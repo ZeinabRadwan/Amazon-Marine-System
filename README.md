@@ -1,56 +1,148 @@
-# Amazon Marine ERP
+# Amazon Marine — Shipping ERP
 
-Full-stack ERP system for shipping companies, designed to centralize operations, CRM, sales, accounting, treasury, pricing, reporting, expenses, official documents, attendance, and client visits. Built with React frontend, Laravel backend, and modular HTML/CSS/JS.
+A role-based ERP web application for shipping agencies. It centralizes operations, CRM, sales, accounting, treasury, pricing, reporting, and attendance in a single frontend application.
+
+---
+
+## Overview
+
+Amazon Marine ERP provides:
+
+- **Role-based access** — Admin, Sales, Accounting, Pricing, Operations, Support, and Sales Manager, each with dedicated dashboards and permissions.
+- **Unified workflow** — From client visits and SD (Shipping Details) forms through operations, shipments, invoicing, and payments.
+- **Frontend-only delivery** — No backend required; runs in the browser with optional persistence via `localStorage`.
+
+---
 
 ## Features
 
-- **Dashboard** – Role-based overview for Admin, Sales, Accounting, Pricing, Operations, and Support.  
-- **CRM & Sales** – Client management, visit tracking, SD forms, sales pipeline, follow-ups.  
-- **Shipments & Operations** – Shipment tracking, dynamic status system, notes & tasks, operations management.  
-- **Accounting & Treasury** – Invoices, payments, cash flow, partner accounts, bank reconciliation.  
-- **Pricing Module** – Container rates, quotes, approvals, SLA tracking.  
-- **Expenses** – Track shipment and general expenses with reports.  
-- **Partners & Vendors** – Shipping lines, transport companies, customs brokers management.  
-- **Reports & Analytics** – Financial, sales, operations, attendance, and visit reports with exports.  
-- **Official Documents** – Upload and manage contracts, licenses, insurance, templates.  
-- **Attendance & Visits** – Employee check-in/out, late/absent tracking, sales visits logging.
+| Module | Description |
+|--------|-------------|
+| **Dashboard** | Role-specific KPIs, charts, and quick actions. |
+| **CRM** | Client management, visit tracking, and sales follow-ups. |
+| **Shipments** | Tracking, dynamic statuses (admin-configurable), notes, and status updates. |
+| **SD Forms** | Shipping-details forms with submit-to-operations workflow and status flow. |
+| **Operations** | Task queue, booking/transport/clearance tracking, and timelines. |
+| **Invoices & Accounting** | Invoicing, payments, and partner accounts. |
+| **Treasury & Expenses** | Cash flow, bank reconciliation, and expense tracking. |
+| **Pricing** | Container rates, quotes, approvals, and cost viewer. |
+| **Partners** | Shipping lines, transporters, and customs brokers. |
+| **Reports** | Financial, sales, operations, and attendance reports with export. |
+| **Documents** | Official documents, contracts, and templates. |
+| **Attendance** | Check-in/out and attendance overview. |
+| **Visits** | Sales visit logging and outcomes. |
+| **Support (Tickets)** | Client tickets and requests (Support role). |
+| **Team Performance** | Sales rep metrics and funnel (Sales Manager role). |
+| **Settings** | Company settings, users, notifications, system options, and **Shipment Status Management** (add/edit/disable statuses). |
+
+---
 
 ## Tech Stack
 
-- **Frontend UI** – Modular HTML/CSS/JS components  
-- **React Frontend** – Dynamic dashboards, forms, and reporting  
-- **Backend** – Laravel API for business logic, database, and authentication  
-- **Storage & Local Logic** – LocalStorage for shipment notes/tasks and dynamic status system  
+- **Frontend:** HTML5, CSS3, JavaScript (vanilla).
+- **Styling:** Custom CSS with RTL support; Boxicons for icons.
+- **State / persistence:** `localStorage` (roles, shipment statuses, operations tasks, notifications, notes).
+- **Charts:** Chart.js (CDN) where used.
 
-## Structure
+No server, database, or build step is required.
 
-- `/ui` – HTML, CSS, JS static components  
-- `/front` – React frontend for dashboards and dynamic interactions  
-- `/back` – Laravel backend for API, database, and server logic  
+---
 
-## Installation
+## Project Structure
 
-1. Clone repository:  
+```
+Shipping ERP/
+├── index.html              # Login and role selection
+├── dashboard.html          # Main dashboard (role-based view)
+├── clients.html            # CRM
+├── shipments.html          # Shipments and tracking
+├── sd-forms.html          # SD forms
+├── operations.html        # Operations tasks
+├── invoices.html          # Invoices
+├── accounting.html        # Accounting
+├── treasury.html          # Treasury
+├── expenses.html          # Expenses
+├── pricing.html           # Pricing
+├── cost-viewer.html       # Cost viewer
+├── partners.html          # Partners
+├── reports.html           # Reports
+├── documents.html         # Official documents
+├── attendance.html        # Attendance
+├── visits.html            # Visits
+├── tickets.html           # Support tickets
+├── team-performance.html  # Sales team performance
+├── profile.html            # User profile
+├── settings.html           # System and shipment status settings
+├── forgot-password.html
+├── reset-password.html
+├── css/
+│   └── styles.css         # Global styles
+├── js/
+│   ├── role-auth.js       # Roles and page access
+│   ├── role-sidebar-apply.js
+│   ├── role-views.js      # Role-based UI (visibility, filters)
+│   ├── shipment-statuses.js  # Dynamic shipment status CRUD
+│   ├── sd-operations-workflow.js  # SD → Operations flow
+│   └── app.js             # Modals, dropdowns, shared UI
+└── logo/                  # Logo assets
+```
+
+---
+
+## Getting Started
+
+1. **Open in a browser**  
+   Open `index.html` in a modern browser (Chrome, Firefox, Edge, Safari).
+
+2. **Choose a role**  
+   On the login screen, select a role (e.g. Admin, Sales, Operations) and click **تسجيل الدخول**.
+
+3. **Navigate**  
+   Use the sidebar to move between modules. Visible menu items depend on the selected role.
+
+For local development, you can serve the folder with any static server, for example:
+
 ```bash
-git clone <repo-url>```
+# Example: Python
+python -m http.server 8080
 
-2. Install backend dependencies (Laravel):
-```bash
-cd back
-composer install
-cp .env.example .env
-php artisan key:generate```
+# Example: Node (npx)
+npx serve .
+```
 
-3. Install frontend dependencies (React):
-```bash
-cd front
-npm install
-npm start```
+Then open `http://localhost:8080` (or the port shown).
 
-4. Open /ui folder for static components preview.
+---
 
-## Usage
-- Admin manages all modules.
-- Sales, Accounting, Pricing, Operations, and Support have role-specific dashboards and access.
-- Shipments have dynamic statuses and a note/task system for better tracking.
-- Reports are exportable to Excel/PDF.
+## Roles and Access
+
+| Role | Focus |
+|------|--------|
+| **Admin** | Full access to all modules and settings. |
+| **Sales** | Dashboard, CRM, SD forms, visits, shipments, pricing, reports, attendance. |
+| **Accounting** | Dashboard, clients, shipments, invoices, accounting, treasury, expenses, partners, reports. |
+| **Pricing** | Dashboard, clients, shipments, invoices, pricing, cost viewer, reports. |
+| **Operations** | Dashboard, operations, shipments, attendance, profile, settings (no SD forms). |
+| **Support** | Dashboard, CRM (read), shipments (tracking), tickets, visits, invoices (read), attendance. |
+| **Sales Manager** | Dashboard, CRM, SD forms, shipments, reports, visits, team performance, attendance. |
+
+Access is enforced in the frontend (redirect to dashboard when a page is not allowed for the current role).
+
+---
+
+## Shipment Statuses
+
+Shipment statuses are configurable by Admin:
+
+1. Go to **الإعدادات** → **حالات الشحنات**.
+2. Add, edit, enable/disable, or delete statuses (name in Arabic/English, color, description).
+3. Only **active** statuses appear in the Shipments page filter and in the status-update modal.
+4. Badges in the shipments table use the configured colors.
+
+Data is stored in `localStorage` under `amazonMarineShipmentStatuses`.
+
+---
+
+## License and Copyright
+
+© 2026 Amazon Marine. All rights reserved.
