@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazon Marine — الشحنات</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+        <div class="logo-area"><img src="logo/logo (1).png" alt="Logo">
+            <div class="logo-text"><span class="brand-name">Amazon Marine</span><span class="brand-sub">Shipping
+                    Agency</span></div>
+        </div>
+        <div class="menu-label">الرئيسية</div>
+        <ul class="menu">
+            <li><a href="dashboard.html"><i class='bx bxs-dashboard'></i><span>لوحة التحكم</span></a></li>
+            <li><a href="clients.html"><i class='bx bx-group'></i><span>العملاء / CRM</span><span
+                        class="menu-badge">24</span></a></li>
+            <li class="active"><a href="shipments.html"><i class='bx bx-package'></i><span>الشحنات</span></a></li>
+            <li><a href="sd-forms.html"><i class='bx bx-file'></i><span>نماذج SD</span></a></li>
+            <li><a href="operations.html"><i class='bx bxs-ship'></i><span>العمليات</span></a></li>
+        </ul>
+        <div class="menu-label">المالية</div>
+        <ul class="menu">
+            <li><a href="invoices.html"><i class='bx bx-receipt'></i><span>الفواتير</span></a></li>
+            <li><a href="accounting.html"><i class='bx bx-wallet'></i><span>الحسابات</span></a></li>
+            <li><a href="treasury.html"><i class='bx bx-credit-card'></i><span>الخزينة</span></a></li>
+            <li><a href="expenses.html"><i class='bx bx-money'></i><span>المصروفات</span></a></li>
+            <li><a href="pricing.html"><i class='bx bx-dollar-circle'></i><span>التسعير</span></a></li>
+        </ul>
+        <div class="menu-label">الإدارة</div>
+        <ul class="menu">
+            <li><a href="partners.html"><i class='bx bx-buildings'></i><span>الشركاء</span></a></li>
+            <li><a href="reports.html"><i class='bx bx-bar-chart-alt-2'></i><span>التقارير</span></a></li>
+            <li><a href="documents.html"><i class='bx bx-file-blank'></i><span>المستندات الرسمية</span></a></li>
+            <li><a href="tickets.html"><i class='bx bx-message-alt-detail'></i><span>تذاكر الدعم</span></a></li>
+            <li><a href="team-performance.html"><i class='bx bx-trending-up'></i><span>أداء الفريق</span></a></li>
+            <li><a href="attendance.html"><i class='bx bx-time-five'></i><span>الحضور والانصراف</span></a></li>
+            <li><a href="visits.html"><i class='bx bx-map-pin'></i><span>سجل الزيارات</span></a></li>
+        </ul>
+        <div class="menu-label">الإعدادات</div>
+        <ul class="menu">
+            <li><a href="settings.html"><i class='bx bx-cog'></i><span>الإعدادات</span></a></li>
+            <li><a href="profile.html"><i class='bx bx-user'></i><span>الملف الشخصي</span></a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-avatar">MD</div>
+            <div class="user-info">
+                <div class="user-name">Capt. Mostafa</div>
+                <div class="user-role">مدير النظام</div>
+            </div><a href="index.html"><i class='bx bx-log-out'
+                    style="color:rgba(255,255,255,0.35);cursor:pointer;font-size:1.2rem;"></i></a>
+        </div>
+    </nav>
+
+    <!-- MAIN -->
+    <div class="main-wrapper">
+        <header class="topbar">
+            <div class="page-title-area">
+                <h1>الشحنات</h1>
+                <div class="breadcrumbs">Amazon Marine > <span>إدارة الشحنات</span></div>
+            </div>
+            <div class="topbar-right">
+                <div class="search-bar"><i class='bx bx-search'></i><input type="text"
+                        placeholder="بحث بـ BL# أو اسم العميل..."></div>
+                <div class="topbar-icon"><i class='bx bx-bell'></i>
+                    <div class="notif-dot"></div>
+                </div>
+                <div class="currency-dropdown">
+                    <div class="topbar-icon" onclick="toggleCurrencyDropdown(event)">
+                        <i class='bx bx-dollar-circle'></i>
+                        <span class="currency-code" id="currencyCodeBadge">$</span>
+                    </div>
+                    <div class="currency-dropdown-menu" id="currencyDropdown">
+                        <button type="button" class="currency-dropdown-item active" data-currency="USD">$ USD <i class='bx bx-check'></i></button>
+                        <button type="button" class="currency-dropdown-item" data-currency="EUR">€ EUR</button>
+                        <button type="button" class="currency-dropdown-item" data-currency="EGP">E£ EGP</button>
+                    </div>
+                </div>
+                <div class="profile-pill">
+                    <div class="profile-avatar">MD</div><span>Capt. Mostafa</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="content">
+            <!-- Pipeline Summary -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-icon-wrap info"><i class='bx bx-calendar-check'></i></div>
+                    <div class="stat-info">
+                        <h3>18</h3>
+                        <div class="stat-label">تم الحجز</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-wrap gold"><i class='bx bx-transfer'></i></div>
+                    <div class="stat-info">
+                        <h3>12</h3>
+                        <div class="stat-label">في الطريق</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-wrap cyan"><i class='bx bx-check-shield'></i></div>
+                    <div class="stat-info">
+                        <h3>8</h3>
+                        <div class="stat-label">تخليص جمركي</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-wrap green"><i class='bx bx-check-double'></i></div>
+                    <div class="stat-info">
+                        <h3>210</h3>
+                        <div class="stat-label">تم التسليم</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts: Status & Revenue/Profit -->
+            <div class="card" style="margin-bottom:24px;">
+                <div class="card-header">
+                    <span class="card-title">إحصائيات الشحنات</span>
+                    <select class="form-control" id="chartMonths" style="width:auto;min-width:110px;">
+                        <option value="6">6 أشهر</option>
+                        <option value="12">12 شهر</option>
+                    </select>
+                </div>
+                <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+                    <div>
+                        <p class="fs-sm fw-600 text-muted" style="margin-bottom:8px;">توزيع الحالات</p>
+                        <div class="chart-wrap" style="position:relative;height:220px;width:100%;">
+                            <canvas id="chartStatus"></canvas>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="fs-sm fw-600 text-muted" style="margin-bottom:8px;">الإيرادات والربح الشهري ($)</p>
+                        <div class="chart-wrap" style="position:relative;height:220px;width:100%;">
+                            <canvas id="chartRevenueProfit"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="page-header">
+                <div class="page-header-actions">
+                    <button type="button" class="btn btn-outline btn-sm" id="btnExportAll"><i class='bx bx-export'></i> تصدير الكل</button>
+                </div>
+                <button class="btn btn-primary" data-role-only="admin,sales" onclick="openModal('addShipmentModal')"><i class='bx bx-plus'></i> شحنة
+                    جديدة</button>
+            </div>
+
+            <!-- Bulk Actions Bar -->
+            <div class="bulk-actions-bar" id="bulkActionsBar" style="display:none;">
+                <span class="bulk-count" id="bulkCount">تم تحديد 0 شحنة</span>
+                <button type="button" class="btn btn-outline btn-sm" id="bulkExportSelected"><i class='bx bx-download'></i> تصدير المحدد</button>
+                <button type="button" class="btn btn-outline btn-sm" id="bulkClearSelection">إلغاء التحديد</button>
+            </div>
+
+            <!-- Filters & Table (Sales: my clients only; Accounting: financial cols; Pricing: pricing cols) -->
+            <div class="card" data-sales-filter-table>
+                <div class="filter-bar">
+                    <input type="text" class="form-control" id="shipmentSearch" placeholder="بحث بـ BL# أو العميل أو المسار..." style="max-width:260px;">
+                    <select class="form-control" id="filterStatus">
+                        <option value="">كل الحالات</option>
+                        <!-- options filled by js/shipment-statuses.js -->
+                    </select>
+                    <select class="form-control" id="filterClient">
+                        <option value="">كل العملاء</option>
+                        <option value="منصور وشركاه">منصور وشركاه</option>
+                        <option value="الإيمان للأغذية">الإيمان للأغذية</option>
+                        <option value="طه للمنسوجات">طه للمنسوجات</option>
+                        <option value="نايل كرافت مصر">نايل كرافت مصر</option>
+                        <option value="السعودي للتصدير">السعودي للتصدير</option>
+                    </select>
+                    <select class="form-control" id="filterLine">
+                        <option value="">كل الخطوط</option>
+                        <option value="MSC">MSC</option>
+                        <option value="CMA CGM">CMA CGM</option>
+                        <option value="Maersk">Maersk</option>
+                        <option value="Hapag-Lloyd">Hapag-Lloyd</option>
+                    </select>
+                    <input type="month" class="form-control" id="filterMonth" value="2026-02">
+                    <select class="form-control" id="sortShipments" style="width:auto;min-width:120px;">
+                        <option value="">ترتيب حسب</option>
+                        <option value="bl">BL#</option>
+                        <option value="client">العميل</option>
+                        <option value="cost">التكلفة</option>
+                        <option value="profit">الربح</option>
+                    </select>
+                </div>
+
+                <table class="data-table" id="shipmentsTable">
+                    <thead>
+                        <tr>
+                            <th style="width:44px;"><input type="checkbox" id="selectAllShipments" title="تحديد الكل"></th>
+                            <th>BL#</th>
+                            <th>العميل</th>
+                            <th>المسار</th>
+                            <th>الخط الملاحي</th>
+                            <th>الحالة</th>
+                            <th data-shipments-col="admin,accounting">التكلفة</th>
+                            <th data-shipments-col="admin,accounting,pricing">سعر البيع</th>
+                            <th data-shipments-col="admin,accounting">الربح</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="shipment-row" onclick="window.currentShipmentRow=this;openModal('shipmentDetailModal')" style="cursor:pointer;" data-status="في الطريق" data-client="منصور وشركاه" data-sales-rep="أحمد خيري" data-line="MSC" data-cost="4250" data-profit="1200" data-bl="BL-2026-0248">
+                            <td onclick="event.stopPropagation()"><input type="checkbox" class="shipment-checkbox"></td>
+                            <td class="bl-number">BL-2026-0248</td>
+                            <td>
+                                <div class="client-cell">
+                                    <div class="client-avatar"
+                                        style="background:linear-gradient(135deg,var(--navy-700),var(--navy-500));">MN
+                                    </div><span>منصور وشركاه</span>
+                                </div>
+                            </td>
+                            <td>الإسكندرية → جدة</td>
+                            <td>MSC</td>
+                            <td><span class="status-badge in-transit">في الطريق</span></td>
+                            <td class="fw-600" data-shipments-col="admin,accounting">$4,250</td>
+                            <td class="fw-600" data-shipments-col="admin,accounting,pricing">$5,450</td>
+                            <td class="fw-600 text-success" data-shipments-col="admin,accounting">$1,200</td>
+                            <td onclick="event.stopPropagation()">
+                                <div class="table-actions">
+                                    <button class="tbl-btn view" title="عرض التفاصيل"
+                                        onclick="openModal('shipmentDetailModal')"><i class='bx bx-show'></i></button>
+                                    <button class="tbl-btn phone" title="تتبع"
+                                        onclick="openModal('shipmentDetailModal')"><i class='bx bx-map'></i></button>
+                                    <button class="tbl-btn edit" title="تحديث الحالة"
+                                        onclick="openStageUpdateModal(this)"><i class='bx bx-edit-alt'></i></button>
+                                    <button class="tbl-btn view" title="طباعة" onclick="window.print()"><i class='bx bx-printer'></i></button>
+                                    <button class="tbl-btn note" title="ملاحظات الشحنة"
+                                        onclick="event.stopPropagation();openShipmentNotesModal(this)"><i class='bx bx-note'></i></button>
+                                    <button class="tbl-btn delete" title="حذف"
+                                        onclick="confirm('هل أنت متأكد من حذف هذه الشحنة؟')"><i class='bx bx-trash'></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="shipment-row" onclick="openModal('shipmentDetailModal')" style="cursor:pointer;" data-status="تم الحجز" data-client="الإيمان للأغذية" data-sales-rep="محمد سعيد" data-line="CMA CGM" data-cost="6800" data-profit="1700" data-bl="BL-2026-0247">
+                            <td onclick="event.stopPropagation()"><input type="checkbox" class="shipment-checkbox"></td>
+                            <td class="bl-number">BL-2026-0247</td>
+                            <td>
+                                <div class="client-cell">
+                                    <div class="client-avatar"
+                                        style="background:linear-gradient(135deg,var(--accent-cyan),#0e8a9b);">AE</div>
+                                    <span>الإيمان للأغذية</span>
+                                </div>
+                            </td>
+                            <td>دمياط → دبي</td>
+                            <td>CMA CGM</td>
+                            <td><span class="status-badge booked">تم الحجز</span></td>
+                            <td class="fw-600" data-shipments-col="admin,accounting">$6,800</td>
+                            <td class="fw-600" data-shipments-col="admin,accounting,pricing">$8,500</td>
+                            <td class="fw-600 text-success" data-shipments-col="admin,accounting">$1,700</td>
+                            <td onclick="event.stopPropagation()">
+                                <div class="table-actions">
+                                    <button class="tbl-btn view" title="عرض التفاصيل"
+                                        onclick="openModal('shipmentDetailModal')"><i class='bx bx-show'></i></button>
+                                    <button class="tbl-btn edit" title="تحديث الحالة"
+                                        onclick="openStageUpdateModal(this)"><i class='bx bx-edit-alt'></i></button>
+                                    <button class="tbl-btn view" title="طباعة" onclick="window.print()"><i
+                                            class='bx bx-printer'></i></button>
+                                    <button class="tbl-btn phone" title="تتبع"
+                                        onclick="openModal('shipmentDetailModal')"><i class='bx bx-map'></i></button>
+                                    <button class="tbl-btn note" title="ملاحظات الشحنة"
+                                        onclick="event.stopPropagation();openShipmentNotesModal(this)"><i class='bx bx-note'></i></button>
+                                    <button class="tbl-btn delete" title="حذف"
+                                        onclick="confirm('هل أنت متأكد من حذف هذه الشحنة؟')"><i class='bx bx-trash'></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="shipment-row" onclick="window.currentShipmentRow=this;openModal('shipmentDetailModal')" style="cursor:pointer;" data-status="تخليص جمركي" data-client="طه للمنسوجات" data-sales-rep="زينب رضوان" data-line="Hapag-Lloyd" data-cost="8150" data-profit="2050" data-bl="BL-2026-0245">
+                            <td onclick="event.stopPropagation()"><input type="checkbox" class="shipment-checkbox"></td>
+                            <td class="bl-number">BL-2026-0245</td>
+                            <td>
+                                <div class="client-cell">
+                                    <div class="client-avatar"
+                                        style="background:linear-gradient(135deg,var(--accent-gold),#b8913c);">TF</div>
+                                    <span>طه للمنسوجات</span>
+                                </div>
+                            </td>
+                            <td>السخنة → هامبورغ</td>
+                            <td>Hapag-Lloyd</td>
+                            <td><span class="status-badge clearance">تخليص جمركي</span></td>
+                            <td class="fw-600" data-shipments-col="admin,accounting">$8,150</td>
+                            <td class="fw-600" data-shipments-col="admin,accounting,pricing">$10,200</td>
+                            <td class="fw-600 text-success" data-shipments-col="admin,accounting">$2,050</td>
+                            <td onclick="event.stopPropagation()">
+                                <div class="table-actions">
+                                    <button class="tbl-btn view" title="عرض التفاصيل"
+                                        onclick="openModal('shipmentDetailModal')"><i class='bx bx-show'></i></button>
+                                    <button class="tbl-btn phone" title="تتبع"
+                                        onclick="openModal('shipmentDetailModal')"><i class='bx bx-map'></i></button>
+                                    <button class="tbl-btn edit" title="تحديث الحالة"
+                                        onclick="openStageUpdateModal(this)"><i class='bx bx-edit-alt'></i></button>
+                                    <button class="tbl-btn view" title="طباعة" onclick="window.print()"><i class='bx bx-printer'></i></button>
+                                    <button class="tbl-btn note" title="ملاحظات الشحنة"
+                                        onclick="event.stopPropagation();openShipmentNotesModal(this)"><i class='bx bx-note'></i></button>
+                                    <button class="tbl-btn delete" title="حذف"
+                                        onclick="confirm('هل أنت متأكد من حذف هذه الشحنة؟')"><i class='bx bx-trash'></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="shipment-row" onclick="window.currentShipmentRow=this;openModal('shipmentDetailModal')" style="cursor:pointer;" data-status="تم التسليم" data-client="نايل كرافت مصر" data-sales-rep="حسن نبيل" data-line="MSC" data-cost="3600" data-profit="1200" data-bl="BL-2026-0243">
+                            <td onclick="event.stopPropagation()"><input type="checkbox" class="shipment-checkbox"></td>
+                            <td class="bl-number">BL-2026-0243</td>
+                            <td>
+                                <div class="client-cell">
+                                    <div class="client-avatar"
+                                        style="background:linear-gradient(135deg,var(--success),#059669);">NK</div>
+                                    <span>نايل كرافت مصر</span>
+                                </div>
+                            </td>
+                            <td>بورسعيد → إسطنبول</td>
+                            <td>MSC</td>
+                            <td><span class="status-badge delivered">تم التسليم</span></td>
+                            <td class="fw-600" data-shipments-col="admin,accounting">$3,600</td>
+                            <td class="fw-600" data-shipments-col="admin,accounting,pricing">$4,800</td>
+                            <td class="fw-600 text-success" data-shipments-col="admin,accounting">$1,200</td>
+                            <td onclick="event.stopPropagation()">
+                                <div class="table-actions">
+                                    <button class="tbl-btn view" title="عرض التفاصيل"
+                                        onclick="openModal('shipmentDetailModal')"><i class='bx bx-show'></i></button>
+                                    <button class="tbl-btn phone" title="تتبع"
+                                        onclick="openModal('shipmentDetailModal')"><i class='bx bx-map'></i></button>
+                                    <button class="tbl-btn edit" title="تحديث الحالة"
+                                        onclick="openStageUpdateModal(this)"><i class='bx bx-edit-alt'></i></button>
+                                    <button class="tbl-btn view" title="طباعة" onclick="window.print()"><i class='bx bx-printer'></i></button>
+                                    <button class="tbl-btn note" title="ملاحظات الشحنة"
+                                        onclick="event.stopPropagation();openShipmentNotesModal(this)"><i class='bx bx-note'></i></button>
+                                    <button class="tbl-btn delete" title="حذف"
+                                        onclick="confirm('هل أنت متأكد من حذف هذه الشحنة؟')"><i class='bx bx-trash'></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="shipment-row" onclick="window.currentShipmentRow=this;openModal('shipmentDetailModal')" style="cursor:pointer;" data-status="تم التسليم" data-client="السعودي للتصدير" data-sales-rep="أحمد خيري" data-line="Maersk" data-cost="5900" data-profit="1650" data-bl="BL-2026-0240">
+                            <td onclick="event.stopPropagation()"><input type="checkbox" class="shipment-checkbox"></td>
+                            <td class="bl-number">BL-2026-0240</td>
+                            <td>
+                                <div class="client-cell">
+                                    <div class="client-avatar"
+                                        style="background:linear-gradient(135deg,#7c3aed,#5b21b6);">SE</div>
+                                    <span>السعودي للتصدير</span>
+                                </div>
+                            </td>
+                            <td>الإسكندرية → جنوة</td>
+                            <td>Maersk</td>
+                            <td><span class="status-badge delivered">تم التسليم</span></td>
+                            <td class="fw-600" data-shipments-col="admin,accounting">$5,900</td>
+                            <td class="fw-600" data-shipments-col="admin,accounting,pricing">$7,550</td>
+                            <td class="fw-600 text-success" data-shipments-col="admin,accounting">$1,650</td>
+                            <td onclick="event.stopPropagation()">
+                                <div class="table-actions">
+                                    <button class="tbl-btn view" title="عرض التفاصيل"
+                                        onclick="openModal('shipmentDetailModal')"><i class='bx bx-show'></i></button>
+                                    <button class="tbl-btn phone" title="تتبع"
+                                        onclick="openModal('shipmentDetailModal')"><i class='bx bx-map'></i></button>
+                                    <button class="tbl-btn edit" title="تحديث الحالة"
+                                        onclick="openStageUpdateModal(this)"><i class='bx bx-edit-alt'></i></button>
+                                    <button class="tbl-btn view" title="طباعة" onclick="window.print()"><i class='bx bx-printer'></i></button>
+                                    <button class="tbl-btn note" title="ملاحظات الشحنة"
+                                        onclick="event.stopPropagation();openShipmentNotesModal(this)"><i class='bx bx-note'></i></button>
+                                    <button class="tbl-btn delete" title="حذف"
+                                        onclick="confirm('هل أنت متأكد من حذف هذه الشحنة؟')"><i class='bx bx-trash'></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="pagination">
+                    <div class="pagination-info">عرض 1 - 5 من 248 شحنة</div>
+                    <div class="pagination-pages">
+                        <button class="pagination-btn"><i class='bx bx-chevron-right'></i></button>
+                        <button class="pagination-btn active">1</button><button class="pagination-btn">2</button><button
+                            class="pagination-btn">3</button><button class="pagination-btn">...</button><button
+                            class="pagination-btn">50</button>
+                        <button class="pagination-btn"><i class='bx bx-chevron-left'></i></button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ADD SHIPMENT MODAL -->
+    <div class="modal-overlay" id="addShipmentModal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3><i class='bx bx-package' style="margin-left:8px;"></i> شحنة جديدة</h3><button class="modal-close"
+                    onclick="closeModal('addShipmentModal')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">تاريخ الحجز (Booking Date)</label><input
+                            type="date" class="form-control"></div>
+                    <div class="form-group"><label class="form-label">رقم الحجز (Booking No.)</label><input type="text"
+                            class="form-control" placeholder="أدخل رقم الحجز"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">رقم البوليصة (B/L No.)</label><input type="text"
+                            class="form-control" placeholder="BL-2026-XXXX"></div>
+                    <div class="form-group"><label class="form-label">الخط الملاحي (Shipping Line)</label><select
+                            class="form-control">
+                            <option>اختر الخط</option>
+                            <option>MSC</option>
+                            <option>CMA CGM</option>
+                            <option>Maersk</option>
+                            <option>Hapag-Lloyd</option>
+                            <option>Cosco</option>
+                            <option>Evergreen</option>
+                        </select></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">وسيلة الشحن (Mode)</label><select
+                            class="form-control">
+                            <option>بحر (Sea)</option>
+                            <option>بر (Land)</option>
+                            <option>جو (Air)</option>
+                        </select></div>
+                    <div class="form-group"><label class="form-label">نوع الشحن (Type)</label><select
+                            class="form-control">
+                            <option>FCL (حاوية كاملة)</option>
+                            <option>LCL (شحن جزئي)</option>
+                        </select></div>
+                    <div class="form-group"><label class="form-label">اتجاة الشحنة (Direction)</label><select
+                            class="form-control">
+                            <option>تصدير (Export)</option>
+                            <option>استيراد (Import)</option>
+                        </select></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">نوع الحاوية (Cont. Type)</label><select
+                            class="form-control">
+                            <option>Dry</option>
+                            <option>Reefer (مبرد)</option>
+                            <option>Open Top</option>
+                            <option>Flat Rack</option>
+                            <option>High Cube</option>
+                        </select></div>
+                    <div class="form-group"><label class="form-label">مقاس الحاوية (Size)</label><select
+                            class="form-control">
+                            <option>20'</option>
+                            <option>40'</option>
+                        </select></div>
+                    <div class="form-group"><label class="form-label">عدد الحاويات</label><input type="number"
+                            class="form-control" placeholder="1" value="1"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">مكان التحميل (Place of Loading)</label><input
+                            type="text" class="form-control" placeholder="المصنع / المستودع"></div>
+                    <div class="form-group"><label class="form-label">ميناء التحميل (POL)</label><select
+                            class="form-control">
+                            <option>اختر الميناء</option>
+                            <option>الإسكندرية</option>
+                            <option>دمياط</option>
+                            <option>بورسعيد</option>
+                            <option>السخنة</option>
+                        </select></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">ميناء الوصول (POD)</label><input type="text"
+                            class="form-control" placeholder="مثال: جدة"></div>
+                    <div class="form-group"><label class="form-label">تاريخ التحميل (Loading Date)</label><input
+                            type="date" class="form-control"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">العميل</label><select class="form-control">
+                            <option>اختر العميل</option>
+                            <option>منصور وشركاه</option>
+                            <option>الإيمان للأغذية</option>
+                            <option>طه للمنسوجات</option>
+                        </select></div>
+                    <div class="form-group"><label class="form-label">وصف البضاعة (Cargo Desc.)</label><input
+                            type="text" class="form-control" placeholder="مثال: منسوجات قطنية"></div>
+                </div>
+                <div class="form-group"><label class="form-label">ملاحظات</label><textarea class="form-control"
+                        placeholder="أي تعليمات خاصة..."></textarea></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-outline"
+                    onclick="closeModal('addShipmentModal')">إلغاء</button><button class="btn btn-primary"><i
+                        class='bx bx-check'></i> إنشاء الشحنة</button></div>
+        </div>
+    </div>
+
+    <!-- SHIPMENT DETAIL MODAL -->
+    <div class="modal-overlay" id="shipmentDetailModal">
+        <div class="modal modal-xl">
+            <div class="modal-header">
+                <h3><i class='bx bx-package' style="margin-left:8px;"></i> تفاصيل الشحنة — BL-2026-0248</h3><button
+                    class="modal-close" onclick="closeModal('shipmentDetailModal')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <!-- Stage progress strip -->
+                <div class="shipment-stage-progress" style="margin-bottom:24px;">
+                    <div class="stage-step done"><span class="stage-num">1</span><span class="stage-name">تم الحجز</span></div>
+                    <div class="stage-connector"></div>
+                    <div class="stage-step done"><span class="stage-num">2</span><span class="stage-name">في الطريق</span></div>
+                    <div class="stage-connector"></div>
+                    <div class="stage-step active"><span class="stage-num">3</span><span class="stage-name">تخليص جمركي</span></div>
+                    <div class="stage-connector"></div>
+                    <div class="stage-step"><span class="stage-num">4</span><span class="stage-name">تم التسليم</span></div>
+                </div>
+                <!-- Shipment Info -->
+                <div class="grid-2" style="margin-bottom:24px;">
+                    <div>
+                        <h4 style="font-size:0.85rem;font-weight:700;margin-bottom:12px;">بيانات الشحنة</h4>
+                        <div class="grid-2" style="gap:15px;">
+                            <div style="display:flex;flex-direction:column;gap:6px;">
+                                <div class="d-flex justify-between"><span class="text-muted fs-xs">تاريخ
+                                        الحجز:</span><span class="fw-600 fs-xs">10 فبراير 2026</span></div>
+                                <div class="d-flex justify-between"><span class="text-muted fs-xs">رقم
+                                        الحجز:</span><span class="fw-700 fs-xs">BK-MSC-9921</span></div>
+                                <div class="d-flex justify-between"><span class="text-muted fs-xs">BL#:</span><span
+                                        class="fw-700 fs-xs">BL-2026-0248</span></div>
+                                <div class="d-flex justify-between"><span class="text-muted fs-xs">وسيلة
+                                        الشحن:</span><span class="fw-600 fs-xs">بحر (Sea)</span></div>
+                                <div class="d-flex justify-between"><span class="text-muted fs-xs">نوع
+                                        الشحن:</span><span class="fw-600 fs-xs">FCL</span></div>
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:6px;">
+                                <div class="d-flex justify-between"><span class="text-muted fs-xs">الاتجاه:</span><span
+                                        class="fw-600 fs-xs">تصدير (Export)</span></div>
+                                <div class="d-flex justify-between"><span class="text-muted fs-xs">الخط:</span><span
+                                        class="fw-600 fs-xs">MSC</span></div>
+                                <div class="d-flex justify-between"><span class="text-muted fs-xs">الحاوية:</span><span
+                                        class="fw-600 fs-xs">2 × 40' HC (Dry)</span></div>
+                                <div class="d-flex justify-between"><span class="text-muted fs-xs">POL:</span><span
+                                        class="fw-600 fs-xs">ميناء الإسكندرية</span></div>
+                                <div class="d-flex justify-between"><span class="text-muted fs-xs">POD:</span><span
+                                        class="fw-600 fs-xs">ميناء جدة الاسلامي</span></div>
+                            </div>
+                        </div>
+                        <div
+                            style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border); display:flex; flex-direction:column; gap:6px;">
+                            <div class="d-flex justify-between"><span class="text-muted fs-xs">مكان التحميل:</span><span
+                                    class="fw-600 fs-xs">موقع العميل - المنطقة الصناعية</span></div>
+                            <div class="d-flex justify-between"><span class="text-muted fs-xs">تاريخ
+                                    التحميل:</span><span class="fw-600 fs-xs">12 فبراير 2026</span></div>
+                            <div class="d-flex justify-between"><span class="text-muted fs-xs">وصف البضاعة:</span><span
+                                    class="fw-600 fs-xs">منسوجات قطنية وأقمشة جاهزة</span></div>
+                            <div class="d-flex justify-between"><span class="text-muted fs-xs">العميل:</span><span
+                                    class="fw-600 fs-xs">منصور وشركاه</span></div>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 style="font-size:0.85rem;font-weight:700;margin-bottom:12px;">الملخص المالي</h4>
+                        <div style="display:flex;flex-direction:column;gap:8px;">
+                            <div class="d-flex justify-between"><span class="text-muted fs-sm">Freight:</span><span
+                                    class="fw-600 fs-sm">$2,800</span></div>
+                            <div class="d-flex justify-between"><span class="text-muted fs-sm">THC:</span><span
+                                    class="fw-600 fs-sm">$450</span></div>
+                            <div class="d-flex justify-between"><span class="text-muted fs-sm">نقل داخلي:</span><span
+                                    class="fw-600 fs-sm">$600</span></div>
+                            <div class="d-flex justify-between"><span class="text-muted fs-sm">تخليص جمركي:</span><span
+                                    class="fw-600 fs-sm">$400</span></div>
+                            <div class="d-flex justify-between"
+                                style="padding-top:8px;border-top:1px solid var(--border);"><span
+                                    class="fw-700 fs-sm">إجمالي التكلفة:</span><span class="fw-800 fs-sm">$4,250</span>
+                            </div>
+                            <div class="d-flex justify-between"><span class="fw-700 fs-sm">سعر البيع:</span><span
+                                    class="fw-800 fs-sm">$5,450</span></div>
+                            <div class="d-flex justify-between"><span
+                                    class="fw-700 fs-sm text-success">الربح:</span><span
+                                    class="fw-800 fs-sm text-success">$1,200</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Workflow Timeline -->
+                <h4 style="font-size:0.85rem;font-weight:700;margin-bottom:16px;">مراحل الشحنة</h4>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-dot green"></div>
+                        <div class="timeline-date">10 فبراير 2026 - 9:00 ص</div>
+                        <div class="timeline-title">✅ تأكيد الحجز (Booking Confirmation)</div>
+                        <div class="timeline-desc">Vessel: MSC OSCAR • Voyage: 026E • Container: MSCU1234567,
+                            MSCU7654321</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot green"></div>
+                        <div class="timeline-date">12 فبراير 2026 - 2:00 م</div>
+                        <div class="timeline-title">✅ النقل الداخلي</div>
+                        <div class="timeline-desc">شركة نايل للنقل — تم نقل الحاويات من مصنع العميل لميناء الإسكندرية
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot green"></div>
+                        <div class="timeline-date">14 فبراير 2026 - 11:30 ص</div>
+                        <div class="timeline-title">✅ التخليص الجمركي</div>
+                        <div class="timeline-desc">وكالة التخليص العالمية — تم التخليص بنجاح. رقم البيان: CUS-2026-8834
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot cyan"></div>
+                        <div class="timeline-date">15 فبراير 2026 - 6:00 م</div>
+                        <div class="timeline-title">🚢 في الطريق (In Transit)</div>
+                        <div class="timeline-desc">ETD: 15 فبراير • ETA: 22 فبراير • الحالة الحالية</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot" style="background:var(--border);"></div>
+                        <div class="timeline-date">22 فبراير 2026 (متوقع)</div>
+                        <div class="timeline-title">⏳ التسليم</div>
+                        <div class="timeline-desc">وصول متوقع لميناء جدة</div>
+                    </div>
+                </div>
+
+                <!-- Partners Involved -->
+                <h4 style="font-size:0.85rem;font-weight:700;margin-bottom:12px;margin-top:24px;">الجهات المشاركة</h4>
+                <div class="grid-3" style="margin-bottom:0;">
+                    <div class="partner-item">
+                        <div class="partner-icon" style="background:rgba(30,42,90,0.1);color:var(--navy-700);"><i
+                                class='bx bx-ship'></i></div>
+                        <div class="partner-info">
+                            <div class="partner-name">MSC</div>
+                            <div class="partner-desc">خط ملاحي</div>
+                        </div>
+                        <div class="partner-amount">$3,250</div>
+                    </div>
+                    <div class="partner-item">
+                        <div class="partner-icon" style="background:rgba(23,162,184,0.1);color:var(--accent-cyan);"><i
+                                class='bx bx-car'></i></div>
+                        <div class="partner-info">
+                            <div class="partner-name">نايل للنقل</div>
+                            <div class="partner-desc">نقل داخلي</div>
+                        </div>
+                        <div class="partner-amount">$600</div>
+                    </div>
+                    <div class="partner-item">
+                        <div class="partner-icon" style="background:rgba(212,168,83,0.12);color:var(--accent-gold);"><i
+                                class='bx bx-check-shield'></i></div>
+                        <div class="partner-info">
+                            <div class="partner-name">التخليص العالمية</div>
+                            <div class="partner-desc">تخليص جمركي</div>
+                        </div>
+                        <div class="partner-amount">$400</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('shipmentDetailModal')">إغلاق</button>
+                <button class="btn btn-cyan"><i class='bx bx-printer'></i> طباعة</button>
+                <button class="btn btn-primary"
+                    onclick="closeModal('shipmentDetailModal');openStageUpdateModal()"><i class='bx bx-edit'></i>
+                    تحديث الحالة</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SHIPMENT NOTES & TASKS MODAL (ملاحظات الشحنة) -->
+    <div class="modal-overlay" id="shipmentNoteModal">
+        <div class="modal modal-lg shipment-notes-modal">
+            <div class="modal-header">
+                <h3><i class='bx bx-note' style="margin-left:8px;"></i> <span id="shipmentNotesModalTitle">ملاحظات الشحنة – BL-XXXX</span></h3>
+                <button class="modal-close" onclick="closeModal('shipmentNoteModal')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="shipmentNotesCurrentBL" value="">
+                <!-- Add New Note -->
+                <section class="notes-add-section">
+                    <h4 class="notes-section-title">إضافة ملاحظة جديدة</h4>
+                    <div class="form-group">
+                        <label class="form-label">عنوان الملاحظة</label>
+                        <input type="text" class="form-control" id="shipmentNoteTitle" placeholder="عنوان الملاحظة">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">تفاصيل الملاحظة</label>
+                        <textarea class="form-control" id="shipmentNoteDetails" placeholder="تفاصيل الملاحظة" rows="3"></textarea>
+                    </div>
+                    <button type="button" class="btn btn-primary" id="btnAddShipmentNote"><i class='bx bx-plus'></i> إضافة الملاحظة</button>
+                </section>
+                <!-- Notes Timeline -->
+                <section class="notes-timeline-section">
+                    <h4 class="notes-section-title">الملاحظات والمهام</h4>
+                    <div id="shipmentNotesTimeline" class="notes-timeline">
+                        <!-- Filled by JS -->
+                    </div>
+                    <div id="shipmentNotesEmpty" class="notes-empty" style="display:none;">
+                        <i class='bx bx-note'></i>
+                        <p>لا توجد ملاحظات بعد. أضف ملاحظة أعلاه.</p>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <!-- STAGE UPDATE MODAL -->
+    <div class="modal-overlay" id="stageUpdateModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class='bx bx-edit' style="margin-left:8px;"></i> تحديث حالة الشحنة</h3><button
+                    class="modal-close" onclick="closeModal('stageUpdateModal')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group"><label class="form-label">الحالة الجديدة</label>
+                    <select class="form-control" id="stageUpdateStatusSelect">
+                        <!-- options filled by js/shipment-statuses.js -->
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">التاريخ</label><input type="date"
+                            class="form-control" value="2026-02-19"></div>
+                    <div class="form-group"><label class="form-label">الجهة المسؤولة</label><select
+                            class="form-control">
+                            <option>MSC</option>
+                            <option>نايل للنقل</option>
+                            <option>التخليص العالمية</option>
+                        </select></div>
+                </div>
+                <div class="form-group"><label class="form-label">ملاحظات</label><textarea class="form-control"
+                        placeholder="تفاصيل التحديث..."></textarea></div>
+                <div class="form-group"><label class="form-label">مرفقات</label>
+                    <div class="file-upload"><i class='bx bx-cloud-upload'></i>
+                        <p>اسحب الملفات هنا أو اضغط للرفع</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-outline"
+                    onclick="closeModal('stageUpdateModal')">إلغاء</button><button class="btn btn-primary" id="stageUpdateConfirmBtn"><i
+                        class='bx bx-check'></i> تحديث</button></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="js/shipment-statuses.js"></script>
+    <script src="js/role-auth.js"></script>
+    <script src="js/role-sidebar-apply.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/role-views.js"></script>
+    <script>
+    (function() {
+        // —— Charts ——
+        var chartStatusEl = document.getElementById('chartStatus');
+        var chartRevEl = document.getElementById('chartRevenueProfit');
+        var chartMonthsEl = document.getElementById('chartMonths');
+        var chartStatus;
+        if (chartStatusEl && typeof Chart !== 'undefined') {
+            var activeStatuses = typeof getActiveShipmentStatuses === 'function' ? getActiveShipmentStatuses() : [];
+            var statusLabels = activeStatuses.map(function(s) { return s.name; });
+            var statusColors = activeStatuses.map(function(s) { return s.color || '#6b7280'; });
+            var statusData = activeStatuses.length ? activeStatuses.map(function(_, i) { return [18, 12, 8, 210, 5][i] || 10; }) : [18, 12, 8, 210];
+            if (statusData.length !== statusLabels.length) statusData = statusLabels.map(function(_, i) { return [18, 12, 8, 210][i] || 10; });
+            chartStatus = new Chart(chartStatusEl, {
+                type: 'doughnut',
+                data: {
+                    labels: statusLabels.length ? statusLabels : ['تم الحجز', 'في الطريق', 'تخليص جمركي', 'تم التسليم'],
+                    datasets: [{ data: statusData, backgroundColor: statusColors.length ? statusColors : ['var(--navy-500)', 'var(--accent-cyan)', 'var(--accent-gold)', 'var(--success)'], borderWidth: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+        }
+        function revenueProfitData(months) {
+            var m = parseInt(months, 10) || 6;
+            var labels = [], revenue = [], profit = [];
+            for (var i = m - 1; i >= 0; i--) {
+                var d = new Date();
+                d.setMonth(d.getMonth() - i);
+                labels.push(d.toLocaleDateString('ar-EG', { month: 'short', year: '2-digit' }));
+                revenue.push(42000 + Math.floor(Math.random() * 20000));
+                profit.push(8000 + Math.floor(Math.random() * 6000));
+            }
+            return { labels: labels, revenue: revenue, profit: profit };
+        }
+        var chartRev;
+        if (chartRevEl && typeof Chart !== 'undefined') {
+            var rp = revenueProfitData(6);
+            chartRev = new Chart(chartRevEl, {
+                type: 'bar',
+                data: {
+                    labels: rp.labels,
+                    datasets: [
+                        { label: 'الإيرادات', data: rp.revenue, backgroundColor: 'rgba(23,162,184,0.7)', borderColor: 'var(--accent-cyan)', borderWidth: 1 },
+                        { label: 'الربح', data: rp.profit, backgroundColor: 'rgba(16,185,129,0.7)', borderColor: 'var(--success)', borderWidth: 1 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } }
+            });
+        }
+        if (chartMonthsEl) chartMonthsEl.addEventListener('change', function() {
+            var rp = revenueProfitData(this.value);
+            if (chartRev) { chartRev.data.labels = rp.labels; chartRev.data.datasets[0].data = rp.revenue; chartRev.data.datasets[1].data = rp.profit; chartRev.update(); }
+        });
+
+        // —— Dynamic shipment statuses (from js/shipment-statuses.js) ——
+        window.currentShipmentRow = null;
+        function fillFilterStatus() {
+            var sel = document.getElementById('filterStatus');
+            if (!sel) return;
+            var active = typeof getActiveShipmentStatuses === 'function' ? getActiveShipmentStatuses() : [];
+            sel.innerHTML = '<option value="">كل الحالات</option>' + active.map(function(s) {
+                return '<option value="' + (s.name || '').replace(/"/g, '&quot;') + '">' + (s.name || '') + '</option>';
+            }).join('');
+        }
+        function fillStageUpdateSelect() {
+            var sel = document.getElementById('stageUpdateStatusSelect');
+            if (!sel) return;
+            var active = typeof getActiveShipmentStatuses === 'function' ? getActiveShipmentStatuses() : [];
+            sel.innerHTML = active.map(function(s) {
+                return '<option value="' + (s.name || '').replace(/"/g, '&quot;') + '" data-color="' + (s.color || '') + '">' + (s.name || '') + '</option>';
+            }).join('');
+        }
+        function applyShipmentStatusBadges() {
+            var rows = document.querySelectorAll('#shipmentsTable .shipment-row');
+            rows.forEach(function(tr) {
+                var statusName = tr.getAttribute('data-status');
+                var statusTd = tr.querySelector('td:nth-child(6)');
+                if (!statusTd) return;
+                var badge = statusTd.querySelector('.status-badge');
+                if (!badge) return;
+                var s = typeof getStatusByName === 'function' ? getStatusByName(statusName) : null;
+                if (s && s.color) {
+                    badge.style.cssText = typeof getStatusBadgeStyle === 'function' ? getStatusBadgeStyle(s.color) : '';
+                    badge.className = 'status-badge';
+                }
+                badge.textContent = statusName || '—';
+            });
+        }
+        function openStageUpdateModal(btn) {
+            if (btn) window.currentShipmentRow = btn.closest('.shipment-row');
+            var row = window.currentShipmentRow;
+            fillStageUpdateSelect();
+            var sel = document.getElementById('stageUpdateStatusSelect');
+            if (sel && row) {
+                var status = row.getAttribute('data-status');
+                sel.value = status || (sel.options[0] && sel.options[0].value) || '';
+            }
+            openModal('stageUpdateModal');
+        }
+        window.openStageUpdateModal = openStageUpdateModal;
+        document.getElementById('stageUpdateConfirmBtn').addEventListener('click', function() {
+            var row = window.currentShipmentRow;
+            var sel = document.getElementById('stageUpdateStatusSelect');
+            if (!row || !sel) { closeModal('stageUpdateModal'); return; }
+            var newStatus = sel.value;
+            if (!newStatus) { closeModal('stageUpdateModal'); return; }
+            row.setAttribute('data-status', newStatus);
+            var statusTd = row.querySelector('td:nth-child(6)');
+            if (statusTd) {
+                var badge = statusTd.querySelector('.status-badge');
+                if (badge) {
+                    var s = typeof getStatusByName === 'function' ? getStatusByName(newStatus) : null;
+                    badge.style.cssText = (s && typeof getStatusBadgeStyle === 'function') ? getStatusBadgeStyle(s.color) : '';
+                    badge.className = 'status-badge';
+                    badge.textContent = newStatus;
+                }
+            }
+            closeModal('stageUpdateModal');
+        });
+        fillFilterStatus();
+        fillStageUpdateSelect();
+        applyShipmentStatusBadges();
+        (function() {
+            var counts = {};
+            document.querySelectorAll('#shipmentsTable .shipment-row').forEach(function(tr) {
+                var s = tr.getAttribute('data-status');
+                if (s) counts[s] = (counts[s] || 0) + 1;
+            });
+            if (typeof setShipmentStatusUsage === 'function') setShipmentStatusUsage(counts);
+        })();
+
+        // —— Table: filters, search, sort ——
+        var shipmentSearch = document.getElementById('shipmentSearch');
+        var filterStatus = document.getElementById('filterStatus');
+        var filterClient = document.getElementById('filterClient');
+        var filterLine = document.getElementById('filterLine');
+        var sortShipments = document.getElementById('sortShipments');
+        var tbody = document.querySelector('#shipmentsTable tbody');
+        var rows = tbody ? tbody.querySelectorAll('.shipment-row') : [];
+
+        function applyFiltersAndSort() {
+            var q = (shipmentSearch && shipmentSearch.value.trim().toLowerCase()) || '';
+            var status = (filterStatus && filterStatus.value) || '';
+            var client = (filterClient && filterClient.value) || '';
+            var line = (filterLine && filterLine.value) || '';
+            rows.forEach(function(tr) {
+                var text = (tr.textContent || '').toLowerCase();
+                var matchSearch = !q || text.indexOf(q) !== -1;
+                var matchStatus = !status || (tr.getAttribute('data-status') || '') === status;
+                var matchClient = !client || (tr.getAttribute('data-client') || '') === client;
+                var matchLine = !line || (tr.getAttribute('data-line') || '') === line;
+                tr.style.display = (matchSearch && matchStatus && matchClient && matchLine) ? '' : 'none';
+            });
+            applySort();
+        }
+        function applySort() {
+            var key = (sortShipments && sortShipments.value) || '';
+            if (!key || !tbody) return;
+            var order = sortShipments.getAttribute('data-order') === 'desc' ? -1 : 1;
+            var arr = Array.prototype.slice.call(rows);
+            arr.sort(function(a, b) {
+                var va = a.getAttribute('data-' + key) || '';
+                var vb = b.getAttribute('data-' + key) || '';
+                if (key === 'cost' || key === 'profit') { va = parseFloat(va) || 0; vb = parseFloat(vb) || 0; return order * (va - vb); }
+                return order * ((va + '').localeCompare(vb + ''));
+            });
+            arr.forEach(function(tr) { tbody.appendChild(tr); });
+        }
+        if (sortShipments) { sortShipments.addEventListener('change', function() { this.setAttribute('data-order', this.getAttribute('data-order') === 'desc' ? 'asc' : 'desc'); applyFiltersAndSort(); }); }
+        [shipmentSearch, filterStatus, filterClient, filterLine].forEach(function(el) {
+            if (el) { el.addEventListener('input', applyFiltersAndSort); if (el.tagName === 'SELECT') el.addEventListener('change', applyFiltersAndSort); }
+        });
+
+        // —— Bulk actions ——
+        var selectAll = document.getElementById('selectAllShipments');
+        var bulkBar = document.getElementById('bulkActionsBar');
+        var bulkCount = document.getElementById('bulkCount');
+        var checkboxes = tbody ? tbody.querySelectorAll('.shipment-checkbox') : [];
+        function updateBulkBar() {
+            var n = 0;
+            checkboxes.forEach(function(cb) { var tr = cb.closest('tr'); if (tr && tr.style.display !== 'none' && cb.checked) n++; });
+            if (bulkCount) bulkCount.textContent = 'تم تحديد ' + n + ' شحنة';
+            if (bulkBar) bulkBar.style.display = n > 0 ? 'flex' : 'none';
+            if (selectAll) selectAll.checked = n > 0 && n === (tbody ? tbody.querySelectorAll('.shipment-row:not([style*="display: none"])').length : 0);
+        }
+        if (selectAll && tbody) selectAll.addEventListener('change', function() { tbody.querySelectorAll('.shipment-row:not([style*="display: none"])').forEach(function(tr) { var cb = tr.querySelector('.shipment-checkbox'); if (cb) cb.checked = selectAll.checked; }); updateBulkBar(); });
+        checkboxes.forEach(function(cb) { cb.addEventListener('change', updateBulkBar); });
+        if (document.getElementById('bulkClearSelection')) document.getElementById('bulkClearSelection').addEventListener('click', function() { selectAll.checked = false; checkboxes.forEach(function(cb) { cb.checked = false; }); updateBulkBar(); });
+
+        // —— Export ——
+        function exportShipmentsToExcel(onlySelected) {
+            var table = document.getElementById('shipmentsTable');
+            if (!table) return;
+            var clone = table.cloneNode(true);
+            if (onlySelected && tbody) {
+                var toRemove = [];
+                clone.querySelectorAll('tbody tr').forEach(function(tr, i) {
+                    var orig = rows[i];
+                    if (!orig || !orig.querySelector('.shipment-checkbox') || !orig.querySelector('.shipment-checkbox').checked) toRemove.push(tr);
+                });
+                toRemove.forEach(function(tr) { tr.parentNode.removeChild(tr); });
+            }
+            var blob = new Blob(['\ufeff' + clone.outerHTML], { type: 'application/vnd.ms-excel' });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = onlySelected ? 'شحنات_محددة.xls' : 'شحنات.xls';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+        if (document.getElementById('btnExportAll')) document.getElementById('btnExportAll').addEventListener('click', function() { exportShipmentsToExcel(false); });
+        if (document.getElementById('bulkExportSelected')) document.getElementById('bulkExportSelected').addEventListener('click', function() { exportShipmentsToExcel(true); });
+    })();
+    </script>
+    <script>
+    // —— Shipment Notes & Tasks (ملاحظات الشحنة) — deadline-based, frontend only, localStorage ——
+    (function() {
+        var SHIPMENT_NOTES_KEY = 'shipping-erp-shipment-notes';
+        var ALERT_WITHIN_HOURS = 2;
+
+        function getStoredNotes() {
+            try {
+                var raw = localStorage.getItem(SHIPMENT_NOTES_KEY);
+                return raw ? JSON.parse(raw) : {};
+            } catch (e) { return {}; }
+        }
+        function setStoredNotes(data) {
+            try { localStorage.setItem(SHIPMENT_NOTES_KEY, JSON.stringify(data)); } catch (e) {}
+        }
+
+        function getCurrentUser() {
+            var el = document.querySelector('.sidebar-footer .user-name') || document.querySelector('.profile-pill span');
+            return (el && el.textContent.trim()) || 'مستخدم';
+        }
+
+        function formatDateTime(isoOrStamp) {
+            var d = new Date(isoOrStamp);
+            if (isNaN(d.getTime())) return isoOrStamp || '—';
+            return d.toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' }) + ' — ' +
+                d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function toDatetimeLocalValue(isoStr) {
+            var d = new Date(isoStr);
+            if (isNaN(d.getTime())) return '';
+            var y = d.getFullYear(), m = ('0' + (d.getMonth() + 1)).slice(-2), day = ('0' + d.getDate()).slice(-2);
+            var h = ('0' + d.getHours()).slice(-2), min = ('0' + d.getMinutes()).slice(-2);
+            return y + '-' + m + '-' + day + 'T' + h + ':' + min;
+        }
+
+        function getDeadlineUrgency(deadlineIso) {
+            var d = new Date(deadlineIso);
+            if (isNaN(d.getTime())) return 'future';
+            var now = new Date();
+            d.setHours(0, 0, 0, 0);
+            var today = new Date(now);
+            today.setHours(0, 0, 0, 0);
+            var tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            if (d.getTime() < today.getTime()) return 'past';
+            if (d.getTime() === today.getTime()) return 'today';
+            if (d.getTime() === tomorrow.getTime()) return 'tomorrow';
+            return 'future';
+        }
+
+        function getCountdownText(deadlineIso, isDone) {
+            if (isDone) return '';
+            var d = new Date(deadlineIso);
+            if (isNaN(d.getTime())) return '';
+            var now = new Date();
+            var ms = d.getTime() - now.getTime();
+            var hours = Math.floor(ms / (1000 * 60 * 60));
+            var days = Math.floor(hours / 24);
+            var minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+            if (ms < 0) {
+                var ago = -ms;
+                var agoHours = Math.floor(ago / (1000 * 60 * 60));
+                var agoDays = Math.floor(agoHours / 24);
+                if (agoDays > 0) return 'متأخرة منذ ' + agoDays + ' يوم';
+                if (agoHours > 0) return 'متأخرة منذ ' + agoHours + ' ساعة';
+                return 'متأخرة منذ ' + Math.max(1, Math.floor(ago / 60000)) + ' دقيقة';
+            }
+            if (days > 0) return days === 1 ? 'متبقي يوم' : 'متبقي ' + days + ' يوم';
+            if (hours > 0) return 'متبقي ' + hours + ' ساعة';
+            if (minutes > 0) return 'متبقي ' + minutes + ' دقيقة';
+            return 'متبقي أقل من دقيقة';
+        }
+
+        function normalizeTask(task) {
+            if (!task) return null;
+            var t = { title: task.title || '', done: !!task.done, user: task.user || '' };
+            t.deadline = task.deadline || task.date || new Date().toISOString();
+            return t;
+        }
+
+        window.openShipmentNotesModal = function(btn) {
+            var row = btn && btn.closest && btn.closest('.shipment-row');
+            var bl = row ? (row.getAttribute('data-bl') || '') : '';
+            if (!bl) return;
+            var titleEl = document.getElementById('shipmentNotesModalTitle');
+            var blInput = document.getElementById('shipmentNotesCurrentBL');
+            if (titleEl) titleEl.textContent = 'ملاحظات الشحنة – ' + bl;
+            if (blInput) blInput.value = bl;
+            renderNotesTimeline(bl);
+            openModal('shipmentNoteModal');
+        };
+
+        function getNotesForBL(bl) {
+            var all = getStoredNotes();
+            return Array.isArray(all[bl]) ? all[bl] : [];
+        }
+
+        function saveNotesForBL(bl, notes) {
+            var all = getStoredNotes();
+            all[bl] = notes;
+            setStoredNotes(all);
+        }
+
+        function renderNotesTimeline(bl) {
+            var container = document.getElementById('shipmentNotesTimeline');
+            var emptyEl = document.getElementById('shipmentNotesEmpty');
+            if (!container) return;
+            var notes = getNotesForBL(bl);
+            var withIndex = notes.map(function(n, i) { return { note: n, originalIndex: i }; });
+            withIndex.sort(function(a, b) { return new Date(b.note.date) - new Date(a.note.date); });
+            container.innerHTML = '';
+            if (notes.length === 0) {
+                if (emptyEl) emptyEl.style.display = 'block';
+                return;
+            }
+            if (emptyEl) emptyEl.style.display = 'none';
+            var defaultDeadline = toDatetimeLocalValue(new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString());
+            withIndex.forEach(function(item) {
+                var note = item.note;
+                var noteIndex = item.originalIndex;
+                var card = document.createElement('div');
+                card.className = 'note-card';
+                var tasks = (note.tasks || []).map(normalizeTask).filter(Boolean);
+                var doneCount = tasks.filter(function(t) { return t.done; }).length;
+                var totalTasks = tasks.length;
+                var progressPct = totalTasks ? Math.round((doneCount / totalTasks) * 100) : 0;
+
+                var progressHtml = totalTasks
+                    ? '<div class="note-tasks-progress"><div class="note-tasks-progress-bar" style="width:' + progressPct + '%"></div></div>'
+                    : '';
+
+                var tasksListHtml = '';
+                tasks.forEach(function(task, taskIdx) {
+                    var urgency = task.done ? 'future' : getDeadlineUrgency(task.deadline);
+                    var statusClass = task.done ? 'completed' : (urgency === 'past' ? 'overdue' : 'pending');
+                    var statusText = task.done ? 'مكتملة' : (urgency === 'past' ? 'متأخرة' : 'قيد التنفيذ');
+                    var statusIcon = task.done ? '✅ ' : (urgency === 'past' ? '🔴 ' : '⏳ ');
+                    var rowClass = 'note-task-row' + (task.done ? ' task-done' : '') + ' task-deadline-' + urgency;
+                    var countdown = getCountdownText(task.deadline, task.done);
+                    tasksListHtml += '<div class="' + rowClass + '" data-note-index="' + noteIndex + '" data-task-index="' + taskIdx + '">' +
+                        '<input type="checkbox" class="task-checkbox" ' + (task.done ? 'checked' : '') + '>' +
+                        '<div class="task-content"><span class="task-title">' + escapeHtml(task.title) + '</span>' +
+                        '<div class="task-meta">الموعد: ' + formatDateTime(task.deadline) + '</div>' +
+                        '<div class="task-meta">بواسطة: ' + escapeHtml(task.user) + '</div>' +
+                        (countdown ? '<div class="task-countdown">' + escapeHtml(countdown) + '</div>' : '') + '</div>' +
+                        '<span class="task-status-badge ' + statusClass + '">' + statusIcon + statusText + '</span></div>';
+                });
+
+                card.innerHTML =
+                    '<div class="note-card-header"><span class="note-card-title">' + escapeHtml(note.title) + '</span></div>' +
+                    '<div class="note-card-meta">' + formatDateTime(note.date) + '</div>' +
+                    (note.details ? '<div class="note-card-details">' + escapeHtml(note.details) + '</div>' : '') +
+                    '<div class="note-card-by">بواسطة: <strong>' + escapeHtml(note.user) + '</strong></div>' +
+                    progressHtml +
+                    '<div class="note-tasks-block">' +
+                    '<div class="note-tasks-block-title">قائمة المهام</div>' +
+                    '<div class="note-add-task-row">' +
+                    '<input type="text" class="form-control note-task-input" placeholder="عنوان المهمة" data-note-index="' + noteIndex + '">' +
+                    '<input type="datetime-local" class="form-control note-task-deadline" data-note-index="' + noteIndex + '" value="' + defaultDeadline + '">' +
+                    '<button type="button" class="btn btn-outline btn-sm btn-add-task" data-note-index="' + noteIndex + '"><i class=\'bx bx-plus\'></i> إضافة مهمة</button>' +
+                    '</div>' +
+                    '<div class="note-tasks-list">' + tasksListHtml + '</div></div>';
+                container.appendChild(card);
+            });
+
+            container.addEventListener('change', function(e) {
+                if (!e.target.classList.contains('task-checkbox')) return;
+                var row = e.target.closest('.note-task-row');
+                if (!row) return;
+                var noteIdx = parseInt(row.getAttribute('data-note-index'), 10);
+                var taskIdx = parseInt(row.getAttribute('data-task-index'), 10);
+                toggleTask(bl, noteIdx, taskIdx);
+            });
+            container.addEventListener('click', function(e) {
+                var btn = e.target.closest('.btn-add-task');
+                if (!btn) return;
+                e.preventDefault();
+                var noteIdx = parseInt(btn.getAttribute('data-note-index'), 10);
+                var card = btn.closest('.note-card');
+                var titleInput = card ? card.querySelector('.note-task-input') : null;
+                var deadlineInput = card ? card.querySelector('.note-task-deadline') : null;
+                var title = titleInput ? titleInput.value.trim() : '';
+                var deadlineVal = deadlineInput ? deadlineInput.value : '';
+                if (title && deadlineVal) {
+                    var deadlineIso = new Date(deadlineVal).toISOString();
+                    addTask(bl, noteIdx, title, deadlineIso);
+                }
+            });
+        }
+
+        function escapeHtml(s) {
+            if (s == null) return '';
+            var div = document.createElement('div');
+            div.textContent = s;
+            return div.innerHTML;
+        }
+
+        function addNote() {
+            var blInput = document.getElementById('shipmentNotesCurrentBL');
+            var bl = blInput ? blInput.value.trim() : '';
+            if (!bl) return;
+            var titleEl = document.getElementById('shipmentNoteTitle');
+            var detailsEl = document.getElementById('shipmentNoteDetails');
+            var title = titleEl ? titleEl.value.trim() : '';
+            if (!title) return;
+            var notes = getNotesForBL(bl);
+            notes.push({
+                title: title,
+                details: detailsEl ? detailsEl.value.trim() : '',
+                date: new Date().toISOString(),
+                user: getCurrentUser(),
+                tasks: []
+            });
+            saveNotesForBL(bl, notes);
+            if (titleEl) titleEl.value = '';
+            if (detailsEl) detailsEl.value = '';
+            renderNotesTimeline(bl);
+        }
+
+        function addTask(bl, noteIndex, taskTitle, deadlineIso) {
+            var notes = getNotesForBL(bl);
+            var note = notes[noteIndex];
+            if (!note) return;
+            if (!note.tasks) note.tasks = [];
+            note.tasks.push({
+                title: taskTitle,
+                deadline: deadlineIso,
+                done: false,
+                user: getCurrentUser()
+            });
+            saveNotesForBL(bl, notes);
+            renderNotesTimeline(bl);
+            refreshShipmentNotesAlerts();
+        }
+
+        function toggleTask(bl, noteIndex, taskIndex) {
+            var notes = getNotesForBL(bl);
+            var note = notes[noteIndex];
+            if (!note || !note.tasks || !note.tasks[taskIndex]) return;
+            note.tasks[taskIndex].done = !note.tasks[taskIndex].done;
+            saveNotesForBL(bl, notes);
+            renderNotesTimeline(bl);
+            refreshShipmentNotesAlerts();
+        }
+
+        function isTaskAlert(task) {
+            if (task.done) return false;
+            var t = normalizeTask(task);
+            if (!t || !t.deadline) return false;
+            var d = new Date(t.deadline);
+            if (isNaN(d.getTime())) return false;
+            var now = new Date();
+            var ms = d.getTime() - now.getTime();
+            var hoursLeft = ms / (1000 * 60 * 60);
+            return hoursLeft <= ALERT_WITHIN_HOURS;
+        }
+
+        function getBLsWithTaskAlerts() {
+            var all = getStoredNotes();
+            var bls = [];
+            Object.keys(all).forEach(function(bl) {
+                var notes = all[bl];
+                if (!Array.isArray(notes)) return;
+                var hasAlert = notes.some(function(n) {
+                    return (n.tasks || []).some(isTaskAlert);
+                });
+                if (hasAlert) bls.push(bl);
+            });
+            return bls;
+        }
+
+        window.refreshShipmentNotesAlerts = function() {
+            var alertBLs = getBLsWithTaskAlerts();
+            var rows = document.querySelectorAll('#shipmentsTable .shipment-row');
+            rows.forEach(function(tr) {
+                var bl = tr.getAttribute('data-bl');
+                var hasAlert = alertBLs.indexOf(bl) !== -1;
+                var badge = tr.querySelector('.shipment-notes-alert-badge');
+                var noteBtn = tr.querySelector('.tbl-btn.note');
+                if (hasAlert) {
+                    if (!badge) {
+                        badge = document.createElement('span');
+                        badge.className = 'shipment-notes-alert-badge';
+                        badge.setAttribute('title', 'مهام متأخرة أو قريبة من الموعد');
+                        badge.textContent = '!';
+                        var actionsCell = tr.querySelector('.table-actions');
+                        if (actionsCell) {
+                            actionsCell.insertBefore(badge, actionsCell.firstChild);
+                        }
+                    }
+                    badge.style.display = 'inline-flex';
+                    if (noteBtn) noteBtn.classList.add('has-notes-alert');
+                } else {
+                    if (badge) badge.style.display = 'none';
+                    if (noteBtn) noteBtn.classList.remove('has-notes-alert');
+                }
+            });
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var btnAdd = document.getElementById('btnAddShipmentNote');
+            if (btnAdd) btnAdd.addEventListener('click', addNote);
+            refreshShipmentNotesAlerts();
+        });
+
+        (function() {
+            var origClose = window.closeModal;
+            if (typeof origClose === 'function') {
+                window.closeModal = function(id) {
+                    origClose(id);
+                    if (id === 'shipmentNoteModal' && window.refreshShipmentNotesAlerts) window.refreshShipmentNotesAlerts();
+                };
+            }
+        })();
+    })();
+    </script>
+</body>
+
+</html>

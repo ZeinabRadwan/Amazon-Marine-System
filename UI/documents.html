@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazon Marine — المستندات الرسمية</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <nav class="sidebar">
+        <div class="logo-area"><img src="logo/logo (1).png" alt="Logo">
+            <div class="logo-text"><span class="brand-name">Amazon Marine</span><span class="brand-sub">Shipping
+                    Agency</span></div>
+        </div>
+        <div class="menu-label">الرئيسية</div>
+        <ul class="menu">
+            <li><a href="dashboard.html"><i class='bx bxs-dashboard'></i><span>لوحة التحكم</span></a></li>
+            <li><a href="clients.html"><i class='bx bx-group'></i><span>العملاء / CRM</span></a></li>
+            <li><a href="shipments.html"><i class='bx bx-package'></i><span>الشحنات</span></a></li>
+            <li><a href="sd-forms.html"><i class='bx bx-file'></i><span>نماذج SD</span></a></li>
+            <li><a href="operations.html"><i class='bx bxs-ship'></i><span>العمليات</span></a></li>
+        </ul>
+        <div class="menu-label">المالية</div>
+        <ul class="menu">
+            <li><a href="invoices.html"><i class='bx bx-receipt'></i><span>الفواتير</span></a></li>
+            <li><a href="accounting.html"><i class='bx bx-wallet'></i><span>الحسابات</span></a></li>
+            <li><a href="treasury.html"><i class='bx bx-credit-card'></i><span>الخزينة</span></a></li>
+            <li><a href="expenses.html"><i class='bx bx-money'></i><span>المصروفات</span></a></li>
+            <li><a href="pricing.html"><i class='bx bx-dollar-circle'></i><span>التسعير</span></a></li>
+        </ul>
+        <div class="menu-label">الإدارة</div>
+        <ul class="menu">
+            <li><a href="partners.html"><i class='bx bx-buildings'></i><span>الشركاء</span></a></li>
+            <li><a href="attendance.html"><i class='bx bx-time-five'></i><span>الحضور والانصراف</span></a></li>
+            <li><a href="visits.html"><i class='bx bx-map-pin'></i><span>سجل الزيارات</span></a></li>
+            <li><a href="reports.html"><i class='bx bx-bar-chart-alt-2'></i><span>التقارير</span></a></li>
+            <li class="active"><a href="documents.html"><i class='bx bx-file-blank'></i><span>المستندات
+                        الرسمية</span></a></li>
+            <li><a href="tickets.html"><i class='bx bx-message-alt-detail'></i><span>تذاكر الدعم</span></a></li>
+            <li><a href="team-performance.html"><i class='bx bx-trending-up'></i><span>أداء الفريق</span></a></li>
+        </ul>
+        <div class="menu-label">الإعدادات</div>
+        <ul class="menu">
+            <li><a href="settings.html"><i class='bx bx-cog'></i><span>الإعدادات</span></a></li>
+            <li><a href="profile.html"><i class='bx bx-user'></i><span>الملف الشخصي</span></a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-avatar">MD</div>
+            <div class="user-info">
+                <div class="user-name">Capt. Mostafa</div>
+                <div class="user-role">مدير النظام</div>
+            </div><a href="index.html"><i class='bx bx-log-out'
+                    style="color:rgba(255,255,255,0.35);font-size:1.2rem;"></i></a>
+        </div>
+    </nav>
+
+    <div class="main-wrapper">
+        <header class="topbar">
+            <div class="page-title-area">
+                <h1>المستندات الرسمية</h1>
+                <div class="breadcrumbs">Amazon Marine > <span>أرشيف المستندات</span></div>
+            </div>
+            <div class="topbar-right">
+                <div class="search-bar"><i class='bx bx-search'></i><input type="text"
+                        placeholder="بحث في المستندات..."></div>
+                <div class="topbar-icon"><i class='bx bx-bell'></i>
+                    <div class="notif-dot"></div>
+                </div>
+                <div class="currency-dropdown">
+                    <div class="topbar-icon" onclick="toggleCurrencyDropdown(event)">
+                        <i class='bx bx-dollar-circle'></i>
+                        <span class="currency-code" id="currencyCodeBadge">$</span>
+                    </div>
+                    <div class="currency-dropdown-menu" id="currencyDropdown">
+                        <button type="button" class="currency-dropdown-item active" data-currency="USD">$ USD <i class='bx bx-check'></i></button>
+                        <button type="button" class="currency-dropdown-item" data-currency="EUR">€ EUR</button>
+                        <button type="button" class="currency-dropdown-item" data-currency="EGP">E£ EGP</button>
+                    </div>
+                </div>
+                <div class="profile-pill">
+                    <div class="profile-avatar">MD</div><span>Capt. Mostafa</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="content">
+            <div class="page-header">
+                <div class="tabs" data-tab-group="docTab">
+                    <button class="tab active" data-tab="company" onclick="switchTab('docTab','company')"><i
+                            class='bx bx-building'></i> مستندات الشركة</button>
+                    <button class="tab" data-tab="templates" onclick="switchTab('docTab','templates')"><i
+                            class='bx bx-file'></i> قوالب المستندات</button>
+                </div>
+                <button class="btn btn-primary" onclick="openModal('uploadDocModal')"><i class='bx bx-upload'></i> رفع
+                    مستند</button>
+            </div>
+
+            <!-- Company Documents Tab -->
+            <div class="tab-content active" id="docTab-company">
+                <div class="grid-3">
+                    <!-- Company Registration -->
+                    <div class="card doc-card">
+                        <div class="doc-icon"><i class='bx bx-building'
+                                style="font-size:2.2rem;color:var(--navy-700);"></i></div>
+                        <h4 class="fs-sm fw-700 mb-1">السجل التجاري</h4>
+                        <p class="fs-xs text-muted mb-2">سجل_تجاری_2024.pdf • 2.4 MB</p>
+                        <div class="d-flex justify-between align-center">
+                            <span class="status-badge active">ساري</span>
+                            <span class="fs-xs text-muted">حتى 31/12/2026</span>
+                        </div>
+                        <div class="d-flex gap-1" style="margin-top:10px;"><button class="btn btn-sm btn-outline"><i
+                                    class='bx bx-show'></i> عرض</button><button class="btn btn-sm btn-cyan"><i
+                                    class='bx bx-download'></i></button></div>
+                    </div>
+                    <!-- Tax Card -->
+                    <div class="card doc-card">
+                        <div class="doc-icon"><i class='bx bx-id-card'
+                                style="font-size:2.2rem;color:var(--accent-gold);"></i></div>
+                        <h4 class="fs-sm fw-700 mb-1">البطاقة الضريبية</h4>
+                        <p class="fs-xs text-muted mb-2">بطاقه_ضريبية.pdf • 1.8 MB</p>
+                        <div class="d-flex justify-between align-center">
+                            <span class="status-badge active">ساري</span>
+                            <span class="fs-xs text-muted">حتى 30/06/2026</span>
+                        </div>
+                        <div class="d-flex gap-1" style="margin-top:10px;"><button class="btn btn-sm btn-outline"><i
+                                    class='bx bx-show'></i> عرض</button><button class="btn btn-sm btn-cyan"><i
+                                    class='bx bx-download'></i></button></div>
+                    </div>
+                    <!-- IATA Certificate -->
+                    <div class="card doc-card">
+                        <div class="doc-icon"><i class='bx bx-shield-quarter'
+                                style="font-size:2.2rem;color:var(--accent-cyan);"></i></div>
+                        <h4 class="fs-sm fw-700 mb-1">ترخيص وكالة الملاحة</h4>
+                        <p class="fs-xs text-muted mb-2">ترخیص_ملاحة.pdf • 3.1 MB</p>
+                        <div class="d-flex justify-between align-center">
+                            <span class="status-badge active">ساري</span>
+                            <span class="fs-xs text-muted">حتى 15/09/2026</span>
+                        </div>
+                        <div class="d-flex gap-1" style="margin-top:10px;"><button class="btn btn-sm btn-outline"><i
+                                    class='bx bx-show'></i> عرض</button><button class="btn btn-sm btn-cyan"><i
+                                    class='bx bx-download'></i></button></div>
+                    </div>
+                    <!-- Insurance -->
+                    <div class="card doc-card">
+                        <div class="doc-icon"><i class='bx bx-shield-alt-2'
+                                style="font-size:2.2rem;color:var(--success);"></i></div>
+                        <h4 class="fs-sm fw-700 mb-1">وثيقة التأمين</h4>
+                        <p class="fs-xs text-muted mb-2">تأمين_2025_2026.pdf • 4.2 MB</p>
+                        <div class="d-flex justify-between align-center">
+                            <span class="status-badge active">ساري</span>
+                            <span class="fs-xs text-muted">حتى 01/01/2027</span>
+                        </div>
+                        <div class="d-flex gap-1" style="margin-top:10px;"><button class="btn btn-sm btn-outline"><i
+                                    class='bx bx-show'></i> عرض</button><button class="btn btn-sm btn-cyan"><i
+                                    class='bx bx-download'></i></button></div>
+                    </div>
+                    <!-- Port Authority -->
+                    <div class="card doc-card">
+                        <div class="doc-icon"><i class='bx bx-anchor' style="font-size:2.2rem;color:var(--danger);"></i>
+                        </div>
+                        <h4 class="fs-sm fw-700 mb-1">تصريح هيئة الميناء</h4>
+                        <p class="fs-xs text-muted mb-2">تصریح_هیئة_میناء.pdf • 1.5 MB</p>
+                        <div class="d-flex justify-between align-center">
+                            <span class="status-badge clearance">قارب على الانتهاء</span>
+                            <span class="fs-xs text-danger">حتى 28/02/2026</span>
+                        </div>
+                        <div class="d-flex gap-1" style="margin-top:10px;"><button class="btn btn-sm btn-outline"><i
+                                    class='bx bx-show'></i> عرض</button><button class="btn btn-sm btn-cyan"><i
+                                    class='bx bx-download'></i></button></div>
+                    </div>
+                    <!-- Employee Contracts -->
+                    <div class="card doc-card">
+                        <div class="doc-icon"><i class='bx bx-group' style="font-size:2.2rem;color:#7c3aed;"></i></div>
+                        <h4 class="fs-sm fw-700 mb-1">عقود الموظفين</h4>
+                        <p class="fs-xs text-muted mb-2">8 عقود • مجلد</p>
+                        <div class="d-flex justify-between align-center">
+                            <span class="status-badge active">محدث</span>
+                            <span class="fs-xs text-muted">8 ملفات</span>
+                        </div>
+                        <div class="d-flex gap-1" style="margin-top:10px;"><button class="btn btn-sm btn-outline"><i
+                                    class='bx bx-folder-open'></i> فتح المجلد</button></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Templates Tab -->
+            <div class="tab-content" id="docTab-templates">
+                <div class="grid-3">
+                    <div class="card doc-card">
+                        <div class="doc-icon"><i class='bx bx-receipt'
+                                style="font-size:2.2rem;color:var(--navy-700);"></i></div>
+                        <h4 class="fs-sm fw-700 mb-1">قالب الفاتورة</h4>
+                        <p class="fs-xs text-muted mb-2">invoice_template.docx</p>
+                        <button class="btn btn-sm btn-outline"><i class='bx bx-download'></i> تحميل</button>
+                    </div>
+                    <div class="card doc-card">
+                        <div class="doc-icon"><i class='bx bx-file'
+                                style="font-size:2.2rem;color:var(--accent-cyan);"></i></div>
+                        <h4 class="fs-sm fw-700 mb-1">قالب عرض السعر</h4>
+                        <p class="fs-xs text-muted mb-2">quotation_template.docx</p>
+                        <button class="btn btn-sm btn-outline"><i class='bx bx-download'></i> تحميل</button>
+                    </div>
+                    <div class="card doc-card">
+                        <div class="doc-icon"><i class='bx bx-package'
+                                style="font-size:2.2rem;color:var(--accent-gold);"></i></div>
+                        <h4 class="fs-sm fw-700 mb-1">قالب بوليصة الشحن</h4>
+                        <p class="fs-xs text-muted mb-2">bill_of_lading_template.pdf</p>
+                        <button class="btn btn-sm btn-outline"><i class='bx bx-download'></i> تحميل</button>
+                    </div>
+                    <div class="card doc-card">
+                        <div class="doc-icon"><i class='bx bx-file-blank'
+                                style="font-size:2.2rem;color:var(--success);"></i></div>
+                        <h4 class="fs-sm fw-700 mb-1">قالب عقد العميل</h4>
+                        <p class="fs-xs text-muted mb-2">client_contract_template.docx</p>
+                        <button class="btn btn-sm btn-outline"><i class='bx bx-download'></i> تحميل</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- UPLOAD DOCUMENT MODAL -->
+    <div class="modal-overlay" id="uploadDocModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class='bx bx-upload' style="margin-left:8px;"></i> رفع مستند</h3><button class="modal-close"
+                    onclick="closeModal('uploadDocModal')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group"><label class="form-label">نوع المستند</label><select class="form-control">
+                        <option>سجل تجاري</option>
+                        <option>بطاقة ضريبية</option>
+                        <option>ترخيص</option>
+                        <option>تأمين</option>
+                        <option>عقد موظف</option>
+                        <option>أخرى</option>
+                    </select></div>
+                <div class="form-group"><label class="form-label">اسم المستند</label><input type="text"
+                        class="form-control" placeholder="اسم المستند"></div>
+                <div class="form-group"><label class="form-label">تاريخ الانتهاء (إن وجد)</label><input type="date"
+                        class="form-control"></div>
+                <div class="form-group"><label class="form-label">الملف</label>
+                    <div class="file-upload"><i class='bx bx-cloud-upload'></i>
+                        <p>اسحب الملف أو اضغط للرفع (PDF, DOCX, JPG)</p>
+                    </div>
+                </div>
+                <div class="form-group"><label class="form-label">ملاحظات</label><textarea class="form-control"
+                        placeholder="أي ملاحظات..."></textarea></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-outline"
+                    onclick="closeModal('uploadDocModal')">إلغاء</button><button class="btn btn-primary"><i
+                        class='bx bx-check'></i> رفع وحفظ</button></div>
+        </div>
+    </div>
+
+    <script src="js/role-auth.js"></script>
+    <script src="js/role-sidebar-apply.js"></script>
+    <script src="js/app.js"></script>
+</body>
+
+</html>

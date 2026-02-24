@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazon Marine — نماذج SD</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+        <div class="logo-area"><img src="logo/logo (1).png" alt="Logo">
+            <div class="logo-text"><span class="brand-name">Amazon Marine</span><span class="brand-sub">Shipping
+                    Agency</span></div>
+        </div>
+        <div class="menu-label">الرئيسية</div>
+        <ul class="menu">
+            <li><a href="dashboard.html"><i class='bx bxs-dashboard'></i><span>لوحة التحكم</span></a></li>
+            <li><a href="clients.html"><i class='bx bx-group'></i><span>العملاء / CRM</span></a></li>
+            <li><a href="shipments.html"><i class='bx bx-package'></i><span>الشحنات</span></a></li>
+            <li class="active"><a href="sd-forms.html"><i class='bx bx-file'></i><span>نماذج SD</span></a></li>
+            <li><a href="operations.html"><i class='bx bxs-ship'></i><span>العمليات</span></a></li>
+        </ul>
+        <div class="menu-label">المالية</div>
+        <ul class="menu">
+            <li><a href="invoices.html"><i class='bx bx-receipt'></i><span>الفواتير</span></a></li>
+            <li><a href="accounting.html"><i class='bx bx-wallet'></i><span>الحسابات</span></a></li>
+            <li><a href="treasury.html"><i class='bx bx-credit-card'></i><span>الخزينة</span></a></li>
+            <li><a href="expenses.html"><i class='bx bx-money'></i><span>المصروفات</span></a></li>
+            <li><a href="pricing.html"><i class='bx bx-dollar-circle'></i><span>التسعير</span></a></li>
+        </ul>
+        <div class="menu-label">الإدارة</div>
+        <ul class="menu">
+            <li><a href="partners.html"><i class='bx bx-buildings'></i><span>الشركاء</span></a></li>
+            <li><a href="reports.html"><i class='bx bx-bar-chart-alt-2'></i><span>التقارير</span></a></li>
+            <li><a href="documents.html"><i class='bx bx-file-blank'></i><span>المستندات الرسمية</span></a></li>
+            <li><a href="tickets.html"><i class='bx bx-message-alt-detail'></i><span>تذاكر الدعم</span></a></li>
+            <li><a href="team-performance.html"><i class='bx bx-trending-up'></i><span>أداء الفريق</span></a></li>
+            <li><a href="attendance.html"><i class='bx bx-time-five'></i><span>الحضور والانصراف</span></a></li>
+            <li><a href="visits.html"><i class='bx bx-map-pin'></i><span>سجل الزيارات</span></a></li>
+        </ul>
+        <div class="menu-label">الإعدادات</div>
+        <ul class="menu">
+            <li><a href="settings.html"><i class='bx bx-cog'></i><span>الإعدادات</span></a></li>
+            <li><a href="profile.html"><i class='bx bx-user'></i><span>الملف الشخصي</span></a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-avatar">MD</div>
+            <div class="user-info">
+                <div class="user-name">Capt. Mostafa</div>
+                <div class="user-role">مدير النظام</div>
+            </div><a href="index.html"><i class='bx bx-log-out'
+                    style="color:rgba(255,255,255,0.35);font-size:1.2rem;"></i></a>
+        </div>
+    </nav>
+
+    <div class="main-wrapper">
+        <header class="topbar">
+            <div class="page-title-area">
+                <h1>نماذج SD</h1>
+                <div class="breadcrumbs">Amazon Marine > <span>Shipping Details Forms</span></div>
+            </div>
+            <div class="topbar-right">
+                <div class="search-bar"><i class='bx bx-search'></i><input type="text" placeholder="بحث في النماذج...">
+                </div>
+                <div class="topbar-icon"><i class='bx bx-bell'></i>
+                    <div class="notif-dot"></div>
+                </div>
+                <div class="currency-dropdown">
+                    <div class="topbar-icon" onclick="toggleCurrencyDropdown(event)">
+                        <i class='bx bx-dollar-circle'></i>
+                        <span class="currency-code" id="currencyCodeBadge">$</span>
+                    </div>
+                    <div class="currency-dropdown-menu" id="currencyDropdown">
+                        <button type="button" class="currency-dropdown-item active" data-currency="USD">$ USD <i class='bx bx-check'></i></button>
+                        <button type="button" class="currency-dropdown-item" data-currency="EUR">€ EUR</button>
+                        <button type="button" class="currency-dropdown-item" data-currency="EGP">E£ EGP</button>
+                    </div>
+                </div>
+                <div class="profile-pill">
+                    <div class="profile-avatar">MD</div><span>Capt. Mostafa</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="content">
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-icon-wrap navy"><i class='bx bx-file'></i></div>
+                    <div class="stat-info">
+                        <h3>156</h3>
+                        <div class="stat-label">إجمالي النماذج</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-wrap gold"><i class='bx bx-edit'></i></div>
+                    <div class="stat-info">
+                        <h3>8</h3>
+                        <div class="stat-label">مسودات</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-wrap cyan"><i class='bx bx-send'></i></div>
+                    <div class="stat-info">
+                        <h3>5</h3>
+                        <div class="stat-label">تم الإرسال للعمليات</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-wrap green"><i class='bx bx-check-circle'></i></div>
+                    <div class="stat-info">
+                        <h3>143</h3>
+                        <div class="stat-label">مؤكدة</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="card" style="margin-bottom:24px;">
+                <div class="card-header">
+                    <span class="card-title">إحصائيات النماذج</span>
+                    <select class="form-control" id="chartMonths" style="width:auto;min-width:110px;">
+                        <option value="6">6 أشهر</option>
+                        <option value="12">12 شهر</option>
+                    </select>
+                </div>
+                <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+                    <div>
+                        <p class="fs-sm fw-600 text-muted" style="margin-bottom:8px;">توزيع الحالات</p>
+                        <div class="chart-wrap" style="position:relative;height:220px;width:100%;">
+                            <canvas id="chartSDStatus"></canvas>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="fs-sm fw-600 text-muted" style="margin-bottom:8px;">نماذج شهرياً</p>
+                        <div class="chart-wrap" style="position:relative;height:220px;width:100%;">
+                            <canvas id="chartSDMonthly"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page-header">
+                <div class="page-header-actions">
+                    <button type="button" class="btn btn-outline btn-sm" id="btnExportAll"><i class='bx bx-export'></i> تصدير الكل</button>
+                </div>
+                <button class="btn btn-primary" onclick="openModal('createSDModal')" data-sd-create><i class='bx bx-plus'></i> نموذج SD
+                    جديد</button>
+            </div>
+
+            <!-- Bulk bar -->
+            <div class="bulk-actions-bar" id="bulkActionsBar" style="display:none;">
+                <span class="bulk-count" id="bulkCount">تم تحديد 0 نموذج</span>
+                <button type="button" class="btn btn-outline btn-sm" id="bulkExportSelected"><i class='bx bx-download'></i> تصدير المحدد</button>
+                <button type="button" class="btn btn-outline btn-sm" id="bulkClearSelection">إلغاء التحديد</button>
+            </div>
+
+            <div class="card">
+                <div class="filter-bar">
+                    <input type="text" class="form-control" id="sdSearch" placeholder="بحث بـ SD# أو العميل أو البضاعة..." style="max-width:260px;">
+                    <select class="form-control" id="filterStatus">
+                        <option value="">كل الحالات</option>
+                        <option value="مسودة">مسودة</option>
+                        <option value="تم الإرسال">تم الإرسال</option>
+                        <option value="أرسل للعمليات">أرسل للعمليات</option>
+                        <option value="قيد التنفيذ">قيد التنفيذ</option>
+                        <option value="مكتمل">مكتمل</option>
+                        <option value="مؤكدة">مؤكدة</option>
+                    </select>
+                    <select class="form-control" id="filterSales">
+                        <option value="">كل السيلز</option>
+                        <option value="أحمد خيري">أحمد خيري</option>
+                        <option value="محمد سعيد">محمد سعيد</option>
+                        <option value="زينب رضوان">زينب رضوان</option>
+                    </select>
+                    <select class="form-control" id="sortSD" style="width:auto;min-width:120px;">
+                        <option value="">ترتيب حسب</option>
+                        <option value="sd">SD#</option>
+                        <option value="client">العميل</option>
+                        <option value="date">التاريخ</option>
+                    </select>
+                </div>
+                <table class="data-table" id="sdFormsTable">
+                    <thead>
+                        <tr>
+                            <th style="width:44px;"><input type="checkbox" id="selectAllSD" title="تحديد الكل"></th>
+                            <th>SD#</th>
+                            <th>العميل</th>
+                            <th>المورد</th>
+                            <th>الميناء</th>
+                            <th>الوجهة</th>
+                            <th>البضاعة</th>
+                            <th>السيلز</th>
+                            <th>الحالة</th>
+                            <th>التاريخ</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="sd-row" onclick="openModal('viewSDModal')" style="cursor:pointer;" data-status="مؤكدة" data-sales="أحمد خيري" data-client="منصور وشركاه" data-sd="SD-2026-0089" data-date="20260219">
+                            <td onclick="event.stopPropagation()"><input type="checkbox" class="sd-checkbox"></td>
+                            <td class="bl-number">SD-2026-0089</td>
+                            <td class="fw-600">منصور وشركاه</td>
+                            <td>مصنع النيل للقطن</td>
+                            <td>الإسكندرية</td>
+                            <td>جدة</td>
+                            <td>منسوجات قطنية</td>
+                            <td>أحمد خيري</td>
+                            <td><span class="status-badge active">مؤكدة</span></td>
+                            <td class="text-muted fs-sm">19/02/2026</td>
+                            <td onclick="event.stopPropagation()">
+                                <div class="table-actions">
+                                    <button class="tbl-btn view" title="عرض" onclick="openModal('viewSDModal')"><i class='bx bx-show'></i></button>
+                                    <button class="tbl-btn edit" title="تعديل" onclick="openModal('createSDModal')" data-sd-edit-form><i class='bx bx-edit'></i></button>
+                                    <button class="tbl-btn view" title="طباعة" onclick="window.print()"><i class='bx bx-printer'></i></button>
+                                    <button class="tbl-btn note" title="ملاحظة" onclick="event.stopPropagation();openModal('sdNoteModal')"><i class='bx bx-note'></i></button>
+                                    <button class="tbl-btn phone" title="إرسال للعمليات" onclick="event.stopPropagation();sendSDToOperations(this.closest('tr'));"><i class='bx bx-send'></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="sd-row" onclick="openModal('viewSDModal')" style="cursor:pointer;" data-status="تم الإرسال" data-sales="محمد سعيد" data-client="الإيمان للأغذية" data-sd="SD-2026-0088" data-date="20260218">
+                            <td onclick="event.stopPropagation()"><input type="checkbox" class="sd-checkbox"></td>
+                            <td class="bl-number">SD-2026-0088</td>
+                            <td class="fw-600">الإيمان للأغذية</td>
+                            <td>مصنع الأمل للمواد الغذائية</td>
+                            <td>دمياط</td>
+                            <td>دبي</td>
+                            <td>مواد غذائية مجمدة</td>
+                            <td>محمد سعيد</td>
+                            <td><span class="status-badge pending">تم الإرسال</span></td>
+                            <td class="text-muted fs-sm">18/02/2026</td>
+                            <td onclick="event.stopPropagation()">
+                                <div class="table-actions">
+                                    <button class="tbl-btn view" title="عرض" onclick="openModal('viewSDModal')"><i class='bx bx-show'></i></button>
+                                    <button class="tbl-btn edit" title="تعديل" onclick="openModal('createSDModal')" data-sd-edit-form><i class='bx bx-edit'></i></button>
+                                    <button class="tbl-btn view" title="طباعة" onclick="window.print()"><i class='bx bx-printer'></i></button>
+                                    <button class="tbl-btn note" title="ملاحظة" onclick="event.stopPropagation();openModal('sdNoteModal')"><i class='bx bx-note'></i></button>
+                                    <button class="tbl-btn phone" title="إرسال للعمليات" onclick="event.stopPropagation();sendSDToOperations(this.closest('tr'));"><i class='bx bx-send'></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="sd-row" onclick="openModal('viewSDModal')" style="cursor:pointer;" data-status="مسودة" data-sales="زينب رضوان" data-client="طه للمنسوجات" data-sd="SD-2026-0087" data-date="20260218">
+                            <td onclick="event.stopPropagation()"><input type="checkbox" class="sd-checkbox"></td>
+                            <td class="bl-number">SD-2026-0087</td>
+                            <td class="fw-600">طه للمنسوجات</td>
+                            <td>مصنع الفجر للمنسوجات</td>
+                            <td>السخنة</td>
+                            <td>هامبورغ</td>
+                            <td>أقمشة صناعية</td>
+                            <td>زينب رضوان</td>
+                            <td><span class="status-badge draft">مسودة</span></td>
+                            <td class="text-muted fs-sm">18/02/2026</td>
+                            <td onclick="event.stopPropagation()">
+                                <div class="table-actions">
+                                    <button class="tbl-btn view" title="عرض" onclick="openModal('viewSDModal')"><i class='bx bx-show'></i></button>
+                                    <button class="tbl-btn edit" title="تعديل" onclick="openModal('createSDModal')" data-sd-edit-form><i class='bx bx-edit'></i></button>
+                                    <button class="tbl-btn view" title="طباعة" onclick="window.print()"><i class='bx bx-printer'></i></button>
+                                    <button class="tbl-btn note" title="ملاحظة" onclick="event.stopPropagation();openModal('sdNoteModal')"><i class='bx bx-note'></i></button>
+                                    <button class="tbl-btn phone" title="إرسال للعمليات" onclick="event.stopPropagation();sendSDToOperations(this.closest('tr'));"><i class='bx bx-send'></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="sd-row" onclick="openModal('viewSDModal')" style="cursor:pointer;" data-status="مؤكدة" data-sales="أحمد خيري" data-client="السعودي للتصدير" data-sd="SD-2026-0086" data-date="20260217">
+                            <td onclick="event.stopPropagation()"><input type="checkbox" class="sd-checkbox"></td>
+                            <td class="bl-number">SD-2026-0086</td>
+                            <td class="fw-600">السعودي للتصدير</td>
+                            <td>مصنع المحروسة</td>
+                            <td>الإسكندرية</td>
+                            <td>جنوة</td>
+                            <td>رخام وحجر</td>
+                            <td>أحمد خيري</td>
+                            <td><span class="status-badge active">مؤكدة</span></td>
+                            <td class="text-muted fs-sm">17/02/2026</td>
+                            <td onclick="event.stopPropagation()">
+                                <div class="table-actions">
+                                    <button class="tbl-btn view" title="عرض" onclick="openModal('viewSDModal')"><i class='bx bx-show'></i></button>
+                                    <button class="tbl-btn edit" title="تعديل" onclick="openModal('createSDModal')" data-sd-edit-form><i class='bx bx-edit'></i></button>
+                                    <button class="tbl-btn view" title="طباعة" onclick="window.print()"><i class='bx bx-printer'></i></button>
+                                    <button class="tbl-btn note" title="ملاحظة" onclick="event.stopPropagation();openModal('sdNoteModal')"><i class='bx bx-note'></i></button>
+                                    <button class="tbl-btn phone" title="إرسال للعمليات" onclick="event.stopPropagation();sendSDToOperations(this.closest('tr'));"><i class='bx bx-send'></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="pagination">
+                    <div class="pagination-info">عرض 1 - 4 من 156 نموذج</div>
+                    <div class="pagination-pages"><button class="pagination-btn active">1</button><button
+                            class="pagination-btn">2</button><button class="pagination-btn">3</button></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- CREATE / EDIT SD FORM MODAL -->
+    <div class="modal-overlay" id="createSDModal">
+        <div class="modal modal-xl">
+            <div class="modal-header">
+                <h3><i class='bx bx-file' style="margin-left:8px;"></i> نموذج SD جديد</h3><button class="modal-close"
+                    onclick="closeModal('createSDModal')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <!-- Section 1: Client -->
+                <h4 style="font-size:0.88rem;font-weight:700;margin-bottom:14px;color:var(--navy-700);">📋 بيانات العميل
+                </h4>
+                <div class="form-row-3">
+                    <div class="form-group"><label class="form-label">اسم العميل</label><select class="form-control">
+                            <option>اختر العميل</option>
+                            <option>منصور وشركاه</option>
+                            <option>الإيمان للأغذية</option>
+                            <option>طه للمنسوجات</option>
+                        </select></div>
+                    <div class="form-group"><label class="form-label">هاتف العميل</label><input type="tel"
+                            class="form-control" placeholder="+20 1xx xxx xxxx"></div>
+                    <div class="form-group"><label class="form-label">بريد العميل</label><input type="email"
+                            class="form-control" placeholder="email@client.com"></div>
+                </div>
+
+                <!-- Section 2: Supplier -->
+                <h4 style="font-size:0.88rem;font-weight:700;margin:20px 0 14px;color:var(--navy-700);">🏭 بيانات المورد
+                    / المصنّع</h4>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">اسم المورد</label><input type="text"
+                            class="form-control" placeholder="اسم المصنع أو المورد"></div>
+                    <div class="form-group"><label class="form-label">عنوان المورد</label><input type="text"
+                            class="form-control" placeholder="العنوان الكامل"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">هاتف المورد</label><input type="tel"
+                            class="form-control" placeholder="+20 xxx xxx xxxx"></div>
+                    <div class="form-group"><label class="form-label">مسؤول التواصل</label><input type="text"
+                            class="form-control" placeholder="اسم المسؤول"></div>
+                </div>
+
+                <!-- Section 3: Port & Destination -->
+                <h4 style="font-size:0.88rem;font-weight:700;margin:20px 0 14px;color:var(--navy-700);">⚓ الميناء
+                    والوجهة</h4>
+                <div class="form-row-3">
+                    <div class="form-group"><label class="form-label">ميناء التحميل</label><select class="form-control">
+                            <option>اختر</option>
+                            <option>الإسكندرية</option>
+                            <option>دمياط</option>
+                            <option>بورسعيد</option>
+                            <option>السخنة</option>
+                        </select></div>
+                    <div class="form-group"><label class="form-label">ميناء الوصول</label><input type="text"
+                            class="form-control" placeholder="مثال: جدة"></div>
+                    <div class="form-group"><label class="form-label">بلد الوصول</label><input type="text"
+                            class="form-control" placeholder="مثال: السعودية"></div>
+                </div>
+
+                <!-- Section 4: Commodity -->
+                <h4 style="font-size:0.88rem;font-weight:700;margin:20px 0 14px;color:var(--navy-700);">📦 بيانات
+                    البضاعة</h4>
+                <div class="form-row-3">
+                    <div class="form-group"><label class="form-label">نوع البضاعة</label><input type="text"
+                            class="form-control" placeholder="مثال: أقمشة قطنية"></div>
+                    <div class="form-group"><label class="form-label">HS Code</label><input type="text"
+                            class="form-control" placeholder="مثال: 5208.11"></div>
+                    <div class="form-group"><label class="form-label">الوزن الإجمالي (كجم)</label><input type="number"
+                            class="form-control" placeholder="مثال: 25000"></div>
+                </div>
+                <div class="form-row-3">
+                    <div class="form-group"><label class="form-label">نوع الحاوية</label><select class="form-control">
+                            <option>20' Standard</option>
+                            <option>40' Standard</option>
+                            <option>40' HC</option>
+                            <option>Reefer 20'</option>
+                            <option>Reefer 40'</option>
+                        </select></div>
+                    <div class="form-group"><label class="form-label">عدد الحاويات</label><input type="number"
+                            class="form-control" value="1"></div>
+                    <div class="form-group"><label class="form-label">شروط الشحن (Incoterms)</label><select
+                            class="form-control">
+                            <option>FOB</option>
+                            <option>CIF</option>
+                            <option>CFR</option>
+                            <option>EXW</option>
+                            <option>DDP</option>
+                        </select></div>
+                </div>
+
+                <!-- Section 5: Shipping Line Requirements -->
+                <h4 style="font-size:0.88rem;font-weight:700;margin:20px 0 14px;color:var(--navy-700);">🚢 متطلبات الخط
+                    الملاحي</h4>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">الخط الملاحي المفضل</label><select
+                            class="form-control">
+                            <option>أي خط</option>
+                            <option>MSC</option>
+                            <option>CMA CGM</option>
+                            <option>Maersk</option>
+                            <option>Hapag-Lloyd</option>
+                        </select></div>
+                    <div class="form-group"><label class="form-label">تاريخ المغادرة المطلوب</label><input type="date"
+                            class="form-control"></div>
+                </div>
+
+                <!-- Section 6: Special Instructions -->
+                <h4 style="font-size:0.88rem;font-weight:700;margin:20px 0 14px;color:var(--navy-700);">📝 تعليمات خاصة
+                </h4>
+                <div class="form-group"><textarea class="form-control" rows="3"
+                        placeholder="أي تعليمات خاصة بالشحنة، مثل: بضاعة هشة، درجة حرارة معينة، إلخ..."></textarea>
+                </div>
+                <div class="form-group"><label class="form-label">مرفقات</label>
+                    <div class="file-upload"><i class='bx bx-cloud-upload'></i>
+                        <p>اسحب الملفات هنا (Packing List, Commercial Invoice, etc.)</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('createSDModal')">إلغاء</button>
+                <button class="btn btn-outline"><i class='bx bx-save'></i> حفظ كمسودة</button>
+                <button class="btn btn-primary"><i class='bx bx-send'></i> إرسال للعمليات</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SD Note Modal -->
+    <div class="modal-overlay" id="sdNoteModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class='bx bx-note' style="margin-left:8px;"></i> ملاحظة على النموذج</h3>
+                <button class="modal-close" onclick="closeModal('sdNoteModal')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">SD#</label>
+                    <input type="text" class="form-control" id="sdNoteNumber" value="SD-2026-0089" readonly style="background:var(--bg-body);">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">الملاحظة</label>
+                    <textarea class="form-control" id="sdNoteContent" placeholder="اكتب ملاحظة للنموذج..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('sdNoteModal')">إلغاء</button>
+                <button class="btn btn-primary" onclick="closeModal('sdNoteModal')"><i class='bx bx-check'></i> حفظ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW SD FORM MODAL (Row details) -->
+    <div class="modal-overlay" id="viewSDModal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3><i class='bx bx-file' style="margin-left:8px;"></i> نموذج SD-2026-0089</h3><button
+                    class="modal-close" onclick="closeModal('viewSDModal')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-between align-center mb-3">
+                    <span class="status-badge active">مؤكدة</span>
+                    <span class="text-muted fs-sm">أحمد خيري • 19/02/2026</span>
+                </div>
+                <div class="grid-2" style="margin-bottom:16px;">
+                    <div>
+                        <h4 class="fs-sm fw-700 mb-2">العميل</h4>
+                        <p class="fs-sm">منصور وشركاه</p>
+                        <p class="fs-xs text-muted">+20 100 123 4567 • info@mansour.com</p>
+                    </div>
+                    <div>
+                        <h4 class="fs-sm fw-700 mb-2">المورد</h4>
+                        <p class="fs-sm">مصنع النيل للقطن</p>
+                        <p class="fs-xs text-muted">المنطقة الصناعية، العاشر من رمضان</p>
+                    </div>
+                </div>
+                <div class="grid-2" style="margin-bottom:16px;">
+                    <div>
+                        <h4 class="fs-sm fw-700 mb-2">الميناء والوجهة</h4>
+                        <p class="fs-sm">الإسكندرية → جدة, السعودية</p>
+                    </div>
+                    <div>
+                        <h4 class="fs-sm fw-700 mb-2">البضاعة</h4>
+                        <p class="fs-sm">منسوجات قطنية • 2 × 40'HC • 48,000 كجم</p>
+                        <p class="fs-xs text-muted">HS: 5208.11 • FOB</p>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="fs-sm fw-700 mb-2">تعليمات خاصة</h4>
+                    <p class="fs-sm text-secondary">البضاعة يجب أن تكون في حاويات نظيفة وجافة. يُرجى تجنب تحميل مع بضائع
+                        ذات رائحة قوية.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('viewSDModal')">إغلاق</button>
+                <button class="btn btn-cyan"><i class='bx bx-printer'></i> طباعة</button>
+                <button class="btn btn-primary"><i class='bx bx-edit'></i> تعديل</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="js/role-auth.js"></script>
+    <script src="js/role-sidebar-apply.js"></script>
+    <script src="js/role-views.js"></script>
+    <script src="js/sd-operations-workflow.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+    (function() {
+        // —— Charts ——
+        var chartStatusEl = document.getElementById('chartSDStatus');
+        var chartMonthlyEl = document.getElementById('chartSDMonthly');
+        var chartMonthsEl = document.getElementById('chartMonths');
+        if (chartStatusEl && typeof Chart !== 'undefined') {
+            new Chart(chartStatusEl, {
+                type: 'doughnut',
+                data: {
+                    labels: ['مسودة', 'تم الإرسال', 'مؤكدة'],
+                    datasets: [{ data: [8, 5, 143], backgroundColor: ['var(--accent-gold)', 'var(--accent-cyan)', 'var(--success)'], borderWidth: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+        }
+        function monthlyData(months) {
+            var m = parseInt(months, 10) || 6;
+            var labels = [], data = [];
+            for (var i = m - 1; i >= 0; i--) {
+                var d = new Date();
+                d.setMonth(d.getMonth() - i);
+                labels.push(d.toLocaleDateString('ar-EG', { month: 'short', year: '2-digit' }));
+                data.push(18 + Math.floor(Math.random() * 16));
+            }
+            return { labels: labels, data: data };
+        }
+        var chartMonthly;
+        if (chartMonthlyEl && typeof Chart !== 'undefined') {
+            var md = monthlyData(6);
+            chartMonthly = new Chart(chartMonthlyEl, {
+                type: 'bar',
+                data: { labels: md.labels, datasets: [{ label: 'نماذج', data: md.data, backgroundColor: 'rgba(30,42,90,0.7)', borderColor: 'var(--navy-700)', borderWidth: 1 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } }
+            });
+        }
+        if (chartMonthsEl) chartMonthsEl.addEventListener('change', function() {
+            var md = monthlyData(this.value);
+            if (chartMonthly) { chartMonthly.data.labels = md.labels; chartMonthly.data.datasets[0].data = md.data; chartMonthly.update(); }
+        });
+
+        // —— Filters, search, sort ——
+        var sdSearch = document.getElementById('sdSearch');
+        var filterStatus = document.getElementById('filterStatus');
+        var filterSales = document.getElementById('filterSales');
+        var sortSD = document.getElementById('sortSD');
+        var tbody = document.querySelector('#sdFormsTable tbody');
+        var rows = tbody ? tbody.querySelectorAll('.sd-row') : [];
+
+        function applyFiltersAndSort() {
+            var q = (sdSearch && sdSearch.value.trim().toLowerCase()) || '';
+            var status = (filterStatus && filterStatus.value) || '';
+            var sales = (filterSales && filterSales.value) || '';
+            rows.forEach(function(tr) {
+                var text = (tr.textContent || '').toLowerCase();
+                var matchSearch = !q || text.indexOf(q) !== -1;
+                var matchStatus = !status || (tr.getAttribute('data-status') || '') === status;
+                var matchSales = !sales || (tr.getAttribute('data-sales') || '') === sales;
+                tr.style.display = (matchSearch && matchStatus && matchSales) ? '' : 'none';
+            });
+            applySort();
+        }
+        function applySort() {
+            var key = (sortSD && sortSD.value) || '';
+            if (!key || !tbody) return;
+            var order = sortSD.getAttribute('data-order') === 'desc' ? -1 : 1;
+            var arr = Array.prototype.slice.call(rows);
+            arr.sort(function(a, b) {
+                var va = a.getAttribute('data-' + key) || '';
+                var vb = b.getAttribute('data-' + key) || '';
+                if (key === 'date') { va = parseFloat(va) || 0; vb = parseFloat(vb) || 0; return order * (va - vb); }
+                return order * ((va + '').localeCompare(vb + ''));
+            });
+            arr.forEach(function(tr) { tbody.appendChild(tr); });
+        }
+        if (sortSD) sortSD.addEventListener('change', function() { this.setAttribute('data-order', this.getAttribute('data-order') === 'desc' ? 'asc' : 'desc'); applyFiltersAndSort(); });
+        [sdSearch, filterStatus, filterSales].forEach(function(el) {
+            if (el) { el.addEventListener('input', applyFiltersAndSort); if (el.tagName === 'SELECT') el.addEventListener('change', applyFiltersAndSort); }
+        });
+
+        // —— Bulk ——
+        var selectAll = document.getElementById('selectAllSD');
+        var bulkBar = document.getElementById('bulkActionsBar');
+        var bulkCount = document.getElementById('bulkCount');
+        var checkboxes = tbody ? tbody.querySelectorAll('.sd-checkbox') : [];
+        function updateBulkBar() {
+            var n = 0;
+            checkboxes.forEach(function(cb) { var tr = cb.closest('tr'); if (tr && tr.style.display !== 'none' && cb.checked) n++; });
+            if (bulkCount) bulkCount.textContent = 'تم تحديد ' + n + ' نموذج';
+            if (bulkBar) bulkBar.style.display = n > 0 ? 'flex' : 'none';
+            if (selectAll) selectAll.checked = n > 0 && n === (tbody ? tbody.querySelectorAll('.sd-row:not([style*="display: none"])').length : 0);
+        }
+        if (selectAll && tbody) selectAll.addEventListener('change', function() { tbody.querySelectorAll('.sd-row:not([style*="display: none"])').forEach(function(tr) { var cb = tr.querySelector('.sd-checkbox'); if (cb) cb.checked = selectAll.checked; }); updateBulkBar(); });
+        checkboxes.forEach(function(cb) { cb.addEventListener('change', updateBulkBar); });
+        if (document.getElementById('bulkClearSelection')) document.getElementById('bulkClearSelection').addEventListener('click', function() { selectAll.checked = false; checkboxes.forEach(function(cb) { cb.checked = false; }); updateBulkBar(); });
+
+        // —— Export ——
+        function exportSDToExcel(onlySelected) {
+            var table = document.getElementById('sdFormsTable');
+            if (!table) return;
+            var clone = table.cloneNode(true);
+            if (onlySelected && tbody) {
+                var toRemove = [];
+                clone.querySelectorAll('tbody tr').forEach(function(tr, i) {
+                    var orig = rows[i];
+                    if (!orig || !orig.querySelector('.sd-checkbox') || !orig.querySelector('.sd-checkbox').checked) toRemove.push(tr);
+                });
+                toRemove.forEach(function(tr) { tr.parentNode.removeChild(tr); });
+            }
+            var blob = new Blob(['\ufeff' + clone.outerHTML], { type: 'application/vnd.ms-excel' });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = onlySelected ? 'نماذج_SD_محددة.xls' : 'نماذج_SD.xls';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+        if (document.getElementById('btnExportAll')) document.getElementById('btnExportAll').addEventListener('click', function() { exportSDToExcel(false); });
+        if (document.getElementById('bulkExportSelected')) document.getElementById('bulkExportSelected').addEventListener('click', function() { exportSDToExcel(true); });
+    })();
+    </script>
+</body>
+
+</html>

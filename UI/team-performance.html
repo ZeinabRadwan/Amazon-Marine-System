@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazon Marine — أداء الفريق</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="logo-area"><img src="logo/logo (1).png" alt="Logo"><div class="logo-text"><span class="brand-name">Amazon Marine</span><span class="brand-sub">Shipping Agency</span></div></div>
+        <div class="menu-label">الرئيسية</div>
+        <ul class="menu">
+            <li><a href="dashboard.html"><i class='bx bxs-dashboard'></i><span>لوحة التحكم</span></a></li>
+            <li><a href="clients.html"><i class='bx bx-group'></i><span>العملاء / CRM</span></a></li>
+            <li><a href="shipments.html"><i class='bx bx-package'></i><span>الشحنات</span></a></li>
+            <li><a href="sd-forms.html"><i class='bx bx-file'></i><span>نماذج SD</span></a></li>
+            <li><a href="operations.html"><i class='bx bxs-ship'></i><span>العمليات</span></a></li>
+        </ul>
+        <div class="menu-label">المالية</div>
+        <ul class="menu">
+            <li><a href="invoices.html"><i class='bx bx-receipt'></i><span>الفواتير</span></a></li>
+            <li><a href="accounting.html"><i class='bx bx-wallet'></i><span>الحسابات</span></a></li>
+            <li><a href="treasury.html"><i class='bx bx-credit-card'></i><span>الخزينة</span></a></li>
+            <li><a href="expenses.html"><i class='bx bx-money'></i><span>المصروفات</span></a></li>
+            <li><a href="pricing.html"><i class='bx bx-dollar-circle'></i><span>التسعير</span></a></li>
+        </ul>
+        <div class="menu-label">الإدارة</div>
+        <ul class="menu">
+            <li><a href="partners.html"><i class='bx bx-buildings'></i><span>الشركاء</span></a></li>
+            <li><a href="reports.html"><i class='bx bx-bar-chart-alt-2'></i><span>التقارير</span></a></li>
+            <li><a href="documents.html"><i class='bx bx-file-blank'></i><span>المستندات الرسمية</span></a></li>
+            <li><a href="tickets.html"><i class='bx bx-message-alt-detail'></i><span>تذاكر الدعم</span></a></li>
+            <li class="active"><a href="team-performance.html"><i class='bx bx-trending-up'></i><span>أداء الفريق</span></a></li>
+            <li><a href="attendance.html"><i class='bx bx-time-five'></i><span>الحضور والانصراف</span></a></li>
+            <li><a href="visits.html"><i class='bx bx-map-pin'></i><span>سجل الزيارات</span></a></li>
+        </ul>
+        <div class="menu-label">الإعدادات</div>
+        <ul class="menu">
+            <li><a href="settings.html"><i class='bx bx-cog'></i><span>الإعدادات</span></a></li>
+            <li><a href="profile.html"><i class='bx bx-user'></i><span>الملف الشخصي</span></a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-avatar">KM</div>
+            <div class="user-info"><div class="user-name">خالد المدير</div><div class="user-role">مدير المبيعات</div></div>
+            <a href="index.html"><i class='bx bx-log-out' style="color:rgba(255,255,255,0.35);font-size:1.2rem;"></i></a>
+        </div>
+    </nav>
+    <div class="main-wrapper">
+        <header class="topbar">
+            <div class="page-title-area"><h1>أداء الفريق</h1><div class="breadcrumbs">Amazon Marine > <span>أداء مندوبي المبيعات</span></div></div>
+            <div class="topbar-right">
+                <div class="search-bar"><i class='bx bx-search'></i><input type="text" placeholder="بحث في الفريق..."></div>
+                <div class="topbar-icon"><i class='bx bx-bell'></i></div>
+                <div class="profile-pill"><div class="profile-avatar">KM</div><span>خالد المدير</span></div>
+            </div>
+        </header>
+        <main class="content">
+            <div class="page-header">
+                <h2 style="font-size:1rem;font-weight:700;">متابعة أداء مندوبي المبيعات</h2>
+                <div class="page-header-actions">
+                    <button type="button" class="btn btn-outline btn-sm" id="btnExportTeam"><i class='bx bx-export'></i> تصدير Excel</button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="filter-bar" style="padding:12px 20px;">
+                    <input type="text" class="form-control" id="teamSearch" placeholder="بحث باسم المندوب..." style="max-width:240px;">
+                    <select class="form-control" id="teamSort" style="width:auto;min-width:140px;">
+                        <option value="">ترتيب حسب</option>
+                        <option value="revenue">الإيرادات</option>
+                        <option value="conversion">معدل التحويل</option>
+                        <option value="visits">عدد الزيارات</option>
+                    </select>
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table" id="teamPerformanceTable">
+                        <thead>
+                            <tr>
+                                <th>مندوب المبيعات</th>
+                                <th>العملاء</th>
+                                <th>نماذج SD</th>
+                                <th>الشحنات</th>
+                                <th>الإيرادات</th>
+                                <th>معدل التحويل</th>
+                                <th>عدد الزيارات</th>
+                                <th>متوسط وقت الرد</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="team-row" data-revenue="45000" data-conversion="78" data-visits="12">
+                                <td class="fw-600">أحمد خيري</td>
+                                <td>24</td>
+                                <td>18</td>
+                                <td>14</td>
+                                <td class="text-success">$45,000</td>
+                                <td>78%</td>
+                                <td>12</td>
+                                <td class="text-muted fs-sm">2.1 س</td>
+                            </tr>
+                            <tr class="team-row" data-revenue="38200" data-conversion="72" data-visits="10">
+                                <td class="fw-600">محمد سعيد</td>
+                                <td>20</td>
+                                <td>15</td>
+                                <td>11</td>
+                                <td class="text-success">$38,200</td>
+                                <td>72%</td>
+                                <td>10</td>
+                                <td class="text-muted fs-sm">2.5 س</td>
+                            </tr>
+                            <tr class="team-row" data-revenue="28900" data-conversion="65" data-visits="8">
+                                <td class="fw-600">زينب رضوان</td>
+                                <td>16</td>
+                                <td>12</td>
+                                <td>9</td>
+                                <td class="text-success">$28,900</td>
+                                <td>65%</td>
+                                <td>8</td>
+                                <td class="text-muted fs-sm">3.0 س</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination-wrap" style="padding:12px 20px;"><span class="fs-sm text-muted">عرض 3 مندوبين</span></div>
+            </div>
+            <div class="card" style="margin-top:24px;">
+                <div class="card-header"><span class="card-title">ملخص الأداء — قمع المبيعات</span></div>
+                <div style="padding:20px;">
+                    <p class="text-muted mb-2">التحويل: زيارات → SD → حجز → شحنة → فاتورة → دفع</p>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-top:12px;">
+                        <div style="padding:12px;background:var(--bg-body);border-radius:8px;text-align:center;"><span class="fs-sm text-muted">الزيارات</span><div class="fw-700">30</div></div>
+                        <div style="padding:12px;background:var(--bg-body);border-radius:8px;text-align:center;"><span class="fs-sm text-muted">نماذج SD</span><div class="fw-700">45</div></div>
+                        <div style="padding:12px;background:var(--bg-body);border-radius:8px;text-align:center;"><span class="fs-sm text-muted">الحجوزات</span><div class="fw-700">34</div></div>
+                        <div style="padding:12px;background:var(--bg-body);border-radius:8px;text-align:center;"><span class="fs-sm text-muted">الشحنات</span><div class="fw-700">34</div></div>
+                        <div style="padding:12px;background:var(--bg-body);border-radius:8px;text-align:center;"><span class="fs-sm text-muted">الفواتير</span><div class="fw-700">32</div></div>
+                        <div style="padding:12px;background:var(--bg-body);border-radius:8px;text-align:center;"><span class="fs-sm text-muted">الدفع</span><div class="fw-700">28</div></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="js/role-auth.js"></script>
+    <script src="js/role-sidebar-apply.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

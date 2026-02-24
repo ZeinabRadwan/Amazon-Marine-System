@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazon Marine — العملاء / CRM</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+        <div class="logo-area"><img src="logo/logo (1).png" alt="Logo">
+            <div class="logo-text"><span class="brand-name">Amazon Marine</span><span class="brand-sub">Shipping
+                    Agency</span></div>
+        </div>
+        <div class="menu-label">الرئيسية</div>
+        <ul class="menu">
+            <li><a href="dashboard.html"><i class='bx bxs-dashboard'></i><span>لوحة التحكم</span></a></li>
+            <li class="active"><a href="clients.html"><i class='bx bx-group'></i><span>العملاء / CRM</span><span
+                        class="menu-badge">24</span></a></li>
+            <li><a href="shipments.html"><i class='bx bx-package'></i><span>الشحنات</span></a></li>
+            <li><a href="sd-forms.html"><i class='bx bx-file'></i><span>نماذج SD</span></a></li>
+            <li><a href="operations.html"><i class='bx bxs-ship'></i><span>العمليات</span></a></li>
+        </ul>
+        <div class="menu-label">المالية</div>
+        <ul class="menu">
+            <li><a href="invoices.html"><i class='bx bx-receipt'></i><span>الفواتير</span></a></li>
+            <li><a href="accounting.html"><i class='bx bx-wallet'></i><span>الحسابات</span></a></li>
+            <li><a href="treasury.html"><i class='bx bx-credit-card'></i><span>الخزينة</span></a></li>
+            <li><a href="expenses.html"><i class='bx bx-money'></i><span>المصروفات</span></a></li>
+            <li><a href="pricing.html"><i class='bx bx-dollar-circle'></i><span>التسعير</span></a></li>
+        </ul>
+        <div class="menu-label">الإدارة</div>
+        <ul class="menu">
+            <li><a href="partners.html"><i class='bx bx-buildings'></i><span>الشركاء</span></a></li>
+            <li><a href="reports.html"><i class='bx bx-bar-chart-alt-2'></i><span>التقارير</span></a></li>
+            <li><a href="documents.html"><i class='bx bx-file-blank'></i><span>المستندات الرسمية</span></a></li>
+            <li><a href="tickets.html"><i class='bx bx-message-alt-detail'></i><span>تذاكر الدعم</span></a></li>
+            <li><a href="team-performance.html"><i class='bx bx-trending-up'></i><span>أداء الفريق</span></a></li>
+            <li><a href="attendance.html"><i class='bx bx-time-five'></i><span>الحضور والانصراف</span></a></li>
+            <li><a href="visits.html"><i class='bx bx-map-pin'></i><span>سجل الزيارات</span></a></li>
+        </ul>
+        <div class="menu-label">الإعدادات</div>
+        <ul class="menu">
+            <li><a href="settings.html"><i class='bx bx-cog'></i><span>الإعدادات</span></a></li>
+            <li><a href="profile.html"><i class='bx bx-user'></i><span>الملف الشخصي</span></a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-avatar">MD</div>
+            <div class="user-info">
+                <div class="user-name">Capt. Mostafa</div>
+                <div class="user-role">مدير النظام</div>
+            </div><a href="index.html"><i class='bx bx-log-out'
+                    style="color:rgba(255,255,255,0.35);cursor:pointer;font-size:1.2rem;"></i></a>
+        </div>
+    </nav>
+
+    <!-- MAIN -->
+    <div class="main-wrapper">
+        <header class="topbar">
+            <div class="page-title-area">
+                <h1>العملاء / CRM</h1>
+                <div class="breadcrumbs">Amazon Marine > <span>إدارة العملاء</span></div>
+            </div>
+            <div class="topbar-right">
+                <div class="search-bar"><i class='bx bx-search'></i><input type="text" placeholder="بحث في العملاء...">
+                </div>
+                <div class="topbar-icon"><i class='bx bx-bell'></i>
+                    <div class="notif-dot"></div>
+                </div>
+                <div class="currency-dropdown">
+                    <div class="topbar-icon" onclick="toggleCurrencyDropdown(event)">
+                        <i class='bx bx-dollar-circle'></i>
+                        <span class="currency-code" id="currencyCodeBadge">$</span>
+                    </div>
+                    <div class="currency-dropdown-menu" id="currencyDropdown">
+                        <button type="button" class="currency-dropdown-item active" data-currency="USD">$ USD <i class='bx bx-check'></i></button>
+                        <button type="button" class="currency-dropdown-item" data-currency="EUR">€ EUR</button>
+                        <button type="button" class="currency-dropdown-item" data-currency="EGP">E£ EGP</button>
+                    </div>
+                </div>
+                <div class="profile-pill">
+                    <div class="profile-avatar">MD</div><span>Capt. Mostafa</span><i class='bx bx-chevron-down'
+                        style="color:var(--text-muted);font-size:1rem;"></i>
+                </div>
+            </div>
+        </header>
+
+        <main class="content">
+            <!-- Sales: "My clients only" notice -->
+            <p data-role-only="sales" class="fs-sm text-muted" style="margin-bottom:12px;display:none;"><i class='bx bx-user'></i> عرض: <strong>عملائي فقط</strong></p>
+
+            <!-- Accounting: clients financial view only -->
+            <div data-role-only="accounting" style="display:none;">
+                <div class="card" style="margin-bottom:24px;">
+                    <div class="card-header"><span class="card-title">العملاء — بيانات مالية فقط</span></div>
+                    <p class="fs-sm text-muted" style="padding:0 20px 12px;">الأرصدة المستحقة، المدفوعات، والفواتير. لا يمكنك تعديل بيانات العملاء أو الزيارات.</p>
+                    <table class="data-table">
+                        <thead>
+                            <tr><th>العميل / الشركة</th><th>الرصيد المستحق</th><th>آخر دفعة</th><th>فواتير مفتوحة</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>منصور وشركاه</td><td class="fw-600">$2,400</td><td class="text-muted fs-sm">15/02</td><td>1</td></tr>
+                            <tr><td>الإيمان للأغذية</td><td class="fw-600">$0</td><td class="text-muted fs-sm">18/02</td><td>0</td></tr>
+                            <tr><td>طه للمنسوجات</td><td class="fw-600 text-danger">$5,100</td><td class="text-muted fs-sm">01/02</td><td>2</td></tr>
+                            <tr><td>نايل كرافت مصر</td><td class="fw-600">$1,200</td><td class="text-muted fs-sm">10/02</td><td>1</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pricing: read-only pricing per client -->
+            <div data-role-only="pricing" style="display:none;">
+                <div class="card" style="margin-bottom:24px;">
+                    <div class="card-header"><span class="card-title">التسعير المطبق على العملاء (قراءة فقط)</span></div>
+                    <p class="fs-sm text-muted" style="padding:0 20px 12px;">لا يمكنك عرض جهات اتصال العملاء أو تفاصيل الإيرادات.</p>
+                    <table class="data-table">
+                        <thead>
+                            <tr><th>العميل / الشركة</th><th>شريحة التسعير</th><th>خصم %</th><th>آخر تحديث سعر</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>منصور وشركاه</td><td>شريحة A</td><td>5%</td><td class="fs-sm">01/02/2026</td></tr>
+                            <tr><td>الإيمان للأغذية</td><td>شريحة B</td><td>3%</td><td class="fs-sm">05/02/2026</td></tr>
+                            <tr><td>طه للمنسوجات</td><td>شريحة A</td><td>7%</td><td class="fs-sm">10/02/2026</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Stats Row (Admin + Sales) -->
+            <div data-role-only="admin,sales">
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-icon-wrap cyan"><i class='bx bx-group'></i></div>
+                    <div class="stat-info">
+                        <h3>87</h3>
+                        <div class="stat-label">إجمالي العملاء</div><span class="stat-trend up"><i
+                                class='bx bx-trending-up'></i> 12% هذا الشهر</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-wrap green"><i class='bx bx-check-circle'></i></div>
+                    <div class="stat-info">
+                        <h3>62</h3>
+                        <div class="stat-label">عملاء نشطون</div><span class="stat-trend up"><i
+                                class='bx bx-trending-up'></i> 8%</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-wrap gold"><i class='bx bx-user-plus'></i></div>
+                    <div class="stat-info">
+                        <h3>14</h3>
+                        <div class="stat-label">عملاء جدد (هذا الشهر)</div><span class="stat-trend up"><i
+                                class='bx bx-trending-up'></i> 5 عن الشهر السابق</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-wrap navy"><i class='bx bx-dollar-circle'></i></div>
+                    <div class="stat-info">
+                        <h3>$342K</h3>
+                        <div class="stat-label">إجمالي الإيرادات من العملاء</div><span class="stat-trend up"><i
+                                class='bx bx-trending-up'></i> 23%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CRM Trends Charts -->
+            <div class="card" style="margin-bottom:24px;">
+                <div class="card-header">
+                    <span class="card-title">اتجاهات العملاء</span>
+                    <select class="form-control" id="chartMonths" style="width:auto;min-width:110px;">
+                        <option value="6">6 أشهر</option>
+                        <option value="12">12 شهر</option>
+                    </select>
+                </div>
+                <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+                    <div>
+                        <p class="fs-sm fw-600 text-muted" style="margin-bottom:8px;">عملاء جدد شهرياً</p>
+                        <div class="chart-wrap" style="position:relative;height:220px;width:100%;">
+                            <canvas id="chartNewClients"></canvas>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="fs-sm fw-600 text-muted" style="margin-bottom:8px;">توزيع العملاء حسب المصدر</p>
+                        <div class="chart-wrap" style="position:relative;height:220px;width:100%;">
+                            <canvas id="chartBySource"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page Header with Actions -->
+            <div class="page-header">
+                <div class="page-header-actions">
+                    <button class="btn btn-outline btn-sm" id="btnExportAll"><i class='bx bx-export'></i> تصدير الكل</button>
+                    <button class="btn btn-primary" onclick="openModal('addClientModal')"><i class='bx bx-plus'></i>
+                        إضافة عميل</button>
+                </div>
+            </div>
+
+            <!-- Bulk Actions Bar (hidden until selection) -->
+            <div class="bulk-actions-bar" id="bulkActionsBar" style="display:none;">
+                <span class="bulk-count" id="bulkCount">تم تحديد 0 عميل</span>
+                <button type="button" class="btn btn-outline btn-sm" id="bulkExportSelected"><i class='bx bx-download'></i> تصدير المحدد</button>
+                <button type="button" class="btn btn-outline btn-sm" id="bulkAssignSales">تعيين سيلز</button>
+                <button type="button" class="btn btn-outline btn-sm" id="bulkClearSelection">إلغاء التحديد</button>
+            </div>
+
+            <!-- Clients List (Sales: filtered to my clients via role-views.js) -->
+            <div class="card" data-sales-filter-table>
+                    <div class="filter-bar">
+                        <input type="text" class="form-control" id="clientSearch" placeholder="بحث بالاسم، الشركة، الهاتف، البريد..." style="max-width:280px;">
+                        <select class="form-control" id="filterStatus">
+                            <option value="">كل الحالات</option>
+                            <option value="نشط">نشط</option>
+                            <option value="غير نشط">غير نشط</option>
+                            <option value="محتمل">محتمل</option>
+                            <option value="جديد">جديد</option>
+                        </select>
+                        <select class="form-control" id="filterSource">
+                            <option value="">كل المصادر</option>
+                            <option value="إحالة عميل">إحالة عميل</option>
+                            <option value="فيسبوك">فيسبوك</option>
+                            <option value="لينكدإن">لينكدإن</option>
+                            <option value="موقع الشركة">موقع الشركة</option>
+                            <option value="زيارة مباشرة">زيارة مباشرة</option>
+                        </select>
+                        <select class="form-control" id="filterSales">
+                            <option value="">كل السيلز</option>
+                            <option value="أحمد خيري">أحمد خيري</option>
+                            <option value="محمد سعيد">محمد سعيد</option>
+                            <option value="زينب رضوان">زينب رضوان</option>
+                            <option value="حسن نبيل">حسن نبيل</option>
+                        </select>
+                        <select class="form-control" id="sortColumn" style="width:auto;min-width:130px;">
+                            <option value="">ترتيب حسب</option>
+                            <option value="client">العميل</option>
+                            <option value="company">اسم الشركة</option>
+                            <option value="shipments">الشحنات</option>
+                            <option value="profit">إجمالي الربح</option>
+                            <option value="lastContact">آخر تواصل</option>
+                        </select>
+                    </div>
+                    <table class="data-table" id="clientsTable">
+                        <thead>
+                            <tr>
+                                <th style="width:44px;"><input type="checkbox" id="selectAllClients" title="تحديد الكل"></th>
+                                <th data-sort="client">العميل <i class='bx bx-sort-alt-2 sort-icon'></i></th>
+                                <th data-sort="company">اسم الشركة <i class='bx bx-sort-alt-2 sort-icon'></i></th>
+                                <th>الهاتف</th>
+                                <th>البريد</th>
+                                <th data-sort="source">المصدر <i class='bx bx-sort-alt-2 sort-icon'></i></th>
+                                <th data-sort="shipments">الشحنات <i class='bx bx-sort-alt-2 sort-icon'></i></th>
+                                <th data-sort="profit">إجمالي الربح <i class='bx bx-sort-alt-2 sort-icon'></i></th>
+                                <th>الحالة</th>
+                                <th data-sort="lastContact">آخر تواصل <i class='bx bx-sort-alt-2 sort-icon'></i></th>
+                                <th>إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="client-row" onclick="openModal('clientDetailModal')" style="cursor:pointer;" data-status="نشط" data-source="إحالة عميل" data-sales="أحمد خيري" data-client="منصور محمد" data-company="منصور وشركاه للتجارة" data-shipments="12" data-profit="18400" data-lastcontact="2">
+                                <td onclick="event.stopPropagation()"><input type="checkbox" class="client-checkbox"></td>
+                                <td>
+                                    <div class="client-cell">
+                                        <div class="client-avatar"
+                                            style="background:linear-gradient(135deg,var(--navy-700),var(--navy-500));">
+                                            MN</div><span class="fw-600">منصور محمد</span>
+                                    </div>
+                                </td>
+                                <td class="fw-600">منصور وشركاه للتجارة</td>
+                                <td>+20 100 123 4567</td>
+                                <td>info@mansour.com</td>
+                                <td>إحالة عميل</td>
+                                <td class="fw-600">12</td>
+                                <td class="fw-600 text-success">$18,400</td>
+                                <td><span class="status-badge active">نشط</span></td>
+                                <td class="text-muted fs-sm">منذ يومين</td>
+                                <td onclick="event.stopPropagation()">
+                                    <div class="table-actions">
+                                        <button class="tbl-btn view" title="عرض التفاصيل"
+                                            onclick="openModal('clientDetailModal')"><i class='bx bx-show'></i></button>
+                                        <button class="tbl-btn edit" title="تعديل"
+                                            onclick="openModal('editClientModal')"><i class='bx bx-edit'></i></button>
+                                        <button class="tbl-btn phone" title="متابعة"
+                                            onclick="openModal('addFollowupModal')"><i class='bx bx-phone'></i></button>
+                                        <button class="tbl-btn ship" title="شحنة جديدة"
+                                            onclick="event.stopPropagation();openModal('addShipmentModal')"><i class='bx bx-package'></i></button>
+                                        <button class="tbl-btn note" title="ملاحظة سريعة"
+                                            onclick="event.stopPropagation();openModal('addNoteModal')"><i class='bx bx-note'></i></button>
+                                        <button class="tbl-btn delete" title="حذف"
+                                            onclick="confirm('هل أنت متأكد من حذف هذا العميل؟')"><i
+                                                class='bx bx-trash'></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="client-row" onclick="openModal('clientDetailModal')" style="cursor:pointer;" data-status="نشط" data-source="فيسبوك" data-sales="محمد سعيد" data-client="أحمد عبد العزيز" data-company="الإيمان للأغذية" data-shipments="8" data-profit="12600" data-lastcontact="1">
+                                <td onclick="event.stopPropagation()"><input type="checkbox" class="client-checkbox"></td>
+                                <td>
+                                    <div class="client-cell">
+                                        <div class="client-avatar"
+                                            style="background:linear-gradient(135deg,var(--accent-cyan),#0e8a9b);">AE
+                                        </div><span class="fw-600">أحمد عبد العزيز</span>
+                                    </div>
+                                </td>
+                                <td class="fw-600">الإيمان للأغذية</td>
+                                <td>+20 111 234 5678</td>
+                                <td>sales@aleman.com</td>
+                                <td>فيسبوك</td>
+                                <td class="fw-600">8</td>
+                                <td class="fw-600 text-success">$12,600</td>
+                                <td><span class="status-badge active">نشط</span></td>
+                                <td class="text-muted fs-sm">أمس</td>
+                                <td onclick="event.stopPropagation()">
+                                    <div class="table-actions">
+                                        <button class="tbl-btn view" title="عرض التفاصيل"
+                                            onclick="openModal('clientDetailModal')"><i class='bx bx-show'></i></button>
+                                        <button class="tbl-btn edit" title="تعديل"
+                                            onclick="openModal('editClientModal')"><i class='bx bx-edit'></i></button>
+                                        <button class="tbl-btn phone" title="متابعة"
+                                            onclick="openModal('addFollowupModal')"><i class='bx bx-phone'></i></button>
+                                        <button class="tbl-btn ship" title="شحنة جديدة"
+                                            onclick="event.stopPropagation();openModal('addShipmentModal')"><i class='bx bx-package'></i></button>
+                                        <button class="tbl-btn note" title="ملاحظة سريعة"
+                                            onclick="event.stopPropagation();openModal('addNoteModal')"><i class='bx bx-note'></i></button>
+                                        <button class="tbl-btn delete" title="حذف"
+                                            onclick="confirm('هل أنت متأكد من حذف هذا العميل؟')"><i class='bx bx-trash'></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="client-row" onclick="openModal('clientDetailModal')" style="cursor:pointer;" data-status="نشط" data-source="لينكدإن" data-sales="زينب رضوان" data-client="طارق فوزي" data-company="طه للمنسوجات" data-shipments="5" data-profit="8150" data-lastcontact="0">
+                                <td onclick="event.stopPropagation()"><input type="checkbox" class="client-checkbox"></td>
+                                <td>
+                                    <div class="client-cell">
+                                        <div class="client-avatar"
+                                            style="background:linear-gradient(135deg,var(--accent-gold),#b8913c);">TF
+                                        </div><span class="fw-600">طارق فوزي</span>
+                                    </div>
+                                </td>
+                                <td class="fw-600">طه للمنسوجات</td>
+                                <td>+20 122 345 6789</td>
+                                <td>taha@fabrics.com</td>
+                                <td>لينكدإن</td>
+                                <td class="fw-600">5</td>
+                                <td class="fw-600 text-success">$8,150</td>
+                                <td><span class="status-badge active">نشط</span></td>
+                                <td class="text-muted fs-sm">اليوم</td>
+                                <td onclick="event.stopPropagation()">
+                                    <div class="table-actions">
+                                        <button class="tbl-btn view" title="عرض التفاصيل"
+                                            onclick="openModal('clientDetailModal')"><i class='bx bx-show'></i></button>
+                                        <button class="tbl-btn edit" title="تعديل"
+                                            onclick="openModal('editClientModal')"><i class='bx bx-edit'></i></button>
+                                        <button class="tbl-btn phone" title="متابعة"
+                                            onclick="openModal('addFollowupModal')"><i class='bx bx-phone'></i></button>
+                                        <button class="tbl-btn ship" title="شحنة جديدة"
+                                            onclick="event.stopPropagation();openModal('addShipmentModal')"><i class='bx bx-package'></i></button>
+                                        <button class="tbl-btn note" title="ملاحظة سريعة"
+                                            onclick="event.stopPropagation();openModal('addNoteModal')"><i class='bx bx-note'></i></button>
+                                        <button class="tbl-btn delete" title="حذف"
+                                            onclick="confirm('هل أنت متأكد من حذف هذا العميل؟')"><i class='bx bx-trash'></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="client-row" onclick="openModal('clientDetailModal')" style="cursor:pointer;" data-status="محتمل" data-source="موقع الشركة" data-sales="حسن نبيل" data-client="نادر كمال" data-company="نايل كرافت مصر" data-shipments="3" data-profit="3600" data-lastcontact="7">
+                                <td onclick="event.stopPropagation()"><input type="checkbox" class="client-checkbox"></td>
+                                <td>
+                                    <div class="client-cell">
+                                        <div class="client-avatar"
+                                            style="background:linear-gradient(135deg,var(--success),#059669);">NK</div>
+                                        <span class="fw-600">نادر كمال</span>
+                                    </div>
+                                </td>
+                                <td class="fw-600">نايل كرافت مصر</td>
+                                <td>+20 106 456 7890</td>
+                                <td>nile@kraft.com</td>
+                                <td>موقع الشركة</td>
+                                <td class="fw-600">3</td>
+                                <td class="fw-600 text-success">$3,600</td>
+                                <td><span class="status-badge pending">محتمل</span></td>
+                                <td class="text-muted fs-sm">منذ أسبوع</td>
+                                <td onclick="event.stopPropagation()">
+                                    <div class="table-actions">
+                                        <button class="tbl-btn view" title="عرض التفاصيل"
+                                            onclick="openModal('clientDetailModal')"><i class='bx bx-show'></i></button>
+                                        <button class="tbl-btn edit" title="تعديل"
+                                            onclick="openModal('editClientModal')"><i class='bx bx-edit'></i></button>
+                                        <button class="tbl-btn phone" title="متابعة"
+                                            onclick="openModal('addFollowupModal')"><i class='bx bx-phone'></i></button>
+                                        <button class="tbl-btn ship" title="شحنة جديدة"
+                                            onclick="event.stopPropagation();openModal('addShipmentModal')"><i class='bx bx-package'></i></button>
+                                        <button class="tbl-btn note" title="ملاحظة سريعة"
+                                            onclick="event.stopPropagation();openModal('addNoteModal')"><i class='bx bx-note'></i></button>
+                                        <button class="tbl-btn delete" title="حذف"
+                                            onclick="confirm('هل أنت متأكد من حذف هذا العميل؟')"><i class='bx bx-trash'></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="client-row" onclick="openModal('clientDetailModal')" style="cursor:pointer;" data-status="نشط" data-source="زيارة مباشرة" data-sales="أحمد خيري" data-client="سعود العمري" data-company="السعودي للتصدير" data-shipments="15" data-profit="24800" data-lastcontact="1">
+                                <td onclick="event.stopPropagation()"><input type="checkbox" class="client-checkbox"></td>
+                                <td>
+                                    <div class="client-cell">
+                                        <div class="client-avatar"
+                                            style="background:linear-gradient(135deg,#7c3aed,#5b21b6);">SE</div><span
+                                            class="fw-600">سعود العمري</span>
+                                    </div>
+                                </td>
+                                <td class="fw-600">السعودي للتصدير</td>
+                                <td>+20 112 567 8901</td>
+                                <td>seoudi@export.com</td>
+                                <td>زيارة مباشرة</td>
+                                <td class="fw-600">15</td>
+                                <td class="fw-600 text-success">$24,800</td>
+                                <td><span class="status-badge active">نشط</span></td>
+                                <td class="text-muted fs-sm">أمس</td>
+                                <td onclick="event.stopPropagation()">
+                                    <div class="table-actions">
+                                        <button class="tbl-btn view" title="عرض التفاصيل"
+                                            onclick="openModal('clientDetailModal')"><i class='bx bx-show'></i></button>
+                                        <button class="tbl-btn edit" title="تعديل"
+                                            onclick="openModal('editClientModal')"><i class='bx bx-edit'></i></button>
+                                        <button class="tbl-btn phone" title="متابعة"
+                                            onclick="openModal('addFollowupModal')"><i class='bx bx-phone'></i></button>
+                                        <button class="tbl-btn ship" title="شحنة جديدة"
+                                            onclick="event.stopPropagation();openModal('addShipmentModal')"><i class='bx bx-package'></i></button>
+                                        <button class="tbl-btn note" title="ملاحظة سريعة"
+                                            onclick="event.stopPropagation();openModal('addNoteModal')"><i class='bx bx-note'></i></button>
+                                        <button class="tbl-btn delete" title="حذف"
+                                            onclick="confirm('هل أنت متأكد من حذف هذا العميل؟')"><i class='bx bx-trash'></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="client-row" onclick="openModal('clientDetailModal')" style="cursor:pointer;" data-status="جديد" data-source="إحالة عميل" data-sales="أحمد خيري" data-client="رضا منصور" data-company="رمضان للتجارة" data-shipments="0" data-profit="0" data-lastcontact="0">
+                                <td onclick="event.stopPropagation()"><input type="checkbox" class="client-checkbox"></td>
+                                <td>
+                                    <div class="client-cell">
+                                        <div class="client-avatar"
+                                            style="background:linear-gradient(135deg,var(--danger),#dc2626);">RM</div>
+                                        <span class="fw-600">رضا منصور</span>
+                                    </div>
+                                </td>
+                                <td class="fw-600">رمضان للتجارة</td>
+                                <td>+20 128 678 9012</td>
+                                <td>ramadan@trade.com</td>
+                                <td>إحالة عميل</td>
+                                <td class="fw-600">0</td>
+                                <td class="fw-600 text-muted">$0</td>
+                                <td><span class="status-badge new">جديد</span></td>
+                                <td class="text-muted fs-sm">اليوم</td>
+                                <td onclick="event.stopPropagation()">
+                                    <div class="table-actions">
+                                        <button class="tbl-btn view" title="عرض التفاصيل"
+                                            onclick="openModal('clientDetailModal')"><i class='bx bx-show'></i></button>
+                                        <button class="tbl-btn edit" title="تعديل"
+                                            onclick="openModal('editClientModal')"><i class='bx bx-edit'></i></button>
+                                        <button class="tbl-btn phone" title="متابعة"
+                                            onclick="openModal('addFollowupModal')"><i class='bx bx-phone'></i></button>
+                                        <button class="tbl-btn ship" title="شحنة جديدة"
+                                            onclick="event.stopPropagation();openModal('addShipmentModal')"><i class='bx bx-package'></i></button>
+                                        <button class="tbl-btn note" title="ملاحظة سريعة"
+                                            onclick="event.stopPropagation();openModal('addNoteModal')"><i class='bx bx-note'></i></button>
+                                        <button class="tbl-btn delete" title="حذف"
+                                            onclick="confirm('هل أنت متأكد من حذف هذا العميل؟')"><i class='bx bx-trash'></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="pagination">
+                        <div class="pagination-info">عرض 1 - 6 من 87 عميل</div>
+                        <div class="pagination-pages">
+                            <button class="pagination-btn"><i class='bx bx-chevron-right'></i></button>
+                            <button class="pagination-btn active">1</button>
+                            <button class="pagination-btn">2</button>
+                            <button class="pagination-btn">3</button>
+                            <button class="pagination-btn">...</button>
+                            <button class="pagination-btn">15</button>
+                            <button class="pagination-btn"><i class='bx bx-chevron-left'></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+            <!-- end data-role-only admin,sales -->
+        </main>
+    </div>
+
+    <!-- ADD CLIENT MODAL -->
+    <div class="modal-overlay" id="addClientModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class='bx bx-user-plus' style="margin-left:8px;"></i> إضافة عميل جديد</h3><button
+                    class="modal-close" onclick="closeModal('addClientModal')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">اسم العميل <span
+                                style="color:var(--danger)">*</span></label><input type="text" class="form-control"
+                            placeholder="أدخل اسم العميل الكامل"></div>
+                    <div class="form-group"><label class="form-label">اسم الشركة <span
+                                style="color:var(--danger)">*</span></label><input type="text" class="form-control"
+                            placeholder="اسم الشركة أو المنشأة"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">رقم الهاتف</label><input type="tel"
+                            class="form-control" placeholder="+20 1xx xxxx xxx"></div>
+                    <div class="form-group"><label class="form-label">البريد الإلكتروني</label><input type="email"
+                            class="form-control" placeholder="email@company.com"></div>
+                </div>
+                <div class="form-group"><label class="form-label">العنوان</label><input type="text" class="form-control"
+                        placeholder="المدينة، الحي، الشارع..."></div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label"><i class='bx bx-globe'
+                                style="color:var(--accent-cyan);vertical-align:middle;margin-left:4px;"></i> الموقع
+                            الإلكتروني</label><input type="url" class="form-control"
+                            placeholder="https://www.example.com"></div>
+                    <div class="form-group"><label class="form-label">البطاقة الضريبية</label><input type="text"
+                            class="form-control" placeholder="رقم البطاقة الضريبية"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label"><i class='bx bxl-facebook-circle'
+                                style="color:#1877f2;vertical-align:middle;margin-left:4px;"></i> حساب
+                            Facebook</label><input type="url" class="form-control"
+                            placeholder="https://facebook.com/..."></div>
+                    <div class="form-group"><label class="form-label"><i class='bx bxl-linkedin-square'
+                                style="color:#0a66c2;vertical-align:middle;margin-left:4px;"></i> حساب
+                            LinkedIn</label><input type="url" class="form-control"
+                            placeholder="https://linkedin.com/in/..."></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">المصدر</label><select class="form-control">
+                            <option>اختر المصدر</option>
+                            <option>إحالة عميل</option>
+                            <option>فيسبوك</option>
+                            <option>لينكدإن</option>
+                            <option>موقع الشركة</option>
+                            <option>زيارة مباشرة</option>
+                            <option>أخرى</option>
+                        </select></div>
+                    <div class="form-group"><label class="form-label">السيلز المسؤول</label><select
+                            class="form-control">
+                            <option>اختر</option>
+                            <option>أحمد خيري</option>
+                            <option>محمد سعيد</option>
+                            <option>زينب رضوان</option>
+                            <option>حسن نبيل</option>
+                        </select></div>
+                </div>
+                <div class="form-group"><label class="form-label">ملاحظات</label><textarea class="form-control"
+                        placeholder="أي ملاحظات إضافية..."></textarea></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-outline"
+                    onclick="closeModal('addClientModal')">إلغاء</button><button class="btn btn-primary"><i
+                        class='bx bx-check'></i> حفظ العميل</button></div>
+        </div>
+    </div>
+
+    <!-- CLIENT DETAIL MODAL -->
+    <div class="modal-overlay" id="clientDetailModal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3><i class='bx bx-user' style="margin-left:8px;"></i> تفاصيل العميل — منصور وشركاه</h3><button
+                    class="modal-close" onclick="closeModal('clientDetailModal')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <!-- Client Info -->
+                <div class="grid-2" style="margin-bottom:20px;">
+                    <div>
+                        <h4 style="font-size:0.85rem;font-weight:700;margin-bottom:12px;">معلومات العميل</h4>
+                        <div style="display:flex;flex-direction:column;gap:10px;">
+                            <div class="d-flex justify-between"><span class="text-muted fs-sm">اسم الشركة:</span><span
+                                    class="fw-600 fs-sm">منصور وشركاه للتجارة</span></div>
+                            <div class="d-flex justify-between"><span class="text-muted fs-sm">الهاتف:</span><span
+                                    class="fw-600 fs-sm">+20 100 123 4567</span></div>
+                            <div class="d-flex justify-between"><span class="text-muted fs-sm">البريد:</span><span
+                                    class="fw-600 fs-sm">info@mansour.com</span></div>
+                            <div class="d-flex justify-between"><span class="text-muted fs-sm">العنوان:</span><span
+                                    class="fw-600 fs-sm">الإسكندرية، ميناء الإسكندرية</span></div>
+                            <div class="d-flex justify-between"><span class="text-muted fs-sm">الموقع:</span>
+                                <a href="#" class="fw-600 fs-sm"
+                                    style="color:var(--accent-cyan);">www.mansour-trade.com</a>
+                            </div>
+                            <div class="d-flex justify-between"><span class="text-muted fs-sm"><i
+                                        class='bx bxl-facebook-circle' style="color:#1877f2;"></i> Facebook:</span>
+                                <a href="#" class="fw-600 fs-sm" style="color:#1877f2;">fb.com/mansour.trading</a>
+                            </div>
+                            <div class="d-flex justify-between"><span class="text-muted fs-sm"><i
+                                        class='bx bxl-linkedin-square' style="color:#0a66c2;"></i> LinkedIn:</span>
+                                <a href="#" class="fw-600 fs-sm" style="color:#0a66c2;">linkedin.com/in/mansour</a>
+                            </div>
+                            <div class="d-flex justify-between"><span class="text-muted fs-sm">الضريبية:</span><span
+                                    class="fw-600 fs-sm">TAX-2024-00123</span></div>
+                            <div class="d-flex justify-between"><span class="text-muted fs-sm">المصدر:</span><span
+                                    class="fw-600 fs-sm">إحالة عميل</span></div>
+                            <div class="d-flex justify-between"><span class="text-muted fs-sm">السيلز:</span><span
+                                    class="fw-600 fs-sm">أحمد خيري</span></div>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 style="font-size:0.85rem;font-weight:700;margin-bottom:12px;">ملخص مالي</h4>
+                        <div style="display:flex;flex-direction:column;gap:10px;">
+                            <div class="d-flex justify-between"><span class="text-muted fs-sm">عدد الشحنات:</span><span
+                                    class="fw-700 fs-sm">12</span></div>
+                            <div class="d-flex justify-between"><span class="text-muted fs-sm">إجمالي
+                                    المبيعات:</span><span class="fw-700 fs-sm">$52,400</span></div>
+                            <div class="d-flex justify-between"><span class="text-muted fs-sm">إجمالي
+                                    الأرباح:</span><span class="fw-700 fs-sm text-success">$18,400</span></div>
+                            <div class="d-flex justify-between"><span class="text-muted fs-sm">مستحقات عليه:</span><span
+                                    class="fw-700 fs-sm text-danger">$4,250</span></div>
+                            <div class="d-flex justify-between"><span class="text-muted fs-sm">مرات التواصل:</span><span
+                                    class="fw-700 fs-sm">28</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Communication Log -->
+                <h4 style="font-size:0.85rem;font-weight:700;margin-bottom:12px;margin-top:20px;">سجل التواصل</h4>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-dot cyan"></div>
+                        <div class="timeline-date">19 فبراير 2026 - 10:30 ص</div>
+                        <div class="timeline-title">مكالمة هاتفية — أحمد خيري</div>
+                        <div class="timeline-desc">تم الاتفاق على شحنة جديدة من الإسكندرية إلى جدة. سيتم إرسال SD Form
+                            اليوم.</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot navy"></div>
+                        <div class="timeline-date">17 فبراير 2026 - 2:15 م</div>
+                        <div class="timeline-title">إرسال عرض سعر #Q-048</div>
+                        <div class="timeline-desc">تم إرسال عرض سعر لشحنة 2x40HC إلى ميناء جدة.</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot green"></div>
+                        <div class="timeline-date">15 فبراير 2026 - 11:00 ص</div>
+                        <div class="timeline-title">تم تسليم الشحنة BL-2026-0240</div>
+                        <div class="timeline-desc">تم تسليم الشحنة بنجاح. العميل راضٍ عن الخدمة.</div>
+                    </div>
+                </div>
+
+                <!-- Recent Shipments -->
+                <h4 style="font-size:0.85rem;font-weight:700;margin-bottom:12px;margin-top:20px;">أحدث الشحنات</h4>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>BL#</th>
+                            <th>المسار</th>
+                            <th>الحالة</th>
+                            <th>التكلفة</th>
+                            <th>الربح</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="bl-number">BL-2026-0248</td>
+                            <td>الإسكندرية → جدة</td>
+                            <td><span class="status-badge in-transit">في الطريق</span></td>
+                            <td class="fw-600">$4,250</td>
+                            <td class="fw-600 text-success">$1,200</td>
+                        </tr>
+                        <tr>
+                            <td class="bl-number">BL-2026-0240</td>
+                            <td>الإسكندرية → جنوة</td>
+                            <td><span class="status-badge delivered">تم التسليم</span></td>
+                            <td class="fw-600">$5,900</td>
+                            <td class="fw-600 text-success">$1,650</td>
+                        </tr>
+                        <tr>
+                            <td class="bl-number">BL-2026-0232</td>
+                            <td>دمياط → هامبورغ</td>
+                            <td><span class="status-badge delivered">تم التسليم</span></td>
+                            <td class="fw-600">$7,800</td>
+                            <td class="fw-600 text-success">$2,100</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('clientDetailModal')">إغلاق</button>
+                <button class="btn btn-cyan" onclick="closeModal('clientDetailModal');openModal('addFollowupModal')"><i
+                        class='bx bx-phone'></i> إضافة متابعة</button>
+                <button class="btn btn-primary"
+                    onclick="closeModal('clientDetailModal');openModal('editClientModal')"><i class='bx bx-edit'></i>
+                    تعديل العميل</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD FOLLOW-UP MODAL -->
+    <div class="modal-overlay" id="addFollowupModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class='bx bx-phone-call' style="margin-left:8px;"></i> إضافة متابعة</h3><button
+                    class="modal-close" onclick="closeModal('addFollowupModal')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">نوع المتابعة</label><select class="form-control">
+                            <option>مكالمة هاتفية</option>
+                            <option>بريد إلكتروني</option>
+                            <option>زيارة</option>
+                            <option>واتساب</option>
+                            <option>اجتماع</option>
+                        </select></div>
+                    <div class="form-group"><label class="form-label">التاريخ والوقت</label><input type="datetime-local"
+                            class="form-control"></div>
+                </div>
+                <div class="form-group"><label class="form-label">ملخص المتابعة</label><textarea class="form-control"
+                        placeholder="ملخص المكالمة أو الزيارة..."></textarea></div>
+                <div class="form-group"><label class="form-label">الموعد القادم</label><input type="date"
+                        class="form-control"></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-outline"
+                    onclick="closeModal('addFollowupModal')">إلغاء</button><button class="btn btn-primary"><i
+                        class='bx bx-check'></i> حفظ المتابعة</button></div>
+        </div>
+    </div>
+
+    <!-- ADD NOTE MODAL (quick note per client) -->
+    <div class="modal-overlay" id="addNoteModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class='bx bx-note' style="margin-left:8px;"></i> ملاحظة سريعة</h3>
+                <button class="modal-close" onclick="closeModal('addNoteModal')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">العميل</label>
+                    <input type="text" class="form-control" id="noteClientName" value="منصور محمد" readonly style="background:var(--bg-body);">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">الملاحظة</label>
+                    <textarea class="form-control" id="noteContent" placeholder="اكتب ملاحظة للعميل..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('addNoteModal')">إلغاء</button>
+                <button class="btn btn-primary" onclick="closeModal('addNoteModal')"><i class='bx bx-check'></i> حفظ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD SHIPMENT MODAL (quick link to new shipment for client) -->
+    <div class="modal-overlay" id="addShipmentModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class='bx bx-package' style="margin-left:8px;"></i> شحنة جديدة للعميل</h3>
+                <button class="modal-close" onclick="closeModal('addShipmentModal')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted fs-sm">سيتم فتح صفحة الشحنات مع تحديد العميل.</p>
+                <div class="form-group">
+                    <label class="form-label">العميل</label>
+                    <input type="text" class="form-control" id="shipmentClientName" value="منصور وشركاه للتجارة" readonly style="background:var(--bg-body);">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('addShipmentModal')">إلغاء</button>
+                <a href="shipments.html?new=1&client=mansour" class="btn btn-primary"><i class='bx bx-package'></i> فتح نموذج شحنة</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT CLIENT MODAL -->
+    <div class="modal-overlay" id="editClientModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class='bx bx-edit' style="margin-left:8px;"></i> تعديل بيانات العميل — منصور وشركاه</h3>
+                <button class="modal-close" onclick="closeModal('editClientModal')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">اسم العميل <span
+                                style="color:var(--danger)">*</span></label><input type="text" class="form-control"
+                            value="منصور محمد" placeholder="أدخل اسم العميل الكامل"></div>
+                    <div class="form-group"><label class="form-label">اسم الشركة <span
+                                style="color:var(--danger)">*</span></label><input type="text" class="form-control"
+                            value="منصور وشركاه للتجارة" placeholder="اسم الشركة أو المنشأة"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">رقم الهاتف</label><input type="tel"
+                            class="form-control" value="+20 100 123 4567" placeholder="+20 1xx xxxx xxx"></div>
+                    <div class="form-group"><label class="form-label">البريد الإلكتروني</label><input type="email"
+                            class="form-control" value="info@mansour.com" placeholder="email@company.com"></div>
+                </div>
+                <div class="form-group"><label class="form-label">العنوان</label><input type="text" class="form-control"
+                        value="الإسكندرية، ميناء الإسكندرية" placeholder="المدينة، الحي، الشارع..."></div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label"><i class='bx bx-globe'
+                                style="color:var(--accent-cyan);vertical-align:middle;margin-left:4px;"></i> الموقع
+                            الإلكتروني</label><input type="url" class="form-control"
+                            value="https://www.mansour-trade.com" placeholder="https://www.example.com"></div>
+                    <div class="form-group"><label class="form-label">البطاقة الضريبية</label><input type="text"
+                            class="form-control" value="TAX-2024-00123" placeholder="رقم البطاقة الضريبية"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label"><i class='bx bxl-facebook-circle'
+                                style="color:#1877f2;vertical-align:middle;margin-left:4px;"></i> حساب
+                            Facebook</label><input type="url" class="form-control"
+                            value="https://facebook.com/mansour.trading" placeholder="https://facebook.com/..."></div>
+                    <div class="form-group"><label class="form-label"><i class='bx bxl-linkedin-square'
+                                style="color:#0a66c2;vertical-align:middle;margin-left:4px;"></i> حساب
+                            LinkedIn</label><input type="url" class="form-control"
+                            value="https://linkedin.com/in/mansour" placeholder="https://linkedin.com/in/..."></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">المصدر</label><select class="form-control">
+                            <option>اختر المصدر</option>
+                            <option selected>إحالة عميل</option>
+                            <option>فيسبوك</option>
+                            <option>لينكدإن</option>
+                            <option>موقع الشركة</option>
+                            <option>زيارة مباشرة</option>
+                            <option>أخرى</option>
+                        </select></div>
+                    <div class="form-group"><label class="form-label">السيلز المسؤول</label><select
+                            class="form-control">
+                            <option>اختر</option>
+                            <option selected>أحمد خيري</option>
+                            <option>محمد سعيد</option>
+                            <option>زينب رضوان</option>
+                            <option>حسن نبيل</option>
+                        </select></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">الحالة</label><select class="form-control">
+                            <option selected>نشط</option>
+                            <option>غير نشط</option>
+                            <option>محتمل</option>
+                        </select></div>
+                    <div class="form-group"><label class="form-label">تاريخ الإضافة</label><input type="date"
+                            class="form-control" value="2024-03-15" disabled style="opacity:0.6;"></div>
+                </div>
+                <div class="form-group"><label class="form-label">ملاحظات</label><textarea class="form-control"
+                        placeholder="أي ملاحظات إضافية...">عميل مميز، يفضل التواصل صباحاً.</textarea></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('editClientModal')">إلغاء</button>
+                <button class="btn btn-danger btn-sm" style="margin-left:auto;"
+                    onclick="closeModal('editClientModal')"><i class='bx bx-trash'></i> حذف العميل</button>
+                <button class="btn btn-primary" onclick="closeModal('editClientModal')"><i class='bx bx-check'></i> حفظ
+                    التعديلات</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="js/role-auth.js"></script>
+    <script src="js/role-sidebar-apply.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/role-views.js"></script>
+    <script>
+    (function() {
+        // —— Charts (CRM trends) ——
+        var chartMonthsEl = document.getElementById('chartMonths');
+        function newClientsData(months) {
+            var m = parseInt(months, 10) || 6;
+            var labels = [], data = [];
+            for (var i = m - 1; i >= 0; i--) {
+                var d = new Date();
+                d.setMonth(d.getMonth() - i);
+                labels.push(d.toLocaleDateString('ar-EG', { month: 'short', year: '2-digit' }));
+                data.push(8 + Math.floor(Math.random() * 10));
+            }
+            return { labels: labels, data: data };
+        }
+        var chartNewEl = document.getElementById('chartNewClients');
+        var chartSourceEl = document.getElementById('chartBySource');
+        var chartNew, chartSource;
+        if (chartNewEl && typeof Chart !== 'undefined') {
+            var nd = newClientsData(6);
+            chartNew = new Chart(chartNewEl, {
+                type: 'bar',
+                data: { labels: nd.labels, datasets: [{ label: 'عملاء جدد', data: nd.data, backgroundColor: 'rgba(23,162,184,0.7)', borderColor: 'var(--accent-cyan)', borderWidth: 1 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } }
+            });
+        }
+        if (chartSourceEl && typeof Chart !== 'undefined') {
+            chartSource = new Chart(chartSourceEl, {
+                type: 'doughnut',
+                data: {
+                    labels: ['إحالة عميل', 'فيسبوك', 'لينكدإن', 'موقع الشركة', 'زيارة مباشرة'],
+                    datasets: [{ data: [28, 22, 18, 16, 16], backgroundColor: ['var(--navy-600)', 'var(--accent-cyan)', 'var(--accent-gold)', 'var(--success)', '#7c3aed'], borderWidth: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+        }
+        if (chartMonthsEl) chartMonthsEl.addEventListener('change', function() {
+            var nd = newClientsData(this.value);
+            if (chartNew) { chartNew.data.labels = nd.labels; chartNew.data.datasets[0].data = nd.data; chartNew.update(); }
+        });
+
+        // —— Table: filters + search ——
+        var clientSearch = document.getElementById('clientSearch');
+        var filterStatus = document.getElementById('filterStatus');
+        var filterSource = document.getElementById('filterSource');
+        var filterSales = document.getElementById('filterSales');
+        var sortColumn = document.getElementById('sortColumn');
+        var tbody = document.querySelector('#clientsTable tbody');
+        var rows = tbody ? tbody.querySelectorAll('.client-row') : [];
+
+        function applyFiltersAndSort() {
+            var q = (clientSearch && clientSearch.value.trim().toLowerCase()) || '';
+            var status = (filterStatus && filterStatus.value) || '';
+            var source = (filterSource && filterSource.value) || '';
+            var sales = (filterSales && filterSales.value) || '';
+            rows.forEach(function(tr) {
+                var text = (tr.textContent || '').toLowerCase();
+                var matchSearch = !q || text.indexOf(q) !== -1;
+                var matchStatus = !status || (tr.getAttribute('data-status') || '') === status;
+                var matchSource = !source || (tr.getAttribute('data-source') || '') === source;
+                var matchSales = !sales || (tr.getAttribute('data-sales') || '') === sales;
+                tr.style.display = (matchSearch && matchStatus && matchSource && matchSales) ? '' : 'none';
+            });
+            applySort();
+        }
+        function applySort() {
+            var key = (sortColumn && sortColumn.value) || '';
+            if (!key || !tbody) return;
+            var order = sortColumn.getAttribute('data-order') === 'desc' ? -1 : 1;
+            var arr = Array.prototype.slice.call(rows);
+            arr.sort(function(a, b) {
+                var va = a.getAttribute('data-' + key) || (key === 'client' ? (a.getAttribute('data-client') || '') : (key === 'company' ? (a.getAttribute('data-company') || '') : ''));
+                var vb = b.getAttribute('data-' + key) || (key === 'client' ? (b.getAttribute('data-client') || '') : (key === 'company' ? (b.getAttribute('data-company') || '') : ''));
+                if (key === 'profit' || key === 'shipments' || key === 'lastContact') {
+                    va = parseFloat(va) || 0;
+                    vb = parseFloat(vb) || 0;
+                    return order * (va - vb);
+                }
+                return order * ((va + '').localeCompare(vb + ''));
+            });
+            arr.forEach(function(tr) { tbody.appendChild(tr); });
+        }
+        if (sortColumn) {
+            sortColumn.addEventListener('change', function() {
+                var o = this.getAttribute('data-order');
+                this.setAttribute('data-order', o === 'desc' ? 'asc' : 'desc');
+                applyFiltersAndSort();
+            });
+        }
+        [clientSearch, filterStatus, filterSource, filterSales].forEach(function(el) {
+            if (el) el.addEventListener('input', applyFiltersAndSort);
+            if (el && el.tagName === 'SELECT') el.addEventListener('change', applyFiltersAndSort);
+        });
+
+        // —— Bulk actions ——
+        var selectAll = document.getElementById('selectAllClients');
+        var bulkBar = document.getElementById('bulkActionsBar');
+        var bulkCount = document.getElementById('bulkCount');
+        var checkboxes = tbody ? tbody.querySelectorAll('.client-checkbox') : [];
+
+        function updateBulkBar() {
+            var n = 0;
+            checkboxes.forEach(function(cb) {
+                var tr = cb.closest('tr');
+                if (tr && tr.style.display !== 'none' && cb.checked) n++;
+            });
+            if (bulkCount) bulkCount.textContent = 'تم تحديد ' + n + ' عميل';
+            if (bulkBar) bulkBar.style.display = n > 0 ? 'flex' : 'none';
+            if (selectAll) selectAll.checked = n > 0 && n === (tbody ? tbody.querySelectorAll('.client-row:not([style*="display: none"])').length : 0);
+        }
+        if (selectAll && tbody) {
+            selectAll.addEventListener('change', function() {
+                var visible = tbody.querySelectorAll('.client-row:not([style*="display: none"])');
+                visible.forEach(function(tr) {
+                    var cb = tr.querySelector('.client-checkbox');
+                    if (cb) cb.checked = selectAll.checked;
+                });
+                updateBulkBar();
+            });
+        }
+        checkboxes.forEach(function(cb) {
+            cb.addEventListener('change', updateBulkBar);
+        });
+        if (document.getElementById('bulkClearSelection')) {
+            document.getElementById('bulkClearSelection').addEventListener('click', function() {
+                selectAll.checked = false;
+                checkboxes.forEach(function(cb) { cb.checked = false; });
+                updateBulkBar();
+            });
+        }
+        if (document.getElementById('bulkAssignSales')) {
+            document.getElementById('bulkAssignSales').addEventListener('click', function() {
+                var n = 0;
+                checkboxes.forEach(function(cb) { if (cb.checked) n++; });
+                alert('تعيين سيلز للمحددين (' + n + ' عميل) — يمكن ربطه بنموذج لاحقاً.');
+            });
+        }
+
+        // —— Export ——
+        function exportClientsToExcel(onlySelected) {
+            var table = document.getElementById('clientsTable');
+            if (!table) return;
+            var clone = table.cloneNode(true);
+            if (onlySelected && tbody) {
+                var toRemove = [];
+                clone.querySelectorAll('tbody tr').forEach(function(tr, i) {
+                    var orig = rows[i];
+                    if (!orig || !orig.querySelector('.client-checkbox') || !orig.querySelector('.client-checkbox').checked)
+                        toRemove.push(tr);
+                });
+                toRemove.forEach(function(tr) { tr.parentNode.removeChild(tr); });
+            }
+            var html = clone.outerHTML;
+            var blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-excel' });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = onlySelected ? 'عملاء_محددون.xls' : 'عملاء_CRM.xls';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+        if (document.getElementById('btnExportAll')) document.getElementById('btnExportAll').addEventListener('click', function() { exportClientsToExcel(false); });
+        if (document.getElementById('bulkExportSelected')) document.getElementById('bulkExportSelected').addEventListener('click', function() { exportClientsToExcel(true); });
+    })();
+    </script>
+</body>
+
+</html>

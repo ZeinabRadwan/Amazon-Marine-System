@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazon Marine — الإعدادات</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <nav class="sidebar">
+        <div class="logo-area"><img src="logo/logo (1).png" alt="Logo">
+            <div class="logo-text"><span class="brand-name">Amazon Marine</span><span class="brand-sub">Shipping
+                    Agency</span></div>
+        </div>
+        <div class="menu-label">الرئيسية</div>
+        <ul class="menu">
+            <li><a href="dashboard.html"><i class='bx bxs-dashboard'></i><span>لوحة التحكم</span></a></li>
+            <li><a href="clients.html"><i class='bx bx-group'></i><span>العملاء / CRM</span></a></li>
+            <li><a href="shipments.html"><i class='bx bx-package'></i><span>الشحنات</span></a></li>
+            <li><a href="sd-forms.html"><i class='bx bx-file'></i><span>نماذج SD</span></a></li>
+            <li><a href="operations.html"><i class='bx bxs-ship'></i><span>العمليات</span></a></li>
+        </ul>
+        <div class="menu-label">المالية</div>
+        <ul class="menu">
+            <li><a href="invoices.html"><i class='bx bx-receipt'></i><span>الفواتير</span></a></li>
+            <li><a href="accounting.html"><i class='bx bx-wallet'></i><span>الحسابات</span></a></li>
+            <li><a href="treasury.html"><i class='bx bx-credit-card'></i><span>الخزينة</span></a></li>
+            <li><a href="expenses.html"><i class='bx bx-money'></i><span>المصروفات</span></a></li>
+            <li><a href="pricing.html"><i class='bx bx-dollar-circle'></i><span>التسعير</span></a></li>
+        </ul>
+        <div class="menu-label">الإدارة</div>
+        <ul class="menu">
+            <li><a href="partners.html"><i class='bx bx-buildings'></i><span>الشركاء</span></a></li>
+            <li><a href="attendance.html"><i class='bx bx-time-five'></i><span>الحضور والانصراف</span></a></li>
+            <li><a href="visits.html"><i class='bx bx-map-pin'></i><span>سجل الزيارات</span></a></li>
+            <li><a href="reports.html"><i class='bx bx-bar-chart-alt-2'></i><span>التقارير</span></a></li>
+            <li><a href="documents.html"><i class='bx bx-file-blank'></i><span>المستندات الرسمية</span></a></li>
+        </ul>
+        <div class="menu-label">الإعدادات</div>
+        <ul class="menu">
+            <li class="active"><a href="settings.html"><i class='bx bx-cog'></i><span>الإعدادات</span></a></li>
+            <li><a href="profile.html"><i class='bx bx-user'></i><span>الملف الشخصي</span></a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-avatar">MD</div>
+            <div class="user-info">
+                <div class="user-name">Capt. Mostafa</div>
+                <div class="user-role">مدير النظام</div>
+            </div><a href="index.html"><i class='bx bx-log-out'
+                    style="color:rgba(255,255,255,0.35);font-size:1.2rem;"></i></a>
+        </div>
+    </nav>
+
+    <div class="main-wrapper">
+        <header class="topbar">
+            <div class="page-title-area">
+                <h1>الإعدادات</h1>
+                <div class="breadcrumbs">Amazon Marine > <span>إعدادات النظام</span></div>
+            </div>
+            <div class="topbar-right">
+                <div class="topbar-icon"><i class='bx bx-bell'></i>
+                    <div class="notif-dot"></div>
+                </div>
+                <div class="currency-dropdown">
+                    <div class="topbar-icon" onclick="toggleCurrencyDropdown(event)">
+                        <i class='bx bx-dollar-circle'></i>
+                        <span class="currency-code" id="currencyCodeBadge">$</span>
+                    </div>
+                    <div class="currency-dropdown-menu" id="currencyDropdown">
+                        <button type="button" class="currency-dropdown-item active" data-currency="USD">$ USD <i class='bx bx-check'></i></button>
+                        <button type="button" class="currency-dropdown-item" data-currency="EUR">€ EUR</button>
+                        <button type="button" class="currency-dropdown-item" data-currency="EGP">E£ EGP</button>
+                    </div>
+                </div>
+                <div class="profile-pill">
+                    <div class="profile-avatar">MD</div><span>Capt. Mostafa</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="content">
+            <!-- Settings Navigation -->
+            <div class="settings-layout">
+                <div class="settings-nav">
+                    <div class="settings-nav-item active"
+                        onclick="document.querySelectorAll('.settings-nav-item').forEach(e=>e.classList.remove('active'));this.classList.add('active');document.querySelectorAll('.settings-section').forEach(e=>e.style.display='none');document.getElementById('companySettings').style.display='block';">
+                        <i class='bx bx-building'></i><span>بيانات الشركة</span>
+                    </div>
+                    <div class="settings-nav-item"
+                        onclick="document.querySelectorAll('.settings-nav-item').forEach(e=>e.classList.remove('active'));this.classList.add('active');document.querySelectorAll('.settings-section').forEach(e=>e.style.display='none');document.getElementById('usersSettings').style.display='block';">
+                        <i class='bx bx-group'></i><span>المستخدمين والصلاحيات</span>
+                    </div>
+                    <div class="settings-nav-item"
+                        onclick="document.querySelectorAll('.settings-nav-item').forEach(e=>e.classList.remove('active'));this.classList.add('active');document.querySelectorAll('.settings-section').forEach(e=>e.style.display='none');document.getElementById('notifSettings').style.display='block';">
+                        <i class='bx bx-bell'></i><span>الإشعارات</span>
+                    </div>
+                    <div class="settings-nav-item"
+                        onclick="document.querySelectorAll('.settings-nav-item').forEach(e=>e.classList.remove('active'));this.classList.add('active');document.querySelectorAll('.settings-section').forEach(e=>e.style.display='none');document.getElementById('systemSettings').style.display='block';">
+                        <i class='bx bx-cog'></i><span>النظام</span>
+                    </div>
+                    <div class="settings-nav-item"
+                        onclick="document.querySelectorAll('.settings-nav-item').forEach(e=>e.classList.remove('active'));this.classList.add('active');document.querySelectorAll('.settings-section').forEach(e=>e.style.display='none');document.getElementById('shipStatusSettings').style.display='block';renderShipmentStatusTable();">
+                        <i class='bx bx-package'></i><span>حالات الشحنات</span>
+                    </div>
+                    <div class="settings-nav-item"
+                        onclick="document.querySelectorAll('.settings-nav-item').forEach(e=>e.classList.remove('active'));this.classList.add('active');document.querySelectorAll('.settings-section').forEach(e=>e.style.display='none');document.getElementById('profileSettings').style.display='block';">
+                        <i class='bx bx-user'></i><span>الملف الشخصي</span>
+                    </div>
+                    <div class="settings-nav-item"
+                        onclick="document.querySelectorAll('.settings-nav-item').forEach(e=>e.classList.remove('active'));this.classList.add('active');document.querySelectorAll('.settings-section').forEach(e=>e.style.display='none');document.getElementById('sessionSettings').style.display='block';">
+                        <i class='bx bx-laptop'></i><span>إدارة الجلسات</span>
+                    </div>
+                </div>
+
+                <div class="settings-content">
+                    <!-- Company Settings -->
+                    <div class="settings-section" id="companySettings" style="display:block;">
+                        <div class="card">
+                            <div class="card-header"><span class="card-title">بيانات الشركة</span></div>
+                            <div style="padding:20px;">
+                                <div class="d-flex align-center gap-3 mb-3">
+                                    <div class="company-logo-preview"><img src="logo/logo (1).png" alt="Logo"
+                                            style="width:80px;height:80px;border-radius:16px;object-fit:contain;border:2px solid var(--border);padding:8px;">
+                                    </div>
+                                    <div><button class="btn btn-outline btn-sm"><i class='bx bx-upload'></i> تغيير
+                                            اللوجو</button>
+                                        <p class="fs-xs text-muted" style="margin-top:4px;">PNG, JPG • 512×512 كحد أقصى
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group"><label class="form-label">اسم الشركة (عربي)</label><input
+                                            type="text" class="form-control" value="أمازون مارين"></div>
+                                    <div class="form-group"><label class="form-label">Company Name
+                                            (English)</label><input type="text" class="form-control"
+                                            value="Amazon Marine"></div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group"><label class="form-label">الهاتف</label><input type="tel"
+                                            class="form-control" value="+20 3 123 4567"></div>
+                                    <div class="form-group"><label class="form-label">البريد الإلكتروني</label><input
+                                            type="email" class="form-control" value="info@amazonmarine.com"></div>
+                                </div>
+                                <div class="form-group"><label class="form-label">العنوان</label><input type="text"
+                                        class="form-control" value="123 شارع الحرية، الإسكندرية، مصر"></div>
+                                <div class="form-row">
+                                    <div class="form-group"><label class="form-label">السجل التجاري</label><input
+                                            type="text" class="form-control" value="CR-2024-00456"></div>
+                                    <div class="form-group"><label class="form-label">البطاقة الضريبية</label><input
+                                            type="text" class="form-control" value="TAX-2024-00789"></div>
+                                </div>
+                                <button class="btn btn-primary" style="margin-top:12px;"><i class='bx bx-check'></i> حفظ
+                                    التغييرات</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Users & Roles Settings -->
+                    <div class="settings-section" id="usersSettings" style="display:none;">
+                        <div class="card">
+                            <div class="card-header"><span class="card-title">المستخدمين والصلاحيات</span><button
+                                    class="btn btn-primary btn-sm" onclick="openModal('addUserModal')"><i
+                                        class='bx bx-plus'></i> إضافة مستخدم</button></div>
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>المستخدم</th>
+                                        <th>البريد</th>
+                                        <th>الدور</th>
+                                        <th>الحالة</th>
+                                        <th>آخر دخول</th>
+                                        <th>إجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <div class="client-cell">
+                                                <div class="client-avatar"
+                                                    style="background:linear-gradient(135deg,var(--navy-700),var(--navy-500));">
+                                                    MD</div><span class="fw-600">Capt. Mostafa</span>
+                                            </div>
+                                        </td>
+                                        <td class="fs-sm">mostafa@amazonmarine.com</td>
+                                        <td><span class="status-badge active">مدير النظام</span></td>
+                                        <td><span class="status-badge active">نشط</span></td>
+                                        <td class="fs-sm text-muted">الآن</td>
+                                        <td><button class="btn btn-sm btn-outline"><i class='bx bx-edit'></i></button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="client-cell">
+                                                <div class="client-avatar"
+                                                    style="background:linear-gradient(135deg,var(--accent-cyan),#0e8a9b);">
+                                                    AK</div><span class="fw-600">أحمد خيري</span>
+                                            </div>
+                                        </td>
+                                        <td class="fs-sm">ahmed@amazonmarine.com</td>
+                                        <td><span class="status-badge pending">مبيعات</span></td>
+                                        <td><span class="status-badge active">نشط</span></td>
+                                        <td class="fs-sm text-muted">10:30 ص</td>
+                                        <td><button class="btn btn-sm btn-outline"><i class='bx bx-edit'></i></button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="client-cell">
+                                                <div class="client-avatar"
+                                                    style="background:linear-gradient(135deg,var(--accent-gold),#b8913c);">
+                                                    MS</div><span class="fw-600">محمد سعيد</span>
+                                            </div>
+                                        </td>
+                                        <td class="fs-sm">msaeid@amazonmarine.com</td>
+                                        <td><span class="status-badge pending">مبيعات</span></td>
+                                        <td><span class="status-badge active">نشط</span></td>
+                                        <td class="fs-sm text-muted">09:45 ص</td>
+                                        <td><button class="btn btn-sm btn-outline"><i class='bx bx-edit'></i></button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="client-cell">
+                                                <div class="client-avatar"
+                                                    style="background:linear-gradient(135deg,var(--success),#059669);">
+                                                    SM</div><span class="fw-600">سارة محمود</span>
+                                            </div>
+                                        </td>
+                                        <td class="fs-sm">sara@amazonmarine.com</td>
+                                        <td><span class="status-badge booked">عمليات</span></td>
+                                        <td><span class="status-badge active">نشط</span></td>
+                                        <td class="fs-sm text-muted">08:50 ص</td>
+                                        <td><button class="btn btn-sm btn-outline"><i class='bx bx-edit'></i></button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="client-cell">
+                                                <div class="client-avatar"
+                                                    style="background:linear-gradient(135deg,var(--danger),#dc2626);">KA
+                                                </div><span class="fw-600">كريم عادل</span>
+                                            </div>
+                                        </td>
+                                        <td class="fs-sm">karim@amazonmarine.com</td>
+                                        <td><span class="status-badge clearance">محاسبة</span></td>
+                                        <td><span class="status-badge active">نشط</span></td>
+                                        <td class="fs-sm text-muted">09:00 ص</td>
+                                        <td><button class="btn btn-sm btn-outline"><i class='bx bx-edit'></i></button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="card" style="margin-top:20px;">
+                            <div class="card-header"><span class="card-title">الأدوار والصلاحيات</span></div>
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>الدور</th>
+                                        <th>لوحة التحكم</th>
+                                        <th>CRM</th>
+                                        <th>الشحنات</th>
+                                        <th>SD Forms</th>
+                                        <th>العمليات</th>
+                                        <th>المالية</th>
+                                        <th>الإعدادات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="fw-600">مدير النظام</td>
+                                        <td><i class='bx bx-check text-success'></i></td>
+                                        <td><i class='bx bx-check text-success'></i></td>
+                                        <td><i class='bx bx-check text-success'></i></td>
+                                        <td><i class='bx bx-check text-success'></i></td>
+                                        <td><i class='bx bx-check text-success'></i></td>
+                                        <td><i class='bx bx-check text-success'></i></td>
+                                        <td><i class='bx bx-check text-success'></i></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-600">مبيعات</td>
+                                        <td><i class='bx bx-check text-success'></i></td>
+                                        <td><i class='bx bx-check text-success'></i></td>
+                                        <td><i class='bx bx-show text-muted'></i></td>
+                                        <td><i class='bx bx-check text-success'></i></td>
+                                        <td><i class='bx bx-x text-danger'></i></td>
+                                        <td><i class='bx bx-x text-danger'></i></td>
+                                        <td><i class='bx bx-x text-danger'></i></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-600">عمليات</td>
+                                        <td><i class='bx bx-check text-success'></i></td>
+                                        <td><i class='bx bx-show text-muted'></i></td>
+                                        <td><i class='bx bx-check text-success'></i></td>
+                                        <td><i class='bx bx-show text-muted'></i></td>
+                                        <td><i class='bx bx-check text-success'></i></td>
+                                        <td><i class='bx bx-x text-danger'></i></td>
+                                        <td><i class='bx bx-x text-danger'></i></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-600">محاسبة</td>
+                                        <td><i class='bx bx-check text-success'></i></td>
+                                        <td><i class='bx bx-x text-danger'></i></td>
+                                        <td><i class='bx bx-show text-muted'></i></td>
+                                        <td><i class='bx bx-x text-danger'></i></td>
+                                        <td><i class='bx bx-x text-danger'></i></td>
+                                        <td><i class='bx bx-check text-success'></i></td>
+                                        <td><i class='bx bx-x text-danger'></i></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Notification Settings -->
+                    <div class="settings-section" id="notifSettings" style="display:none;">
+                        <div class="card">
+                            <div class="card-header"><span class="card-title">إعدادات الإشعارات</span></div>
+                            <div style="padding:20px;">
+                                <div class="settings-toggle mb-2">
+                                    <div>
+                                        <h4 class="fs-sm fw-700">إشعارات الشحنات</h4>
+                                        <p class="fs-xs text-muted">تحديثات حالة الشحنة وتغيير المراحل</p>
+                                    </div><label class="switch"><input type="checkbox" checked><span
+                                            class="slider"></span></label>
+                                </div>
+                                <div class="settings-toggle mb-2">
+                                    <div>
+                                        <h4 class="fs-sm fw-700">إشعارات المالية</h4>
+                                        <p class="fs-xs text-muted">فواتير جديدة، دفعات، مستحقات</p>
+                                    </div><label class="switch"><input type="checkbox" checked><span
+                                            class="slider"></span></label>
+                                </div>
+                                <div class="settings-toggle mb-2">
+                                    <div>
+                                        <h4 class="fs-sm fw-700">إشعارات CRM</h4>
+                                        <p class="fs-xs text-muted">عملاء جدد، متابعات، SD Forms</p>
+                                    </div><label class="switch"><input type="checkbox" checked><span
+                                            class="slider"></span></label>
+                                </div>
+                                <div class="settings-toggle mb-2">
+                                    <div>
+                                        <h4 class="fs-sm fw-700">إشعارات البريد الإلكتروني</h4>
+                                        <p class="fs-xs text-muted">إرسال نسخة من الإشعارات بالبريد</p>
+                                    </div><label class="switch"><input type="checkbox"><span
+                                            class="slider"></span></label>
+                                </div>
+                                <div class="settings-toggle mb-2">
+                                    <div>
+                                        <h4 class="fs-sm fw-700">تذكير المستندات المنتهية</h4>
+                                        <p class="fs-xs text-muted">تنبيه قبل انتهاء صلاحية المستندات</p>
+                                    </div><label class="switch"><input type="checkbox" checked><span
+                                            class="slider"></span></label>
+                                </div>
+                                <button class="btn btn-primary" style="margin-top:16px;"><i class='bx bx-check'></i> حفظ
+                                    الإعدادات</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Settings -->
+                    <div class="settings-section" id="systemSettings" style="display:none;">
+                        <div class="card">
+                            <div class="card-header"><span class="card-title">إعدادات النظام</span></div>
+                            <div style="padding:20px;">
+                                <div class="form-row">
+                                    <div class="form-group"><label class="form-label">اللغة الافتراضية</label><select
+                                            class="form-control">
+                                            <option>العربية</option>
+                                            <option>English</option>
+                                        </select></div>
+                                    <div class="form-group"><label class="form-label">المنطقة الزمنية</label><select
+                                            class="form-control">
+                                            <option>Africa/Cairo (UTC+2)</option>
+                                            <option>Asia/Riyadh (UTC+3)</option>
+                                            <option>Europe/London (UTC+0)</option>
+                                        </select></div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group"><label class="form-label">العملة الافتراضية</label><select
+                                            class="form-control">
+                                            <option>USD - دولار أمريكي</option>
+                                            <option>EGP - جنيه مصري</option>
+                                            <option>EUR - يورو</option>
+                                        </select></div>
+                                    <div class="form-group"><label class="form-label">تنسيق التاريخ</label><select
+                                            class="form-control">
+                                            <option>DD/MM/YYYY</option>
+                                            <option>MM/DD/YYYY</option>
+                                            <option>YYYY-MM-DD</option>
+                                        </select></div>
+                                </div>
+                                <div class="form-group"><label class="form-label">نسبة الضريبة الافتراضية
+                                        (%)</label><input type="number" class="form-control" value="14"
+                                        style="width:120px;"></div>
+
+                                <h4 style="font-size:0.88rem;font-weight:700;margin:20px 0 12px;">🗄️ النسخ الاحتياطي
+                                </h4>
+                                <div class="d-flex align-center gap-2 mb-2"><span class="text-muted fs-sm">آخر نسخة:
+                                        18/02/2026 — 11:30 م</span><button class="btn btn-outline btn-sm"><i
+                                            class='bx bx-download'></i> تحميل نسخة</button><button
+                                        class="btn btn-primary btn-sm"><i class='bx bx-refresh'></i> نسخ احتياطي
+                                        الآن</button></div>
+
+                                <button class="btn btn-primary" style="margin-top:20px;"><i class='bx bx-check'></i> حفظ
+                                    الإعدادات</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Shipment Status Management -->
+                    <div class="settings-section" id="shipStatusSettings" style="display:none;">
+                        <div class="card">
+                            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+                                <span class="card-title">إدارة حالات الشحنات</span>
+                                <button type="button" class="btn btn-primary" onclick="openShipStatusModal()"><i class='bx bx-plus'></i> إضافة حالة</button>
+                            </div>
+                            <div style="padding:20px;">
+                                <p class="fs-sm text-muted mb-3">إضافة، تعديل، تعطيل أو حذف حالات الشحنات. الحالات النشطة فقط تظهر في صفحة الشحنات وقائمة التصفية.</p>
+                                <div class="table-wrap">
+                                    <table class="data-table" id="shipStatusTable">
+                                        <thead>
+                                            <tr>
+                                                <th>الاسم (عربي)</th>
+                                                <th>الاسم (إنجليزي)</th>
+                                                <th>اللون</th>
+                                                <th>الوصف</th>
+                                                <th>نشط</th>
+                                                <th>إجراءات</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="shipStatusTableBody">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Profile (moved from profile.html) -->
+                    <div class="settings-section" id="profileSettings" style="display:none;">
+                        <div class="card">
+                            <div class="card-header"><span class="card-title">الملف الشخصي</span></div>
+                            <div style="padding:24px;">
+                                <div class="form-group">
+                                    <label class="form-label">الاسم</label>
+                                    <input type="text" class="form-control" value="Capt. Mostafa" id="profileName">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">البريد الإلكتروني</label>
+                                    <input type="email" class="form-control" value="mostafa@amazonmarine.com" id="profileEmail">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">الهاتف</label>
+                                    <input type="tel" class="form-control" placeholder="+20 ...">
+                                </div>
+                                <button class="btn btn-primary"><i class='bx bx-save'></i> حفظ التغييرات</button>
+                            </div>
+                        </div>
+                        <div class="card" style="margin-top:24px;">
+                            <div class="card-header"><span class="card-title">الأمان</span></div>
+                            <div style="padding:24px;">
+                                <p class="text-muted fs-sm" style="margin-bottom:16px;">غيّر كلمة المرور أو فعّل المصادقة الثنائية.</p>
+                                <a href="reset-password.html" class="btn btn-outline"><i class='bx bx-lock-alt'></i> تغيير كلمة المرور</a>
+                                <button class="btn btn-outline" style="margin-right:8px;"><i class='bx bx-shield-quarter'></i> المصادقة الثنائية (2FA)</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Session management (moved from session-management.html) -->
+                    <div class="settings-section" id="sessionSettings" style="display:none;">
+                        <div class="card">
+                            <div class="card-header"><span class="card-title">الجلسات النشطة</span><button class="btn btn-outline btn-sm"><i class='bx bx-log-out'></i> إنهاء جميع الجلسات الأخرى</button></div>
+                            <div class="table-wrap" style="overflow-x:auto;">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>المستخدم</th>
+                                            <th>الجهاز / المتصفح</th>
+                                            <th>عنوان IP</th>
+                                            <th>آخر نشاط</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Capt. Mostafa</td>
+                                            <td>Chrome — Windows</td>
+                                            <td>192.168.1.10</td>
+                                            <td>الآن</td>
+                                            <td><span class="status-badge active">الحالية</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>أحمد خيري</td>
+                                            <td>Firefox — Windows</td>
+                                            <td>192.168.1.12</td>
+                                            <td>منذ 5 دقائق</td>
+                                            <td><button class="btn btn-outline btn-sm">إنهاء</button></td>
+                                        </tr>
+                                        <tr>
+                                            <td>كريم عادل</td>
+                                            <td>Chrome — Mac</td>
+                                            <td>192.168.1.15</td>
+                                            <td>منذ ساعة</td>
+                                            <td><button class="btn btn-outline btn-sm">إنهاء</button></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ADD USER MODAL -->
+    <div class="modal-overlay" id="addUserModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class='bx bx-user-plus' style="margin-left:8px;"></i> إضافة مستخدم</h3><button
+                    class="modal-close" onclick="closeModal('addUserModal')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">الاسم الكامل</label><input type="text"
+                            class="form-control" placeholder="اسم الموظف"></div>
+                    <div class="form-group"><label class="form-label">البريد الإلكتروني</label><input type="email"
+                            class="form-control" placeholder="email@amazonmarine.com"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">كلمة المرور</label><input type="password"
+                            class="form-control" placeholder="كلمة مرور قوية"></div>
+                    <div class="form-group"><label class="form-label">الدور</label><select class="form-control">
+                            <option>مبيعات</option>
+                            <option>عمليات</option>
+                            <option>محاسبة</option>
+                            <option>دعم فني</option>
+                            <option>مدير النظام</option>
+                        </select></div>
+                </div>
+                <div class="form-group"><label class="form-label">رقم الهاتف</label><input type="tel"
+                        class="form-control" placeholder="+20 1xx xxx xxxx"></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-outline"
+                    onclick="closeModal('addUserModal')">إلغاء</button><button class="btn btn-primary"><i
+                        class='bx bx-check'></i> إنشاء المستخدم</button></div>
+        </div>
+    </div>
+
+    <!-- Shipment Status Add/Edit Modal -->
+    <div class="modal-overlay" id="shipStatusModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="shipStatusModalTitle"><i class='bx bx-package' style="margin-left:8px;"></i> إضافة حالة شحنة</h3>
+                <button class="modal-close" onclick="closeShipStatusModal()"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="shipStatusId" value="">
+                <div class="form-group">
+                    <label class="form-label">الاسم (عربي) *</label>
+                    <input type="text" class="form-control" id="shipStatusName" placeholder="مثال: تم الحجز" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">الاسم (إنجليزي - اختياري)</label>
+                    <input type="text" class="form-control" id="shipStatusNameEn" placeholder="e.g. Booked">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">اللون</label>
+                    <div class="d-flex align-center gap-2 flex-wrap">
+                        <input type="color" class="form-control ship-status-color-picker" id="shipStatusColor" value="#3B82F6" style="width:56px;height:38px;padding:4px;cursor:pointer;">
+                        <input type="text" class="form-control" id="shipStatusColorHex" value="#3B82F6" placeholder="#3B82F6" style="width:100px;">
+                        <span class="ship-status-preview" id="shipStatusColorPreview">معاينة</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">الوصف (اختياري)</label>
+                    <input type="text" class="form-control" id="shipStatusDesc" placeholder="وصف مختصر">
+                </div>
+                <div class="form-group">
+                    <label class="form-check">
+                        <input type="checkbox" id="shipStatusActive" checked> نشط (يظهر في القوائم)
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeShipStatusModal()">إلغاء</button>
+                <button type="button" class="btn btn-primary" id="shipStatusSaveBtn" onclick="saveShipStatus()"><i class='bx bx-check'></i> حفظ</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/shipment-statuses.js"></script>
+    <script src="js/role-auth.js"></script>
+    <script src="js/role-sidebar-apply.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+    (function() {
+        function renderShipmentStatusTable() {
+            var tbody = document.getElementById('shipStatusTableBody');
+            if (!tbody) return;
+            var list = getShipmentStatuses();
+            tbody.innerHTML = list.map(function(s) {
+                var style = getStatusBadgeStyle(s.color);
+                var activeHtml = '<label class="switch"><input type="checkbox" ' + (s.active !== false ? 'checked' : '') + ' onchange="toggleShipStatusActive(' + s.id + ');renderShipmentStatusTable();"><span class="slider"></span></label>';
+                return '<tr data-status-id="' + s.id + '">' +
+                    '<td class="fw-600">' + (s.name || '—') + '</td>' +
+                    '<td class="text-muted fs-sm">' + (s.nameEn || '—') + '</td>' +
+                    '<td><span class="status-badge status-preview-badge" style="' + style + '">' + (s.name || '') + '</span></td>' +
+                    '<td class="fs-sm text-muted">' + (s.description || '—') + '</td>' +
+                    '<td>' + activeHtml + '</td>' +
+                    '<td><div class="table-actions">' +
+                    '<button type="button" class="tbl-btn edit" title="تعديل" onclick="editShipStatus(' + s.id + ')"><i class=\'bx bx-edit\'></i></button>' +
+                    '<button type="button" class="tbl-btn delete" title="حذف" onclick="confirmDeleteShipStatus(' + s.id + ', \'' + (s.name || '').replace(/'/g, "\\'") + '\')"><i class=\'bx bx-trash\'></i></button>' +
+                    '</div></td></tr>';
+            }).join('');
+        }
+        window.renderShipmentStatusTable = renderShipmentStatusTable;
+
+        function openShipStatusModal(editId) {
+            document.getElementById('shipStatusModalTitle').innerHTML = '<i class=\'bx bx-package\' style="margin-left:8px;"></i> ' + (editId ? 'تعديل حالة شحنة' : 'إضافة حالة شحنة');
+            document.getElementById('shipStatusId').value = editId || '';
+            document.getElementById('shipStatusName').value = '';
+            document.getElementById('shipStatusNameEn').value = '';
+            document.getElementById('shipStatusColor').value = '#3B82F6';
+            document.getElementById('shipStatusColorHex').value = '#3B82F6';
+            document.getElementById('shipStatusDesc').value = '';
+            document.getElementById('shipStatusActive').checked = true;
+            if (editId) {
+                var s = getStatusById(editId);
+                if (s) {
+                    document.getElementById('shipStatusName').value = s.name || '';
+                    document.getElementById('shipStatusNameEn').value = s.nameEn || '';
+                    document.getElementById('shipStatusColor').value = s.color || '#3B82F6';
+                    document.getElementById('shipStatusColorHex').value = s.color || '#3B82F6';
+                    document.getElementById('shipStatusDesc').value = s.description || '';
+                    document.getElementById('shipStatusActive').checked = s.active !== false;
+                }
+            }
+            updateShipStatusPreview();
+            document.getElementById('shipStatusModal').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+        window.openShipStatusModal = openShipStatusModal;
+
+        function closeShipStatusModal() {
+            document.getElementById('shipStatusModal').classList.remove('show');
+            document.body.style.overflow = '';
+        }
+        window.closeShipStatusModal = closeShipStatusModal;
+
+        function saveShipStatus() {
+            var id = document.getElementById('shipStatusId').value;
+            var name = (document.getElementById('shipStatusName').value || '').trim();
+            if (!name) { alert('الاسم (عربي) مطلوب'); return; }
+            var nameEn = (document.getElementById('shipStatusNameEn').value || '').trim();
+            var color = (document.getElementById('shipStatusColorHex').value || document.getElementById('shipStatusColor').value || '#3B82F6').trim();
+            if (!/^#[0-9A-Fa-f]{6}$/.test(color)) color = '#3B82F6';
+            var description = (document.getElementById('shipStatusDesc').value || '').trim();
+            var active = document.getElementById('shipStatusActive').checked;
+            if (id) {
+                updateShipmentStatus(parseInt(id, 10), { name: name, nameEn: nameEn, color: color, description: description, active: active });
+            } else {
+                addShipmentStatus({ name: name, nameEn: nameEn, color: color, description: description, active: active });
+            }
+            closeShipStatusModal();
+            renderShipmentStatusTable();
+        }
+        window.saveShipStatus = saveShipStatus;
+
+        function editShipStatus(id) {
+            openShipStatusModal(id);
+        }
+        window.editShipStatus = editShipStatus;
+
+        function confirmDeleteShipStatus(id, name) {
+            var usage = getShipmentStatusUsageCount(name);
+            var msg = 'هل تريد حذف الحالة «' + name + '»؟';
+            if (usage >= 0 && usage > 0) msg += '\n\nتحذير: هذه الحالة مستخدمة في ' + usage + ' شحنة. يُفضّل تعطيلها بدلاً من الحذف، أو تحديث الشحنات أولاً.';
+            else msg += '\n\nتحذير: إذا كانت هذه الحالة مستخدمة في شحنات حالية، قد تحتاج إلى تحديث تلك الشحنات يدوياً.';
+            if (!confirm(msg)) return;
+            deleteShipmentStatus(id);
+            renderShipmentStatusTable();
+        }
+        window.confirmDeleteShipStatus = confirmDeleteShipStatus;
+
+        var colorPicker = document.getElementById('shipStatusColor');
+        var colorHex = document.getElementById('shipStatusColorHex');
+        if (colorPicker) colorPicker.addEventListener('input', function() { colorHex.value = this.value; updateShipStatusPreview(); });
+        if (colorHex) colorHex.addEventListener('input', function() { var v = this.value; if (/^#[0-9A-Fa-f]{6}$/.test(v)) document.getElementById('shipStatusColor').value = v; updateShipStatusPreview(); });
+        function updateShipStatusPreview() {
+            var el = document.getElementById('shipStatusColorPreview');
+            var hex = (document.getElementById('shipStatusColorHex') && document.getElementById('shipStatusColorHex').value) || (document.getElementById('shipStatusColor') && document.getElementById('shipStatusColor').value) || '#3B82F6';
+            if (el) { el.style.cssText = getStatusBadgeStyle(hex); el.textContent = 'معاينة'; }
+        }
+    })();
+    </script>
+</body>
+
+</html>

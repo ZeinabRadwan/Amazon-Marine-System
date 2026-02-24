@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazon Marine — الحضور والانصراف</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <nav class="sidebar">
+        <div class="logo-area"><img src="logo/logo (1).png" alt="Logo">
+            <div class="logo-text"><span class="brand-name">Amazon Marine</span><span class="brand-sub">Shipping
+                    Agency</span></div>
+        </div>
+        <div class="menu-label">الرئيسية</div>
+        <ul class="menu">
+            <li><a href="dashboard.html"><i class='bx bxs-dashboard'></i><span>لوحة التحكم</span></a></li>
+            <li><a href="clients.html"><i class='bx bx-group'></i><span>العملاء / CRM</span></a></li>
+            <li><a href="shipments.html"><i class='bx bx-package'></i><span>الشحنات</span></a></li>
+            <li><a href="sd-forms.html"><i class='bx bx-file'></i><span>نماذج SD</span></a></li>
+            <li><a href="operations.html"><i class='bx bxs-ship'></i><span>العمليات</span></a></li>
+        </ul>
+        <div class="menu-label">المالية</div>
+        <ul class="menu">
+            <li><a href="invoices.html"><i class='bx bx-receipt'></i><span>الفواتير</span></a></li>
+            <li><a href="accounting.html"><i class='bx bx-wallet'></i><span>الحسابات</span></a></li>
+            <li><a href="treasury.html"><i class='bx bx-credit-card'></i><span>الخزينة</span></a></li>
+            <li><a href="expenses.html"><i class='bx bx-money'></i><span>المصروفات</span></a></li>
+            <li><a href="pricing.html"><i class='bx bx-dollar-circle'></i><span>التسعير</span></a></li>
+        </ul>
+        <div class="menu-label">الإدارة</div>
+        <ul class="menu">
+            <li><a href="partners.html"><i class='bx bx-buildings'></i><span>الشركاء</span></a></li>
+            <li class="active"><a href="attendance.html"><i class='bx bx-time-five'></i><span>الحضور
+                        والانصراف</span></a></li>
+            <li><a href="visits.html"><i class='bx bx-map-pin'></i><span>سجل الزيارات</span></a></li>
+            <li><a href="reports.html"><i class='bx bx-bar-chart-alt-2'></i><span>التقارير</span></a></li>
+            <li><a href="documents.html"><i class='bx bx-file-blank'></i><span>المستندات الرسمية</span></a></li>
+            <li><a href="tickets.html"><i class='bx bx-message-alt-detail'></i><span>تذاكر الدعم</span></a></li>
+            <li><a href="team-performance.html"><i class='bx bx-trending-up'></i><span>أداء الفريق</span></a></li>
+        </ul>
+        <div class="menu-label">الإعدادات</div>
+        <ul class="menu">
+            <li><a href="settings.html"><i class='bx bx-cog'></i><span>الإعدادات</span></a></li>
+            <li><a href="profile.html"><i class='bx bx-user'></i><span>الملف الشخصي</span></a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-avatar">MD</div>
+            <div class="user-info">
+                <div class="user-name">Capt. Mostafa</div>
+                <div class="user-role">مدير النظام</div>
+            </div><a href="index.html"><i class='bx bx-log-out'
+                    style="color:rgba(255,255,255,0.35);font-size:1.2rem;"></i></a>
+        </div>
+    </nav>
+
+    <div class="main-wrapper">
+        <header class="topbar">
+            <div class="page-title-area">
+                <h1>الحضور والانصراف</h1>
+                <div class="breadcrumbs">Amazon Marine > <span>سجل الحضور</span></div>
+            </div>
+            <div class="topbar-right">
+                <div class="search-bar"><i class='bx bx-search'></i><input type="text" placeholder="بحث بالاسم...">
+                </div>
+                <div class="topbar-icon"><i class='bx bx-bell'></i>
+                    <div class="notif-dot"></div>
+                </div>
+                <div class="currency-dropdown">
+                    <div class="topbar-icon" onclick="toggleCurrencyDropdown(event)">
+                        <i class='bx bx-dollar-circle'></i>
+                        <span class="currency-code" id="currencyCodeBadge">$</span>
+                    </div>
+                    <div class="currency-dropdown-menu" id="currencyDropdown">
+                        <button type="button" class="currency-dropdown-item active" data-currency="USD">$ USD <i class='bx bx-check'></i></button>
+                        <button type="button" class="currency-dropdown-item" data-currency="EUR">€ EUR</button>
+                        <button type="button" class="currency-dropdown-item" data-currency="EGP">E£ EGP</button>
+                    </div>
+                </div>
+                <div class="profile-pill">
+                    <div class="profile-avatar">MD</div><span>Capt. Mostafa</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="content">
+            <p data-role-only="sales,accounting,pricing" class="fs-sm text-muted" style="margin-bottom:12px;display:none;"><i class='bx bx-user'></i> عرض: <strong>حضوري فقط</strong></p>
+            <!-- Today's Check-in/out -->
+            <div class="card" style="margin-bottom:20px;">
+                <div class="card-header"><span class="card-title">📅 حالة اليوم — الأربعاء 19 فبراير 2026</span></div>
+                <div class="grid-4" style="margin-bottom:0;">
+                    <div style="text-align:center;padding:16px;">
+                        <div class="stat-icon-wrap green" style="margin:0 auto 8px;"><i class='bx bx-log-in'></i></div>
+                        <h3 style="font-size:1.3rem;color:var(--navy-800);">6</h3>
+                        <p class="fs-sm text-muted">حضروا اليوم</p>
+                    </div>
+                    <div style="text-align:center;padding:16px;">
+                        <div class="stat-icon-wrap danger" style="margin:0 auto 8px;"><i class='bx bx-log-out'></i>
+                        </div>
+                        <h3 style="font-size:1.3rem;color:var(--navy-800);">2</h3>
+                        <p class="fs-sm text-muted">انصرفوا</p>
+                    </div>
+                    <div style="text-align:center;padding:16px;">
+                        <div class="stat-icon-wrap gold" style="margin:0 auto 8px;"><i class='bx bx-time'></i></div>
+                        <h3 style="font-size:1.3rem;color:var(--navy-800);">1</h3>
+                        <p class="fs-sm text-muted">متأخرين</p>
+                    </div>
+                    <div style="text-align:center;padding:16px;">
+                        <div class="stat-icon-wrap cyan" style="margin:0 auto 8px;"><i class='bx bx-user-x'></i></div>
+                        <h3 style="font-size:1.3rem;color:var(--navy-800);">1</h3>
+                        <p class="fs-sm text-muted">غائبين</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts: Daily trend + Monthly summary -->
+            <div class="card" style="margin-bottom:24px;">
+                <div class="card-header">
+                    <span class="card-title">اتجاهات الحضور</span>
+                    <select class="form-control" id="attChartPeriod" style="width:auto;min-width:110px;">
+                        <option value="7">7 أيام</option>
+                        <option value="14">14 يوم</option>
+                        <option value="30">30 يوم</option>
+                    </select>
+                </div>
+                <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+                    <div>
+                        <p class="fs-sm fw-600 text-muted" style="margin-bottom:8px;">الحضور اليومي (حاضر / متأخر / غائب)</p>
+                        <div class="chart-wrap" style="position:relative;height:220px;width:100%;">
+                            <canvas id="chartAttendanceDaily"></canvas>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="fs-sm fw-600 text-muted" style="margin-bottom:8px;">ساعات العمل الأسبوعية</p>
+                        <div class="chart-wrap" style="position:relative;height:220px;width:100%;">
+                            <canvas id="chartHoursWeekly"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alerts: Missing check-in / Late -->
+            <div class="card acc-notifications" style="margin-bottom:24px;">
+                <div class="card-header">
+                    <span class="card-title"><i class='bx bx-error-circle' style="margin-left:6px;"></i> تنبيهات الحضور</span>
+                    <span class="fs-sm text-muted" id="attAlertsCount">2 تنبيهات</span>
+                </div>
+                <div class="acc-notif-list" id="attAlertsList">
+                    <div class="acc-notif-item danger">
+                        <i class='bx bx-user-x'></i>
+                        <span>لم يسجل حضور — ياسين حسام (عمليات) حتى الآن</span>
+                        <a href="#" class="fs-sm">تسجيل غياب</a>
+                    </div>
+                    <div class="acc-notif-item warning">
+                        <i class='bx bx-time-five'></i>
+                        <span>تأخر عن الموعد — حسن نبيل (مبيعات) سجل 09:35 بدلاً من 09:00</span>
+                        <a href="#" class="fs-sm">عرض السجل</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payroll & Leave integration -->
+            <div class="card" style="margin-bottom:24px;padding:16px 20px;">
+                <div class="d-flex align-center justify-between flex-wrap gap-2">
+                    <span class="fw-600"><i class='bx bx-link' style="margin-left:8px;"></i> ربط بكشف الرواتب والإجازات</span>
+                    <div class="d-flex gap-2">
+                        <a href="expenses.html" class="btn btn-outline btn-sm"><i class='bx bx-money'></i> كشف الرواتب (المصروفات)</a>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="openModal('leaveManagementModal')"><i class='bx bx-calendar-x'></i> إدارة الإجازات</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="page-header">
+                <div class="tabs" data-tab-group="attTab">
+                    <button class="tab active" data-tab="today" onclick="switchTab('attTab','today')">اليوم</button>
+                    <button class="tab" data-tab="report" onclick="switchTab('attTab','report')">التقرير الشهري</button>
+                </div>
+                <div class="page-header-actions">
+                    <div class="dropdown">
+                        <button type="button" class="btn btn-outline btn-sm" id="attExportBtn"><i class='bx bx-export'></i> تصدير <i class='bx bx-chevron-down'></i></button>
+                        <div class="dropdown-menu" id="attExportMenu">
+                            <a href="#" data-export="excel">تصدير Excel (اليوم)</a>
+                            <a href="#" data-export="pdf">تصدير PDF (التقرير الشهري)</a>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-cyan btn-sm" onclick="openModal('geoVerifyModal')" title="التحقق من الموقع"><i class='bx bx-map-pin'></i> التحقق من الموقع</button>
+                </div>
+            </div>
+
+            <!-- Today's Attendance -->
+            <div class="tab-content active" id="attTab-today">
+                <div class="card">
+                    <div class="filter-bar">
+                        <input type="text" class="form-control" id="attTodaySearch" placeholder="بحث بالاسم..." style="max-width:200px;">
+                        <select class="form-control" id="attTodayRole">
+                            <option value="">كل الأدوار</option>
+                            <option value="مبيعات">مبيعات</option>
+                            <option value="عمليات">عمليات</option>
+                            <option value="محاسبة">محاسبة</option>
+                            <option value="دعم فني">دعم فني</option>
+                        </select>
+                        <select class="form-control" id="attTodayDept">
+                            <option value="">كل الأقسام</option>
+                            <option value="المبيعات">المبيعات</option>
+                            <option value="العمليات">العمليات</option>
+                            <option value="المالية">المالية</option>
+                            <option value="الدعم">الدعم</option>
+                        </select>
+                        <select class="form-control" id="attTodayShift">
+                            <option value="">كل الورديات</option>
+                            <option value="صباحية">صباحية (8–5)</option>
+                            <option value="مسائية">مسائية</option>
+                        </select>
+                        <select class="form-control" id="attTodayStatus">
+                            <option value="">كل الحالات</option>
+                            <option value="حاضر">حاضر</option>
+                            <option value="انصرف">انصرف</option>
+                            <option value="متأخر">متأخر</option>
+                            <option value="غائب">غائب</option>
+                        </select>
+                    </div>
+                    <table class="data-table" id="attTodayTable">
+                        <thead>
+                            <tr>
+                                <th>الموظف</th>
+                                <th>الدور</th>
+                                <th>حضور</th>
+                                <th>انصراف</th>
+                                <th>ساعات العمل</th>
+                                <th>الحالة</th>
+                                <th>الموقع</th>
+                                <th>التحقق</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="att-today-row" data-name="أحمد خيري" data-role="مبيعات" data-dept="المبيعات" data-shift="صباحية" data-status="حاضر">
+                                <td>
+                                    <div class="client-cell">
+                                        <div class="client-avatar" style="background:linear-gradient(135deg,var(--navy-700),var(--navy-500));">AK</div><span class="fw-600">أحمد خيري</span>
+                                    </div>
+                                </td>
+                                <td class="text-muted fs-sm">مبيعات</td>
+                                <td class="fw-600 text-success">09:00 ص</td>
+                                <td class="fw-600">—</td>
+                                <td>—</td>
+                                <td><span class="status-badge active">حاضر</span></td>
+                                <td class="fs-xs text-muted">📍 المكتب</td>
+                                <td><span class="geo-badge verified" title="تم التحقق من الموقع"><i class='bx bx-check-circle text-success'></i></span></td>
+                            </tr>
+                            <tr class="att-today-row" data-name="محمد سعيد" data-role="مبيعات" data-dept="المبيعات" data-shift="صباحية" data-status="حاضر">
+                                <td>
+                                    <div class="client-cell">
+                                        <div class="client-avatar" style="background:linear-gradient(135deg,var(--accent-cyan),#0e8a9b);">MS</div><span class="fw-600">محمد سعيد</span>
+                                    </div>
+                                </td>
+                                <td class="text-muted fs-sm">مبيعات</td>
+                                <td class="fw-600 text-success">08:45 ص</td>
+                                <td class="fw-600">—</td>
+                                <td>—</td>
+                                <td><span class="status-badge active">حاضر</span></td>
+                                <td class="fs-xs text-muted">📍 المكتب</td>
+                                <td><span class="geo-badge verified" title="تم التحقق من الموقع"><i class='bx bx-check-circle text-success'></i></span></td>
+                            </tr>
+                            <tr class="att-today-row" data-name="زينب رضوان" data-role="مبيعات" data-dept="المبيعات" data-shift="صباحية" data-status="حاضر">
+                                <td>
+                                    <div class="client-cell">
+                                        <div class="client-avatar" style="background:linear-gradient(135deg,var(--accent-gold),#b8913c);">ZR</div><span class="fw-600">زينب رضوان</span>
+                                    </div>
+                                </td>
+                                <td class="text-muted fs-sm">مبيعات</td>
+                                <td class="fw-600 text-success">09:15 ص</td>
+                                <td class="fw-600">—</td>
+                                <td>—</td>
+                                <td><span class="status-badge active">حاضر</span></td>
+                                <td class="fs-xs text-muted">📍 المكتب</td>
+                                <td><span class="geo-badge verified" title="تم التحقق من الموقع"><i class='bx bx-check-circle text-success'></i></span></td>
+                            </tr>
+                            <tr class="att-today-row" data-name="حسن نبيل" data-role="مبيعات" data-dept="المبيعات" data-shift="صباحية" data-status="متأخر">
+                                <td>
+                                    <div class="client-cell">
+                                        <div class="client-avatar" style="background:linear-gradient(135deg,#7c3aed,#5b21b6);">HN</div><span class="fw-600">حسن نبيل</span>
+                                    </div>
+                                </td>
+                                <td class="text-muted fs-sm">مبيعات</td>
+                                <td class="fw-600 text-danger">09:35 ص</td>
+                                <td class="fw-600">—</td>
+                                <td>—</td>
+                                <td><span class="status-badge clearance">متأخر</span></td>
+                                <td class="fs-xs text-muted">📍 المكتب</td>
+                                <td><span class="geo-badge verified" title="تم التحقق من الموقع"><i class='bx bx-check-circle text-success'></i></span></td>
+                            </tr>
+                            <tr class="att-today-row" data-name="سارة محمود" data-role="عمليات" data-dept="العمليات" data-shift="صباحية" data-status="انصرف">
+                                <td>
+                                    <div class="client-cell">
+                                        <div class="client-avatar" style="background:linear-gradient(135deg,var(--success),#059669);">SM</div><span class="fw-600">سارة محمود</span>
+                                    </div>
+                                </td>
+                                <td class="text-muted fs-sm">عمليات</td>
+                                <td class="fw-600 text-success">08:50 ص</td>
+                                <td class="fw-600 text-success">05:00 م</td>
+                                <td class="fw-600">8h 10m</td>
+                                <td><span class="status-badge delivered">انصرف</span></td>
+                                <td class="fs-xs text-muted">📍 المكتب</td>
+                                <td><span class="geo-badge verified" title="تم التحقق من الموقع"><i class='bx bx-check-circle text-success'></i></span></td>
+                            </tr>
+                            <tr class="att-today-row" data-name="كريم عادل" data-role="محاسبة" data-dept="المالية" data-shift="صباحية" data-status="انصرف">
+                                <td>
+                                    <div class="client-cell">
+                                        <div class="client-avatar" style="background:linear-gradient(135deg,var(--danger),#dc2626);">KA</div><span class="fw-600">كريم عادل</span>
+                                    </div>
+                                </td>
+                                <td class="text-muted fs-sm">محاسبة</td>
+                                <td class="fw-600 text-success">09:00 ص</td>
+                                <td class="fw-600 text-success">04:30 م</td>
+                                <td class="fw-600">7h 30m</td>
+                                <td><span class="status-badge delivered">انصرف</span></td>
+                                <td class="fs-xs text-muted">📍 المكتب</td>
+                                <td><span class="geo-badge verified" title="تم التحقق من الموقع"><i class='bx bx-check-circle text-success'></i></span></td>
+                            </tr>
+                            <tr class="att-today-row" data-name="فاطمة عامر" data-role="دعم فني" data-dept="الدعم" data-shift="صباحية" data-status="حاضر">
+                                <td>
+                                    <div class="client-cell">
+                                        <div class="client-avatar" style="background:linear-gradient(135deg,#6b7280,#4b5563);">FA</div><span class="fw-600">فاطمة عامر</span>
+                                    </div>
+                                </td>
+                                <td class="text-muted fs-sm">دعم فني</td>
+                                <td class="fw-600 text-success">08:55 ص</td>
+                                <td class="fw-600">—</td>
+                                <td>—</td>
+                                <td><span class="status-badge active">حاضر</span></td>
+                                <td class="fs-xs text-muted">📍 المكتب</td>
+                                <td><span class="geo-badge verified" title="تم التحقق من الموقع"><i class='bx bx-check-circle text-success'></i></span></td>
+                            </tr>
+                            <tr class="att-today-row" data-name="ياسين حسام" data-role="عمليات" data-dept="العمليات" data-shift="صباحية" data-status="غائب">
+                                <td>
+                                    <div class="client-cell">
+                                        <div class="client-avatar" style="background:linear-gradient(135deg,#f97316,#ea580c);">YH</div><span class="fw-600">ياسين حسام</span>
+                                    </div>
+                                </td>
+                                <td class="text-muted fs-sm">عمليات</td>
+                                <td class="text-muted">—</td>
+                                <td class="text-muted">—</td>
+                                <td>—</td>
+                                <td><span class="status-badge unpaid">غائب</span></td>
+                                <td class="fs-xs text-muted">—</td>
+                                <td><span class="geo-badge" title="لم يسجل حضور"><i class='bx bx-minus-circle text-muted'></i></span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Monthly Report Tab -->
+            <div class="tab-content" id="attTab-report">
+                <div class="card">
+                    <div class="filter-bar">
+                        <input type="month" class="form-control" id="attReportMonth" value="2026-02">
+                        <input type="text" class="form-control" id="attReportSearch" placeholder="بحث بالاسم..." style="max-width:200px;">
+                        <select class="form-control" id="attReportRole">
+                            <option value="">كل الأدوار</option>
+                            <option value="مبيعات">مبيعات</option>
+                            <option value="عمليات">عمليات</option>
+                            <option value="محاسبة">محاسبة</option>
+                        </select>
+                        <select class="form-control" id="attReportSort">
+                            <option value="">ترتيب حسب</option>
+                            <option value="hours">إجمالي الساعات</option>
+                            <option value="present">أيام الحضور</option>
+                            <option value="absent">أيام الغياب</option>
+                            <option value="name">الاسم</option>
+                        </select>
+                    </div>
+                    <table class="data-table" id="attReportTable">
+                        <thead>
+                            <tr>
+                                <th>الموظف</th>
+                                <th>الدور</th>
+                                <th>أيام العمل</th>
+                                <th>حاضر</th>
+                                <th>غائب</th>
+                                <th>متأخر</th>
+                                <th>إجمالي الساعات</th>
+                                <th>المتوسط/يوم</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="att-report-row" data-name="أحمد خيري" data-role="مبيعات" data-days="14" data-present="13" data-absent="1" data-late="2" data-hours="108">
+                                <td class="fw-600">أحمد خيري</td>
+                                <td class="text-muted fs-sm">مبيعات</td>
+                                <td>14</td>
+                                <td class="text-success fw-600">13</td>
+                                <td class="text-danger fw-600">1</td>
+                                <td class="text-warning fw-600">2</td>
+                                <td class="fw-600">108h</td>
+                                <td>8.3h</td>
+                            </tr>
+                            <tr class="att-report-row" data-name="محمد سعيد" data-role="مبيعات" data-days="14" data-present="14" data-absent="0" data-late="0" data-hours="115">
+                                <td class="fw-600">محمد سعيد</td>
+                                <td class="text-muted fs-sm">مبيعات</td>
+                                <td>14</td>
+                                <td class="text-success fw-600">14</td>
+                                <td class="text-success fw-600">0</td>
+                                <td class="text-success fw-600">0</td>
+                                <td class="fw-600">115h</td>
+                                <td>8.2h</td>
+                            </tr>
+                            <tr class="att-report-row" data-name="زينب رضوان" data-role="مبيعات" data-days="14" data-present="12" data-absent="2" data-late="1" data-hours="96">
+                                <td class="fw-600">زينب رضوان</td>
+                                <td class="text-muted fs-sm">مبيعات</td>
+                                <td>14</td>
+                                <td class="text-success fw-600">12</td>
+                                <td class="text-danger fw-600">2</td>
+                                <td class="text-warning fw-600">1</td>
+                                <td class="fw-600">96h</td>
+                                <td>8.0h</td>
+                            </tr>
+                            <tr class="att-report-row" data-name="حسن نبيل" data-role="مبيعات" data-days="14" data-present="11" data-absent="3" data-late="4" data-hours="85">
+                                <td class="fw-600">حسن نبيل</td>
+                                <td class="text-muted fs-sm">مبيعات</td>
+                                <td>14</td>
+                                <td class="text-success fw-600">11</td>
+                                <td class="text-danger fw-600">3</td>
+                                <td class="text-warning fw-600">4</td>
+                                <td class="fw-600">85h</td>
+                                <td>7.7h</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Geolocation verification modal -->
+    <div class="modal-overlay" id="geoVerifyModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class='bx bx-map-pin' style="margin-left:8px;"></i> التحقق من موقع الحضور والانصراف</h3>
+                <button class="modal-close" onclick="closeModal('geoVerifyModal')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="fs-sm text-muted mb-3">عرض سجلات الحضور/الانصراف التي تم التحقق من موقعها (GPS) أو التي تحتاج مراجعة.</p>
+                <div class="form-group">
+                    <label class="form-label">التاريخ</label>
+                    <input type="date" class="form-control" value="2026-02-19">
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr><th>الموظف</th><th>نوع السجل</th><th>الوقت</th><th>الموقع</th><th>الحالة</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="fw-600">أحمد خيري</td>
+                                <td>حضور</td>
+                                <td>09:00 ص</td>
+                                <td class="fs-xs">31.2001°N, 29.9187°E (المكتب)</td>
+                                <td><span class="status-badge active">مطابق</span></td>
+                            </tr>
+                            <tr>
+                                <td class="fw-600">حسن نبيل</td>
+                                <td>حضور</td>
+                                <td>09:35 ص</td>
+                                <td class="fs-xs">31.2001°N, 29.9187°E (المكتب)</td>
+                                <td><span class="status-badge partial">خارج النطاق 50m</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="fs-xs text-muted mt-2">النطاق المسموح: 100m من موقع المكتب. الربط الفعلي بـ GPS يتم من تطبيق الموظف.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('geoVerifyModal')">إغلاق</button>
+                <button class="btn btn-primary"><i class='bx bx-download'></i> تصدير سجل المواقع</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leave management modal -->
+    <div class="modal-overlay" id="leaveManagementModal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3><i class='bx bx-calendar-x' style="margin-left:8px;"></i> إدارة الإجازات</h3>
+                <button class="modal-close" onclick="closeModal('leaveManagementModal')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="fs-sm text-muted mb-3">ربط الحضور بالإجازات: عرض الموظفين في إجازة اليوم أو طلبات إجازة معلقة. التكامل الكامل مع نظام الرواتب لاحقاً.</p>
+                <div class="d-flex gap-2 mb-3">
+                    <button type="button" class="btn btn-outline btn-sm active">إجازات اليوم</button>
+                    <button type="button" class="btn btn-outline btn-sm">طلبات معلقة</button>
+                    <button type="button" class="btn btn-outline btn-sm">رصيد الإجازات</button>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr><th>الموظف</th><th>نوع الإجازة</th><th>من</th><th>إلى</th><th>الحالة</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="fw-600">ياسين حسام</td>
+                            <td>إجازة سنوية</td>
+                            <td>19/02/2026</td>
+                            <td>20/02/2026</td>
+                            <td><span class="status-badge active">معتمدة</span></td>
+                        </tr>
+                        <tr>
+                            <td class="fw-600">زينب رضوان</td>
+                            <td>إجازة مرضية</td>
+                            <td>25/02/2026</td>
+                            <td>26/02/2026</td>
+                            <td><span class="status-badge pending">معلقة</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('leaveManagementModal')">إغلاق</button>
+                <button class="btn btn-primary"><i class='bx bx-plus'></i> طلب إجازة جديد</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/role-auth.js"></script>
+    <script src="js/role-sidebar-apply.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/role-views.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+        // —— Charts: Daily attendance + Weekly hours ——
+        (function() {
+            var periodEl = document.getElementById('attChartPeriod');
+            var dailyEl = document.getElementById('chartAttendanceDaily');
+            var hoursEl = document.getElementById('chartHoursWeekly');
+            var days = 7;
+            function getDailyData() {
+                var labels = [], present = [], late = [], absent = [];
+                for (var i = days - 1; i >= 0; i--) {
+                    var d = new Date();
+                    d.setDate(d.getDate() - i);
+                    labels.push(d.toLocaleDateString('ar-EG', { weekday: 'short', day: 'numeric', month: 'short' }));
+                    present.push([6, 7, 6, 8, 7, 6, 6][i] || 6);
+                    late.push([1, 0, 1, 0, 1, 1, 1][i] || 0);
+                    absent.push([1, 1, 1, 0, 0, 1, 1][i] || 1);
+                }
+                return { labels: labels, present: present, late: late, absent: absent };
+            }
+            var chartDaily, chartHours;
+            if (dailyEl && typeof Chart !== 'undefined') {
+                var dd = getDailyData();
+                chartDaily = new Chart(dailyEl, {
+                    type: 'bar',
+                    data: {
+                        labels: dd.labels,
+                        datasets: [
+                            { label: 'حاضر', data: dd.present, backgroundColor: 'rgba(16, 185, 129, 0.7)', borderColor: '#10b981', borderWidth: 1 },
+                            { label: 'متأخر', data: dd.late, backgroundColor: 'rgba(245, 158, 11, 0.7)', borderColor: '#f59e0b', borderWidth: 1 },
+                            { label: 'غائب', data: dd.absent, backgroundColor: 'rgba(239, 68, 68, 0.7)', borderColor: '#ef4444', borderWidth: 1 }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true }, x: { stacked: false } } }
+                });
+            }
+            if (hoursEl && typeof Chart !== 'undefined') {
+                chartHours = new Chart(hoursEl, {
+                    type: 'bar',
+                    data: {
+                        labels: ['الأسبوع 1', 'الأسبوع 2', 'الأسبوع 3', 'الأسبوع 4'],
+                        datasets: [{ label: 'ساعات', data: [320, 315, 328, 310], backgroundColor: 'rgba(23, 162, 184, 0.6)', borderColor: '#17a2b8', borderWidth: 1 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+                });
+            }
+            if (periodEl && chartDaily) {
+                periodEl.addEventListener('change', function() {
+                    days = parseInt(this.value, 10);
+                    var dd = getDailyData();
+                    chartDaily.data.labels = dd.labels;
+                    chartDaily.data.datasets[0].data = dd.present;
+                    chartDaily.data.datasets[1].data = dd.late;
+                    chartDaily.data.datasets[2].data = dd.absent;
+                    chartDaily.update();
+                });
+            }
+        })();
+
+        // —— Export dropdown ——
+        (function() {
+            var btn = document.getElementById('attExportBtn');
+            var menu = document.getElementById('attExportMenu');
+            if (btn && menu) {
+                btn.addEventListener('click', function(e) { e.stopPropagation(); menu.classList.toggle('show'); });
+                document.addEventListener('click', function() { menu.classList.remove('show'); });
+                menu.querySelectorAll('a').forEach(function(a) {
+                    a.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        alert('سيتم تصدير: ' + (this.getAttribute('data-export') === 'excel' ? 'Excel (اليوم)' : 'PDF (التقرير الشهري)') + ' — ربط بالخادم لاحقاً');
+                        menu.classList.remove('show');
+                    });
+                });
+            }
+        })();
+
+        // —— Today table: filters ——
+        (function() {
+            var search = document.getElementById('attTodaySearch');
+            var role = document.getElementById('attTodayRole');
+            var dept = document.getElementById('attTodayDept');
+            var shift = document.getElementById('attTodayShift');
+            var status = document.getElementById('attTodayStatus');
+            var table = document.getElementById('attTodayTable');
+            var rows = table ? table.querySelectorAll('.att-today-row') : [];
+            function apply() {
+                var q = (search && search.value) ? search.value.trim().toLowerCase() : '';
+                var r = role && role.value;
+                var d = dept && dept.value;
+                var s = shift && shift.value;
+                var st = status && status.value;
+                rows.forEach(function(tr) {
+                    var name = (tr.getAttribute('data-name') || '').toLowerCase();
+                    var show = true;
+                    if (q && name.indexOf(q) < 0) show = false;
+                    if (r && tr.getAttribute('data-role') !== r) show = false;
+                    if (d && tr.getAttribute('data-dept') !== d) show = false;
+                    if (s && tr.getAttribute('data-shift') !== s) show = false;
+                    if (st && tr.getAttribute('data-status') !== st) show = false;
+                    tr.style.display = show ? '' : 'none';
+                });
+            }
+            [role, dept, shift, status].forEach(function(el) { if (el) el.addEventListener('change', apply); });
+            if (search) search.addEventListener('input', apply);
+        })();
+
+        // —— Report table: filters & sort ——
+        (function() {
+            var search = document.getElementById('attReportSearch');
+            var role = document.getElementById('attReportRole');
+            var sort = document.getElementById('attReportSort');
+            var table = document.getElementById('attReportTable');
+            var rows = table ? table.querySelectorAll('.att-report-row') : [];
+            function apply() {
+                var q = (search && search.value) ? search.value.trim().toLowerCase() : '';
+                var r = role && role.value;
+                var sortVal = sort && sort.value;
+                var visible = [];
+                rows.forEach(function(tr) {
+                    var name = (tr.getAttribute('data-name') || '').toLowerCase();
+                    var show = true;
+                    if (q && name.indexOf(q) < 0) show = false;
+                    if (r && tr.getAttribute('data-role') !== r) show = false;
+                    tr.style.display = show ? '' : 'none';
+                    if (show) visible.push(tr);
+                });
+                if (sortVal && visible.length) {
+                    visible.sort(function(a, b) {
+                        var av, bv;
+                        switch (sortVal) {
+                            case 'hours': av = parseFloat(a.getAttribute('data-hours')); bv = parseFloat(b.getAttribute('data-hours')); return bv - av;
+                            case 'present': av = parseFloat(a.getAttribute('data-present')); bv = parseFloat(b.getAttribute('data-present')); return bv - av;
+                            case 'absent': av = parseFloat(a.getAttribute('data-absent')); bv = parseFloat(b.getAttribute('data-absent')); return bv - av;
+                            case 'name': av = a.getAttribute('data-name'); bv = b.getAttribute('data-name'); return (av || '').localeCompare(bv || '');
+                            default: return 0;
+                        }
+                    });
+                    var tbody = table.querySelector('tbody');
+                    visible.forEach(function(tr) { tbody.appendChild(tr); });
+                }
+            }
+            [role, sort].forEach(function(el) { if (el) el.addEventListener('change', apply); });
+            if (search) search.addEventListener('input', apply);
+        })();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazon Marine — عرض التكاليف</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="logo-area"><img src="logo/logo (1).png" alt="Logo"><div class="logo-text"><span class="brand-name">Amazon Marine</span><span class="brand-sub">Shipping Agency</span></div></div>
+        <div class="menu-label">الرئيسية</div>
+        <ul class="menu">
+            <li><a href="dashboard.html"><i class='bx bxs-dashboard'></i><span>لوحة التحكم</span></a></li>
+            <li><a href="pricing.html"><i class='bx bx-dollar-circle'></i><span>التسعير</span></a></li>
+            <li class="active"><a href="cost-viewer.html"><i class='bx bx-show'></i><span>عرض التكاليف</span></a></li>
+            <li><a href="reports.html"><i class='bx bx-bar-chart-alt-2'></i><span>التقارير</span></a></li>
+            <li><a href="attendance.html"><i class='bx bx-time-five'></i><span>الحضور والانصراف</span></a></li>
+        </ul>
+        <div class="menu-label">الإعدادات</div>
+        <ul class="menu">
+            <li><a href="settings.html"><i class='bx bx-cog'></i><span>الإعدادات</span></a></li>
+            <li><a href="profile.html"><i class='bx bx-user'></i><span>الملف الشخصي</span></a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-avatar">NH</div>
+            <div class="user-info"><div class="user-name">نادية حسن</div><div class="user-role">فريق التسعير</div></div>
+            <a href="index.html"><i class='bx bx-log-out' style="color:rgba(255,255,255,0.35);font-size:1.2rem;"></i></a>
+        </div>
+    </nav>
+    <div class="main-wrapper">
+        <header class="topbar">
+            <div class="page-title-area"><h1>عرض التكاليف</h1><div class="breadcrumbs">Amazon Marine > <span>عرض التكاليف</span></div></div>
+            <div class="topbar-right">
+                <div class="search-bar"><i class='bx bx-search'></i><input type="text" placeholder="بحث بالمسار أو العميل..."></div>
+                <div class="topbar-icon"><i class='bx bx-bell'></i><div class="notif-dot"></div></div>
+                <div class="currency-dropdown">
+                    <div class="topbar-icon" onclick="toggleCurrencyDropdown(event)">
+                        <i class='bx bx-dollar-circle'></i>
+                        <span class="currency-code" id="currencyCodeBadge">$</span>
+                    </div>
+                    <div class="currency-dropdown-menu" id="currencyDropdown">
+                        <button type="button" class="currency-dropdown-item active" data-currency="USD">$ USD <i class='bx bx-check'></i></button>
+                        <button type="button" class="currency-dropdown-item" data-currency="EUR">€ EUR</button>
+                        <button type="button" class="currency-dropdown-item" data-currency="EGP">E£ EGP</button>
+                    </div>
+                </div>
+                <div class="profile-pill"><div class="profile-avatar">NH</div><span>نادية حسن</span></div>
+            </div>
+        </header>
+        <main class="content">
+            <div class="stats-row">
+                <div class="stat-card"><div class="stat-icon-wrap cyan"><i class='bx bx-dollar'></i></div><div class="stat-info"><h3>$248K</h3><div class="stat-label">إجمالي تكاليف الشهر</div></div></div>
+                <div class="stat-card"><div class="stat-icon-wrap green"><i class='bx bx-trending-up'></i></div><div class="stat-info"><h3>18%</h3><div class="stat-label">هامش متوسط</div></div></div>
+                <div class="stat-card"><div class="stat-icon-wrap warning"><i class='bx bx-map'></i></div><div class="stat-info"><h3>12</h3><div class="stat-label">أعلى المسارات تكلفة</div></div></div>
+            </div>
+            <div class="card">
+                <div class="card-header"><span class="card-title">تكاليف الشحنات (عرض للفريق)</span><button class="btn btn-outline btn-sm"><i class='bx bx-download'></i> تصدير Excel</button></div>
+                <div class="table-wrap"><table class="table"><thead><tr><th>رقم البوليصة</th><th>العميل</th><th>المسار</th><th>التكلفة</th><th>السعر</th><th>الهامش</th></tr></thead><tbody>
+                    <tr><td>BL-2026-0248</td><td>منصور وشركاه</td><td>الإسكندرية → جدة</td><td>$2,400</td><td>$2,950</td><td>23%</td></tr>
+                    <tr><td>BL-2026-0247</td><td>طه للمنسوجات</td><td>السخنة → هامبورغ</td><td>$4,100</td><td>$4,800</td><td>17%</td></tr>
+                    <tr><td>BL-2026-0246</td><td>نايل كرافت</td><td>دمياط → دبي</td><td>$3,200</td><td>$3,750</td><td>17%</td></tr>
+                </tbody></table></div>
+            </div>
+        </main>
+    </div>
+    <script src="js/role-auth.js"></script>
+    <script src="js/role-sidebar-apply.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

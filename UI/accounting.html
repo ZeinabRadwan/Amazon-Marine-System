@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazon Marine — الحسابات</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <nav class="sidebar">
+        <div class="logo-area"><img src="logo/logo (1).png" alt="Logo">
+            <div class="logo-text"><span class="brand-name">Amazon Marine</span><span class="brand-sub">Shipping
+                    Agency</span></div>
+        </div>
+        <div class="menu-label">الرئيسية</div>
+        <ul class="menu">
+            <li><a href="dashboard.html"><i class='bx bxs-dashboard'></i><span>لوحة التحكم</span></a></li>
+            <li><a href="clients.html"><i class='bx bx-group'></i><span>العملاء / CRM</span></a></li>
+            <li><a href="shipments.html"><i class='bx bx-package'></i><span>الشحنات</span></a></li>
+            <li><a href="sd-forms.html"><i class='bx bx-file'></i><span>نماذج SD</span></a></li>
+            <li><a href="operations.html"><i class='bx bxs-ship'></i><span>العمليات</span></a></li>
+        </ul>
+        <div class="menu-label">المالية</div>
+        <ul class="menu">
+            <li><a href="invoices.html"><i class='bx bx-receipt'></i><span>الفواتير</span></a></li>
+            <li class="active"><a href="accounting.html"><i class='bx bx-wallet'></i><span>الحسابات</span></a></li>
+            <li><a href="treasury.html"><i class='bx bx-credit-card'></i><span>الخزينة</span></a></li>
+            <li><a href="expenses.html"><i class='bx bx-money'></i><span>المصروفات</span></a></li>
+            <li><a href="pricing.html"><i class='bx bx-dollar-circle'></i><span>التسعير</span></a></li>
+        </ul>
+        <div class="menu-label">الإدارة</div>
+        <ul class="menu">
+            <li><a href="partners.html"><i class='bx bx-buildings'></i><span>الشركاء</span></a></li>
+            <li><a href="attendance.html"><i class='bx bx-time-five'></i><span>الحضور والانصراف</span></a></li>
+            <li><a href="visits.html"><i class='bx bx-map-pin'></i><span>سجل الزيارات</span></a></li>
+            <li><a href="reports.html"><i class='bx bx-bar-chart-alt-2'></i><span>التقارير</span></a></li>
+            <li><a href="documents.html"><i class='bx bx-file-blank'></i><span>المستندات الرسمية</span></a></li>
+            <li><a href="tickets.html"><i class='bx bx-message-alt-detail'></i><span>تذاكر الدعم</span></a></li>
+            <li><a href="team-performance.html"><i class='bx bx-trending-up'></i><span>أداء الفريق</span></a></li>
+        </ul>
+        <div class="menu-label">الإعدادات</div>
+        <ul class="menu">
+            <li><a href="settings.html"><i class='bx bx-cog'></i><span>الإعدادات</span></a></li>
+            <li><a href="profile.html"><i class='bx bx-user'></i><span>الملف الشخصي</span></a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-avatar">MD</div>
+            <div class="user-info">
+                <div class="user-name">Capt. Mostafa</div>
+                <div class="user-role">مدير النظام</div>
+            </div><a href="index.html"><i class='bx bx-log-out'
+                    style="color:rgba(255,255,255,0.35);font-size:1.2rem;"></i></a>
+        </div>
+    </nav>
+
+    <div class="main-wrapper">
+        <header class="topbar">
+            <div class="page-title-area">
+                <h1>الحسابات</h1>
+                <div class="breadcrumbs">Amazon Marine > <span>الحسابات المالية</span></div>
+            </div>
+            <div class="topbar-right">
+                <div class="search-bar"><i class='bx bx-search'></i><input type="text" placeholder="بحث في الحسابات...">
+                </div>
+                <div class="topbar-icon"><i class='bx bx-bell'></i>
+                    <div class="notif-dot"></div>
+                </div>
+                <div class="currency-dropdown">
+                    <div class="topbar-icon" onclick="toggleCurrencyDropdown(event)">
+                        <i class='bx bx-dollar-circle'></i>
+                        <span class="currency-code" id="currencyCodeBadge">$</span>
+                    </div>
+                    <div class="currency-dropdown-menu" id="currencyDropdown">
+                        <button type="button" class="currency-dropdown-item active" data-currency="USD">$ USD <i class='bx bx-check'></i></button>
+                        <button type="button" class="currency-dropdown-item" data-currency="EUR">€ EUR</button>
+                        <button type="button" class="currency-dropdown-item" data-currency="EGP">E£ EGP</button>
+                    </div>
+                </div>
+                <div class="profile-pill">
+                    <div class="profile-avatar">MD</div><span>Capt. Mostafa</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="content">
+            <!-- Financial Summary -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-icon-wrap green"><i class='bx bx-trending-up'></i></div>
+                    <div class="stat-info">
+                        <h3>$125K</h3>
+                        <div class="stat-label">إجمالي المستحقات (لنا)</div><span class="stat-trend up"><i
+                                class='bx bx-trending-up'></i> عملاء</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-wrap danger"><i class='bx bx-trending-down'></i></div>
+                    <div class="stat-info">
+                        <h3>$82K</h3>
+                        <div class="stat-label">إجمالي المطلوبات (علينا)</div><span class="stat-trend down"><i
+                                class='bx bx-trending-down'></i> شركاء</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-wrap cyan"><i class='bx bx-wallet'></i></div>
+                    <div class="stat-info">
+                        <h3>$43K</h3>
+                        <div class="stat-label">صافي الرصيد</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-wrap gold"><i class='bx bx-transfer'></i></div>
+                    <div class="stat-info">
+                        <h3>3</h3>
+                        <div class="stat-label">عملات نشطة</div><span class="stat-trend up">USD / EGP / EUR</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts: Receivables vs Payables & Balance breakdown -->
+            <div class="card" style="margin-bottom:24px;">
+                <div class="card-header">
+                    <span class="card-title">اتجاه المستحقات والمطلوبات</span>
+                    <select class="form-control" id="accChartMonths" style="width:auto;min-width:110px;">
+                        <option value="6">6 أشهر</option>
+                        <option value="12">12 شهر</option>
+                    </select>
+                </div>
+                <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+                    <div>
+                        <p class="fs-sm fw-600 text-muted" style="margin-bottom:8px;">المستحقات (عملاء) vs المطلوبات (شركاء) $K</p>
+                        <div class="chart-wrap" style="position:relative;height:220px;width:100%;">
+                            <canvas id="chartReceivablesPayables"></canvas>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="fs-sm fw-600 text-muted" style="margin-bottom:8px;">توزيع الرصيد المستحق حسب العملة</p>
+                        <div class="chart-wrap" style="position:relative;height:220px;width:100%;">
+                            <canvas id="chartBalanceByCurrency"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Accounting notifications / alerts -->
+            <div class="card acc-notifications" style="margin-bottom:24px;">
+                <div class="card-header">
+                    <span class="card-title"><i class='bx bx-bell' style="margin-left:6px;"></i> تنبيهات الحسابات</span>
+                    <span class="fs-sm text-muted" id="accNotifCount">3 تنبيهات</span>
+                </div>
+                <div class="acc-notif-list" id="accNotifList">
+                    <div class="acc-notif-item warning">
+                        <i class='bx bx-time-five'></i>
+                        <span>رصيد متأخر — منصور وشركاه ($4,250) منذ 8 أيام</span>
+                        <a href="#" class="fs-sm">كشف حساب</a>
+                    </div>
+                    <div class="acc-notif-item danger">
+                        <i class='bx bx-error-circle'></i>
+                        <span>رصيد متأخر — الإيمان للأغذية ($7,500) منذ 5 أيام</span>
+                        <a href="#" class="fs-sm">كشف حساب</a>
+                    </div>
+                    <div class="acc-notif-item info">
+                        <i class='bx bx-info-circle'></i>
+                        <span>دفعة شركاء مستحقة — MSC ($18,000) خلال 7 أيام</span>
+                        <a href="#" class="fs-sm">كشف حساب</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="page-header">
+                <div class="tabs" data-tab-group="accTab">
+                    <button class="tab active" data-tab="clients" onclick="switchTab('accTab','clients')"><i
+                            class='bx bx-group'></i> حسابات العملاء</button>
+                    <button class="tab" data-tab="partners" onclick="switchTab('accTab','partners')"><i
+                            class='bx bx-buildings'></i> حسابات الشركاء</button>
+                    <button class="tab" data-tab="bank" onclick="switchTab('accTab','bank')"><i
+                            class='bx bx-credit-card'></i> الحسابات البنكية</button>
+                </div>
+                <div class="page-header-actions">
+                    <div class="dropdown" id="accExportDropdown">
+                        <button type="button" class="btn btn-outline btn-sm" id="accExportBtn"><i class='bx bx-export'></i> تصدير <i class='bx bx-chevron-down' style="font-size:1rem;"></i></button>
+                        <div class="dropdown-menu" id="accExportMenu">
+                            <a href="#" data-export="clients">تصدير حسابات العملاء (Excel)</a>
+                            <a href="#" data-export="partners">تصدير حسابات الشركاء (Excel)</a>
+                            <a href="#" data-export="summary">تصدير ملخص مالي (PDF)</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bulk actions bar (shared for clients/partners) -->
+            <div class="bulk-actions-bar" id="accBulkBar" style="display:none;">
+                <span class="bulk-count" id="accBulkCount">تم تحديد 0</span>
+                <button type="button" class="btn btn-outline btn-sm" id="accBulkExport"><i class='bx bx-download'></i> تصدير المحدد</button>
+                <button type="button" class="btn btn-outline btn-sm" id="accBulkReminder">إرسال تذكير بالرصيد</button>
+                <button type="button" class="btn btn-outline btn-sm" id="accBulkClear">إلغاء التحديد</button>
+            </div>
+
+            <!-- Client Accounts Tab -->
+            <div class="tab-content active" id="accTab-clients">
+                <div class="card">
+                    <div class="card-header"><span class="card-title">كشف حسابات العملاء</span></div>
+                    <div class="filter-bar">
+                        <input type="text" class="form-control" id="accClientSearch" placeholder="بحث بالعميل..." style="max-width:220px;">
+                        <select class="form-control" id="accClientCurrency">
+                            <option value="">كل العملات</option>
+                            <option value="USD">USD</option>
+                            <option value="EUR">EUR</option>
+                            <option value="EGP">EGP</option>
+                        </select>
+                        <select class="form-control" id="accClientSort" style="width:auto;min-width:140px;">
+                            <option value="">ترتيب حسب</option>
+                            <option value="balance">الرصيد المستحق</option>
+                            <option value="sales">إجمالي المبيعات</option>
+                            <option value="lastPayment">آخر دفعة</option>
+                            <option value="client">اسم العميل</option>
+                        </select>
+                    </div>
+                    <table class="data-table" id="accClientsTable">
+                        <thead>
+                            <tr>
+                                <th style="width:44px;"><input type="checkbox" id="accSelectAllClients" title="تحديد الكل"></th>
+                                <th>العميل</th>
+                                <th>إجمالي المبيعات</th>
+                                <th>المدفوع</th>
+                                <th>الرصيد المستحق</th>
+                                <th>العملة</th>
+                                <th>آخر دفعة</th>
+                                <th>إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="acc-client-row" data-client="منصور وشركاه" data-sales="52400" data-paid="48150" data-balance="4250" data-currency="USD" data-lastpayment="2026-02-15">
+                                <td><input type="checkbox" class="acc-client-checkbox"></td>
+                                <td class="fw-600">منصور وشركاه</td>
+                                <td>$52,400</td>
+                                <td class="text-success fw-600">$48,150</td>
+                                <td class="text-danger fw-700">$4,250</td>
+                                <td>USD</td>
+                                <td class="text-muted fs-sm">15/02/2026</td>
+                                <td><button class="btn btn-sm btn-outline" onclick="openModal('clientLedgerModal')"><i class='bx bx-spreadsheet'></i> كشف حساب</button></td>
+                            </tr>
+                            <tr class="acc-client-row" data-client="الإيمان للأغذية" data-sales="38600" data-paid="31100" data-balance="7500" data-currency="USD" data-lastpayment="2026-02-18">
+                                <td><input type="checkbox" class="acc-client-checkbox"></td>
+                                <td class="fw-600">الإيمان للأغذية</td>
+                                <td>$38,600</td>
+                                <td class="text-success fw-600">$31,100</td>
+                                <td class="text-danger fw-700">$7,500</td>
+                                <td>USD</td>
+                                <td class="text-muted fs-sm">18/02/2026</td>
+                                <td><button class="btn btn-sm btn-outline" onclick="openModal('clientLedgerModal')"><i class='bx bx-spreadsheet'></i> كشف حساب</button></td>
+                            </tr>
+                            <tr class="acc-client-row" data-client="طه للمنسوجات" data-sales="28400" data-paid="28400" data-balance="0" data-currency="EUR" data-lastpayment="2026-02-17">
+                                <td><input type="checkbox" class="acc-client-checkbox"></td>
+                                <td class="fw-600">طه للمنسوجات</td>
+                                <td>€28,400</td>
+                                <td class="text-success fw-600">€28,400</td>
+                                <td class="text-success fw-700">€0</td>
+                                <td>EUR</td>
+                                <td class="text-muted fs-sm">17/02/2026</td>
+                                <td><button class="btn btn-sm btn-outline" onclick="openModal('clientLedgerModal')"><i class='bx bx-spreadsheet'></i> كشف حساب</button></td>
+                            </tr>
+                            <tr class="acc-client-row" data-client="السعودي للتصدير" data-sales="85200" data-paid="82000" data-balance="3200" data-currency="USD" data-lastpayment="2026-02-16">
+                                <td><input type="checkbox" class="acc-client-checkbox"></td>
+                                <td class="fw-600">السعودي للتصدير</td>
+                                <td>$85,200</td>
+                                <td class="text-success fw-600">$82,000</td>
+                                <td class="text-danger fw-700">$3,200</td>
+                                <td>USD</td>
+                                <td class="text-muted fs-sm">16/02/2026</td>
+                                <td><button class="btn btn-sm btn-outline" onclick="openModal('clientLedgerModal')"><i class='bx bx-spreadsheet'></i> كشف حساب</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Partner Accounts Tab -->
+            <div class="tab-content" id="accTab-partners">
+                <div class="card">
+                    <div class="card-header"><span class="card-title">كشف حسابات الشركاء</span></div>
+                    <div class="filter-bar">
+                        <input type="text" class="form-control" id="accPartnerSearch" placeholder="بحث بالشريك..." style="max-width:220px;">
+                        <select class="form-control" id="accPartnerType">
+                            <option value="">كل الأنواع</option>
+                            <option value="خط ملاحي">خط ملاحي</option>
+                            <option value="نقل داخلي">نقل داخلي</option>
+                            <option value="تخليص جمركي">تخليص جمركي</option>
+                        </select>
+                        <select class="form-control" id="accPartnerCurrency">
+                            <option value="">كل العملات</option>
+                            <option value="USD">USD</option>
+                            <option value="EGP">EGP</option>
+                            <option value="EUR">EUR</option>
+                        </select>
+                        <select class="form-control" id="accPartnerSort" style="width:auto;min-width:140px;">
+                            <option value="">ترتيب حسب</option>
+                            <option value="balance">الرصيد</option>
+                            <option value="total">إجمالي المستحق</option>
+                            <option value="partner">اسم الشريك</option>
+                        </select>
+                    </div>
+                    <table class="data-table" id="accPartnersTable">
+                        <thead>
+                            <tr>
+                                <th style="width:44px;"><input type="checkbox" id="accSelectAllPartners" title="تحديد الكل"></th>
+                                <th>الشريك</th>
+                                <th>النوع</th>
+                                <th>إجمالي المستحق</th>
+                                <th>المدفوع</th>
+                                <th>الرصيد</th>
+                                <th>العملة</th>
+                                <th>إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="acc-partner-row" data-partner="MSC" data-type="خط ملاحي" data-total="156000" data-paid="138000" data-balance="18000" data-currency="USD">
+                                <td><input type="checkbox" class="acc-partner-checkbox"></td>
+                                <td class="fw-600">MSC</td>
+                                <td>خط ملاحي</td>
+                                <td>$156,000</td>
+                                <td class="text-success fw-600">$138,000</td>
+                                <td class="text-danger fw-700">$18,000</td>
+                                <td>USD</td>
+                                <td><button class="btn btn-sm btn-outline" onclick="openModal('partnerLedgerModal')"><i class='bx bx-spreadsheet'></i></button></td>
+                            </tr>
+                            <tr class="acc-partner-row" data-partner="CMA CGM" data-type="خط ملاحي" data-total="98500" data-paid="92800" data-balance="5700" data-currency="USD">
+                                <td><input type="checkbox" class="acc-partner-checkbox"></td>
+                                <td class="fw-600">CMA CGM</td>
+                                <td>خط ملاحي</td>
+                                <td>$98,500</td>
+                                <td class="text-success fw-600">$92,800</td>
+                                <td class="text-danger fw-700">$5,700</td>
+                                <td>USD</td>
+                                <td><button class="btn btn-sm btn-outline" onclick="openModal('partnerLedgerModal')"><i class='bx bx-spreadsheet'></i></button></td>
+                            </tr>
+                            <tr class="acc-partner-row" data-partner="نايل للنقل" data-type="نقل داخلي" data-total="1240000" data-paid="1100000" data-balance="140000" data-currency="EGP">
+                                <td><input type="checkbox" class="acc-partner-checkbox"></td>
+                                <td class="fw-600">نايل للنقل</td>
+                                <td>نقل داخلي</td>
+                                <td>EGP 1,240,000</td>
+                                <td class="text-success fw-600">EGP 1,100,000</td>
+                                <td class="text-danger fw-700">EGP 140,000</td>
+                                <td>EGP</td>
+                                <td><button class="btn btn-sm btn-outline" onclick="openModal('partnerLedgerModal')"><i class='bx bx-spreadsheet'></i></button></td>
+                            </tr>
+                            <tr class="acc-partner-row" data-partner="التخليص العالمية" data-type="تخليص جمركي" data-total="680000" data-paid="680000" data-balance="0" data-currency="EGP">
+                                <td><input type="checkbox" class="acc-partner-checkbox"></td>
+                                <td class="fw-600">التخليص العالمية</td>
+                                <td>تخليص جمركي</td>
+                                <td>EGP 680,000</td>
+                                <td class="text-success fw-600">EGP 680,000</td>
+                                <td class="text-success fw-700">EGP 0</td>
+                                <td>EGP</td>
+                                <td><button class="btn btn-sm btn-outline" onclick="openModal('partnerLedgerModal')"><i class='bx bx-spreadsheet'></i></button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Bank Accounts Tab -->
+            <div class="tab-content" id="accTab-bank">
+                <div class="grid-3">
+                    <div class="card" style="text-align:center;padding:28px;">
+                        <div class="stat-icon-wrap navy" style="margin:0 auto 12px;"><i class='bx bx-dollar'></i></div>
+                        <h3 style="font-size:1.4rem;color:var(--navy-800);margin-bottom:4px;">$142,300</h3>
+                        <p class="text-muted fs-sm">حساب USD</p>
+                        <p class="fs-xs text-secondary">CIB Bank • ****4521</p>
+                    </div>
+                    <div class="card" style="text-align:center;padding:28px;">
+                        <div class="stat-icon-wrap cyan" style="margin:0 auto 12px;"><i class='bx bx-pound'></i></div>
+                        <h3 style="font-size:1.4rem;color:var(--navy-800);margin-bottom:4px;">EGP 2,840,000</h3>
+                        <p class="text-muted fs-sm">حساب EGP</p>
+                        <p class="fs-xs text-secondary">البنك الأهلي • ****7832</p>
+                    </div>
+                    <div class="card" style="text-align:center;padding:28px;">
+                        <div class="stat-icon-wrap gold" style="margin:0 auto 12px;"><i class='bx bx-euro'></i></div>
+                        <h3 style="font-size:1.4rem;color:var(--navy-800);margin-bottom:4px;">€38,600</h3>
+                        <p class="text-muted fs-sm">حساب EUR</p>
+                        <p class="fs-xs text-secondary">QNB Alahli • ****3914</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- CLIENT LEDGER MODAL -->
+    <div class="modal-overlay" id="clientLedgerModal">
+        <div class="modal modal-xl">
+            <div class="modal-header">
+                <h3><i class='bx bx-spreadsheet' style="margin-left:8px;"></i> كشف حساب — منصور وشركاه</h3><button
+                    class="modal-close" onclick="closeModal('clientLedgerModal')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-between align-center mb-3">
+                    <div><span class="text-muted fs-sm">الرصيد الحالي: </span><span class="fw-800 text-danger"
+                            style="font-size:1.1rem;">$4,250</span></div>
+                    <div class="d-flex gap-1"><input type="date" class="form-control" value="2026-01-01"
+                            style="width:140px;padding:6px 10px;"><input type="date" class="form-control"
+                            value="2026-02-19" style="width:140px;padding:6px 10px;"></div>
+                </div>
+                <table class="ledger-table">
+                    <thead>
+                        <tr>
+                            <th>التاريخ</th>
+                            <th>الوصف</th>
+                            <th>المرجع</th>
+                            <th>مدين (له)</th>
+                            <th>دائن (منه)</th>
+                            <th>الرصيد</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>01/01/2026</td>
+                            <td>رصيد أول المدة</td>
+                            <td>—</td>
+                            <td></td>
+                            <td></td>
+                            <td class="fw-700">$0</td>
+                        </tr>
+                        <tr>
+                            <td>05/01/2026</td>
+                            <td>فاتورة شحنة</td>
+                            <td>INV-0080</td>
+                            <td class="text-danger">$7,800</td>
+                            <td></td>
+                            <td class="fw-700">$7,800</td>
+                        </tr>
+                        <tr>
+                            <td>10/01/2026</td>
+                            <td>دفعة — تحويل بنكي</td>
+                            <td>PAY-0041</td>
+                            <td></td>
+                            <td class="text-success">$7,800</td>
+                            <td class="fw-700">$0</td>
+                        </tr>
+                        <tr>
+                            <td>18/01/2026</td>
+                            <td>فاتورة شحنة</td>
+                            <td>INV-0085</td>
+                            <td class="text-danger">$5,900</td>
+                            <td></td>
+                            <td class="fw-700">$5,900</td>
+                        </tr>
+                        <tr>
+                            <td>25/01/2026</td>
+                            <td>دفعة — نقدي</td>
+                            <td>PAY-0048</td>
+                            <td></td>
+                            <td class="text-success">$5,900</td>
+                            <td class="fw-700">$0</td>
+                        </tr>
+                        <tr>
+                            <td>10/02/2026</td>
+                            <td>فاتورة شحنة</td>
+                            <td>INV-0092</td>
+                            <td class="text-danger">$4,250</td>
+                            <td></td>
+                            <td class="fw-700">$4,250</td>
+                        </tr>
+                        <tr>
+                            <td>19/02/2026</td>
+                            <td>فاتورة شحنة</td>
+                            <td>INV-0094</td>
+                            <td class="text-danger">$5,450</td>
+                            <td></td>
+                            <td class="fw-700">$9,700</td>
+                        </tr>
+                        <tr>
+                            <td>15/02/2026</td>
+                            <td>دفعة — تحويل بنكي</td>
+                            <td>PAY-0055</td>
+                            <td></td>
+                            <td class="text-success">$5,450</td>
+                            <td class="fw-700 text-danger">$4,250</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer"><button class="btn btn-outline"
+                    onclick="closeModal('clientLedgerModal')">إغلاق</button><button class="btn btn-cyan"><i
+                        class='bx bx-printer'></i> طباعة كشف حساب</button></div>
+        </div>
+    </div>
+
+    <!-- PARTNER LEDGER MODAL -->
+    <div class="modal-overlay" id="partnerLedgerModal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3><i class='bx bx-spreadsheet' style="margin-left:8px;"></i> كشف حساب — MSC</h3><button
+                    class="modal-close" onclick="closeModal('partnerLedgerModal')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-between align-center mb-3">
+                    <div><span class="text-muted fs-sm">الرصيد الحالي: </span><span class="fw-800 text-danger"
+                            style="font-size:1.1rem;">$18,000</span></div>
+                    <div><span class="text-muted fs-sm">نوع: </span><span class="fw-600 fs-sm">خط ملاحي</span></div>
+                </div>
+                <table class="ledger-table">
+                    <thead>
+                        <tr>
+                            <th>التاريخ</th>
+                            <th>الوصف</th>
+                            <th>المرجع</th>
+                            <th>مدين</th>
+                            <th>دائن</th>
+                            <th>الرصيد</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>01/02/2026</td>
+                            <td>حجز فراغ — MSC OSCAR</td>
+                            <td>BK-44521</td>
+                            <td class="text-danger">$12,800</td>
+                            <td></td>
+                            <td class="fw-700">$12,800</td>
+                        </tr>
+                        <tr>
+                            <td>05/02/2026</td>
+                            <td>دفعة — تحويل بنكي</td>
+                            <td>PAY-P042</td>
+                            <td></td>
+                            <td class="text-success">$8,000</td>
+                            <td class="fw-700">$4,800</td>
+                        </tr>
+                        <tr>
+                            <td>12/02/2026</td>
+                            <td>حجز فراغ — MSC OSCAR</td>
+                            <td>BK-44622</td>
+                            <td class="text-danger">$13,200</td>
+                            <td></td>
+                            <td class="fw-700">$18,000</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer"><button class="btn btn-outline"
+                    onclick="closeModal('partnerLedgerModal')">إغلاق</button><button class="btn btn-cyan"><i
+                        class='bx bx-printer'></i> طباعة</button></div>
+        </div>
+    </div>
+
+    <script src="js/role-auth.js"></script>
+    <script src="js/role-sidebar-apply.js"></script>
+    <script src="js/app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+        // —— Charts (Receivables vs Payables + Balance by currency) ——
+        (function() {
+            var chartMonthsEl = document.getElementById('accChartMonths');
+            var rpEl = document.getElementById('chartReceivablesPayables');
+            var currEl = document.getElementById('chartBalanceByCurrency');
+            var months = 6;
+            function getTrendData() {
+                var labels = [], rec = [], pay = [];
+                for (var i = months - 1; i >= 0; i--) {
+                    var d = new Date();
+                    d.setMonth(d.getMonth() - i);
+                    labels.push(d.toLocaleDateString('ar-EG', { month: 'short', year: '2-digit' }));
+                    rec.push([118, 122, 128, 125, 130, 125][i] || 120);
+                    pay.push([75, 78, 82, 80, 85, 82][i] || 80);
+                }
+                return { labels: labels, receivables: rec, payables: pay };
+            }
+            var trend = getTrendData();
+            var chartRP, chartCurr;
+            if (rpEl && typeof Chart !== 'undefined') {
+                chartRP = new Chart(rpEl, {
+                    type: 'bar',
+                    data: {
+                        labels: trend.labels,
+                        datasets: [
+                            { label: 'المستحقات ($K)', data: trend.receivables, backgroundColor: 'rgba(16, 185, 129, 0.6)', borderColor: '#10b981', borderWidth: 1 },
+                            { label: 'المطلوبات ($K)', data: trend.payables, backgroundColor: 'rgba(239, 68, 68, 0.6)', borderColor: '#ef4444', borderWidth: 1 }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } }
+                });
+            }
+            if (currEl && typeof Chart !== 'undefined') {
+                chartCurr = new Chart(currEl, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['USD', 'EGP', 'EUR'],
+                        datasets: [{ data: [125, 82, 28], backgroundColor: ['#17a2b8', '#d4a853', '#2e3f8e'], borderWidth: 0 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                });
+            }
+            if (chartMonthsEl && chartRP) {
+                chartMonthsEl.addEventListener('change', function() {
+                    months = parseInt(this.value, 10);
+                    var t = getTrendData();
+                    chartRP.data.labels = t.labels;
+                    chartRP.data.datasets[0].data = t.receivables;
+                    chartRP.data.datasets[1].data = t.payables;
+                    chartRP.update();
+                });
+            }
+        })();
+
+        // —— Export dropdown ——
+        (function() {
+            var btn = document.getElementById('accExportBtn');
+            var menu = document.getElementById('accExportMenu');
+            var container = document.getElementById('accExportDropdown');
+            if (btn && menu) {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    menu.classList.toggle('show');
+                });
+                document.addEventListener('click', function() { menu.classList.remove('show'); });
+                menu.querySelectorAll('a').forEach(function(a) {
+                    a.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        var type = this.getAttribute('data-export');
+                        alert('سيتم تصدير: ' + (type === 'clients' ? 'حسابات العملاء' : type === 'partners' ? 'حسابات الشركاء' : 'ملخص مالي') + ' (ربط بالخادم لاحقاً)');
+                        menu.classList.remove('show');
+                    });
+                });
+            }
+        })();
+
+        // —— Client filters, sort, bulk ——
+        (function() {
+            var search = document.getElementById('accClientSearch');
+            var currency = document.getElementById('accClientCurrency');
+            var sort = document.getElementById('accClientSort');
+            var table = document.getElementById('accClientsTable');
+            var rows = table ? table.querySelectorAll('.acc-client-row') : [];
+            var selectAll = document.getElementById('accSelectAllClients');
+            var bulkBar = document.getElementById('accBulkBar');
+            var bulkCount = document.getElementById('accBulkCount');
+
+            function applyClientFilters() {
+                var q = (search && search.value) ? search.value.trim().toLowerCase() : '';
+                var curr = currency && currency.value;
+                var sortVal = sort && sort.value;
+                var visible = [];
+                rows.forEach(function(tr) {
+                    var name = (tr.getAttribute('data-client') || '').toLowerCase();
+                    var rowCurr = tr.getAttribute('data-currency');
+                    var show = true;
+                    if (q && name.indexOf(q) < 0) show = false;
+                    if (curr && rowCurr !== curr) show = false;
+                    tr.style.display = show ? '' : 'none';
+                    if (show) visible.push(tr);
+                });
+                if (sortVal && visible.length) {
+                    visible.sort(function(a, b) {
+                        var av, bv;
+                        switch (sortVal) {
+                            case 'balance': av = parseFloat(a.getAttribute('data-balance')); bv = parseFloat(b.getAttribute('data-balance')); return bv - av;
+                            case 'sales': av = parseFloat(a.getAttribute('data-sales')); bv = parseFloat(b.getAttribute('data-sales')); return bv - av;
+                            case 'lastPayment': av = a.getAttribute('data-lastpayment'); bv = b.getAttribute('data-lastpayment'); return (bv || '').localeCompare(av || '');
+                            case 'client': av = a.getAttribute('data-client'); bv = b.getAttribute('data-client'); return (av || '').localeCompare(bv || '');
+                            default: return 0;
+                        }
+                    });
+                    var tbody = table.querySelector('tbody');
+                    visible.forEach(function(tr) { tbody.appendChild(tr); });
+                }
+            }
+            [search, currency, sort].forEach(function(el) { if (el) el.addEventListener('change', applyClientFilters); });
+            if (search) search.addEventListener('input', applyClientFilters);
+
+            function updateBulk() {
+                var clientChecked = table.querySelectorAll('.acc-client-checkbox:checked');
+                var partnerTable = document.getElementById('accPartnersTable');
+                var partnerChecked = partnerTable ? partnerTable.querySelectorAll('.acc-partner-checkbox:checked') : [];
+                var total = clientChecked.length + partnerChecked.length;
+                bulkBar.style.display = total ? 'flex' : 'none';
+                if (bulkCount) bulkCount.textContent = 'تم تحديد ' + total + ' سجل';
+                if (selectAll) selectAll.checked = clientChecked.length && clientChecked.length === rows.length;
+            }
+            table && table.addEventListener('change', function(e) {
+                if (e.target.classList.contains('acc-client-checkbox') || e.target.id === 'accSelectAllClients') {
+                    if (e.target.id === 'accSelectAllClients') rows.forEach(function(tr) { var cb = tr.querySelector('.acc-client-checkbox'); if (cb) cb.checked = selectAll.checked; });
+                    updateBulk();
+                }
+            });
+        })();
+
+        // —— Partner filters, sort, bulk ——
+        (function() {
+            var search = document.getElementById('accPartnerSearch');
+            var type = document.getElementById('accPartnerType');
+            var currency = document.getElementById('accPartnerCurrency');
+            var sort = document.getElementById('accPartnerSort');
+            var table = document.getElementById('accPartnersTable');
+            var rows = table ? table.querySelectorAll('.acc-partner-row') : [];
+            var selectAll = document.getElementById('accSelectAllPartners');
+            var bulkBar = document.getElementById('accBulkBar');
+            var bulkCount = document.getElementById('accBulkCount');
+
+            function applyPartnerFilters() {
+                var q = (search && search.value) ? search.value.trim().toLowerCase() : '';
+                var t = type && type.value;
+                var curr = currency && currency.value;
+                var sortVal = sort && sort.value;
+                var visible = [];
+                rows.forEach(function(tr) {
+                    var name = (tr.getAttribute('data-partner') || '').toLowerCase();
+                    var rowType = tr.getAttribute('data-type');
+                    var rowCurr = tr.getAttribute('data-currency');
+                    var show = true;
+                    if (q && name.indexOf(q) < 0) show = false;
+                    if (t && rowType !== t) show = false;
+                    if (curr && rowCurr !== curr) show = false;
+                    tr.style.display = show ? '' : 'none';
+                    if (show) visible.push(tr);
+                });
+                if (sortVal && visible.length) {
+                    visible.sort(function(a, b) {
+                        var av, bv;
+                        switch (sortVal) {
+                            case 'balance': av = parseFloat(a.getAttribute('data-balance')); bv = parseFloat(b.getAttribute('data-balance')); return bv - av;
+                            case 'total': av = parseFloat(a.getAttribute('data-total')); bv = parseFloat(b.getAttribute('data-total')); return bv - av;
+                            case 'partner': av = a.getAttribute('data-partner'); bv = b.getAttribute('data-partner'); return (av || '').localeCompare(bv || '');
+                            default: return 0;
+                        }
+                    });
+                    var tbody = table.querySelector('tbody');
+                    visible.forEach(function(tr) { tbody.appendChild(tr); });
+                }
+            }
+            [search, type, currency, sort].forEach(function(el) { if (el) el.addEventListener('change', applyPartnerFilters); });
+            if (search) search.addEventListener('input', applyPartnerFilters);
+
+            table && table.addEventListener('change', function(e) {
+                if (e.target.classList.contains('acc-partner-checkbox') || e.target.id === 'accSelectAllPartners') {
+                    if (e.target.id === 'accSelectAllPartners') rows.forEach(function(tr) { var cb = tr.querySelector('.acc-partner-checkbox'); if (cb) cb.checked = selectAll.checked; });
+                    var clientChecked = document.querySelectorAll('.acc-client-checkbox:checked');
+                    var partnerChecked = table.querySelectorAll('.acc-partner-checkbox:checked');
+                    var total = clientChecked.length + partnerChecked.length;
+                    bulkBar.style.display = total ? 'flex' : 'none';
+                    if (bulkCount) bulkCount.textContent = 'تم تحديد ' + total + ' سجل';
+                    if (selectAll) selectAll.checked = partnerChecked.length && partnerChecked.length === rows.length;
+                }
+            });
+        })();
+
+        // —— Bulk clear / export / reminder ——
+        (function() {
+            document.getElementById('accBulkClear') && document.getElementById('accBulkClear').addEventListener('click', function() {
+                document.querySelectorAll('.acc-client-checkbox, .acc-partner-checkbox').forEach(function(cb) { cb.checked = false; });
+                document.getElementById('accSelectAllClients') && (document.getElementById('accSelectAllClients').checked = false);
+                document.getElementById('accSelectAllPartners') && (document.getElementById('accSelectAllPartners').checked = false);
+                document.getElementById('accBulkBar').style.display = 'none';
+            });
+            document.getElementById('accBulkExport') && document.getElementById('accBulkExport').addEventListener('click', function() {
+                var n = document.querySelectorAll('.acc-client-checkbox:checked, .acc-partner-checkbox:checked').length;
+                if (n) alert('سيتم تصدير ' + n + ' سجل (ربط بالخادم لاحقاً).'); else alert('لم يتم تحديد أي سجل.');
+            });
+            document.getElementById('accBulkReminder') && document.getElementById('accBulkReminder').addEventListener('click', function() {
+                var n = document.querySelectorAll('.acc-client-checkbox:checked, .acc-partner-checkbox:checked').length;
+                if (n) alert('سيتم إرسال تذكير بالرصيد لـ ' + n + ' (ربط بالبريد لاحقاً).'); else alert('لم يتم تحديد أي سجل.');
+            });
+        })();
+    </script>
+</body>
+
+</html>

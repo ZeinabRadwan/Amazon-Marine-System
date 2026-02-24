@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazon Marine — الفواتير</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <nav class="sidebar">
+        <div class="logo-area"><img src="logo/logo (1).png" alt="Logo">
+            <div class="logo-text"><span class="brand-name">Amazon Marine</span><span class="brand-sub">Shipping
+                    Agency</span></div>
+        </div>
+        <div class="menu-label">الرئيسية</div>
+        <ul class="menu">
+            <li><a href="dashboard.html"><i class='bx bxs-dashboard'></i><span>لوحة التحكم</span></a></li>
+            <li><a href="clients.html"><i class='bx bx-group'></i><span>العملاء / CRM</span></a></li>
+            <li><a href="shipments.html"><i class='bx bx-package'></i><span>الشحنات</span></a></li>
+            <li><a href="sd-forms.html"><i class='bx bx-file'></i><span>نماذج SD</span></a></li>
+            <li><a href="operations.html"><i class='bx bxs-ship'></i><span>العمليات</span></a></li>
+        </ul>
+        <div class="menu-label">المالية</div>
+        <ul class="menu">
+            <li class="active"><a href="invoices.html"><i class='bx bx-receipt'></i><span>الفواتير</span></a></li>
+            <li><a href="accounting.html"><i class='bx bx-wallet'></i><span>الحسابات</span></a></li>
+            <li><a href="treasury.html"><i class='bx bx-credit-card'></i><span>الخزينة</span></a></li>
+            <li><a href="expenses.html"><i class='bx bx-money'></i><span>المصروفات</span></a></li>
+            <li><a href="pricing.html"><i class='bx bx-dollar-circle'></i><span>التسعير</span></a></li>
+        </ul>
+        <div class="menu-label">الإدارة</div>
+        <ul class="menu">
+            <li><a href="partners.html"><i class='bx bx-buildings'></i><span>الشركاء</span></a></li>
+            <li><a href="attendance.html"><i class='bx bx-time-five'></i><span>الحضور والانصراف</span></a></li>
+            <li><a href="visits.html"><i class='bx bx-map-pin'></i><span>سجل الزيارات</span></a></li>
+            <li><a href="reports.html"><i class='bx bx-bar-chart-alt-2'></i><span>التقارير</span></a></li>
+            <li><a href="documents.html"><i class='bx bx-file-blank'></i><span>المستندات الرسمية</span></a></li>
+            <li><a href="tickets.html"><i class='bx bx-message-alt-detail'></i><span>تذاكر الدعم</span></a></li>
+            <li><a href="team-performance.html"><i class='bx bx-trending-up'></i><span>أداء الفريق</span></a></li>
+        </ul>
+        <div class="menu-label">الإعدادات</div>
+        <ul class="menu">
+            <li><a href="settings.html"><i class='bx bx-cog'></i><span>الإعدادات</span></a></li>
+            <li><a href="profile.html"><i class='bx bx-user'></i><span>الملف الشخصي</span></a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-avatar">MD</div>
+            <div class="user-info">
+                <div class="user-name">Capt. Mostafa</div>
+                <div class="user-role">مدير النظام</div>
+            </div><a href="index.html"><i class='bx bx-log-out'
+                    style="color:rgba(255,255,255,0.35);font-size:1.2rem;"></i></a>
+        </div>
+    </nav>
+
+    <div class="main-wrapper">
+        <header class="topbar">
+            <div class="page-title-area">
+                <h1>الفواتير</h1>
+                <div class="breadcrumbs">Amazon Marine > <span>إدارة الفواتير</span></div>
+            </div>
+            <div class="topbar-right">
+                <div class="search-bar"><i class='bx bx-search'></i><input type="text"
+                        placeholder="بحث بـ رقم الفاتورة..."></div>
+                <div class="topbar-icon"><i class='bx bx-bell'></i>
+                    <div class="notif-dot"></div>
+                </div>
+                <div class="currency-dropdown">
+                    <div class="topbar-icon" onclick="toggleCurrencyDropdown(event)">
+                        <i class='bx bx-dollar-circle'></i>
+                        <span class="currency-code" id="currencyCodeBadge">$</span>
+                    </div>
+                    <div class="currency-dropdown-menu" id="currencyDropdown">
+                        <button type="button" class="currency-dropdown-item active" data-currency="USD">$ USD <i class='bx bx-check'></i></button>
+                        <button type="button" class="currency-dropdown-item" data-currency="EUR">€ EUR</button>
+                        <button type="button" class="currency-dropdown-item" data-currency="EGP">E£ EGP</button>
+                    </div>
+                </div>
+                <div class="profile-pill">
+                    <div class="profile-avatar">MD</div><span>Capt. Mostafa</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="content">
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-icon-wrap navy"><i class='bx bx-receipt'></i></div>
+                    <div class="stat-info">
+                        <h3>342</h3>
+                        <div class="stat-label">إجمالي الفواتير</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-wrap green"><i class='bx bx-check-circle'></i></div>
+                    <div class="stat-info">
+                        <h3>$285K</h3>
+                        <div class="stat-label">مدفوعة</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-wrap gold"><i class='bx bx-time'></i></div>
+                    <div class="stat-info">
+                        <h3>$42K</h3>
+                        <div class="stat-label">جزئية</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-wrap danger"><i class='bx bx-error-circle'></i></div>
+                    <div class="stat-info">
+                        <h3>$15K</h3>
+                        <div class="stat-label">غير مدفوعة</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts: Revenue & Outstanding -->
+            <div class="card" style="margin-bottom:24px;">
+                <div class="card-header">
+                    <span class="card-title">إيرادات الفواتير والفواتير المستحقة</span>
+                    <select class="form-control" id="chartMonths" style="width:auto;min-width:110px;">
+                        <option value="6">6 أشهر</option>
+                        <option value="12">12 شهر</option>
+                    </select>
+                </div>
+                <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+                    <div>
+                        <p class="fs-sm fw-600 text-muted" style="margin-bottom:8px;">الإيرادات الشهرية (مدفوعة)</p>
+                        <div class="chart-wrap" style="position:relative;height:220px;width:100%;">
+                            <canvas id="chartInvoiceRevenue"></canvas>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="fs-sm fw-600 text-muted" style="margin-bottom:8px;">الفواتير حسب الحالة</p>
+                        <div class="chart-wrap" style="position:relative;height:220px;width:100%;">
+                            <canvas id="chartOutstanding"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs + Actions -->
+            <div class="page-header">
+                <div class="tabs" data-tab-group="invTab">
+                    <button class="tab active" data-tab="all" onclick="switchTab('invTab','all')">الكل</button>
+                    <button class="tab" data-tab="client" onclick="switchTab('invTab','client')">فواتير العملاء</button>
+                    <button class="tab" data-tab="partner" onclick="switchTab('invTab','partner')">فواتير
+                        الشركاء</button>
+                </div>
+                <div class="page-header-actions">
+                    <button class="btn btn-outline btn-sm"><i class='bx bx-export'></i> تصدير</button>
+                    <button class="btn btn-primary" data-invoices-create onclick="openModal('createInvoiceModal')"><i class='bx bx-plus'></i>
+                        إنشاء فاتورة</button>
+                </div>
+            </div>
+
+            <!-- Bulk Actions Bar (invoices) -->
+            <div class="bulk-actions-bar" id="invoicesBulkBar" style="display:none;">
+                <span class="bulk-count" id="invoicesBulkCount">تم تحديد 0 فاتورة</span>
+                <button type="button" class="btn btn-outline btn-sm" id="bulkExportInvoices"><i class='bx bx-download'></i> تصدير المحدد</button>
+                <button type="button" class="btn btn-outline btn-sm" id="bulkSendReminder">إرسال تذكير</button>
+                <button type="button" class="btn btn-outline btn-sm" id="bulkClearInvoices">إلغاء التحديد</button>
+            </div>
+
+            <!-- ALL Invoices (Sales: their clients only, view only; Pricing: read-only) -->
+            <div class="tab-content active" id="invTab-all">
+                <div class="card" data-sales-filter-table>
+                    <div class="filter-bar">
+                        <input type="text" class="form-control" id="invoiceSearch" placeholder="بحث برقم الفاتورة أو العميل..." style="max-width:240px;">
+                        <select class="form-control" id="filterInvStatus">
+                            <option value="">كل الحالات</option>
+                            <option value="مدفوعة">مدفوعة</option>
+                            <option value="جزئية">جزئية</option>
+                            <option value="غير مدفوعة">غير مدفوعة</option>
+                            <option value="متأخرة">متأخرة</option>
+                        </select>
+                        <select class="form-control" id="filterInvType">
+                            <option value="">الكل (عميل/شريك)</option>
+                            <option value="client">عميل</option>
+                            <option value="partner">شريك</option>
+                        </select>
+                        <select class="form-control" id="filterInvCurrency">
+                            <option value="">كل العملات</option>
+                            <option value="USD">USD</option>
+                            <option value="EGP">EGP</option>
+                            <option value="EUR">EUR</option>
+                        </select>
+                        <input type="month" class="form-control" id="filterInvMonth" value="2026-02">
+                        <select class="form-control" id="sortInvoices" style="width:auto;min-width:130px;">
+                            <option value="">ترتيب حسب</option>
+                            <option value="number">رقم الفاتورة</option>
+                            <option value="date">التاريخ</option>
+                            <option value="amount">المبلغ</option>
+                            <option value="status">الحالة</option>
+                            <option value="party">العميل/الشريك</option>
+                        </select>
+                    </div>
+                    <table class="data-table" id="invoicesTable">
+                        <thead>
+                            <tr>
+                                <th style="width:44px;"><input type="checkbox" id="selectAllInvoices" title="تحديد الكل"></th>
+                                <th data-sort="number">رقم الفاتورة <i class='bx bx-sort-alt-2 sort-icon'></i></th>
+                                <th data-sort="party">العميل/الشريك <i class='bx bx-sort-alt-2 sort-icon'></i></th>
+                                <th>الشحنة</th>
+                                <th data-sort="amount">المبلغ <i class='bx bx-sort-alt-2 sort-icon'></i></th>
+                                <th>العملة</th>
+                                <th data-sort="status">الحالة <i class='bx bx-sort-alt-2 sort-icon'></i></th>
+                                <th>ضريبية</th>
+                                <th data-sort="date">التاريخ <i class='bx bx-sort-alt-2 sort-icon'></i></th>
+                                <th>إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="invoice-row" data-inv="INV-2026-0094" data-party="منصور وشركاه" data-sales-rep="أحمد خيري" data-type="client" data-amount="5450" data-status="غير مدفوعة" data-currency="USD" data-date="2026-02-19" onclick="openInvoiceDetails('INV-2026-0094')" style="cursor:pointer;">
+                                <td onclick="event.stopPropagation()"><input type="checkbox" class="invoice-checkbox"></td>
+                                <td class="bl-number">INV-2026-0094</td>
+                                <td class="fw-600">منصور وشركاه</td>
+                                <td>BL-2026-0248</td>
+                                <td class="fw-700">$5,450</td>
+                                <td>USD</td>
+                                <td><span class="status-badge unpaid">غير مدفوعة</span></td>
+                                <td><span class="status-badge draft">لا</span></td>
+                                <td class="text-muted fs-sm">19/02/2026</td>
+                                <td onclick="event.stopPropagation()">
+                                    <div class="d-flex gap-1">
+                                        <button class="btn btn-sm btn-outline" title="تفاصيل" onclick="openInvoiceDetails('INV-2026-0094')"><i class='bx bx-show'></i></button>
+                                        <button class="btn btn-sm btn-cyan" data-invoices-edit onclick="openModal('recordPaymentModal')" title="تسجيل دفعة"><i class='bx bx-dollar'></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="invoice-row" data-inv="INV-2026-0093" data-party="الإيمان للأغذية" data-sales-rep="محمد سعيد" data-type="client" data-amount="8500" data-status="جزئية" data-currency="USD" data-date="2026-02-18" onclick="openInvoiceDetails('INV-2026-0093')" style="cursor:pointer;">
+                                <td onclick="event.stopPropagation()"><input type="checkbox" class="invoice-checkbox"></td>
+                                <td class="bl-number">INV-2026-0093</td>
+                                <td class="fw-600">الإيمان للأغذية</td>
+                                <td>BL-2026-0247</td>
+                                <td class="fw-700">$8,500</td>
+                                <td>USD</td>
+                                <td><span class="status-badge partial">جزئية</span></td>
+                                <td><span class="status-badge active">نعم</span></td>
+                                <td class="text-muted fs-sm">18/02/2026</td>
+                                <td onclick="event.stopPropagation()">
+                                    <div class="d-flex gap-1">
+                                        <button class="btn btn-sm btn-outline" title="تفاصيل" onclick="openInvoiceDetails('INV-2026-0093')"><i class='bx bx-show'></i></button>
+                                        <button class="btn btn-sm btn-cyan" data-invoices-edit onclick="openModal('recordPaymentModal')" title="تسجيل دفعة"><i class='bx bx-dollar'></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="invoice-row" data-inv="INV-2026-0092" data-party="طه للمنسوجات" data-sales-rep="زينب رضوان" data-type="client" data-amount="7800" data-status="مدفوعة" data-currency="EUR" data-date="2026-02-17" onclick="openInvoiceDetails('INV-2026-0092')" style="cursor:pointer;">
+                                <td onclick="event.stopPropagation()"><input type="checkbox" class="invoice-checkbox"></td>
+                                <td class="bl-number">INV-2026-0092</td>
+                                <td class="fw-600">طه للمنسوجات</td>
+                                <td>BL-2026-0245</td>
+                                <td class="fw-700">€7,800</td>
+                                <td>EUR</td>
+                                <td><span class="status-badge paid">مدفوعة</span></td>
+                                <td><span class="status-badge active">نعم</span></td>
+                                <td class="text-muted fs-sm">17/02/2026</td>
+                                <td onclick="event.stopPropagation()">
+                                    <div class="d-flex gap-1">
+                                        <button class="btn btn-sm btn-outline" title="تفاصيل" onclick="openInvoiceDetails('INV-2026-0092')"><i class='bx bx-show'></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="invoice-row" data-inv="INV-2026-0091" data-party="MSC (شريك)" data-type="partner" data-amount="3250" data-status="مدفوعة" data-currency="USD" data-date="2026-02-16" onclick="openInvoiceDetails('INV-2026-0091')" style="cursor:pointer;">
+                                <td onclick="event.stopPropagation()"><input type="checkbox" class="invoice-checkbox"></td>
+                                <td class="bl-number">INV-2026-0091</td>
+                                <td class="fw-600">MSC (شريك)</td>
+                                <td>BL-2026-0248</td>
+                                <td class="fw-700">$3,250</td>
+                                <td>USD</td>
+                                <td><span class="status-badge paid">مدفوعة</span></td>
+                                <td><span class="status-badge draft">لا</span></td>
+                                <td class="text-muted fs-sm">16/02/2026</td>
+                                <td onclick="event.stopPropagation()">
+                                    <div class="d-flex gap-1">
+                                        <button class="btn btn-sm btn-outline" title="تفاصيل" onclick="openInvoiceDetails('INV-2026-0091')"><i class='bx bx-show'></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="invoice-row" data-inv="INV-2026-0090" data-party="نايل للنقل (شريك)" data-type="partner" data-amount="18000" data-status="متأخرة" data-currency="EGP" data-date="2026-02-16" data-overdue="1" onclick="openInvoiceDetails('INV-2026-0090')" style="cursor:pointer;">
+                                <td onclick="event.stopPropagation()"><input type="checkbox" class="invoice-checkbox"></td>
+                                <td class="bl-number">INV-2026-0090</td>
+                                <td class="fw-600">نايل للنقل (شريك)</td>
+                                <td>BL-2026-0248</td>
+                                <td class="fw-700">EGP 18,000</td>
+                                <td>EGP</td>
+                                <td><span class="status-badge overdue">متأخرة</span></td>
+                                <td><span class="status-badge draft">لا</span></td>
+                                <td class="text-muted fs-sm">16/02/2026</td>
+                                <td onclick="event.stopPropagation()">
+                                    <div class="d-flex gap-1">
+                                        <button class="btn btn-sm btn-outline" title="تفاصيل" onclick="openInvoiceDetails('INV-2026-0090')"><i class='bx bx-show'></i></button>
+                                        <button class="btn btn-sm btn-cyan" onclick="openModal('recordPaymentModal')" title="تسجيل دفعة"><i class='bx bx-dollar'></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="pagination">
+                        <div class="pagination-info">عرض 1 - 5 من 342 فاتورة</div>
+                        <div class="pagination-pages"><button class="pagination-btn active">1</button><button
+                                class="pagination-btn">2</button><button class="pagination-btn">3</button></div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-content" id="invTab-client">
+                <div class="card">
+                    <div class="empty-state"><i class='bx bx-receipt'></i>
+                        <h3>فواتير العملاء</h3>
+                        <p>يتم عرض فواتير العملاء فقط هنا</p>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-content" id="invTab-partner">
+                <div class="card">
+                    <div class="empty-state"><i class='bx bx-buildings'></i>
+                        <h3>فواتير الشركاء</h3>
+                        <p>فواتير الخطوط الملاحية والنقل والتخليص</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- FULL INVOICE DETAILS MODAL -->
+    <div class="modal-overlay" id="invoiceDetailsModal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3><i class='bx bx-receipt' style="margin-left:8px;"></i> تفاصيل الفاتورة</h3>
+                <div class="d-flex align-center gap-2">
+                    <span class="status-badge unpaid" id="detailModalStatus">غير مدفوعة</span>
+                    <button class="modal-close" onclick="closeModal('invoiceDetailsModal')"><i class='bx bx-x'></i></button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="grid-2" style="margin-bottom:20px;gap:20px;">
+                    <div>
+                        <p class="fs-sm fw-700 text-muted" style="margin-bottom:4px;">رقم الفاتورة</p>
+                        <p class="fs-md fw-700" id="detailInvNumber">INV-2026-0094</p>
+                        <p class="fs-sm text-muted" id="detailInvDate">التاريخ: 19/02/2026</p>
+                        <p class="fs-sm text-muted" id="detailInvDue">الاستحقاق: 04/03/2026</p>
+                    </div>
+                    <div>
+                        <p class="fs-sm fw-700 text-muted" style="margin-bottom:4px;">العميل / الشريك</p>
+                        <p class="fw-600" id="detailParty">منصور وشركاه</p>
+                        <p class="fs-xs text-muted" id="detailPartyContact">+20 100 123 4567 • info@mansour.com</p>
+                    </div>
+                </div>
+                <div style="margin-bottom:16px;">
+                    <p class="fs-sm fw-700 text-muted" style="margin-bottom:4px;">الشحنة</p>
+                    <p class="fw-600" id="detailShipment">BL-2026-0248</p>
+                    <p class="fs-xs text-muted" id="detailShipmentRoute">الإسكندرية → جدة • MSC OSCAR</p>
+                </div>
+                <table class="ledger-table" style="margin-bottom:16px;">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>الوصف</th>
+                            <th>الكمية</th>
+                            <th>السعر</th>
+                            <th>الإجمالي</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detailLineItems">
+                        <tr><td>1</td><td>Ocean Freight (40'HC×2)</td><td>1</td><td>$2,800</td><td class="fw-600">$2,800</td></tr>
+                        <tr><td>2</td><td>THC</td><td>2</td><td>$225</td><td class="fw-600">$450</td></tr>
+                        <tr><td>3</td><td>Inland Transport</td><td>1</td><td>$600</td><td class="fw-600">$600</td></tr>
+                        <tr><td>4</td><td>Documentation Fee</td><td>1</td><td>$150</td><td class="fw-600">$150</td></tr>
+                        <tr><td>5</td><td>Service Charge</td><td>1</td><td>$1,050</td><td class="fw-600">$1,050</td></tr>
+                    </tbody>
+                </table>
+                <div style="text-align:left;padding:12px 16px;background:var(--bg-body);border-radius:10px;margin-bottom:20px;">
+                    <div class="d-flex justify-between mb-1"><span class="fs-sm text-muted">المجموع الفرعي:</span><span class="fs-sm fw-600" id="detailSubtotal">$5,450</span></div>
+                    <div class="d-flex justify-between mb-1"><span class="fs-sm text-muted">الضريبة:</span><span class="fs-sm fw-600" id="detailTax">$0</span></div>
+                    <div class="d-flex justify-between" style="padding-top:8px;border-top:1px solid var(--border);">
+                        <span class="fw-700">الإجمالي:</span><span class="fw-800" style="font-size:1.15rem;color:var(--navy-800);" id="detailTotal">$5,450</span>
+                    </div>
+                </div>
+                <div style="margin-bottom:8px;">
+                    <p class="fs-sm fw-700 text-muted" style="margin-bottom:8px;">سجل الدفعات</p>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr><th>التاريخ</th><th>المبلغ</th><th>طريقة الدفع</th><th>مرجع</th></tr>
+                            </thead>
+                            <tbody id="detailPayments">
+                                <tr><td class="fs-sm">—</td><td class="fs-sm">—</td><td class="fs-sm">لا توجد دفعات بعد</td><td>—</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 flex-wrap" style="margin-top:16px;">
+                    <span class="status-badge draft" id="detailTaxBadge">غير ضريبية</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('invoiceDetailsModal')">إغلاق</button>
+                <button class="btn btn-outline" id="detailBtnRecordPayment" onclick="openModal('recordPaymentModal')"><i class='bx bx-dollar'></i> تسجيل دفعة</button>
+                <button class="btn btn-outline"><i class='bx bx-printer'></i> طباعة</button>
+                <button class="btn btn-primary" onclick="closeModal('invoiceDetailsModal');openModal('invoicePreviewModal')"><i class='bx bx-download'></i> تحميل PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CREATE INVOICE MODAL -->
+    <div class="modal-overlay" id="createInvoiceModal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3><i class='bx bx-receipt' style="margin-left:8px;"></i> إنشاء فاتورة</h3><button class="modal-close"
+                    onclick="closeModal('createInvoiceModal')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">نوع الفاتورة</label><select class="form-control">
+                            <option>فاتورة عميل</option>
+                            <option>فاتورة شريك (مورد)</option>
+                        </select></div>
+                    <div class="form-group"><label class="form-label">العميل / الشريك</label><select
+                            class="form-control">
+                            <option>اختر</option>
+                            <option>منصور وشركاه</option>
+                            <option>الإيمان للأغذية</option>
+                            <option>MSC</option>
+                            <option>نايل للنقل</option>
+                        </select></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">رقم الشحنة (BL#)</label><select
+                            class="form-control">
+                            <option>اختر</option>
+                            <option>BL-2026-0248</option>
+                            <option>BL-2026-0247</option>
+                        </select></div>
+                    <div class="form-group"><label class="form-label">العملة</label><select class="form-control">
+                            <option>USD</option>
+                            <option>EGP</option>
+                            <option>EUR</option>
+                        </select></div>
+                </div>
+
+                <h4 style="font-size:0.85rem;font-weight:700;margin:16px 0 12px;">بنود الفاتورة</h4>
+                <table class="data-table" style="margin-bottom:12px;">
+                    <thead>
+                        <tr>
+                            <th>الوصف</th>
+                            <th>الكمية</th>
+                            <th>السعر</th>
+                            <th>الإجمالي</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><input class="form-control" value="Ocean Freight (40'HC×2)" style="padding:6px 10px;">
+                            </td>
+                            <td><input class="form-control" value="1" style="width:60px;padding:6px;text-align:center;">
+                            </td>
+                            <td><input class="form-control" value="2,800"
+                                    style="width:100px;padding:6px;text-align:center;"></td>
+                            <td class="fw-700">$2,800</td>
+                        </tr>
+                        <tr>
+                            <td><input class="form-control" value="THC" style="padding:6px 10px;"></td>
+                            <td><input class="form-control" value="2" style="width:60px;padding:6px;text-align:center;">
+                            </td>
+                            <td><input class="form-control" value="225"
+                                    style="width:100px;padding:6px;text-align:center;"></td>
+                            <td class="fw-700">$450</td>
+                        </tr>
+                        <tr>
+                            <td><input class="form-control" value="Documentation Fee" style="padding:6px 10px;"></td>
+                            <td><input class="form-control" value="1" style="width:60px;padding:6px;text-align:center;">
+                            </td>
+                            <td><input class="form-control" value="150"
+                                    style="width:100px;padding:6px;text-align:center;"></td>
+                            <td class="fw-700">$150</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <button class="btn btn-sm btn-outline mb-2"><i class='bx bx-plus'></i> إضافة بند</button>
+
+                <div class="d-flex justify-between align-center"
+                    style="padding:12px 16px;background:var(--bg-body);border-radius:10px;margin-top:12px;">
+                    <div><label class="form-check"><input type="checkbox"> فاتورة ضريبية</label></div>
+                    <div style="text-align:left;"><span class="text-muted fs-sm">الإجمالي: </span><span class="fw-800"
+                            style="font-size:1.2rem;color:var(--navy-800);">$3,400</span></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('createInvoiceModal')">إلغاء</button>
+                <button class="btn btn-outline"><i class='bx bx-save'></i> حفظ كمسودة</button>
+                <button class="btn btn-primary"
+                    onclick="closeModal('createInvoiceModal');openModal('invoicePreviewModal')"><i
+                        class='bx bx-file'></i> معاينة PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- INVOICE PDF PREVIEW MODAL -->
+    <div class="modal-overlay" id="invoicePreviewModal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3><i class='bx bx-file' style="margin-left:8px;"></i> معاينة الفاتورة</h3><button class="modal-close"
+                    onclick="closeModal('invoicePreviewModal')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="doc-preview">
+                    <div class="doc-header">
+                        <div class="d-flex justify-between align-center" style="margin-bottom:16px;">
+                            <div style="text-align:right;">
+                                <h2 style="color:var(--navy-800);margin:0;">Amazon Marine</h2>
+                                <p class="text-muted fs-sm">Shipping Agency • وكالة شحن</p>
+                            </div>
+                            <div style="text-align:left;">
+                                <h3 style="font-size:1rem;color:var(--navy-700);">فاتورة / INVOICE</h3>
+                                <p class="fs-sm text-muted">#INV-2026-0094</p>
+                                <p class="fs-sm text-muted">التاريخ: 19/02/2026</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid-2" style="margin-bottom:20px;">
+                        <div>
+                            <p class="fs-sm fw-700">إلى:</p>
+                            <p class="fs-sm">منصور وشركاه</p>
+                            <p class="fs-xs text-muted">+20 100 123 4567</p>
+                            <p class="fs-xs text-muted">البطاقة الضريبية: TAX-2024-00123</p>
+                        </div>
+                        <div style="text-align:left;">
+                            <p class="fs-sm fw-700">الشحنة:</p>
+                            <p class="fs-sm">BL-2026-0248</p>
+                            <p class="fs-xs text-muted">الإسكندرية → جدة</p>
+                            <p class="fs-xs text-muted">MSC OSCAR • Voyage: 026E</p>
+                        </div>
+                    </div>
+                    <table class="ledger-table" style="margin-bottom:20px;">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>الوصف</th>
+                                <th>الكمية</th>
+                                <th>السعر</th>
+                                <th>الإجمالي</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td>Ocean Freight (40'HC×2)</td>
+                                <td>1</td>
+                                <td>$2,800</td>
+                                <td class="fw-600">$2,800</td>
+                            </tr>
+                            <tr>
+                                <td>2</td>
+                                <td>THC</td>
+                                <td>2</td>
+                                <td>$225</td>
+                                <td class="fw-600">$450</td>
+                            </tr>
+                            <tr>
+                                <td>3</td>
+                                <td>Inland Transport</td>
+                                <td>1</td>
+                                <td>$600</td>
+                                <td class="fw-600">$600</td>
+                            </tr>
+                            <tr>
+                                <td>4</td>
+                                <td>Customs Clearance</td>
+                                <td>1</td>
+                                <td>$400</td>
+                                <td class="fw-600">$400</td>
+                            </tr>
+                            <tr>
+                                <td>5</td>
+                                <td>Documentation Fee</td>
+                                <td>1</td>
+                                <td>$150</td>
+                                <td class="fw-600">$150</td>
+                            </tr>
+                            <tr>
+                                <td>6</td>
+                                <td>Service Charge</td>
+                                <td>1</td>
+                                <td>$1,050</td>
+                                <td class="fw-600">$1,050</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div style="text-align:left;padding:12px 16px;background:var(--bg-body);border-radius:10px;">
+                        <div class="d-flex justify-between mb-1"><span class="fs-sm text-muted">المجموع
+                                الفرعي:</span><span class="fs-sm fw-600">$5,450</span></div>
+                        <div class="d-flex justify-between mb-1"><span class="fs-sm text-muted">الضريبة
+                                (0%):</span><span class="fs-sm fw-600">$0</span></div>
+                        <div class="d-flex justify-between" style="padding-top:8px;border-top:1px solid var(--border);">
+                            <span class="fw-700">الإجمالي:</span><span class="fw-800"
+                                style="font-size:1.15rem;color:var(--navy-800);">$5,450</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('invoicePreviewModal')">إغلاق</button>
+                <button class="btn btn-cyan"><i class='bx bx-printer'></i> طباعة</button>
+                <button class="btn btn-primary"><i class='bx bx-download'></i> تحميل PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- RECORD PAYMENT MODAL -->
+    <div class="modal-overlay" id="recordPaymentModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class='bx bx-dollar' style="margin-left:8px;"></i> تسجيل دفعة</h3><button class="modal-close"
+                    onclick="closeModal('recordPaymentModal')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">المبلغ</label><input type="number"
+                            class="form-control" placeholder="0.00"></div>
+                    <div class="form-group"><label class="form-label">العملة</label><select class="form-control">
+                            <option>USD</option>
+                            <option>EGP</option>
+                            <option>EUR</option>
+                        </select></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">طريقة الدفع</label><select class="form-control">
+                            <option>تحويل بنكي</option>
+                            <option>نقدي</option>
+                            <option>InstaPay</option>
+                            <option>شيك</option>
+                        </select></div>
+                    <div class="form-group"><label class="form-label">التاريخ</label><input type="date"
+                            class="form-control" value="2026-02-19"></div>
+                </div>
+                <div class="form-group"><label class="form-label">رقم التحويل / مرجع</label><input type="text"
+                        class="form-control" placeholder="رقم الحوالة أو رقم الشيك"></div>
+                <div class="form-group"><label class="form-label">صورة الإيصال</label>
+                    <div class="file-upload"><i class='bx bx-cloud-upload'></i>
+                        <p>ارفع صورة الإيصال</p>
+                    </div>
+                </div>
+                <div class="form-group"><label class="form-label">ملاحظات</label><textarea class="form-control"
+                        placeholder="أي ملاحظات..."></textarea></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-outline"
+                    onclick="closeModal('recordPaymentModal')">إلغاء</button><button class="btn btn-primary"><i
+                        class='bx bx-check'></i> تسجيل الدفعة</button></div>
+        </div>
+    </div>
+
+    <!-- UPLOAD TAX INVOICE MODAL -->
+    <div class="modal-overlay" id="uploadTaxModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class='bx bx-upload' style="margin-left:8px;"></i> رفع فاتورة ضريبية</h3><button
+                    class="modal-close" onclick="closeModal('uploadTaxModal')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group"><label class="form-label">رقم الفاتورة الإلكترونية</label><input type="text"
+                        class="form-control" placeholder="رقم الفاتورة على المنظومة"></div>
+                <div class="form-group"><label class="form-label">ملف الفاتورة الضريبية</label>
+                    <div class="file-upload"><i class='bx bx-cloud-upload'></i>
+                        <p>ارفع PDF أو صورة الفاتورة الضريبية</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-outline"
+                    onclick="closeModal('uploadTaxModal')">إلغاء</button><button class="btn btn-primary"><i
+                        class='bx bx-check'></i> رفع وأرشفة</button></div>
+        </div>
+    </div>
+
+    <script src="js/role-auth.js"></script>
+    <script src="js/role-sidebar-apply.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/role-views.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+        // —— Invoice details modal (sample data keyed by inv number) ——
+        var invoiceDetailsData = {
+            'INV-2026-0094': { status: 'غير مدفوعة', statusClass: 'unpaid', party: 'منصور وشركاه', contact: '+20 100 123 4567 • info@mansour.com', shipment: 'BL-2026-0248', route: 'الإسكندرية → جدة • MSC OSCAR', date: '19/02/2026', due: '04/03/2026', subtotal: '$5,450', tax: '$0', total: '$5,450', taxLabel: 'غير ضريبية', payments: [] },
+            'INV-2026-0093': { status: 'جزئية', statusClass: 'partial', party: 'الإيمان للأغذية', contact: '+20 111 222 3344', shipment: 'BL-2026-0247', route: 'بورسعيد → دبي', date: '18/02/2026', due: '03/03/2026', subtotal: '$8,500', tax: '$0', total: '$8,500', taxLabel: 'ضريبية', payments: [{ date: '15/02/2026', amount: '$3,000', method: 'تحويل بنكي', ref: 'TRF-8821' }] },
+            'INV-2026-0092': { status: 'مدفوعة', statusClass: 'paid', party: 'طه للمنسوجات', contact: 'taha@textiles.com', shipment: 'BL-2026-0245', route: 'الإسكندرية → جدة', date: '17/02/2026', due: '02/03/2026', subtotal: '€7,800', tax: '€0', total: '€7,800', taxLabel: 'ضريبية', payments: [{ date: '20/02/2026', amount: '€7,800', method: 'تحويل بنكي', ref: 'TRF-8840' }] },
+            'INV-2026-0091': { status: 'مدفوعة', statusClass: 'paid', party: 'MSC (شريك)', contact: 'billing@msc.com', shipment: 'BL-2026-0248', route: '—', date: '16/02/2026', due: '01/03/2026', subtotal: '$3,250', tax: '$0', total: '$3,250', taxLabel: 'لا', payments: [{ date: '18/02/2026', amount: '$3,250', method: 'تحويل بنكي', ref: 'MSC-INV-9912' }] },
+            'INV-2026-0090': { status: 'متأخرة', statusClass: 'overdue', party: 'نايل للنقل (شريك)', contact: '+20 122 333 4455', shipment: 'BL-2026-0248', route: 'نقل داخلي', date: '16/02/2026', due: '01/02/2026', subtotal: 'EGP 18,000', tax: 'EGP 0', total: 'EGP 18,000', taxLabel: 'لا', payments: [] }
+        };
+        function openInvoiceDetails(invId) {
+            var d = invoiceDetailsData[invId] || invoiceDetailsData['INV-2026-0094'];
+            var statusEl = document.getElementById('detailModalStatus');
+            statusEl.textContent = d.status;
+            statusEl.className = 'status-badge ' + d.statusClass;
+            document.getElementById('detailInvNumber').textContent = invId;
+            document.getElementById('detailInvDate').textContent = 'التاريخ: ' + d.date;
+            document.getElementById('detailInvDue').textContent = 'الاستحقاق: ' + d.due;
+            document.getElementById('detailParty').textContent = d.party;
+            document.getElementById('detailPartyContact').textContent = d.contact;
+            document.getElementById('detailShipment').textContent = d.shipment;
+            document.getElementById('detailShipmentRoute').textContent = d.route;
+            document.getElementById('detailSubtotal').textContent = d.subtotal;
+            document.getElementById('detailTax').textContent = d.tax;
+            document.getElementById('detailTotal').textContent = d.total;
+            document.getElementById('detailTaxBadge').textContent = d.taxLabel;
+            var tbody = document.getElementById('detailPayments');
+            if (d.payments && d.payments.length) {
+                tbody.innerHTML = d.payments.map(function(p) {
+                    return '<tr><td class="fs-sm">' + p.date + '</td><td class="fw-600">' + p.amount + '</td><td class="fs-sm">' + p.method + '</td><td class="fs-sm">' + (p.ref || '—') + '</td></tr>';
+                }).join('');
+            } else {
+                tbody.innerHTML = '<tr><td class="fs-sm" colspan="4">لا توجد دفعات بعد</td></tr>';
+            }
+            var btnRecord = document.getElementById('detailBtnRecordPayment');
+            btnRecord.style.display = (d.statusClass === 'paid' ? 'none' : 'inline-flex');
+            openModal('invoiceDetailsModal');
+        }
+        window.openInvoiceDetails = openInvoiceDetails;
+
+        // —— Charts ——
+        (function() {
+            var chartMonthsEl = document.getElementById('chartMonths');
+            var revEl = document.getElementById('chartInvoiceRevenue');
+            var outEl = document.getElementById('chartOutstanding');
+            var months = 6;
+            function getRevenueData() {
+                var labels = [], data = [];
+                for (var i = months - 1; i >= 0; i--) {
+                    var d = new Date();
+                    d.setMonth(d.getMonth() - i);
+                    labels.push(d.toLocaleDateString('ar-EG', { month: 'short', year: '2-digit' }));
+                    data.push([42, 38, 52, 48, 55, 45][i] || 40);
+                }
+                return { labels: labels, data: data };
+            }
+            var revData = getRevenueData();
+            var chartRevenue, chartOutstanding;
+            if (revEl && typeof Chart !== 'undefined') {
+                chartRevenue = new Chart(revEl, {
+                    type: 'bar',
+                    data: { labels: revData.labels, datasets: [{ label: 'إيرادات ($K)', data: revData.data, backgroundColor: 'rgba(23, 162, 184, 0.6)', borderColor: 'rgba(23, 162, 184, 1)', borderWidth: 1 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+                });
+            }
+            if (outEl && typeof Chart !== 'undefined') {
+                chartOutstanding = new Chart(outEl, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['مدفوعة', 'جزئية', 'غير مدفوعة', 'متأخرة'],
+                        datasets: [{ data: [220, 42, 15, 8], backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#c53030'], borderWidth: 0 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                });
+            }
+            if (chartMonthsEl && chartRevenue) {
+                chartMonthsEl.addEventListener('change', function() {
+                    months = parseInt(this.value, 10);
+                    var rd = getRevenueData();
+                    chartRevenue.data.labels = rd.labels;
+                    chartRevenue.data.datasets[0].data = rd.data;
+                    chartRevenue.update();
+                });
+            }
+        })();
+
+        // —— Filters, sort, bulk (invoices) ——
+        (function() {
+            var search = document.getElementById('invoiceSearch');
+            var filterStatus = document.getElementById('filterInvStatus');
+            var filterType = document.getElementById('filterInvType');
+            var filterCurrency = document.getElementById('filterInvCurrency');
+            var filterMonth = document.getElementById('filterInvMonth');
+            var sortSelect = document.getElementById('sortInvoices');
+            var table = document.getElementById('invoicesTable');
+            var rows = table ? table.querySelectorAll('.invoice-row') : [];
+            var selectAll = document.getElementById('selectAllInvoices');
+            var bulkBar = document.getElementById('invoicesBulkBar');
+            var bulkCount = document.getElementById('invoicesBulkCount');
+            function applyFiltersAndSort() {
+                var q = (search && search.value) ? search.value.trim().toLowerCase() : '';
+                var status = filterStatus && filterStatus.value;
+                var type = filterType && filterType.value;
+                var currency = filterCurrency && filterCurrency.value;
+                var sort = sortSelect && sortSelect.value;
+                var month = filterMonth && filterMonth.value;
+                var visible = [];
+                rows.forEach(function(tr) {
+                    var party = (tr.getAttribute('data-party') || '').toLowerCase();
+                    var inv = (tr.getAttribute('data-inv') || '').toLowerCase();
+                    var rowStatus = tr.getAttribute('data-status');
+                    var rowType = tr.getAttribute('data-type');
+                    var rowCurrency = tr.getAttribute('data-currency');
+                    var rowDate = tr.getAttribute('data-date') || '';
+                    var rowAmount = parseFloat(tr.getAttribute('data-amount')) || 0;
+                    var show = true;
+                    if (q && party.indexOf(q) < 0 && inv.indexOf(q) < 0) show = false;
+                    if (status && rowStatus !== status) show = false;
+                    if (type && rowType !== type) show = false;
+                    if (currency && rowCurrency !== currency) show = false;
+                    if (month && rowDate && rowDate.slice(0, 7) !== month) show = false;
+                    tr.style.display = show ? '' : 'none';
+                    if (show) visible.push(tr);
+                });
+                if (sort && visible.length) {
+                    visible.sort(function(a, b) {
+                        var av, bv;
+                        switch (sort) {
+                            case 'number': av = a.getAttribute('data-inv'); bv = b.getAttribute('data-inv'); return (bv < av) ? 1 : (bv > av ? -1 : 0);
+                            case 'date': av = a.getAttribute('data-date'); bv = b.getAttribute('data-date'); return (bv || '').localeCompare(av || '');
+                            case 'amount': av = parseFloat(a.getAttribute('data-amount')); bv = parseFloat(b.getAttribute('data-amount')); return av - bv;
+                            case 'status': av = a.getAttribute('data-status'); bv = b.getAttribute('data-status'); return (av || '').localeCompare(bv || '');
+                            case 'party': av = a.getAttribute('data-party'); bv = b.getAttribute('data-party'); return (av || '').localeCompare(bv || '');
+                            default: return 0;
+                        }
+                    });
+                    var tbody = table.querySelector('tbody');
+                    visible.forEach(function(tr) { tbody.appendChild(tr); });
+                }
+            }
+            [search, filterStatus, filterType, filterCurrency, filterMonth, sortSelect].forEach(function(el) {
+                if (el) el.addEventListener('change', applyFiltersAndSort);
+            });
+            if (search) search.addEventListener('input', applyFiltersAndSort);
+
+            function updateBulkBar() {
+                var checked = table ? table.querySelectorAll('.invoice-checkbox:checked') : [];
+                var n = checked.length;
+                bulkBar.style.display = n ? 'flex' : 'none';
+                if (bulkCount) bulkCount.textContent = 'تم تحديد ' + n + ' فاتورة';
+                if (selectAll) selectAll.checked = n && rows.length && n === rows.length;
+            }
+            table && table.addEventListener('change', function(e) {
+                if (e.target.classList.contains('invoice-checkbox') || e.target.id === 'selectAllInvoices') {
+                    if (e.target.id === 'selectAllInvoices') {
+                        rows.forEach(function(tr) {
+                            var cb = tr.querySelector('.invoice-checkbox');
+                            if (cb) cb.checked = selectAll.checked;
+                        });
+                    }
+                    updateBulkBar();
+                }
+            });
+            if (document.getElementById('bulkClearInvoices')) {
+                document.getElementById('bulkClearInvoices').addEventListener('click', function() {
+                    if (selectAll) selectAll.checked = false;
+                    rows.forEach(function(tr) {
+                        var cb = tr.querySelector('.invoice-checkbox');
+                        if (cb) cb.checked = false;
+                    });
+                    updateBulkBar();
+                });
+            }
+            if (document.getElementById('bulkExportInvoices')) {
+                document.getElementById('bulkExportInvoices').addEventListener('click', function() {
+                    var checked = table.querySelectorAll('.invoice-checkbox:checked');
+                    if (checked.length) alert('سيتم تصدير ' + checked.length + ' فاتورة (واجهة جاهزة، الربط بالخادم لاحقاً).'); else alert('لم يتم تحديد فواتير.');
+                });
+            }
+            if (document.getElementById('bulkSendReminder')) {
+                document.getElementById('bulkSendReminder').addEventListener('click', function() {
+                    var checked = table.querySelectorAll('.invoice-checkbox:checked');
+                    if (checked.length) alert('سيتم إرسال تذكير لـ ' + checked.length + ' فاتورة (واجهة جاهزة، الربط بالبريد لاحقاً).'); else alert('لم يتم تحديد فواتير.');
+                });
+            }
+        })();
+    </script>
+</body>
+
+</html>

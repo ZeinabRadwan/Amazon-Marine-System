@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazon Marine — التقارير</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <nav class="sidebar">
+        <div class="logo-area"><img src="logo/logo (1).png" alt="Logo">
+            <div class="logo-text"><span class="brand-name">Amazon Marine</span><span class="brand-sub">Shipping
+                    Agency</span></div>
+        </div>
+        <div class="menu-label">الرئيسية</div>
+        <ul class="menu">
+            <li><a href="dashboard.html"><i class='bx bxs-dashboard'></i><span>لوحة التحكم</span></a></li>
+            <li><a href="clients.html"><i class='bx bx-group'></i><span>العملاء / CRM</span></a></li>
+            <li><a href="shipments.html"><i class='bx bx-package'></i><span>الشحنات</span></a></li>
+            <li><a href="sd-forms.html"><i class='bx bx-file'></i><span>نماذج SD</span></a></li>
+            <li><a href="operations.html"><i class='bx bxs-ship'></i><span>العمليات</span></a></li>
+        </ul>
+        <div class="menu-label">المالية</div>
+        <ul class="menu">
+            <li><a href="invoices.html"><i class='bx bx-receipt'></i><span>الفواتير</span></a></li>
+            <li><a href="accounting.html"><i class='bx bx-wallet'></i><span>الحسابات</span></a></li>
+            <li><a href="treasury.html"><i class='bx bx-credit-card'></i><span>الخزينة</span></a></li>
+            <li><a href="expenses.html"><i class='bx bx-money'></i><span>المصروفات</span></a></li>
+            <li><a href="pricing.html"><i class='bx bx-dollar-circle'></i><span>التسعير</span></a></li>
+        </ul>
+        <div class="menu-label">الإدارة</div>
+        <ul class="menu">
+            <li><a href="partners.html"><i class='bx bx-buildings'></i><span>الشركاء</span></a></li>
+            <li><a href="attendance.html"><i class='bx bx-time-five'></i><span>الحضور والانصراف</span></a></li>
+            <li><a href="visits.html"><i class='bx bx-map-pin'></i><span>سجل الزيارات</span></a></li>
+            <li class="active"><a href="reports.html"><i class='bx bx-bar-chart-alt-2'></i><span>التقارير</span></a>
+            </li>
+            <li><a href="documents.html"><i class='bx bx-file-blank'></i><span>المستندات الرسمية</span></a></li>
+            <li><a href="tickets.html"><i class='bx bx-message-alt-detail'></i><span>تذاكر الدعم</span></a></li>
+            <li><a href="team-performance.html"><i class='bx bx-trending-up'></i><span>أداء الفريق</span></a></li>
+        </ul>
+        <div class="menu-label">الإعدادات</div>
+        <ul class="menu">
+            <li><a href="settings.html"><i class='bx bx-cog'></i><span>الإعدادات</span></a></li>
+            <li><a href="profile.html"><i class='bx bx-user'></i><span>الملف الشخصي</span></a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-avatar">MD</div>
+            <div class="user-info">
+                <div class="user-name">Capt. Mostafa</div>
+                <div class="user-role">مدير النظام</div>
+            </div><a href="index.html"><i class='bx bx-log-out'
+                    style="color:rgba(255,255,255,0.35);font-size:1.2rem;"></i></a>
+        </div>
+    </nav>
+
+    <div class="main-wrapper">
+        <header class="topbar">
+            <div class="page-title-area">
+                <h1>التقارير والتحليلات</h1>
+                <div class="breadcrumbs">Amazon Marine > <span>التقارير</span></div>
+            </div>
+            <div class="topbar-right">
+                <div class="topbar-icon"><i class='bx bx-bell'></i>
+                    <div class="notif-dot"></div>
+                </div>
+                <div class="currency-dropdown">
+                    <div class="topbar-icon" onclick="toggleCurrencyDropdown(event)">
+                        <i class='bx bx-dollar-circle'></i>
+                        <span class="currency-code" id="currencyCodeBadge">$</span>
+                    </div>
+                    <div class="currency-dropdown-menu" id="currencyDropdown">
+                        <button type="button" class="currency-dropdown-item active" data-currency="USD">$ USD <i class='bx bx-check'></i></button>
+                        <button type="button" class="currency-dropdown-item" data-currency="EUR">€ EUR</button>
+                        <button type="button" class="currency-dropdown-item" data-currency="EGP">E£ EGP</button>
+                    </div>
+                </div>
+                <div class="profile-pill">
+                    <div class="profile-avatar">MD</div><span>Capt. Mostafa</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="content">
+            <!-- Sales: My performance only -->
+            <div data-reports-role="sales" style="display:none;">
+                <div class="card" style="margin-bottom:20px;">
+                    <div class="card-header"><span class="card-title">تقرير أدائي فقط</span></div>
+                    <p class="fs-sm text-muted" style="padding:0 20px 12px;">زيارات العملاء، التحويل، إيرادات عملائي، وحالة شحنات عملائي.</p>
+                    <div class="stats-row" style="padding:0 20px 20px;">
+                        <div class="stat-card"><div class="stat-icon-wrap cyan"><i class='bx bx-map-pin'></i></div><div class="stat-info"><h3>12</h3><div class="stat-label">زياراتي (هذا الشهر)</div></div></div>
+                        <div class="stat-card"><div class="stat-icon-wrap green"><i class='bx bx-trending-up'></i></div><div class="stat-info"><h3>78%</h3><div class="stat-label">معدل التحويل</div></div></div>
+                        <div class="stat-card"><div class="stat-icon-wrap gold"><i class='bx bx-dollar'></i></div><div class="stat-info"><h3>$45K</h3><div class="stat-label">إيرادات عملائي</div></div></div>
+                        <div class="stat-card"><div class="stat-icon-wrap navy"><i class='bx bx-package'></i></div><div class="stat-info"><h3>32</h3><div class="stat-label">شحنات عملائي</div></div></div>
+                    </div>
+                    <div style="padding:0 20px 20px;"><a href="visits.html" class="btn btn-outline btn-sm">سجل الزيارات</a> <a href="shipments.html" class="btn btn-outline btn-sm">شحناتي</a></div>
+                </div>
+            </div>
+
+            <!-- Accounting: Financial reports only -->
+            <div data-reports-role="accounting" style="display:none;">
+                <div class="card" style="margin-bottom:20px;">
+                    <div class="card-header"><span class="card-title">التقارير المالية فقط</span></div>
+                    <p class="fs-sm text-muted" style="padding:0 20px 12px;">الفواتير، المدفوعات، الأرصدة، والتدفق النقدي.</p>
+                    <div class="stats-row" style="padding:0 20px 20px;">
+                        <div class="stat-card"><div class="stat-icon-wrap gold"><i class='bx bx-receipt'></i></div><div class="stat-info"><h3>94</h3><div class="stat-label">فواتير الشهر</div></div></div>
+                        <div class="stat-card"><div class="stat-icon-wrap green"><i class='bx bx-check-circle'></i></div><div class="stat-info"><h3>$186K</h3><div class="stat-label">مدفوعات مستلمة</div></div></div>
+                        <div class="stat-card"><div class="stat-icon-wrap danger"><i class='bx bx-error-circle'></i></div><div class="stat-info"><h3>$125K</h3><div class="stat-label">أرصدة معلقة</div></div></div>
+                        <div class="stat-card"><div class="stat-icon-wrap cyan"><i class='bx bx-trending-up'></i></div><div class="stat-info"><h3>$42K</h3><div class="stat-label">صافي التدفق</div></div></div>
+                    </div>
+                    <div style="padding:0 20px 20px;"><a href="invoices.html" class="btn btn-outline btn-sm">الفواتير</a> <a href="accounting.html" class="btn btn-outline btn-sm">الحسابات</a> <a href="treasury.html" class="btn btn-outline btn-sm">الخزينة</a></div>
+                </div>
+            </div>
+
+            <!-- Pricing: Pricing reports only -->
+            <div data-reports-role="pricing" style="display:none;">
+                <div class="card" style="margin-bottom:20px;">
+                    <div class="card-header"><span class="card-title">تقارير التسعير فقط</span></div>
+                    <p class="fs-sm text-muted" style="padding:0 20px 12px;">سجل الأسعار، موافقات الخصم، وتغييرات الأسعار.</p>
+                    <div class="stats-row" style="padding:0 20px 20px;">
+                        <div class="stat-card"><div class="stat-icon-wrap navy"><i class='bx bx-dollar-circle'></i></div><div class="stat-info"><h3>24</h3><div class="stat-label">أسعار نشطة</div></div></div>
+                        <div class="stat-card"><div class="stat-icon-wrap warning"><i class='bx bx-time'></i></div><div class="stat-info"><h3>7</h3><div class="stat-label">موافقات معلقة</div></div></div>
+                        <div class="stat-card"><div class="stat-icon-wrap cyan"><i class='bx bx-purchase-tag'></i></div><div class="stat-info"><h3>14</h3><div class="stat-label">خصومات مطبقة</div></div></div>
+                        <div class="stat-card"><div class="stat-icon-wrap green"><i class='bx bx-history'></i></div><div class="stat-info"><h3>18</h3><div class="stat-label">تعديلات معتمدة</div></div></div>
+                    </div>
+                    <div style="padding:0 20px 20px;"><a href="pricing.html" class="btn btn-outline btn-sm">التسعير</a> <a href="cost-viewer.html" class="btn btn-outline btn-sm">عرض التكاليف</a></div>
+                </div>
+            </div>
+
+            <!-- Date Range (Admin full reports) -->
+            <div data-reports-role="admin,sales_manager">
+            <div class="card" style="margin-bottom:20px;">
+                <div class="d-flex justify-between align-center flex-wrap gap-2">
+                    <h3 style="font-size:0.92rem;font-weight:700;">فترة التقرير</h3>
+                    <div class="d-flex gap-1">
+                        <input type="date" class="form-control" id="reportStart" value="2026-01-01" style="width:145px;padding:6px 10px;">
+                        <input type="date" class="form-control" id="reportEnd" value="2026-02-19" style="width:145px;padding:6px 10px;">
+                        <button type="button" class="btn btn-primary btn-sm" id="reportRefreshBtn"><i class='bx bx-refresh'></i> تحديث</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI Alerts (threshold alerts) -->
+            <div class="card acc-notifications" id="reportKpiAlerts" style="margin-bottom:20px;">
+                <div class="card-header">
+                    <span class="card-title"><i class='bx bx-error-circle' style="margin-left:6px;"></i> تنبيهات المؤشرات</span>
+                    <span class="fs-sm text-muted">3 تنبيهات</span>
+                </div>
+                <div class="acc-notif-list">
+                    <div class="acc-notif-item warning" data-alert="conversion">
+                        <i class='bx bx-trending-down'></i>
+                        <span>معدل التحويل أقل من الهدف (71% &lt; 75%) — تقرير العملاء</span>
+                        <a href="#" class="fs-sm" onclick="openDrillDown('clients')">عرض التفاصيل</a>
+                    </div>
+                    <div class="acc-notif-item danger" data-alert="delayed">
+                        <i class='bx bx-time-five'></i>
+                        <span>5 شحنات متأخرة عن الموعد — تقرير الشحنات</span>
+                        <a href="shipments.html" class="fs-sm">عرض الشحنات</a>
+                    </div>
+                    <div class="acc-notif-item info" data-alert="margin">
+                        <i class='bx bx-info-circle'></i>
+                        <span>هامش الربح قريب من الحد الأدنى (19.9% — الهدف 20%)</span>
+                        <a href="#" class="fs-sm" onclick="openDrillDown('financial')">عرض التقرير المالي</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI Summary (drill-down enabled) - Admin only -->
+            <div class="stats-row" id="reportKpiCards">
+                <div class="stat-card stat-card-drill" data-drill="shipments" title="انقر لعرض التفاصيل">
+                    <div class="stat-icon-wrap navy"><i class='bx bx-package'></i></div>
+                    <div class="stat-info">
+                        <h3>248</h3>
+                        <div class="stat-label">إجمالي الشحنات</div><span class="stat-trend up"><i class='bx bx-trending-up'></i> 12%</span>
+                    </div>
+                </div>
+                <div class="stat-card stat-card-drill" data-drill="revenue" title="انقر لعرض التفاصيل">
+                    <div class="stat-icon-wrap gold"><i class='bx bx-dollar-circle'></i></div>
+                    <div class="stat-info">
+                        <h3>$342K</h3>
+                        <div class="stat-label">إجمالي الإيرادات</div><span class="stat-trend up"><i class='bx bx-trending-up'></i> 23%</span>
+                    </div>
+                </div>
+                <div class="stat-card stat-card-drill" data-drill="profit" title="انقر لعرض التفاصيل">
+                    <div class="stat-icon-wrap green"><i class='bx bx-line-chart'></i></div>
+                    <div class="stat-info">
+                        <h3>$68K</h3>
+                        <div class="stat-label">صافي الربح</div><span class="stat-trend up"><i class='bx bx-trending-up'></i> 15%</span>
+                    </div>
+                </div>
+                <div class="stat-card stat-card-drill" data-drill="margin" title="انقر لعرض التفاصيل">
+                    <div class="stat-icon-wrap cyan"><i class='bx bx-transfer'></i></div>
+                    <div class="stat-info">
+                        <h3>19.9%</h3>
+                        <div class="stat-label">هامش الربح</div><span class="stat-trend up"><i class='bx bx-trending-up'></i> 2.1%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive dashboard charts -->
+            <div class="card" style="margin-bottom:24px;">
+                <div class="card-header">
+                    <span class="card-title">لوحة تفاعلية</span>
+                    <select class="form-control" id="reportChartPeriod" style="width:auto;min-width:110px;">
+                        <option value="7">7 أيام</option>
+                        <option value="30">30 يوم</option>
+                        <option value="90">90 يوم</option>
+                    </select>
+                </div>
+                <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+                    <div>
+                        <p class="fs-sm fw-600 text-muted" style="margin-bottom:8px;">الإيرادات والربح ($K)</p>
+                        <div class="chart-wrap" style="position:relative;height:220px;width:100%;">
+                            <canvas id="chartReportRevenue"></canvas>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="fs-sm fw-600 text-muted" style="margin-bottom:8px;">الشحنات حسب الحالة</p>
+                        <div class="chart-wrap" style="position:relative;height:220px;width:100%;">
+                            <canvas id="chartReportShipments"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div style="padding:0 16px 16px;">
+                    <p class="fs-sm fw-600 text-muted" style="margin-bottom:8px;">أداء السيلز (إيرادات $K) — انقر للتفاصيل</p>
+                    <div class="chart-wrap" style="position:relative;height:200px;width:100%;">
+                        <canvas id="chartReportSales"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Integration: real-time data from modules -->
+            <div class="card" style="margin-bottom:24px;padding:16px 20px;">
+                <div class="d-flex align-center justify-between flex-wrap gap-2">
+                    <span class="fw-600"><i class='bx bx-link' style="margin-left:8px;"></i> بيانات حية من الوحدات</span>
+                    <span class="fs-sm text-muted" id="reportLastSync">آخر تحديث: منذ 5 دقائق</span>
+                    <div class="d-flex gap-2">
+                        <a href="clients.html" class="btn btn-outline btn-sm"><i class='bx bx-group'></i> CRM</a>
+                        <a href="accounting.html" class="btn btn-outline btn-sm"><i class='bx bx-wallet'></i> الحسابات</a>
+                        <a href="operations.html" class="btn btn-outline btn-sm"><i class='bx bxs-ship'></i> العمليات</a>
+                        <a href="shipments.html" class="btn btn-outline btn-sm"><i class='bx bx-package'></i> الشحنات</a>
+                        <a href="invoices.html" class="btn btn-outline btn-sm"><i class='bx bx-receipt'></i> الفواتير</a>
+                        <button type="button" class="btn btn-cyan btn-sm" id="reportSyncBtn"><i class='bx bx-refresh'></i> تحديث الآن</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Cards + Templates -->
+            <div class="d-flex justify-between align-center flex-wrap gap-2" style="margin-bottom:14px;">
+                <h3 style="font-size:0.92rem;font-weight:700;margin:0;">📊 التقارير المتاحة</h3>
+                <button type="button" class="btn btn-outline btn-sm" onclick="openModal('reportTemplatesModal')"><i class='bx bx-file-blank'></i> قوالب التقارير</button>
+            </div>
+            <div class="grid-3">
+                <!-- Sales Report -->
+                <div class="card report-card">
+                    <div class="d-flex align-center gap-2 mb-2">
+                        <div class="stat-icon-wrap navy"><i class='bx bx-bar-chart-alt-2'></i></div>
+                        <h4 class="fs-sm fw-700">تقرير المبيعات</h4>
+                    </div>
+                    <p class="fs-xs text-muted mb-2">أداء فريق المبيعات — انقر على السيلز للتفاصيل</p>
+                    <table class="data-table" style="margin-bottom:12px;">
+                        <thead>
+                            <tr>
+                                <th>السيلز</th>
+                                <th>شحنات</th>
+                                <th>إيرادات</th>
+                                <th>ربح</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="report-drill-row" data-drill="sales" data-rep="أحمد خيري" onclick="openDrillDown('sales','أحمد خيري')" style="cursor:pointer;">
+                                <td class="fw-600 fs-sm link">أحمد خيري</td>
+                                <td>45</td>
+                                <td>$98K</td>
+                                <td class="text-success fw-600">$18.4K</td>
+                            </tr>
+                            <tr class="report-drill-row" data-drill="sales" data-rep="محمد سعيد" onclick="openDrillDown('sales','محمد سعيد')" style="cursor:pointer;">
+                                <td class="fw-600 fs-sm link">محمد سعيد</td>
+                                <td>38</td>
+                                <td>$82K</td>
+                                <td class="text-success fw-600">$15.2K</td>
+                            </tr>
+                            <tr class="report-drill-row" data-drill="sales" data-rep="زينب رضوان" onclick="openDrillDown('sales','زينب رضوان')" style="cursor:pointer;">
+                                <td class="fw-600 fs-sm link">زينب رضوان</td>
+                                <td>29</td>
+                                <td>$64K</td>
+                                <td class="text-success fw-600">$11.8K</td>
+                            </tr>
+                            <tr class="report-drill-row" data-drill="sales" data-rep="حسن نبيل" onclick="openDrillDown('sales','حسن نبيل')" style="cursor:pointer;">
+                                <td class="fw-600 fs-sm link">حسن نبيل</td>
+                                <td>22</td>
+                                <td>$48K</td>
+                                <td class="text-success fw-600">$9.6K</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <button class="btn btn-outline btn-sm"><i class='bx bx-download'></i> تحميل Excel</button>
+                </div>
+
+                <!-- Shipment Report -->
+                <div class="card report-card">
+                    <div class="d-flex align-center gap-2 mb-2">
+                        <div class="stat-icon-wrap cyan"><i class='bx bx-package'></i></div>
+                        <h4 class="fs-sm fw-700">تقرير الشحنات</h4>
+                    </div>
+                    <p class="fs-xs text-muted mb-2">انقر على الميناء لعرض الشحنات</p>
+                    <div style="margin-bottom:12px;">
+                        <div class="d-flex justify-between mb-1"><a href="shipments.html" class="fs-xs link">الإسكندرية</a><span class="fs-xs fw-600">42%</span></div>
+                        <div class="stage-bar" style="margin-bottom:8px;">
+                            <div class="stage-bar-fill fill-navy" style="width:42%;"></div>
+                        </div>
+                        <div class="d-flex justify-between mb-1"><a href="shipments.html" class="fs-xs link">دمياط</a><span class="fs-xs fw-600">28%</span></div>
+                        <div class="stage-bar" style="margin-bottom:8px;">
+                            <div class="stage-bar-fill fill-cyan" style="width:28%;"></div>
+                        </div>
+                        <div class="d-flex justify-between mb-1"><a href="shipments.html" class="fs-xs link">بورسعيد</a><span class="fs-xs fw-600">18%</span></div>
+                        <div class="stage-bar" style="margin-bottom:8px;">
+                            <div class="stage-bar-fill fill-gold" style="width:18%;"></div>
+                        </div>
+                        <div class="d-flex justify-between mb-1"><a href="shipments.html" class="fs-xs link">السخنة</a><span class="fs-xs fw-600">12%</span></div>
+                        <div class="stage-bar">
+                            <div class="stage-bar-fill fill-green" style="width:12%;"></div>
+                        </div>
+                    </div>
+                    <button class="btn btn-outline btn-sm"><i class='bx bx-download'></i> تحميل تقرير</button>
+                </div>
+
+                <!-- Financial Report -->
+                <div class="card report-card">
+                    <div class="d-flex align-center gap-2 mb-2">
+                        <div class="stat-icon-wrap gold"><i class='bx bx-wallet'></i></div>
+                        <h4 class="fs-sm fw-700">التقرير المالي</h4>
+                    </div>
+                    <p class="fs-xs text-muted mb-2">ملخص الإيرادات والمصروفات وصافي الربح</p>
+                    <div style="margin-bottom:12px;">
+                        <div class="d-flex justify-between mb-1"><span class="text-muted fs-sm">إجمالي
+                                الإيرادات:</span><span class="fw-700 fs-sm">$342,000</span></div>
+                        <div class="d-flex justify-between mb-1"><span class="text-muted fs-sm">إجمالي
+                                المصروفات:</span><span class="fw-700 fs-sm text-danger">$274,000</span></div>
+                        <div class="d-flex justify-between" style="padding-top:8px;border-top:1px solid var(--border);">
+                            <span class="fw-700 fs-sm text-success">صافي الربح:</span><span
+                                class="fw-800 fs-sm text-success">$68,000</span></div>
+                    </div>
+                    <div class="d-flex justify-between mb-1"><span class="text-muted fs-xs">مستحقات:</span><span
+                            class="fw-600 fs-xs text-danger">$14,950</span></div>
+                    <div class="d-flex justify-between mb-2"><span class="text-muted fs-xs">مطلوبات:</span><span
+                            class="fw-600 fs-xs text-danger">$31,900</span></div>
+                    <button class="btn btn-outline btn-sm"><i class='bx bx-download'></i> تحميل PDF</button>
+                </div>
+
+                <!-- Client Activity Report -->
+                <div class="card report-card">
+                    <div class="d-flex align-center gap-2 mb-2">
+                        <div class="stat-icon-wrap green"><i class='bx bx-group'></i></div>
+                        <h4 class="fs-sm fw-700">تقرير العملاء</h4>
+                    </div>
+                    <p class="fs-xs text-muted mb-2">بيانات CRM — <a href="clients.html" class="link">عرض العملاء</a></p>
+                    <div style="margin-bottom:12px;">
+                        <div class="d-flex justify-between mb-1"><span class="text-muted fs-sm">إجمالي العملاء:</span><a href="clients.html" class="fw-700 fs-sm link">87</a></div>
+                        <div class="d-flex justify-between mb-1"><span class="text-muted fs-sm">عملاء جدد (فبراير):</span><span class="fw-700 fs-sm">14</span></div>
+                        <div class="d-flex justify-between mb-1"><span class="text-muted fs-sm">معدل التحويل:</span><span class="fw-700 fs-sm text-success">71%</span></div>
+                        <div class="d-flex justify-between"><span class="text-muted fs-sm">أعلى مصدر:</span><span class="fw-700 fs-sm">إحالة عميل (34%)</span></div>
+                    </div>
+                    <button class="btn btn-outline btn-sm"><i class='bx bx-download'></i> تحميل تقرير</button>
+                </div>
+
+                <!-- Partner Statement -->
+                <div class="card report-card">
+                    <div class="d-flex align-center gap-2 mb-2">
+                        <div class="stat-icon-wrap danger"><i class='bx bx-buildings'></i></div>
+                        <h4 class="fs-sm fw-700">كشف حسابات الشركاء</h4>
+                    </div>
+                    <p class="fs-xs text-muted mb-2">أرصدة — <a href="accounting.html" class="link">الحسابات</a></p>
+                    <div style="margin-bottom:12px;">
+                        <div class="d-flex justify-between mb-1"><a href="accounting.html" class="text-muted fs-sm link">MSC:</a><span class="fw-700 fs-sm text-danger">$18,000</span></div>
+                        <div class="d-flex justify-between mb-1"><a href="accounting.html" class="text-muted fs-sm link">CMA CGM:</a><span class="fw-700 fs-sm text-danger">$5,700</span></div>
+                        <div class="d-flex justify-between mb-1"><a href="accounting.html" class="text-muted fs-sm link">نايل للنقل:</a><span class="fw-700 fs-sm text-danger">EGP 140K</span></div>
+                        <div class="d-flex justify-between"><a href="accounting.html" class="text-muted fs-sm link">التخليص العالمية:</a><span class="fw-700 fs-sm text-success">$0</span></div>
+                    </div>
+                    <button class="btn btn-outline btn-sm"><i class='bx bx-download'></i> تحميل كشوفات</button>
+                </div>
+
+                <!-- Attendance Report -->
+                <div class="card report-card">
+                    <div class="d-flex align-center gap-2 mb-2">
+                        <div class="stat-icon-wrap info"><i class='bx bx-time-five'></i></div>
+                        <h4 class="fs-sm fw-700">تقرير الحضور</h4>
+                    </div>
+                    <p class="fs-xs text-muted mb-2">ملخص حضور وغياب الموظفين</p>
+                    <div style="margin-bottom:12px;">
+                        <div class="d-flex justify-between mb-1"><span class="text-muted fs-sm">إجمالي
+                                الموظفين:</span><span class="fw-700 fs-sm">8</span></div>
+                        <div class="d-flex justify-between mb-1"><span class="text-muted fs-sm">متوسط
+                                الحضور:</span><span class="fw-700 fs-sm text-success">92%</span></div>
+                        <div class="d-flex justify-between mb-1"><span class="text-muted fs-sm">أيام
+                                التأخير:</span><span class="fw-700 fs-sm text-warning">7</span></div>
+                        <div class="d-flex justify-between"><span class="text-muted fs-sm">أيام الغياب:</span><span
+                                class="fw-700 fs-sm text-danger">6</span></div>
+                    </div>
+                    <button class="btn btn-outline btn-sm"><i class='bx bx-download'></i> تحميل تقرير</button>
+                </div>
+            </div>
+            </div>
+            <!-- end data-reports-role admin -->
+        </main>
+    </div>
+
+    <!-- Drill-down modal -->
+    <div class="modal-overlay" id="reportDrillDownModal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3><i class='bx bx-zoom-in' style="margin-left:8px;"></i> <span id="drillDownTitle">تفاصيل التقرير</span></h3>
+                <button class="modal-close" onclick="closeModal('reportDrillDownModal')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body" id="drillDownContent">
+                <p class="text-muted fs-sm">تحميل التفاصيل حسب المؤشر المحدد...</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('reportDrillDownModal')">إغلاق</button>
+                <a href="#" id="drillDownLink" class="btn btn-primary"><i class='bx bx-link'></i> الانتقال للوحدة</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report templates modal -->
+    <div class="modal-overlay" id="reportTemplatesModal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3><i class='bx bx-file-blank' style="margin-left:8px;"></i> قوالب التقارير</h3>
+                <button class="modal-close" onclick="closeModal('reportTemplatesModal')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="fs-sm text-muted mb-3">إنشاء قالب تقرير مخصص: اختر النوع والأقسام وتكرار الإرسال (ربط بالخادم لاحقاً).</p>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">نوع التقرير</label>
+                        <select class="form-control" id="templateReportType">
+                            <option>تقرير المبيعات</option>
+                            <option>تقرير الشحنات</option>
+                            <option>التقرير المالي</option>
+                            <option>تقرير العملاء</option>
+                            <option>كشف حسابات الشركاء</option>
+                            <option>تقرير الحضور</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">صيغة التصدير</label>
+                        <select class="form-control">
+                            <option>Excel</option>
+                            <option>PDF</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">الأقسام المطلوبة</label>
+                    <div class="d-flex flex-wrap gap-2">
+                        <label class="form-check"><input type="checkbox" checked> ملخص المؤشرات</label>
+                        <label class="form-check"><input type="checkbox" checked> الجداول التفصيلية</label>
+                        <label class="form-check"><input type="checkbox"> الرسوم البيانية</label>
+                        <label class="form-check"><input type="checkbox"> مقارنة بالفترة السابقة</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">جدولة الإرسال (اختياري)</label>
+                    <select class="form-control" style="max-width:200px;">
+                        <option>بدون جدولة</option>
+                        <option>يومي</option>
+                        <option>أسبوعي</option>
+                        <option>شهري</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('reportTemplatesModal')">إلغاء</button>
+                <button class="btn btn-primary"><i class='bx bx-save'></i> حفظ القالب</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/role-auth.js"></script>
+    <script src="js/role-sidebar-apply.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/role-views.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+        // —— Drill-down ——
+        function openDrillDown(type, param) {
+            var title = document.getElementById('drillDownTitle');
+            var content = document.getElementById('drillDownContent');
+            var link = document.getElementById('drillDownLink');
+            var titles = {
+                sales: 'تفاصيل السيلز: ' + (param || ''),
+                clients: 'تفاصيل العملاء والتحويل',
+                financial: 'التقرير المالي التفصيلي',
+                shipments: 'الشحنات حسب الميناء'
+            };
+            var links = {
+                sales: 'clients.html',
+                clients: 'clients.html',
+                financial: 'accounting.html',
+                shipments: 'shipments.html'
+            };
+            var html = {
+                sales: '<p class="fs-sm">شحنات وإيرادات وربح <strong>' + (param || '') + '</strong> في الفترة المحددة. البيانات تُحمّل من وحدة CRM والشحنات.</p><table class="data-table"><thead><tr><th>الشحنة</th><th>العميل</th><th>الإيراد</th><th>الربح</th></tr></thead><tbody><tr><td>BL-2026-0248</td><td>منصور وشركاه</td><td>$5,450</td><td class="text-success">$1,200</td></tr><tr><td>BL-2026-0247</td><td>الإيمان للأغذية</td><td>$8,500</td><td class="text-success">$1,850</td></tr></tbody></table>',
+                clients: '<p class="fs-sm">معدل التحويل الحالي 71%. العملاء الجدد 14. أعلى مصدر: إحالة عميل.</p><a href="clients.html" class="link">عرض قائمة العملاء</a>',
+                financial: '<p class="fs-sm">إيرادات $342K، مصروفات $274K، صافي $68K. مستحقات $14.95K، مطلوبات $31.9K.</p><a href="accounting.html" class="link">فتح الحسابات</a>',
+                shipments: '<p class="fs-sm">توزيع الشحنات حسب الميناء. انقر على الروابط في تقرير الشحنات لعرض الفلتر.</p><a href="shipments.html" class="link">عرض الشحنات</a>'
+            };
+            title.textContent = titles[type] || 'تفاصيل';
+            content.innerHTML = html[type] || '<p class="text-muted">لا توجد تفاصيل.</p>';
+            link.href = links[type] || '#';
+            link.style.display = links[type] ? 'inline-flex' : 'none';
+            openModal('reportDrillDownModal');
+        }
+        window.openDrillDown = openDrillDown;
+
+        // —— KPI cards drill-down ——
+        document.getElementById('reportKpiCards') && document.getElementById('reportKpiCards').addEventListener('click', function(e) {
+            var card = e.target.closest('.stat-card-drill');
+            if (!card) return;
+            var drill = card.getAttribute('data-drill');
+            if (drill === 'shipments') openDrillDown('shipments');
+            else if (drill === 'revenue' || drill === 'profit' || drill === 'margin') openDrillDown('financial');
+        });
+
+        // —— Charts ——
+        (function() {
+            var periodEl = document.getElementById('reportChartPeriod');
+            var revEl = document.getElementById('chartReportRevenue');
+            var shipEl = document.getElementById('chartReportShipments');
+            var salesEl = document.getElementById('chartReportSales');
+            if (revEl && typeof Chart !== 'undefined') {
+                new Chart(revEl, {
+                    type: 'line',
+                    data: {
+                        labels: ['يناير', 'فبراير (أسبوع 1)', 'أسبوع 2', 'أسبوع 3', 'أسبوع 4'],
+                        datasets: [
+                            { label: 'الإيرادات ($K)', data: [280, 310, 320, 335, 342], borderColor: '#d4a853', backgroundColor: 'rgba(212, 168, 83, 0.1)', fill: true, tension: 0.3 },
+                            { label: 'الربح ($K)', data: [52, 58, 62, 65, 68], borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.3 }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } }
+                });
+            }
+            if (shipEl && typeof Chart !== 'undefined') {
+                new Chart(shipEl, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['تم الحجز', 'في الطريق', 'تخليص جمركي', 'تم التسليم'],
+                        datasets: [{ data: [45, 82, 38, 83], backgroundColor: ['#3b82f6', '#f59e0b', '#7c3aed', '#10b981'], borderWidth: 0 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                });
+            }
+            if (salesEl && typeof Chart !== 'undefined') {
+                new Chart(salesEl, {
+                    type: 'bar',
+                    data: {
+                        labels: ['أحمد خيري', 'محمد سعيد', 'زينب رضوان', 'حسن نبيل'],
+                        datasets: [{ label: 'إيرادات ($K)', data: [98, 82, 64, 48], backgroundColor: 'rgba(30, 42, 90, 0.7)', borderColor: '#1e2a5a', borderWidth: 1 }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        onClick: function(ev, items) {
+                            if (items.length) {
+                                var idx = items[0].index;
+                                var reps = ['أحمد خيري', 'محمد سعيد', 'زينب رضوان', 'حسن نبيل'];
+                                openDrillDown('sales', reps[idx]);
+                            }
+                        },
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+            }
+        })();
+
+        // —— Sync & refresh ——
+        document.getElementById('reportSyncBtn') && document.getElementById('reportSyncBtn').addEventListener('click', function() {
+            document.getElementById('reportLastSync').textContent = 'جاري التحديث...';
+            setTimeout(function() {
+                document.getElementById('reportLastSync').textContent = 'آخر تحديث: الآن';
+            }, 800);
+        });
+        document.getElementById('reportRefreshBtn') && document.getElementById('reportRefreshBtn').addEventListener('click', function() {
+            var start = document.getElementById('reportStart').value;
+            var end = document.getElementById('reportEnd').value;
+            if (start && end) alert('سيتم تحديث التقارير للفترة ' + start + ' — ' + end + ' (ربط بالخادم لاحقاً).');
+        });
+    </script>
+</body>
+
+</html>

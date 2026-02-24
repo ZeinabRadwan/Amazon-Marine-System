@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazon Marine — لوحة التحكم</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        @media (max-width: 768px) {
+            .sales-dashboard-grid,
+            .accounting-dashboard-grid,
+            .pricing-dashboard-grid { grid-template-columns: 1fr !important; }
+            [data-dashboard-role="sales"] .chart-wrap + .chart-wrap { margin-top: 0; }
+            [data-dashboard-role="accounting"] .card table.data-table { font-size: 0.8rem; }
+            .acc-aging-grid { grid-template-columns: 1fr !important; }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+        <div class="logo-area">
+            <img src="logo/logo (1).png" alt="Amazon Marine Logo">
+            <div class="logo-text">
+                <span class="brand-name">Amazon Marine</span>
+                <span class="brand-sub">Shipping Agency</span>
+            </div>
+        </div>
+
+        <div class="menu-label">الرئيسية</div>
+        <ul class="menu">
+            <li class="active"><a href="dashboard.html"><i class='bx bxs-dashboard'></i> <span>لوحة التحكم</span></a>
+            </li>
+            <li><a href="clients.html"><i class='bx bx-group'></i> <span>العملاء / CRM</span> <span
+                        class="menu-badge">24</span></a></li>
+            <li><a href="shipments.html"><i class='bx bx-package'></i> <span>الشحنات</span></a></li>
+            <li><a href="sd-forms.html"><i class='bx bx-file'></i> <span>نماذج SD</span></a></li>
+            <li><a href="operations.html"><i class='bx bxs-ship'></i> <span>العمليات</span></a></li>
+        </ul>
+
+        <div class="menu-label">المالية</div>
+        <ul class="menu">
+            <li><a href="invoices.html"><i class='bx bx-receipt'></i> <span>الفواتير</span></a></li>
+            <li><a href="accounting.html"><i class='bx bx-wallet'></i> <span>الحسابات</span></a></li>
+            <li><a href="treasury.html"><i class='bx bx-credit-card'></i> <span>الخزينة</span></a></li>
+            <li><a href="expenses.html"><i class='bx bx-money'></i> <span>المصروفات</span></a></li>
+            <li><a href="pricing.html"><i class='bx bx-dollar-circle'></i> <span>التسعير</span></a></li>
+        </ul>
+
+        <div class="menu-label">الإدارة</div>
+        <ul class="menu">
+            <li><a href="partners.html"><i class='bx bx-buildings'></i> <span>الشركاء</span></a></li>
+            <li><a href="reports.html"><i class='bx bx-bar-chart-alt-2'></i> <span>التقارير</span></a></li>
+            <li><a href="documents.html"><i class='bx bx-file-blank'></i> <span>المستندات الرسمية</span></a></li>
+            <li><a href="tickets.html"><i class='bx bx-message-alt-detail'></i> <span>تذاكر الدعم</span></a></li>
+            <li><a href="team-performance.html"><i class='bx bx-trending-up'></i> <span>أداء الفريق</span></a></li>
+            <li><a href="attendance.html"><i class='bx bx-time-five'></i> <span>الحضور والانصراف</span></a></li>
+            <li><a href="visits.html"><i class='bx bx-map-pin'></i> <span>سجل الزيارات</span></a></li>
+        </ul>
+
+        <div class="menu-label">الإعدادات</div>
+        <ul class="menu">
+            <li><a href="settings.html"><i class='bx bx-cog'></i> <span>الإعدادات</span></a></li>
+            <li><a href="profile.html"><i class='bx bx-user'></i> <span>الملف الشخصي</span></a></li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <div class="user-avatar">MD</div>
+            <div class="user-info">
+                <div class="user-name">Capt. Mostafa</div>
+                <div class="user-role">مدير النظام</div>
+            </div>
+            <a href="index.html"><i class='bx bx-log-out'
+                    style="color:rgba(255,255,255,0.35);cursor:pointer;font-size:1.2rem;"></i></a>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-wrapper">
+        <header class="topbar">
+            <div class="page-title-area">
+                <h1>لوحة التحكم</h1>
+                <div class="breadcrumbs">Amazon Marine > <span>نظرة عامة</span></div>
+            </div>
+            <div class="topbar-right">
+                <div class="search-bar">
+                    <i class='bx bx-search'></i>
+                    <input type="text" placeholder="بحث في الشحنات، العملاء...">
+                </div>
+                <div class="notif-wrapper" style="position:relative;">
+                    <div class="topbar-icon" onclick="toggleNotifications(event)">
+                        <i class='bx bx-bell'></i>
+                        <div class="notif-dot"></div>
+                    </div>
+                    <div class="notif-panel" id="notifPanel">
+                        <div class="notif-header">
+                            <h4>الإشعارات</h4>
+                            <span class="fs-sm text-muted" style="cursor:pointer;">تحديد الكل كمقروء</span>
+                        </div>
+                        <div class="notif-item">
+                            <div class="notif-icon" style="background:var(--info-light);color:var(--info);"><i
+                                    class='bx bx-package'></i></div>
+                            <div class="notif-text">
+                                <p>شحنة <strong>BL-2026-0248</strong> وصلت ميناء جدة</p>
+                                <span>منذ 15 دقيقة</span>
+                            </div>
+                        </div>
+                        <div class="notif-item">
+                            <div class="notif-icon" style="background:var(--success-light);color:var(--success);"><i
+                                    class='bx bx-check-circle'></i></div>
+                            <div class="notif-text">
+                                <p>تم تأكيد حجز الشحنة <strong>BL-2026-0250</strong></p>
+                                <span>منذ ساعة</span>
+                            </div>
+                        </div>
+                        <div class="notif-item">
+                            <div class="notif-icon" style="background:var(--warning-light);color:var(--warning);"><i
+                                    class='bx bx-receipt'></i></div>
+                            <div class="notif-text">
+                                <p>فاتورة <strong>#INV-0094</strong> بانتظار السداد</p>
+                                <span>منذ 3 ساعات</span>
+                            </div>
+                        </div>
+                        <div class="notif-item">
+                            <div class="notif-icon" style="background:var(--danger-light);color:var(--danger);"><i
+                                    class='bx bx-error'></i></div>
+                            <div class="notif-text">
+                                <p>تأخر في تخليص شحنة <strong>BL-2026-0245</strong></p>
+                                <span>منذ 5 ساعات</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="currency-dropdown">
+                    <div class="topbar-icon" onclick="toggleCurrencyDropdown(event)">
+                        <i class='bx bx-dollar-circle'></i>
+                        <span class="currency-code" id="currencyCodeBadge">$</span>
+                    </div>
+                    <div class="currency-dropdown-menu" id="currencyDropdown">
+                        <button type="button" class="currency-dropdown-item active" data-currency="USD">$ USD <i class='bx bx-check'></i></button>
+                        <button type="button" class="currency-dropdown-item" data-currency="EUR">€ EUR</button>
+                        <button type="button" class="currency-dropdown-item" data-currency="EGP">E£ EGP</button>
+                    </div>
+                </div>
+                <div class="lang-dropdown">
+                    <div class="topbar-icon" onclick="toggleLangDropdown(event)">
+                        <i class='bx bx-globe'></i>
+                        <span class="lang-code" id="langCodeBadge">AR</span>
+                    </div>
+                    <div class="lang-dropdown-menu" id="langDropdown">
+                        <button class="lang-dropdown-item active" data-lang="ar"><span class="lang-flag">🇸🇦</span>
+                            عربي <i class='bx bx-check'></i></button>
+                        <button class="lang-dropdown-item" data-lang="en"><span class="lang-flag">🇬🇧</span>
+                            English</button>
+                    </div>
+                </div>
+                <div class="profile-pill">
+                    <div class="profile-avatar">MD</div>
+                    <span>Capt. Mostafa</span>
+                    <i class='bx bx-chevron-down' style="color:var(--text-muted);font-size:1rem;"></i>
+                </div>
+            </div>
+        </header>
+
+        <main class="content">
+            <!-- Welcome Banner (text updated by role in JS) -->
+            <div class="welcome-banner" id="dashboardWelcome">
+                <div class="welcome-text">
+                    <h2 id="dashboardWelcomeTitle">مرحبًا بك 🚢</h2>
+                    <p id="dashboardWelcomeDesc">لوحة التحكم</p>
+                </div>
+                <div class="welcome-date">
+                    <i class='bx bx-calendar'></i>
+                    <span>الأربعاء، 19 فبراير 2026</span>
+                </div>
+            </div>
+
+            <!-- Sales Dashboard (visible for sales role) -->
+            <div data-dashboard-role="sales" style="display:none;">
+                <div class="stats-row">
+                    <div class="stat-card"><div class="stat-icon-wrap cyan"><i class='bx bx-user'></i></div><div class="stat-info"><h3>24</h3><div class="stat-label">عملائي</div></div></div>
+                    <div class="stat-card"><div class="stat-icon-wrap green"><i class='bx bx-file'></i></div><div class="stat-info"><h3>18</h3><div class="stat-label">عروض أسعار / SD</div></div></div>
+                    <div class="stat-card"><div class="stat-icon-wrap navy"><i class='bx bx-map-pin'></i></div><div class="stat-info"><h3>12</h3><div class="stat-label">زياراتي هذا الشهر</div></div></div>
+                    <div class="stat-card"><div class="stat-icon-wrap gold"><i class='bx bx-trending-up'></i></div><div class="stat-info"><h3>78%</h3><div class="stat-label">معدل التحويل</div></div></div>
+                    <div class="stat-card"><div class="stat-icon-wrap green"><i class='bx bx-dollar'></i></div><div class="stat-info"><h3>$45K</h3><div class="stat-label">إيرادات عملائي</div></div></div>
+                </div>
+
+                <!-- Alerts: pending SD, follow-ups -->
+                <div class="card" style="margin-bottom:24px;">
+                    <div class="card-header">
+                        <span class="card-title"><i class='bx bx-error-circle' style="color:var(--warning);margin-left:6px;"></i> تنبيهات ومتابعات</span>
+                        <span class="badge" style="background:var(--warning);color:#fff;font-size:0.75rem;" id="salesAlertCount">3</span>
+                    </div>
+                    <div class="dashboard-alerts" style="padding:12px 20px;">
+                        <div class="alert-item alert-warning">
+                            <i class='bx bx-file'></i>
+                            <div><strong>موافقة SD معلقة</strong> — طلب حجز منصور وشركاه (SD-0248) بانتظار الموافقة. <a href="sd-forms.html" class="text-cyan fs-sm">نماذج SD</a></div>
+                        </div>
+                        <div class="alert-item alert-info">
+                            <i class='bx bx-time-five'></i>
+                            <div><strong>متابعة اليوم</strong> — مصنع الفجر، 10:00 ص. <a href="visits.html" class="text-cyan fs-sm">سجل الزيارات</a> · <a href="clients.html" class="text-cyan fs-sm">العملاء</a></div>
+                        </div>
+                        <div class="alert-item alert-warning">
+                            <i class='bx bx-calendar'></i>
+                            <div><strong>زيارة قادمة</strong> — التوفيق للملابس غداً 11:00 ص (متابعة SD). <a href="visits.html" class="text-cyan fs-sm">التفاصيل</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts: personal performance -->
+                <div class="card" style="margin-bottom:24px;">
+                    <div class="card-header"><span class="card-title">أدائي — الإيرادات ومعدل التحويل</span></div>
+                    <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+                        <div>
+                            <p class="fs-sm fw-600 text-muted" style="margin-bottom:8px;">الإيرادات الشهرية ($K) — آخر 6 أشهر</p>
+                            <div class="chart-wrap" style="position:relative;height:200px;width:100%;">
+                                <canvas id="chartSalesRevenue"></canvas>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="fs-sm fw-600 text-muted" style="margin-bottom:8px;">معدل التحويل شهرياً (%)</p>
+                            <div class="chart-wrap" style="position:relative;height:200px;width:100%;">
+                                <canvas id="chartSalesConversion"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timeline: SD forms + follow-ups -->
+                <div class="card" style="margin-bottom:24px;">
+                    <div class="card-header">
+                        <span class="card-title">الجدول الزمني — نماذج SD ومتابعات</span>
+                        <div class="d-flex gap-2">
+                            <a href="sd-forms.html" class="btn btn-outline btn-sm">نماذج SD</a>
+                            <a href="visits.html" class="btn btn-outline btn-sm">الزيارات</a>
+                        </div>
+                    </div>
+                    <div class="sales-timeline" style="padding:16px 20px;">
+                        <div class="timeline-item" style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
+                            <div class="stat-icon-wrap green" style="flex-shrink:0;"><i class='bx bx-check-circle'></i></div>
+                            <div><span class="fs-sm fw-600">SD-0247 معتمد</span><span class="text-muted fs-sm"> — الإيمان للأغذية، 18/02</span><br><span class="fs-xs text-muted">طلب حجز → تم الموافقة</span></div>
+                        </div>
+                        <div class="timeline-item" style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
+                            <div class="stat-icon-wrap warning" style="flex-shrink:0;"><i class='bx bx-time-five'></i></div>
+                            <div><span class="fs-sm fw-600">SD-0248 قيد المراجعة</span><span class="text-muted fs-sm"> — منصور وشركاه، 19/02</span><br><span class="fs-xs text-muted">في انتظار الموافقة</span></div>
+                        </div>
+                        <div class="timeline-item" style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
+                            <div class="stat-icon-wrap cyan" style="flex-shrink:0;"><i class='bx bx-map-pin'></i></div>
+                            <div><span class="fs-sm fw-600">زيارة اليوم 10:00 ص</span><span class="text-muted fs-sm"> — مصنع الفجر</span><br><span class="fs-xs text-muted">متابعة عرض سعر</span></div>
+                        </div>
+                        <div class="timeline-item" style="display:flex;align-items:flex-start;gap:12px;">
+                            <div class="stat-icon-wrap navy" style="flex-shrink:0;"><i class='bx bx-calendar'></i></div>
+                            <div><span class="fs-sm fw-600">زيارة غداً 11:00 ص</span><span class="text-muted fs-sm"> — التوفيق للملابس</span><br><span class="fs-xs text-muted">متابعة SD</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Integration + Advanced analytics -->
+                <div class="card" style="margin-bottom:24px;">
+                    <div class="card-header"><span class="card-title">ربط سريع وتحليلات</span></div>
+                    <div style="padding:16px 20px;">
+                        <div class="d-flex flex-wrap gap-2 align-center" style="margin-bottom:16px;">
+                            <span class="fs-sm text-muted">سياق سريع:</span>
+                            <a href="shipments.html" class="btn btn-outline btn-sm"><i class='bx bx-package'></i> شحناتي</a>
+                            <a href="invoices.html" class="btn btn-outline btn-sm"><i class='bx bx-receipt'></i> فواتير عملائي</a>
+                            <a href="clients.html" class="btn btn-outline btn-sm"><i class='bx bx-group'></i> العملاء</a>
+                        </div>
+                        <div style="display:flex;flex-wrap:wrap;gap:20px;" class="fs-sm">
+                            <div><span class="text-muted">متوسط التحويل لكل عميل:</span> <span class="fw-700">74%</span></div>
+                            <div><span class="text-muted">اتجاه الإيرادات (3 أشهر):</span> <span class="fw-700 text-success">+12%</span></div>
+                            <div><span class="text-muted">نسبة نجاح الزيارات:</span> <span class="fw-700">82%</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Today's follow-ups + SD status + Export -->
+                <div class="sales-dashboard-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px;">
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">متابعات اليوم</span><a href="clients.html" class="card-action">العملاء ←</a></div>
+                        <div style="padding:20px;">
+                            <p class="text-muted mb-2">5 متابعات مجدولة اليوم.</p>
+                            <ul class="fs-sm" style="margin:0;padding-right:20px;">
+                                <li>مصنع الفجر — 10:00 ص (متابعة عرض)</li>
+                                <li>التوفيق للملابس — غداً 11:00 ص</li>
+                            </ul>
+                            <a href="visits.html" class="btn btn-outline btn-sm" style="margin-top:8px;">سجل الزيارات</a>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">حالة طلبات الحجز (SD)</span><a href="sd-forms.html" class="card-action">نماذج SD ←</a></div>
+                        <div style="padding:20px;">
+                            <p class="text-muted mb-2">3 قيد المراجعة، 2 معتمدة هذا الأسبوع.</p>
+                            <ul class="fs-sm" style="margin:0;padding-right:20px;">
+                                <li><span class="status-badge pending">قيد المراجعة</span> SD-0248 (منصور وشركاه)</li>
+                                <li><span class="status-badge active">معتمد</span> SD-0247 (الإيمان للأغذية)</li>
+                            </ul>
+                            <a href="sd-forms.html" class="btn btn-outline btn-sm" style="margin-top:8px;">عرض الكل</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="page-header">
+                    <span class="fs-sm text-muted">تصدير أدائي:</span>
+                    <button type="button" class="btn btn-outline btn-sm" id="salesExportKpi"><i class='bx bx-export'></i> Excel (KPIs)</button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="window.print()"><i class='bx bx-printer'></i> PDF</button>
+                </div>
+            </div>
+
+            <!-- Accounting Dashboard (visible for accounting role) — financial KPIs only -->
+            <div data-dashboard-role="accounting" style="display:none;">
+                <div class="stats-row">
+                    <div class="stat-card"><div class="stat-icon-wrap gold"><i class='bx bx-receipt'></i></div><div class="stat-info"><h3>94</h3><div class="stat-label">فواتير هذا الشهر</div><span class="fs-xs text-muted">صادرة · معلقة · جزئية</span></div></div>
+                    <div class="stat-card"><div class="stat-icon-wrap green"><i class='bx bx-check-circle'></i></div><div class="stat-info"><h3>$186K</h3><div class="stat-label">مدفوعات مستلمة (عملاء)</div></div></div>
+                    <div class="stat-card"><div class="stat-icon-wrap danger"><i class='bx bx-error-circle'></i></div><div class="stat-info"><h3>$125K</h3><div class="stat-label">أرصدة معلقة</div><span class="fs-xs text-muted">عملاء + شركاء</span></div></div>
+                    <div class="stat-card"><div class="stat-icon-wrap cyan"><i class='bx bx-trending-up'></i></div><div class="stat-info"><h3>$42K</h3><div class="stat-label">التدفق النقدي (صافي)</div></div></div>
+                    <div class="stat-card"><div class="stat-icon-wrap navy"><i class='bx bx-wallet'></i></div><div class="stat-info"><h3>₺1.2M</h3><div class="stat-label">رصيد الخزينة</div><span class="fs-xs text-muted">بنك + نقد</span></div></div>
+                </div>
+
+                <!-- Alerts: overdue invoices, upcoming payments -->
+                <div class="card" style="margin-bottom:24px;">
+                    <div class="card-header">
+                        <span class="card-title"><i class='bx bx-error-circle' style="color:var(--danger);margin-left:6px;"></i> تنبيهات فواتير ومدفوعات</span>
+                        <span class="badge" style="background:var(--danger);color:#fff;font-size:0.75rem;" id="accAlertCount">4</span>
+                    </div>
+                    <div class="dashboard-alerts" style="padding:12px 20px;">
+                        <div class="alert-item alert-danger">
+                            <i class='bx bx-receipt'></i>
+                            <div><strong>فواتير متأخرة</strong> — 3 فواتير عملاء غير مدفوعة منذ +30 يوم. <a href="invoices.html" class="text-cyan fs-sm">الفواتير</a></div>
+                        </div>
+                        <div class="alert-item alert-warning">
+                            <i class='bx bx-calendar'></i>
+                            <div><strong>مدفوعات شركاء قادمة</strong> — 8 مدفوعات معلقة (MSC، نايل للنقل). <a href="accounting.html" class="text-cyan fs-sm">الحسابات</a></div>
+                        </div>
+                        <div class="alert-item alert-info">
+                            <i class='bx bx-dollar'></i>
+                            <div><strong>مستحقات هذا الأسبوع</strong> — $28K من عملاء (منصور وشركاه، طه للمنسوجات). <a href="invoices.html" class="text-cyan fs-sm">التفاصيل</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts: cash inflows vs outflows -->
+                <div class="card" style="margin-bottom:24px;">
+                    <div class="card-header"><span class="card-title">التدفقات النقدية — وارد وصادر ($K)</span></div>
+                    <div style="padding:16px;">
+                        <p class="fs-sm fw-600 text-muted" style="margin-bottom:8px;">آخر 6 أشهر</p>
+                        <div class="chart-wrap" style="position:relative;height:220px;width:100%;">
+                            <canvas id="chartAccInflowsOutflows"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Aging: receivables & payables -->
+                <div class="card" style="margin-bottom:24px;">
+                    <div class="card-header">
+                        <span class="card-title">تقرير الأعمار — مستحقات وملتزمات</span>
+                        <a href="accounting.html" class="card-action">الحسابات ←</a>
+                    </div>
+                    <div class="acc-aging-grid" style="padding:16px 20px;display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+                        <div>
+                            <p class="fs-sm fw-600 text-muted mb-2">مستحقات العملاء (حسب العمر)</p>
+                            <table class="data-table" style="font-size:0.85rem;">
+                                <thead><tr><th>الفترة</th><th>المبلغ</th></tr></thead>
+                                <tbody>
+                                    <tr><td>0–30 يوم</td><td class="fw-600">$42K</td></tr>
+                                    <tr><td>31–60 يوم</td><td class="fw-600 text-warning">$38K</td></tr>
+                                    <tr><td>61–90 يوم</td><td class="fw-600 text-warning">$28K</td></tr>
+                                    <tr><td>+90 يوم</td><td class="fw-600 text-danger">$17K</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div>
+                            <p class="fs-sm fw-600 text-muted mb-2">ملتزمات الشركاء (حسب العمر)</p>
+                            <table class="data-table" style="font-size:0.85rem;">
+                                <thead><tr><th>الفترة</th><th>المبلغ</th></tr></thead>
+                                <tbody>
+                                    <tr><td>0–30 يوم</td><td class="fw-600">$52K</td></tr>
+                                    <tr><td>31–60 يوم</td><td class="fw-600 text-warning">$38K</td></tr>
+                                    <tr><td>61–90 يوم</td><td class="fw-600 text-warning">$22K</td></tr>
+                                    <tr><td>+90 يوم</td><td class="fw-600 text-danger">$13K</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Integration + Advanced analytics -->
+                <div class="card" style="margin-bottom:24px;">
+                    <div class="card-header"><span class="card-title">ربط وتحليلات مالية</span></div>
+                    <div style="padding:16px 20px;">
+                        <div class="d-flex flex-wrap gap-2 align-center" style="margin-bottom:16px;">
+                            <span class="fs-sm text-muted">ربط سريع:</span>
+                            <a href="shipments.html" class="btn btn-outline btn-sm"><i class='bx bx-package'></i> الشحنات</a>
+                            <a href="sd-forms.html" class="btn btn-outline btn-sm"><i class='bx bx-file'></i> نماذج SD</a>
+                            <a href="invoices.html" class="btn btn-outline btn-sm"><i class='bx bx-receipt'></i> الفواتير</a>
+                            <a href="accounting.html" class="btn btn-outline btn-sm"><i class='bx bx-wallet'></i> الحسابات</a>
+                            <a href="treasury.html" class="btn btn-outline btn-sm"><i class='bx bx-safe'></i> الخزينة</a>
+                        </div>
+                        <div class="fs-sm mb-3"><span class="text-muted fw-600">أعلى العملاء دفعاً (هذا الشهر):</span> منصور وشركاه $48K · الإيمان للأغذية $32K · طه للمنسوجات $28K</div>
+                        <div class="fs-sm mb-2"><span class="text-muted">اتجاه المدفوعات شهرياً:</span> <span class="fw-700 text-success">+8%</span> (مقارنة بالشهر السابق)</div>
+                        <div class="fs-sm"><span class="text-muted">التدفق المتوقع (حسب الفواتير المعلقة):</span> <span class="fw-700">+$85K وارد متوقع خلال 30 يوم</span></div>
+                    </div>
+                </div>
+
+                <!-- Quick tasks + Drill-down -->
+                <div class="accounting-dashboard-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px;">
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">فواتير مفتوحة ومدفوعات معلقة</span><a href="invoices.html" class="card-action">الفواتير ←</a></div>
+                        <div style="padding:20px;">
+                            <p class="text-muted fs-sm mb-2">12 فاتورة عملاء معلقة، 8 مدفوعات شركاء.</p>
+                            <ul class="fs-sm" style="margin:0;padding-right:20px;">
+                                <li><a href="invoices.html" class="text-cyan">منصور وشركاه</a> — $5,450 غير مدفوعة</li>
+                                <li><a href="invoices.html" class="text-cyan">طه للمنسوجات</a> — $10,200 جزئية</li>
+                                <li>MSC (شريك) — $18K معلقة</li>
+                            </ul>
+                            <a href="invoices.html" class="btn btn-outline btn-sm" style="margin-top:8px;">عرض التفاصيل</a>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">الخزينة والتدفق</span><a href="treasury.html" class="card-action">الخزينة ←</a></div>
+                        <div style="padding:20px;">
+                            <p class="text-muted fs-sm mb-2">رصيد الخزينة: ₺ 1.2M (بنك + نقد).</p>
+                            <p class="fs-sm">صافي التدفق هذا الشهر: <span class="fw-700 text-success">+$42K</span></p>
+                            <a href="treasury.html" class="btn btn-outline btn-sm" style="margin-top:8px;">إدارة الخزينة</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="page-header">
+                    <span class="fs-sm text-muted">تصدير:</span>
+                    <button type="button" class="btn btn-outline btn-sm" id="accExportKpi"><i class='bx bx-export'></i> Excel (مؤشرات)</button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="window.print()"><i class='bx bx-printer'></i> PDF</button>
+                </div>
+            </div>
+
+            <!-- Pricing Dashboard (visible for pricing role) — rates, approvals, discounts only -->
+            <div data-dashboard-role="pricing" style="display:none;">
+                <div class="stats-row">
+                    <div class="stat-card"><div class="stat-icon-wrap navy"><i class='bx bx-dollar-circle'></i></div><div class="stat-info"><h3>24</h3><div class="stat-label">أسعار حاوية نشطة</div></div></div>
+                    <div class="stat-card"><div class="stat-icon-wrap warning"><i class='bx bx-time'></i></div><div class="stat-info"><h3>7</h3><div class="stat-label">موافقات معلقة</div></div></div>
+                    <div class="stat-card"><div class="stat-icon-wrap cyan"><i class='bx bx-file'></i></div><div class="stat-info"><h3>14</h3><div class="stat-label">عروض اليوم</div></div></div>
+                    <div class="stat-card"><div class="stat-icon-wrap gold"><i class='bx bx-purchase-tag'></i></div><div class="stat-info"><h3>14</h3><div class="stat-label">خصومات هذا الشهر</div></div></div>
+                    <div class="stat-card"><div class="stat-icon-wrap green"><i class='bx bx-check'></i></div><div class="stat-info"><h3>18</h3><div class="stat-label">تعديلات معتمدة</div></div></div>
+                    <div class="stat-card"><div class="stat-icon-wrap green"><i class='bx bx-timer'></i></div><div class="stat-info"><h3>95%</h3><div class="stat-label">SLA (رد خلال 4 س)</div></div></div>
+                </div>
+
+                <!-- Alerts: expiring rates, SLA breaches -->
+                <div class="card" style="margin-bottom:24px;">
+                    <div class="card-header">
+                        <span class="card-title"><i class='bx bx-error-circle' style="color:var(--warning);margin-left:6px;"></i> تنبيهات التسعير و SLA</span>
+                        <span class="badge" style="background:var(--warning);color:#fff;font-size:0.75rem;" id="pricingAlertCount">2</span>
+                    </div>
+                    <div class="dashboard-alerts" style="padding:12px 20px;">
+                        <div class="alert-item alert-warning">
+                            <i class='bx bx-calendar-x'></i>
+                            <div><strong>أسعار قريبة من الانتهاء</strong> — 5 أسعار تنتهي صلاحيتها خلال 14 يوم (الإسكندرية–جدة، دمياط–دبي). <a href="pricing.html" class="text-cyan fs-sm">جداول الأسعار</a></div>
+                        </div>
+                        <div class="alert-item alert-danger">
+                            <i class='bx bx-time-five'></i>
+                            <div><strong>تجاوز SLA</strong> — طلب واحد لم يُرد عليه خلال 4 ساعات (طلب #PQ-0892). <a href="pricing.html" class="text-cyan fs-sm">مراجعة الطلبات</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts: price trends per route / container type -->
+                <div class="card" style="margin-bottom:24px;">
+                    <div class="card-header"><span class="card-title">اتجاهات الأسعار — حسب المسار ($)</span></div>
+                    <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+                        <div>
+                            <p class="fs-sm fw-600 text-muted" style="margin-bottom:8px;">متوسط السعر للمسار (آخر 6 أشهر)</p>
+                            <div class="chart-wrap" style="position:relative;height:200px;width:100%;">
+                                <canvas id="chartPricingByRoute"></canvas>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="fs-sm fw-600 text-muted" style="margin-bottom:8px;">الطلبات حسب الحالة (معتمد / معلق)</p>
+                            <div class="chart-wrap" style="position:relative;height:200px;width:100%;">
+                                <canvas id="chartPricingApprovedPending"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Integration + Advanced analytics -->
+                <div class="card" style="margin-bottom:24px;">
+                    <div class="card-header"><span class="card-title">ربط والتحقق من التكاليف</span></div>
+                    <div style="padding:16px 20px;">
+                        <div class="d-flex flex-wrap gap-2 align-center" style="margin-bottom:16px;">
+                            <span class="fs-sm text-muted">ربط سريع:</span>
+                            <a href="shipments.html" class="btn btn-outline btn-sm"><i class='bx bx-package'></i> الشحنات</a>
+                            <a href="sd-forms.html" class="btn btn-outline btn-sm"><i class='bx bx-file'></i> نماذج SD</a>
+                            <a href="invoices.html" class="btn btn-outline btn-sm"><i class='bx bx-receipt'></i> الفواتير</a>
+                            <a href="pricing.html" class="btn btn-outline btn-sm"><i class='bx bx-dollar-circle'></i> التسعير</a>
+                            <a href="cost-viewer.html" class="btn btn-outline btn-sm"><i class='bx bx-show'></i> عرض التكاليف</a>
+                        </div>
+                        <div class="fs-sm mb-2"><span class="text-muted">الخصومات المطبقة vs أثر الإيرادات:</span> <span class="fw-700">14 خصم هذا الشهر — تقدير أثر: -2.1% على هامش المسار</span></div>
+                        <div class="fs-sm mb-2"><span class="text-muted">متوسط وقت الرد على طلبات التسعير:</span> <span class="fw-700 text-success">2.8 ساعة</span></div>
+                        <div class="fs-sm"><span class="text-muted">مقارنة معتمد vs معلق:</span> <span class="fw-700">18 معتمدة، 7 معلقة هذا الشهر</span></div>
+                    </div>
+                </div>
+
+                <!-- High-priority approvals + Quick tasks -->
+                <div class="pricing-dashboard-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px;">
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title">موافقات ذات أولوية</span>
+                            <a href="pricing.html" class="card-action">التسعير ←</a>
+                        </div>
+                        <div style="padding:20px;">
+                            <p class="text-muted fs-sm mb-2">7 طلبات بانتظار الموافقة أو الرفض.</p>
+                            <ul class="fs-sm" style="margin:0;padding-right:20px;">
+                                <li><span class="status-badge pending">معلق</span> خصم 7% — منصور وشركاه (مسار جدة)</li>
+                                <li><span class="status-badge pending">معلق</span> سعر خاص — الإيمان للأغذية (حاوية 40')</li>
+                                <li><span class="status-badge warning">قريب من SLA</span> طلب #PQ-0893</li>
+                            </ul>
+                            <a href="pricing.html" class="btn btn-outline btn-sm" style="margin-top:8px;">اعتماد / رفض</a>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">مهام سريعة</span><a href="cost-viewer.html" class="card-action">عرض التكاليف ←</a></div>
+                        <div style="padding:20px;">
+                            <p class="text-muted fs-sm mb-2">جداول الأسعار الحالية، عروض أسعار جديدة، تفاصيل تكلفة الشحنات.</p>
+                            <a href="pricing.html" class="btn btn-outline btn-sm" style="margin-left:6px;">جداول الأسعار</a>
+                            <a href="pricing.html" class="btn btn-outline btn-sm" style="margin-left:6px;">عرض سعر جديد</a>
+                            <a href="cost-viewer.html" class="btn btn-outline btn-sm">تفكيك التكاليف</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="page-header">
+                    <span class="fs-sm text-muted">تصدير:</span>
+                    <button type="button" class="btn btn-outline btn-sm" id="pricingExportKpi"><i class='bx bx-export'></i> Excel (مؤشرات)</button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="window.print()"><i class='bx bx-printer'></i> PDF</button>
+                </div>
+            </div>
+
+            <!-- Operations Dashboard (visible for operation role) -->
+            <div data-dashboard-role="operation" style="display:none;">
+                <div class="stats-row">
+                    <div class="stat-card"><div class="stat-icon-wrap warning"><i class='bx bx-time-five'></i></div><div class="stat-info"><h3>8</h3><div class="stat-label">مهام معلقة</div></div></div>
+                    <div class="stat-card"><div class="stat-icon-wrap cyan"><i class='bx bxs-ship'></i></div><div class="stat-info"><h3>6</h3><div class="stat-label">عمليات قيد التنفيذ</div></div></div>
+                    <div class="stat-card"><div class="stat-icon-wrap green"><i class='bx bx-check-circle'></i></div><div class="stat-info"><h3>4</h3><div class="stat-label">مكتملة اليوم</div></div></div>
+                    <div class="stat-card"><div class="stat-icon-wrap danger"><i class='bx bx-error-circle'></i></div><div class="stat-info"><h3>2</h3><div class="stat-label">مهام متأخرة</div></div></div>
+                </div>
+                <div class="card" style="margin-bottom:24px;">
+                    <div class="card-header"><span class="card-title">مهام العمليات — أحدث المهام</span><a href="operations.html" class="card-action">العمليات ←</a></div>
+                    <div style="padding:16px 20px;">
+                        <p class="text-muted fs-sm mb-2">مهام من نماذج SD المرسلة للعمليات.</p>
+                        <a href="operations.html" class="btn btn-primary btn-sm"><i class='bx bxs-ship'></i> لوحة العمليات</a>
+                        <a href="sd-forms.html" class="btn btn-outline btn-sm"><i class='bx bx-file'></i> نماذج SD (تحديث الحالة)</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Support Dashboard (visible for support role) -->
+            <div data-dashboard-role="support" style="display:none;">
+                <div class="stats-row">
+                    <div class="stat-card"><div class="stat-icon-wrap warning"><i class='bx bx-message-square-detail'></i></div><div class="stat-info"><h3>12</h3><div class="stat-label">تذاكر مفتوحة</div></div></div>
+                    <div class="stat-card"><div class="stat-icon-wrap green"><i class='bx bx-check-circle'></i></div><div class="stat-info"><h3>8</h3><div class="stat-label">تم حلها اليوم</div></div></div>
+                    <div class="stat-card"><div class="stat-icon-wrap cyan"><i class='bx bx-time-five'></i></div><div class="stat-info"><h3>5</h3><div class="stat-label">طلبات عملاء معلقة</div></div></div>
+                    <div class="stat-card"><div class="stat-icon-wrap navy"><i class='bx bx-trending-up'></i></div><div class="stat-info"><h3>94%</h3><div class="stat-label">معدل الاستجابة (SLA)</div></div></div>
+                </div>
+                <div class="card" style="margin-bottom:24px;">
+                    <div class="card-header"><span class="card-title">تذاكر الدعم والطلبات</span><a href="tickets.html" class="card-action">التذاكر ←</a></div>
+                    <div style="padding:16px 20px;">
+                        <p class="text-muted fs-sm mb-2">إدارة التذاكر، الرد على العملاء، رفع للإدارة أو العمليات.</p>
+                        <a href="tickets.html" class="btn btn-primary btn-sm"><i class='bx bx-message-alt-detail'></i> تذاكر الدعم</a>
+                        <a href="clients.html" class="btn btn-outline btn-sm"><i class='bx bx-group'></i> العملاء (عرض)</a>
+                        <a href="shipments.html" class="btn btn-outline btn-sm"><i class='bx bx-package'></i> تتبع الشحنات</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sales Manager Dashboard (visible for sales_manager role) -->
+            <div data-dashboard-role="sales_manager" style="display:none;">
+                <div class="stats-row">
+                    <div class="stat-card"><div class="stat-icon-wrap gold"><i class='bx bx-dollar-circle'></i></div><div class="stat-info"><h3>$112K</h3><div class="stat-label">إجمالي إيرادات المبيعات</div></div></div>
+                    <div class="stat-card"><div class="stat-icon-wrap cyan"><i class='bx bx-trending-up'></i></div><div class="stat-info"><h3>72%</h3><div class="stat-label">معدل التحويل</div></div></div>
+                    <div class="stat-card"><div class="stat-icon-wrap navy"><i class='bx bx-group'></i></div><div class="stat-info"><h3>60</h3><div class="stat-label">عملاء نشطون</div></div></div>
+                    <div class="stat-card"><div class="stat-icon-wrap green"><i class='bx bx-file'></i></div><div class="stat-info"><h3>45</h3><div class="stat-label">إجمالي نماذج SD</div></div></div>
+                    <div class="stat-card"><div class="stat-icon-wrap warning"><i class='bx bx-package'></i></div><div class="stat-info"><h3>34</h3><div class="stat-label">شحنات لكل المندوبين</div></div></div>
+                    <div class="stat-card"><div class="stat-icon-wrap green"><i class='bx bx-line-chart'></i></div><div class="stat-info"><h3>+12%</h3><div class="stat-label">النمو الشهري</div></div></div>
+                </div>
+                <div class="card" style="margin-bottom:24px;">
+                    <div class="card-header"><span class="card-title">أداء الفريق والتحليلات</span><a href="team-performance.html" class="card-action">أداء الفريق ←</a></div>
+                    <div style="padding:16px 20px;">
+                        <p class="text-muted fs-sm mb-2">مراقبة أداء مندوبي المبيعات، التحويل، الإيرادات، الزيارات.</p>
+                        <a href="team-performance.html" class="btn btn-primary btn-sm"><i class='bx bx-trending-up'></i> أداء الفريق</a>
+                        <a href="clients.html" class="btn btn-outline btn-sm"><i class='bx bx-group'></i> CRM (الكل)</a>
+                        <a href="sd-forms.html" class="btn btn-outline btn-sm"><i class='bx bx-file'></i> نماذج SD وعروض الأسعار</a>
+                        <a href="reports.html" class="btn btn-outline btn-sm"><i class='bx bx-bar-chart-alt-2'></i> التقارير</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Dashboard (full - visible for admin role) -->
+            <div data-dashboard-role="admin">
+            <!-- KPI Stats -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-icon-wrap navy"><i class='bx bx-package'></i></div>
+                    <div class="stat-info">
+                        <h3>248</h3>
+                        <div class="stat-label">إجمالي الشحنات</div>
+                        <span class="stat-trend up"><i class='bx bx-trending-up'></i> 12% هذا الشهر</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-wrap cyan"><i class='bx bx-group'></i></div>
+                    <div class="stat-info">
+                        <h3>87</h3>
+                        <div class="stat-label">العملاء النشطون</div>
+                        <span class="stat-trend up"><i class='bx bx-trending-up'></i> 8% هذا الشهر</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-wrap gold"><i class='bx bx-dollar-circle'></i></div>
+                    <div class="stat-info">
+                        <h3>$342K</h3>
+                        <div class="stat-label">الإيرادات (حتى تاريخه)</div>
+                        <span class="stat-trend up"><i class='bx bx-trending-up'></i> 23% مقارنة بالعام الماضي</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-wrap green"><i class='bx bx-line-chart'></i></div>
+                    <div class="stat-info">
+                        <h3>$68K</h3>
+                        <div class="stat-label">صافي الربح</div>
+                        <span class="stat-trend up"><i class='bx bx-trending-up'></i> 15%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <div class="quick-btn" onclick="window.location.href='sd-forms.html'">
+                    <i style="background:rgba(30,42,90,0.1);color:var(--navy-700);"><span
+                            class='bx bx-plus-circle'></span></i>
+                    <div>
+                        <div class="quick-label">نموذج SD جديد</div>
+                        <div class="quick-desc">إنشاء تفاصيل شحنة</div>
+                    </div>
+                </div>
+                <div class="quick-btn" onclick="openModal('addClientModal')">
+                    <i style="background:rgba(23,162,184,0.1);color:var(--accent-cyan);"><span
+                            class='bx bx-user-plus'></span></i>
+                    <div>
+                        <div class="quick-label">عميل جديد</div>
+                        <div class="quick-desc">إضافة للـ CRM</div>
+                    </div>
+                </div>
+                <div class="quick-btn" onclick="window.location.href='invoices.html'">
+                    <i style="background:rgba(212,168,83,0.12);color:var(--accent-gold);"><span
+                            class='bx bx-receipt'></span></i>
+                    <div>
+                        <div class="quick-label">إنشاء فاتورة</div>
+                        <div class="quick-desc">إصدار فاتورة PDF</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts & Alerts Row -->
+            <div class="grid-2-1" style="margin-bottom:24px;">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">اتجاهات الأداء</span>
+                        <div class="d-flex gap-2">
+                            <select class="form-control" style="width:auto;min-width:100px;" id="chartPeriod">
+                                <option value="6">6 أشهر</option>
+                                <option value="12">12 شهر</option>
+                            </select>
+                            <button class="btn btn-outline btn-sm" onclick="exportChartImage()"><i class='bx bx-download'></i> تصدير</button>
+                        </div>
+                    </div>
+                    <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+                        <div>
+                            <p class="fs-sm fw-600 text-muted" style="margin-bottom:8px;">الشحنات الشهرية</p>
+                            <div class="chart-wrap" style="position:relative;height:200px;width:100%;">
+                                <canvas id="chartShipments"></canvas>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="fs-sm fw-600 text-muted" style="margin-bottom:8px;">الإيرادات الشهرية ($)</p>
+                            <div class="chart-wrap" style="position:relative;height:200px;width:100%;">
+                                <canvas id="chartRevenue"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title"><i class='bx bx-error-circle' style="color:var(--warning);margin-left:6px;"></i> تنبيهات ومهام معلقة</span>
+                        <span class="badge" style="background:var(--danger);color:#fff;font-size:0.7rem;" id="alertCount">4</span>
+                    </div>
+                    <div class="dashboard-alerts" style="padding:12px 16px;">
+                        <div class="alert-item alert-warning">
+                            <i class='bx bx-time-five'></i>
+                            <div><strong>تأخير متوقع</strong> — BL-2026-0245 (طه للمنسوجات) ينتظر وثائق جمركية</div>
+                        </div>
+                        <div class="alert-item alert-danger">
+                            <i class='bx bx-error-circle'></i>
+                            <div><strong>فواتير متأخرة</strong> — 3 فواتير عملاء غير مدفوعة منذ +30 يوم</div>
+                        </div>
+                        <div class="alert-item alert-info">
+                            <i class='bx bx-task'></i>
+                            <div><strong>مهام اليوم</strong> — 5 متابعات عملاء، 2 عروض أسعار لمراجعة</div>
+                        </div>
+                        <div class="alert-item alert-warning">
+                            <i class='bx bx-ship'></i>
+                            <div><strong>شحنة قيد الاستثناء</strong> — BL-2026-0078 ينتظر تصحيح بيانات</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Grid -->
+            <div class="grid-2-1">
+                <!-- Recent Shipments Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">أحدث الشحنات</span>
+                        <div class="d-flex gap-2 align-center">
+                            <select class="form-control dashboard-table-filter" style="width:auto;min-width:110px;" id="filterStatus">
+                                <option value="">كل الحالات</option>
+                                <option value="في الطريق">في الطريق</option>
+                                <option value="تم الحجز">تم الحجز</option>
+                                <option value="تخليص جمركي">تخليص جمركي</option>
+                                <option value="تم التسليم">تم التسليم</option>
+                            </select>
+                            <button class="btn btn-outline btn-sm" onclick="exportTableToExcel('recentShipmentsTable','أحدث الشحنات')"><i class='bx bx-download'></i> Excel</button>
+                            <a href="shipments.html" class="card-action">عرض الكل ←</a>
+                        </div>
+                    </div>
+                    <div class="filter-bar" style="padding:0 20px 12px;">
+                        <input type="text" class="form-control" placeholder="بحث بالبوليصة أو العميل..." id="searchShipments" style="max-width:220px;">
+                    </div>
+                    <table class="data-table" id="recentShipmentsTable">
+                        <thead>
+                            <tr>
+                                <th>رقم البوليصة</th>
+                                <th>العميل</th>
+                                <th>المسار</th>
+                                <th>الحالة</th>
+                                <th>التكلفة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="bl-number">BL-2026-0248</td>
+                                <td>
+                                    <div class="client-cell">
+                                        <div class="client-avatar"
+                                            style="background:linear-gradient(135deg,var(--navy-700),var(--navy-500));">
+                                            MN</div><span>منصور وشركاه</span>
+                                    </div>
+                                </td>
+                                <td>الإسكندرية → جدة</td>
+                                <td><span class="status-badge in-transit">في الطريق</span></td>
+                                <td class="fw-600">$4,250</td>
+                            </tr>
+                            <tr>
+                                <td class="bl-number">BL-2026-0247</td>
+                                <td>
+                                    <div class="client-cell">
+                                        <div class="client-avatar"
+                                            style="background:linear-gradient(135deg,var(--accent-cyan),#0e8a9b);">AE
+                                        </div><span>الإيمان للأغذية</span>
+                                    </div>
+                                </td>
+                                <td>دمياط → دبي</td>
+                                <td><span class="status-badge booked">تم الحجز</span></td>
+                                <td class="fw-600">$6,800</td>
+                            </tr>
+                            <tr>
+                                <td class="bl-number">BL-2026-0245</td>
+                                <td>
+                                    <div class="client-cell">
+                                        <div class="client-avatar"
+                                            style="background:linear-gradient(135deg,var(--accent-gold),#b8913c);">TF
+                                        </div><span>طه للمنسوجات</span>
+                                    </div>
+                                </td>
+                                <td>السخنة → هامبورغ</td>
+                                <td><span class="status-badge clearance">تخليص جمركي</span></td>
+                                <td class="fw-600">$8,150</td>
+                            </tr>
+                            <tr>
+                                <td class="bl-number">BL-2026-0243</td>
+                                <td>
+                                    <div class="client-cell">
+                                        <div class="client-avatar"
+                                            style="background:linear-gradient(135deg,var(--success),#059669);">NK</div>
+                                        <span>نايل كرافت مصر</span>
+                                    </div>
+                                </td>
+                                <td>بورسعيد → إسطنبول</td>
+                                <td><span class="status-badge delivered">تم التسليم</span></td>
+                                <td class="fw-600">$3,600</td>
+                            </tr>
+                            <tr>
+                                <td class="bl-number">BL-2026-0240</td>
+                                <td>
+                                    <div class="client-cell">
+                                        <div class="client-avatar"
+                                            style="background:linear-gradient(135deg,#7c3aed,#5b21b6);">SE</div>
+                                        <span>السعودي للتصدير</span>
+                                    </div>
+                                </td>
+                                <td>الإسكندرية → جنوة</td>
+                                <td><span class="status-badge delivered">تم التسليم</span></td>
+                                <td class="fw-600">$5,900</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pipeline + Finance -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">مراحل الشحنة</span>
+                        <span class="card-action">التفاصيل</span>
+                    </div>
+                    <div class="pipeline-stages">
+                        <div class="pipeline-stage">
+                            <div class="stage-bar-wrapper">
+                                <div class="stage-label"><span>تأكيد الحجز</span><span>18</span></div>
+                                <div class="stage-bar">
+                                    <div class="stage-bar-fill fill-navy" style="width:75%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="pipeline-stage">
+                            <div class="stage-bar-wrapper">
+                                <div class="stage-label"><span>في الطريق</span><span>12</span></div>
+                                <div class="stage-bar">
+                                    <div class="stage-bar-fill fill-cyan" style="width:50%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="pipeline-stage">
+                            <div class="stage-bar-wrapper">
+                                <div class="stage-label"><span>التخليص الجمركي</span><span>8</span></div>
+                                <div class="stage-bar">
+                                    <div class="stage-bar-fill fill-gold" style="width:33%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="pipeline-stage">
+                            <div class="stage-bar-wrapper">
+                                <div class="stage-label"><span>تم التسليم</span><span>210</span></div>
+                                <div class="stage-bar">
+                                    <div class="stage-bar-fill fill-green" style="width:88%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:28px;">
+                        <div class="card-header" style="margin-bottom:14px;"><span class="card-title">نظرة مالية</span>
+                        </div>
+                        <div class="finance-row">
+                            <div class="finance-mini">
+                                <div class="fin-value">$125K</div>
+                                <div class="fin-label">مستحقات</div>
+                                <div class="fin-currency">متعدد العملات</div>
+                            </div>
+                            <div class="finance-mini">
+                                <div class="fin-value">$82K</div>
+                                <div class="fin-label">مطلوبات</div>
+                                <div class="fin-currency">EGP / USD / EUR</div>
+                            </div>
+                            <div class="finance-mini">
+                                <div class="fin-value" style="color:var(--success);">$43K</div>
+                                <div class="fin-label">صافي الرصيد</div>
+                                <div class="fin-currency">محوّل</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Partners + Sales -->
+            <div class="grid-1-1">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">حسابات الشركاء</span>
+                        <a href="partners.html" class="card-action">إدارة ←</a>
+                    </div>
+                    <div class="partner-list">
+                        <div class="partner-item">
+                            <div class="partner-icon" style="background:rgba(30,42,90,0.1);color:var(--navy-700);"><i
+                                    class='bx bx-ship'></i></div>
+                            <div class="partner-info">
+                                <div class="partner-name">خط MSC الملاحي</div>
+                                <div class="partner-desc">خط ملاحي • 14 حجز نشط</div>
+                            </div>
+                            <div class="partner-amount">$32,400</div>
+                        </div>
+                        <div class="partner-item">
+                            <div class="partner-icon" style="background:rgba(23,162,184,0.1);color:var(--accent-cyan);">
+                                <i class='bx bx-car'></i></div>
+                            <div class="partner-info">
+                                <div class="partner-name">شركة نايل للنقل</div>
+                                <div class="partner-desc">نقل داخلي • 8 مهام نشطة</div>
+                            </div>
+                            <div class="partner-amount">$12,800</div>
+                        </div>
+                        <div class="partner-item">
+                            <div class="partner-icon"
+                                style="background:rgba(212,168,83,0.12);color:var(--accent-gold);"><i
+                                    class='bx bx-check-shield'></i></div>
+                            <div class="partner-info">
+                                <div class="partner-name">وكالة التخليص العالمية</div>
+                                <div class="partner-desc">تخليص جمركي • 6 معلق</div>
+                            </div>
+                            <div class="partner-amount">$8,950</div>
+                        </div>
+                        <div class="partner-item">
+                            <div class="partner-icon" style="background:var(--success-light);color:var(--success);"><i
+                                    class='bx bx-ship'></i></div>
+                            <div class="partner-info">
+                                <div class="partner-name">CMA CGM</div>
+                                <div class="partner-desc">خط ملاحي • 9 حجز نشط</div>
+                            </div>
+                            <div class="partner-amount">$28,600</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">أداء فريق المبيعات</span>
+                        <a href="reports.html" class="card-action">تقرير كامل ←</a>
+                    </div>
+                    <div class="sales-list">
+                        <div class="sales-person">
+                            <div class="sales-avatar"
+                                style="background:linear-gradient(135deg,var(--navy-700),var(--navy-500));">AK</div>
+                            <div class="sales-details">
+                                <div class="sales-name">أحمد خيري</div>
+                                <div class="sales-meta">32 عميل • 45 شحنة</div>
+                            </div>
+                            <div class="sales-profit">
+                                <div class="amount">$18,400</div>
+                                <div class="deals">أرباح محققة</div>
+                            </div>
+                        </div>
+                        <div class="sales-person">
+                            <div class="sales-avatar"
+                                style="background:linear-gradient(135deg,var(--accent-cyan),#0e8a9b);">MS</div>
+                            <div class="sales-details">
+                                <div class="sales-name">محمد سعيد</div>
+                                <div class="sales-meta">28 عميل • 38 شحنة</div>
+                            </div>
+                            <div class="sales-profit">
+                                <div class="amount">$15,200</div>
+                                <div class="deals">أرباح محققة</div>
+                            </div>
+                        </div>
+                        <div class="sales-person">
+                            <div class="sales-avatar"
+                                style="background:linear-gradient(135deg,var(--accent-gold),#b8913c);">ZR</div>
+                            <div class="sales-details">
+                                <div class="sales-name">زينب رضوان</div>
+                                <div class="sales-meta">21 عميل • 29 شحنة</div>
+                            </div>
+                            <div class="sales-profit">
+                                <div class="amount">$11,800</div>
+                                <div class="deals">أرباح محققة</div>
+                            </div>
+                        </div>
+                        <div class="sales-person">
+                            <div class="sales-avatar" style="background:linear-gradient(135deg,#7c3aed,#5b21b6);">HN
+                            </div>
+                            <div class="sales-details">
+                                <div class="sales-name">حسن نبيل</div>
+                                <div class="sales-meta">18 عميل • 22 شحنة</div>
+                            </div>
+                            <div class="sales-profit">
+                                <div class="amount">$9,600</div>
+                                <div class="deals">أرباح محققة</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Finance Table & Export Tools -->
+            <div class="card" style="margin-top:24px;">
+                <div class="card-header">
+                    <span class="card-title">جدول مالي تفصيلي</span>
+                    <div class="d-flex gap-2 align-center">
+                        <select class="form-control dashboard-table-filter" style="width:auto;min-width:120px;" id="filterFinanceType">
+                            <option value="">كل الأنواع</option>
+                            <option value="مستحقات">مستحقات</option>
+                            <option value="مطلوبات">مطلوبات</option>
+                            <option value="مدفوعات">مدفوعات</option>
+                        </select>
+                        <input type="month" class="form-control" id="filterFinanceMonth" style="width:auto;">
+                        <button class="btn btn-outline btn-sm" onclick="exportTableToExcel('financeDetailTable','جدول_مالي')"><i class='bx bx-download'></i> Excel</button>
+                        <button class="btn btn-outline btn-sm" onclick="window.print();"><i class='bx bx-printer'></i> طباعة</button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table" id="financeDetailTable">
+                        <thead>
+                            <tr>
+                                <th>التاريخ</th>
+                                <th>نوع البند</th>
+                                <th>العميل / الشريك</th>
+                                <th>الوصف</th>
+                                <th>المبلغ ($)</th>
+                                <th>الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr data-type="مستحقات">
+                                <td>2026-02-20</td>
+                                <td>مستحقات</td>
+                                <td>منصور وشركاه</td>
+                                <td>شحنة BL-2026-0248</td>
+                                <td class="fw-600">4,250</td>
+                                <td><span class="status-badge booked">معلق</span></td>
+                            </tr>
+                            <tr data-type="مطلوبات">
+                                <td>2026-02-18</td>
+                                <td>مطلوبات</td>
+                                <td>خط MSC الملاحي</td>
+                                <td>أتعاب حجز فبراير</td>
+                                <td class="fw-600">12,400</td>
+                                <td><span class="status-badge delivered">مدفوع</span></td>
+                            </tr>
+                            <tr data-type="مستحقات">
+                                <td>2026-02-15</td>
+                                <td>مستحقات</td>
+                                <td>الإيمان للأغذية</td>
+                                <td>شحنة BL-2026-0247</td>
+                                <td class="fw-600">6,800</td>
+                                <td><span class="status-badge in-transit">معلق</span></td>
+                            </tr>
+                            <tr data-type="مدفوعات">
+                                <td>2026-02-12</td>
+                                <td>مدفوعات</td>
+                                <td>وكالة التخليص العالمية</td>
+                                <td>تخليص BL-2026-0245</td>
+                                <td class="fw-600">2,100</td>
+                                <td><span class="status-badge delivered">مدفوع</span></td>
+                            </tr>
+                            <tr data-type="مستحقات">
+                                <td>2026-02-10</td>
+                                <td>مستحقات</td>
+                                <td>نايل كرافت مصر</td>
+                                <td>شحنة BL-2026-0243</td>
+                                <td class="fw-600">3,600</td>
+                                <td><span class="status-badge delivered">مدفوع</span></td>
+                            </tr>
+                            <tr data-type="مطلوبات">
+                                <td>2026-02-08</td>
+                                <td>مطلوبات</td>
+                                <td>CMA CGM</td>
+                                <td>أتعاب حاوية جنوة</td>
+                                <td class="fw-600">8,200</td>
+                                <td><span class="status-badge clearance">معلق</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Client Quick Modal -->
+    <div class="modal-overlay" id="addClientModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class='bx bx-user-plus' style="margin-left:8px;"></i> إضافة عميل جديد</h3>
+                <button class="modal-close" onclick="closeModal('addClientModal')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">اسم العميل</label><input type="text"
+                            class="form-control" placeholder="أدخل اسم العميل"></div>
+                    <div class="form-group"><label class="form-label">رقم الهاتف</label><input type="tel"
+                            class="form-control" placeholder="+20 1xx xxxx xxx"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">البريد الإلكتروني</label><input type="email"
+                            class="form-control" placeholder="email@company.com"></div>
+                    <div class="form-group"><label class="form-label">البطاقة الضريبية</label><input type="text"
+                            class="form-control" placeholder="رقم البطاقة الضريبية"></div>
+                </div>
+                <div class="form-group"><label class="form-label">المصدر (جاي من فين)</label>
+                    <select class="form-control">
+                        <option>اختر المصدر</option>
+                        <option>إحالة عميل</option>
+                        <option>فيسبوك</option>
+                        <option>لينكدإن</option>
+                        <option>موقع الشركة</option>
+                        <option>زيارة مباشرة</option>
+                        <option>أخرى</option>
+                    </select>
+                </div>
+                <div class="form-group"><label class="form-label">ملاحظات</label><textarea class="form-control"
+                        placeholder="أي ملاحظات إضافية..."></textarea></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('addClientModal')">إلغاء</button>
+                <button class="btn btn-primary"><i class='bx bx-check'></i> حفظ العميل</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="js/role-auth.js"></script>
+    <script src="js/role-sidebar-apply.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        (function() {
+            var role = (typeof getCurrentRole === 'function' ? getCurrentRole() : null) || localStorage.getItem('amazonMarineRole') || 'admin';
+            var roleUsers = { admin: 'Capt. Mostafa', sales: 'أحمد خيري', accounting: 'كريم عادل', pricing: 'نادية حسن' };
+            var userName = (typeof getRoleConfig === 'function' && getRoleConfig().user) ? getRoleConfig().user : (roleUsers[role] || roleUsers.admin);
+            var welcomeTitle = document.getElementById('dashboardWelcomeTitle');
+            var welcomeDesc = document.getElementById('dashboardWelcomeDesc');
+            if (welcomeTitle) welcomeTitle.textContent = 'مرحبًا بك، ' + userName + ' 🚢';
+            var desc = { admin: 'لديك 12 شحنة نشطة و 5 فواتير معلقة اليوم.', sales: 'لديك 24 عميل و 18 عرض سعر نشط.', accounting: 'فواتير معلقة: 12 عميل، 8 مدفوعات شركاء.', pricing: '7 طلبات تسعير معلقة، 14 عرض اليوم.' };
+            if (welcomeDesc) welcomeDesc.innerHTML = '<strong>' + (desc[role] || desc.admin) + '</strong>';
+            document.querySelectorAll('[data-dashboard-role]').forEach(function(el) {
+                el.style.display = el.getAttribute('data-dashboard-role') === role ? 'block' : 'none';
+            });
+        })();
+    </script>
+    <script>
+        (function() {
+            var role = (typeof getCurrentRole === 'function' ? getCurrentRole() : null) || localStorage.getItem('amazonMarineRole') || 'admin';
+            if (role !== 'sales' || typeof Chart === 'undefined') return;
+            var months = 6;
+            var labels = [], rev = [], conv = [];
+            for (var i = months - 1; i >= 0; i--) {
+                var d = new Date();
+                d.setMonth(d.getMonth() - i);
+                labels.push(d.toLocaleDateString('ar-EG', { month: 'short', year: '2-digit' }));
+                rev.push(6 + Math.floor(Math.random() * 4));
+                conv.push(70 + Math.floor(Math.random() * 18));
+            }
+            var revEl = document.getElementById('chartSalesRevenue');
+            var convEl = document.getElementById('chartSalesConversion');
+            if (revEl) new Chart(revEl, {
+                type: 'bar',
+                data: { labels: labels, datasets: [{ label: 'إيرادات ($K)', data: rev, backgroundColor: 'rgba(212,168,83,0.7)', borderColor: 'var(--accent-gold)', borderWidth: 1 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } }
+            });
+            if (convEl) new Chart(convEl, {
+                type: 'line',
+                data: { labels: labels, datasets: [{ label: 'تحويل %', data: conv, borderColor: 'var(--accent-cyan)', backgroundColor: 'rgba(23,162,184,0.15)', fill: true, tension: 0.3 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { min: 50, max: 100 }, x: { grid: { display: false } } } }
+            });
+            var salesExportKpi = document.getElementById('salesExportKpi');
+            if (salesExportKpi) salesExportKpi.addEventListener('click', function() {
+                var csv = ['المؤشر,القيمة\n', 'عملائي,24\n', 'عروض SD,18\n', 'زيارات هذا الشهر,12\n', 'معدل التحويل %,78\n', 'إيرادات عملائي ($K),45\n'];
+                var blob = new Blob(['\ufeff' + csv.join('')], { type: 'text/csv;charset=utf-8' });
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'sales-kpi-' + new Date().toISOString().slice(0,10) + '.csv';
+                a.click();
+                URL.revokeObjectURL(a.href);
+            });
+        })();
+    </script>
+    <script>
+        (function() {
+            var role = (typeof getCurrentRole === 'function' ? getCurrentRole() : null) || localStorage.getItem('amazonMarineRole') || 'admin';
+            if (role !== 'accounting' || typeof Chart === 'undefined') return;
+            var months = 6;
+            var labels = [], inflows = [], outflows = [];
+            for (var i = months - 1; i >= 0; i--) {
+                var d = new Date();
+                d.setMonth(d.getMonth() - i);
+                labels.push(d.toLocaleDateString('ar-EG', { month: 'short', year: '2-digit' }));
+                inflows.push(180 + Math.floor(Math.random() * 40));
+                outflows.push(140 + Math.floor(Math.random() * 50));
+            }
+            var el = document.getElementById('chartAccInflowsOutflows');
+            if (el) new Chart(el, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'وارد ($K)', data: inflows, backgroundColor: 'rgba(34,197,94,0.7)', borderColor: 'var(--success)', borderWidth: 1 },
+                        { label: 'صادر ($K)', data: outflows, backgroundColor: 'rgba(239,68,68,0.6)', borderColor: 'var(--danger)', borderWidth: 1 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } },
+                    scales: { y: { beginAtZero: true }, x: { grid: { display: false } } }
+                }
+            });
+            var accExportKpi = document.getElementById('accExportKpi');
+            if (accExportKpi) accExportKpi.addEventListener('click', function() {
+                var csv = ['المؤشر,القيمة\n', 'فواتير هذا الشهر,94\n', 'مدفوعات مستلمة ($K),186\n', 'أرصدة معلقة ($K),125\n', 'التدفق النقدي ($K),42\n', 'رصيد الخزينة,1.2M EGP\n'];
+                var blob = new Blob(['\ufeff' + csv.join('')], { type: 'text/csv;charset=utf-8' });
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'accounting-kpi-' + new Date().toISOString().slice(0,10) + '.csv';
+                a.click();
+                URL.revokeObjectURL(a.href);
+            });
+        })();
+    </script>
+    <script>
+        (function() {
+            var role = (typeof getCurrentRole === 'function' ? getCurrentRole() : null) || localStorage.getItem('amazonMarineRole') || 'admin';
+            if (role !== 'pricing' || typeof Chart === 'undefined') return;
+            var routeLabels = ['الإسكندرية→جدة', 'دمياط→دبي', 'السخنة→هامبورغ', 'بورسعيد→إسطنبول', 'الإسكندرية→جنوة'];
+            var routePrices = [4200, 3800, 5200, 3100, 4800];
+            var routeEl = document.getElementById('chartPricingByRoute');
+            if (routeEl) new Chart(routeEl, {
+                type: 'bar',
+                data: {
+                    labels: routeLabels,
+                    datasets: [{ label: 'متوسط السعر ($)', data: routePrices, backgroundColor: 'rgba(30,42,90,0.7)', borderColor: 'var(--navy-700)', borderWidth: 1 }]
+                },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true }, y: { grid: { display: false } } } }
+            });
+            var approvedPendingEl = document.getElementById('chartPricingApprovedPending');
+            if (approvedPendingEl) new Chart(approvedPendingEl, {
+                type: 'doughnut',
+                data: {
+                    labels: ['معتمد', 'معلق'],
+                    datasets: [{ data: [18, 7], backgroundColor: ['var(--success)', 'var(--warning)'] }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+            var pricingExportKpi = document.getElementById('pricingExportKpi');
+            if (pricingExportKpi) pricingExportKpi.addEventListener('click', function() {
+                var csv = ['المؤشر,القيمة\n', 'أسعار حاوية نشطة,24\n', 'موافقات معلقة,7\n', 'عروض اليوم,14\n', 'خصومات هذا الشهر,14\n', 'تعديلات معتمدة,18\n', 'SLA %,95\n'];
+                var blob = new Blob(['\ufeff' + csv.join('')], { type: 'text/csv;charset=utf-8' });
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'pricing-kpi-' + new Date().toISOString().slice(0,10) + '.csv';
+                a.click();
+                URL.revokeObjectURL(a.href);
+            });
+        })();
+    </script>
+    <script>
+        (function() {
+            var role = (typeof getCurrentRole === 'function' ? getCurrentRole() : null) || localStorage.getItem('amazonMarineRole') || 'admin';
+            if (role !== 'admin') return;
+
+            function sampleData(months) {
+                var m = parseInt(months, 10) || 6;
+                var labels = [], shipments = [], revenue = [];
+                for (var i = m - 1; i >= 0; i--) {
+                    var d = new Date();
+                    d.setMonth(d.getMonth() - i);
+                    labels.push(d.toLocaleDateString('ar-EG', { month: 'short', year: '2-digit' }));
+                    shipments.push(18 + Math.floor(Math.random() * 14));
+                    revenue.push(42000 + Math.floor(Math.random() * 28000));
+                }
+                return { labels: labels, shipments: shipments, revenue: revenue };
+            }
+
+            var chartShipmentsEl = document.getElementById('chartShipments');
+            var chartRevenueEl = document.getElementById('chartRevenue');
+            var chartShipments, chartRevenue;
+
+            if (chartShipmentsEl && typeof Chart !== 'undefined') {
+                var data = sampleData(6);
+                chartShipments = new Chart(chartShipmentsEl, {
+                    type: 'bar',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{ label: 'الشحنات', data: data.shipments, backgroundColor: 'rgba(30,42,90,0.7)', borderColor: 'var(--navy-700)', borderWidth: 1 }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.06)' } },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
+            if (chartRevenueEl && typeof Chart !== 'undefined') {
+                var data = sampleData(6);
+                chartRevenue = new Chart(chartRevenueEl, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{ label: 'الإيرادات', data: data.revenue, borderColor: 'var(--accent-cyan)', backgroundColor: 'rgba(23,162,184,0.15)', fill: true, tension: 0.3 }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.06)' } },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
+
+            var chartPeriod = document.getElementById('chartPeriod');
+            if (chartPeriod) chartPeriod.addEventListener('change', function() {
+                var data = sampleData(this.value);
+                if (chartShipments) { chartShipments.data.labels = data.labels; chartShipments.data.datasets[0].data = data.shipments; chartShipments.update(); }
+                if (chartRevenue) { chartRevenue.data.labels = data.labels; chartRevenue.data.datasets[0].data = data.revenue; chartRevenue.update(); }
+            });
+
+            function exportChartImage() {
+                var container = document.querySelector('#chartShipments') && document.querySelector('#chartShipments').closest('.card');
+                if (!container) return;
+                var canvases = container.querySelectorAll('canvas');
+                if (canvases.length && canvases[0].toDataURL) {
+                    var a = document.createElement('a');
+                    a.download = 'dashboard-charts-' + new Date().toISOString().slice(0,10) + '.png';
+                    a.href = canvases[0].toDataURL('image/png');
+                    a.click();
+                }
+            }
+
+            function exportTableToExcel(tableId, sheetName) {
+                var table = document.getElementById(tableId);
+                if (!table) return;
+                var html = table.outerHTML;
+                var blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-excel' });
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = (sheetName || 'export') + '.xls';
+                a.click();
+                URL.revokeObjectURL(a.href);
+            }
+            window.exportTableToExcel = exportTableToExcel;
+            window.exportChartImage = exportChartImage;
+
+            var filterStatus = document.getElementById('filterStatus');
+            var searchShipments = document.getElementById('searchShipments');
+            var shipTable = document.getElementById('recentShipmentsTable');
+            if (shipTable && shipTable.tBodies[0]) {
+                var shipRows = shipTable.tBodies[0].querySelectorAll('tr');
+                function filterShipments() {
+                    var status = (filterStatus && filterStatus.value) || '';
+                    var q = (searchShipments && searchShipments.value.trim().toLowerCase()) || '';
+                    shipRows.forEach(function(tr) {
+                        var statusBadge = tr.querySelector('.status-badge');
+                        var statusText = statusBadge ? statusBadge.textContent.trim() : '';
+                        var text = (tr.textContent || '').toLowerCase();
+                        var matchStatus = !status || statusText === status;
+                        var matchSearch = !q || text.indexOf(q) !== -1;
+                        tr.style.display = matchStatus && matchSearch ? '' : 'none';
+                    });
+                }
+                if (filterStatus) filterStatus.addEventListener('change', filterShipments);
+                if (searchShipments) searchShipments.addEventListener('input', filterShipments);
+            }
+
+            var filterFinanceType = document.getElementById('filterFinanceType');
+            var financeTable = document.getElementById('financeDetailTable');
+            if (financeTable && financeTable.tBodies[0] && filterFinanceType) {
+                var financeRows = financeTable.tBodies[0].querySelectorAll('tr');
+                filterFinanceType.addEventListener('change', function() {
+                    var type = this.value || '';
+                    financeRows.forEach(function(tr) {
+                        var t = (tr.getAttribute('data-type') || '');
+                        tr.style.display = !type || t === type ? '' : 'none';
+                    });
+                });
+            }
+        })();
+    </script>
+</body>
+
+</html>

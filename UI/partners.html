@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazon Marine — الشركاء</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <nav class="sidebar">
+        <div class="logo-area"><img src="logo/logo (1).png" alt="Logo">
+            <div class="logo-text"><span class="brand-name">Amazon Marine</span><span class="brand-sub">Shipping
+                    Agency</span></div>
+        </div>
+        <div class="menu-label">الرئيسية</div>
+        <ul class="menu">
+            <li><a href="dashboard.html"><i class='bx bxs-dashboard'></i><span>لوحة التحكم</span></a></li>
+            <li><a href="clients.html"><i class='bx bx-group'></i><span>العملاء / CRM</span></a></li>
+            <li><a href="shipments.html"><i class='bx bx-package'></i><span>الشحنات</span></a></li>
+            <li><a href="sd-forms.html"><i class='bx bx-file'></i><span>نماذج SD</span></a></li>
+            <li><a href="operations.html"><i class='bx bxs-ship'></i><span>العمليات</span></a></li>
+        </ul>
+        <div class="menu-label">المالية</div>
+        <ul class="menu">
+            <li><a href="invoices.html"><i class='bx bx-receipt'></i><span>الفواتير</span></a></li>
+            <li><a href="accounting.html"><i class='bx bx-wallet'></i><span>الحسابات</span></a></li>
+            <li><a href="treasury.html"><i class='bx bx-credit-card'></i><span>الخزينة</span></a></li>
+            <li><a href="expenses.html"><i class='bx bx-money'></i><span>المصروفات</span></a></li>
+            <li><a href="pricing.html"><i class='bx bx-dollar-circle'></i><span>التسعير</span></a></li>
+        </ul>
+        <div class="menu-label">الإدارة</div>
+        <ul class="menu">
+            <li class="active"><a href="partners.html"><i class='bx bx-buildings'></i><span>الشركاء</span></a></li>
+            <li><a href="attendance.html"><i class='bx bx-time-five'></i><span>الحضور والانصراف</span></a></li>
+            <li><a href="visits.html"><i class='bx bx-map-pin'></i><span>سجل الزيارات</span></a></li>
+            <li><a href="reports.html"><i class='bx bx-bar-chart-alt-2'></i><span>التقارير</span></a></li>
+            <li><a href="documents.html"><i class='bx bx-file-blank'></i><span>المستندات الرسمية</span></a></li>
+            <li><a href="tickets.html"><i class='bx bx-message-alt-detail'></i><span>تذاكر الدعم</span></a></li>
+            <li><a href="team-performance.html"><i class='bx bx-trending-up'></i><span>أداء الفريق</span></a></li>
+        </ul>
+        <div class="menu-label">الإعدادات</div>
+        <ul class="menu">
+            <li><a href="settings.html"><i class='bx bx-cog'></i><span>الإعدادات</span></a></li>
+            <li><a href="profile.html"><i class='bx bx-user'></i><span>الملف الشخصي</span></a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-avatar">MD</div>
+            <div class="user-info">
+                <div class="user-name">Capt. Mostafa</div>
+                <div class="user-role">مدير النظام</div>
+            </div><a href="index.html"><i class='bx bx-log-out'
+                    style="color:rgba(255,255,255,0.35);font-size:1.2rem;"></i></a>
+        </div>
+    </nav>
+
+    <div class="main-wrapper">
+        <header class="topbar">
+            <div class="page-title-area">
+                <h1>الشركاء</h1>
+                <div class="breadcrumbs">Amazon Marine > <span>إدارة الشركاء والموردين</span></div>
+            </div>
+            <div class="topbar-right">
+                <div class="search-bar"><i class='bx bx-search'></i><input type="text" placeholder="بحث في الشركاء...">
+                </div>
+                <div class="topbar-icon"><i class='bx bx-bell'></i>
+                    <div class="notif-dot"></div>
+                </div>
+                <div class="currency-dropdown">
+                    <div class="topbar-icon" onclick="toggleCurrencyDropdown(event)">
+                        <i class='bx bx-dollar-circle'></i>
+                        <span class="currency-code" id="currencyCodeBadge">$</span>
+                    </div>
+                    <div class="currency-dropdown-menu" id="currencyDropdown">
+                        <button type="button" class="currency-dropdown-item active" data-currency="USD">$ USD <i class='bx bx-check'></i></button>
+                        <button type="button" class="currency-dropdown-item" data-currency="EUR">€ EUR</button>
+                        <button type="button" class="currency-dropdown-item" data-currency="EGP">E£ EGP</button>
+                    </div>
+                </div>
+                <div class="profile-pill">
+                    <div class="profile-avatar">MD</div><span>Capt. Mostafa</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="content">
+            <!-- Dashboard cards -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-icon-wrap cyan"><i class='bx bx-buildings'></i></div>
+                    <div class="stat-info"><h3>9</h3><div class="stat-label">إجمالي الشركاء</div></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-wrap danger"><i class='bx bx-money-withdraw'></i></div>
+                    <div class="stat-info"><h3>$31.9K</h3><div class="stat-label">أرصدة مستحقة (USD)</div></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-wrap green"><i class='bx bx-trending-up'></i></div>
+                    <div class="stat-info"><h3>MSC</h3><div class="stat-label">أعلى شريك بإيراد — $156K</div></div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="card" style="margin-bottom:24px;">
+                <div class="card-header">
+                    <span class="card-title">إحصائيات الشركاء</span>
+                </div>
+                <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+                    <div>
+                        <p class="fs-sm fw-600 text-muted" style="margin-bottom:8px;">توزيع حسب النوع</p>
+                        <div class="chart-wrap" style="position:relative;height:220px;width:100%;">
+                            <canvas id="chartPartnerType"></canvas>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="fs-sm fw-600 text-muted" style="margin-bottom:8px;">تعاملات الشهر ($)</p>
+                        <div class="chart-wrap" style="position:relative;height:220px;width:100%;">
+                            <canvas id="chartPartnerTrend"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs + filters + bulk -->
+            <div class="page-header">
+                <div class="tabs" data-tab-group="partTab">
+                    <button class="tab active" data-tab="shipping" onclick="switchTab('partTab','shipping')"><i class='bx bx-ship'></i> خطوط ملاحية</button>
+                    <button class="tab" data-tab="transport" onclick="switchTab('partTab','transport')"><i class='bx bx-car'></i> شركات نقل</button>
+                    <button class="tab" data-tab="customs" onclick="switchTab('partTab','customs')"><i class='bx bx-check-shield'></i> تخليص جمركي</button>
+                </div>
+                <div class="d-flex gap-2 align-center">
+                    <button type="button" class="btn btn-outline btn-sm" id="partnersExportExcel"><i class='bx bx-export'></i> Excel</button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="window.print()"><i class='bx bx-printer'></i> طباعة / PDF</button>
+                    <button class="btn btn-primary" onclick="openModal('addPartnerModal')"><i class='bx bx-plus'></i> إضافة شريك</button>
+                </div>
+            </div>
+
+            <div class="bulk-actions-bar" id="partnersBulkBar" style="display:none;">
+                <span class="bulk-count" id="partnersBulkCount">تم تحديد 0 شريك</span>
+                <button type="button" class="btn btn-outline btn-sm" id="partnersBulkExport">تصدير المحدد Excel</button>
+                <button type="button" class="btn btn-outline btn-sm" id="partnersBulkClear">إلغاء التحديد</button>
+            </div>
+
+            <div class="filter-bar" style="padding:12px 20px;margin-bottom:0;">
+                <input type="text" class="form-control" id="partnerSearch" placeholder="بحث باسم الشريك..." style="max-width:220px;">
+                <label class="d-flex align-center gap-2" style="cursor:pointer;"><input type="checkbox" id="filterHasBalance"> رصيد مستحق فقط</label>
+                <select class="form-control" id="partnerSort" style="width:auto;min-width:140px;">
+                    <option value="">ترتيب حسب</option>
+                    <option value="balance">الرصيد المستحق</option>
+                    <option value="total">إجمالي التعاملات</option>
+                    <option value="name">الاسم</option>
+                </select>
+            </div>
+
+            <!-- Shipping Lines Tab -->
+            <div class="tab-content active" id="partTab-shipping">
+                <div class="grid-3" id="partnersGridShipping">
+                    <div class="card partner-card partner-card-item" onclick="openModal('partnerDetailModal')" data-type="shipping" data-name="MSC" data-balance="18000" data-total="156000" data-has-balance="1">
+                        <div class="d-flex align-center gap-2 mb-2">
+                            <input type="checkbox" class="partner-checkbox" onclick="event.stopPropagation()">
+                            <div class="partner-icon" style="background:rgba(30,42,90,0.1);color:var(--navy-700);"><i class='bx bx-ship'></i></div>
+                            <div><h4 class="fs-sm fw-700">MSC</h4><p class="fs-xs text-muted">Mediterranean Shipping Co.</p></div>
+                        </div>
+                        <div class="d-flex justify-between mb-1"><span class="text-muted fs-xs">حجوزات نشطة:</span><span class="fw-700 fs-sm">14</span></div>
+                        <div class="d-flex justify-between mb-1"><span class="text-muted fs-xs">الرصيد المستحق:</span><span class="fw-700 fs-sm text-danger">$18,000</span></div>
+                        <div class="d-flex justify-between"><span class="text-muted fs-xs">إجمالي التعاملات:</span><span class="fw-600 fs-sm">$156,000</span></div>
+                    </div>
+                    <div class="card partner-card partner-card-item" onclick="openModal('partnerDetailModal')" data-type="shipping" data-name="CMA CGM" data-balance="5700" data-total="98500" data-has-balance="1">
+                        <div class="d-flex align-center gap-2 mb-2">
+                            <input type="checkbox" class="partner-checkbox" onclick="event.stopPropagation()">
+                            <div class="partner-icon" style="background:rgba(23,162,184,0.1);color:var(--accent-cyan);"><i class='bx bx-ship'></i></div>
+                            <div><h4 class="fs-sm fw-700">CMA CGM</h4><p class="fs-xs text-muted">CMA CGM Group</p></div>
+                        </div>
+                        <div class="d-flex justify-between mb-1"><span class="text-muted fs-xs">حجوزات نشطة:</span><span class="fw-700 fs-sm">9</span></div>
+                        <div class="d-flex justify-between mb-1"><span class="text-muted fs-xs">الرصيد المستحق:</span><span class="fw-700 fs-sm text-danger">$5,700</span></div>
+                        <div class="d-flex justify-between"><span class="text-muted fs-xs">إجمالي التعاملات:</span><span class="fw-600 fs-sm">$98,500</span></div>
+                    </div>
+                    <div class="card partner-card partner-card-item" onclick="openModal('partnerDetailModal')" data-type="shipping" data-name="Maersk" data-balance="0" data-total="72300" data-has-balance="0">
+                        <div class="d-flex align-center gap-2 mb-2">
+                            <input type="checkbox" class="partner-checkbox" onclick="event.stopPropagation()">
+                            <div class="partner-icon" style="background:var(--success-light);color:var(--success);"><i class='bx bx-ship'></i></div>
+                            <div><h4 class="fs-sm fw-700">Maersk</h4><p class="fs-xs text-muted">A.P. Moller-Maersk</p></div>
+                        </div>
+                        <div class="d-flex justify-between mb-1"><span class="text-muted fs-xs">حجوزات نشطة:</span><span class="fw-700 fs-sm">6</span></div>
+                        <div class="d-flex justify-between mb-1"><span class="text-muted fs-xs">الرصيد المستحق:</span><span class="fw-700 fs-sm text-success">$0</span></div>
+                        <div class="d-flex justify-between"><span class="text-muted fs-xs">إجمالي التعاملات:</span><span class="fw-600 fs-sm">$72,300</span></div>
+                    </div>
+                    <div class="card partner-card partner-card-item" onclick="openModal('partnerDetailModal')" data-type="shipping" data-name="Hapag-Lloyd" data-balance="8200" data-total="45100" data-has-balance="1">
+                        <div class="d-flex align-center gap-2 mb-2">
+                            <input type="checkbox" class="partner-checkbox" onclick="event.stopPropagation()">
+                            <div class="partner-icon" style="background:rgba(212,168,83,0.12);color:var(--accent-gold);"><i class='bx bx-ship'></i></div>
+                            <div><h4 class="fs-sm fw-700">Hapag-Lloyd</h4><p class="fs-xs text-muted">Hapag-Lloyd AG</p></div>
+                        </div>
+                        <div class="d-flex justify-between mb-1"><span class="text-muted fs-xs">حجوزات نشطة:</span><span class="fw-700 fs-sm">4</span></div>
+                        <div class="d-flex justify-between mb-1"><span class="text-muted fs-xs">الرصيد المستحق:</span><span class="fw-700 fs-sm text-danger">$8,200</span></div>
+                        <div class="d-flex justify-between"><span class="text-muted fs-xs">إجمالي التعاملات:</span><span class="fw-600 fs-sm">$45,100</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transport Tab -->
+            <div class="tab-content" id="partTab-transport">
+                <div class="grid-3">
+                    <div class="card partner-card partner-card-item" onclick="openModal('partnerDetailModal')" data-type="transport" data-name="نايل للنقل" data-balance="140000" data-total="1240000" data-has-balance="1">
+                        <div class="d-flex align-center gap-2 mb-2">
+                            <input type="checkbox" class="partner-checkbox" onclick="event.stopPropagation()">
+                            <div class="partner-icon" style="background:rgba(23,162,184,0.1);color:var(--accent-cyan);"><i class='bx bx-car'></i></div>
+                            <div><h4 class="fs-sm fw-700">نايل للنقل</h4><p class="fs-xs text-muted">نقل داخلي — كل الموانئ</p></div>
+                        </div>
+                        <div class="d-flex justify-between mb-1"><span class="text-muted fs-xs">مهام نشطة:</span><span class="fw-700 fs-sm">8</span></div>
+                        <div class="d-flex justify-between mb-1"><span class="text-muted fs-xs">الرصيد المستحق:</span><span class="fw-700 fs-sm text-danger">EGP 140,000</span></div>
+                        <div class="d-flex justify-between"><span class="text-muted fs-xs">إجمالي التعاملات:</span><span class="fw-600 fs-sm">EGP 1,240,000</span></div>
+                    </div>
+                    <div class="card partner-card partner-card-item" onclick="openModal('partnerDetailModal')" data-type="transport" data-name="الصفا للنقل" data-balance="0" data-total="480000" data-has-balance="0">
+                        <div class="d-flex align-center gap-2 mb-2">
+                            <input type="checkbox" class="partner-checkbox" onclick="event.stopPropagation()">
+                            <div class="partner-icon" style="background:var(--success-light);color:var(--success);"><i class='bx bx-car'></i></div>
+                            <div><h4 class="fs-sm fw-700">الصفا للنقل</h4><p class="fs-xs text-muted">نقل ثقيل — السخنة ودمياط</p></div>
+                        </div>
+                        <div class="d-flex justify-between mb-1"><span class="text-muted fs-xs">مهام نشطة:</span><span class="fw-700 fs-sm">3</span></div>
+                        <div class="d-flex justify-between mb-1"><span class="text-muted fs-xs">الرصيد المستحق:</span><span class="fw-700 fs-sm text-success">EGP 0</span></div>
+                        <div class="d-flex justify-between"><span class="text-muted fs-xs">إجمالي التعاملات:</span><span class="fw-600 fs-sm">EGP 480,000</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customs Tab -->
+            <div class="tab-content" id="partTab-customs">
+                <div class="grid-3">
+                    <div class="card partner-card partner-card-item" onclick="openModal('partnerDetailModal')" data-type="customs" data-name="التخليص العالمية" data-balance="0" data-total="680000" data-has-balance="0">
+                        <div class="d-flex align-center gap-2 mb-2">
+                            <input type="checkbox" class="partner-checkbox" onclick="event.stopPropagation()">
+                            <div class="partner-icon" style="background:rgba(212,168,83,0.12);color:var(--accent-gold);"><i class='bx bx-check-shield'></i></div>
+                            <div><h4 class="fs-sm fw-700">التخليص العالمية</h4><p class="fs-xs text-muted">تخليص جمركي — كل الموانئ</p></div>
+                        </div>
+                        <div class="d-flex justify-between mb-1"><span class="text-muted fs-xs">معاملات معلقة:</span><span class="fw-700 fs-sm">6</span></div>
+                        <div class="d-flex justify-between mb-1"><span class="text-muted fs-xs">الرصيد المستحق:</span><span class="fw-700 fs-sm text-success">EGP 0</span></div>
+                        <div class="d-flex justify-between"><span class="text-muted fs-xs">إجمالي التعاملات:</span><span class="fw-600 fs-sm">EGP 680,000</span></div>
+                    </div>
+                    <div class="card partner-card partner-card-item" onclick="openModal('partnerDetailModal')" data-type="customs" data-name="الشرق للتخليص" data-balance="42000" data-total="320000" data-has-balance="1">
+                        <div class="d-flex align-center gap-2 mb-2">
+                            <input type="checkbox" class="partner-checkbox" onclick="event.stopPropagation()">
+                            <div class="partner-icon" style="background:rgba(30,42,90,0.1);color:var(--navy-700);"><i class='bx bx-check-shield'></i></div>
+                            <div><h4 class="fs-sm fw-700">الشرق للتخليص</h4><p class="fs-xs text-muted">تخليص جمركي — الإسكندرية</p></div>
+                        </div>
+                        <div class="d-flex justify-between mb-1"><span class="text-muted fs-xs">معاملات معلقة:</span><span class="fw-700 fs-sm">2</span></div>
+                        <div class="d-flex justify-between mb-1"><span class="text-muted fs-xs">الرصيد المستحق:</span><span class="fw-700 fs-sm text-danger">EGP 42,000</span></div>
+                        <div class="d-flex justify-between"><span class="text-muted fs-xs">إجمالي التعاملات:</span><span class="fw-600 fs-sm">EGP 320,000</span></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ADD PARTNER MODAL -->
+    <div class="modal-overlay" id="addPartnerModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class='bx bx-buildings' style="margin-left:8px;"></i> إضافة شريك</h3><button class="modal-close"
+                    onclick="closeModal('addPartnerModal')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group"><label class="form-label">نوع الشريك</label><select class="form-control">
+                        <option>خط ملاحي</option>
+                        <option>شركة نقل داخلي</option>
+                        <option>شركة تخليص جمركي</option>
+                    </select></div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">اسم الشريك</label><input type="text"
+                            class="form-control" placeholder="اسم الشركة"></div>
+                    <div class="form-group"><label class="form-label">مسؤول التواصل</label><input type="text"
+                            class="form-control" placeholder="اسم المسؤول"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">الهاتف</label><input type="tel"
+                            class="form-control" placeholder="+20 xxx xxx xxxx"></div>
+                    <div class="form-group"><label class="form-label">البريد</label><input type="email"
+                            class="form-control" placeholder="email@partner.com"></div>
+                </div>
+                <div class="form-group"><label class="form-label">العنوان</label><input type="text" class="form-control"
+                        placeholder="العنوان الكامل"></div>
+                <div class="form-group"><label class="form-label">العملة الأساسية</label><select class="form-control">
+                        <option>USD</option>
+                        <option>EGP</option>
+                        <option>EUR</option>
+                    </select></div>
+                <div class="form-group"><label class="form-label">ملاحظات</label><textarea class="form-control"
+                        placeholder="أي ملاحظات..."></textarea></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-outline"
+                    onclick="closeModal('addPartnerModal')">إلغاء</button><button class="btn btn-primary"><i
+                        class='bx bx-check'></i> حفظ الشريك</button></div>
+        </div>
+    </div>
+
+    <!-- PARTNER DETAIL MODAL -->
+    <div class="modal-overlay" id="partnerDetailModal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3><i class='bx bx-ship' style="margin-left:8px;"></i> تفاصيل — MSC</h3><button class="modal-close"
+                    onclick="closeModal('partnerDetailModal')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="grid-2" style="margin-bottom:20px;">
+                    <div>
+                        <h4 class="fs-sm fw-700 mb-2">معلومات الشريك</h4>
+                        <div style="display:flex;flex-direction:column;gap:8px;">
+                            <div class="d-flex justify-between"><span class="text-muted fs-sm">النوع:</span><span
+                                    class="fw-600 fs-sm">خط ملاحي</span></div>
+                            <div class="d-flex justify-between"><span class="text-muted fs-sm">المسؤول:</span><span
+                                    class="fw-600 fs-sm">John Smith</span></div>
+                            <div class="d-flex justify-between"><span class="text-muted fs-sm">الهاتف:</span><span
+                                    class="fw-600 fs-sm">+41 22 703 8888</span></div>
+                            <div class="d-flex justify-between"><span class="text-muted fs-sm">البريد:</span><span
+                                    class="fw-600 fs-sm">bookings@msc.com</span></div>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="fs-sm fw-700 mb-2">ملخص مالي</h4>
+                        <div style="display:flex;flex-direction:column;gap:8px;">
+                            <div class="d-flex justify-between"><span class="text-muted fs-sm">إجمالي
+                                    التعاملات:</span><span class="fw-700 fs-sm">$156,000</span></div>
+                            <div class="d-flex justify-between"><span class="text-muted fs-sm">المدفوع:</span><span
+                                    class="fw-700 fs-sm text-success">$138,000</span></div>
+                            <div class="d-flex justify-between"><span class="text-muted fs-sm">المستحق:</span><span
+                                    class="fw-700 fs-sm text-danger">$18,000</span></div>
+                            <div class="d-flex justify-between"><span class="text-muted fs-sm">حجوزات نشطة:</span><span
+                                    class="fw-700 fs-sm">14</span></div>
+                        </div>
+                    </div>
+                </div>
+                <h4 class="fs-sm fw-700 mb-2">حجوزات / مهام نشطة</h4>
+                <table class="data-table" style="margin-bottom:16px;">
+                    <thead><tr><th>الشحنة</th><th>المسار</th><th>التاريخ</th><th>الحالة</th></tr></thead>
+                    <tbody>
+                        <tr><td class="bl-number">BL-2026-0248</td><td>الإسكندرية → جدة</td><td class="fs-sm">15/02/2026</td><td><span class="status-badge in-transit">قيد التنفيذ</span></td></tr>
+                        <tr><td class="bl-number">BL-2026-0246</td><td>دمياط → دبي</td><td class="fs-sm">12/02/2026</td><td><span class="status-badge booked">تم الحجز</span></td></tr>
+                    </tbody>
+                </table>
+                <h4 class="fs-sm fw-700 mb-2">فواتير ومدفوعات</h4>
+                <table class="data-table" style="margin-bottom:16px;">
+                    <thead><tr><th>التاريخ</th><th>الشحنة</th><th>المبلغ</th><th>الحالة</th></tr></thead>
+                    <tbody>
+                        <tr><td class="fs-sm">15/02/2026</td><td class="bl-number">BL-2026-0248</td><td class="fw-600">$3,250</td><td><span class="status-badge unpaid">غير مدفوع</span></td></tr>
+                        <tr><td class="fs-sm">12/02/2026</td><td class="bl-number">BL-2026-0246</td><td class="fw-600">$4,100</td><td><span class="status-badge unpaid">غير مدفوع</span></td></tr>
+                        <tr><td class="fs-sm">05/02/2026</td><td class="bl-number">BL-2026-0240</td><td class="fw-600">$2,800</td><td><span class="status-badge paid">مدفوع</span></td></tr>
+                    </tbody>
+                </table>
+                <h4 class="fs-sm fw-700 mb-2">سجل التواصل</h4>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-dot cyan"></div>
+                        <div class="timeline-date">18 فبراير 2026</div>
+                        <div class="timeline-title">مكالمة — تأكيد حجز BL-2026-0248</div>
+                        <div class="timeline-desc">تم الاتفاق على السعر والموعد مع John Smith.</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot green"></div>
+                        <div class="timeline-date">05 فبراير 2026</div>
+                        <div class="timeline-title">تحويل مدفوع — $2,800</div>
+                        <div class="timeline-desc">تم تسوية فاتورة BL-2026-0240.</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('partnerDetailModal')">إغلاق</button>
+                <button class="btn btn-outline" onclick="window.print()"><i class='bx bx-printer'></i> طباعة</button>
+                <button class="btn btn-cyan"><i class='bx bx-spreadsheet'></i> كشف حساب</button>
+                <button class="btn btn-primary"><i class='bx bx-edit'></i> تعديل</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="js/role-sidebar-apply.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+    (function() {
+        if (typeof switchTab !== 'function') window.switchTab = function(grp, tab) {
+            document.querySelectorAll('[data-tab-group="' + grp + '"] .tab').forEach(function(t) { t.classList.toggle('active', t.getAttribute('data-tab') === tab); });
+            document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.toggle('active', c.id === grp + '-' + tab); });
+        };
+
+        // Charts
+        var chartTypeEl = document.getElementById('chartPartnerType');
+        var chartTrendEl = document.getElementById('chartPartnerTrend');
+        if (chartTypeEl && typeof Chart !== 'undefined') {
+            new Chart(chartTypeEl, {
+                type: 'doughnut',
+                data: {
+                    labels: ['خطوط ملاحية', 'شركات نقل', 'تخليص جمركي'],
+                    datasets: [{ data: [4, 2, 2], backgroundColor: ['var(--accent-cyan)', 'var(--success)', 'var(--accent-gold)'], borderWidth: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+        }
+        if (chartTrendEl && typeof Chart !== 'undefined') {
+            new Chart(chartTrendEl, {
+                type: 'bar',
+                data: {
+                    labels: ['يناير', 'فبراير', 'مارس'],
+                    datasets: [{ label: 'تعاملات ($)', data: [42000, 38500, 31000], backgroundColor: 'rgba(23,162,184,0.7)', borderColor: 'var(--accent-cyan)', borderWidth: 1 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } }
+            });
+        }
+
+        // Filters: search, has balance, sort
+        var partnerSearch = document.getElementById('partnerSearch');
+        var filterHasBalance = document.getElementById('filterHasBalance');
+        var partnerSort = document.getElementById('partnerSort');
+        var cards = document.querySelectorAll('.partner-card-item');
+        var activeTab = function() { var t = document.querySelector('[data-tab-group="partTab"].tab.active'); return t ? t.getAttribute('data-tab') : 'shipping'; };
+        function visibleCards() { var tab = document.querySelector('.tab-content.active'); return tab ? tab.querySelectorAll('.partner-card-item') : []; }
+        function applyPartnerFilters() {
+            var q = (partnerSearch && partnerSearch.value.trim().toLowerCase()) || '';
+            var onlyBalance = filterHasBalance && filterHasBalance.checked;
+            var list = visibleCards();
+            list.forEach(function(card) {
+                var name = (card.getAttribute('data-name') || '').toLowerCase();
+                var hasBal = card.getAttribute('data-has-balance') === '1';
+                var matchSearch = !q || name.indexOf(q) !== -1;
+                var matchBalance = !onlyBalance || hasBal;
+                card.style.display = (matchSearch && matchBalance) ? '' : 'none';
+            });
+        }
+        if (partnerSearch) partnerSearch.addEventListener('input', applyPartnerFilters);
+        if (filterHasBalance) filterHasBalance.addEventListener('change', applyPartnerFilters);
+
+        // Bulk
+        var checkboxes = document.querySelectorAll('.partner-checkbox');
+        function updatePartnersBulk() {
+            var list = visibleCards();
+            var n = 0;
+            list.forEach(function(card) { if (card.style.display !== 'none' && card.querySelector('.partner-checkbox') && card.querySelector('.partner-checkbox').checked) n++; });
+            var bar = document.getElementById('partnersBulkBar');
+            var count = document.getElementById('partnersBulkCount');
+            if (count) count.textContent = 'تم تحديد ' + n + ' شريك';
+            if (bar) bar.style.display = n > 0 ? 'flex' : 'none';
+        }
+        checkboxes.forEach(function(cb) { cb.addEventListener('change', updatePartnersBulk); });
+        if (document.getElementById('partnersBulkClear')) document.getElementById('partnersBulkClear').addEventListener('click', function() { checkboxes.forEach(function(cb) { cb.checked = false; }); updatePartnersBulk(); });
+
+        // Export Excel: build table from visible or selected cards
+        function exportPartnersExcel(selectedOnly) {
+            var list = visibleCards();
+            var rows = [];
+            list.forEach(function(card) {
+                if (selectedOnly && (!card.querySelector('.partner-checkbox') || !card.querySelector('.partner-checkbox').checked)) return;
+                if (card.style.display === 'none') return;
+                var name = card.getAttribute('data-name') || '';
+                var type = card.getAttribute('data-type') || '';
+                var balance = card.querySelector('.text-danger') ? (card.querySelector('.text-danger').textContent || '') : (card.querySelector('.text-success') ? card.querySelector('.text-success').textContent : '');
+                var total = card.querySelectorAll('.d-flex justify-between span.fw-600');
+                var totalText = total.length ? (total[total.length - 1].textContent || '') : '';
+                rows.push([name, type, balance, totalText]);
+            });
+            var csv = '\ufeffالاسم,النوع,الرصيد المستحق,إجمالي التعاملات\n' + rows.map(function(r) { return r.join(','); }).join('\n');
+            var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+            var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = selectedOnly ? 'شركاء_محددون.csv' : 'الشركاء.csv'; a.click(); URL.revokeObjectURL(a.href);
+        }
+        if (document.getElementById('partnersExportExcel')) document.getElementById('partnersExportExcel').addEventListener('click', function() { exportPartnersExcel(false); });
+        if (document.getElementById('partnersBulkExport')) document.getElementById('partnersBulkExport').addEventListener('click', function() { exportPartnersExcel(true); });
+    })();
+    </script>
+</body>
+
+</html>

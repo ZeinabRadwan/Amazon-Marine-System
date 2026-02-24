@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazon Marine — المصروفات</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <nav class="sidebar">
+        <div class="logo-area"><img src="logo/logo (1).png" alt="Logo">
+            <div class="logo-text"><span class="brand-name">Amazon Marine</span><span class="brand-sub">Shipping
+                    Agency</span></div>
+        </div>
+        <div class="menu-label">الرئيسية</div>
+        <ul class="menu">
+            <li><a href="dashboard.html"><i class='bx bxs-dashboard'></i><span>لوحة التحكم</span></a></li>
+            <li><a href="clients.html"><i class='bx bx-group'></i><span>العملاء / CRM</span></a></li>
+            <li><a href="shipments.html"><i class='bx bx-package'></i><span>الشحنات</span></a></li>
+            <li><a href="sd-forms.html"><i class='bx bx-file'></i><span>نماذج SD</span></a></li>
+            <li><a href="operations.html"><i class='bx bxs-ship'></i><span>العمليات</span></a></li>
+        </ul>
+        <div class="menu-label">المالية</div>
+        <ul class="menu">
+            <li><a href="invoices.html"><i class='bx bx-receipt'></i><span>الفواتير</span></a></li>
+            <li><a href="accounting.html"><i class='bx bx-wallet'></i><span>الحسابات</span></a></li>
+            <li><a href="treasury.html"><i class='bx bx-credit-card'></i><span>الخزينة</span></a></li>
+            <li class="active"><a href="expenses.html"><i class='bx bx-money'></i><span>المصروفات</span></a></li>
+            <li><a href="pricing.html"><i class='bx bx-dollar-circle'></i><span>التسعير</span></a></li>
+        </ul>
+        <div class="menu-label">الإدارة</div>
+        <ul class="menu">
+            <li><a href="partners.html"><i class='bx bx-buildings'></i><span>الشركاء</span></a></li>
+            <li><a href="attendance.html"><i class='bx bx-time-five'></i><span>الحضور والانصراف</span></a></li>
+            <li><a href="visits.html"><i class='bx bx-map-pin'></i><span>سجل الزيارات</span></a></li>
+            <li><a href="reports.html"><i class='bx bx-bar-chart-alt-2'></i><span>التقارير</span></a></li>
+            <li><a href="documents.html"><i class='bx bx-file-blank'></i><span>المستندات الرسمية</span></a></li>
+            <li><a href="tickets.html"><i class='bx bx-message-alt-detail'></i><span>تذاكر الدعم</span></a></li>
+            <li><a href="team-performance.html"><i class='bx bx-trending-up'></i><span>أداء الفريق</span></a></li>
+        </ul>
+        <div class="menu-label">الإعدادات</div>
+        <ul class="menu">
+            <li><a href="settings.html"><i class='bx bx-cog'></i><span>الإعدادات</span></a></li>
+            <li><a href="profile.html"><i class='bx bx-user'></i><span>الملف الشخصي</span></a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-avatar">MD</div>
+            <div class="user-info">
+                <div class="user-name">Capt. Mostafa</div>
+                <div class="user-role">مدير النظام</div>
+            </div><a href="index.html"><i class='bx bx-log-out'
+                    style="color:rgba(255,255,255,0.35);font-size:1.2rem;"></i></a>
+        </div>
+    </nav>
+
+    <div class="main-wrapper">
+        <header class="topbar">
+            <div class="page-title-area">
+                <h1>المصروفات</h1>
+                <div class="breadcrumbs">Amazon Marine > <span>إدارة المصروفات</span></div>
+            </div>
+            <div class="topbar-right">
+                <div class="search-bar"><i class='bx bx-search'></i><input type="text"
+                        placeholder="بحث في المصروفات..."></div>
+                <div class="topbar-icon"><i class='bx bx-bell'></i>
+                    <div class="notif-dot"></div>
+                </div>
+                <div class="currency-dropdown">
+                    <div class="topbar-icon" onclick="toggleCurrencyDropdown(event)">
+                        <i class='bx bx-dollar-circle'></i>
+                        <span class="currency-code" id="currencyCodeBadge">$</span>
+                    </div>
+                    <div class="currency-dropdown-menu" id="currencyDropdown">
+                        <button type="button" class="currency-dropdown-item active" data-currency="USD">$ USD <i class='bx bx-check'></i></button>
+                        <button type="button" class="currency-dropdown-item" data-currency="EUR">€ EUR</button>
+                        <button type="button" class="currency-dropdown-item" data-currency="EGP">E£ EGP</button>
+                    </div>
+                </div>
+                <div class="profile-pill">
+                    <div class="profile-avatar">MD</div><span>Capt. Mostafa</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="content">
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-icon-wrap navy"><i class='bx bx-money'></i></div>
+                    <div class="stat-info">
+                        <h3>$186K</h3>
+                        <div class="stat-label">إجمالي المصروفات (هذا الشهر)</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-wrap cyan"><i class='bx bx-package'></i></div>
+                    <div class="stat-info">
+                        <h3>$148K</h3>
+                        <div class="stat-label">مصروفات الشحنات</div><span class="stat-trend">80% من الإجمالي</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-wrap gold"><i class='bx bx-building-house'></i></div>
+                    <div class="stat-info">
+                        <h3>$38K</h3>
+                        <div class="stat-label">مصروفات عامة</div><span class="stat-trend">20% من الإجمالي</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-wrap green"><i class='bx bx-line-chart'></i></div>
+                    <div class="stat-info">
+                        <h3>$68K</h3>
+                        <div class="stat-label">صافي الربح</div><span class="stat-trend up"><i
+                                class='bx bx-trending-up'></i> 15%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts: Monthly trend + By category -->
+            <div class="card" style="margin-bottom:24px;">
+                <div class="card-header">
+                    <span class="card-title">تحليل المصروفات</span>
+                    <select class="form-control" id="expChartMonths" style="width:auto;min-width:110px;">
+                        <option value="6">6 أشهر</option>
+                        <option value="12">12 شهر</option>
+                    </select>
+                </div>
+                <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+                    <div>
+                        <p class="fs-sm fw-600 text-muted" style="margin-bottom:8px;">المصروفات الشهرية ($K)</p>
+                        <div class="chart-wrap" style="position:relative;height:220px;width:100%;">
+                            <canvas id="chartExpensesMonthly"></canvas>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="fs-sm fw-600 text-muted" style="margin-bottom:8px;">توزيع المصروفات حسب التصنيف</p>
+                        <div class="chart-wrap" style="position:relative;height:220px;width:100%;">
+                            <canvas id="chartExpensesByCategory"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="page-header">
+                <div class="tabs" data-tab-group="expTab">
+                    <button class="tab active" data-tab="shipment" onclick="switchTab('expTab','shipment')"><i
+                            class='bx bx-package'></i> مصروفات الشحنات</button>
+                    <button class="tab" data-tab="general" onclick="switchTab('expTab','general')"><i
+                            class='bx bx-building-house'></i> مصروفات عامة</button>
+                </div>
+                <div class="page-header-actions">
+                    <button class="btn btn-outline btn-sm"><i class='bx bx-export'></i> تقرير</button>
+                    <button class="btn btn-primary" onclick="openModal('addExpenseModal')"><i class='bx bx-plus'></i>
+                        إضافة مصروف</button>
+                </div>
+            </div>
+
+            <!-- Shipment Expenses Tab -->
+            <div class="tab-content active" id="expTab-shipment">
+                <div class="card">
+                    <div class="filter-bar">
+                        <input type="text" class="form-control" id="expShipSearch" placeholder="بحث بالوصف أو الجهة..." style="max-width:240px;">
+                        <select class="form-control" id="expShipBl">
+                            <option value="">كل الشحنات</option>
+                            <option value="BL-2026-0248">BL-2026-0248</option>
+                            <option value="BL-2026-0247">BL-2026-0247</option>
+                            <option value="BL-2026-0245">BL-2026-0245</option>
+                        </select>
+                        <select class="form-control" id="expShipCategory">
+                            <option value="">كل التصنيفات</option>
+                            <option value="Freight">Freight</option>
+                            <option value="THC">THC</option>
+                            <option value="نقل">نقل</option>
+                            <option value="تخليص">تخليص</option>
+                        </select>
+                        <select class="form-control" id="expShipCurrency">
+                            <option value="">كل العملات</option>
+                            <option value="USD">USD</option>
+                            <option value="EGP">EGP</option>
+                        </select>
+                        <input type="month" class="form-control" id="expShipMonth" value="2026-02">
+                        <select class="form-control" id="expShipSort" style="width:auto;min-width:130px;">
+                            <option value="">ترتيب حسب</option>
+                            <option value="amount">المبلغ</option>
+                            <option value="date">التاريخ</option>
+                            <option value="category">التصنيف</option>
+                            <option value="bl">الشحنة</option>
+                        </select>
+                    </div>
+                    <table class="data-table" id="expShipmentTable">
+                        <thead>
+                            <tr>
+                                <th>الشحنة</th>
+                                <th>التصنيف</th>
+                                <th>الوصف</th>
+                                <th>المبلغ</th>
+                                <th>العملة</th>
+                                <th>الجهة</th>
+                                <th>التاريخ</th>
+                                <th>الفاتورة</th>
+                                <th>الإيصال</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="exp-ship-row" data-bl="BL-2026-0248" data-category="Freight" data-amount="2800" data-currency="USD" data-date="2026-02-15" data-vendor="MSC" data-desc="Ocean Freight" data-receipt="1" data-inv="INV-2026-0091">
+                                <td><a href="shipments.html" class="bl-number link">BL-2026-0248</a></td>
+                                <td><span class="status-badge booked">Freight</span></td>
+                                <td>Ocean Freight 2×40'HC</td>
+                                <td class="fw-700">$2,800</td>
+                                <td>USD</td>
+                                <td>MSC</td>
+                                <td class="fs-sm text-muted">15/02</td>
+                                <td><a href="invoices.html" class="fs-sm link">INV-2026-0091</a></td>
+                                <td><button type="button" class="btn btn-sm btn-outline" onclick="openReceiptViewer('BL-2026-0248', 'Freight', 2800, 'USD', '15/02/2026')" title="عرض الإيصال"><i class='bx bx-receipt'></i></button></td>
+                            </tr>
+                            <tr class="exp-ship-row" data-bl="BL-2026-0248" data-category="THC" data-amount="450" data-currency="USD" data-date="2026-02-15" data-vendor="MSC" data-desc="THC" data-receipt="1">
+                                <td><a href="shipments.html" class="bl-number link">BL-2026-0248</a></td>
+                                <td><span class="status-badge pending">THC</span></td>
+                                <td>Terminal Handling Charge</td>
+                                <td class="fw-700">$450</td>
+                                <td>USD</td>
+                                <td>MSC</td>
+                                <td class="fs-sm text-muted">15/02</td>
+                                <td><span class="text-muted fs-sm">—</span></td>
+                                <td><button type="button" class="btn btn-sm btn-outline" onclick="openReceiptViewer('BL-2026-0248', 'THC', 450, 'USD', '15/02/2026')" title="عرض الإيصال"><i class='bx bx-receipt'></i></button></td>
+                            </tr>
+                            <tr class="exp-ship-row" data-bl="BL-2026-0248" data-category="نقل" data-amount="18000" data-currency="EGP" data-date="2026-02-12" data-vendor="نايل للنقل" data-desc="نقل داخلي" data-receipt="1">
+                                <td><a href="shipments.html" class="bl-number link">BL-2026-0248</a></td>
+                                <td><span class="status-badge in-transit">نقل</span></td>
+                                <td>نقل داخلي — مصنع ← ميناء</td>
+                                <td class="fw-700">EGP 18,000</td>
+                                <td>EGP</td>
+                                <td>نايل للنقل</td>
+                                <td class="fs-sm text-muted">12/02</td>
+                                <td><span class="text-muted fs-sm">—</span></td>
+                                <td><button type="button" class="btn btn-sm btn-outline" onclick="openReceiptViewer('BL-2026-0248', 'نقل داخلي', 18000, 'EGP', '12/02/2026')" title="عرض الإيصال"><i class='bx bx-receipt'></i></button></td>
+                            </tr>
+                            <tr class="exp-ship-row" data-bl="BL-2026-0248" data-category="تخليص" data-amount="12000" data-currency="EGP" data-date="2026-02-14" data-vendor="التخليص العالمية" data-desc="تخليص جمركي" data-receipt="1">
+                                <td><a href="shipments.html" class="bl-number link">BL-2026-0248</a></td>
+                                <td><span class="status-badge clearance">تخليص</span></td>
+                                <td>تخليص جمركي</td>
+                                <td class="fw-700">EGP 12,000</td>
+                                <td>EGP</td>
+                                <td>التخليص العالمية</td>
+                                <td class="fs-sm text-muted">14/02</td>
+                                <td><span class="text-muted fs-sm">—</span></td>
+                                <td><button type="button" class="btn btn-sm btn-outline" onclick="openReceiptViewer('BL-2026-0248', 'تخليص جمركي', 12000, 'EGP', '14/02/2026')" title="عرض الإيصال"><i class='bx bx-receipt'></i></button></td>
+                            </tr>
+                            <tr class="exp-ship-row" data-bl="BL-2026-0247" data-category="Freight" data-amount="4200" data-currency="USD" data-date="2026-02-18" data-vendor="CMA CGM" data-desc="Ocean Freight" data-receipt="0">
+                                <td><a href="shipments.html" class="bl-number link">BL-2026-0247</a></td>
+                                <td><span class="status-badge booked">Freight</span></td>
+                                <td>Ocean Freight 1×40'HC</td>
+                                <td class="fw-700">$4,200</td>
+                                <td>USD</td>
+                                <td>CMA CGM</td>
+                                <td class="fs-sm text-muted">18/02</td>
+                                <td><span class="text-muted fs-sm">—</span></td>
+                                <td><button type="button" class="btn btn-sm btn-outline" onclick="openModal('uploadReceiptModal')" title="رفع إيصال"><i class='bx bx-upload'></i></button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- General Expenses Tab -->
+            <div class="tab-content" id="expTab-general">
+                <div class="card">
+                    <div class="filter-bar">
+                        <input type="text" class="form-control" id="expGenSearch" placeholder="بحث بالوصف..." style="max-width:240px;">
+                        <select class="form-control" id="expGenCategory">
+                            <option value="">كل التصنيفات</option>
+                            <option value="إيجار">إيجار</option>
+                            <option value="رواتب">رواتب</option>
+                            <option value="مرافق">مرافق</option>
+                            <option value="تسويق">تسويق</option>
+                            <option value="أخرى">أخرى</option>
+                        </select>
+                        <select class="form-control" id="expGenCurrency">
+                            <option value="">كل العملات</option>
+                            <option value="EGP">EGP</option>
+                            <option value="USD">USD</option>
+                        </select>
+                        <input type="month" class="form-control" id="expGenMonth" value="2026-02">
+                        <select class="form-control" id="expGenSort" style="width:auto;min-width:130px;">
+                            <option value="">ترتيب حسب</option>
+                            <option value="amount">المبلغ</option>
+                            <option value="date">التاريخ</option>
+                            <option value="category">التصنيف</option>
+                        </select>
+                    </div>
+                    <table class="data-table" id="expGeneralTable">
+                        <thead>
+                            <tr>
+                                <th>التصنيف</th>
+                                <th>الوصف</th>
+                                <th>المبلغ</th>
+                                <th>العملة</th>
+                                <th>طريقة الدفع</th>
+                                <th>التاريخ</th>
+                                <th>الإيصال</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="exp-gen-row" data-category="إيجار" data-amount="35000" data-currency="EGP" data-date="2026-02-01" data-desc="إيجار المكتب">
+                                <td><span class="status-badge active">إيجار</span></td>
+                                <td>إيجار المكتب — فبراير</td>
+                                <td class="fw-700">EGP 35,000</td>
+                                <td>EGP</td>
+                                <td>تحويل بنكي</td>
+                                <td class="fs-sm text-muted">01/02</td>
+                                <td><button type="button" class="btn btn-sm btn-outline" onclick="openReceiptViewer(null, 'إيجار', 35000, 'EGP', '01/02/2026')" title="عرض الإيصال"><i class='bx bx-receipt'></i></button></td>
+                            </tr>
+                            <tr class="exp-gen-row" data-category="رواتب" data-amount="180000" data-currency="EGP" data-date="2026-01-28" data-desc="رواتب">
+                                <td><span class="status-badge pending">رواتب</span></td>
+                                <td>رواتب الموظفين — فبراير</td>
+                                <td class="fw-700">EGP 180,000</td>
+                                <td>EGP</td>
+                                <td>تحويل بنكي</td>
+                                <td class="fs-sm text-muted">28/01</td>
+                                <td><button type="button" class="btn btn-sm btn-outline" onclick="openReceiptViewer(null, 'رواتب', 180000, 'EGP', '28/01/2026')" title="عرض الإيصال"><i class='bx bx-receipt'></i></button></td>
+                            </tr>
+                            <tr class="exp-gen-row" data-category="مرافق" data-amount="8500" data-currency="EGP" data-date="2026-02-05" data-desc="مرافق">
+                                <td><span class="status-badge in-transit">مرافق</span></td>
+                                <td>كهرباء + مياه + إنترنت</td>
+                                <td class="fw-700">EGP 8,500</td>
+                                <td>EGP</td>
+                                <td>نقدي</td>
+                                <td class="fs-sm text-muted">05/02</td>
+                                <td><button type="button" class="btn btn-sm btn-outline" onclick="openReceiptViewer(null, 'مرافق', 8500, 'EGP', '05/02/2026')" title="عرض الإيصال"><i class='bx bx-receipt'></i></button></td>
+                            </tr>
+                            <tr class="exp-gen-row" data-category="تسويق" data-amount="15000" data-currency="EGP" data-date="2026-02-10" data-desc="تسويق">
+                                <td><span class="status-badge clearance">تسويق</span></td>
+                                <td>إعلانات فيسبوك + لينكدإن</td>
+                                <td class="fw-700">EGP 15,000</td>
+                                <td>EGP</td>
+                                <td>بطاقة ائتمان</td>
+                                <td class="fs-sm text-muted">10/02</td>
+                                <td><button type="button" class="btn btn-sm btn-outline" onclick="openModal('uploadReceiptModal')" title="رفع إيصال"><i class='bx bx-upload'></i></button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Receipt viewer modal -->
+    <div class="modal-overlay" id="receiptViewerModal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3><i class='bx bx-receipt' style="margin-left:8px;"></i> عرض الإيصال</h3>
+                <button class="modal-close" onclick="closeModal('receiptViewerModal')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="receipt-meta" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+                    <div><span class="text-muted fs-sm">الشحنة:</span> <span id="receiptBl" class="fw-600">—</span></div>
+                    <div><span class="text-muted fs-sm">التصنيف:</span> <span id="receiptCategory" class="fw-600">—</span></div>
+                    <div><span class="text-muted fs-sm">المبلغ:</span> <span id="receiptAmount" class="fw-700">—</span></div>
+                    <div><span class="text-muted fs-sm">التاريخ:</span> <span id="receiptDate" class="fw-600">—</span></div>
+                </div>
+                <div class="receipt-preview" style="min-height:280px;background:var(--bg-body);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;color:var(--text-muted);">
+                    <div style="text-align:center;">
+                        <i class='bx bx-file-blank' style="font-size:4rem;margin-bottom:12px;"></i>
+                        <p class="fs-sm">معاينة الإيصال (صورة/PDF سيتم ربطها من الخادم)</p>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 mt-3">
+                    <a href="shipments.html" class="btn btn-outline btn-sm" id="receiptLinkShipment" style="display:none;"><i class='bx bx-package'></i> عرض الشحنة</a>
+                    <a href="invoices.html" class="btn btn-outline btn-sm"><i class='bx bx-receipt'></i> الفواتير</a>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('receiptViewerModal')">إغلاق</button>
+                <button class="btn btn-primary"><i class='bx bx-download'></i> تحميل الإيصال</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload receipt modal -->
+    <div class="modal-overlay" id="uploadReceiptModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class='bx bx-upload' style="margin-left:8px;"></i> رفع إيصال</h3>
+                <button class="modal-close" onclick="closeModal('uploadReceiptModal')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">ربط بمصروف</label>
+                    <select class="form-control" id="uploadReceiptExpense">
+                        <option>BL-2026-0247 — Freight $4,200</option>
+                        <option>تسويق — إعلانات EGP 15,000</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">ملف الإيصال (صورة أو PDF)</label>
+                    <div class="file-upload" id="uploadReceiptFile"><i class='bx bx-cloud-upload'></i>
+                        <p>اسحب الملف هنا أو انقر للاختيار</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('uploadReceiptModal')">إلغاء</button>
+                <button class="btn btn-primary"><i class='bx bx-check'></i> رفع وأرشفة</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD EXPENSE MODAL -->
+    <div class="modal-overlay" id="addExpenseModal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3><i class='bx bx-money' style="margin-left:8px;"></i> إضافة مصروف</h3><button class="modal-close"
+                    onclick="closeModal('addExpenseModal')"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">نوع المصروف</label><select class="form-control">
+                            <option>مصروف شحنة</option>
+                            <option>مصروف عام</option>
+                        </select></div>
+                    <div class="form-group"><label class="form-label">التصنيف</label><select class="form-control">
+                            <option>اختر</option>
+                            <option>Freight</option>
+                            <option>THC</option>
+                            <option>نقل داخلي</option>
+                            <option>تخليص جمركي</option>
+                            <option>إيجار</option>
+                            <option>رواتب</option>
+                            <option>مرافق</option>
+                            <option>تسويق</option>
+                            <option>أخرى</option>
+                        </select></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">الشحنة (اختياري)</label><select
+                            class="form-control">
+                            <option>لا يوجد</option>
+                            <option>BL-2026-0248</option>
+                            <option>BL-2026-0247</option>
+                        </select></div>
+                    <div class="form-group"><label class="form-label">الجهة</label><select class="form-control">
+                            <option>اختر</option>
+                            <option>MSC</option>
+                            <option>CMA CGM</option>
+                            <option>نايل للنقل</option>
+                            <option>التخليص العالمية</option>
+                            <option>أخرى</option>
+                        </select></div>
+                </div>
+                <div class="form-group"><label class="form-label">الوصف</label><input type="text" class="form-control"
+                        placeholder="وصف المصروف"></div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">المبلغ</label><input type="number"
+                            class="form-control" placeholder="0.00"></div>
+                    <div class="form-group"><label class="form-label">العملة</label><select class="form-control">
+                            <option>EGP</option>
+                            <option>USD</option>
+                            <option>EUR</option>
+                        </select></div>
+                    <div class="form-group"><label class="form-label">طريقة الدفع</label><select class="form-control">
+                            <option>تحويل بنكي</option>
+                            <option>نقدي</option>
+                            <option>بطاقة ائتمان</option>
+                            <option>InstaPay</option>
+                        </select></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">التاريخ</label><input type="date" class="form-control" value="2026-02-19"></div>
+                    <div class="form-group"><label class="form-label">ربط بفاتورة (اختياري)</label><select class="form-control">
+                            <option>لا يوجد</option>
+                            <option>INV-2026-0094</option>
+                            <option>INV-2026-0091</option>
+                            <option>INV-2026-0090</option>
+                        </select></div>
+                </div>
+                <div class="form-group"><label class="form-label">صورة الإيصال</label>
+                    <div class="file-upload"><i class='bx bx-cloud-upload'></i>
+                        <p>ارفع صورة الإيصال أو الفاتورة</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-outline"
+                    onclick="closeModal('addExpenseModal')">إلغاء</button><button class="btn btn-primary"><i
+                        class='bx bx-check'></i> حفظ المصروف</button></div>
+        </div>
+    </div>
+
+    <script src="js/role-auth.js"></script>
+    <script src="js/role-sidebar-apply.js"></script>
+    <script src="js/app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+        // —— Receipt viewer ——
+        function openReceiptViewer(bl, category, amount, currency, date) {
+            document.getElementById('receiptBl').textContent = bl || '—';
+            document.getElementById('receiptCategory').textContent = category || '—';
+            var amtStr = amount != null ? (currency === 'EGP' ? 'EGP ' + Number(amount).toLocaleString('ar-EG') : currency + ' ' + Number(amount).toLocaleString('ar-EG')) : '—';
+            document.getElementById('receiptAmount').textContent = amtStr;
+            document.getElementById('receiptDate').textContent = date || '—';
+            document.getElementById('receiptLinkShipment').style.display = bl ? 'inline-flex' : 'none';
+            openModal('receiptViewerModal');
+        }
+        window.openReceiptViewer = openReceiptViewer;
+
+        // —— Charts ——
+        (function() {
+            var monthsEl = document.getElementById('expChartMonths');
+            var monthlyEl = document.getElementById('chartExpensesMonthly');
+            var categoryEl = document.getElementById('chartExpensesByCategory');
+            var months = 6;
+            function getMonthlyData() {
+                var labels = [], data = [];
+                for (var i = months - 1; i >= 0; i--) {
+                    var d = new Date();
+                    d.setMonth(d.getMonth() - i);
+                    labels.push(d.toLocaleDateString('ar-EG', { month: 'short', year: '2-digit' }));
+                    data.push([168, 172, 186, 178, 192, 186][i] || 180);
+                }
+                return { labels: labels, data: data };
+            }
+            var chartMonthly, chartCategory;
+            if (monthlyEl && typeof Chart !== 'undefined') {
+                var md = getMonthlyData();
+                chartMonthly = new Chart(monthlyEl, {
+                    type: 'line',
+                    data: { labels: md.labels, datasets: [{ label: 'المصروفات ($K)', data: md.data, borderColor: '#17a2b8', backgroundColor: 'rgba(23, 162, 184, 0.1)', fill: true, tension: 0.3 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+                });
+            }
+            if (categoryEl && typeof Chart !== 'undefined') {
+                chartCategory = new Chart(categoryEl, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['شحنات (Freight/THC)', 'نقل/تخليص', 'إيجار/رواتب', 'مرافق/تسويق', 'أخرى'],
+                        datasets: [{ data: [148, 38, 42, 24, 12], backgroundColor: ['#2e3f8e', '#17a2b8', '#d4a853', '#10b981', '#8896ad'], borderWidth: 0 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                });
+            }
+            if (monthsEl && chartMonthly) {
+                monthsEl.addEventListener('change', function() {
+                    months = parseInt(this.value, 10);
+                    var md = getMonthlyData();
+                    chartMonthly.data.labels = md.labels;
+                    chartMonthly.data.datasets[0].data = md.data;
+                    chartMonthly.update();
+                });
+            }
+        })();
+
+        // —— Shipment expenses: filters & sort ——
+        (function() {
+            var search = document.getElementById('expShipSearch');
+            var bl = document.getElementById('expShipBl');
+            var category = document.getElementById('expShipCategory');
+            var currency = document.getElementById('expShipCurrency');
+            var month = document.getElementById('expShipMonth');
+            var sort = document.getElementById('expShipSort');
+            var table = document.getElementById('expShipmentTable');
+            var rows = table ? table.querySelectorAll('.exp-ship-row') : [];
+            function apply() {
+                var q = (search && search.value) ? search.value.trim().toLowerCase() : '';
+                var blVal = bl && bl.value;
+                var catVal = category && category.value;
+                var currVal = currency && currency.value;
+                var monthVal = month && month.value;
+                var sortVal = sort && sort.value;
+                var visible = [];
+                rows.forEach(function(tr) {
+                    var desc = (tr.getAttribute('data-desc') || '').toLowerCase();
+                    var vendor = (tr.getAttribute('data-vendor') || '').toLowerCase();
+                    var show = true;
+                    if (q && desc.indexOf(q) < 0 && vendor.indexOf(q) < 0) show = false;
+                    if (blVal && tr.getAttribute('data-bl') !== blVal) show = false;
+                    if (catVal && tr.getAttribute('data-category') !== catVal) show = false;
+                    if (currVal && tr.getAttribute('data-currency') !== currVal) show = false;
+                    if (monthVal && tr.getAttribute('data-date') && tr.getAttribute('data-date').slice(0, 7) !== monthVal) show = false;
+                    tr.style.display = show ? '' : 'none';
+                    if (show) visible.push(tr);
+                });
+                if (sortVal && visible.length) {
+                    visible.sort(function(a, b) {
+                        var av, bv;
+                        switch (sortVal) {
+                            case 'amount': av = parseFloat(a.getAttribute('data-amount')); bv = parseFloat(b.getAttribute('data-amount')); return av - bv;
+                            case 'date': av = a.getAttribute('data-date'); bv = b.getAttribute('data-date'); return (av || '').localeCompare(bv || '');
+                            case 'category': av = a.getAttribute('data-category'); bv = b.getAttribute('data-category'); return (av || '').localeCompare(bv || '');
+                            case 'bl': av = a.getAttribute('data-bl'); bv = b.getAttribute('data-bl'); return (av || '').localeCompare(bv || '');
+                            default: return 0;
+                        }
+                    });
+                    var tbody = table.querySelector('tbody');
+                    visible.forEach(function(tr) { tbody.appendChild(tr); });
+                }
+            }
+            [bl, category, currency, month, sort].forEach(function(el) { if (el) el.addEventListener('change', apply); });
+            if (search) search.addEventListener('input', apply);
+        })();
+
+        // —— General expenses: filters & sort ——
+        (function() {
+            var search = document.getElementById('expGenSearch');
+            var category = document.getElementById('expGenCategory');
+            var currency = document.getElementById('expGenCurrency');
+            var month = document.getElementById('expGenMonth');
+            var sort = document.getElementById('expGenSort');
+            var table = document.getElementById('expGeneralTable');
+            var rows = table ? table.querySelectorAll('.exp-gen-row') : [];
+            function apply() {
+                var q = (search && search.value) ? search.value.trim().toLowerCase() : '';
+                var catVal = category && category.value;
+                var currVal = currency && currency.value;
+                var monthVal = month && month.value;
+                var sortVal = sort && sort.value;
+                var visible = [];
+                rows.forEach(function(tr) {
+                    var desc = (tr.getAttribute('data-desc') || '').toLowerCase();
+                    var show = true;
+                    if (q && desc.indexOf(q) < 0) show = false;
+                    if (catVal && tr.getAttribute('data-category') !== catVal) show = false;
+                    if (currVal && tr.getAttribute('data-currency') !== currVal) show = false;
+                    if (monthVal && tr.getAttribute('data-date') && tr.getAttribute('data-date').slice(0, 7) !== monthVal) show = false;
+                    tr.style.display = show ? '' : 'none';
+                    if (show) visible.push(tr);
+                });
+                if (sortVal && visible.length) {
+                    visible.sort(function(a, b) {
+                        var av, bv;
+                        switch (sortVal) {
+                            case 'amount': av = parseFloat(a.getAttribute('data-amount')); bv = parseFloat(b.getAttribute('data-amount')); return av - bv;
+                            case 'date': av = a.getAttribute('data-date'); bv = b.getAttribute('data-date'); return (av || '').localeCompare(bv || '');
+                            case 'category': av = a.getAttribute('data-category'); bv = b.getAttribute('data-category'); return (av || '').localeCompare(bv || '');
+                            default: return 0;
+                        }
+                    });
+                    var tbody = table.querySelector('tbody');
+                    visible.forEach(function(tr) { tbody.appendChild(tr); });
+                }
+            }
+            [category, currency, month, sort].forEach(function(el) { if (el) el.addEventListener('change', apply); });
+            if (search) search.addEventListener('input', apply);
+        })();
+    </script>
+</body>
+
+</html>

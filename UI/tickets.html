@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazon Marine — تذاكر الدعم</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="logo-area"><img src="logo/logo (1).png" alt="Logo"><div class="logo-text"><span class="brand-name">Amazon Marine</span><span class="brand-sub">Shipping Agency</span></div></div>
+        <div class="menu-label">الرئيسية</div>
+        <ul class="menu">
+            <li><a href="dashboard.html"><i class='bx bxs-dashboard'></i><span>لوحة التحكم</span></a></li>
+            <li><a href="clients.html"><i class='bx bx-group'></i><span>العملاء / CRM</span></a></li>
+            <li><a href="shipments.html"><i class='bx bx-package'></i><span>الشحنات</span></a></li>
+            <li><a href="sd-forms.html"><i class='bx bx-file'></i><span>نماذج SD</span></a></li>
+            <li><a href="operations.html"><i class='bx bxs-ship'></i><span>العمليات</span></a></li>
+        </ul>
+        <div class="menu-label">المالية</div>
+        <ul class="menu">
+            <li><a href="invoices.html"><i class='bx bx-receipt'></i><span>الفواتير</span></a></li>
+            <li><a href="accounting.html"><i class='bx bx-wallet'></i><span>الحسابات</span></a></li>
+            <li><a href="treasury.html"><i class='bx bx-credit-card'></i><span>الخزينة</span></a></li>
+            <li><a href="expenses.html"><i class='bx bx-money'></i><span>المصروفات</span></a></li>
+            <li><a href="pricing.html"><i class='bx bx-dollar-circle'></i><span>التسعير</span></a></li>
+        </ul>
+        <div class="menu-label">الإدارة</div>
+        <ul class="menu">
+            <li><a href="partners.html"><i class='bx bx-buildings'></i><span>الشركاء</span></a></li>
+            <li><a href="reports.html"><i class='bx bx-bar-chart-alt-2'></i><span>التقارير</span></a></li>
+            <li><a href="documents.html"><i class='bx bx-file-blank'></i><span>المستندات الرسمية</span></a></li>
+            <li class="active"><a href="tickets.html"><i class='bx bx-message-alt-detail'></i><span>تذاكر الدعم</span></a></li>
+            <li><a href="team-performance.html"><i class='bx bx-trending-up'></i><span>أداء الفريق</span></a></li>
+            <li><a href="attendance.html"><i class='bx bx-time-five'></i><span>الحضور والانصراف</span></a></li>
+            <li><a href="visits.html"><i class='bx bx-map-pin'></i><span>سجل الزيارات</span></a></li>
+        </ul>
+        <div class="menu-label">الإعدادات</div>
+        <ul class="menu">
+            <li><a href="settings.html"><i class='bx bx-cog'></i><span>الإعدادات</span></a></li>
+            <li><a href="profile.html"><i class='bx bx-user'></i><span>الملف الشخصي</span></a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-avatar">SD</div>
+            <div class="user-info"><div class="user-name">سارة الدعم</div><div class="user-role">الدعم الفني</div></div>
+            <a href="index.html"><i class='bx bx-log-out' style="color:rgba(255,255,255,0.35);font-size:1.2rem;"></i></a>
+        </div>
+    </nav>
+    <div class="main-wrapper">
+        <header class="topbar">
+            <div class="page-title-area"><h1>تذاكر الدعم</h1><div class="breadcrumbs">Amazon Marine > <span>تذاكر وطلبات العملاء</span></div></div>
+            <div class="topbar-right">
+                <div class="search-bar"><i class='bx bx-search'></i><input type="text" placeholder="بحث في التذاكر..."></div>
+                <div class="topbar-icon"><i class='bx bx-bell'></i><div class="notif-dot"></div></div>
+                <div class="profile-pill"><div class="profile-avatar">SD</div><span>سارة الدعم</span></div>
+            </div>
+        </header>
+        <main class="content">
+            <!-- Support Dashboard KPIs -->
+            <div class="stats-row">
+                <div class="stat-card"><div class="stat-icon-wrap warning"><i class='bx bx-message-square-detail'></i></div><div class="stat-info"><h3>12</h3><div class="stat-label">تذاكر مفتوحة</div></div></div>
+                <div class="stat-card"><div class="stat-icon-wrap green"><i class='bx bx-check-circle'></i></div><div class="stat-info"><h3>8</h3><div class="stat-label">تم حلها اليوم</div></div></div>
+                <div class="stat-card"><div class="stat-icon-wrap cyan"><i class='bx bx-time-five'></i></div><div class="stat-info"><h3>5</h3><div class="stat-label">طلبات عملاء معلقة</div></div></div>
+                <div class="stat-card"><div class="stat-icon-wrap navy"><i class='bx bx-trending-up'></i></div><div class="stat-info"><h3>94%</h3><div class="stat-label">معدل الاستجابة (SLA)</div></div></div>
+            </div>
+            <div class="page-header">
+                <h2 style="font-size:1rem;font-weight:700;">قائمة التذاكر والطلبات</h2>
+                <div class="page-header-actions">
+                    <button type="button" class="btn btn-outline btn-sm" id="btnExportTickets"><i class='bx bx-export'></i> تصدير</button>
+                    <button class="btn btn-primary" onclick="openModal('newTicketModal')"><i class='bx bx-plus'></i> تذكرة جديدة</button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="filter-bar" style="padding:12px 20px;display:flex;gap:12px;flex-wrap:wrap;">
+                    <input type="text" class="form-control" id="ticketSearch" placeholder="بحث بـ رقم التذكرة أو العميل..." style="max-width:240px;">
+                    <select class="form-control" id="filterTicketStatus" style="max-width:140px;">
+                        <option value="">كل الحالات</option>
+                        <option value="مفتوح">مفتوح</option>
+                        <option value="قيد المعالجة">قيد المعالجة</option>
+                        <option value="تم الحل">تم الحل</option>
+                        <option value="مرفوع">مرفوع</option>
+                    </select>
+                    <select class="form-control" id="filterTicketPriority" style="max-width:140px;">
+                        <option value="">كل الأولويات</option>
+                        <option value="عالي">عالي</option>
+                        <option value="متوسط">متوسط</option>
+                        <option value="منخفض">منخفض</option>
+                    </select>
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table" id="ticketsTable">
+                        <thead>
+                            <tr>
+                                <th>رقم التذكرة</th>
+                                <th>العميل</th>
+                                <th>الشحنة</th>
+                                <th>التصنيف</th>
+                                <th>الأولوية</th>
+                                <th>الحالة</th>
+                                <th>الوكيل</th>
+                                <th>تاريخ الإنشاء</th>
+                                <th>إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="ticket-row" data-status="مفتوح" data-priority="عالي" data-client="منصور وشركاه">
+                                <td class="fw-600">#TKT-2026-1042</td>
+                                <td>منصور وشركاه</td>
+                                <td>BL-2026-0085</td>
+                                <td>تتبع شحنة</td>
+                                <td><span class="status-badge unpaid">عالي</span></td>
+                                <td><span class="status-badge new">مفتوح</span></td>
+                                <td>سارة الدعم</td>
+                                <td class="text-muted fs-sm">24/02/2026 10:30</td>
+                                <td>
+                                    <div class="table-actions">
+                                        <button class="tbl-btn view" title="رد" onclick="openModal('replyTicketModal')"><i class='bx bx-reply'></i></button>
+                                        <button class="tbl-btn edit" title="تغيير الحالة"><i class='bx bx-edit'></i></button>
+                                        <button class="tbl-btn note" title="رفع للإدارة"><i class='bx bx-up-arrow-alt'></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="ticket-row" data-status="قيد المعالجة" data-priority="متوسط" data-client="الإيمان للأغذية">
+                                <td class="fw-600">#TKT-2026-1041</td>
+                                <td>الإيمان للأغذية</td>
+                                <td>—</td>
+                                <td>استفسار فاتورة</td>
+                                <td><span class="status-badge pending">متوسط</span></td>
+                                <td><span class="status-badge in-transit">قيد المعالجة</span></td>
+                                <td>سارة الدعم</td>
+                                <td class="text-muted fs-sm">24/02/2026 09:15</td>
+                                <td>
+                                    <div class="table-actions">
+                                        <button class="tbl-btn view" title="رد" onclick="openModal('replyTicketModal')"><i class='bx bx-reply'></i></button>
+                                        <button class="tbl-btn edit" title="تغيير الحالة"><i class='bx bx-edit'></i></button>
+                                        <button class="tbl-btn note" title="رفع للإدارة"><i class='bx bx-up-arrow-alt'></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="ticket-row" data-status="تم الحل" data-priority="منخفض" data-client="طه للمنسوجات">
+                                <td class="fw-600">#TKT-2026-1040</td>
+                                <td>طه للمنسوجات</td>
+                                <td>BL-2026-0080</td>
+                                <td>تتبع شحنة</td>
+                                <td><span class="status-badge active">منخفض</span></td>
+                                <td><span class="status-badge active">تم الحل</span></td>
+                                <td>سارة الدعم</td>
+                                <td class="text-muted fs-sm">23/02/2026 14:00</td>
+                                <td>
+                                    <div class="table-actions">
+                                        <button class="tbl-btn view" title="رد" onclick="openModal('replyTicketModal')"><i class='bx bx-reply'></i></button>
+                                        <button class="tbl-btn edit" title="تغيير الحالة"><i class='bx bx-edit'></i></button>
+                                        <button class="tbl-btn note" title="رفع للإدارة"><i class='bx bx-up-arrow-alt'></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination-wrap" style="padding:12px 20px;"><span class="fs-sm text-muted">عرض 1–3 من 12</span><div style="display:flex;gap:4px;"><button class="pagination-btn"><i class='bx bx-chevron-right'></i></button><button class="pagination-btn active">1</button><button class="pagination-btn"><i class='bx bx-chevron-left'></i></button></div></div>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="newTicketModal">
+        <div class="modal">
+            <div class="modal-header"><h3><i class='bx bx-plus'></i> تذكرة جديدة</h3><button class="modal-close" onclick="closeModal('newTicketModal')"><i class='bx bx-x'></i></button></div>
+            <div class="modal-body">
+                <div class="form-group"><label class="form-label">العميل</label><select class="form-control"><option>اختر العميل</option><option>منصور وشركاه</option><option>الإيمان للأغذية</option></select></div>
+                <div class="form-group"><label class="form-label">الشحنة (اختياري)</label><input type="text" class="form-control" placeholder="BL-2026-XXXX"></div>
+                <div class="form-group"><label class="form-label">التصنيف</label><select class="form-control"><option>تتبع شحنة</option><option>استفسار فاتورة</option><option>طلب وثائق</option><option>أخرى</option></select></div>
+                <div class="form-group"><label class="form-label">الأولوية</label><select class="form-control"><option>عالي</option><option>متوسط</option><option>منخفض</option></select></div>
+                <div class="form-group"><label class="form-label">الوصف</label><textarea class="form-control" rows="3" placeholder="وصف الطلب أو الاستفسار..."></textarea></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('newTicketModal')">إلغاء</button><button class="btn btn-primary" onclick="closeModal('newTicketModal')"><i class='bx bx-check'></i> إنشاء</button></div>
+        </div>
+    </div>
+    <div class="modal-overlay" id="replyTicketModal">
+        <div class="modal">
+            <div class="modal-header"><h3><i class='bx bx-reply'></i> رد على التذكرة #TKT-2026-1042</h3><button class="modal-close" onclick="closeModal('replyTicketModal')"><i class='bx bx-x'></i></button></div>
+            <div class="modal-body">
+                <div class="form-group"><label class="form-label">الرد</label><textarea class="form-control" rows="4" placeholder="اكتب ردك..."></textarea></div>
+                <div class="form-group"><label class="form-label">مرفقات</label><input type="file" class="form-control" multiple></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('replyTicketModal')">إلغاء</button><button class="btn btn-primary" onclick="closeModal('replyTicketModal')"><i class='bx bx-send'></i> إرسال</button></div>
+        </div>
+    </div>
+
+    <script src="js/role-auth.js"></script>
+    <script src="js/role-sidebar-apply.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

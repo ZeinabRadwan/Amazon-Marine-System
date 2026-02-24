@@ -1,34 +1,14 @@
-# Amazon Marine — Shipping ERP
+# Amazon Marine — UI (HTML, CSS, JS)
 
-A role-based ERP web application for shipping agencies. It centralizes operations, CRM, sales, accounting, treasury, pricing, reporting, and attendance in a single application.
-
----
-
-## Repository structure (monorepo)
-
-This project is split into three parts:
-
-| Folder   | Stack              | Description                    |
-|----------|--------------------|--------------------------------|
-| **UI**   | HTML, CSS, JS      | Static prototype / reference UI (no build). |
-| **front**| React (Vite)       | Modern React SPA that will consume the API. |
-| **back** | Laravel (PHP)      | REST API, auth, and business logic.         |
-
-- **UI** — Open `UI/index.html` in a browser or serve the `UI` folder (e.g. `npx serve UI`). See `UI/README.md`.
-- **front** — React app: `cd front && npm install && npm run dev` (default: http://localhost:5173).
-- **back** — Laravel API: `cd back && php artisan serve` (default: http://localhost:8000). API health: `GET http://localhost:8000/api/health`.
-
-To run **front** and **back** together: start Laravel in one terminal (`php artisan serve` in `back`), then start the React app in another (`npm run dev` in `front`). Configure the API URL in `front/.env` (copy from `front/.env.example`) as `VITE_API_URL=http://localhost:8000`.
+Static prototype / reference UI for the shipping ERP. No build step; runs in the browser with optional persistence via `localStorage`. Part of the monorepo (see root `README.md`).
 
 ---
 
 ## Overview
 
-Amazon Marine ERP provides:
-
 - **Role-based access** — Admin, Sales, Accounting, Pricing, Operations, Support, and Sales Manager, each with dedicated dashboards and permissions.
 - **Unified workflow** — From client visits and SD (Shipping Details) forms through operations, shipments, invoicing, and payments.
-- **Frontend-only delivery** — No backend required; runs in the browser with optional persistence via `localStorage`.
+- **Frontend-only** — No backend required.
 
 ---
 
@@ -69,40 +49,40 @@ No server, database, or build step is required.
 ## Project Structure
 
 ```
-Shipping ERP/
+UI/
 ├── index.html              # Login and role selection
 ├── dashboard.html          # Main dashboard (role-based view)
 ├── clients.html            # CRM
 ├── shipments.html          # Shipments and tracking
-├── sd-forms.html          # SD forms
-├── operations.html        # Operations tasks
-├── invoices.html          # Invoices
-├── accounting.html        # Accounting
-├── treasury.html          # Treasury
-├── expenses.html          # Expenses
-├── pricing.html           # Pricing
-├── cost-viewer.html       # Cost viewer
-├── partners.html          # Partners
-├── reports.html           # Reports
-├── documents.html         # Official documents
-├── attendance.html        # Attendance
-├── visits.html            # Visits
-├── tickets.html           # Support tickets
-├── team-performance.html  # Sales team performance
+├── sd-forms.html           # SD forms
+├── operations.html         # Operations tasks
+├── invoices.html           # Invoices
+├── accounting.html         # Accounting
+├── treasury.html           # Treasury
+├── expenses.html           # Expenses
+├── pricing.html            # Pricing
+├── cost-viewer.html        # Cost viewer
+├── partners.html           # Partners
+├── reports.html            # Reports
+├── documents.html          # Official documents
+├── attendance.html         # Attendance
+├── visits.html             # Visits
+├── tickets.html            # Support tickets
+├── team-performance.html   # Sales team performance
 ├── profile.html            # User profile
 ├── settings.html           # System and shipment status settings
 ├── forgot-password.html
 ├── reset-password.html
 ├── css/
-│   └── styles.css         # Global styles
+│   └── styles.css          # Global styles
 ├── js/
-│   ├── role-auth.js       # Roles and page access
+│   ├── role-auth.js        # Roles and page access
 │   ├── role-sidebar-apply.js
-│   ├── role-views.js      # Role-based UI (visibility, filters)
-│   ├── shipment-statuses.js  # Dynamic shipment status CRUD
+│   ├── role-views.js       # Role-based UI (visibility, filters)
+│   ├── shipment-statuses.js    # Dynamic shipment status CRUD
 │   ├── sd-operations-workflow.js  # SD → Operations flow
-│   └── app.js             # Modals, dropdowns, shared UI
-└── logo/                  # Logo assets
+│   └── app.js              # Modals, dropdowns, shared UI
+└── logo/                   # Logo assets
 ```
 
 ---
@@ -112,23 +92,19 @@ Shipping ERP/
 1. **Open in a browser**  
    Open `index.html` in a modern browser (Chrome, Firefox, Edge, Safari).
 
-2. **Choose a role**  
+2. **Or serve the folder** (recommended for local dev):
+   ```bash
+   cd UI
+   npx serve .
+   # or: python -m http.server 8080
+   ```
+   Then open the URL shown (e.g. http://localhost:3000 or http://localhost:8080).
+
+3. **Choose a role**  
    On the login screen, select a role (e.g. Admin, Sales, Operations) and click **تسجيل الدخول**.
 
-3. **Navigate**  
+4. **Navigate**  
    Use the sidebar to move between modules. Visible menu items depend on the selected role.
-
-For local development, you can serve the folder with any static server, for example:
-
-```bash
-# Example: Python
-python -m http.server 8080
-
-# Example: Node (npx)
-npx serve .
-```
-
-Then open `http://localhost:8080` (or the port shown).
 
 ---
 
@@ -160,7 +136,5 @@ Shipment statuses are configurable by Admin:
 Data is stored in `localStorage` under `amazonMarineShipmentStatuses`.
 
 ---
-
-## License and Copyright
 
 © 2026 Amazon Marine. All rights reserved.
