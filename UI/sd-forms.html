@@ -11,6 +11,21 @@
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .ops-status-badge { font-size:0.8rem; font-weight:700; padding:6px 12px; border-radius:8px; }
+        .ops-status-badge.status-New { background:var(--accent-cyan); color:#fff; }
+        .ops-status-badge.status-Received { background:var(--accent-gold); color:#fff; }
+        .ops-status-badge.status-InProgress { background:#6366f1; color:#fff; }
+        .ops-status-badge.status-Booked { background:var(--success); color:#fff; }
+        .ops-status-badge.status-Cancelled { background:var(--danger); color:#fff; }
+        .ops-status-badge.status-Hold { background:#f59e0b; color:#fff; }
+        .ops-status-badge.status-Rejected { background:#991b1b; color:#fff; }
+        .ops-notes-timeline { display:flex; flex-direction:column; gap:12px; }
+        .ops-notes-timeline-item { padding:12px; background:var(--bg-body); border-radius:10px; border:1px solid var(--border); }
+        .ops-note-meta { font-size:0.75rem; font-weight:600; color:var(--navy-600); margin-bottom:6px; }
+        .ops-note-text { font-size:0.85rem; color:var(--text-secondary); }
+        .mt-2 { margin-top:8px; }
+    </style>
 </head>
 
 <body>
@@ -65,7 +80,7 @@
         <header class="topbar">
             <div class="page-title-area">
                 <h1>نماذج SD</h1>
-                <div class="breadcrumbs">Amazon Marine > <span>Shipping Details Forms</span></div>
+                <div class="breadcrumbs">Amazon Marine &gt; <span>نماذج تفاصيل الشحن</span></div>
             </div>
             <div class="topbar-right">
                 <div class="search-bar"><i class='bx bx-search'></i><input type="text" placeholder="بحث في النماذج...">
@@ -152,8 +167,7 @@
                 <div class="page-header-actions">
                     <button type="button" class="btn btn-outline btn-sm" id="btnExportAll"><i class='bx bx-export'></i> تصدير الكل</button>
                 </div>
-                <button class="btn btn-primary" onclick="openModal('createSDModal')" data-sd-create><i class='bx bx-plus'></i> نموذج SD
-                    جديد</button>
+                <button class="btn btn-primary" onclick="openModal('createSDModal')" data-sd-create><i class='bx bx-plus'></i> نموذج SD جديد</button>
             </div>
 
             <!-- Bulk bar -->
@@ -300,126 +314,198 @@
         </main>
     </div>
 
-    <!-- CREATE / EDIT SD FORM MODAL -->
+    <!-- CREATE / EDIT SD FORM MODAL (labels in English per requirement) -->
     <div class="modal-overlay" id="createSDModal">
         <div class="modal modal-xl">
             <div class="modal-header">
-                <h3><i class='bx bx-file' style="margin-left:8px;"></i> نموذج SD جديد</h3><button class="modal-close"
-                    onclick="closeModal('createSDModal')"><i class='bx bx-x'></i></button>
+                <h3><i class='bx bx-file' style="margin-left:8px;"></i> نموذج SD — Shipping Details Form</h3>
+                <button class="modal-close" onclick="closeModal('createSDModal')"><i class='bx bx-x'></i></button>
             </div>
-            <div class="modal-body">
-                <!-- Section 1: Client -->
-                <h4 style="font-size:0.88rem;font-weight:700;margin-bottom:14px;color:var(--navy-700);">📋 بيانات العميل
-                </h4>
-                <div class="form-row-3">
-                    <div class="form-group"><label class="form-label">اسم العميل</label><select class="form-control">
-                            <option>اختر العميل</option>
-                            <option>منصور وشركاه</option>
-                            <option>الإيمان للأغذية</option>
-                            <option>طه للمنسوجات</option>
-                        </select></div>
-                    <div class="form-group"><label class="form-label">هاتف العميل</label><input type="tel"
-                            class="form-control" placeholder="+20 1xx xxx xxxx"></div>
-                    <div class="form-group"><label class="form-label">بريد العميل</label><input type="email"
-                            class="form-control" placeholder="email@client.com"></div>
+            <div class="modal-body" style="direction:ltr; text-align:left;">
+                <!-- SD Number (auto-generated, read-only) -->
+                <div class="form-section sd-number-section">
+                    <div class="form-group" style="max-width:200px;">
+                        <label class="form-label">SD Number</label>
+                        <input type="text" class="form-control" id="sdFormNumber" value="SD-000001" readonly style="background:var(--bg-body); font-weight:700;">
+                        <p class="fs-sm text-muted" style="margin-top:4px;">Auto-generated</p>
+                    </div>
                 </div>
 
-                <!-- Section 2: Supplier -->
-                <h4 style="font-size:0.88rem;font-weight:700;margin:20px 0 14px;color:var(--navy-700);">🏭 بيانات المورد
-                    / المصنّع</h4>
-                <div class="form-row">
-                    <div class="form-group"><label class="form-label">اسم المورد</label><input type="text"
-                            class="form-control" placeholder="اسم المصنع أو المورد"></div>
-                    <div class="form-group"><label class="form-label">عنوان المورد</label><input type="text"
-                            class="form-control" placeholder="العنوان الكامل"></div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group"><label class="form-label">هاتف المورد</label><input type="tel"
-                            class="form-control" placeholder="+20 xxx xxx xxxx"></div>
-                    <div class="form-group"><label class="form-label">مسؤول التواصل</label><input type="text"
-                            class="form-control" placeholder="اسم المسؤول"></div>
-                </div>
-
-                <!-- Section 3: Port & Destination -->
-                <h4 style="font-size:0.88rem;font-weight:700;margin:20px 0 14px;color:var(--navy-700);">⚓ الميناء
-                    والوجهة</h4>
-                <div class="form-row-3">
-                    <div class="form-group"><label class="form-label">ميناء التحميل</label><select class="form-control">
-                            <option>اختر</option>
-                            <option>الإسكندرية</option>
-                            <option>دمياط</option>
-                            <option>بورسعيد</option>
-                            <option>السخنة</option>
-                        </select></div>
-                    <div class="form-group"><label class="form-label">ميناء الوصول</label><input type="text"
-                            class="form-control" placeholder="مثال: جدة"></div>
-                    <div class="form-group"><label class="form-label">بلد الوصول</label><input type="text"
-                            class="form-control" placeholder="مثال: السعودية"></div>
-                </div>
-
-                <!-- Section 4: Commodity -->
-                <h4 style="font-size:0.88rem;font-weight:700;margin:20px 0 14px;color:var(--navy-700);">📦 بيانات
-                    البضاعة</h4>
-                <div class="form-row-3">
-                    <div class="form-group"><label class="form-label">نوع البضاعة</label><input type="text"
-                            class="form-control" placeholder="مثال: أقمشة قطنية"></div>
-                    <div class="form-group"><label class="form-label">HS Code</label><input type="text"
-                            class="form-control" placeholder="مثال: 5208.11"></div>
-                    <div class="form-group"><label class="form-label">الوزن الإجمالي (كجم)</label><input type="number"
-                            class="form-control" placeholder="مثال: 25000"></div>
-                </div>
-                <div class="form-row-3">
-                    <div class="form-group"><label class="form-label">نوع الحاوية</label><select class="form-control">
-                            <option>20' Standard</option>
-                            <option>40' Standard</option>
-                            <option>40' HC</option>
-                            <option>Reefer 20'</option>
-                            <option>Reefer 40'</option>
-                        </select></div>
-                    <div class="form-group"><label class="form-label">عدد الحاويات</label><input type="number"
-                            class="form-control" value="1"></div>
-                    <div class="form-group"><label class="form-label">شروط الشحن (Incoterms)</label><select
-                            class="form-control">
-                            <option>FOB</option>
-                            <option>CIF</option>
-                            <option>CFR</option>
-                            <option>EXW</option>
-                            <option>DDP</option>
-                        </select></div>
+                <!-- 1. Shipment Basic Information -->
+                <div class="form-section">
+                    <h4 class="form-section-title">1. Shipment Basic Information</h4>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">1. Port of Loading (POL)</label>
+                            <div class="dynamic-select-wrap">
+                                <select class="form-control" id="sdPOL">
+                                    <option value="">Select port</option>
+                                    <option>Alexandria</option>
+                                    <option>Port Said East</option>
+                                    <option value="__new">+ Add new port</option>
+                                </select>
+                                <input type="text" class="form-control" id="sdPOLNew" placeholder="Enter new port name" style="display:none; margin-top:8px;">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">2. Port of Discharge (POD)</label>
+                            <div class="dynamic-select-wrap">
+                                <select class="form-control" id="sdPOD">
+                                    <option value="">Select port</option>
+                                    <option>Jeddah</option>
+                                    <option>Dubai</option>
+                                    <option value="__new">+ Add new port</option>
+                                </select>
+                                <input type="text" class="form-control" id="sdPODNew" placeholder="Enter new port name" style="display:none; margin-top:8px;">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">3. Final Destination</label>
+                        <input type="text" class="form-control" id="sdFinalDest" placeholder="Final destination if different from POD">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">4. Shipment Direction <span style="color:var(--danger);">*</span></label>
+                        <select class="form-control" id="sdShipmentDirection" required>
+                            <option value="">Select</option>
+                            <option value="Export">Export</option>
+                            <option value="Import">Import</option>
+                        </select>
+                    </div>
                 </div>
 
-                <!-- Section 5: Shipping Line Requirements -->
-                <h4 style="font-size:0.88rem;font-weight:700;margin:20px 0 14px;color:var(--navy-700);">🚢 متطلبات الخط
-                    الملاحي</h4>
-                <div class="form-row">
-                    <div class="form-group"><label class="form-label">الخط الملاحي المفضل</label><select
-                            class="form-control">
-                            <option>أي خط</option>
-                            <option>MSC</option>
-                            <option>CMA CGM</option>
-                            <option>Maersk</option>
-                            <option>Hapag-Lloyd</option>
-                        </select></div>
-                    <div class="form-group"><label class="form-label">تاريخ المغادرة المطلوب</label><input type="date"
-                            class="form-control"></div>
+                <!-- 2. Parties Information -->
+                <div class="form-section">
+                    <h4 class="form-section-title">2. Parties Information</h4>
+                    <div class="form-group">
+                        <label class="form-label">5. Shipper Information</label>
+                        <textarea class="form-control" id="sdShipper" rows="3" placeholder="Full shipper details"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">6. Consignee Information</label>
+                        <textarea class="form-control" id="sdConsignee" rows="3" placeholder="Full consignee details"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">7. Notify Party</label>
+                        <select class="form-control" id="sdNotifyParty">
+                            <option value="Same">Same as Consignee</option>
+                            <option value="Different">Different</option>
+                        </select>
+                        <div id="sdNotifyPartyDifferentWrap" style="display:none; margin-top:8px;">
+                            <textarea class="form-control" id="sdNotifyPartyDetails" rows="3" placeholder="Enter full notify party details"></textarea>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Section 6: Special Instructions -->
-                <h4 style="font-size:0.88rem;font-weight:700;margin:20px 0 14px;color:var(--navy-700);">📝 تعليمات خاصة
-                </h4>
-                <div class="form-group"><textarea class="form-control" rows="3"
-                        placeholder="أي تعليمات خاصة بالشحنة، مثل: بضاعة هشة، درجة حرارة معينة، إلخ..."></textarea>
+                <!-- 3. Freight & Payment -->
+                <div class="form-section">
+                    <h4 class="form-section-title">3. Freight &amp; Payment</h4>
+                    <div class="form-group" style="max-width:240px;">
+                        <label class="form-label">9. Freight Term</label>
+                        <select class="form-control" id="sdFreightTerm">
+                            <option value="">Select</option>
+                            <option value="Prepaid">Prepaid</option>
+                            <option value="Collect">Collect</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="form-group"><label class="form-label">مرفقات</label>
-                    <div class="file-upload"><i class='bx bx-cloud-upload'></i>
-                        <p>اسحب الملفات هنا (Packing List, Commercial Invoice, etc.)</p>
+
+                <!-- 4. Container Details -->
+                <div class="form-section">
+                    <h4 class="form-section-title">4. Container Details</h4>
+                    <div class="form-row-3">
+                        <div class="form-group">
+                            <label class="form-label">10. Container Type</label>
+                            <select class="form-control" id="sdContainerType">
+                                <option value="">Select</option>
+                                <option value="Dry">Dry</option>
+                                <option value="Reefer">Reefer</option>
+                                <option value="Open Top">Open Top</option>
+                                <option value="Flat Rack">Flat Rack</option>
+                                <option value="High Cube (HQ)">High Cube (HQ)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">11. Container Size</label>
+                            <select class="form-control" id="sdContainerSize">
+                                <option value="">Select</option>
+                                <option value="20">20'</option>
+                                <option value="40">40'</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">12. Number of Containers</label>
+                            <input type="number" class="form-control" id="sdNumContainers" min="1" value="1">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. Shipment Details -->
+                <div class="form-section">
+                    <h4 class="form-section-title">5. Shipment Details</h4>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">13. Requested Vessel Date</label>
+                            <input type="date" class="form-control" id="sdVesselDate">
+                        </div>
+                        <div class="form-group" id="sdACIDWrap" style="display:none;">
+                            <label class="form-label">14. ACID Number</label>
+                            <input type="text" class="form-control" id="sdACID" placeholder="ACID Number (Import only)">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6. Cargo Information -->
+                <div class="form-section">
+                    <h4 class="form-section-title">6. Cargo Information</h4>
+                    <div class="form-group">
+                        <label class="form-label">15. Cargo Description</label>
+                        <textarea class="form-control" id="sdCargoDesc" rows="3" placeholder="Cargo description"></textarea>
+                    </div>
+                    <div class="form-group" style="max-width:200px;">
+                        <label class="form-label">16. HS Code</label>
+                        <input type="text" class="form-control" id="sdHSCode" placeholder="e.g. 5208.11">
+                    </div>
+                </div>
+
+                <!-- 7. Reefer Details (conditional) -->
+                <div class="form-section" id="sdReeferSection" style="display:none;">
+                    <h4 class="form-section-title">7. Reefer Details</h4>
+                    <div class="form-row-3">
+                        <div class="form-group">
+                            <label class="form-label">17. Temperature (Temp)</label>
+                            <input type="text" class="form-control" id="sdReeferTemp" placeholder="e.g. -18°C">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">18. Ventilation (Vent)</label>
+                            <input type="text" class="form-control" id="sdReeferVent" placeholder="Numeric or text">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">19. Humidity (Hum)</label>
+                            <input type="text" class="form-control" id="sdReeferHum" placeholder="Numeric or text">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 8. Weight Details -->
+                <div class="form-section">
+                    <h4 class="form-section-title">8. Weight Details</h4>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">20. Total Gross Weight (KG)</label>
+                            <input type="number" class="form-control" id="sdGrossWeight" min="0" placeholder="KG">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">21. Total Net Weight (KG)</label>
+                            <input type="number" class="form-control" id="sdNetWeight" min="0" placeholder="KG">
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer" style="direction:rtl;">
                 <button class="btn btn-outline" onclick="closeModal('createSDModal')">إلغاء</button>
-                <button class="btn btn-outline"><i class='bx bx-save'></i> حفظ كمسودة</button>
-                <button class="btn btn-primary"><i class='bx bx-send'></i> إرسال للعمليات</button>
+                <button class="btn btn-outline" id="sdSaveDraftBtn"><i class='bx bx-save'></i> حفظ كمسودة</button>
+                <button class="btn btn-primary" id="sdCreateBtn"><i class='bx bx-check'></i> Create SD Form</button>
             </div>
         </div>
     </div>
@@ -452,8 +538,8 @@
     <div class="modal-overlay" id="viewSDModal">
         <div class="modal modal-lg">
             <div class="modal-header">
-                <h3><i class='bx bx-file' style="margin-left:8px;"></i> نموذج SD-2026-0089</h3><button
-                    class="modal-close" onclick="closeModal('viewSDModal')"><i class='bx bx-x'></i></button>
+                <h3><i class='bx bx-file' style="margin-left:8px;"></i> نموذج SD-2026-0089</h3>
+                <button class="modal-close" onclick="closeModal('viewSDModal')"><i class='bx bx-x'></i></button>
             </div>
             <div class="modal-body">
                 <div class="d-flex justify-between align-center mb-3">
@@ -464,7 +550,6 @@
                     <div>
                         <h4 class="fs-sm fw-700 mb-2">العميل</h4>
                         <p class="fs-sm">منصور وشركاه</p>
-                        <p class="fs-xs text-muted">+20 100 123 4567 • info@mansour.com</p>
                     </div>
                     <div>
                         <h4 class="fs-sm fw-700 mb-2">المورد</h4>
@@ -475,7 +560,7 @@
                 <div class="grid-2" style="margin-bottom:16px;">
                     <div>
                         <h4 class="fs-sm fw-700 mb-2">الميناء والوجهة</h4>
-                        <p class="fs-sm">الإسكندرية → جدة, السعودية</p>
+                        <p class="fs-sm">الإسكندرية → جدة، السعودية</p>
                     </div>
                     <div>
                         <h4 class="fs-sm fw-700 mb-2">البضاعة</h4>
@@ -485,13 +570,62 @@
                 </div>
                 <div>
                     <h4 class="fs-sm fw-700 mb-2">تعليمات خاصة</h4>
-                    <p class="fs-sm text-secondary">البضاعة يجب أن تكون في حاويات نظيفة وجافة. يُرجى تجنب تحميل مع بضائع
-                        ذات رائحة قوية.</p>
+                    <p class="fs-sm text-secondary">البضاعة يجب أن تكون في حاويات نظيفة وجافة. يُرجى تجنب التحميل مع بضائع ذات رائحة قوية.</p>
+                </div>
+
+                <!-- Stage 4: Operations Handling of SD -->
+                <div class="sd-ops-section" style="margin-top:24px; padding-top:20px; border-top:1px solid var(--border);">
+                    <h4 class="fs-sm fw-700 mb-3" style="color:var(--navy-700);"><i class='bx bx-cog' style="margin-left:6px;"></i> المرحلة 4 — استلام ومعالجة العمليات للـ SD</h4>
+                    <p class="fs-sm text-muted mb-3">محاكاة الصلاحيات: اختر الدور لرؤية السلوك (Sales = عرض فقط، Operations = يمكن التعديل)</p>
+                    <div class="form-group" style="max-width:200px; margin-bottom:16px;">
+                        <label class="form-label">Simulate role</label>
+                        <select class="form-control" id="viewSDUserRole">
+                            <option value="sales">Sales (view only)</option>
+                            <option value="operations">Operations (can edit)</option>
+                        </select>
+                    </div>
+
+                    <div class="card ops-status-card" style="margin-bottom:20px;">
+                        <div class="card-header" style="padding:12px 16px;">
+                            <span class="card-title">Operational Status</span>
+                            <span class="ops-status-badge" id="viewSDOpsStatusBadge">New</span>
+                        </div>
+                        <div class="card-body" style="padding:16px;">
+                            <label class="form-label">الحالة التشغيلية (ظاهرة لـ Sales و Operations — تعديلها من Operations فقط)</label>
+                            <select class="form-control" id="viewSDOpsStatus" style="max-width:280px;">
+                                <option value="New">New</option>
+                                <option value="Received">Received</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Booked">Booked</option>
+                                <option value="Cancelled">Cancelled</option>
+                                <option value="Hold (Pending Data)">Hold (Pending Data)</option>
+                                <option value="Rejected">Rejected</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="card ops-notes-card">
+                        <div class="card-header" style="padding:12px 16px;">
+                            <span class="card-title">Operations Notes / Comments</span>
+                        </div>
+                        <div class="card-body" style="padding:16px;">
+                            <label class="form-label">تعليقات العمليات</label>
+                            <textarea class="form-control" id="viewSDOpsNotesInput" rows="4" placeholder="Write operational comments here..."></textarea>
+                            <button type="button" class="btn btn-primary btn-sm mt-2" id="viewSDAddOpsNoteBtn" style="margin-top:8px;"><i class='bx bx-plus'></i> Add Note</button>
+                            <div class="ops-notes-timeline" id="viewSDOpsNotesTimeline" style="margin-top:20px;">
+                                <div class="ops-notes-timeline-item">
+                                    <div class="ops-note-meta">[Operations User] – 26 Feb 2026, 3:45 PM</div>
+                                    <div class="ops-note-text">Waiting confirmation from shipping line – booking pending.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeModal('viewSDModal')">إغلاق</button>
-                <button class="btn btn-cyan"><i class='bx bx-printer'></i> طباعة</button>
+                <button class="btn btn-cyan" id="viewSDSendEmailBtn"><i class='bx bx-envelope'></i> Send SD via Email</button>
+                <button class="btn btn-outline" onclick="window.print()"><i class='bx bx-printer'></i> طباعة</button>
                 <button class="btn btn-primary"><i class='bx bx-edit'></i> تعديل</button>
             </div>
         </div>
@@ -621,6 +755,156 @@
         }
         if (document.getElementById('btnExportAll')) document.getElementById('btnExportAll').addEventListener('click', function() { exportSDToExcel(false); });
         if (document.getElementById('bulkExportSelected')) document.getElementById('bulkExportSelected').addEventListener('click', function() { exportSDToExcel(true); });
+
+        // —— Send SD via Email: show success alert only ——
+        var viewSDSendEmailBtn = document.getElementById('viewSDSendEmailBtn');
+        if (viewSDSendEmailBtn) {
+            viewSDSendEmailBtn.addEventListener('click', function() {
+                alert('SD Form sent to email successfully.');
+            });
+        }
+
+        // —— Create SD Modal: conditional logic & dynamic POL/POD ——
+        var sdNotifyParty = document.getElementById('sdNotifyParty');
+        var sdNotifyPartyDifferentWrap = document.getElementById('sdNotifyPartyDifferentWrap');
+        var sdShipmentDirection = document.getElementById('sdShipmentDirection');
+        var sdACIDWrap = document.getElementById('sdACIDWrap');
+        var sdContainerType = document.getElementById('sdContainerType');
+        var sdReeferSection = document.getElementById('sdReeferSection');
+        var sdPOL = document.getElementById('sdPOL');
+        var sdPOLNew = document.getElementById('sdPOLNew');
+        var sdPOD = document.getElementById('sdPOD');
+        var sdPODNew = document.getElementById('sdPODNew');
+
+        if (sdNotifyParty && sdNotifyPartyDifferentWrap) {
+            sdNotifyParty.addEventListener('change', function() {
+                sdNotifyPartyDifferentWrap.style.display = this.value === 'Different' ? 'block' : 'none';
+            });
+        }
+        if (sdShipmentDirection && sdACIDWrap) {
+            sdShipmentDirection.addEventListener('change', function() {
+                sdACIDWrap.style.display = this.value === 'Import' ? 'block' : 'none';
+            });
+        }
+        if (sdContainerType && sdReeferSection) {
+            sdContainerType.addEventListener('change', function() {
+                sdReeferSection.style.display = this.value === 'Reefer' ? 'block' : 'none';
+            });
+        }
+
+        function addOptionToPortSelect(selectEl, newInput) {
+            if (!selectEl || !newInput) return;
+            var val = (newInput.value || '').trim();
+            if (!val) return;
+            var opt = document.createElement('option');
+            opt.value = '__custom_' + Date.now();
+            opt.textContent = val;
+            var last = selectEl.querySelector('option[value="__new"]');
+            selectEl.insertBefore(opt, last || null);
+            selectEl.value = opt.value;
+            newInput.style.display = 'none';
+            newInput.value = '';
+        }
+        if (sdPOL && sdPOLNew) {
+            sdPOL.addEventListener('change', function() {
+                sdPOLNew.style.display = this.value === '__new' ? 'block' : 'none';
+            });
+            sdPOLNew.addEventListener('blur', function() { addOptionToPortSelect(sdPOL, sdPOLNew); });
+            sdPOLNew.addEventListener('keydown', function(e) { if (e.key === 'Enter') { addOptionToPortSelect(sdPOL, sdPOLNew); } });
+        }
+        if (sdPOD && sdPODNew) {
+            sdPOD.addEventListener('change', function() {
+                sdPODNew.style.display = this.value === '__new' ? 'block' : 'none';
+            });
+            sdPODNew.addEventListener('blur', function() { addOptionToPortSelect(sdPOD, sdPODNew); });
+            sdPODNew.addEventListener('keydown', function(e) { if (e.key === 'Enter') { addOptionToPortSelect(sdPOD, sdPODNew); } });
+        }
+
+        // Create SD Form button: one-time notification (Operations notified), default status = New
+        var sdCreateBtn = document.getElementById('sdCreateBtn');
+        if (sdCreateBtn) {
+            sdCreateBtn.addEventListener('click', function() {
+                closeModal('createSDModal');
+                alert('New SD received – Operations team notified.');
+            });
+        }
+
+        // —— Operations Handling (Stage 4): role simulation, status, notes timeline ——
+        var viewSDUserRole = document.getElementById('viewSDUserRole');
+        var viewSDOpsStatus = document.getElementById('viewSDOpsStatus');
+        var viewSDOpsStatusBadge = document.getElementById('viewSDOpsStatusBadge');
+        var viewSDOpsNotesInput = document.getElementById('viewSDOpsNotesInput');
+        var viewSDAddOpsNoteBtn = document.getElementById('viewSDAddOpsNoteBtn');
+        var viewSDOpsNotesTimeline = document.getElementById('viewSDOpsNotesTimeline');
+
+        function getViewSDUserRole() {
+            return (viewSDUserRole && viewSDUserRole.value) ? viewSDUserRole.value : 'sales';
+        }
+
+        function applyOperationsPermissions() {
+            var userRole = getViewSDUserRole();
+            var isOps = userRole === 'operations';
+            if (viewSDOpsStatus) {
+                viewSDOpsStatus.disabled = !isOps;
+                viewSDOpsStatus.style.opacity = isOps ? '1' : '0.85';
+            }
+            if (viewSDOpsNotesInput) {
+                viewSDOpsNotesInput.readOnly = !isOps;
+                viewSDOpsNotesInput.style.background = isOps ? '' : 'var(--bg-body)';
+            }
+            if (viewSDAddOpsNoteBtn) {
+                viewSDAddOpsNoteBtn.disabled = !isOps;
+                viewSDAddOpsNoteBtn.style.opacity = isOps ? '1' : '0.7';
+            }
+        }
+
+        function updateOpsStatusBadge() {
+            if (!viewSDOpsStatus || !viewSDOpsStatusBadge) return;
+            var v = viewSDOpsStatus.value || 'New';
+            viewSDOpsStatusBadge.textContent = v;
+            var slug = v.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, '');
+            viewSDOpsStatusBadge.className = 'ops-status-badge status-' + (slug === 'Hold' ? 'Hold' : slug);
+        }
+
+        if (viewSDUserRole) {
+            viewSDUserRole.addEventListener('change', applyOperationsPermissions);
+        }
+        if (viewSDOpsStatus) {
+            viewSDOpsStatus.addEventListener('change', updateOpsStatusBadge);
+        }
+
+        if (viewSDAddOpsNoteBtn && viewSDOpsNotesInput && viewSDOpsNotesTimeline) {
+            viewSDAddOpsNoteBtn.addEventListener('click', function() {
+                var userRole = getViewSDUserRole();
+                if (userRole !== 'operations') return;
+                var text = (viewSDOpsNotesInput.value || '').trim();
+                if (!text) return;
+                var now = new Date();
+                var dateStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+                var timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true });
+                var meta = '[Operations User] – ' + dateStr + ', ' + timeStr;
+                var item = document.createElement('div');
+                item.className = 'ops-notes-timeline-item';
+                item.innerHTML = '<div class="ops-note-meta">' + meta + '</div><div class="ops-note-text">' + text.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>';
+                viewSDOpsNotesTimeline.insertBefore(item, viewSDOpsNotesTimeline.firstChild);
+                viewSDOpsNotesInput.value = '';
+            });
+        }
+
+        var viewSDModalEl = document.getElementById('viewSDModal');
+        if (viewSDModalEl) {
+            var origOpenModal = window.openModal;
+            if (typeof origOpenModal === 'function') {
+                window.openModal = function(id) {
+                    origOpenModal(id);
+                    if (id === 'viewSDModal') {
+                        if (viewSDOpsStatus) viewSDOpsStatus.value = 'New';
+                        updateOpsStatusBadge();
+                        applyOperationsPermissions();
+                    }
+                };
+            }
+        }
     })();
     </script>
 </body>

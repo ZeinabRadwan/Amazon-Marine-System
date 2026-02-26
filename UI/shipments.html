@@ -11,6 +11,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .ops-card .card-header { border-bottom: 1px solid var(--border); }
+        .ops-task-list { list-style: none; padding: 0; margin: 0; }
+        .ops-task-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid var(--border); gap: 12px; }
+        .ops-task-item:last-child { border-bottom: none; }
+        .ops-task-label { display: flex; align-items: center; gap: 10px; cursor: pointer; margin: 0; font-size: 0.9rem; flex: 1; }
+        .ops-task-checkbox { width: 18px; height: 18px; accent-color: var(--navy-700); }
+        .ops-task-status { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); min-width: 70px; text-align: left; }
+        .ops-task-item.done .ops-task-status { color: var(--success); }
+        .ops-task-item.done .ops-task-label { text-decoration: line-through; color: var(--text-muted); }
+    </style>
 </head>
 
 <body>
@@ -401,17 +412,29 @@
                     onclick="closeModal('addShipmentModal')"><i class='bx bx-x'></i></button>
             </div>
             <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">اسم العميل (Client Name)</label>
+                    <select class="form-control" id="addShipmentClientName">
+                        <option value="">اختر العميل</option>
+                        <option>منصور وشركاه</option>
+                        <option>الإيمان للأغذية</option>
+                        <option>طه للمنسوجات</option>
+                        <option>نايل كرافت مصر</option>
+                        <option>السعودي للتصدير</option>
+                    </select>
+                    <p class="fs-sm text-muted" style="margin-top:4px;">يتم ربط الشحنة بالعميل تلقائياً عبر رقم الحجز أو رقم البوليصة (محاكاة)</p>
+                </div>
                 <div class="form-row">
                     <div class="form-group"><label class="form-label">تاريخ الحجز (Booking Date)</label><input
-                            type="date" class="form-control"></div>
+                            type="date" class="form-control" id="addShipmentBookingDate"></div>
                     <div class="form-group"><label class="form-label">رقم الحجز (Booking No.)</label><input type="text"
-                            class="form-control" placeholder="أدخل رقم الحجز"></div>
+                            class="form-control" id="addShipmentBookingNo" placeholder="أدخل رقم الحجز"></div>
                 </div>
                 <div class="form-row">
                     <div class="form-group"><label class="form-label">رقم البوليصة (B/L No.)</label><input type="text"
-                            class="form-control" placeholder="BL-2026-XXXX"></div>
+                            class="form-control" id="addShipmentBLNo" placeholder="BL-2026-XXXX"></div>
                     <div class="form-group"><label class="form-label">الخط الملاحي (Shipping Line)</label><select
-                            class="form-control">
+                            class="form-control" id="addShipmentLine">
                             <option>اختر الخط</option>
                             <option>MSC</option>
                             <option>CMA CGM</option>
@@ -422,21 +445,21 @@
                         </select></div>
                 </div>
                 <div class="form-row">
-                    <div class="form-group"><label class="form-label">وسيلة الشحن (Mode)</label><select
-                            class="form-control">
-                            <option>بحر (Sea)</option>
-                            <option>بر (Land)</option>
-                            <option>جو (Air)</option>
+                    <div class="form-group"><label class="form-label">نوع النقل (Transport Type)</label><select
+                            class="form-control" id="addShipmentTransportType">
+                            <option value="Sea Freight">Sea Freight</option>
+                            <option value="Air Freight">Air Freight</option>
+                            <option value="Inland Transport">Inland Transport</option>
                         </select></div>
                     <div class="form-group"><label class="form-label">نوع الشحن (Type)</label><select
                             class="form-control">
                             <option>FCL (حاوية كاملة)</option>
                             <option>LCL (شحن جزئي)</option>
                         </select></div>
-                    <div class="form-group"><label class="form-label">اتجاة الشحنة (Direction)</label><select
-                            class="form-control">
-                            <option>تصدير (Export)</option>
-                            <option>استيراد (Import)</option>
+                    <div class="form-group"><label class="form-label">اتجاه الشحنة (Shipment Direction)</label><select
+                            class="form-control" id="addShipmentDirection">
+                            <option value="Export">Export</option>
+                            <option value="Import">Import</option>
                         </select></div>
                 </div>
                 <div class="form-row">
@@ -474,16 +497,8 @@
                     <div class="form-group"><label class="form-label">تاريخ التحميل (Loading Date)</label><input
                             type="date" class="form-control"></div>
                 </div>
-                <div class="form-row">
-                    <div class="form-group"><label class="form-label">العميل</label><select class="form-control">
-                            <option>اختر العميل</option>
-                            <option>منصور وشركاه</option>
-                            <option>الإيمان للأغذية</option>
-                            <option>طه للمنسوجات</option>
-                        </select></div>
-                    <div class="form-group"><label class="form-label">وصف البضاعة (Cargo Desc.)</label><input
-                            type="text" class="form-control" placeholder="مثال: منسوجات قطنية"></div>
-                </div>
+                <div class="form-group"><label class="form-label">وصف البضاعة (Cargo Desc.)</label><input
+                        type="text" class="form-control" placeholder="مثال: منسوجات قطنية"></div>
                 <div class="form-group"><label class="form-label">ملاحظات</label><textarea class="form-control"
                         placeholder="أي تعليمات خاصة..."></textarea></div>
             </div>
@@ -615,12 +630,11 @@
                     </div>
                 </div>
 
-                <!-- Partners Involved -->
+                <!-- Partners Involved (summary) -->
                 <h4 style="font-size:0.85rem;font-weight:700;margin-bottom:12px;margin-top:24px;">الجهات المشاركة</h4>
                 <div class="grid-3" style="margin-bottom:0;">
                     <div class="partner-item">
-                        <div class="partner-icon" style="background:rgba(30,42,90,0.1);color:var(--navy-700);"><i
-                                class='bx bx-ship'></i></div>
+                        <div class="partner-icon" style="background:rgba(30,42,90,0.1);color:var(--navy-700);"><i class='bx bx-ship'></i></div>
                         <div class="partner-info">
                             <div class="partner-name">MSC</div>
                             <div class="partner-desc">خط ملاحي</div>
@@ -628,8 +642,7 @@
                         <div class="partner-amount">$3,250</div>
                     </div>
                     <div class="partner-item">
-                        <div class="partner-icon" style="background:rgba(23,162,184,0.1);color:var(--accent-cyan);"><i
-                                class='bx bx-car'></i></div>
+                        <div class="partner-icon" style="background:rgba(23,162,184,0.1);color:var(--accent-cyan);"><i class='bx bx-car'></i></div>
                         <div class="partner-info">
                             <div class="partner-name">نايل للنقل</div>
                             <div class="partner-desc">نقل داخلي</div>
@@ -637,13 +650,136 @@
                         <div class="partner-amount">$600</div>
                     </div>
                     <div class="partner-item">
-                        <div class="partner-icon" style="background:rgba(212,168,83,0.12);color:var(--accent-gold);"><i
-                                class='bx bx-check-shield'></i></div>
+                        <div class="partner-icon" style="background:rgba(212,168,83,0.12);color:var(--accent-gold);"><i class='bx bx-check-shield'></i></div>
                         <div class="partner-info">
                             <div class="partner-name">التخليص العالمية</div>
                             <div class="partner-desc">تخليص جمركي</div>
                         </div>
                         <div class="partner-amount">$400</div>
+                    </div>
+                </div>
+
+                <!-- Operations Dashboard (role-based: Sales view only, Operations can edit) -->
+                <div class="shipment-ops-dashboard" style="margin-top:28px; padding-top:24px; border-top:2px solid var(--border);">
+                    <h4 style="font-size:0.9rem;font-weight:700;margin-bottom:8px;color:var(--navy-700);"><i class='bx bx-cog' style="margin-left:6px;"></i> لوحة العمليات</h4>
+                    <div class="form-group" style="max-width:220px; margin-bottom:16px;">
+                        <label class="form-label">محاكاة الدور</label>
+                        <select class="form-control" id="shipmentDetailUserRole">
+                            <option value="sales">Sales (عرض فقط)</option>
+                            <option value="operations">Operations (يمكن التعديل)</option>
+                        </select>
+                    </div>
+
+                    <!-- Operational Shipment Status (visible to both, editable by Operations only) -->
+                    <div class="card ops-card" style="margin-bottom:20px;">
+                        <div class="card-header" style="padding:12px 16px;">
+                            <span class="card-title">Operational Shipment Status</span>
+                        </div>
+                        <div class="card-body" style="padding:16px;">
+                            <select class="form-control" id="shipmentOpsStatus" style="max-width:100%;">
+                                <option value="Container allocation & pickup in progress">Container allocation & pickup in progress</option>
+                                <option value="Loading in progress">Loading in progress</option>
+                                <option value="Customs clearance in progress">Customs clearance in progress</option>
+                                <option value="Waiting shipment invoices">Waiting shipment invoices</option>
+                                <option value="Invoicing in progress">Invoicing in progress</option>
+                                <option value="Waiting client payment">Waiting client payment</option>
+                                <option value="Cargo release in progress">Cargo release in progress</option>
+                                <option value="Shipment completed">Shipment completed</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Partners & Vendors (Operations only – dropdowns linked to Vendors DB simulation) -->
+                    <div class="card ops-card" style="margin-bottom:20px;">
+                        <div class="card-header" style="padding:12px 16px;">
+                            <span class="card-title">Partners &amp; Vendors</span>
+                        </div>
+                        <div class="card-body" style="padding:16px;">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Contractor Transport</label>
+                                    <select class="form-control shipment-ops-field" id="shipmentContractorTransport">
+                                        <option value="">Select</option>
+                                        <option>نايل للنقل</option>
+                                        <option>المصرية للنقل</option>
+                                        <option>دلتا لوجستيك</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Customs Broker</label>
+                                    <select class="form-control shipment-ops-field" id="shipmentCustomsBroker">
+                                        <option value="">Select</option>
+                                        <option>التخليص العالمية</option>
+                                        <option>جلف للتخليص</option>
+                                        <option>سفنكس للخدمات الجمركية</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Insurance Company</label>
+                                    <select class="form-control shipment-ops-field" id="shipmentInsurance">
+                                        <option value="">Select</option>
+                                        <option>المتحدة للتأمين</option>
+                                        <option>أليانز</option>
+                                        <option>إيجيبت إنشورنس</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Overseas Agent (External Partner Outside Egypt)</label>
+                                    <select class="form-control shipment-ops-field" id="shipmentOverseasAgent">
+                                        <option value="">Select</option>
+                                        <option>Gulf Agency Jeddah</option>
+                                        <option>MSC Agent Dubai</option>
+                                        <option>CMA CGM Agent Hamburg</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Operational Dates (Operations only; ETA editable anytime) -->
+                    <div class="card ops-card" style="margin-bottom:20px;">
+                        <div class="card-header" style="padding:12px 16px;">
+                            <span class="card-title">Operational Dates</span>
+                        </div>
+                        <div class="card-body" style="padding:16px;">
+                            <div class="form-row-3">
+                                <div class="form-group">
+                                    <label class="form-label">Cut-Off Date</label>
+                                    <input type="date" class="form-control shipment-ops-field" id="shipmentCutOffDate">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">ETD (Estimated Time of Departure)</label>
+                                    <input type="datetime-local" class="form-control shipment-ops-field" id="shipmentETD">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">ETA (Estimated Time of Arrival)</label>
+                                    <input type="datetime-local" class="form-control shipment-ops-field" id="shipmentETA">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Operations Task Management System (checklist) -->
+                    <div class="card ops-card" style="margin-bottom:20px;">
+                        <div class="card-header" style="padding:12px 16px;">
+                            <span class="card-title">Operations Task Management System</span>
+                        </div>
+                        <div class="card-body" style="padding:16px;">
+                            <ul class="ops-task-list" id="shipmentOpsTaskList">
+                                <li class="ops-task-item" data-task="Review client documents"><label class="ops-task-label"><input type="checkbox" class="ops-task-checkbox"> Review client documents</label><span class="ops-task-status">Pending</span></li>
+                                <li class="ops-task-item" data-task="Review Packing List & Invoice"><label class="ops-task-label"><input type="checkbox" class="ops-task-checkbox"> Review Packing List &amp; Invoice</label><span class="ops-task-status">Pending</span></li>
+                                <li class="ops-task-item" data-task="Review Stickers"><label class="ops-task-label"><input type="checkbox" class="ops-task-checkbox"> Review Stickers</label><span class="ops-task-status">Pending</span></li>
+                                <li class="ops-task-item" data-task="Open Customs Declaration"><label class="ops-task-label"><input type="checkbox" class="ops-task-checkbox"> Open Customs Declaration</label><span class="ops-task-status">Pending</span></li>
+                                <li class="ops-task-item" data-task="Assign Shipping Permit"><label class="ops-task-label"><input type="checkbox" class="ops-task-checkbox"> Assign Shipping Permit</label><span class="ops-task-status">Pending</span></li>
+                                <li class="ops-task-item" data-task="Container Pickup"><label class="ops-task-label"><input type="checkbox" class="ops-task-checkbox"> Container Pickup</label><span class="ops-task-status">Pending</span></li>
+                                <li class="ops-task-item" data-task="Insert SI & VGM"><label class="ops-task-label"><input type="checkbox" class="ops-task-checkbox"> Insert SI &amp; VGM</label><span class="ops-task-status">Pending</span></li>
+                                <li class="ops-task-item" data-task="Review Draft B/L"><label class="ops-task-label"><input type="checkbox" class="ops-task-checkbox"> Review Draft B/L</label><span class="ops-task-status">Pending</span></li>
+                                <li class="ops-task-item" data-task="Prepare Certificate of Origin / Agriculture"><label class="ops-task-label"><input type="checkbox" class="ops-task-checkbox"> Prepare Certificate of Origin / Agriculture (if needed)</label><span class="ops-task-status">Pending</span></li>
+                                <li class="ops-task-item" data-task="Stamp Customs Documents"><label class="ops-task-label"><input type="checkbox" class="ops-task-checkbox"> Stamp Customs Documents</label><span class="ops-task-status">Pending</span></li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -859,6 +995,28 @@
         fillFilterStatus();
         fillStageUpdateSelect();
         applyShipmentStatusBadges();
+        (function applyAttachedPriceOffers() {
+            try {
+                var raw = localStorage.getItem('amazonMarineShipmentPriceOffers');
+                var map = raw ? JSON.parse(raw) : {};
+                document.querySelectorAll('#shipmentsTable .shipment-row').forEach(function(tr) {
+                    var bl = tr.getAttribute('data-bl');
+                    if (!bl || !map[bl]) return;
+                    var info = map[bl];
+                    var blTd = tr.querySelector('td.bl-number');
+                    if (!blTd) return;
+                    var existing = blTd.querySelector('.attached-offer-badge');
+                    if (existing) return;
+                    var span = document.createElement('span');
+                    span.className = 'attached-offer-badge';
+                    span.style.cssText = 'display:inline-block;margin-right:6px;padding:2px 6px;border-radius:6px;font-size:0.7rem;background:var(--info-light);color:var(--info);';
+                    span.title = 'مرتبط بعرض سعر: ' + (info.shippingLine || '') + ' — ' + (info.containerType || '');
+                    span.textContent = 'عرض سعر';
+                    blTd.appendChild(document.createTextNode(' '));
+                    blTd.appendChild(span);
+                });
+            } catch (e) {}
+        })();
         (function() {
             var counts = {};
             document.querySelectorAll('#shipmentsTable .shipment-row').forEach(function(tr) {
@@ -948,6 +1106,73 @@
         }
         if (document.getElementById('btnExportAll')) document.getElementById('btnExportAll').addEventListener('click', function() { exportShipmentsToExcel(false); });
         if (document.getElementById('bulkExportSelected')) document.getElementById('bulkExportSelected').addEventListener('click', function() { exportShipmentsToExcel(true); });
+
+        // —— Operations Dashboard: role simulation (userRole = "operations" | "sales") ——
+        var shipmentDetailUserRole = document.getElementById('shipmentDetailUserRole');
+        var shipmentOpsStatus = document.getElementById('shipmentOpsStatus');
+        var shipmentETA = document.getElementById('shipmentETA');
+
+        function getShipmentDetailUserRole() {
+            return (shipmentDetailUserRole && shipmentDetailUserRole.value) ? shipmentDetailUserRole.value : 'sales';
+        }
+
+        function applyShipmentOpsPermissions() {
+            var userRole = getShipmentDetailUserRole();
+            var isOps = userRole === 'operations';
+            var opsFields = document.querySelectorAll('.shipment-ops-field');
+            opsFields.forEach(function(el) {
+                el.disabled = !isOps;
+                el.readOnly = el.tagName === 'INPUT' && el.type !== 'checkbox' ? !isOps : false;
+                el.style.background = isOps ? '' : 'var(--bg-body)';
+                el.style.cursor = isOps ? '' : 'default';
+            });
+            if (shipmentOpsStatus) {
+                shipmentOpsStatus.disabled = !isOps;
+                shipmentOpsStatus.style.background = isOps ? '' : 'var(--bg-body)';
+            }
+            // ETA editable anytime per requirement – keep enabled for both (shipping line updates)
+            if (shipmentETA) {
+                shipmentETA.disabled = false;
+                shipmentETA.readOnly = false;
+                shipmentETA.style.background = '';
+            }
+            var taskCheckboxes = document.querySelectorAll('#shipmentOpsTaskList .ops-task-checkbox');
+            taskCheckboxes.forEach(function(cb) {
+                cb.disabled = !isOps;
+            });
+        }
+
+        document.querySelectorAll('#shipmentOpsTaskList .ops-task-checkbox').forEach(function(cb) {
+            cb.addEventListener('change', function() {
+                var item = this.closest('.ops-task-item');
+                var statusEl = item ? item.querySelector('.ops-task-status') : null;
+                if (!item || !statusEl) return;
+                if (this.checked) {
+                    statusEl.textContent = 'Done';
+                    item.classList.add('done');
+                } else {
+                    statusEl.textContent = 'Pending';
+                    item.classList.remove('done');
+                }
+            });
+        });
+
+        if (shipmentDetailUserRole) {
+            shipmentDetailUserRole.addEventListener('change', applyShipmentOpsPermissions);
+        }
+
+        var shipmentDetailModal = document.getElementById('shipmentDetailModal');
+        if (shipmentDetailModal) {
+            var origOpen = window.openModal;
+            if (typeof origOpen === 'function') {
+                window.openModal = function(id) {
+                    origOpen(id);
+                    if (id === 'shipmentDetailModal') {
+                        applyShipmentOpsPermissions();
+                    }
+                };
+            }
+        }
     })();
     </script>
     <script>

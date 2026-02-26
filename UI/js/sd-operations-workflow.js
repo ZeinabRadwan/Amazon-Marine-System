@@ -102,7 +102,7 @@ function sendSDToOperations(tr) {
     }
 
     // In-system toast
-    showSDOperationsToast('تم إرسال نموذج SD للعمليات', 'تم إنشاء مهمة عمليات وإشعار للفريق. (محاكاة: إشعار بريد إلكتروني للعمليات)');
+    showSDOperationsToast('تم إرسال نموذج SD للعمليات', 'تم إنشاء مهمة عمليات وإشعار للفريق. (محاكاة)');
 }
 
 function showSDOperationsToast(title, message) {

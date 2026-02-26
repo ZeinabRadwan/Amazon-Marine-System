@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazon Marine — خدمة العملاء</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="logo-area"><img src="logo/logo (1).png" alt="Logo"><div class="logo-text"><span class="brand-name">Amazon Marine</span><span class="brand-sub">Shipping Agency</span></div></div>
+        <div class="menu-label">الرئيسية</div>
+        <ul class="menu">
+            <li><a href="dashboard.html"><i class='bx bxs-dashboard'></i><span>لوحة التحكم</span></a></li>
+            <li><a href="clients.html"><i class='bx bx-group'></i><span>العملاء / CRM</span></a></li>
+            <li><a href="shipments.html"><i class='bx bx-package'></i><span>الشحنات</span></a></li>
+            <li><a href="sd-forms.html"><i class='bx bx-file'></i><span>نماذج SD</span></a></li>
+            <li><a href="operations.html"><i class='bx bxs-ship'></i><span>العمليات</span></a></li>
+        </ul>
+        <div class="menu-label">المالية</div>
+        <ul class="menu">
+            <li><a href="invoices.html"><i class='bx bx-receipt'></i><span>الفواتير</span></a></li>
+            <li><a href="accounting.html"><i class='bx bx-wallet'></i><span>الحسابات</span></a></li>
+            <li><a href="treasury.html"><i class='bx bx-credit-card'></i><span>الخزينة</span></a></li>
+            <li><a href="expenses.html"><i class='bx bx-money'></i><span>المصروفات</span></a></li>
+            <li><a href="pricing.html"><i class='bx bx-dollar-circle'></i><span>التسعير</span></a></li>
+        </ul>
+        <div class="menu-label">الإدارة</div>
+        <ul class="menu">
+            <li><a href="partners.html"><i class='bx bx-buildings'></i><span>الشركاء</span></a></li>
+            <li><a href="reports.html"><i class='bx bx-bar-chart-alt-2'></i><span>التقارير</span></a></li>
+            <li><a href="documents.html"><i class='bx bx-file-blank'></i><span>المستندات الرسمية</span></a></li>
+            <li class="active"><a href="customer-service.html"><i class='bx bx-support'></i><span>خدمة العملاء</span></a></li>
+            <li><a href="tickets.html"><i class='bx bx-message-alt-detail'></i><span>تذاكر الدعم</span></a></li>
+            <li><a href="team-performance.html"><i class='bx bx-trending-up'></i><span>أداء الفريق</span></a></li>
+            <li><a href="attendance.html"><i class='bx bx-time-five'></i><span>الحضور والانصراف</span></a></li>
+            <li><a href="visits.html"><i class='bx bx-map-pin'></i><span>سجل الزيارات</span></a></li>
+        </ul>
+        <div class="menu-label">الإعدادات</div>
+        <ul class="menu">
+            <li><a href="settings.html"><i class='bx bx-cog'></i><span>الإعدادات</span></a></li>
+            <li><a href="profile.html"><i class='bx bx-user'></i><span>الملف الشخصي</span></a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-avatar">SD</div>
+            <div class="user-info"><div class="user-name">سارة الدعم</div><div class="user-role">الدعم الفني</div></div>
+            <a href="index.html"><i class='bx bx-log-out' style="color:rgba(255,255,255,0.35);font-size:1.2rem;"></i></a>
+        </div>
+    </nav>
+    <div class="main-wrapper">
+        <header class="topbar">
+            <div class="page-title-area"><h1>خدمة العملاء</h1><div class="breadcrumbs">Amazon Marine > <span>تتبع الشحنات — التذاكر — سجل التواصل</span></div></div>
+            <div class="topbar-right">
+                <div class="search-bar"><i class='bx bx-search'></i><input type="text" id="topSearchCs" placeholder="بحث..."></div>
+                <div class="topbar-icon"><i class='bx bx-bell'></i><div class="notif-dot"></div></div>
+                <div class="profile-pill"><div class="profile-avatar">SD</div><span>سارة الدعم</span></div>
+            </div>
+        </header>
+        <main class="content">
+            <p class="fs-sm text-muted" style="margin-bottom:16px;">ثلاث ركائز: تتبع الشحنات والتحديثات — التذاكر (طلبات وشكاوى) — سجل التواصل.</p>
+            <div class="page-header">
+                <div class="tabs" data-tab-group="csTab">
+                    <button class="tab active" data-tab="tracking" onclick="switchTab('csTab','tracking')"><i class='bx bx-package'></i> تتبع الشحنات والتحديثات</button>
+                    <button class="tab" data-tab="tickets" onclick="switchTab('csTab','tickets')"><i class='bx bx-message-alt-detail'></i> التذاكر (طلبات وشكاوى)</button>
+                    <button class="tab" data-tab="comms" onclick="switchTab('csTab','comms')"><i class='bx bx-chat'></i> سجل التواصل</button>
+                </div>
+            </div>
+
+            <!-- Tab 1: Shipment Tracking Dashboard (Customer View) -->
+            <div class="tab-content active" id="csTab-tracking">
+                <div class="card">
+                    <div class="card-header d-flex justify-between align-center flex-wrap gap-2">
+                        <span class="card-title">لوحة تتبع الشحنات — عرض العميل</span>
+                        <button type="button" class="btn btn-outline btn-sm" id="btnAddShipmentUpdate"><i class='bx bx-plus'></i> إضافة تحديث</button>
+                    </div>
+                    <p class="fs-sm text-muted" style="padding:0 20px 12px;">جميع الشحنات بحالة مناسبة للعميل. إرسال التحديث عبر البريد أو واتساب باستخدام قوالب جاهزة.</p>
+                    <div class="filter-bar">
+                        <input type="text" class="form-control" id="trackingSearchBl" placeholder="بحث برقم BL..." style="max-width:200px;">
+                        <input type="text" class="form-control" id="trackingSearchClient" placeholder="بحث بالعميل..." style="max-width:200px;">
+                        <select class="form-control" id="trackingFilterStatus" style="width:auto;">
+                            <option value="">كل الحالات</option>
+                            <option value="booking_confirmed">تم تأكيد الحجز</option>
+                            <option value="container_allocation">تخصيص الحاوية</option>
+                            <option value="loading_in_progress">التحميل قيد التنفيذ</option>
+                            <option value="vessel_departed">السفينة غادرت</option>
+                            <option value="in_transit">في الطريق</option>
+                            <option value="customs_clearance">التخليص الجمركي</option>
+                            <option value="ready_for_delivery">جاهز للتسليم</option>
+                            <option value="delivered">تم التسليم</option>
+                        </select>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table" id="trackingTable">
+                            <thead>
+                                <tr>
+                                    <th>BL#</th>
+                                    <th>العميل</th>
+                                    <th>المسار</th>
+                                    <th>الحالة (عرض العميل)</th>
+                                    <th>آخر تحديث</th>
+                                    <th>إجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="trackingTableBody">
+                                <tr class="tracking-row" data-bl="BL-2026-0248" data-client="منصور وشركاه" data-status="in_transit" data-route="الإسكندرية → جدة">
+                                    <td class="fw-600 bl-cell">BL-2026-0248</td>
+                                    <td>منصور وشركاه</td>
+                                    <td>الإسكندرية → جدة</td>
+                                    <td><span class="status-badge in-transit">في الطريق</span></td>
+                                    <td class="last-update-cell text-muted fs-sm">25/02 — الشحنة في البحر متجهة إلى جدة</td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline btn-add-update" data-bl="BL-2026-0248" data-client="منصور وشركاه" data-route="الإسكندرية → جدة"><i class='bx bx-edit'></i> تحديث</button>
+                                        <button type="button" class="btn btn-sm btn-outline btn-send-update" data-bl="BL-2026-0248" data-client="منصور وشركاه" data-route="الإسكندرية → جدة" data-status="in_transit"><i class='bx bx-send'></i> إرسال للعميل</button>
+                                        <a href="shipments.html" class="btn btn-sm btn-outline"><i class='bx bx-show'></i> عرض</a>
+                                    </td>
+                                </tr>
+                                <tr class="tracking-row" data-bl="BL-2026-0247" data-client="الإيمان للأغذية" data-status="booking_confirmed" data-route="دمياط → دبي">
+                                    <td class="fw-600 bl-cell">BL-2026-0247</td>
+                                    <td>الإيمان للأغذية</td>
+                                    <td>دمياط → دبي</td>
+                                    <td><span class="status-badge booked">تم تأكيد الحجز</span></td>
+                                    <td class="last-update-cell text-muted fs-sm">24/02 — تم تأكيد الحجز</td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline btn-add-update" data-bl="BL-2026-0247" data-client="الإيمان للأغذية" data-route="دمياط → دبي"><i class='bx bx-edit'></i> تحديث</button>
+                                        <button type="button" class="btn btn-sm btn-outline btn-send-update" data-bl="BL-2026-0247" data-client="الإيمان للأغذية" data-route="دمياط → دبي" data-status="booking_confirmed"><i class='bx bx-send'></i> إرسال للعميل</button>
+                                        <a href="shipments.html" class="btn btn-sm btn-outline"><i class='bx bx-show'></i> عرض</a>
+                                    </td>
+                                </tr>
+                                <tr class="tracking-row" data-bl="BL-2026-0245" data-client="طه للمنسوجات" data-status="customs_clearance" data-route="السخنة → هامبورغ">
+                                    <td class="fw-600 bl-cell">BL-2026-0245</td>
+                                    <td>طه للمنسوجات</td>
+                                    <td>السخنة → هامبورغ</td>
+                                    <td><span class="status-badge pending">التخليص الجمركي</span></td>
+                                    <td class="last-update-cell text-muted fs-sm">26/02 — وصول الميناء — بدء التخليص</td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline btn-add-update" data-bl="BL-2026-0245" data-client="طه للمنسوجات" data-route="السخنة → هامبورغ"><i class='bx bx-edit'></i> تحديث</button>
+                                        <button type="button" class="btn btn-sm btn-outline btn-send-update" data-bl="BL-2026-0245" data-client="طه للمنسوجات" data-route="السخنة → هامبورغ" data-status="customs_clearance"><i class='bx bx-send'></i> إرسال للعميل</button>
+                                        <a href="shipments.html" class="btn btn-sm btn-outline"><i class='bx bx-show'></i> عرض</a>
+                                    </td>
+                                </tr>
+                                <tr class="tracking-row" data-bl="BL-2026-0244" data-client="نايل كرافت مصر" data-status="vessel_departed" data-route="بورسعيد → مرسيليا">
+                                    <td class="fw-600 bl-cell">BL-2026-0244</td>
+                                    <td>نايل كرافت مصر</td>
+                                    <td>بورسعيد → مرسيليا</td>
+                                    <td><span class="status-badge in-transit">السفينة غادرت</span></td>
+                                    <td class="last-update-cell text-muted fs-sm">26/02 — مغادرة الميناء</td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline btn-add-update" data-bl="BL-2026-0244" data-client="نايل كرافت مصر" data-route="بورسعيد → مرسيليا"><i class='bx bx-edit'></i> تحديث</button>
+                                        <button type="button" class="btn btn-sm btn-outline btn-send-update" data-bl="BL-2026-0244" data-client="نايل كرافت مصر" data-route="بورسعيد → مرسيليا" data-status="vessel_departed"><i class='bx bx-send'></i> إرسال للعميل</button>
+                                        <a href="shipments.html" class="btn btn-sm btn-outline"><i class='bx bx-show'></i> عرض</a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: Ticket System – Complaints & Requests (CS creates → Assign → Dept responds → CS closes) -->
+            <div class="tab-content" id="csTab-tickets">
+                <div class="card">
+                    <div class="card-header d-flex justify-between align-center flex-wrap gap-2">
+                        <span class="card-title">التذاكر — استفسارات، شكاوى، طلبات</span>
+                        <button type="button" class="btn btn-primary btn-sm" id="btnNewTicketCs"><i class='bx bx-plus'></i> إنشاء تذكرة</button>
+                    </div>
+                    <p class="fs-sm text-muted" style="padding:0 20px 12px;">إنشاء تذكرة ← تعيين للإدارة (عمليات / مبيعات / محاسبة) ← الرد ← إغلاق من خدمة العملاء.</p>
+                    <div class="filter-bar">
+                        <input type="text" class="form-control" id="ticketSearchCs" placeholder="بحث برقم التذكرة أو العميل..." style="max-width:220px;">
+                        <select class="form-control" id="filterTicketType" style="width:auto;">
+                            <option value="">النوع</option>
+                            <option value="inquiry">استفسار (Inquiry)</option>
+                            <option value="complaint">شكوى (Complaint)</option>
+                            <option value="request">طلب (Request)</option>
+                        </select>
+                        <select class="form-control" id="filterTicketAssigned" style="width:auto;">
+                            <option value="">التعيين</option>
+                            <option value="cs">خدمة العملاء (CS)</option>
+                            <option value="operations">العمليات (Operations)</option>
+                            <option value="sales">المبيعات (Sales)</option>
+                            <option value="accounting">المحاسبة (Accounting)</option>
+                        </select>
+                        <select class="form-control" id="filterTicketStatusCs" style="width:auto;">
+                            <option value="">الحالة</option>
+                            <option value="open">مفتوح (Open)</option>
+                            <option value="in_progress">قيد المعالجة (In Progress)</option>
+                            <option value="waiting">بانتظار (Waiting)</option>
+                            <option value="closed">مغلق (Closed)</option>
+                        </select>
+                        <select class="form-control" id="filterTicketPriorityCs" style="width:auto;">
+                            <option value="">الأولوية</option>
+                            <option value="low">منخفض (Low)</option>
+                            <option value="medium">متوسط (Medium)</option>
+                            <option value="high">عالي (High)</option>
+                        </select>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table" id="ticketsTableCs">
+                            <thead>
+                                <tr>
+                                    <th>رقم التذكرة</th>
+                                    <th>العميل</th>
+                                    <th>الشحنة</th>
+                                    <th>النوع</th>
+                                    <th>الأولوية</th>
+                                    <th>معيّن إلى</th>
+                                    <th>الحالة</th>
+                                    <th>التاريخ</th>
+                                    <th>إجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ticketsTableBodyCs">
+                                <!-- Rendered by JS from storage + seed -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 3: Communication Log -->
+            <div class="tab-content" id="csTab-comms">
+                <div class="card">
+                    <div class="card-header d-flex justify-between align-center flex-wrap gap-2">
+                        <span class="card-title">سجل التواصل</span>
+                        <button type="button" class="btn btn-primary btn-sm" id="btnAddCommsLog"><i class='bx bx-plus'></i> إضافة سجل</button>
+                    </div>
+                    <div class="filter-bar">
+                        <input type="text" class="form-control" id="commsSearch" placeholder="بحث بالعميل أو الموضوع..." style="max-width:240px;">
+                        <select class="form-control" id="commsFilterType" style="width:auto;">
+                            <option value="">نوع التواصل</option>
+                            <option value="مكالمة">مكالمة</option>
+                            <option value="بريد إلكتروني">بريد إلكتروني</option>
+                            <option value="اجتماع">اجتماع</option>
+                            <option value="ملاحظة">ملاحظة</option>
+                        </select>
+                        <select class="form-control" id="commsFilterRelated" style="width:auto;">
+                            <option value="">مرتبط بـ</option>
+                            <option value="عميل">عميل</option>
+                            <option value="شحنة">شحنة</option>
+                            <option value="تذكرة">تذكرة</option>
+                        </select>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table" id="commsTable">
+                            <thead>
+                                <tr>
+                                    <th>التاريخ والوقت</th>
+                                    <th>نوع التواصل</th>
+                                    <th>مرتبط بـ</th>
+                                    <th>الموضوع / الملخص</th>
+                                    <th>الوكيل</th>
+                                </tr>
+                            </thead>
+                            <tbody id="commsTableBody">
+                                <tr class="comms-row" data-type="مكالمة" data-related="عميل" data-client="منصور وشركاه">
+                                    <td class="text-muted fs-sm">26/02/2026 10:30</td>
+                                    <td><i class='bx bx-phone'></i> مكالمة</td>
+                                    <td>منصور وشركاه (عميل)</td>
+                                    <td>استفسار عن موعد وصول BL-2026-0248</td>
+                                    <td>سارة الدعم</td>
+                                </tr>
+                                <tr class="comms-row" data-type="بريد إلكتروني" data-related="تذكرة" data-client="الإيمان للأغذية">
+                                    <td class="text-muted fs-sm">25/02/2026 14:00</td>
+                                    <td><i class='bx bx-envelope'></i> بريد إلكتروني</td>
+                                    <td>#TKT-2026-1041 (تذكرة)</td>
+                                    <td>رد على استفسار الفاتورة</td>
+                                    <td>سارة الدعم</td>
+                                </tr>
+                                <tr class="comms-row" data-type="ملاحظة" data-related="شحنة" data-client="طه للمنسوجات">
+                                    <td class="text-muted fs-sm">25/02/2026 09:15</td>
+                                    <td><i class='bx bx-note'></i> ملاحظة</td>
+                                    <td>BL-2026-0245 (شحنة)</td>
+                                    <td>تم إبلاغ العميل ببدء التخليص الجمركي</td>
+                                    <td>سارة الدعم</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Shipment Update Modal -->
+    <div class="modal-overlay" id="addShipmentUpdateModal">
+        <div class="modal">
+            <div class="modal-header"><h3><i class='bx bx-edit'></i> إضافة تحديث للشحنة</h3><button class="modal-close" onclick="closeModal('addShipmentUpdateModal')"><i class='bx bx-x'></i></button></div>
+            <div class="modal-body">
+                <input type="hidden" id="updateModalBl" value="">
+                <div class="form-group"><label class="form-label">رقم الشحنة (BL)</label><input type="text" class="form-control" id="updateBlDisplay" readonly></div>
+                <div class="form-group"><label class="form-label">نص التحديث</label><textarea class="form-control" id="updateText" rows="3" placeholder="اكتب التحديث للعميل..."></textarea></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('addShipmentUpdateModal')">إلغاء</button><button class="btn btn-primary" id="btnSaveUpdate"><i class='bx bx-check'></i> حفظ التحديث</button></div>
+        </div>
+    </div>
+
+    <!-- Send Update to Client (Email / WhatsApp + Templates) -->
+    <div class="modal-overlay" id="sendUpdateToClientModal">
+        <div class="modal modal-lg">
+            <div class="modal-header"><h3><i class='bx bx-send'></i> إرسال تحديث للعميل</h3><button class="modal-close" onclick="closeModal('sendUpdateToClientModal')"><i class='bx bx-x'></i></button></div>
+            <div class="modal-body">
+                <input type="hidden" id="sendUpdateBl" value="">
+                <input type="hidden" id="sendUpdateClient" value="">
+                <input type="hidden" id="sendUpdateRoute" value="">
+                <input type="hidden" id="sendUpdateStatus" value="">
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">الشحنة (BL)</label><input type="text" class="form-control" id="sendUpdateBlDisplay" readonly></div>
+                    <div class="form-group"><label class="form-label">العميل</label><input type="text" class="form-control" id="sendUpdateClientDisplay" readonly></div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">إرسال عبر</label>
+                    <div class="d-flex gap-3" style="flex-wrap:wrap;">
+                        <label class="d-flex align-center gap-2" style="cursor:pointer;"><input type="radio" name="sendUpdateChannel" value="email" checked> <i class='bx bx-envelope'></i> بريد إلكتروني</label>
+                        <label class="d-flex align-center gap-2" style="cursor:pointer;"><input type="radio" name="sendUpdateChannel" value="whatsapp"> <i class='bx bxl-whatsapp'></i> واتساب</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">قالب جاهز</label>
+                    <select class="form-control" id="sendUpdateTemplate">
+                        <option value="">— اختر قالبًا —</option>
+                        <option value="booking_confirmed">تم تأكيد الحجز (Booking Confirmed)</option>
+                        <option value="container_allocation">تخصيص الحاوية (Container Allocation)</option>
+                        <option value="loading_in_progress">التحميل قيد التنفيذ (Loading in Progress)</option>
+                        <option value="vessel_departed">السفينة غادرت (Vessel Departed)</option>
+                        <option value="in_transit">في الطريق (In Transit)</option>
+                        <option value="customs_clearance">التخليص الجمركي (Customs Clearance)</option>
+                        <option value="ready_for_delivery">جاهز للتسليم (Ready for Delivery)</option>
+                        <option value="delivered">تم التسليم (Delivered)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">نص الرسالة (يمكن التعديل)</label>
+                    <textarea class="form-control" id="sendUpdateMessage" rows="4" placeholder="سيتم تعبئته من القالب..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('sendUpdateToClientModal')">إلغاء</button><button class="btn btn-primary" id="btnSendUpdateToClient"><i class='bx bx-send'></i> إرسال</button></div>
+        </div>
+    </div>
+
+    <!-- New Ticket Modal (CS creates → Assign to department) -->
+    <div class="modal-overlay" id="csNewTicketModal">
+        <div class="modal">
+            <div class="modal-header"><h3><i class='bx bx-plus'></i> إنشاء تذكرة</h3><button class="modal-close" onclick="closeModal('csNewTicketModal')"><i class='bx bx-x'></i></button></div>
+            <div class="modal-body">
+                <div class="form-group"><label class="form-label">العميل</label><select class="form-control" id="newTicketClient" required><option value="">— اختر العميل —</option><option value="منصور وشركاه">منصور وشركاه</option><option value="الإيمان للأغذية">الإيمان للأغذية</option><option value="طه للمنسوجات">طه للمنسوجات</option><option value="نايل كرافت مصر">نايل كرافت مصر</option></select></div>
+                <div class="form-group"><label class="form-label">الشحنة (اختياري)</label><input type="text" class="form-control" id="newTicketShipment" placeholder="BL-2026-XXXX"></div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">النوع</label><select class="form-control" id="newTicketType"><option value="inquiry">استفسار (Inquiry)</option><option value="complaint">شكوى (Complaint)</option><option value="request">طلب (Request)</option></select></div>
+                    <div class="form-group"><label class="form-label">الأولوية</label><select class="form-control" id="newTicketPriority"><option value="low">منخفض (Low)</option><option value="medium" selected>متوسط (Medium)</option><option value="high">عالي (High)</option></select></div>
+                </div>
+                <div class="form-group"><label class="form-label">تعيين إلى (قسم الرد)</label><select class="form-control" id="newTicketAssigned"><option value="cs">خدمة العملاء (CS)</option><option value="operations">العمليات (Operations)</option><option value="sales">المبيعات (Sales)</option><option value="accounting">المحاسبة (Accounting)</option></select></div>
+                <div class="form-group"><label class="form-label">الوصف</label><textarea class="form-control" id="newTicketDesc" rows="3" placeholder="وصف الاستفسار / الشكوى / الطلب..."></textarea></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('csNewTicketModal')">إلغاء</button><button class="btn btn-primary" id="btnCreateTicketCs"><i class='bx bx-check'></i> إنشاء تذكرة</button></div>
+        </div>
+    </div>
+
+    <!-- Reply / Update Status / Close Ticket Modal -->
+    <div class="modal-overlay" id="csReplyTicketModal">
+        <div class="modal">
+            <div class="modal-header"><h3><i class='bx bx-reply'></i> <span id="csReplyModalTitle">رد على التذكرة</span></h3><button class="modal-close" onclick="closeModal('csReplyTicketModal')"><i class='bx bx-x'></i></button></div>
+            <div class="modal-body">
+                <input type="hidden" id="replyTicketId" value="">
+                <div class="form-group"><label class="form-label">التذكرة</label><input type="text" class="form-control" id="replyTicketIdDisplay" readonly></div>
+                <div class="form-group"><label class="form-label">الحالة الحالية</label><input type="text" class="form-control" id="replyTicketStatusDisplay" readonly></div>
+                <div class="form-group"><label class="form-label">الرد / التحديث</label><textarea class="form-control" id="replyTicketText" rows="4" placeholder="اكتب ردك أو تحديث الحالة..."></textarea></div>
+                <div class="form-group"><label class="form-label">تحديث الحالة (للإدارة)</label><select class="form-control" id="replyTicketStatusSelect"><option value="open">مفتوح (Open)</option><option value="in_progress">قيد المعالجة (In Progress)</option><option value="waiting">بانتظار (Waiting)</option><option value="closed">مغلق (Closed)</option></select></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('csReplyTicketModal')">إلغاء</button>
+                <button class="btn btn-outline" id="btnReplyTicketCs"><i class='bx bx-send'></i> إرسال الرد</button>
+                <button class="btn btn-primary" id="btnCloseTicketCs"><i class='bx bx-check-circle'></i> إغلاق التذكرة (CS)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Communication Log Modal -->
+    <div class="modal-overlay" id="addCommsLogModal">
+        <div class="modal">
+            <div class="modal-header"><h3><i class='bx bx-chat'></i> إضافة سجل تواصل</h3><button class="modal-close" onclick="closeModal('addCommsLogModal')"><i class='bx bx-x'></i></button></div>
+            <div class="modal-body">
+                <div class="form-group"><label class="form-label">نوع التواصل</label><select class="form-control" id="commsLogType"><option value="مكالمة">مكالمة</option><option value="بريد إلكتروني">بريد إلكتروني</option><option value="اجتماع">اجتماع</option><option value="ملاحظة">ملاحظة</option></select></div>
+                <div class="form-group"><label class="form-label">مرتبط بـ</label><select class="form-control" id="commsLogRelated"><option value="عميل">عميل</option><option value="شحنة">شحنة</option><option value="تذكرة">تذكرة</option></select></div>
+                <div class="form-group" id="commsLogRefWrap"><label class="form-label">العميل / الشحنة / التذكرة</label><select class="form-control" id="commsLogRef"><option value="منصور وشركاه">منصور وشركاه</option><option value="الإيمان للأغذية">الإيمان للأغذية</option><option value="طه للمنسوجات">طه للمنسوجات</option><option value="BL-2026-0248">BL-2026-0248</option><option value="BL-2026-0247">BL-2026-0247</option><option value="#TKT-2026-1042">#TKT-2026-1042</option></select></div>
+                <div class="form-group"><label class="form-label">الموضوع / الملخص</label><input type="text" class="form-control" id="commsLogSubject" placeholder="موضوع التواصل أو ملخصه"></div>
+                <div class="form-group"><label class="form-label">ملاحظات (اختياري)</label><textarea class="form-control" id="commsLogNotes" rows="2" placeholder="تفاصيل إضافية..."></textarea></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('addCommsLogModal')">إلغاء</button><button class="btn btn-primary" id="btnSaveCommsLog"><i class='bx bx-check'></i> حفظ</button></div>
+        </div>
+    </div>
+
+    <script src="js/role-auth.js"></script>
+    <script src="js/role-sidebar-apply.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/customer-service.js"></script>
+</body>
+</html>

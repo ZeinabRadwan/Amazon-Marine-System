@@ -13,6 +13,7 @@ const ROLES = {
             'dashboard.html', 'clients.html', 'shipments.html', 'sd-forms.html', 'operations.html',
             'invoices.html', 'accounting.html', 'treasury.html', 'expenses.html', 'pricing.html',
             'partners.html', 'reports.html', 'documents.html', 'attendance.html', 'visits.html',
+            'customer-service.html', 'tickets.html',
             'settings.html', 'cost-viewer.html', 'profile.html'
         ],
         showClockInOut: true
@@ -67,7 +68,7 @@ const ROLES = {
         user: 'سارة الدعم',
         initials: 'SD',
         allowedPages: [
-            'dashboard.html', 'clients.html', 'shipments.html', 'tickets.html', 'visits.html',
+            'dashboard.html', 'clients.html', 'shipments.html', 'customer-service.html', 'tickets.html', 'visits.html',
             'invoices.html', 'attendance.html', 'profile.html', 'settings.html'
         ],
         showClockInOut: true
