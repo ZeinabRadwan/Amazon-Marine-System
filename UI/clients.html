@@ -491,73 +491,192 @@
         </main>
     </div>
 
-    <!-- ADD CLIENT MODAL -->
+    <!-- ADD CLIENT MODAL (Sales: Add New Client) -->
     <div class="modal-overlay" id="addClientModal">
-        <div class="modal">
+        <div class="modal modal-lg">
             <div class="modal-header">
                 <h3><i class='bx bx-user-plus' style="margin-left:8px;"></i> إضافة عميل جديد</h3><button
                     class="modal-close" onclick="closeModal('addClientModal')"><i class='bx bx-x'></i></button>
             </div>
             <div class="modal-body">
-                <div class="form-row">
-                    <div class="form-group"><label class="form-label">اسم العميل <span
-                                style="color:var(--danger)">*</span></label><input type="text" class="form-control"
-                            placeholder="أدخل اسم العميل الكامل"></div>
-                    <div class="form-group"><label class="form-label">اسم الشركة <span
-                                style="color:var(--danger)">*</span></label><input type="text" class="form-control"
-                            placeholder="اسم الشركة أو المنشأة"></div>
+                <!-- Basic Info -->
+                <div class="form-section">
+                    <h4 class="form-section-title"><i class='bx bx-building'></i> معلومات أساسية</h4>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">اسم العميل <span style="color:var(--danger)">*</span></label>
+                            <input type="text" class="form-control" placeholder="أدخل اسم العميل الكامل">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">اسم الشركة <span style="color:var(--danger)">*</span></label>
+                            <input type="text" class="form-control" placeholder="اسم الشركة أو المنشأة">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">نوع الشركة</label>
+                            <select class="form-control" id="addClientCompanyType">
+                                <option value="">اختر النوع</option>
+                                <option value="Factory">مصنع</option>
+                                <option value="Trader">تاجر</option>
+                                <option value="Exporter">مصدر</option>
+                                <option value="Importer">مستورد</option>
+                                <option value="Machinery">آلات / معدات</option>
+                                <option value="Other">أخرى</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">مجال النشاط / الأعمال <span class="form-optional">(اختياري)</span></label>
+                            <input type="text" class="form-control" id="addClientActivity" placeholder="فواكه، مجمدات، أثاث، إلخ.">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">الأسواق المستهدفة <span class="form-optional">(اختياري)</span></label>
+                        <input type="text" class="form-control" id="addClientMarkets" placeholder="أوروبا، الخليج، أفريقيا، إلخ.">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">مشاكل الشحن الحالية <span class="form-optional">(اختياري)</span></label>
+                        <textarea class="form-control" id="addClientShippingProblems" rows="2" placeholder="وصف المشاكل أو التحديات..."></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">طريقة التواصل المفضلة</label>
+                            <select class="form-control" id="addClientCommMethod">
+                                <option value="">اختر</option>
+                                <option value="Call">مكالمة</option>
+                                <option value="WhatsApp">واتساب</option>
+                                <option value="Email">بريد إلكتروني</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">رقم الهاتف</label>
+                            <input type="tel" class="form-control" id="addClientPhone" placeholder="+20 1xx xxxx xxx">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">البريد الإلكتروني</label>
+                            <input type="email" class="form-control" id="addClientEmail" placeholder="email@company.com">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">مستوى اهتمام العميل</label>
+                            <select class="form-control" id="addClientInterest">
+                                <option value="">اختر</option>
+                                <option value="High">عالي</option>
+                                <option value="Medium">متوسط</option>
+                                <option value="Low">منخفض</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">العنوان <span class="form-optional">(اختياري)</span></label>
+                        <input type="text" class="form-control" id="addClientAddress" placeholder="المدينة، الحي، الشارع...">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label"><i class='bx bx-globe' style="color:var(--accent-cyan);vertical-align:middle;margin-left:4px;"></i> الموقع الإلكتروني <span class="form-optional">(اختياري)</span></label>
+                            <input type="url" class="form-control" id="addClientWebsite" placeholder="https://www.example.com">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">البطاقة الضريبية <span class="form-optional">(اختياري)</span></label>
+                            <input type="text" class="form-control" id="addClientTaxCard" placeholder="رقم البطاقة الضريبية">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label"><i class='bx bxl-facebook-circle' style="color:#1877f2;vertical-align:middle;margin-left:4px;"></i> Facebook <span class="form-optional">(اختياري)</span></label>
+                            <input type="url" class="form-control" placeholder="https://facebook.com/...">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label"><i class='bx bxl-linkedin-square' style="color:#0a66c2;vertical-align:middle;margin-left:4px;"></i> LinkedIn <span class="form-optional">(اختياري)</span></label>
+                            <input type="url" class="form-control" placeholder="https://linkedin.com/in/...">
+                        </div>
+                    </div>
                 </div>
-                <div class="form-row">
-                    <div class="form-group"><label class="form-label">رقم الهاتف</label><input type="tel"
-                            class="form-control" placeholder="+20 1xx xxxx xxx"></div>
-                    <div class="form-group"><label class="form-label">البريد الإلكتروني</label><input type="email"
-                            class="form-control" placeholder="email@company.com"></div>
+
+                <!-- Decision Maker Info -->
+                <div class="form-section">
+                    <h4 class="form-section-title"><i class='bx bx-user-detail'></i> بيانات صاحب القرار</h4>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">اسم صاحب القرار <span class="form-optional">(اختياري)</span></label>
+                            <input type="text" class="form-control" id="addClientDecisionMaker" placeholder="الاسم الكامل">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">المسمى الوظيفي</label>
+                            <div class="job-title-wrap">
+                                <select class="form-control" id="addClientJobTitle">
+                                    <option value="">اختر</option>
+                                    <option value="Owner">مالك / صاحب المنشأة</option>
+                                    <option value="LogisticsManager">مدير لوجستيات</option>
+                                    <option value="Other">آخر</option>
+                                </select>
+                                <input type="text" class="form-control" id="addClientJobTitleOther" placeholder="اكتب المسمى الوظيفي" style="display:none; margin-top:8px;">
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="form-group"><label class="form-label">العنوان</label><input type="text" class="form-control"
-                        placeholder="المدينة، الحي، الشارع..."></div>
-                <div class="form-row">
-                    <div class="form-group"><label class="form-label"><i class='bx bx-globe'
-                                style="color:var(--accent-cyan);vertical-align:middle;margin-left:4px;"></i> الموقع
-                            الإلكتروني</label><input type="url" class="form-control"
-                            placeholder="https://www.example.com"></div>
-                    <div class="form-group"><label class="form-label">البطاقة الضريبية</label><input type="text"
-                            class="form-control" placeholder="رقم البطاقة الضريبية"></div>
+
+                <!-- Source & Sales Info -->
+                <div class="form-section">
+                    <h4 class="form-section-title"><i class='bx bx-target-lock'></i> المصدر وتعيين المبيعات</h4>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">مصدر العميل</label>
+                            <div class="client-source-wrap">
+                                <select class="form-control" id="addClientSource">
+                                    <option value="">اختر المصدر</option>
+                                    <option value="Website">الموقع الإلكتروني</option>
+                                    <option value="Facebook">فيسبوك</option>
+                                    <option value="Referral">إحالة</option>
+                                    <option value="Other">أخرى — إضافة مصدر جديد</option>
+                                </select>
+                                <input type="text" class="form-control form-control-inline" id="addClientSourceOther" placeholder="اكتب المصدر الجديد" style="display:none; margin-top:8px;">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">المسؤول عن المبيعات</label>
+                            <input type="text" class="form-control" id="addClientAssignedSales" readonly style="background:var(--bg-body); cursor:default;" placeholder="يتم التعيين تلقائياً حسب المستخدم الحالي">
+                        </div>
+                    </div>
                 </div>
-                <div class="form-row">
-                    <div class="form-group"><label class="form-label"><i class='bx bxl-facebook-circle'
-                                style="color:#1877f2;vertical-align:middle;margin-left:4px;"></i> حساب
-                            Facebook</label><input type="url" class="form-control"
-                            placeholder="https://facebook.com/..."></div>
-                    <div class="form-group"><label class="form-label"><i class='bx bxl-linkedin-square'
-                                style="color:#0a66c2;vertical-align:middle;margin-left:4px;"></i> حساب
-                            LinkedIn</label><input type="url" class="form-control"
-                            placeholder="https://linkedin.com/in/..."></div>
+
+                <!-- Documents Upload -->
+                <div class="form-section">
+                    <h4 class="form-section-title"><i class='bx bx-file-blank'></i> مستندات العميل</h4>
+                    <div class="form-group">
+                        <label class="form-label">رفع مستندات PDF <span class="form-optional">(اختياري)</span></label>
+                        <p class="fs-sm text-muted" style="margin-bottom:8px;">بطاقة ضريبية، سجل تجاري، مستندات أخرى. يمكن رفع أكثر من ملف.</p>
+                        <input type="file" class="form-control" id="addClientDocuments" accept=".pdf,application/pdf" multiple>
+                        <ul class="document-list fs-sm text-muted" id="addClientDocList" style="margin-top:8px; list-style:none; padding:0;"></ul>
+                    </div>
                 </div>
-                <div class="form-row">
-                    <div class="form-group"><label class="form-label">المصدر</label><select class="form-control">
-                            <option>اختر المصدر</option>
-                            <option>إحالة عميل</option>
-                            <option>فيسبوك</option>
-                            <option>لينكدإن</option>
-                            <option>موقع الشركة</option>
-                            <option>زيارة مباشرة</option>
-                            <option>أخرى</option>
-                        </select></div>
-                    <div class="form-group"><label class="form-label">السيلز المسؤول</label><select
-                            class="form-control">
-                            <option>اختر</option>
-                            <option>أحمد خيري</option>
-                            <option>محمد سعيد</option>
-                            <option>زينب رضوان</option>
-                            <option>حسن نبيل</option>
-                        </select></div>
+
+                <!-- Notes: Structured guidance for Sales -->
+                <div class="form-section notes-guidance">
+                    <h4 class="form-section-title"><i class='bx bx-note'></i> توجيهات للمبيعات — أهم المعلومات قبل التواصل</h4>
+                    <div class="form-group">
+                        <label class="form-label">الحاجة الحالية</label>
+                        <textarea class="form-control" id="addClientCurrentNeed" rows="2" placeholder="ما الذي يبحث عنه العميل حالياً؟"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">نقاط الألم</label>
+                        <textarea class="form-control" id="addClientPainPoints" rows="2" placeholder="التحديات أو المشاكل التي يواجهها العميل"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">الفرصة</label>
+                        <textarea class="form-control" id="addClientOpportunity" rows="2" placeholder="كيف يمكن لنا تقديم قيمة؟"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">متطلبات خاصة</label>
+                        <textarea class="form-control" id="addClientSpecialReqs" rows="2" placeholder="أي متطلبات أو شروط خاصة بالعميل"></textarea>
+                    </div>
                 </div>
-                <div class="form-group"><label class="form-label">ملاحظات</label><textarea class="form-control"
-                        placeholder="أي ملاحظات إضافية..."></textarea></div>
             </div>
-            <div class="modal-footer"><button class="btn btn-outline"
-                    onclick="closeModal('addClientModal')">إلغاء</button><button class="btn btn-primary"><i
-                        class='bx bx-check'></i> حفظ العميل</button></div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('addClientModal')">إلغاء</button>
+                <button class="btn btn-primary"><i class='bx bx-check'></i> حفظ العميل</button>
+            </div>
         </div>
     </div>
 
@@ -721,11 +840,11 @@
         </div>
     </div>
 
-    <!-- ADD NOTE MODAL (quick note per client) -->
+    <!-- ADD NOTE MODAL (structured guidance for sales) -->
     <div class="modal-overlay" id="addNoteModal">
         <div class="modal">
             <div class="modal-header">
-                <h3><i class='bx bx-note' style="margin-left:8px;"></i> ملاحظة سريعة</h3>
+                <h3><i class='bx bx-note' style="margin-left:8px;"></i> ملاحظة سريعة — توجيهات للمبيعات</h3>
                 <button class="modal-close" onclick="closeModal('addNoteModal')"><i class='bx bx-x'></i></button>
             </div>
             <div class="modal-body">
@@ -733,9 +852,23 @@
                     <label class="form-label">العميل</label>
                     <input type="text" class="form-control" id="noteClientName" value="منصور محمد" readonly style="background:var(--bg-body);">
                 </div>
-                <div class="form-group">
-                    <label class="form-label">الملاحظة</label>
-                    <textarea class="form-control" id="noteContent" placeholder="اكتب ملاحظة للعميل..."></textarea>
+                <div class="form-section notes-guidance" style="margin-top:8px;">
+                    <div class="form-group">
+                        <label class="form-label">الحاجة الحالية</label>
+                        <textarea class="form-control" id="noteCurrentNeed" rows="2" placeholder="ما الذي يبحث عنه العميل حالياً؟"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">نقاط الألم</label>
+                        <textarea class="form-control" id="notePainPoints" rows="2" placeholder="التحديات أو المشاكل"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">الفرصة</label>
+                        <textarea class="form-control" id="noteOpportunity" rows="2" placeholder="كيف يمكن لنا تقديم قيمة؟"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">متطلبات خاصة</label>
+                        <textarea class="form-control" id="noteSpecialReqs" rows="2" placeholder="أي متطلبات أو شروط خاصة"></textarea>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -836,8 +969,13 @@
                     <div class="form-group"><label class="form-label">تاريخ الإضافة</label><input type="date"
                             class="form-control" value="2024-03-15" disabled style="opacity:0.6;"></div>
                 </div>
-                <div class="form-group"><label class="form-label">ملاحظات</label><textarea class="form-control"
-                        placeholder="أي ملاحظات إضافية...">عميل مميز، يفضل التواصل صباحاً.</textarea></div>
+                <div class="form-section notes-guidance" style="margin-top:16px;">
+                    <h4 class="form-section-title"><i class='bx bx-note'></i> توجيهات للمبيعات</h4>
+                    <div class="form-group"><label class="form-label">الحاجة الحالية</label><textarea class="form-control" id="editClientCurrentNeed" rows="2" placeholder="ما الذي يبحث عنه العميل حالياً؟"></textarea></div>
+                    <div class="form-group"><label class="form-label">نقاط الألم</label><textarea class="form-control" id="editClientPainPoints" rows="2" placeholder="التحديات أو المشاكل"></textarea></div>
+                    <div class="form-group"><label class="form-label">الفرصة</label><textarea class="form-control" id="editClientOpportunity" rows="2" placeholder="كيف يمكن لنا تقديم قيمة؟"></textarea></div>
+                    <div class="form-group"><label class="form-label">متطلبات خاصة</label><textarea class="form-control" id="editClientSpecialReqs" rows="2" placeholder="متطلبات أو شروط خاصة"></textarea></div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeModal('editClientModal')">إلغاء</button>
@@ -1016,6 +1154,75 @@
         }
         if (document.getElementById('btnExportAll')) document.getElementById('btnExportAll').addEventListener('click', function() { exportClientsToExcel(false); });
         if (document.getElementById('bulkExportSelected')) document.getElementById('bulkExportSelected').addEventListener('click', function() { exportClientsToExcel(true); });
+
+        // —— Add Client Modal: dynamic source, auto-assigned sales, document list ——
+        var addClientModalEl = document.getElementById('addClientModal');
+        var addClientSourceSelect = document.getElementById('addClientSource');
+        var addClientSourceOther = document.getElementById('addClientSourceOther');
+        var addClientAssignedSales = document.getElementById('addClientAssignedSales');
+        var addClientDocuments = document.getElementById('addClientDocuments');
+        var addClientDocList = document.getElementById('addClientDocList');
+        var customSources = ['الموقع الإلكتروني', 'فيسبوك', 'إحالة', 'أخرى'];
+
+        function initAddClientModal() {
+            var userNameEl = document.querySelector('.sidebar .user-name');
+            if (addClientAssignedSales) addClientAssignedSales.value = userNameEl ? userNameEl.textContent.trim() : 'المستخدم الحالي';
+            if (addClientSourceOther) { addClientSourceOther.style.display = 'none'; addClientSourceOther.value = ''; }
+            if (addClientJobTitleOther) { addClientJobTitleOther.style.display = 'none'; addClientJobTitleOther.value = ''; }
+            if (addClientDocList) addClientDocList.innerHTML = '';
+        }
+
+        var addClientJobTitleSelect = document.getElementById('addClientJobTitle');
+        var addClientJobTitleOther = document.getElementById('addClientJobTitleOther');
+        if (addClientJobTitleSelect && addClientJobTitleOther) {
+            addClientJobTitleSelect.addEventListener('change', function() {
+                var isOther = this.value === 'Other';
+                addClientJobTitleOther.style.display = isOther ? 'block' : 'none';
+                if (!isOther) addClientJobTitleOther.value = '';
+            });
+        }
+
+        if (addClientSourceSelect && addClientSourceOther) {
+            addClientSourceSelect.addEventListener('change', function() {
+                var isOther = this.value === 'Other';
+                addClientSourceOther.style.display = isOther ? 'block' : 'none';
+                if (!isOther) addClientSourceOther.value = '';
+            });
+            addClientSourceOther.addEventListener('blur', function() {
+                var val = this.value.trim();
+                if (!val) return;
+                var opt = addClientSourceSelect.querySelector('option[value="__custom_' + val + '"]');
+                if (!opt) {
+                    opt = document.createElement('option');
+                    opt.value = '__custom_' + val;
+                    opt.textContent = val;
+                    addClientSourceSelect.insertBefore(opt, addClientSourceSelect.querySelector('option[value="Other"]'));
+                }
+                addClientSourceSelect.value = opt.value;
+            });
+        }
+
+        if (addClientDocuments && addClientDocList) {
+            addClientDocuments.addEventListener('change', function() {
+                var files = this.files || [];
+                addClientDocList.innerHTML = '';
+                for (var i = 0; i < files.length; i++) {
+                    var li = document.createElement('li');
+                    li.textContent = (i + 1) + '. ' + files[i].name;
+                    addClientDocList.appendChild(li);
+                }
+            });
+        }
+
+        if (addClientModalEl) {
+            var origOpen = window.openModal;
+            if (typeof origOpen === 'function') {
+                window.openModal = function(id) {
+                    origOpen(id);
+                    if (id === 'addClientModal') initAddClientModal();
+                };
+            }
+        }
     })();
     </script>
 </body>
