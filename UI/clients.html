@@ -82,7 +82,8 @@
                         <span class="currency-code" id="currencyCodeBadge">$</span>
                     </div>
                     <div class="currency-dropdown-menu" id="currencyDropdown">
-                        <button type="button" class="currency-dropdown-item active" data-currency="USD">$ USD <i class='bx bx-check'></i></button>
+                        <button type="button" class="currency-dropdown-item active" data-currency="USD">$ USD <i
+                                class='bx bx-check'></i></button>
                         <button type="button" class="currency-dropdown-item" data-currency="EUR">€ EUR</button>
                         <button type="button" class="currency-dropdown-item" data-currency="EGP">E£ EGP</button>
                     </div>
@@ -96,22 +97,49 @@
 
         <main class="content">
             <!-- Sales: "My clients only" notice -->
-            <p data-role-only="sales" class="fs-sm text-muted" style="margin-bottom:12px;display:none;"><i class='bx bx-user'></i> عرض: <strong>عملائي فقط</strong></p>
+            <p data-role-only="sales" class="fs-sm text-muted" style="margin-bottom:12px;display:none;"><i
+                    class='bx bx-user'></i> عرض: <strong>عملائي فقط</strong></p>
 
             <!-- Accounting: clients financial view only -->
             <div data-role-only="accounting" style="display:none;">
                 <div class="card" style="margin-bottom:24px;">
                     <div class="card-header"><span class="card-title">العملاء — بيانات مالية فقط</span></div>
-                    <p class="fs-sm text-muted" style="padding:0 20px 12px;">الأرصدة المستحقة، المدفوعات، والفواتير. لا يمكنك تعديل بيانات العملاء أو الزيارات.</p>
+                    <p class="fs-sm text-muted" style="padding:0 20px 12px;">الأرصدة المستحقة، المدفوعات، والفواتير. لا
+                        يمكنك تعديل بيانات العملاء أو الزيارات.</p>
                     <table class="data-table">
                         <thead>
-                            <tr><th>العميل / الشركة</th><th>الرصيد المستحق</th><th>آخر دفعة</th><th>فواتير مفتوحة</th></tr>
+                            <tr>
+                                <th>العميل / الشركة</th>
+                                <th>الرصيد المستحق</th>
+                                <th>آخر دفعة</th>
+                                <th>فواتير مفتوحة</th>
+                            </tr>
                         </thead>
                         <tbody>
-                            <tr><td>منصور وشركاه</td><td class="fw-600">$2,400</td><td class="text-muted fs-sm">15/02</td><td>1</td></tr>
-                            <tr><td>الإيمان للأغذية</td><td class="fw-600">$0</td><td class="text-muted fs-sm">18/02</td><td>0</td></tr>
-                            <tr><td>طه للمنسوجات</td><td class="fw-600 text-danger">$5,100</td><td class="text-muted fs-sm">01/02</td><td>2</td></tr>
-                            <tr><td>نايل كرافت مصر</td><td class="fw-600">$1,200</td><td class="text-muted fs-sm">10/02</td><td>1</td></tr>
+                            <tr>
+                                <td>منصور وشركاه</td>
+                                <td class="fw-600">$2,400</td>
+                                <td class="text-muted fs-sm">15/02</td>
+                                <td>1</td>
+                            </tr>
+                            <tr>
+                                <td>الإيمان للأغذية</td>
+                                <td class="fw-600">$0</td>
+                                <td class="text-muted fs-sm">18/02</td>
+                                <td>0</td>
+                            </tr>
+                            <tr>
+                                <td>طه للمنسوجات</td>
+                                <td class="fw-600 text-danger">$5,100</td>
+                                <td class="text-muted fs-sm">01/02</td>
+                                <td>2</td>
+                            </tr>
+                            <tr>
+                                <td>نايل كرافت مصر</td>
+                                <td class="fw-600">$1,200</td>
+                                <td class="text-muted fs-sm">10/02</td>
+                                <td>1</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -120,16 +148,38 @@
             <!-- Pricing: read-only pricing per client -->
             <div data-role-only="pricing" style="display:none;">
                 <div class="card" style="margin-bottom:24px;">
-                    <div class="card-header"><span class="card-title">التسعير المطبق على العملاء (قراءة فقط)</span></div>
-                    <p class="fs-sm text-muted" style="padding:0 20px 12px;">لا يمكنك عرض جهات اتصال العملاء أو تفاصيل الإيرادات.</p>
+                    <div class="card-header"><span class="card-title">التسعير المطبق على العملاء (قراءة فقط)</span>
+                    </div>
+                    <p class="fs-sm text-muted" style="padding:0 20px 12px;">لا يمكنك عرض جهات اتصال العملاء أو تفاصيل
+                        الإيرادات.</p>
                     <table class="data-table">
                         <thead>
-                            <tr><th>العميل / الشركة</th><th>شريحة التسعير</th><th>خصم %</th><th>آخر تحديث سعر</th></tr>
+                            <tr>
+                                <th>العميل / الشركة</th>
+                                <th>شريحة التسعير</th>
+                                <th>خصم %</th>
+                                <th>آخر تحديث سعر</th>
+                            </tr>
                         </thead>
                         <tbody>
-                            <tr><td>منصور وشركاه</td><td>شريحة A</td><td>5%</td><td class="fs-sm">01/02/2026</td></tr>
-                            <tr><td>الإيمان للأغذية</td><td>شريحة B</td><td>3%</td><td class="fs-sm">05/02/2026</td></tr>
-                            <tr><td>طه للمنسوجات</td><td>شريحة A</td><td>7%</td><td class="fs-sm">10/02/2026</td></tr>
+                            <tr>
+                                <td>منصور وشركاه</td>
+                                <td>شريحة A</td>
+                                <td>5%</td>
+                                <td class="fs-sm">01/02/2026</td>
+                            </tr>
+                            <tr>
+                                <td>الإيمان للأغذية</td>
+                                <td>شريحة B</td>
+                                <td>3%</td>
+                                <td class="fs-sm">05/02/2026</td>
+                            </tr>
+                            <tr>
+                                <td>طه للمنسوجات</td>
+                                <td>شريحة A</td>
+                                <td>7%</td>
+                                <td class="fs-sm">10/02/2026</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -137,87 +187,168 @@
 
             <!-- Stats Row (Admin + Sales) -->
             <div data-role-only="admin,sales">
-            <div class="stats-row">
-                <div class="stat-card">
-                    <div class="stat-icon-wrap cyan"><i class='bx bx-group'></i></div>
-                    <div class="stat-info">
-                        <h3>87</h3>
-                        <div class="stat-label">إجمالي العملاء</div><span class="stat-trend up"><i
-                                class='bx bx-trending-up'></i> 12% هذا الشهر</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon-wrap green"><i class='bx bx-check-circle'></i></div>
-                    <div class="stat-info">
-                        <h3>62</h3>
-                        <div class="stat-label">عملاء نشطون</div><span class="stat-trend up"><i
-                                class='bx bx-trending-up'></i> 8%</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon-wrap gold"><i class='bx bx-user-plus'></i></div>
-                    <div class="stat-info">
-                        <h3>14</h3>
-                        <div class="stat-label">عملاء جدد (هذا الشهر)</div><span class="stat-trend up"><i
-                                class='bx bx-trending-up'></i> 5 عن الشهر السابق</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon-wrap navy"><i class='bx bx-dollar-circle'></i></div>
-                    <div class="stat-info">
-                        <h3>$342K</h3>
-                        <div class="stat-label">إجمالي الإيرادات من العملاء</div><span class="stat-trend up"><i
-                                class='bx bx-trending-up'></i> 23%</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- CRM Trends Charts -->
-            <div class="card" style="margin-bottom:24px;">
-                <div class="card-header">
-                    <span class="card-title">اتجاهات العملاء</span>
-                    <select class="form-control" id="chartMonths" style="width:auto;min-width:110px;">
-                        <option value="6">6 أشهر</option>
-                        <option value="12">12 شهر</option>
-                    </select>
-                </div>
-                <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:24px;">
-                    <div>
-                        <p class="fs-sm fw-600 text-muted" style="margin-bottom:8px;">عملاء جدد شهرياً</p>
-                        <div class="chart-wrap" style="position:relative;height:220px;width:100%;">
-                            <canvas id="chartNewClients"></canvas>
+                <div class="stats-row">
+                    <div class="stat-card">
+                        <div class="stat-icon-wrap cyan"><i class='bx bx-group'></i></div>
+                        <div class="stat-info">
+                            <h3>87</h3>
+                            <div class="stat-label">إجمالي العملاء</div><span class="stat-trend up"><i
+                                    class='bx bx-trending-up'></i> 12% هذا الشهر</span>
                         </div>
                     </div>
-                    <div>
-                        <p class="fs-sm fw-600 text-muted" style="margin-bottom:8px;">توزيع العملاء حسب المصدر</p>
-                        <div class="chart-wrap" style="position:relative;height:220px;width:100%;">
-                            <canvas id="chartBySource"></canvas>
+                    <div class="stat-card">
+                        <div class="stat-icon-wrap green"><i class='bx bx-check-circle'></i></div>
+                        <div class="stat-info">
+                            <h3>62</h3>
+                            <div class="stat-label">عملاء نشطون</div><span class="stat-trend up"><i
+                                    class='bx bx-trending-up'></i> 8%</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon-wrap gold"><i class='bx bx-user-plus'></i></div>
+                        <div class="stat-info">
+                            <h3>14</h3>
+                            <div class="stat-label">عملاء جدد (هذا الشهر)</div><span class="stat-trend up"><i
+                                    class='bx bx-trending-up'></i> 5 عن الشهر السابق</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon-wrap navy"><i class='bx bx-dollar-circle'></i></div>
+                        <div class="stat-info">
+                            <h3>$342K</h3>
+                            <div class="stat-label">إجمالي الإيرادات من العملاء</div><span class="stat-trend up"><i
+                                    class='bx bx-trending-up'></i> 23%</span>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Page Header with Actions -->
-            <div class="page-header">
-                <div class="page-header-actions">
-                    <button class="btn btn-outline btn-sm" id="btnExportAll"><i class='bx bx-export'></i> تصدير الكل</button>
-                    <button class="btn btn-primary" onclick="openModal('addClientModal')"><i class='bx bx-plus'></i>
-                        إضافة عميل</button>
+                <!-- Sales Agent Performance Stats (Admin / Sales Manager only) -->
+                <div data-role-only="admin,sales_manager" style="margin-bottom:24px;">
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title"><i class='bx bx-trending-up' style="margin-left:6px;"></i> أداء
+                                فريق المبيعات</span>
+                            <span class="fs-xs text-muted">هذا الشهر</span>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table class="data-table" style="min-width:560px;">
+                                <thead>
+                                    <tr>
+                                        <th>وكيل المبيعات</th>
+                                        <th>عملاء تم التواصل معهم</th>
+                                        <th>عدد الشحنات</th>
+                                        <th>إجمالي المبيعات</th>
+                                        <th>صافي الربح</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="fw-600">
+                                            <div class="client-cell">
+                                                <div class="client-avatar"
+                                                    style="background:linear-gradient(135deg,var(--accent-cyan),var(--navy-600));">
+                                                    أخ</div><span>أحمد خيري</span>
+                                            </div>
+                                        </td>
+                                        <td>32</td>
+                                        <td class="fw-700">18</td>
+                                        <td class="fw-700">$124,500</td>
+                                        <td class="fw-700 text-success">$42,100</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-600">
+                                            <div class="client-cell">
+                                                <div class="client-avatar"
+                                                    style="background:linear-gradient(135deg,var(--accent-gold),#d97706);">
+                                                    زر</div><span>زينب رضوان</span>
+                                            </div>
+                                        </td>
+                                        <td>24</td>
+                                        <td class="fw-700">12</td>
+                                        <td class="fw-700">$87,200</td>
+                                        <td class="fw-700 text-success">$28,400</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-600">
+                                            <div class="client-cell">
+                                                <div class="client-avatar"
+                                                    style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);">مس</div>
+                                                <span>محمد سعيد</span>
+                                            </div>
+                                        </td>
+                                        <td>19</td>
+                                        <td class="fw-700">9</td>
+                                        <td class="fw-700">$63,800</td>
+                                        <td class="fw-700 text-success">$19,700</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-600">
+                                            <div class="client-cell">
+                                                <div class="client-avatar"
+                                                    style="background:linear-gradient(135deg,var(--success),#059669);">
+                                                    حن</div><span>حسن نبيل</span>
+                                            </div>
+                                        </td>
+                                        <td>14</td>
+                                        <td class="fw-700">6</td>
+                                        <td class="fw-700">$41,300</td>
+                                        <td class="fw-700 text-success">$11,200</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Bulk Actions Bar (hidden until selection) -->
-            <div class="bulk-actions-bar" id="bulkActionsBar" style="display:none;">
-                <span class="bulk-count" id="bulkCount">تم تحديد 0 عميل</span>
-                <button type="button" class="btn btn-outline btn-sm" id="bulkExportSelected"><i class='bx bx-download'></i> تصدير المحدد</button>
-                <button type="button" class="btn btn-outline btn-sm" id="bulkAssignSales">تعيين سيلز</button>
-                <button type="button" class="btn btn-outline btn-sm" id="bulkClearSelection">إلغاء التحديد</button>
-            </div>
+                <!-- CRM Trends Charts -->
+                <div class="card" style="margin-bottom:24px;">
+                    <div class="card-header">
+                        <span class="card-title">اتجاهات العملاء</span>
+                        <select class="form-control" id="chartMonths" style="width:auto;min-width:110px;">
+                            <option value="6">6 أشهر</option>
+                            <option value="12">12 شهر</option>
+                        </select>
+                    </div>
+                    <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+                        <div>
+                            <p class="fs-sm fw-600 text-muted" style="margin-bottom:8px;">عملاء جدد شهرياً</p>
+                            <div class="chart-wrap" style="position:relative;height:220px;width:100%;">
+                                <canvas id="chartNewClients"></canvas>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="fs-sm fw-600 text-muted" style="margin-bottom:8px;">توزيع العملاء حسب المصدر</p>
+                            <div class="chart-wrap" style="position:relative;height:220px;width:100%;">
+                                <canvas id="chartBySource"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-            <!-- Clients List (Sales: filtered to my clients via role-views.js) -->
-            <div class="card" data-sales-filter-table>
+                <!-- Page Header with Actions -->
+                <div class="page-header">
+                    <div class="page-header-actions">
+                        <button class="btn btn-outline btn-sm" id="btnExportAll"><i class='bx bx-export'></i> تصدير
+                            الكل</button>
+                        <button class="btn btn-primary" onclick="openModal('addClientModal')"><i class='bx bx-plus'></i>
+                            إضافة عميل</button>
+                    </div>
+                </div>
+
+                <!-- Bulk Actions Bar (hidden until selection) -->
+                <div class="bulk-actions-bar" id="bulkActionsBar" style="display:none;">
+                    <span class="bulk-count" id="bulkCount">تم تحديد 0 عميل</span>
+                    <button type="button" class="btn btn-outline btn-sm" id="bulkExportSelected"><i
+                            class='bx bx-download'></i> تصدير المحدد</button>
+                    <button type="button" class="btn btn-outline btn-sm" id="bulkAssignSales">تعيين سيلز</button>
+                    <button type="button" class="btn btn-outline btn-sm" id="bulkClearSelection">إلغاء التحديد</button>
+                </div>
+
+                <!-- Clients List (Sales: filtered to my clients via role-views.js) -->
+                <div class="card" data-sales-filter-table>
                     <div class="filter-bar">
-                        <input type="text" class="form-control" id="clientSearch" placeholder="بحث بالاسم، الشركة، الهاتف، البريد..." style="max-width:280px;">
+                        <input type="text" class="form-control" id="clientSearch"
+                            placeholder="بحث بالاسم، الشركة، الهاتف، البريد..." style="max-width:280px;">
                         <select class="form-control" id="filterStatus">
                             <option value="">كل الحالات</option>
                             <option value="نشط">نشط</option>
@@ -252,7 +383,8 @@
                     <table class="data-table" id="clientsTable">
                         <thead>
                             <tr>
-                                <th style="width:44px;"><input type="checkbox" id="selectAllClients" title="تحديد الكل"></th>
+                                <th style="width:44px;"><input type="checkbox" id="selectAllClients" title="تحديد الكل">
+                                </th>
                                 <th data-sort="client">العميل <i class='bx bx-sort-alt-2 sort-icon'></i></th>
                                 <th data-sort="company">اسم الشركة <i class='bx bx-sort-alt-2 sort-icon'></i></th>
                                 <th>الهاتف</th>
@@ -266,8 +398,12 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr class="client-row" onclick="openModal('clientDetailModal')" style="cursor:pointer;" data-status="نشط" data-source="إحالة عميل" data-sales="أحمد خيري" data-client="منصور محمد" data-company="منصور وشركاه للتجارة" data-shipments="12" data-profit="18400" data-lastcontact="2">
-                                <td onclick="event.stopPropagation()"><input type="checkbox" class="client-checkbox"></td>
+                            <tr class="client-row" onclick="openModal('clientDetailModal')" style="cursor:pointer;"
+                                data-status="نشط" data-source="إحالة عميل" data-sales="أحمد خيري"
+                                data-client="منصور محمد" data-company="منصور وشركاه للتجارة" data-shipments="12"
+                                data-profit="18400" data-lastcontact="2">
+                                <td onclick="event.stopPropagation()"><input type="checkbox" class="client-checkbox">
+                                </td>
                                 <td>
                                     <div class="client-cell">
                                         <div class="client-avatar"
@@ -292,17 +428,23 @@
                                         <button class="tbl-btn phone" title="متابعة"
                                             onclick="openModal('addFollowupModal')"><i class='bx bx-phone'></i></button>
                                         <button class="tbl-btn ship" title="شحنة جديدة"
-                                            onclick="event.stopPropagation();openModal('addShipmentModal')"><i class='bx bx-package'></i></button>
+                                            onclick="event.stopPropagation();openModal('addShipmentModal')"><i
+                                                class='bx bx-package'></i></button>
                                         <button class="tbl-btn note" title="ملاحظة سريعة"
-                                            onclick="event.stopPropagation();openModal('addNoteModal')"><i class='bx bx-note'></i></button>
+                                            onclick="event.stopPropagation();openModal('addNoteModal')"><i
+                                                class='bx bx-note'></i></button>
                                         <button class="tbl-btn delete" title="حذف"
                                             onclick="confirm('هل أنت متأكد من حذف هذا العميل؟')"><i
                                                 class='bx bx-trash'></i></button>
                                     </div>
                                 </td>
                             </tr>
-                            <tr class="client-row" onclick="openModal('clientDetailModal')" style="cursor:pointer;" data-status="نشط" data-source="فيسبوك" data-sales="محمد سعيد" data-client="أحمد عبد العزيز" data-company="الإيمان للأغذية" data-shipments="8" data-profit="12600" data-lastcontact="1">
-                                <td onclick="event.stopPropagation()"><input type="checkbox" class="client-checkbox"></td>
+                            <tr class="client-row" onclick="openModal('clientDetailModal')" style="cursor:pointer;"
+                                data-status="نشط" data-source="فيسبوك" data-sales="محمد سعيد"
+                                data-client="أحمد عبد العزيز" data-company="الإيمان للأغذية" data-shipments="8"
+                                data-profit="12600" data-lastcontact="1">
+                                <td onclick="event.stopPropagation()"><input type="checkbox" class="client-checkbox">
+                                </td>
                                 <td>
                                     <div class="client-cell">
                                         <div class="client-avatar"
@@ -327,16 +469,22 @@
                                         <button class="tbl-btn phone" title="متابعة"
                                             onclick="openModal('addFollowupModal')"><i class='bx bx-phone'></i></button>
                                         <button class="tbl-btn ship" title="شحنة جديدة"
-                                            onclick="event.stopPropagation();openModal('addShipmentModal')"><i class='bx bx-package'></i></button>
+                                            onclick="event.stopPropagation();openModal('addShipmentModal')"><i
+                                                class='bx bx-package'></i></button>
                                         <button class="tbl-btn note" title="ملاحظة سريعة"
-                                            onclick="event.stopPropagation();openModal('addNoteModal')"><i class='bx bx-note'></i></button>
+                                            onclick="event.stopPropagation();openModal('addNoteModal')"><i
+                                                class='bx bx-note'></i></button>
                                         <button class="tbl-btn delete" title="حذف"
-                                            onclick="confirm('هل أنت متأكد من حذف هذا العميل؟')"><i class='bx bx-trash'></i></button>
+                                            onclick="confirm('هل أنت متأكد من حذف هذا العميل؟')"><i
+                                                class='bx bx-trash'></i></button>
                                     </div>
                                 </td>
                             </tr>
-                            <tr class="client-row" onclick="openModal('clientDetailModal')" style="cursor:pointer;" data-status="نشط" data-source="لينكدإن" data-sales="زينب رضوان" data-client="طارق فوزي" data-company="طه للمنسوجات" data-shipments="5" data-profit="8150" data-lastcontact="0">
-                                <td onclick="event.stopPropagation()"><input type="checkbox" class="client-checkbox"></td>
+                            <tr class="client-row" onclick="openModal('clientDetailModal')" style="cursor:pointer;"
+                                data-status="نشط" data-source="لينكدإن" data-sales="زينب رضوان" data-client="طارق فوزي"
+                                data-company="طه للمنسوجات" data-shipments="5" data-profit="8150" data-lastcontact="0">
+                                <td onclick="event.stopPropagation()"><input type="checkbox" class="client-checkbox">
+                                </td>
                                 <td>
                                     <div class="client-cell">
                                         <div class="client-avatar"
@@ -361,16 +509,23 @@
                                         <button class="tbl-btn phone" title="متابعة"
                                             onclick="openModal('addFollowupModal')"><i class='bx bx-phone'></i></button>
                                         <button class="tbl-btn ship" title="شحنة جديدة"
-                                            onclick="event.stopPropagation();openModal('addShipmentModal')"><i class='bx bx-package'></i></button>
+                                            onclick="event.stopPropagation();openModal('addShipmentModal')"><i
+                                                class='bx bx-package'></i></button>
                                         <button class="tbl-btn note" title="ملاحظة سريعة"
-                                            onclick="event.stopPropagation();openModal('addNoteModal')"><i class='bx bx-note'></i></button>
+                                            onclick="event.stopPropagation();openModal('addNoteModal')"><i
+                                                class='bx bx-note'></i></button>
                                         <button class="tbl-btn delete" title="حذف"
-                                            onclick="confirm('هل أنت متأكد من حذف هذا العميل؟')"><i class='bx bx-trash'></i></button>
+                                            onclick="confirm('هل أنت متأكد من حذف هذا العميل؟')"><i
+                                                class='bx bx-trash'></i></button>
                                     </div>
                                 </td>
                             </tr>
-                            <tr class="client-row" onclick="openModal('clientDetailModal')" style="cursor:pointer;" data-status="محتمل" data-source="موقع الشركة" data-sales="حسن نبيل" data-client="نادر كمال" data-company="نايل كرافت مصر" data-shipments="3" data-profit="3600" data-lastcontact="7">
-                                <td onclick="event.stopPropagation()"><input type="checkbox" class="client-checkbox"></td>
+                            <tr class="client-row" onclick="openModal('clientDetailModal')" style="cursor:pointer;"
+                                data-status="محتمل" data-source="موقع الشركة" data-sales="حسن نبيل"
+                                data-client="نادر كمال" data-company="نايل كرافت مصر" data-shipments="3"
+                                data-profit="3600" data-lastcontact="7">
+                                <td onclick="event.stopPropagation()"><input type="checkbox" class="client-checkbox">
+                                </td>
                                 <td>
                                     <div class="client-cell">
                                         <div class="client-avatar"
@@ -395,16 +550,23 @@
                                         <button class="tbl-btn phone" title="متابعة"
                                             onclick="openModal('addFollowupModal')"><i class='bx bx-phone'></i></button>
                                         <button class="tbl-btn ship" title="شحنة جديدة"
-                                            onclick="event.stopPropagation();openModal('addShipmentModal')"><i class='bx bx-package'></i></button>
+                                            onclick="event.stopPropagation();openModal('addShipmentModal')"><i
+                                                class='bx bx-package'></i></button>
                                         <button class="tbl-btn note" title="ملاحظة سريعة"
-                                            onclick="event.stopPropagation();openModal('addNoteModal')"><i class='bx bx-note'></i></button>
+                                            onclick="event.stopPropagation();openModal('addNoteModal')"><i
+                                                class='bx bx-note'></i></button>
                                         <button class="tbl-btn delete" title="حذف"
-                                            onclick="confirm('هل أنت متأكد من حذف هذا العميل؟')"><i class='bx bx-trash'></i></button>
+                                            onclick="confirm('هل أنت متأكد من حذف هذا العميل؟')"><i
+                                                class='bx bx-trash'></i></button>
                                     </div>
                                 </td>
                             </tr>
-                            <tr class="client-row" onclick="openModal('clientDetailModal')" style="cursor:pointer;" data-status="نشط" data-source="زيارة مباشرة" data-sales="أحمد خيري" data-client="سعود العمري" data-company="السعودي للتصدير" data-shipments="15" data-profit="24800" data-lastcontact="1">
-                                <td onclick="event.stopPropagation()"><input type="checkbox" class="client-checkbox"></td>
+                            <tr class="client-row" onclick="openModal('clientDetailModal')" style="cursor:pointer;"
+                                data-status="نشط" data-source="زيارة مباشرة" data-sales="أحمد خيري"
+                                data-client="سعود العمري" data-company="السعودي للتصدير" data-shipments="15"
+                                data-profit="24800" data-lastcontact="1">
+                                <td onclick="event.stopPropagation()"><input type="checkbox" class="client-checkbox">
+                                </td>
                                 <td>
                                     <div class="client-cell">
                                         <div class="client-avatar"
@@ -429,16 +591,23 @@
                                         <button class="tbl-btn phone" title="متابعة"
                                             onclick="openModal('addFollowupModal')"><i class='bx bx-phone'></i></button>
                                         <button class="tbl-btn ship" title="شحنة جديدة"
-                                            onclick="event.stopPropagation();openModal('addShipmentModal')"><i class='bx bx-package'></i></button>
+                                            onclick="event.stopPropagation();openModal('addShipmentModal')"><i
+                                                class='bx bx-package'></i></button>
                                         <button class="tbl-btn note" title="ملاحظة سريعة"
-                                            onclick="event.stopPropagation();openModal('addNoteModal')"><i class='bx bx-note'></i></button>
+                                            onclick="event.stopPropagation();openModal('addNoteModal')"><i
+                                                class='bx bx-note'></i></button>
                                         <button class="tbl-btn delete" title="حذف"
-                                            onclick="confirm('هل أنت متأكد من حذف هذا العميل؟')"><i class='bx bx-trash'></i></button>
+                                            onclick="confirm('هل أنت متأكد من حذف هذا العميل؟')"><i
+                                                class='bx bx-trash'></i></button>
                                     </div>
                                 </td>
                             </tr>
-                            <tr class="client-row" onclick="openModal('clientDetailModal')" style="cursor:pointer;" data-status="جديد" data-source="إحالة عميل" data-sales="أحمد خيري" data-client="رضا منصور" data-company="رمضان للتجارة" data-shipments="0" data-profit="0" data-lastcontact="0">
-                                <td onclick="event.stopPropagation()"><input type="checkbox" class="client-checkbox"></td>
+                            <tr class="client-row" onclick="openModal('clientDetailModal')" style="cursor:pointer;"
+                                data-status="جديد" data-source="إحالة عميل" data-sales="أحمد خيري"
+                                data-client="رضا منصور" data-company="رمضان للتجارة" data-shipments="0" data-profit="0"
+                                data-lastcontact="0">
+                                <td onclick="event.stopPropagation()"><input type="checkbox" class="client-checkbox">
+                                </td>
                                 <td>
                                     <div class="client-cell">
                                         <div class="client-avatar"
@@ -463,11 +632,14 @@
                                         <button class="tbl-btn phone" title="متابعة"
                                             onclick="openModal('addFollowupModal')"><i class='bx bx-phone'></i></button>
                                         <button class="tbl-btn ship" title="شحنة جديدة"
-                                            onclick="event.stopPropagation();openModal('addShipmentModal')"><i class='bx bx-package'></i></button>
+                                            onclick="event.stopPropagation();openModal('addShipmentModal')"><i
+                                                class='bx bx-package'></i></button>
                                         <button class="tbl-btn note" title="ملاحظة سريعة"
-                                            onclick="event.stopPropagation();openModal('addNoteModal')"><i class='bx bx-note'></i></button>
+                                            onclick="event.stopPropagation();openModal('addNoteModal')"><i
+                                                class='bx bx-note'></i></button>
                                         <button class="tbl-btn delete" title="حذف"
-                                            onclick="confirm('هل أنت متأكد من حذف هذا العميل؟')"><i class='bx bx-trash'></i></button>
+                                            onclick="confirm('هل أنت متأكد من حذف هذا العميل؟')"><i
+                                                class='bx bx-trash'></i></button>
                                     </div>
                                 </td>
                             </tr>
@@ -487,9 +659,9 @@
                     </div>
                 </div>
             </div>
-            </div>
-            <!-- end data-role-only admin,sales -->
-        </main>
+    </div>
+    <!-- end data-role-only admin,sales -->
+    </main>
     </div>
 
     <!-- ADD CLIENT MODAL (Sales: Add New Client) -->
@@ -527,17 +699,22 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">مجال النشاط / الأعمال <span class="form-optional">(اختياري)</span></label>
-                            <input type="text" class="form-control" id="addClientActivity" placeholder="فواكه، مجمدات، أثاث، إلخ.">
+                            <label class="form-label">مجال النشاط / الأعمال <span
+                                    class="form-optional">(اختياري)</span></label>
+                            <input type="text" class="form-control" id="addClientActivity"
+                                placeholder="فواكه، مجمدات، أثاث، إلخ.">
                         </div>
                     </div>
                     <div class="form-group">
                         <label class="form-label">الأسواق المستهدفة <span class="form-optional">(اختياري)</span></label>
-                        <input type="text" class="form-control" id="addClientMarkets" placeholder="أوروبا، الخليج، أفريقيا، إلخ.">
+                        <input type="text" class="form-control" id="addClientMarkets"
+                            placeholder="أوروبا، الخليج، أفريقيا، إلخ.">
                     </div>
                     <div class="form-group">
-                        <label class="form-label">مشاكل الشحن الحالية <span class="form-optional">(اختياري)</span></label>
-                        <textarea class="form-control" id="addClientShippingProblems" rows="2" placeholder="وصف المشاكل أو التحديات..."></textarea>
+                        <label class="form-label">مشاكل الشحن الحالية <span
+                                class="form-optional">(اختياري)</span></label>
+                        <textarea class="form-control" id="addClientShippingProblems" rows="2"
+                            placeholder="وصف المشاكل أو التحديات..."></textarea>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
@@ -557,7 +734,8 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label class="form-label">البريد الإلكتروني</label>
-                            <input type="email" class="form-control" id="addClientEmail" placeholder="email@company.com">
+                            <input type="email" class="form-control" id="addClientEmail"
+                                placeholder="email@company.com">
                         </div>
                         <div class="form-group">
                             <label class="form-label">مستوى اهتمام العميل</label>
@@ -571,25 +749,35 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">العنوان <span class="form-optional">(اختياري)</span></label>
-                        <input type="text" class="form-control" id="addClientAddress" placeholder="المدينة، الحي، الشارع...">
+                        <input type="text" class="form-control" id="addClientAddress"
+                            placeholder="المدينة، الحي، الشارع...">
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label class="form-label"><i class='bx bx-globe' style="color:var(--accent-cyan);vertical-align:middle;margin-left:4px;"></i> الموقع الإلكتروني <span class="form-optional">(اختياري)</span></label>
-                            <input type="url" class="form-control" id="addClientWebsite" placeholder="https://www.example.com">
+                            <label class="form-label"><i class='bx bx-globe'
+                                    style="color:var(--accent-cyan);vertical-align:middle;margin-left:4px;"></i> الموقع
+                                الإلكتروني <span class="form-optional">(اختياري)</span></label>
+                            <input type="url" class="form-control" id="addClientWebsite"
+                                placeholder="https://www.example.com">
                         </div>
                         <div class="form-group">
-                            <label class="form-label">البطاقة الضريبية <span class="form-optional">(اختياري)</span></label>
-                            <input type="text" class="form-control" id="addClientTaxCard" placeholder="رقم البطاقة الضريبية">
+                            <label class="form-label">البطاقة الضريبية <span
+                                    class="form-optional">(اختياري)</span></label>
+                            <input type="text" class="form-control" id="addClientTaxCard"
+                                placeholder="رقم البطاقة الضريبية">
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label class="form-label"><i class='bx bxl-facebook-circle' style="color:#1877f2;vertical-align:middle;margin-left:4px;"></i> Facebook <span class="form-optional">(اختياري)</span></label>
+                            <label class="form-label"><i class='bx bxl-facebook-circle'
+                                    style="color:#1877f2;vertical-align:middle;margin-left:4px;"></i> Facebook <span
+                                    class="form-optional">(اختياري)</span></label>
                             <input type="url" class="form-control" placeholder="https://facebook.com/...">
                         </div>
                         <div class="form-group">
-                            <label class="form-label"><i class='bx bxl-linkedin-square' style="color:#0a66c2;vertical-align:middle;margin-left:4px;"></i> LinkedIn <span class="form-optional">(اختياري)</span></label>
+                            <label class="form-label"><i class='bx bxl-linkedin-square'
+                                    style="color:#0a66c2;vertical-align:middle;margin-left:4px;"></i> LinkedIn <span
+                                    class="form-optional">(اختياري)</span></label>
                             <input type="url" class="form-control" placeholder="https://linkedin.com/in/...">
                         </div>
                     </div>
@@ -600,8 +788,10 @@
                     <h4 class="form-section-title"><i class='bx bx-user-detail'></i> بيانات صاحب القرار</h4>
                     <div class="form-row">
                         <div class="form-group">
-                            <label class="form-label">اسم صاحب القرار <span class="form-optional">(اختياري)</span></label>
-                            <input type="text" class="form-control" id="addClientDecisionMaker" placeholder="الاسم الكامل">
+                            <label class="form-label">اسم صاحب القرار <span
+                                    class="form-optional">(اختياري)</span></label>
+                            <input type="text" class="form-control" id="addClientDecisionMaker"
+                                placeholder="الاسم الكامل">
                         </div>
                         <div class="form-group">
                             <label class="form-label">المسمى الوظيفي</label>
@@ -612,7 +802,8 @@
                                     <option value="LogisticsManager">مدير لوجستيات</option>
                                     <option value="Other">آخر</option>
                                 </select>
-                                <input type="text" class="form-control" id="addClientJobTitleOther" placeholder="اكتب المسمى الوظيفي" style="display:none; margin-top:8px;">
+                                <input type="text" class="form-control" id="addClientJobTitleOther"
+                                    placeholder="اكتب المسمى الوظيفي" style="display:none; margin-top:8px;">
                             </div>
                         </div>
                     </div>
@@ -629,15 +820,21 @@
                                     <option value="">اختر المصدر</option>
                                     <option value="Website">الموقع الإلكتروني</option>
                                     <option value="Facebook">فيسبوك</option>
-                                    <option value="Referral">إحالة</option>
+                                    <option value="LinkedIn">LinkedIn</option>
+                                    <option value="Referral">إحالة عميل</option>
+                                    <option value="Exhibition">معرض تجاري</option>
+                                    <option value="Cold Call">اتصال مباشر (Cold Call)</option>
                                     <option value="Other">أخرى — إضافة مصدر جديد</option>
                                 </select>
-                                <input type="text" class="form-control form-control-inline" id="addClientSourceOther" placeholder="اكتب المصدر الجديد" style="display:none; margin-top:8px;">
+                                <input type="text" class="form-control form-control-inline" id="addClientSourceOther"
+                                    placeholder="اكتب المصدر الجديد" style="display:none; margin-top:8px;">
                             </div>
                         </div>
                         <div class="form-group">
                             <label class="form-label">المسؤول عن المبيعات</label>
-                            <input type="text" class="form-control" id="addClientAssignedSales" readonly style="background:var(--bg-body); cursor:default;" placeholder="يتم التعيين تلقائياً حسب المستخدم الحالي">
+                            <input type="text" class="form-control" id="addClientAssignedSales" readonly
+                                style="background:var(--bg-body); cursor:default;"
+                                placeholder="يتم التعيين تلقائياً حسب المستخدم الحالي">
                         </div>
                     </div>
                 </div>
@@ -647,30 +844,38 @@
                     <h4 class="form-section-title"><i class='bx bx-file-blank'></i> مستندات العميل</h4>
                     <div class="form-group">
                         <label class="form-label">رفع مستندات PDF <span class="form-optional">(اختياري)</span></label>
-                        <p class="fs-sm text-muted" style="margin-bottom:8px;">بطاقة ضريبية، سجل تجاري، مستندات أخرى. يمكن رفع أكثر من ملف.</p>
-                        <input type="file" class="form-control" id="addClientDocuments" accept=".pdf,application/pdf" multiple>
-                        <ul class="document-list fs-sm text-muted" id="addClientDocList" style="margin-top:8px; list-style:none; padding:0;"></ul>
+                        <p class="fs-sm text-muted" style="margin-bottom:8px;">بطاقة ضريبية، سجل تجاري، مستندات أخرى.
+                            يمكن رفع أكثر من ملف.</p>
+                        <input type="file" class="form-control" id="addClientDocuments" accept=".pdf,application/pdf"
+                            multiple>
+                        <ul class="document-list fs-sm text-muted" id="addClientDocList"
+                            style="margin-top:8px; list-style:none; padding:0;"></ul>
                     </div>
                 </div>
 
                 <!-- Notes: Structured guidance for Sales -->
                 <div class="form-section notes-guidance">
-                    <h4 class="form-section-title"><i class='bx bx-note'></i> توجيهات للمبيعات — أهم المعلومات قبل التواصل</h4>
+                    <h4 class="form-section-title"><i class='bx bx-note'></i> توجيهات للمبيعات — أهم المعلومات قبل
+                        التواصل</h4>
                     <div class="form-group">
                         <label class="form-label">الحاجة الحالية</label>
-                        <textarea class="form-control" id="addClientCurrentNeed" rows="2" placeholder="ما الذي يبحث عنه العميل حالياً؟"></textarea>
+                        <textarea class="form-control" id="addClientCurrentNeed" rows="2"
+                            placeholder="ما الذي يبحث عنه العميل حالياً؟"></textarea>
                     </div>
                     <div class="form-group">
                         <label class="form-label">نقاط الألم</label>
-                        <textarea class="form-control" id="addClientPainPoints" rows="2" placeholder="التحديات أو المشاكل التي يواجهها العميل"></textarea>
+                        <textarea class="form-control" id="addClientPainPoints" rows="2"
+                            placeholder="التحديات أو المشاكل التي يواجهها العميل"></textarea>
                     </div>
                     <div class="form-group">
                         <label class="form-label">الفرصة</label>
-                        <textarea class="form-control" id="addClientOpportunity" rows="2" placeholder="كيف يمكن لنا تقديم قيمة؟"></textarea>
+                        <textarea class="form-control" id="addClientOpportunity" rows="2"
+                            placeholder="كيف يمكن لنا تقديم قيمة؟"></textarea>
                     </div>
                     <div class="form-group">
                         <label class="form-label">متطلبات خاصة</label>
-                        <textarea class="form-control" id="addClientSpecialReqs" rows="2" placeholder="أي متطلبات أو شروط خاصة بالعميل"></textarea>
+                        <textarea class="form-control" id="addClientSpecialReqs" rows="2"
+                            placeholder="أي متطلبات أو شروط خاصة بالعميل"></textarea>
                     </div>
                 </div>
             </div>
@@ -851,30 +1056,36 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label class="form-label">العميل</label>
-                    <input type="text" class="form-control" id="noteClientName" value="منصور محمد" readonly style="background:var(--bg-body);">
+                    <input type="text" class="form-control" id="noteClientName" value="منصور محمد" readonly
+                        style="background:var(--bg-body);">
                 </div>
                 <div class="form-section notes-guidance" style="margin-top:8px;">
                     <div class="form-group">
                         <label class="form-label">الحاجة الحالية</label>
-                        <textarea class="form-control" id="noteCurrentNeed" rows="2" placeholder="ما الذي يبحث عنه العميل حالياً؟"></textarea>
+                        <textarea class="form-control" id="noteCurrentNeed" rows="2"
+                            placeholder="ما الذي يبحث عنه العميل حالياً؟"></textarea>
                     </div>
                     <div class="form-group">
                         <label class="form-label">نقاط الألم</label>
-                        <textarea class="form-control" id="notePainPoints" rows="2" placeholder="التحديات أو المشاكل"></textarea>
+                        <textarea class="form-control" id="notePainPoints" rows="2"
+                            placeholder="التحديات أو المشاكل"></textarea>
                     </div>
                     <div class="form-group">
                         <label class="form-label">الفرصة</label>
-                        <textarea class="form-control" id="noteOpportunity" rows="2" placeholder="كيف يمكن لنا تقديم قيمة؟"></textarea>
+                        <textarea class="form-control" id="noteOpportunity" rows="2"
+                            placeholder="كيف يمكن لنا تقديم قيمة؟"></textarea>
                     </div>
                     <div class="form-group">
                         <label class="form-label">متطلبات خاصة</label>
-                        <textarea class="form-control" id="noteSpecialReqs" rows="2" placeholder="أي متطلبات أو شروط خاصة"></textarea>
+                        <textarea class="form-control" id="noteSpecialReqs" rows="2"
+                            placeholder="أي متطلبات أو شروط خاصة"></textarea>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeModal('addNoteModal')">إلغاء</button>
-                <button class="btn btn-primary" onclick="closeModal('addNoteModal')"><i class='bx bx-check'></i> حفظ</button>
+                <button class="btn btn-primary" onclick="closeModal('addNoteModal')"><i class='bx bx-check'></i>
+                    حفظ</button>
             </div>
         </div>
     </div>
@@ -890,12 +1101,14 @@
                 <p class="text-muted fs-sm">سيتم فتح صفحة الشحنات مع تحديد العميل.</p>
                 <div class="form-group">
                     <label class="form-label">العميل</label>
-                    <input type="text" class="form-control" id="shipmentClientName" value="منصور وشركاه للتجارة" readonly style="background:var(--bg-body);">
+                    <input type="text" class="form-control" id="shipmentClientName" value="منصور وشركاه للتجارة"
+                        readonly style="background:var(--bg-body);">
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeModal('addShipmentModal')">إلغاء</button>
-                <a href="shipments.html?new=1&client=mansour" class="btn btn-primary"><i class='bx bx-package'></i> فتح نموذج شحنة</a>
+                <a href="shipments.html?new=1&client=mansour" class="btn btn-primary"><i class='bx bx-package'></i> فتح
+                    نموذج شحنة</a>
             </div>
         </div>
     </div>
@@ -972,10 +1185,15 @@
                 </div>
                 <div class="form-section notes-guidance" style="margin-top:16px;">
                     <h4 class="form-section-title"><i class='bx bx-note'></i> توجيهات للمبيعات</h4>
-                    <div class="form-group"><label class="form-label">الحاجة الحالية</label><textarea class="form-control" id="editClientCurrentNeed" rows="2" placeholder="ما الذي يبحث عنه العميل حالياً؟"></textarea></div>
-                    <div class="form-group"><label class="form-label">نقاط الألم</label><textarea class="form-control" id="editClientPainPoints" rows="2" placeholder="التحديات أو المشاكل"></textarea></div>
-                    <div class="form-group"><label class="form-label">الفرصة</label><textarea class="form-control" id="editClientOpportunity" rows="2" placeholder="كيف يمكن لنا تقديم قيمة؟"></textarea></div>
-                    <div class="form-group"><label class="form-label">متطلبات خاصة</label><textarea class="form-control" id="editClientSpecialReqs" rows="2" placeholder="متطلبات أو شروط خاصة"></textarea></div>
+                    <div class="form-group"><label class="form-label">الحاجة الحالية</label><textarea
+                            class="form-control" id="editClientCurrentNeed" rows="2"
+                            placeholder="ما الذي يبحث عنه العميل حالياً؟"></textarea></div>
+                    <div class="form-group"><label class="form-label">نقاط الألم</label><textarea class="form-control"
+                            id="editClientPainPoints" rows="2" placeholder="التحديات أو المشاكل"></textarea></div>
+                    <div class="form-group"><label class="form-label">الفرصة</label><textarea class="form-control"
+                            id="editClientOpportunity" rows="2" placeholder="كيف يمكن لنا تقديم قيمة؟"></textarea></div>
+                    <div class="form-group"><label class="form-label">متطلبات خاصة</label><textarea class="form-control"
+                            id="editClientSpecialReqs" rows="2" placeholder="متطلبات أو شروط خاصة"></textarea></div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -994,237 +1212,237 @@
     <script src="js/app.js"></script>
     <script src="js/role-views.js"></script>
     <script>
-    (function() {
-        // —— Charts (CRM trends) ——
-        var chartMonthsEl = document.getElementById('chartMonths');
-        function newClientsData(months) {
-            var m = parseInt(months, 10) || 6;
-            var labels = [], data = [];
-            for (var i = m - 1; i >= 0; i--) {
-                var d = new Date();
-                d.setMonth(d.getMonth() - i);
-                labels.push(d.toLocaleDateString('ar-EG', { month: 'short', year: '2-digit' }));
-                data.push(8 + Math.floor(Math.random() * 10));
-            }
-            return { labels: labels, data: data };
-        }
-        var chartNewEl = document.getElementById('chartNewClients');
-        var chartSourceEl = document.getElementById('chartBySource');
-        var chartNew, chartSource;
-        if (chartNewEl && typeof Chart !== 'undefined') {
-            var nd = newClientsData(6);
-            chartNew = new Chart(chartNewEl, {
-                type: 'bar',
-                data: { labels: nd.labels, datasets: [{ label: 'عملاء جدد', data: nd.data, backgroundColor: 'rgba(23,162,184,0.7)', borderColor: 'var(--accent-cyan)', borderWidth: 1 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } }
-            });
-        }
-        if (chartSourceEl && typeof Chart !== 'undefined') {
-            chartSource = new Chart(chartSourceEl, {
-                type: 'doughnut',
-                data: {
-                    labels: ['إحالة عميل', 'فيسبوك', 'لينكدإن', 'موقع الشركة', 'زيارة مباشرة'],
-                    datasets: [{ data: [28, 22, 18, 16, 16], backgroundColor: ['var(--navy-600)', 'var(--accent-cyan)', 'var(--accent-gold)', 'var(--success)', '#7c3aed'], borderWidth: 0 }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-            });
-        }
-        if (chartMonthsEl) chartMonthsEl.addEventListener('change', function() {
-            var nd = newClientsData(this.value);
-            if (chartNew) { chartNew.data.labels = nd.labels; chartNew.data.datasets[0].data = nd.data; chartNew.update(); }
-        });
-
-        // —— Table: filters + search ——
-        var clientSearch = document.getElementById('clientSearch');
-        var filterStatus = document.getElementById('filterStatus');
-        var filterSource = document.getElementById('filterSource');
-        var filterSales = document.getElementById('filterSales');
-        var sortColumn = document.getElementById('sortColumn');
-        var tbody = document.querySelector('#clientsTable tbody');
-        var rows = tbody ? tbody.querySelectorAll('.client-row') : [];
-
-        function applyFiltersAndSort() {
-            var q = (clientSearch && clientSearch.value.trim().toLowerCase()) || '';
-            var status = (filterStatus && filterStatus.value) || '';
-            var source = (filterSource && filterSource.value) || '';
-            var sales = (filterSales && filterSales.value) || '';
-            rows.forEach(function(tr) {
-                var text = (tr.textContent || '').toLowerCase();
-                var matchSearch = !q || text.indexOf(q) !== -1;
-                var matchStatus = !status || (tr.getAttribute('data-status') || '') === status;
-                var matchSource = !source || (tr.getAttribute('data-source') || '') === source;
-                var matchSales = !sales || (tr.getAttribute('data-sales') || '') === sales;
-                tr.style.display = (matchSearch && matchStatus && matchSource && matchSales) ? '' : 'none';
-            });
-            applySort();
-        }
-        function applySort() {
-            var key = (sortColumn && sortColumn.value) || '';
-            if (!key || !tbody) return;
-            var order = sortColumn.getAttribute('data-order') === 'desc' ? -1 : 1;
-            var arr = Array.prototype.slice.call(rows);
-            arr.sort(function(a, b) {
-                var va = a.getAttribute('data-' + key) || (key === 'client' ? (a.getAttribute('data-client') || '') : (key === 'company' ? (a.getAttribute('data-company') || '') : ''));
-                var vb = b.getAttribute('data-' + key) || (key === 'client' ? (b.getAttribute('data-client') || '') : (key === 'company' ? (b.getAttribute('data-company') || '') : ''));
-                if (key === 'profit' || key === 'shipments' || key === 'lastContact') {
-                    va = parseFloat(va) || 0;
-                    vb = parseFloat(vb) || 0;
-                    return order * (va - vb);
+        (function () {
+            // —— Charts (CRM trends) ——
+            var chartMonthsEl = document.getElementById('chartMonths');
+            function newClientsData(months) {
+                var m = parseInt(months, 10) || 6;
+                var labels = [], data = [];
+                for (var i = m - 1; i >= 0; i--) {
+                    var d = new Date();
+                    d.setMonth(d.getMonth() - i);
+                    labels.push(d.toLocaleDateString('ar-EG', { month: 'short', year: '2-digit' }));
+                    data.push(8 + Math.floor(Math.random() * 10));
                 }
-                return order * ((va + '').localeCompare(vb + ''));
-            });
-            arr.forEach(function(tr) { tbody.appendChild(tr); });
-        }
-        if (sortColumn) {
-            sortColumn.addEventListener('change', function() {
-                var o = this.getAttribute('data-order');
-                this.setAttribute('data-order', o === 'desc' ? 'asc' : 'desc');
-                applyFiltersAndSort();
-            });
-        }
-        [clientSearch, filterStatus, filterSource, filterSales].forEach(function(el) {
-            if (el) el.addEventListener('input', applyFiltersAndSort);
-            if (el && el.tagName === 'SELECT') el.addEventListener('change', applyFiltersAndSort);
-        });
-
-        // —— Bulk actions ——
-        var selectAll = document.getElementById('selectAllClients');
-        var bulkBar = document.getElementById('bulkActionsBar');
-        var bulkCount = document.getElementById('bulkCount');
-        var checkboxes = tbody ? tbody.querySelectorAll('.client-checkbox') : [];
-
-        function updateBulkBar() {
-            var n = 0;
-            checkboxes.forEach(function(cb) {
-                var tr = cb.closest('tr');
-                if (tr && tr.style.display !== 'none' && cb.checked) n++;
-            });
-            if (bulkCount) bulkCount.textContent = 'تم تحديد ' + n + ' عميل';
-            if (bulkBar) bulkBar.style.display = n > 0 ? 'flex' : 'none';
-            if (selectAll) selectAll.checked = n > 0 && n === (tbody ? tbody.querySelectorAll('.client-row:not([style*="display: none"])').length : 0);
-        }
-        if (selectAll && tbody) {
-            selectAll.addEventListener('change', function() {
-                var visible = tbody.querySelectorAll('.client-row:not([style*="display: none"])');
-                visible.forEach(function(tr) {
-                    var cb = tr.querySelector('.client-checkbox');
-                    if (cb) cb.checked = selectAll.checked;
+                return { labels: labels, data: data };
+            }
+            var chartNewEl = document.getElementById('chartNewClients');
+            var chartSourceEl = document.getElementById('chartBySource');
+            var chartNew, chartSource;
+            if (chartNewEl && typeof Chart !== 'undefined') {
+                var nd = newClientsData(6);
+                chartNew = new Chart(chartNewEl, {
+                    type: 'bar',
+                    data: { labels: nd.labels, datasets: [{ label: 'عملاء جدد', data: nd.data, backgroundColor: 'rgba(23,162,184,0.7)', borderColor: 'var(--accent-cyan)', borderWidth: 1 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } }
                 });
-                updateBulkBar();
+            }
+            if (chartSourceEl && typeof Chart !== 'undefined') {
+                chartSource = new Chart(chartSourceEl, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['إحالة عميل', 'فيسبوك', 'لينكدإن', 'موقع الشركة', 'زيارة مباشرة'],
+                        datasets: [{ data: [28, 22, 18, 16, 16], backgroundColor: ['var(--navy-600)', 'var(--accent-cyan)', 'var(--accent-gold)', 'var(--success)', '#7c3aed'], borderWidth: 0 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                });
+            }
+            if (chartMonthsEl) chartMonthsEl.addEventListener('change', function () {
+                var nd = newClientsData(this.value);
+                if (chartNew) { chartNew.data.labels = nd.labels; chartNew.data.datasets[0].data = nd.data; chartNew.update(); }
             });
-        }
-        checkboxes.forEach(function(cb) {
-            cb.addEventListener('change', updateBulkBar);
-        });
-        if (document.getElementById('bulkClearSelection')) {
-            document.getElementById('bulkClearSelection').addEventListener('click', function() {
-                selectAll.checked = false;
-                checkboxes.forEach(function(cb) { cb.checked = false; });
-                updateBulkBar();
+
+            // —— Table: filters + search ——
+            var clientSearch = document.getElementById('clientSearch');
+            var filterStatus = document.getElementById('filterStatus');
+            var filterSource = document.getElementById('filterSource');
+            var filterSales = document.getElementById('filterSales');
+            var sortColumn = document.getElementById('sortColumn');
+            var tbody = document.querySelector('#clientsTable tbody');
+            var rows = tbody ? tbody.querySelectorAll('.client-row') : [];
+
+            function applyFiltersAndSort() {
+                var q = (clientSearch && clientSearch.value.trim().toLowerCase()) || '';
+                var status = (filterStatus && filterStatus.value) || '';
+                var source = (filterSource && filterSource.value) || '';
+                var sales = (filterSales && filterSales.value) || '';
+                rows.forEach(function (tr) {
+                    var text = (tr.textContent || '').toLowerCase();
+                    var matchSearch = !q || text.indexOf(q) !== -1;
+                    var matchStatus = !status || (tr.getAttribute('data-status') || '') === status;
+                    var matchSource = !source || (tr.getAttribute('data-source') || '') === source;
+                    var matchSales = !sales || (tr.getAttribute('data-sales') || '') === sales;
+                    tr.style.display = (matchSearch && matchStatus && matchSource && matchSales) ? '' : 'none';
+                });
+                applySort();
+            }
+            function applySort() {
+                var key = (sortColumn && sortColumn.value) || '';
+                if (!key || !tbody) return;
+                var order = sortColumn.getAttribute('data-order') === 'desc' ? -1 : 1;
+                var arr = Array.prototype.slice.call(rows);
+                arr.sort(function (a, b) {
+                    var va = a.getAttribute('data-' + key) || (key === 'client' ? (a.getAttribute('data-client') || '') : (key === 'company' ? (a.getAttribute('data-company') || '') : ''));
+                    var vb = b.getAttribute('data-' + key) || (key === 'client' ? (b.getAttribute('data-client') || '') : (key === 'company' ? (b.getAttribute('data-company') || '') : ''));
+                    if (key === 'profit' || key === 'shipments' || key === 'lastContact') {
+                        va = parseFloat(va) || 0;
+                        vb = parseFloat(vb) || 0;
+                        return order * (va - vb);
+                    }
+                    return order * ((va + '').localeCompare(vb + ''));
+                });
+                arr.forEach(function (tr) { tbody.appendChild(tr); });
+            }
+            if (sortColumn) {
+                sortColumn.addEventListener('change', function () {
+                    var o = this.getAttribute('data-order');
+                    this.setAttribute('data-order', o === 'desc' ? 'asc' : 'desc');
+                    applyFiltersAndSort();
+                });
+            }
+            [clientSearch, filterStatus, filterSource, filterSales].forEach(function (el) {
+                if (el) el.addEventListener('input', applyFiltersAndSort);
+                if (el && el.tagName === 'SELECT') el.addEventListener('change', applyFiltersAndSort);
             });
-        }
-        if (document.getElementById('bulkAssignSales')) {
-            document.getElementById('bulkAssignSales').addEventListener('click', function() {
+
+            // —— Bulk actions ——
+            var selectAll = document.getElementById('selectAllClients');
+            var bulkBar = document.getElementById('bulkActionsBar');
+            var bulkCount = document.getElementById('bulkCount');
+            var checkboxes = tbody ? tbody.querySelectorAll('.client-checkbox') : [];
+
+            function updateBulkBar() {
                 var n = 0;
-                checkboxes.forEach(function(cb) { if (cb.checked) n++; });
-                alert('تعيين سيلز للمحددين (' + n + ' عميل) — يمكن ربطه بنموذج لاحقاً.');
-            });
-        }
-
-        // —— Export ——
-        function exportClientsToExcel(onlySelected) {
-            var table = document.getElementById('clientsTable');
-            if (!table) return;
-            var clone = table.cloneNode(true);
-            if (onlySelected && tbody) {
-                var toRemove = [];
-                clone.querySelectorAll('tbody tr').forEach(function(tr, i) {
-                    var orig = rows[i];
-                    if (!orig || !orig.querySelector('.client-checkbox') || !orig.querySelector('.client-checkbox').checked)
-                        toRemove.push(tr);
+                checkboxes.forEach(function (cb) {
+                    var tr = cb.closest('tr');
+                    if (tr && tr.style.display !== 'none' && cb.checked) n++;
                 });
-                toRemove.forEach(function(tr) { tr.parentNode.removeChild(tr); });
+                if (bulkCount) bulkCount.textContent = 'تم تحديد ' + n + ' عميل';
+                if (bulkBar) bulkBar.style.display = n > 0 ? 'flex' : 'none';
+                if (selectAll) selectAll.checked = n > 0 && n === (tbody ? tbody.querySelectorAll('.client-row:not([style*="display: none"])').length : 0);
             }
-            var html = clone.outerHTML;
-            var blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-excel' });
-            var a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = onlySelected ? 'عملاء_محددون.xls' : 'عملاء_CRM.xls';
-            a.click();
-            URL.revokeObjectURL(a.href);
-        }
-        if (document.getElementById('btnExportAll')) document.getElementById('btnExportAll').addEventListener('click', function() { exportClientsToExcel(false); });
-        if (document.getElementById('bulkExportSelected')) document.getElementById('bulkExportSelected').addEventListener('click', function() { exportClientsToExcel(true); });
-
-        // —— Add Client Modal: dynamic source, auto-assigned sales, document list ——
-        var addClientModalEl = document.getElementById('addClientModal');
-        var addClientSourceSelect = document.getElementById('addClientSource');
-        var addClientSourceOther = document.getElementById('addClientSourceOther');
-        var addClientAssignedSales = document.getElementById('addClientAssignedSales');
-        var addClientDocuments = document.getElementById('addClientDocuments');
-        var addClientDocList = document.getElementById('addClientDocList');
-        var customSources = ['الموقع الإلكتروني', 'فيسبوك', 'إحالة', 'أخرى'];
-
-        function initAddClientModal() {
-            var userNameEl = document.querySelector('.sidebar .user-name');
-            if (addClientAssignedSales) addClientAssignedSales.value = userNameEl ? userNameEl.textContent.trim() : 'المستخدم الحالي';
-            if (addClientSourceOther) { addClientSourceOther.style.display = 'none'; addClientSourceOther.value = ''; }
-            if (addClientJobTitleOther) { addClientJobTitleOther.style.display = 'none'; addClientJobTitleOther.value = ''; }
-            if (addClientDocList) addClientDocList.innerHTML = '';
-        }
-
-        var addClientJobTitleSelect = document.getElementById('addClientJobTitle');
-        var addClientJobTitleOther = document.getElementById('addClientJobTitleOther');
-        if (addClientJobTitleSelect && addClientJobTitleOther) {
-            addClientJobTitleSelect.addEventListener('change', function() {
-                var isOther = this.value === 'Other';
-                addClientJobTitleOther.style.display = isOther ? 'block' : 'none';
-                if (!isOther) addClientJobTitleOther.value = '';
-            });
-        }
-
-        if (addClientSourceSelect && addClientSourceOther) {
-            addClientSourceSelect.addEventListener('change', function() {
-                var isOther = this.value === 'Other';
-                addClientSourceOther.style.display = isOther ? 'block' : 'none';
-                if (!isOther) addClientSourceOther.value = '';
-            });
-            addClientSourceOther.addEventListener('blur', function() {
-                var val = this.value.trim();
-                if (!val) return;
-                var opt = addClientSourceSelect.querySelector('option[value="__custom_' + val + '"]');
-                if (!opt) {
-                    opt = document.createElement('option');
-                    opt.value = '__custom_' + val;
-                    opt.textContent = val;
-                    addClientSourceSelect.insertBefore(opt, addClientSourceSelect.querySelector('option[value="Other"]'));
-                }
-                addClientSourceSelect.value = opt.value;
-            });
-        }
-
-        if (addClientDocuments && addClientDocList) {
-            addClientDocuments.addEventListener('change', function() {
-                var files = this.files || [];
-                addClientDocList.innerHTML = '';
-                for (var i = 0; i < files.length; i++) {
-                    var li = document.createElement('li');
-                    li.textContent = (i + 1) + '. ' + files[i].name;
-                    addClientDocList.appendChild(li);
-                }
-            });
-        }
-
-        if (addClientModalEl) {
-            var origOpen = window.openModal;
-            if (typeof origOpen === 'function') {
-                window.openModal = function(id) {
-                    origOpen(id);
-                    if (id === 'addClientModal') initAddClientModal();
-                };
+            if (selectAll && tbody) {
+                selectAll.addEventListener('change', function () {
+                    var visible = tbody.querySelectorAll('.client-row:not([style*="display: none"])');
+                    visible.forEach(function (tr) {
+                        var cb = tr.querySelector('.client-checkbox');
+                        if (cb) cb.checked = selectAll.checked;
+                    });
+                    updateBulkBar();
+                });
             }
-        }
-    })();
+            checkboxes.forEach(function (cb) {
+                cb.addEventListener('change', updateBulkBar);
+            });
+            if (document.getElementById('bulkClearSelection')) {
+                document.getElementById('bulkClearSelection').addEventListener('click', function () {
+                    selectAll.checked = false;
+                    checkboxes.forEach(function (cb) { cb.checked = false; });
+                    updateBulkBar();
+                });
+            }
+            if (document.getElementById('bulkAssignSales')) {
+                document.getElementById('bulkAssignSales').addEventListener('click', function () {
+                    var n = 0;
+                    checkboxes.forEach(function (cb) { if (cb.checked) n++; });
+                    alert('تعيين سيلز للمحددين (' + n + ' عميل) — يمكن ربطه بنموذج لاحقاً.');
+                });
+            }
+
+            // —— Export ——
+            function exportClientsToExcel(onlySelected) {
+                var table = document.getElementById('clientsTable');
+                if (!table) return;
+                var clone = table.cloneNode(true);
+                if (onlySelected && tbody) {
+                    var toRemove = [];
+                    clone.querySelectorAll('tbody tr').forEach(function (tr, i) {
+                        var orig = rows[i];
+                        if (!orig || !orig.querySelector('.client-checkbox') || !orig.querySelector('.client-checkbox').checked)
+                            toRemove.push(tr);
+                    });
+                    toRemove.forEach(function (tr) { tr.parentNode.removeChild(tr); });
+                }
+                var html = clone.outerHTML;
+                var blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-excel' });
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = onlySelected ? 'عملاء_محددون.xls' : 'عملاء_CRM.xls';
+                a.click();
+                URL.revokeObjectURL(a.href);
+            }
+            if (document.getElementById('btnExportAll')) document.getElementById('btnExportAll').addEventListener('click', function () { exportClientsToExcel(false); });
+            if (document.getElementById('bulkExportSelected')) document.getElementById('bulkExportSelected').addEventListener('click', function () { exportClientsToExcel(true); });
+
+            // —— Add Client Modal: dynamic source, auto-assigned sales, document list ——
+            var addClientModalEl = document.getElementById('addClientModal');
+            var addClientSourceSelect = document.getElementById('addClientSource');
+            var addClientSourceOther = document.getElementById('addClientSourceOther');
+            var addClientAssignedSales = document.getElementById('addClientAssignedSales');
+            var addClientDocuments = document.getElementById('addClientDocuments');
+            var addClientDocList = document.getElementById('addClientDocList');
+            var customSources = ['الموقع الإلكتروني', 'فيسبوك', 'إحالة', 'أخرى'];
+
+            function initAddClientModal() {
+                var userNameEl = document.querySelector('.sidebar .user-name');
+                if (addClientAssignedSales) addClientAssignedSales.value = userNameEl ? userNameEl.textContent.trim() : 'المستخدم الحالي';
+                if (addClientSourceOther) { addClientSourceOther.style.display = 'none'; addClientSourceOther.value = ''; }
+                if (addClientJobTitleOther) { addClientJobTitleOther.style.display = 'none'; addClientJobTitleOther.value = ''; }
+                if (addClientDocList) addClientDocList.innerHTML = '';
+            }
+
+            var addClientJobTitleSelect = document.getElementById('addClientJobTitle');
+            var addClientJobTitleOther = document.getElementById('addClientJobTitleOther');
+            if (addClientJobTitleSelect && addClientJobTitleOther) {
+                addClientJobTitleSelect.addEventListener('change', function () {
+                    var isOther = this.value === 'Other';
+                    addClientJobTitleOther.style.display = isOther ? 'block' : 'none';
+                    if (!isOther) addClientJobTitleOther.value = '';
+                });
+            }
+
+            if (addClientSourceSelect && addClientSourceOther) {
+                addClientSourceSelect.addEventListener('change', function () {
+                    var isOther = this.value === 'Other';
+                    addClientSourceOther.style.display = isOther ? 'block' : 'none';
+                    if (!isOther) addClientSourceOther.value = '';
+                });
+                addClientSourceOther.addEventListener('blur', function () {
+                    var val = this.value.trim();
+                    if (!val) return;
+                    var opt = addClientSourceSelect.querySelector('option[value="__custom_' + val + '"]');
+                    if (!opt) {
+                        opt = document.createElement('option');
+                        opt.value = '__custom_' + val;
+                        opt.textContent = val;
+                        addClientSourceSelect.insertBefore(opt, addClientSourceSelect.querySelector('option[value="Other"]'));
+                    }
+                    addClientSourceSelect.value = opt.value;
+                });
+            }
+
+            if (addClientDocuments && addClientDocList) {
+                addClientDocuments.addEventListener('change', function () {
+                    var files = this.files || [];
+                    addClientDocList.innerHTML = '';
+                    for (var i = 0; i < files.length; i++) {
+                        var li = document.createElement('li');
+                        li.textContent = (i + 1) + '. ' + files[i].name;
+                        addClientDocList.appendChild(li);
+                    }
+                });
+            }
+
+            if (addClientModalEl) {
+                var origOpen = window.openModal;
+                if (typeof origOpen === 'function') {
+                    window.openModal = function (id) {
+                        origOpen(id);
+                        if (id === 'addClientModal') initAddClientModal();
+                    };
+                }
+            }
+        })();
     </script>
 </body>
 

@@ -12,19 +12,76 @@
         rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
     <style>
-        .ops-status-badge { font-size:0.8rem; font-weight:700; padding:6px 12px; border-radius:8px; }
-        .ops-status-badge.status-New { background:var(--accent-cyan); color:#fff; }
-        .ops-status-badge.status-Received { background:var(--accent-gold); color:#fff; }
-        .ops-status-badge.status-InProgress { background:#6366f1; color:#fff; }
-        .ops-status-badge.status-Booked { background:var(--success); color:#fff; }
-        .ops-status-badge.status-Cancelled { background:var(--danger); color:#fff; }
-        .ops-status-badge.status-Hold { background:#f59e0b; color:#fff; }
-        .ops-status-badge.status-Rejected { background:#991b1b; color:#fff; }
-        .ops-notes-timeline { display:flex; flex-direction:column; gap:12px; }
-        .ops-notes-timeline-item { padding:12px; background:var(--bg-body); border-radius:10px; border:1px solid var(--border); }
-        .ops-note-meta { font-size:0.75rem; font-weight:600; color:var(--navy-600); margin-bottom:6px; }
-        .ops-note-text { font-size:0.85rem; color:var(--text-secondary); }
-        .mt-2 { margin-top:8px; }
+        .ops-status-badge {
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 6px 12px;
+            border-radius: 8px;
+        }
+
+        .ops-status-badge.status-New {
+            background: var(--accent-cyan);
+            color: #fff;
+        }
+
+        .ops-status-badge.status-Received {
+            background: var(--accent-gold);
+            color: #fff;
+        }
+
+        .ops-status-badge.status-InProgress {
+            background: #6366f1;
+            color: #fff;
+        }
+
+        .ops-status-badge.status-Booked {
+            background: var(--success);
+            color: #fff;
+        }
+
+        .ops-status-badge.status-Cancelled {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        .ops-status-badge.status-Hold {
+            background: #f59e0b;
+            color: #fff;
+        }
+
+        .ops-status-badge.status-Rejected {
+            background: #991b1b;
+            color: #fff;
+        }
+
+        .ops-notes-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .ops-notes-timeline-item {
+            padding: 12px;
+            background: var(--bg-body);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .ops-note-meta {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--navy-600);
+            margin-bottom: 6px;
+        }
+
+        .ops-note-text {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .mt-2 {
+            margin-top: 8px;
+        }
     </style>
 </head>
 
@@ -95,7 +152,8 @@
                         <span class="currency-code" id="currencyCodeBadge">$</span>
                     </div>
                     <div class="currency-dropdown-menu" id="currencyDropdown">
-                        <button type="button" class="currency-dropdown-item active" data-currency="USD">$ USD <i class='bx bx-check'></i></button>
+                        <button type="button" class="currency-dropdown-item active" data-currency="USD">$ USD <i
+                                class='bx bx-check'></i></button>
                         <button type="button" class="currency-dropdown-item" data-currency="EUR">€ EUR</button>
                         <button type="button" class="currency-dropdown-item" data-currency="EGP">E£ EGP</button>
                     </div>
@@ -166,21 +224,25 @@
 
             <div class="page-header">
                 <div class="page-header-actions">
-                    <button type="button" class="btn btn-outline btn-sm" id="btnExportAll"><i class='bx bx-export'></i> تصدير الكل</button>
+                    <button type="button" class="btn btn-outline btn-sm" id="btnExportAll"><i class='bx bx-export'></i>
+                        تصدير الكل</button>
                 </div>
-                <button class="btn btn-primary" onclick="openModal('createSDModal')" data-sd-create><i class='bx bx-plus'></i> نموذج SD جديد</button>
+                <button class="btn btn-primary" onclick="openModal('createSDModal')" data-sd-create><i
+                        class='bx bx-plus'></i> نموذج SD جديد</button>
             </div>
 
             <!-- Bulk bar -->
             <div class="bulk-actions-bar" id="bulkActionsBar" style="display:none;">
                 <span class="bulk-count" id="bulkCount">تم تحديد 0 نموذج</span>
-                <button type="button" class="btn btn-outline btn-sm" id="bulkExportSelected"><i class='bx bx-download'></i> تصدير المحدد</button>
+                <button type="button" class="btn btn-outline btn-sm" id="bulkExportSelected"><i
+                        class='bx bx-download'></i> تصدير المحدد</button>
                 <button type="button" class="btn btn-outline btn-sm" id="bulkClearSelection">إلغاء التحديد</button>
             </div>
 
             <div class="card">
                 <div class="filter-bar">
-                    <input type="text" class="form-control" id="sdSearch" placeholder="بحث بـ SD# أو العميل أو البضاعة..." style="max-width:260px;">
+                    <input type="text" class="form-control" id="sdSearch"
+                        placeholder="بحث بـ SD# أو العميل أو البضاعة..." style="max-width:260px;">
                     <select class="form-control" id="filterStatus">
                         <option value="">كل الحالات</option>
                         <option value="مسودة">مسودة</option>
@@ -220,7 +282,9 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr class="sd-row" onclick="openModal('viewSDModal')" style="cursor:pointer;" data-status="مؤكدة" data-sales="أحمد خيري" data-client="منصور وشركاه" data-sd="SD-2026-0089" data-date="20260219">
+                        <tr class="sd-row" onclick="openModal('viewSDModal')" style="cursor:pointer;"
+                            data-status="مؤكدة" data-sales="أحمد خيري" data-client="منصور وشركاه" data-sd="SD-2026-0089"
+                            data-date="20260219">
                             <td onclick="event.stopPropagation()"><input type="checkbox" class="sd-checkbox"></td>
                             <td class="bl-number">SD-2026-0089</td>
                             <td class="fw-600">منصور وشركاه</td>
@@ -233,15 +297,24 @@
                             <td class="text-muted fs-sm">19/02/2026</td>
                             <td onclick="event.stopPropagation()">
                                 <div class="table-actions">
-                                    <button class="tbl-btn view" title="عرض" onclick="openModal('viewSDModal')"><i class='bx bx-show'></i></button>
-                                    <button class="tbl-btn edit" title="تعديل" onclick="openModal('createSDModal')" data-sd-edit-form><i class='bx bx-edit'></i></button>
-                                    <button class="tbl-btn view" title="طباعة" onclick="window.print()"><i class='bx bx-printer'></i></button>
-                                    <button class="tbl-btn note" title="ملاحظة" onclick="event.stopPropagation();openModal('sdNoteModal')"><i class='bx bx-note'></i></button>
-                                    <button class="tbl-btn phone" title="إرسال للعمليات" onclick="event.stopPropagation();sendSDToOperations(this.closest('tr'));"><i class='bx bx-send'></i></button>
+                                    <button class="tbl-btn view" title="عرض" onclick="openModal('viewSDModal')"><i
+                                            class='bx bx-show'></i></button>
+                                    <button class="tbl-btn edit" title="تعديل" onclick="openModal('createSDModal')"
+                                        data-sd-edit-form><i class='bx bx-edit'></i></button>
+                                    <button class="tbl-btn view" title="طباعة" onclick="window.print()"><i
+                                            class='bx bx-printer'></i></button>
+                                    <button class="tbl-btn note" title="ملاحظة"
+                                        onclick="event.stopPropagation();openModal('sdNoteModal')"><i
+                                            class='bx bx-note'></i></button>
+                                    <button class="tbl-btn phone" title="إرسال للعمليات"
+                                        onclick="event.stopPropagation();sendSDToOperations(this.closest('tr'));"><i
+                                            class='bx bx-send'></i></button>
                                 </div>
                             </td>
                         </tr>
-                        <tr class="sd-row" onclick="openModal('viewSDModal')" style="cursor:pointer;" data-status="تم الإرسال" data-sales="محمد سعيد" data-client="الإيمان للأغذية" data-sd="SD-2026-0088" data-date="20260218">
+                        <tr class="sd-row" onclick="openModal('viewSDModal')" style="cursor:pointer;"
+                            data-status="تم الإرسال" data-sales="محمد سعيد" data-client="الإيمان للأغذية"
+                            data-sd="SD-2026-0088" data-date="20260218">
                             <td onclick="event.stopPropagation()"><input type="checkbox" class="sd-checkbox"></td>
                             <td class="bl-number">SD-2026-0088</td>
                             <td class="fw-600">الإيمان للأغذية</td>
@@ -254,15 +327,24 @@
                             <td class="text-muted fs-sm">18/02/2026</td>
                             <td onclick="event.stopPropagation()">
                                 <div class="table-actions">
-                                    <button class="tbl-btn view" title="عرض" onclick="openModal('viewSDModal')"><i class='bx bx-show'></i></button>
-                                    <button class="tbl-btn edit" title="تعديل" onclick="openModal('createSDModal')" data-sd-edit-form><i class='bx bx-edit'></i></button>
-                                    <button class="tbl-btn view" title="طباعة" onclick="window.print()"><i class='bx bx-printer'></i></button>
-                                    <button class="tbl-btn note" title="ملاحظة" onclick="event.stopPropagation();openModal('sdNoteModal')"><i class='bx bx-note'></i></button>
-                                    <button class="tbl-btn phone" title="إرسال للعمليات" onclick="event.stopPropagation();sendSDToOperations(this.closest('tr'));"><i class='bx bx-send'></i></button>
+                                    <button class="tbl-btn view" title="عرض" onclick="openModal('viewSDModal')"><i
+                                            class='bx bx-show'></i></button>
+                                    <button class="tbl-btn edit" title="تعديل" onclick="openModal('createSDModal')"
+                                        data-sd-edit-form><i class='bx bx-edit'></i></button>
+                                    <button class="tbl-btn view" title="طباعة" onclick="window.print()"><i
+                                            class='bx bx-printer'></i></button>
+                                    <button class="tbl-btn note" title="ملاحظة"
+                                        onclick="event.stopPropagation();openModal('sdNoteModal')"><i
+                                            class='bx bx-note'></i></button>
+                                    <button class="tbl-btn phone" title="إرسال للعمليات"
+                                        onclick="event.stopPropagation();sendSDToOperations(this.closest('tr'));"><i
+                                            class='bx bx-send'></i></button>
                                 </div>
                             </td>
                         </tr>
-                        <tr class="sd-row" onclick="openModal('viewSDModal')" style="cursor:pointer;" data-status="مسودة" data-sales="زينب رضوان" data-client="طه للمنسوجات" data-sd="SD-2026-0087" data-date="20260218">
+                        <tr class="sd-row" onclick="openModal('viewSDModal')" style="cursor:pointer;"
+                            data-status="مسودة" data-sales="زينب رضوان" data-client="طه للمنسوجات"
+                            data-sd="SD-2026-0087" data-date="20260218">
                             <td onclick="event.stopPropagation()"><input type="checkbox" class="sd-checkbox"></td>
                             <td class="bl-number">SD-2026-0087</td>
                             <td class="fw-600">طه للمنسوجات</td>
@@ -275,15 +357,24 @@
                             <td class="text-muted fs-sm">18/02/2026</td>
                             <td onclick="event.stopPropagation()">
                                 <div class="table-actions">
-                                    <button class="tbl-btn view" title="عرض" onclick="openModal('viewSDModal')"><i class='bx bx-show'></i></button>
-                                    <button class="tbl-btn edit" title="تعديل" onclick="openModal('createSDModal')" data-sd-edit-form><i class='bx bx-edit'></i></button>
-                                    <button class="tbl-btn view" title="طباعة" onclick="window.print()"><i class='bx bx-printer'></i></button>
-                                    <button class="tbl-btn note" title="ملاحظة" onclick="event.stopPropagation();openModal('sdNoteModal')"><i class='bx bx-note'></i></button>
-                                    <button class="tbl-btn phone" title="إرسال للعمليات" onclick="event.stopPropagation();sendSDToOperations(this.closest('tr'));"><i class='bx bx-send'></i></button>
+                                    <button class="tbl-btn view" title="عرض" onclick="openModal('viewSDModal')"><i
+                                            class='bx bx-show'></i></button>
+                                    <button class="tbl-btn edit" title="تعديل" onclick="openModal('createSDModal')"
+                                        data-sd-edit-form><i class='bx bx-edit'></i></button>
+                                    <button class="tbl-btn view" title="طباعة" onclick="window.print()"><i
+                                            class='bx bx-printer'></i></button>
+                                    <button class="tbl-btn note" title="ملاحظة"
+                                        onclick="event.stopPropagation();openModal('sdNoteModal')"><i
+                                            class='bx bx-note'></i></button>
+                                    <button class="tbl-btn phone" title="إرسال للعمليات"
+                                        onclick="event.stopPropagation();sendSDToOperations(this.closest('tr'));"><i
+                                            class='bx bx-send'></i></button>
                                 </div>
                             </td>
                         </tr>
-                        <tr class="sd-row" onclick="openModal('viewSDModal')" style="cursor:pointer;" data-status="مؤكدة" data-sales="أحمد خيري" data-client="السعودي للتصدير" data-sd="SD-2026-0086" data-date="20260217">
+                        <tr class="sd-row" onclick="openModal('viewSDModal')" style="cursor:pointer;"
+                            data-status="مؤكدة" data-sales="أحمد خيري" data-client="السعودي للتصدير"
+                            data-sd="SD-2026-0086" data-date="20260217">
                             <td onclick="event.stopPropagation()"><input type="checkbox" class="sd-checkbox"></td>
                             <td class="bl-number">SD-2026-0086</td>
                             <td class="fw-600">السعودي للتصدير</td>
@@ -296,11 +387,18 @@
                             <td class="text-muted fs-sm">17/02/2026</td>
                             <td onclick="event.stopPropagation()">
                                 <div class="table-actions">
-                                    <button class="tbl-btn view" title="عرض" onclick="openModal('viewSDModal')"><i class='bx bx-show'></i></button>
-                                    <button class="tbl-btn edit" title="تعديل" onclick="openModal('createSDModal')" data-sd-edit-form><i class='bx bx-edit'></i></button>
-                                    <button class="tbl-btn view" title="طباعة" onclick="window.print()"><i class='bx bx-printer'></i></button>
-                                    <button class="tbl-btn note" title="ملاحظة" onclick="event.stopPropagation();openModal('sdNoteModal')"><i class='bx bx-note'></i></button>
-                                    <button class="tbl-btn phone" title="إرسال للعمليات" onclick="event.stopPropagation();sendSDToOperations(this.closest('tr'));"><i class='bx bx-send'></i></button>
+                                    <button class="tbl-btn view" title="عرض" onclick="openModal('viewSDModal')"><i
+                                            class='bx bx-show'></i></button>
+                                    <button class="tbl-btn edit" title="تعديل" onclick="openModal('createSDModal')"
+                                        data-sd-edit-form><i class='bx bx-edit'></i></button>
+                                    <button class="tbl-btn view" title="طباعة" onclick="window.print()"><i
+                                            class='bx bx-printer'></i></button>
+                                    <button class="tbl-btn note" title="ملاحظة"
+                                        onclick="event.stopPropagation();openModal('sdNoteModal')"><i
+                                            class='bx bx-note'></i></button>
+                                    <button class="tbl-btn phone" title="إرسال للعمليات"
+                                        onclick="event.stopPropagation();sendSDToOperations(this.closest('tr'));"><i
+                                            class='bx bx-send'></i></button>
                                 </div>
                             </td>
                         </tr>
@@ -327,7 +425,8 @@
                 <div class="form-section sd-number-section">
                     <div class="form-group" style="max-width:200px;">
                         <label class="form-label">SD Number</label>
-                        <input type="text" class="form-control" id="sdFormNumber" value="SD-000001" readonly style="background:var(--bg-body); font-weight:700;">
+                        <input type="text" class="form-control" id="sdFormNumber" value="SD-000001" readonly
+                            style="background:var(--bg-body); font-weight:700;">
                         <p class="fs-sm text-muted" style="margin-top:4px;">Auto-generated</p>
                     </div>
                 </div>
@@ -345,7 +444,8 @@
                                     <option>Port Said East</option>
                                     <option value="__new">+ Add new port</option>
                                 </select>
-                                <input type="text" class="form-control" id="sdPOLNew" placeholder="Enter new port name" style="display:none; margin-top:8px;">
+                                <input type="text" class="form-control" id="sdPOLNew" placeholder="Enter new port name"
+                                    style="display:none; margin-top:8px;">
                             </div>
                         </div>
                         <div class="form-group">
@@ -357,16 +457,19 @@
                                     <option>Dubai</option>
                                     <option value="__new">+ Add new port</option>
                                 </select>
-                                <input type="text" class="form-control" id="sdPODNew" placeholder="Enter new port name" style="display:none; margin-top:8px;">
+                                <input type="text" class="form-control" id="sdPODNew" placeholder="Enter new port name"
+                                    style="display:none; margin-top:8px;">
                             </div>
                         </div>
                     </div>
                     <div class="form-group">
                         <label class="form-label">3. Final Destination</label>
-                        <input type="text" class="form-control" id="sdFinalDest" placeholder="Final destination if different from POD">
+                        <input type="text" class="form-control" id="sdFinalDest"
+                            placeholder="Final destination if different from POD">
                     </div>
                     <div class="form-group">
-                        <label class="form-label">4. Shipment Direction <span style="color:var(--danger);">*</span></label>
+                        <label class="form-label">4. Shipment Direction <span
+                                style="color:var(--danger);">*</span></label>
                         <select class="form-control" id="sdShipmentDirection" required>
                             <option value="">Select</option>
                             <option value="Export">Export</option>
@@ -380,11 +483,13 @@
                     <h4 class="form-section-title">2. Parties Information</h4>
                     <div class="form-group">
                         <label class="form-label">5. Shipper Information</label>
-                        <textarea class="form-control" id="sdShipper" rows="3" placeholder="Full shipper details"></textarea>
+                        <textarea class="form-control" id="sdShipper" rows="3"
+                            placeholder="Full shipper details"></textarea>
                     </div>
                     <div class="form-group">
                         <label class="form-label">6. Consignee Information</label>
-                        <textarea class="form-control" id="sdConsignee" rows="3" placeholder="Full consignee details"></textarea>
+                        <textarea class="form-control" id="sdConsignee" rows="3"
+                            placeholder="Full consignee details"></textarea>
                     </div>
                     <div class="form-group">
                         <label class="form-label">7. Notify Party</label>
@@ -393,7 +498,8 @@
                             <option value="Different">Different</option>
                         </select>
                         <div id="sdNotifyPartyDifferentWrap" style="display:none; margin-top:8px;">
-                            <textarea class="form-control" id="sdNotifyPartyDetails" rows="3" placeholder="Enter full notify party details"></textarea>
+                            <textarea class="form-control" id="sdNotifyPartyDetails" rows="3"
+                                placeholder="Enter full notify party details"></textarea>
                         </div>
                     </div>
                 </div>
@@ -461,7 +567,8 @@
                     <h4 class="form-section-title">6. Cargo Information</h4>
                     <div class="form-group">
                         <label class="form-label">15. Cargo Description</label>
-                        <textarea class="form-control" id="sdCargoDesc" rows="3" placeholder="Cargo description"></textarea>
+                        <textarea class="form-control" id="sdCargoDesc" rows="3"
+                            placeholder="Cargo description"></textarea>
                     </div>
                     <div class="form-group" style="max-width:200px;">
                         <label class="form-label">16. HS Code</label>
@@ -506,6 +613,8 @@
             <div class="modal-footer" style="direction:rtl;">
                 <button class="btn btn-outline" onclick="closeModal('createSDModal')">إلغاء</button>
                 <button class="btn btn-outline" id="sdSaveDraftBtn"><i class='bx bx-save'></i> حفظ كمسودة</button>
+                <button class="btn btn-cyan" id="sdGeneratePdfBtn" onclick="window.print()"
+                    title="Generate PDF of this SD Form"><i class='bx bx-file-pdf'></i> Generate PDF</button>
                 <button class="btn btn-primary" id="sdCreateBtn"><i class='bx bx-check'></i> Create SD Form</button>
             </div>
         </div>
@@ -521,7 +630,8 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label class="form-label">SD#</label>
-                    <input type="text" class="form-control" id="sdNoteNumber" value="SD-2026-0089" readonly style="background:var(--bg-body);">
+                    <input type="text" class="form-control" id="sdNoteNumber" value="SD-2026-0089" readonly
+                        style="background:var(--bg-body);">
                 </div>
                 <div class="form-group">
                     <label class="form-label">الملاحظة</label>
@@ -530,7 +640,8 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeModal('sdNoteModal')">إلغاء</button>
-                <button class="btn btn-primary" onclick="closeModal('sdNoteModal')"><i class='bx bx-check'></i> حفظ</button>
+                <button class="btn btn-primary" onclick="closeModal('sdNoteModal')"><i class='bx bx-check'></i>
+                    حفظ</button>
             </div>
         </div>
     </div>
@@ -571,52 +682,62 @@
                 </div>
                 <div>
                     <h4 class="fs-sm fw-700 mb-2">تعليمات خاصة</h4>
-                    <p class="fs-sm text-secondary">البضاعة يجب أن تكون في حاويات نظيفة وجافة. يُرجى تجنب التحميل مع بضائع ذات رائحة قوية.</p>
+                    <p class="fs-sm text-secondary">البضاعة يجب أن تكون في حاويات نظيفة وجافة. يُرجى تجنب التحميل مع
+                        بضائع ذات رائحة قوية.</p>
                 </div>
 
-                <!-- Stage 4: Operations Handling of SD -->
-                <div class="sd-ops-section" style="margin-top:24px; padding-top:20px; border-top:1px solid var(--border);">
-                    <h4 class="fs-sm fw-700 mb-3" style="color:var(--navy-700);"><i class='bx bx-cog' style="margin-left:6px;"></i> المرحلة 4 — استلام ومعالجة العمليات للـ SD</h4>
-                    <p class="fs-sm text-muted mb-3">محاكاة الصلاحيات: اختر الدور لرؤية السلوك (Sales = عرض فقط، Operations = يمكن التعديل)</p>
-                    <div class="form-group" style="max-width:200px; margin-bottom:16px;">
-                        <label class="form-label">Simulate role</label>
-                        <select class="form-control" id="viewSDUserRole">
-                            <option value="sales">Sales (view only)</option>
-                            <option value="operations">Operations (can edit)</option>
-                        </select>
+                <!-- Stage 4: Operations Status (real role-based) -->
+                <div class="sd-ops-section"
+                    style="margin-top:24px; padding-top:20px; border-top:1px solid var(--border);">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+                        <i class='bx bx-cog' style="color:var(--accent-cyan);font-size:1.1rem;"></i>
+                        <h4 class="fs-sm fw-700" style="margin:0;color:var(--navy-700);">المرحلة 4 — حالة العمليات</h4>
+                        <span class="status-badge" id="viewSDOpsStatusBadge" style="margin-right:8px;">—</span>
                     </div>
 
-                    <div class="card ops-status-card" style="margin-bottom:20px;">
-                        <div class="card-header" style="padding:12px 16px;">
-                            <span class="card-title">Operational Status</span>
-                            <span class="ops-status-badge" id="viewSDOpsStatusBadge">New</span>
+                    <!-- Sales view: read-only banner -->
+                    <div id="sdStage4SalesView">
+                        <div
+                            style="background:rgba(23,162,184,0.07);border:1px dashed var(--accent-cyan);border-radius:var(--radius-sm);padding:12px 16px;display:flex;align-items:center;gap:10px;">
+                            <i class='bx bx-info-circle'
+                                style="color:var(--accent-cyan);font-size:1.1rem;flex-shrink:0;"></i>
+                            <div>
+                                <p class="fs-sm fw-600" style="margin:0 0 2px;">تحديثات العمليات</p>
+                                <p class="fs-xs text-muted" style="margin:0;">الحالة الحالية: <strong
+                                        id="sdStage4StatusText">—</strong> • التعديل متاح لفريق العمليات فقط من صفحة
+                                    العمليات.</p>
+                            </div>
                         </div>
-                        <div class="card-body" style="padding:16px;">
-                            <label class="form-label">الحالة التشغيلية (ظاهرة لـ Sales و Operations — تعديلها من Operations فقط)</label>
-                            <select class="form-control" id="viewSDOpsStatus" style="max-width:280px;">
-                                <option value="New">New</option>
-                                <option value="Received">Received</option>
-                                <option value="In Progress">In Progress</option>
-                                <option value="Booked">Booked</option>
-                                <option value="Cancelled">Cancelled</option>
-                                <option value="Hold (Pending Data)">Hold (Pending Data)</option>
-                                <option value="Rejected">Rejected</option>
-                            </select>
-                        </div>
+                        <div id="sdStage4SalesNotes"
+                            style="margin-top:14px;display:flex;flex-direction:column;gap:6px;"></div>
                     </div>
 
-                    <div class="card ops-notes-card">
-                        <div class="card-header" style="padding:12px 16px;">
-                            <span class="card-title">Operations Notes / Comments</span>
+                    <!-- Ops view: editable -->
+                    <div id="sdStage4OpsView" style="display:none;">
+                        <div class="card ops-card" style="margin-bottom:14px;">
+                            <div class="card-header" style="padding:10px 16px;"><span class="card-title fs-sm">الحالة
+                                    التشغيلية</span></div>
+                            <div style="padding:12px 16px;">
+                                <select class="form-control" id="viewSDOpsStatus" style="max-width:280px;">
+                                    <option value="أرسل للعمليات">أرسل للعمليات</option>
+                                    <option value="تم الاستلام">تم الاستلام</option>
+                                    <option value="قيد التنفيذ">قيد التنفيذ</option>
+                                    <option value="محجوز">محجوز</option>
+                                    <option value="معلق">معلق (Pending Data)</option>
+                                    <option value="ملغي">ملغي</option>
+                                    <option value="مرفوض">مرفوض</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="card-body" style="padding:16px;">
-                            <label class="form-label">تعليقات العمليات</label>
-                            <textarea class="form-control" id="viewSDOpsNotesInput" rows="4" placeholder="Write operational comments here..."></textarea>
-                            <button type="button" class="btn btn-primary btn-sm mt-2" id="viewSDAddOpsNoteBtn" style="margin-top:8px;"><i class='bx bx-plus'></i> Add Note</button>
-                            <div class="ops-notes-timeline" id="viewSDOpsNotesTimeline" style="margin-top:20px;">
-                                <div class="ops-notes-timeline-item">
-                                    <div class="ops-note-meta">[Operations User] – 26 Feb 2026, 3:45 PM</div>
-                                    <div class="ops-note-text">Waiting confirmation from shipping line – booking pending.</div>
+                        <div class="card ops-card">
+                            <div class="card-header" style="padding:10px 16px;"><span class="card-title fs-sm">ملاحظات
+                                    العمليات</span></div>
+                            <div style="padding:12px 16px;">
+                                <textarea class="form-control" id="viewSDOpsNotesInput" rows="3"
+                                    placeholder="اكتب ملاحظة..."></textarea>
+                                <button type="button" class="btn btn-primary btn-sm" id="viewSDAddOpsNoteBtn"
+                                    style="margin-top:8px;"><i class='bx bx-plus'></i> إضافة ملاحظة</button>
+                                <div class="ops-notes-timeline" id="viewSDOpsNotesTimeline" style="margin-top:14px;">
                                 </div>
                             </div>
                         </div>
@@ -625,7 +746,8 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeModal('viewSDModal')">إغلاق</button>
-                <button class="btn btn-cyan" id="viewSDSendEmailBtn"><i class='bx bx-envelope'></i> Send SD via Email</button>
+                <button class="btn btn-cyan" id="viewSDSendEmailBtn"><i class='bx bx-envelope'></i> Send SD via
+                    Email</button>
                 <button class="btn btn-outline" onclick="window.print()"><i class='bx bx-printer'></i> طباعة</button>
                 <button class="btn btn-primary"><i class='bx bx-edit'></i> تعديل</button>
             </div>
@@ -639,274 +761,319 @@
     <script src="js/sd-operations-workflow.js"></script>
     <script src="js/app.js"></script>
     <script>
-    (function() {
-        // —— Charts ——
-        var chartStatusEl = document.getElementById('chartSDStatus');
-        var chartMonthlyEl = document.getElementById('chartSDMonthly');
-        var chartMonthsEl = document.getElementById('chartMonths');
-        if (chartStatusEl && typeof Chart !== 'undefined') {
-            new Chart(chartStatusEl, {
-                type: 'doughnut',
-                data: {
-                    labels: ['مسودة', 'تم الإرسال', 'مؤكدة'],
-                    datasets: [{ data: [8, 5, 143], backgroundColor: ['var(--accent-gold)', 'var(--accent-cyan)', 'var(--success)'], borderWidth: 0 }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-            });
-        }
-        function monthlyData(months) {
-            var m = parseInt(months, 10) || 6;
-            var labels = [], data = [];
-            for (var i = m - 1; i >= 0; i--) {
-                var d = new Date();
-                d.setMonth(d.getMonth() - i);
-                labels.push(d.toLocaleDateString('ar-EG', { month: 'short', year: '2-digit' }));
-                data.push(18 + Math.floor(Math.random() * 16));
-            }
-            return { labels: labels, data: data };
-        }
-        var chartMonthly;
-        if (chartMonthlyEl && typeof Chart !== 'undefined') {
-            var md = monthlyData(6);
-            chartMonthly = new Chart(chartMonthlyEl, {
-                type: 'bar',
-                data: { labels: md.labels, datasets: [{ label: 'نماذج', data: md.data, backgroundColor: 'rgba(30,42,90,0.7)', borderColor: 'var(--navy-700)', borderWidth: 1 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } }
-            });
-        }
-        if (chartMonthsEl) chartMonthsEl.addEventListener('change', function() {
-            var md = monthlyData(this.value);
-            if (chartMonthly) { chartMonthly.data.labels = md.labels; chartMonthly.data.datasets[0].data = md.data; chartMonthly.update(); }
-        });
-
-        // —— Filters, search, sort ——
-        var sdSearch = document.getElementById('sdSearch');
-        var filterStatus = document.getElementById('filterStatus');
-        var filterSales = document.getElementById('filterSales');
-        var sortSD = document.getElementById('sortSD');
-        var tbody = document.querySelector('#sdFormsTable tbody');
-        var rows = tbody ? tbody.querySelectorAll('.sd-row') : [];
-
-        function applyFiltersAndSort() {
-            var q = (sdSearch && sdSearch.value.trim().toLowerCase()) || '';
-            var status = (filterStatus && filterStatus.value) || '';
-            var sales = (filterSales && filterSales.value) || '';
-            rows.forEach(function(tr) {
-                var text = (tr.textContent || '').toLowerCase();
-                var matchSearch = !q || text.indexOf(q) !== -1;
-                var matchStatus = !status || (tr.getAttribute('data-status') || '') === status;
-                var matchSales = !sales || (tr.getAttribute('data-sales') || '') === sales;
-                tr.style.display = (matchSearch && matchStatus && matchSales) ? '' : 'none';
-            });
-            applySort();
-        }
-        function applySort() {
-            var key = (sortSD && sortSD.value) || '';
-            if (!key || !tbody) return;
-            var order = sortSD.getAttribute('data-order') === 'desc' ? -1 : 1;
-            var arr = Array.prototype.slice.call(rows);
-            arr.sort(function(a, b) {
-                var va = a.getAttribute('data-' + key) || '';
-                var vb = b.getAttribute('data-' + key) || '';
-                if (key === 'date') { va = parseFloat(va) || 0; vb = parseFloat(vb) || 0; return order * (va - vb); }
-                return order * ((va + '').localeCompare(vb + ''));
-            });
-            arr.forEach(function(tr) { tbody.appendChild(tr); });
-        }
-        if (sortSD) sortSD.addEventListener('change', function() { this.setAttribute('data-order', this.getAttribute('data-order') === 'desc' ? 'asc' : 'desc'); applyFiltersAndSort(); });
-        [sdSearch, filterStatus, filterSales].forEach(function(el) {
-            if (el) { el.addEventListener('input', applyFiltersAndSort); if (el.tagName === 'SELECT') el.addEventListener('change', applyFiltersAndSort); }
-        });
-
-        // —— Bulk ——
-        var selectAll = document.getElementById('selectAllSD');
-        var bulkBar = document.getElementById('bulkActionsBar');
-        var bulkCount = document.getElementById('bulkCount');
-        var checkboxes = tbody ? tbody.querySelectorAll('.sd-checkbox') : [];
-        function updateBulkBar() {
-            var n = 0;
-            checkboxes.forEach(function(cb) { var tr = cb.closest('tr'); if (tr && tr.style.display !== 'none' && cb.checked) n++; });
-            if (bulkCount) bulkCount.textContent = 'تم تحديد ' + n + ' نموذج';
-            if (bulkBar) bulkBar.style.display = n > 0 ? 'flex' : 'none';
-            if (selectAll) selectAll.checked = n > 0 && n === (tbody ? tbody.querySelectorAll('.sd-row:not([style*="display: none"])').length : 0);
-        }
-        if (selectAll && tbody) selectAll.addEventListener('change', function() { tbody.querySelectorAll('.sd-row:not([style*="display: none"])').forEach(function(tr) { var cb = tr.querySelector('.sd-checkbox'); if (cb) cb.checked = selectAll.checked; }); updateBulkBar(); });
-        checkboxes.forEach(function(cb) { cb.addEventListener('change', updateBulkBar); });
-        if (document.getElementById('bulkClearSelection')) document.getElementById('bulkClearSelection').addEventListener('click', function() { selectAll.checked = false; checkboxes.forEach(function(cb) { cb.checked = false; }); updateBulkBar(); });
-
-        // —— Export ——
-        function exportSDToExcel(onlySelected) {
-            var table = document.getElementById('sdFormsTable');
-            if (!table) return;
-            var clone = table.cloneNode(true);
-            if (onlySelected && tbody) {
-                var toRemove = [];
-                clone.querySelectorAll('tbody tr').forEach(function(tr, i) {
-                    var orig = rows[i];
-                    if (!orig || !orig.querySelector('.sd-checkbox') || !orig.querySelector('.sd-checkbox').checked) toRemove.push(tr);
+        (function () {
+            // —— Charts ——
+            var chartStatusEl = document.getElementById('chartSDStatus');
+            var chartMonthlyEl = document.getElementById('chartSDMonthly');
+            var chartMonthsEl = document.getElementById('chartMonths');
+            if (chartStatusEl && typeof Chart !== 'undefined') {
+                new Chart(chartStatusEl, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['مسودة', 'تم الإرسال', 'مؤكدة'],
+                        datasets: [{ data: [8, 5, 143], backgroundColor: ['var(--accent-gold)', 'var(--accent-cyan)', 'var(--success)'], borderWidth: 0 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
                 });
-                toRemove.forEach(function(tr) { tr.parentNode.removeChild(tr); });
             }
-            var blob = new Blob(['\ufeff' + clone.outerHTML], { type: 'application/vnd.ms-excel' });
-            var a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = onlySelected ? 'نماذج_SD_محددة.xls' : 'نماذج_SD.xls';
-            a.click();
-            URL.revokeObjectURL(a.href);
-        }
-        if (document.getElementById('btnExportAll')) document.getElementById('btnExportAll').addEventListener('click', function() { exportSDToExcel(false); });
-        if (document.getElementById('bulkExportSelected')) document.getElementById('bulkExportSelected').addEventListener('click', function() { exportSDToExcel(true); });
-
-        // —— Send SD via Email: show success alert only ——
-        var viewSDSendEmailBtn = document.getElementById('viewSDSendEmailBtn');
-        if (viewSDSendEmailBtn) {
-            viewSDSendEmailBtn.addEventListener('click', function() {
-                alert('SD Form sent to email successfully.');
-            });
-        }
-
-        // —— Create SD Modal: conditional logic & dynamic POL/POD ——
-        var sdNotifyParty = document.getElementById('sdNotifyParty');
-        var sdNotifyPartyDifferentWrap = document.getElementById('sdNotifyPartyDifferentWrap');
-        var sdShipmentDirection = document.getElementById('sdShipmentDirection');
-        var sdACIDWrap = document.getElementById('sdACIDWrap');
-        var sdContainerType = document.getElementById('sdContainerType');
-        var sdReeferSection = document.getElementById('sdReeferSection');
-        var sdPOL = document.getElementById('sdPOL');
-        var sdPOLNew = document.getElementById('sdPOLNew');
-        var sdPOD = document.getElementById('sdPOD');
-        var sdPODNew = document.getElementById('sdPODNew');
-
-        if (sdNotifyParty && sdNotifyPartyDifferentWrap) {
-            sdNotifyParty.addEventListener('change', function() {
-                sdNotifyPartyDifferentWrap.style.display = this.value === 'Different' ? 'block' : 'none';
-            });
-        }
-        if (sdShipmentDirection && sdACIDWrap) {
-            sdShipmentDirection.addEventListener('change', function() {
-                sdACIDWrap.style.display = this.value === 'Import' ? 'block' : 'none';
-            });
-        }
-        if (sdContainerType && sdReeferSection) {
-            sdContainerType.addEventListener('change', function() {
-                sdReeferSection.style.display = this.value === 'Reefer' ? 'block' : 'none';
-            });
-        }
-
-        function addOptionToPortSelect(selectEl, newInput) {
-            if (!selectEl || !newInput) return;
-            var val = (newInput.value || '').trim();
-            if (!val) return;
-            var opt = document.createElement('option');
-            opt.value = '__custom_' + Date.now();
-            opt.textContent = val;
-            var last = selectEl.querySelector('option[value="__new"]');
-            selectEl.insertBefore(opt, last || null);
-            selectEl.value = opt.value;
-            newInput.style.display = 'none';
-            newInput.value = '';
-        }
-        if (sdPOL && sdPOLNew) {
-            sdPOL.addEventListener('change', function() {
-                sdPOLNew.style.display = this.value === '__new' ? 'block' : 'none';
-            });
-            sdPOLNew.addEventListener('blur', function() { addOptionToPortSelect(sdPOL, sdPOLNew); });
-            sdPOLNew.addEventListener('keydown', function(e) { if (e.key === 'Enter') { addOptionToPortSelect(sdPOL, sdPOLNew); } });
-        }
-        if (sdPOD && sdPODNew) {
-            sdPOD.addEventListener('change', function() {
-                sdPODNew.style.display = this.value === '__new' ? 'block' : 'none';
-            });
-            sdPODNew.addEventListener('blur', function() { addOptionToPortSelect(sdPOD, sdPODNew); });
-            sdPODNew.addEventListener('keydown', function(e) { if (e.key === 'Enter') { addOptionToPortSelect(sdPOD, sdPODNew); } });
-        }
-
-        // Create SD Form button: one-time notification (Operations notified), default status = New
-        var sdCreateBtn = document.getElementById('sdCreateBtn');
-        if (sdCreateBtn) {
-            sdCreateBtn.addEventListener('click', function() {
-                closeModal('createSDModal');
-                alert('New SD received – Operations team notified.');
-            });
-        }
-
-        // —— Operations Handling (Stage 4): role simulation, status, notes timeline ——
-        var viewSDUserRole = document.getElementById('viewSDUserRole');
-        var viewSDOpsStatus = document.getElementById('viewSDOpsStatus');
-        var viewSDOpsStatusBadge = document.getElementById('viewSDOpsStatusBadge');
-        var viewSDOpsNotesInput = document.getElementById('viewSDOpsNotesInput');
-        var viewSDAddOpsNoteBtn = document.getElementById('viewSDAddOpsNoteBtn');
-        var viewSDOpsNotesTimeline = document.getElementById('viewSDOpsNotesTimeline');
-
-        function getViewSDUserRole() {
-            return (viewSDUserRole && viewSDUserRole.value) ? viewSDUserRole.value : 'sales';
-        }
-
-        function applyOperationsPermissions() {
-            var userRole = getViewSDUserRole();
-            var isOps = userRole === 'operations';
-            if (viewSDOpsStatus) {
-                viewSDOpsStatus.disabled = !isOps;
-                viewSDOpsStatus.style.opacity = isOps ? '1' : '0.85';
+            function monthlyData(months) {
+                var m = parseInt(months, 10) || 6;
+                var labels = [], data = [];
+                for (var i = m - 1; i >= 0; i--) {
+                    var d = new Date();
+                    d.setMonth(d.getMonth() - i);
+                    labels.push(d.toLocaleDateString('ar-EG', { month: 'short', year: '2-digit' }));
+                    data.push(18 + Math.floor(Math.random() * 16));
+                }
+                return { labels: labels, data: data };
             }
-            if (viewSDOpsNotesInput) {
-                viewSDOpsNotesInput.readOnly = !isOps;
-                viewSDOpsNotesInput.style.background = isOps ? '' : 'var(--bg-body)';
+            var chartMonthly;
+            if (chartMonthlyEl && typeof Chart !== 'undefined') {
+                var md = monthlyData(6);
+                chartMonthly = new Chart(chartMonthlyEl, {
+                    type: 'bar',
+                    data: { labels: md.labels, datasets: [{ label: 'نماذج', data: md.data, backgroundColor: 'rgba(30,42,90,0.7)', borderColor: 'var(--navy-700)', borderWidth: 1 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } }
+                });
             }
+            if (chartMonthsEl) chartMonthsEl.addEventListener('change', function () {
+                var md = monthlyData(this.value);
+                if (chartMonthly) { chartMonthly.data.labels = md.labels; chartMonthly.data.datasets[0].data = md.data; chartMonthly.update(); }
+            });
+
+            // —— Filters, search, sort ——
+            var sdSearch = document.getElementById('sdSearch');
+            var filterStatus = document.getElementById('filterStatus');
+            var filterSales = document.getElementById('filterSales');
+            var sortSD = document.getElementById('sortSD');
+            var tbody = document.querySelector('#sdFormsTable tbody');
+            var rows = tbody ? tbody.querySelectorAll('.sd-row') : [];
+
+            function applyFiltersAndSort() {
+                var q = (sdSearch && sdSearch.value.trim().toLowerCase()) || '';
+                var status = (filterStatus && filterStatus.value) || '';
+                var sales = (filterSales && filterSales.value) || '';
+                rows.forEach(function (tr) {
+                    var text = (tr.textContent || '').toLowerCase();
+                    var matchSearch = !q || text.indexOf(q) !== -1;
+                    var matchStatus = !status || (tr.getAttribute('data-status') || '') === status;
+                    var matchSales = !sales || (tr.getAttribute('data-sales') || '') === sales;
+                    tr.style.display = (matchSearch && matchStatus && matchSales) ? '' : 'none';
+                });
+                applySort();
+            }
+            function applySort() {
+                var key = (sortSD && sortSD.value) || '';
+                if (!key || !tbody) return;
+                var order = sortSD.getAttribute('data-order') === 'desc' ? -1 : 1;
+                var arr = Array.prototype.slice.call(rows);
+                arr.sort(function (a, b) {
+                    var va = a.getAttribute('data-' + key) || '';
+                    var vb = b.getAttribute('data-' + key) || '';
+                    if (key === 'date') { va = parseFloat(va) || 0; vb = parseFloat(vb) || 0; return order * (va - vb); }
+                    return order * ((va + '').localeCompare(vb + ''));
+                });
+                arr.forEach(function (tr) { tbody.appendChild(tr); });
+            }
+            if (sortSD) sortSD.addEventListener('change', function () { this.setAttribute('data-order', this.getAttribute('data-order') === 'desc' ? 'asc' : 'desc'); applyFiltersAndSort(); });
+            [sdSearch, filterStatus, filterSales].forEach(function (el) {
+                if (el) { el.addEventListener('input', applyFiltersAndSort); if (el.tagName === 'SELECT') el.addEventListener('change', applyFiltersAndSort); }
+            });
+
+            // —— Bulk ——
+            var selectAll = document.getElementById('selectAllSD');
+            var bulkBar = document.getElementById('bulkActionsBar');
+            var bulkCount = document.getElementById('bulkCount');
+            var checkboxes = tbody ? tbody.querySelectorAll('.sd-checkbox') : [];
+            function updateBulkBar() {
+                var n = 0;
+                checkboxes.forEach(function (cb) { var tr = cb.closest('tr'); if (tr && tr.style.display !== 'none' && cb.checked) n++; });
+                if (bulkCount) bulkCount.textContent = 'تم تحديد ' + n + ' نموذج';
+                if (bulkBar) bulkBar.style.display = n > 0 ? 'flex' : 'none';
+                if (selectAll) selectAll.checked = n > 0 && n === (tbody ? tbody.querySelectorAll('.sd-row:not([style*="display: none"])').length : 0);
+            }
+            if (selectAll && tbody) selectAll.addEventListener('change', function () { tbody.querySelectorAll('.sd-row:not([style*="display: none"])').forEach(function (tr) { var cb = tr.querySelector('.sd-checkbox'); if (cb) cb.checked = selectAll.checked; }); updateBulkBar(); });
+            checkboxes.forEach(function (cb) { cb.addEventListener('change', updateBulkBar); });
+            if (document.getElementById('bulkClearSelection')) document.getElementById('bulkClearSelection').addEventListener('click', function () { selectAll.checked = false; checkboxes.forEach(function (cb) { cb.checked = false; }); updateBulkBar(); });
+
+            // —— Export ——
+            function exportSDToExcel(onlySelected) {
+                var table = document.getElementById('sdFormsTable');
+                if (!table) return;
+                var clone = table.cloneNode(true);
+                if (onlySelected && tbody) {
+                    var toRemove = [];
+                    clone.querySelectorAll('tbody tr').forEach(function (tr, i) {
+                        var orig = rows[i];
+                        if (!orig || !orig.querySelector('.sd-checkbox') || !orig.querySelector('.sd-checkbox').checked) toRemove.push(tr);
+                    });
+                    toRemove.forEach(function (tr) { tr.parentNode.removeChild(tr); });
+                }
+                var blob = new Blob(['\ufeff' + clone.outerHTML], { type: 'application/vnd.ms-excel' });
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = onlySelected ? 'نماذج_SD_محددة.xls' : 'نماذج_SD.xls';
+                a.click();
+                URL.revokeObjectURL(a.href);
+            }
+            if (document.getElementById('btnExportAll')) document.getElementById('btnExportAll').addEventListener('click', function () { exportSDToExcel(false); });
+            if (document.getElementById('bulkExportSelected')) document.getElementById('bulkExportSelected').addEventListener('click', function () { exportSDToExcel(true); });
+
+            // —— Send SD via Email: show success alert only ——
+            var viewSDSendEmailBtn = document.getElementById('viewSDSendEmailBtn');
+            if (viewSDSendEmailBtn) {
+                viewSDSendEmailBtn.addEventListener('click', function () {
+                    alert('SD Form sent to email successfully.');
+                });
+            }
+
+            // —— Create SD Modal: conditional logic & dynamic POL/POD ——
+            var sdNotifyParty = document.getElementById('sdNotifyParty');
+            var sdNotifyPartyDifferentWrap = document.getElementById('sdNotifyPartyDifferentWrap');
+            var sdShipmentDirection = document.getElementById('sdShipmentDirection');
+            var sdACIDWrap = document.getElementById('sdACIDWrap');
+            var sdContainerType = document.getElementById('sdContainerType');
+            var sdReeferSection = document.getElementById('sdReeferSection');
+            var sdPOL = document.getElementById('sdPOL');
+            var sdPOLNew = document.getElementById('sdPOLNew');
+            var sdPOD = document.getElementById('sdPOD');
+            var sdPODNew = document.getElementById('sdPODNew');
+
+            if (sdNotifyParty && sdNotifyPartyDifferentWrap) {
+                sdNotifyParty.addEventListener('change', function () {
+                    sdNotifyPartyDifferentWrap.style.display = this.value === 'Different' ? 'block' : 'none';
+                });
+            }
+            if (sdShipmentDirection && sdACIDWrap) {
+                sdShipmentDirection.addEventListener('change', function () {
+                    sdACIDWrap.style.display = this.value === 'Import' ? 'block' : 'none';
+                });
+            }
+            if (sdContainerType && sdReeferSection) {
+                sdContainerType.addEventListener('change', function () {
+                    sdReeferSection.style.display = this.value === 'Reefer' ? 'block' : 'none';
+                });
+            }
+
+            function addOptionToPortSelect(selectEl, newInput) {
+                if (!selectEl || !newInput) return;
+                var val = (newInput.value || '').trim();
+                if (!val) return;
+                var opt = document.createElement('option');
+                opt.value = '__custom_' + Date.now();
+                opt.textContent = val;
+                var last = selectEl.querySelector('option[value="__new"]');
+                selectEl.insertBefore(opt, last || null);
+                selectEl.value = opt.value;
+                newInput.style.display = 'none';
+                newInput.value = '';
+            }
+            if (sdPOL && sdPOLNew) {
+                sdPOL.addEventListener('change', function () {
+                    sdPOLNew.style.display = this.value === '__new' ? 'block' : 'none';
+                });
+                sdPOLNew.addEventListener('blur', function () { addOptionToPortSelect(sdPOL, sdPOLNew); });
+                sdPOLNew.addEventListener('keydown', function (e) { if (e.key === 'Enter') { addOptionToPortSelect(sdPOL, sdPOLNew); } });
+            }
+            if (sdPOD && sdPODNew) {
+                sdPOD.addEventListener('change', function () {
+                    sdPODNew.style.display = this.value === '__new' ? 'block' : 'none';
+                });
+                sdPODNew.addEventListener('blur', function () { addOptionToPortSelect(sdPOD, sdPODNew); });
+                sdPODNew.addEventListener('keydown', function (e) { if (e.key === 'Enter') { addOptionToPortSelect(sdPOD, sdPODNew); } });
+            }
+
+            // Create SD Form button: one-time notification (Operations notified), default status = New
+            var sdCreateBtn = document.getElementById('sdCreateBtn');
+            if (sdCreateBtn) {
+                sdCreateBtn.addEventListener('click', function () {
+                    closeModal('createSDModal');
+                    alert('New SD received – Operations team notified.');
+                });
+            }
+
+
+            // \u2014\u2014 Stage 4: Real role-based Operations handling \u2014\u2014
+            var _currentViewSD = '';   // tracks which SD# is open in viewSDModal
+
+            function getActualRole() {
+                // role-auth.js sets window.amazonMarineCurrentRole
+                return (window.amazonMarineCurrentRole || 'sales').toLowerCase();
+            }
+
+            function renderViewSDStage4(sdNumber) {
+                _currentViewSD = sdNumber || '';
+                var isOps = (getActualRole() === 'operations');
+                var opsRec = (typeof getOpsStatusForSD === 'function' && sdNumber)
+                    ? getOpsStatusForSD(sdNumber) : null;
+                var status = (opsRec && opsRec.status) || (sdNumber ? 'أرسل للعمليات' : '\u2014');
+
+                // Header badge
+                var badge = document.getElementById('viewSDOpsStatusBadge');
+                if (badge) {
+                    badge.textContent = status;
+                    badge.className = 'status-badge ' + (typeof opsStatusClass === 'function' ? opsStatusClass(status) : 'pending');
+                }
+
+                if (isOps) {
+                    // Show editable ops panel
+                    var ov = document.getElementById('sdStage4OpsView');
+                    var sv = document.getElementById('sdStage4SalesView');
+                    if (ov) ov.style.display = '';
+                    if (sv) sv.style.display = 'none';
+
+                    var sel = document.getElementById('viewSDOpsStatus');
+                    if (sel && opsRec) sel.value = opsRec.status || 'أرسل للعمليات';
+
+                    renderViewSDNotesTimeline(opsRec ? (opsRec.notes || []) : []);
+                    var ni = document.getElementById('viewSDOpsNotesInput'); if (ni) ni.value = '';
+                } else {
+                    // Show read-only banner for Sales / other roles
+                    var ov2 = document.getElementById('sdStage4OpsView');
+                    var sv2 = document.getElementById('sdStage4SalesView');
+                    if (ov2) ov2.style.display = 'none';
+                    if (sv2) sv2.style.display = '';
+
+                    var stxt = document.getElementById('sdStage4StatusText');
+                    if (stxt) stxt.textContent = status;
+
+                    // Render notes read-only
+                    var salesNotes = document.getElementById('sdStage4SalesNotes');
+                    if (salesNotes) {
+                        var notes = opsRec ? (opsRec.notes || []) : [];
+                        if (!notes.length) {
+                            salesNotes.innerHTML = '<p class="fs-xs text-muted">\u0644\u0627 \u062a\u0648\u062c\u062f \u0645\u0644\u0627\u062d\u0638\u0627\u062a \u0645\u0646 \u0627\u0644\u0639\u0645\u0644\u064a\u0627\u062a \u0628\u0639\u062f.</p>';
+                        } else {
+                            salesNotes.innerHTML = notes.map(function (n) {
+                                var dt = n.at ? new Date(n.at).toLocaleString('ar-EG') : '';
+                                return '<div style="background:var(--bg-body);border-radius:6px;padding:8px 12px;margin-bottom:4px;">'
+                                    + '<div class="fs-xs text-muted">' + dt + '</div>'
+                                    + '<div class="fs-sm">' + n.text + '</div></div>';
+                            }).join('');
+                        }
+                    }
+                }
+            }
+
+            function renderViewSDNotesTimeline(notes) {
+                var tl = document.getElementById('viewSDOpsNotesTimeline');
+                if (!tl) return;
+                if (!notes || !notes.length) { tl.innerHTML = '<p class="fs-xs text-muted">\u0644\u0627 \u062a\u0648\u062c\u062f \u0645\u0644\u0627\u062d\u0638\u0627\u062a \u0628\u0639\u062f.</p>'; return; }
+                tl.innerHTML = notes.map(function (n) {
+                    var dt = n.at ? new Date(n.at).toLocaleString('ar-EG') : '';
+                    return '<div class="ops-notes-timeline-item">'
+                        + '<div class="ops-note-meta">' + dt + '</div>'
+                        + '<div class="ops-note-text">' + n.text + '</div></div>';
+                }).join('');
+            }
+
+            // Operations: Add note button
+            var viewSDAddOpsNoteBtn = document.getElementById('viewSDAddOpsNoteBtn');
             if (viewSDAddOpsNoteBtn) {
-                viewSDAddOpsNoteBtn.disabled = !isOps;
-                viewSDAddOpsNoteBtn.style.opacity = isOps ? '1' : '0.7';
+                viewSDAddOpsNoteBtn.addEventListener('click', function () {
+                    if (getActualRole() !== 'operations') return;
+                    var noteInput = document.getElementById('viewSDOpsNotesInput');
+                    var text = (noteInput && noteInput.value || '').trim();
+                    if (!text || !_currentViewSD) return;
+                    var sel = document.getElementById('viewSDOpsStatus');
+                    var status = (sel && sel.value) || 'أرسل للعمليات';
+                    if (typeof saveOpsStatusForSD === 'function') saveOpsStatusForSD(_currentViewSD, status, text, '');
+                    renderViewSDStage4(_currentViewSD);
+                });
             }
-        }
 
-        function updateOpsStatusBadge() {
-            if (!viewSDOpsStatus || !viewSDOpsStatusBadge) return;
-            var v = viewSDOpsStatus.value || 'New';
-            viewSDOpsStatusBadge.textContent = v;
-            var slug = v.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, '');
-            viewSDOpsStatusBadge.className = 'ops-status-badge status-' + (slug === 'Hold' ? 'Hold' : slug);
-        }
-
-        if (viewSDUserRole) {
-            viewSDUserRole.addEventListener('change', applyOperationsPermissions);
-        }
-        if (viewSDOpsStatus) {
-            viewSDOpsStatus.addEventListener('change', updateOpsStatusBadge);
-        }
-
-        if (viewSDAddOpsNoteBtn && viewSDOpsNotesInput && viewSDOpsNotesTimeline) {
-            viewSDAddOpsNoteBtn.addEventListener('click', function() {
-                var userRole = getViewSDUserRole();
-                if (userRole !== 'operations') return;
-                var text = (viewSDOpsNotesInput.value || '').trim();
-                if (!text) return;
-                var now = new Date();
-                var dateStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-                var timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true });
-                var meta = '[Operations User] – ' + dateStr + ', ' + timeStr;
-                var item = document.createElement('div');
-                item.className = 'ops-notes-timeline-item';
-                item.innerHTML = '<div class="ops-note-meta">' + meta + '</div><div class="ops-note-text">' + text.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>';
-                viewSDOpsNotesTimeline.insertBefore(item, viewSDOpsNotesTimeline.firstChild);
-                viewSDOpsNotesInput.value = '';
-            });
-        }
-
-        var viewSDModalEl = document.getElementById('viewSDModal');
-        if (viewSDModalEl) {
-            var origOpenModal = window.openModal;
-            if (typeof origOpenModal === 'function') {
-                window.openModal = function(id) {
-                    origOpenModal(id);
+            // Hook into openModal to load stage 4 data when viewSDModal opens
+            (function () {
+                var origOpen = window.openModal;
+                window.openModal = function (id) {
+                    if (typeof origOpen === 'function') origOpen(id);
                     if (id === 'viewSDModal') {
-                        if (viewSDOpsStatus) viewSDOpsStatus.value = 'New';
-                        updateOpsStatusBadge();
-                        applyOperationsPermissions();
+                        // Try to read SD# from the view button's closest row
+                        var sdNum = '';
+                        try {
+                            var activeRow = document.querySelector('#sdFormsTable .sd-row[data-highlighted]')
+                                || document.querySelector('#sdFormsTable .sd-row:focus-within');
+                            if (!activeRow) {
+                                // Fallback: row clicked stores its SD in a global
+                                sdNum = window._lastClickedSDNumber || '';
+                            } else {
+                                sdNum = activeRow.getAttribute('data-sd') || '';
+                            }
+                        } catch (e) { }
+                        renderViewSDStage4(sdNum);
                     }
                 };
-            }
-        }
-    })();
+            })();
+
+            // Capture which SD row was clicked before opening viewSDModal
+            document.querySelectorAll('#sdFormsTable .sd-row').forEach(function (tr) {
+                tr.addEventListener('click', function () {
+                    var cells = tr.querySelectorAll('td');
+                    window._lastClickedSDNumber = cells[1] ? (cells[1].textContent || '').trim() : '';
+                });
+            });
+        })();
+
     </script>
 </body>
 

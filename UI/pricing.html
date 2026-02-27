@@ -79,7 +79,8 @@
                         <span class="currency-code" id="currencyCodeBadge">$</span>
                     </div>
                     <div class="currency-dropdown-menu" id="currencyDropdown">
-                        <button type="button" class="currency-dropdown-item active" data-currency="USD">$ USD <i class='bx bx-check'></i></button>
+                        <button type="button" class="currency-dropdown-item active" data-currency="USD">$ USD <i
+                                class='bx bx-check'></i></button>
                         <button type="button" class="currency-dropdown-item" data-currency="EUR">€ EUR</button>
                         <button type="button" class="currency-dropdown-item" data-currency="EGP">E£ EGP</button>
                     </div>
@@ -91,39 +92,51 @@
         </header>
 
         <main class="content">
-            <p class="fs-sm text-muted" style="margin-bottom:12px;"><strong>التسعير:</strong> (1) <strong>جداول الأسعار</strong> — بحث وإدارة عروض الأسعار حسب المنطقة وميناء التفريغ. (2) <strong>عروض الأسعار للعملاء</strong> — إنشاء وعرض وإرسال عروض السعر للعملاء.</p>
+            <p class="fs-sm text-muted" style="margin-bottom:12px;"><strong>التسعير:</strong> (1) <strong>جداول
+                    الأسعار</strong> — بحث وإدارة عروض الأسعار حسب المنطقة وميناء التفريغ. (2) <strong>عروض الأسعار
+                    للعملاء</strong> — إنشاء وعرض وإرسال عروض السعر للعملاء.</p>
 
             <div class="page-header">
                 <div class="tabs" data-tab-group="priceTab">
-                    <button class="tab active" data-tab="sheets" onclick="switchTab('priceTab','sheets')"><i class='bx bx-spreadsheet'></i> جداول الأسعار</button>
-                    <button class="tab" data-tab="quotes" onclick="switchTab('priceTab','quotes')"><i class='bx bx-file'></i> عروض الأسعار للعملاء</button>
+                    <button class="tab active" data-tab="sheets" onclick="switchTab('priceTab','sheets')"><i
+                            class='bx bx-spreadsheet'></i> جداول الأسعار</button>
+                    <button class="tab" data-tab="quotes" onclick="switchTab('priceTab','quotes')"><i
+                            class='bx bx-file'></i> عروض الأسعار للعملاء</button>
                 </div>
                 <div class="page-header-actions">
-                    <button class="btn btn-primary" data-role-only="admin,pricing" onclick="openModal('createQuoteModal')" id="btnCreateQuoteHeader"><i class='bx bx-plus'></i> إنشاء عرض سعر للعميل</button>
+                    <button class="btn btn-primary" data-role-only="admin,pricing"
+                        onclick="openModal('createQuoteModal')" id="btnCreateQuoteHeader"><i class='bx bx-plus'></i>
+                        إنشاء عرض سعر للعميل</button>
                 </div>
             </div>
 
             <!-- Tab 1: Price Sheets (search + offers) -->
             <div class="tab-content active" id="priceTab-sheets">
-                <div class="card" style="margin-bottom:16px; padding:12px 20px; background:var(--info-light); border:1px solid var(--info); border-radius:var(--radius-sm);">
+                <div class="card"
+                    style="margin-bottom:16px; padding:12px 20px; background:var(--info-light); border:1px solid var(--info); border-radius:var(--radius-sm);">
                     <span class="fw-700 fs-sm" style="color:var(--navy-800);">قواعد النظام:</span>
                     <ul class="fs-sm text-muted" style="margin:8px 0 0 16px; padding-right:8px;">
                         <li>المبيعات — عرض فقط. فريق التسعير يدير التحديثات.</li>
-                        <li>عدة عروض لنفس الميناء مسموحة. السعر الإجمالي في النتائج؛ التفاصيل الكاملة في تفاصيل العرض.</li>
+                        <li>عدة عروض لنفس الميناء مسموحة. السعر الإجمالي في النتائج؛ التفاصيل الكاملة في تفاصيل العرض.
+                        </li>
                     </ul>
                 </div>
                 <div class="card" style="margin-bottom:24px;">
                     <div class="card-header">
-                        <span class="card-title"><i class='bx bx-search-alt' style="margin-left:6px;"></i> البحث عن الأسعار</span>
+                        <span class="card-title"><i class='bx bx-search-alt' style="margin-left:6px;"></i> البحث عن
+                            الأسعار</span>
                     </div>
                     <div style="padding:0 20px 20px;">
-                        <p class="fs-sm text-muted" style="margin-bottom:12px;">ابحث باسم الميناء (POD) أو اختر المنطقة والميناء.</p>
+                        <p class="fs-sm text-muted" style="margin-bottom:12px;">ابحث باسم الميناء (POD) أو اختر المنطقة
+                            والميناء.</p>
                         <div class="filter-bar" style="flex-wrap:wrap; align-items:flex-end;">
                             <div class="form-group" style="margin-bottom:0;">
                                 <label class="form-label fs-xs text-muted">بحث باسم الميناء (POD)</label>
                                 <div class="d-flex gap-2" style="flex-wrap:wrap;">
-                                    <input type="text" class="form-control" id="searchByPOD" placeholder="مثال: جدة، دبي، هامبورغ" style="min-width:220px;">
-                                    <button type="button" class="btn btn-primary" id="btnSearchByPOD"><i class='bx bx-search'></i> بحث</button>
+                                    <input type="text" class="form-control" id="searchByPOD"
+                                        placeholder="مثال: جدة، دبي، هامبورغ" style="min-width:220px;">
+                                    <button type="button" class="btn btn-primary" id="btnSearchByPOD"><i
+                                            class='bx bx-search'></i> بحث</button>
                                 </div>
                             </div>
                             <span class="fs-sm text-muted" style="align-self:center; margin:0 8px;">أو</span>
@@ -151,7 +164,8 @@
                                 </select>
                             </div>
                             <div class="d-flex align-center gap-2">
-                                <button type="button" class="btn btn-primary" id="btnLoadOffers"><i class='bx bx-list-ul'></i> عرض العروض</button>
+                                <button type="button" class="btn btn-primary" id="btnLoadOffers"><i
+                                        class='bx bx-list-ul'></i> عرض العروض</button>
                                 <button type="button" class="btn btn-outline" id="btnClearFilters">مسح</button>
                             </div>
                         </div>
@@ -160,10 +174,12 @@
                 <div class="card" id="offersCard" style="display:none;">
                     <div class="card-header d-flex justify-between align-center flex-wrap gap-2">
                         <span class="card-title">عروض الأسعار — <span id="offersSubtitle">المنطقة / POD</span></span>
-                        <button type="button" class="btn btn-primary btn-sm" data-role-only="admin,pricing" id="btnAddOffer" style="display:none;"><i class='bx bx-plus'></i> إضافة عرض سعر</button>
+                        <button type="button" class="btn btn-primary btn-sm" data-role-only="admin,pricing"
+                            id="btnAddOffer" style="display:none;"><i class='bx bx-plus'></i> إضافة عرض سعر</button>
                     </div>
                     <div class="filter-bar">
-                        <input type="text" class="form-control" id="offersSearch" placeholder="بحث بالخط أو نوع الحاوية..." style="max-width:240px;">
+                        <input type="text" class="form-control" id="offersSearch"
+                            placeholder="بحث بالخط أو نوع الحاوية..." style="max-width:240px;">
                         <select class="form-control" id="filterLine" style="width:auto;">
                             <option value="">كل الخطوط</option>
                             <option value="MSC">MSC</option>
@@ -179,7 +195,8 @@
                             <option value="Reefer 40'">Reefer 40'</option>
                         </select>
                     </div>
-                    <p class="fs-xs text-muted" style="padding:0 20px 8px;">السعر الإجمالي يظهر في النتائج. انقر «عرض التفاصيل» لرؤية تفاصيل البنود.</p>
+                    <p class="fs-xs text-muted" style="padding:0 20px 8px;">السعر الإجمالي يظهر في النتائج. انقر «عرض
+                        التفاصيل» لرؤية تفاصيل البنود.</p>
                     <div class="table-responsive">
                         <table class="data-table" id="offersTable">
                             <thead>
@@ -195,24 +212,32 @@
                             <tbody id="offersTableBody"></tbody>
                         </table>
                     </div>
-                    <div class="empty-state" id="offersEmpty" style="display:none; padding:32px; text-align:center; color:var(--text-muted);">
+                    <div class="empty-state" id="offersEmpty"
+                        style="display:none; padding:32px; text-align:center; color:var(--text-muted);">
                         <i class='bx bx-package' style="font-size:48px; margin-bottom:12px;"></i>
-                        <p>لا توجد عروض لهذا الميناء. <span data-role-only="admin,pricing" style="display:none;">يمكنك <button type="button" class="btn btn-link btn-sm" onclick="document.getElementById('btnAddOffer').click()">إضافة عرض سعر</button>.</span></p>
+                        <p>لا توجد عروض لهذا الميناء. <span data-role-only="admin,pricing" style="display:none;">يمكنك
+                                <button type="button" class="btn btn-link btn-sm"
+                                    onclick="document.getElementById('btnAddOffer').click()">إضافة عرض
+                                    سعر</button>.</span></p>
                     </div>
                 </div>
                 <div class="card" id="selectFirstCard">
                     <div style="padding:48px 24px; text-align:center;">
-                        <i class='bx bx-spreadsheet' style="font-size:64px; color:var(--accent-cyan); margin-bottom:16px;"></i>
+                        <i class='bx bx-spreadsheet'
+                            style="font-size:64px; color:var(--accent-cyan); margin-bottom:16px;"></i>
                         <h3 style="margin-bottom:8px;">جداول الأسعار</h3>
-                        <p class="text-muted" style="max-width:420px; margin:0 auto;">اختر <strong>المنطقة</strong> و <strong>ميناء التفريغ (POD)</strong> ثم اضغط «عرض العروض» لعرض أو إضافة عروض الأسعار.</p>
+                        <p class="text-muted" style="max-width:420px; margin:0 auto;">اختر <strong>المنطقة</strong> و
+                            <strong>ميناء التفريغ (POD)</strong> ثم اضغط «عرض العروض» لعرض أو إضافة عروض الأسعار.</p>
                     </div>
                 </div>
             </div>
 
             <!-- Tab 2: Customer quotations -->
             <div class="tab-content" id="priceTab-quotes">
-                <div id="quotationFromOfferBanner" class="card" style="margin-bottom:16px; display:none; padding:12px 20px; background:var(--info-light); border:1px solid var(--info); border-radius:var(--radius-sm);">
-                    <span><i class='bx bx-info-circle' style="color:var(--info); margin-left:6px;"></i> تم اختيار عرض سعر من جداول الأسعار. يمكنك إنشاء عرض السعر من الزر أعلاه.</span>
+                <div id="quotationFromOfferBanner" class="card"
+                    style="margin-bottom:16px; display:none; padding:12px 20px; background:var(--info-light); border:1px solid var(--info); border-radius:var(--radius-sm);">
+                    <span><i class='bx bx-info-circle' style="color:var(--info); margin-left:6px;"></i> تم اختيار عرض
+                        سعر من جداول الأسعار. يمكنك إنشاء عرض السعر من الزر أعلاه.</span>
                 </div>
                 <div class="card" style="margin-bottom:24px;">
                     <div class="card-header">
@@ -233,10 +258,12 @@
                 <div class="card">
                     <div class="card-header">
                         <span class="card-title">عروض الأسعار</span>
-                        <button type="button" class="btn btn-outline btn-sm" id="quotesExportAll"><i class='bx bx-export'></i> تصدير</button>
+                        <button type="button" class="btn btn-outline btn-sm" id="quotesExportAll"><i
+                                class='bx bx-export'></i> تصدير</button>
                     </div>
                     <div class="filter-bar">
-                        <input type="text" class="form-control" id="quotesSearch" placeholder="بحث بالعميل أو رقم العرض..." style="max-width:220px;">
+                        <input type="text" class="form-control" id="quotesSearch"
+                            placeholder="بحث بالعميل أو رقم العرض..." style="max-width:220px;">
                         <select class="form-control" id="filterQuoteStatus" style="width:auto;">
                             <option value="">كل الحالات</option>
                             <option value="مقبول">مقبول</option>
@@ -258,7 +285,8 @@
                     <table class="data-table" id="quotesTable">
                         <thead>
                             <tr>
-                                <th style="width:44px;"><input type="checkbox" id="selectAllQuotes" title="تحديد الكل"></th>
+                                <th style="width:44px;"><input type="checkbox" id="selectAllQuotes" title="تحديد الكل">
+                                </th>
                                 <th>رقم العرض</th>
                                 <th>العميل</th>
                                 <th>المسار</th>
@@ -272,7 +300,8 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr class="quote-row" data-status="مقبول" data-sales="أحمد خيري" data-amount="5450" data-date="20260218">
+                            <tr class="quote-row" data-status="مقبول" data-sales="أحمد خيري" data-amount="5450"
+                                data-date="20260218">
                                 <td><input type="checkbox" class="quote-checkbox"></td>
                                 <td class="bl-number">Q-2026-0048</td>
                                 <td class="fw-600">منصور وشركاه</td>
@@ -280,12 +309,15 @@
                                 <td>2×40'HC</td>
                                 <td class="fw-700">$5,450</td>
                                 <td><span class="status-badge active">مقبول</span></td>
-                                <td><a href="shipments.html?bl=BL-2026-0248" class="text-cyan fs-sm">BL-2026-0248</a></td>
+                                <td><a href="shipments.html?bl=BL-2026-0248" class="text-cyan fs-sm">BL-2026-0248</a>
+                                </td>
                                 <td>أحمد خيري</td>
                                 <td class="fs-sm text-muted">18/02</td>
-                                <td><button class="btn btn-sm btn-outline" onclick="openModal('quotePreviewModal')"><i class='bx bx-show'></i></button></td>
+                                <td><button class="btn btn-sm btn-outline" onclick="openModal('quotePreviewModal')"><i
+                                            class='bx bx-show'></i></button></td>
                             </tr>
-                            <tr class="quote-row" data-status="بانتظار" data-sales="زينب رضوان" data-amount="10200" data-date="20260217">
+                            <tr class="quote-row" data-status="بانتظار" data-sales="زينب رضوان" data-amount="10200"
+                                data-date="20260217">
                                 <td><input type="checkbox" class="quote-checkbox"></td>
                                 <td class="bl-number">Q-2026-0047</td>
                                 <td class="fw-600">طه للمنسوجات</td>
@@ -296,9 +328,11 @@
                                 <td>—</td>
                                 <td>زينب رضوان</td>
                                 <td class="fs-sm text-muted">17/02</td>
-                                <td><button class="btn btn-sm btn-outline" onclick="openModal('quotePreviewModal')"><i class='bx bx-show'></i></button></td>
+                                <td><button class="btn btn-sm btn-outline" onclick="openModal('quotePreviewModal')"><i
+                                            class='bx bx-show'></i></button></td>
                             </tr>
-                            <tr class="quote-row" data-status="مرفوض" data-sales="محمد سعيد" data-amount="3200" data-date="20260215">
+                            <tr class="quote-row" data-status="مرفوض" data-sales="محمد سعيد" data-amount="3200"
+                                data-date="20260215">
                                 <td><input type="checkbox" class="quote-checkbox"></td>
                                 <td class="bl-number">Q-2026-0046</td>
                                 <td class="fw-600">العربية للشحن</td>
@@ -309,7 +343,8 @@
                                 <td>—</td>
                                 <td>محمد سعيد</td>
                                 <td class="fs-sm text-muted">15/02</td>
-                                <td><button class="btn btn-sm btn-outline" onclick="openModal('quotePreviewModal')"><i class='bx bx-show'></i></button></td>
+                                <td><button class="btn btn-sm btn-outline" onclick="openModal('quotePreviewModal')"><i
+                                            class='bx bx-show'></i></button></td>
                             </tr>
                         </tbody>
                     </table>
@@ -322,7 +357,8 @@
     <div class="modal-overlay" id="offerModal">
         <div class="modal modal-lg">
             <div class="modal-header">
-                <h3><i class='bx bx-spreadsheet' style="margin-left:8px;"></i> <span id="offerModalTitle">إضافة عرض سعر</span></h3>
+                <h3><i class='bx bx-spreadsheet' style="margin-left:8px;"></i> <span id="offerModalTitle">إضافة عرض
+                        سعر</span></h3>
                 <button class="modal-close" onclick="closeModal('offerModal')"><i class='bx bx-x'></i></button>
             </div>
             <div class="modal-body">
@@ -357,7 +393,8 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">الإبحار (Sailings)</label>
-                        <input type="text" class="form-control" id="offerSailings" placeholder="مثال: أسبوعي، الإثنين/الخميس">
+                        <input type="text" class="form-control" id="offerSailings"
+                            placeholder="مثال: أسبوعي، الإثنين/الخميس">
                     </div>
                     <div class="form-group">
                         <label class="form-label">أيام مجانية (Free Days)</label>
@@ -386,30 +423,72 @@
                     <tbody>
                         <tr>
                             <td>Ocean Freight (أوقيان فريت)</td>
-                            <td><input type="number" class="form-control form-control-sm price-item" data-item="oceanFreight" placeholder="0" step="0.01" min="0"></td>
-                            <td><select class="form-control form-control-sm currency-item" data-item="oceanFreight"><option value="USD">USD</option><option value="EUR">EUR</option><option value="EGP">EGP</option></select></td>
+                            <td><input type="number" class="form-control form-control-sm price-item"
+                                    data-item="oceanFreight" placeholder="0" step="0.01" min="0"></td>
+                            <td><select class="form-control form-control-sm currency-item" data-item="oceanFreight">
+                                    <option value="USD">USD</option>
+                                    <option value="EUR">EUR</option>
+                                    <option value="EGP">EGP</option>
+                                </select></td>
+                        </tr>
+                        <tr>
+                            <td>THC (رسوم المحطة)</td>
+                            <td><input type="number" class="form-control form-control-sm price-item" data-item="thc"
+                                    placeholder="0" step="0.01" min="0"></td>
+                            <td><select class="form-control form-control-sm currency-item" data-item="thc">
+                                    <option value="USD">USD</option>
+                                    <option value="EUR">EUR</option>
+                                    <option value="EGP">EGP</option>
+                                </select></td>
+                        </tr>
+                        <tr id="offerPowerRow" style="display:none; background:rgba(23,162,184,0.04);">
+                            <td><i class='bx bx-bolt-circle' style="color:var(--accent-cyan);margin-left:4px;"></i>
+                                Power / Genset <span class="fs-xs text-muted">(Reefer only)</span></td>
+                            <td><input type="number" class="form-control form-control-sm price-item" data-item="power"
+                                    placeholder="0" step="0.01" min="0"></td>
+                            <td><select class="form-control form-control-sm currency-item" data-item="power">
+                                    <option value="USD">USD</option>
+                                    <option value="EUR">EUR</option>
+                                    <option value="EGP">EGP</option>
+                                </select></td>
                         </tr>
                         <tr>
                             <td>B/L Fee (رسم B/L)</td>
-                            <td><input type="number" class="form-control form-control-sm price-item" data-item="blFee" placeholder="0" step="0.01" min="0"></td>
-                            <td><select class="form-control form-control-sm currency-item" data-item="blFee"><option value="USD">USD</option><option value="EUR">EUR</option><option value="EGP">EGP</option></select></td>
+                            <td><input type="number" class="form-control form-control-sm price-item" data-item="blFee"
+                                    placeholder="0" step="0.01" min="0"></td>
+                            <td><select class="form-control form-control-sm currency-item" data-item="blFee">
+                                    <option value="USD">USD</option>
+                                    <option value="EUR">EUR</option>
+                                    <option value="EGP">EGP</option>
+                                </select></td>
                         </tr>
                         <tr>
                             <td>Telex Release (تليكس رليز)</td>
-                            <td><input type="number" class="form-control form-control-sm price-item" data-item="telexRelease" placeholder="0" step="0.01" min="0"></td>
-                            <td><select class="form-control form-control-sm currency-item" data-item="telexRelease"><option value="USD">USD</option><option value="EUR">EUR</option><option value="EGP">EGP</option></select></td>
+                            <td><input type="number" class="form-control form-control-sm price-item"
+                                    data-item="telexRelease" placeholder="0" step="0.01" min="0"></td>
+                            <td><select class="form-control form-control-sm currency-item" data-item="telexRelease">
+                                    <option value="USD">USD</option>
+                                    <option value="EUR">EUR</option>
+                                    <option value="EGP">EGP</option>
+                                </select></td>
                         </tr>
                         <tr>
                             <td>Other Charges (أخرى)</td>
-                            <td><input type="number" class="form-control form-control-sm price-item" data-item="otherCharges" placeholder="0" step="0.01" min="0"></td>
-                            <td><select class="form-control form-control-sm currency-item" data-item="otherCharges"><option value="USD">USD</option><option value="EUR">EUR</option><option value="EGP">EGP</option></select></td>
+                            <td><input type="number" class="form-control form-control-sm price-item"
+                                    data-item="otherCharges" placeholder="0" step="0.01" min="0"></td>
+                            <td><select class="form-control form-control-sm currency-item" data-item="otherCharges">
+                                    <option value="USD">USD</option>
+                                    <option value="EUR">EUR</option>
+                                    <option value="EGP">EGP</option>
+                                </select></td>
                         </tr>
                     </tbody>
                 </table>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline" onclick="closeModal('offerModal')">إلغاء</button>
-                <button type="button" class="btn btn-primary" id="btnSaveOffer"><i class='bx bx-check'></i> حفظ العرض</button>
+                <button type="button" class="btn btn-primary" id="btnSaveOffer"><i class='bx bx-check'></i> حفظ
+                    العرض</button>
             </div>
         </div>
     </div>
@@ -424,9 +503,12 @@
             <div class="modal-body" id="offerDetailBody"></div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline" onclick="closeModal('offerDetailModal')">إغلاق</button>
-                <button type="button" class="btn btn-outline" data-role-only="admin,pricing" id="btnEditFromDetail" style="display:none;"><i class='bx bx-edit'></i> تعديل</button>
-                <button type="button" class="btn btn-outline" id="btnCreateQuotation"><i class='bx bx-file'></i> إنشاء عرض سعر للعميل</button>
-                <button type="button" class="btn btn-primary" id="btnAttachToShipment"><i class='bx bx-link'></i> ربط بشحنة</button>
+                <button type="button" class="btn btn-outline" data-role-only="admin,pricing" id="btnEditFromDetail"
+                    style="display:none;"><i class='bx bx-edit'></i> تعديل</button>
+                <button type="button" class="btn btn-outline" id="btnCreateQuotation"><i class='bx bx-file'></i> إنشاء
+                    عرض سعر للعميل</button>
+                <button type="button" class="btn btn-primary" id="btnAttachToShipment"><i class='bx bx-link'></i> ربط
+                    بشحنة</button>
             </div>
         </div>
     </div>
@@ -436,7 +518,8 @@
         <div class="modal">
             <div class="modal-header">
                 <h3><i class='bx bx-link' style="margin-left:8px;"></i> ربط عرض السعر بشحنة</h3>
-                <button class="modal-close" onclick="closeModal('attachToShipmentModal')"><i class='bx bx-x'></i></button>
+                <button class="modal-close" onclick="closeModal('attachToShipmentModal')"><i
+                        class='bx bx-x'></i></button>
             </div>
             <div class="modal-body">
                 <p class="fs-sm text-muted" style="margin-bottom:12px;">اختر الشحنة لربط عرض السعر الحالي بها.</p>
@@ -456,8 +539,10 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-outline" onclick="closeModal('attachToShipmentModal')">إلغاء</button>
-                <button type="button" class="btn btn-primary" id="btnConfirmAttach"><i class='bx bx-link'></i> ربط</button>
+                <button type="button" class="btn btn-outline"
+                    onclick="closeModal('attachToShipmentModal')">إلغاء</button>
+                <button type="button" class="btn btn-primary" id="btnConfirmAttach"><i class='bx bx-link'></i>
+                    ربط</button>
             </div>
         </div>
     </div>
@@ -631,7 +716,8 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeModal('quotePreviewModal')">إغلاق</button>
-                <a href="cost-viewer.html" class="btn btn-outline" target="_blank"><i class='bx bx-calculator'></i> عرض التكلفة المقدرة</a>
+                <a href="cost-viewer.html" class="btn btn-outline" target="_blank"><i class='bx bx-calculator'></i> عرض
+                    التكلفة المقدرة</a>
                 <button class="btn btn-cyan"><i class='bx bx-printer'></i> طباعة</button>
                 <button class="btn btn-primary"><i class='bx bx-send'></i> إرسال للعميل</button>
             </div>
@@ -645,77 +731,87 @@
     <script src="js/role-views.js"></script>
     <script src="js/price-sheets.js"></script>
     <script>
-    (function() {
-        if (typeof switchTab !== 'function') window.switchTab = function(grp, tab) {
-            document.querySelectorAll('[data-tab-group="' + grp + '"] .tab').forEach(function(t) { t.classList.toggle('active', t.getAttribute('data-tab') === tab); });
-            document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.toggle('active', c.id === grp + '-' + tab); });
-        };
+        (function () {
+            // Reefer Power row toggle
+            var offerContainerType = document.getElementById('offerContainerType');
+            var offerPowerRow = document.getElementById('offerPowerRow');
+            if (offerContainerType && offerPowerRow) {
+                offerContainerType.addEventListener('change', function () {
+                    var isReefer = (this.value || '').toLowerCase().indexOf('reefer') !== -1;
+                    offerPowerRow.style.display = isReefer ? '' : 'none';
+                });
+            }
 
-        if (window.location.search.indexOf('createQuote=1') !== -1) {
-            try {
-                var offerRaw = localStorage.getItem('amazonMarineSelectedOfferForQuotation');
-                if (offerRaw) {
-                    switchTab('priceTab', 'quotes');
-                    var banner = document.getElementById('quotationFromOfferBanner');
-                    if (banner) banner.style.display = 'block';
-                }
-            } catch (e) {}
-        }
+            if (typeof switchTab !== 'function') window.switchTab = function (grp, tab) {
+                document.querySelectorAll('[data-tab-group="' + grp + '"] .tab').forEach(function (t) { t.classList.toggle('active', t.getAttribute('data-tab') === tab); });
+                document.querySelectorAll('.tab-content').forEach(function (c) { c.classList.toggle('active', c.id === grp + '-' + tab); });
+            };
 
-        // Chart: quotes status
-        var chartQuotesEl = document.getElementById('chartQuotesStatus');
-        if (chartQuotesEl && typeof Chart !== 'undefined') {
-            new Chart(chartQuotesEl, {
-                type: 'doughnut',
-                data: {
-                    labels: ['مقبول', 'بانتظار', 'مرفوض'],
-                    datasets: [{ data: [12, 8, 5], backgroundColor: ['var(--success)', 'var(--warning)', 'var(--danger)'], borderWidth: 0 }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            if (window.location.search.indexOf('createQuote=1') !== -1) {
+                try {
+                    var offerRaw = localStorage.getItem('amazonMarineSelectedOfferForQuotation');
+                    if (offerRaw) {
+                        switchTab('priceTab', 'quotes');
+                        var banner = document.getElementById('quotationFromOfferBanner');
+                        if (banner) banner.style.display = 'block';
+                    }
+                } catch (e) { }
+            }
+
+            // Chart: quotes status
+            var chartQuotesEl = document.getElementById('chartQuotesStatus');
+            if (chartQuotesEl && typeof Chart !== 'undefined') {
+                new Chart(chartQuotesEl, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['مقبول', 'بانتظار', 'مرفوض'],
+                        datasets: [{ data: [12, 8, 5], backgroundColor: ['var(--success)', 'var(--warning)', 'var(--danger)'], borderWidth: 0 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                });
+            }
+
+            // Quotes: filters, bulk, export
+            var quotesSearch = document.getElementById('quotesSearch');
+            var filterQuoteStatus = document.getElementById('filterQuoteStatus');
+            var filterQuoteSales = document.getElementById('filterQuoteSales');
+            var quotesTbody = document.querySelector('#quotesTable tbody');
+            var quoteRows = quotesTbody ? quotesTbody.querySelectorAll('.quote-row') : [];
+            function applyQuotesFilters() {
+                var q = (quotesSearch && quotesSearch.value.trim().toLowerCase()) || '';
+                var status = (filterQuoteStatus && filterQuoteStatus.value) || '';
+                var sales = (filterQuoteSales && filterQuoteSales.value) || '';
+                quoteRows.forEach(function (tr) {
+                    var text = (tr.textContent || '').toLowerCase();
+                    var matchSearch = !q || text.indexOf(q) !== -1;
+                    var matchStatus = !status || (tr.getAttribute('data-status') || '') === status;
+                    var matchSales = !sales || (tr.getAttribute('data-sales') || '') === sales;
+                    tr.style.display = (matchSearch && matchStatus && matchSales) ? '' : 'none';
+                });
+            }
+            [quotesSearch, filterQuoteStatus, filterQuoteSales].forEach(function (el) { if (el) { el.addEventListener('input', applyQuotesFilters); if (el.tagName === 'SELECT') el.addEventListener('change', applyQuotesFilters); } });
+            function updateQuotesBulk() {
+                var n = 0;
+                document.querySelectorAll('.quote-checkbox').forEach(function (cb) { var tr = cb.closest('tr'); if (tr && tr.style.display !== 'none' && cb.checked) n++; });
+                var bar = document.getElementById('quotesBulkBar');
+                var count = document.getElementById('quotesBulkCount');
+                if (count) count.textContent = 'تم تحديد ' + n + ' عرض';
+                if (bar) bar.style.display = n > 0 ? 'flex' : 'none';
+            }
+            var selectAllQuotes = document.getElementById('selectAllQuotes');
+            if (selectAllQuotes && quotesTbody) selectAllQuotes.addEventListener('change', function () { quotesTbody.querySelectorAll('.quote-row:not([style*="display: none"])').forEach(function (tr) { var cb = tr.querySelector('.quote-checkbox'); if (cb) cb.checked = selectAllQuotes.checked; }); updateQuotesBulk(); });
+            document.querySelectorAll('.quote-checkbox').forEach(function (cb) { cb.addEventListener('change', updateQuotesBulk); });
+            if (document.getElementById('quotesBulkClear')) document.getElementById('quotesBulkClear').addEventListener('click', function () { selectAllQuotes.checked = false; document.querySelectorAll('.quote-checkbox').forEach(function (cb) { cb.checked = false; }); updateQuotesBulk(); });
+            if (document.getElementById('quotesExportAll')) document.getElementById('quotesExportAll').addEventListener('click', function () { var t = document.getElementById('quotesTable'); if (t) { var blob = new Blob(['\ufeff' + t.outerHTML], { type: 'application/vnd.ms-excel' }); var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'عروض_الأسعار.xls'; a.click(); URL.revokeObjectURL(a.href); } });
+            if (document.getElementById('quotesBulkExport')) document.getElementById('quotesBulkExport').addEventListener('click', function () {
+                var t = document.getElementById('quotesTable');
+                if (!t) return;
+                var clone = t.cloneNode(true);
+                var toRemove = []; clone.querySelectorAll('tbody tr').forEach(function (tr, i) { var orig = quoteRows[i]; if (!orig || !orig.querySelector('.quote-checkbox') || !orig.querySelector('.quote-checkbox').checked) toRemove.push(tr); });
+                toRemove.forEach(function (tr) { tr.parentNode.removeChild(tr); });
+                var blob = new Blob(['\ufeff' + clone.outerHTML], { type: 'application/vnd.ms-excel' }); var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'عروض_محددة.xls'; a.click(); URL.revokeObjectURL(a.href);
             });
-        }
-
-        // Quotes: filters, bulk, export
-        var quotesSearch = document.getElementById('quotesSearch');
-        var filterQuoteStatus = document.getElementById('filterQuoteStatus');
-        var filterQuoteSales = document.getElementById('filterQuoteSales');
-        var quotesTbody = document.querySelector('#quotesTable tbody');
-        var quoteRows = quotesTbody ? quotesTbody.querySelectorAll('.quote-row') : [];
-        function applyQuotesFilters() {
-            var q = (quotesSearch && quotesSearch.value.trim().toLowerCase()) || '';
-            var status = (filterQuoteStatus && filterQuoteStatus.value) || '';
-            var sales = (filterQuoteSales && filterQuoteSales.value) || '';
-            quoteRows.forEach(function(tr) {
-                var text = (tr.textContent || '').toLowerCase();
-                var matchSearch = !q || text.indexOf(q) !== -1;
-                var matchStatus = !status || (tr.getAttribute('data-status') || '') === status;
-                var matchSales = !sales || (tr.getAttribute('data-sales') || '') === sales;
-                tr.style.display = (matchSearch && matchStatus && matchSales) ? '' : 'none';
-            });
-        }
-        [quotesSearch, filterQuoteStatus, filterQuoteSales].forEach(function(el) { if (el) { el.addEventListener('input', applyQuotesFilters); if (el.tagName === 'SELECT') el.addEventListener('change', applyQuotesFilters); } });
-        function updateQuotesBulk() {
-            var n = 0;
-            document.querySelectorAll('.quote-checkbox').forEach(function(cb) { var tr = cb.closest('tr'); if (tr && tr.style.display !== 'none' && cb.checked) n++; });
-            var bar = document.getElementById('quotesBulkBar');
-            var count = document.getElementById('quotesBulkCount');
-            if (count) count.textContent = 'تم تحديد ' + n + ' عرض';
-            if (bar) bar.style.display = n > 0 ? 'flex' : 'none';
-        }
-        var selectAllQuotes = document.getElementById('selectAllQuotes');
-        if (selectAllQuotes && quotesTbody) selectAllQuotes.addEventListener('change', function() { quotesTbody.querySelectorAll('.quote-row:not([style*="display: none"])').forEach(function(tr) { var cb = tr.querySelector('.quote-checkbox'); if (cb) cb.checked = selectAllQuotes.checked; }); updateQuotesBulk(); });
-        document.querySelectorAll('.quote-checkbox').forEach(function(cb) { cb.addEventListener('change', updateQuotesBulk); });
-        if (document.getElementById('quotesBulkClear')) document.getElementById('quotesBulkClear').addEventListener('click', function() { selectAllQuotes.checked = false; document.querySelectorAll('.quote-checkbox').forEach(function(cb) { cb.checked = false; }); updateQuotesBulk(); });
-        if (document.getElementById('quotesExportAll')) document.getElementById('quotesExportAll').addEventListener('click', function() { var t = document.getElementById('quotesTable'); if (t) { var blob = new Blob(['\ufeff' + t.outerHTML], { type: 'application/vnd.ms-excel' }); var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'عروض_الأسعار.xls'; a.click(); URL.revokeObjectURL(a.href); } });
-        if (document.getElementById('quotesBulkExport')) document.getElementById('quotesBulkExport').addEventListener('click', function() {
-            var t = document.getElementById('quotesTable');
-            if (!t) return;
-            var clone = t.cloneNode(true);
-            var toRemove = []; clone.querySelectorAll('tbody tr').forEach(function(tr, i) { var orig = quoteRows[i]; if (!orig || !orig.querySelector('.quote-checkbox') || !orig.querySelector('.quote-checkbox').checked) toRemove.push(tr); });
-            toRemove.forEach(function(tr) { tr.parentNode.removeChild(tr); });
-            var blob = new Blob(['\ufeff' + clone.outerHTML], { type: 'application/vnd.ms-excel' }); var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'عروض_محددة.xls'; a.click(); URL.revokeObjectURL(a.href);
-        });
-    })();
+        })();
     </script>
 </body>
 
