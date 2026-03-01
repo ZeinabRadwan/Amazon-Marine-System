@@ -1,1780 +1,1519 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Amazon Marine — التسعير</title>
-    <link
-      href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="css/styles.css" />
-  </head>
 
-  <body>
-    <nav class="sidebar">
-      <div class="logo-area">
-        <img src="logo/logo (1).png" alt="Logo" />
-        <div class="logo-text">
-          <span class="brand-name">Amazon Marine</span
-          ><span class="brand-sub">Shipping Agency</span>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Amazon Marine — التسعير</title>
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    /* ── Price Sheet Cards ──────────────────────────────── */
+    .pricing-type-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .pricing-type-tab {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 10px;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: .875rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      transition: all .2s;
+    }
+
+    .pricing-type-tab:hover {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+
+    .pricing-type-tab.active {
+      background: var(--accent-cyan);
+      border-color: var(--accent-cyan);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(34, 211, 238, .35);
+    }
+
+    .pricing-type-tab i {
+      font-size: 1.1rem;
+    }
+
+    /* Cards grid */
+    .offers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 16px;
+      padding: 16px 0;
+    }
+
+    .offer-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      transition: box-shadow .2s, transform .15s;
+    }
+
+    .offer-card:hover {
+      box-shadow: 0 8px 28px rgba(0, 0, 0, .12);
+      transform: translateY(-2px);
+    }
+
+    .offer-card-header {
+      padding: 16px 18px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .offer-card-line {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .shipping-line-badge {
+      background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      color: #fff;
+      padding: 3px 12px;
+      border-radius: 20px;
+      font-size: .78rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .inland-badge {
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+    }
+
+    .offer-card-route {
+      font-size: .85rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .offer-card-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-size: .76rem;
+      color: var(--text-muted);
+    }
+
+    .offer-card-meta span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .badge-validity {
+      color: #22c55e;
+      font-weight: 600;
+    }
+
+    .offer-card-prices {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .price-chip {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px 6px;
+      border-left: 1px solid var(--border);
+    }
+
+    .price-chip:last-child {
+      border-left: none;
+    }
+
+    .price-chip-label {
+      font-size: .68rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .price-chip-value {
+      font-size: .82rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .price-chip-reefer .price-chip-label {
+      color: #06b6d4;
+    }
+
+    .price-chip-reefer .price-chip-value {
+      color: #06b6d4;
+    }
+
+    .offer-card-footer {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 18px;
+      flex-wrap: wrap;
+    }
+
+    .offer-total-label {
+      font-size: .78rem;
+      color: var(--text-muted);
+    }
+
+    .offer-total-value {
+      font-size: .92rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      margin-left: auto;
+    }
+
+    .offer-card-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    /* Select first */
+    .select-first-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 56px 32px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+
+    .select-first-card i {
+      font-size: 3.5rem;
+      margin-bottom: 16px;
+      opacity: .35;
+    }
+
+    .select-first-card h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    /* Detail modal grid */
+    .detail-header-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .detail-header-grid>div {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .detail-label {
+      font-size: .72rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .detail-value {
+      font-size: .9rem;
+      color: var(--text);
+    }
+
+    .detail-section-title {
+      font-size: .85rem;
+      font-weight: 700;
+      padding: 12px 0 10px;
+      border-top: 1px solid var(--border);
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text);
+    }
+
+    .detail-pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .detail-price-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 14px;
+      background: var(--surface-raised, rgba(255, 255, 255, .04));
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .detail-price-label {
+      font-size: .78rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .detail-price-value {
+      font-size: .85rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .detail-price-value.muted {
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .currency-tag {
+      font-size: .68rem;
+      color: var(--text-muted);
+      font-weight: 400;
+      margin-right: 4px;
+    }
+
+    .detail-total-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: rgba(34, 211, 238, .08);
+      border-radius: 8px;
+      border: 1px solid rgba(34, 211, 238, .25);
+    }
+
+    .detail-total-bar>span:first-child {
+      font-size: .85rem;
+      color: var(--text-muted);
+    }
+
+    .detail-total-amount {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--accent-cyan);
+    }
+
+    /* Sailing days checkboxes */
+    .sailing-days-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .sailing-day-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      padding: 5px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: .8rem;
+      font-weight: 500;
+      transition: all .15s;
+    }
+
+    .sailing-day-label:has(input:checked) {
+      background: var(--accent-cyan);
+      border-color: var(--accent-cyan);
+      color: #fff;
+    }
+
+    .sailing-day-label input {
+      display: none;
+    }
+
+    .btn-copy-cost {
+      background: var(--navy-50);
+      border: 1px solid var(--navy-200);
+      color: var(--navy-600);
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      transition: 0.2s;
+      display: none;
+      vertical-align: middle;
+      margin-right: 4px;
+    }
+
+    .btn-copy-cost:hover {
+      background: var(--navy-500);
+      color: #fff;
+    }
+
+    .qc-amount:focus {
+      border-color: var(--navy-500) !important;
+      box-shadow: 0 0 0 3px rgba(30, 41, 59, 0.1);
+    }
+  </style>
+</head>
+
+<body>
+  <nav class="sidebar">
+    <div class="logo-area">
+      <img src="logo/logo (1).png" alt="Logo" />
+      <div class="logo-text">
+        <span class="brand-name">Amazon Marine</span><span class="brand-sub">Shipping Agency</span>
+      </div>
+    </div>
+    <div class="menu-label">الرئيسية</div>
+    <ul class="menu">
+      <li>
+        <a href="dashboard.html"><i class="bx bxs-dashboard"></i><span>لوحة التحكم</span></a>
+      </li>
+      <li>
+        <a href="clients.html"><i class="bx bx-group"></i><span>العملاء / CRM</span></a>
+      </li>
+      <li>
+        <a href="shipments.html"><i class="bx bx-package"></i><span>الشحنات</span></a>
+      </li>
+      <li>
+        <a href="sd-forms.html"><i class="bx bx-file"></i><span>نماذج SD</span></a>
+      </li>
+      <li>
+        <a href="operations.html"><i class="bx bxs-ship"></i><span>العمليات</span></a>
+      </li>
+    </ul>
+    <div class="menu-label">المالية</div>
+    <ul class="menu">
+      <li>
+        <a href="invoices.html"><i class="bx bx-receipt"></i><span>الفواتير</span></a>
+      </li>
+      <li>
+        <a href="accounting.html"><i class="bx bx-wallet"></i><span>الحسابات</span></a>
+      </li>
+      <li>
+        <a href="treasury.html"><i class="bx bx-credit-card"></i><span>الخزينة</span></a>
+      </li>
+      <li>
+        <a href="expenses.html"><i class="bx bx-money"></i><span>المصروفات</span></a>
+      </li>
+      <li class="active">
+        <a href="pricing.html"><i class="bx bx-dollar-circle"></i><span>التسعير</span></a>
+      </li>
+    </ul>
+    <div class="menu-label">الإدارة</div>
+    <ul class="menu">
+      <li>
+        <a href="partners.html"><i class="bx bx-buildings"></i><span>الشركاء</span></a>
+      </li>
+      <li>
+        <a href="attendance.html"><i class="bx bx-time-five"></i><span>الحضور والانصراف</span></a>
+      </li>
+      <li>
+        <a href="visits.html"><i class="bx bx-map-pin"></i><span>سجل الزيارات</span></a>
+      </li>
+      <li>
+        <a href="reports.html"><i class="bx bx-bar-chart-alt-2"></i><span>التقارير</span></a>
+      </li>
+      <li>
+        <a href="documents.html"><i class="bx bx-file-blank"></i><span>المستندات الرسمية</span></a>
+      </li>
+      <li>
+        <a href="customer-service.html"><i class="bx bx-support"></i><span>خدمة العملاء</span></a>
+      </li>
+      <li>
+        <a href="tickets.html"><i class="bx bx-message-alt-detail"></i><span>تذاكر الدعم</span></a>
+      </li>
+      <li>
+        <a href="team-performance.html"><i class="bx bx-trending-up"></i><span>أداء الفريق</span></a>
+      </li>
+    </ul>
+    <div class="menu-label">الإعدادات</div>
+    <ul class="menu">
+      <li>
+        <a href="settings.html"><i class="bx bx-cog"></i><span>الإعدادات</span></a>
+      </li>
+      <li>
+        <a href="profile.html"><i class="bx bx-user"></i><span>الملف الشخصي</span></a>
+      </li>
+    </ul>
+    <div class="sidebar-footer">
+      <div class="user-avatar">MD</div>
+      <div class="user-info">
+        <div class="user-name">Capt. Mostafa</div>
+        <div class="user-role">مدير النظام</div>
+      </div>
+      <a href="index.html"><i class="bx bx-log-out" style="color: rgba(255, 255, 255, 0.35); font-size: 1.2rem"></i></a>
+    </div>
+  </nav>
+
+  <div class="main-wrapper">
+    <header class="topbar">
+      <div class="page-title-area">
+        <h1>التسعير</h1>
+        <div class="breadcrumbs">
+          Amazon Marine > <span>أسعار الشحن وعروض الأسعار</span>
         </div>
       </div>
-      <div class="menu-label">الرئيسية</div>
-      <ul class="menu">
-        <li>
-          <a href="dashboard.html"
-            ><i class="bx bxs-dashboard"></i><span>لوحة التحكم</span></a
-          >
-        </li>
-        <li>
-          <a href="clients.html"
-            ><i class="bx bx-group"></i><span>العملاء / CRM</span></a
-          >
-        </li>
-        <li>
-          <a href="shipments.html"
-            ><i class="bx bx-package"></i><span>الشحنات</span></a
-          >
-        </li>
-        <li>
-          <a href="sd-forms.html"
-            ><i class="bx bx-file"></i><span>نماذج SD</span></a
-          >
-        </li>
-        <li>
-          <a href="operations.html"
-            ><i class="bx bxs-ship"></i><span>العمليات</span></a
-          >
-        </li>
-      </ul>
-      <div class="menu-label">المالية</div>
-      <ul class="menu">
-        <li>
-          <a href="invoices.html"
-            ><i class="bx bx-receipt"></i><span>الفواتير</span></a
-          >
-        </li>
-        <li>
-          <a href="accounting.html"
-            ><i class="bx bx-wallet"></i><span>الحسابات</span></a
-          >
-        </li>
-        <li>
-          <a href="treasury.html"
-            ><i class="bx bx-credit-card"></i><span>الخزينة</span></a
-          >
-        </li>
-        <li>
-          <a href="expenses.html"
-            ><i class="bx bx-money"></i><span>المصروفات</span></a
-          >
-        </li>
-        <li class="active">
-          <a href="pricing.html"
-            ><i class="bx bx-dollar-circle"></i><span>التسعير</span></a
-          >
-        </li>
-      </ul>
-      <div class="menu-label">الإدارة</div>
-      <ul class="menu">
-        <li>
-          <a href="partners.html"
-            ><i class="bx bx-buildings"></i><span>الشركاء</span></a
-          >
-        </li>
-        <li>
-          <a href="attendance.html"
-            ><i class="bx bx-time-five"></i><span>الحضور والانصراف</span></a
-          >
-        </li>
-        <li>
-          <a href="visits.html"
-            ><i class="bx bx-map-pin"></i><span>سجل الزيارات</span></a
-          >
-        </li>
-        <li>
-          <a href="reports.html"
-            ><i class="bx bx-bar-chart-alt-2"></i><span>التقارير</span></a
-          >
-        </li>
-        <li>
-          <a href="documents.html"
-            ><i class="bx bx-file-blank"></i><span>المستندات الرسمية</span></a
-          >
-        </li>
-        <li>
-          <a href="customer-service.html"
-            ><i class="bx bx-support"></i><span>خدمة العملاء</span></a
-          >
-        </li>
-        <li>
-          <a href="tickets.html"
-            ><i class="bx bx-message-alt-detail"></i><span>تذاكر الدعم</span></a
-          >
-        </li>
-        <li>
-          <a href="team-performance.html"
-            ><i class="bx bx-trending-up"></i><span>أداء الفريق</span></a
-          >
-        </li>
-      </ul>
-      <div class="menu-label">الإعدادات</div>
-      <ul class="menu">
-        <li>
-          <a href="settings.html"
-            ><i class="bx bx-cog"></i><span>الإعدادات</span></a
-          >
-        </li>
-        <li>
-          <a href="profile.html"
-            ><i class="bx bx-user"></i><span>الملف الشخصي</span></a
-          >
-        </li>
-      </ul>
-      <div class="sidebar-footer">
-        <div class="user-avatar">MD</div>
-        <div class="user-info">
-          <div class="user-name">Capt. Mostafa</div>
-          <div class="user-role">مدير النظام</div>
+      <div class="topbar-right">
+        <div class="search-bar">
+          <i class="bx bx-search"></i><input type="text" placeholder="بحث في الأسعار..." />
         </div>
-        <a href="index.html"
-          ><i
-            class="bx bx-log-out"
-            style="color: rgba(255, 255, 255, 0.35); font-size: 1.2rem"
-          ></i
-        ></a>
+        <div class="topbar-icon">
+          <i class="bx bx-bell"></i>
+          <div class="notif-dot"></div>
+        </div>
+        <div class="currency-dropdown">
+          <div class="topbar-icon" onclick="toggleCurrencyDropdown(event)">
+            <i class="bx bx-dollar-circle"></i>
+            <span class="currency-code" id="currencyCodeBadge">$</span>
+          </div>
+          <div class="currency-dropdown-menu" id="currencyDropdown">
+            <button type="button" class="currency-dropdown-item active" data-currency="USD">
+              $ USD <i class="bx bx-check"></i>
+            </button>
+            <button type="button" class="currency-dropdown-item" data-currency="EUR">
+              € EUR
+            </button>
+            <button type="button" class="currency-dropdown-item" data-currency="EGP">
+              E£ EGP
+            </button>
+          </div>
+        </div>
+        <div class="profile-pill">
+          <div class="profile-avatar">MD</div>
+          <span>Capt. Mostafa</span>
+        </div>
       </div>
-    </nav>
+    </header>
 
-    <div class="main-wrapper">
-      <header class="topbar">
-        <div class="page-title-area">
-          <h1>التسعير</h1>
-          <div class="breadcrumbs">
-            Amazon Marine > <span>أسعار الشحن وعروض الأسعار</span>
-          </div>
+    <main class="content">
+      <p class="fs-sm text-muted" style="margin-bottom: 12px">
+        <strong>التسعير:</strong> (1) <strong>جداول الأسعار</strong> — بحث
+        وإدارة عروض الأسعار حسب المنطقة وميناء التفريغ. (2)
+        <strong>عروض الأسعار للعملاء</strong> — إنشاء وعرض وإرسال عروض السعر
+        للعملاء.
+      </p>
+
+      <div class="page-header">
+        <div class="tabs" data-tab-group="priceTab">
+          <button class="tab active" data-tab="rates" onclick="switchTab('priceTab', 'rates')">
+            <i class="bx bx-table"></i> جدول الأسعار
+          </button>
+          <button class="tab" data-tab="quotes" onclick="switchTab('priceTab', 'quotes')">
+            <i class="bx bx-file"></i> عروض الأسعار
+          </button>
         </div>
-        <div class="topbar-right">
-          <div class="search-bar">
-            <i class="bx bx-search"></i
-            ><input type="text" placeholder="بحث في الأسعار..." />
-          </div>
-          <div class="topbar-icon">
-            <i class="bx bx-bell"></i>
-            <div class="notif-dot"></div>
-          </div>
-          <div class="currency-dropdown">
-            <div class="topbar-icon" onclick="toggleCurrencyDropdown(event)">
-              <i class="bx bx-dollar-circle"></i>
-              <span class="currency-code" id="currencyCodeBadge">$</span>
-            </div>
-            <div class="currency-dropdown-menu" id="currencyDropdown">
-              <button
-                type="button"
-                class="currency-dropdown-item active"
-                data-currency="USD"
-              >
-                $ USD <i class="bx bx-check"></i>
-              </button>
-              <button
-                type="button"
-                class="currency-dropdown-item"
-                data-currency="EUR"
-              >
-                € EUR
-              </button>
-              <button
-                type="button"
-                class="currency-dropdown-item"
-                data-currency="EGP"
-              >
-                E£ EGP
-              </button>
-            </div>
-          </div>
-          <div class="profile-pill">
-            <div class="profile-avatar">MD</div>
-            <span>Capt. Mostafa</span>
-          </div>
+        <div class="page-header-actions">
+          <button class="btn btn-outline btn-sm" data-role-only="admin,pricing"
+            onclick="if(typeof openAddOfferGlobal==='function')openAddOfferGlobal();else openModal('offerModal')">
+            <i class="bx bx-plus"></i> إضافة سعر
+          </button>
+          <button class="btn btn-primary" data-role-only="admin,pricing" onclick="openModal('createQuoteModal')">
+            <i class="bx bx-plus"></i> إنشاء عرض سعر
+          </button>
         </div>
-      </header>
+      </div>
 
-      <main class="content">
-        <p class="fs-sm text-muted" style="margin-bottom: 12px">
-          <strong>التسعير:</strong> (1) <strong>جداول الأسعار</strong> — بحث
-          وإدارة عروض الأسعار حسب المنطقة وميناء التفريغ. (2)
-          <strong>عروض الأسعار للعملاء</strong> — إنشاء وعرض وإرسال عروض السعر
-          للعملاء.
-        </p>
+      <!-- Tab 1: Price Sheets (search + offers) -->
+      <div class="tab-content active" id="priceTab-rates">
 
-        <div class="page-header">
-          <div class="tabs" data-tab-group="priceTab">
-            <button
-              class="tab active"
-              data-tab="rates"
-              onclick="switchTab('priceTab', 'rates')"
-            >
-              <i class="bx bx-table"></i> جدول الأسعار
-            </button>
-            <button
-              class="tab"
-              data-tab="quotes"
-              onclick="switchTab('priceTab', 'quotes')"
-            >
-              <i class="bx bx-file"></i> عروض الأسعار
-            </button>
-          </div>
-          <div class="page-header-actions">
-            <button
-              class="btn btn-outline btn-sm"
-              data-role-only="admin,pricing"
-              onclick="openModal('addRateModal')"
-            >
-              <i class="bx bx-plus"></i> إضافة سعر
-            </button>
-            <button
-              class="btn btn-primary"
-              data-role-only="admin,pricing"
-              onclick="openModal('createQuoteModal')"
-            >
-              <i class="bx bx-plus"></i> إنشاء عرض سعر
-            </button>
-          </div>
+        <!-- Pricing type selector -->
+        <div class="pricing-type-tabs">
+          <button class="pricing-type-tab active" id="btnTypeTab_sea" type="button">
+            <i class="bx bxs-ship"></i> خطوط ملاحية
+          </button>
+          <button class="pricing-type-tab" id="btnTypeTab_inland" type="button">
+            <i class="bx bx-trip"></i> نقل داخلي
+          </button>
         </div>
 
-        <!-- Tab 1: Price Sheets (search + offers) -->
-        <div class="tab-content active" id="priceTab-sheets">
-          <div
-            class="card"
-            style="
-              margin-bottom: 16px;
-              padding: 12px 20px;
-              background: var(--info-light);
-              border: 1px solid var(--info);
-              border-radius: var(--radius-sm);
-            "
-          >
-            <span class="fw-700 fs-sm" style="color: var(--navy-800)"
-              >قواعد النظام:</span
-            >
-            <ul
-              class="fs-sm text-muted"
-              style="margin: 8px 0 0 16px; padding-right: 8px"
-            >
-              <li>المبيعات — عرض فقط. فريق التسعير يدير التحديثات.</li>
-              <li>
-                عدة عروض لنفس الميناء مسموحة. السعر الإجمالي في النتائج؛
-                التفاصيل الكاملة في تفاصيل العرض.
-              </li>
-            </ul>
+        <!-- Search/Filter card -->
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-header">
+            <span class="card-title">
+              <i class="bx bx-search-alt" style="margin-left:6px"></i>
+              البحث في التسعير —
+              <span id="pricingTypeBadge" style="font-weight:400;color:var(--accent-cyan)">🚢 خطوط ملاحية</span>
+            </span>
           </div>
-          <div class="card" style="margin-bottom: 24px">
-            <div class="card-header">
-              <span class="card-title"
-                ><i class="bx bx-search-alt" style="margin-left: 6px"></i> البحث
-                عن الأسعار</span
-              >
-            </div>
-            <div style="padding: 0 20px 20px">
-              <p class="fs-sm text-muted" style="margin-bottom: 12px">
-                ابحث باسم الميناء (POD) أو اختر المنطقة والميناء.
-              </p>
-              <div
-                class="filter-bar"
-                style="flex-wrap: wrap; align-items: flex-end"
-              >
-                <div class="form-group" style="margin-bottom: 0">
-                  <label class="form-label fs-xs text-muted"
-                    >بحث باسم الميناء (POD)</label
-                  >
-                  <div class="d-flex gap-2" style="flex-wrap: wrap">
-                    <input
-                      type="text"
-                      class="form-control"
-                      id="searchByPOD"
-                      placeholder="مثال: جدة، دبي، هامبورغ"
-                      style="min-width: 220px"
-                    />
-                    <button
-                      type="button"
-                      class="btn btn-primary"
-                      id="btnSearchByPOD"
-                    >
-                      <i class="bx bx-search"></i> بحث
-                    </button>
-                  </div>
-                </div>
-                <span
-                  class="fs-sm text-muted"
-                  style="align-self: center; margin: 0 8px"
-                  >أو</span
-                >
-                <div class="form-group" style="margin-bottom: 0">
-                  <label class="form-label fs-xs text-muted">المنطقة</label>
-                  <select
-                    class="form-control"
-                    id="filterRegion"
-                    style="min-width: 160px"
-                  >
-                    <option value="">— اختر المنطقة —</option>
-                    <option value="البحر الأحمر">البحر الأحمر</option>
-                    <option value="البحر المتوسط">البحر المتوسط</option>
-                    <option value="أوروبا">أوروبا</option>
-                    <option value="الخليج">الخليج</option>
-                  </select>
-                </div>
-                <div class="form-group" style="margin-bottom: 0">
-                  <label class="form-label fs-xs text-muted"
-                    >ميناء التفريغ (POD)</label
-                  >
-                  <select
-                    class="form-control"
-                    id="filterPOD"
-                    style="min-width: 160px"
-                  >
-                    <option value="">— اختر الميناء —</option>
-                    <option value="جدة">جدة</option>
-                    <option value="دبي">دبي</option>
-                    <option value="الإسكندرية">الإسكندرية</option>
-                    <option value="مرسيليا">مرسيليا</option>
-                    <option value="هامبورغ">هامبورغ</option>
-                    <option value="جنوة">جنوة</option>
-                    <option value="إسطنبول">إسطنبول</option>
-                  </select>
-                </div>
-                <div class="d-flex align-center gap-2">
-                  <button
-                    type="button"
-                    class="btn btn-primary"
-                    id="btnLoadOffers"
-                  >
-                    <i class="bx bx-list-ul"></i> عرض العروض
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-outline"
-                    id="btnClearFilters"
-                  >
-                    مسح
+          <div style="padding:0 20px 20px">
+            <div class="filter-bar" style="flex-wrap:wrap;align-items:flex-end">
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label fs-xs text-muted">بحث سريع باسم الميناء</label>
+                <div class="d-flex gap-2">
+                  <input type="text" class="form-control" id="searchByPOD" placeholder="مثال: جدة، دبي، هامبورغ"
+                    style="min-width:200px" />
+                  <button type="button" class="btn btn-outline" id="btnSearchByPOD">
+                    <i class="bx bx-search"></i>
                   </button>
                 </div>
               </div>
+              <span class="fs-sm text-muted" style="align-self:center;margin:0 6px">أو</span>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label fs-xs text-muted" for="filterRegion">المنطقة</label>
+                <select class="form-control" id="filterRegion" style="min-width:160px">
+                  <option value="">— اختر المنطقة —</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label fs-xs text-muted" for="filterPOD">ميناء التفريغ (POD)</label>
+                <select class="form-control" id="filterPOD" style="min-width:160px">
+                  <option value="">— اختر الميناء —</option>
+                </select>
+              </div>
+              <div class="d-flex align-center gap-2">
+                <button type="button" class="btn btn-primary" id="btnLoadOffers">
+                  <i class="bx bx-list-ul"></i> عرض التسعير
+                </button>
+                <button type="button" class="btn btn-outline" id="btnClearFilters">مسح</button>
+              </div>
             </div>
-          </div>
-          <div class="card" id="offersCard" style="display: none">
-            <div
-              class="card-header d-flex justify-between align-center flex-wrap gap-2"
-            >
-              <span class="card-title"
-                >عروض الأسعار —
-                <span id="offersSubtitle">المنطقة / POD</span></span
-              >
-              <button
-                type="button"
-                class="btn btn-primary btn-sm"
-                data-role-only="admin,pricing"
-                id="btnAddOffer"
-                style="display: none"
-              >
-                <i class="bx bx-plus"></i> إضافة عرض سعر
-              </button>
-            </div>
-            <div class="filter-bar">
-              <input
-                type="text"
-                class="form-control"
-                id="offersSearch"
-                placeholder="بحث بالخط أو نوع الحاوية..."
-                style="max-width: 240px"
-              />
-              <select class="form-control" id="filterLine" style="width: auto">
-                <option value="">كل الخطوط</option>
-                <option value="MSC">MSC</option>
-                <option value="CMA CGM">CMA CGM</option>
-                <option value="Maersk">Maersk</option>
-                <option value="Hapag-Lloyd">Hapag-Lloyd</option>
-              </select>
-              <select
-                class="form-control"
-                id="filterContainerType"
-                style="width: auto"
-              >
-                <option value="">كل الأنواع</option>
-                <option value="20' STD">20' STD</option>
-                <option value="40' STD">40' STD</option>
-                <option value="40' HC">40' HC</option>
-                <option value="Reefer 40'">Reefer 40'</option>
-              </select>
-            </div>
-            <table class="data-table" id="ratesTable">
-              <thead>
-                <tr>
-                  <th style="width: 44px">
-                    <input
-                      type="checkbox"
-                      id="selectAllRates"
-                      title="تحديد الكل"
-                    />
-                  </th>
-                  <th>الخط</th>
-                  <th>ميناء التحميل</th>
-                  <th>الوجهة</th>
-                  <th>20' STD</th>
-                  <th>40' STD</th>
-                  <th>40' HC</th>
-                  <th>Reefer 40'</th>
-                  <th>THC</th>
-                  <th>ساري حتى</th>
-                  <th>إجراءات</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  class="rate-row"
-                  data-line="MSC"
-                  data-port="الإسكندرية"
-                  data-route="الإسكندرية-جدة"
-                >
-                  <td><input type="checkbox" class="rate-checkbox" /></td>
-                  <td class="fw-600">MSC</td>
-                  <td>الإسكندرية</td>
-                  <td>جدة</td>
-                  <td>$850</td>
-                  <td>$1,200</td>
-                  <td class="fw-700">$1,400</td>
-                  <td>$2,800</td>
-                  <td>$225</td>
-                  <td class="fs-sm text-muted">28/02/2026</td>
-                  <td>
-                    <a
-                      href="cost-viewer.html?pol=alex&pod=jeddah"
-                      class="btn btn-sm btn-outline"
-                      title="عرض التكلفة"
-                      ><i class="bx bx-calculator"></i
-                    ></a>
-                    <button class="btn btn-sm btn-outline">
-                      <i class="bx bx-edit"></i>
-                    </button>
-                  </td>
-                </tr>
-                <tr
-                  class="rate-row"
-                  data-line="MSC"
-                  data-port="الإسكندرية"
-                  data-route="الإسكندرية-إسطنبول"
-                >
-                  <td><input type="checkbox" class="rate-checkbox" /></td>
-                  <td class="fw-600">MSC</td>
-                  <td>الإسكندرية</td>
-                  <td>إسطنبول</td>
-                  <td>$650</td>
-                  <td>$950</td>
-                  <td class="fw-700">$1,100</td>
-                  <td>$2,200</td>
-                  <td>$225</td>
-                  <td class="fs-sm text-muted">28/02/2026</td>
-                  <td>
-                    <a
-                      href="cost-viewer.html"
-                      class="btn btn-sm btn-outline"
-                      title="عرض التكلفة"
-                      ><i class="bx bx-calculator"></i
-                    ></a>
-                    <button class="btn btn-sm btn-outline">
-                      <i class="bx bx-edit"></i>
-                    </button>
-                  </td>
-                </tr>
-                <tr
-                  class="rate-row"
-                  data-line="CMA CGM"
-                  data-port="دمياط"
-                  data-route="دمياط-دبي"
-                >
-                  <td><input type="checkbox" class="rate-checkbox" /></td>
-                  <td class="fw-600">CMA CGM</td>
-                  <td>دمياط</td>
-                  <td>دبي</td>
-                  <td>$900</td>
-                  <td>$1,350</td>
-                  <td class="fw-700">$1,550</td>
-                  <td>$3,100</td>
-                  <td>$250</td>
-                  <td class="fs-sm text-muted">15/03/2026</td>
-                  <td>
-                    <a
-                      href="cost-viewer.html"
-                      class="btn btn-sm btn-outline"
-                      title="عرض التكلفة"
-                      ><i class="bx bx-calculator"></i
-                    ></a>
-                    <button class="btn btn-sm btn-outline">
-                      <i class="bx bx-edit"></i>
-                    </button>
-                  </td>
-                </tr>
-                <tr
-                  class="rate-row"
-                  data-line="CMA CGM"
-                  data-port="الإسكندرية"
-                  data-route="الإسكندرية-مرسيليا"
-                >
-                  <td><input type="checkbox" class="rate-checkbox" /></td>
-                  <td class="fw-600">CMA CGM</td>
-                  <td>الإسكندرية</td>
-                  <td>مرسيليا</td>
-                  <td>$750</td>
-                  <td>$1,100</td>
-                  <td class="fw-700">$1,250</td>
-                  <td>$2,500</td>
-                  <td>$250</td>
-                  <td class="fs-sm text-muted">15/03/2026</td>
-                  <td>
-                    <a
-                      href="cost-viewer.html"
-                      class="btn btn-sm btn-outline"
-                      title="عرض التكلفة"
-                      ><i class="bx bx-calculator"></i
-                    ></a>
-                    <button class="btn btn-sm btn-outline">
-                      <i class="bx bx-edit"></i>
-                    </button>
-                  </td>
-                </tr>
-                <tr
-                  class="rate-row"
-                  data-line="Hapag-Lloyd"
-                  data-port="السخنة"
-                  data-route="السخنة-هامبورغ"
-                >
-                  <td><input type="checkbox" class="rate-checkbox" /></td>
-                  <td class="fw-600">Hapag-Lloyd</td>
-                  <td>السخنة</td>
-                  <td>هامبورغ</td>
-                  <td>$1,100</td>
-                  <td>$1,800</td>
-                  <td class="fw-700">$2,050</td>
-                  <td>$3,800</td>
-                  <td>$275</td>
-                  <td class="fs-sm text-muted">01/03/2026</td>
-                  <td>
-                    <a
-                      href="cost-viewer.html"
-                      class="btn btn-sm btn-outline"
-                      title="عرض التكلفة"
-                      ><i class="bx bx-calculator"></i
-                    ></a>
-                    <button class="btn btn-sm btn-outline">
-                      <i class="bx bx-edit"></i>
-                    </button>
-                  </td>
-                </tr>
-                <tr
-                  class="rate-row"
-                  data-line="Maersk"
-                  data-port="الإسكندرية"
-                  data-route="الإسكندرية-جنوة"
-                >
-                  <td><input type="checkbox" class="rate-checkbox" /></td>
-                  <td class="fw-600">Maersk</td>
-                  <td>الإسكندرية</td>
-                  <td>جنوة</td>
-                  <td>$800</td>
-                  <td>$1,150</td>
-                  <td class="fw-700">$1,300</td>
-                  <td>$2,600</td>
-                  <td>$240</td>
-                  <td class="fs-sm text-muted">28/02/2026</td>
-                  <td>
-                    <a
-                      href="cost-viewer.html"
-                      class="btn btn-sm btn-outline"
-                      title="عرض التكلفة"
-                      ><i class="bx bx-calculator"></i
-                    ></a>
-                    <button class="btn btn-sm btn-outline">
-                      <i class="bx bx-edit"></i>
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
           </div>
         </div>
 
-        <!-- Tab 2: Customer quotations -->
-        <div class="tab-content" id="priceTab-quotes">
-          <div
-            id="quotationFromOfferBanner"
-            class="card"
-            style="
+        <!-- Select-first placeholder -->
+        <div id="selectFirstCard" class="card">
+          <div class="select-first-card">
+            <i class="bx bx-filter-alt"></i>
+            <h3>اختر المنطقة والميناء لعرض التسعير</h3>
+            <p class="fs-sm text-muted">استخدم الفلاتر أعلاه لعرض عروض الأسعار المتاحة، أو ابحث بالاسم مباشرةً.</p>
+          </div>
+        </div>
+
+        <!-- Offers panel (hidden until loaded) -->
+        <div class="card" id="offersCard" style="display:none">
+          <div class="card-header d-flex justify-between align-center flex-wrap gap-2">
+            <span class="card-title">
+              عروض الأسعار —
+              <span id="offersSubtitle" style="font-weight:400">المنطقة / POD</span>
+            </span>
+            <div class="d-flex gap-2 align-center">
+              <input type="text" class="form-control form-control-sm" id="offersSearch" placeholder="بحث..."
+                style="max-width:180px" />
+              <button type="button" class="btn btn-primary btn-sm" data-role-only="admin,pricing" id="btnAddOffer"
+                style="display:none">
+                <i class="bx bx-plus"></i> إضافة تسعير
+              </button>
+            </div>
+          </div>
+          <div id="offersContainer" class="offers-grid" style="padding:0 16px 16px"></div>
+          <div id="offersEmpty" style="display:none; padding:40px; text-align:center; color:var(--text-muted)">
+            <i class="bx bx-inbox" style="font-size:2.5rem; opacity:.3"></i>
+            <p class="fs-sm" style="margin-top:10px">لا توجد عروض بعد. اضغط «إضافة تسعير» لإضافة أول عرض.</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Tab 2: Customer quotations -->
+      <div class="tab-content" id="priceTab-quotes">
+        <div id="quotationFromOfferBanner" class="card" style="
               margin-bottom: 16px;
               display: none;
               padding: 12px 20px;
               background: var(--info-light);
               border: 1px solid var(--info);
               border-radius: var(--radius-sm);
-            "
-          >
-            <span
-              ><i
-                class="bx bx-info-circle"
-                style="color: var(--info); margin-left: 6px"
-              ></i>
-              تم اختيار عرض سعر من جداول الأسعار. يمكنك إنشاء عرض السعر من الزر
-              أعلاه.</span
-            >
+            ">
+          <span><i class="bx bx-info-circle" style="color: var(--info); margin-left: 6px"></i>
+            تم اختيار عرض سعر من جداول الأسعار. يمكنك إنشاء عرض السعر من الزر
+            أعلاه.</span>
+        </div>
+        <div class="card" style="margin-bottom: 24px">
+          <div class="card-header">
+            <span class="card-title">إحصائيات عروض الأسعار</span>
           </div>
-          <div class="card" style="margin-bottom: 24px">
-            <div class="card-header">
-              <span class="card-title">إحصائيات عروض الأسعار</span>
-            </div>
-            <div style="padding: 16px; max-width: 320px">
-              <p class="fs-sm fw-600 text-muted" style="margin-bottom: 8px">
-                حالة العروض
-              </p>
-              <div
-                class="chart-wrap"
-                style="position: relative; height: 200px; width: 100%"
-              >
-                <canvas id="chartQuotesStatus"></canvas>
-              </div>
+          <div style="padding: 16px; max-width: 320px">
+            <p class="fs-sm fw-600 text-muted" style="margin-bottom: 8px">
+              حالة العروض
+            </p>
+            <div class="chart-wrap" style="position: relative; height: 200px; width: 100%">
+              <canvas id="chartQuotesStatus"></canvas>
             </div>
           </div>
-          <div
-            class="bulk-actions-bar"
-            id="quotesBulkBar"
-            style="display: none"
-          >
-            <span class="bulk-count" id="quotesBulkCount">تم تحديد 0 عرض</span>
-            <button
-              type="button"
-              class="btn btn-outline btn-sm"
-              id="quotesBulkExport"
-            >
-              تصدير المحدد
-            </button>
-            <button
-              type="button"
-              class="btn btn-outline btn-sm"
-              id="quotesBulkClear"
-            >
-              إلغاء التحديد
+        </div>
+        <div class="bulk-actions-bar" id="quotesBulkBar" style="display: none">
+          <span class="bulk-count" id="quotesBulkCount">تم تحديد 0 عرض</span>
+          <button type="button" class="btn btn-outline btn-sm" id="quotesBulkExport">
+            تصدير المحدد
+          </button>
+          <button type="button" class="btn btn-outline btn-sm" id="quotesBulkClear">
+            إلغاء التحديد
+          </button>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">عروض الأسعار</span>
+            <button type="button" class="btn btn-outline btn-sm" id="quotesExportAll">
+              <i class="bx bx-export"></i> تصدير
             </button>
           </div>
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">عروض الأسعار</span>
-              <button
-                type="button"
-                class="btn btn-outline btn-sm"
-                id="quotesExportAll"
-              >
-                <i class="bx bx-export"></i> تصدير
+          <div class="filter-bar">
+            <input type="text" class="form-control" id="quotesSearch" placeholder="بحث بالعميل أو رقم العرض..."
+              style="max-width: 220px" />
+            <select class="form-control" id="filterQuoteStatus" style="width: auto">
+              <option value="">كل الحالات</option>
+              <option value="مقبول">مقبول</option>
+              <option value="بانتظار">بانتظار</option>
+              <option value="مرفوض">مرفوض</option>
+            </select>
+            <select class="form-control" id="filterQuoteSales" style="width: auto">
+              <option value="">كل السيلز</option>
+              <option value="أحمد خيري">أحمد خيري</option>
+              <option value="محمد سعيد">محمد سعيد</option>
+              <option value="زينب رضوان">زينب رضوان</option>
+            </select>
+            <select class="form-control" id="sortQuotes" style="width: auto; min-width: 110px">
+              <option value="">ترتيب حسب</option>
+              <option value="date">التاريخ</option>
+              <option value="amount">المبلغ</option>
+            </select>
+          </div>
+          <table class="data-table" id="quotesTable">
+            <thead>
+              <tr>
+                <th style="width: 44px">
+                  <input type="checkbox" id="selectAllQuotes" title="تحديد الكل" />
+                </th>
+                <th>رقم العرض</th>
+                <th>العميل</th>
+                <th>المسار</th>
+                <th>نوع الحاوية</th>
+                <th>السعر</th>
+                <th>الحالة</th>
+                <th>شحنة</th>
+                <th>السيلز</th>
+                <th>التاريخ</th>
+                <th>إجراءات</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="quote-row" data-status="مقبول" data-sales="أحمد خيري" data-amount="5450" data-date="20260218">
+                <td><input type="checkbox" class="quote-checkbox" /></td>
+                <td class="bl-number">Q-2026-0048</td>
+                <td class="fw-600">منصور وشركاه</td>
+                <td>الإسكندرية → جدة</td>
+                <td>2×40'HC</td>
+                <td class="fw-700">$5,450</td>
+                <td><span class="status-badge active">مقبول</span></td>
+                <td>
+                  <a href="shipments.html?bl=BL-2026-0248" class="text-cyan fs-sm">BL-2026-0248</a>
+                </td>
+                <td>أحمد خيري</td>
+                <td class="fs-sm text-muted">18/02</td>
+                <td>
+                  <button class="btn btn-sm btn-outline" onclick="openModal('quotePreviewModal')">
+                    <i class="bx bx-show"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr class="quote-row" data-status="بانتظار" data-sales="زينب رضوان" data-amount="10200"
+                data-date="20260217">
+                <td><input type="checkbox" class="quote-checkbox" /></td>
+                <td class="bl-number">Q-2026-0047</td>
+                <td class="fw-600">طه للمنسوجات</td>
+                <td>السخنة → هامبورغ</td>
+                <td>1×40'HC</td>
+                <td class="fw-700">$10,200</td>
+                <td><span class="status-badge pending">بانتظار</span></td>
+                <td>—</td>
+                <td>زينب رضوان</td>
+                <td class="fs-sm text-muted">17/02</td>
+                <td>
+                  <button class="btn btn-sm btn-outline" onclick="openModal('quotePreviewModal')">
+                    <i class="bx bx-show"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr class="quote-row" data-status="مرفوض" data-sales="محمد سعيد" data-amount="3200" data-date="20260215">
+                <td><input type="checkbox" class="quote-checkbox" /></td>
+                <td class="bl-number">Q-2026-0046</td>
+                <td class="fw-600">العربية للشحن</td>
+                <td>بورسعيد → مرسيليا</td>
+                <td>1×20'</td>
+                <td class="fw-700">$3,200</td>
+                <td><span class="status-badge unpaid">مرفوض</span></td>
+                <td>—</td>
+                <td>محمد سعيد</td>
+                <td class="fs-sm text-muted">15/02</td>
+                <td>
+                  <button class="btn btn-sm btn-outline" onclick="openModal('quotePreviewModal')">
+                    <i class="bx bx-show"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ═══ Add/Edit Price Offer Modal ═══ -->
+  <div class="modal-overlay" id="offerModal">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h3>
+          <i class="bx bx-spreadsheet" style="margin-left: 8px"></i>
+          <span id="offerModalTitle">إضافة عرض سعر</span>
+        </h3>
+        <button class="modal-close" onclick="closeModal('offerModal')">
+          <i class="bx bx-x"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="offerId" />
+
+        <!-- ▸ Sea Freight fields -->
+        <div id="seaFields">
+          <!-- Region → POD selector -->
+          <div class="form-row"
+            style="background:rgba(34,211,238,.06);border-radius:10px;padding:12px 14px;margin-bottom:14px;border:1px solid rgba(34,211,238,.2)">
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label fs-xs" style="color:var(--accent-cyan)">📍 المنطقة <span
+                  style="color:#ef4444">*</span></label>
+              <select class="form-control" id="offerRegion"></select>
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label fs-xs" style="color:var(--accent-cyan)">⚓ POD <span
+                  style="color:#ef4444">*</span></label>
+              <select class="form-control" id="offerPOD"></select>
+            </div>
+          </div>
+
+          <!-- Line / POL / T.T row -->
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">SHIPPING LINE <span style="color:#ef4444">*</span></label>
+              <select class="form-control" id="offerShippingLine"></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">D&D / Free Days <span class="fs-xs text-muted">(مثال: 7det)</span></label>
+              <input type="text" class="form-control" id="offerDnD" placeholder="مثال: 7det, 14 days" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">POL <span style="color:#ef4444">*</span></label>
+              <select class="form-control" id="offerPOL"></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">T.T <span class="fs-xs text-muted">(وقت العبور)</span></label>
+              <input type="text" class="form-control" id="offerTransitTime" placeholder="مثال: 5 days, 5-6 days" />
+            </div>
+          </div>
+
+          <!-- Sailing Dates — multiple date pickers -->
+          <div class="form-group">
+            <label class="form-label">VESSELS / مواعيد الإبحار
+              <button type="button" class="btn btn-sm btn-outline" id="btnAddSailingDate"
+                style="margin-right:10px;padding:2px 10px;font-size:.75rem">
+                <i class="bx bx-plus"></i> إضافة تاريخ
               </button>
+            </label>
+            <div id="sailingDatesContainer" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px"></div>
+          </div>
+
+          <!-- Pricing table -->
+          <h4 class="fs-sm fw-700" style="margin:16px 0 10px;border-top:1px solid var(--border);padding-top:14px">
+            <i class="bx bx-dollar-circle" style="color:var(--accent-cyan)"></i> OF / THC
+          </h4>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>البند</th>
+                <th style="width:140px">السعر</th>
+                <th style="width:100px">العملة</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>OF 20'DC</strong></td>
+                <td><input type="number" class="form-control form-control-sm offer-price-input" data-item="of20"
+                    placeholder="0" step="0.01" min="0" /></td>
+                <td><select class="form-control form-control-sm offer-currency-select" data-item="of20">
+                    <option>USD</option>
+                    <option>EGP</option>
+                    <option>EUR</option>
+                  </select></td>
+              </tr>
+              <tr>
+                <td><strong>OF 40'HQ</strong></td>
+                <td><input type="number" class="form-control form-control-sm offer-price-input" data-item="of40"
+                    placeholder="0" step="0.01" min="0" /></td>
+                <td><select class="form-control form-control-sm offer-currency-select" data-item="of40">
+                    <option>USD</option>
+                    <option>EGP</option>
+                    <option>EUR</option>
+                  </select></td>
+              </tr>
+              <tr>
+                <td>THC 20'DC</td>
+                <td><input type="number" class="form-control form-control-sm offer-price-input" data-item="thc20"
+                    placeholder="0" step="0.01" min="0" /></td>
+                <td><select class="form-control form-control-sm offer-currency-select" data-item="thc20">
+                    <option>USD</option>
+                    <option>EGP</option>
+                    <option>EUR</option>
+                  </select></td>
+              </tr>
+              <tr>
+                <td>THC 40'HQ</td>
+                <td><input type="number" class="form-control form-control-sm offer-price-input" data-item="thc40"
+                    placeholder="0" step="0.01" min="0" /></td>
+                <td><select class="form-control form-control-sm offer-currency-select" data-item="thc40">
+                    <option>USD</option>
+                    <option>EGP</option>
+                    <option>EUR</option>
+                  </select></td>
+              </tr>
+              <tr style="background:rgba(6,182,212,.05)">
+                <td><i class="bx bxs-droplet-half" style="color:#06b6d4"></i> <strong>OF 40'RF</strong> <span
+                    class="fs-xs text-muted">(Reefer)</span></td>
+                <td><input type="number" class="form-control form-control-sm offer-price-input" data-item="of40rf"
+                    placeholder="0" step="0.01" min="0" /></td>
+                <td><select class="form-control form-control-sm offer-currency-select" data-item="of40rf">
+                    <option>USD</option>
+                    <option>EGP</option>
+                    <option>EUR</option>
+                  </select></td>
+              </tr>
+              <tr style="background:rgba(6,182,212,.05)">
+                <td>THC 40'RF</td>
+                <td><input type="number" class="form-control form-control-sm offer-price-input" data-item="thcRf"
+                    placeholder="0" step="0.01" min="0" /></td>
+                <td><select class="form-control form-control-sm offer-currency-select" data-item="thcRf">
+                    <option>USD</option>
+                    <option>EGP</option>
+                    <option>EUR</option>
+                  </select></td>
+              </tr>
+              <tr style="background:rgba(6,182,212,.05)">
+                <td><i class="bx bx-plug" style="color:#06b6d4"></i> Power/day <span
+                    class="fs-xs text-muted">(Reefer)</span></td>
+                <td><input type="number" class="form-control form-control-sm offer-price-input" data-item="powerDay"
+                    placeholder="0" step="0.01" min="0" /></td>
+                <td><select class="form-control form-control-sm offer-currency-select" data-item="powerDay">
+                    <option>USD</option>
+                    <option>EGP</option>
+                    <option>EUR</option>
+                  </select></td>
+              </tr>
+              <tr style="background:rgba(6,182,212,.05)">
+                <td>PTI <span class="fs-xs text-muted">(Reefer)</span></td>
+                <td><input type="number" class="form-control form-control-sm offer-price-input" data-item="pti"
+                    placeholder="0" step="0.01" min="0" /></td>
+                <td><select class="form-control form-control-sm offer-currency-select" data-item="pti">
+                    <option>USD</option>
+                    <option>EGP</option>
+                    <option>EUR</option>
+                  </select></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Other Charges (free text, combined field) -->
+          <div class="form-group" style="margin-top:12px">
+            <label class="form-label">OTHER CHARGES <span class="fs-xs text-muted">(مثال: BL:35$, Tlx:20$,
+                W.R:80$)</span></label>
+            <input type="text" class="form-control" id="offerOtherCharges" placeholder="BL:35$, Tlx:20$" />
+          </div>
+        </div>
+
+        <!-- ▸ Inland Transport fields -->
+        <div id="inlandFields" style="display:none">
+
+          <!-- Port + Destination row -->
+          <div class="form-row"
+            style="background:rgba(245,158,11,.07);border-radius:10px;padding:14px;margin-bottom:14px;border:1px solid rgba(245,158,11,.25)">
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label fs-xs" style="color:#f59e0b">⚓ الميناء <span
+                  style="color:#ef4444">*</span></label>
+              <select class="form-control form-control-sm" id="offerInlandPort"></select>
             </div>
-            <div class="filter-bar">
-              <input
-                type="text"
-                class="form-control"
-                id="quotesSearch"
-                placeholder="بحث بالعميل أو رقم العرض..."
-                style="max-width: 220px"
-              />
-              <select
-                class="form-control"
-                id="filterQuoteStatus"
-                style="width: auto"
-              >
-                <option value="">كل الحالات</option>
-                <option value="مقبول">مقبول</option>
-                <option value="بانتظار">بانتظار</option>
-                <option value="مرفوض">مرفوض</option>
-              </select>
-              <select
-                class="form-control"
-                id="filterQuoteSales"
-                style="width: auto"
-              >
-                <option value="">كل السيلز</option>
-                <option value="أحمد خيري">أحمد خيري</option>
-                <option value="محمد سعيد">محمد سعيد</option>
-                <option value="زينب رضوان">زينب رضوان</option>
-              </select>
-              <select
-                class="form-control"
-                id="sortQuotes"
-                style="width: auto; min-width: 110px"
-              >
-                <option value="">ترتيب حسب</option>
-                <option value="date">التاريخ</option>
-                <option value="amount">المبلغ</option>
-              </select>
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label fs-xs" style="color:#f59e0b">📍 المحافظة <span
+                  style="color:#ef4444">*</span></label>
+              <select class="form-control form-control-sm" id="offerInlandGov"
+                onchange="window.updateInlandCities()"></select>
             </div>
-            <table class="data-table" id="quotesTable">
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label fs-xs" style="color:#f59e0b">📍 مكان التحميل <span
+                  style="color:#ef4444">*</span></label>
+              <select class="form-control form-control-sm" id="offerInlandCity"></select>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div class="form-group">
+            <label class="form-label">ملاحظات <span class="fs-xs text-muted">(اختياري)</span></label>
+            <input type="text" class="form-control form-control-sm" id="offerNotes"
+              placeholder="مثال: يشمل التعقيم، المناطق الصناعية فقط" />
+          </div>
+
+          <!-- Pricing table — one row per truck type -->
+          <h4 class="fs-sm fw-700" style="margin:16px 0 10px;border-top:1px solid var(--border);padding-top:14px">
+            <i class="bx bx-truck" style="color:#f59e0b"></i>أنواع العربيات
+          </h4>
+          <div class="table-responsive">
+            <table class="data-table" style="font-size: 0.85rem">
               <thead>
-                <tr>
-                  <th style="width: 44px">
-                    <input
-                      type="checkbox"
-                      id="selectAllQuotes"
-                      title="تحديد الكل"
-                    />
-                  </th>
-                  <th>رقم العرض</th>
-                  <th>العميل</th>
-                  <th>المسار</th>
-                  <th>نوع الحاوية</th>
-                  <th>السعر</th>
-                  <th>الحالة</th>
-                  <th>شحنة</th>
-                  <th>السيلز</th>
-                  <th>التاريخ</th>
-                  <th>إجراءات</th>
+                <tr style="background:var(--bg-lighter)">
+                  <th style="padding:10px 12px">نوع العربة (Truck Type)</th>
+                  <th style="width:180px;padding:10px 12px">السعر (ج.م)</th>
                 </tr>
               </thead>
               <tbody>
-                <tr
-                  class="quote-row"
-                  data-status="مقبول"
-                  data-sales="أحمد خيري"
-                  data-amount="5450"
-                  data-date="20260218"
-                >
-                  <td><input type="checkbox" class="quote-checkbox" /></td>
-                  <td class="bl-number">Q-2026-0048</td>
-                  <td class="fw-600">منصور وشركاه</td>
-                  <td>الإسكندرية → جدة</td>
-                  <td>2×40'HC</td>
-                  <td class="fw-700">$5,450</td>
-                  <td><span class="status-badge active">مقبول</span></td>
-                  <td>
-                    <a
-                      href="shipments.html?bl=BL-2026-0248"
-                      class="text-cyan fs-sm"
-                      >BL-2026-0248</a
-                    >
-                  </td>
-                  <td>أحمد خيري</td>
-                  <td class="fs-sm text-muted">18/02</td>
-                  <td>
-                    <button
-                      class="btn btn-sm btn-outline"
-                      onclick="openModal('quotePreviewModal')"
-                    >
-                      <i class="bx bx-show"></i>
-                    </button>
-                  </td>
+                <tr>
+                  <td>Truck – 1 × 20' Dry Container</td>
+                  <td><input type="number" class="form-control form-control-sm offer-price-input" data-item="t20d"
+                      placeholder="0" step="1" min="0" /></td>
                 </tr>
-                <tr
-                  class="quote-row"
-                  data-status="بانتظار"
-                  data-sales="زينب رضوان"
-                  data-amount="10200"
-                  data-date="20260217"
-                >
-                  <td><input type="checkbox" class="quote-checkbox" /></td>
-                  <td class="bl-number">Q-2026-0047</td>
-                  <td class="fw-600">طه للمنسوجات</td>
-                  <td>السخنة → هامبورغ</td>
-                  <td>1×40'HC</td>
-                  <td class="fw-700">$10,200</td>
-                  <td><span class="status-badge pending">بانتظار</span></td>
-                  <td>—</td>
-                  <td>زينب رضوان</td>
-                  <td class="fs-sm text-muted">17/02</td>
-                  <td>
-                    <button
-                      class="btn btn-sm btn-outline"
-                      onclick="openModal('quotePreviewModal')"
-                    >
-                      <i class="bx bx-show"></i>
-                    </button>
-                  </td>
+                <tr>
+                  <td>Truck – 2 × 20' Dry Containers</td>
+                  <td><input type="number" class="form-control form-control-sm offer-price-input" data-item="t20dx2"
+                      placeholder="0" step="1" min="0" /></td>
                 </tr>
-                <tr
-                  class="quote-row"
-                  data-status="مرفوض"
-                  data-sales="محمد سعيد"
-                  data-amount="3200"
-                  data-date="20260215"
-                >
-                  <td><input type="checkbox" class="quote-checkbox" /></td>
-                  <td class="bl-number">Q-2026-0046</td>
-                  <td class="fw-600">العربية للشحن</td>
-                  <td>بورسعيد → مرسيليا</td>
-                  <td>1×20'</td>
-                  <td class="fw-700">$3,200</td>
-                  <td><span class="status-badge unpaid">مرفوض</span></td>
-                  <td>—</td>
-                  <td>محمد سعيد</td>
-                  <td class="fs-sm text-muted">15/02</td>
-                  <td>
-                    <button
-                      class="btn btn-sm btn-outline"
-                      onclick="openModal('quotePreviewModal')"
-                    >
-                      <i class="bx bx-show"></i>
-                    </button>
-                  </td>
+                <tr>
+                  <td>Truck – 1 × 40' Dry Container</td>
+                  <td><input type="number" class="form-control form-control-sm offer-price-input" data-item="t40d"
+                      placeholder="0" step="1" min="0" /></td>
+                </tr>
+                <tr>
+                  <td>Truck – 1 × 40' High Cube (HQ) Dry Container</td>
+                  <td><input type="number" class="form-control form-control-sm offer-price-input" data-item="t40hq"
+                      placeholder="0" step="1" min="0" /></td>
+                </tr>
+                <tr style="background:rgba(6,182,212,.05)">
+                  <td><i class="bx bxs-droplet-half" style="color:#06b6d4;margin-left:4px"></i> Truck – 1 × 20' Reefer
+                    Container</td>
+                  <td><input type="number" class="form-control form-control-sm offer-price-input" data-item="t20r"
+                      placeholder="0" step="1" min="0" /></td>
+                </tr>
+                <tr style="background:rgba(6,182,212,.05)">
+                  <td><i class="bx bxs-droplet-half" style="color:#06b6d4;margin-left:4px"></i> Truck – 1 × 40' Reefer
+                    Container</td>
+                  <td><input type="number" class="form-control form-control-sm offer-price-input" data-item="t40r"
+                      placeholder="0" step="1" min="0" /></td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
-      </main>
-    </div>
 
-    <!-- Add/Edit Price Offer Modal -->
-    <div class="modal-overlay" id="offerModal">
-      <div class="modal modal-lg">
-        <div class="modal-header">
-          <h3>
-            <i class="bx bx-spreadsheet" style="margin-left: 8px"></i>
-            <span id="offerModalTitle">إضافة عرض سعر</span>
-          </h3>
-          <button class="modal-close" onclick="closeModal('offerModal')">
-            <i class="bx bx-x"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <input type="hidden" id="offerId" value="" />
-          <h4 class="fs-sm fw-700" style="margin-bottom: 12px">
-            البيانات الأساسية
-          </h4>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">الخط الملاحي</label>
-              <select class="form-control" id="offerShippingLine" required>
-                <option value="">— اختر —</option>
-                <option value="MSC">MSC</option>
-                <option value="CMA CGM">CMA CGM</option>
-                <option value="Maersk">Maersk</option>
-                <option value="Hapag-Lloyd">Hapag-Lloyd</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">نوع الحاوية</label>
-              <select class="form-control" id="offerContainerType" required>
-                <option value="">— اختر —</option>
-                <option value="20' STD">20' STD</option>
-                <option value="40' STD">40' STD</option>
-                <option value="40' HC">40' HC</option>
-                <option value="Reefer 40'">Reefer 40'</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">وقت العبور (أيام)</label>
-              <input
-                type="number"
-                class="form-control"
-                id="offerTransitTime"
-                placeholder="مثال: 12"
-                min="1"
-              />
-            </div>
-            <div class="form-group">
-              <label class="form-label">الإبحار (Sailings)</label>
-              <input
-                type="text"
-                class="form-control"
-                id="offerSailings"
-                placeholder="مثال: أسبوعي، الإثنين/الخميس"
-              />
-            </div>
-            <div class="form-group">
-              <label class="form-label">أيام مجانية (Free Days)</label>
-              <input
-                type="number"
-                class="form-control"
-                id="offerFreeDays"
-                placeholder="مثال: 14"
-                min="0"
-              />
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">فترة السريان من</label>
-              <input type="date" class="form-control" id="offerValidFrom" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">فترة السريان إلى</label>
-              <input type="date" class="form-control" id="offerValidTo" />
-            </div>
-          </div>
-          <h4 class="fs-sm fw-700" style="margin: 20px 0 12px">
-            بنود الأسعار (كل بند: سعر + عملة)
-          </h4>
-          <table class="data-table" id="offerPricingTable">
-            <thead>
-              <tr>
-                <th>البند</th>
-                <th style="width: 140px">السعر</th>
-                <th style="width: 120px">العملة</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Ocean Freight (أوقيان فريت)</td>
-                <td>
-                  <input
-                    type="number"
-                    class="form-control form-control-sm price-item"
-                    data-item="oceanFreight"
-                    placeholder="0"
-                    step="0.01"
-                    min="0"
-                  />
-                </td>
-                <td>
-                  <select
-                    class="form-control form-control-sm currency-item"
-                    data-item="oceanFreight"
-                  >
-                    <option value="USD">USD</option>
-                    <option value="EUR">EUR</option>
-                    <option value="EGP">EGP</option>
-                  </select>
-                </td>
-              </tr>
-              <tr>
-                <td>THC (رسوم المحطة)</td>
-                <td>
-                  <input
-                    type="number"
-                    class="form-control form-control-sm price-item"
-                    data-item="thc"
-                    placeholder="0"
-                    step="0.01"
-                    min="0"
-                  />
-                </td>
-                <td>
-                  <select
-                    class="form-control form-control-sm currency-item"
-                    data-item="thc"
-                  >
-                    <option value="USD">USD</option>
-                    <option value="EUR">EUR</option>
-                    <option value="EGP">EGP</option>
-                  </select>
-                </td>
-              </tr>
-              <tr
-                id="offerPowerRow"
-                style="display: none; background: rgba(23, 162, 184, 0.04)"
-              >
-                <td>
-                  <i
-                    class="bx bx-bolt-circle"
-                    style="color: var(--accent-cyan); margin-left: 4px"
-                  ></i>
-                  Power / Genset
-                  <span class="fs-xs text-muted">(Reefer only)</span>
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    class="form-control form-control-sm price-item"
-                    data-item="power"
-                    placeholder="0"
-                    step="0.01"
-                    min="0"
-                  />
-                </td>
-                <td>
-                  <select
-                    class="form-control form-control-sm currency-item"
-                    data-item="power"
-                  >
-                    <option value="USD">USD</option>
-                    <option value="EUR">EUR</option>
-                    <option value="EGP">EGP</option>
-                  </select>
-                </td>
-              </tr>
-              <tr>
-                <td>B/L Fee (رسم B/L)</td>
-                <td>
-                  <input
-                    type="number"
-                    class="form-control form-control-sm price-item"
-                    data-item="blFee"
-                    placeholder="0"
-                    step="0.01"
-                    min="0"
-                  />
-                </td>
-                <td>
-                  <select
-                    class="form-control form-control-sm currency-item"
-                    data-item="blFee"
-                  >
-                    <option value="USD">USD</option>
-                    <option value="EUR">EUR</option>
-                    <option value="EGP">EGP</option>
-                  </select>
-                </td>
-              </tr>
-              <tr>
-                <td>Telex Release (تليكس رليز)</td>
-                <td>
-                  <input
-                    type="number"
-                    class="form-control form-control-sm price-item"
-                    data-item="telexRelease"
-                    placeholder="0"
-                    step="0.01"
-                    min="0"
-                  />
-                </td>
-                <td>
-                  <select
-                    class="form-control form-control-sm currency-item"
-                    data-item="telexRelease"
-                  >
-                    <option value="USD">USD</option>
-                    <option value="EUR">EUR</option>
-                    <option value="EGP">EGP</option>
-                  </select>
-                </td>
-              </tr>
-              <tr>
-                <td>Other Charges (أخرى)</td>
-                <td>
-                  <input
-                    type="number"
-                    class="form-control form-control-sm price-item"
-                    data-item="otherCharges"
-                    placeholder="0"
-                    step="0.01"
-                    min="0"
-                  />
-                </td>
-                <td>
-                  <select
-                    class="form-control form-control-sm currency-item"
-                    data-item="otherCharges"
-                  >
-                    <option value="USD">USD</option>
-                    <option value="EUR">EUR</option>
-                    <option value="EGP">EGP</option>
-                  </select>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="modal-footer">
-          <button
-            type="button"
-            class="btn btn-outline"
-            onclick="closeModal('offerModal')"
-          >
-            إلغاء
-          </button>
-          <button type="button" class="btn btn-primary" id="btnSaveOffer">
-            <i class="bx bx-check"></i> حفظ العرض
-          </button>
-        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal('offerModal')">إلغاء</button>
+        <button type="button" class="btn btn-primary" id="btnSaveOffer">
+          <i class="bx bx-check"></i> حفظ التسعير
+        </button>
       </div>
     </div>
+  </div>
 
-    <!-- Offer detail modal -->
-    <div class="modal-overlay" id="offerDetailModal">
-      <div class="modal modal-lg">
-        <div class="modal-header">
-          <h3>
-            <i class="bx bx-show" style="margin-left: 8px"></i> تفاصيل عرض السعر
-          </h3>
-          <button class="modal-close" onclick="closeModal('offerDetailModal')">
-            <i class="bx bx-x"></i>
-          </button>
-        </div>
-        <div class="modal-body" id="offerDetailBody"></div>
-        <div class="modal-footer">
-          <button
-            type="button"
-            class="btn btn-outline"
-            onclick="closeModal('offerDetailModal')"
-          >
-            إغلاق
-          </button>
-          <button
-            type="button"
-            class="btn btn-outline"
-            data-role-only="admin,pricing"
-            id="btnEditFromDetail"
-            style="display: none"
-          >
-            <i class="bx bx-edit"></i> تعديل
-          </button>
-          <button type="button" class="btn btn-outline" id="btnCreateQuotation">
-            <i class="bx bx-file"></i> إنشاء عرض سعر للعميل
-          </button>
-          <button
-            type="button"
-            class="btn btn-primary"
-            id="btnAttachToShipment"
-          >
-            <i class="bx bx-link"></i> ربط بشحنة
-          </button>
-        </div>
+  <!-- Offer detail modal -->
+  <div class="modal-overlay" id="offerDetailModal">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h3><i class="bx bx-spreadsheet" style="margin-left:8px"></i> تفاصيل عرض السعر</h3>
+        <button class="modal-close" onclick="closeModal('offerDetailModal')"><i class="bx bx-x"></i></button>
+      </div>
+      <div class="modal-body" id="offerDetailBody"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal('offerDetailModal')">إغلاق</button>
+        <button type="button" class="btn btn-outline" id="btnEditFromDetail" style="display:none">
+          <i class="bx bx-edit"></i> تعديل
+        </button>
+        <button type="button" class="btn btn-outline" id="btnCreateQuotation">
+          <i class="bx bx-file"></i> إنشاء عرض للعميل
+        </button>
       </div>
     </div>
+  </div>
 
-    <!-- Attach offer to shipment -->
-    <div class="modal-overlay" id="attachToShipmentModal">
-      <div class="modal">
-        <div class="modal-header">
-          <h3>
-            <i class="bx bx-link" style="margin-left: 8px"></i> ربط عرض السعر
-            بشحنة
-          </h3>
-          <button
-            class="modal-close"
-            onclick="closeModal('attachToShipmentModal')"
-          >
-            <i class="bx bx-x"></i>
-          </button>
+  <!-- Attach offer to shipment -->
+  <div class="modal-overlay" id="attachToShipmentModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>
+          <i class="bx bx-link" style="margin-left: 8px"></i> ربط عرض السعر
+          بشحنة
+        </h3>
+        <button class="modal-close" onclick="closeModal('attachToShipmentModal')">
+          <i class="bx bx-x"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="fs-sm text-muted" style="margin-bottom: 12px">
+          اختر الشحنة لربط عرض السعر الحالي بها.
+        </p>
+        <div class="form-group">
+          <label class="form-label">رقم الشحنة (BL#)</label>
+          <select class="form-control" id="attachShipmentSelect">
+            <option value="">— اختر شحنة —</option>
+            <option value="BL-2026-0248">BL-2026-0248 — منصور وشركاه</option>
+            <option value="BL-2026-0247">
+              BL-2026-0247 — الإيمان للأغذية
+            </option>
+            <option value="BL-2026-0245">BL-2026-0245 — طه للمنسوجات</option>
+            <option value="__custom__">— إدخال رقم BL آخر —</option>
+          </select>
         </div>
-        <div class="modal-body">
-          <p class="fs-sm text-muted" style="margin-bottom: 12px">
-            اختر الشحنة لربط عرض السعر الحالي بها.
-          </p>
-          <div class="form-group">
-            <label class="form-label">رقم الشحنة (BL#)</label>
-            <select class="form-control" id="attachShipmentSelect">
-              <option value="">— اختر شحنة —</option>
-              <option value="BL-2026-0248">BL-2026-0248 — منصور وشركاه</option>
-              <option value="BL-2026-0247">
-                BL-2026-0247 — الإيمان للأغذية
-              </option>
-              <option value="BL-2026-0245">BL-2026-0245 — طه للمنسوجات</option>
-              <option value="__custom__">— إدخال رقم BL آخر —</option>
-            </select>
-          </div>
-          <div class="form-group" id="attachCustomBlWrap" style="display: none">
-            <label class="form-label">رقم BL</label>
-            <input
-              type="text"
-              class="form-control"
-              id="attachCustomBl"
-              placeholder="مثال: BL-2026-0300"
-            />
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button
-            type="button"
-            class="btn btn-outline"
-            onclick="closeModal('attachToShipmentModal')"
-          >
-            إلغاء
-          </button>
-          <button type="button" class="btn btn-primary" id="btnConfirmAttach">
-            <i class="bx bx-link"></i> ربط
-          </button>
+        <div class="form-group" id="attachCustomBlWrap" style="display: none">
+          <label class="form-label">رقم BL</label>
+          <input type="text" class="form-control" id="attachCustomBl" placeholder="مثال: BL-2026-0300" />
         </div>
       </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal('attachToShipmentModal')">
+          إلغاء
+        </button>
+        <button type="button" class="btn btn-primary" id="btnConfirmAttach">
+          <i class="bx bx-link"></i> ربط
+        </button>
+      </div>
     </div>
+  </div>
 
-    <!-- CREATE QUOTATION MODAL -->
-    <div class="modal-overlay" id="createQuoteModal">
-      <div class="modal modal-lg">
-        <div class="modal-header">
-          <h3>
-            <i class="bx bx-file" style="margin-left: 8px"></i> إنشاء عرض سعر
-          </h3>
-          <button class="modal-close" onclick="closeModal('createQuoteModal')">
-            <i class="bx bx-x"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <!-- ═══ قسم 1: بيانات العميل ═══ -->
-          <p
-            class="fs-xs fw-700 text-muted"
-            style="
+  <!-- CREATE QUOTATION MODAL -->
+  <div class="modal-overlay" id="createQuoteModal">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h3>
+          <i class="bx bx-file" style="margin-left: 8px"></i> إنشاء عرض سعر
+        </h3>
+        <button class="modal-close" onclick="closeModal('createQuoteModal')">
+          <i class="bx bx-x"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- ═══ قسم 1: بيانات العميل ═══ -->
+        <p class="fs-xs fw-700 text-muted" style="
               margin-bottom: 8px;
               text-transform: uppercase;
               letter-spacing: 0.05em;
-            "
-          >
-            بيانات العميل
-          </p>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label"
-                >العميل <span style="color: var(--danger)">*</span></label
-              >
-              <select class="form-control" id="qc-client">
-                <option value="">اختر العميل</option>
-                <option>منصور وشركاه</option>
-                <option>طه للمنسوجات</option>
-                <option>الإيمان للأغذية</option>
-                <option>العربية للشحن</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label"
-                >السيلز <span style="color: var(--danger)">*</span></label
-              >
-              <select class="form-control" id="qc-sales">
-                <option>أحمد خيري</option>
-                <option>محمد سعيد</option>
-                <option>زينب رضوان</option>
-                <option>حسن نبيل</option>
-              </select>
-            </div>
+            ">
+          بيانات العميل
+        </p>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">العميل <span style="color: var(--danger)">*</span></label>
+            <select class="form-control" id="qc-client">
+              <option value="">اختر العميل</option>
+              <option>منصور وشركاه</option>
+              <option>طه للمنسوجات</option>
+              <option>الإيمان للأغذية</option>
+              <option>العربية للشحن</option>
+            </select>
           </div>
+          <div class="form-group">
+            <label class="form-label">السيلز <span style="color: var(--danger)">*</span></label>
+            <select class="form-control" id="qc-sales">
+              <option>أحمد خيري</option>
+              <option>محمد سعيد</option>
+              <option>زينب رضوان</option>
+              <option>حسن نبيل</option>
+            </select>
+          </div>
+        </div>
 
-          <!-- ═══ قسم 2: بيانات الشحن ═══ -->
-          <p
-            class="fs-xs fw-700 text-muted"
-            style="
+        <!-- ═══ قسم 2: بيانات الشحن ═══ -->
+        <p class="fs-xs fw-700 text-muted" style="
               margin: 16px 0 8px;
               text-transform: uppercase;
               letter-spacing: 0.05em;
-            "
-          >
-            بيانات الشحن
+            ">
+          بيانات الشحن
+        </p>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">ميناء التحميل (POL)
+              <span style="color: var(--danger)">*</span></label>
+            <select class="form-control" id="qc-pol" onchange="window.updateQuoteIndications()">
+              <option value="">اختر الميناء</option>
+              <option value="Alex">الإسكندرية (Alex)</option>
+              <option value="Damietta">دمياط (Damietta)</option>
+              <option value="PortSaidWest">بورسعيد (West)</option>
+              <option value="Sokhna">السخنة (Sokhna)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">ميناء الوصول (POD)
+              <span style="color: var(--danger)">*</span></label>
+            <select class="form-control" id="qc-pod" onchange="window.updateQuoteIndications()">
+              <option value="">اختر الميناء</option>
+              <option>جدة</option>
+              <option>دبي</option>
+              <option>هامبورغ</option>
+              <option>مرسيليا</option>
+              <option>جنوة</option>
+              <option>إسطنبول</option>
+              <option>أنتويرب</option>
+              <option>روتردام</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">الخط الملاحي <span style="color: var(--danger)">*</span></label>
+            <select class="form-control" id="qc-line" onchange="window.updateQuoteIndications()">
+              <option value="">اختر الخط</option>
+              <option>MSC</option>
+              <option>CMA CGM</option>
+              <option>Maersk</option>
+              <option>Hapag-Lloyd</option>
+              <option>Evergreen</option>
+              <option>ONE</option>
+            </select>
+          </div>
+          <p class="fs-xs fw-700 text-muted"
+            style="margin: 16px 0 8px; text-transform: uppercase; letter-spacing: 0.05em;">
+            النقل الداخلي (اختياري)
           </p>
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label"
-                >ميناء التحميل (POL)
-                <span style="color: var(--danger)">*</span></label
-              >
-              <select class="form-control" id="qc-pol">
-                <option value="">اختر الميناء</option>
-                <option>الإسكندرية</option>
-                <option>دمياط</option>
-                <option>بورسعيد</option>
-                <option>السخنة</option>
+              <label class="form-label">محافظة التحميل</label>
+              <select class="form-control" id="qc-inland-gov" onchange="window.updateQuoteInlandCities()">
+                <option value="">— اختر المحافظة —</option>
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label"
-                >ميناء الوصول (POD)
-                <span style="color: var(--danger)">*</span></label
-              >
-              <select class="form-control" id="qc-pod">
-                <option value="">اختر الميناء</option>
-                <option>جدة</option>
-                <option>دبي</option>
-                <option>هامبورغ</option>
-                <option>مرسيليا</option>
-                <option>جنوة</option>
-                <option>إسطنبول</option>
-                <option>أنتويرب</option>
-                <option>روتردام</option>
+              <label class="form-label">مكان التحميل</label>
+              <select class="form-control" id="qc-inland-city" onchange="window.updateQuoteIndications()">
+                <option value="">— اختر المحافظة أولاً —</option>
               </select>
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label"
-                >الخط الملاحي <span style="color: var(--danger)">*</span></label
-              >
-              <select class="form-control" id="qc-line">
-                <option value="">اختر الخط</option>
-                <option>MSC</option>
-                <option>CMA CGM</option>
-                <option>Maersk</option>
-                <option>Hapag-Lloyd</option>
-                <option>Evergreen</option>
-                <option>ONE</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">وقت العبور (Transit Time) — أيام</label>
-              <input
-                type="number"
-                class="form-control"
-                id="qc-transit"
-                placeholder="مثال: 7"
-                min="1"
-              />
             </div>
           </div>
 
-          <!-- ═══ قسم 3: مواصفات الحاوية ═══ -->
-          <p
-            class="fs-xs fw-700 text-muted"
-            style="
+          <div class="form-group">
+            <label class="form-label">وقت العبور (Transit Time) — أيام</label>
+            <input type="number" class="form-control" id="qc-transit" placeholder="مثال: 7" min="1" />
+          </div>
+        </div>
+
+        <!-- ═══ قسم 3: مواصفات الحاوية ═══ -->
+        <p class="fs-xs fw-700 text-muted" style="
               margin: 16px 0 8px;
               text-transform: uppercase;
               letter-spacing: 0.05em;
-            "
-          >
-            مواصفات الحاوية
-          </p>
-          <div class="form-row" style="align-items: flex-end">
-            <div class="form-group">
-              <label class="form-label"
-                >نوع الحاوية <span style="color: var(--danger)">*</span></label
-              >
-              <select
-                class="form-control"
-                id="qc-container"
-                onchange="handleContainerChange()"
-              >
-                <option value="20 Dry">20 Dry</option>
-                <option value="40 Dry">40 Dry</option>
-                <option value="40HQ Dry">40HQ Dry</option>
-                <option value="20 Reefer">20 Reefer</option>
-                <option value="40 Reefer">40 Reefer</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">العدد</label>
-              <input
-                type="number"
-                class="form-control"
-                id="qc-qty"
-                value="1"
-                min="1"
-              />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Free Time — أيام</label>
-              <input
-                type="number"
-                class="form-control"
-                id="qc-freetime"
-                placeholder="مثال: 14"
-                min="0"
-              />
-            </div>
+            ">
+          مواصفات الحاوية
+        </p>
+        <div class="form-row" style="align-items: flex-end">
+          <div class="form-group">
+            <label class="form-label">نوع الحاوية <span style="color: var(--danger)">*</span></label>
+            <select class="form-control" id="qc-container" onchange="handleContainerChange()">
+              <option value="20 Dry">20 Dry</option>
+              <option value="40 Dry">40 Dry</option>
+              <option value="40HQ Dry">40HQ Dry</option>
+              <option value="20 Reefer">20 Reefer</option>
+              <option value="40 Reefer">40 Reefer</option>
+            </select>
           </div>
+          <div class="form-group">
+            <label class="form-label">العدد</label>
+            <input type="number" class="form-control" id="qc-qty" value="1" min="1" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Free Time — أيام</label>
+            <input type="number" class="form-control" id="qc-freetime" placeholder="مثال: 14" min="0" />
+          </div>
+        </div>
 
-          <!-- ═══ قسم 4: الرحلات المتاحة والصلاحية ═══ -->
-          <div class="form-row">
-            <div class="form-group" style="flex: 1.5">
-              <label class="form-label"
-                >الرحلات المتاحة (Available Sailings)</label
-              >
-              <div
-                style="
-                  display: flex;
-                  flex-wrap: wrap;
-                  gap: 8px;
-                  padding: 10px;
-                  background: var(--bg-body);
-                  border: 1px solid var(--border);
-                  border-radius: 8px;
-                "
-              >
-                <label
-                  style="
-                    display: flex;
-                    align-items: center;
-                    gap: 4px;
-                    font-size: 0.82rem;
-                    cursor: pointer;
-                  "
-                  ><input type="checkbox" class="sailing-day" value="السبت" />
-                  السبت</label
-                >
-                <label
-                  style="
-                    display: flex;
-                    align-items: center;
-                    gap: 4px;
-                    font-size: 0.82rem;
-                    cursor: pointer;
-                  "
-                  ><input type="checkbox" class="sailing-day" value="الأحد" />
-                  الأحد</label
-                >
-                <label
-                  style="
-                    display: flex;
-                    align-items: center;
-                    gap: 4px;
-                    font-size: 0.82rem;
-                    cursor: pointer;
-                  "
-                  ><input type="checkbox" class="sailing-day" value="الاثنين" />
-                  الاثنين</label
-                >
-                <label
-                  style="
-                    display: flex;
-                    align-items: center;
-                    gap: 4px;
-                    font-size: 0.82rem;
-                    cursor: pointer;
-                  "
-                  ><input
-                    type="checkbox"
-                    class="sailing-day"
-                    value="الثلاثاء"
-                  />
-                  الثلاثاء</label
-                >
-                <label
-                  style="
-                    display: flex;
-                    align-items: center;
-                    gap: 4px;
-                    font-size: 0.82rem;
-                    cursor: pointer;
-                  "
-                  ><input
-                    type="checkbox"
-                    class="sailing-day"
-                    value="الأربعاء"
-                  />
-                  الأربعاء</label
-                >
-                <label
-                  style="
-                    display: flex;
-                    align-items: center;
-                    gap: 4px;
-                    font-size: 0.82rem;
-                    cursor: pointer;
-                  "
-                  ><input type="checkbox" class="sailing-day" value="الخميس" />
-                  الخميس</label
-                >
-                <label
-                  style="
-                    display: flex;
-                    align-items: center;
-                    gap: 4px;
-                    font-size: 0.82rem;
-                    cursor: pointer;
-                  "
-                  ><input type="checkbox" class="sailing-day" value="الجمعة" />
-                  الجمعة</label
-                >
+        <!-- ═══ قسم 4: الرحلات المتاحة والصلاحية ═══ -->
+        <div class="form-row">
+          <div class="form-group" style="flex: 1.5">
+            <label class="form-label">تواريخ الرحلات (Available Sailings)</label>
+            <div id="qc-sailings-container" style="display: flex; flex-direction: column; gap: 8px;">
+              <div style="display: flex; gap: 8px; align-items: center;" class="qc-sailing-row">
+                <input type="date" class="form-control qc-sailing-date" />
+                <button type="button" class="btn btn-outline btn-sm" onclick="window.addQCSailingDate()"><i
+                    class="bx bx-plus"></i></button>
               </div>
             </div>
-            <div class="form-group">
-              <label class="form-label">صالح من</label>
-              <input type="date" class="form-control" id="qc-valid-from" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">صالح حتى</label>
-              <input type="date" class="form-control" id="qc-valid-to" />
-            </div>
           </div>
+          <div class="form-group">
+            <label class="form-label">صالح من</label>
+            <input type="date" class="form-control" id="qc-valid-from" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">صالح حتى</label>
+            <input type="date" class="form-control" id="qc-valid-to" />
+          </div>
+        </div>
 
-          <!-- ═══ قسم 5: بنود العرض ═══ -->
-          <p
-            class="fs-xs fw-700 text-muted"
-            style="
+        <!-- ═══ قسم 5: بنود العرض ═══ -->
+        <p class="fs-xs fw-700 text-muted" style="
               margin: 16px 0 8px;
               text-transform: uppercase;
               letter-spacing: 0.05em;
-            "
-          >
-            بنود العرض
-          </p>
-          <table
-            class="data-table"
-            id="qc-items-table"
-            style="margin-bottom: 8px"
-          >
-            <thead>
-              <tr>
-                <th style="width: 30%">البند</th>
-                <th>الوصف</th>
-                <th style="width: 130px">المبلغ</th>
-                <th style="width: 90px">العملة</th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- Ocean Freight -->
-              <tr class="qc-fixed-row">
-                <td class="fw-600">Ocean Freight</td>
-                <td>
-                  <input
-                    class="form-control"
-                    placeholder="اختياري"
-                    style="padding: 5px 8px"
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    class="form-control qc-amount"
-                    placeholder="0"
-                    style="padding: 5px 8px; text-align: center"
-                    oninput="calcQuoteTotal()"
-                  />
-                </td>
-                <td>
-                  <select class="form-control" style="padding: 5px 6px">
-                    <option>USD</option>
-                    <option>EUR</option>
-                    <option>EGP</option>
-                  </select>
-                </td>
-              </tr>
-              <!-- THC -->
-              <tr class="qc-fixed-row">
-                <td class="fw-600">THC</td>
-                <td>
-                  <input
-                    class="form-control"
-                    placeholder="اختياري"
-                    style="padding: 5px 8px"
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    class="form-control qc-amount"
-                    placeholder="0"
-                    style="padding: 5px 8px; text-align: center"
-                    oninput="calcQuoteTotal()"
-                  />
-                </td>
-                <td>
-                  <select class="form-control" style="padding: 5px 6px">
-                    <option>USD</option>
-                    <option>EUR</option>
-                    <option>EGP</option>
-                  </select>
-                </td>
-              </tr>
-              <!-- Power — يظهر فقط عند Reefer -->
-              <tr
-                class="qc-fixed-row qc-reefer-row"
-                id="row-power"
-                style="display: none"
-              >
-                <td class="fw-600">
-                  Power
-                  <span
-                    class="status-badge pending"
-                    style="font-size: 0.65rem; padding: 2px 6px"
-                    >Reefer</span
-                  >
-                </td>
-                <td>
-                  <input
-                    class="form-control"
-                    placeholder="اختياري"
-                    style="padding: 5px 8px"
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    class="form-control qc-amount"
-                    placeholder="0"
-                    style="padding: 5px 8px; text-align: center"
-                    oninput="calcQuoteTotal()"
-                  />
-                </td>
-                <td>
-                  <select class="form-control" style="padding: 5px 6px">
-                    <option>USD</option>
-                    <option>EUR</option>
-                    <option>EGP</option>
-                  </select>
-                </td>
-              </tr>
-              <!-- PTI Days — يظهر فقط عند Reefer -->
-              <tr
-                class="qc-fixed-row qc-reefer-row"
-                id="row-pti"
-                style="display: none"
-              >
-                <td class="fw-600">
-                  PTI Days
-                  <span
-                    class="status-badge pending"
-                    style="font-size: 0.65rem; padding: 2px 6px"
-                    >Reefer</span
-                  >
-                </td>
-                <td>
-                  <input
-                    class="form-control"
-                    placeholder="عدد الأيام"
-                    style="padding: 5px 8px"
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    class="form-control qc-amount"
-                    placeholder="0"
-                    style="padding: 5px 8px; text-align: center"
-                    oninput="calcQuoteTotal()"
-                  />
-                </td>
-                <td>
-                  <select class="form-control" style="padding: 5px 6px">
-                    <option>USD</option>
-                    <option>EUR</option>
-                    <option>EGP</option>
-                  </select>
-                </td>
-              </tr>
-              <!-- B/L Fee -->
-              <tr class="qc-fixed-row">
-                <td class="fw-600">B/L Fee (بوليسة)</td>
-                <td>
-                  <input
-                    class="form-control"
-                    placeholder="اختياري"
-                    style="padding: 5px 8px"
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    class="form-control qc-amount"
-                    placeholder="0"
-                    style="padding: 5px 8px; text-align: center"
-                    oninput="calcQuoteTotal()"
-                  />
-                </td>
-                <td>
-                  <select class="form-control" style="padding: 5px 6px">
-                    <option>USD</option>
-                    <option>EUR</option>
-                    <option>EGP</option>
-                  </select>
-                </td>
-              </tr>
-              <!-- Telex Release -->
-              <tr class="qc-fixed-row">
-                <td class="fw-600">Telex Release (تليكس)</td>
-                <td>
-                  <input
-                    class="form-control"
-                    placeholder="اختياري"
-                    style="padding: 5px 8px"
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    class="form-control qc-amount"
-                    placeholder="0"
-                    style="padding: 5px 8px; text-align: center"
-                    oninput="calcQuoteTotal()"
-                  />
-                </td>
-                <td>
-                  <select class="form-control" style="padding: 5px 6px">
-                    <option>USD</option>
-                    <option>EUR</option>
-                    <option>EGP</option>
-                  </select>
-                </td>
-              </tr>
-            </tbody>
-            <tfoot id="qc-other-charges">
-              <!-- Other Charges rows injected here -->
-            </tfoot>
-          </table>
-          <div
-            style="
+            ">
+          بنود العرض
+        </p>
+        <table class="data-table" id="qc-items-table" style="margin-bottom: 8px">
+          <thead>
+            <tr>
+              <th style="width: 25%">البند</th>
+              <th>الوصف</th>
+              <th style="width: 100px; text-align:center;">التكلفة (Ind)</th>
+              <th style="width: 110px">سعر البيع</th>
+              <th style="width: 80px">العملة</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Ocean Freight -->
+            <tr class="qc-fixed-row">
+              <td class="fw-600">Ocean Freight</td>
+              <td>
+                <input class="form-control" placeholder="اختياري" style="padding: 5px 8px" />
+              </td>
+              <td style="text-align: center;">
+                <span class="fs-xs text-muted fw-600" id="qc-ind-of">—</span>
+                <button type="button" class="btn-copy-cost" onclick="copyCostToSale(this, 'qc-ind-of')"
+                  title="نسخ التكلفة"><i class="bx bx-right-arrow-alt"></i></button>
+              </td>
+              <td>
+                <input type="number" class="form-control qc-amount" placeholder="0"
+                  style="padding: 5px 8px; text-align: center" oninput="window.calcQuoteTotal()" />
+              </td>
+              <td>
+                <select class="form-control" style="padding: 5px 6px">
+                  <option>USD</option>
+                  <option>EUR</option>
+                  <option>EGP</option>
+                </select>
+              </td>
+            </tr>
+            <!-- THC -->
+            <tr class="qc-fixed-row">
+              <td class="fw-600">THC</td>
+              <td>
+                <input class="form-control" placeholder="اختياري" style="padding: 5px 8px" />
+              </td>
+              <td style="text-align: center;">
+                <span class="fs-xs text-muted fw-600" id="qc-ind-thc">—</span>
+                <button type="button" class="btn-copy-cost" onclick="copyCostToSale(this, 'qc-ind-thc')"
+                  title="نسخ التكلفة"><i class="bx bx-right-arrow-alt"></i></button>
+              </td>
+              <td>
+                <input type="number" class="form-control qc-amount" placeholder="0"
+                  style="padding: 5px 8px; text-align: center" oninput="window.calcQuoteTotal()" />
+              </td>
+              <td>
+                <select class="form-control" style="padding: 5px 6px">
+                  <option>USD</option>
+                  <option>EUR</option>
+                  <option>EGP</option>
+                </select>
+              </td>
+            </tr>
+            <!-- Power -->
+            <tr class="qc-fixed-row qc-reefer-row" id="row-power" style="display: none">
+              <td class="fw-600">Power <span class="status-badge pending" style="font-size: 0.6rem;">Reefer</span></td>
+              <td>
+                <input class="form-control" placeholder="اختياري" style="padding: 5px 8px" />
+              </td>
+              <td style="text-align: center;">
+                <span class="fs-xs text-muted fw-600" id="qc-ind-power">—</span>
+                <button type="button" class="btn-copy-cost" onclick="copyCostToSale(this, 'qc-ind-power')"
+                  title="نسخ التكلفة"><i class="bx bx-right-arrow-alt"></i></button>
+              </td>
+              <td>
+                <input type="number" class="form-control qc-amount" placeholder="0"
+                  style="padding: 5px 8px; text-align: center" oninput="window.calcQuoteTotal()" />
+              </td>
+              <td>
+                <select class="form-control" style="padding: 5px 6px">
+                  <option>USD</option>
+                  <option>EUR</option>
+                  <option>EGP</option>
+                </select>
+              </td>
+            </tr>
+            <!-- PTI -->
+            <tr class="qc-fixed-row qc-reefer-row" id="row-pti" style="display: none">
+              <td class="fw-600">PTI <span class="status-badge pending" style="font-size: 0.6rem;">Reefer</span></td>
+              <td>
+                <input class="form-control" placeholder="أيام" style="padding: 5px 8px" />
+              </td>
+              <td style="text-align: center;">
+                <span class="fs-xs text-muted fw-600" id="qc-ind-pti">—</span>
+                <button type="button" class="btn-copy-cost" onclick="copyCostToSale(this, 'qc-ind-pti')"
+                  title="نسخ التكلفة"><i class="bx bx-right-arrow-alt"></i></button>
+              </td>
+              <td>
+                <input type="number" class="form-control qc-amount" placeholder="0"
+                  style="padding: 5px 8px; text-align: center" oninput="window.calcQuoteTotal()" />
+              </td>
+              <td>
+                <select class="form-control" style="padding: 5px 6px">
+                  <option>USD</option>
+                  <option>EUR</option>
+                  <option>EGP</option>
+                </select>
+              </td>
+            </tr>
+            <!-- B/L Fee -->
+            <tr class="qc-fixed-row">
+              <td class="fw-600">B/L Fee (بوليسة)</td>
+              <td>
+                <input class="form-control" placeholder="اختياري" style="padding: 5px 8px" />
+              </td>
+              <td style="text-align: center;"><span class="fs-xs text-muted">—</span></td>
+              <td>
+                <input type="number" class="form-control qc-amount" placeholder="0"
+                  style="padding: 5px 8px; text-align: center" oninput="window.calcQuoteTotal()" />
+              </td>
+              <td>
+                <select class="form-control" style="padding: 5px 6px">
+                  <option>USD</option>
+                  <option>EUR</option>
+                  <option>EGP</option>
+                </select>
+              </td>
+            </tr>
+            <!-- Telex -->
+            <tr class="qc-fixed-row">
+              <td class="fw-600">Telex Release (تليكس)</td>
+              <td>
+                <input class="form-control" placeholder="اختياري" style="padding: 5px 8px" />
+              </td>
+              <td style="text-align: center;"><span class="fs-xs text-muted">—</span></td>
+              <td>
+                <input type="number" class="form-control qc-amount" placeholder="0"
+                  style="padding: 5px 8px; text-align: center" oninput="window.calcQuoteTotal()" />
+              </td>
+              <td>
+                <select class="form-control" style="padding: 5px 6px">
+                  <option>USD</option>
+                  <option>EUR</option>
+                  <option>EGP</option>
+                </select>
+              </td>
+            </tr>
+            <!-- Inland -->
+            <tr class="qc-fixed-row">
+              <td class="fw-600">Inland Transport
+                <div class="fs-xs text-muted" id="qc-inland-route" style="font-weight: normal; margin-top:2px;"></div>
+              </td>
+              <td>
+                <input class="form-control" placeholder="اختياري" style="padding: 5px 8px" />
+              </td>
+              <td style="text-align: center;">
+                <span class="fs-xs text-muted fw-600" id="qc-ind-inland">—</span>
+                <button type="button" class="btn-copy-cost" onclick="copyCostToSale(this, 'qc-ind-inland')"
+                  title="نسخ التكلفة"><i class="bx bx-right-arrow-alt"></i></button>
+              </td>
+              <td>
+                <input type="number" class="form-control qc-amount" placeholder="0"
+                  style="padding: 5px 8px; text-align: center" oninput="window.calcQuoteTotal()" />
+              </td>
+              <td>
+                <select class="form-control" style="padding: 5px 6px">
+                  <option>EGP</option>
+                  <option>USD</option>
+                  <option>EUR</option>
+                </select>
+              </td>
+            </tr>
+            <!-- Handling -->
+            <tr class="qc-fixed-row">
+              <td class="fw-600">Handling Fees (مناولة)</td>
+              <td>
+                <input class="form-control" placeholder="اختياري" style="padding: 5px 8px" />
+              </td>
+              <td style="text-align: center;"><span class="fs-xs text-muted">—</span></td>
+              <td>
+                <input type="number" class="form-control qc-amount" placeholder="0"
+                  style="padding: 5px 8px; text-align: center" oninput="window.calcQuoteTotal()" />
+              </td>
+              <td>
+                <select class="form-control" style="padding: 5px 6px">
+                  <option>EGP</option>
+                  <option>USD</option>
+                  <option>EUR</option>
+                </select>
+              </td>
+            </tr>
+          </tbody>
+          <tfoot id="qc-other-charges"></tfoot>
+        </table>
+        <div style="
               display: flex;
               justify-content: space-between;
               align-items: center;
               margin-bottom: 12px;
-            "
-          >
-            <button
-              type="button"
-              class="btn btn-outline btn-sm"
-              onclick="addOtherCharge()"
-            >
-              <i class="bx bx-plus"></i> إضافة رسوم أخرى
-            </button>
-            <div>
-              <span class="text-muted fs-sm">إجمالي العرض: </span>
-              <span
-                class="fw-800"
-                id="qc-total"
-                style="font-size: 1.1rem; color: var(--navy-800)"
-                >$0</span
-              >
-            </div>
-          </div>
-
-          <!-- ═══ قسم 6: ملاحظات ═══ -->
-          <div class="form-group">
-            <label class="form-label">ملاحظات عامة</label>
-            <textarea
-              class="form-control"
-              id="qc-notes"
-              rows="2"
-              placeholder="شروط خاصة أو ملاحظات للعميل..."
-            ></textarea>
+            ">
+          <button type="button" class="btn btn-outline btn-sm" onclick="window.addOtherCharge()">
+            <i class="bx bx-plus"></i> إضافة رسوم أخرى
+          </button>
+          <div>
+            <span class="text-muted fs-sm">إجمالي العرض: </span>
+            <span class="fw-800" id="qc-total" style="font-size: 1.1rem; color: var(--navy-800)">$0</span>
           </div>
         </div>
-        <div class="modal-footer">
-          <button
-            class="btn btn-outline"
-            onclick="closeModal('createQuoteModal')"
-          >
-            إلغاء
-          </button>
-          <button class="btn btn-outline">
-            <i class="bx bx-save"></i> حفظ مسودة
-          </button>
-          <button class="btn btn-primary" onclick="previewQuote()">
-            <i class="bx bx-file"></i> معاينة وإرسال
-          </button>
+
+        <!-- ═══ قسم 6: ملاحظات ═══ -->
+        <div class="form-group">
+          <label class="form-label">ملاحظات عامة</label>
+          <textarea class="form-control" id="qc-notes" rows="2" placeholder="شروط خاصة أو ملاحظات للعميل..."></textarea>
         </div>
       </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('createQuoteModal')">
+          إلغاء
+        </button>
+        <button class="btn btn-outline">
+          <i class="bx bx-save"></i> حفظ مسودة
+        </button>
+        <button class="btn btn-primary" onclick="previewQuote()">
+          <i class="bx bx-file"></i> معاينة وإرسال
+        </button>
+      </div>
     </div>
+  </div>
 
-    <!-- QUOTE PREVIEW MODAL -->
-    <div class="modal-overlay" id="quotePreviewModal">
-      <div class="modal modal-lg">
-        <div class="modal-header">
-          <h3>
-            <i class="bx bx-file" style="margin-left: 8px"></i> معاينة عرض السعر
-          </h3>
-          <button class="modal-close" onclick="closeModal('quotePreviewModal')">
-            <i class="bx bx-x"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <div class="doc-preview" id="quotePrintArea">
-            <!-- Header -->
-            <div
-              class="d-flex justify-between align-center"
-              style="margin-bottom: 16px"
-            >
-              <div>
-                <h2 style="color: var(--navy-800); margin: 0">Amazon Marine</h2>
-                <p class="text-muted fs-sm">Shipping Agency</p>
-              </div>
-              <div style="text-align: left">
-                <h3 style="font-size: 1rem; color: var(--navy-700)">
-                  عرض سعر / QUOTATION
-                </h3>
-                <p class="fs-sm text-muted" id="prev-num">#Q-2026-XXXX</p>
-                <p class="fs-sm text-muted" id="prev-date"></p>
-              </div>
+  <!-- QUOTE PREVIEW MODAL -->
+  <div class="modal-overlay" id="quotePreviewModal">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h3>
+          <i class="bx bx-file" style="margin-left: 8px"></i> معاينة عرض السعر
+        </h3>
+        <button class="modal-close" onclick="closeModal('quotePreviewModal')">
+          <i class="bx bx-x"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="doc-preview" id="quotePrintArea">
+          <!-- Header -->
+          <div class="d-flex justify-between align-center" style="margin-bottom: 16px">
+            <div>
+              <h2 style="color: var(--navy-800); margin: 0">Amazon Marine</h2>
+              <p class="text-muted fs-sm">Shipping Agency</p>
             </div>
-            <!-- Client & Route info -->
-            <div
-              style="
+            <div style="text-align: left">
+              <h3 style="font-size: 1rem; color: var(--navy-700)">
+                عرض سعر / QUOTATION
+              </h3>
+              <p class="fs-sm text-muted" id="prev-num">#Q-2026-XXXX</p>
+              <p class="fs-sm text-muted" id="prev-date"></p>
+            </div>
+          </div>
+          <!-- Client & Route info -->
+          <div style="
                 display: grid;
                 grid-template-columns: 1fr 1fr;
                 gap: 12px;
@@ -1782,697 +1521,732 @@
                 padding: 12px;
                 background: var(--bg-body);
                 border-radius: 8px;
-              "
-            >
-              <div>
-                <p class="fs-xs text-muted fw-700" style="margin-bottom: 2px">
-                  العميل
-                </p>
-                <p class="fs-sm fw-600" id="prev-client">—</p>
-              </div>
-              <div>
-                <p class="fs-xs text-muted fw-700" style="margin-bottom: 2px">
-                  السيلز
-                </p>
-                <p class="fs-sm" id="prev-sales">—</p>
-              </div>
-              <div>
-                <p class="fs-xs text-muted fw-700" style="margin-bottom: 2px">
-                  المسار
-                </p>
-                <p class="fs-sm fw-600" id="prev-route">—</p>
-              </div>
-              <div>
-                <p class="fs-xs text-muted fw-700" style="margin-bottom: 2px">
-                  الخط الملاحي
-                </p>
-                <p class="fs-sm" id="prev-line">—</p>
-              </div>
-              <div>
-                <p class="fs-xs text-muted fw-700" style="margin-bottom: 2px">
-                  الحاوية
-                </p>
-                <p class="fs-sm" id="prev-container">—</p>
-              </div>
-              <div>
-                <p class="fs-xs text-muted fw-700" style="margin-bottom: 2px">
-                  وقت العبور
-                </p>
-                <p class="fs-sm" id="prev-transit">—</p>
-              </div>
-              <div>
-                <p class="fs-xs text-muted fw-700" style="margin-bottom: 2px">
-                  Free Time
-                </p>
-                <p class="fs-sm" id="prev-freetime">—</p>
-              </div>
-              <div>
-                <p class="fs-xs text-muted fw-700" style="margin-bottom: 2px">
-                  الرحلات المتاحة
-                </p>
-                <p class="fs-sm" id="prev-sailings">—</p>
-              </div>
-              <div>
-                <p class="fs-xs text-muted fw-700" style="margin-bottom: 2px">
-                  صالح من
-                </p>
-                <p class="fs-sm" id="prev-validfrom">—</p>
-              </div>
-              <div>
-                <p class="fs-xs text-muted fw-700" style="margin-bottom: 2px">
-                  صالح حتى
-                </p>
-                <p class="fs-sm" id="prev-validto">—</p>
-              </div>
+              ">
+            <div>
+              <p class="fs-xs text-muted fw-700" style="margin-bottom: 2px">
+                العميل
+              </p>
+              <p class="fs-sm fw-600" id="prev-client">—</p>
             </div>
-            <!-- Line Items Table -->
-            <table class="ledger-table" style="margin-bottom: 16px">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>البند</th>
-                  <th>الوصف</th>
-                  <th style="text-align: left">المبلغ</th>
-                </tr>
-              </thead>
-              <tbody id="prev-items-body">
-                <!-- populated by previewQuote() -->
-              </tbody>
-            </table>
-            <div
-              style="
+            <div>
+              <p class="fs-xs text-muted fw-700" style="margin-bottom: 2px">
+                السيلز
+              </p>
+              <p class="fs-sm" id="prev-sales">—</p>
+            </div>
+            <div>
+              <p class="fs-xs text-muted fw-700" style="margin-bottom: 2px">
+                المسار
+              </p>
+              <p class="fs-sm fw-600" id="prev-route">—</p>
+            </div>
+            <div>
+              <p class="fs-xs text-muted fw-700" style="margin-bottom: 2px">
+                الخط الملاحي
+              </p>
+              <p class="fs-sm" id="prev-line">—</p>
+            </div>
+            <div>
+              <p class="fs-xs text-muted fw-700" style="margin-bottom: 2px">
+                الحاوية
+              </p>
+              <p class="fs-sm" id="prev-container">—</p>
+            </div>
+            <div>
+              <p class="fs-xs text-muted fw-700" style="margin-bottom: 2px">
+                وقت العبور
+              </p>
+              <p class="fs-sm" id="prev-transit">—</p>
+            </div>
+            <div>
+              <p class="fs-xs text-muted fw-700" style="margin-bottom: 2px">
+                Free Time
+              </p>
+              <p class="fs-sm" id="prev-freetime">—</p>
+            </div>
+            <div>
+              <p class="fs-xs text-muted fw-700" style="margin-bottom: 2px">
+                الرحلات المتاحة
+              </p>
+              <p class="fs-sm" id="prev-sailings">—</p>
+            </div>
+            <div>
+              <p class="fs-xs text-muted fw-700" style="margin-bottom: 2px">
+                صالح من
+              </p>
+              <p class="fs-sm" id="prev-validfrom">—</p>
+            </div>
+            <div>
+              <p class="fs-xs text-muted fw-700" style="margin-bottom: 2px">
+                صالح حتى
+              </p>
+              <p class="fs-sm" id="prev-validto">—</p>
+            </div>
+          </div>
+          <!-- Line Items Table -->
+          <table class="ledger-table" style="margin-bottom: 16px">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>البند</th>
+                <th>الوصف</th>
+                <th style="text-align: left">المبلغ</th>
+              </tr>
+            </thead>
+            <tbody id="prev-items-body">
+              <!-- populated by previewQuote() -->
+            </tbody>
+          </table>
+          <div style="
                 text-align: left;
                 padding: 12px;
                 background: var(--bg-body);
                 border-radius: 8px;
                 margin-bottom: 12px;
-              "
-            >
-              <span class="fw-700">الإجمالي: </span>
-              <span
-                class="fw-800"
-                id="prev-total"
-                style="font-size: 1.15rem; color: var(--navy-800)"
-                >$0</span
-              >
-            </div>
-            <p class="text-muted fs-xs" id="prev-notes-line"></p>
-            <p class="text-muted fs-xs" style="margin-top: 6px">
-              * الأسعار بالدولار الأمريكي ما لم يُذكر غير ذلك — صالح حتى التاريخ
-              المذكور أعلاه.
-            </p>
+              ">
+            <span class="fw-700">الإجمالي: </span>
+            <span class="fw-800" id="prev-total" style="font-size: 1.15rem; color: var(--navy-800)">$0</span>
           </div>
-        </div>
-        <div class="modal-footer">
-          <button
-            class="btn btn-outline"
-            onclick="closeModal('quotePreviewModal')"
-          >
-            إغلاق
-          </button>
-          <a href="cost-viewer.html" class="btn btn-outline" target="_blank"
-            ><i class="bx bx-calculator"></i> عرض التكلفة المقدرة</a
-          >
-          <button class="btn btn-cyan">
-            <i class="bx bx-printer"></i> طباعة
-          </button>
-          <button class="btn btn-primary">
-            <i class="bx bx-send"></i> إرسال للعميل
-          </button>
+          <p class="text-muted fs-xs" id="prev-notes-line"></p>
+          <p class="text-muted fs-xs" style="margin-top: 6px">
+            * الأسعار بالدولار الأمريكي ما لم يُذكر غير ذلك — صالح حتى التاريخ
+            المذكور أعلاه.
+          </p>
         </div>
       </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('quotePreviewModal')">
+          إغلاق
+        </button>
+        <a href="cost-viewer.html" class="btn btn-outline" target="_blank"><i class="bx bx-calculator"></i> عرض التكلفة
+          المقدرة</a>
+        <button class="btn btn-cyan">
+          <i class="bx bx-printer"></i> طباعة
+        </button>
+        <button class="btn btn-primary">
+          <i class="bx bx-send"></i> إرسال للعميل
+        </button>
+      </div>
     </div>
+  </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <script src="js/role-auth.js"></script>
-    <script src="js/role-sidebar-apply.js"></script>
-    <script src="js/app.js"></script>
-    <script src="js/role-views.js"></script>
-    <script src="js/price-sheets.js"></script>
-    <script>
-      (function () {
-        // Reefer Power row toggle
-        var offerContainerType = document.getElementById("offerContainerType");
-        var offerPowerRow = document.getElementById("offerPowerRow");
-        if (offerContainerType && offerPowerRow) {
-          offerContainerType.addEventListener("change", function () {
-            var isReefer =
-              (this.value || "").toLowerCase().indexOf("reefer") !== -1;
-            offerPowerRow.style.display = isReefer ? "" : "none";
-          });
-        }
-
-        if (typeof switchTab !== "function")
-          window.switchTab = function (grp, tab) {
-            document
-              .querySelectorAll('[data-tab-group="' + grp + '"] .tab')
-              .forEach(function (t) {
-                t.classList.toggle(
-                  "active",
-                  t.getAttribute("data-tab") === tab,
-                );
-              });
-            document.querySelectorAll(".tab-content").forEach(function (c) {
-              c.classList.toggle("active", c.id === grp + "-" + tab);
-            });
-          };
-
-        if (window.location.search.indexOf("createQuote=1") !== -1) {
-          try {
-            var offerRaw = localStorage.getItem(
-              "amazonMarineSelectedOfferForQuotation",
-            );
-            if (offerRaw) {
-              switchTab("priceTab", "quotes");
-              var banner = document.getElementById("quotationFromOfferBanner");
-              if (banner) banner.style.display = "block";
-            }
-          } catch (e) {}
-        }
-
-        // Chart: quotes status
-        var chartQuotesEl = document.getElementById("chartQuotesStatus");
-        if (chartQuotesEl && typeof Chart !== "undefined") {
-          new Chart(chartQuotesEl, {
-            type: "doughnut",
-            data: {
-              labels: ["مقبول", "بانتظار", "مرفوض"],
-              datasets: [
-                {
-                  data: [12, 8, 5],
-                  backgroundColor: [
-                    "var(--success)",
-                    "var(--warning)",
-                    "var(--danger)",
-                  ],
-                  borderWidth: 0,
-                },
-              ],
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: { legend: { position: "bottom" } },
-            },
-          });
-        }
-
-        if (typeof switchTab !== "function")
-          window.switchTab = function (grp, tab) {
-            document
-              .querySelectorAll('[data-tab-group="' + grp + '"] .tab')
-              .forEach(function (t) {
-                t.classList.toggle(
-                  "active",
-                  t.getAttribute("data-tab") === tab,
-                );
-              });
-            document.querySelectorAll(".tab-content").forEach(function (c) {
-              c.classList.toggle("active", c.id === grp + "-" + tab);
-            });
-          };
-
-        // Charts
-        var chartRatesEl = document.getElementById("chartRatesByLine");
-        var chartQuotesEl = document.getElementById("chartQuotesStatus");
-        if (chartRatesEl && typeof Chart !== "undefined") {
-          new Chart(chartRatesEl, {
-            type: "bar",
-            data: {
-              labels: ["MSC", "CMA CGM", "Maersk", "Hapag-Lloyd"],
-              datasets: [
-                {
-                  label: "متوسط 40' HC ($)",
-                  data: [1250, 1400, 1225, 1975],
-                  backgroundColor: "rgba(23,162,184,0.7)",
-                  borderColor: "var(--accent-cyan)",
-                  borderWidth: 1,
-                },
-              ],
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: { legend: { display: false } },
-              scales: {
-                y: { beginAtZero: true },
-                x: { grid: { display: false } },
-              },
-            },
-          });
-        }
-        if (chartQuotesEl && typeof Chart !== "undefined") {
-          new Chart(chartQuotesEl, {
-            type: "doughnut",
-            data: {
-              labels: ["مقبول", "بانتظار", "مرفوض"],
-              datasets: [
-                {
-                  data: [12, 8, 5],
-                  backgroundColor: [
-                    "var(--success)",
-                    "var(--warning)",
-                    "var(--danger)",
-                  ],
-                  borderWidth: 0,
-                },
-              ],
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: { legend: { position: "bottom" } },
-            },
-          });
-        }
-
-        // Rates: filters, sort, bulk, export
-        var ratesSearch = document.getElementById("ratesSearch");
-        var filterLine = document.getElementById("filterLine");
-        var filterPort = document.getElementById("filterPort");
-        var sortRates = document.getElementById("sortRates");
-        var ratesTbody = document.querySelector("#ratesTable tbody");
-        var rateRows = ratesTbody
-          ? ratesTbody.querySelectorAll(".rate-row")
-          : [];
-        function applyRatesFilters() {
-          var q = (ratesSearch && ratesSearch.value.trim().toLowerCase()) || "";
-          var line = (filterLine && filterLine.value) || "";
-          var port = (filterPort && filterPort.value) || "";
-          rateRows.forEach(function (tr) {
-            var text = (tr.textContent || "").toLowerCase();
-            var matchSearch = !q || text.indexOf(q) !== -1;
-            var matchLine =
-              !line || (tr.getAttribute("data-line") || "") === line;
-            var matchPort =
-              !port || (tr.getAttribute("data-port") || "") === port;
-            tr.style.display =
-              matchSearch && matchLine && matchPort ? "" : "none";
-          });
-        }
-        [ratesSearch, filterLine, filterPort].forEach(function (el) {
-          if (el) {
-            el.addEventListener("input", applyRatesFilters);
-            if (el.tagName === "SELECT")
-              el.addEventListener("change", applyRatesFilters);
-          }
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="js/role-auth.js"></script>
+  <script src="js/role-sidebar-apply.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/role-views.js"></script>
+  <script src="js/price-sheets.js"></script>
+  <script>
+    (function () {
+      // Reefer Power row toggle
+      var offerContainerType = document.getElementById("offerContainerType");
+      var offerPowerRow = document.getElementById("offerPowerRow");
+      if (offerContainerType && offerPowerRow) {
+        offerContainerType.addEventListener("change", function () {
+          var isReefer =
+            (this.value || "").toLowerCase().indexOf("reefer") !== -1;
+          offerPowerRow.style.display = isReefer ? "" : "none";
         });
-        function updateRatesBulk() {
-          var n = 0;
-          document.querySelectorAll(".rate-checkbox").forEach(function (cb) {
-            var tr = cb.closest("tr");
-            if (tr && tr.style.display !== "none" && cb.checked) n++;
+      }
+
+      if (typeof switchTab !== "function")
+        window.switchTab = function (grp, tab) {
+          document
+            .querySelectorAll('[data-tab-group="' + grp + '"] .tab')
+            .forEach(function (t) {
+              t.classList.toggle(
+                "active",
+                t.getAttribute("data-tab") === tab,
+              );
+            });
+          document.querySelectorAll(".tab-content").forEach(function (c) {
+            c.classList.toggle("active", c.id === grp + "-" + tab);
           });
-          var bar = document.getElementById("ratesBulkBar");
-          var count = document.getElementById("ratesBulkCount");
-          if (count) count.textContent = "تم تحديد " + n + " سعر";
-          if (bar) bar.style.display = n > 0 ? "flex" : "none";
+        };
+
+      if (window.location.search.indexOf("createQuote=1") !== -1) {
+        try {
+          var offerRaw = localStorage.getItem(
+            "amazonMarineSelectedOfferForQuotation",
+          );
+          if (offerRaw) {
+            switchTab("priceTab", "quotes");
+            var banner = document.getElementById("quotationFromOfferBanner");
+            if (banner) banner.style.display = "block";
+          }
+        } catch (e) { }
+      }
+
+      // Chart: quotes status
+      var chartQuotesEl = document.getElementById("chartQuotesStatus");
+      if (chartQuotesEl && typeof Chart !== "undefined") {
+        new Chart(chartQuotesEl, {
+          type: "doughnut",
+          data: {
+            labels: ["مقبول", "بانتظار", "مرفوض"],
+            datasets: [
+              {
+                data: [12, 8, 5],
+                backgroundColor: [
+                  "var(--success)",
+                  "var(--warning)",
+                  "var(--danger)",
+                ],
+                borderWidth: 0,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: "bottom" } },
+          },
+        });
+      }
+
+      if (typeof switchTab !== "function")
+        window.switchTab = function (grp, tab) {
+          document
+            .querySelectorAll('[data-tab-group="' + grp + '"] .tab')
+            .forEach(function (t) {
+              t.classList.toggle(
+                "active",
+                t.getAttribute("data-tab") === tab,
+              );
+            });
+          document.querySelectorAll(".tab-content").forEach(function (c) {
+            c.classList.toggle("active", c.id === grp + "-" + tab);
+          });
+        };
+
+      // Charts
+      var chartRatesEl = document.getElementById("chartRatesByLine");
+      var chartQuotesEl = document.getElementById("chartQuotesStatus");
+      if (chartRatesEl && typeof Chart !== "undefined") {
+        new Chart(chartRatesEl, {
+          type: "bar",
+          data: {
+            labels: ["MSC", "CMA CGM", "Maersk", "Hapag-Lloyd"],
+            datasets: [
+              {
+                label: "متوسط 40' HC ($)",
+                data: [1250, 1400, 1225, 1975],
+                backgroundColor: "rgba(23,162,184,0.7)",
+                borderColor: "var(--accent-cyan)",
+                borderWidth: 1,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { beginAtZero: true },
+              x: { grid: { display: false } },
+            },
+          },
+        });
+      }
+      if (chartQuotesEl && typeof Chart !== "undefined") {
+        new Chart(chartQuotesEl, {
+          type: "doughnut",
+          data: {
+            labels: ["مقبول", "بانتظار", "مرفوض"],
+            datasets: [
+              {
+                data: [12, 8, 5],
+                backgroundColor: [
+                  "var(--success)",
+                  "var(--warning)",
+                  "var(--danger)",
+                ],
+                borderWidth: 0,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: "bottom" } },
+          },
+        });
+      }
+
+      // Rates: filters, sort, bulk, export
+      var ratesSearch = document.getElementById("ratesSearch");
+      var filterLine = document.getElementById("filterLine");
+      var filterPort = document.getElementById("filterPort");
+      var sortRates = document.getElementById("sortRates");
+      var ratesTbody = document.querySelector("#ratesTable tbody");
+      var rateRows = ratesTbody
+        ? ratesTbody.querySelectorAll(".rate-row")
+        : [];
+      function applyRatesFilters() {
+        var q = (ratesSearch && ratesSearch.value.trim().toLowerCase()) || "";
+        var line = (filterLine && filterLine.value) || "";
+        var port = (filterPort && filterPort.value) || "";
+        rateRows.forEach(function (tr) {
+          var text = (tr.textContent || "").toLowerCase();
+          var matchSearch = !q || text.indexOf(q) !== -1;
+          var matchLine =
+            !line || (tr.getAttribute("data-line") || "") === line;
+          var matchPort =
+            !port || (tr.getAttribute("data-port") || "") === port;
+          tr.style.display =
+            matchSearch && matchLine && matchPort ? "" : "none";
+        });
+      }
+      [ratesSearch, filterLine, filterPort].forEach(function (el) {
+        if (el) {
+          el.addEventListener("input", applyRatesFilters);
+          if (el.tagName === "SELECT")
+            el.addEventListener("change", applyRatesFilters);
         }
-        var selectAllRates = document.getElementById("selectAllRates");
-        if (selectAllRates && ratesTbody)
-          selectAllRates.addEventListener("change", function () {
-            ratesTbody
-              .querySelectorAll('.rate-row:not([style*="display: none"])')
-              .forEach(function (tr) {
-                var cb = tr.querySelector(".rate-checkbox");
-                if (cb) cb.checked = selectAllRates.checked;
+      });
+      function updateRatesBulk() {
+        var n = 0;
+        document.querySelectorAll(".rate-checkbox").forEach(function (cb) {
+          var tr = cb.closest("tr");
+          if (tr && tr.style.display !== "none" && cb.checked) n++;
+        });
+        var bar = document.getElementById("ratesBulkBar");
+        var count = document.getElementById("ratesBulkCount");
+        if (count) count.textContent = "تم تحديد " + n + " سعر";
+        if (bar) bar.style.display = n > 0 ? "flex" : "none";
+      }
+      var selectAllRates = document.getElementById("selectAllRates");
+      if (selectAllRates && ratesTbody)
+        selectAllRates.addEventListener("change", function () {
+          ratesTbody
+            .querySelectorAll('.rate-row:not([style*="display: none"])')
+            .forEach(function (tr) {
+              var cb = tr.querySelector(".rate-checkbox");
+              if (cb) cb.checked = selectAllRates.checked;
+            });
+          updateRatesBulk();
+        });
+      document.querySelectorAll(".rate-checkbox").forEach(function (cb) {
+        cb.addEventListener("change", updateRatesBulk);
+      });
+      if (document.getElementById("ratesBulkClear"))
+        document
+          .getElementById("ratesBulkClear")
+          .addEventListener("click", function () {
+            selectAllRates.checked = false;
+            document
+              .querySelectorAll(".rate-checkbox")
+              .forEach(function (cb) {
+                cb.checked = false;
               });
             updateRatesBulk();
           });
-        document.querySelectorAll(".rate-checkbox").forEach(function (cb) {
-          cb.addEventListener("change", updateRatesBulk);
-        });
-        if (document.getElementById("ratesBulkClear"))
-          document
-            .getElementById("ratesBulkClear")
-            .addEventListener("click", function () {
-              selectAllRates.checked = false;
-              document
-                .querySelectorAll(".rate-checkbox")
-                .forEach(function (cb) {
-                  cb.checked = false;
-                });
-              updateRatesBulk();
-            });
-        if (document.getElementById("ratesExportAll"))
-          document
-            .getElementById("ratesExportAll")
-            .addEventListener("click", function () {
-              var t = document.getElementById("ratesTable");
-              if (t) {
-                var blob = new Blob(["\ufeff" + t.outerHTML], {
-                  type: "application/vnd.ms-excel",
-                });
-                var a = document.createElement("a");
-                a.href = URL.createObjectURL(blob);
-                a.download = "جدول_الأسعار.xls";
-                a.click();
-                URL.revokeObjectURL(a.href);
-              }
-            });
-        if (document.getElementById("ratesBulkExport"))
-          document
-            .getElementById("ratesBulkExport")
-            .addEventListener("click", function () {
-              var t = document.getElementById("ratesTable");
-              if (!t) return;
-              var clone = t.cloneNode(true);
-              var toRemove = [];
-              clone.querySelectorAll("tbody tr").forEach(function (tr, i) {
-                var orig = rateRows[i];
-                if (
-                  !orig ||
-                  !orig.querySelector(".rate-checkbox") ||
-                  !orig.querySelector(".rate-checkbox").checked
-                )
-                  toRemove.push(tr);
-              });
-              toRemove.forEach(function (tr) {
-                tr.parentNode.removeChild(tr);
-              });
-              var blob = new Blob(["\ufeff" + clone.outerHTML], {
+      if (document.getElementById("ratesExportAll"))
+        document
+          .getElementById("ratesExportAll")
+          .addEventListener("click", function () {
+            var t = document.getElementById("ratesTable");
+            if (t) {
+              var blob = new Blob(["\ufeff" + t.outerHTML], {
                 type: "application/vnd.ms-excel",
               });
               var a = document.createElement("a");
               a.href = URL.createObjectURL(blob);
-              a.download = "أسعار_محددة.xls";
+              a.download = "جدول_الأسعار.xls";
               a.click();
               URL.revokeObjectURL(a.href);
-            });
-
-        // Quotes: filters, bulk, export
-        var quotesSearch = document.getElementById("quotesSearch");
-        var filterQuoteStatus = document.getElementById("filterQuoteStatus");
-        var filterQuoteSales = document.getElementById("filterQuoteSales");
-        var quotesTbody = document.querySelector("#quotesTable tbody");
-        var quoteRows = quotesTbody
-          ? quotesTbody.querySelectorAll(".quote-row")
-          : [];
-        function applyQuotesFilters() {
-          var q =
-            (quotesSearch && quotesSearch.value.trim().toLowerCase()) || "";
-          var status = (filterQuoteStatus && filterQuoteStatus.value) || "";
-          var sales = (filterQuoteSales && filterQuoteSales.value) || "";
-          quoteRows.forEach(function (tr) {
-            var text = (tr.textContent || "").toLowerCase();
-            var matchSearch = !q || text.indexOf(q) !== -1;
-            var matchStatus =
-              !status || (tr.getAttribute("data-status") || "") === status;
-            var matchSales =
-              !sales || (tr.getAttribute("data-sales") || "") === sales;
-            tr.style.display =
-              matchSearch && matchStatus && matchSales ? "" : "none";
-          });
-        }
-        [quotesSearch, filterQuoteStatus, filterQuoteSales].forEach(
-          function (el) {
-            if (el) {
-              el.addEventListener("input", applyQuotesFilters);
-              if (el.tagName === "SELECT")
-                el.addEventListener("change", applyQuotesFilters);
             }
-          },
-        );
-        function updateQuotesBulk() {
-          var n = 0;
-          document.querySelectorAll(".quote-checkbox").forEach(function (cb) {
-            var tr = cb.closest("tr");
-            if (tr && tr.style.display !== "none" && cb.checked) n++;
           });
-          var bar = document.getElementById("quotesBulkBar");
-          var count = document.getElementById("quotesBulkCount");
-          if (count) count.textContent = "تم تحديد " + n + " عرض";
-          if (bar) bar.style.display = n > 0 ? "flex" : "none";
-        }
-        var selectAllQuotes = document.getElementById("selectAllQuotes");
-        if (selectAllQuotes && quotesTbody)
-          selectAllQuotes.addEventListener("change", function () {
-            quotesTbody
-              .querySelectorAll('.quote-row:not([style*="display: none"])')
-              .forEach(function (tr) {
-                var cb = tr.querySelector(".quote-checkbox");
-                if (cb) cb.checked = selectAllQuotes.checked;
+      if (document.getElementById("ratesBulkExport"))
+        document
+          .getElementById("ratesBulkExport")
+          .addEventListener("click", function () {
+            var t = document.getElementById("ratesTable");
+            if (!t) return;
+            var clone = t.cloneNode(true);
+            var toRemove = [];
+            clone.querySelectorAll("tbody tr").forEach(function (tr, i) {
+              var orig = rateRows[i];
+              if (
+                !orig ||
+                !orig.querySelector(".rate-checkbox") ||
+                !orig.querySelector(".rate-checkbox").checked
+              )
+                toRemove.push(tr);
+            });
+            toRemove.forEach(function (tr) {
+              tr.parentNode.removeChild(tr);
+            });
+            var blob = new Blob(["\ufeff" + clone.outerHTML], {
+              type: "application/vnd.ms-excel",
+            });
+            var a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "أسعار_محددة.xls";
+            a.click();
+            URL.revokeObjectURL(a.href);
+          });
+
+      // Quotes: filters, bulk, export
+      var quotesSearch = document.getElementById("quotesSearch");
+      var filterQuoteStatus = document.getElementById("filterQuoteStatus");
+      var filterQuoteSales = document.getElementById("filterQuoteSales");
+      var quotesTbody = document.querySelector("#quotesTable tbody");
+      var quoteRows = quotesTbody
+        ? quotesTbody.querySelectorAll(".quote-row")
+        : [];
+      function applyQuotesFilters() {
+        var q =
+          (quotesSearch && quotesSearch.value.trim().toLowerCase()) || "";
+        var status = (filterQuoteStatus && filterQuoteStatus.value) || "";
+        var sales = (filterQuoteSales && filterQuoteSales.value) || "";
+        quoteRows.forEach(function (tr) {
+          var text = (tr.textContent || "").toLowerCase();
+          var matchSearch = !q || text.indexOf(q) !== -1;
+          var matchStatus =
+            !status || (tr.getAttribute("data-status") || "") === status;
+          var matchSales =
+            !sales || (tr.getAttribute("data-sales") || "") === sales;
+          tr.style.display =
+            matchSearch && matchStatus && matchSales ? "" : "none";
+        });
+      }
+      [quotesSearch, filterQuoteStatus, filterQuoteSales].forEach(
+        function (el) {
+          if (el) {
+            el.addEventListener("input", applyQuotesFilters);
+            if (el.tagName === "SELECT")
+              el.addEventListener("change", applyQuotesFilters);
+          }
+        },
+      );
+      function updateQuotesBulk() {
+        var n = 0;
+        document.querySelectorAll(".quote-checkbox").forEach(function (cb) {
+          var tr = cb.closest("tr");
+          if (tr && tr.style.display !== "none" && cb.checked) n++;
+        });
+        var bar = document.getElementById("quotesBulkBar");
+        var count = document.getElementById("quotesBulkCount");
+        if (count) count.textContent = "تم تحديد " + n + " عرض";
+        if (bar) bar.style.display = n > 0 ? "flex" : "none";
+      }
+      var selectAllQuotes = document.getElementById("selectAllQuotes");
+      if (selectAllQuotes && quotesTbody)
+        selectAllQuotes.addEventListener("change", function () {
+          quotesTbody
+            .querySelectorAll('.quote-row:not([style*="display: none"])')
+            .forEach(function (tr) {
+              var cb = tr.querySelector(".quote-checkbox");
+              if (cb) cb.checked = selectAllQuotes.checked;
+            });
+          updateQuotesBulk();
+        });
+      document.querySelectorAll(".quote-checkbox").forEach(function (cb) {
+        cb.addEventListener("change", updateQuotesBulk);
+      });
+      if (document.getElementById("quotesBulkClear"))
+        document
+          .getElementById("quotesBulkClear")
+          .addEventListener("click", function () {
+            selectAllQuotes.checked = false;
+            document
+              .querySelectorAll(".quote-checkbox")
+              .forEach(function (cb) {
+                cb.checked = false;
               });
             updateQuotesBulk();
           });
-        document.querySelectorAll(".quote-checkbox").forEach(function (cb) {
-          cb.addEventListener("change", updateQuotesBulk);
-        });
-        if (document.getElementById("quotesBulkClear"))
-          document
-            .getElementById("quotesBulkClear")
-            .addEventListener("click", function () {
-              selectAllQuotes.checked = false;
-              document
-                .querySelectorAll(".quote-checkbox")
-                .forEach(function (cb) {
-                  cb.checked = false;
-                });
-              updateQuotesBulk();
-            });
-        if (document.getElementById("quotesExportAll"))
-          document
-            .getElementById("quotesExportAll")
-            .addEventListener("click", function () {
-              var t = document.getElementById("quotesTable");
-              if (t) {
-                var blob = new Blob(["\ufeff" + t.outerHTML], {
-                  type: "application/vnd.ms-excel",
-                });
-                var a = document.createElement("a");
-                a.href = URL.createObjectURL(blob);
-                a.download = "عروض_الأسعار.xls";
-                a.click();
-                URL.revokeObjectURL(a.href);
-              }
-            });
-        if (document.getElementById("quotesBulkExport"))
-          document
-            .getElementById("quotesBulkExport")
-            .addEventListener("click", function () {
-              var t = document.getElementById("quotesTable");
-              if (!t) return;
-              var clone = t.cloneNode(true);
-              var toRemove = [];
-              clone.querySelectorAll("tbody tr").forEach(function (tr, i) {
-                var orig = quoteRows[i];
-                if (
-                  !orig ||
-                  !orig.querySelector(".quote-checkbox") ||
-                  !orig.querySelector(".quote-checkbox").checked
-                )
-                  toRemove.push(tr);
-              });
-              toRemove.forEach(function (tr) {
-                tr.parentNode.removeChild(tr);
-              });
-              var blob = new Blob(["\ufeff" + clone.outerHTML], {
+      if (document.getElementById("quotesExportAll"))
+        document
+          .getElementById("quotesExportAll")
+          .addEventListener("click", function () {
+            var t = document.getElementById("quotesTable");
+            if (t) {
+              var blob = new Blob(["\ufeff" + t.outerHTML], {
                 type: "application/vnd.ms-excel",
               });
               var a = document.createElement("a");
               a.href = URL.createObjectURL(blob);
-              a.download = "عروض_محددة.xls";
+              a.download = "عروض_الأسعار.xls";
               a.click();
               URL.revokeObjectURL(a.href);
-            });
-
-        // ─── Quote Creation Logic ───────────────────────────────────────
-
-        // Rule 1 & 2: Container type change → show/hide Reefer-only rows
-        window.handleContainerChange = function () {
-          var sel = document.getElementById("qc-container");
-          var isReefer = sel && sel.value && sel.value.indexOf("Reefer") !== -1;
-          document.querySelectorAll(".qc-reefer-row").forEach(function (tr) {
-            tr.style.display = isReefer ? "" : "none";
-            // clear amounts when hiding to avoid including them in total
-            if (!isReefer) {
-              var amt = tr.querySelector(".qc-amount");
-              if (amt) amt.value = "";
             }
           });
-          calcQuoteTotal();
-        };
-
-        // Calculate total from all visible amount inputs
-        window.calcQuoteTotal = function () {
-          var total = 0;
-          document
-            .querySelectorAll(
-              "#qc-items-table .qc-amount, #qc-other-charges .qc-amount",
-            )
-            .forEach(function (inp) {
-              var tr = inp.closest("tr");
-              // skip hidden rows (Reefer rows when Dry selected)
-              if (tr && tr.style.display === "none") return;
-              var v = parseFloat(inp.value) || 0;
-              total += v;
+      if (document.getElementById("quotesBulkExport"))
+        document
+          .getElementById("quotesBulkExport")
+          .addEventListener("click", function () {
+            var t = document.getElementById("quotesTable");
+            if (!t) return;
+            var clone = t.cloneNode(true);
+            var toRemove = [];
+            clone.querySelectorAll("tbody tr").forEach(function (tr, i) {
+              var orig = quoteRows[i];
+              if (
+                !orig ||
+                !orig.querySelector(".quote-checkbox") ||
+                !orig.querySelector(".quote-checkbox").checked
+              )
+                toRemove.push(tr);
             });
-          var el = document.getElementById("qc-total");
-          if (el)
-            el.textContent =
-              "$" + total.toLocaleString("en-US", { minimumFractionDigits: 0 });
-        };
+            toRemove.forEach(function (tr) {
+              tr.parentNode.removeChild(tr);
+            });
+            var blob = new Blob(["\ufeff" + clone.outerHTML], {
+              type: "application/vnd.ms-excel",
+            });
+            var a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "عروض_محددة.xls";
+            a.click();
+            URL.revokeObjectURL(a.href);
+          });
 
-        // Add Other Charges row dynamically
-        var otherChargeCount = 0;
-        window.addOtherCharge = function () {
-          otherChargeCount++;
-          var tfoot = document.getElementById("qc-other-charges");
-          if (!tfoot) return;
-          var tr = document.createElement("tr");
-          tr.className = "qc-other-row";
-          tr.innerHTML =
-            '<td><span class="fw-600">Other Charges</span> <span class="fs-xs text-muted">#' +
-            otherChargeCount +
-            "</span></td>" +
-            '<td><input class="form-control" placeholder="وصف الرسوم — إلزامي" required style="padding:5px 8px;"></td>' +
-            '<td><input type="number" class="form-control qc-amount" placeholder="0" style="padding:5px 8px;text-align:center;" oninput="calcQuoteTotal()"></td>' +
-            '<td style="display:flex;gap:4px;align-items:center;">' +
-            '<select class="form-control" style="padding:5px 6px;"><option>USD</option><option>EUR</option><option>EGP</option></select>' +
-            '<button type="button" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:1.1rem;" onclick="this.closest(\'tr\').remove();calcQuoteTotal();" title="حذف"><i class=\'bx bx-trash\'></i></button>' +
+    })();
+  </script>
+  <script>
+    // ─── Quote Creation Logic ───────────────────────────────────────
+
+    // Rule 1 & 2: Container type change → show/hide Reefer-only rows
+    window.handleContainerChange = function () {
+      if (window.updateQuoteIndications) window.updateQuoteIndications();
+      var sel = document.getElementById("qc-container");
+      var isReefer = sel && sel.value && sel.value.indexOf("Reefer") !== -1;
+      document.querySelectorAll(".qc-reefer-row").forEach(function (tr) {
+        tr.style.display = isReefer ? "" : "none";
+        // clear amounts when hiding to avoid including them in total
+        if (!isReefer) {
+          var amt = tr.querySelector(".qc-amount");
+          if (amt) amt.value = "";
+        }
+      });
+      calcQuoteTotal();
+    };
+
+    // Calculate total from all visible amount inputs
+    window.calcQuoteTotal = function () {
+      var total = 0;
+      document
+        .querySelectorAll(
+          "#qc-items-table .qc-amount, #qc-other-charges .qc-amount",
+        )
+        .forEach(function (inp) {
+          var tr = inp.closest("tr");
+          // skip hidden rows (Reefer rows when Dry selected)
+          if (tr && tr.style.display === "none") return;
+          var v = parseFloat(inp.value) || 0;
+          total += v;
+        });
+      var el = document.getElementById("qc-total");
+      if (el)
+        el.textContent =
+          "$" + total.toLocaleString("en-US", { minimumFractionDigits: 0 });
+    };
+
+    window.copyCostToSale = function (btn, costId) {
+      var span = document.getElementById(costId);
+      if (!span) return;
+      var text = span.textContent.trim();
+      var match = text.match(/\d+/);
+      if (match) {
+        var tr = btn.closest('tr');
+        var input = tr.querySelector('.qc-amount');
+        if (input) {
+          input.value = match[0];
+          window.calcQuoteTotal();
+
+          // Flash effect
+          input.style.backgroundColor = '#f0fdf4';
+          setTimeout(function () { input.style.backgroundColor = ''; }, 500);
+        }
+      }
+    };
+    window.addQCSailingDate = function () {
+      var container = document.getElementById("qc-sailings-container");
+      var div = document.createElement("div");
+      div.className = "qc-sailing-row";
+      div.style.display = "flex";
+      div.style.gap = "8px";
+      div.style.alignItems = "center";
+
+      var inp = document.createElement("input");
+      inp.type = "date";
+      inp.className = "form-control qc-sailing-date";
+
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "btn btn-outline btn-sm";
+      btn.innerHTML = '<i class="bx bx-trash" style="color:var(--danger)"></i>';
+      btn.onclick = function () { div.remove(); };
+
+      div.appendChild(inp);
+      div.appendChild(btn);
+      container.appendChild(div);
+    };
+
+    // Add Other Charges row dynamically
+    var otherChargeCount = 0;
+    window.addOtherCharge = function () {
+      otherChargeCount++;
+      var tfoot = document.getElementById("qc-other-charges");
+      if (!tfoot) return;
+      var tr = document.createElement("tr");
+      tr.className = "qc-other-row";
+      tr.innerHTML =
+        '<td><span class="fw-600">Other Charges</span> <span class="fs-xs text-muted">#' +
+        otherChargeCount +
+        "</span></td>" +
+        '<td><input class="form-control" placeholder="وصف الرسوم — إلزامي" required style="padding:5px 8px;"></td>' +
+        '<td><input type="number" class="form-control qc-amount" placeholder="0" style="padding:5px 8px;text-align:center;" oninput="calcQuoteTotal()"></td>' +
+        '<td style="display:flex;gap:4px;align-items:center;">' +
+        '<select class="form-control" style="padding:5px 6px;"><option>USD</option><option>EUR</option><option>EGP</option></select>' +
+        '<button type="button" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:1.1rem;" onclick="this.closest(\'tr\').remove();calcQuoteTotal();" title="حذف"><i class=\'bx bx-trash\'></i></button>' +
+        "</td>";
+      tfoot.appendChild(tr);
+    };
+
+    // Populate preview modal from form values
+    window.previewQuote = function () {
+      var get = function (id) {
+        var el = document.getElementById(id);
+        return el ? el.value.trim() : "";
+      };
+
+      // Generate quote number
+      var qNum =
+        "Q-" +
+        new Date().getFullYear() +
+        "-" +
+        String(Math.floor(Math.random() * 9000) + 1000);
+      var today = new Date().toLocaleDateString("ar-EG");
+
+      // Route
+      var pol = get("qc-pol");
+      var pod = get("qc-pod");
+      var route = pol && pod ? pol + " ← " + pod : pol || pod || "—";
+
+      // Container
+      var container = get("qc-container");
+      var qty = get("qc-qty") || "1";
+      var containerStr = qty + " × " + container;
+
+      // Sailings
+      var days = [];
+      document
+        .querySelectorAll(".qc-sailing-date")
+        .forEach(function (inp) {
+          if (inp.value) days.push(inp.value);
+        });
+
+      // Fill preview fields
+      var set = function (id, val) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = val || "—";
+      };
+      set("prev-num", "#" + qNum);
+      set("prev-date", today);
+      set("prev-client", get("qc-client"));
+      set("prev-sales", get("qc-sales"));
+      set("prev-route", route);
+      set("prev-line", get("qc-line"));
+      set("prev-container", containerStr);
+      set(
+        "prev-transit",
+        get("qc-transit") ? get("qc-transit") + " أيام" : "—",
+      );
+      set(
+        "prev-freetime",
+        get("qc-freetime") ? get("qc-freetime") + " أيام" : "—",
+      );
+      set("prev-sailings", days.length ? days.join(" ، ") : "—");
+      set("prev-validfrom", get("qc-valid-from") || "—");
+      set("prev-validto", get("qc-valid-to") || "—");
+
+      // Notes
+      var notes = get("qc-notes");
+      var notesEl = document.getElementById("prev-notes-line");
+      if (notesEl) notesEl.textContent = notes ? "* ملاحظات: " + notes : "";
+
+      // Build items table
+      var tbody = document.getElementById("prev-items-body");
+      if (tbody) {
+        tbody.innerHTML = "";
+        var idx = 1;
+        var total = 0;
+        var itemNames = [
+          "Ocean Freight",
+          "THC",
+          "Power",
+          "PTI Days",
+          "B/L Fee (بوليسة)",
+          "Telex Release (تليكس)",
+          "Inland Transport",
+          "Handling Fees (مناولة)",
+        ];
+        var rows = document.querySelectorAll(
+          "#qc-items-table .qc-fixed-row",
+        );
+        rows.forEach(function (tr, i) {
+          if (tr.style.display === "none") return;
+          var amtInput = tr.querySelector(".qc-amount");
+          var descInput = tr.querySelector('input:not([type="number"])');
+          var currSelect = tr.querySelector("select");
+          var amt = parseFloat(amtInput && amtInput.value) || 0;
+          if (amt === 0) return;
+          total += amt;
+          var curr = currSelect ? currSelect.value : "USD";
+          var sym = curr === "USD" ? "$" : curr === "EUR" ? "€" : "E£";
+          var desc = descInput ? descInput.value.trim() : "";
+          var nameCell = tr.querySelector("td:first-child");
+          var name = nameCell
+            ? nameCell.textContent.trim()
+            : itemNames[i] || "بند";
+          var row = document.createElement("tr");
+          row.innerHTML =
+            "<td>" +
+            idx++ +
+            "</td><td>" +
+            name +
+            "</td><td>" +
+            (desc || "—") +
+            '</td><td style="text-align:left;">' +
+            sym +
+            amt.toLocaleString("en-US") +
             "</td>";
-          tfoot.appendChild(tr);
-        };
+          tbody.appendChild(row);
+        });
+        // Other charges
+        document
+          .querySelectorAll("#qc-other-charges .qc-other-row")
+          .forEach(function (tr) {
+            var inputs = tr.querySelectorAll("input");
+            var descVal = inputs[0] ? inputs[0].value.trim() : "";
+            var amtVal = parseFloat(inputs[1] && inputs[1].value) || 0;
+            var currSel = tr.querySelector("select");
+            var curr = currSel ? currSel.value : "USD";
+            var sym = curr === "USD" ? "$" : curr === "EUR" ? "€" : "E£";
+            if (amtVal === 0 && !descVal) return;
+            total += amtVal;
+            var row = document.createElement("tr");
+            row.innerHTML =
+              "<td>" +
+              idx++ +
+              "</td><td>Other Charges</td><td>" +
+              (descVal || "—") +
+              '</td><td style="text-align:left;">' +
+              sym +
+              amtVal.toLocaleString("en-US") +
+              "</td>";
+            tbody.appendChild(row);
+          });
+        set("prev-total", "$" + total.toLocaleString("en-US"));
+      }
 
-        // Populate preview modal from form values
-        window.previewQuote = function () {
-          var get = function (id) {
-            var el = document.getElementById(id);
-            return el ? el.value.trim() : "";
-          };
+      closeModal("createQuoteModal");
+      openModal("quotePreviewModal");
+    };
+  </script>
+</body>
 
-          // Generate quote number
-          var qNum =
-            "Q-" +
-            new Date().getFullYear() +
-            "-" +
-            String(Math.floor(Math.random() * 9000) + 1000);
-          var today = new Date().toLocaleDateString("ar-EG");
-
-          // Route
-          var pol = get("qc-pol");
-          var pod = get("qc-pod");
-          var route = pol && pod ? pol + " ← " + pod : pol || pod || "—";
-
-          // Container
-          var container = get("qc-container");
-          var qty = get("qc-qty") || "1";
-          var containerStr = qty + " × " + container;
-
-          // Sailings
-          var days = [];
-          document
-            .querySelectorAll(".sailing-day:checked")
-            .forEach(function (cb) {
-              days.push(cb.value);
-            });
-
-          // Fill preview fields
-          var set = function (id, val) {
-            var el = document.getElementById(id);
-            if (el) el.textContent = val || "—";
-          };
-          set("prev-num", "#" + qNum);
-          set("prev-date", today);
-          set("prev-client", get("qc-client"));
-          set("prev-sales", get("qc-sales"));
-          set("prev-route", route);
-          set("prev-line", get("qc-line"));
-          set("prev-container", containerStr);
-          set(
-            "prev-transit",
-            get("qc-transit") ? get("qc-transit") + " أيام" : "—",
-          );
-          set(
-            "prev-freetime",
-            get("qc-freetime") ? get("qc-freetime") + " أيام" : "—",
-          );
-          set("prev-sailings", days.length ? days.join(" ، ") : "—");
-          set("prev-validfrom", get("qc-valid-from") || "—");
-          set("prev-validto", get("qc-valid-to") || "—");
-
-          // Notes
-          var notes = get("qc-notes");
-          var notesEl = document.getElementById("prev-notes-line");
-          if (notesEl) notesEl.textContent = notes ? "* ملاحظات: " + notes : "";
-
-          // Build items table
-          var tbody = document.getElementById("prev-items-body");
-          if (tbody) {
-            tbody.innerHTML = "";
-            var idx = 1;
-            var total = 0;
-            var itemNames = [
-              "Ocean Freight",
-              "THC",
-              "Power",
-              "PTI Days",
-              "B/L Fee (بوليسة)",
-              "Telex Release (تليكس)",
-            ];
-            var rows = document.querySelectorAll(
-              "#qc-items-table .qc-fixed-row",
-            );
-            rows.forEach(function (tr, i) {
-              if (tr.style.display === "none") return;
-              var amtInput = tr.querySelector(".qc-amount");
-              var descInput = tr.querySelector('input:not([type="number"])');
-              var currSelect = tr.querySelector("select");
-              var amt = parseFloat(amtInput && amtInput.value) || 0;
-              if (amt === 0) return;
-              total += amt;
-              var curr = currSelect ? currSelect.value : "USD";
-              var sym = curr === "USD" ? "$" : curr === "EUR" ? "€" : "E£";
-              var desc = descInput ? descInput.value.trim() : "";
-              var nameCell = tr.querySelector("td:first-child");
-              var name = nameCell
-                ? nameCell.textContent.trim()
-                : itemNames[i] || "بند";
-              var row = document.createElement("tr");
-              row.innerHTML =
-                "<td>" +
-                idx++ +
-                "</td><td>" +
-                name +
-                "</td><td>" +
-                (desc || "—") +
-                '</td><td style="text-align:left;">' +
-                sym +
-                amt.toLocaleString("en-US") +
-                "</td>";
-              tbody.appendChild(row);
-            });
-            // Other charges
-            document
-              .querySelectorAll("#qc-other-charges .qc-other-row")
-              .forEach(function (tr) {
-                var inputs = tr.querySelectorAll("input");
-                var descVal = inputs[0] ? inputs[0].value.trim() : "";
-                var amtVal = parseFloat(inputs[1] && inputs[1].value) || 0;
-                var currSel = tr.querySelector("select");
-                var curr = currSel ? currSel.value : "USD";
-                var sym = curr === "USD" ? "$" : curr === "EUR" ? "€" : "E£";
-                if (amtVal === 0 && !descVal) return;
-                total += amtVal;
-                var row = document.createElement("tr");
-                row.innerHTML =
-                  "<td>" +
-                  idx++ +
-                  "</td><td>Other Charges</td><td>" +
-                  (descVal || "—") +
-                  '</td><td style="text-align:left;">' +
-                  sym +
-                  amtVal.toLocaleString("en-US") +
-                  "</td>";
-                tbody.appendChild(row);
-              });
-            set("prev-total", "$" + total.toLocaleString("en-US"));
-          }
-
-          closeModal("createQuoteModal");
-          openModal("quotePreviewModal");
-        };
-      })();
-    </script>
-  </body>
 </html>
