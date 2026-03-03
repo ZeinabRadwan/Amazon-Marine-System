@@ -84,7 +84,6 @@
                         class="menu-badge">24</span></a></li>
             <li class="active"><a href="shipments.html"><i class='bx bx-package'></i><span>الشحنات</span></a></li>
             <li><a href="sd-forms.html"><i class='bx bx-file'></i><span>نماذج SD</span></a></li>
-            <li><a href="operations.html"><i class='bx bxs-ship'></i><span>العمليات</span></a></li>
         </ul>
         <div class="menu-label">المالية</div>
         <ul class="menu">
@@ -302,16 +301,15 @@
                             <td onclick="event.stopPropagation()">
                                 <div class="table-actions">
                                     <button class="tbl-btn view" title="عرض التفاصيل"
-                                        onclick="openModal('shipmentDetailModal')"><i class='bx bx-show'></i></button>
-                                    <button class="tbl-btn ops" title="إدارة العمليات"
-                                        onclick="event.stopPropagation();openOpsManageModal(this.closest('tr'))"><i
-                                            class='bx bxs-cog'></i></button>
+                                        onclick="window.currentShipmentRow=this.closest('tr');openModal('shipmentDetailModal')"><i class='bx bx-show'></i></button>
                                     <button class="tbl-btn phone" title="تتبع"
-                                        onclick="openModal('shipmentDetailModal')"><i class='bx bx-map'></i></button>
+                                        onclick="window.currentShipmentRow=this.closest('tr');openModal('shipmentDetailModal')"><i class='bx bx-map'></i></button>
                                     <button class="tbl-btn edit" title="تحديث الحالة"
                                         onclick="openStageUpdateModal(this)"><i class='bx bx-edit-alt'></i></button>
                                     <button class="tbl-btn view" title="طباعة" onclick="window.print()"><i
                                             class='bx bx-printer'></i></button>
+                                    <button class="tbl-btn phone" title="الماليات والفواتير"
+                                        onclick="openFinancialsModal(this.closest('tr').getAttribute('data-bl'))"><i class='bx bx-receipt'></i></button>
                                     <button class="tbl-btn note" title="ملاحظات الشحنة"
                                         onclick="event.stopPropagation();openShipmentNotesModal(this)"><i
                                             class='bx bx-note'></i></button>
@@ -342,16 +340,15 @@
                             <td onclick="event.stopPropagation()">
                                 <div class="table-actions">
                                     <button class="tbl-btn view" title="عرض التفاصيل"
-                                        onclick="openModal('shipmentDetailModal')"><i class='bx bx-show'></i></button>
-                                    <button class="tbl-btn ops" title="إدارة العمليات"
-                                        onclick="event.stopPropagation();openOpsManageModal(this.closest('tr'))"><i
-                                            class='bx bxs-cog'></i></button>
+                                        onclick="window.currentShipmentRow=this.closest('tr');openModal('shipmentDetailModal')"><i class='bx bx-show'></i></button>
                                     <button class="tbl-btn edit" title="تحديث الحالة"
                                         onclick="openStageUpdateModal(this)"><i class='bx bx-edit-alt'></i></button>
                                     <button class="tbl-btn view" title="طباعة" onclick="window.print()"><i
                                             class='bx bx-printer'></i></button>
                                     <button class="tbl-btn phone" title="تتبع"
-                                        onclick="openModal('shipmentDetailModal')"><i class='bx bx-map'></i></button>
+                                        onclick="window.currentShipmentRow=this.closest('tr');openModal('shipmentDetailModal')"><i class='bx bx-map'></i></button>
+                                    <button class="tbl-btn phone" title="الماليات والفواتير"
+                                        onclick="openFinancialsModal(this.closest('tr').getAttribute('data-bl'))"><i class='bx bx-receipt'></i></button>
                                     <button class="tbl-btn note" title="ملاحظات الشحنة"
                                         onclick="event.stopPropagation();openShipmentNotesModal(this)"><i
                                             class='bx bx-note'></i></button>
@@ -384,16 +381,15 @@
                             <td onclick="event.stopPropagation()">
                                 <div class="table-actions">
                                     <button class="tbl-btn view" title="عرض التفاصيل"
-                                        onclick="openModal('shipmentDetailModal')"><i class='bx bx-show'></i></button>
-                                    <button class="tbl-btn ops" title="إدارة العمليات"
-                                        onclick="event.stopPropagation();openOpsManageModal(this.closest('tr'))"><i
-                                            class='bx bxs-cog'></i></button>
+                                        onclick="window.currentShipmentRow=this.closest('tr');openModal('shipmentDetailModal')"><i class='bx bx-show'></i></button>
                                     <button class="tbl-btn phone" title="تتبع"
-                                        onclick="openModal('shipmentDetailModal')"><i class='bx bx-map'></i></button>
+                                        onclick="window.currentShipmentRow=this.closest('tr');openModal('shipmentDetailModal')"><i class='bx bx-map'></i></button>
                                     <button class="tbl-btn edit" title="تحديث الحالة"
                                         onclick="openStageUpdateModal(this)"><i class='bx bx-edit-alt'></i></button>
                                     <button class="tbl-btn view" title="طباعة" onclick="window.print()"><i
                                             class='bx bx-printer'></i></button>
+                                    <button class="tbl-btn phone" title="الماليات والفواتير"
+                                        onclick="openFinancialsModal(this.closest('tr').getAttribute('data-bl'))"><i class='bx bx-receipt'></i></button>
                                     <button class="tbl-btn note" title="ملاحظات الشحنة"
                                         onclick="event.stopPropagation();openShipmentNotesModal(this)"><i
                                             class='bx bx-note'></i></button>
@@ -426,16 +422,15 @@
                             <td onclick="event.stopPropagation()">
                                 <div class="table-actions">
                                     <button class="tbl-btn view" title="عرض التفاصيل"
-                                        onclick="openModal('shipmentDetailModal')"><i class='bx bx-show'></i></button>
-                                    <button class="tbl-btn ops" title="إدارة العمليات"
-                                        onclick="event.stopPropagation();openOpsManageModal(this.closest('tr'))"><i
-                                            class='bx bxs-cog'></i></button>
+                                        onclick="window.currentShipmentRow=this.closest('tr');openModal('shipmentDetailModal')"><i class='bx bx-show'></i></button>
                                     <button class="tbl-btn phone" title="تتبع"
-                                        onclick="openModal('shipmentDetailModal')"><i class='bx bx-map'></i></button>
+                                        onclick="window.currentShipmentRow=this.closest('tr');openModal('shipmentDetailModal')"><i class='bx bx-map'></i></button>
                                     <button class="tbl-btn edit" title="تحديث الحالة"
                                         onclick="openStageUpdateModal(this)"><i class='bx bx-edit-alt'></i></button>
                                     <button class="tbl-btn view" title="طباعة" onclick="window.print()"><i
                                             class='bx bx-printer'></i></button>
+                                    <button class="tbl-btn phone" title="الماليات والفواتير"
+                                        onclick="openFinancialsModal(this.closest('tr').getAttribute('data-bl'))"><i class='bx bx-receipt'></i></button>
                                     <button class="tbl-btn note" title="ملاحظات الشحنة"
                                         onclick="event.stopPropagation();openShipmentNotesModal(this)"><i
                                             class='bx bx-note'></i></button>
@@ -469,9 +464,6 @@
                                 <div class="table-actions">
                                     <button class="tbl-btn view" title="عرض التفاصيل"
                                         onclick="openModal('shipmentDetailModal')"><i class='bx bx-show'></i></button>
-                                    <button class="tbl-btn ops" title="إدارة العمليات"
-                                        onclick="event.stopPropagation();openOpsManageModal(this.closest('tr'))"><i
-                                            class='bx bxs-cog'></i></button>
                                     <button class="tbl-btn phone" title="تتبع"
                                         onclick="openModal('shipmentDetailModal')"><i class='bx bx-map'></i></button>
                                     <button class="tbl-btn edit" title="تحديث الحالة"
@@ -780,48 +772,419 @@
                         </select>
                     </div>
 
-                    <!-- Operational Shipment Status (visible to both, editable by Operations only) -->
-                    <div class="card ops-card" style="margin-bottom:20px;">
-                        <div class="card-header" style="padding:12px 16px;">
-                            <span class="card-title">Operational Shipment Status</span>
-                        </div>
-                        <div class="card-body" style="padding:16px;">
-                            <select class="form-control" id="shipmentOpsStatus" style="max-width:100%;">
-                                <option value="Container allocation & pickup in progress">Container allocation & pickup
-                                    in progress</option>
-                                <option value="Loading in progress">Loading in progress</option>
-                                <option value="Customs clearance in progress">Customs clearance in progress</option>
-                                <option value="Waiting shipment invoices">Waiting shipment invoices</option>
-                                <option value="Invoicing in progress">Invoicing in progress</option>
-                                <option value="Waiting client payment">Waiting client payment</option>
-                                <option value="Cargo release in progress">Cargo release in progress</option>
-                                <option value="Shipment completed">Shipment completed</option>
-                            </select>
-                        </div>
-                    </div>
+                    <div class="shipment-ops-grid"
+                        style="display:flex;flex-direction:column;gap:16px;align-items:stretch;">
 
-                    <!-- Ops data now managed via the dedicated "إدارة العمليات" button in the shipments table -->
-                    <div
-                        style="background:rgba(23,162,184,0.07);border:1px dashed var(--accent-cyan);border-radius:var(--radius-sm);padding:12px 16px;display:flex;align-items:center;gap:10px;">
-                        <i class='bx bxs-cog' style="color:var(--accent-cyan);font-size:1.3rem;flex-shrink:0;"></i>
-                        <div>
-                            <p class="fs-sm fw-600" style="margin:0 0 2px;">بيانات العمليات — Vendors &amp; Partners /
-                                Dates / Checklist</p>
-                            <p class="fs-xs text-muted" style="margin:0;">يتم إدارتها عبر زر <strong>إدارة
-                                    العمليات</strong> <i class='bx bxs-cog' style="font-size:0.75rem;"></i> في جدول
-                                الشحنات مباشرةً.</p>
+                        <!-- Operational Shipment Status (visible to both, editable by Operations only) -->
+                        <div class="card ops-card">
+                            <div class="card-header" style="padding:12px 16px;">
+                                <span class="card-title fs-sm">Operational Shipment Status</span>
+                            </div>
+                            <div class="card-body" style="padding:14px 16px;">
+                                <select class="form-control shipment-ops-field" id="shipmentOpsStatus"
+                                    style="max-width:100%;">
+                                    <option value="1">جاري تخصيص وسحب الحاويات</option>
+                                    <option value="2">جاري التحميل</option>
+                                    <option value="3">جاري التخليص الجمركي</option>
+                                    <option value="4">انتظار فواتير الشحنة</option>
+                                    <option value="5">جاري الفوترة</option>
+                                    <option value="6">انتظار دفع العميل</option>
+                                    <option value="7">جاري الإفراج عن الشحنة</option>
+                                    <option value="8">شحنة مكتملة</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Vendors & Partners -->
+                        <div class="card ops-card">
+                            <div class="card-header" style="padding:12px 16px;">
+                                <span class="card-title fs-sm"><i class='bx bx-buildings'
+                                        style="margin-left:6px;"></i>Vendors &amp; Partners — شركاء التنفيذ</span>
+                            </div>
+                            <div
+                                style="padding:14px 16px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;">
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label class="form-label">Transport Contractor <span
+                                            class="fs-xs text-muted">(مقاول النقل)</span></label>
+                                    <select class="form-control shipment-ops-field" id="sdOpsTransportContractor">
+                                        <option value="">— اختر —</option>
+                                        <option>نايل للنقل</option>
+                                        <option>المصرية للنقل</option>
+                                        <option>دلتا لوجستيك</option>
+                                        <option>سفنكس لوجستيكس</option>
+                                        <option>النيل للخدمات اللوجستية</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label class="form-label">Customs Broker <span
+                                            class="fs-xs text-muted">(مخلص جمركي)</span></label>
+                                    <select class="form-control shipment-ops-field" id="sdOpsCustomsBroker">
+                                        <option value="">— اختر —</option>
+                                        <option>التخليص العالمية</option>
+                                        <option>جلف للتخليص</option>
+                                        <option>سفنكس للخدمات الجمركية</option>
+                                        <option>الراية للتخليص الجمركي</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label class="form-label">Insurance Company <span
+                                            class="fs-xs text-muted">(شركة التأمين)</span></label>
+                                    <select class="form-control shipment-ops-field" id="sdOpsInsurance">
+                                        <option value="">— اختر —</option>
+                                        <option>المتحدة للتأمين</option>
+                                        <option>أليانز</option>
+                                        <option>إيجيبت إنشورنس</option>
+                                        <option>AXA مصر</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label class="form-label">Overseas Agent <span
+                                            class="fs-xs text-muted">(وكيل خارجي)</span></label>
+                                    <select class="form-control shipment-ops-field" id="sdOpsOverseasAgent">
+                                        <option value="">— اختر —</option>
+                                        <option>Gulf Agency Jeddah</option>
+                                        <option>MSC Agent Dubai</option>
+                                        <option>CMA CGM Agent Hamburg</option>
+                                        <option>Maersk Agent Rotterdam</option>
+                                        <option>Istanbul Port Agent</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Operational Dates -->
+                        <div class="card ops-card">
+                            <div class="card-header" style="padding:12px 16px;">
+                                <span class="card-title fs-sm"><i class='bx bx-calendar'
+                                        style="margin-left:6px;"></i>Operational Dates — تواريخ تشغيلية</span>
+                            </div>
+                            <div
+                                style="padding:14px 16px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;">
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label class="form-label">Cut-Off Date
+                                        <span class="fs-xs text-muted" style="display:block;">(موعد الكات أوف)</span>
+                                    </label>
+                                    <input type="date" class="form-control shipment-ops-field" id="sdOpsCutOff">
+                                </div>
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label class="form-label">ETD
+                                        <span class="fs-xs text-muted" style="display:block;">(Estimated
+                                            Departure)</span>
+                                    </label>
+                                    <input type="datetime-local" class="form-control shipment-ops-field" id="sdOpsETD">
+                                </div>
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label class="form-label">ETA
+                                        <span class="fs-xs text-muted" style="display:block;">(Estimated Arrival —
+                                            قابل للتعديل بواسطة العمليات)</span>
+                                    </label>
+                                    <input type="datetime-local" class="form-control shipment-ops-field" id="sdOpsETA">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Task Management System -->
+                        <div class="card ops-card">
+                            <div class="card-header"
+                                style="padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                                <span class="card-title fs-sm"><i class='bx bx-task'
+                                        style="margin-left:6px;"></i>Task Management — نظام مهام العمليات</span>
+                                <span class="fs-xs text-muted" id="sdTaskProgress">0 / 10</span>
+                            </div>
+                            <div class="card-body" style="padding:10px 16px;max-height:270px;overflow:auto;">
+                                <div class="sd-task-list" id="sdTaskList"
+                                    style="display:flex;flex-direction:column;gap:6px;">
+                                        <!-- Each row: checkbox + name, then assignee / due / status -->
+                                        <div class="sd-task-row" data-task-key="review_client_docs"
+                                            style="display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,2fr);gap:8px;align-items:center;">
+                                            <label
+                                                style="margin:0;display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                                <input type="checkbox" class="sd-task-cb shipment-ops-field">
+                                                <span class="fs-xs fw-600">مراجعة أوراق العميل</span>
+                                            </label>
+                                            <div
+                                                style="display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1.1fr) minmax(0,1.2fr);gap:6px;align-items:center;">
+                                                <select class="form-control shipment-ops-field sd-task-assignee">
+                                                    <option value="">Assigned To</option>
+                                                    <option value="أحمد خيري">أحمد خيري</option>
+                                                    <option value="محمد سعيد">محمد سعيد</option>
+                                                    <option value="زينب رضوان">زينب رضوان</option>
+                                                    <option value="حسن نبيل">حسن نبيل</option>
+                                                    <option value="عماد العمليات">عماد العمليات</option>
+                                                    <option value="سارة الدعم">سارة الدعم</option>
+                                                </select>
+                                                <input type="date" class="form-control shipment-ops-field sd-task-due">
+                                                <select
+                                                    class="form-control shipment-ops-field sd-task-status-sel fs-xs fw-600">
+                                                    <option value="pending">Pending</option>
+                                                    <option value="in_progress">In Progress</option>
+                                                    <option value="done">Done</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="sd-task-row" data-task-key="review_packing_invoice"
+                                            style="display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,2fr);gap:8px;align-items:center;">
+                                            <label
+                                                style="margin:0;display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                                <input type="checkbox" class="sd-task-cb shipment-ops-field">
+                                                <span class="fs-xs fw-600">مراجعة Packing List &amp; Invoice</span>
+                                            </label>
+                                            <div
+                                                style="display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1.1fr) minmax(0,1.2fr);gap:6px;align-items:center;">
+                                                <select class="form-control shipment-ops-field sd-task-assignee">
+                                                    <option value="">Assigned To</option>
+                                                    <option value="أحمد خيري">أحمد خيري</option>
+                                                    <option value="محمد سعيد">محمد سعيد</option>
+                                                    <option value="زينب رضوان">زينب رضوان</option>
+                                                    <option value="حسن نبيل">حسن نبيل</option>
+                                                    <option value="عماد العمليات">عماد العمليات</option>
+                                                    <option value="سارة الدعم">سارة الدعم</option>
+                                                </select>
+                                                <input type="date" class="form-control shipment-ops-field sd-task-due">
+                                                <select
+                                                    class="form-control shipment-ops-field sd-task-status-sel fs-xs fw-600">
+                                                    <option value="pending">Pending</option>
+                                                    <option value="in_progress">In Progress</option>
+                                                    <option value="done">Done</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="sd-task-row" data-task-key="review_sticker"
+                                            style="display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,2fr);gap:8px;align-items:center;">
+                                            <label
+                                                style="margin:0;display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                                <input type="checkbox" class="sd-task-cb shipment-ops-field">
+                                                <span class="fs-xs fw-600">مراجعة الاستيكر</span>
+                                            </label>
+                                            <div
+                                                style="display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1.1fr) minmax(0,1.2fr);gap:6px;align-items:center;">
+                                                <select class="form-control shipment-ops-field sd-task-assignee">
+                                                    <option value="">Assigned To</option>
+                                                    <option value="أحمد خيري">أحمد خيري</option>
+                                                    <option value="محمد سعيد">محمد سعيد</option>
+                                                    <option value="زينب رضوان">زينب رضوان</option>
+                                                    <option value="حسن نبيل">حسن نبيل</option>
+                                                    <option value="عماد العمليات">عماد العمليات</option>
+                                                    <option value="سارة الدعم">سارة الدعم</option>
+                                                </select>
+                                                <input type="date" class="form-control shipment-ops-field sd-task-due">
+                                                <select
+                                                    class="form-control shipment-ops-field sd-task-status-sel fs-xs fw-600">
+                                                    <option value="pending">Pending</option>
+                                                    <option value="in_progress">In Progress</option>
+                                                    <option value="done">Done</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="sd-task-row" data-task-key="open_customs_declaration"
+                                            style="display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,2fr);gap:8px;align-items:center;">
+                                            <label
+                                                style="margin:0;display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                                <input type="checkbox" class="sd-task-cb shipment-ops-field">
+                                                <span class="fs-xs fw-600">فتح الشهادة الجمركية</span>
+                                            </label>
+                                            <div
+                                                style="display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1.1fr) minmax(0,1.2fr);gap:6px;align-items:center;">
+                                                <select class="form-control shipment-ops-field sd-task-assignee">
+                                                    <option value="">Assigned To</option>
+                                                    <option value="أحمد خيري">أحمد خيري</option>
+                                                    <option value="محمد سعيد">محمد سعيد</option>
+                                                    <option value="زينب رضوان">زينب رضوان</option>
+                                                    <option value="حسن نبيل">حسن نبيل</option>
+                                                    <option value="عماد العمليات">عماد العمليات</option>
+                                                    <option value="سارة الدعم">سارة الدعم</option>
+                                                </select>
+                                                <input type="date" class="form-control shipment-ops-field sd-task-due">
+                                                <select
+                                                    class="form-control shipment-ops-field sd-task-status-sel fs-xs fw-600">
+                                                    <option value="pending">Pending</option>
+                                                    <option value="in_progress">In Progress</option>
+                                                    <option value="done">Done</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="sd-task-row" data-task-key="assign_shipping_order"
+                                            style="display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,2fr);gap:8px;align-items:center;">
+                                            <label
+                                                style="margin:0;display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                                <input type="checkbox" class="sd-task-cb shipment-ops-field">
+                                                <span class="fs-xs fw-600">تخصيص إذن الشحن</span>
+                                            </label>
+                                            <div
+                                                style="display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1.1fr) minmax(0,1.2fr);gap:6px;align-items:center;">
+                                                <select class="form-control shipment-ops-field sd-task-assignee">
+                                                    <option value="">Assigned To</option>
+                                                    <option value="أحمد خيري">أحمد خيري</option>
+                                                    <option value="محمد سعيد">محمد سعيد</option>
+                                                    <option value="زينب رضوان">زينب رضوان</option>
+                                                    <option value="حسن نبيل">حسن نبيل</option>
+                                                    <option value="عماد العمليات">عماد العمليات</option>
+                                                    <option value="سارة الدعم">سارة الدعم</option>
+                                                </select>
+                                                <input type="date" class="form-control shipment-ops-field sd-task-due">
+                                                <select
+                                                    class="form-control shipment-ops-field sd-task-status-sel fs-xs fw-600">
+                                                    <option value="pending">Pending</option>
+                                                    <option value="in_progress">In Progress</option>
+                                                    <option value="done">Done</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="sd-task-row" data-task-key="pull_containers"
+                                            style="display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,2fr);gap:8px;align-items:center;">
+                                            <label
+                                                style="margin:0;display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                                <input type="checkbox" class="sd-task-cb shipment-ops-field">
+                                                <span class="fs-xs fw-600">سحب الحاويات</span>
+                                            </label>
+                                            <div
+                                                style="display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1.1fr) minmax(0,1.2fr);gap:6px;align-items:center;">
+                                                <select class="form-control shipment-ops-field sd-task-assignee">
+                                                    <option value="">Assigned To</option>
+                                                    <option value="أحمد خيري">أحمد خيري</option>
+                                                    <option value="محمد سعيد">محمد سعيد</option>
+                                                    <option value="زينب رضوان">زينب رضوان</option>
+                                                    <option value="حسن نبيل">حسن نبيل</option>
+                                                    <option value="عماد العمليات">عماد العمليات</option>
+                                                    <option value="سارة الدعم">سارة الدعم</option>
+                                                </select>
+                                                <input type="date" class="form-control shipment-ops-field sd-task-due">
+                                                <select
+                                                    class="form-control shipment-ops-field sd-task-status-sel fs-xs fw-600">
+                                                    <option value="pending">Pending</option>
+                                                    <option value="in_progress">In Progress</option>
+                                                    <option value="done">Done</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="sd-task-row" data-task-key="enter_si_vgm"
+                                            style="display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,2fr);gap:8px;align-items:center;">
+                                            <label
+                                                style="margin:0;display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                                <input type="checkbox" class="sd-task-cb shipment-ops-field">
+                                                <span class="fs-xs fw-600">إدخال SI &amp; VGM</span>
+                                            </label>
+                                            <div
+                                                style="display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1.1fr) minmax(0,1.2fr);gap:6px;align-items:center;">
+                                                <select class="form-control shipment-ops-field sd-task-assignee">
+                                                    <option value="">Assigned To</option>
+                                                    <option value="أحمد خيري">أحمد خيري</option>
+                                                    <option value="محمد سعيد">محمد سعيد</option>
+                                                    <option value="زينب رضوان">زينب رضوان</option>
+                                                    <option value="حسن نبيل">حسن نبيل</option>
+                                                    <option value="عماد العمليات">عماد العمليات</option>
+                                                    <option value="سارة الدعم">سارة الدعم</option>
+                                                </select>
+                                                <input type="date" class="form-control shipment-ops-field sd-task-due">
+                                                <select
+                                                    class="form-control shipment-ops-field sd-task-status-sel fs-xs fw-600">
+                                                    <option value="pending">Pending</option>
+                                                    <option value="in_progress">In Progress</option>
+                                                    <option value="done">Done</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="sd-task-row" data-task-key="review_draft_bl"
+                                            style="display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,2fr);gap:8px;align-items:center;">
+                                            <label
+                                                style="margin:0;display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                                <input type="checkbox" class="sd-task-cb shipment-ops-field">
+                                                <span class="fs-xs fw-600">مراجعة Draft B/L</span>
+                                            </label>
+                                            <div
+                                                style="display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1.1fr) minmax(0,1.2fr);gap:6px;align-items:center;">
+                                                <select class="form-control shipment-ops-field sd-task-assignee">
+                                                    <option value="">Assigned To</option>
+                                                    <option value="أحمد خيري">أحمد خيري</option>
+                                                    <option value="محمد سعيد">محمد سعيد</option>
+                                                    <option value="زينب رضوان">زينب رضوان</option>
+                                                    <option value="حسن نبيل">حسن نبيل</option>
+                                                    <option value="عماد العمليات">عماد العمليات</option>
+                                                    <option value="سارة الدعم">سارة الدعم</option>
+                                                </select>
+                                                <input type="date" class="form-control shipment-ops-field sd-task-due">
+                                                <select
+                                                    class="form-control shipment-ops-field sd-task-status-sel fs-xs fw-600">
+                                                    <option value="pending">Pending</option>
+                                                    <option value="in_progress">In Progress</option>
+                                                    <option value="done">Done</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="sd-task-row" data-task-key="prepare_origin_cert"
+                                            style="display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,2fr);gap:8px;align-items:center;">
+                                            <label
+                                                style="margin:0;display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                                <input type="checkbox" class="sd-task-cb shipment-ops-field">
+                                                <span class="fs-xs fw-600">إعداد شهادة المنشأ / الزراعي (إن وجد)</span>
+                                            </label>
+                                            <div
+                                                style="display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1.1fr) minmax(0,1.2fr);gap:6px;align-items:center;">
+                                                <select class="form-control shipment-ops-field sd-task-assignee">
+                                                    <option value="">Assigned To</option>
+                                                    <option value="أحمد خيري">أحمد خيري</option>
+                                                    <option value="محمد سعيد">محمد سعيد</option>
+                                                    <option value="زينب رضوان">زينب رضوان</option>
+                                                    <option value="حسن نبيل">حسن نبيل</option>
+                                                    <option value="عماد العمليات">عماد العمليات</option>
+                                                    <option value="سارة الدعم">سارة الدعم</option>
+                                                </select>
+                                                <input type="date" class="form-control shipment-ops-field sd-task-due">
+                                                <select
+                                                    class="form-control shipment-ops-field sd-task-status-sel fs-xs fw-600">
+                                                    <option value="pending">Pending</option>
+                                                    <option value="in_progress">In Progress</option>
+                                                    <option value="done">Done</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="sd-task-row" data-task-key="stamp_customs_docs"
+                                            style="display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,2fr);gap:8px;align-items:center;">
+                                            <label
+                                                style="margin:0;display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                                <input type="checkbox" class="sd-task-cb shipment-ops-field">
+                                                <span class="fs-xs fw-600">ختم المستندات الجمركية</span>
+                                            </label>
+                                            <div
+                                                style="display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1.1fr) minmax(0,1.2fr);gap:6px;align-items:center;">
+                                                <input type="text" class="form-control shipment-ops-field sd-task-assignee"
+                                                    placeholder="Assigned To">
+                                                <input type="date" class="form-control shipment-ops-field sd-task-due">
+                                                <select
+                                                    class="form-control shipment-ops-field sd-task-status-sel fs-xs fw-600">
+                                                    <option value="pending">Pending</option>
+                                                    <option value="in_progress">In Progress</option>
+                                                    <option value="done">Done</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-outline" onclick="closeModal('shipmentDetailModal')">إغلاق</button>
-                <button class="btn btn-outline" onclick="window.print()"><i class='bx bx-printer'></i> طباعة</button>
-                <button class="btn btn-primary" onclick="closeModal('shipmentDetailModal');openStageUpdateModal()"><i
-                        class='bx bx-edit'></i> تحديث الحالة</button>
-                <button class="btn" style="background:var(--accent-gold);color:#fff;"
-                    onclick="openFinancialsModal('BL-2026-0248')"><i class='bx bx-receipt'></i> الماليات
-                    والفواتير</button>
+
+                <div class="modal-footer" style="margin-top:12px;">
+                    <button class="btn btn-outline" onclick="closeModal('shipmentDetailModal')">إغلاق</button>
+                    <button class="btn btn-outline" onclick="window.print()"><i class='bx bx-printer'></i> طباعة</button>
+                    <button class="btn btn-primary" onclick="closeModal('shipmentDetailModal');openStageUpdateModal()"><i
+                            class='bx bx-edit'></i> تحديث الحالة</button>
+                    <button class="btn" style="background:var(--accent-gold);color:#fff;"
+                        onclick="openFinancialsModal('BL-2026-0248')"><i class='bx bx-receipt'></i> الماليات
+                        والفواتير</button>
+                </div>
+
             </div>
 
         </div>
@@ -2961,6 +3324,134 @@
                         }
 
                         var shipmentDetailModal = document.getElementById('shipmentDetailModal');
+                        var shipmentDetailOpsStore = {};
+
+                        function syncShipmentOpsFromStore(bl) {
+                            if (!bl) return;
+                            var d = shipmentDetailOpsStore[bl] || {};
+
+                            if (shipmentOpsStatus && d.opsStatus !== undefined) {
+                                shipmentOpsStatus.value = String(d.opsStatus);
+                            }
+
+                            var mapIds = [
+                                ['sdOpsTransportContractor', 'vendorTransport'],
+                                ['sdOpsCustomsBroker', 'vendorCustoms'],
+                                ['sdOpsInsurance', 'vendorInsurance'],
+                                ['sdOpsOverseasAgent', 'vendorOverseas'],
+                                ['sdOpsCutOff', 'cutoff'],
+                                ['sdOpsETD', 'etd'],
+                                ['sdOpsETA', 'eta']
+                            ];
+                            mapIds.forEach(function (pair) {
+                                var el = document.getElementById(pair[0]);
+                                if (el && d[pair[1]] !== undefined) {
+                                    el.value = d[pair[1]];
+                                }
+                            });
+
+                            var taskRows = document.querySelectorAll('#sdTaskList .sd-task-row');
+                            var tasks = d.tasks || [];
+                            taskRows.forEach(function (row, idx) {
+                                var t = tasks[idx] || {};
+                                var cb = row.querySelector('.sd-task-cb');
+                                var asg = row.querySelector('.sd-task-assignee');
+                                var due = row.querySelector('.sd-task-due');
+                                var sel = row.querySelector('.sd-task-status-sel');
+                                if (cb) cb.checked = !!t.done;
+                                if (asg && t.assignee !== undefined) asg.value = t.assignee;
+                                if (due && t.due !== undefined) due.value = t.due;
+                                if (sel && t.status) sel.value = t.status;
+                            });
+
+                            updateShipmentOpsTaskProgress();
+                        }
+
+                        function collectShipmentOpsToStore(bl) {
+                            if (!bl) return;
+                            var d = shipmentDetailOpsStore[bl] || {};
+
+                            d.opsStatus = shipmentOpsStatus ? shipmentOpsStatus.value : d.opsStatus;
+
+                            var mapIds = [
+                                ['sdOpsTransportContractor', 'vendorTransport'],
+                                ['sdOpsCustomsBroker', 'vendorCustoms'],
+                                ['sdOpsInsurance', 'vendorInsurance'],
+                                ['sdOpsOverseasAgent', 'vendorOverseas'],
+                                ['sdOpsCutOff', 'cutoff'],
+                                ['sdOpsETD', 'etd'],
+                                ['sdOpsETA', 'eta']
+                            ];
+                            mapIds.forEach(function (pair) {
+                                var el = document.getElementById(pair[0]);
+                                if (el) {
+                                    d[pair[1]] = el.value;
+                                }
+                            });
+
+                            d.tasks = [];
+                            var taskRows = document.querySelectorAll('#sdTaskList .sd-task-row');
+                            taskRows.forEach(function (row) {
+                                var cb = row.querySelector('.sd-task-cb');
+                                var asg = row.querySelector('.sd-task-assignee');
+                                var due = row.querySelector('.sd-task-due');
+                                var sel = row.querySelector('.sd-task-status-sel');
+                                d.tasks.push({
+                                    done: cb ? cb.checked : false,
+                                    assignee: asg ? asg.value : '',
+                                    due: due ? due.value : '',
+                                    status: sel ? sel.value : 'pending'
+                                });
+                            });
+
+                            shipmentDetailOpsStore[bl] = d;
+                        }
+
+                        function updateShipmentOpsTaskProgress() {
+                            var rows = document.querySelectorAll('#sdTaskList .sd-task-row');
+                            var done = 0;
+                            rows.forEach(function (row) {
+                                var sel = row.querySelector('.sd-task-status-sel');
+                                if (sel && sel.value === 'done') done++;
+                            });
+                            var el = document.getElementById('sdTaskProgress');
+                            if (el) el.textContent = done + ' / ' + rows.length;
+                        }
+
+                        function bindShipmentDetailOpsHandlers() {
+                            var grid = document.getElementById('sdTaskList');
+                            if (grid && !grid.dataset.bound) {
+                                grid.dataset.bound = '1';
+                                grid.addEventListener('change', function (e) {
+                                    var row = e.target.closest('.sd-task-row');
+                                    if (!row) return;
+                                    var cb = row.querySelector('.sd-task-cb');
+                                    var sel = row.querySelector('.sd-task-status-sel');
+                                    if (e.target.classList.contains('sd-task-cb')) {
+                                        if (sel) sel.value = cb && cb.checked ? 'done' : 'pending';
+                                    } else if (e.target.classList.contains('sd-task-status-sel')) {
+                                        if (cb) cb.checked = e.target.value === 'done';
+                                    }
+                                    updateShipmentOpsTaskProgress();
+
+                                    var rowEl = window.currentShipmentRow;
+                                    var bl = rowEl ? rowEl.getAttribute('data-bl') : null;
+                                    if (bl) collectShipmentOpsToStore(bl);
+                                });
+                            }
+
+                            var fieldContainer = document.querySelector('.shipment-ops-dashboard');
+                            if (fieldContainer && !fieldContainer.dataset.bound) {
+                                fieldContainer.dataset.bound = '1';
+                                fieldContainer.addEventListener('change', function (e) {
+                                    if (!e.target.classList.contains('shipment-ops-field')) return;
+                                    var rowEl = window.currentShipmentRow;
+                                    var bl = rowEl ? rowEl.getAttribute('data-bl') : null;
+                                    if (bl) collectShipmentOpsToStore(bl);
+                                });
+                            }
+                        }
+
                         if (shipmentDetailModal) {
                             var origOpen = window.openModal;
                             if (typeof origOpen === 'function') {
@@ -2968,6 +3459,13 @@
                                     origOpen(id);
                                     if (id === 'shipmentDetailModal') {
                                         applyShipmentOpsPermissions();
+                                        bindShipmentDetailOpsHandlers();
+                                        var rowEl = window.currentShipmentRow;
+                                        var bl = rowEl ? rowEl.getAttribute('data-bl') : null;
+                                        if (bl) {
+                                            collectShipmentOpsToStore(bl);
+                                            syncShipmentOpsFromStore(bl);
+                                        }
                                     }
                                 };
                             }
