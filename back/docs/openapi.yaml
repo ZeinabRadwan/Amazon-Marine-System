@@ -1,0 +1,43 @@
+openapi: 3.0.0
+info:
+  title: Amazon Marine Shipping ERP API
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000/api/v1
+paths:
+  /auth/login:
+    post:
+      summary: Login and obtain API token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Successful login
+  /sd-forms:
+    get:
+      summary: List SD forms
+      responses:
+        '200':
+          description: SD forms list
+  /shipments:
+    get:
+      summary: List shipments
+      responses:
+        '200':
+          description: Shipments list
+  /invoices:
+    get:
+      summary: List invoices
+      responses:
+        '200':
+          description: Invoices list
+

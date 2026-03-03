@@ -1,13 +1,3 @@
-# Amazon Marine — Laravel API
-
-Laravel backend for the Amazon Marine ERP. Serves the REST API used by the React frontend in `../front`.
-
-**Run:** `php artisan serve` (http://localhost:8000).  
-**API health:** `GET http://localhost:8000/api/health`.  
-**Database:** SQLite by default (`.env`); run `php artisan migrate` if needed.
-
----
-
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">
