@@ -16,18 +16,51 @@ class Client extends Model
      */
     protected $fillable = [
         'name',
+        'contact_name',
+        'company_name',
         'code',
         'type',
+        'company_type',
+        'business_activity',
+        'target_markets',
         'tax_id',
         'email',
         'phone',
+        'preferred_comm_method',
         'city',
         'country',
         'address',
+        'website_url',
+        'facebook_url',
+        'linkedin_url',
+        'status',
+        'lead_source',
+        'lead_source_other',
+        'interest_level',
+        'decision_maker_name',
+        'decision_maker_title',
+        'decision_maker_title_other',
         'default_payment_terms',
         'default_currency',
         'assigned_sales_id',
         'notes',
+        'shipping_problems',
+        'current_need',
+        'pain_points',
+        'opportunity',
+        'special_requirements',
+        'shipments_count',
+        'total_profit',
+        'last_contact_at',
+    ];
+
+    /**
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'shipments_count' => 'int',
+        'total_profit' => 'decimal:2',
+        'last_contact_at' => 'datetime',
     ];
 
     /**

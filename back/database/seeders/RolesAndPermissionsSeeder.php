@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\PagePermission;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -24,9 +25,11 @@ class RolesAndPermissionsSeeder extends Seeder
             'sales_manager',
         ];
 
-        $roles = collect($roleKeys)->mapWithKeys(function (string $roleKey) {
-            return [$roleKey => Role::firstOrCreate(['name' => $roleKey])];
-        });
+        $roles = collect($roleKeys)
+            ->mapWithKeys(function (string $roleKey): array {
+                return [$roleKey => Role::firstOrCreate(['name' => $roleKey])];
+            })
+            ->all();
 
         // Define permissions grouped by domain
         $permissionGroups = [
@@ -44,27 +47,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'clients.view',
                 'clients.manage',
             ],
-            'sd_forms' => [
-                'sd_forms.view',
-                'sd_forms.manage',
-            ],
-            'shipments' => [
-                'shipments.view',
-                'shipments.manage_ops',
-            ],
-            'financial' => [
-                'financial.view',
-                'financial.manage',
-            ],
-            'reports' => [
-                'reports.view',
-            ],
-            'support' => [
-                'tickets.view',
-                'tickets.manage',
-                'notes.view',
-                'notes.manage',
-            ],
+            // Permissions for legacy modules are intentionally omitted
         ];
 
         $allPermissionNames = collect($permissionGroups)->flatten()->unique();
@@ -82,10 +65,6 @@ class RolesAndPermissionsSeeder extends Seeder
             $sales->syncPermissions([
                 $permissions['clients.view'],
                 $permissions['clients.manage'],
-                $permissions['sd_forms.view'],
-                $permissions['sd_forms.manage'],
-                $permissions['shipments.view'],
-                $permissions['reports.view'],
             ]);
         }
 
@@ -93,47 +72,123 @@ class RolesAndPermissionsSeeder extends Seeder
             $salesManager->syncPermissions([
                 $permissions['clients.view'],
                 $permissions['clients.manage'],
-                $permissions['sd_forms.view'],
-                $permissions['sd_forms.manage'],
-                $permissions['shipments.view'],
-                $permissions['reports.view'],
                 $permissions['users.view'],
                 $permissions['users.manage'],
             ]);
         }
 
         if ($operation = $roles['operation'] ?? null) {
-            $operation->syncPermissions([
-                $permissions['shipments.view'],
-                $permissions['shipments.manage_ops'],
-                $permissions['sd_forms.view'],
-                $permissions['reports.view'],
-            ]);
+            $operation->syncPermissions([]);
         }
 
         if ($accounting = $roles['accounting'] ?? null) {
-            $accounting->syncPermissions([
-                $permissions['financial.view'],
-                $permissions['financial.manage'],
-                $permissions['shipments.view'],
-                $permissions['reports.view'],
-            ]);
+            $accounting->syncPermissions([]);
         }
 
         if ($pricing = $roles['pricing'] ?? null) {
-            $pricing->syncPermissions([
-                $permissions['shipments.view'],
-                $permissions['reports.view'],
-            ]);
+            $pricing->syncPermissions([]);
         }
 
         if ($support = $roles['support'] ?? null) {
             $support->syncPermissions([
                 $permissions['clients.view'],
-                $permissions['sd_forms.view'],
-                $permissions['shipments.view'],
-                $permissions['reports.view'],
             ]);
+        }
+
+        // Seed page-level permissions for core modules
+        $this->seedPagePermissions($roles);
+    }
+
+    /**
+     * @param array<string, Role> $roles
+     */
+    protected function seedPagePermissions(array $roles): void
+    {
+        $pages = [
+            'auth',
+            'users',
+            'roles',
+            'permissions',
+            'clients',
+        ];
+
+        // Admin: full access to all pages
+        if ($admin = $roles['admin'] ?? null) {
+            foreach ($pages as $page) {
+                PagePermission::updateOrCreate(
+                    [
+                        'role_id' => $admin->id,
+                        'page' => $page,
+                    ],
+                    [
+                        'can_view' => true,
+                        'can_edit' => true,
+                        'can_delete' => true,
+                        'can_approve' => true,
+                    ],
+                );
+            }
+        }
+
+        // Sales: full access to clients page
+        if ($sales = $roles['sales'] ?? null) {
+            PagePermission::updateOrCreate(
+                [
+                    'role_id' => $sales->id,
+                    'page' => 'clients',
+                ],
+                [
+                    'can_view' => true,
+                    'can_edit' => true,
+                    'can_delete' => false,
+                    'can_approve' => false,
+                ],
+            );
+        }
+
+        // Sales manager: manage clients and users
+        if ($salesManager = $roles['sales_manager'] ?? null) {
+            PagePermission::updateOrCreate(
+                [
+                    'role_id' => $salesManager->id,
+                    'page' => 'clients',
+                ],
+                [
+                    'can_view' => true,
+                    'can_edit' => true,
+                    'can_delete' => true,
+                    'can_approve' => true,
+                ],
+            );
+
+            PagePermission::updateOrCreate(
+                [
+                    'role_id' => $salesManager->id,
+                    'page' => 'users',
+                ],
+                [
+                    'can_view' => true,
+                    'can_edit' => true,
+                    'can_delete' => false,
+                    'can_approve' => false,
+                ],
+            );
+        }
+
+        // Support: view-only access to clients
+        if ($support = $roles['support'] ?? null) {
+            PagePermission::updateOrCreate(
+                [
+                    'role_id' => $support->id,
+                    'page' => 'clients',
+                ],
+                [
+                    'can_view' => true,
+                    'can_edit' => false,
+                    'can_delete' => false,
+                    'can_approve' => false,
+                ],
+            );
         }
     }
 }

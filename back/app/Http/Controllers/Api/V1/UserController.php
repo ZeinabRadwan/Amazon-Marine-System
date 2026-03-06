@@ -127,6 +127,38 @@ class UserController extends Controller
         ]);
     }
 
+    public function updatePassword(Request $request, User $user)
+    {
+        $this->authorize('update', $user);
+
+        $validated = $request->validate([
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $user->password = Hash::make($validated['password']);
+        $user->save();
+
+        return response()->json([
+            'data' => $this->transformUser($user),
+        ]);
+    }
+
+    public function assignRole(Request $request, User $user)
+    {
+        $this->authorize('update', $user);
+
+        $validated = $request->validate([
+            'role' => ['required', 'string'],
+        ]);
+
+        $user->syncRoles([$validated['role']]);
+        $user->load('roles');
+
+        return response()->json([
+            'data' => $this->transformUser($user),
+        ]);
+    }
+
     /**
      * @return array<string, mixed>
      */

@@ -37,7 +37,7 @@
           "response": []
         },
         {
-          "name": "Me",
+          "name": "Profile (me)",
           "request": {
             "method": "GET",
             "header": [
@@ -51,14 +51,74 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/auth/me",
+              "raw": "{{base_url}}/profile",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "auth",
-                "me"
+                "profile"
               ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "profile"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Admin\",\n  \"email\": \"admin@amazonmarine.test\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Change Password (self)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/profile/password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "profile",
+                "password"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"password\",\n  \"password\": \"new-password\",\n  \"password_confirmation\": \"new-password\"\n}"
             }
           },
           "response": []
@@ -93,7 +153,132 @@
       ]
     },
     {
-      "name": "Roles & Permissions (planned)",
+      "name": "Users",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create User (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sales User\",\n  \"email\": \"sales@amazonmarine.test\",\n  \"password\": \"password\",\n  \"password_confirmation\": \"password\",\n  \"role\": \"sales\",\n  \"status\": \"active\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Change User Password (admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/{{user_id}}/password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users",
+                "{{user_id}}",
+                "password"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"new-password\",\n  \"password_confirmation\": \"new-password\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Assign Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/{{user_id}}/assign-role",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users",
+                "{{user_id}}",
+                "assign-role"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"sales\"\n}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Roles & Permissions",
       "item": [
         {
           "name": "List Roles",
@@ -122,7 +307,7 @@
           "response": []
         },
         {
-          "name": "List Permissions",
+          "name": "List Page Permissions",
           "request": {
             "method": "GET",
             "header": [
@@ -146,14 +331,39 @@
             }
           },
           "response": []
-        }
-      ]
-    },
-    {
-      "name": "CRM & Reference (planned)",
-      "item": [
+        },
         {
-          "name": "List Clients",
+          "name": "Upsert Page Permission",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/permissions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "permissions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role_id\": 1,\n  \"page\": \"clients\",\n  \"can_view\": true,\n  \"can_edit\": true,\n  \"can_delete\": false,\n  \"can_approve\": false\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Permissions For Role",
           "request": {
             "method": "GET",
             "header": [
@@ -167,12 +377,66 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/clients",
+              "raw": "{{base_url}}/permissions/{{role_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "permissions",
+                "{{role_id}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Clients",
+      "item": [
+        {
+          "name": "List Clients (search/filter/sort)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/clients?q={{search}}&status={{status}}&assigned_sales_id={{sales_id}}&sort=client&direction=asc",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "clients"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "{{search}}"
+                },
+                {
+                  "key": "status",
+                  "value": "{{status}}"
+                },
+                {
+                  "key": "assigned_sales_id",
+                  "value": "{{sales_id}}"
+                },
+                {
+                  "key": "sort",
+                  "value": "client"
+                },
+                {
+                  "key": "direction",
+                  "value": "asc"
+                }
               ]
             }
           },
@@ -203,13 +467,13 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Mansour & Co.\",\n  \"code\": \"CL-001\",\n  \"type\": \"company\",\n  \"email\": \"client@example.com\",\n  \"phone\": \"+20123456789\",\n  \"city\": \"Alexandria\",\n  \"country\": \"EG\",\n  \"address\": \"Industrial Zone\",\n  \"default_payment_terms\": \"30 days\",\n  \"default_currency\": \"USD\"\n}"
+              "raw": "{\n  \"name\": \"منصور وشركاه للتجارة\",\n  \"contact_name\": \"منصور محمد\",\n  \"company_name\": \"منصور وشركاه للتجارة\",\n  \"company_type\": \"Trader\",\n  \"business_activity\": \"تجارة قطع غيار سيارات\",\n  \"target_markets\": \"السعودية والخليج\",\n  \"tax_id\": \"123-456-789\",\n  \"email\": \"client@example.com\",\n  \"phone\": \"+20123456789\",\n  \"preferred_comm_method\": \"WhatsApp\",\n  \"city\": \"القاهرة\",\n  \"country\": \"EG\",\n  \"address\": \"مدينة نصر - المنطقة الصناعية\",\n  \"website_url\": \"https://example.com\",\n  \"facebook_url\": \"https://facebook.com/example\",\n  \"linkedin_url\": \"https://linkedin.com/company/example\",\n  \"status\": \"نشط\",\n  \"lead_source\": \"إحالة عميل\",\n  \"interest_level\": \"High\",\n  \"decision_maker_name\": \"منصور محمد\",\n  \"decision_maker_title\": \"Owner\",\n  \"default_payment_terms\": \"30 days\",\n  \"default_currency\": \"USD\",\n  \"notes\": \"عميل مهم في قطاع السيارات\"\n}"
             }
           },
           "response": []
         },
         {
-          "name": "List Ports",
+          "name": "Get Client Detail",
           "request": {
             "method": "GET",
             "header": [
@@ -223,164 +487,20 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/ports",
+              "raw": "{{base_url}}/clients/{{client_id}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "ports"
+                "clients",
+                "{{client_id}}"
               ]
             }
           },
           "response": []
         },
         {
-          "name": "List Vendors",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/vendors",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "vendors"
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "SD Forms (planned)",
-      "item": [
-        {
-          "name": "List SD Forms",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/sd-forms",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "sd-forms"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Create SD Form",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/sd-forms",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "sd-forms"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"client_id\": 1,\n  \"pol_id\": 1,\n  \"pod_id\": 2,\n  \"final_destination\": \"Jeddah ICD\",\n  \"shipment_direction\": \"Export\",\n  \"shipper_info\": \"...\",\n  \"consignee_info\": \"...\",\n  \"notify_party_mode\": \"same\",\n  \"freight_term\": \"Prepaid\",\n  \"container_type\": \"Dry\",\n  \"container_size\": \"40\",\n  \"num_containers\": 2,\n  \"requested_vessel_date\": \"2026-02-20\",\n  \"cargo_description\": \"Textiles\",\n  \"hs_code\": \"5208.11\",\n  \"total_gross_weight\": 12000,\n  \"total_net_weight\": 11000\n}"
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Shipments & Ops (planned)",
-      "item": [
-        {
-          "name": "List Shipments",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/shipments",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "shipments"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Shipment Detail",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/shipments/{{shipment_id}}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "shipments",
-                "{{shipment_id}}"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Update Operations",
+          "name": "Update Client",
           "request": {
             "method": "PUT",
             "header": [
@@ -394,58 +514,26 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/shipments/{{shipment_id}}/operations",
+              "raw": "{{base_url}}/clients/{{client_id}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "shipments",
-                "{{shipment_id}}",
-                "operations"
+                "clients",
+                "{{client_id}}"
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"operations_status\": 3,\n  \"transport_contractor_id\": 1,\n  \"customs_broker_id\": 2,\n  \"insurance_company_id\": 3,\n  \"overseas_agent_id\": 4,\n  \"cut_off_date\": \"2026-02-10\",\n  \"etd\": \"2026-02-15T18:00:00\",\n  \"eta\": \"2026-02-22T08:00:00\"\n}"
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Financials (planned)",
-      "item": [
-        {
-          "name": "List Invoices",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/invoices",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "invoices"
-              ]
+              "raw": "{\n  \"status\": \"نشط\",\n  \"interest_level\": \"High\"\n}"
             }
           },
           "response": []
         },
         {
-          "name": "List Vendor Bills",
+          "name": "Delete Client",
           "request": {
-            "method": "GET",
+            "method": "DELETE",
             "header": [
               {
                 "key": "Accept",
@@ -457,126 +545,13 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/vendor-bills",
+              "raw": "{{base_url}}/clients/{{client_id}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "vendor-bills"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "List Payments",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/payments",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "payments"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "List Expenses",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/expenses",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "expenses"
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Support & Notes (planned)",
-      "item": [
-        {
-          "name": "List Tickets",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/tickets",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "tickets"
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Activity Logs (planned)",
-      "item": [
-        {
-          "name": "List Activity Logs",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/activity-logs",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "activity-logs"
+                "clients",
+                "{{client_id}}"
               ]
             }
           },
@@ -593,10 +568,6 @@
     {
       "key": "token",
       "value": ""
-    },
-    {
-      "key": "shipment_id",
-      "value": "1"
     }
   ]
 }
