@@ -127,6 +127,41 @@ class UserController extends Controller
         ]);
     }
 
+    public function activate(User $user)
+    {
+        $this->authorize('update', $user);
+
+        $user->status = 'active';
+        $user->save();
+
+        return response()->json([
+            'data' => $this->transformUser($user->load('roles')),
+            'message' => 'User activated. They can log in again.',
+        ]);
+    }
+
+    public function deactivate(Request $request, User $user)
+    {
+        $this->authorize('update', $user);
+
+        $currentUser = $request->user();
+        if ($currentUser && $user->id === $currentUser->id) {
+            return response()->json([
+                'message' => 'You cannot deactivate your own account.',
+            ], 422);
+        }
+
+        $user->status = 'inactive';
+        $user->save();
+
+        $user->tokens()->delete();
+
+        return response()->json([
+            'data' => $this->transformUser($user->load('roles')),
+            'message' => 'User deactivated. They can no longer log in until activated again.',
+        ]);
+    }
+
     public function updatePassword(Request $request, User $user)
     {
         $this->authorize('update', $user);

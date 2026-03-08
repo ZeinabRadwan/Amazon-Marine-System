@@ -27,6 +27,13 @@ class AuthController extends Controller
         /** @var \App\Models\User $user */
         $user = $request->user();
 
+        if ($user->status !== 'active') {
+            Auth::logout();
+            throw ValidationException::withMessages([
+                'email' => ['Your account has been deactivated. Please contact an administrator.'],
+            ]);
+        }
+
         $token = $user->createToken('spa')->plainTextToken;
 
         return response()->json([

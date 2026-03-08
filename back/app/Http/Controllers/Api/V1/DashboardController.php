@@ -14,7 +14,9 @@ class DashboardController extends Controller
 {
     public function overview(Request $request)
     {
-        abort_unless($request->user()?->can('reports.view'), 403);
+        if (! $request->user()?->can('reports.view')) {
+            abort(403, 'You do not have permission to view the dashboard.');
+        }
 
         $shipmentsByStatus = Shipment::selectRaw('status, COUNT(*) as count')
             ->groupBy('status')
@@ -31,19 +33,16 @@ class DashboardController extends Controller
 
         $from = Carbon::now()->subMonths(11)->startOfMonth();
 
-        $revenueByMonth = Invoice::selectRaw("DATE_FORMAT(issue_date, '%Y-%m-01') as month, SUM(net_amount) as revenue")
-            ->whereDate('issue_date', '>=', $from)
-            ->groupBy('month')
-            ->orderBy('month')
+        $revenueByMonth = Invoice::whereDate('issue_date', '>=', $from)
+            ->whereNotIn('status', ['cancelled'])
             ->get()
-            ->keyBy('month');
+            ->groupBy(fn ($inv) => $inv->issue_date?->format('Y-m-01'))
+            ->map(fn ($group) => (object) ['revenue' => $group->sum('net_amount')]);
 
-        $costByMonth = VendorBill::selectRaw("DATE_FORMAT(bill_date, '%Y-%m-01') as month, SUM(net_amount) as cost")
-            ->whereDate('bill_date', '>=', $from)
-            ->groupBy('month')
-            ->orderBy('month')
+        $costByMonth = VendorBill::whereDate('bill_date', '>=', $from)
             ->get()
-            ->keyBy('month');
+            ->groupBy(fn ($bill) => $bill->bill_date?->format('Y-m-01'))
+            ->map(fn ($group) => (object) ['cost' => $group->sum('net_amount')]);
 
         $months = [];
         $cursor = $from->copy();

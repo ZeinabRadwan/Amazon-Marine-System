@@ -16,32 +16,25 @@ class Client extends Model
      */
     protected $fillable = [
         'name',
-        'contact_name',
         'company_name',
-        'code',
-        'type',
-        'company_type',
+        'company_type_id',
         'business_activity',
         'target_markets',
         'tax_id',
         'email',
         'phone',
-        'preferred_comm_method',
-        'city',
-        'country',
+        'preferred_comm_method_id',
         'address',
         'website_url',
         'facebook_url',
         'linkedin_url',
         'status',
-        'lead_source',
+        'lead_source_id',
         'lead_source_other',
-        'interest_level',
+        'interest_level_id',
         'decision_maker_name',
-        'decision_maker_title',
+        'decision_maker_title_id',
         'decision_maker_title_other',
-        'default_payment_terms',
-        'default_currency',
         'assigned_sales_id',
         'notes',
         'shipping_problems',
@@ -52,6 +45,9 @@ class Client extends Model
         'shipments_count',
         'total_profit',
         'last_contact_at',
+        'pricing_tier',
+        'pricing_discount_pct',
+        'pricing_updated_at',
     ];
 
     /**
@@ -61,6 +57,8 @@ class Client extends Model
         'shipments_count' => 'int',
         'total_profit' => 'decimal:2',
         'last_contact_at' => 'datetime',
+        'pricing_discount_pct' => 'decimal:2',
+        'pricing_updated_at' => 'datetime',
     ];
 
     /**
@@ -72,11 +70,59 @@ class Client extends Model
     }
 
     /**
+     * @return BelongsTo<CompanyType, Client>
+     */
+    public function companyType(): BelongsTo
+    {
+        return $this->belongsTo(CompanyType::class, 'company_type_id');
+    }
+
+    /**
+     * @return BelongsTo<PreferredCommMethod, Client>
+     */
+    public function preferredCommMethod(): BelongsTo
+    {
+        return $this->belongsTo(PreferredCommMethod::class, 'preferred_comm_method_id');
+    }
+
+    /**
+     * @return BelongsTo<InterestLevel, Client>
+     */
+    public function interestLevel(): BelongsTo
+    {
+        return $this->belongsTo(InterestLevel::class, 'interest_level_id');
+    }
+
+    /**
+     * @return BelongsTo<DecisionMakerTitle, Client>
+     */
+    public function decisionMakerTitle(): BelongsTo
+    {
+        return $this->belongsTo(DecisionMakerTitle::class, 'decision_maker_title_id');
+    }
+
+    /**
+     * @return BelongsTo<LeadSource, Client>
+     */
+    public function leadSource(): BelongsTo
+    {
+        return $this->belongsTo(LeadSource::class, 'lead_source_id');
+    }
+
+    /**
      * @return HasMany<ClientContact>
      */
     public function contacts(): HasMany
     {
         return $this->hasMany(ClientContact::class);
+    }
+
+    /**
+     * @return HasMany<ClientAttachment>
+     */
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(ClientAttachment::class);
     }
 
     /**

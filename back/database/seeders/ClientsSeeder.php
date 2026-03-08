@@ -3,13 +3,14 @@
 namespace Database\Seeders;
 
 use App\Models\Client;
+use App\Models\CompanyType;
+use App\Models\PreferredCommMethod;
+use App\Models\InterestLevel;
+use App\Models\LeadSource;
 use Illuminate\Database\Seeder;
 
 class ClientsSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
         $now = now();
@@ -17,7 +18,6 @@ class ClientsSeeder extends Seeder
         $clients = [
             [
                 'name' => 'منصور وشركاه للتجارة',
-                'contact_name' => 'منصور محمد',
                 'company_name' => 'منصور وشركاه للتجارة',
                 'company_type' => 'Trader',
                 'business_activity' => 'تجارة قطع غيار سيارات',
@@ -26,17 +26,13 @@ class ClientsSeeder extends Seeder
                 'email' => 'mansour@example.com',
                 'phone' => '+201234567890',
                 'preferred_comm_method' => 'WhatsApp',
-                'city' => 'القاهرة',
-                'country' => 'EG',
                 'address' => 'مدينة نصر - المنطقة الصناعية',
                 'website_url' => 'https://mansour-trading.example.com',
                 'facebook_url' => 'https://facebook.com/mansour-trading',
                 'linkedin_url' => 'https://linkedin.com/company/mansour-trading',
-                'status' => 'نشط',
-                'lead_source' => 'إحالة عميل',
+                'lead_source' => 'Referral',
                 'interest_level' => 'High',
-                'default_payment_terms' => '30 days',
-                'default_currency' => 'USD',
+                'status' => 'active',
                 'notes' => 'عميل مهم في قطاع السيارات',
                 'shipments_count' => 12,
                 'total_profit' => 18400,
@@ -44,7 +40,6 @@ class ClientsSeeder extends Seeder
             ],
             [
                 'name' => 'الأفق للشحن الدولي',
-                'contact_name' => 'أحمد خيري',
                 'company_name' => 'الأفق للشحن الدولي',
                 'company_type' => 'Exporter',
                 'business_activity' => 'شحن بحري وبري',
@@ -53,17 +48,13 @@ class ClientsSeeder extends Seeder
                 'email' => 'afaq@example.com',
                 'phone' => '+201112223334',
                 'preferred_comm_method' => 'Call',
-                'city' => 'الإسكندرية',
-                'country' => 'EG',
                 'address' => 'ميناء الدخيلة',
                 'website_url' => 'https://afaq-shipping.example.com',
                 'facebook_url' => null,
                 'linkedin_url' => null,
-                'status' => 'محتمل',
-                'lead_source' => 'فيسبوك',
+                'lead_source' => 'Facebook',
                 'interest_level' => 'Medium',
-                'default_payment_terms' => '45 days',
-                'default_currency' => 'USD',
+                'status' => 'active',
                 'notes' => 'مهتم بخدمات الشحن المبرد',
                 'shipments_count' => 5,
                 'total_profit' => 7200,
@@ -71,7 +62,6 @@ class ClientsSeeder extends Seeder
             ],
             [
                 'name' => 'النخبة للاستيراد والتصدير',
-                'contact_name' => 'منى عبد الله',
                 'company_name' => 'النخبة للاستيراد والتصدير',
                 'company_type' => 'Importer',
                 'business_activity' => 'استيراد أجهزة كهربائية',
@@ -80,17 +70,13 @@ class ClientsSeeder extends Seeder
                 'email' => 'nokhba@example.com',
                 'phone' => '+201009998887',
                 'preferred_comm_method' => 'Email',
-                'city' => 'طنطا',
-                'country' => 'EG',
                 'address' => 'شارع الجيش',
                 'website_url' => null,
                 'facebook_url' => null,
                 'linkedin_url' => null,
-                'status' => 'جديد',
                 'lead_source' => 'LinkedIn',
                 'interest_level' => 'High',
-                'default_payment_terms' => '60 days',
-                'default_currency' => 'EUR',
+                'status' => 'pending',
                 'notes' => 'عميل جديد يحتاج متابعة مكثفة',
                 'shipments_count' => 0,
                 'total_profit' => 0,
@@ -99,13 +85,34 @@ class ClientsSeeder extends Seeder
         ];
 
         foreach ($clients as $data) {
+            $companyType = isset($data['company_type'])
+                ? CompanyType::where('name', $data['company_type'])->first()
+                : null;
+            $commMethod = isset($data['preferred_comm_method'])
+                ? PreferredCommMethod::where('name', $data['preferred_comm_method'])->first()
+                : null;
+            $interestLevel = isset($data['interest_level'])
+                ? InterestLevel::where('name', $data['interest_level'])->first()
+                : null;
+            $leadSource = isset($data['lead_source'])
+                ? LeadSource::where('name', $data['lead_source'])->first()
+                : null;
+
+            unset(
+                $data['company_type'],
+                $data['preferred_comm_method'],
+                $data['interest_level'],
+                $data['lead_source']
+            );
+            $data['company_type_id'] = $companyType?->id;
+            $data['preferred_comm_method_id'] = $commMethod?->id;
+            $data['interest_level_id'] = $interestLevel?->id;
+            $data['lead_source_id'] = $leadSource?->id;
+
             Client::updateOrCreate(
-                [
-                    'email' => $data['email'],
-                ],
+                ['email' => $data['email']],
                 $data,
             );
         }
     }
 }
-

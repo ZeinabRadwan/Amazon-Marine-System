@@ -57,10 +57,19 @@ class ShipmentController extends Controller
             $query->where('bl_number', 'like', '%' . $bl . '%');
         }
 
-        $shipments = $query->orderByDesc('created_at')->get();
+        $perPage = $request->integer('per_page', 15);
+        $paginator = $query->orderByDesc('created_at')->paginate($perPage);
 
         return response()->json([
-            'data' => $shipments,
+            'data' => $paginator->getCollection(),
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'from' => $paginator->firstItem(),
+                'to' => $paginator->lastItem(),
+            ],
         ]);
     }
 

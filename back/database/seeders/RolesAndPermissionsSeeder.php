@@ -47,7 +47,9 @@ class RolesAndPermissionsSeeder extends Seeder
                 'clients.view',
                 'clients.manage',
             ],
-            // Permissions for legacy modules are intentionally omitted
+            'reports' => [
+                'reports.view',
+            ],
         ];
 
         $allPermissionNames = collect($permissionGroups)->flatten()->unique();
