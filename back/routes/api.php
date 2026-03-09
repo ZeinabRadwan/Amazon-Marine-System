@@ -14,10 +14,13 @@ use App\Http\Controllers\Api\V1\PreferredCommMethodController;
 use App\Http\Controllers\Api\V1\InterestLevelController;
 use App\Http\Controllers\Api\V1\DecisionMakerTitleController;
 use App\Http\Controllers\Api\V1\LeadSourceController;
+use App\Http\Controllers\Api\V1\PortController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\VisitController;
 use App\Http\Controllers\Api\V1\ShipmentController;
+use App\Http\Controllers\Api\V1\SDFormController;
+use App\Http\Controllers\Api\V1\NotificationController;
 
 Route::prefix('v1')->group(function () {
     // Public auth routes
@@ -52,7 +55,7 @@ Route::prefix('v1')->group(function () {
         Route::post('users/{user}/activate', [UserController::class, 'activate']);
         Route::post('users/{user}/deactivate', [UserController::class, 'deactivate']);
 
-        // Client lookups (company type, comm method, interest level, decision maker title, lead source)
+        // Client lookups (company type, comm method, interest level, decision maker title, lead source, ports)
         Route::get('company-types', [CompanyTypeController::class, 'index']);
         Route::post('company-types', [CompanyTypeController::class, 'store']);
         Route::get('company-types/{companyType}', [CompanyTypeController::class, 'show']);
@@ -82,6 +85,12 @@ Route::prefix('v1')->group(function () {
         Route::get('lead-sources/{leadSource}', [LeadSourceController::class, 'show']);
         Route::put('lead-sources/{leadSource}', [LeadSourceController::class, 'update']);
         Route::delete('lead-sources/{leadSource}', [LeadSourceController::class, 'destroy']);
+
+        Route::get('ports', [PortController::class, 'index']);
+        Route::post('ports', [PortController::class, 'store']);
+        Route::get('ports/{port}', [PortController::class, 'show']);
+        Route::put('ports/{port}', [PortController::class, 'update']);
+        Route::delete('ports/{port}', [PortController::class, 'destroy']);
 
         // CRM: clients & contacts
         Route::get('clients', [ClientController::class, 'index'])
@@ -128,6 +137,21 @@ Route::prefix('v1')->group(function () {
         Route::delete('clients/{client}/contacts/{contact}', [ClientContactController::class, 'destroy'])
             ->middleware('page_permission:clients,delete');
 
+        // SD Forms (Shipping Details)
+        Route::get('sd-forms', [SDFormController::class, 'index']);
+        Route::post('sd-forms', [SDFormController::class, 'store']);
+        Route::get('sd-forms/stats', [SDFormController::class, 'stats']);
+        Route::get('sd-forms/charts', [SDFormController::class, 'charts']);
+        Route::get('sd-forms/{sdForm}', [SDFormController::class, 'show']);
+        Route::put('sd-forms/{sdForm}', [SDFormController::class, 'update']);
+        Route::delete('sd-forms/{sdForm}', [SDFormController::class, 'destroy']);
+        Route::post('sd-forms/{sdForm}/submit', [SDFormController::class, 'submit']);
+        Route::post('sd-forms/{sdForm}/send-to-operations', [SDFormController::class, 'sendToOperations']);
+        Route::post('sd-forms/{sdForm}/link-shipment', [SDFormController::class, 'linkShipment']);
+        Route::post('sd-forms/{sdForm}/email-operations', [SDFormController::class, 'emailToOperations']);
+        Route::get('sd-forms/{sdForm}/pdf', [SDFormController::class, 'pdf']);
+        Route::get('sd-forms/export', [SDFormController::class, 'export']);
+
         // Shipments
         Route::get('shipments', [ShipmentController::class, 'index']);
         Route::post('shipments', [ShipmentController::class, 'store']);
@@ -146,6 +170,12 @@ Route::prefix('v1')->group(function () {
         Route::get('reports/shipments', [ReportController::class, 'shipments']);
         Route::get('reports/finance', [ReportController::class, 'finance']);
         Route::get('reports/sales-performance', [ReportController::class, 'salesPerformance']);
+
+        // Notifications
+        Route::get('notifications', [NotificationController::class, 'index']);
+        Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::post('notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
+        Route::post('notifications/read-all', [NotificationController::class, 'markAllAsRead']);
     });
 });
 

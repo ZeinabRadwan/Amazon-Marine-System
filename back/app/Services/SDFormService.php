@@ -48,11 +48,11 @@ class SDFormService
         $fromKey = $from ?? 'draft';
 
         if (! array_key_exists($fromKey, $allowedTransitions)) {
-            throw new \RuntimeException('Invalid SD form status: ' . $fromKey);
+            abort(422, 'Invalid SD form status: ' . $fromKey);
         }
 
         if (! in_array($toStatus, $allowedTransitions[$fromKey], true)) {
-            throw new \RuntimeException("Transition from {$fromKey} to {$toStatus} is not allowed.");
+            abort(422, "Transition from {$fromKey} to {$toStatus} is not allowed.");
         }
 
         $form->status = $toStatus;

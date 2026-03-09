@@ -47,6 +47,10 @@ class RolesAndPermissionsSeeder extends Seeder
                 'clients.view',
                 'clients.manage',
             ],
+            'sd_forms' => [
+                'sd_forms.view',
+                'sd_forms.manage',
+            ],
             'reports' => [
                 'reports.view',
             ],
@@ -67,6 +71,8 @@ class RolesAndPermissionsSeeder extends Seeder
             $sales->syncPermissions([
                 $permissions['clients.view'],
                 $permissions['clients.manage'],
+                $permissions['sd_forms.view'],
+                $permissions['sd_forms.manage'],
             ]);
         }
 
@@ -76,11 +82,16 @@ class RolesAndPermissionsSeeder extends Seeder
                 $permissions['clients.manage'],
                 $permissions['users.view'],
                 $permissions['users.manage'],
+                $permissions['sd_forms.view'],
+                $permissions['sd_forms.manage'],
             ]);
         }
 
         if ($operation = $roles['operation'] ?? null) {
-            $operation->syncPermissions([]);
+            $operation->syncPermissions([
+                $permissions['sd_forms.view'],
+                $permissions['sd_forms.manage'],
+            ]);
         }
 
         if ($accounting = $roles['accounting'] ?? null) {

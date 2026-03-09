@@ -78,7 +78,7 @@ class ShipmentController extends Controller
         $this->authorize('create', Shipment::class);
 
         $validated = $request->validate([
-            'sd_form_id' => ['nullable', 'integer', 'exists:sd_forms,id'],
+            'sd_form_id' => ['nullable', 'integer', 'exists:s_d_forms,id'],
             'client_id' => ['nullable', 'integer', 'exists:clients,id'],
             'sales_rep_id' => ['nullable', 'integer', 'exists:users,id'],
             'line_vendor_id' => ['nullable', 'integer', 'exists:vendors,id'],
