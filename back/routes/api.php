@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\V1\VisitController;
 use App\Http\Controllers\Api\V1\ShipmentController;
 use App\Http\Controllers\Api\V1\SDFormController;
 use App\Http\Controllers\Api\V1\NotificationController;
+use App\Http\Controllers\Api\V1\PdfLayoutController;
 
 Route::prefix('v1')->group(function () {
     // Public auth routes
@@ -176,6 +177,10 @@ Route::prefix('v1')->group(function () {
         Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
         Route::post('notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
         Route::post('notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+
+        // PDF layouts
+        Route::get('pdf-layouts/{documentType}', [PdfLayoutController::class, 'show']);
+        Route::put('pdf-layouts/{documentType}', [PdfLayoutController::class, 'upsert']);
     });
 });
 

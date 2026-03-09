@@ -11,11 +11,12 @@ use App\Models\SDForm;
 use App\Models\Shipment;
 use App\Models\User;
 use App\Notifications\OperationSDFormNotification;
+use App\Models\PdfLayout;
 use App\Services\ActivityLogger;
 use App\Services\SDFormService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
-use Barryvdh\DomPDF\Facade\Pdf;
+use Mpdf\Mpdf;
 
 class SDFormController extends Controller
 {
@@ -440,13 +441,32 @@ class SDFormController extends Controller
 
         $sdForm->loadMissing(['client', 'salesRep', 'pol', 'pod']);
 
-        $pdf = Pdf::loadView('sd_forms.pdf', [
-            'form' => $sdForm,
-        ]);
+        $layout = PdfLayout::where('document_type', 'sd_form')->first();
 
         $filename = ($sdForm->sd_number ?: 'SD-' . $sdForm->id) . '.pdf';
 
-        return $pdf->download($filename);
+        $html = view('sd_forms.pdf', [
+            'form' => $sdForm,
+            'headerHtml' => $layout?->header_html,
+            'footerHtml' => $layout?->footer_html,
+        ])->render();
+
+        $mpdf = new Mpdf([
+            'mode' => 'utf-8',
+            'default_font' => 'dejavusans',
+            'format' => 'A4',
+            'margin_top' => 10,
+            'margin_bottom' => 15,
+            'margin_left' => 10,
+            'margin_right' => 10,
+        ]);
+
+        $mpdf->WriteHTML($html);
+
+        return response($mpdf->Output($filename, 'S'), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
 }
 

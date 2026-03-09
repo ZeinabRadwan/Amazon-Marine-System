@@ -1073,6 +1073,47 @@
     {
       "key": "status",
       "value": ""
+        }
+      ]
+    },
+    {
+      "name": "PDF Layouts",
+      "item": [
+        {
+          "name": "Get SD Form PDF Layout",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/pdf-layouts/sd_form",
+              "host": ["{{base_url}}"],
+              "path": ["pdf-layouts", "sd_form"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update SD Form PDF Layout",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/pdf-layouts/sd_form",
+              "host": ["{{base_url}}"],
+              "path": ["pdf-layouts", "sd_form"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"header_html\": \"<p><strong>Amazon Marine</strong> &mdash; SD Offer</p>\",\n  \"footer_html\": \"<p>Thanks &amp; best regards<br>Amazon Marine Team</p>\"\n}"
+            }
+          },
+          "response": []
+        }
+      ]
     }
-  ]
-}
