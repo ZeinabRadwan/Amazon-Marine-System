@@ -51,6 +51,10 @@ class RolesAndPermissionsSeeder extends Seeder
                 'sd_forms.view',
                 'sd_forms.manage',
             ],
+            'accounting' => [
+                'accounting.view',
+                'accounting.manage',
+            ],
             'reports' => [
                 'reports.view',
             ],
@@ -95,7 +99,10 @@ class RolesAndPermissionsSeeder extends Seeder
         }
 
         if ($accounting = $roles['accounting'] ?? null) {
-            $accounting->syncPermissions([]);
+            $accounting->syncPermissions([
+                $permissions['accounting.view'],
+                $permissions['accounting.manage'],
+            ]);
         }
 
         if ($pricing = $roles['pricing'] ?? null) {

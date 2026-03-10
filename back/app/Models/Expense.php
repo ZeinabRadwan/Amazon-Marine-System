@@ -21,6 +21,11 @@ class Expense extends Model
         'expense_date',
         'paid_by_id',
         'shipment_id',
+        'vendor_id',
+        'payment_method',
+        'invoice_number',
+        'has_receipt',
+        'receipt_path',
     ];
 
     /**
@@ -29,6 +34,7 @@ class Expense extends Model
     protected $casts = [
         'amount' => 'decimal:2',
         'expense_date' => 'date',
+        'has_receipt' => 'boolean',
     ];
 
     /**
@@ -53,5 +59,13 @@ class Expense extends Model
     public function shipment(): BelongsTo
     {
         return $this->belongsTo(Shipment::class);
+    }
+
+    /**
+     * @return BelongsTo<Vendor, Expense>
+     */
+    public function vendor(): BelongsTo
+    {
+        return $this->belongsTo(Vendor::class);
     }
 }

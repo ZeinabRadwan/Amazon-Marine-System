@@ -623,68 +623,9 @@
     <script src="js/role-auth.js"></script>
     <script src="js/role-sidebar-apply.js"></script>
     <script src="js/app.js"></script>
+    <script src="js/treasury.js"></script>
     <script>
         (function () {
-            // Cash flow charts
-            var chartFlowEl = document.getElementById('chartCashFlow');
-            var chartBalanceEl = document.getElementById('chartBalance');
-            var chartMonthsEl = document.getElementById('chartMonths');
-            function flowData(months) {
-                var m = parseInt(months, 10) || 6;
-                var labels = [], inbound = [], outbound = [];
-                for (var i = m - 1; i >= 0; i--) {
-                    var d = new Date();
-                    d.setMonth(d.getMonth() - i);
-                    labels.push(d.toLocaleDateString('ar-EG', { month: 'short', year: '2-digit' }));
-                    inbound.push(40000 + Math.floor(Math.random() * 20000));
-                    outbound.push(35000 + Math.floor(Math.random() * 15000));
-                }
-                return { labels: labels, inbound: inbound, outbound: outbound };
-            }
-            function balanceData(months) {
-                var m = parseInt(months, 10) || 6;
-                var labels = [], balance = [];
-                var b = 400000;
-                for (var i = m - 1; i >= 0; i--) {
-                    var d = new Date();
-                    d.setMonth(d.getMonth() - i);
-                    labels.push(d.toLocaleDateString('ar-EG', { month: 'short', year: '2-digit' }));
-                    b = b + (Math.random() * 20000 - 8000);
-                    balance.push(Math.round(b));
-                }
-                return { labels: labels, balance: balance };
-            }
-            var chartFlow;
-            if (chartFlowEl && typeof Chart !== 'undefined') {
-                var fd = flowData(6);
-                chartFlow = new Chart(chartFlowEl, {
-                    type: 'bar',
-                    data: {
-                        labels: fd.labels,
-                        datasets: [
-                            { label: 'وارد', data: fd.inbound, backgroundColor: 'rgba(16,185,129,0.7)', borderColor: 'var(--success)', borderWidth: 1 },
-                            { label: 'صادر', data: fd.outbound, backgroundColor: 'rgba(239,68,68,0.6)', borderColor: 'var(--danger)', borderWidth: 1 }
-                        ]
-                    },
-                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } }
-                });
-            }
-            var chartBalance;
-            if (chartBalanceEl && typeof Chart !== 'undefined') {
-                var bd = balanceData(6);
-                chartBalance = new Chart(chartBalanceEl, {
-                    type: 'line',
-                    data: { labels: bd.labels, datasets: [{ label: 'رصيد', data: bd.balance, borderColor: 'var(--accent-cyan)', backgroundColor: 'rgba(23,162,184,0.15)', fill: true, tension: 0.3 }] },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: false }, x: { grid: { display: false } } } }
-                });
-            }
-            if (chartMonthsEl) chartMonthsEl.addEventListener('change', function () {
-                var fd = flowData(this.value);
-                var bd = balanceData(this.value);
-                if (chartFlow) { chartFlow.data.labels = fd.labels; chartFlow.data.datasets[0].data = fd.inbound; chartFlow.data.datasets[1].data = fd.outbound; chartFlow.update(); }
-                if (chartBalance) { chartBalance.data.labels = bd.labels; chartBalance.data.datasets[0].data = bd.balance; chartBalance.update(); }
-            });
-
             // Treasury table: filters, sort, export
             var treasurySearch = document.getElementById('treasurySearch');
             var filterType = document.getElementById('filterType');

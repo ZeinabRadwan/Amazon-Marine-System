@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             ClientLookupsSeeder::class,
             ClientsSeeder::class,
             SDFormsSeeder::class,
+            ExpensesSeeder::class,
         ]);
     }
 }

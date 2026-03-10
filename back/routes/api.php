@@ -22,6 +22,9 @@ use App\Http\Controllers\Api\V1\ShipmentController;
 use App\Http\Controllers\Api\V1\SDFormController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\PdfLayoutController;
+use App\Http\Controllers\Api\V1\AccountingController;
+use App\Http\Controllers\Api\V1\TreasuryController;
+use App\Http\Controllers\Api\V1\ExpensesController;
 
 Route::prefix('v1')->group(function () {
     // Public auth routes
@@ -171,6 +174,29 @@ Route::prefix('v1')->group(function () {
         Route::get('reports/shipments', [ReportController::class, 'shipments']);
         Route::get('reports/finance', [ReportController::class, 'finance']);
         Route::get('reports/sales-performance', [ReportController::class, 'salesPerformance']);
+
+        // Accounting
+        Route::get('accounting/summary', [AccountingController::class, 'summary']);
+        Route::get('accounting/clients', [AccountingController::class, 'clientAccounts']);
+        Route::get('accounting/partners', [AccountingController::class, 'partnerAccounts']);
+        Route::get('accounting/clients/export', [AccountingController::class, 'exportClients']);
+        Route::get('accounting/partners/export', [AccountingController::class, 'exportPartners']);
+
+        // Treasury
+        Route::get('treasury/summary', [TreasuryController::class, 'summary']);
+        Route::get('treasury/entries', [TreasuryController::class, 'entries']);
+        Route::post('treasury/entries', [TreasuryController::class, 'storeEntry']);
+        Route::post('treasury/transfers', [TreasuryController::class, 'storeTransfer']);
+        Route::get('treasury/expenses', [TreasuryController::class, 'expenses']);
+        Route::post('treasury/expenses', [TreasuryController::class, 'storeExpense']);
+
+        // Expenses (shipment & general)
+        Route::get('expenses/summary', [ExpensesController::class, 'summary']);
+        Route::get('expenses/shipment', [ExpensesController::class, 'shipmentIndex']);
+        Route::get('expenses/general', [ExpensesController::class, 'generalIndex']);
+        Route::post('expenses', [ExpensesController::class, 'store']);
+        Route::post('expenses/{expense}/receipt', [ExpensesController::class, 'uploadReceipt']);
+        Route::get('expenses/export', [ExpensesController::class, 'export']);
 
         // Notifications
         Route::get('notifications', [NotificationController::class, 'index']);
