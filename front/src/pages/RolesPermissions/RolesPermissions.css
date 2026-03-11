@@ -1,0 +1,240 @@
+.roles-permissions-page {
+  padding: 0;
+}
+
+.roles-permissions-view-toggle {
+  display: flex;
+  gap: 0;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--form-divider, #e5e7eb);
+}
+
+.rp-btn--tab {
+  padding: 10px 20px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: transparent;
+  color: var(--root-text, #1c2030);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.rp-btn--tab:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.rp-btn--tab-active {
+  border-bottom-color: var(--form-primary, #0039c5);
+  color: var(--form-primary, #0039c5);
+}
+
+.roles-permissions-top-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.roles-permissions-page h1 {
+  margin: 0 0 24px;
+  font-size: 1.5rem;
+}
+
+.roles-permissions-error {
+  padding: 12px;
+  margin-bottom: 16px;
+  background: var(--form-error-bg, #fef2f2);
+  color: var(--form-error-text, #b91c1c);
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.roles-permissions-section {
+  margin-bottom: 32px;
+  padding: 24px;
+  background: var(--form-bg, #fff);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.roles-permissions-section h2 {
+  margin: 0 0 16px;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.roles-permissions-empty {
+  color: var(--root-text);
+  opacity: 0.8;
+}
+
+.roles-permissions-role-select {
+  max-width: 280px;
+}
+
+.roles-permissions-role-select label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.roles-permissions-role-select select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--form-input-border, #d9dde6);
+  border-radius: 8px;
+  font-size: 14px;
+  background: var(--form-input-bg, #fff);
+  color: var(--form-text);
+}
+
+.rp-btn {
+  padding: 8px 16px;
+  border: 1px solid var(--form-divider, #d9dde6);
+  border-radius: 8px;
+  background: var(--form-bg, #fff);
+  color: var(--root-text, #1c2030);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  margin-bottom: 16px;
+}
+
+.rp-btn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: var(--root-deco-blue, #0039c5);
+}
+
+.rp-btn--primary {
+  background: var(--form-primary, #0039c5);
+  color: #fff;
+  border-color: var(--form-primary, #0039c5);
+}
+
+.rp-btn--primary:hover:not(:disabled) {
+  background: var(--root-deco-blue-dark, #1f2a60);
+  border-color: var(--root-deco-blue-dark, #1f2a60);
+}
+
+.rp-btn--small {
+  padding: 6px 12px;
+  font-size: 13px;
+  margin-bottom: 0;
+}
+
+.rp-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.rp-table-wrap {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid var(--form-divider, #e5e7eb);
+  margin-top: 12px;
+}
+
+.rp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.rp-table th,
+.rp-table td {
+  padding: 12px 16px;
+  text-align: start;
+  border-bottom: 1px solid var(--form-divider, #e5e7eb);
+}
+
+.rp-table th {
+  font-weight: 600;
+  background: var(--root-bg, #f6f8fb);
+}
+
+.rp-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Modal */
+.rp-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.rp-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+
+.rp-modal-content {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  padding: 24px;
+  background: var(--form-bg, #fff);
+  border-radius: 12px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.15);
+}
+
+.rp-modal-content h2 {
+  margin: 0 0 20px;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.rp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.rp-field label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.rp-field input[type="text"],
+.rp-field select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--form-input-border, #d9dde6);
+  border-radius: 8px;
+  font-size: 14px;
+  background: var(--form-input-bg, #fff);
+  color: var(--form-text);
+}
+
+.rp-field--check label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  margin-bottom: 0;
+}
+
+.rp-field--check input {
+  width: auto;
+}
+
+.rp-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}

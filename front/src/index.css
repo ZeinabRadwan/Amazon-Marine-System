@@ -1,33 +1,127 @@
+@import "tailwindcss";
+
+/* Dark mode variant for TopNav etc. (matches data-theme="dark" on document) */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PALETTE – Root (page/box) and Form tokens per mode. Use these as single source.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Light mode ─── */
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  color-scheme: light dark;
+
+  /* Root / page / box – full-page background and decorative area */
+  --root-bg: #f6f8fb;
+  --root-bg-gradient-start: #f6f8fb;
+  --root-bg-gradient-end: #e9eff7;
+  --root-text: #1c2030;
+  --root-deco-blue: #0039c5;
+  --root-deco-blue-dark: #1f2a60;
+  --root-deco-gray: #d9dde6;
+  --root-deco-orange: #ff8c42;
+  --root-deco-divider: #cfd4e1;
+
+  /* Form – card, inputs, buttons, labels, errors */
+  --form-bg: #ffffff;
+  --form-shadow: rgba(0, 0, 0, 0.08) 0 4px 12px;
+  --form-text: #1c2030;
+  --form-input-bg: #fefeff;
+  --form-input-border: #cfd4e1;
+  --form-input-text: #1c2030;
+  --form-primary: #0039c5;
+  --form-primary-text: #ffffff;
+  --form-accent: #0039c5;
+  --form-error-text: #e74c3c;
+  --form-error-bg: #fdecea;
+  --form-divider: #cfd4e1;
+  --form-focus-ring: color-mix(in srgb, var(--form-primary) 50%, transparent);
+
+  /* Aliases – map legacy names to palette (use --root-* / --form-* in new code) */
+  --login-bg: var(--root-bg);
+  --login-bg-gradient-start: var(--root-bg-gradient-start);
+  --login-bg-gradient-end: var(--root-bg-gradient-end);
+  --login-card-bg: var(--form-bg);
+  --login-card-shadow: var(--form-shadow);
+  --login-text: var(--form-text);
+  --login-input-bg: var(--form-input-bg);
+  --login-input-border: var(--form-input-border);
+  --login-input-text: var(--form-input-text);
+  --login-primary: var(--form-primary);
+  --login-primary-text: var(--form-primary-text);
+  --login-accent: var(--form-accent);
+  --login-error-text: var(--form-error-text);
+  --login-error-bg: var(--form-error-bg);
+  --login-divider: var(--form-divider);
+  --login-deco-blue: var(--root-deco-blue);
+  --login-deco-blue800: var(--root-deco-blue-dark);
+  --login-deco-gray: var(--root-deco-gray);
+  --login-deco-cyan: var(--root-deco-orange);
+  --app-bg: var(--root-bg);
+  --app-text: var(--root-text);
+  --btn-primary-bg: var(--form-primary);
+  --btn-primary-text: var(--form-primary-text);
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+/* ─── Dark mode – "Midnight Marine" (depth via navy/charcoal shades) ─── */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Root / page / box – main content area: deep matte navy/charcoal */
+  --root-bg: #111827;
+  --root-bg-gradient-start: #111827;
+  --root-bg-gradient-end: #0f172a;
+  --root-text: #e5e7eb;
+  --root-deco-blue: #0039c5;
+  --root-deco-blue-dark: #1e255b;
+  --root-deco-gray: #1f2937;
+  --root-deco-orange: #ff8c42;
+  --root-deco-divider: #1E293B;
+
+  /* Top nav / separation border */
+  --nav-border: #1E293B;
+
+  /* Form – cards/panels: slightly lighter shade for "lifted" effect */
+  --form-bg: #1F2937;
+  --form-shadow: rgba(0, 0, 0, 0.4) 0 4px 12px;
+  --form-text: #e5e7eb;
+  --form-input-bg: #111827;
+  --form-input-border: #374151;
+  --form-input-text: #e5e7eb;
+  --form-primary: #0039c5;
+  --form-primary-text: #ffffff;
+  --form-accent: #6a7df0;
+  --form-error-text: #f6655b;
+  --form-error-bg: rgba(246, 101, 91, 0.12);
+  --form-divider: #1E293B;
+  --form-focus-ring: color-mix(in srgb, var(--form-primary) 50%, transparent);
 }
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  background-color: var(--app-bg);
+  color: var(--app-text);
+}
+#root {
+  min-height: 100vh;
+}
+
+a {
+  font-weight: 500;
+  color: var(--login-accent, #5469d4);
+  text-decoration: inherit;
+}
+a:hover {
+  opacity: 0.9;
 }
 
 h1 {
@@ -42,27 +136,128 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
   cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
+  transition: border-color 0.25s, background-color 0.2s;
 }
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+/* Language dropdown – modern menu */
+.lang-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.lang-dropdown-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--form-text);
+  background: var(--form-bg);
+  border: 1px solid var(--form-divider);
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: var(--form-shadow);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  min-width: 120px;
+  justify-content: space-between;
+}
+
+.lang-dropdown-trigger:hover {
+  border-color: var(--form-accent);
+  box-shadow: 0 4px 12px rgba(59, 87, 177, 0.15);
+}
+
+.lang-dropdown-trigger[aria-expanded="true"] {
+  border-color: var(--form-primary);
+  box-shadow: 0 0 0 2px rgba(59, 87, 177, 0.25);
+}
+
+.lang-dropdown-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lang-dropdown-chevron {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+  opacity: 0.8;
+}
+
+.lang-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 100%;
+  padding: 6px;
+  background: var(--form-bg);
+  border: 1px solid var(--form-divider);
+  border-radius: 10px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08);
+  z-index: 1000;
+  animation: lang-dropdown-in 0.2s ease;
+}
+
+[dir="rtl"] .lang-dropdown-menu {
+  right: auto;
+  left: 0;
+}
+
+.lang-dropdown-menu[hidden] {
+  display: none;
+}
+
+.lang-dropdown-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--form-text);
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: start;
+  transition: background 0.15s, color 0.15s;
+}
+
+.lang-dropdown-item:hover {
+  background: var(--form-divider);
+}
+
+.lang-dropdown-item.active {
+  background: color-mix(in srgb, var(--form-primary) 12%, transparent);
+  color: var(--form-primary);
+  font-weight: 600;
+}
+
+.lang-dropdown-item.active:hover {
+  background: color-mix(in srgb, var(--form-primary) 20%, transparent);
+}
+
+@keyframes lang-dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
   }
-  a:hover {
-    color: #747bff;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
-  button {
-    background-color: #f9f9f9;
+}
+
+@media (max-width: 480px) {
+  .lang-dropdown-trigger {
+    padding: 8px 12px;
+    font-size: 13px;
+    min-width: 100px;
   }
 }

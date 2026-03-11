@@ -1,0 +1,123 @@
+.profile-page {
+  padding: 0;
+}
+
+.profile-top-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.profile-page h1 {
+  margin: 0 0 24px;
+  font-size: 1.5rem;
+}
+
+.profile-error {
+  padding: 12px;
+  margin-bottom: 16px;
+  background: var(--form-error-bg, #fef2f2);
+  color: var(--form-error-text, #b91c1c);
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.profile-section {
+  margin-bottom: 32px;
+  padding: 24px;
+  background: var(--form-bg, #fff);
+  border-radius: 12px;
+  box-shadow: var(--form-shadow, 0 1px 3px rgba(0, 0, 0, 0.08));
+}
+
+.profile-section h2 {
+  margin: 0 0 20px;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.profile-form {
+  max-width: 400px;
+}
+
+.profile-field {
+  margin-bottom: 16px;
+}
+
+.profile-field label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--form-text, #1c2030);
+}
+
+.profile-field input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--form-input-border, #d9dde6);
+  border-radius: 8px;
+  font-size: 14px;
+  background: var(--form-input-bg, #fff);
+  color: var(--form-text);
+}
+
+.profile-field input:focus {
+  outline: none;
+  border-color: var(--form-primary, #0039c5);
+  box-shadow: 0 0 0 2px var(--form-focus-ring, rgba(0, 57, 197, 0.2));
+}
+
+.profile-field input:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.profile-btn {
+  margin-top: 8px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background: var(--form-primary, #0039c5);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.profile-btn:hover:not(:disabled) {
+  background: var(--root-deco-blue-dark, #1f2a60);
+}
+
+.profile-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.profile-success {
+  margin-top: 12px;
+  font-size: 14px;
+  color: var(--form-success, #15803d);
+}
+
+.profile-section-desc {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: var(--form-text, #1c2030);
+  opacity: 0.9;
+}
+
+.profile-section--danger {
+  border-color: var(--form-error-border, rgba(185, 28, 28, 0.2));
+}
+
+.profile-btn--danger {
+  background: var(--form-danger, #b91c1c);
+}
+
+.profile-btn--danger:hover:not(:disabled) {
+  background: var(--form-danger-dark, #991b1b);
+}
