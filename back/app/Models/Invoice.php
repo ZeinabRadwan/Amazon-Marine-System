@@ -16,14 +16,17 @@ class Invoice extends Model
      */
     protected $fillable = [
         'invoice_number',
+        'invoice_type',
         'shipment_id',
         'client_id',
         'issue_date',
         'due_date',
         'status',
+        'currency_id',
         'currency_code',
         'total_amount',
         'tax_amount',
+        'is_vat_invoice',
         'net_amount',
         'notes',
     ];
@@ -36,6 +39,7 @@ class Invoice extends Model
         'due_date' => 'date',
         'total_amount' => 'decimal:2',
         'tax_amount' => 'decimal:2',
+        'is_vat_invoice' => 'bool',
         'net_amount' => 'decimal:2',
     ];
 

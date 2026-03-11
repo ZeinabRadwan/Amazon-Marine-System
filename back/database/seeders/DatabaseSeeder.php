@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             ClientsSeeder::class,
             SDFormsSeeder::class,
             ExpensesSeeder::class,
+            InvoicesSeeder::class,
         ]);
     }
 }

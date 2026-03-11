@@ -1,9 +1,11 @@
 {
   "info": {
-    "_postman_id": "amazon-marine-backend-collection",
+    "_postman_id": "cb3edeb4-fb09-48c9-b9ee-e014b2a87510",
     "name": "Amazon Marine Backend API",
+    "description": "Postman collection for Amazon Marine Laravel backend (Auth, roles/permissions, and core API contracts).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Postman collection for Amazon Marine Laravel backend (Auth, roles/permissions, and core API contracts)."
+    "_exporter_id": "26243035",
+    "_collection_link": "https://go.postman.co/collection/26243035-cb3edeb4-fb09-48c9-b9ee-e014b2a87510?source=collection_link"
   },
   "item": [
     {
@@ -19,6 +21,10 @@
                 "value": "application/json"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@amazonmarine.test\",\n  \"password\": \"password\"\n}"
+            },
             "url": {
               "raw": "{{base_url}}/auth/login",
               "host": [
@@ -28,10 +34,6 @@
                 "auth",
                 "login"
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@amazonmarine.test\",\n  \"password\": \"password\"\n}"
             }
           },
           "response": []
@@ -76,6 +78,10 @@
                 "value": "Bearer {{token}}"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Admin\",\n  \"email\": \"admin@amazonmarine.test\"\n}"
+            },
             "url": {
               "raw": "{{base_url}}/profile",
               "host": [
@@ -84,10 +90,6 @@
               "path": [
                 "profile"
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Updated Admin\",\n  \"email\": \"admin@amazonmarine.test\"\n}"
             }
           },
           "response": []
@@ -106,6 +108,10 @@
                 "value": "Bearer {{token}}"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"password\",\n  \"password\": \"new-password\",\n  \"password_confirmation\": \"new-password\"\n}"
+            },
             "url": {
               "raw": "{{base_url}}/profile/password",
               "host": [
@@ -115,10 +121,6 @@
                 "profile",
                 "password"
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"current_password\": \"password\",\n  \"password\": \"new-password\",\n  \"password_confirmation\": \"new-password\"\n}"
             }
           },
           "response": []
@@ -195,6 +197,10 @@
                 "value": "Bearer {{token}}"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sales User\",\n  \"email\": \"sales@amazonmarine.test\",\n  \"password\": \"password\",\n  \"password_confirmation\": \"password\",\n  \"role\": \"sales\",\n  \"status\": \"active\"\n}"
+            },
             "url": {
               "raw": "{{base_url}}/users",
               "host": [
@@ -203,10 +209,6 @@
               "path": [
                 "users"
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Sales User\",\n  \"email\": \"sales@amazonmarine.test\",\n  \"password\": \"password\",\n  \"password_confirmation\": \"password\",\n  \"role\": \"sales\",\n  \"status\": \"active\"\n}"
             }
           },
           "response": []
@@ -252,6 +254,10 @@
                 "value": "Bearer {{token}}"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Name\",\n  \"email\": \"updated@amazonmarine.test\",\n  \"initials\": \"UN\",\n  \"status\": \"active\",\n  \"role\": \"sales\"\n}"
+            },
             "url": {
               "raw": "{{base_url}}/users/{{user_id}}",
               "host": [
@@ -261,10 +267,6 @@
                 "users",
                 "{{user_id}}"
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Updated Name\",\n  \"email\": \"updated@amazonmarine.test\",\n  \"initials\": \"UN\",\n  \"status\": \"active\",\n  \"role\": \"sales\"\n}"
             }
           },
           "response": []
@@ -366,6 +368,10 @@
                 "value": "Bearer {{token}}"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"new-password\",\n  \"password_confirmation\": \"new-password\"\n}"
+            },
             "url": {
               "raw": "{{base_url}}/users/{{user_id}}/password",
               "host": [
@@ -376,10 +382,6 @@
                 "{{user_id}}",
                 "password"
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"password\": \"new-password\",\n  \"password_confirmation\": \"new-password\"\n}"
             }
           },
           "response": []
@@ -398,6 +400,10 @@
                 "value": "Bearer {{token}}"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"sales\"\n}"
+            },
             "url": {
               "raw": "{{base_url}}/users/{{user_id}}/assign-role",
               "host": [
@@ -408,10 +414,6 @@
                 "{{user_id}}",
                 "assign-role"
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"role\": \"sales\"\n}"
             }
           },
           "response": []
@@ -487,6 +489,10 @@
                 "value": "Bearer {{token}}"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role_id\": 1,\n  \"page\": \"clients\",\n  \"can_view\": true,\n  \"can_edit\": true,\n  \"can_delete\": false,\n  \"can_approve\": false\n}"
+            },
             "url": {
               "raw": "{{base_url}}/permissions",
               "host": [
@@ -495,10 +501,6 @@
               "path": [
                 "permissions"
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"role_id\": 1,\n  \"page\": \"clients\",\n  \"can_view\": true,\n  \"can_edit\": true,\n  \"can_delete\": false,\n  \"can_approve\": false\n}"
             }
           },
           "response": []
@@ -538,61 +540,863 @@
         {
           "name": "Company Types",
           "item": [
-            { "name": "List Company Types", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/company-types", "host": ["{{base_url}}"], "path": ["company-types"] } }, "response": [] },
-            { "name": "Create Company Type", "request": { "method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/company-types", "host": ["{{base_url}}"], "path": ["company-types"] }, "body": { "mode": "raw", "raw": "{\n  \"name\": \"Trader\",\n  \"sort_order\": 1\n}" } }, "response": [] },
-            { "name": "Show Company Type", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/company-types/1", "host": ["{{base_url}}"], "path": ["company-types", "1"] } }, "response": [] },
-            { "name": "Update Company Type", "request": { "method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/company-types/1", "host": ["{{base_url}}"], "path": ["company-types", "1"] }, "body": { "mode": "raw", "raw": "{\n  \"name\": \"Trader\",\n  \"sort_order\": 2\n}" } }, "response": [] },
-            { "name": "Delete Company Type", "request": { "method": "DELETE", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/company-types/1", "host": ["{{base_url}}"], "path": ["company-types", "1"] } }, "response": [] }
+            {
+              "name": "List Company Types",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/company-types",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "company-types"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create Company Type",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Trader\",\n  \"sort_order\": 1\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/company-types",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "company-types"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Show Company Type",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/company-types/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "company-types",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update Company Type",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Trader\",\n  \"sort_order\": 2\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/company-types/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "company-types",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Company Type",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/company-types/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "company-types",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            }
           ]
         },
         {
           "name": "Preferred Comm Methods",
           "item": [
-            { "name": "List Preferred Comm Methods", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/preferred-comm-methods", "host": ["{{base_url}}"], "path": ["preferred-comm-methods"] } }, "response": [] },
-            { "name": "Create Preferred Comm Method", "request": { "method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/preferred-comm-methods", "host": ["{{base_url}}"], "path": ["preferred-comm-methods"] }, "body": { "mode": "raw", "raw": "{\n  \"name\": \"WhatsApp\",\n  \"sort_order\": 1\n}" } }, "response": [] },
-            { "name": "Show Preferred Comm Method", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/preferred-comm-methods/1", "host": ["{{base_url}}"], "path": ["preferred-comm-methods", "1"] } }, "response": [] },
-            { "name": "Update Preferred Comm Method", "request": { "method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/preferred-comm-methods/1", "host": ["{{base_url}}"], "path": ["preferred-comm-methods", "1"] }, "body": { "mode": "raw", "raw": "{\n  \"name\": \"WhatsApp\",\n  \"sort_order\": 2\n}" } }, "response": [] },
-            { "name": "Delete Preferred Comm Method", "request": { "method": "DELETE", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/preferred-comm-methods/1", "host": ["{{base_url}}"], "path": ["preferred-comm-methods", "1"] } }, "response": [] }
+            {
+              "name": "List Preferred Comm Methods",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/preferred-comm-methods",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "preferred-comm-methods"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create Preferred Comm Method",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"WhatsApp\",\n  \"sort_order\": 1\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/preferred-comm-methods",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "preferred-comm-methods"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Show Preferred Comm Method",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/preferred-comm-methods/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "preferred-comm-methods",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update Preferred Comm Method",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"WhatsApp\",\n  \"sort_order\": 2\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/preferred-comm-methods/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "preferred-comm-methods",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Preferred Comm Method",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/preferred-comm-methods/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "preferred-comm-methods",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            }
           ]
         },
         {
           "name": "Interest Levels",
           "item": [
-            { "name": "List Interest Levels", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/interest-levels", "host": ["{{base_url}}"], "path": ["interest-levels"] } }, "response": [] },
-            { "name": "Create Interest Level", "request": { "method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/interest-levels", "host": ["{{base_url}}"], "path": ["interest-levels"] }, "body": { "mode": "raw", "raw": "{\n  \"name\": \"High\",\n  \"sort_order\": 1\n}" } }, "response": [] },
-            { "name": "Show Interest Level", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/interest-levels/1", "host": ["{{base_url}}"], "path": ["interest-levels", "1"] } }, "response": [] },
-            { "name": "Update Interest Level", "request": { "method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/interest-levels/1", "host": ["{{base_url}}"], "path": ["interest-levels", "1"] }, "body": { "mode": "raw", "raw": "{\n  \"name\": \"High\",\n  \"sort_order\": 2\n}" } }, "response": [] },
-            { "name": "Delete Interest Level", "request": { "method": "DELETE", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/interest-levels/1", "host": ["{{base_url}}"], "path": ["interest-levels", "1"] } }, "response": [] }
+            {
+              "name": "List Interest Levels",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/interest-levels",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "interest-levels"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create Interest Level",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"High\",\n  \"sort_order\": 1\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/interest-levels",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "interest-levels"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Show Interest Level",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/interest-levels/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "interest-levels",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update Interest Level",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"High\",\n  \"sort_order\": 2\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/interest-levels/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "interest-levels",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Interest Level",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/interest-levels/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "interest-levels",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            }
           ]
         },
         {
           "name": "Decision Maker Titles",
           "item": [
-            { "name": "List Decision Maker Titles", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/decision-maker-titles", "host": ["{{base_url}}"], "path": ["decision-maker-titles"] } }, "response": [] },
-            { "name": "Create Decision Maker Title", "request": { "method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/decision-maker-titles", "host": ["{{base_url}}"], "path": ["decision-maker-titles"] }, "body": { "mode": "raw", "raw": "{\n  \"name\": \"Owner\",\n  \"sort_order\": 1\n}" } }, "response": [] },
-            { "name": "Show Decision Maker Title", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/decision-maker-titles/1", "host": ["{{base_url}}"], "path": ["decision-maker-titles", "1"] } }, "response": [] },
-            { "name": "Update Decision Maker Title", "request": { "method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/decision-maker-titles/1", "host": ["{{base_url}}"], "path": ["decision-maker-titles", "1"] }, "body": { "mode": "raw", "raw": "{\n  \"name\": \"Owner\",\n  \"sort_order\": 2\n}" } }, "response": [] },
-            { "name": "Delete Decision Maker Title", "request": { "method": "DELETE", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/decision-maker-titles/1", "host": ["{{base_url}}"], "path": ["decision-maker-titles", "1"] } }, "response": [] }
+            {
+              "name": "List Decision Maker Titles",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/decision-maker-titles",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "decision-maker-titles"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create Decision Maker Title",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Owner\",\n  \"sort_order\": 1\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/decision-maker-titles",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "decision-maker-titles"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Show Decision Maker Title",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/decision-maker-titles/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "decision-maker-titles",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update Decision Maker Title",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Owner\",\n  \"sort_order\": 2\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/decision-maker-titles/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "decision-maker-titles",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Decision Maker Title",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/decision-maker-titles/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "decision-maker-titles",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            }
           ]
         },
         {
           "name": "Lead Sources",
           "item": [
-            { "name": "List Lead Sources", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/lead-sources", "host": ["{{base_url}}"], "path": ["lead-sources"] } }, "response": [] },
-            { "name": "Create Lead Source", "request": { "method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/lead-sources", "host": ["{{base_url}}"], "path": ["lead-sources"] }, "body": { "mode": "raw", "raw": "{\n  \"name\": \"Referral\",\n  \"sort_order\": 1\n}" } }, "response": [] },
-            { "name": "Show Lead Source", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/lead-sources/1", "host": ["{{base_url}}"], "path": ["lead-sources", "1"] } }, "response": [] },
-            { "name": "Update Lead Source", "request": { "method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/lead-sources/1", "host": ["{{base_url}}"], "path": ["lead-sources", "1"] }, "body": { "mode": "raw", "raw": "{\n  \"name\": \"Referral\",\n  \"sort_order\": 2\n}" } }, "response": [] },
-            { "name": "Delete Lead Source", "request": { "method": "DELETE", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/lead-sources/1", "host": ["{{base_url}}"], "path": ["lead-sources", "1"] } }, "response": [] }
+            {
+              "name": "List Lead Sources",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/lead-sources",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "lead-sources"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create Lead Source",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Referral\",\n  \"sort_order\": 1\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/lead-sources",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "lead-sources"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Show Lead Source",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/lead-sources/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "lead-sources",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update Lead Source",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Referral\",\n  \"sort_order\": 2\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/lead-sources/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "lead-sources",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Lead Source",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/lead-sources/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "lead-sources",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            }
           ]
         },
         {
           "name": "Ports",
           "item": [
-            { "name": "List Ports", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/ports?q=&active=true", "host": ["{{base_url}}"], "path": ["ports"], "query": [ { "key": "q", "value": "" }, { "key": "active", "value": "true" } ] } }, "response": [] },
-            { "name": "Create Port", "request": { "method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/ports", "host": ["{{base_url}}"], "path": ["ports"] }, "body": { "mode": "raw", "raw": "{\n  \"name\": \"Alexandria\",\n  \"code\": \"EGALY\",\n  \"country\": \"Egypt\",\n  \"active\": true\n}" } }, "response": [] },
-            { "name": "Show Port", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/ports/1", "host": ["{{base_url}}"], "path": ["ports", "1"] } }, "response": [] },
-            { "name": "Update Port", "request": { "method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/ports/1", "host": ["{{base_url}}"], "path": ["ports", "1"] }, "body": { "mode": "raw", "raw": "{\n  \"name\": \"Port Said East\",\n  \"code\": \"EGPSD\",\n  \"country\": \"Egypt\",\n  \"active\": true\n}" } }, "response": [] },
-            { "name": "Delete Port", "request": { "method": "DELETE", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/ports/1", "host": ["{{base_url}}"], "path": ["ports", "1"] } }, "response": [] }
+            {
+              "name": "List Ports",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/ports?q=&active=true",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "ports"
+                  ],
+                  "query": [
+                    {
+                      "key": "q",
+                      "value": ""
+                    },
+                    {
+                      "key": "active",
+                      "value": "true"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create Port",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Alexandria\",\n  \"code\": \"EGALY\",\n  \"country\": \"Egypt\",\n  \"active\": true\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/ports",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "ports"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Show Port",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/ports/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "ports",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update Port",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Port Said East\",\n  \"code\": \"EGPSD\",\n  \"country\": \"Egypt\",\n  \"active\": true\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/ports/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "ports",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Port",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/ports/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "ports",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            }
           ]
         }
       ]
@@ -603,51 +1407,711 @@
         {
           "name": "Shipment Directions",
           "item": [
-            { "name": "List Shipment Directions", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/shipment-directions", "host": ["{{base_url}}"], "path": ["shipment-directions"] } }, "response": [] },
-            { "name": "Create Shipment Direction", "request": { "method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/shipment-directions", "host": ["{{base_url}}"], "path": ["shipment-directions"] }, "body": { "mode": "raw", "raw": "{\n  \"name\": \"Export\",\n  \"sort_order\": 1\n}" } }, "response": [] },
-            { "name": "Show Shipment Direction", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/shipment-directions/1", "host": ["{{base_url}}"], "path": ["shipment-directions", "1"] } }, "response": [] },
-            { "name": "Update Shipment Direction", "request": { "method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/shipment-directions/1", "host": ["{{base_url}}"], "path": ["shipment-directions", "1"] }, "body": { "mode": "raw", "raw": "{\n  \"name\": \"Import\",\n  \"sort_order\": 2\n}" } }, "response": [] },
-            { "name": "Delete Shipment Direction", "request": { "method": "DELETE", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/shipment-directions/1", "host": ["{{base_url}}"], "path": ["shipment-directions", "1"] } }, "response": [] }
+            {
+              "name": "List Shipment Directions",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/shipment-directions",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "shipment-directions"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create Shipment Direction",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Export\",\n  \"sort_order\": 1\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/shipment-directions",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "shipment-directions"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Show Shipment Direction",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/shipment-directions/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "shipment-directions",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update Shipment Direction",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Import\",\n  \"sort_order\": 2\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/shipment-directions/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "shipment-directions",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Shipment Direction",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/shipment-directions/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "shipment-directions",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            }
           ]
         },
         {
           "name": "Notify Party Modes",
           "item": [
-            { "name": "List Notify Party Modes", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/notify-party-modes", "host": ["{{base_url}}"], "path": ["notify-party-modes"] } }, "response": [] },
-            { "name": "Create Notify Party Mode", "request": { "method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/notify-party-modes", "host": ["{{base_url}}"], "path": ["notify-party-modes"] }, "body": { "mode": "raw", "raw": "{\n  \"name\": \"Same\",\n  \"sort_order\": 1\n}" } }, "response": [] },
-            { "name": "Show Notify Party Mode", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/notify-party-modes/1", "host": ["{{base_url}}"], "path": ["notify-party-modes", "1"] } }, "response": [] },
-            { "name": "Update Notify Party Mode", "request": { "method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/notify-party-modes/1", "host": ["{{base_url}}"], "path": ["notify-party-modes", "1"] }, "body": { "mode": "raw", "raw": "{\n  \"name\": \"Different\",\n  \"sort_order\": 2\n}" } }, "response": [] },
-            { "name": "Delete Notify Party Mode", "request": { "method": "DELETE", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/notify-party-modes/1", "host": ["{{base_url}}"], "path": ["notify-party-modes", "1"] } }, "response": [] }
+            {
+              "name": "List Notify Party Modes",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/notify-party-modes",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "notify-party-modes"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create Notify Party Mode",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Same\",\n  \"sort_order\": 1\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/notify-party-modes",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "notify-party-modes"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Show Notify Party Mode",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/notify-party-modes/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "notify-party-modes",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update Notify Party Mode",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Different\",\n  \"sort_order\": 2\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/notify-party-modes/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "notify-party-modes",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Notify Party Mode",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/notify-party-modes/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "notify-party-modes",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            }
           ]
         },
         {
           "name": "Freight Terms",
           "item": [
-            { "name": "List Freight Terms", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/freight-terms", "host": ["{{base_url}}"], "path": ["freight-terms"] } }, "response": [] },
-            { "name": "Create Freight Term", "request": { "method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/freight-terms", "host": ["{{base_url}}"], "path": ["freight-terms"] }, "body": { "mode": "raw", "raw": "{\n  \"name\": \"Prepaid\",\n  \"sort_order\": 1\n}" } }, "response": [] },
-            { "name": "Show Freight Term", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/freight-terms/1", "host": ["{{base_url}}"], "path": ["freight-terms", "1"] } }, "response": [] },
-            { "name": "Update Freight Term", "request": { "method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/freight-terms/1", "host": ["{{base_url}}"], "path": ["freight-terms", "1"] }, "body": { "mode": "raw", "raw": "{\n  \"name\": \"Collect\",\n  \"sort_order\": 2\n}" } }, "response": [] },
-            { "name": "Delete Freight Term", "request": { "method": "DELETE", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/freight-terms/1", "host": ["{{base_url}}"], "path": ["freight-terms", "1"] } }, "response": [] }
+            {
+              "name": "List Freight Terms",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/freight-terms",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "freight-terms"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create Freight Term",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Prepaid\",\n  \"sort_order\": 1\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/freight-terms",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "freight-terms"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Show Freight Term",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/freight-terms/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "freight-terms",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update Freight Term",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Collect\",\n  \"sort_order\": 2\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/freight-terms/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "freight-terms",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Freight Term",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/freight-terms/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "freight-terms",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            }
           ]
         },
         {
           "name": "Container Types",
           "item": [
-            { "name": "List Container Types", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/container-types", "host": ["{{base_url}}"], "path": ["container-types"] } }, "response": [] },
-            { "name": "Create Container Type", "request": { "method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/container-types", "host": ["{{base_url}}"], "path": ["container-types"] }, "body": { "mode": "raw", "raw": "{\n  \"name\": \"Dry\",\n  \"sort_order\": 1\n}" } }, "response": [] },
-            { "name": "Show Container Type", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/container-types/1", "host": ["{{base_url}}"], "path": ["container-types", "1"] } }, "response": [] },
-            { "name": "Update Container Type", "request": { "method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/container-types/1", "host": ["{{base_url}}"], "path": ["container-types", "1"] }, "body": { "mode": "raw", "raw": "{\n  \"name\": \"Reefer\",\n  \"sort_order\": 2\n}" } }, "response": [] },
-            { "name": "Delete Container Type", "request": { "method": "DELETE", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/container-types/1", "host": ["{{base_url}}"], "path": ["container-types", "1"] } }, "response": [] }
+            {
+              "name": "List Container Types",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/container-types",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "container-types"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create Container Type",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Dry\",\n  \"sort_order\": 1\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/container-types",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "container-types"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Show Container Type",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/container-types/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "container-types",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update Container Type",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Reefer\",\n  \"sort_order\": 2\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/container-types/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "container-types",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Container Type",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/container-types/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "container-types",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            }
           ]
         },
         {
           "name": "Container Sizes",
           "item": [
-            { "name": "List Container Sizes", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/container-sizes", "host": ["{{base_url}}"], "path": ["container-sizes"] } }, "response": [] },
-            { "name": "Create Container Size", "request": { "method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/container-sizes", "host": ["{{base_url}}"], "path": ["container-sizes"] }, "body": { "mode": "raw", "raw": "{\n  \"name\": \"20'\",\n  \"sort_order\": 1\n}" } }, "response": [] },
-            { "name": "Show Container Size", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/container-sizes/1", "host": ["{{base_url}}"], "path": ["container-sizes", "1"] } }, "response": [] },
-            { "name": "Update Container Size", "request": { "method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/container-sizes/1", "host": ["{{base_url}}"], "path": ["container-sizes", "1"] }, "body": { "mode": "raw", "raw": "{\n  \"name\": \"40'\",\n  \"sort_order\": 2\n}" } }, "response": [] },
-            { "name": "Delete Container Size", "request": { "method": "DELETE", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": { "raw": "{{base_url}}/container-sizes/1", "host": ["{{base_url}}"], "path": ["container-sizes", "1"] } }, "response": [] }
+            {
+              "name": "List Container Sizes",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/container-sizes",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "container-sizes"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create Container Size",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"20'\",\n  \"sort_order\": 1\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/container-sizes",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "container-sizes"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Show Container Size",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/container-sizes/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "container-sizes",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update Container Size",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"40'\",\n  \"sort_order\": 2\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/container-sizes/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "container-sizes",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Container Size",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/container-sizes/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "container-sizes",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            }
           ]
         }
       ]
@@ -670,7 +2134,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/clients?q={{search}}&status={{status}}&assigned_sales_id={{sales_id}}&lead_source_id={{lead_source_id}}&sort=client&direction=asc&page=1&per_page=15",
+              "raw": "{{base_url}}/clients?q={{search}}&lead_source_id={{lead_source_id}}&status={{status}}&page=1&per_page=15&assigned_sales_id={{sales_id}}&sort=client&direction=asc",
               "host": [
                 "{{base_url}}"
               ],
@@ -729,6 +2193,10 @@
                 "value": "Bearer {{token}}"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"منصور وشركاه للتجارة\",\n  \"company_name\": \"منصور وشركاه للتجارة\",\n  \"company_type_id\": 2,\n  \"business_activity\": \"تجارة قطع غيار سيارات\",\n  \"target_markets\": \"السعودية والخليج\",\n  \"tax_id\": \"123-456-789\",\n  \"email\": \"client@example.com\",\n  \"phone\": \"+20123456789\",\n  \"preferred_comm_method_id\": 2,\n  \"address\": \"مدينة نصر - المنطقة الصناعية\",\n  \"website_url\": \"https://example.com\",\n  \"facebook_url\": \"https://facebook.com/example\",\n  \"linkedin_url\": \"https://linkedin.com/company/example\",\n  \"lead_source_id\": 4,\n  \"interest_level_id\": 1,\n  \"decision_maker_name\": \"منصور محمد\",\n  \"decision_maker_title_id\": 1,\n  \"notes\": \"عميل مهم في قطاع السيارات\"\n}"
+            },
             "url": {
               "raw": "{{base_url}}/clients",
               "host": [
@@ -737,10 +2205,6 @@
               "path": [
                 "clients"
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"منصور وشركاه للتجارة\",\n  \"company_name\": \"منصور وشركاه للتجارة\",\n  \"company_type_id\": 2,\n  \"business_activity\": \"تجارة قطع غيار سيارات\",\n  \"target_markets\": \"السعودية والخليج\",\n  \"tax_id\": \"123-456-789\",\n  \"email\": \"client@example.com\",\n  \"phone\": \"+20123456789\",\n  \"preferred_comm_method_id\": 2,\n  \"address\": \"مدينة نصر - المنطقة الصناعية\",\n  \"website_url\": \"https://example.com\",\n  \"facebook_url\": \"https://facebook.com/example\",\n  \"linkedin_url\": \"https://linkedin.com/company/example\",\n  \"lead_source_id\": 4,\n  \"interest_level_id\": 1,\n  \"decision_maker_name\": \"منصور محمد\",\n  \"decision_maker_title_id\": 1,\n  \"notes\": \"عميل مهم في قطاع السيارات\"\n}"
             }
           },
           "response": []
@@ -786,6 +2250,10 @@
                 "value": "Bearer {{token}}"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"interest_level_id\": 1,\n  \"business_activity\": \"تجارة قطع غيار سيارات\"\n}"
+            },
             "url": {
               "raw": "{{base_url}}/clients/{{client_id}}",
               "host": [
@@ -795,10 +2263,6 @@
                 "clients",
                 "{{client_id}}"
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"interest_level_id\": 1,\n  \"business_activity\": \"تجارة قطع غيار سيارات\"\n}"
             }
           },
           "response": []
@@ -834,8 +2298,26 @@
           "name": "Client Stats",
           "request": {
             "method": "GET",
-            "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}],
-            "url": {"raw": "{{base_url}}/clients/stats", "host": ["{{base_url}}"], "path": ["clients", "stats"]}
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/clients/stats",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "clients",
+                "stats"
+              ]
+            }
           },
           "response": []
         },
@@ -843,8 +2325,32 @@
           "name": "Client Charts",
           "request": {
             "method": "GET",
-            "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}],
-            "url": {"raw": "{{base_url}}/clients/charts?months=6", "host": ["{{base_url}}"], "path": ["clients", "charts"], "query": [{"key": "months", "value": "6"}]}
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/clients/charts?months=6",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "clients",
+                "charts"
+              ],
+              "query": [
+                {
+                  "key": "months",
+                  "value": "6"
+                }
+              ]
+            }
           },
           "response": []
         },
@@ -852,8 +2358,26 @@
           "name": "Financial Summary",
           "request": {
             "method": "GET",
-            "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}],
-            "url": {"raw": "{{base_url}}/clients/financial-summary", "host": ["{{base_url}}"], "path": ["clients", "financial-summary"]}
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/clients/financial-summary",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "clients",
+                "financial-summary"
+              ]
+            }
           },
           "response": []
         },
@@ -861,8 +2385,26 @@
           "name": "Pricing List",
           "request": {
             "method": "GET",
-            "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}],
-            "url": {"raw": "{{base_url}}/clients/pricing", "host": ["{{base_url}}"], "path": ["clients", "pricing"]}
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/clients/pricing",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "clients",
+                "pricing"
+              ]
+            }
           },
           "response": []
         },
@@ -870,8 +2412,22 @@
           "name": "Export Clients",
           "request": {
             "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
-            "url": {"raw": "{{base_url}}/clients/export", "host": ["{{base_url}}"], "path": ["clients", "export"]}
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/clients/export",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "clients",
+                "export"
+              ]
+            }
           },
           "response": []
         },
@@ -879,9 +2435,30 @@
           "name": "Bulk Assign Sales",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}],
-            "url": {"raw": "{{base_url}}/clients/bulk-assign", "host": ["{{base_url}}"], "path": ["clients", "bulk-assign"]},
-            "body": {"mode": "raw", "raw": "{\n  \"client_ids\": [1, 2],\n  \"assigned_sales_id\": 1\n}"}
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"client_ids\": [1, 2],\n  \"assigned_sales_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/clients/bulk-assign",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "clients",
+                "bulk-assign"
+              ]
+            }
           },
           "response": []
         },
@@ -889,8 +2466,27 @@
           "name": "Get Client Visits",
           "request": {
             "method": "GET",
-            "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}],
-            "url": {"raw": "{{base_url}}/clients/{{client_id}}/visits", "host": ["{{base_url}}"], "path": ["clients", "{{client_id}}", "visits"]}
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/clients/{{client_id}}/visits",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "clients",
+                "{{client_id}}",
+                "visits"
+              ]
+            }
           },
           "response": []
         },
@@ -898,8 +2494,33 @@
           "name": "Get Client Shipments",
           "request": {
             "method": "GET",
-            "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}],
-            "url": {"raw": "{{base_url}}/clients/{{client_id}}/shipments?per_page=10", "host": ["{{base_url}}"], "path": ["clients", "{{client_id}}", "shipments"], "query": [{"key": "per_page", "value": "10"}]}
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/clients/{{client_id}}/shipments?per_page=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "clients",
+                "{{client_id}}",
+                "shipments"
+              ],
+              "query": [
+                {
+                  "key": "per_page",
+                  "value": "10"
+                }
+              ]
+            }
           },
           "response": []
         },
@@ -907,8 +2528,27 @@
           "name": "Get Client Attachments",
           "request": {
             "method": "GET",
-            "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}],
-            "url": {"raw": "{{base_url}}/clients/{{client_id}}/attachments", "host": ["{{base_url}}"], "path": ["clients", "{{client_id}}", "attachments"]}
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/clients/{{client_id}}/attachments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "clients",
+                "{{client_id}}",
+                "attachments"
+              ]
+            }
           },
           "response": []
         },
@@ -916,9 +2556,33 @@
           "name": "Post Client Attachment",
           "request": {
             "method": "POST",
-            "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
-            "url": {"raw": "{{base_url}}/clients/{{client_id}}/attachments", "host": ["{{base_url}}"], "path": ["clients", "{{client_id}}", "attachments"]},
-            "body": {"mode": "formdata", "formdata": [{"key": "file", "type": "file", "src": []}]}
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "value": null
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/clients/{{client_id}}/attachments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "clients",
+                "{{client_id}}",
+                "attachments"
+              ]
+            }
           },
           "response": []
         },
@@ -926,8 +2590,24 @@
           "name": "Delete Client Attachment",
           "request": {
             "method": "DELETE",
-            "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
-            "url": {"raw": "{{base_url}}/clients/{{client_id}}/attachments/1", "host": ["{{base_url}}"], "path": ["clients", "{{client_id}}", "attachments", "1"]}
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/clients/{{client_id}}/attachments/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "clients",
+                "{{client_id}}",
+                "attachments",
+                "1"
+              ]
+            }
           },
           "response": []
         }
@@ -936,38 +2616,687 @@
     {
       "name": "SD Forms",
       "item": [
-        {"name": "List SD Forms", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": {"raw": "{{base_url}}/sd-forms?status=&sales_rep_id=&client_id=&search=&sort=date&direction=desc&page=1&per_page=15", "host": ["{{base_url}}"], "path": ["sd-forms"], "query": [{"key": "status", "value": ""}, {"key": "sales_rep_id", "value": ""}, {"key": "client_id", "value": ""}, {"key": "search", "value": ""}, {"key": "sort", "value": "date"}, {"key": "direction", "value": "desc"}, {"key": "page", "value": "1"}, {"key": "per_page", "value": "15"}]}}, "response": []},
-        {"name": "SD Forms Stats", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": {"raw": "{{base_url}}/sd-forms/stats", "host": ["{{base_url}}"], "path": ["sd-forms", "stats"]}}, "response": []},
-        {"name": "SD Forms Charts", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": {"raw": "{{base_url}}/sd-forms/charts?months=6", "host": ["{{base_url}}"], "path": ["sd-forms", "charts"], "query": [{"key": "months", "value": "6"}]}}, "response": []},
-        {"name": "Create SD Form (draft)", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": {"raw": "{{base_url}}/sd-forms", "host": ["{{base_url}}"], "path": ["sd-forms"]}, "body": {"mode": "raw", "raw": "{\n  \"client_id\": 1,\n  \"sales_rep_id\": 1,\n  \"status\": \"draft\",\n  \"pol_id\": 1,\n  \"pod_id\": 2,\n  \"final_destination\": \"Jeddah, Saudi Arabia\",\n  \"shipment_direction\": \"Export\",\n  \"shipper_info\": \"Mansour & Co., Industrial Zone, Cairo\",\n  \"consignee_info\": \"Al Saud Trading, Jeddah\",\n  \"notify_party_mode\": \"same\",\n  \"notify_party_details\": null,\n  \"freight_term\": \"Prepaid\",\n  \"container_type\": \"Dry\",\n  \"container_size\": \"40\",\n  \"num_containers\": 2,\n  \"requested_vessel_date\": \"2026-02-19\",\n  \"acid_number\": null,\n  \"cargo_description\": \"Cotton textiles\",\n  \"hs_code\": \"5208.11\",\n  \"reefer_temp\": null,\n  \"reefer_vent\": null,\n  \"reefer_hum\": null,\n  \"total_gross_weight\": 48000,\n  \"total_net_weight\": 47000\n}"}}, "response": []},
-        {"name": "Show SD Form", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": {"raw": "{{base_url}}/sd-forms/1", "host": ["{{base_url}}"], "path": ["sd-forms", "1"]}}, "response": []},
-        {"name": "Update SD Form", "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": {"raw": "{{base_url}}/sd-forms/1", "host": ["{{base_url}}"], "path": ["sd-forms", "1"]}, "body": {"mode": "raw", "raw": "{\n  \"cargo_description\": \"Updated cargo description\"\n}"}}, "response": []},
-        {"name": "Submit SD Form", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": {"raw": "{{base_url}}/sd-forms/1/submit", "host": ["{{base_url}}"], "path": ["sd-forms", "1", "submit"]}, "body": {"mode": "raw", "raw": "{\n  \"shipment_direction\": \"Export\"\n}"}}, "response": []},
-        {"name": "Send SD Form to Operations", "request": {"method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": {"raw": "{{base_url}}/sd-forms/1/send-to-operations", "host": ["{{base_url}}"], "path": ["sd-forms", "1", "send-to-operations"]}}, "response": []},
-        {"name": "Link Shipment to SD Form", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": {"raw": "{{base_url}}/sd-forms/1/link-shipment", "host": ["{{base_url}}"], "path": ["sd-forms", "1", "link-shipment"]}, "body": {"mode": "raw", "raw": "{\n  \"shipment_id\": 1\n}"}}, "response": []},
-        {"name": "Email SD Form to Operations", "request": {"method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": {"raw": "{{base_url}}/sd-forms/1/email-operations", "host": ["{{base_url}}"], "path": ["sd-forms", "1", "email-operations"]}}, "response": []},
-        {"name": "Download SD Form PDF", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": {"raw": "{{base_url}}/sd-forms/1/pdf", "host": ["{{base_url}}"], "path": ["sd-forms", "1", "pdf"]}}, "response": []},
-        {"name": "Export SD Forms (all)", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": {"raw": "{{base_url}}/sd-forms/export", "host": ["{{base_url}}"], "path": ["sd-forms", "export"]}}, "response": []},
-        {"name": "Export SD Forms (selected)", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": {"raw": "{{base_url}}/sd-forms/export?ids=1,2,3", "host": ["{{base_url}}"], "path": ["sd-forms", "export"], "query": [{"key": "ids", "value": "1,2,3"}]}}, "response": []}
+        {
+          "name": "List SD Forms",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/sd-forms?status=&sales_rep_id=&client_id=&search=&sort=date&direction=desc&page=1&per_page=15",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "sd-forms"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": ""
+                },
+                {
+                  "key": "sales_rep_id",
+                  "value": ""
+                },
+                {
+                  "key": "client_id",
+                  "value": ""
+                },
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "sort",
+                  "value": "date"
+                },
+                {
+                  "key": "direction",
+                  "value": "desc"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "per_page",
+                  "value": "15"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "SD Forms Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/sd-forms/stats",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "sd-forms",
+                "stats"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "SD Forms Charts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/sd-forms/charts?months=6",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "sd-forms",
+                "charts"
+              ],
+              "query": [
+                {
+                  "key": "months",
+                  "value": "6"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create SD Form (draft)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"client_id\": 1,\n  \"sales_rep_id\": 1,\n  \"status\": \"draft\",\n  \"pol_id\": 1,\n  \"pod_id\": 2,\n  \"final_destination\": \"Jeddah, Saudi Arabia\",\n  \"shipment_direction\": \"Export\",\n  \"shipper_info\": \"Mansour & Co., Industrial Zone, Cairo\",\n  \"consignee_info\": \"Al Saud Trading, Jeddah\",\n  \"notify_party_mode\": \"same\",\n  \"notify_party_details\": null,\n  \"freight_term\": \"Prepaid\",\n  \"container_type\": \"Dry\",\n  \"container_size\": \"40\",\n  \"num_containers\": 2,\n  \"requested_vessel_date\": \"2026-02-19\",\n  \"acid_number\": null,\n  \"cargo_description\": \"Cotton textiles\",\n  \"hs_code\": \"5208.11\",\n  \"reefer_temp\": null,\n  \"reefer_vent\": null,\n  \"reefer_hum\": null,\n  \"total_gross_weight\": 48000,\n  \"total_net_weight\": 47000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/sd-forms",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "sd-forms"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Show SD Form",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/sd-forms/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "sd-forms",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update SD Form",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cargo_description\": \"Updated cargo description\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/sd-forms/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "sd-forms",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Submit SD Form",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shipment_direction\": \"Export\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/sd-forms/1/submit",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "sd-forms",
+                "1",
+                "submit"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send SD Form to Operations",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/sd-forms/1/send-to-operations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "sd-forms",
+                "1",
+                "send-to-operations"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Link Shipment to SD Form",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shipment_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/sd-forms/1/link-shipment",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "sd-forms",
+                "1",
+                "link-shipment"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Email SD Form to Operations",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/sd-forms/1/email-operations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "sd-forms",
+                "1",
+                "email-operations"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Download SD Form PDF",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/sd-forms/1/pdf",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "sd-forms",
+                "1",
+                "pdf"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export SD Forms (all)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/sd-forms/export",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "sd-forms",
+                "export"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export SD Forms (selected)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/sd-forms/export?ids=1,2,3",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "sd-forms",
+                "export"
+              ],
+              "query": [
+                {
+                  "key": "ids",
+                  "value": "1,2,3"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
       ]
     },
     {
       "name": "Visits",
       "item": [
-        {"name": "List Visits", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": {"raw": "{{base_url}}/visits?client_id={{client_id}}", "host": ["{{base_url}}"], "path": ["visits"], "query": [{"key": "client_id", "value": "{{client_id}}"}]}}, "response": []},
-        {"name": "Create Visit", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": {"raw": "{{base_url}}/visits", "host": ["{{base_url}}"], "path": ["visits"]}, "body": {"mode": "raw", "raw": "{\n  \"client_id\": 1,\n  \"subject\": \"مكالمة هاتفية\",\n  \"purpose\": \"متابعة\",\n  \"notes\": \"تم الاتفاق على شحنة جديدة\",\n  \"visit_date\": \"2026-03-07\"\n}"}}, "response": []},
-        {"name": "Show Visit", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": {"raw": "{{base_url}}/visits/1", "host": ["{{base_url}}"], "path": ["visits", "1"]}}, "response": []},
-        {"name": "Update Visit", "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": {"raw": "{{base_url}}/visits/1", "host": ["{{base_url}}"], "path": ["visits", "1"]}, "body": {"mode": "raw", "raw": "{\n  \"subject\": \"مكالمة هاتفية\",\n  \"notes\": \"تم التحديث\"\n}"}}, "response": []},
-        {"name": "Delete Visit", "request": {"method": "DELETE", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": {"raw": "{{base_url}}/visits/1", "host": ["{{base_url}}"], "path": ["visits", "1"]}}, "response": []}
+        {
+          "name": "List Visits",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/visits?client_id={{client_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "visits"
+              ],
+              "query": [
+                {
+                  "key": "client_id",
+                  "value": "{{client_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Visit",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"client_id\": 1,\n  \"subject\": \"مكالمة هاتفية\",\n  \"purpose\": \"متابعة\",\n  \"notes\": \"تم الاتفاق على شحنة جديدة\",\n  \"visit_date\": \"2026-03-07\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/visits",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "visits"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Show Visit",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/visits/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "visits",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Visit",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"مكالمة هاتفية\",\n  \"notes\": \"تم التحديث\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/visits/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "visits",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Visit",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/visits/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "visits",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        }
       ]
     },
     {
       "name": "Shipments",
       "item": [
-        {"name": "List Shipments", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": {"raw": "{{base_url}}/shipments?client_id={{client_id}}&per_page=15", "host": ["{{base_url}}"], "path": ["shipments"], "query": [{"key": "client_id", "value": "{{client_id}}"}, {"key": "per_page", "value": "15"}]}}, "response": []},
-        {"name": "Create Shipment", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": {"raw": "{{base_url}}/shipments", "host": ["{{base_url}}"], "path": ["shipments"]}, "body": {"mode": "raw", "raw": "{\n  \"client_id\": 1,\n  \"status\": \"booked\"\n}"}}, "response": []},
-        {"name": "Show Shipment", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": {"raw": "{{base_url}}/shipments/1", "host": ["{{base_url}}"], "path": ["shipments", "1"]}}, "response": []},
-        {"name": "Update Shipment", "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": {"raw": "{{base_url}}/shipments/1", "host": ["{{base_url}}"], "path": ["shipments", "1"]}, "body": {"mode": "raw", "raw": "{\n  \"status\": \"in_transit\"\n}"}}, "response": []}
+        {
+          "name": "List Shipments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/shipments?client_id={{client_id}}&per_page=15",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "shipments"
+              ],
+              "query": [
+                {
+                  "key": "client_id",
+                  "value": "{{client_id}}"
+                },
+                {
+                  "key": "per_page",
+                  "value": "15"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Shipment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"client_id\": 1,\n  \"status\": \"booked\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/shipments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "shipments"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Show Shipment",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/shipments/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "shipments",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Shipment",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in_transit\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/shipments/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "shipments",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        }
       ]
     },
     {
@@ -978,16 +3307,32 @@
           "request": {
             "method": "GET",
             "header": [
-              {"key": "Accept", "value": "application/json"},
-              {"key": "Authorization", "value": "Bearer {{token}}"}
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/notifications?page=1&per_page=20",
-              "host": ["{{base_url}}"],
-              "path": ["notifications"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notifications"
+              ],
               "query": [
-                {"key": "page", "value": "1"},
-                {"key": "per_page", "value": "20"}
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "per_page",
+                  "value": "20"
+                }
               ]
             }
           },
@@ -998,13 +3343,24 @@
           "request": {
             "method": "GET",
             "header": [
-              {"key": "Accept", "value": "application/json"},
-              {"key": "Authorization", "value": "Bearer {{token}}"}
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/notifications/unread-count",
-              "host": ["{{base_url}}"],
-              "path": ["notifications", "unread-count"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notifications",
+                "unread-count"
+              ]
             }
           },
           "response": []
@@ -1014,13 +3370,25 @@
           "request": {
             "method": "POST",
             "header": [
-              {"key": "Accept", "value": "application/json"},
-              {"key": "Authorization", "value": "Bearer {{token}}"}
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/notifications/{{notification_id}}/read",
-              "host": ["{{base_url}}"],
-              "path": ["notifications", "{{notification_id}}", "read"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notifications",
+                "{{notification_id}}",
+                "read"
+              ]
             }
           },
           "response": []
@@ -1030,13 +3398,24 @@
           "request": {
             "method": "POST",
             "header": [
-              {"key": "Accept", "value": "application/json"},
-              {"key": "Authorization", "value": "Bearer {{token}}"}
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/notifications/read-all",
-              "host": ["{{base_url}}"],
-              "path": ["notifications", "read-all"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notifications",
+                "read-all"
+              ]
             }
           },
           "response": []
@@ -1046,10 +3425,124 @@
     {
       "name": "Dashboard & Reports",
       "item": [
-        {"name": "Dashboard Overview", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": {"raw": "{{base_url}}/dashboard/overview", "host": ["{{base_url}}"], "path": ["dashboard", "overview"]}}, "response": []},
-        {"name": "Reports Shipments", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": {"raw": "{{base_url}}/reports/shipments", "host": ["{{base_url}}"], "path": ["reports", "shipments"]}}, "response": []},
-        {"name": "Reports Finance", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": {"raw": "{{base_url}}/reports/finance", "host": ["{{base_url}}"], "path": ["reports", "finance"]}}, "response": []},
-        {"name": "Reports Sales Performance", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": {"raw": "{{base_url}}/reports/sales-performance?from=&to=", "host": ["{{base_url}}"], "path": ["reports", "sales-performance"], "query": [{"key": "from", "value": ""}, {"key": "to", "value": ""}]}}, "response": []}
+        {
+          "name": "Dashboard Overview",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/overview",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "overview"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reports Shipments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/reports/shipments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reports",
+                "shipments"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reports Finance",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/reports/finance",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reports",
+                "finance"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reports Sales Performance",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/reports/sales-performance?from=&to=",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reports",
+                "sales-performance"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": ""
+                },
+                {
+                  "key": "to",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        }
       ]
     },
     {
@@ -1060,15 +3553,29 @@
           "request": {
             "method": "GET",
             "header": [
-              {"key": "Accept", "value": "application/json"},
-              {"key": "Authorization", "value": "Bearer {{token}}"}
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/accounting/summary?months=6",
-              "host": ["{{base_url}}"],
-              "path": ["accounting", "summary"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounting",
+                "summary"
+              ],
               "query": [
-                {"key": "months", "value": "6"}
+                {
+                  "key": "months",
+                  "value": "6"
+                }
               ]
             }
           },
@@ -1079,17 +3586,37 @@
           "request": {
             "method": "GET",
             "header": [
-              {"key": "Accept", "value": "application/json"},
-              {"key": "Authorization", "value": "Bearer {{token}}"}
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/accounting/clients?search=&currency=&sort=balance",
-              "host": ["{{base_url}}"],
-              "path": ["accounting", "clients"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounting",
+                "clients"
+              ],
               "query": [
-                {"key": "search", "value": ""},
-                {"key": "currency", "value": ""},
-                {"key": "sort", "value": "balance"}
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "currency",
+                  "value": ""
+                },
+                {
+                  "key": "sort",
+                  "value": "balance"
+                }
               ]
             }
           },
@@ -1100,18 +3627,41 @@
           "request": {
             "method": "GET",
             "header": [
-              {"key": "Accept", "value": "application/json"},
-              {"key": "Authorization", "value": "Bearer {{token}}"}
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/accounting/partners?search=&partner_type=&currency=&sort=balance",
-              "host": ["{{base_url}}"],
-              "path": ["accounting", "partners"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounting",
+                "partners"
+              ],
               "query": [
-                {"key": "search", "value": ""},
-                {"key": "partner_type", "value": ""},
-                {"key": "currency", "value": ""},
-                {"key": "sort", "value": "balance"}
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "partner_type",
+                  "value": ""
+                },
+                {
+                  "key": "currency",
+                  "value": ""
+                },
+                {
+                  "key": "sort",
+                  "value": "balance"
+                }
               ]
             }
           },
@@ -1122,14 +3672,26 @@
           "request": {
             "method": "GET",
             "header": [
-              {"key": "Authorization", "value": "Bearer {{token}}"}
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/accounting/clients/export?ids=1,2,3",
-              "host": ["{{base_url}}"],
-              "path": ["accounting", "clients", "export"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounting",
+                "clients",
+                "export"
+              ],
               "query": [
-                {"key": "ids", "value": "1,2,3"}
+                {
+                  "key": "ids",
+                  "value": "1,2,3"
+                }
               ]
             }
           },
@@ -1140,14 +3702,26 @@
           "request": {
             "method": "GET",
             "header": [
-              {"key": "Authorization", "value": "Bearer {{token}}"}
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/accounting/partners/export?ids=1,2,3",
-              "host": ["{{base_url}}"],
-              "path": ["accounting", "partners", "export"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounting",
+                "partners",
+                "export"
+              ],
               "query": [
-                {"key": "ids", "value": "1,2,3"}
+                {
+                  "key": "ids",
+                  "value": "1,2,3"
+                }
               ]
             }
           },
@@ -1163,15 +3737,29 @@
           "request": {
             "method": "GET",
             "header": [
-              {"key": "Accept", "value": "application/json"},
-              {"key": "Authorization", "value": "Bearer {{token}}"}
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/treasury/summary?months=6",
-              "host": ["{{base_url}}"],
-              "path": ["treasury", "summary"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "treasury",
+                "summary"
+              ],
               "query": [
-                {"key": "months", "value": "6"}
+                {
+                  "key": "months",
+                  "value": "6"
+                }
               ]
             }
           },
@@ -1182,17 +3770,37 @@
           "request": {
             "method": "GET",
             "header": [
-              {"key": "Accept", "value": "application/json"},
-              {"key": "Authorization", "value": "Bearer {{token}}"}
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/treasury/entries?search=&type=&sort=date",
-              "host": ["{{base_url}}"],
-              "path": ["treasury", "entries"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "treasury",
+                "entries"
+              ],
               "query": [
-                {"key": "search", "value": ""},
-                {"key": "type", "value": ""},
-                {"key": "sort", "value": "date"}
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "type",
+                  "value": ""
+                },
+                {
+                  "key": "sort",
+                  "value": "date"
+                }
               ]
             }
           },
@@ -1203,17 +3811,28 @@
           "request": {
             "method": "POST",
             "header": [
-              {"key": "Content-Type", "value": "application/json"},
-              {"key": "Authorization", "value": "Bearer {{token}}"}
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
-            "url": {
-              "raw": "{{base_url}}/treasury/entries",
-              "host": ["{{base_url}}"],
-              "path": ["treasury", "entries"]
-            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"entry_type\": \"in\",\n  \"source\": \"cash-egp\",\n  \"amount\": 1000,\n  \"currency_code\": \"EGP\",\n  \"description\": \"Test entry\",\n  \"entry_date\": \"2026-03-10\",\n  \"notes\": \"Added from Postman\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/treasury/entries",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "treasury",
+                "entries"
+              ]
             }
           },
           "response": []
@@ -1223,17 +3842,28 @@
           "request": {
             "method": "POST",
             "header": [
-              {"key": "Content-Type", "value": "application/json"},
-              {"key": "Authorization", "value": "Bearer {{token}}"}
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
-            "url": {
-              "raw": "{{base_url}}/treasury/transfers",
-              "host": ["{{base_url}}"],
-              "path": ["treasury", "transfers"]
-            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"from_account\": \"cash-egp\",\n  \"to_account\": \"bank-cib-egp\",\n  \"from_amount\": 5000,\n  \"from_currency\": \"EGP\",\n  \"to_amount\": 5000,\n  \"to_currency\": \"EGP\",\n  \"fx_rate\": null,\n  \"description\": \"Transfer test\",\n  \"entry_date\": \"2026-03-10\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/treasury/transfers",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "treasury",
+                "transfers"
+              ]
             }
           },
           "response": []
@@ -1243,16 +3873,33 @@
           "request": {
             "method": "GET",
             "header": [
-              {"key": "Accept", "value": "application/json"},
-              {"key": "Authorization", "value": "Bearer {{token}}"}
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/treasury/expenses?category_id=&sort=date",
-              "host": ["{{base_url}}"],
-              "path": ["treasury", "expenses"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "treasury",
+                "expenses"
+              ],
               "query": [
-                {"key": "category_id", "value": ""},
-                {"key": "sort", "value": "date"}
+                {
+                  "key": "category_id",
+                  "value": ""
+                },
+                {
+                  "key": "sort",
+                  "value": "date"
+                }
               ]
             }
           },
@@ -1263,17 +3910,28 @@
           "request": {
             "method": "POST",
             "header": [
-              {"key": "Content-Type", "value": "application/json"},
-              {"key": "Authorization", "value": "Bearer {{token}}"}
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
-            "url": {
-              "raw": "{{base_url}}/treasury/expenses",
-              "host": ["{{base_url}}"],
-              "path": ["treasury", "expenses"]
-            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"expense_category_id\": 1,\n  \"description\": \"Test expense\",\n  \"amount\": 250,\n  \"currency_code\": \"EGP\",\n  \"expense_date\": \"2026-03-10\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/treasury/expenses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "treasury",
+                "expenses"
+              ]
             }
           },
           "response": []
@@ -1288,15 +3946,29 @@
           "request": {
             "method": "GET",
             "header": [
-              {"key": "Accept", "value": "application/json"},
-              {"key": "Authorization", "value": "Bearer {{token}}"}
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/expenses/summary?months=6",
-              "host": ["{{base_url}}"],
-              "path": ["expenses", "summary"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "expenses",
+                "summary"
+              ],
               "query": [
-                {"key": "months", "value": "6"}
+                {
+                  "key": "months",
+                  "value": "6"
+                }
               ]
             }
           },
@@ -1307,20 +3979,49 @@
           "request": {
             "method": "GET",
             "header": [
-              {"key": "Accept", "value": "application/json"},
-              {"key": "Authorization", "value": "Bearer {{token}}"}
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/expenses/shipment?search=&bl=&category=&currency=&month=&sort=amount",
-              "host": ["{{base_url}}"],
-              "path": ["expenses", "shipment"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "expenses",
+                "shipment"
+              ],
               "query": [
-                {"key": "search", "value": ""},
-                {"key": "bl", "value": ""},
-                {"key": "category", "value": ""},
-                {"key": "currency", "value": ""},
-                {"key": "month", "value": ""},
-                {"key": "sort", "value": "amount"}
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "bl",
+                  "value": ""
+                },
+                {
+                  "key": "category",
+                  "value": ""
+                },
+                {
+                  "key": "currency",
+                  "value": ""
+                },
+                {
+                  "key": "month",
+                  "value": ""
+                },
+                {
+                  "key": "sort",
+                  "value": "amount"
+                }
               ]
             }
           },
@@ -1331,19 +4032,45 @@
           "request": {
             "method": "GET",
             "header": [
-              {"key": "Accept", "value": "application/json"},
-              {"key": "Authorization", "value": "Bearer {{token}}"}
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/expenses/general?search=&category=&currency=&month=&sort=amount",
-              "host": ["{{base_url}}"],
-              "path": ["expenses", "general"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "expenses",
+                "general"
+              ],
               "query": [
-                {"key": "search", "value": ""},
-                {"key": "category", "value": ""},
-                {"key": "currency", "value": ""},
-                {"key": "month", "value": ""},
-                {"key": "sort", "value": "amount"}
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "category",
+                  "value": ""
+                },
+                {
+                  "key": "currency",
+                  "value": ""
+                },
+                {
+                  "key": "month",
+                  "value": ""
+                },
+                {
+                  "key": "sort",
+                  "value": "amount"
+                }
               ]
             }
           },
@@ -1354,17 +4081,27 @@
           "request": {
             "method": "POST",
             "header": [
-              {"key": "Content-Type", "value": "application/json"},
-              {"key": "Authorization", "value": "Bearer {{token}}"}
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
-            "url": {
-              "raw": "{{base_url}}/expenses",
-              "host": ["{{base_url}}"],
-              "path": ["expenses"]
-            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"type\": \"general\",\n  \"expense_category_id\": 1,\n  \"description\": \"Office supplies\",\n  \"amount\": 150,\n  \"currency_code\": \"EGP\",\n  \"payment_method\": \"cash\",\n  \"expense_date\": \"2026-03-11\",\n  \"invoice_number\": \"INV-001\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/expenses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "expenses"
+              ]
             }
           },
           "response": []
@@ -1374,17 +4111,30 @@
           "request": {
             "method": "POST",
             "header": [
-              {"key": "Authorization", "value": "Bearer {{token}}"}
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
-            "url": {
-              "raw": "{{base_url}}/expenses/1/receipt",
-              "host": ["{{base_url}}"],
-              "path": ["expenses", "1", "receipt"]
-            },
             "body": {
               "mode": "formdata",
               "formdata": [
-                {"key": "file", "type": "file", "src": ""}
+                {
+                  "key": "file",
+                  "type": "file",
+                  "value": ""
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/expenses/1/receipt",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "expenses",
+                "1",
+                "receipt"
               ]
             }
           },
@@ -1395,16 +4145,641 @@
           "request": {
             "method": "GET",
             "header": [
-              {"key": "Authorization", "value": "Bearer {{token}}"}
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/expenses/export?type=all&month=&currency=",
-              "host": ["{{base_url}}"],
-              "path": ["expenses", "export"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "expenses",
+                "export"
+              ],
               "query": [
-                {"key": "type", "value": "all"},
-                {"key": "month", "value": ""},
-                {"key": "currency", "value": ""}
+                {
+                  "key": "type",
+                  "value": "all"
+                },
+                {
+                  "key": "month",
+                  "value": ""
+                },
+                {
+                  "key": "currency",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Invoices",
+      "item": [
+        {
+          "name": "Get Invoices",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/invoices?search=&status=&currency_id=&month=&sort=date",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "invoices"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "status",
+                  "value": ""
+                },
+                {
+                  "key": "currency_id",
+                  "value": ""
+                },
+                {
+                  "key": "month",
+                  "value": ""
+                },
+                {
+                  "key": "sort",
+                  "value": "date"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Invoices Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/invoices/summary?months=6",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "invoices",
+                "summary"
+              ],
+              "query": [
+                {
+                  "key": "months",
+                  "value": "6"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Invoice Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/invoices/{{invoice_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "invoices",
+                "{{invoice_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Invoice",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invoice_type_id\": 0,\n  \"client_id\": 1,\n  \"shipment_id\": 1,\n  \"issue_date\": \"2026-03-11\",\n  \"due_date\": \"2026-03-25\",\n  \"currency_id\": 1,\n  \"is_vat_invoice\": false,\n  \"notes\": \"Test invoice from Postman\",\n  \"items\": [\n    { \"description\": \"Ocean Freight (40'HC×2)\", \"quantity\": 1, \"unit_price\": 2800 },\n    { \"description\": \"THC\", \"quantity\": 2, \"unit_price\": 225 },\n    { \"description\": \"Inland Transport\", \"quantity\": 1, \"unit_price\": 600 },\n    { \"description\": \"Documentation Fee\", \"quantity\": 1, \"unit_price\": 150 },\n    { \"description\": \"Service Charge\", \"quantity\": 1, \"unit_price\": 1050 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/invoices",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "invoices"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Invoice",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"due_date\": \"2026-03-30\",\n  \"notes\": \"Updated notes\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/invoices/{{invoice_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "invoices",
+                "{{invoice_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Issue Invoice",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/invoices/{{invoice_id}}/issue",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "invoices",
+                "{{invoice_id}}",
+                "issue"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Invoice",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/invoices/{{invoice_id}}/cancel",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "invoices",
+                "{{invoice_id}}",
+                "cancel"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Record Invoice Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 1000,\n  \"currency_code\": \"USD\",\n  \"method\": \"bank_transfer\",\n  \"reference\": \"PAY-001\",\n  \"paid_at\": \"2026-03-11\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/invoices/{{invoice_id}}/payments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "invoices",
+                "{{invoice_id}}",
+                "payments"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export Invoices (CSV)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/invoices/export?status=&currency_id=&month=&ids=",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "invoices",
+                "export"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": ""
+                },
+                {
+                  "key": "currency_id",
+                  "value": ""
+                },
+                {
+                  "key": "month",
+                  "value": ""
+                },
+                {
+                  "key": "ids",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Invoice Reminders",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ids\": [1, 2, 3]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/invoices/reminders",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "invoices",
+                "reminders"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Vendor Bills (Partners)",
+      "item": [
+        {
+          "name": "List Vendor Bills",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vendor-bills?vendor_id=&status=&currency_code=&month=&sort=",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vendor-bills"
+              ],
+              "query": [
+                {
+                  "key": "vendor_id",
+                  "value": ""
+                },
+                {
+                  "key": "status",
+                  "value": ""
+                },
+                {
+                  "key": "currency_code",
+                  "value": ""
+                },
+                {
+                  "key": "month",
+                  "value": ""
+                },
+                {
+                  "key": "sort",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Show Vendor Bill",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vendor-bills/{{vendor_bill_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vendor-bills",
+                "{{vendor_bill_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Vendor Bill",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bill_number\": \"VB-2026-0001\",\n  \"vendor_id\": {{vendor_id}},\n  \"shipment_id\": 1,\n  \"bill_date\": \"2026-03-11\",\n  \"due_date\": \"2026-03-25\",\n  \"currency_code\": \"USD\",\n  \"notes\": \"Test vendor bill from Postman\",\n  \"items\": [\n    { \"description\": \"Ocean Freight\", \"quantity\": 1, \"unit_price\": 2500 },\n    { \"description\": \"Port Charges\", \"quantity\": 1, \"unit_price\": 400 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/vendor-bills",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vendor-bills"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Vendor Bill",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"due_date\": \"2026-03-30\",\n  \"notes\": \"Updated partner bill notes\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/vendor-bills/{{vendor_bill_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vendor-bills",
+                "{{vendor_bill_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Vendor Bill",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vendor-bills/{{vendor_bill_id}}/approve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vendor-bills",
+                "{{vendor_bill_id}}",
+                "approve"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Vendor Bill",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vendor-bills/{{vendor_bill_id}}/cancel",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vendor-bills",
+                "{{vendor_bill_id}}",
+                "cancel"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Record Vendor Bill Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 1000,\n  \"currency_code\": \"USD\",\n  \"method\": \"bank_transfer\",\n  \"reference\": \"VB-PAY-001\",\n  \"paid_at\": \"2026-03-11\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/vendor-bills/{{vendor_bill_id}}/payments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vendor-bills",
+                "{{vendor_bill_id}}",
+                "payments"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export Vendor Bills (CSV)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vendor-bills/export?vendor_id=&status=&currency_code=&month=&ids=",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vendor-bills",
+                "export"
+              ],
+              "query": [
+                {
+                  "key": "vendor_id",
+                  "value": ""
+                },
+                {
+                  "key": "status",
+                  "value": ""
+                },
+                {
+                  "key": "currency_code",
+                  "value": ""
+                },
+                {
+                  "key": "month",
+                  "value": ""
+                },
+                {
+                  "key": "ids",
+                  "value": ""
+                }
               ]
             }
           },
@@ -1435,47 +4810,4 @@
       "value": ""
     }
   ]
-  ,
-
- "PDF Layouts" :   {
-      "name": "PDF Layouts",
-      "item": [
-        {
-          "name": "Get SD Form PDF Layout",
-          "request": {
-            "method": "GET",
-            "header": [
-              {"key": "Accept", "value": "application/json"},
-              {"key": "Authorization", "value": "Bearer {{token}}"}
-            ],
-            "url": {
-              "raw": "{{base_url}}/pdf-layouts/sd_form",
-              "host": ["{{base_url}}"],
-              "path": ["pdf-layouts", "sd_form"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Update SD Form PDF Layout",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {"key": "Content-Type", "value": "application/json"},
-              {"key": "Authorization", "value": "Bearer {{token}}"}
-            ],
-            "url": {
-              "raw": "{{base_url}}/pdf-layouts/sd_form",
-              "host": ["{{base_url}}"],
-              "path": ["pdf-layouts", "sd_form"]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"header_html\": \"<p><strong>Amazon Marine</strong> &mdash; SD Offer</p>\",\n  \"footer_html\": \"<p>Thanks &amp; best regards<br>Amazon Marine Team</p>\"\n}"
-            }
-          },
-          "response": []
-        }
-      ]
-    }
-  }
+}

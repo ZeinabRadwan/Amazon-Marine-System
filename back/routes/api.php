@@ -25,6 +25,8 @@ use App\Http\Controllers\Api\V1\PdfLayoutController;
 use App\Http\Controllers\Api\V1\AccountingController;
 use App\Http\Controllers\Api\V1\TreasuryController;
 use App\Http\Controllers\Api\V1\ExpensesController;
+use App\Http\Controllers\Api\V1\InvoiceController;
+use App\Http\Controllers\Api\V1\VendorBillController;
 
 Route::prefix('v1')->group(function () {
     // Public auth routes
@@ -181,6 +183,27 @@ Route::prefix('v1')->group(function () {
         Route::get('accounting/partners', [AccountingController::class, 'partnerAccounts']);
         Route::get('accounting/clients/export', [AccountingController::class, 'exportClients']);
         Route::get('accounting/partners/export', [AccountingController::class, 'exportPartners']);
+
+        // Invoices
+        Route::get('invoices', [InvoiceController::class, 'index']);
+        Route::get('invoices/summary', [InvoiceController::class, 'summary']);
+        Route::get('invoices/{invoice}', [InvoiceController::class, 'show']);
+        Route::post('invoices', [InvoiceController::class, 'store']);
+        Route::put('invoices/{invoice}', [InvoiceController::class, 'update']);
+        Route::post('invoices/{invoice}/issue', [InvoiceController::class, 'issue']);
+        Route::post('invoices/{invoice}/cancel', [InvoiceController::class, 'cancel']);
+        Route::post('invoices/{invoice}/payments', [InvoiceController::class, 'recordPayment']);
+        Route::get('invoices/export', [InvoiceController::class, 'export']);
+
+        // Vendor bills (partner invoices / payables)
+        Route::get('vendor-bills', [VendorBillController::class, 'index']);
+        Route::get('vendor-bills/{vendorBill}', [VendorBillController::class, 'show']);
+        Route::post('vendor-bills', [VendorBillController::class, 'store']);
+        Route::put('vendor-bills/{vendorBill}', [VendorBillController::class, 'update']);
+        Route::post('vendor-bills/{vendorBill}/approve', [VendorBillController::class, 'approve']);
+        Route::post('vendor-bills/{vendorBill}/cancel', [VendorBillController::class, 'cancel']);
+        Route::post('vendor-bills/{vendorBill}/payments', [VendorBillController::class, 'recordPayment']);
+        Route::get('vendor-bills/export', [VendorBillController::class, 'export']);
 
         // Treasury
         Route::get('treasury/summary', [TreasuryController::class, 'summary']);

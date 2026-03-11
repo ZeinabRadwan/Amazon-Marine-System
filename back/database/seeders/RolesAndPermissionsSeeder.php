@@ -55,6 +55,10 @@ class RolesAndPermissionsSeeder extends Seeder
                 'accounting.view',
                 'accounting.manage',
             ],
+            'financial' => [
+                'financial.view',
+                'financial.manage',
+            ],
             'reports' => [
                 'reports.view',
             ],
@@ -102,6 +106,8 @@ class RolesAndPermissionsSeeder extends Seeder
             $accounting->syncPermissions([
                 $permissions['accounting.view'],
                 $permissions['accounting.manage'],
+                $permissions['financial.view'],
+                $permissions['financial.manage'],
             ]);
         }
 
