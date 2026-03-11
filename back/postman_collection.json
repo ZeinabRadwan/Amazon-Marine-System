@@ -2396,13 +2396,39 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/clients/pricing",
+              "raw": "{{base_url}}/clients/pricing?search=&pricing_tier=&min_discount=&max_discount=&sort=name&direction=asc",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "clients",
                 "pricing"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "pricing_tier",
+                  "value": ""
+                },
+                {
+                  "key": "min_discount",
+                  "value": ""
+                },
+                {
+                  "key": "max_discount",
+                  "value": ""
+                },
+                {
+                  "key": "sort",
+                  "value": "name"
+                },
+                {
+                  "key": "direction",
+                  "value": "asc"
+                }
               ]
             }
           },
@@ -4780,6 +4806,231 @@
                   "key": "ids",
                   "value": ""
                 }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Pricing Offers",
+      "item": [
+        {
+          "name": "List Pricing Offers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/pricing/offers?pricing_type=&region=&pod=&shipping_line=&inland_port=&destination=&status=&valid_from=&valid_to=&q=&per_page=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "pricing",
+                "offers"
+              ],
+              "query": [
+                { "key": "pricing_type", "value": "" },
+                { "key": "region", "value": "" },
+                { "key": "pod", "value": "" },
+                { "key": "shipping_line", "value": "" },
+                { "key": "inland_port", "value": "" },
+                { "key": "destination", "value": "" },
+                { "key": "status", "value": "" },
+                { "key": "valid_from", "value": "" },
+                { "key": "valid_to", "value": "" },
+                { "key": "q", "value": "" },
+                { "key": "per_page", "value": "20" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Show Pricing Offer",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/pricing/offers/{{pricing_offer_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "pricing",
+                "offers",
+                "{{pricing_offer_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Sea Pricing Offer (Jeddah demo)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pricing_type\": \"sea\",\n  \"region\": \"البحر الأحمر\",\n  \"pod\": \"جدة\",\n  \"shipping_line\": \"MSC\",\n  \"pol\": \"Sokhna\",\n  \"dnd\": \"7det\",\n  \"transit_time\": \"5 days\",\n  \"valid_to\": \"2026-12-31\",\n  \"other_charges\": \"BL: 35$\",\n  \"notes\": \"Demo Jeddah sea offer from Postman\",\n  \"sailing_dates\": [\n    \"2026-03-14\",\n    \"2026-03-21\"\n  ],\n  \"pricing\": {\n    \"of20\": { \"price\": 70, \"currency\": \"USD\" },\n    \"of40\": { \"price\": 103, \"currency\": \"USD\" },\n    \"thc20\": { \"price\": 160, \"currency\": \"USD\" },\n    \"thc40\": { \"price\": 240, \"currency\": \"USD\" },\n    \"of40rf\": null,\n    \"thcRf\": null,\n    \"powerDay\": null,\n    \"pti\": null\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/pricing/offers",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "pricing",
+                "offers"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Inland Pricing Offer (Alex → Cairo demo)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pricing_type\": \"inland\",\n  \"region\": \"القاهرة الكبرى\",\n  \"pod\": \"Alex\",\n  \"inland_port\": \"Alex\",\n  \"destination\": \"القاهرة - مدينة نصر\",\n  \"inland_gov\": \"القاهرة الكبرى\",\n  \"inland_city\": \"القاهرة\",\n  \"valid_to\": \"2026-12-31\",\n  \"notes\": \"Demo inland rate Alex → Cairo\",\n  \"pricing\": {\n    \"t20d\": { \"price\": 8500, \"currency\": \"EGP\" },\n    \"t20dx2\": { \"price\": 9700, \"currency\": \"EGP\" },\n    \"t40d\": { \"price\": 10000, \"currency\": \"EGP\" },\n    \"t40hq\": { \"price\": 10000, \"currency\": \"EGP\" },\n    \"t20r\": { \"price\": 12500, \"currency\": \"EGP\" },\n    \"t40r\": { \"price\": 14000, \"currency\": \"EGP\" }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/pricing/offers",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "pricing",
+                "offers"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Pricing Offer",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"valid_to\": \"2027-01-31\",\n  \"notes\": \"Updated pricing notes from Postman\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/pricing/offers/{{pricing_offer_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "pricing",
+                "offers",
+                "{{pricing_offer_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Activate Pricing Offer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/pricing/offers/{{pricing_offer_id}}/activate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "pricing",
+                "offers",
+                "{{pricing_offer_id}}",
+                "activate"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Archive Pricing Offer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/pricing/offers/{{pricing_offer_id}}/archive",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "pricing",
+                "offers",
+                "{{pricing_offer_id}}",
+                "archive"
               ]
             }
           },

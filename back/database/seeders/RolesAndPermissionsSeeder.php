@@ -62,6 +62,12 @@ class RolesAndPermissionsSeeder extends Seeder
             'reports' => [
                 'reports.view',
             ],
+            'pricing' => [
+                'pricing.view_offers',
+                'pricing.manage_offers',
+                'pricing.view_client_pricing',
+                'pricing.manage_client_pricing',
+            ],
         ];
 
         $allPermissionNames = collect($permissionGroups)->flatten()->unique();
@@ -112,7 +118,13 @@ class RolesAndPermissionsSeeder extends Seeder
         }
 
         if ($pricing = $roles['pricing'] ?? null) {
-            $pricing->syncPermissions([]);
+            $pricing->syncPermissions([
+                $permissions['pricing.view_offers'],
+                $permissions['pricing.manage_offers'],
+                $permissions['pricing.view_client_pricing'],
+                $permissions['pricing.manage_client_pricing'],
+                $permissions['clients.view'],
+            ]);
         }
 
         if ($support = $roles['support'] ?? null) {

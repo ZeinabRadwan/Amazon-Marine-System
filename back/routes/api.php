@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\V1\TreasuryController;
 use App\Http\Controllers\Api\V1\ExpensesController;
 use App\Http\Controllers\Api\V1\InvoiceController;
 use App\Http\Controllers\Api\V1\VendorBillController;
+use App\Http\Controllers\Api\V1\PricingOfferController;
 
 Route::prefix('v1')->group(function () {
     // Public auth routes
@@ -204,6 +205,14 @@ Route::prefix('v1')->group(function () {
         Route::post('vendor-bills/{vendorBill}/cancel', [VendorBillController::class, 'cancel']);
         Route::post('vendor-bills/{vendorBill}/payments', [VendorBillController::class, 'recordPayment']);
         Route::get('vendor-bills/export', [VendorBillController::class, 'export']);
+
+        // Pricing offers (sea & inland rate sheets)
+        Route::get('pricing/offers', [PricingOfferController::class, 'index']);
+        Route::get('pricing/offers/{offer}', [PricingOfferController::class, 'show']);
+        Route::post('pricing/offers', [PricingOfferController::class, 'store']);
+        Route::put('pricing/offers/{offer}', [PricingOfferController::class, 'update']);
+        Route::post('pricing/offers/{offer}/activate', [PricingOfferController::class, 'activate']);
+        Route::post('pricing/offers/{offer}/archive', [PricingOfferController::class, 'archive']);
 
         // Treasury
         Route::get('treasury/summary', [TreasuryController::class, 'summary']);

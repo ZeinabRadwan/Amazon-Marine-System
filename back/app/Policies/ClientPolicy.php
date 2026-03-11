@@ -9,12 +9,12 @@ class ClientPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->can('clients.view');
+        return $user->can('clients.view') || $user->can('pricing.view_client_pricing');
     }
 
     public function view(User $user, Client $client): bool
     {
-        return $user->can('clients.view');
+        return $user->can('clients.view') || $user->can('pricing.view_client_pricing');
     }
 
     public function create(User $user): bool
@@ -24,6 +24,10 @@ class ClientPolicy
 
     public function update(User $user, Client $client): bool
     {
+        if ($user->can('pricing.manage_client_pricing')) {
+            return true;
+        }
+
         if (! $user->can('clients.manage')) {
             return false;
         }

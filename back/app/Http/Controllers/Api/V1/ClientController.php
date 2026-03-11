@@ -297,9 +297,41 @@ class ClientController extends Controller
     {
         $this->authorize('viewAny', Client::class);
 
-        $clients = Client::select('id', 'name', 'company_name', 'pricing_tier', 'pricing_discount_pct', 'pricing_updated_at')
-            ->orderBy('name')
-            ->get();
+        $query = Client::select('id', 'name', 'company_name', 'pricing_tier', 'pricing_discount_pct', 'pricing_updated_at');
+
+        if ($search = $request->query('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%'.$search.'%')
+                    ->orWhere('company_name', 'like', '%'.$search.'%');
+            });
+        }
+
+        if ($tier = $request->query('pricing_tier')) {
+            $query->where('pricing_tier', $tier);
+        }
+
+        if ($minDiscount = $request->query('min_discount')) {
+            $query->where('pricing_discount_pct', '>=', (float) $minDiscount);
+        }
+
+        if ($maxDiscount = $request->query('max_discount')) {
+            $query->where('pricing_discount_pct', '<=', (float) $maxDiscount);
+        }
+
+        $sort = $request->query('sort', 'name');
+        $direction = strtolower($request->query('direction', 'asc')) === 'desc' ? 'desc' : 'asc';
+
+        $allowedSorts = [
+            'name' => 'name',
+            'company' => 'company_name',
+            'tier' => 'pricing_tier',
+            'discount' => 'pricing_discount_pct',
+            'updated_at' => 'pricing_updated_at',
+        ];
+
+        $sortColumn = $allowedSorts[$sort] ?? 'name';
+
+        $clients = $query->orderBy($sortColumn, $direction)->get();
 
         return response()->json([
             'data' => $clients->map(fn (Client $c) => [
