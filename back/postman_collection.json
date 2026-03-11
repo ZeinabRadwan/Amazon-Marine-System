@@ -1051,6 +1051,366 @@
         {"name": "Reports Finance", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": {"raw": "{{base_url}}/reports/finance", "host": ["{{base_url}}"], "path": ["reports", "finance"]}}, "response": []},
         {"name": "Reports Sales Performance", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}], "url": {"raw": "{{base_url}}/reports/sales-performance?from=&to=", "host": ["{{base_url}}"], "path": ["reports", "sales-performance"], "query": [{"key": "from", "value": ""}, {"key": "to", "value": ""}]}}, "response": []}
       ]
+    },
+    {
+      "name": "Accounting",
+      "item": [
+        {
+          "name": "Accounting Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/accounting/summary?months=6",
+              "host": ["{{base_url}}"],
+              "path": ["accounting", "summary"],
+              "query": [
+                {"key": "months", "value": "6"}
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Client Accounts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/accounting/clients?search=&currency=&sort=balance",
+              "host": ["{{base_url}}"],
+              "path": ["accounting", "clients"],
+              "query": [
+                {"key": "search", "value": ""},
+                {"key": "currency", "value": ""},
+                {"key": "sort", "value": "balance"}
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Partner Accounts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/accounting/partners?search=&partner_type=&currency=&sort=balance",
+              "host": ["{{base_url}}"],
+              "path": ["accounting", "partners"],
+              "query": [
+                {"key": "search", "value": ""},
+                {"key": "partner_type", "value": ""},
+                {"key": "currency", "value": ""},
+                {"key": "sort", "value": "balance"}
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export Client Accounts (CSV)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/accounting/clients/export?ids=1,2,3",
+              "host": ["{{base_url}}"],
+              "path": ["accounting", "clients", "export"],
+              "query": [
+                {"key": "ids", "value": "1,2,3"}
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export Partner Accounts (CSV)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/accounting/partners/export?ids=1,2,3",
+              "host": ["{{base_url}}"],
+              "path": ["accounting", "partners", "export"],
+              "query": [
+                {"key": "ids", "value": "1,2,3"}
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Treasury",
+      "item": [
+        {
+          "name": "Treasury Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/treasury/summary?months=6",
+              "host": ["{{base_url}}"],
+              "path": ["treasury", "summary"],
+              "query": [
+                {"key": "months", "value": "6"}
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Treasury Entries",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/treasury/entries?search=&type=&sort=date",
+              "host": ["{{base_url}}"],
+              "path": ["treasury", "entries"],
+              "query": [
+                {"key": "search", "value": ""},
+                {"key": "type", "value": ""},
+                {"key": "sort", "value": "date"}
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Treasury Entry",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/treasury/entries",
+              "host": ["{{base_url}}"],
+              "path": ["treasury", "entries"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entry_type\": \"in\",\n  \"source\": \"cash-egp\",\n  \"amount\": 1000,\n  \"currency_code\": \"EGP\",\n  \"description\": \"Test entry\",\n  \"entry_date\": \"2026-03-10\",\n  \"notes\": \"Added from Postman\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Treasury Transfer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/treasury/transfers",
+              "host": ["{{base_url}}"],
+              "path": ["treasury", "transfers"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"from_account\": \"cash-egp\",\n  \"to_account\": \"bank-cib-egp\",\n  \"from_amount\": 5000,\n  \"from_currency\": \"EGP\",\n  \"to_amount\": 5000,\n  \"to_currency\": \"EGP\",\n  \"fx_rate\": null,\n  \"description\": \"Transfer test\",\n  \"entry_date\": \"2026-03-10\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Treasury Expenses",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/treasury/expenses?category_id=&sort=date",
+              "host": ["{{base_url}}"],
+              "path": ["treasury", "expenses"],
+              "query": [
+                {"key": "category_id", "value": ""},
+                {"key": "sort", "value": "date"}
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Treasury Expense",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/treasury/expenses",
+              "host": ["{{base_url}}"],
+              "path": ["treasury", "expenses"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expense_category_id\": 1,\n  \"description\": \"Test expense\",\n  \"amount\": 250,\n  \"currency_code\": \"EGP\",\n  \"expense_date\": \"2026-03-10\"\n}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Expenses",
+      "item": [
+        {
+          "name": "Expenses Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/expenses/summary?months=6",
+              "host": ["{{base_url}}"],
+              "path": ["expenses", "summary"],
+              "query": [
+                {"key": "months", "value": "6"}
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Shipment Expenses",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/expenses/shipment?search=&bl=&category=&currency=&month=&sort=amount",
+              "host": ["{{base_url}}"],
+              "path": ["expenses", "shipment"],
+              "query": [
+                {"key": "search", "value": ""},
+                {"key": "bl", "value": ""},
+                {"key": "category", "value": ""},
+                {"key": "currency", "value": ""},
+                {"key": "month", "value": ""},
+                {"key": "sort", "value": "amount"}
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "General Expenses",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/expenses/general?search=&category=&currency=&month=&sort=amount",
+              "host": ["{{base_url}}"],
+              "path": ["expenses", "general"],
+              "query": [
+                {"key": "search", "value": ""},
+                {"key": "category", "value": ""},
+                {"key": "currency", "value": ""},
+                {"key": "month", "value": ""},
+                {"key": "sort", "value": "amount"}
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Expense",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/expenses",
+              "host": ["{{base_url}}"],
+              "path": ["expenses"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"general\",\n  \"expense_category_id\": 1,\n  \"description\": \"Office supplies\",\n  \"amount\": 150,\n  \"currency_code\": \"EGP\",\n  \"payment_method\": \"cash\",\n  \"expense_date\": \"2026-03-11\",\n  \"invoice_number\": \"INV-001\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Expense Receipt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/expenses/1/receipt",
+              "host": ["{{base_url}}"],
+              "path": ["expenses", "1", "receipt"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {"key": "file", "type": "file", "src": ""}
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export Expenses (CSV)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/expenses/export?type=all&month=&currency=",
+              "host": ["{{base_url}}"],
+              "path": ["expenses", "export"],
+              "query": [
+                {"key": "type", "value": "all"},
+                {"key": "month", "value": ""},
+                {"key": "currency", "value": ""}
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "variable": [
