@@ -1,8 +1,125 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+/* App-level styles; login page uses its own full-width layout */
+
+.home-page {
+  text-align: start;
+  min-height: 100vh;
+  background-color: var(--app-bg);
+  color: var(--app-text);
+  position: relative;
+}
+
+/* Match login page: Mode button + Localization dropdown position and styling */
+.home-top-actions {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  left: 24px;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+}
+[dir="rtl"] .home-top-actions {
+  right: 24px;
+  left: 24px;
+  flex-direction: row-reverse;
+}
+
+.theme-toggle-app {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid var(--form-divider);
+  background: var(--form-bg);
+  color: var(--form-text);
+  cursor: pointer;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--form-shadow);
+  transition: background 0.2s, border-color 0.2s;
+}
+.theme-toggle-app:hover {
+  filter: brightness(1.05);
+}
+.theme-toggle-app svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Nav bar buttons – same style as mode toggle (theme-toggle-app) */
+.nav-btn {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid var(--form-divider);
+  background: var(--form-bg);
+  color: var(--form-text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--form-shadow);
+  transition: background 0.2s, border-color 0.2s;
+}
+.nav-btn:hover {
+  filter: brightness(1.05);
+}
+.nav-btn svg {
+  width: 20px;
+  height: 20px;
+}
+.nav-btn--with-label {
+  width: auto;
+  min-width: 40px;
+  padding: 0 12px;
+  gap: 6px;
+}
+.nav-btn--with-label svg {
+  width: 18px;
+  height: 18px;
+}
+
+@media (max-width: 480px) {
+  .home-top-actions {
+    top: 16px;
+    right: 16px;
+    left: 16px;
+    gap: 8px;
+  }
+  .theme-toggle-app {
+    width: 36px;
+    height: 36px;
+  }
+  .theme-toggle-app svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.logout-btn {
+  margin-top: 1rem;
+  padding: 0.5rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--btn-primary-text, #fff);
+  background-color: var(--btn-primary-bg, #5469d4);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow: rgba(60, 66, 87, 0.08) 0 2px 5px 0;
+}
+.logout-btn:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+.logout-btn:disabled {
+  opacity: 0.8;
+  cursor: not-allowed;
 }
 
 .logo {

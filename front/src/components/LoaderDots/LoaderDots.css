@@ -1,0 +1,46 @@
+/* LoaderDots – 3-dot wave animation, matches sidebar toggle dots (orange, yellow, green) */
+
+@keyframes loader-dots-scale {
+  0%,
+  100% {
+    transform: scale(0.6);
+  }
+  50% {
+    transform: scale(1);
+  }
+}
+
+.loader-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.loader-dots__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  animation: loader-dots-scale 1.2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+/* Sidebar toggle dot colors: orange, yellow, green */
+.loader-dots__dot--orange {
+  background-color: #ff8c42;
+}
+.loader-dots__dot--yellow {
+  background-color: #eab308;
+}
+.loader-dots__dot--green {
+  background-color: #22c55e;
+}
+
+.loader-dots__dot:nth-child(1) {
+  animation-delay: 0s;
+}
+.loader-dots__dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.loader-dots__dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
