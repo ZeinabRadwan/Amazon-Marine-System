@@ -533,6 +533,222 @@
       ]
     },
     {
+      "name": "Clients",
+      "item": [
+        {
+          "name": "List Clients",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/clients?search=&status=&sort=name",
+              "host": ["{{base_url}}"],
+              "path": ["clients"],
+              "query": [
+                { "key": "search", "value": "" },
+                { "key": "status", "value": "" },
+                { "key": "sort", "value": "name" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Client",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/clients", "host": ["{{base_url}}"], "path": ["clients"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Client\",\n  \"company_name\": \"Company Ltd\",\n  \"email\": \"client@example.com\",\n  \"phone\": \"+201234567890\",\n  \"status\": \"active\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Client Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/clients/stats", "host": ["{{base_url}}"], "path": ["clients", "stats"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Client Charts",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/clients/charts", "host": ["{{base_url}}"], "path": ["clients", "charts"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Client Financial Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/clients/financial-summary", "host": ["{{base_url}}"], "path": ["clients", "financial-summary"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Client Pricing List",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/clients/pricing", "host": ["{{base_url}}"], "path": ["clients", "pricing"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Bulk Assign Sales",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/clients/bulk-assign", "host": ["{{base_url}}"], "path": ["clients", "bulk-assign"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"client_ids\": [1, 2, 3],\n  \"sales_rep_id\": 1\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export Clients (CSV)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{base_url}}/clients/export", "host": ["{{base_url}}"], "path": ["clients", "export"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Show Client",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/clients/{{client_id}}", "host": ["{{base_url}}"], "path": ["clients", "{{client_id}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Client",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/clients/{{client_id}}", "host": ["{{base_url}}"], "path": ["clients", "{{client_id}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Client Name\",\n  \"email\": \"updated@example.com\",\n  \"status\": \"active\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Client",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{base_url}}/clients/{{client_id}}", "host": ["{{base_url}}"], "path": ["clients", "{{client_id}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Client Visits",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/clients/{{client_id}}/visits", "host": ["{{base_url}}"], "path": ["clients", "{{client_id}}", "visits"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Client Shipments",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/clients/{{client_id}}/shipments", "host": ["{{base_url}}"], "path": ["clients", "{{client_id}}", "shipments"] }
+          },
+          "response": []
+        },
+        {
+          "name": "List Client Contacts",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/clients/{{client_id}}/contacts", "host": ["{{base_url}}"], "path": ["clients", "{{client_id}}", "contacts"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Client Contact",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/clients/{{client_id}}/contacts", "host": ["{{base_url}}"], "path": ["clients", "{{client_id}}", "contacts"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Contact Name\",\n  \"title\": \"Manager\",\n  \"email\": \"contact@example.com\",\n  \"phone\": \"+201234567890\",\n  \"is_primary\": false\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Client Attachments",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/clients/{{client_id}}/attachments", "host": ["{{base_url}}"], "path": ["clients", "{{client_id}}", "attachments"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Client Lookups",
       "item": [
         {
