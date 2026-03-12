@@ -122,3 +122,13 @@ export async function deletePreferredCommMethod(token, id) {
   if (!res.ok) throw new Error(data.message || data.error || `Failed to delete preferred comm method (${res.status})`)
   return data
 }
+
+// —— Lead Sources (for Clients filter) ——
+
+/** GET {{base_url}}/lead-sources – List Lead Sources */
+export async function listLeadSources(token) {
+  const res = await fetch(`${getBaseUrl()}/lead-sources`, { headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to list lead sources (${res.status})`)
+  return data
+}

@@ -1,14 +1,36 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { getStoredToken, clearToken } from '../../pages/Login'
 import { getProfile, logout as logoutApi } from '../../api/auth'
 import AppLayout from '../AppLayout'
 import LoaderDots from '../LoaderDots'
 import '../LoaderDots/LoaderDots.css'
 
+function getPageHeaderForPath(pathname, t) {
+  const home = { label: t('pageHeader.home'), href: '/' }
+  switch (pathname) {
+    case '/':
+      return { title: t('pageHeader.dashboard'), breadcrumbs: [home] }
+    case '/profile':
+      return { title: t('profile.title'), breadcrumbs: [home, { label: t('profile.title') }] }
+    case '/users':
+      return { title: t('users.title'), breadcrumbs: [home, { label: t('users.title') }] }
+    case '/roles-permissions':
+      return { title: t('rolesPermissions.title'), breadcrumbs: [home, { label: t('rolesPermissions.title') }] }
+    case '/clients':
+      return { title: t('clients.title'), breadcrumbs: [home, { label: t('clients.title') }] }
+    case '/client-lookups':
+      return { title: t('clientLookups.title'), breadcrumbs: [home, { label: t('clientLookups.title') }] }
+    default:
+      return { title: t('pageHeader.dashboard'), breadcrumbs: [home] }
+  }
+}
+
 export default function AuthenticatedLayout() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { t } = useTranslation()
   const token = getStoredToken()
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -97,6 +119,11 @@ export default function AuthenticatedLayout() {
       }
     : { name: 'User', email: '', avatarUrl: null }
 
+  const pageHeaderConfig = useMemo(
+    () => getPageHeaderForPath(location.pathname, t),
+    [location.pathname, t]
+  )
+
   if (loading) {
     return (
       <div className="app-layout" style={{ alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }} aria-label="Loading">
@@ -117,8 +144,10 @@ export default function AuthenticatedLayout() {
       sdFormsCount={5}
       appName="Amazon Marine"
       onLogout={handleLogout}
+      pageTitle={pageHeaderConfig.title}
+      pageBreadcrumbs={pageHeaderConfig.breadcrumbs}
     >
-      <Outlet />
+      <Outlet context={{ user }} />
     </AppLayout>
   )
 }

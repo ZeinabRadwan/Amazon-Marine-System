@@ -8,6 +8,147 @@
   position: relative;
 }
 
+/* Welcome Banner – greeting, date, role-based quote */
+.welcome-banner {
+  --welcome-bg-start: var(--root-deco-blue, #1e3a5f);
+  --welcome-bg-end: var(--root-deco-blue-dark, #0f2744);
+  --welcome-accent: rgba(255, 255, 255, 0.12);
+  margin-bottom: 1.75rem;
+  padding: 1.5rem 1.75rem;
+  border-radius: 16px;
+  background: linear-gradient(145deg, var(--welcome-bg-start) 0%, var(--welcome-bg-end) 100%);
+  color: #fff;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.08),
+    0 2px 4px -2px rgba(0, 0, 0, 0.06);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  align-items: start;
+  position: relative;
+  overflow: hidden;
+}
+
+.welcome-banner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 40%;
+  max-width: 280px;
+  height: 100%;
+  background: radial-gradient(ellipse 80% 70% at 100% 50%, var(--welcome-accent) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+@media (min-width: 640px) {
+  .welcome-banner {
+    padding: 1.75rem 2rem;
+    grid-template-columns: 1fr auto;
+    gap: 2rem;
+    align-items: center;
+  }
+}
+
+.welcome-banner__main {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+
+.welcome-banner__title {
+  margin: 0 0 0.35rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+  color: #fff;
+}
+
+.welcome-banner__subtitle {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  opacity: 0.9;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+@media (min-width: 640px) {
+  .welcome-banner__title {
+    font-size: 1.75rem;
+  }
+}
+
+.welcome-banner__quote-wrap {
+  position: relative;
+  z-index: 1;
+  padding: 1rem 1.25rem;
+  background: var(--welcome-accent);
+  border-radius: 12px;
+  border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+[dir="rtl"] .welcome-banner__quote-wrap {
+  border-left: none;
+  border-right: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+@media (min-width: 640px) {
+  .welcome-banner__quote-wrap {
+    max-width: 360px;
+    padding: 1.125rem 1.5rem;
+  }
+}
+
+.welcome-banner__date-icon {
+  position: absolute;
+  top: 50%;
+  left: 0.75rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: -0.625rem;
+  opacity: 0.9;
+  flex-shrink: 0;
+}
+
+[dir="rtl"] .welcome-banner__date-icon {
+  left: auto;
+  right: 0.75rem;
+}
+
+.welcome-banner__quote {
+  margin: 0;
+  padding-left: 1.5rem;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+[dir="rtl"] .welcome-banner__quote {
+  padding-left: 0;
+  padding-right: 1.5rem;
+}
+
+/* Dark mode: welcome banner follows theme (light mode unchanged above) */
+[data-theme="dark"] .welcome-banner {
+  --welcome-bg-start: #1e293b;
+  --welcome-bg-end: #0f172a;
+  --welcome-accent: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.3),
+    0 2px 4px -2px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .welcome-banner__quote-wrap {
+  background: var(--welcome-accent);
+  border-left-color: rgba(255, 255, 255, 0.25);
+}
+
+[dir="rtl"] [data-theme="dark"] .welcome-banner__quote-wrap {
+  border-left-color: transparent;
+  border-right-color: rgba(255, 255, 255, 0.25);
+}
+
 /* Match login page: Mode button + Localization dropdown position and styling */
 .home-top-actions {
   position: absolute;

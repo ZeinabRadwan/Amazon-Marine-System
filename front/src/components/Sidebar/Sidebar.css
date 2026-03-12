@@ -104,6 +104,11 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  text-decoration: none;
+  color: inherit;
+}
+.sidebar-logo:hover {
+  color: inherit;
 }
 .sidebar-logo-img {
   width: auto;

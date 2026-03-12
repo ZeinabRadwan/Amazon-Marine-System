@@ -1,8 +1,12 @@
+import { useTranslation } from 'react-i18next'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import './Pagination.css'
 
 /**
  * Pagination – navigate between pages in tables.
  * Previous / Next buttons + page number buttons.
+ * Responsive: on narrow screens shows Prev + "Page X of Y" + Next.
+ * Localized aria-labels and summary text.
  *
  * @param {number} currentPage - 1-based current page
  * @param {number} totalPages - Total number of pages
@@ -15,26 +19,10 @@ export default function Pagination({
   onPageChange,
   className = '',
 }) {
+  const { t } = useTranslation()
   const safeCurrent = Math.max(1, Math.min(currentPage, totalPages))
   const hasPrev = safeCurrent > 1
   const hasNext = safeCurrent < totalPages
-
-  const btnBase = `
-    inline-flex items-center justify-center min-w-[2.25rem] h-9 px-3 rounded-lg
-    text-sm font-medium
-    border border-gray-200 bg-white text-gray-700
-    shadow-sm
-    transition-colors duration-200
-    focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0039c5] focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#111827]
-    disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed
-    hover:bg-gray-50 hover:border-gray-300
-    dark:border-[#1F2937] dark:bg-[#1F2937] dark:text-gray-300 dark:hover:bg-[#374151] dark:hover:border-[#374151]
-  `
-  const btnActive = `
-    !bg-[#0039c5] !border-[#0039c5] !text-white
-    dark:!bg-blue-500 dark:!border-blue-500 dark:!text-white
-    hover:!bg-[#0030a0] hover:!border-[#0030a0] dark:hover:!bg-blue-600 dark:hover:!border-blue-600
-  `
 
   const getPageNumbers = () => {
     if (totalPages <= 7) {
@@ -63,25 +51,29 @@ export default function Pagination({
 
   return (
     <nav
-      className={`flex flex-wrap items-center justify-center gap-2 rounded-lg ${className}`.trim()}
-      aria-label="Pagination"
+      className={`pagination ${className}`.trim()}
+      aria-label={t('pagination.ariaLabel')}
     >
       <button
         type="button"
         onClick={() => onPageChange?.(safeCurrent - 1)}
         disabled={!hasPrev}
-        className={btnBase}
-        aria-label="Previous page"
+        className="pagination__btn"
+        aria-label={t('pagination.prev')}
       >
-        <ChevronLeft className="h-4 w-4" aria-hidden />
+        <ChevronLeft className="pagination__icon pagination__icon--prev" aria-hidden />
       </button>
 
-      <div className="flex items-center gap-1">
+      <span className="pagination__summary" aria-live="polite">
+        {t('pagination.pageOfTotal', { current: safeCurrent, total: totalPages })}
+      </span>
+
+      <div className="pagination__group pagination__pages">
         {getPageNumbers().map((page, i) =>
           page === 'ellipsis' ? (
             <span
               key={`ellipsis-${i}`}
-              className="flex h-9 min-w-[2.25rem] items-center justify-center px-1 text-gray-500 dark:text-gray-400"
+              className="pagination__ellipsis"
               aria-hidden
             >
               …
@@ -91,8 +83,8 @@ export default function Pagination({
               key={page}
               type="button"
               onClick={() => onPageChange?.(page)}
-              className={`${btnBase} ${page === safeCurrent ? btnActive : ''}`}
-              aria-label={page === safeCurrent ? `Page ${page}, current page` : `Go to page ${page}`}
+              className={`pagination__page ${page === safeCurrent ? 'pagination__page--current' : ''}`}
+              aria-label={page === safeCurrent ? t('pagination.currentPage', { num: page }) : t('pagination.goToPage', { num: page })}
               aria-current={page === safeCurrent ? 'page' : undefined}
             >
               {page}
@@ -105,10 +97,10 @@ export default function Pagination({
         type="button"
         onClick={() => onPageChange?.(safeCurrent + 1)}
         disabled={!hasNext}
-        className={btnBase}
-        aria-label="Next page"
+        className="pagination__btn"
+        aria-label={t('pagination.next')}
       >
-        <ChevronRight className="h-4 w-4" aria-hidden />
+        <ChevronRight className="pagination__icon pagination__icon--next" aria-hidden />
       </button>
     </nav>
   )

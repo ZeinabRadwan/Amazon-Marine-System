@@ -1,4 +1,3 @@
-import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './i18n'
 import { initTheme } from './theme'
@@ -7,8 +6,7 @@ import App from './App.jsx'
 
 initTheme()
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+// Note: StrictMode was removed so API calls in useEffect run once in development.
+// In React 18 dev, StrictMode double-invokes effects, which caused every request to appear twice in the network tab.
+// Production builds are unaffected (effects run once). To re-enable Strict Mode for debugging, wrap <App /> in <StrictMode>.
+createRoot(document.getElementById('root')).render(<App />)

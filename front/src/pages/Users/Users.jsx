@@ -12,8 +12,8 @@ import {
   changeUserPassword,
   assignRole,
 } from '../../api/users'
-import { PageHeader } from '../../components/PageHeader'
 import { Container } from '../../components/Container'
+import '../../components/PageHeader/PageHeader.css'
 import { Table, IconActionButton } from '../../components/Table'
 import {
   Eye,
@@ -284,14 +284,7 @@ export default function Users() {
   return (
     <Container size="xl">
       <div className="users-page">
-        <PageHeader
-        title={t('users.title')}
-        breadcrumbs={[
-          { label: t('pageHeader.home'), href: '/' },
-          { label: t('pageHeader.system'), href: '/users' },
-          { label: t('users.title') },
-        ]}
-        actions={
+        <div className="users-top-actions">
           <button
             type="button"
             className="page-header__btn page-header__btn--primary"
@@ -299,8 +292,7 @@ export default function Users() {
           >
             {t('users.createUser')}
           </button>
-        }
-      />
+        </div>
       {error && <div className="users-error" role="alert">{error}</div>}
 
       {loading ? (

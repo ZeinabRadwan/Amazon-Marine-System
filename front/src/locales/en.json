@@ -74,14 +74,27 @@
     "documentation": "Documentation",
     "systemStatus": "System Status"
   },
+  "table": {
+    "empty": "No data.",
+    "sortBy": "Sort by {{column}}",
+    "sortAsc": "Ascending",
+    "sortDesc": "Descending",
+    "sortedAsc": "Sorted ascending by {{column}}. Click to sort descending.",
+    "sortedDesc": "Sorted descending by {{column}}. Click to sort ascending.",
+    "sortable": "Sort by this column"
+  },
   "statsCard": {
     "changeLabel": "Change: {{change}}, trend: {{trend}}",
     "trendUp": "Trend up",
     "trendDown": "Trend down",
     "totalShipments": "Total Shipments",
     "totalClients": "Total Clients",
+    "activeClients": "Active Clients",
     "revenue": "Revenue",
-    "revenueValue": "1.2M"
+    "revenueToDate": "Revenue (to date)",
+    "revenueValue": "$342K",
+    "netProfit": "Net Profit",
+    "netProfitValue": "$68K"
   },
   "login": {
     "title": "Sign in to your account",
@@ -97,11 +110,20 @@
     "darkMode": "Switch to dark mode"
   },
   "home": {
-    "signedIn": "You are signed in.",
     "signedInAs": "You are signed in as {{name}}.",
     "loading": "Loading…",
     "signOut": "Sign out",
-    "signingOut": "Signing out…"
+    "signingOut": "Signing out…",
+    "welcomeBack": "Welcome back, {{name}}",
+    "loggedInAsRole": "Logged in now as {{role}}",
+    "today": "Today is {{date}}",
+    "quotes": {
+      "admin": "Excellence in leadership is about lifting others up.",
+      "manager": "Great teams are built on trust and clear goals.",
+      "sales": "Every client conversation is an opportunity to deliver value.",
+      "user": "Small steps every day lead to big results.",
+      "default": "Make today count."
+    }
   },
   "signup": {
     "comingSoon": "Sign up (coming soon)"
@@ -220,10 +242,41 @@
     "title": "Clients",
     "loading": "Loading clients…",
     "error": "Failed to load clients.",
+    "errorLoad": "Failed to load clients.",
+    "errorDetail": "Failed to load client details.",
+    "errorCreate": "Failed to create client.",
+    "errorUpdate": "Failed to update client.",
+    "errorDelete": "Failed to delete client.",
+    "errorExport": "Failed to export.",
+    "errorAttachmentUpload": "Failed to upload attachment.",
+    "errorAttachmentDelete": "Failed to delete attachment.",
+    "warningVisits": "Failed to load visits.",
+    "warningShipments": "Failed to load shipments.",
+    "warningAttachments": "Failed to load attachments.",
     "createClient": "Create client",
     "editClient": "Edit client",
     "search": "Search…",
+    "searchPlaceholder": "Search by name, company, phone, email…",
     "status": "Status",
+    "statusAll": "All statuses",
+    "statusActive": "Active",
+    "statusInactive": "Inactive",
+    "statusProspect": "Prospect",
+    "statusLead": "Lead",
+    "filterLeadSource": "Lead source",
+    "leadSourcePlaceholder": "All lead sources",
+    "assignedSalesPlaceholder": "All sales",
+    "sortBy": "Sort by",
+    "sortClient": "Client name",
+    "sortCompany": "Company",
+    "sortShipments": "Shipments count",
+    "sortProfit": "Profit",
+    "sortLastContact": "Last contact",
+    "directionAsc": "Ascending",
+    "directionDesc": "Descending",
+    "perPage": "Per page",
+    "sortOrder": "Sort order",
+    "clearFilters": "Clear filters",
     "noClients": "No clients yet.",
     "actions": "Actions",
     "view": "View",
@@ -237,6 +290,12 @@
     "deleteConfirm": "Delete client?",
     "deleteConfirmMessage": "This action cannot be undone.",
     "deleting": "Deleting…",
+    "created": "Client created.",
+    "updated": "Client updated.",
+    "deleted": "Client deleted.",
+    "exportSuccess": "Export downloaded.",
+    "attachmentUploaded": "Attachment uploaded.",
+    "attachmentDeleted": "Attachment deleted.",
     "fields": {
       "name": "Name",
       "contact_name": "Contact name",
@@ -263,6 +322,23 @@
       "default_currency": "Currency",
       "notes": "Notes"
     },
+    "stats": {
+      "total_clients": "Total clients",
+      "active_clients": "Active clients",
+      "new_clients_this_month": "New clients this month",
+      "total_revenue_from_clients": "Total revenue from clients"
+    },
+    "charts": "Charts",
+    "chartsNewClientsByMonth": "New clients by month",
+    "chartsByLeadSource": "By lead source",
+    "chartsMonth": "Month",
+    "chartsCount": "Count",
+    "chartsNoData": "No chart data",
+    "leadSource": {
+      "Facebook": "Facebook",
+      "LinkedIn": "LinkedIn",
+      "Referral": "Referral"
+    },
     "bulkAssign": "Bulk assign",
     "bulkAssignSelected": "Selected",
     "assignedSales": "Assigned sales",
@@ -286,6 +362,17 @@
     "charts": "Charts",
     "financialSummary": "Financial summary",
     "pricingList": "Pricing list",
-    "noPricing": "No pricing"
+    "noPricing": "No pricing",
+    "noFinancialData": "No financial data",
+    "financialFields": {
+      "balance_due": "Balance due",
+      "last_payment_at": "Last payment",
+      "open_invoices_count": "Open invoices"
+    },
+    "pricingFields": {
+      "pricing_tier": "Pricing tier",
+      "pricing_discount_pct": "Discount %",
+      "pricing_updated_at": "Pricing updated"
+    }
   }
 }

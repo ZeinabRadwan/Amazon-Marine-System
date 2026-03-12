@@ -88,7 +88,7 @@ export default function Tabs({ tabs = [], activeTab, onChange, className = '' })
           className="tabs-pill__glider"
           aria-hidden
           style={{
-            width: n > 0 ? `calc((100% - 1.5rem) / ${n})` : undefined,
+            width: n > 0 ? `calc((100% - 0.75rem) / ${n})` : undefined,
             transform: `translateX(${gliderTranslate}%)`,
           }}
         />

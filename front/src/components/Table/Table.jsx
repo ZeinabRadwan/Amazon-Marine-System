@@ -1,32 +1,48 @@
+import { useTranslation } from 'react-i18next'
+import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react'
+import './Table.css'
+
 /**
  * Responsive Table – desktop table + mobile card list.
+ * Localized empty message and sort labels. Sortable column headers (except last column).
  *
  * Props:
- *   - columns: Array<{ key: string, label: string, render?: (value, row) => ReactNode, hideOnMobile?: boolean }>
+ *   - columns: Array<{ key: string, label: string, render?: (value, row) => ReactNode, hideOnMobile?: boolean, sortable?: boolean, sortKey?: string }>  (sortKey used for onSort when different from key, e.g. API param)
  *   - data: array of row objects
  *   - getRowKey: (row) => string | number
- *   - emptyMessage?: ReactNode
+ *   - emptyMessage?: ReactNode (defaults to localized "No data.")
+ *   - sortKey?: string – key of column currently sorted
+ *   - sortDirection?: 'asc' | 'desc'
+ *   - onSort?: (key: string, direction: 'asc' | 'desc') => void
  *   - className?: string
- *
- * Desktop (md+): standard table with horizontal scroll. Mobile: card per row with label-value pairs.
- * Design: rounded-lg, subtle shadow, hover, light/dark.
  */
 export default function Table({
   columns = [],
   data = [],
   getRowKey = (row) => row.id ?? row.key,
-  emptyMessage = 'No data.',
+  emptyMessage,
+  sortKey,
+  sortDirection = 'asc',
+  onSort,
   className = '',
 }) {
+  const { t } = useTranslation()
+  const defaultEmpty = t('table.empty')
   const visibleColumns = columns.filter((col) => !col.hideOnMobile)
+
+  const handleSort = (colKey) => {
+    if (!onSort) return
+    const nextDirection = sortKey === colKey && sortDirection === 'asc' ? 'desc' : 'asc'
+    onSort(colKey, nextDirection)
+  }
 
   if (data.length === 0) {
     return (
       <div
-        className={`rounded-lg border border-gray-200 bg-white px-4 py-8 text-center text-gray-500 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 ${className}`.trim()}
+        className={`responsive-table__empty rounded-lg border border-gray-200 bg-white px-4 py-8 text-center text-gray-500 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 ${className}`.trim()}
         role="status"
       >
-        {emptyMessage}
+        {emptyMessage ?? defaultEmpty}
       </div>
     )
   }
@@ -35,17 +51,51 @@ export default function Table({
     <div className={`responsive-table ${className}`.trim()}>
       {/* Desktop (md+): table with horizontal scroll */}
       <div className="responsive-table__scroll hidden overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 md:block">
-        <table className="responsive-table__table w-full border-collapse text-left text-sm">
+        <table className="responsive-table__table w-full border-collapse text-sm">
           <thead>
             <tr>
-              {columns.map((col) => (
-                <th
-                  key={col.key}
-                  className="responsive-table__th whitespace-nowrap border-b border-gray-200 px-4 py-3 font-semibold text-gray-700 dark:border-gray-600 dark:bg-gray-800/80 dark:text-gray-200"
-                >
-                  {col.label}
-                </th>
-              ))}
+              {columns.map((col, index) => {
+                const isLast = index === columns.length - 1
+                const colSortKey = col.sortKey ?? col.key
+                const sortable = !isLast && col.sortable !== false && !!onSort
+                const isSorted = sortKey === colSortKey
+
+                return (
+                  <th
+                    key={col.key}
+                    className="responsive-table__th whitespace-nowrap border-b border-gray-200 px-4 py-3 font-semibold text-gray-700 dark:border-gray-600 dark:bg-gray-800/80 dark:text-gray-200"
+                    aria-sort={isSorted ? (sortDirection === 'asc' ? 'ascending' : 'descending') : undefined}
+                  >
+                    {sortable ? (
+                      <button
+                        type="button"
+                        onClick={() => handleSort(colSortKey)}
+                        className="responsive-table__sort-btn inline-flex items-center gap-1.5 text-left font-semibold text-gray-700 hover:text-gray-900 dark:text-gray-200 dark:hover:text-white"
+                        aria-label={
+                          isSorted
+                            ? sortDirection === 'asc'
+                              ? t('table.sortedAsc', { column: col.label })
+                              : t('table.sortedDesc', { column: col.label })
+                            : t('table.sortable')
+                        }
+                      >
+                        <span>{col.label}</span>
+                        {isSorted ? (
+                          sortDirection === 'asc' ? (
+                            <ChevronUp className="responsive-table__sort-icon h-4 w-4 shrink-0" aria-hidden />
+                          ) : (
+                            <ChevronDown className="responsive-table__sort-icon h-4 w-4 shrink-0" aria-hidden />
+                          )
+                        ) : (
+                          <ChevronsUpDown className="responsive-table__sort-icon h-4 w-4 shrink-0 opacity-50" aria-hidden />
+                        )}
+                      </button>
+                    ) : (
+                      col.label
+                    )}
+                  </th>
+                )
+              })}
             </tr>
           </thead>
           <tbody>

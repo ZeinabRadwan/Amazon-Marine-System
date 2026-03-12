@@ -13,7 +13,6 @@ import {
   updatePreferredCommMethod,
   deletePreferredCommMethod,
 } from '../../api/clientLookups'
-import { PageHeader } from '../../components/PageHeader'
 import { Container } from '../../components/Container'
 import './ClientLookups.css'
 
@@ -240,14 +239,6 @@ export default function ClientLookups() {
   return (
     <Container size="xl">
       <div className="client-lookups-page">
-        <PageHeader
-          title={t('clientLookups.title')}
-          breadcrumbs={[
-            { label: t('pageHeader.home'), href: '/' },
-            { label: t('pageHeader.clients'), href: '/clients' },
-            { label: t('clientLookups.title') },
-          ]}
-        />
         {error && <div className="client-lookups-error" role="alert">{error}</div>}
 
         <div className="client-lookups-tabs">

@@ -12,24 +12,30 @@ import {
   getFinancialSummary,
   getPricingList,
   exportClients,
-  bulkAssignSales,
   getClientVisits,
   getClientShipments,
   getClientAttachments,
   postClientAttachment,
   deleteClientAttachment,
 } from '../../api/clients'
-import { PageHeader } from '../../components/PageHeader'
 import { Container } from '../../components/Container'
+import '../../components/PageHeader/PageHeader.css'
 import { Table, IconActionButton } from '../../components/Table'
 import Pagination from '../../components/Pagination'
 import Tabs from '../../components/Tabs'
 import { StatsCard } from '../../components/StatsCard'
+import ClientDetailModal from './ClientDetailModal'
 import LoaderDots from '../../components/LoaderDots'
-import { Eye, Pencil, Trash2, Download, UserPlus, Users } from 'lucide-react'
+import Alert from '../../components/Alert'
+import { Eye, Pencil, Trash2, Download, Users, Search, X, ArrowUpDown, ChevronDown, ChevronUp } from 'lucide-react'
+import { BarChart, DonutChart } from '../../components/Charts'
+import '../../components/Charts/Charts.css'
 import '../../components/LoaderDots/LoaderDots.css'
-import { listUsers } from '../../api/users'
 import './Clients.css'
+
+function getMonthFormat(locale) {
+  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-US', { month: 'short', year: 'numeric' })
+}
 
 /** Normalize API client: backend may return client_name/source instead of name/contact_name/lead_source */
 function normalizeClient(c) {
@@ -70,11 +76,13 @@ const defaultClientForm = () => ({
 })
 
 export default function Clients() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const token = getStoredToken()
+  const numberLocale = 'en-US'
+  const monthFormat = getMonthFormat(i18n.language)
   const [list, setList] = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [alert, setAlert] = useState(null)
   const [filters, setFilters] = useState({
     q: '',
     status: '',
@@ -83,16 +91,12 @@ export default function Clients() {
     sort: 'client',
     direction: 'asc',
     page: 1,
-    per_page: 15,
+    per_page: 50,
   })
   const [pagination, setPagination] = useState({ total: 0, last_page: 1, current_page: 1 })
   const [stats, setStats] = useState(null)
   const [statsLoading, setStatsLoading] = useState(false)
   const [exportLoading, setExportLoading] = useState(false)
-  const [selectedIds, setSelectedIds] = useState(new Set())
-  const [showBulkAssign, setShowBulkAssign] = useState(false)
-  const [bulkAssignSalesId, setBulkAssignSalesId] = useState('')
-  const [bulkAssignSubmitting, setBulkAssignSubmitting] = useState(false)
   const [showCreate, setShowCreate] = useState(false)
   const [createForm, setCreateForm] = useState(defaultClientForm())
   const [createSubmitting, setCreateSubmitting] = useState(false)
@@ -113,19 +117,34 @@ export default function Clients() {
   const [attachmentsLoading, setAttachmentsLoading] = useState(false)
   const [attachmentUploading, setAttachmentUploading] = useState(false)
   const [attachmentDeletingId, setAttachmentDeletingId] = useState(null)
-  const [users, setUsers] = useState([])
   const [charts, setCharts] = useState(null)
   const [chartsLoading, setChartsLoading] = useState(false)
-  const [financialSummary, setFinancialSummary] = useState(null)
+  const [financialSummaryList, setFinancialSummaryList] = useState([])
   const [financialLoading, setFinancialLoading] = useState(false)
   const [pricingList, setPricingList] = useState([])
   const [pricingLoading, setPricingLoading] = useState(false)
-  const [extraPanel, setExtraPanel] = useState(null)
+  const [showSort, setShowSort] = useState(false)
+
+  const pageLoading =
+    loading ||
+    statsLoading ||
+    chartsLoading ||
+    detailLoading ||
+    visitsLoading ||
+    shipmentsLoading ||
+    attachmentsLoading ||
+    financialLoading ||
+    pricingLoading ||
+    exportLoading ||
+    createSubmitting ||
+    editSubmitting ||
+    deleteSubmitting ||
+    attachmentUploading
 
   const loadList = useCallback(() => {
     if (!token) return
     setLoading(true)
-    setError('')
+    setAlert(null)
     listClients(token, filters)
       .then((data) => {
         const arr = data.data ?? data.clients ?? data
@@ -137,7 +156,7 @@ export default function Clients() {
           current_page: meta.current_page ?? meta.page ?? 1,
         })
       })
-      .catch((err) => setError(err.message || t('clients.error')))
+      .catch(() => setAlert({ type: 'error', message: t('clients.errorLoad') }))
       .finally(() => setLoading(false))
   }, [token, filters.q, filters.status, filters.assigned_sales_id, filters.lead_source_id, filters.sort, filters.direction, filters.page, filters.per_page, t])
 
@@ -155,6 +174,15 @@ export default function Clients() {
   }, [token])
 
   useEffect(() => {
+    if (!token) return
+    setChartsLoading(true)
+    getClientCharts(token, { months: 6 })
+      .then((data) => setCharts(data.data ?? data.charts ?? data))
+      .catch(() => setCharts(null))
+      .finally(() => setChartsLoading(false))
+  }, [token])
+
+  useEffect(() => {
     if (!detailId || !token) {
       setDetailClient(null)
       return
@@ -162,9 +190,12 @@ export default function Clients() {
     setDetailLoading(true)
     getClient(token, detailId)
       .then((data) => setDetailClient(normalizeClient(data.client ?? data.data ?? data)))
-      .catch(() => setDetailClient(null))
+      .catch(() => {
+        setDetailClient(null)
+        setAlert({ type: 'error', message: t('clients.errorDetail') })
+      })
       .finally(() => setDetailLoading(false))
-  }, [token, detailId])
+  }, [token, detailId, t])
 
   useEffect(() => {
     if (!detailId || !token || detailTab !== 'visits') return
@@ -174,9 +205,12 @@ export default function Clients() {
         const arr = data.data ?? data.visits ?? data
         setVisits(Array.isArray(arr) ? arr : [])
       })
-      .catch(() => setVisits([]))
+      .catch(() => {
+        setVisits([])
+        setAlert({ type: 'warning', message: t('clients.warningVisits') })
+      })
       .finally(() => setVisitsLoading(false))
-  }, [token, detailId, detailTab])
+  }, [token, detailId, detailTab, t])
 
   useEffect(() => {
     if (!detailId || !token || detailTab !== 'shipments') return
@@ -186,9 +220,12 @@ export default function Clients() {
         const arr = data.data ?? data.shipments ?? data
         setShipments(Array.isArray(arr) ? arr : [])
       })
-      .catch(() => setShipments([]))
+      .catch(() => {
+        setShipments([])
+        setAlert({ type: 'warning', message: t('clients.warningShipments') })
+      })
       .finally(() => setShipmentsLoading(false))
-  }, [token, detailId, detailTab])
+  }, [token, detailId, detailTab, t])
 
   useEffect(() => {
     if (!detailId || !token || detailTab !== 'attachments') return
@@ -198,9 +235,33 @@ export default function Clients() {
         const arr = data.data ?? data.attachments ?? data
         setAttachments(Array.isArray(arr) ? arr : [])
       })
-      .catch(() => setAttachments([]))
+      .catch(() => {
+        setAttachments([])
+        setAlert({ type: 'warning', message: t('clients.warningAttachments') })
+      })
       .finally(() => setAttachmentsLoading(false))
-  }, [token, detailId, detailTab])
+  }, [token, detailId, detailTab, t])
+
+  useEffect(() => {
+    if (!token) return
+    setFinancialLoading(true)
+    getFinancialSummary(token)
+      .then((data) => setFinancialSummaryList(Array.isArray(data.data) ? data.data : []))
+      .catch(() => setFinancialSummaryList([]))
+      .finally(() => setFinancialLoading(false))
+  }, [token])
+
+  useEffect(() => {
+    if (!token) return
+    setPricingLoading(true)
+    getPricingList(token)
+      .then((data) => {
+        const arr = data.data ?? data.pricing ?? data
+        setPricingList(Array.isArray(arr) ? arr : [])
+      })
+      .catch(() => setPricingList([]))
+      .finally(() => setPricingLoading(false))
+  }, [token])
 
   const openEdit = (client) => {
     const n = normalizeClient(client)
@@ -235,15 +296,16 @@ export default function Clients() {
 
   const handleCreateSubmit = async (e) => {
     e.preventDefault()
-    setError('')
+    setAlert(null)
     setCreateSubmitting(true)
     try {
       await createClient(token, createForm)
       setShowCreate(false)
       setCreateForm(defaultClientForm())
       loadList()
+      setAlert({ type: 'success', message: t('clients.created') })
     } catch (err) {
-      setError(err.message)
+      setAlert({ type: 'error', message: t('clients.errorCreate') })
     } finally {
       setCreateSubmitting(false)
     }
@@ -252,7 +314,7 @@ export default function Clients() {
   const handleEditSubmit = async (e) => {
     e.preventDefault()
     if (!editId) return
-    setError('')
+    setAlert(null)
     setEditSubmitting(true)
     try {
       await updateClient(token, editId, editForm)
@@ -260,8 +322,9 @@ export default function Clients() {
       loadList()
       if (detailId === editId) setDetailClient(null)
       setDetailId(null)
+      setAlert({ type: 'success', message: t('clients.updated') })
     } catch (err) {
-      setError(err.message)
+      setAlert({ type: 'error', message: t('clients.errorUpdate') })
     } finally {
       setEditSubmitting(false)
     }
@@ -269,7 +332,7 @@ export default function Clients() {
 
   const handleDeleteConfirm = async () => {
     if (!deleteId) return
-    setError('')
+    setAlert(null)
     setDeleteSubmitting(true)
     try {
       await deleteClient(token, deleteId)
@@ -279,15 +342,16 @@ export default function Clients() {
         setDetailClient(null)
       }
       loadList()
+      setAlert({ type: 'success', message: t('clients.deleted') })
     } catch (err) {
-      setError(err.message)
+      setAlert({ type: 'error', message: t('clients.errorDelete') })
     } finally {
       setDeleteSubmitting(false)
     }
   }
 
   const handleExport = async () => {
-    setError('')
+    setAlert(null)
     setExportLoading(true)
     try {
       const blob = await exportClients(token, { ...filters })
@@ -297,60 +361,27 @@ export default function Clients() {
       a.download = `clients-export-${new Date().toISOString().slice(0, 10)}.csv`
       a.click()
       URL.revokeObjectURL(url)
+      setAlert({ type: 'success', message: t('clients.exportSuccess') })
     } catch (err) {
-      setError(err.message)
+      setAlert({ type: 'error', message: t('clients.errorExport') })
     } finally {
       setExportLoading(false)
     }
   }
 
-  const handleBulkAssignSubmit = async (e) => {
-    e.preventDefault()
-    if (selectedIds.size === 0 || !bulkAssignSalesId) return
-    setError('')
-    setBulkAssignSubmitting(true)
-    try {
-      await bulkAssignSales(token, {
-        client_ids: Array.from(selectedIds),
-        assigned_sales_id: Number(bulkAssignSalesId),
-      })
-      setShowBulkAssign(false)
-      setBulkAssignSalesId('')
-      setSelectedIds(new Set())
-      loadList()
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setBulkAssignSubmitting(false)
-    }
-  }
-
-  const toggleSelect = (id) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
-
-  const toggleSelectAll = () => {
-    if (selectedIds.size === list.length) setSelectedIds(new Set())
-    else setSelectedIds(new Set(list.map((c) => c.id)))
-  }
-
   const handleAttachmentUpload = async (e) => {
     const file = e.target?.files?.[0]
     if (!file || !detailId || !token) return
-    setError('')
+    setAlert(null)
     setAttachmentUploading(true)
     try {
       await postClientAttachment(token, detailId, file)
       const data = await getClientAttachments(token, detailId)
       const arr = data.data ?? data.attachments ?? data
       setAttachments(Array.isArray(arr) ? arr : [])
+      setAlert({ type: 'success', message: t('clients.attachmentUploaded') })
     } catch (err) {
-      setError(err.message)
+      setAlert({ type: 'error', message: t('clients.errorAttachmentUpload') })
     } finally {
       setAttachmentUploading(false)
       e.target.value = ''
@@ -359,60 +390,17 @@ export default function Clients() {
 
   const handleAttachmentDelete = async (attachmentId) => {
     if (!detailId || !token) return
-    setError('')
+    setAlert(null)
     setAttachmentDeletingId(attachmentId)
     try {
       await deleteClientAttachment(token, detailId, attachmentId)
       setAttachments((prev) => prev.filter((a) => a.id !== attachmentId))
+      setAlert({ type: 'success', message: t('clients.attachmentDeleted') })
     } catch (err) {
-      setError(err.message)
+      setAlert({ type: 'error', message: t('clients.errorAttachmentDelete') })
     } finally {
       setAttachmentDeletingId(null)
     }
-  }
-
-  const openBulkAssign = () => {
-    setBulkAssignSalesId('')
-    listUsers(token)
-      .then((data) => {
-        const arr = data.data ?? data.users ?? data
-        setUsers(Array.isArray(arr) ? arr : [])
-      })
-      .catch(() => setUsers([]))
-    setShowBulkAssign(true)
-  }
-
-  const loadCharts = () => {
-    if (!token) return
-    setExtraPanel('charts')
-    setChartsLoading(true)
-    getClientCharts(token, { months: 6 })
-      .then((data) => setCharts(data.data ?? data.charts ?? data))
-      .catch(() => setCharts(null))
-      .finally(() => setChartsLoading(false))
-  }
-
-  const loadFinancialSummary = () => {
-    if (!token) return
-    setExtraPanel('financial')
-    setFinancialLoading(true)
-    getFinancialSummary(token)
-      .then((data) => setFinancialSummary(data.data ?? data.summary ?? data))
-      .catch(() => setFinancialSummary(null))
-      .finally(() => setFinancialLoading(false))
-  }
-
-  const loadPricingList = () => {
-    if (!token) return
-    setExtraPanel('pricing')
-    setPricingLoading(true)
-    getPricingList(token)
-      .then((data) => {
-        const arr = data.data ?? data.pricing ?? data
-        setPricingList(Array.isArray(arr) ? arr : [])
-      })
-      .catch(() => setPricingList([]))
-      .finally(() => setPricingLoading(false))
   }
 
   const clientFormFields = [
@@ -454,26 +442,8 @@ export default function Clients() {
 
   const clientColumns = [
     {
-      key: '_select',
-      label: (
-        <input
-          type="checkbox"
-          checked={list.length > 0 && selectedIds.size === list.length}
-          onChange={toggleSelectAll}
-          aria-label={t('clients.selectAll', 'Select all')}
-        />
-      ),
-      render: (_, c) => (
-        <input
-          type="checkbox"
-          checked={selectedIds.has(c.id)}
-          onChange={() => toggleSelect(c.id)}
-          aria-label={t('clients.select', 'Select')}
-        />
-      ),
-    },
-    {
       key: 'name',
+      sortKey: 'client',
       label: t('clients.fields.name'),
       render: (_, c) => c.client_name ?? c.name ?? '—',
     },
@@ -515,15 +485,150 @@ export default function Clients() {
   return (
     <Container size="xl">
       <div className="clients-page">
-        <PageHeader
-        title={t('clients.title')}
-        breadcrumbs={[
-          { label: t('pageHeader.home', 'Home'), href: '/' },
-          { label: t('pageHeader.operations', 'Operations'), href: '/' },
-          { label: t('clients.title') },
-        ]}
-        actions={
-          <>
+      {pageLoading && (
+        <div className="clients-page-loader" aria-live="polite" aria-busy="true">
+          <LoaderDots />
+        </div>
+      )}
+      {stats && typeof stats === 'object' && (
+        <div className="grid grid-cols-4 gap-4 mb-6">
+          {Object.entries(stats).slice(0, 4).map(([key, value], i) => {
+            const title = t(`clients.stats.${key}`, { defaultValue: key.replace(/_/g, ' ') })
+            const displayValue =
+              key === 'total_revenue_from_clients' && typeof value === 'number'
+                ? new Intl.NumberFormat(numberLocale, {
+                    style: 'currency',
+                    currency: 'USD',
+                    maximumFractionDigits: 0,
+                    minimumFractionDigits: 0,
+                  }).format(value)
+                : typeof value === 'number'
+                  ? new Intl.NumberFormat(numberLocale).format(value)
+                  : String(value)
+            return (
+              <StatsCard
+                key={key}
+                title={title}
+                value={displayValue}
+                icon={<Users className="h-6 w-6" />}
+                variant={i % 3 === 0 ? 'blue' : i % 3 === 1 ? 'green' : 'amber'}
+              />
+            )
+          })}
+        </div>
+      )}
+
+      <div className="clients-extra-panel clients-charts-panel mb-4">
+        {charts && (charts.new_clients_by_month?.length > 0 || charts.by_lead_source?.length > 0) ? (
+          <div className="clients-charts-grid">
+            {charts.new_clients_by_month?.length > 0 && (
+              <div className="clients-chart-wrap">
+                <BarChart
+                  data={charts.new_clients_by_month.map((d) => ({
+                    ...d,
+                    monthLabel: d.month ? monthFormat.format(new Date(d.month)) : d.month,
+                  }))}
+                  xKey="monthLabel"
+                  yKey="count"
+                  xLabel={t('clients.chartsMonth', 'Month')}
+                  yLabel={t('clients.chartsCount', 'Count')}
+                  valueLabel={t('clients.chartsCount', 'Count')}
+                  title={t('clients.chartsNewClientsByMonth', 'New clients by month')}
+                  height={260}
+                />
+              </div>
+            )}
+            {charts.by_lead_source?.length > 0 && (
+              <div className="clients-chart-wrap">
+                <DonutChart
+                  data={charts.by_lead_source.map((item) => ({
+                    ...item,
+                    displayName: t(`clients.leadSource.${item.lead_source_name}`, item.lead_source_name),
+                  }))}
+                  nameKey="displayName"
+                  valueKey="count"
+                  valueLabel={t('clients.chartsCount', 'Count')}
+                  title={t('clients.chartsByLeadSource', 'By lead source')}
+                  height={260}
+                />
+              </div>
+            )}
+          </div>
+        ) : charts && (
+          <p className="text-sm text-gray-500 dark:text-gray-400">{t('clients.chartsNoData', 'No chart data')}</p>
+        )}
+      </div>
+
+      <div className="clients-filters-card">
+        <div className="clients-filters__row clients-filters__row--main">
+          <div className="clients-filters__search-wrap" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}>
+            <Search className="clients-filters__search-icon" aria-hidden />
+            <input
+              type="search"
+              placeholder={t('clients.searchPlaceholder', t('clients.search'))}
+              value={filters.q}
+              onChange={(e) => setFilters((f) => ({ ...f, q: e.target.value, page: 1 }))}
+              className="clients-input clients-filters__search"
+              aria-label={t('clients.search')}
+            />
+          </div>
+          <div className="clients-filters__fields">
+            <input
+              type="text"
+              placeholder={t('clients.status')}
+              value={filters.status}
+              onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value, page: 1 }))}
+              className="clients-input"
+              aria-label={t('clients.status')}
+            />
+            <input
+              type="text"
+              placeholder={t('clients.filterLeadSource')}
+              value={filters.lead_source_id}
+              onChange={(e) => setFilters((f) => ({ ...f, lead_source_id: e.target.value, page: 1 }))}
+              className="clients-input"
+              aria-label={t('clients.filterLeadSource')}
+            />
+            <input
+              type="text"
+              placeholder={t('clients.assignedSalesPlaceholder')}
+              value={filters.assigned_sales_id}
+              onChange={(e) => setFilters((f) => ({ ...f, assigned_sales_id: e.target.value, page: 1 }))}
+              className="clients-input"
+              aria-label={t('clients.assignedSalesPlaceholder')}
+            />
+          </div>
+          <button
+            type="button"
+            className="clients-filters__clear"
+            onClick={() => setFilters((f) => ({
+              ...f,
+              q: '',
+              status: '',
+              assigned_sales_id: '',
+              lead_source_id: '',
+              sort: 'client',
+              direction: 'asc',
+              page: 1,
+            }))}
+            aria-label={t('clients.clearFilters')}
+          >
+            <X className="clients-filters__clear-icon" aria-hidden />
+            {t('clients.clearFilters')}
+          </button>
+          <button
+            type="button"
+            className="clients-filters__sort-toggle"
+            onClick={() => setShowSort((v) => !v)}
+            aria-expanded={showSort}
+            aria-controls="clients-sort-panel"
+            id="clients-sort-toggle"
+          >
+            <ArrowUpDown className="clients-filters__sort-toggle-icon" aria-hidden />
+            <span>{t('clients.sortBy')}</span>
+            {showSort ? <ChevronUp className="clients-filters__sort-toggle-chevron" aria-hidden /> : <ChevronDown className="clients-filters__sort-toggle-chevron" aria-hidden />}
+          </button>
+          <div className="clients-filters__actions">
             <button
               type="button"
               className="page-header__btn page-header__btn--primary"
@@ -539,155 +644,52 @@ export default function Clients() {
             >
               {exportLoading ? t('clients.loading') : t('pageHeader.export', 'Export')}
             </button>
-            <button
-              type="button"
-              className="page-header__btn"
-              onClick={openBulkAssign}
-              disabled={selectedIds.size === 0}
+          </div>
+        </div>
+        <div
+          id="clients-sort-panel"
+          className="clients-filters__row clients-filters__row--sort"
+          role="region"
+          aria-labelledby="clients-sort-toggle"
+          hidden={!showSort}
+        >
+          <div className="clients-filters__sort-group">
+            <label className="clients-filters__sort-label" htmlFor="clients-sort-by">
+              {t('clients.sortBy')}
+            </label>
+            <select
+              id="clients-sort-by"
+              value={filters.sort}
+              onChange={(e) => setFilters((f) => ({ ...f, sort: e.target.value }))}
+              className="clients-select"
+              aria-label={t('clients.sortBy')}
             >
-              <UserPlus className="h-4 w-4 inline mr-1" />
-              {t('clients.bulkAssign', 'Bulk assign')} {selectedIds.size > 0 ? `(${selectedIds.size})` : ''}
-            </button>
-          </>
-        }
-      />
-
-      {stats && typeof stats === 'object' && !statsLoading && (
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          {Object.entries(stats).slice(0, 4).map(([key, value], i) => (
-            <StatsCard
-              key={key}
-              title={key.replace(/_/g, ' ')}
-              value={typeof value === 'number' ? value : String(value)}
-              icon={<Users className="h-6 w-6" />}
-              variant={i % 3 === 0 ? 'blue' : i % 3 === 1 ? 'green' : 'amber'}
-            />
-          ))}
+              <option value="client">{t('clients.sortClient')}</option>
+              <option value="company_name">{t('clients.sortCompany')}</option>
+              <option value="created_at">created_at</option>
+            </select>
+            <select
+              value={filters.direction}
+              onChange={(e) => setFilters((f) => ({ ...f, direction: e.target.value }))}
+              className="clients-select clients-filters__direction"
+              aria-label={t('clients.sortOrder')}
+            >
+              <option value="asc">{t('clients.directionAsc')}</option>
+              <option value="desc">{t('clients.directionDesc')}</option>
+            </select>
+          </div>
         </div>
-      )}
-
-      <div className="flex flex-wrap gap-2 mb-3">
-        <button type="button" className="clients-btn clients-btn--small" onClick={loadCharts}>
-          {t('clients.charts', 'Charts')}
-        </button>
-        <button type="button" className="clients-btn clients-btn--small" onClick={loadFinancialSummary}>
-          {t('clients.financialSummary', 'Financial summary')}
-        </button>
-        <button type="button" className="clients-btn clients-btn--small" onClick={loadPricingList}>
-          {t('clients.pricingList', 'Pricing list')}
-        </button>
-        {extraPanel && (
-          <button type="button" className="clients-btn clients-btn--small" onClick={() => setExtraPanel(null)}>
-            {t('clients.close')}
-          </button>
-        )}
-      </div>
-      {extraPanel === 'charts' && (
-        <div className="clients-extra-panel mb-4 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-          <h3 className="text-sm font-semibold mb-2">{t('clients.charts', 'Charts')}</h3>
-          {chartsLoading ? (
-            <div className="flex items-center gap-3 py-4">
-              <LoaderDots size={20} />
-              <span>{t('clients.loading')}</span>
-            </div>
-          ) : charts && <pre className="text-xs overflow-auto max-h-48">{JSON.stringify(charts, null, 2)}</pre>}
-        </div>
-      )}
-      {extraPanel === 'financial' && (
-        <div className="clients-extra-panel mb-4 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-          <h3 className="text-sm font-semibold mb-2">{t('clients.financialSummary', 'Financial summary')}</h3>
-          {financialLoading ? (
-            <div className="flex items-center gap-3 py-4">
-              <LoaderDots size={20} />
-              <span>{t('clients.loading')}</span>
-            </div>
-          ) : financialSummary && <pre className="text-xs overflow-auto max-h-48">{JSON.stringify(financialSummary, null, 2)}</pre>}
-        </div>
-      )}
-      {extraPanel === 'pricing' && (
-        <div className="clients-extra-panel mb-4 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-          <h3 className="text-sm font-semibold mb-2">{t('clients.pricingList', 'Pricing list')}</h3>
-          {pricingLoading ? (
-            <div className="flex items-center gap-3 py-4">
-              <LoaderDots size={20} />
-              <span>{t('clients.loading')}</span>
-            </div>
-          ) : pricingList.length === 0 ? <p>{t('clients.noPricing', 'No pricing')}</p> : (
-            <ul className="text-sm">
-              {pricingList.slice(0, 20).map((p, i) => (
-                <li key={p.id ?? i}>{typeof p === 'object' ? JSON.stringify(p) : p}</li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-
-      <div className="clients-filters">
-        <input
-          type="search"
-          placeholder={t('clients.search')}
-          value={filters.q}
-          onChange={(e) => setFilters((f) => ({ ...f, q: e.target.value, page: 1 }))}
-          className="clients-input"
-        />
-        <input
-          type="text"
-          placeholder={t('clients.status')}
-          value={filters.status}
-          onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value, page: 1 }))}
-          className="clients-input"
-        />
-        <input
-          type="text"
-          placeholder="Lead source ID"
-          value={filters.lead_source_id}
-          onChange={(e) => setFilters((f) => ({ ...f, lead_source_id: e.target.value, page: 1 }))}
-          className="clients-input"
-        />
-        <input
-          type="text"
-          placeholder="Assigned sales ID"
-          value={filters.assigned_sales_id}
-          onChange={(e) => setFilters((f) => ({ ...f, assigned_sales_id: e.target.value, page: 1 }))}
-          className="clients-input"
-        />
-        <select
-          value={filters.sort}
-          onChange={(e) => setFilters((f) => ({ ...f, sort: e.target.value }))}
-          className="clients-select"
-        >
-          <option value="client">client</option>
-          <option value="company_name">company_name</option>
-          <option value="created_at">created_at</option>
-        </select>
-        <select
-          value={filters.direction}
-          onChange={(e) => setFilters((f) => ({ ...f, direction: e.target.value }))}
-          className="clients-select"
-        >
-          <option value="asc">asc</option>
-          <option value="desc">desc</option>
-        </select>
-        <select
-          value={filters.per_page}
-          onChange={(e) => setFilters((f) => ({ ...f, per_page: Number(e.target.value), page: 1 }))}
-          className="clients-select"
-        >
-          <option value={10}>10</option>
-          <option value={15}>15</option>
-          <option value={25}>25</option>
-          <option value={50}>50</option>
-        </select>
       </div>
 
-      {error && <div className="clients-error" role="alert">{error}</div>}
+      {alert && (
+        <Alert
+          variant={alert.type}
+          message={alert.message}
+          onClose={() => setAlert(null)}
+        />
+      )}
 
-      {loading ? (
-        <div className="flex items-center gap-3 py-8">
-          <LoaderDots size={24} />
-          <span>{t('clients.loading')}</span>
-        </div>
-      ) : list.length === 0 ? (
+      {list.length === 0 ? (
         <p className="clients-empty">{t('clients.noClients')}</p>
       ) : (
         <Table
@@ -695,14 +697,33 @@ export default function Clients() {
           data={list}
           getRowKey={(c) => c.id}
           emptyMessage={t('clients.noClients')}
+          sortKey={filters.sort}
+          sortDirection={filters.direction}
+          onSort={(key, direction) => setFilters((f) => ({ ...f, sort: key, direction }))}
         />
       )}
 
       {list.length > 0 && pagination.last_page > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-4 mt-4">
-          <span className="text-sm text-gray-600 dark:text-gray-400">
-            {t('clients.total', 'Total')}: {pagination.total}
-          </span>
+        <div className="clients-pagination">
+          <div className="clients-pagination__left">
+            <span className="clients-pagination__total">
+              {t('clients.total', 'Total')}: {pagination.total}
+            </span>
+            <label className="clients-pagination__per-page">
+              <span className="clients-pagination__per-page-label">{t('clients.perPage', 'Per page')}</span>
+              <select
+                value={filters.per_page}
+                onChange={(e) => setFilters((f) => ({ ...f, per_page: Number(e.target.value), page: 1 }))}
+                className="clients-select clients-pagination__select"
+                aria-label={t('clients.perPage', 'Per page')}
+              >
+                <option value={10}>10</option>
+                <option value={15}>15</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+              </select>
+            </label>
+          </div>
           <Pagination
             currentPage={pagination.current_page}
             totalPages={Math.max(1, pagination.last_page)}
@@ -732,123 +753,25 @@ export default function Clients() {
         </div>
       )}
 
-      {/* Detail modal */}
-      {detailId && (
-        <div className="clients-modal" role="dialog" aria-modal="true">
-          <div className="clients-modal-backdrop" onClick={() => { setDetailId(null); setDetailClient(null); setDetailTab('info') }} />
-          <div className="clients-modal-content clients-modal-content--wide">
-            <h2>{t('clients.detail')}</h2>
-            <Tabs
-              tabs={[
-                { id: 'info', label: t('clients.tabs.info', 'Info') },
-                { id: 'visits', label: t('clients.tabs.visits', 'Visits') },
-                { id: 'shipments', label: t('clients.tabs.shipments', 'Shipments') },
-                { id: 'attachments', label: t('clients.tabs.attachments', 'Attachments') },
-              ]}
-              activeTab={detailTab}
-              onChange={setDetailTab}
-              className="mb-4"
-            />
-            <div role="tabpanel" id={`panel-${detailTab}`} aria-labelledby={`tab-${detailTab}`}>
-            {detailTab === 'info' && (
-              <>
-                {detailLoading ? (
-                  <div className="flex items-center gap-3 py-4">
-                    <LoaderDots size={20} />
-                    <span>{t('clients.loading')}</span>
-                  </div>
-                ) : detailClient ? (
-                  <div className="clients-detail">
-                    {clientFormFields.flat().map((key) => (
-                      <div key={key} className="clients-detail-row">
-                        <span className="clients-detail-label">{t(`clients.fields.${key}`)}</span>
-                        <span className="clients-detail-value">{detailClient[key] ?? '—'}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p>{t('clients.error')}</p>
-                )}
-              </>
-            )}
-            {detailTab === 'visits' && (
-              visitsLoading ? (
-                <div className="flex items-center gap-3 py-4">
-                  <LoaderDots size={20} />
-                  <span>{t('clients.loading')}</span>
-                </div>
-              ) : (
-                <div className="clients-detail-list">
-                  {visits.length === 0 ? <p>{t('clients.noVisits', 'No visits')}</p> : visits.map((v) => (
-                    <div key={v.id ?? v.visit_date} className="clients-detail-row">
-                      <span className="clients-detail-label">{v.visit_date ?? v.date ?? '—'}</span>
-                      <span className="clients-detail-value">{v.notes ?? v.summary ?? '—'}</span>
-                    </div>
-                  ))}
-                </div>
-              )
-            )}
-            {detailTab === 'shipments' && (
-              shipmentsLoading ? (
-                <div className="flex items-center gap-3 py-4">
-                  <LoaderDots size={20} />
-                  <span>{t('clients.loading')}</span>
-                </div>
-              ) : (
-                <div className="clients-detail-list">
-                  {shipments.length === 0 ? <p>{t('clients.noShipments', 'No shipments')}</p> : shipments.map((s) => (
-                    <div key={s.id} className="clients-detail-row">
-                      <span className="clients-detail-label">{s.bl_number ?? s.reference ?? s.id}</span>
-                      <span className="clients-detail-value">{s.status ?? s.amount ?? '—'}</span>
-                    </div>
-                  ))}
-                </div>
-              )
-            )}
-            {detailTab === 'attachments' && (
-              attachmentsLoading ? (
-                <div className="flex items-center gap-3 py-4">
-                  <LoaderDots size={20} />
-                  <span>{t('clients.loading')}</span>
-                </div>
-              ) : (
-                <div className="clients-detail-list">
-                  <div className="flex items-center gap-2 mb-3">
-                    <label className="clients-btn clients-btn--small clients-btn--primary cursor-pointer">
-                      {attachmentUploading ? t('clients.uploading') : t('clients.uploadAttachment', 'Upload')}
-                      <input type="file" className="hidden" accept="*" onChange={handleAttachmentUpload} disabled={attachmentUploading} />
-                    </label>
-                  </div>
-                  {attachments.length === 0 ? <p>{t('clients.noAttachments', 'No attachments')}</p> : attachments.map((a) => (
-                    <div key={a.id} className="clients-detail-row flex items-center justify-between">
-                      <span className="clients-detail-value">{a.file_name ?? a.name ?? a.id}</span>
-                      <button
-                        type="button"
-                        className="clients-btn clients-btn--small clients-btn--danger"
-                        onClick={() => handleAttachmentDelete(a.id)}
-                        disabled={attachmentDeletingId === a.id}
-                      >
-                        {attachmentDeletingId === a.id ? t('clients.deleting') : t('clients.delete')}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )
-            )}
-            </div>
-            <div className="clients-modal-actions">
-              <button type="button" className="clients-btn" onClick={() => { setDetailId(null); setDetailClient(null); setDetailTab('info') }}>
-                {t('clients.close')}
-              </button>
-              {detailClient && detailTab === 'info' && (
-                <button type="button" className="clients-btn clients-btn--primary" onClick={() => { openEdit(detailClient); setDetailId(null); setDetailClient(null) }}>
-                  {t('clients.edit')}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <ClientDetailModal
+        open={!!detailId}
+        detailId={detailId}
+        detailClient={detailClient}
+        detailTab={detailTab}
+        onTabChange={setDetailTab}
+        onClose={() => { setDetailId(null); setDetailClient(null); setDetailTab('info') }}
+        onEdit={openEdit}
+        visits={visits}
+        shipments={shipments}
+        attachments={attachments}
+        attachmentUploading={attachmentUploading}
+        attachmentDeletingId={attachmentDeletingId}
+        onAttachmentUpload={handleAttachmentUpload}
+        onAttachmentDelete={handleAttachmentDelete}
+        financialSummaryList={financialSummaryList}
+        pricingList={pricingList}
+        numberLocale={numberLocale}
+      />
 
       {/* Edit modal */}
       {editId && (
@@ -890,40 +813,6 @@ export default function Clients() {
         </div>
       )}
 
-      {/* Bulk assign modal */}
-      {showBulkAssign && (
-        <div className="clients-modal" role="dialog" aria-modal="true">
-          <div className="clients-modal-backdrop" onClick={() => setShowBulkAssign(false)} />
-          <div className="clients-modal-content">
-            <h2>{t('clients.bulkAssign', 'Bulk assign sales')}</h2>
-            <p>{t('clients.bulkAssignSelected', 'Selected')}: {selectedIds.size}</p>
-            <form onSubmit={handleBulkAssignSubmit} className="clients-form">
-              <div className="clients-field">
-                <label>{t('clients.assignedSales', 'Assigned sales')}</label>
-                <select
-                  value={bulkAssignSalesId}
-                  onChange={(e) => setBulkAssignSalesId(e.target.value)}
-                  required
-                  disabled={bulkAssignSubmitting}
-                >
-                  <option value="">—</option>
-                  {users.map((u) => (
-                    <option key={u.id} value={u.id}>{u.name ?? u.email ?? u.id}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="clients-modal-actions">
-                <button type="button" className="clients-btn" onClick={() => setShowBulkAssign(false)} disabled={bulkAssignSubmitting}>
-                  {t('clients.cancel')}
-                </button>
-                <button type="submit" className="clients-btn clients-btn--primary" disabled={bulkAssignSubmitting}>
-                  {bulkAssignSubmitting ? t('clients.saving') : t('clients.save')}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
       </div>
     </Container>
   )

@@ -1,0 +1,39 @@
+/* Table sort button and layout */
+.responsive-table__sort-btn {
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+
+.responsive-table__sort-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--form-primary, #0039c5);
+}
+
+.responsive-table__sort-icon {
+  flex-shrink: 0;
+}
+
+[dir="rtl"] .responsive-table__sort-btn {
+  flex-direction: row-reverse;
+}
+
+/* Column alignment: LTR = left, RTL (ar) = right; last column always center */
+.responsive-table__th,
+.responsive-table__td {
+  text-align: left;
+}
+
+[dir="rtl"] .responsive-table__th:not(:last-child),
+[dir="rtl"] .responsive-table__td:not(:last-child) {
+  text-align: right;
+}
+
+.responsive-table__th:last-child,
+.responsive-table__td:last-child {
+  text-align: center;
+}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getResolvedTheme } from '../../theme'
 import {
@@ -156,14 +157,14 @@ export default function Sidebar({
         </button>
 
         <div className="sidebar-header">
-          <div className="sidebar-logo">
+          <Link to="/" className="sidebar-logo">
             <img src={logoDark} alt="" className="sidebar-logo-img" />
             {expanded && (
               <span className="sidebar-app-name">
                 {appName}
               </span>
             )}
-          </div>
+          </Link>
         </div>
 
         <nav className="sidebar-nav" aria-label="Main navigation">

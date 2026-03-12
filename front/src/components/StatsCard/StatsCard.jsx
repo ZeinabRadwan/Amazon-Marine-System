@@ -49,7 +49,7 @@ export default function StatsCard({
   return (
     <article
       className={`
-        flex flex-shrink-0 flex-col rounded-lg border border-gray-200/80 bg-white py-6 px-5
+        flex flex-shrink-0 flex-col rounded-lg border border-gray-200/80 bg-white py-3.5 px-4
         shadow-sm transition-all duration-200 hover:shadow-md
         dark:border-gray-700/80 dark:bg-gray-800/80 dark:shadow-none dark:hover:border-gray-600
         ${className}
@@ -57,9 +57,9 @@ export default function StatsCard({
       aria-labelledby={titleId}
     >
       {/* Row 1: Icon (top-left) + Trend pill (top-right) */}
-      <div className="flex w-full items-start justify-between gap-3">
+      <div className="flex w-full items-start justify-between gap-2">
         <div
-          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl p-2.5 ${iconStyles}`}
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg p-1.5 [&>svg]:h-4 [&>svg]:w-4 ${iconStyles}`}
           aria-hidden
         >
           {icon}
@@ -67,7 +67,7 @@ export default function StatsCard({
         {changeDisplay != null && (
           <span
             className={`
-              inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium tabular-nums
+              inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[0.6875rem] font-medium tabular-nums
               ${hasTrend
                 ? isPositive
                   ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200'
@@ -79,9 +79,9 @@ export default function StatsCard({
             {hasTrend && (
               <>
                 {isPositive ? (
-                  <TrendingUp className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                  <TrendingUp className="h-3 w-3 shrink-0" aria-hidden />
                 ) : (
-                  <TrendingDown className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                  <TrendingDown className="h-3 w-3 shrink-0" aria-hidden />
                 )}
                 <span>{changeDisplay}</span>
               </>
@@ -92,13 +92,13 @@ export default function StatsCard({
       </div>
 
       {/* Row 2: Number + Title stacked */}
-      <div className="mt-4 min-w-0">
-        <p className="text-[2.1rem] font-bold leading-tight tabular-nums text-gray-900 dark:text-gray-100">
+      <div className="mt-2.5 min-w-0">
+        <p className="text-xl font-bold leading-tight tabular-nums text-gray-900 dark:text-gray-100">
           {typeof value === 'number' ? formatValue(value, i18n.language) : value}
         </p>
         <p
           id={titleId}
-          className="mt-1 text-base font-medium text-slate-700 dark:text-slate-300"
+          className="mt-0.5 text-sm font-medium text-slate-600 dark:text-slate-400"
         >
           {title}
         </p>

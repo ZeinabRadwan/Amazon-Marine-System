@@ -1,5 +1,20 @@
 /**
- * Clients API – matches back/postman_collection.json Clients module.
+ * Clients API – matches back/postman_collection.json Clients module (15 endpoints).
+ * 1. GET  /clients                      – List Clients (search/filter/sort)
+ * 2. POST /clients                      – Create Client
+ * 3. GET  /clients/:id                  – Get Client Detail
+ * 4. PUT  /clients/:id                  – Update Client
+ * 5. DELETE /clients/:id                – Delete Client
+ * 6. GET  /clients/stats                – Client Stats
+ * 7. GET  /clients/charts?months=6      – Client Charts
+ * 8. GET  /clients/financial-summary    – Financial Summary
+ * 9. GET  /clients/pricing              – Pricing List
+ * 10. GET /clients/export               – Export Clients
+ * 11. GET /clients/:id/visits           – Get Client Visits
+ * 12. GET /clients/:id/shipments        – Get Client Shipments
+ * 13. GET /clients/:id/attachments      – Get Client Attachments
+ * 14. POST /clients/:id/attachments     – Post Client Attachment
+ * 15. DELETE /clients/:id/attachments/:id – Delete Client Attachment
  */
 
 const getBaseUrl = () => {
@@ -121,7 +136,7 @@ export async function getClientCharts(token, params = {}) {
 }
 
 /**
- * GET {{base_url}}/clients/financial-summary – Financial Summary
+ * GET {{base_url}}/clients/financial-summary – Financial Summary (global)
  */
 export async function getFinancialSummary(token) {
   const res = await fetch(`${getBaseUrl()}/clients/financial-summary`, { headers: authHeaders(token) })
@@ -131,12 +146,42 @@ export async function getFinancialSummary(token) {
 }
 
 /**
- * GET {{base_url}}/clients/pricing – Pricing List
+ * GET {{base_url}}/clients/:id/financial-summary – Financial Summary for one client
  */
-export async function getPricingList(token) {
-  const res = await fetch(`${getBaseUrl()}/clients/pricing`, { headers: authHeaders(token) })
+export async function getClientFinancialSummary(token, clientId) {
+  const res = await fetch(`${getBaseUrl()}/clients/${clientId}/financial-summary`, { headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to get client financial summary (${res.status})`)
+  return data
+}
+
+/**
+ * GET {{base_url}}/clients/pricing – Pricing List (global)
+ * Query: search, pricing_tier, min_discount, max_discount, sort, direction
+ */
+export async function getPricingList(token, params = {}) {
+  const searchParams = new URLSearchParams()
+  if (params.search != null && params.search !== '') searchParams.set('search', params.search)
+  if (params.pricing_tier != null && params.pricing_tier !== '') searchParams.set('pricing_tier', params.pricing_tier)
+  if (params.min_discount != null && params.min_discount !== '') searchParams.set('min_discount', String(params.min_discount))
+  if (params.max_discount != null && params.max_discount !== '') searchParams.set('max_discount', String(params.max_discount))
+  if (params.sort != null) searchParams.set('sort', params.sort)
+  if (params.direction != null) searchParams.set('direction', params.direction)
+  const query = searchParams.toString()
+  const url = `${getBaseUrl()}/clients/pricing${query ? `?${query}` : ''}`
+  const res = await fetch(url, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to get pricing list (${res.status})`)
+  return data
+}
+
+/**
+ * GET {{base_url}}/clients/:id/pricing – Pricing List for one client
+ */
+export async function getClientPricingList(token, clientId) {
+  const res = await fetch(`${getBaseUrl()}/clients/${clientId}/pricing`, { headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to get client pricing list (${res.status})`)
   return data
 }
 
@@ -181,11 +226,16 @@ export async function getClientVisits(token, clientId) {
 }
 
 /**
- * GET {{base_url}}/clients/:id/shipments?per_page=10 – Get Client Shipments
+ * GET {{base_url}}/clients/:id/shipments – Get Client Shipments
+ * Query: per_page, page
  */
 export async function getClientShipments(token, clientId, params = {}) {
-  const perPage = params.per_page != null ? params.per_page : 10
-  const res = await fetch(`${getBaseUrl()}/clients/${clientId}/shipments?per_page=${perPage}`, { headers: authHeaders(token) })
+  const searchParams = new URLSearchParams()
+  if (params.per_page != null) searchParams.set('per_page', String(params.per_page))
+  else searchParams.set('per_page', '10')
+  if (params.page != null) searchParams.set('page', String(params.page))
+  const query = searchParams.toString()
+  const res = await fetch(`${getBaseUrl()}/clients/${clientId}/shipments?${query}`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to get client shipments (${res.status})`)
   return data

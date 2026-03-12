@@ -74,14 +74,27 @@
     "documentation": "التوثيق",
     "systemStatus": "حالة النظام"
   },
+  "table": {
+    "empty": "لا توجد بيانات.",
+    "sortBy": "ترتيب حسب {{column}}",
+    "sortAsc": "تصاعدي",
+    "sortDesc": "تنازلي",
+    "sortedAsc": "مرتب تصاعدياً حسب {{column}}. انقر للترتيب تنازلياً.",
+    "sortedDesc": "مرتب تنازلياً حسب {{column}}. انقر للترتيب تصاعدياً.",
+    "sortable": "ترتيب حسب هذا العمود"
+  },
   "statsCard": {
     "changeLabel": "التغيير: {{change}}، الاتجاه: {{trend}}",
     "trendUp": "اتجاه صاعد",
     "trendDown": "اتجاه هابط",
     "totalShipments": "إجمالي الشحنات",
     "totalClients": "إجمالي العملاء",
+    "activeClients": "العملاء النشطون",
     "revenue": "الإيرادات",
-    "revenueValue": "1.2م"
+    "revenueToDate": "الإيرادات (حتى تاريخه)",
+    "revenueValue": "342 ألف",
+    "netProfit": "صافي الربح",
+    "netProfitValue": "68 ألف"
   },
   "login": {
     "title": "تسجيل الدخول إلى حسابك",
@@ -97,11 +110,20 @@
     "darkMode": "التبديل إلى الوضع الداكن"
   },
   "home": {
-    "signedIn": "أنت مسجل الدخول.",
     "signedInAs": "أنت مسجل الدخول كـ {{name}}.",
     "loading": "جاري التحميل…",
     "signOut": "تسجيل الخروج",
-    "signingOut": "جاري تسجيل الخروج…"
+    "signingOut": "جاري تسجيل الخروج…",
+    "welcomeBack": "مرحباً بعودتك، {{name}}",
+    "loggedInAsRole": "مسجل الدخول الآن كـ {{role}}",
+    "today": "اليوم {{date}}",
+    "quotes": {
+      "admin": "التميز في القيادة يعني رفع الآخرين.",
+      "manager": "الفرق العظيمة تُبنى على الثقة والأهداف الواضحة.",
+      "sales": "كل محادثة مع عميل هي فرصة لتقديم قيمة.",
+      "user": "خطوات صغيرة كل يوم تؤدي إلى نتائج كبيرة.",
+      "default": "اجعل اليوم مهماً."
+    }
   },
   "signup": {
     "comingSoon": "إنشاء حساب (قريباً)"
@@ -220,10 +242,41 @@
     "title": "العملاء",
     "loading": "جاري تحميل العملاء…",
     "error": "فشل تحميل العملاء.",
+    "errorLoad": "فشل تحميل العملاء.",
+    "errorDetail": "فشل تحميل تفاصيل العميل.",
+    "errorCreate": "فشل إنشاء العميل.",
+    "errorUpdate": "فشل تحديث العميل.",
+    "errorDelete": "فشل حذف العميل.",
+    "errorExport": "فشل التصدير.",
+    "errorAttachmentUpload": "فشل رفع المرفق.",
+    "errorAttachmentDelete": "فشل حذف المرفق.",
+    "warningVisits": "فشل تحميل الزيارات.",
+    "warningShipments": "فشل تحميل الشحنات.",
+    "warningAttachments": "فشل تحميل المرفقات.",
     "createClient": "إضافة عميل",
     "editClient": "تعديل العميل",
     "search": "بحث…",
+    "searchPlaceholder": "بحث بالاسم، الشركة، الهاتف، البريد…",
     "status": "الحالة",
+    "statusAll": "جميع الحالات",
+    "statusActive": "نشط",
+    "statusInactive": "غير نشط",
+    "statusProspect": "عميل محتمل",
+    "statusLead": "عميل متوقع",
+    "filterLeadSource": "مصدر العميل",
+    "leadSourcePlaceholder": "جميع المصادر",
+    "assignedSalesPlaceholder": "جميع الموظفين",
+    "sortBy": "ترتيب حسب",
+    "sortClient": "اسم العميل",
+    "sortCompany": "الشركة",
+    "sortShipments": "عدد الشحنات",
+    "sortProfit": "الربح",
+    "sortLastContact": "آخر تواصل",
+    "directionAsc": "تصاعدي",
+    "directionDesc": "تنازلي",
+    "perPage": "لكل صفحة",
+    "sortOrder": "ترتيب الفرز",
+    "clearFilters": "مسح الفلاتر",
     "noClients": "لا يوجد عملاء بعد.",
     "actions": "إجراءات",
     "view": "عرض",
@@ -237,6 +290,12 @@
     "deleteConfirm": "حذف العميل؟",
     "deleteConfirmMessage": "لا يمكن التراجع عن هذا الإجراء.",
     "deleting": "جاري الحذف…",
+    "created": "تم إنشاء العميل.",
+    "updated": "تم تحديث العميل.",
+    "deleted": "تم حذف العميل.",
+    "exportSuccess": "تم تنزيل التصدير.",
+    "attachmentUploaded": "تم رفع المرفق.",
+    "attachmentDeleted": "تم حذف المرفق.",
     "fields": {
       "name": "الاسم",
       "contact_name": "اسم جهة الاتصال",
@@ -263,6 +322,23 @@
       "default_currency": "العملة",
       "notes": "ملاحظات"
     },
+    "stats": {
+      "total_clients": "إجمالي العملاء",
+      "active_clients": "العملاء النشطون",
+      "new_clients_this_month": "عملاء جدد هذا الشهر",
+      "total_revenue_from_clients": "إجمالي الإيرادات من العملاء"
+    },
+    "charts": "الرسوم البيانية",
+    "chartsNewClientsByMonth": "عملاء جدد حسب الشهر",
+    "chartsByLeadSource": "حسب مصدر العميل",
+    "chartsMonth": "الشهر",
+    "chartsCount": "العدد",
+    "chartsNoData": "لا توجد بيانات للرسم",
+    "leadSource": {
+      "Facebook": "فيسبوك",
+      "LinkedIn": "لينكدإن",
+      "Referral": "إحالة"
+    },
     "bulkAssign": "تعيين جماعي",
     "bulkAssignSelected": "المحدد",
     "assignedSales": "موظف المبيعات المعين",
@@ -286,6 +362,17 @@
     "charts": "الرسوم البيانية",
     "financialSummary": "الملخص المالي",
     "pricingList": "قائمة الأسعار",
-    "noPricing": "لا يوجد تسعير"
+    "noPricing": "لا يوجد تسعير",
+    "noFinancialData": "لا توجد بيانات مالية",
+    "financialFields": {
+      "balance_due": "المبلغ المستحق",
+      "last_payment_at": "آخر دفعة",
+      "open_invoices_count": "فواتير مفتوحة"
+    },
+    "pricingFields": {
+      "pricing_tier": "مستوى التسعير",
+      "pricing_discount_pct": "نسبة الخصم %",
+      "pricing_updated_at": "تاريخ تحديث التسعير"
+    }
   }
 }

@@ -1,10 +1,9 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { Package, Users as UsersIcon, DollarSign, ChevronDown, Download, Filter, RefreshCw } from 'lucide-react'
+import { BrowserRouter, Routes, Route, Navigate, useOutletContext } from 'react-router-dom'
+import { Package, Users as UsersIcon, DollarSign, ChevronDown, Download, Filter, RefreshCw, Calendar } from 'lucide-react'
 import Login from './pages/Login'
 import AuthenticatedLayout from './components/AuthenticatedLayout'
-import { PageHeader } from './components/PageHeader'
 import { Container } from './components/Container'
 import { StatsCard } from './components/StatsCard'
 import { DropdownMenu } from './components/DropdownMenu'
@@ -32,40 +31,62 @@ const DASHBOARD_TABS = [
 ]
 
 function Home() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [activeTab, setActiveTab] = useState('clients')
+  const { user } = useOutletContext() || {}
+  const displayName = user?.name || 'User'
+  const role = (user?.primary_role ?? user?.roles?.[0] ?? 'user')?.toLowerCase?.() || 'user'
+  const dateOnly = new Date().toLocaleDateString(i18n.language === 'ar' ? 'ar-EG' : 'en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
 
   return (
     <Container size="xl" className="home-page">
-      <PageHeader
-        title={t('pageHeader.dashboard')}
-        breadcrumbs={[{ label: t('pageHeader.home') }]}
-      />
-      <p className="mb-6">{t('home.signedIn')}</p>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <section className="welcome-banner" aria-label="Welcome">
+        <div className="welcome-banner__main">
+          <h2 className="welcome-banner__title">{t('home.welcomeBack', { name: displayName })}</h2>
+          <p className="welcome-banner__subtitle">{t('home.loggedInAsRole', { role })}</p>
+        </div>
+        <div className="welcome-banner__quote-wrap">
+          <Calendar className="welcome-banner__date-icon" aria-hidden />
+          <p className="welcome-banner__quote">{dateOnly}</p>
+        </div>
+      </section>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatsCard
           title={t('statsCard.totalShipments', 'Total Shipments')}
-          value={1245}
+          value={248}
           icon={<Package className="h-6 w-6" />}
           change={12}
           trend="up"
           variant="blue"
         />
         <StatsCard
-          title={t('statsCard.totalClients', 'Total Clients')}
-          value={89}
+          title={t('statsCard.activeClients', 'Active Clients')}
+          value={87}
           icon={<UsersIcon className="h-6 w-6" />}
           change={-3}
           trend="down"
           variant="green"
         />
         <StatsCard
-          title={t('statsCard.revenue', 'Revenue')}
-          value={t('statsCard.revenueValue', '1.2M')}
+          title={t('statsCard.revenueToDate', 'Revenue (to date)')}
+          value={t('statsCard.revenueValue', '$342K')}
           icon={<DollarSign className="h-6 w-6" />}
-          change={8}
+          change={23}
           trend="up"
           variant="amber"
+        />
+        <StatsCard
+          title={t('statsCard.netProfit', 'Net Profit')}
+          value={t('statsCard.netProfitValue', '$68K')}
+          icon={<DollarSign className="h-6 w-6" />}
+          change={-5}
+          trend="down"
+          variant="green"
         />
       </div>
 

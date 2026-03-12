@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getStoredToken } from '../Login'
 import { listRoles, listPermissions, getPermissionsForRole, upsertPermission } from '../../api/roles'
-import { PageHeader } from '../../components/PageHeader'
 import { Container } from '../../components/Container'
 import './RolesPermissions.css'
 
@@ -121,17 +120,9 @@ export default function RolesPermissions() {
   return (
     <Container size="xl">
       <div className="roles-permissions-page">
-        <PageHeader
-        title={t('rolesPermissions.title')}
-        breadcrumbs={[
-          { label: t('pageHeader.home'), href: '/' },
-          { label: t('pageHeader.system'), href: '/users' },
-          { label: t('rolesPermissions.title') },
-        ]}
-      />
-      {error && <div className="roles-permissions-error" role="alert">{error}</div>}
+        {error && <div className="roles-permissions-error" role="alert">{error}</div>}
 
-      {loading ? (
+        {loading ? (
         <p>{t('rolesPermissions.loading')}</p>
       ) : (
         <>

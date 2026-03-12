@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { getStoredToken, clearToken } from '../Login'
 import { getProfile, updateProfile, changePassword, logout } from '../../api/auth'
-import { PageHeader } from '../../components/PageHeader'
 import { Container } from '../../components/Container'
 import './Profile.css'
 
@@ -114,13 +113,6 @@ export default function Profile() {
   return (
     <Container size="lg">
       <div className="profile-page">
-        <PageHeader
-        title={t('profile.title')}
-        breadcrumbs={[
-          { label: t('pageHeader.home'), href: '/' },
-          { label: t('profile.title') },
-        ]}
-      />
       {error && <div className="profile-error" role="alert">{error}</div>}
 
       <section className="profile-section">

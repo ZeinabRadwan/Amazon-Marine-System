@@ -26,7 +26,8 @@ export default function AppLayout({
   sdFormsCount = 0,
   appName = 'Marketerz',
   onLogout,
-  pageHeader,
+  pageTitle = '',
+  pageBreadcrumbs = [],
   children,
 }) {
   const [sidebarExpanded, setSidebarExpanded] = useState(true)
@@ -55,9 +56,10 @@ export default function AppLayout({
           user={sidebarUser}
           onLogout={onLogout}
           alertsCount={alertsCount}
+          pageTitle={pageTitle}
+          pageBreadcrumbs={pageBreadcrumbs}
         />
         <div className="app-layout-content">
-          {pageHeader != null && <header className="app-layout-page-header">{pageHeader}</header>}
           <div className="app-layout-page">{children}</div>
           <Footer />
         </div>
