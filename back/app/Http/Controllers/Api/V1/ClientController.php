@@ -19,7 +19,6 @@ class ClientController extends Controller
     protected function clientWith(): array
     {
         return [
-            'assignedSales',
             'companyType',
             'preferredCommMethod',
             'interestLevel',
@@ -38,15 +37,11 @@ class ClientController extends Controller
 
         if ($search) {
             $query->where(function ($q) use ($search) {
-                $q->where('company_name', 'like', '%' . $search . '%')
-                    ->orWhere('name', 'like', '%' . $search . '%')
-                    ->orWhere('phone', 'like', '%' . $search . '%')
-                    ->orWhere('email', 'like', '%' . $search . '%');
+                $q->where('company_name', 'like', '%'.$search.'%')
+                    ->orWhere('name', 'like', '%'.$search.'%')
+                    ->orWhere('phone', 'like', '%'.$search.'%')
+                    ->orWhere('email', 'like', '%'.$search.'%');
             });
-        }
-
-        if ($assignedSalesId = $request->query('assigned_sales_id')) {
-            $query->where('assigned_sales_id', $assignedSalesId);
         }
 
         if ($sourceId = $request->query('lead_source_id')) {
@@ -132,25 +127,6 @@ class ClientController extends Controller
         ]);
     }
 
-    public function bulkAssignSales(Request $request)
-    {
-        $this->authorize('viewAny', Client::class);
-
-        $validated = $request->validate([
-            'client_ids' => ['required', 'array'],
-            'client_ids.*' => ['integer', 'exists:clients,id'],
-            'assigned_sales_id' => ['required', 'integer', 'exists:users,id'],
-        ]);
-
-        $count = Client::whereIn('id', $validated['client_ids'])
-            ->update(['assigned_sales_id' => $validated['assigned_sales_id']]);
-
-        return response()->json([
-            'message' => "Updated {$count} clients.",
-            'updated_count' => $count,
-        ]);
-    }
-
     public function export(Request $request)
     {
         $this->authorize('viewAny', Client::class);
@@ -171,7 +147,7 @@ class ClientController extends Controller
 
         $headers = [
             'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="clients-export-' . date('Y-m-d') . '.csv"',
+            'Content-Disposition' => 'attachment; filename="clients-export-'.date('Y-m-d').'.csv"',
         ];
         $callback = function () use ($rows) {
             $fh = fopen('php://output', 'w');
@@ -442,7 +418,6 @@ class ClientController extends Controller
             'profit' => $client->total_profit,
             'last_contact_at' => $lastContactAt,
             'last_contact_age_days' => $lastContactAgeDays,
-            'sales_rep' => $client->assignedSales?->name,
             'pricing_tier' => $client->pricing_tier,
             'pricing_discount_pct' => $client->pricing_discount_pct,
             'pricing_updated_at' => $client->pricing_updated_at,

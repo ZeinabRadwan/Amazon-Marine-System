@@ -14,15 +14,24 @@ class RolesAndPermissionsSeeder extends Seeder
      */
     public function run(): void
     {
-        // Define core roles
+        app()->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+
+        $permissionGroups = config('permissions.groups', []);
+        $allPermissionNames = collect($permissionGroups)->flatten()->unique()->values()->all();
+
+        $permissions = collect($allPermissionNames)->mapWithKeys(function (string $permKey): array {
+            return [$permKey => Permission::firstOrCreate(['name' => $permKey])];
+        });
+
         $roleKeys = [
             'admin',
             'sales',
+            'sales_supervisor',
+            'sales_manager',
             'accounting',
             'pricing',
             'operation',
             'support',
-            'sales_manager',
         ];
 
         $roles = collect($roleKeys)
@@ -31,52 +40,6 @@ class RolesAndPermissionsSeeder extends Seeder
             })
             ->all();
 
-        // Define permissions grouped by domain
-        $permissionGroups = [
-            'users' => [
-                'users.view',
-                'users.manage',
-            ],
-            'roles' => [
-                'roles.view',
-                'roles.manage',
-                'permissions.view',
-                'permissions.manage',
-            ],
-            'clients' => [
-                'clients.view',
-                'clients.manage',
-            ],
-            'sd_forms' => [
-                'sd_forms.view',
-                'sd_forms.manage',
-            ],
-            'accounting' => [
-                'accounting.view',
-                'accounting.manage',
-            ],
-            'financial' => [
-                'financial.view',
-                'financial.manage',
-            ],
-            'reports' => [
-                'reports.view',
-            ],
-            'pricing' => [
-                'pricing.view_offers',
-                'pricing.manage_offers',
-                'pricing.view_client_pricing',
-                'pricing.manage_client_pricing',
-            ],
-        ];
-
-        $allPermissionNames = collect($permissionGroups)->flatten()->unique();
-
-        $permissions = $allPermissionNames->mapWithKeys(function (string $permKey) {
-            return [$permKey => Permission::firstOrCreate(['name' => $permKey])];
-        });
-
-        // Assign permissions per role (can be refined later)
         if ($admin = $roles['admin'] ?? null) {
             $admin->syncPermissions($permissions->values());
         }
@@ -87,6 +50,20 @@ class RolesAndPermissionsSeeder extends Seeder
                 $permissions['clients.manage'],
                 $permissions['sd_forms.view'],
                 $permissions['sd_forms.manage'],
+                $permissions['shipments.view_own'],
+            ]);
+        }
+
+        if ($salesSupervisor = $roles['sales_supervisor'] ?? null) {
+            $salesSupervisor->syncPermissions([
+                $permissions['clients.view'],
+                $permissions['clients.manage'],
+                $permissions['clients.delete'],
+                $permissions['sd_forms.view'],
+                $permissions['sd_forms.manage'],
+                $permissions['sd_forms.manage_any'],
+                $permissions['shipments.view_own'],
+                $permissions['reports.view'],
             ]);
         }
 
@@ -94,10 +71,15 @@ class RolesAndPermissionsSeeder extends Seeder
             $salesManager->syncPermissions([
                 $permissions['clients.view'],
                 $permissions['clients.manage'],
+                $permissions['clients.delete'],
                 $permissions['users.view'],
                 $permissions['users.manage'],
+                $permissions['users.manage_admins'],
                 $permissions['sd_forms.view'],
                 $permissions['sd_forms.manage'],
+                $permissions['sd_forms.manage_any'],
+                $permissions['shipments.view_own'],
+                $permissions['reports.view'],
             ]);
         }
 
@@ -105,6 +87,8 @@ class RolesAndPermissionsSeeder extends Seeder
             $operation->syncPermissions([
                 $permissions['sd_forms.view'],
                 $permissions['sd_forms.manage'],
+                $permissions['shipments.view'],
+                $permissions['shipments.manage_ops'],
             ]);
         }
 
@@ -130,15 +114,20 @@ class RolesAndPermissionsSeeder extends Seeder
         if ($support = $roles['support'] ?? null) {
             $support->syncPermissions([
                 $permissions['clients.view'],
+                $permissions['tickets.view'],
+                $permissions['tickets.manage'],
+                $permissions['customer_service.view_comms'],
+                $permissions['customer_service.manage_comms'],
+                $permissions['customer_service.view_tracking_updates'],
+                $permissions['customer_service.manage_tracking_updates'],
             ]);
         }
 
-        // Seed page-level permissions for core modules
         $this->seedPagePermissions($roles);
     }
 
     /**
-     * @param array<string, Role> $roles
+     * @param  array<string, Role>  $roles
      */
     protected function seedPagePermissions(array $roles): void
     {
@@ -150,7 +139,6 @@ class RolesAndPermissionsSeeder extends Seeder
             'clients',
         ];
 
-        // Admin: full access to all pages
         if ($admin = $roles['admin'] ?? null) {
             foreach ($pages as $page) {
                 PagePermission::updateOrCreate(
@@ -168,7 +156,6 @@ class RolesAndPermissionsSeeder extends Seeder
             }
         }
 
-        // Sales: full access to clients page
         if ($sales = $roles['sales'] ?? null) {
             PagePermission::updateOrCreate(
                 [
@@ -184,7 +171,21 @@ class RolesAndPermissionsSeeder extends Seeder
             );
         }
 
-        // Sales manager: manage clients and users
+        if ($salesSupervisor = $roles['sales_supervisor'] ?? null) {
+            PagePermission::updateOrCreate(
+                [
+                    'role_id' => $salesSupervisor->id,
+                    'page' => 'clients',
+                ],
+                [
+                    'can_view' => true,
+                    'can_edit' => true,
+                    'can_delete' => true,
+                    'can_approve' => false,
+                ],
+            );
+        }
+
         if ($salesManager = $roles['sales_manager'] ?? null) {
             PagePermission::updateOrCreate(
                 [
@@ -213,7 +214,6 @@ class RolesAndPermissionsSeeder extends Seeder
             );
         }
 
-        // Support: view-only access to clients
         if ($support = $roles['support'] ?? null) {
             PagePermission::updateOrCreate(
                 [

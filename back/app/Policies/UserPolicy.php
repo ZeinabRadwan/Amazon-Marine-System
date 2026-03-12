@@ -27,8 +27,7 @@ class UserPolicy
             return false;
         }
 
-        // Prevent non-admins from modifying admin users
-        if ($model->hasRole('admin') && ! $user->hasRole('admin')) {
+        if ($model->hasRole('admin') && ! $user->can('users.manage_admins')) {
             return false;
         }
 
@@ -46,11 +45,10 @@ class UserPolicy
             return false;
         }
 
-        if ($model->hasRole('admin') && ! $user->hasRole('admin')) {
+        if ($model->hasRole('admin') && ! $user->can('users.manage_admins')) {
             return false;
         }
 
         return true;
     }
 }
-

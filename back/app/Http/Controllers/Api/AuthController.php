@@ -41,7 +41,7 @@ class AuthController extends Controller
             'user' => $this->transformUser($user),
             'role' => $user->getRoleNames()->first(),
             'roles' => $user->getRoleNames(),
-            'permissions' => $user->getAllPermissions()->pluck('name'),
+            'permissions' => $user->getAllPermissions()->pluck('name')->values()->all(),
         ]);
     }
 
@@ -64,6 +64,7 @@ class AuthController extends Controller
 
         return response()->json([
             'user' => $this->transformUser($user),
+            'permissions' => $user->getAllPermissions()->pluck('name')->values()->all(),
         ]);
     }
 
@@ -74,6 +75,7 @@ class AuthController extends Controller
 
         return response()->json([
             'user' => $this->transformUser($user),
+            'permissions' => $user->getAllPermissions()->pluck('name')->values()->all(),
         ]);
     }
 
@@ -84,7 +86,7 @@ class AuthController extends Controller
 
         $validated = $request->validate([
             'name' => ['sometimes', 'string', 'max:255'],
-            'email' => ['sometimes', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'email' => ['sometimes', 'email', 'max:255', 'unique:users,email,'.$user->id],
             'current_password' => ['sometimes', 'required_with:password,password_confirmation', 'string'],
             'password' => ['sometimes', 'required_with:current_password', 'string', 'min:8', 'confirmed'],
         ]);
@@ -153,4 +155,3 @@ class AuthController extends Controller
         ];
     }
 }
-

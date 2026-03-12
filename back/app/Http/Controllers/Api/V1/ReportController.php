@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\Shipment;
 use App\Models\User;
@@ -64,15 +63,12 @@ class ReportController extends Controller
         $to = $request->query('to') ? Carbon::parse($request->query('to'))->endOfDay() : now()->copy()->endOfMonth();
 
         $userIds = collect();
-        $userIds = $userIds->merge(Shipment::whereNotNull('sales_rep_id')->distinct()->pluck('sales_rep_id'));
-        $userIds = $userIds->merge(Client::whereNotNull('assigned_sales_id')->distinct()->pluck('assigned_sales_id'));
-        $userIds = $userIds->unique()->filter()->values();
+        $userIds = Shipment::whereNotNull('sales_rep_id')->distinct()->pluck('sales_rep_id')->unique()->filter()->values();
 
         $users = User::whereIn('id', $userIds)->get()->keyBy('id');
 
         $data = $userIds->map(function ($userId) use ($users, $from, $to) {
             $user = $users->get($userId);
-            $clientsAssigned = Client::where('assigned_sales_id', $userId)->count();
             $shipmentsInPeriod = Shipment::where('sales_rep_id', $userId)
                 ->whereBetween('created_at', [$from, $to]);
             $shipmentsCount = (int) (clone $shipmentsInPeriod)->count();
@@ -83,7 +79,6 @@ class ReportController extends Controller
                 'user_id' => $userId,
                 'name' => $user?->name ?? '',
                 'initials' => $user?->initials ?? '',
-                'clients_assigned' => $clientsAssigned,
                 'shipments_count' => $shipmentsCount,
                 'total_sales' => round($totalSales, 2),
                 'net_profit' => round($netProfit, 2),
@@ -93,4 +88,3 @@ class ReportController extends Controller
         return response()->json(['data' => $data]);
     }
 }
-

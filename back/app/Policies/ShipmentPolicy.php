@@ -9,7 +9,7 @@ class ShipmentPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->can('shipments.view');
+        return $user->can('shipments.view') || $user->can('shipments.view_own');
     }
 
     public function view(User $user, Shipment $shipment): bool
@@ -18,11 +18,7 @@ class ShipmentPolicy
             return true;
         }
 
-        if ($user->hasRole('sales') && $shipment->sales_rep_id === $user->id) {
-            return true;
-        }
-
-        return false;
+        return $user->can('shipments.view_own') && $shipment->sales_rep_id === $user->id;
     }
 
     public function create(User $user): bool
@@ -40,4 +36,3 @@ class ShipmentPolicy
         return $user->can('shipments.manage_ops');
     }
 }
-

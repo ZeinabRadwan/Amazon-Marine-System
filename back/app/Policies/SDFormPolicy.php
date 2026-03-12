@@ -18,7 +18,7 @@ class SDFormPolicy
             return true;
         }
 
-        if ($user->hasRole('sales') && $form->sales_rep_id === $user->id) {
+        if ($user->can('sd_forms.manage') && $form->sales_rep_id === $user->id) {
             return true;
         }
 
@@ -36,15 +36,11 @@ class SDFormPolicy
             return false;
         }
 
-        if ($user->hasRole('admin') || $user->hasRole('sales_manager')) {
+        if ($user->can('sd_forms.manage_any')) {
             return true;
         }
 
-        if ($user->hasRole('sales') && $form->sales_rep_id === $user->id) {
-            return true;
-        }
-
-        return false;
+        return $form->sales_rep_id === $user->id;
     }
 
     public function delete(User $user, SDForm $form): bool
@@ -52,4 +48,3 @@ class SDFormPolicy
         return $this->update($user, $form);
     }
 }
-

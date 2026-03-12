@@ -1,33 +1,37 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\AbilitiesController;
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\PermissionController;
-use App\Http\Controllers\Api\V1\UserController;
-use App\Http\Controllers\Api\V1\ClientController;
-use App\Http\Controllers\Api\V1\ClientContactController;
+use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\V1\AccountingController;
 use App\Http\Controllers\Api\V1\ClientAttachmentController;
+use App\Http\Controllers\Api\V1\ClientContactController;
+use App\Http\Controllers\Api\V1\ClientController;
+use App\Http\Controllers\Api\V1\CommunicationLogController;
 use App\Http\Controllers\Api\V1\CompanyTypeController;
-use App\Http\Controllers\Api\V1\PreferredCommMethodController;
-use App\Http\Controllers\Api\V1\InterestLevelController;
-use App\Http\Controllers\Api\V1\DecisionMakerTitleController;
-use App\Http\Controllers\Api\V1\LeadSourceController;
-use App\Http\Controllers\Api\V1\PortController;
 use App\Http\Controllers\Api\V1\DashboardController;
-use App\Http\Controllers\Api\V1\ReportController;
-use App\Http\Controllers\Api\V1\VisitController;
-use App\Http\Controllers\Api\V1\ShipmentController;
-use App\Http\Controllers\Api\V1\SDFormController;
+use App\Http\Controllers\Api\V1\DecisionMakerTitleController;
+use App\Http\Controllers\Api\V1\ExpensesController;
+use App\Http\Controllers\Api\V1\InterestLevelController;
+use App\Http\Controllers\Api\V1\InvoiceController;
+use App\Http\Controllers\Api\V1\LeadSourceController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\PdfLayoutController;
-use App\Http\Controllers\Api\V1\AccountingController;
-use App\Http\Controllers\Api\V1\TreasuryController;
-use App\Http\Controllers\Api\V1\ExpensesController;
-use App\Http\Controllers\Api\V1\InvoiceController;
-use App\Http\Controllers\Api\V1\VendorBillController;
+use App\Http\Controllers\Api\V1\PortController;
+use App\Http\Controllers\Api\V1\PreferredCommMethodController;
 use App\Http\Controllers\Api\V1\PricingOfferController;
+use App\Http\Controllers\Api\V1\ReportController;
+use App\Http\Controllers\Api\V1\SDFormController;
+use App\Http\Controllers\Api\V1\ShipmentController;
+use App\Http\Controllers\Api\V1\ShipmentTrackingUpdateController;
+use App\Http\Controllers\Api\V1\TicketController;
+use App\Http\Controllers\Api\V1\TicketTypeController;
+use App\Http\Controllers\Api\V1\TreasuryController;
+use App\Http\Controllers\Api\V1\UserController;
+use App\Http\Controllers\Api\V1\VendorBillController;
+use App\Http\Controllers\Api\V1\VisitController;
+use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
     // Public auth routes
@@ -43,12 +47,16 @@ Route::prefix('v1')->group(function () {
         Route::put('profile', [AuthController::class, 'updateProfile']);
         Route::put('profile/password', [AuthController::class, 'updatePassword']);
 
-        // Roles & page permissions
+        // Roles & Spatie abilities (for permission page)
         Route::get('roles', [RoleController::class, 'index']);
+        Route::post('roles', [RoleController::class, 'store']);
+        Route::put('roles/{role}', [RoleController::class, 'update']);
+        Route::delete('roles/{role}', [RoleController::class, 'destroy']);
+        Route::get('abilities', [AbilitiesController::class, 'index']);
 
         Route::get('permissions', [PermissionController::class, 'index']);
         Route::post('permissions', [PermissionController::class, 'store']);
-        Route::get('permissions/{role}', [PermissionController::class, 'showByRole']);
+        Route::get('permissions/by-role/{roleId}', [PermissionController::class, 'showByRole']);
         Route::delete('permissions/{permission}', [PermissionController::class, 'destroy']);
 
         // User management
@@ -59,6 +67,7 @@ Route::prefix('v1')->group(function () {
         Route::delete('users/{user}', [UserController::class, 'destroy']);
         Route::put('users/{user}/password', [UserController::class, 'updatePassword']);
         Route::post('users/{user}/assign-role', [UserController::class, 'assignRole']);
+        Route::put('users/{user}/permissions', [UserController::class, 'syncPermissions']);
         Route::post('users/{user}/activate', [UserController::class, 'activate']);
         Route::post('users/{user}/deactivate', [UserController::class, 'deactivate']);
 
@@ -112,8 +121,6 @@ Route::prefix('v1')->group(function () {
             ->middleware('page_permission:clients,view');
         Route::get('clients/pricing', [ClientController::class, 'pricingList'])
             ->middleware('page_permission:clients,view');
-        Route::post('clients/bulk-assign', [ClientController::class, 'bulkAssignSales'])
-            ->middleware('page_permission:clients,edit');
         Route::get('clients/export', [ClientController::class, 'export'])
             ->middleware('page_permission:clients,view');
         Route::get('clients/{client}', [ClientController::class, 'show'])
@@ -164,6 +171,27 @@ Route::prefix('v1')->group(function () {
         Route::post('shipments', [ShipmentController::class, 'store']);
         Route::get('shipments/{shipment}', [ShipmentController::class, 'show']);
         Route::put('shipments/{shipment}', [ShipmentController::class, 'update']);
+        Route::get('shipments/{shipment}/tracking-updates', [ShipmentTrackingUpdateController::class, 'index']);
+        Route::post('shipments/{shipment}/tracking-updates', [ShipmentTrackingUpdateController::class, 'store']);
+
+        // Ticket types (lookup – CRUD)
+        Route::get('ticket-types', [TicketTypeController::class, 'index']);
+        Route::post('ticket-types', [TicketTypeController::class, 'store']);
+        Route::get('ticket-types/{ticket_type}', [TicketTypeController::class, 'show']);
+        Route::put('ticket-types/{ticket_type}', [TicketTypeController::class, 'update']);
+        Route::delete('ticket-types/{ticket_type}', [TicketTypeController::class, 'destroy']);
+
+        // Tickets (customer service)
+        Route::get('tickets', [TicketController::class, 'index']);
+        Route::post('tickets', [TicketController::class, 'store']);
+        Route::get('tickets/{ticket}', [TicketController::class, 'show']);
+        Route::put('tickets/{ticket}', [TicketController::class, 'update']);
+        Route::delete('tickets/{ticket}', [TicketController::class, 'destroy']);
+
+        // Communication log (customer service)
+        Route::get('communication-logs', [CommunicationLogController::class, 'index']);
+        Route::post('communication-logs', [CommunicationLogController::class, 'store']);
+        Route::get('communication-logs/{communicationLog}', [CommunicationLogController::class, 'show']);
 
         // Visits (follow-ups / communication log)
         Route::get('visits', [VisitController::class, 'index']);
@@ -241,4 +269,3 @@ Route::prefix('v1')->group(function () {
         Route::put('pdf-layouts/{documentType}', [PdfLayoutController::class, 'upsert']);
     });
 });
-

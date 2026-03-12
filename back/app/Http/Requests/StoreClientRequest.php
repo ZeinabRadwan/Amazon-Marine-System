@@ -37,7 +37,6 @@ class StoreClientRequest extends FormRequest
             'decision_maker_name' => ['nullable', 'string', 'max:255'],
             'decision_maker_title_id' => ['nullable', 'integer', 'exists:decision_maker_titles,id'],
             'decision_maker_title_other' => ['nullable', 'string', 'max:255'],
-            'assigned_sales_id' => ['nullable', 'integer', 'exists:users,id'],
             'notes' => ['nullable', 'string'],
             'shipping_problems' => ['nullable', 'string'],
             'current_need' => ['nullable', 'string'],

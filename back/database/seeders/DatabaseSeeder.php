@@ -22,6 +22,9 @@ class DatabaseSeeder extends Seeder
             SDFormsSeeder::class,
             ExpensesSeeder::class,
             InvoicesSeeder::class,
+            TicketTypesAndPrioritiesSeeder::class,
+            CommunicationLogTypesSeeder::class,
+            CustomerServiceSeeder::class,
         ]);
     }
 }

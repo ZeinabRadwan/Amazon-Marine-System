@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -153,5 +153,21 @@ class Shipment extends Model
     public function notes(): MorphMany
     {
         return $this->morphMany(Note::class, 'noteable');
+    }
+
+    /**
+     * @return HasMany<ShipmentTrackingUpdate>
+     */
+    public function trackingUpdates(): HasMany
+    {
+        return $this->hasMany(ShipmentTrackingUpdate::class)->orderByDesc('created_at');
+    }
+
+    /**
+     * @return HasOne<ShipmentTrackingUpdate>
+     */
+    public function latestTrackingUpdate(): HasOne
+    {
+        return $this->hasOne(ShipmentTrackingUpdate::class)->latestOfMany();
     }
 }

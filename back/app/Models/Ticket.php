@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Ticket extends Model
@@ -15,12 +15,15 @@ class Ticket extends Model
      */
     protected $fillable = [
         'client_id',
+        'shipment_id',
         'created_by_id',
         'assigned_to_id',
+        'ticket_type_id',
+        'priority_id',
+        'ticket_number',
         'subject',
         'description',
         'status',
-        'priority',
         'source',
     ];
 
@@ -30,6 +33,30 @@ class Ticket extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    /**
+     * @return BelongsTo<Shipment, Ticket>
+     */
+    public function shipment(): BelongsTo
+    {
+        return $this->belongsTo(Shipment::class);
+    }
+
+    /**
+     * @return BelongsTo<TicketType, Ticket>
+     */
+    public function ticketType(): BelongsTo
+    {
+        return $this->belongsTo(TicketType::class, 'ticket_type_id');
+    }
+
+    /**
+     * @return BelongsTo<TicketPriority, Ticket>
+     */
+    public function priority(): BelongsTo
+    {
+        return $this->belongsTo(TicketPriority::class, 'priority_id');
     }
 
     /**

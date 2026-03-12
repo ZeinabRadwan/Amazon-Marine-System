@@ -27,22 +27,20 @@ class TicketPolicy
 
     public function create(User $user): bool
     {
-        return $user->can('tickets.manage') || $user->hasRole('support') || $user->hasRole('admin');
+        return $user->can('tickets.manage');
     }
 
     public function update(User $user, Ticket $ticket): bool
     {
-        if ($user->can('tickets.manage') || $user->hasRole('support') || $user->hasRole('admin')) {
+        if ($user->can('tickets.manage')) {
             return true;
         }
 
-        // Allow creator to update their own ticket (but UI should limit which fields)
         return $ticket->created_by_id === $user->id;
     }
 
     public function delete(User $user, Ticket $ticket): bool
     {
-        return $user->can('tickets.manage') || $user->hasRole('support') || $user->hasRole('admin');
+        return $user->can('tickets.manage');
     }
 }
-

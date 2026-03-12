@@ -417,6 +417,38 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Sync User Permissions",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"permissions\": [\"clients.delete\", \"sd_forms.manage_any\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/{{user_id}}/permissions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users",
+                "{{user_id}}",
+                "permissions"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },
@@ -506,7 +538,7 @@
           "response": []
         },
         {
-          "name": "Get Permissions For Role",
+          "name": "Get Page Permissions By Role",
           "request": {
             "method": "GET",
             "header": [
@@ -520,12 +552,154 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/permissions/{{role_id}}",
+              "raw": "{{base_url}}/permissions/by-role/{{role_id}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "permissions",
+                "by-role",
+                "{{role_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Page Permission",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/permissions/{{page_permission_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "permissions",
+                "{{page_permission_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Abilities (Spatie)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/abilities",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "abilities"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"custom_role\",\n  \"permissions\": [\"clients.view\", \"clients.manage\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/roles",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "roles"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Role",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"custom_role\",\n  \"permissions\": [\"clients.view\", \"clients.manage\", \"sd_forms.view\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/roles/{{role_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "roles",
+                "{{role_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Role",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/roles/{{role_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "roles",
                 "{{role_id}}"
               ]
             }
@@ -2134,7 +2308,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/clients?q={{search}}&lead_source_id={{lead_source_id}}&status={{status}}&page=1&per_page=15&assigned_sales_id={{sales_id}}&sort=client&direction=asc",
+              "raw": "{{base_url}}/clients?q={{search}}&lead_source_id={{lead_source_id}}&status={{status}}&page=1&per_page=15&sort=client&direction=asc",
               "host": [
                 "{{base_url}}"
               ],
@@ -2161,10 +2335,6 @@
                 {
                   "key": "per_page",
                   "value": "15"
-                },
-                {
-                  "key": "assigned_sales_id",
-                  "value": "{{sales_id}}"
                 },
                 {
                   "key": "sort",
@@ -2452,37 +2622,6 @@
               "path": [
                 "clients",
                 "export"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Bulk Assign Sales",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"client_ids\": [1, 2],\n  \"assigned_sales_id\": 1\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/clients/bulk-assign",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "clients",
-                "bulk-assign"
               ]
             }
           },
@@ -5037,6 +5176,268 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Customer Service",
+      "description": "ticket_type_id (seeded): 1=inquiry (استفسار), 2=complaint (شكوى), 3=request (طلب). priority_id (seeded): 1=low (منخفض), 2=medium (متوسط), 3=high (عالي).",
+      "item": [
+        {
+          "name": "Ticket Types",
+          "item": [
+            {
+              "name": "List Ticket Types",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Accept", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": { "raw": "{{base_url}}/ticket-types", "host": ["{{base_url}}"], "path": ["ticket-types"] }
+              },
+              "response": []
+            },
+            {
+              "name": "Create Ticket Type",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Accept", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"follow_up\",\n  \"label_ar\": \"متابعة\"\n}"
+                },
+                "url": { "raw": "{{base_url}}/ticket-types", "host": ["{{base_url}}"], "path": ["ticket-types"] }
+              },
+              "response": []
+            },
+            {
+              "name": "Show Ticket Type",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Accept", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": { "raw": "{{base_url}}/ticket-types/{{ticket_type_id}}", "host": ["{{base_url}}"], "path": ["ticket-types", "{{ticket_type_id}}"] }
+              },
+              "response": []
+            },
+            {
+              "name": "Update Ticket Type",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Accept", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"inquiry\",\n  \"label_ar\": \"استفسار\"\n}"
+                },
+                "url": { "raw": "{{base_url}}/ticket-types/{{ticket_type_id}}", "host": ["{{base_url}}"], "path": ["ticket-types", "{{ticket_type_id}}"] }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Ticket Type",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  { "key": "Accept", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": { "raw": "{{base_url}}/ticket-types/{{ticket_type_id}}", "host": ["{{base_url}}"], "path": ["ticket-types", "{{ticket_type_id}}"] }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Tickets",
+          "description": "Use ticket_type_id and priority_id (see folder description for seeded ID meanings).",
+          "item": [
+            {
+              "name": "List Tickets",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Accept", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/tickets?per_page=15",
+                  "host": ["{{base_url}}"],
+                  "path": ["tickets"],
+                  "query": [
+                    { "key": "search", "value": "", "disabled": true },
+                    { "key": "ticket_type_id", "value": "1", "description": "1=inquiry, 2=complaint, 3=request", "disabled": true },
+                    { "key": "status", "value": "open", "disabled": true },
+                    { "key": "priority_id", "value": "2", "description": "1=low, 2=medium, 3=high", "disabled": true },
+                    { "key": "client_id", "value": "", "disabled": true },
+                    { "key": "assigned_to_id", "value": "", "disabled": true },
+                    { "key": "per_page", "value": "15" }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create Ticket",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Accept", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"client_id\": 1,\n  \"ticket_type_id\": 1,\n  \"priority_id\": 2,\n  \"subject\": \"Test inquiry\",\n  \"description\": \"Description here\",\n  \"shipment_id\": null,\n  \"assigned_to_id\": null\n}"
+                },
+                "url": { "raw": "{{base_url}}/tickets", "host": ["{{base_url}}"], "path": ["tickets"] }
+              },
+              "response": []
+            },
+            {
+              "name": "Show Ticket",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Accept", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": { "raw": "{{base_url}}/tickets/{{ticket_id}}", "host": ["{{base_url}}"], "path": ["tickets", "{{ticket_id}}"] }
+              },
+              "response": []
+            },
+            {
+              "name": "Update Ticket",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Accept", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"in_progress\",\n  \"ticket_type_id\": 1,\n  \"priority_id\": 2,\n  \"assigned_to_id\": 1\n}"
+                },
+                "url": { "raw": "{{base_url}}/tickets/{{ticket_id}}", "host": ["{{base_url}}"], "path": ["tickets", "{{ticket_id}}"] }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Ticket",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  { "key": "Accept", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": { "raw": "{{base_url}}/tickets/{{ticket_id}}", "host": ["{{base_url}}"], "path": ["tickets", "{{ticket_id}}"] }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Shipment Tracking Updates",
+          "item": [
+            {
+              "name": "List Tracking Updates (for shipment)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Accept", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": { "raw": "{{base_url}}/shipments/{{shipment_id}}/tracking-updates", "host": ["{{base_url}}"], "path": ["shipments", "{{shipment_id}}", "tracking-updates"] }
+              },
+              "response": []
+            },
+            {
+              "name": "Add Tracking Update",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Accept", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"update_text\": \"Shipment has departed the port and is in transit.\"\n}"
+                },
+                "url": { "raw": "{{base_url}}/shipments/{{shipment_id}}/tracking-updates", "host": ["{{base_url}}"], "path": ["shipments", "{{shipment_id}}", "tracking-updates"] }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Communication Log",
+          "description": "communication_log_type_id (seeded): 1=call (مكالمة), 2=whatsapp (واتساب), 3=email (بريد إلكتروني), 4=meeting (اجتماع), 5=note (ملاحظة).",
+          "item": [
+            {
+              "name": "List Communication Logs",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Accept", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/communication-logs?per_page=15",
+                  "host": ["{{base_url}}"],
+                  "path": ["communication-logs"],
+                  "query": [
+                    { "key": "communication_log_type_id", "value": "1", "description": "1=call, 2=whatsapp, 3=email, 4=meeting, 5=note", "disabled": true },
+                    { "key": "related", "value": "client", "disabled": true },
+                    { "key": "client_id", "value": "", "disabled": true },
+                    { "key": "search", "value": "", "disabled": true },
+                    { "key": "per_page", "value": "15" }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create Communication Log",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Accept", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"client_id\": 1,\n  \"communication_log_type_id\": 1,\n  \"subject\": \"Follow-up on BL-2026-0248\",\n  \"client_said\": \"Customer asked about ETA\",\n  \"issue\": \"\",\n  \"reply\": \"Provided ETA and next steps\"\n}"
+                },
+                "url": { "raw": "{{base_url}}/communication-logs", "host": ["{{base_url}}"], "path": ["communication-logs"] }
+              },
+              "response": []
+            },
+            {
+              "name": "Show Communication Log",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Accept", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": { "raw": "{{base_url}}/communication-logs/{{communication_log_id}}", "host": ["{{base_url}}"], "path": ["communication-logs", "{{communication_log_id}}"] }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
     }
   ],
   "variable": [
@@ -5059,6 +5460,22 @@
     {
       "key": "status",
       "value": ""
+    },
+    {
+      "key": "ticket_id",
+      "value": "1"
+    },
+    {
+      "key": "ticket_type_id",
+      "value": "1"
+    },
+    {
+      "key": "shipment_id",
+      "value": "1"
+    },
+    {
+      "key": "communication_log_id",
+      "value": "1"
     }
   ]
 }

@@ -24,28 +24,11 @@ class ClientPolicy
 
     public function update(User $user, Client $client): bool
     {
-        if ($user->can('pricing.manage_client_pricing')) {
-            return true;
-        }
-
-        if (! $user->can('clients.manage')) {
-            return false;
-        }
-
-        if ($user->hasRole('admin') || $user->hasRole('sales_manager')) {
-            return true;
-        }
-
-        if ($user->hasRole('sales') && $client->assigned_sales_id === $user->id) {
-            return true;
-        }
-
-        return false;
+        return $user->can('pricing.manage_client_pricing') || $user->can('clients.manage');
     }
 
     public function delete(User $user, Client $client): bool
     {
-        return $this->update($user, $client);
+        return $user->can('clients.delete');
     }
 }
-

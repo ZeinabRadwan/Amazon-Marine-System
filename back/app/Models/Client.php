@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -35,7 +35,6 @@ class Client extends Model
         'decision_maker_name',
         'decision_maker_title_id',
         'decision_maker_title_other',
-        'assigned_sales_id',
         'notes',
         'shipping_problems',
         'current_need',
@@ -60,14 +59,6 @@ class Client extends Model
         'pricing_discount_pct' => 'decimal:2',
         'pricing_updated_at' => 'datetime',
     ];
-
-    /**
-     * @return BelongsTo<User, Client>
-     */
-    public function assignedSales(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'assigned_sales_id');
-    }
 
     /**
      * @return BelongsTo<CompanyType, Client>

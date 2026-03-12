@@ -37,7 +37,6 @@ class UpdateClientRequest extends FormRequest
             'decision_maker_name' => ['sometimes', 'nullable', 'string', 'max:255'],
             'decision_maker_title_id' => ['sometimes', 'nullable', 'integer', 'exists:decision_maker_titles,id'],
             'decision_maker_title_other' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'assigned_sales_id' => ['sometimes', 'nullable', 'integer', 'exists:users,id'],
             'notes' => ['sometimes', 'nullable', 'string'],
             'shipping_problems' => ['sometimes', 'nullable', 'string'],
             'current_need' => ['sometimes', 'nullable', 'string'],

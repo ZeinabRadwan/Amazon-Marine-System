@@ -19,8 +19,8 @@ class UserController extends Controller
 
         if ($search = $request->query('search')) {
             $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', '%' . $search . '%')
-                    ->orWhere('email', 'like', '%' . $search . '%');
+                $q->where('name', 'like', '%'.$search.'%')
+                    ->orWhere('email', 'like', '%'.$search.'%');
             });
         }
 
@@ -49,7 +49,7 @@ class UserController extends Controller
 
         $validated = $request->validated();
 
-        $user = new User();
+        $user = new User;
         $user->name = $validated['name'];
         $user->email = $validated['email'];
         $user->password = Hash::make($validated['password']);
@@ -194,6 +194,25 @@ class UserController extends Controller
         ]);
     }
 
+    public function syncPermissions(Request $request, User $user)
+    {
+        $this->authorize('update', $user);
+
+        $validated = $request->validate([
+            'permissions' => ['required', 'array'],
+            'permissions.*' => ['string', 'exists:permissions,name'],
+        ]);
+
+        $user->syncPermissions($validated['permissions']);
+
+        $user->load('roles');
+
+        return response()->json([
+            'data' => $this->transformUser($user),
+            'message' => 'User permissions updated.',
+        ]);
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -207,7 +226,7 @@ class UserController extends Controller
             'status' => $user->status,
             'roles' => $user->getRoleNames(),
             'primary_role' => $user->roles->first()?->name,
+            'permissions' => $user->getAllPermissions()->pluck('name')->values()->all(),
         ];
     }
 }
-

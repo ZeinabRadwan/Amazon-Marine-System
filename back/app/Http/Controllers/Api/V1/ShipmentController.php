@@ -3,10 +3,8 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Models\Client;
 use App\Models\SDForm;
 use App\Models\Shipment;
-use App\Models\Vendor;
 use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 
@@ -18,6 +16,10 @@ class ShipmentController extends Controller
 
         $query = Shipment::query()
             ->with(['client', 'salesRep', 'lineVendor', 'originPort', 'destinationPort', 'sdForm']);
+
+        if (str_contains((string) $request->query('include'), 'latest_tracking_update')) {
+            $query->with(['latestTrackingUpdate' => fn ($q) => $q->with('createdBy')]);
+        }
 
         if ($status = $request->query('status')) {
             $query->where('status', $status);
@@ -49,12 +51,12 @@ class ShipmentController extends Controller
 
         if ($sd = $request->query('sd_number')) {
             $query->whereHas('sdForm', function ($q) use ($sd) {
-                $q->where('sd_number', 'like', '%' . $sd . '%');
+                $q->where('sd_number', 'like', '%'.$sd.'%');
             });
         }
 
         if ($bl = $request->query('bl_number')) {
-            $query->where('bl_number', 'like', '%' . $bl . '%');
+            $query->where('bl_number', 'like', '%'.$bl.'%');
         }
 
         $perPage = $request->integer('per_page', 15);
@@ -194,4 +196,3 @@ class ShipmentController extends Controller
         ]);
     }
 }
-
