@@ -20,7 +20,7 @@ class ClientAttachmentController extends Controller
             'data' => $attachments->map(fn (ClientAttachment $a) => [
                 'id' => $a->id,
                 'name' => $a->name,
-                'path' => $a->path,
+                'path' => Storage::disk('local')->path($a->path),
                 'mime_type' => $a->mime_type,
                 'size' => $a->size,
                 'created_at' => $a->created_at,
@@ -33,7 +33,7 @@ class ClientAttachmentController extends Controller
         $this->authorize('update', $client);
 
         $validated = $request->validate([
-            'file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
+            'file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx,csv,txt', 'max:10240'],
         ]);
 
         $file = $request->file('file');
@@ -50,12 +50,31 @@ class ClientAttachmentController extends Controller
             'data' => [
                 'id' => $attachment->id,
                 'name' => $attachment->name,
-                'path' => $attachment->path,
+                'path' => Storage::disk('local')->path($attachment->path),
                 'mime_type' => $attachment->mime_type,
                 'size' => $attachment->size,
                 'created_at' => $attachment->created_at,
             ],
         ], 201);
+    }
+
+    public function download(Client $client, ClientAttachment $client_attachment)
+    {
+        $this->authorize('view', $client);
+
+        if ($client_attachment->client_id !== $client->id) {
+            abort(404);
+        }
+
+        $fullPath = Storage::disk('local')->path($client_attachment->path);
+
+        if (! file_exists($fullPath)) {
+            abort(404, 'File not found.');
+        }
+
+        return response()->download($fullPath, $client_attachment->name, [
+            'Content-Type' => $client_attachment->mime_type ?? 'application/octet-stream',
+        ]);
     }
 
     public function destroy(Client $client, ClientAttachment $client_attachment)

@@ -181,21 +181,91 @@ class ClientController extends Controller
     {
         $this->authorize('viewAny', Client::class);
 
+        $now = Carbon::now();
+        $startThisMonth = $now->copy()->startOfMonth();
+        $startLastMonth = $now->copy()->subMonth()->startOfMonth();
+        $endLastMonth = $now->copy()->subMonth()->endOfMonth();
+
         $totalClients = Client::count();
+        $totalClientsEndLastMonth = Client::where('created_at', '<=', $endLastMonth)->count();
+        $totalClientsTrend = $this->computeTrend($totalClientsEndLastMonth, $totalClients, true);
+
         $activeClients = Client::whereHas('clientStatus', fn ($q) => $q->where('name', 'Active'))->count();
-        $newClientsThisMonth = Client::whereMonth('created_at', now()->month)
-            ->whereYear('created_at', now()->year)
+        $activeClientsLastMonth = Client::whereHas('clientStatus', fn ($q) => $q->where('name', 'Active'))
+            ->where('created_at', '<=', $endLastMonth)
             ->count();
+        $activeClientsTrend = $this->computeTrend($activeClientsLastMonth, $activeClients, true);
+
+        $newClientsThisMonth = Client::whereMonth('created_at', $now->month)
+            ->whereYear('created_at', $now->year)
+            ->count();
+        $newClientsLastMonth = Client::whereMonth('created_at', $startLastMonth->month)
+            ->whereYear('created_at', $startLastMonth->year)
+            ->count();
+        $newClientsTrend = $this->computeTrend($newClientsLastMonth, $newClientsThisMonth, false);
+
         $totalRevenueFromClients = (float) Invoice::whereNotIn('status', ['cancelled'])->sum('net_amount');
+        $revenueThisMonth = (float) Invoice::whereNotIn('status', ['cancelled'])
+            ->whereBetween('issue_date', [$startThisMonth, $now])
+            ->sum('net_amount');
+        $revenueLastMonth = (float) Invoice::whereNotIn('status', ['cancelled'])
+            ->whereBetween('issue_date', [$startLastMonth, $endLastMonth])
+            ->sum('net_amount');
+        $revenueTrend = $this->computeTrend($revenueLastMonth, $revenueThisMonth, true);
 
         return response()->json([
             'data' => [
                 'total_clients' => $totalClients,
+                'total_clients_trend_direction' => $totalClientsTrend['direction'],
+                'total_clients_trend_value' => $totalClientsTrend['value'],
+                'total_clients_trend_pct' => $totalClientsTrend['pct'],
                 'active_clients' => $activeClients,
+                'active_clients_trend_direction' => $activeClientsTrend['direction'],
+                'active_clients_trend_value' => $activeClientsTrend['value'],
+                'active_clients_trend_pct' => $activeClientsTrend['pct'],
                 'new_clients_this_month' => $newClientsThisMonth,
+                'new_clients_trend_direction' => $newClientsTrend['direction'],
+                'new_clients_trend_value' => $newClientsTrend['value'],
+                'new_clients_trend_pct' => $newClientsTrend['pct'],
                 'total_revenue_from_clients' => $totalRevenueFromClients,
+                'total_revenue_trend_direction' => $revenueTrend['direction'],
+                'total_revenue_trend_value' => $revenueTrend['value'],
+                'total_revenue_trend_pct' => $revenueTrend['pct'],
             ],
         ]);
+    }
+
+    /**
+     * @param  int|float  $previous
+     * @param  int|float  $current
+     * @return array{ direction: string, value: int|float|null, pct: float|null }
+     */
+    private function computeTrend($previous, $current, bool $asPercentage): array
+    {
+        $direction = 'same';
+        $value = null;
+        $pct = null;
+
+        if ((float) $previous !== 0.0) {
+            $diff = $current - $previous;
+            $pct = round((float) ($diff / $previous) * 100, 1);
+            if ($diff > 0) {
+                $direction = 'up';
+            } elseif ($diff < 0) {
+                $direction = 'down';
+            }
+            $value = $asPercentage ? $pct : (int) $diff;
+        } elseif ((float) $current !== 0.0) {
+            $direction = 'up';
+            $pct = 100.0;
+            $value = $asPercentage ? 100.0 : (int) $current;
+        }
+
+        return [
+            'direction' => $direction,
+            'value' => $value,
+            'pct' => $pct,
+        ];
     }
 
     public function charts(Request $request)

@@ -144,6 +144,8 @@ Route::prefix('v1')->group(function () {
 
         Route::get('clients/{client}/attachments', [ClientAttachmentController::class, 'index'])
             ->middleware('page_permission:clients,view');
+        Route::get('clients/{client}/attachments/{client_attachment}/download', [ClientAttachmentController::class, 'download'])
+            ->middleware('page_permission:clients,view');
         Route::post('clients/{client}/attachments', [ClientAttachmentController::class, 'store'])
             ->middleware('page_permission:clients,edit');
         Route::delete('clients/{client}/attachments/{client_attachment}', [ClientAttachmentController::class, 'destroy'])
