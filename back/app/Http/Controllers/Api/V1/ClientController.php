@@ -11,6 +11,7 @@ use App\Models\LeadSource;
 use App\Models\Payment;
 use App\Models\Shipment;
 use App\Models\Visit;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
@@ -452,6 +453,53 @@ class ClientController extends Controller
                 'total' => $shipments->total(),
             ],
         ]);
+    }
+
+    /**
+     * Create a new shipment for the client (شحنة جديدة).
+     */
+    public function storeShipment(Request $request, Client $client)
+    {
+        $this->authorize('update', $client);
+        $this->authorize('create', Shipment::class);
+
+        $validated = $request->validate([
+            'sd_form_id' => ['nullable', 'integer', 'exists:s_d_forms,id'],
+            'sales_rep_id' => ['nullable', 'integer', 'exists:users,id'],
+            'line_vendor_id' => ['nullable', 'integer', 'exists:vendors,id'],
+            'origin_port_id' => ['nullable', 'integer', 'exists:ports,id'],
+            'destination_port_id' => ['nullable', 'integer', 'exists:ports,id'],
+            'shipment_direction' => ['nullable', 'string', 'in:Export,Import'],
+            'mode' => ['nullable', 'string', 'in:Sea,Air,Land'],
+            'shipment_type' => ['nullable', 'string', 'in:FCL,LCL'],
+            'status' => ['nullable', 'string', 'max:40'],
+            'operations_status' => ['nullable', 'integer', 'min:1', 'max:8'],
+            'container_count' => ['nullable', 'integer', 'min:1'],
+            'container_size' => ['nullable', 'string', 'max:10'],
+            'container_type' => ['nullable', 'string', 'max:40'],
+            'loading_place' => ['nullable', 'string', 'max:255'],
+            'loading_date' => ['nullable', 'date'],
+            'cargo_description' => ['nullable', 'string'],
+            'is_reefer' => ['nullable', 'boolean'],
+            'reefer_temp' => ['nullable', 'string', 'max:50'],
+            'reefer_vent' => ['nullable', 'string', 'max:50'],
+            'reefer_hum' => ['nullable', 'string', 'max:50'],
+        ]);
+
+        $shipment = new Shipment($validated);
+        $shipment->client_id = $client->id;
+        $shipment->status = $shipment->status ?? 'draft';
+        $shipment->mode = $shipment->mode ?? 'Sea';
+        $shipment->shipment_type = $shipment->shipment_type ?? 'FCL';
+        $shipment->save();
+
+        ActivityLogger::log('shipment.created', $shipment, [
+            'client_id' => $shipment->client_id,
+        ]);
+
+        return response()->json([
+            'data' => $shipment->fresh(['client', 'originPort', 'destinationPort']),
+        ], 201);
     }
 
     /**

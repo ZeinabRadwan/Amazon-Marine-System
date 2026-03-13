@@ -8,6 +8,8 @@ use App\Http\Controllers\Api\V1\AccountingController;
 use App\Http\Controllers\Api\V1\ClientAttachmentController;
 use App\Http\Controllers\Api\V1\ClientContactController;
 use App\Http\Controllers\Api\V1\ClientController;
+use App\Http\Controllers\Api\V1\ClientFollowUpController;
+use App\Http\Controllers\Api\V1\ClientNoteController;
 use App\Http\Controllers\Api\V1\ClientStatusController;
 use App\Http\Controllers\Api\V1\CommunicationLogController;
 use App\Http\Controllers\Api\V1\CompanyTypeController;
@@ -141,6 +143,18 @@ Route::prefix('v1')->group(function () {
             ->middleware('page_permission:clients,view');
         Route::get('clients/{client}/shipments', [ClientController::class, 'shipments'])
             ->middleware('page_permission:clients,view');
+        Route::post('clients/{client}/shipments', [ClientController::class, 'storeShipment'])
+            ->middleware('page_permission:clients,edit');
+
+        Route::get('clients/{client}/notes', [ClientNoteController::class, 'index'])
+            ->middleware('page_permission:clients,view');
+        Route::post('clients/{client}/notes', [ClientNoteController::class, 'store'])
+            ->middleware('page_permission:clients,edit');
+
+        Route::get('clients/{client}/follow-ups', [ClientFollowUpController::class, 'index'])
+            ->middleware('page_permission:clients,view');
+        Route::post('clients/{client}/follow-ups', [ClientFollowUpController::class, 'store'])
+            ->middleware('page_permission:clients,edit');
 
         Route::get('clients/{client}/attachments', [ClientAttachmentController::class, 'index'])
             ->middleware('page_permission:clients,view');

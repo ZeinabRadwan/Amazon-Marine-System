@@ -2917,6 +2917,158 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Create Client Shipment (New Shipment Action)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"origin_port_id\": 1,\n  \"destination_port_id\": 2,\n  \"shipment_direction\": \"Export\",\n  \"mode\": \"Sea\",\n  \"shipment_type\": \"FCL\",\n  \"status\": \"draft\",\n  \"container_count\": 2,\n  \"container_size\": \"40\",\n  \"container_type\": \"Dry\",\n  \"loading_place\": \"Alexandria Port\",\n  \"loading_date\": \"2026-03-20\",\n  \"cargo_description\": \"Frozen food in cartons\",\n  \"is_reefer\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/clients/{{client_id}}/shipments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "clients",
+                "{{client_id}}",
+                "shipments"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Client Notes (Quick Notes)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/clients/{{client_id}}/notes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "clients",
+                "{{client_id}}",
+                "notes"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Client Note (Quick Note)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"ملاحظة سريعة عن العميل، ما الذي يبحث عنه حالياً...\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/clients/{{client_id}}/notes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "clients",
+                "{{client_id}}",
+                "notes"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Client Follow-ups",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/clients/{{client_id}}/follow-ups",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "clients",
+                "{{client_id}}",
+                "follow-ups"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Client Follow-up",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"phone\",\n  \"occurred_at\": \"2026-03-13T10:30:00\",\n  \"summary\": \"تم الاتصال بالعميل بخصوص عرض السعر.\",\n  \"next_follow_up_at\": \"2026-03-20\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/clients/{{client_id}}/follow-ups",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "clients",
+                "{{client_id}}",
+                "follow-ups"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },
