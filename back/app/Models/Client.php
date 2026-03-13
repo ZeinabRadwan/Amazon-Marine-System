@@ -28,7 +28,7 @@ class Client extends Model
         'website_url',
         'facebook_url',
         'linkedin_url',
-        'status',
+        'status_id',
         'lead_source_id',
         'lead_source_other',
         'interest_level_id',
@@ -98,6 +98,14 @@ class Client extends Model
     public function leadSource(): BelongsTo
     {
         return $this->belongsTo(LeadSource::class, 'lead_source_id');
+    }
+
+    /**
+     * @return BelongsTo<ClientStatus, Client>
+     */
+    public function clientStatus(): BelongsTo
+    {
+        return $this->belongsTo(ClientStatus::class, 'status_id');
     }
 
     /**

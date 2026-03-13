@@ -1422,6 +1422,148 @@
           ]
         },
         {
+          "name": "Client Statuses",
+          "item": [
+            {
+              "name": "List Client Statuses",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/client-statuses",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "client-statuses"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create Client Status",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Active\",\n  \"sort_order\": 1\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/client-statuses",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "client-statuses"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Show Client Status",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/client-statuses/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "client-statuses",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update Client Status",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Active\",\n  \"sort_order\": 2\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/client-statuses/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "client-statuses",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Client Status",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/client-statuses/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "client-statuses",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
           "name": "Ports",
           "item": [
             {

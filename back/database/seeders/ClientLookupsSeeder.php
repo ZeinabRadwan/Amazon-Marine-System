@@ -2,11 +2,12 @@
 
 namespace Database\Seeders;
 
+use App\Models\ClientStatus;
 use App\Models\CompanyType;
-use App\Models\PreferredCommMethod;
-use App\Models\InterestLevel;
 use App\Models\DecisionMakerTitle;
+use App\Models\InterestLevel;
 use App\Models\LeadSource;
+use App\Models\PreferredCommMethod;
 use Illuminate\Database\Seeder;
 
 class ClientLookupsSeeder extends Seeder
@@ -75,6 +76,19 @@ class ClientLookupsSeeder extends Seeder
         ];
         foreach ($sources as $i => $row) {
             LeadSource::updateOrCreate(
+                ['name' => $row['name']],
+                ['sort_order' => $row['sort_order'] ?? $i + 1]
+            );
+        }
+
+        $statuses = [
+            ['name' => 'New', 'sort_order' => 1],
+            ['name' => 'Active', 'sort_order' => 2],
+            ['name' => 'Inactive', 'sort_order' => 3],
+            ['name' => 'Pending', 'sort_order' => 4],
+        ];
+        foreach ($statuses as $i => $row) {
+            ClientStatus::updateOrCreate(
                 ['name' => $row['name']],
                 ['sort_order' => $row['sort_order'] ?? $i + 1]
             );

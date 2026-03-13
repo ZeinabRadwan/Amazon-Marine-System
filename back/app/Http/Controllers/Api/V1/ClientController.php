@@ -24,6 +24,7 @@ class ClientController extends Controller
             'interestLevel',
             'decisionMakerTitle',
             'leadSource',
+            'clientStatus',
         ];
     }
 
@@ -48,8 +49,12 @@ class ClientController extends Controller
             $query->where('lead_source_id', $sourceId);
         }
 
-        if ($status = $request->query('status')) {
-            $query->where('status', $status);
+        if ($statusParam = $request->query('status')) {
+            if (is_numeric($statusParam)) {
+                $query->where('status_id', (int) $statusParam);
+            } else {
+                $query->whereHas('clientStatus', fn ($q) => $q->where('name', $statusParam));
+            }
         }
 
         $sort = $request->query('sort', 'client');
@@ -177,7 +182,7 @@ class ClientController extends Controller
         $this->authorize('viewAny', Client::class);
 
         $totalClients = Client::count();
-        $activeClients = Client::where('status', 'active')->count();
+        $activeClients = Client::whereHas('clientStatus', fn ($q) => $q->where('name', 'Active'))->count();
         $newClientsThisMonth = Client::whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->count();
@@ -407,13 +412,18 @@ class ClientController extends Controller
             'interest_level_id' => $client->interest_level_id,
             'interest_level' => $client->interestLevel?->name,
             'address' => $client->address,
+            'city' => $client->getAttribute('city'),
+            'country' => $client->getAttribute('country'),
+            'default_payment_terms' => $client->getAttribute('default_payment_terms'),
+            'default_currency' => $client->getAttribute('default_currency'),
             'website_url' => $client->website_url,
             'tax_id' => $client->tax_id,
             'facebook_url' => $client->facebook_url,
             'linkedin_url' => $client->linkedin_url,
             'lead_source_id' => $client->lead_source_id,
             'lead_source' => $client->leadSource?->name,
-            'status' => $client->status,
+            'status_id' => $client->status_id,
+            'status' => $client->clientStatus?->name,
             'shipments' => $client->shipments_count,
             'profit' => $client->total_profit,
             'last_contact_at' => $lastContactAt,
@@ -431,7 +441,11 @@ class ClientController extends Controller
     {
         $base = $this->transformClient($client);
 
+        $primaryContact = $client->contacts->firstWhere('is_primary', true);
+        $contactName = $primaryContact?->name ?? $client->contacts->first()?->name ?? $client->getAttribute('contact_name');
+
         $details = [
+            'contact_name' => $contactName,
             'lead_source_other' => $client->lead_source_other,
             'decision_maker_name' => $client->decision_maker_name,
             'decision_maker_title_id' => $client->decision_maker_title_id,

@@ -30,7 +30,7 @@ class UpdateClientRequest extends FormRequest
             'website_url' => ['sometimes', 'nullable', 'string', 'max:255'],
             'facebook_url' => ['sometimes', 'nullable', 'string', 'max:255'],
             'linkedin_url' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'status' => ['sometimes', 'nullable', 'string', 'in:new,active,inactive,pending'],
+            'status_id' => ['sometimes', 'nullable', 'integer', 'exists:client_statuses,id'],
             'lead_source_id' => ['sometimes', 'nullable', 'integer', 'exists:lead_sources,id'],
             'lead_source_other' => ['sometimes', 'nullable', 'string', 'max:255'],
             'interest_level_id' => ['sometimes', 'nullable', 'integer', 'exists:interest_levels,id'],

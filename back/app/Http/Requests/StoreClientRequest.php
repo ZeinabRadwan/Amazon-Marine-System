@@ -30,7 +30,7 @@ class StoreClientRequest extends FormRequest
             'website_url' => ['nullable', 'string', 'max:255'],
             'facebook_url' => ['nullable', 'string', 'max:255'],
             'linkedin_url' => ['nullable', 'string', 'max:255'],
-            'status' => ['nullable', 'string', 'in:new,active,inactive,pending'],
+            'status_id' => ['nullable', 'integer', 'exists:client_statuses,id'],
             'lead_source_id' => ['nullable', 'integer', 'exists:lead_sources,id'],
             'lead_source_other' => ['nullable', 'string', 'max:255'],
             'interest_level_id' => ['nullable', 'integer', 'exists:interest_levels,id'],

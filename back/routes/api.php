@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\AccountingController;
 use App\Http\Controllers\Api\V1\ClientAttachmentController;
 use App\Http\Controllers\Api\V1\ClientContactController;
 use App\Http\Controllers\Api\V1\ClientController;
+use App\Http\Controllers\Api\V1\ClientStatusController;
 use App\Http\Controllers\Api\V1\CommunicationLogController;
 use App\Http\Controllers\Api\V1\CompanyTypeController;
 use App\Http\Controllers\Api\V1\DashboardController;
@@ -101,6 +102,12 @@ Route::prefix('v1')->group(function () {
         Route::get('lead-sources/{leadSource}', [LeadSourceController::class, 'show']);
         Route::put('lead-sources/{leadSource}', [LeadSourceController::class, 'update']);
         Route::delete('lead-sources/{leadSource}', [LeadSourceController::class, 'destroy']);
+
+        Route::get('client-statuses', [ClientStatusController::class, 'index']);
+        Route::post('client-statuses', [ClientStatusController::class, 'store']);
+        Route::get('client-statuses/{clientStatus}', [ClientStatusController::class, 'show']);
+        Route::put('client-statuses/{clientStatus}', [ClientStatusController::class, 'update']);
+        Route::delete('client-statuses/{clientStatus}', [ClientStatusController::class, 'destroy']);
 
         Route::get('ports', [PortController::class, 'index']);
         Route::post('ports', [PortController::class, 'store']);
