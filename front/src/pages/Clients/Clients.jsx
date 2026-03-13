@@ -15,9 +15,18 @@ import {
   getClientVisits,
   getClientShipments,
   getClientAttachments,
+  getClientAttachmentDownload,
   postClientAttachment,
   deleteClientAttachment,
 } from '../../api/clients'
+import {
+  listClientStatuses,
+  listCompanyTypes,
+  listPreferredCommMethods,
+  listLeadSources,
+  listInterestLevels,
+  listDecisionMakerTitles,
+} from '../../api/clientLookups'
 import { Container } from '../../components/Container'
 import '../../components/PageHeader/PageHeader.css'
 import { Table, IconActionButton } from '../../components/Table'
@@ -48,31 +57,37 @@ function normalizeClient(c) {
   }
 }
 
+/** Form shape matching backend StoreClientRequest / UpdateClientRequest */
 const defaultClientForm = () => ({
   name: '',
-  contact_name: '',
   company_name: '',
-  company_type: '',
+  company_type_id: '',
   business_activity: '',
   target_markets: '',
   tax_id: '',
   email: '',
   phone: '',
-  preferred_comm_method: '',
-  city: '',
-  country: '',
+  preferred_comm_method_id: '',
   address: '',
   website_url: '',
   facebook_url: '',
   linkedin_url: '',
-  status: '',
-  lead_source: '',
-  interest_level: '',
+  status_id: '',
+  lead_source_id: '',
+  lead_source_other: '',
+  interest_level_id: '',
   decision_maker_name: '',
-  decision_maker_title: '',
-  default_payment_terms: '',
-  default_currency: '',
+  decision_maker_title_id: '',
+  decision_maker_title_other: '',
   notes: '',
+  shipping_problems: '',
+  current_need: '',
+  pain_points: '',
+  opportunity: '',
+  special_requirements: '',
+  pricing_tier: '',
+  pricing_discount_pct: '',
+  pricing_updated_at: '',
 })
 
 export default function Clients() {
@@ -85,7 +100,7 @@ export default function Clients() {
   const [alert, setAlert] = useState(null)
   const [filters, setFilters] = useState({
     q: '',
-    status: '',
+    status_id: '',
     assigned_sales_id: '',
     lead_source_id: '',
     sort: 'client',
@@ -124,6 +139,12 @@ export default function Clients() {
   const [pricingList, setPricingList] = useState([])
   const [pricingLoading, setPricingLoading] = useState(false)
   const [showSort, setShowSort] = useState(false)
+  const [clientStatuses, setClientStatuses] = useState([])
+  const [companyTypes, setCompanyTypes] = useState([])
+  const [commMethods, setCommMethods] = useState([])
+  const [leadSources, setLeadSources] = useState([])
+  const [interestLevels, setInterestLevels] = useState([])
+  const [decisionMakerTitles, setDecisionMakerTitles] = useState([])
 
   const pageLoading =
     loading ||
@@ -158,7 +179,7 @@ export default function Clients() {
       })
       .catch(() => setAlert({ type: 'error', message: t('clients.errorLoad') }))
       .finally(() => setLoading(false))
-  }, [token, filters.q, filters.status, filters.assigned_sales_id, filters.lead_source_id, filters.sort, filters.direction, filters.page, filters.per_page, t])
+  }, [token, filters.q, filters.status_id, filters.assigned_sales_id, filters.lead_source_id, filters.sort, filters.direction, filters.page, filters.per_page, t])
 
   useEffect(() => {
     loadList()
@@ -180,6 +201,43 @@ export default function Clients() {
       .then((data) => setCharts(data.data ?? data.charts ?? data))
       .catch(() => setCharts(null))
       .finally(() => setChartsLoading(false))
+  }, [token])
+
+  useEffect(() => {
+    if (!token) return
+    listClientStatuses(token)
+      .then((data) => setClientStatuses(data.data ?? data ?? []))
+      .catch(() => setClientStatuses([]))
+  }, [token])
+  useEffect(() => {
+    if (!token) return
+    listCompanyTypes(token)
+      .then((data) => setCompanyTypes(data.data ?? data ?? []))
+      .catch(() => setCompanyTypes([]))
+  }, [token])
+  useEffect(() => {
+    if (!token) return
+    listPreferredCommMethods(token)
+      .then((data) => setCommMethods(data.data ?? data ?? []))
+      .catch(() => setCommMethods([]))
+  }, [token])
+  useEffect(() => {
+    if (!token) return
+    listLeadSources(token)
+      .then((data) => setLeadSources(data.data ?? data ?? []))
+      .catch(() => setLeadSources([]))
+  }, [token])
+  useEffect(() => {
+    if (!token) return
+    listInterestLevels(token)
+      .then((data) => setInterestLevels(data.data ?? data ?? []))
+      .catch(() => setInterestLevels([]))
+  }, [token])
+  useEffect(() => {
+    if (!token) return
+    listDecisionMakerTitles(token)
+      .then((data) => setDecisionMakerTitles(data.data ?? data ?? []))
+      .catch(() => setDecisionMakerTitles([]))
   }, [token])
 
   useEffect(() => {
@@ -268,30 +326,71 @@ export default function Clients() {
     setEditId(client.id)
     setEditForm({
       name: n.name ?? '',
-      contact_name: n.contact_name ?? '',
       company_name: n.company_name ?? '',
-      company_type: n.company_type ?? '',
+      company_type_id: n.company_type_id ?? '',
       business_activity: n.business_activity ?? '',
       target_markets: n.target_markets ?? '',
       tax_id: n.tax_id ?? '',
       email: n.email ?? '',
       phone: n.phone ?? '',
-      preferred_comm_method: n.preferred_comm_method ?? '',
-      city: n.city ?? '',
-      country: n.country ?? '',
+      preferred_comm_method_id: n.preferred_comm_method_id ?? '',
       address: n.address ?? '',
       website_url: n.website_url ?? '',
       facebook_url: n.facebook_url ?? '',
       linkedin_url: n.linkedin_url ?? '',
-      status: n.status ?? '',
-      lead_source: n.lead_source ?? '',
-      interest_level: n.interest_level ?? '',
+      status_id: n.status_id ?? '',
+      lead_source_id: n.lead_source_id ?? '',
+      lead_source_other: n.lead_source_other ?? '',
+      interest_level_id: n.interest_level_id ?? '',
       decision_maker_name: n.decision_maker_name ?? '',
-      decision_maker_title: n.decision_maker_title ?? '',
-      default_payment_terms: n.default_payment_terms ?? '',
-      default_currency: n.default_currency ?? '',
+      decision_maker_title_id: n.decision_maker_title_id ?? '',
+      decision_maker_title_other: n.decision_maker_title_other ?? '',
       notes: n.notes ?? '',
+      shipping_problems: n.shipping_problems ?? '',
+      current_need: n.current_need ?? '',
+      pain_points: n.pain_points ?? '',
+      opportunity: n.opportunity ?? '',
+      special_requirements: n.special_requirements ?? '',
+      pricing_tier: n.pricing_tier ?? '',
+      pricing_discount_pct: n.pricing_discount_pct ?? '',
+      pricing_updated_at: n.pricing_updated_at ?? '',
     })
+  }
+
+  const buildClientPayload = (form) => {
+    const num = (v) => (v !== '' && v != null ? Number(v) : null)
+    const str = (v) => (v != null && String(v).trim() !== '' ? String(v).trim() : null)
+    return {
+      name: form.name?.trim() || '',
+      company_name: str(form.company_name),
+      company_type_id: num(form.company_type_id),
+      business_activity: str(form.business_activity),
+      target_markets: str(form.target_markets),
+      tax_id: str(form.tax_id),
+      email: str(form.email),
+      phone: str(form.phone),
+      preferred_comm_method_id: num(form.preferred_comm_method_id),
+      address: str(form.address),
+      website_url: str(form.website_url),
+      facebook_url: str(form.facebook_url),
+      linkedin_url: str(form.linkedin_url),
+      status_id: num(form.status_id),
+      lead_source_id: num(form.lead_source_id),
+      lead_source_other: str(form.lead_source_other),
+      interest_level_id: num(form.interest_level_id),
+      decision_maker_name: str(form.decision_maker_name),
+      decision_maker_title_id: num(form.decision_maker_title_id),
+      decision_maker_title_other: str(form.decision_maker_title_other),
+      notes: str(form.notes),
+      shipping_problems: str(form.shipping_problems),
+      current_need: str(form.current_need),
+      pain_points: str(form.pain_points),
+      opportunity: str(form.opportunity),
+      special_requirements: str(form.special_requirements),
+      pricing_tier: str(form.pricing_tier),
+      pricing_discount_pct: form.pricing_discount_pct !== '' && form.pricing_discount_pct != null ? Number(form.pricing_discount_pct) : null,
+      pricing_updated_at: str(form.pricing_updated_at) || null,
+    }
   }
 
   const handleCreateSubmit = async (e) => {
@@ -299,7 +398,8 @@ export default function Clients() {
     setAlert(null)
     setCreateSubmitting(true)
     try {
-      await createClient(token, createForm)
+      const payload = buildClientPayload(createForm)
+      await createClient(token, payload)
       setShowCreate(false)
       setCreateForm(defaultClientForm())
       loadList()
@@ -317,7 +417,8 @@ export default function Clients() {
     setAlert(null)
     setEditSubmitting(true)
     try {
-      await updateClient(token, editId, editForm)
+      const payload = buildClientPayload(editForm)
+      await updateClient(token, editId, payload)
       setEditId(null)
       loadList()
       if (detailId === editId) setDetailClient(null)
@@ -388,6 +489,22 @@ export default function Clients() {
     }
   }
 
+  const handleAttachmentDownload = async (clientId, attachmentId, fileName) => {
+    if (!clientId || !attachmentId || !token) return
+    setAlert(null)
+    try {
+      const blob = await getClientAttachmentDownload(token, clientId, attachmentId)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = fileName || `attachment-${attachmentId}`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      setAlert({ type: 'error', message: t('clients.errorAttachmentDownload') })
+    }
+  }
+
   const handleAttachmentDelete = async (attachmentId) => {
     if (!detailId || !token) return
     setAlert(null)
@@ -403,39 +520,154 @@ export default function Clients() {
     }
   }
 
-  const clientFormFields = [
-    ['name', 'contact_name', 'company_name', 'company_type'],
-    ['business_activity', 'target_markets', 'tax_id'],
-    ['email', 'phone', 'preferred_comm_method'],
-    ['city', 'country', 'address'],
-    ['website_url', 'facebook_url', 'linkedin_url'],
-    ['status', 'lead_source', 'interest_level'],
-    ['decision_maker_name', 'decision_maker_title'],
-    ['default_payment_terms', 'default_currency'],
-    ['notes'],
+  /** Form sections and field order matching reference (Basic → Decision Maker → Source & Sales → Notes); attachments excluded */
+  const clientFormSections = [
+    {
+      titleKey: 'clients.sections.basic',
+      fields: [
+        { key: 'name', type: 'text', required: true },
+        { key: 'company_name', type: 'text', required: true },
+        { key: 'company_type_id', type: 'select', options: companyTypes },
+        { key: 'business_activity', type: 'text' },
+        { key: 'target_markets', type: 'text' },
+        { key: 'shipping_problems', type: 'textarea', rows: 2 },
+        { key: 'preferred_comm_method_id', type: 'select', options: commMethods },
+        { key: 'phone', type: 'text' },
+        { key: 'email', type: 'email' },
+        { key: 'interest_level_id', type: 'select', options: interestLevels },
+        { key: 'address', type: 'text' },
+        { key: 'website_url', type: 'text' },
+        { key: 'tax_id', type: 'text' },
+        { key: 'facebook_url', type: 'text' },
+        { key: 'linkedin_url', type: 'text' },
+      ],
+    },
+    {
+      titleKey: 'clients.sections.decisionMaker',
+      fields: [
+        { key: 'decision_maker_name', type: 'text' },
+        { key: 'decision_maker_title_id', type: 'select', options: decisionMakerTitles },
+        { key: 'decision_maker_title_other', type: 'text' },
+      ],
+    },
+    {
+      titleKey: 'clients.sections.sourceSales',
+      fields: [
+        { key: 'lead_source_id', type: 'select', options: leadSources },
+        { key: 'lead_source_other', type: 'text' },
+        { key: 'status_id', type: 'select', options: clientStatuses },
+      ],
+    },
+    {
+      titleKey: 'clients.sections.notesGuidance',
+      fields: [
+        { key: 'current_need', type: 'textarea', rows: 2 },
+        { key: 'pain_points', type: 'textarea', rows: 2 },
+        { key: 'opportunity', type: 'textarea', rows: 2 },
+        { key: 'special_requirements', type: 'textarea', rows: 2 },
+        { key: 'notes', type: 'textarea', rows: 4 },
+      ],
+    },
   ]
 
   const renderForm = (form, setForm, disabled) => (
-    <div className="clients-form-grid">
-      {clientFormFields.flat().map((key) => (
-        <div key={key} className="clients-field">
-          <label>{t(`clients.fields.${key}`)}</label>
-          {key === 'notes' ? (
-            <textarea
-              value={form[key] ?? ''}
-              onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-              disabled={disabled}
-              rows={3}
-            />
-          ) : (
-            <input
-              type="text"
-              value={form[key] ?? ''}
-              onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-              disabled={disabled}
-            />
-          )}
-        </div>
+    <div className="clients-form-sections">
+      {clientFormSections.map((section) => (
+        <section key={section.titleKey} className="client-detail-modal__section">
+          <h3 className="client-detail-modal__section-title">{t(section.titleKey)}</h3>
+          <div className="client-detail-modal__form-grid">
+            {section.fields.map((field) => {
+              const key = field.key
+              const labelKey = `clients.fields.${key}`
+              const value = form[key] ?? ''
+              const update = (v) => setForm((f) => ({ ...f, [key]: v }))
+              if (field.type === 'select') {
+                const options = field.options ?? []
+                return (
+                  <div key={key} className="client-detail-modal__form-field">
+                    <label htmlFor={`client-${key}`}>{t(labelKey)}</label>
+                    <select
+                      id={`client-${key}`}
+                      value={value}
+                      onChange={(e) => update(e.target.value)}
+                      disabled={disabled}
+                      aria-label={t(labelKey)}
+                    >
+                      <option value="">—</option>
+                      {options.map((opt) => (
+                        <option key={opt.id} value={opt.id}>
+                          {opt.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )
+              }
+              if (field.type === 'textarea') {
+                return (
+                  <div key={key} className="client-detail-modal__form-field client-detail-modal__form-field--full">
+                    <label htmlFor={`client-${key}`}>{t(labelKey)}</label>
+                    <textarea
+                      id={`client-${key}`}
+                      value={value}
+                      onChange={(e) => update(e.target.value)}
+                      disabled={disabled}
+                      rows={field.rows ?? 3}
+                      aria-label={t(labelKey)}
+                    />
+                  </div>
+                )
+              }
+              if (field.type === 'number') {
+                return (
+                  <div key={key} className="client-detail-modal__form-field">
+                    <label htmlFor={`client-${key}`}>{t(labelKey)}</label>
+                    <input
+                      id={`client-${key}`}
+                      type="number"
+                      min={field.min ?? 0}
+                      max={field.max}
+                      step={field.step ?? 'any'}
+                      value={value}
+                      onChange={(e) => update(e.target.value)}
+                      disabled={disabled}
+                      aria-label={t(labelKey)}
+                    />
+                  </div>
+                )
+              }
+              if (field.type === 'date') {
+                return (
+                  <div key={key} className="client-detail-modal__form-field">
+                    <label htmlFor={`client-${key}`}>{t(labelKey)}</label>
+                    <input
+                      id={`client-${key}`}
+                      type="date"
+                      value={value}
+                      onChange={(e) => update(e.target.value)}
+                      disabled={disabled}
+                      aria-label={t(labelKey)}
+                    />
+                  </div>
+                )
+              }
+              return (
+                <div key={key} className="client-detail-modal__form-field">
+                  <label htmlFor={`client-${key}`}>{t(labelKey)}</label>
+                  <input
+                    id={`client-${key}`}
+                    type={field.type === 'email' ? 'email' : 'text'}
+                    value={value}
+                    onChange={(e) => update(e.target.value)}
+                    disabled={disabled}
+                    required={field.required}
+                    aria-label={t(labelKey)}
+                  />
+                </div>
+              )
+            })}
+          </div>
+        </section>
       ))}
     </div>
   )
@@ -492,10 +724,42 @@ export default function Clients() {
       )}
       {stats && typeof stats === 'object' && (
         <div className="grid grid-cols-4 gap-4 mb-6">
-          {Object.entries(stats).slice(0, 4).map(([key, value], i) => {
-            const title = t(`clients.stats.${key}`, { defaultValue: key.replace(/_/g, ' ') })
+          {[
+            {
+              key: 'total_clients',
+              variant: 'blue',
+              format: 'number',
+              trendDirectionKey: 'total_clients_trend_direction',
+              trendPctKey: 'total_clients_trend_pct',
+            },
+            {
+              key: 'active_clients',
+              variant: 'green',
+              format: 'number',
+              trendDirectionKey: 'active_clients_trend_direction',
+              trendPctKey: 'active_clients_trend_pct',
+            },
+            {
+              key: 'new_clients_this_month',
+              variant: 'amber',
+              format: 'number',
+              trendDirectionKey: 'new_clients_trend_direction',
+              trendValueKey: 'new_clients_trend_value',
+              trendPctKey: 'new_clients_trend_pct',
+              useDiffForChange: true,
+            },
+            {
+              key: 'total_revenue_from_clients',
+              variant: 'default',
+              format: 'currency',
+              trendDirectionKey: 'total_revenue_trend_direction',
+              trendPctKey: 'total_revenue_trend_pct',
+            },
+          ].map((cfg) => {
+            const value = stats[cfg.key]
+            const title = t(`clients.stats.${cfg.key}`, { defaultValue: cfg.key.replace(/_/g, ' ') })
             const displayValue =
-              key === 'total_revenue_from_clients' && typeof value === 'number'
+              cfg.format === 'currency' && typeof value === 'number'
                 ? new Intl.NumberFormat(numberLocale, {
                     style: 'currency',
                     currency: 'USD',
@@ -504,14 +768,25 @@ export default function Clients() {
                   }).format(value)
                 : typeof value === 'number'
                   ? new Intl.NumberFormat(numberLocale).format(value)
-                  : String(value)
+                  : String(value ?? '—')
+            const direction = stats[cfg.trendDirectionKey] || null
+            const pct = stats[cfg.trendPctKey]
+            const diff = cfg.trendValueKey != null ? stats[cfg.trendValueKey] : null
+            const changeDisplay =
+              cfg.useDiffForChange && diff != null && direction !== 'same'
+                ? `${diff > 0 ? '+' : ''}${diff} ${t('clients.stats.vsLastMonth', 'vs last month')}`
+                : pct != null && direction !== 'same'
+                  ? pct
+                  : null
             return (
               <StatsCard
-                key={key}
+                key={cfg.key}
                 title={title}
                 value={displayValue}
                 icon={<Users className="h-6 w-6" />}
-                variant={i % 3 === 0 ? 'blue' : i % 3 === 1 ? 'green' : 'amber'}
+                variant={cfg.variant}
+                trend={direction === 'up' || direction === 'down' ? direction : undefined}
+                change={changeDisplay ?? undefined}
               />
             )
           })}
@@ -573,14 +848,19 @@ export default function Clients() {
             />
           </div>
           <div className="clients-filters__fields">
-            <input
-              type="text"
-              placeholder={t('clients.status')}
-              value={filters.status}
-              onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value, page: 1 }))}
+            <select
+              value={filters.status_id ?? ''}
+              onChange={(e) => setFilters((f) => ({ ...f, status_id: e.target.value, page: 1 }))}
               className="clients-input"
               aria-label={t('clients.status')}
-            />
+            >
+              <option value="">{t('clients.status')}</option>
+              {clientStatuses.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
             <input
               type="text"
               placeholder={t('clients.filterLeadSource')}
@@ -604,7 +884,7 @@ export default function Clients() {
             onClick={() => setFilters((f) => ({
               ...f,
               q: '',
-              status: '',
+              status_id: '',
               assigned_sales_id: '',
               lead_source_id: '',
               sort: 'client',
@@ -732,22 +1012,28 @@ export default function Clients() {
         </div>
       )}
 
-      {/* Create modal */}
+      {/* Create modal – same structure as Client Detail Modal */}
       {showCreate && (
-        <div className="clients-modal" role="dialog" aria-modal="true">
-          <div className="clients-modal-backdrop" onClick={() => setShowCreate(false)} />
-          <div className="clients-modal-content clients-modal-content--wide">
-            <h2>{t('clients.createClient')}</h2>
-            <form onSubmit={handleCreateSubmit} className="clients-form">
-              <div className="clients-form-scroll">{renderForm(createForm, setCreateForm, createSubmitting)}</div>
-              <div className="clients-modal-actions">
-                <button type="button" className="clients-btn" onClick={() => setShowCreate(false)} disabled={createSubmitting}>
+        <div className="client-detail-modal" role="dialog" aria-modal="true" aria-labelledby="client-create-modal-title">
+          <div className="client-detail-modal__backdrop" onClick={() => setShowCreate(false)} />
+          <div className="client-detail-modal__box client-detail-modal__box--form">
+            <header className="client-detail-modal__header">
+              <h2 id="client-create-modal-title" className="client-detail-modal__title">
+                {t('clients.createClient')}
+              </h2>
+            </header>
+            <form onSubmit={handleCreateSubmit} className="client-detail-modal__form">
+              <div className="client-detail-modal__body">
+                <div className="client-detail-modal__body-inner">{renderForm(createForm, setCreateForm, createSubmitting)}</div>
+              </div>
+              <footer className="client-detail-modal__footer">
+                <button type="button" className="client-detail-modal__btn client-detail-modal__btn--secondary" onClick={() => setShowCreate(false)} disabled={createSubmitting}>
                   {t('clients.cancel')}
                 </button>
-                <button type="submit" className="clients-btn clients-btn--primary" disabled={createSubmitting}>
+                <button type="submit" className="client-detail-modal__btn client-detail-modal__btn--primary" disabled={createSubmitting}>
                   {createSubmitting ? t('clients.saving') : t('clients.save')}
                 </button>
-              </div>
+              </footer>
             </form>
           </div>
         </div>
@@ -767,28 +1053,35 @@ export default function Clients() {
         attachmentUploading={attachmentUploading}
         attachmentDeletingId={attachmentDeletingId}
         onAttachmentUpload={handleAttachmentUpload}
+        onAttachmentDownload={handleAttachmentDownload}
         onAttachmentDelete={handleAttachmentDelete}
         financialSummaryList={financialSummaryList}
         pricingList={pricingList}
         numberLocale={numberLocale}
       />
 
-      {/* Edit modal */}
+      {/* Edit modal – same structure as Client Detail Modal */}
       {editId && (
-        <div className="clients-modal" role="dialog" aria-modal="true">
-          <div className="clients-modal-backdrop" onClick={() => setEditId(null)} />
-          <div className="clients-modal-content clients-modal-content--wide">
-            <h2>{t('clients.editClient')}</h2>
-            <form onSubmit={handleEditSubmit} className="clients-form">
-              <div className="clients-form-scroll">{renderForm(editForm, setEditForm, editSubmitting)}</div>
-              <div className="clients-modal-actions">
-                <button type="button" className="clients-btn" onClick={() => setEditId(null)} disabled={editSubmitting}>
+        <div className="client-detail-modal" role="dialog" aria-modal="true" aria-labelledby="client-edit-modal-title">
+          <div className="client-detail-modal__backdrop" onClick={() => setEditId(null)} />
+          <div className="client-detail-modal__box client-detail-modal__box--form">
+            <header className="client-detail-modal__header">
+              <h2 id="client-edit-modal-title" className="client-detail-modal__title">
+                {t('clients.editClient')}
+              </h2>
+            </header>
+            <form onSubmit={handleEditSubmit} className="client-detail-modal__form">
+              <div className="client-detail-modal__body">
+                <div className="client-detail-modal__body-inner">{renderForm(editForm, setEditForm, editSubmitting)}</div>
+              </div>
+              <footer className="client-detail-modal__footer">
+                <button type="button" className="client-detail-modal__btn client-detail-modal__btn--secondary" onClick={() => setEditId(null)} disabled={editSubmitting}>
                   {t('clients.cancel')}
                 </button>
-                <button type="submit" className="clients-btn clients-btn--primary" disabled={editSubmitting}>
+                <button type="submit" className="client-detail-modal__btn client-detail-modal__btn--primary" disabled={editSubmitting}>
                   {editSubmitting ? t('clients.saving') : t('clients.save')}
                 </button>
-              </div>
+              </footer>
             </form>
           </div>
         </div>

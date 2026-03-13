@@ -38,7 +38,7 @@ function authHeaders(token) {
 export async function listClients(token, params = {}) {
   const searchParams = new URLSearchParams()
   if (params.q != null && params.q !== '') searchParams.set('q', params.q)
-  if (params.status != null && params.status !== '') searchParams.set('status', params.status)
+  if (params.status_id != null && params.status_id !== '') searchParams.set('status', String(params.status_id))
   if (params.assigned_sales_id != null && params.assigned_sales_id !== '') searchParams.set('assigned_sales_id', params.assigned_sales_id)
   if (params.lead_source_id != null && params.lead_source_id !== '') searchParams.set('lead_source_id', params.lead_source_id)
   if (params.sort != null) searchParams.set('sort', params.sort)
@@ -265,6 +265,20 @@ export async function postClientAttachment(token, clientId, file) {
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to upload attachment (${res.status})`)
   return data
+}
+
+/**
+ * GET {{base_url}}/clients/:id/attachments/:attachmentId/download – Download Client Attachment (returns blob)
+ */
+export async function getClientAttachmentDownload(token, clientId, attachmentId) {
+  const res = await fetch(`${getBaseUrl()}/clients/${clientId}/attachments/${attachmentId}/download`, {
+    headers: authHeaders(token),
+  })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.message || data.error || `Failed to download attachment (${res.status})`)
+  }
+  return res.blob()
 }
 
 /**

@@ -12,6 +12,11 @@ import {
   showPreferredCommMethod,
   updatePreferredCommMethod,
   deletePreferredCommMethod,
+  listClientStatuses,
+  createClientStatus,
+  showClientStatus,
+  updateClientStatus,
+  deleteClientStatus,
 } from '../../api/clientLookups'
 import { Container } from '../../components/Container'
 import './ClientLookups.css'
@@ -53,6 +58,21 @@ export default function ClientLookups() {
   const [cmDeleteId, setCmDeleteId] = useState(null)
   const [cmDeleteSubmitting, setCmDeleteSubmitting] = useState(false)
 
+  const [clientStatuses, setClientStatuses] = useState([])
+  const [clientStatusesLoading, setClientStatusesLoading] = useState(true)
+  const [csCreateOpen, setCsCreateOpen] = useState(false)
+  const [csCreateForm, setCsCreateForm] = useState({ name: '', sort_order: 1 })
+  const [csCreateSubmitting, setCsCreateSubmitting] = useState(false)
+  const [csViewId, setCsViewId] = useState(null)
+  const [csViewItem, setCsViewItem] = useState(null)
+  const [csViewLoading, setCsViewLoading] = useState(false)
+  const [csEditId, setCsEditId] = useState(null)
+  const [csEditForm, setCsEditForm] = useState({ name: '', sort_order: 1 })
+  const [csEditLoading, setCsEditLoading] = useState(false)
+  const [csEditSubmitting, setCsEditSubmitting] = useState(false)
+  const [csDeleteId, setCsDeleteId] = useState(null)
+  const [csDeleteSubmitting, setCsDeleteSubmitting] = useState(false)
+
   const loadCompanyTypes = () => {
     if (!token) return
     setCompanyTypesLoading(true)
@@ -79,8 +99,99 @@ export default function ClientLookups() {
       .finally(() => setCommMethodsLoading(false))
   }
 
+  const loadClientStatuses = () => {
+    if (!token) return
+    setClientStatusesLoading(true)
+    setError('')
+    listClientStatuses(token)
+      .then((data) => {
+        const list = data.data ?? data.client_statuses ?? data
+        setClientStatuses(Array.isArray(list) ? list : [])
+      })
+      .catch((err) => setError(err.message || t('clientLookups.error')))
+      .finally(() => setClientStatusesLoading(false))
+  }
+
   useEffect(() => { loadCompanyTypes() }, [token])
   useEffect(() => { loadCommMethods() }, [token])
+  useEffect(() => { loadClientStatuses() }, [token])
+
+  const openCsView = (id) => {
+    setCsViewId(id)
+    setCsViewItem(null)
+    setCsViewLoading(true)
+    setError('')
+    showClientStatus(token, id)
+      .then((data) => setCsViewItem(data.data ?? data.client_status ?? data))
+      .catch((err) => setError(err.message))
+      .finally(() => setCsViewLoading(false))
+  }
+
+  const openCsEdit = (id) => {
+    setCsEditId(id)
+    setCsEditLoading(true)
+    setError('')
+    showClientStatus(token, id)
+      .then((data) => {
+        const item = data.data ?? data.client_status ?? data
+        setCsEditForm({ name: item.name ?? '', sort_order: item.sort_order ?? 1 })
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setCsEditLoading(false))
+  }
+
+  const handleCsCreateSubmit = async (e) => {
+    e.preventDefault()
+    setError('')
+    setCsCreateSubmitting(true)
+    try {
+      await createClientStatus(token, {
+        name: csCreateForm.name,
+        sort_order: Number(csCreateForm.sort_order) || 1,
+      })
+      setCsCreateOpen(false)
+      setCsCreateForm({ name: '', sort_order: 1 })
+      loadClientStatuses()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setCsCreateSubmitting(false)
+    }
+  }
+
+  const handleCsEditSubmit = async (e) => {
+    e.preventDefault()
+    if (!csEditId) return
+    setError('')
+    setCsEditSubmitting(true)
+    try {
+      await updateClientStatus(token, csEditId, {
+        name: csEditForm.name,
+        sort_order: Number(csEditForm.sort_order) ?? 1,
+      })
+      setCsEditId(null)
+      loadClientStatuses()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setCsEditSubmitting(false)
+    }
+  }
+
+  const handleCsDeleteConfirm = async () => {
+    if (!csDeleteId) return
+    setError('')
+    setCsDeleteSubmitting(true)
+    try {
+      await deleteClientStatus(token, csDeleteId)
+      setCsDeleteId(null)
+      loadClientStatuses()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setCsDeleteSubmitting(false)
+    }
+  }
 
   const openCtView = (id) => {
     setCtViewId(id)
@@ -256,6 +367,13 @@ export default function ClientLookups() {
           >
             {t('clientLookups.preferredCommMethods')}
           </button>
+          <button
+            type="button"
+            className={`cl-tab ${tab === 'clientStatuses' ? 'cl-tab--active' : ''}`}
+            onClick={() => setTab('clientStatuses')}
+          >
+            {t('clientLookups.clientStatuses')}
+          </button>
         </div>
 
         {tab === 'companyTypes' && (
@@ -330,6 +448,47 @@ export default function ClientLookups() {
                           <button type="button" className="cl-btn cl-btn--small" onClick={() => openCmView(row.id)}>{t('clientLookups.view')}</button>
                           <button type="button" className="cl-btn cl-btn--small" onClick={() => openCmEdit(row.id)}>{t('clientLookups.edit')}</button>
                           <button type="button" className="cl-btn cl-btn--small cl-btn--danger" onClick={() => setCmDeleteId(row.id)}>{t('clientLookups.delete')}</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        )}
+
+        {tab === 'clientStatuses' && (
+          <section className="client-lookups-section">
+            <div className="client-lookups-section-header">
+              <h2>{t('clientLookups.clientStatuses')}</h2>
+              <button type="button" className="cl-btn cl-btn--primary" onClick={() => setCsCreateOpen(true)}>
+                {t('clientLookups.create')}
+              </button>
+            </div>
+            {clientStatusesLoading ? (
+              <p>{t('clientLookups.loading')}</p>
+            ) : clientStatuses.length === 0 ? (
+              <p className="client-lookups-empty">{t('clientLookups.noClientStatuses')}</p>
+            ) : (
+              <div className="cl-table-wrap">
+                <table className="cl-table">
+                  <thead>
+                    <tr>
+                      <th>{t('clientLookups.name')}</th>
+                      <th>{t('clientLookups.sortOrder')}</th>
+                      <th>{t('clientLookups.actions')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {clientStatuses.map((row) => (
+                      <tr key={row.id}>
+                        <td>{row.name ?? '—'}</td>
+                        <td>{row.sort_order ?? '—'}</td>
+                        <td>
+                          <button type="button" className="cl-btn cl-btn--small" onClick={() => openCsView(row.id)}>{t('clientLookups.view')}</button>
+                          <button type="button" className="cl-btn cl-btn--small" onClick={() => openCsEdit(row.id)}>{t('clientLookups.edit')}</button>
+                          <button type="button" className="cl-btn cl-btn--small cl-btn--danger" onClick={() => setCsDeleteId(row.id)}>{t('clientLookups.delete')}</button>
                         </td>
                       </tr>
                     ))}
@@ -497,6 +656,87 @@ export default function ClientLookups() {
               <div className="cl-modal-actions">
                 <button type="button" className="cl-btn" onClick={() => setCmDeleteId(null)} disabled={cmDeleteSubmitting}>{t('clientLookups.cancel')}</button>
                 <button type="button" className="cl-btn cl-btn--danger" onClick={handleCmDeleteConfirm} disabled={cmDeleteSubmitting}>{cmDeleteSubmitting ? t('clientLookups.saving') : t('clientLookups.delete')}</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Client Status modals */}
+        {csCreateOpen && (
+          <div className="cl-modal" role="dialog" aria-modal="true">
+            <div className="cl-modal-backdrop" onClick={() => setCsCreateOpen(false)} />
+            <div className="cl-modal-content">
+              <h2>{t('clientLookups.createClientStatus')}</h2>
+              <form onSubmit={handleCsCreateSubmit} className="cl-form">
+                <div className="cl-field">
+                  <label>{t('clientLookups.name')}</label>
+                  <input type="text" value={csCreateForm.name} onChange={(e) => setCsCreateForm((f) => ({ ...f, name: e.target.value }))} required disabled={csCreateSubmitting} />
+                </div>
+                <div className="cl-field">
+                  <label>{t('clientLookups.sortOrder')}</label>
+                  <input type="number" min={0} value={csCreateForm.sort_order} onChange={(e) => setCsCreateForm((f) => ({ ...f, sort_order: e.target.value }))} disabled={csCreateSubmitting} />
+                </div>
+                <div className="cl-modal-actions">
+                  <button type="button" className="cl-btn" onClick={() => setCsCreateOpen(false)} disabled={csCreateSubmitting}>{t('clientLookups.cancel')}</button>
+                  <button type="submit" className="cl-btn cl-btn--primary" disabled={csCreateSubmitting}>{csCreateSubmitting ? t('clientLookups.saving') : t('clientLookups.save')}</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {csViewId && (
+          <div className="cl-modal" role="dialog" aria-modal="true">
+            <div className="cl-modal-backdrop" onClick={() => setCsViewId(null)} />
+            <div className="cl-modal-content">
+              <h2>{t('clientLookups.viewClientStatus')}</h2>
+              {csViewLoading ? <p>{t('clientLookups.loading')}</p> : csViewItem && (
+                <div className="cl-view">
+                  <p><strong>{t('clientLookups.name')}:</strong> {csViewItem.name ?? '—'}</p>
+                  <p><strong>{t('clientLookups.sortOrder')}:</strong> {csViewItem.sort_order ?? '—'}</p>
+                  <div className="cl-modal-actions">
+                    <button type="button" className="cl-btn" onClick={() => setCsViewId(null)}>{t('clientLookups.close')}</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {csEditId && (
+          <div className="cl-modal" role="dialog" aria-modal="true">
+            <div className="cl-modal-backdrop" onClick={() => !csEditSubmitting && setCsEditId(null)} />
+            <div className="cl-modal-content">
+              <h2>{t('clientLookups.editClientStatus')}</h2>
+              {csEditLoading ? <p>{t('clientLookups.loading')}</p> : (
+                <form onSubmit={handleCsEditSubmit} className="cl-form">
+                  <div className="cl-field">
+                    <label>{t('clientLookups.name')}</label>
+                    <input type="text" value={csEditForm.name} onChange={(e) => setCsEditForm((f) => ({ ...f, name: e.target.value }))} required disabled={csEditSubmitting} />
+                  </div>
+                  <div className="cl-field">
+                    <label>{t('clientLookups.sortOrder')}</label>
+                    <input type="number" min={0} value={csEditForm.sort_order} onChange={(e) => setCsEditForm((f) => ({ ...f, sort_order: e.target.value }))} disabled={csEditSubmitting} />
+                  </div>
+                  <div className="cl-modal-actions">
+                    <button type="button" className="cl-btn" onClick={() => setCsEditId(null)} disabled={csEditSubmitting}>{t('clientLookups.cancel')}</button>
+                    <button type="submit" className="cl-btn cl-btn--primary" disabled={csEditSubmitting}>{csEditSubmitting ? t('clientLookups.saving') : t('clientLookups.save')}</button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        )}
+
+        {csDeleteId && (
+          <div className="cl-modal" role="dialog" aria-modal="true">
+            <div className="cl-modal-backdrop" onClick={() => !csDeleteSubmitting && setCsDeleteId(null)} />
+            <div className="cl-modal-content">
+              <h2>{t('clientLookups.deleteClientStatus')}</h2>
+              <p>{t('clientLookups.deleteConfirm')}</p>
+              <div className="cl-modal-actions">
+                <button type="button" className="cl-btn" onClick={() => setCsDeleteId(null)} disabled={csDeleteSubmitting}>{t('clientLookups.cancel')}</button>
+                <button type="button" className="cl-btn cl-btn--danger" onClick={handleCsDeleteConfirm} disabled={csDeleteSubmitting}>{csDeleteSubmitting ? t('clientLookups.saving') : t('clientLookups.delete')}</button>
               </div>
             </div>
           </div>

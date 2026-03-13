@@ -28,6 +28,7 @@ export default function ClientDetailModal({
   attachmentUploading,
   attachmentDeletingId,
   onAttachmentUpload,
+  onAttachmentDownload,
   onAttachmentDelete,
   financialSummaryList = [],
   pricingList = [],
@@ -159,19 +160,33 @@ export default function ClientDetailModal({
                 <p className="client-detail-modal__empty">{t('clients.noAttachments')}</p>
               ) : (
                 <ul className="client-detail-modal__list client-detail-modal__list--attachments">
-                  {attachments.map((a) => (
-                    <li key={a.id} className="client-detail-modal__list-item client-detail-modal__list-item--with-action">
-                      <span className="client-detail-modal__list-value">{a.file_name ?? a.name ?? a.id}</span>
-                      <button
-                        type="button"
-                        className="client-detail-modal__btn client-detail-modal__btn--danger"
-                        onClick={() => onAttachmentDelete(a.id)}
-                        disabled={attachmentDeletingId === a.id}
-                      >
-                        {attachmentDeletingId === a.id ? t('clients.deleting') : t('clients.delete')}
-                      </button>
-                    </li>
-                  ))}
+                  {attachments.map((a) => {
+                    const displayName = a.name ?? a.file_name ?? `attachment-${a.id}`
+                    return (
+                      <li key={a.id} className="client-detail-modal__list-item client-detail-modal__list-item--with-action">
+                        <span className="client-detail-modal__list-value">{displayName}</span>
+                        <div className="client-detail-modal__list-actions">
+                          {onAttachmentDownload && detailId && (
+                            <button
+                              type="button"
+                              className="client-detail-modal__btn client-detail-modal__btn--secondary"
+                              onClick={() => onAttachmentDownload(detailId, a.id, displayName)}
+                            >
+                              {t('clients.download')}
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            className="client-detail-modal__btn client-detail-modal__btn--danger"
+                            onClick={() => onAttachmentDelete(a.id)}
+                            disabled={attachmentDeletingId === a.id}
+                          >
+                            {attachmentDeletingId === a.id ? t('clients.deleting') : t('clients.delete')}
+                          </button>
+                        </div>
+                      </li>
+                    )
+                  })}
                 </ul>
               )}
             </section>
