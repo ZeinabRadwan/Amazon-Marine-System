@@ -255,6 +255,68 @@ class TreasuryController extends Controller
         ], 201);
     }
 
+    public function updateEntry(Request $request, TreasuryEntry $treasury_entry): JsonResponse
+    {
+        abort_unless(
+            $request->user()?->can('accounting.manage'),
+            403,
+            'You do not have permission to update treasury entries.'
+        );
+
+        $validated = $request->validate([
+            'entry_type' => ['sometimes', 'in:in,out'],
+            'source' => ['sometimes', 'string', 'max:255'],
+            'amount' => ['sometimes', 'numeric', 'min:0'],
+            'currency_code' => ['sometimes', 'string', 'size:3'],
+            'description' => ['nullable', 'string', 'max:255'],
+            'entry_date' => ['sometimes', 'date'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        if (array_key_exists('entry_type', $validated)) {
+            $treasury_entry->entry_type = $validated['entry_type'];
+        }
+        if (array_key_exists('source', $validated)) {
+            $treasury_entry->source = $validated['source'];
+        }
+        if (array_key_exists('amount', $validated)) {
+            $treasury_entry->amount = $validated['amount'];
+        }
+        if (array_key_exists('currency_code', $validated)) {
+            $treasury_entry->currency_code = $validated['currency_code'];
+        }
+        if (array_key_exists('description', $validated)) {
+            $treasury_entry->reference = $validated['description'];
+        }
+        if (array_key_exists('entry_date', $validated)) {
+            $treasury_entry->entry_date = $validated['entry_date'];
+        }
+        if (array_key_exists('notes', $validated)) {
+            $treasury_entry->notes = $validated['notes'];
+        }
+
+        $treasury_entry->save();
+
+        return response()->json([
+            'data' => $treasury_entry,
+        ]);
+    }
+
+    public function destroyEntry(Request $request, TreasuryEntry $treasury_entry): JsonResponse
+    {
+        abort_unless(
+            $request->user()?->can('accounting.manage'),
+            403,
+            'You do not have permission to delete treasury entries.'
+        );
+
+        $treasury_entry->delete();
+
+        return response()->json([
+            'message' => 'Treasury entry deleted.',
+        ]);
+    }
+
     public function storeTransfer(Request $request): JsonResponse
     {
         abort_unless(

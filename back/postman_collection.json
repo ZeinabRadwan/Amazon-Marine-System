@@ -3482,8 +3482,225 @@
       ]
     },
     {
+      "name": "Vendors",
+      "description": "Partners (خطوط ملاحية, شركات النقل, تخليص جمركي). Type: shipping, transport, customs or similar.",
+      "item": [
+        {
+          "name": "List Vendors",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vendors?type=&search=",
+              "host": ["{{base_url}}"],
+              "path": ["vendors"],
+              "query": [
+                { "key": "type", "value": "", "description": "shipping, transport, customs" },
+                { "key": "search", "value": "" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Vendors Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vendors/stats?type=&currency=USD",
+              "host": ["{{base_url}}"],
+              "path": ["vendors", "stats"],
+              "query": [
+                { "key": "type", "value": "" },
+                { "key": "currency", "value": "USD" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Vendors Charts",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vendors/charts?type=&months=6",
+              "host": ["{{base_url}}"],
+              "path": ["vendors", "charts"],
+              "query": [
+                { "key": "type", "value": "" },
+                { "key": "months", "value": "6" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Vendors Export (CSV)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vendors/export?type=&search=&has_balance=",
+              "host": ["{{base_url}}"],
+              "path": ["vendors", "export"],
+              "query": [
+                { "key": "type", "value": "" },
+                { "key": "search", "value": "" },
+                { "key": "has_balance", "value": "", "description": "1 or true to filter" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Vendor",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"MSC\",\n  \"type\": \"shipping\",\n  \"email\": \"bookings@msc.com\",\n  \"phone\": \"+41 22 703 8888\",\n  \"address\": \"Geneva, Switzerland\",\n  \"city\": \"Geneva\",\n  \"country\": \"Switzerland\",\n  \"payment_terms\": \"Net 30\",\n  \"notes\": \"Main shipping line\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/vendors", "host": ["{{base_url}}"], "path": ["vendors"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Show Vendor",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/vendors/{{vendor_id}}", "host": ["{{base_url}}"], "path": ["vendors", "{{vendor_id}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Vendor",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"MSC\",\n  \"type\": \"shipping\",\n  \"email\": \"bookings@msc.com\",\n  \"phone\": \"+41 22 703 8888\",\n  \"address\": \"Updated address\",\n  \"notes\": \"Updated notes\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/vendors/{{vendor_id}}", "host": ["{{base_url}}"], "path": ["vendors", "{{vendor_id}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Vendor",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/vendors/{{vendor_id}}", "host": ["{{base_url}}"], "path": ["vendors", "{{vendor_id}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Vendor Visits",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vendors/{{vendor_id}}/visits",
+              "host": ["{{base_url}}"],
+              "path": ["vendors", "{{vendor_id}}", "visits"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Visits",
       "item": [
+        {
+          "name": "Visits Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/visits/stats?from=&to=&user_id=&visitable_type=",
+              "host": ["{{base_url}}"],
+              "path": ["visits", "stats"],
+              "query": [
+                { "key": "from", "value": "" },
+                { "key": "to", "value": "" },
+                { "key": "user_id", "value": "" },
+                { "key": "visitable_type", "value": "", "description": "client or vendor" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Visits Charts",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/visits/charts?from=&to=&user_id=&visitable_type=",
+              "host": ["{{base_url}}"],
+              "path": ["visits", "charts"],
+              "query": [
+                { "key": "from", "value": "" },
+                { "key": "to", "value": "" },
+                { "key": "user_id", "value": "" },
+                { "key": "visitable_type", "value": "" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Follow-ups Pending",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/visits/follow-ups-pending",
+              "host": ["{{base_url}}"],
+              "path": ["visits", "follow-ups-pending"]
+            }
+          },
+          "response": []
+        },
         {
           "name": "List Visits",
           "request": {
@@ -3499,7 +3716,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/visits?client_id={{client_id}}",
+              "raw": "{{base_url}}/visits?client_id=&vendor_id=&visitable_type=&user_id=&from=&to=",
               "host": [
                 "{{base_url}}"
               ],
@@ -3507,11 +3724,29 @@
                 "visits"
               ],
               "query": [
-                {
-                  "key": "client_id",
-                  "value": "{{client_id}}"
-                }
+                { "key": "client_id", "value": "{{client_id}}" },
+                { "key": "vendor_id", "value": "" },
+                { "key": "visitable_type", "value": "" },
+                { "key": "user_id", "value": "" },
+                { "key": "from", "value": "" },
+                { "key": "to", "value": "" }
               ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Vendor Visits",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vendors/{{vendor_id}}/visits",
+              "host": ["{{base_url}}"],
+              "path": ["vendors", "{{vendor_id}}", "visits"]
             }
           },
           "response": []
@@ -3536,12 +3771,28 @@
             },
             "url": {
               "raw": "{{base_url}}/visits",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "visits"
-              ]
+              "host": ["{{base_url}}"],
+              "path": ["visits"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Visit (to vendor)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vendor_id\": 1,\n  \"subject\": \"زيارة خط ملاحي\",\n  \"purpose\": \"تفاوض أسعار\",\n  \"notes\": \"تم الاجتماع مع ممثل الخط\",\n  \"visit_date\": \"2026-03-14\",\n  \"status\": \"completed\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/visits",
+              "host": ["{{base_url}}"],
+              "path": ["visits"]
             }
           },
           "response": []
@@ -3589,7 +3840,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"subject\": \"مكالمة هاتفية\",\n  \"notes\": \"تم التحديث\"\n}"
+              "raw": "{\n  \"subject\": \"مكالمة هاتفية\",\n  \"notes\": \"تم التحديث\",\n  \"visit_date\": \"2026-03-14\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/visits/1",
@@ -3633,36 +3884,81 @@
       "name": "Shipments",
       "item": [
         {
+          "name": "Get Shipment Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/shipments/stats",
+              "host": ["{{base_url}}"],
+              "path": ["shipments", "stats"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Shipment Charts",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/shipments/charts?months=6",
+              "host": ["{{base_url}}"],
+              "path": ["shipments", "charts"],
+              "query": [{ "key": "months", "value": "6" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export Shipments",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/shipments/export?status=&client_id=&line_vendor_id=&month=&ids=",
+              "host": ["{{base_url}}"],
+              "path": ["shipments", "export"],
+              "query": [
+                { "key": "status", "value": "" },
+                { "key": "client_id", "value": "" },
+                { "key": "line_vendor_id", "value": "" },
+                { "key": "month", "value": "" },
+                { "key": "ids", "value": "" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "List Shipments",
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Accept",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "url": {
-              "raw": "{{base_url}}/shipments?client_id={{client_id}}&per_page=15",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "shipments"
-              ],
+              "raw": "{{base_url}}/shipments?search=&status=&client_id=&line_vendor_id=&month=&sort=&direction=desc&per_page=15",
+              "host": ["{{base_url}}"],
+              "path": ["shipments"],
               "query": [
-                {
-                  "key": "client_id",
-                  "value": "{{client_id}}"
-                },
-                {
-                  "key": "per_page",
-                  "value": "15"
-                }
+                { "key": "search", "value": "" },
+                { "key": "status", "value": "" },
+                { "key": "client_id", "value": "{{client_id}}" },
+                { "key": "line_vendor_id", "value": "" },
+                { "key": "month", "value": "" },
+                { "key": "sort", "value": "" },
+                { "key": "direction", "value": "desc" },
+                { "key": "per_page", "value": "15" }
               ]
             }
           },
@@ -3684,16 +3980,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"client_id\": 1,\n  \"status\": \"booked\"\n}"
+              "raw": "{\n  \"client_id\": 1,\n  \"sales_rep_id\": 1,\n  \"booking_number\": \"BK-MSC-9921\",\n  \"line_vendor_id\": 1,\n  \"origin_port_id\": 1,\n  \"destination_port_id\": 2,\n  \"shipment_direction\": \"Export\",\n  \"mode\": \"Sea\",\n  \"shipment_type\": \"FCL\",\n  \"status\": \"booked\",\n  \"container_count\": 2,\n  \"container_size\": \"40\",\n  \"container_type\": \"Dry\",\n  \"loading_place\": \"Alexandria Port\",\n  \"loading_date\": \"2026-03-20\",\n  \"cargo_description\": \"Cotton textiles\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/shipments",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "shipments"
-              ]
+              "host": ["{{base_url}}"],
+              "path": ["shipments"]
             }
           },
           "response": []
@@ -3741,17 +4033,63 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"status\": \"in_transit\"\n}"
+              "raw": "{\n  \"status\": \"in_transit\",\n  \"operations_status\": 4,\n  \"bl_number\": \"BL-2026-0248\",\n  \"loading_place\": \"Alexandria Port\",\n  \"loading_date\": \"2026-03-15\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/shipments/1",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "shipments",
-                "1"
-              ]
+              "host": ["{{base_url}}"],
+              "path": ["shipments", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Shipment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/shipments/{{shipment_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["shipments", "{{shipment_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Shipment Notes",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/shipments/{{shipment_id}}/notes",
+              "host": ["{{base_url}}"],
+              "path": ["shipments", "{{shipment_id}}", "notes"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Shipment Note",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"ملاحظة على الشحنة — تم التأكد من موعد التحميل.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/shipments/{{shipment_id}}/notes",
+              "host": ["{{base_url}}"],
+              "path": ["shipments", "{{shipment_id}}", "notes"]
             }
           },
           "response": []
@@ -3997,6 +4335,48 @@
                   "key": "to",
                   "value": ""
                 }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reports Team Performance",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/reports/team-performance?from=&to=&search=&sort=revenue",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "team-performance"],
+              "query": [
+                { "key": "from", "value": "" },
+                { "key": "to", "value": "" },
+                { "key": "search", "value": "" },
+                { "key": "sort", "value": "revenue", "description": "revenue, conversion, visits" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reports Team Performance Export (CSV)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/reports/team-performance/export?from=&to=&sort=revenue",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "team-performance", "export"],
+              "query": [
+                { "key": "from", "value": "" },
+                { "key": "to", "value": "" },
+                { "key": "sort", "value": "revenue" }
               ]
             }
           },
@@ -4292,6 +4672,41 @@
                 "treasury",
                 "entries"
               ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Treasury Entry",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 1200,\n  \"entry_date\": \"2026-03-10\",\n  \"description\": \"Updated entry\",\n  \"notes\": \"Corrected amount\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/treasury/entries/1",
+              "host": ["{{base_url}}"],
+              "path": ["treasury", "entries", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Treasury Entry",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/treasury/entries/1",
+              "host": ["{{base_url}}"],
+              "path": ["treasury", "entries", "1"]
             }
           },
           "response": []
@@ -4635,6 +5050,57 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Show Expense",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/expenses/1",
+              "host": ["{{base_url}}"],
+              "path": ["expenses", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Expense",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated expense\",\n  \"amount\": 200,\n  \"expense_date\": \"2026-03-12\",\n  \"currency_code\": \"EGP\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/expenses/1",
+              "host": ["{{base_url}}"],
+              "path": ["expenses", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Expense",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/expenses/1",
+              "host": ["{{base_url}}"],
+              "path": ["expenses", "1"]
+            }
+          },
+          "response": []
         }
       ]
     },
@@ -4656,7 +5122,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/invoices?search=&status=&currency_id=&month=&sort=date",
+              "raw": "{{base_url}}/invoices?search=&status=&invoice_type=&currency_id=&month=&sort=date",
               "host": [
                 "{{base_url}}"
               ],
@@ -4671,6 +5137,11 @@
                 {
                   "key": "status",
                   "value": ""
+                },
+                {
+                  "key": "invoice_type",
+                  "value": "",
+                  "description": "client or partner (for tabs)"
                 },
                 {
                   "key": "currency_id",
@@ -5472,6 +5943,171 @@
       ]
     },
     {
+      "name": "Attendance",
+      "description": "Check-in/check-out and attendance stats. attendance.view or reports.view for all users; otherwise own data only.",
+      "item": [
+        {
+          "name": "Check-in",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/attendance/check-in", "host": ["{{base_url}}"], "path": ["attendance", "check-in"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Check-out",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/attendance/check-out", "host": ["{{base_url}}"], "path": ["attendance", "check-out"] }
+          },
+          "response": []
+        },
+        {
+          "name": "List Attendance",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/attendance?user_id=&date=&from=&to=",
+              "host": ["{{base_url}}"],
+              "path": ["attendance"],
+              "query": [
+                { "key": "user_id", "value": "" },
+                { "key": "date", "value": "" },
+                { "key": "from", "value": "" },
+                { "key": "to", "value": "" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Attendance Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/attendance/stats?date=",
+              "host": ["{{base_url}}"],
+              "path": ["attendance", "stats"],
+              "query": [{ "key": "date", "value": "", "description": "YYYY-MM-DD, default today" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Attendance Today",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/attendance/today",
+              "host": ["{{base_url}}"],
+              "path": ["attendance", "today"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Documents",
+      "description": "Company documents and templates. type: company | template. Upload via form-data with file + name + type.",
+      "item": [
+        {
+          "name": "List Documents",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/documents?type=",
+              "host": ["{{base_url}}"],
+              "path": ["documents"],
+              "query": [{ "key": "type", "value": "", "description": "company or template" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Document",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "Company License", "type": "text" },
+                { "key": "type", "value": "company", "type": "text", "description": "company or template" },
+                { "key": "file", "type": "file", "value": "" }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/documents", "host": ["{{base_url}}"], "path": ["documents"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Download Document",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/documents/1/download",
+              "host": ["{{base_url}}"],
+              "path": ["documents", "1", "download"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Document",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/documents/1",
+              "host": ["{{base_url}}"],
+              "path": ["documents", "1"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Customer Service",
       "description": "ticket_type_id (seeded): 1=inquiry (استفسار), 2=complaint (شكوى), 3=request (طلب). priority_id (seeded): 1=low (منخفض), 2=medium (متوسط), 3=high (عالي).",
       "item": [
@@ -5574,6 +6210,42 @@
                     { "key": "client_id", "value": "", "disabled": true },
                     { "key": "assigned_to_id", "value": "", "disabled": true },
                     { "key": "per_page", "value": "15" }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Tickets Stats",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Accept", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/tickets/stats",
+                  "host": ["{{base_url}}"],
+                  "path": ["tickets", "stats"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Tickets Export (CSV)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/tickets/export?status=&priority_id=&client_id=",
+                  "host": ["{{base_url}}"],
+                  "path": ["tickets", "export"],
+                  "query": [
+                    { "key": "status", "value": "" },
+                    { "key": "priority_id", "value": "" },
+                    { "key": "client_id", "value": "" }
                   ]
                 }
               },
@@ -5769,6 +6441,10 @@
     },
     {
       "key": "communication_log_id",
+      "value": "1"
+    },
+    {
+      "key": "vendor_id",
       "value": "1"
     }
   ]

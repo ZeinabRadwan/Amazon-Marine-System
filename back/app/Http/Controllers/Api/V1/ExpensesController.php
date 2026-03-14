@@ -259,6 +259,94 @@ class ExpensesController extends Controller
         ], 201);
     }
 
+    public function show(Request $request, Expense $expense): JsonResponse
+    {
+        abort_unless(
+            $request->user()?->can('accounting.view'),
+            403,
+            'You do not have permission to view this expense.'
+        );
+
+        return response()->json([
+            'data' => $expense->load(['category', 'vendor', 'shipment']),
+        ]);
+    }
+
+    public function update(Request $request, Expense $expense): JsonResponse
+    {
+        abort_unless(
+            $request->user()?->can('accounting.manage'),
+            403,
+            'You do not have permission to update expenses.'
+        );
+
+        $validated = $request->validate([
+            'expense_category_id' => ['sometimes', 'integer', 'exists:expense_categories,id'],
+            'description' => ['sometimes', 'string', 'max:500'],
+            'amount' => ['sometimes', 'numeric', 'min:0'],
+            'currency_code' => ['sometimes', 'string', 'size:3'],
+            'payment_method' => ['nullable', 'string', 'max:100'],
+            'expense_date' => ['sometimes', 'date'],
+            'invoice_number' => ['nullable', 'string', 'max:100'],
+            'vendor_id' => ['nullable', 'integer', 'exists:vendors,id'],
+            'type' => ['sometimes', 'in:shipment,general'],
+            'shipment_id' => ['nullable', 'integer', 'exists:shipments,id'],
+        ]);
+
+        if (array_key_exists('expense_category_id', $validated)) {
+            $expense->expense_category_id = $validated['expense_category_id'];
+        }
+        if (array_key_exists('description', $validated)) {
+            $expense->description = $validated['description'];
+        }
+        if (array_key_exists('amount', $validated)) {
+            $expense->amount = $validated['amount'];
+        }
+        if (array_key_exists('currency_code', $validated)) {
+            $expense->currency_code = $validated['currency_code'];
+        }
+        if (array_key_exists('payment_method', $validated)) {
+            $expense->payment_method = $validated['payment_method'];
+        }
+        if (array_key_exists('expense_date', $validated)) {
+            $expense->expense_date = $validated['expense_date'];
+        }
+        if (array_key_exists('invoice_number', $validated)) {
+            $expense->invoice_number = $validated['invoice_number'];
+        }
+        if (array_key_exists('vendor_id', $validated)) {
+            $expense->vendor_id = $validated['vendor_id'];
+        }
+        if (isset($validated['type'])) {
+            $expense->shipment_id = ($validated['type'] === 'shipment' && ! empty($validated['shipment_id']))
+                ? $validated['shipment_id']
+                : null;
+        } elseif (array_key_exists('shipment_id', $validated)) {
+            $expense->shipment_id = $validated['shipment_id'];
+        }
+
+        $expense->save();
+
+        return response()->json([
+            'data' => $expense->fresh(['category', 'vendor', 'shipment']),
+        ]);
+    }
+
+    public function destroy(Request $request, Expense $expense): JsonResponse
+    {
+        abort_unless(
+            $request->user()?->can('accounting.manage'),
+            403,
+            'You do not have permission to delete expenses.'
+        );
+
+        $expense->delete();
+
+        return response()->json([
+            'message' => 'Expense deleted.',
+        ]);
+    }
+
     public function uploadReceipt(Request $request, Expense $expense): JsonResponse
     {
         abort_unless(

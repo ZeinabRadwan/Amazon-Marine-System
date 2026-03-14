@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Vendor extends Model
 {
@@ -79,5 +80,13 @@ class Vendor extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    /**
+     * @return MorphMany<Visit>
+     */
+    public function visits(): MorphMany
+    {
+        return $this->morphMany(Visit::class, 'visitable');
     }
 }

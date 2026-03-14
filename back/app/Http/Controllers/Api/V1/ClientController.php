@@ -401,7 +401,7 @@ class ClientController extends Controller
     {
         $this->authorize('view', $client);
 
-        $visits = Visit::where('client_id', $client->id)
+        $visits = $client->visits()
             ->with(['user'])
             ->orderByDesc('visit_date')
             ->get();
@@ -409,7 +409,9 @@ class ClientController extends Controller
         return response()->json([
             'data' => $visits->map(fn (Visit $v) => [
                 'id' => $v->id,
-                'client_id' => $v->client_id,
+                'client_id' => $v->visitable_type === \App\Models\Client::class ? $v->visitable_id : null,
+                'visitable_type' => $v->visitable_type,
+                'visitable_id' => $v->visitable_id,
                 'user_id' => $v->user_id,
                 'user_name' => $v->user?->name,
                 'subject' => $v->subject,

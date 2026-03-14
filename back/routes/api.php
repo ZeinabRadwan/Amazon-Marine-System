@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\V1\AccountingController;
+use App\Http\Controllers\Api\V1\AttendanceController;
 use App\Http\Controllers\Api\V1\ClientAttachmentController;
 use App\Http\Controllers\Api\V1\ClientContactController;
 use App\Http\Controllers\Api\V1\ClientController;
@@ -15,6 +16,7 @@ use App\Http\Controllers\Api\V1\CommunicationLogController;
 use App\Http\Controllers\Api\V1\CompanyTypeController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\DecisionMakerTitleController;
+use App\Http\Controllers\Api\V1\DocumentController;
 use App\Http\Controllers\Api\V1\ExpensesController;
 use App\Http\Controllers\Api\V1\InterestLevelController;
 use App\Http\Controllers\Api\V1\InvoiceController;
@@ -27,12 +29,14 @@ use App\Http\Controllers\Api\V1\PricingOfferController;
 use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\SDFormController;
 use App\Http\Controllers\Api\V1\ShipmentController;
+use App\Http\Controllers\Api\V1\ShipmentNoteController;
 use App\Http\Controllers\Api\V1\ShipmentTrackingUpdateController;
 use App\Http\Controllers\Api\V1\TicketController;
 use App\Http\Controllers\Api\V1\TicketTypeController;
 use App\Http\Controllers\Api\V1\TreasuryController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\VendorBillController;
+use App\Http\Controllers\Api\V1\VendorController;
 use App\Http\Controllers\Api\V1\VisitController;
 use Illuminate\Support\Facades\Route;
 
@@ -190,12 +194,18 @@ Route::prefix('v1')->group(function () {
         Route::get('sd-forms/export', [SDFormController::class, 'export']);
 
         // Shipments
+        Route::get('shipments/stats', [ShipmentController::class, 'stats']);
+        Route::get('shipments/charts', [ShipmentController::class, 'charts']);
+        Route::get('shipments/export', [ShipmentController::class, 'export']);
         Route::get('shipments', [ShipmentController::class, 'index']);
         Route::post('shipments', [ShipmentController::class, 'store']);
         Route::get('shipments/{shipment}', [ShipmentController::class, 'show']);
         Route::put('shipments/{shipment}', [ShipmentController::class, 'update']);
+        Route::delete('shipments/{shipment}', [ShipmentController::class, 'destroy']);
         Route::get('shipments/{shipment}/tracking-updates', [ShipmentTrackingUpdateController::class, 'index']);
         Route::post('shipments/{shipment}/tracking-updates', [ShipmentTrackingUpdateController::class, 'store']);
+        Route::get('shipments/{shipment}/notes', [ShipmentNoteController::class, 'index']);
+        Route::post('shipments/{shipment}/notes', [ShipmentNoteController::class, 'store']);
 
         // Ticket types (lookup – CRUD)
         Route::get('ticket-types', [TicketTypeController::class, 'index']);
@@ -205,6 +215,8 @@ Route::prefix('v1')->group(function () {
         Route::delete('ticket-types/{ticket_type}', [TicketTypeController::class, 'destroy']);
 
         // Tickets (customer service)
+        Route::get('tickets/stats', [TicketController::class, 'stats']);
+        Route::get('tickets/export', [TicketController::class, 'export']);
         Route::get('tickets', [TicketController::class, 'index']);
         Route::post('tickets', [TicketController::class, 'store']);
         Route::get('tickets/{ticket}', [TicketController::class, 'show']);
@@ -216,7 +228,21 @@ Route::prefix('v1')->group(function () {
         Route::post('communication-logs', [CommunicationLogController::class, 'store']);
         Route::get('communication-logs/{communicationLog}', [CommunicationLogController::class, 'show']);
 
+        // Vendors (partners)
+        Route::get('vendors/stats', [VendorController::class, 'stats']);
+        Route::get('vendors/charts', [VendorController::class, 'charts']);
+        Route::get('vendors/export', [VendorController::class, 'export']);
+        Route::get('vendors', [VendorController::class, 'index']);
+        Route::post('vendors', [VendorController::class, 'store']);
+        Route::get('vendors/{vendor}', [VendorController::class, 'show']);
+        Route::put('vendors/{vendor}', [VendorController::class, 'update']);
+        Route::delete('vendors/{vendor}', [VendorController::class, 'destroy']);
+        Route::get('vendors/{vendor}/visits', [VisitController::class, 'indexForVendor']);
+
         // Visits (follow-ups / communication log)
+        Route::get('visits/stats', [VisitController::class, 'stats']);
+        Route::get('visits/charts', [VisitController::class, 'charts']);
+        Route::get('visits/follow-ups-pending', [VisitController::class, 'followUpsPending']);
         Route::get('visits', [VisitController::class, 'index']);
         Route::post('visits', [VisitController::class, 'store']);
         Route::get('visits/{visit}', [VisitController::class, 'show']);
@@ -228,6 +254,15 @@ Route::prefix('v1')->group(function () {
         Route::get('reports/shipments', [ReportController::class, 'shipments']);
         Route::get('reports/finance', [ReportController::class, 'finance']);
         Route::get('reports/sales-performance', [ReportController::class, 'salesPerformance']);
+        Route::get('reports/team-performance', [ReportController::class, 'teamPerformance']);
+        Route::get('reports/team-performance/export', [ReportController::class, 'teamPerformanceExport']);
+
+        // Attendance
+        Route::post('attendance/check-in', [AttendanceController::class, 'checkIn']);
+        Route::post('attendance/check-out', [AttendanceController::class, 'checkOut']);
+        Route::get('attendance', [AttendanceController::class, 'index']);
+        Route::get('attendance/stats', [AttendanceController::class, 'stats']);
+        Route::get('attendance/today', [AttendanceController::class, 'today']);
 
         // Accounting
         Route::get('accounting/summary', [AccountingController::class, 'summary']);
@@ -269,6 +304,8 @@ Route::prefix('v1')->group(function () {
         Route::get('treasury/summary', [TreasuryController::class, 'summary']);
         Route::get('treasury/entries', [TreasuryController::class, 'entries']);
         Route::post('treasury/entries', [TreasuryController::class, 'storeEntry']);
+        Route::put('treasury/entries/{treasury_entry}', [TreasuryController::class, 'updateEntry']);
+        Route::delete('treasury/entries/{treasury_entry}', [TreasuryController::class, 'destroyEntry']);
         Route::post('treasury/transfers', [TreasuryController::class, 'storeTransfer']);
         Route::get('treasury/expenses', [TreasuryController::class, 'expenses']);
         Route::post('treasury/expenses', [TreasuryController::class, 'storeExpense']);
@@ -277,9 +314,12 @@ Route::prefix('v1')->group(function () {
         Route::get('expenses/summary', [ExpensesController::class, 'summary']);
         Route::get('expenses/shipment', [ExpensesController::class, 'shipmentIndex']);
         Route::get('expenses/general', [ExpensesController::class, 'generalIndex']);
+        Route::get('expenses/export', [ExpensesController::class, 'export']);
+        Route::get('expenses/{expense}', [ExpensesController::class, 'show']);
+        Route::put('expenses/{expense}', [ExpensesController::class, 'update']);
+        Route::delete('expenses/{expense}', [ExpensesController::class, 'destroy']);
         Route::post('expenses', [ExpensesController::class, 'store']);
         Route::post('expenses/{expense}/receipt', [ExpensesController::class, 'uploadReceipt']);
-        Route::get('expenses/export', [ExpensesController::class, 'export']);
 
         // Notifications
         Route::get('notifications', [NotificationController::class, 'index']);
@@ -290,5 +330,11 @@ Route::prefix('v1')->group(function () {
         // PDF layouts
         Route::get('pdf-layouts/{documentType}', [PdfLayoutController::class, 'show']);
         Route::put('pdf-layouts/{documentType}', [PdfLayoutController::class, 'upsert']);
+
+        // Documents (company / templates)
+        Route::get('documents', [DocumentController::class, 'index']);
+        Route::post('documents', [DocumentController::class, 'store']);
+        Route::get('documents/{document}/download', [DocumentController::class, 'download']);
+        Route::delete('documents/{document}', [DocumentController::class, 'destroy']);
     });
 });

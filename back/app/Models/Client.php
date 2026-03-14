@@ -126,11 +126,11 @@ class Client extends Model
     }
 
     /**
-     * @return HasMany<Visit>
+     * @return MorphMany<Visit>
      */
-    public function visits(): HasMany
+    public function visits(): MorphMany
     {
-        return $this->hasMany(Visit::class);
+        return $this->morphMany(Visit::class, 'visitable');
     }
 
     /**

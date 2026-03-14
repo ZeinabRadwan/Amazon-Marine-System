@@ -34,6 +34,10 @@ class InvoiceController extends Controller
             $query->where('status', $status);
         }
 
+        if ($invoiceType = $request->query('invoice_type')) {
+            $query->where('invoice_type', $invoiceType === 'partner' ? 'vendor' : $invoiceType);
+        }
+
         if ($clientId = $request->query('client_id')) {
             $query->where('client_id', $clientId);
         }

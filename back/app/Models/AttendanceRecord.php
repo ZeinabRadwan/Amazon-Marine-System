@@ -5,9 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
 
-class Visit extends Model
+class AttendanceRecord extends Model
 {
     use HasFactory;
 
@@ -15,33 +14,26 @@ class Visit extends Model
      * @var list<string>
      */
     protected $fillable = [
-        'visitable_type',
-        'visitable_id',
         'user_id',
-        'subject',
-        'purpose',
+        'date',
+        'check_in_at',
+        'check_out_at',
+        'is_late',
         'notes',
-        'visit_date',
-        'status',
     ];
 
     /**
      * @var array<string, string>
      */
     protected $casts = [
-        'visit_date' => 'date',
+        'date' => 'date',
+        'check_in_at' => 'datetime',
+        'check_out_at' => 'datetime',
+        'is_late' => 'boolean',
     ];
 
     /**
-     * @return MorphTo<Model, Visit>
-     */
-    public function visitable(): MorphTo
-    {
-        return $this->morphTo();
-    }
-
-    /**
-     * @return BelongsTo<User, Visit>
+     * @return BelongsTo<User, AttendanceRecord>
      */
     public function user(): BelongsTo
     {

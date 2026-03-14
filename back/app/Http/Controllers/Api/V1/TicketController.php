@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateTicketRequest;
 use App\Models\Ticket;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TicketController extends Controller
 {
@@ -112,6 +113,89 @@ class TicketController extends Controller
         return response()->json([
             'message' => 'Ticket deleted.',
         ]);
+    }
+
+    public function stats(Request $request): JsonResponse
+    {
+        $this->authorize('viewAny', Ticket::class);
+
+        $open = (int) Ticket::where('status', 'open')->count();
+        $todayStart = now()->startOfDay();
+        $todayEnd = now()->endOfDay();
+        $resolvedToday = (int) Ticket::whereIn('status', ['resolved', 'closed'])
+            ->whereBetween('updated_at', [$todayStart, $todayEnd])
+            ->count();
+        $pending = (int) Ticket::whereIn('status', ['open', 'in_progress'])->count();
+        $total = (int) Ticket::count();
+        $resolvedTotal = (int) Ticket::whereIn('status', ['resolved', 'closed'])->count();
+        $slaPct = $total > 0 ? round($resolvedTotal / $total * 100, 1) : 0;
+
+        return response()->json([
+            'data' => [
+                'open' => $open,
+                'resolved_today' => $resolvedToday,
+                'pending' => $pending,
+                'sla_response_pct' => $slaPct,
+            ],
+        ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        $this->authorize('viewAny', Ticket::class);
+
+        $query = Ticket::query()->with(['client', 'shipment', 'ticketType', 'priority', 'assignedTo']);
+
+        if ($search = $request->query('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('ticket_number', 'like', '%'.$search.'%')
+                    ->orWhereHas('client', function ($q) use ($search) {
+                        $q->where('name', 'like', '%'.$search.'%')
+                            ->orWhere('company_name', 'like', '%'.$search.'%');
+                    });
+            });
+        }
+
+        if ($status = $request->query('status')) {
+            $query->where('status', $status);
+        }
+
+        if ($ticketTypeId = $request->query('ticket_type_id')) {
+            $query->where('ticket_type_id', $ticketTypeId);
+        }
+
+        if ($priorityId = $request->query('priority_id')) {
+            $query->where('priority_id', $priorityId);
+        }
+
+        if ($clientId = $request->query('client_id')) {
+            $query->where('client_id', $clientId);
+        }
+
+        $tickets = $query->orderByDesc('created_at')->get();
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="tickets-'.date('Y-m-d').'.csv"',
+        ];
+
+        return new StreamedResponse(function () use ($tickets) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['ticket_number', 'client', 'shipment_bl', 'type', 'priority', 'status', 'assigned_to', 'created_at']);
+            foreach ($tickets as $t) {
+                fputcsv($out, [
+                    $t->ticket_number ?? '',
+                    $t->client?->name ?? $t->client?->company_name ?? '',
+                    $t->shipment?->bl_number ?? '',
+                    $t->ticketType?->name ?? '',
+                    $t->priority?->name ?? '',
+                    $t->status ?? '',
+                    $t->assignedTo?->name ?? '',
+                    $t->created_at?->toDateTimeString() ?? '',
+                ]);
+            }
+            fclose($out);
+        }, 200, $headers);
     }
 
     private static function generateTicketNumber(): string
