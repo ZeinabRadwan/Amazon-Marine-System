@@ -1012,21 +1012,30 @@ export default function Clients() {
         </div>
       )}
 
-      {/* Create modal – same structure as Client Detail Modal */}
+      {/* Create modal */}
       {showCreate && (
         <div className="client-detail-modal" role="dialog" aria-modal="true" aria-labelledby="client-create-modal-title">
           <div className="client-detail-modal__backdrop" onClick={() => setShowCreate(false)} />
           <div className="client-detail-modal__box client-detail-modal__box--form">
-            <header className="client-detail-modal__header">
+            <header className="client-detail-modal__header client-detail-modal__header--form">
               <h2 id="client-create-modal-title" className="client-detail-modal__title">
                 {t('clients.createClient')}
               </h2>
+              <button
+                type="button"
+                className="client-detail-modal__close"
+                onClick={() => setShowCreate(false)}
+                disabled={createSubmitting}
+                aria-label={t('clients.close', 'Close')}
+              >
+                <X className="client-detail-modal__close-icon" aria-hidden />
+              </button>
             </header>
             <form onSubmit={handleCreateSubmit} className="client-detail-modal__form">
-              <div className="client-detail-modal__body">
+              <div className="client-detail-modal__body client-detail-modal__body--form">
                 <div className="client-detail-modal__body-inner">{renderForm(createForm, setCreateForm, createSubmitting)}</div>
               </div>
-              <footer className="client-detail-modal__footer">
+              <footer className="client-detail-modal__footer client-detail-modal__footer--form">
                 <button type="button" className="client-detail-modal__btn client-detail-modal__btn--secondary" onClick={() => setShowCreate(false)} disabled={createSubmitting}>
                   {t('clients.cancel')}
                 </button>
@@ -1060,21 +1069,30 @@ export default function Clients() {
         numberLocale={numberLocale}
       />
 
-      {/* Edit modal – same structure as Client Detail Modal */}
+      {/* Edit modal */}
       {editId && (
         <div className="client-detail-modal" role="dialog" aria-modal="true" aria-labelledby="client-edit-modal-title">
           <div className="client-detail-modal__backdrop" onClick={() => setEditId(null)} />
           <div className="client-detail-modal__box client-detail-modal__box--form">
-            <header className="client-detail-modal__header">
+            <header className="client-detail-modal__header client-detail-modal__header--form">
               <h2 id="client-edit-modal-title" className="client-detail-modal__title">
                 {t('clients.editClient')}
               </h2>
+              <button
+                type="button"
+                className="client-detail-modal__close"
+                onClick={() => setEditId(null)}
+                disabled={editSubmitting}
+                aria-label={t('clients.close', 'Close')}
+              >
+                <X className="client-detail-modal__close-icon" aria-hidden />
+              </button>
             </header>
             <form onSubmit={handleEditSubmit} className="client-detail-modal__form">
-              <div className="client-detail-modal__body">
+              <div className="client-detail-modal__body client-detail-modal__body--form">
                 <div className="client-detail-modal__body-inner">{renderForm(editForm, setEditForm, editSubmitting)}</div>
               </div>
-              <footer className="client-detail-modal__footer">
+              <footer className="client-detail-modal__footer client-detail-modal__footer--form">
                 <button type="button" className="client-detail-modal__btn client-detail-modal__btn--secondary" onClick={() => setEditId(null)} disabled={editSubmitting}>
                   {t('clients.cancel')}
                 </button>
