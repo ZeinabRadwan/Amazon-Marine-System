@@ -34,6 +34,7 @@ use App\Http\Controllers\Api\V1\ShipmentTrackingUpdateController;
 use App\Http\Controllers\Api\V1\TicketController;
 use App\Http\Controllers\Api\V1\TicketTypeController;
 use App\Http\Controllers\Api\V1\TreasuryController;
+use App\Http\Controllers\Api\UserPermissionsController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\VendorBillController;
 use App\Http\Controllers\Api\V1\VendorController;
@@ -68,13 +69,16 @@ Route::prefix('v1')->group(function () {
 
         // User management
         Route::get('users', [UserController::class, 'index']);
+        Route::get('users-with-permissions', [UserPermissionsController::class, 'index']);
         Route::post('users', [UserController::class, 'store']);
         Route::get('users/{user}', [UserController::class, 'show']);
         Route::put('users/{user}', [UserController::class, 'update']);
         Route::delete('users/{user}', [UserController::class, 'destroy']);
         Route::put('users/{user}/password', [UserController::class, 'updatePassword']);
         Route::post('users/{user}/assign-role', [UserController::class, 'assignRole']);
-        Route::put('users/{user}/permissions', [UserController::class, 'syncPermissions']);
+        Route::get('users/{user}/permissions', [UserPermissionsController::class, 'show']);
+        Route::put('users/{user}/permissions', [UserPermissionsController::class, 'update']);
+        Route::post('users/{user}/permissions/reset', [UserPermissionsController::class, 'reset']);
         Route::post('users/{user}/activate', [UserController::class, 'activate']);
         Route::post('users/{user}/deactivate', [UserController::class, 'deactivate']);
 

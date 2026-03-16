@@ -11,7 +11,9 @@ use App\Models\ShipmentTrackingUpdate;
 use App\Models\Ticket;
 use App\Models\TicketType;
 use App\Models\User;
+use App\Models\UserPermission;
 use App\Policies\ClientPolicy;
+use Illuminate\Support\Facades\Gate;
 use App\Policies\CommunicationLogPolicy;
 use App\Policies\NotePolicy;
 use App\Policies\SDFormPolicy;
@@ -47,5 +49,16 @@ class AuthServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->registerPolicies();
+
+        // User-level permission overrides take priority over role permissions
+        Gate::before(function (User $user, string $ability) {
+            $override = UserPermission::where('user_id', $user->id)
+                ->whereHas('permission', fn ($q) => $q->where('name', $ability))
+                ->first();
+            if ($override !== null) {
+                return $override->allowed;
+            }
+            return null;
+        });
     }
 }

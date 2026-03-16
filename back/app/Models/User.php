@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -121,5 +122,50 @@ class User extends Authenticatable
     public function notesAuthored(): HasMany
     {
         return $this->hasMany(Note::class, 'author_id');
+    }
+
+    /**
+     * User-level permission overrides (allow/deny). Takes priority over role permissions.
+     *
+     * @return BelongsToMany<\Spatie\Permission\Models\Permission>
+     */
+    public function permissionOverrides(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            \Spatie\Permission\Models\Permission::class,
+            'user_permissions',
+            'user_id',
+            'permission_id'
+        )->withPivot('allowed')->withTimestamps();
+    }
+
+    /**
+     * Get effective permission names (role permissions merged with user overrides).
+     *
+     * @return array<int, string>
+     */
+    public function getEffectivePermissionNames(): array
+    {
+        $rolePermissions = $this->getPermissionsViaRoles()->pluck('name')->keyBy(fn ($n) => $n);
+        $overrides = $this->permissionOverrides()->get();
+        foreach ($overrides as $override) {
+            $name = $override->name;
+            $rolePermissions[$name] = $override->pivot->allowed ? $name : null;
+        }
+        return $rolePermissions->filter()->values()->all();
+    }
+
+    /**
+     * Check effective permission (user override wins over role).
+     */
+    public function hasEffectivePermission(string $ability): bool
+    {
+        $override = $this->permissionOverrides()
+            ->where('name', $ability)
+            ->first();
+        if ($override !== null) {
+            return (bool) $override->pivot->allowed;
+        }
+        return $this->can($ability);
     }
 }

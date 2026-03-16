@@ -709,6 +709,79 @@
       ]
     },
     {
+      "name": "Users & Permissions",
+      "item": [
+        {
+          "name": "List Users With Permissions",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users-with-permissions",
+              "host": ["{{base_url}}"],
+              "path": ["users-with-permissions"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Permissions",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/{{user_id}}/permissions",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{user_id}}", "permissions"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update User Permissions",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"permissions\": [\n    { \"name\": \"clients.view\", \"allowed\": true },\n    { \"name\": \"clients.manage\", \"allowed\": false }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/{{user_id}}/permissions",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{user_id}}", "permissions"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reset User Permissions",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/{{user_id}}/permissions/reset",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{user_id}}", "permissions", "reset"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Client Lookups",
       "item": [
         {
