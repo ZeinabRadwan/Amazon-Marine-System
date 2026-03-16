@@ -1,5 +1,417 @@
+/* ========== Page & header ========== */
+.rp-page {
+  padding-bottom: 2rem;
+}
+
+.rp-header {
+  margin-bottom: 1.5rem;
+}
+
+.rp-title {
+  margin: 0 0 0.25rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--root-text, #1c2030);
+  letter-spacing: -0.02em;
+}
+
+.rp-subtitle {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--form-text, #6b7280);
+}
+
+.rp-actions-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.rp-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 2rem;
+  background: var(--form-bg, #fff);
+  border: 1px solid var(--form-divider, #e5e7eb);
+  border-radius: 12px;
+}
+
+.rp-empty-state--inline {
+  padding: 1.5rem;
+}
+
+/* ========== Tabs + tab panels ========== */
+.rp-main-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.rp-tabs {
+  flex-shrink: 0;
+  max-width: fit-content;
+}
+
+.rp-tab-panel {
+  min-height: 0;
+}
+
+.rp-tab-panel[hidden] {
+  display: none;
+}
+
+.rp-panel {
+  background: var(--form-bg, #fff);
+  border: 1px solid var(--form-divider, #e5e7eb);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+[data-theme="dark"] .rp-panel {
+  border-color: var(--form-divider);
+}
+
+.rp-panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--form-divider, #e5e7eb);
+  background: var(--root-bg, #f6f8fb);
+}
+
+[data-theme="dark"] .rp-panel__head {
+  border-bottom-color: var(--form-divider);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.rp-panel__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--root-text, #1c2030);
+}
+
+.rp-panel__action {
+  flex-shrink: 0;
+}
+
+.rp-panel--roles .rp-roles-list {
+  padding: 0.75rem;
+}
+
+.rp-panel--permissions .rp-panel__head {
+  flex-wrap: wrap;
+}
+
+.rp-panel--permissions .rp-section__loading,
+.rp-panel--permissions .rp-empty-state--inline {
+  margin: 1rem 1.25rem;
+}
+
+.rp-panel--roles .clients-table-wrap,
+.rp-panel--permissions .clients-table-wrap {
+  margin: 0;
+  border-radius: 0;
+  border: none;
+}
+
+/* ========== Role cards ========== */
+.rp-roles-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rp-role-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--form-bg, #fff);
+  border: 1px solid var(--form-divider, #e5e7eb);
+  border-radius: 10px;
+  border-inline-start: 3px solid var(--form-primary, #0039c5);
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.rp-role-card:hover {
+  background: var(--root-bg, #f6f8fb);
+  border-color: var(--form-primary, #0039c5);
+  box-shadow: 0 2px 8px rgba(0, 57, 197, 0.08);
+}
+
+[data-theme="dark"] .rp-role-card {
+  background: var(--form-bg);
+}
+
+[data-theme="dark"] .rp-role-card:hover {
+  background: rgba(0, 57, 197, 0.08);
+  border-color: var(--form-primary);
+}
+
+.rp-role-card__name {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--root-text, #1c2030);
+  min-width: 0;
+}
+
+.rp-role-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+/* Roles table (الأدوار tab) */
+.rp-roles-table .rp-th--actions,
+.rp-roles-table .rp-td--actions {
+  width: 1%;
+  white-space: nowrap;
+  text-align: end;
+}
+
+/* ========== Permissions table ========== */
+.rp-permissions-table .rp-th--center,
+.rp-permissions-table .rp-td--center {
+  text-align: center;
+  width: 1%;
+  white-space: nowrap;
+}
+
+.rp-permissions-table .rp-th--actions,
+.rp-permissions-table .rp-td--actions {
+  width: 1%;
+  white-space: nowrap;
+  text-align: end;
+}
+
+.rp-perm-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border-radius: 6px;
+}
+
+.rp-perm-badge--on {
+  background: rgba(34, 197, 94, 0.15);
+  color: #15803d;
+}
+
+[data-theme="dark"] .rp-perm-badge--on {
+  background: rgba(34, 197, 94, 0.25);
+  color: #4ade80;
+}
+
+.rp-perm-badge--off {
+  background: var(--root-bg, rgba(0, 0, 0, 0.04));
+  color: var(--form-text, #9ca3af);
+}
+
+.rp-cell-role {
+  font-weight: 500;
+  color: var(--root-text, #1c2030);
+}
+
+.rp-cell-page {
+  font-family: ui-monospace, monospace;
+  font-size: 0.875rem;
+  color: var(--form-text, #4b5563);
+}
+
+/* Pagination bar (footer below permissions table) */
+.rp-pagination-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.rp-pagination-bar__left {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+
+.rp-pagination-bar__total {
+  font-size: 0.875rem;
+  color: var(--root-text);
+  opacity: 0.9;
+}
+
+.rp-pagination-bar__per-page {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--root-text);
+}
+
+.rp-pagination-bar__per-page-label {
+  white-space: nowrap;
+}
+
+.rp-pagination-bar__select {
+  min-width: auto;
+  width: 72px;
+}
+
 .roles-permissions-page {
   padding: 0;
+  position: relative;
+}
+
+/* Full-page loader – same pattern as Clients */
+.rp-page-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--root-text, #1c2030);
+}
+
+[data-theme="dark"] .rp-page-loader,
+.dark .rp-page-loader {
+  background: rgba(28, 32, 48, 0.9);
+}
+
+/* Filters card – same layout as Clients */
+.rp-filters-card {
+  margin-bottom: 20px;
+  padding: 20px;
+  background: var(--form-bg, #fff);
+  border: 1px solid var(--form-divider, #e5e7eb);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="dark"] .rp-filters-card {
+  background: var(--form-bg);
+  border-color: var(--form-divider);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.rp-filters__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+
+.rp-filters__row--main {
+  align-items: center;
+  gap: 12px;
+}
+
+.rp-filters__tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--form-divider, #e5e7eb);
+  margin-bottom: -2px;
+}
+
+.rp-filters__fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.rp-filters__field {
+  min-width: 0;
+}
+
+.rp-filters__label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--form-text, #4b5563);
+}
+
+.rp-input {
+  padding: 8px 12px;
+  border: 1px solid var(--form-input-border, #d9dde6);
+  border-radius: 8px;
+  font-size: 14px;
+  background: var(--form-input-bg, #fff);
+  color: var(--form-text);
+  min-width: 140px;
+}
+
+.rp-input:focus {
+  outline: none;
+  border-color: var(--form-primary, #0039c5);
+}
+
+.rp-filters__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-inline-start: auto;
+  flex-shrink: 0;
+}
+
+/* Section – used with .clients-filters-card for consistent card; only extra spacing/title */
+.rp-section {
+  margin-bottom: 24px;
+}
+
+.rp-section__title {
+  margin: 0 0 16px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--root-text, #1c2030);
+}
+
+.rp-section__loading {
+  margin: 0;
+  font-size: 14px;
+  color: var(--form-text, #6b7280);
+}
+
+.rp-empty {
+  color: var(--root-text);
+  opacity: 0.8;
+  margin: 0;
+}
+
+/* Checkbox label in modal (used with ClientDetailModal.css) */
+.client-detail-modal__form-field--check-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  margin-bottom: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--form-text, #4b5563);
+}
+
+.client-detail-modal__form-field--check-label input {
+  width: auto;
 }
 
 .roles-permissions-view-toggle {
@@ -53,45 +465,6 @@
   font-size: 14px;
 }
 
-.roles-permissions-section {
-  margin-bottom: 32px;
-  padding: 24px;
-  background: var(--form-bg, #fff);
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-}
-
-.roles-permissions-section h2 {
-  margin: 0 0 16px;
-  font-size: 1.125rem;
-  font-weight: 600;
-}
-
-.roles-permissions-empty {
-  color: var(--root-text);
-  opacity: 0.8;
-}
-
-.roles-permissions-role-select {
-  max-width: 280px;
-}
-
-.roles-permissions-role-select label {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.roles-permissions-role-select select {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--form-input-border, #d9dde6);
-  border-radius: 8px;
-  font-size: 14px;
-  background: var(--form-input-bg, #fff);
-  color: var(--form-text);
-}
 
 .rp-btn {
   padding: 8px 16px;
@@ -126,6 +499,46 @@
   padding: 6px 12px;
   font-size: 13px;
   margin-bottom: 0;
+}
+
+.rp-btn--danger,
+.clients-filters__btn-icon.rp-btn--danger {
+  color: var(--form-error-text, #b91c1c);
+  border-color: var(--form-error-text, #b91c1c);
+}
+
+.rp-btn--danger:hover:not(:disabled),
+.clients-filters__btn-icon.rp-btn--danger:hover:not(:disabled) {
+  background: var(--form-error-bg, #fef2f2);
+  border-color: var(--form-error-text, #b91c1c);
+  color: var(--form-error-text, #b91c1c);
+}
+
+.rp-table-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+}
+
+.rp-abilities-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.rp-empty-small {
+  margin: 0;
+  font-size: 13px;
+  color: var(--form-text, #6b7280);
+}
+
+.client-detail-modal__box--wide {
+  max-width: 560px;
 }
 
 .rp-btn:disabled {
