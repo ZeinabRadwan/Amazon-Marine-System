@@ -3,10 +3,11 @@
 namespace Database\Seeders;
 
 use App\Models\Client;
+use App\Models\ClientStatus;
 use App\Models\CompanyType;
-use App\Models\PreferredCommMethod;
 use App\Models\InterestLevel;
 use App\Models\LeadSource;
+use App\Models\PreferredCommMethod;
 use Illuminate\Database\Seeder;
 
 class ClientsSeeder extends Seeder
@@ -32,7 +33,7 @@ class ClientsSeeder extends Seeder
                 'linkedin_url' => 'https://linkedin.com/company/mansour-trading',
                 'lead_source' => 'Referral',
                 'interest_level' => 'High',
-                'status' => 'active',
+                'status_name' => 'Active',
                 'notes' => 'عميل مهم في قطاع السيارات',
                 'shipments_count' => 12,
                 'total_profit' => 18400,
@@ -54,7 +55,7 @@ class ClientsSeeder extends Seeder
                 'linkedin_url' => null,
                 'lead_source' => 'Facebook',
                 'interest_level' => 'Medium',
-                'status' => 'active',
+                'status_name' => 'Active',
                 'notes' => 'مهتم بخدمات الشحن المبرد',
                 'shipments_count' => 5,
                 'total_profit' => 7200,
@@ -76,7 +77,7 @@ class ClientsSeeder extends Seeder
                 'linkedin_url' => null,
                 'lead_source' => 'LinkedIn',
                 'interest_level' => 'High',
-                'status' => 'pending',
+                'status_name' => 'Pending',
                 'notes' => 'عميل جديد يحتاج متابعة مكثفة',
                 'shipments_count' => 0,
                 'total_profit' => 0,
@@ -97,17 +98,22 @@ class ClientsSeeder extends Seeder
             $leadSource = isset($data['lead_source'])
                 ? LeadSource::where('name', $data['lead_source'])->first()
                 : null;
+            $clientStatus = isset($data['status_name'])
+                ? ClientStatus::where('name', $data['status_name'])->first()
+                : null;
 
             unset(
                 $data['company_type'],
                 $data['preferred_comm_method'],
                 $data['interest_level'],
-                $data['lead_source']
+                $data['lead_source'],
+                $data['status_name']
             );
             $data['company_type_id'] = $companyType?->id;
             $data['preferred_comm_method_id'] = $commMethod?->id;
             $data['interest_level_id'] = $interestLevel?->id;
             $data['lead_source_id'] = $leadSource?->id;
+            $data['status_id'] = $clientStatus?->id;
 
             Client::updateOrCreate(
                 ['email' => $data['email']],
