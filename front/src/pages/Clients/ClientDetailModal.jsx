@@ -1,18 +1,19 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { X } from 'lucide-react'
 import Tabs from '../../components/Tabs'
 import './ClientDetailModal.css'
 
-const clientFormFields = [
-  ['name', 'company_name', 'company_type'],
-  ['business_activity', 'target_markets', 'tax_id'],
-  ['email', 'phone', 'preferred_comm_method'],
-  ['city', 'country', 'address'],
-  ['website_url', 'facebook_url', 'linkedin_url'],
-  ['status', 'lead_source', 'interest_level'],
-  ['decision_maker_name', 'decision_maker_title'],
-  ['default_payment_terms', 'default_currency'],
-  ['notes'],
+/** Info tab: grouped sections with title keys for better layout */
+const infoSectionGroups = [
+  { titleKey: 'clients.sections.basic', fields: ['name', 'company_name', 'company_type', 'business_activity', 'target_markets', 'tax_id'] },
+  { titleKey: 'clients.sections.contact', fields: ['email', 'phone', 'preferred_comm_method'] },
+  { titleKey: 'clients.sections.address', fields: ['city', 'country', 'address'] },
+  { titleKey: 'clients.sections.links', fields: ['website_url', 'facebook_url', 'linkedin_url'] },
+  { titleKey: 'clients.sections.sourceSales', fields: ['status', 'lead_source', 'interest_level'] },
+  { titleKey: 'clients.sections.decisionMaker', fields: ['decision_maker_name', 'decision_maker_title'] },
+  { titleKey: 'clients.sections.payment', fields: ['default_payment_terms', 'default_currency'] },
+  { titleKey: 'clients.sections.notes', fields: ['notes'] },
 ]
 
 export default function ClientDetailModal({
@@ -91,13 +92,24 @@ export default function ClientDetailModal({
     <div className="client-detail-modal" role="dialog" aria-modal="true" aria-labelledby="client-detail-modal-title">
       <div className="client-detail-modal__backdrop" onClick={onClose} />
       <div className="client-detail-modal__box">
-        <header className="client-detail-modal__header">
-          <h2 id="client-detail-modal-title" className="client-detail-modal__title">
-            {t('clients.detail')}
-          </h2>
-          {detailClient?.name && (
-            <p className="client-detail-modal__subtitle">{detailClient.company_name || detailClient.name}</p>
-          )}
+        <header className="client-detail-modal__header client-detail-modal__header--detail">
+          <div className="client-detail-modal__header-inner">
+            <span className="client-detail-modal__header-label">{t('clients.detail')}</span>
+            <h2 id="client-detail-modal-title" className="client-detail-modal__title client-detail-modal__title--client">
+              {detailClient ? (detailClient.company_name || detailClient.name || '—') : '—'}
+            </h2>
+            {detailClient?.company_name && detailClient?.name && detailClient.company_name !== detailClient.name && (
+              <p className="client-detail-modal__subtitle">{detailClient.name}</p>
+            )}
+          </div>
+          <button
+            type="button"
+            className="client-detail-modal__close"
+            onClick={onClose}
+            aria-label={t('clients.close')}
+          >
+            <X className="client-detail-modal__close-icon" aria-hidden />
+          </button>
         </header>
 
         <Tabs
@@ -109,13 +121,20 @@ export default function ClientDetailModal({
 
         <div className="client-detail-modal__body" role="tabpanel" id={`panel-${detailTab}`} aria-labelledby={`tab-${detailTab}`}>
           {detailTab === 'info' && (
-            <section className="client-detail-modal__section">
+            <section className="client-detail-modal__section client-detail-modal__section--info">
               {detailClient ? (
-                <div className="client-detail-modal__grid">
-                  {clientFormFields.flat().map((key) => (
-                    <div key={key} className="client-detail-modal__row">
-                      <span className="client-detail-modal__label">{t(`clients.fields.${key}`)}</span>
-                      <span className="client-detail-modal__value">{detailClient[key] ?? '—'}</span>
+                <div className="client-detail-modal__info-tab">
+                  {infoSectionGroups.map((group) => (
+                    <div key={group.titleKey} className="client-detail-modal__info-group">
+                      <h3 className="client-detail-modal__info-group-title">{t(group.titleKey)}</h3>
+                      <div className="client-detail-modal__grid client-detail-modal__grid--info">
+                        {group.fields.map((key) => (
+                          <div key={key} className="client-detail-modal__row">
+                            <span className="client-detail-modal__label">{t(`clients.fields.${key}`)}</span>
+                            <span className="client-detail-modal__value">{(detailClient[key] ?? '').toString().trim() || '—'}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   ))}
                 </div>

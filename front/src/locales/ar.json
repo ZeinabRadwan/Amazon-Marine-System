@@ -378,9 +378,13 @@
     "errorAttachmentDownload": "فشل تحميل المرفق.",
     "sections": {
       "basic": "معلومات أساسية",
+      "contact": "التواصل",
+      "address": "العنوان",
+      "links": "الروابط",
       "decisionMaker": "بيانات صاحب القرار",
       "sourceSales": "المصدر وتعيين المبيعات",
       "notesGuidance": "توجيهات للمبيعات — أهم المعلومات قبل التواصل",
+      "payment": "شروط الدفع",
       "pricing": "التسعير",
       "notes": "ملاحظات"
     },

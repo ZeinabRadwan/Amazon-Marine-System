@@ -378,9 +378,13 @@
     "errorAttachmentDownload": "Failed to download attachment.",
     "sections": {
       "basic": "Basic information",
+      "contact": "Contact",
+      "address": "Address",
+      "links": "Links",
       "decisionMaker": "Decision maker details",
       "sourceSales": "Source & sales assignment",
       "notesGuidance": "Sales guidance — key info before contact",
+      "payment": "Payment terms",
       "pricing": "Pricing",
       "notes": "Notes"
     },
