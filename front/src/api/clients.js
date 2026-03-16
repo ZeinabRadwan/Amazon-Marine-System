@@ -295,3 +295,68 @@ export async function deleteClientAttachment(token, clientId, attachmentId) {
   }
   return res.json().catch(() => ({}))
 }
+
+/**
+ * GET {{base_url}}/clients/:id/notes – List Client Notes (Quick Notes)
+ */
+export async function getClientNotes(token, clientId) {
+  const res = await fetch(`${getBaseUrl()}/clients/${clientId}/notes`, { headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to get client notes (${res.status})`)
+  return data
+}
+
+/**
+ * POST {{base_url}}/clients/:id/notes – Create Client Note (Quick Note)
+ * Body: { content?: string } or sales-guidance fields (current_need, pain_points, opportunity, special_requirements)
+ */
+export async function postClientNote(token, clientId, body = {}) {
+  const res = await fetch(`${getBaseUrl()}/clients/${clientId}/notes`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+    body: JSON.stringify(body),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to create note (${res.status})`)
+  return data
+}
+
+/**
+ * GET {{base_url}}/clients/:id/follow-ups – List Client Follow-ups
+ */
+export async function getClientFollowUps(token, clientId) {
+  const res = await fetch(`${getBaseUrl()}/clients/${clientId}/follow-ups`, { headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to get follow-ups (${res.status})`)
+  return data
+}
+
+/**
+ * POST {{base_url}}/clients/:id/follow-ups – Create Client Follow-up
+ * Body: { type: 'phone'|'email'|'visit'|'whatsapp'|'meeting', occurred_at, summary?, next_follow_up_at? }
+ */
+export async function postClientFollowUp(token, clientId, body) {
+  const res = await fetch(`${getBaseUrl()}/clients/${clientId}/follow-ups`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+    body: JSON.stringify(body),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to create follow-up (${res.status})`)
+  return data
+}
+
+/**
+ * POST {{base_url}}/clients/:id/shipments – Create Client Shipment (New Shipment Action)
+ * Body: optional origin_port_id, destination_port_id, shipment_direction, mode, shipment_type, status, container_*, loading_*, cargo_description, is_reefer, etc.
+ */
+export async function createClientShipment(token, clientId, body = {}) {
+  const res = await fetch(`${getBaseUrl()}/clients/${clientId}/shipments`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+    body: JSON.stringify(body),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to create shipment (${res.status})`)
+  return data
+}

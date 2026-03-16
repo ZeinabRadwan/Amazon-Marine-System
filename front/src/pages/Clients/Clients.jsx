@@ -18,6 +18,11 @@ import {
   getClientAttachmentDownload,
   postClientAttachment,
   deleteClientAttachment,
+  getClientNotes,
+  postClientNote,
+  getClientFollowUps,
+  postClientFollowUp,
+  createClientShipment,
 } from '../../api/clients'
 import {
   listClientStatuses,
@@ -157,6 +162,13 @@ export default function Clients() {
   const [attachmentsLoading, setAttachmentsLoading] = useState(false)
   const [attachmentUploading, setAttachmentUploading] = useState(false)
   const [attachmentDeletingId, setAttachmentDeletingId] = useState(null)
+  const [notes, setNotes] = useState([])
+  const [notesLoading, setNotesLoading] = useState(false)
+  const [noteSubmitting, setNoteSubmitting] = useState(false)
+  const [followUps, setFollowUps] = useState([])
+  const [followUpsLoading, setFollowUpsLoading] = useState(false)
+  const [followUpSubmitting, setFollowUpSubmitting] = useState(false)
+  const [shipmentCreating, setShipmentCreating] = useState(false)
   const [charts, setCharts] = useState(null)
   const [chartsLoading, setChartsLoading] = useState(false)
   const [financialSummaryList, setFinancialSummaryList] = useState([])
@@ -323,6 +335,36 @@ export default function Clients() {
         setAlert({ type: 'warning', message: t('clients.warningAttachments') })
       })
       .finally(() => setAttachmentsLoading(false))
+  }, [token, detailId, detailTab, t])
+
+  useEffect(() => {
+    if (!detailId || !token || detailTab !== 'notes') return
+    setNotesLoading(true)
+    getClientNotes(token, detailId)
+      .then((data) => {
+        const arr = data.data ?? data.notes ?? data
+        setNotes(Array.isArray(arr) ? arr : [])
+      })
+      .catch(() => {
+        setNotes([])
+        setAlert({ type: 'warning', message: t('clients.warningNotes', 'Failed to load notes.') })
+      })
+      .finally(() => setNotesLoading(false))
+  }, [token, detailId, detailTab, t])
+
+  useEffect(() => {
+    if (!detailId || !token || detailTab !== 'followups') return
+    setFollowUpsLoading(true)
+    getClientFollowUps(token, detailId)
+      .then((data) => {
+        const arr = data.data ?? data.follow_ups ?? data
+        setFollowUps(Array.isArray(arr) ? arr : [])
+      })
+      .catch(() => {
+        setFollowUps([])
+        setAlert({ type: 'warning', message: t('clients.warningFollowUps', 'Failed to load follow-ups.') })
+      })
+      .finally(() => setFollowUpsLoading(false))
   }, [token, detailId, detailTab, t])
 
   useEffect(() => {
@@ -542,6 +584,57 @@ export default function Clients() {
       setAlert({ type: 'error', message: t('clients.errorAttachmentDelete') })
     } finally {
       setAttachmentDeletingId(null)
+    }
+  }
+
+  const handleAddNote = async (content) => {
+    if (!detailId || !token) return
+    setAlert(null)
+    setNoteSubmitting(true)
+    try {
+      await postClientNote(token, detailId, { content: content || '' })
+      const data = await getClientNotes(token, detailId)
+      const arr = data.data ?? data.notes ?? data
+      setNotes(Array.isArray(arr) ? arr : [])
+      setAlert({ type: 'success', message: t('clients.noteAdded', 'Note added.') })
+    } catch (err) {
+      setAlert({ type: 'error', message: err.message || t('clients.error') })
+    } finally {
+      setNoteSubmitting(false)
+    }
+  }
+
+  const handleAddFollowUp = async (body) => {
+    if (!detailId || !token) return
+    setAlert(null)
+    setFollowUpSubmitting(true)
+    try {
+      await postClientFollowUp(token, detailId, body)
+      const data = await getClientFollowUps(token, detailId)
+      const arr = data.data ?? data.follow_ups ?? data
+      setFollowUps(Array.isArray(arr) ? arr : [])
+      setAlert({ type: 'success', message: t('clients.followUpAdded', 'Follow-up added.') })
+    } catch (err) {
+      setAlert({ type: 'error', message: err.message || t('clients.error') })
+    } finally {
+      setFollowUpSubmitting(false)
+    }
+  }
+
+  const handleCreateShipment = async () => {
+    if (!detailId || !token) return
+    setAlert(null)
+    setShipmentCreating(true)
+    try {
+      await createClientShipment(token, detailId, { status: 'draft' })
+      const data = await getClientShipments(token, detailId, { per_page: 10 })
+      const arr = data.data ?? data.shipments ?? data
+      setShipments(Array.isArray(arr) ? arr : [])
+      setAlert({ type: 'success', message: t('clients.shipmentCreated', 'Shipment created.') })
+    } catch (err) {
+      setAlert({ type: 'error', message: err.message || t('clients.error') })
+    } finally {
+      setShipmentCreating(false)
     }
   }
 
@@ -1102,6 +1195,16 @@ export default function Clients() {
         onAttachmentUpload={handleAttachmentUpload}
         onAttachmentDownload={handleAttachmentDownload}
         onAttachmentDelete={handleAttachmentDelete}
+        notes={notes}
+        notesLoading={notesLoading}
+        noteSubmitting={noteSubmitting}
+        onAddNote={handleAddNote}
+        followUps={followUps}
+        followUpsLoading={followUpsLoading}
+        followUpSubmitting={followUpSubmitting}
+        onAddFollowUp={handleAddFollowUp}
+        shipmentCreating={shipmentCreating}
+        onCreateShipment={handleCreateShipment}
         financialSummaryList={financialSummaryList}
         pricingList={pricingList}
         numberLocale={numberLocale}

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Tabs from '../../components/Tabs'
 import './ClientDetailModal.css'
@@ -30,11 +31,28 @@ export default function ClientDetailModal({
   onAttachmentUpload,
   onAttachmentDownload,
   onAttachmentDelete,
+  notes = [],
+  notesLoading = false,
+  noteSubmitting = false,
+  onAddNote,
+  followUps = [],
+  followUpsLoading = false,
+  followUpSubmitting = false,
+  onAddFollowUp,
+  shipmentCreating = false,
+  onCreateShipment,
   financialSummaryList = [],
   pricingList = [],
   numberLocale = 'en-US',
 }) {
   const { t, i18n } = useTranslation()
+  const [noteContent, setNoteContent] = useState('')
+  const [followUpForm, setFollowUpForm] = useState({
+    type: 'phone',
+    occurred_at: new Date().toISOString().slice(0, 16),
+    summary: '',
+    next_follow_up_at: '',
+  })
 
   if (!open) return null
 
@@ -63,6 +81,8 @@ export default function ClientDetailModal({
     { id: 'visits', label: t('clients.tabs.visits', 'Visits') },
     { id: 'shipments', label: t('clients.tabs.shipments', 'Shipments') },
     { id: 'attachments', label: t('clients.tabs.attachments', 'Attachments') },
+    { id: 'notes', label: t('clients.tabs.notes', 'Notes') },
+    { id: 'followups', label: t('clients.tabs.followups', 'Follow-ups') },
     { id: 'financial', label: t('clients.financialSummary', 'Financial summary') },
     { id: 'pricing', label: t('clients.pricingList', 'Pricing list') },
   ]
@@ -125,7 +145,19 @@ export default function ClientDetailModal({
 
           {detailTab === 'shipments' && (
             <section className="client-detail-modal__section">
-              <h3 className="client-detail-modal__section-title">{t('clients.tabs.shipments')}</h3>
+              <div className="client-detail-modal__section-head">
+                <h3 className="client-detail-modal__section-title">{t('clients.tabs.shipments')}</h3>
+                {onCreateShipment && (
+                  <button
+                    type="button"
+                    className="client-detail-modal__btn client-detail-modal__btn--primary"
+                    onClick={onCreateShipment}
+                    disabled={shipmentCreating}
+                  >
+                    {shipmentCreating ? t('clients.creating', 'Creating…') : t('clients.createShipment', 'New shipment')}
+                  </button>
+                )}
+              </div>
               {shipments.length === 0 ? (
                 <p className="client-detail-modal__empty">{t('clients.noShipments')}</p>
               ) : (
@@ -134,6 +166,136 @@ export default function ClientDetailModal({
                     <li key={s.id} className="client-detail-modal__list-item">
                       <span className="client-detail-modal__list-label">{s.bl_number ?? s.reference ?? s.id}</span>
                       <span className="client-detail-modal__list-value">{s.status ?? s.amount ?? '—'}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          )}
+
+          {detailTab === 'notes' && (
+            <section className="client-detail-modal__section">
+              <h3 className="client-detail-modal__section-title">{t('clients.tabs.notes')}</h3>
+              {onAddNote && (
+                <div className="client-detail-modal__form-grid" style={{ marginBottom: 16 }}>
+                  <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+                    <label htmlFor="client-note-content">{t('clients.addNote', 'Add note')}</label>
+                    <textarea
+                      id="client-note-content"
+                      value={noteContent}
+                      onChange={(e) => setNoteContent(e.target.value)}
+                      disabled={noteSubmitting}
+                      rows={3}
+                      placeholder={t('clients.notePlaceholder', 'Quick note…')}
+                    />
+                    <button
+                      type="button"
+                      className="client-detail-modal__btn client-detail-modal__btn--primary"
+                      onClick={() => { onAddNote(noteContent); setNoteContent('') }}
+                      disabled={noteSubmitting}
+                    >
+                      {noteSubmitting ? t('clients.saving', 'Saving…') : t('clients.saveNote', 'Save note')}
+                    </button>
+                  </div>
+                </div>
+              )}
+              {notesLoading ? (
+                <p className="client-detail-modal__empty">{t('clients.loading', 'Loading…')}</p>
+              ) : notes.length === 0 ? (
+                <p className="client-detail-modal__empty">{t('clients.noNotes', 'No notes yet.')}</p>
+              ) : (
+                <ul className="client-detail-modal__list">
+                  {notes.map((n) => (
+                    <li key={n.id} className="client-detail-modal__list-item">
+                      <span className="client-detail-modal__list-label">{formatDate(n.created_at)} {n.author?.name ? ` · ${n.author.name}` : ''}</span>
+                      <span className="client-detail-modal__list-value">{(n.content || '').slice(0, 200)}{(n.content || '').length > 200 ? '…' : ''}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          )}
+
+          {detailTab === 'followups' && (
+            <section className="client-detail-modal__section">
+              <h3 className="client-detail-modal__section-title">{t('clients.tabs.followups')}</h3>
+              {onAddFollowUp && (
+                <div className="client-detail-modal__form-grid client-detail-modal__grid--card" style={{ marginBottom: 16 }}>
+                  <div className="client-detail-modal__form-field">
+                    <label htmlFor="followup-type">{t('clients.followUpType', 'Type')}</label>
+                    <select
+                      id="followup-type"
+                      value={followUpForm.type}
+                      onChange={(e) => setFollowUpForm((f) => ({ ...f, type: e.target.value }))}
+                      disabled={followUpSubmitting}
+                    >
+                      <option value="phone">{t('clients.followUpTypePhone', 'Phone')}</option>
+                      <option value="email">{t('clients.followUpTypeEmail', 'Email')}</option>
+                      <option value="visit">{t('clients.followUpTypeVisit', 'Visit')}</option>
+                      <option value="whatsapp">{t('clients.followUpTypeWhatsapp', 'WhatsApp')}</option>
+                      <option value="meeting">{t('clients.followUpTypeMeeting', 'Meeting')}</option>
+                    </select>
+                  </div>
+                  <div className="client-detail-modal__form-field">
+                    <label htmlFor="followup-occurred">{t('clients.followUpOccurred', 'Occurred at')}</label>
+                    <input
+                      id="followup-occurred"
+                      type="datetime-local"
+                      value={followUpForm.occurred_at}
+                      onChange={(e) => setFollowUpForm((f) => ({ ...f, occurred_at: e.target.value }))}
+                      disabled={followUpSubmitting}
+                    />
+                  </div>
+                  <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+                    <label htmlFor="followup-summary">{t('clients.followUpSummary', 'Summary')}</label>
+                    <textarea
+                      id="followup-summary"
+                      value={followUpForm.summary}
+                      onChange={(e) => setFollowUpForm((f) => ({ ...f, summary: e.target.value }))}
+                      disabled={followUpSubmitting}
+                      rows={2}
+                    />
+                  </div>
+                  <div className="client-detail-modal__form-field">
+                    <label htmlFor="followup-next">{t('clients.followUpNext', 'Next follow-up')}</label>
+                    <input
+                      id="followup-next"
+                      type="date"
+                      value={followUpForm.next_follow_up_at}
+                      onChange={(e) => setFollowUpForm((f) => ({ ...f, next_follow_up_at: e.target.value }))}
+                      disabled={followUpSubmitting}
+                    />
+                  </div>
+                  <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+                    <button
+                      type="button"
+                      className="client-detail-modal__btn client-detail-modal__btn--primary"
+                      onClick={() => {
+                        onAddFollowUp({
+                          type: followUpForm.type,
+                          occurred_at: followUpForm.occurred_at,
+                          summary: followUpForm.summary || undefined,
+                          next_follow_up_at: followUpForm.next_follow_up_at || undefined,
+                        })
+                        setFollowUpForm({ type: 'phone', occurred_at: new Date().toISOString().slice(0, 16), summary: '', next_follow_up_at: '' })
+                      }}
+                      disabled={followUpSubmitting}
+                    >
+                      {followUpSubmitting ? t('clients.saving', 'Saving…') : t('clients.addFollowUp', 'Add follow-up')}
+                    </button>
+                  </div>
+                </div>
+              )}
+              {followUpsLoading ? (
+                <p className="client-detail-modal__empty">{t('clients.loading', 'Loading…')}</p>
+              ) : followUps.length === 0 ? (
+                <p className="client-detail-modal__empty">{t('clients.noFollowUps', 'No follow-ups yet.')}</p>
+              ) : (
+                <ul className="client-detail-modal__list">
+                  {followUps.map((f) => (
+                    <li key={f.id} className="client-detail-modal__list-item">
+                      <span className="client-detail-modal__list-label">{formatDate(f.occurred_at)} · {f.type}</span>
+                      <span className="client-detail-modal__list-value">{f.summary ?? '—'}</span>
                     </li>
                   ))}
                 </ul>
