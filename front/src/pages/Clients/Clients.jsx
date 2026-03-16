@@ -36,7 +36,7 @@ import { StatsCard } from '../../components/StatsCard'
 import ClientDetailModal from './ClientDetailModal'
 import LoaderDots from '../../components/LoaderDots'
 import Alert from '../../components/Alert'
-import { Eye, Pencil, Trash2, Download, Users, Search, X, ArrowUpDown, ChevronDown, ChevronUp } from 'lucide-react'
+import { Eye, Pencil, Trash2, FileSpreadsheet, Users, Search, X, ArrowUpDown, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react'
 import { BarChart, DonutChart } from '../../components/Charts'
 import '../../components/Charts/Charts.css'
 import '../../components/LoaderDots/LoaderDots.css'
@@ -44,6 +44,32 @@ import './Clients.css'
 
 function getMonthFormat(locale) {
   return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-US', { month: 'short', year: 'numeric' })
+}
+
+/** Map status name or id to badge variant for styling */
+function getStatusBadgeVariant(statusName, statusId) {
+  if (!statusName && statusId == null) return 'default'
+  const name = String(statusName ?? '').toLowerCase().trim()
+  if (name === 'new' || name === 'جديد') return 'new'
+  if (name === 'active' || name === 'نشط') return 'active'
+  if (name === 'inactive' || name === 'غير نشط') return 'inactive'
+  if (name === 'pending' || name === 'قيد الانتظار' || name === 'معلق') return 'pending'
+  if (name === 'prospect' || name === 'عميل محتمل') return 'prospect'
+  if (name === 'lead' || name === 'عميل متوقع') return 'lead'
+  return 'default'
+}
+
+/** Map status name (from API) to i18n key for localized label */
+function getStatusLabelKey(statusName) {
+  if (!statusName) return null
+  const name = String(statusName).toLowerCase().trim()
+  if (name === 'new' || name === 'جديد') return 'clients.statusNew'
+  if (name === 'active' || name === 'نشط') return 'clients.statusActive'
+  if (name === 'inactive' || name === 'غير نشط') return 'clients.statusInactive'
+  if (name === 'pending' || name === 'قيد الانتظار' || name === 'معلق') return 'clients.statusPending'
+  if (name === 'prospect' || name === 'عميل محتمل') return 'clients.statusProspect'
+  if (name === 'lead' || name === 'عميل متوقع') return 'clients.statusLead'
+  return null
 }
 
 /** Normalize API client: backend may return client_name/source instead of name/contact_name/lead_source */
@@ -101,7 +127,6 @@ export default function Clients() {
   const [filters, setFilters] = useState({
     q: '',
     status_id: '',
-    assigned_sales_id: '',
     lead_source_id: '',
     sort: 'client',
     direction: 'asc',
@@ -179,7 +204,7 @@ export default function Clients() {
       })
       .catch(() => setAlert({ type: 'error', message: t('clients.errorLoad') }))
       .finally(() => setLoading(false))
-  }, [token, filters.q, filters.status_id, filters.assigned_sales_id, filters.lead_source_id, filters.sort, filters.direction, filters.page, filters.per_page, t])
+  }, [token, filters.q, filters.status_id, filters.lead_source_id, filters.sort, filters.direction, filters.page, filters.per_page, t])
 
   useEffect(() => {
     loadList()
@@ -682,7 +707,20 @@ export default function Clients() {
     { key: 'company_name', label: t('clients.fields.company_name') },
     { key: 'email', label: t('clients.fields.email') },
     { key: 'phone', label: t('clients.fields.phone') },
-    { key: 'status', label: t('clients.fields.status') },
+    {
+      key: 'status',
+      label: t('clients.fields.status'),
+      render: (_, c) => {
+        const statusName = c.status ?? clientStatuses.find((s) => Number(s.id) === Number(c.status_id))?.name ?? '—'
+        const variant = getStatusBadgeVariant(statusName, c.status_id)
+        const label = getStatusLabelKey(statusName) ? t(getStatusLabelKey(statusName)) : statusName
+        return (
+          <span className={`clients-status-badge clients-status-badge--${variant}`} title={label}>
+            {label}
+          </span>
+        )
+      },
+    },
     {
       key: 'actions',
       label: t('clients.actions'),
@@ -849,12 +887,15 @@ export default function Clients() {
               className="clients-input"
               aria-label={t('clients.status')}
             >
-              <option value="">{t('clients.status')}</option>
-              {clientStatuses.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
+              <option value="">{t('clients.statusAll')}</option>
+              {clientStatuses.map((s) => {
+                const label = getStatusLabelKey(s.name) ? t(getStatusLabelKey(s.name)) : s.name
+                return (
+                  <option key={s.id} value={s.id}>
+                    {label}
+                  </option>
+                )
+              })}
             </select>
             <select
               value={filters.lead_source_id ?? ''}
@@ -869,60 +910,57 @@ export default function Clients() {
                 </option>
               ))}
             </select>
-            <input
-              type="text"
-              placeholder={t('clients.assignedSalesPlaceholder')}
-              value={filters.assigned_sales_id}
-              onChange={(e) => setFilters((f) => ({ ...f, assigned_sales_id: e.target.value, page: 1 }))}
-              className="clients-input"
-              aria-label={t('clients.assignedSalesPlaceholder')}
-            />
           </div>
           <button
             type="button"
-            className="clients-filters__clear"
+            className="clients-filters__clear clients-filters__btn-icon"
             onClick={() => setFilters((f) => ({
               ...f,
               q: '',
               status_id: '',
-              assigned_sales_id: '',
               lead_source_id: '',
               sort: 'client',
               direction: 'asc',
               page: 1,
             }))}
             aria-label={t('clients.clearFilters')}
+            title={t('clients.clearFilters')}
           >
-            <X className="clients-filters__clear-icon" aria-hidden />
-            {t('clients.clearFilters')}
+            <RotateCcw className="clients-filters__btn-icon-svg" aria-hidden />
           </button>
           <button
             type="button"
-            className="clients-filters__sort-toggle"
+            className="clients-filters__sort-toggle clients-filters__btn-icon"
             onClick={() => setShowSort((v) => !v)}
             aria-expanded={showSort}
             aria-controls="clients-sort-panel"
             id="clients-sort-toggle"
+            title={t('clients.sortBy')}
           >
-            <ArrowUpDown className="clients-filters__sort-toggle-icon" aria-hidden />
-            <span>{t('clients.sortBy')}</span>
+            <ArrowUpDown className="clients-filters__btn-icon-svg" aria-hidden />
             {showSort ? <ChevronUp className="clients-filters__sort-toggle-chevron" aria-hidden /> : <ChevronDown className="clients-filters__sort-toggle-chevron" aria-hidden />}
           </button>
           <div className="clients-filters__actions">
+            <button
+              type="button"
+              className="clients-filters__btn-icon clients-filters__btn-icon--export"
+              onClick={handleExport}
+              disabled={exportLoading}
+              aria-label={t('pageHeader.export', 'Export')}
+              title={t('pageHeader.export', 'Export')}
+            >
+              {exportLoading ? (
+                <span className="clients-filters__export-spinner" aria-hidden />
+              ) : (
+                <FileSpreadsheet className="clients-filters__btn-icon-svg" aria-hidden />
+              )}
+            </button>
             <button
               type="button"
               className="page-header__btn page-header__btn--primary"
               onClick={() => setShowCreate(true)}
             >
               {t('clients.createClient')}
-            </button>
-            <button
-              type="button"
-              className="page-header__btn"
-              onClick={handleExport}
-              disabled={exportLoading}
-            >
-              {exportLoading ? t('clients.loading') : t('pageHeader.export', 'Export')}
             </button>
           </div>
         </div>
