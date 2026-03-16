@@ -141,6 +141,7 @@
     "currentPassword": "كلمة المرور الحالية",
     "newPassword": "كلمة المرور الجديدة",
     "confirmPassword": "تأكيد كلمة المرور الجديدة",
+    "passwordsDoNotMatch": "كلمة المرور غير متطابقة.",
     "updatePassword": "تحديث كلمة المرور",
     "updating": "جاري التحديث…",
     "passwordUpdated": "تم تحديث كلمة المرور.",
