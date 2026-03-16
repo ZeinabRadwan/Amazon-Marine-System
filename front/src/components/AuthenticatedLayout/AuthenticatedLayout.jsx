@@ -18,6 +18,8 @@ function getPageHeaderForPath(pathname, t) {
       return { title: t('users.title'), breadcrumbs: [home, { label: t('users.title') }] }
     case '/roles-permissions':
       return { title: t('rolesPermissions.title'), breadcrumbs: [home, { label: t('rolesPermissions.title') }] }
+    case '/user-permissions':
+      return { title: t('userPermissions.title'), breadcrumbs: [home, { label: t('userPermissions.title') }] }
     case '/clients':
       return { title: t('clients.title'), breadcrumbs: [home, { label: t('clients.title') }] }
     case '/client-lookups':
@@ -91,6 +93,10 @@ export default function AuthenticatedLayout() {
       navigate('/roles-permissions')
       return
     }
+    if (id === 'usersPermissions') {
+      navigate('/user-permissions')
+      return
+    }
     if (id === 'clientsCrm') {
       navigate('/clients')
       return
@@ -106,6 +112,7 @@ export default function AuthenticatedLayout() {
     '/profile': 'profile',
     '/users': 'users',
     '/roles-permissions': 'rolesPermissions',
+    '/user-permissions': 'usersPermissions',
     '/clients': 'clientsCrm',
     '/client-lookups': 'clientLookups',
   }

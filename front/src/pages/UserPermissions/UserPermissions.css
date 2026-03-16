@@ -1,0 +1,66 @@
+.up-page {
+  padding-bottom: 2rem;
+}
+
+.up-page h1 {
+  margin: 0 0 1.25rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--root-text, #1c2030);
+}
+
+.up-panel {
+  margin-bottom: 1.5rem;
+}
+
+.up-table .rp-th--actions,
+.up-table .rp-td--actions {
+  width: 1%;
+  white-space: nowrap;
+  text-align: end;
+}
+
+.up-muted {
+  font-size: 0.875rem;
+  color: var(--form-text, #6b7280);
+  margin: 0.5rem 0;
+}
+
+.up-edit-abilities {
+  max-height: 360px;
+}
+
+.up-ability-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--form-divider, #e5e7eb);
+}
+
+.up-ability-row:last-child {
+  border-bottom: none;
+}
+
+.up-ability-name {
+  font-family: ui-monospace, monospace;
+  font-size: 0.875rem;
+  color: var(--root-text, #1c2030);
+}
+
+.up-ability-radios {
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: nowrap;
+}
+
+.up-ability-radios label {
+  margin: 0;
+  font-size: 0.8125rem;
+}
+
+.client-detail-modal__box--wide {
+  max-width: 560px;
+}

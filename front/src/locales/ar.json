@@ -33,7 +33,7 @@
     },
     "menu": {
       "dashboard": "لوحة التحكم",
-      "profile": "الملف الشخصي (أنا)",
+      "profile": "الملف الشخصي",
       "clientsCrm": "العملاء / CRM",
       "clientLookups": "بيانات العملاء المرجعية",
       "shipments": "الشحنات",
@@ -129,7 +129,7 @@
     "comingSoon": "إنشاء حساب (قريباً)"
   },
   "profile": {
-    "title": "الملف الشخصي (أنا)",
+    "title": "الملف الشخصي",
     "loading": "جاري تحميل الملف…",
     "updateProfile": "تحديث الملف",
     "name": "الاسم",
@@ -247,6 +247,34 @@
     "dash": "—",
     "perPage": "لكل صفحة",
     "total": "الإجمالي",
+    "actions": "إجراءات"
+  },
+  "userPermissions": {
+    "title": "المستخدمون والصلاحيات",
+    "loading": "جاري التحميل…",
+    "error": "فشل التحميل.",
+    "name": "الاسم",
+    "email": "البريد الإلكتروني",
+    "role": "الدور",
+    "permissionStatus": "حالة الصلاحيات",
+    "roleDefault": "افتراضي الدور",
+    "custom": "مخصص",
+    "viewPermissions": "عرض الصلاحيات",
+    "editPermissions": "تعديل الصلاحيات",
+    "resetToRoleDefault": "إعادة إلى افتراضي الدور",
+    "resetConfirm": "إعادة صلاحيات هذا المستخدم إلى افتراضي الدور؟",
+    "effectivePermissions": "الصلاحيات الفعالة",
+    "overrides": "التجاوزات",
+    "rolePermissions": "صلاحيات الدور",
+    "noUsers": "لا يوجد مستخدمون.",
+    "close": "إغلاق",
+    "cancel": "إلغاء",
+    "save": "حفظ",
+    "saving": "جاري الحفظ…",
+    "saved": "تم تحديث الصلاحيات.",
+    "resetDone": "تم إعادة الصلاحيات إلى افتراضي الدور.",
+    "allowed": "مسموح",
+    "denied": "مرفوض",
     "actions": "إجراءات"
   },
   "clientLookups": {
