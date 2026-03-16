@@ -270,6 +270,7 @@
     "statusProspect": "Prospect",
     "statusLead": "Lead",
     "filterLeadSource": "Lead source",
+    "leadSourceAll": "All sources",
     "leadSourcePlaceholder": "All lead sources",
     "assignedSalesPlaceholder": "All sales",
     "sortBy": "Sort by",

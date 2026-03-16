@@ -680,11 +680,6 @@ export default function Clients() {
       render: (_, c) => c.client_name ?? c.name ?? '—',
     },
     { key: 'company_name', label: t('clients.fields.company_name') },
-    {
-      key: 'contact_name',
-      label: t('clients.fields.contact_name'),
-      render: (_, c) => c.contact_name ?? c.client_name ?? '—',
-    },
     { key: 'email', label: t('clients.fields.email') },
     { key: 'phone', label: t('clients.fields.phone') },
     { key: 'status', label: t('clients.fields.status') },
@@ -861,14 +856,19 @@ export default function Clients() {
                 </option>
               ))}
             </select>
-            <input
-              type="text"
-              placeholder={t('clients.filterLeadSource')}
-              value={filters.lead_source_id}
+            <select
+              value={filters.lead_source_id ?? ''}
               onChange={(e) => setFilters((f) => ({ ...f, lead_source_id: e.target.value, page: 1 }))}
               className="clients-input"
               aria-label={t('clients.filterLeadSource')}
-            />
+            >
+              <option value="">{t('clients.leadSourceAll')}</option>
+              {leadSources.map((src) => (
+                <option key={src.id} value={src.id}>
+                  {src.name}
+                </option>
+              ))}
+            </select>
             <input
               type="text"
               placeholder={t('clients.assignedSalesPlaceholder')}

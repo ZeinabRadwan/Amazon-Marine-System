@@ -2492,6 +2492,40 @@
           "response": []
         },
         {
+          "name": "Filter Clients by Lead Source",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/clients?lead_source_id={{lead_source_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "clients"
+              ],
+              "query": [
+                {
+                  "key": "lead_source_id",
+                  "value": "1",
+                  "description": "Lead source ID (example: 1)"
+                }
+              ]
+            },
+            "description": "Filter clients based on lead_source_id"
+          },
+          "response": []
+        },
+        {
           "name": "Create Client",
           "request": {
             "method": "POST",

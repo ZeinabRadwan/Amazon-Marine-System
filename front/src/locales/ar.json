@@ -270,6 +270,7 @@
     "statusProspect": "عميل محتمل",
     "statusLead": "عميل متوقع",
     "filterLeadSource": "مصدر العميل",
+    "leadSourceAll": "كل المصادر",
     "leadSourcePlaceholder": "جميع المصادر",
     "assignedSalesPlaceholder": "جميع الموظفين",
     "sortBy": "ترتيب حسب",

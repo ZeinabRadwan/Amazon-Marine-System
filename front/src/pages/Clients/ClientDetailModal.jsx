@@ -3,7 +3,7 @@ import Tabs from '../../components/Tabs'
 import './ClientDetailModal.css'
 
 const clientFormFields = [
-  ['name', 'contact_name', 'company_name', 'company_type'],
+  ['name', 'company_name', 'company_type'],
   ['business_activity', 'target_markets', 'tax_id'],
   ['email', 'phone', 'preferred_comm_method'],
   ['city', 'country', 'address'],
