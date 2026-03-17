@@ -708,12 +708,6 @@
   border: 1px solid var(--form-divider, #e5e7eb);
 }
 
-.clients-detail-list--pricing {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
 .clients-modal-actions {
   display: flex;
   gap: 12px;

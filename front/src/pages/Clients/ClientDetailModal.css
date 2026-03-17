@@ -209,7 +209,7 @@
   margin-bottom: 0;
 }
 
-/* Grid (info / financial / pricing) */
+/* Grid (info / financial) */
 .client-detail-modal__grid {
   display: flex;
   flex-direction: column;

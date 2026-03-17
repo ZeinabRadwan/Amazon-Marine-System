@@ -43,7 +43,6 @@ export default function ClientDetailModal({
   shipmentCreating = false,
   onCreateShipment,
   financialSummaryList = [],
-  pricingList = [],
   numberLocale = 'en-US',
 }) {
   const { t, i18n } = useTranslation()
@@ -72,10 +71,7 @@ export default function ClientDetailModal({
       ? new Intl.DateTimeFormat(i18n.language === 'ar' ? 'ar-EG' : 'en-US', { dateStyle: 'medium' }).format(new Date(v))
       : '—'
 
-  const formatPct = (v) => (typeof v === 'number' ? `${Number(v).toFixed(1)}%` : (v ?? '—'))
-
   const clientFinancial = financialSummaryList.find((item) => Number(item.id) === Number(detailId))
-  const clientPricing = pricingList.find((item) => Number(item.id) === Number(detailId))
 
   const tabs = [
     { id: 'info', label: t('clients.tabs.info', 'Info') },
@@ -85,7 +81,6 @@ export default function ClientDetailModal({
     { id: 'notes', label: t('clients.tabs.notes', 'Notes') },
     { id: 'followups', label: t('clients.tabs.followups', 'Follow-ups') },
     { id: 'financial', label: t('clients.financialSummary', 'Financial summary') },
-    { id: 'pricing', label: t('clients.pricingList', 'Pricing list') },
   ]
 
   return (
@@ -405,38 +400,6 @@ export default function ClientDetailModal({
                         ? clientFinancial.open_invoices_count
                         : (clientFinancial.open_invoices_count ?? '—')}
                     </span>
-                  </div>
-                </div>
-              )}
-            </section>
-          )}
-
-          {detailTab === 'pricing' && (
-            <section className="client-detail-modal__section">
-              <h3 className="client-detail-modal__section-title">{t('clients.pricingList')}</h3>
-              {clientPricing == null ? (
-                <p className="client-detail-modal__empty">{t('clients.noPricing')}</p>
-              ) : (
-                <div className="client-detail-modal__grid client-detail-modal__grid--card">
-                  <div className="client-detail-modal__row">
-                    <span className="client-detail-modal__label">{t('clients.fields.name')}</span>
-                    <span className="client-detail-modal__value">{clientPricing.name ?? '—'}</span>
-                  </div>
-                  <div className="client-detail-modal__row">
-                    <span className="client-detail-modal__label">{t('clients.fields.company_name')}</span>
-                    <span className="client-detail-modal__value">{clientPricing.company_name ?? '—'}</span>
-                  </div>
-                  <div className="client-detail-modal__row">
-                    <span className="client-detail-modal__label">{t('clients.pricingFields.pricing_tier')}</span>
-                    <span className="client-detail-modal__value">{clientPricing.pricing_tier ?? '—'}</span>
-                  </div>
-                  <div className="client-detail-modal__row">
-                    <span className="client-detail-modal__label">{t('clients.pricingFields.pricing_discount_pct')}</span>
-                    <span className="client-detail-modal__value">{formatPct(clientPricing.pricing_discount_pct)}</span>
-                  </div>
-                  <div className="client-detail-modal__row">
-                    <span className="client-detail-modal__label">{t('clients.pricingFields.pricing_updated_at')}</span>
-                    <span className="client-detail-modal__value">{formatDate(clientPricing.pricing_updated_at)}</span>
                   </div>
                 </div>
               )}

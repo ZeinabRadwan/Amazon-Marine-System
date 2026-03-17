@@ -10,7 +10,6 @@ import {
   getClientStats,
   getClientCharts,
   getFinancialSummary,
-  getPricingList,
   exportClients,
   getClientVisits,
   getClientShipments,
@@ -173,8 +172,6 @@ export default function Clients() {
   const [chartsLoading, setChartsLoading] = useState(false)
   const [financialSummaryList, setFinancialSummaryList] = useState([])
   const [financialLoading, setFinancialLoading] = useState(false)
-  const [pricingList, setPricingList] = useState([])
-  const [pricingLoading, setPricingLoading] = useState(false)
   const [showSort, setShowSort] = useState(false)
   const [clientStatuses, setClientStatuses] = useState([])
   const [companyTypes, setCompanyTypes] = useState([])
@@ -192,7 +189,6 @@ export default function Clients() {
     shipmentsLoading ||
     attachmentsLoading ||
     financialLoading ||
-    pricingLoading ||
     exportLoading ||
     createSubmitting ||
     editSubmitting ||
@@ -374,18 +370,6 @@ export default function Clients() {
       .then((data) => setFinancialSummaryList(Array.isArray(data.data) ? data.data : []))
       .catch(() => setFinancialSummaryList([]))
       .finally(() => setFinancialLoading(false))
-  }, [token])
-
-  useEffect(() => {
-    if (!token) return
-    setPricingLoading(true)
-    getPricingList(token)
-      .then((data) => {
-        const arr = data.data ?? data.pricing ?? data
-        setPricingList(Array.isArray(arr) ? arr : [])
-      })
-      .catch(() => setPricingList([]))
-      .finally(() => setPricingLoading(false))
   }, [token])
 
   const openEdit = (client) => {
@@ -1206,7 +1190,6 @@ export default function Clients() {
         shipmentCreating={shipmentCreating}
         onCreateShipment={handleCreateShipment}
         financialSummaryList={financialSummaryList}
-        pricingList={pricingList}
         numberLocale={numberLocale}
       />
 
