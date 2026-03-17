@@ -14,6 +14,9 @@ import RolesPermissions from './pages/RolesPermissions'
 import UserPermissions from './pages/UserPermissions'
 import Clients from './pages/Clients'
 import ClientLookups from './pages/ClientLookups'
+import Attendance from './pages/Attendance'
+import SDForms from './pages/SDForms'
+import Notifications from './pages/Notifications'
 import './App.css'
 
 function SignupPlaceholder() {
@@ -182,6 +185,9 @@ function App() {
           <Route path="/user-permissions" element={<UserPermissions />} />
           <Route path="/clients" element={<Clients />} />
           <Route path="/client-lookups" element={<ClientLookups />} />
+          <Route path="/attendance" element={<Attendance />} />
+          <Route path="/sd-forms" element={<SDForms />} />
+          <Route path="/notifications" element={<Notifications />} />
         </Route>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignupPlaceholder />} />

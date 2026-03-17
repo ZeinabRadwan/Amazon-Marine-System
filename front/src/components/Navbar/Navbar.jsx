@@ -1,13 +1,35 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Search, Globe, BellRing, ChevronDown } from 'lucide-react'
 import { setLanguage } from '../../i18n'
+import { getStoredToken } from '../../pages/Login'
+import { listNotifications, getUnreadCount, markNotificationRead } from '../../api/notifications'
 import ThemeToggle from '../ThemeToggle'
 import { DropdownMenu } from '../DropdownMenu'
 import './Navbar.css'
 
 const NAVBAR_HEIGHT = 64
+const RECENT_NOTIF_LIMIT = 5
+
+function formatNotificationTime(iso) {
+  if (!iso) return ''
+  try {
+    const d = new Date(iso)
+    const now = new Date()
+    const diffMs = now - d
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins}m ago`
+    if (diffHours < 24) return `${diffHours}h ago`
+    if (diffDays < 7) return `${diffDays}d ago`
+    return d.toLocaleDateString(undefined, { dateStyle: 'short' })
+  } catch {
+    return iso
+  }
+}
 
 /**
  * Reusable Navbar for Amazon Marine dashboard. Works with the existing left sidebar layout.
@@ -21,8 +43,49 @@ export default function Navbar({
   pageBreadcrumbs = [],
 }) {
   const { t, i18n } = useTranslation()
+  const navigate = useNavigate()
   const [notifOpen, setNotifOpen] = useState(false)
   const notifRef = useRef(null)
+  const token = getStoredToken()
+
+  const [recentNotifications, setRecentNotifications] = useState([])
+  const [notifLoading, setNotifLoading] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(null)
+
+  const loadNotifications = useCallback(() => {
+    if (!token) return
+    setNotifLoading(true)
+    listNotifications(token, { page: 1, per_page: RECENT_NOTIF_LIMIT })
+      .then((res) => {
+        const raw = res.data ?? res.notifications ?? res
+        const arr = Array.isArray(raw) ? raw : (res.data && Array.isArray(res.data) ? res.data : [])
+        setRecentNotifications(arr)
+      })
+      .catch(() => setRecentNotifications([]))
+      .finally(() => setNotifLoading(false))
+  }, [token])
+
+  const loadUnreadCount = useCallback(() => {
+    if (!token) return
+    getUnreadCount(token)
+      .then((res) => {
+        const count = res.unread_count ?? res.count ?? res.data?.unread_count ?? res.data?.count ?? 0
+        setUnreadCount(Number(count))
+      })
+      .catch(() => setUnreadCount(0))
+  }, [token])
+
+  useEffect(() => {
+    if (!token) return
+    loadUnreadCount()
+  }, [token, loadUnreadCount])
+
+  useEffect(() => {
+    if (notifOpen && token) {
+      loadNotifications()
+      loadUnreadCount()
+    }
+  }, [notifOpen, token, loadNotifications, loadUnreadCount])
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -31,6 +94,22 @@ export default function Navbar({
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  const handleNotificationClick = (n) => {
+    const read = !!(n.read_at)
+    if (!read && n.id && token) {
+      markNotificationRead(token, n.id).then(() => {
+        setRecentNotifications((prev) =>
+          prev.map((item) => (item.id === n.id ? { ...item, read_at: item.read_at || new Date().toISOString() } : item))
+        )
+        loadUnreadCount()
+      })
+    }
+    setNotifOpen(false)
+    navigate('/notifications')
+  }
+
+  const badgeCount = unreadCount !== null ? unreadCount : alertsCount
 
   const currentLangLabel = i18n.language === 'ar' ? t('common.arabic') : t('common.english')
 
@@ -101,9 +180,9 @@ export default function Navbar({
               aria-label={t('topNav.notifications')}
             >
               <BellRing className="navbar__btn-icon" aria-hidden />
-              {alertsCount > 0 && (
+              {badgeCount > 0 && (
                 <span className="navbar__badge" aria-hidden>
-                  {alertsCount > 99 ? '99+' : alertsCount}
+                  {badgeCount > 99 ? '99+' : badgeCount}
                 </span>
               )}
             </button>
@@ -115,20 +194,38 @@ export default function Navbar({
               >
                 <div className="navbar__dropdown-header">
                   <h3 className="navbar__dropdown-title">{t('topNav.recentNotifications')}</h3>
+                  <Link
+                    to="/notifications"
+                    className="navbar__dropdown-view-all"
+                    onClick={() => setNotifOpen(false)}
+                  >
+                    {t('topNav.viewAllNotifications')}
+                  </Link>
                 </div>
                 <div className="navbar__dropdown-body">
-                  {alertsCount === 0 ? (
+                  {notifLoading ? (
+                    <p className="navbar__dropdown-empty">{t('notifications.loading')}</p>
+                  ) : recentNotifications.length === 0 ? (
                     <p className="navbar__dropdown-empty">{t('topNav.noNotifications')}</p>
                   ) : (
                     <ul className="navbar__dropdown-list">
-                      {Array.from({ length: Math.min(alertsCount, 5) }, (_, i) => (
-                        <li key={i}>
+                      {recentNotifications.map((n) => (
+                        <li key={n.id}>
                           <button
                             type="button"
-                            className="navbar__dropdown-item"
+                            className={`navbar__dropdown-item ${!(n.read_at) ? 'navbar__dropdown-item--unread' : ''}`}
+                            onClick={() => handleNotificationClick(n)}
                           >
-                            <span className="font-medium">
-                              {t('topNav.notifications')} #{i + 1}
+                            <span className="navbar__dropdown-item-title">
+                              {n.title ?? n.message ?? t('notifications.noTitle')}
+                            </span>
+                            {(n.body ?? n.message) && (n.body !== (n.title ?? n.message)) && (
+                              <span className="navbar__dropdown-item-body">
+                                {typeof n.body === 'string' && n.body.length > 80 ? `${n.body.slice(0, 80)}…` : n.body}
+                              </span>
+                            )}
+                            <span className="navbar__dropdown-item-time">
+                              {formatNotificationTime(n.created_at)}
                             </span>
                           </button>
                         </li>

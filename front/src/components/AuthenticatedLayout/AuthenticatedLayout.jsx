@@ -24,6 +24,12 @@ function getPageHeaderForPath(pathname, t) {
       return { title: t('clients.title'), breadcrumbs: [home, { label: t('clients.title') }] }
     case '/client-lookups':
       return { title: t('clientLookups.title'), breadcrumbs: [home, { label: t('clientLookups.title') }] }
+    case '/attendance':
+      return { title: t('attendance.title'), breadcrumbs: [home, { label: t('attendance.title') }] }
+    case '/sd-forms':
+      return { title: t('sdForms.title'), breadcrumbs: [home, { label: t('sdForms.title') }] }
+    case '/notifications':
+      return { title: t('notifications.title'), breadcrumbs: [home, { label: t('notifications.title') }] }
     default:
       return { title: t('pageHeader.dashboard'), breadcrumbs: [home] }
   }
@@ -105,6 +111,18 @@ export default function AuthenticatedLayout() {
       navigate('/client-lookups')
       return
     }
+    if (id === 'attendance') {
+      navigate('/attendance')
+      return
+    }
+    if (id === 'sdForms') {
+      navigate('/sd-forms')
+      return
+    }
+    if (id === 'notifications') {
+      navigate('/notifications')
+      return
+    }
   }
 
   const pathToMenu = {
@@ -115,6 +133,9 @@ export default function AuthenticatedLayout() {
     '/user-permissions': 'usersPermissions',
     '/clients': 'clientsCrm',
     '/client-lookups': 'clientLookups',
+    '/attendance': 'attendance',
+    '/sd-forms': 'sdForms',
+    '/notifications': 'notifications',
   }
   const activeMenu = pathToMenu[location.pathname] ?? 'dashboard'
 
