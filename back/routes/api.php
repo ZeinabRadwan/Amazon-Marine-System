@@ -4,7 +4,9 @@ use App\Http\Controllers\Api\AbilitiesController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\UserPermissionsController;
 use App\Http\Controllers\Api\V1\AccountingController;
+use App\Http\Controllers\Api\V1\ActivityController;
 use App\Http\Controllers\Api\V1\AttendanceController;
 use App\Http\Controllers\Api\V1\ClientAttachmentController;
 use App\Http\Controllers\Api\V1\ClientContactController;
@@ -28,13 +30,15 @@ use App\Http\Controllers\Api\V1\PreferredCommMethodController;
 use App\Http\Controllers\Api\V1\PricingOfferController;
 use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\SDFormController;
+use App\Http\Controllers\Api\V1\SessionController;
+use App\Http\Controllers\Api\V1\SettingsController;
 use App\Http\Controllers\Api\V1\ShipmentController;
 use App\Http\Controllers\Api\V1\ShipmentNoteController;
+use App\Http\Controllers\Api\V1\ShipmentStatusController;
 use App\Http\Controllers\Api\V1\ShipmentTrackingUpdateController;
 use App\Http\Controllers\Api\V1\TicketController;
 use App\Http\Controllers\Api\V1\TicketTypeController;
 use App\Http\Controllers\Api\V1\TreasuryController;
-use App\Http\Controllers\Api\UserPermissionsController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\VendorBillController;
 use App\Http\Controllers\Api\V1\VendorController;
@@ -46,7 +50,7 @@ Route::prefix('v1')->group(function () {
     Route::post('auth/login', [AuthController::class, 'login']);
 
     // Routes below require authentication
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', 'track_session'])->group(function () {
         Route::post('auth/logout', [AuthController::class, 'logout']);
         Route::get('auth/me', [AuthController::class, 'me']);
 
@@ -54,6 +58,28 @@ Route::prefix('v1')->group(function () {
         Route::get('profile', [AuthController::class, 'profile']);
         Route::put('profile', [AuthController::class, 'updateProfile']);
         Route::put('profile/password', [AuthController::class, 'updatePassword']);
+
+        // Settings APIs (company/system/notifications/sessions)
+        Route::get('settings', [SettingsController::class, 'show']);
+        Route::put('settings/company/profile', [SettingsController::class, 'updateCompanyProfile']);
+        Route::put('settings/company/location', [SettingsController::class, 'updateCompanyLocation']);
+        Route::put('settings/system/preferences', [SettingsController::class, 'updateSystemPreferences']);
+        Route::put('settings/notifications/preferences', [SettingsController::class, 'updateNotificationPreferences']);
+        Route::put('settings/sessions', [SettingsController::class, 'updateSessionSettings']);
+
+        // Sessions (daily combined)
+        Route::get('sessions/today', [SessionController::class, 'today']);
+        Route::get('sessions/history', [SessionController::class, 'history']);
+        Route::post('sessions/logout-others', [SessionController::class, 'logoutOthers']);
+
+        // Activity history
+        Route::get('activities', [ActivityController::class, 'index']);
+
+        // Shipment statuses
+        Route::get('shipment-statuses', [ShipmentStatusController::class, 'index']);
+        Route::post('shipment-statuses', [ShipmentStatusController::class, 'store']);
+        Route::put('shipment-statuses/{shipmentStatus}', [ShipmentStatusController::class, 'update']);
+        Route::delete('shipment-statuses/{shipmentStatus}', [ShipmentStatusController::class, 'destroy']);
 
         // Roles & Spatie abilities (for permission page)
         Route::get('roles', [RoleController::class, 'index']);

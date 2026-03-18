@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'page_permission' => \App\Http\Middleware\CheckPagePermission::class,
+            'track_session' => \App\Http\Middleware\TrackUserSessionActivity::class,
         ]);
 
         $middleware->redirectGuestsTo(function ($request) {
