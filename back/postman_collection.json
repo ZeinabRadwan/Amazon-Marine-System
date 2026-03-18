@@ -9,6 +9,238 @@
   },
   "item": [
     {
+      "name": "Settings & Sessions",
+      "description": "System/company settings and session management. Settings writes typically require admin/roles.manage/permissions.manage.",
+      "item": [
+        {
+          "name": "Get Settings",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/settings", "host": ["{{base_url}}"], "path": ["settings"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Company Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name_ar\": \"أمازون مارين\",\n  \"name_en\": \"Amazon Marine\",\n  \"phone\": \"+20 3 123 4567\",\n  \"email\": \"info@amazonmarine.com\",\n  \"address\": \"123 شارع الحرية، الإسكندرية، مصر\",\n  \"commercial_register\": \"CR-2024-00456\",\n  \"tax_card\": \"TAX-2024-00789\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/settings/company/profile", "host": ["{{base_url}}"], "path": ["settings","company","profile"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Company Location (Attendance)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lat\": 31.2001,\n  \"lng\": 29.9187,\n  \"radius_m\": 250\n}"
+            },
+            "url": { "raw": "{{base_url}}/settings/company/location", "host": ["{{base_url}}"], "path": ["settings","company","location"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update System Preferences",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"timezone\": \"Africa/Cairo\",\n  \"currency\": \"EGP\",\n  \"date_format\": \"DD/MM/YYYY\",\n  \"default_tax_pct\": 14\n}"
+            },
+            "url": { "raw": "{{base_url}}/settings/system/preferences", "host": ["{{base_url}}"], "path": ["settings","system","preferences"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Notification Preferences",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shipments\": true,\n  \"finance\": true,\n  \"crm\": true,\n  \"email\": false,\n  \"docs_expiry\": true\n}"
+            },
+            "url": { "raw": "{{base_url}}/settings/notifications/preferences", "host": ["{{base_url}}"], "path": ["settings","notifications","preferences"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Session Settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reset_hour\": 6,\n  \"idle_logout_minutes\": 30\n}"
+            },
+            "url": { "raw": "{{base_url}}/settings/sessions", "host": ["{{base_url}}"], "path": ["settings","sessions"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Sessions Today (Combined)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/sessions/today?user_id=",
+              "host": ["{{base_url}}"],
+              "path": ["sessions","today"],
+              "query": [
+                { "key": "user_id", "value": "", "description": "Optional; requires reports.view to view others" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Sessions History (By Day)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/sessions/history?from=&to=&user_id=",
+              "host": ["{{base_url}}"],
+              "path": ["sessions","history"],
+              "query": [
+                { "key": "from", "value": "" },
+                { "key": "to", "value": "" },
+                { "key": "user_id", "value": "", "description": "Optional; requires reports.view to view others" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout Other Sessions",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/sessions/logout-others", "host": ["{{base_url}}"], "path": ["sessions","logout-others"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Activity History",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/activities?from=&to=&event=&subject_type=&subject_id=&user_id=",
+              "host": ["{{base_url}}"],
+              "path": ["activities"],
+              "query": [
+                { "key": "from", "value": "" },
+                { "key": "to", "value": "" },
+                { "key": "event", "value": "", "description": "Optional event key, e.g. shipment.created" },
+                { "key": "subject_type", "value": "" },
+                { "key": "subject_id", "value": "" },
+                { "key": "user_id", "value": "", "description": "Optional; requires reports.view to view others" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Shipment Statuses (List)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/shipment-statuses", "host": ["{{base_url}}"], "path": ["shipment-statuses"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Shipment Status",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name_ar\": \"تم الحجز\",\n  \"name_en\": \"Booked\",\n  \"color\": \"#3B82F6\",\n  \"description\": \"حالة حجز الشحنة\",\n  \"active\": true,\n  \"sort_order\": 10\n}"
+            },
+            "url": { "raw": "{{base_url}}/shipment-statuses", "host": ["{{base_url}}"], "path": ["shipment-statuses"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Shipment Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name_ar\": \"تم الوصول\",\n  \"active\": true\n}"
+            },
+            "url": { "raw": "{{base_url}}/shipment-statuses/{{shipment_status_id}}", "host": ["{{base_url}}"], "path": ["shipment-statuses","{{shipment_status_id}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Shipment Status",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/shipment-statuses/{{shipment_status_id}}", "host": ["{{base_url}}"], "path": ["shipment-statuses","{{shipment_status_id}}"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Auth",
       "item": [
         {

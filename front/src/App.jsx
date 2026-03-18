@@ -18,6 +18,7 @@ import CustomerServices from './pages/CustomerServices'
 import Attendance from './pages/Attendance'
 import SDForms from './pages/SDForms'
 import Notifications from './pages/Notifications'
+import Settings from './pages/Settings'
 import './App.css'
 
 function SignupPlaceholder() {
@@ -190,6 +191,7 @@ function App() {
           <Route path="/attendance" element={<Attendance />} />
           <Route path="/sd-forms" element={<SDForms />} />
           <Route path="/notifications" element={<Notifications />} />
+          <Route path="/settings" element={<Settings />} />
         </Route>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignupPlaceholder />} />

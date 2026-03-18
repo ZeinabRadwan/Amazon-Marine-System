@@ -85,6 +85,14 @@
     "sortedDesc": "مرتب تنازلياً حسب {{column}}. انقر للترتيب تصاعدياً.",
     "sortable": "ترتيب حسب هذا العمود"
   },
+  "pagination": {
+    "ariaLabel": "ترقيم الصفحات",
+    "prev": "الصفحة السابقة",
+    "next": "الصفحة التالية",
+    "pageOfTotal": "صفحة {{current}} من {{total}}",
+    "currentPage": "الصفحة الحالية، صفحة {{num}}",
+    "goToPage": "الانتقال إلى صفحة {{num}}"
+  },
   "statsCard": {
     "changeLabel": "التغيير: {{change}}، الاتجاه: {{trend}}",
     "trendUp": "اتجاه صاعد",
@@ -766,6 +774,122 @@
       "pricing_tier": "مستوى التسعير",
       "pricing_discount_pct": "نسبة الخصم %",
       "pricing_updated_at": "تاريخ تحديث التسعير"
+    }
+  },
+  "settings": {
+    "title": "إعدادات النظام",
+    "subtitle": "إدارة بيانات الشركة، إعدادات النظام، الإشعارات وسلوك الجلسات.",
+    "tabs": {
+      "company": "بيانات الشركة",
+      "system": "النظام والإشعارات",
+      "sessions": "إدارة الجلسات",
+      "activity": "سجل النشاط",
+      "shipmentStatuses": "حالات الشحنات"
+    },
+    "company": {
+      "cardTitle": "بيانات الشركة",
+      "profileTitle": "الملف التعريفي للشركة",
+      "nameAr": "اسم الشركة (عربي)",
+      "nameEn": "اسم الشركة (إنجليزي)",
+      "phone": "الهاتف",
+      "email": "البريد الإلكتروني",
+      "address": "العنوان",
+      "commercialRegister": "السجل التجاري",
+      "taxCard": "البطاقة الضريبية",
+      "saveProfile": "حفظ بيانات الشركة",
+      "locationTitle": "موقع الشركة (للحضور)",
+      "lat": "خط العرض",
+      "lng": "خط الطول",
+      "radius": "نصف القطر (متر)",
+      "locationHint": "سيتم استخدام هذا الموقع عند تقييم حضور الموظفين.",
+      "saveLocation": "حفظ الموقع"
+    },
+    "system": {
+      "cardTitle": "النظام والإشعارات",
+      "systemTitle": "إعدادات النظام",
+      "timezone": "المنطقة الزمنية",
+      "currency": "العملة",
+      "dateFormat": "تنسيق التاريخ",
+      "defaultTax": "نسبة الضريبة الافتراضية (%)",
+      "saveSystem": "حفظ إعدادات النظام",
+      "notificationsTitle": "إعدادات الإشعارات",
+      "shipments": "إشعارات الشحنات",
+      "finance": "إشعارات المالية",
+      "crm": "إشعارات CRM",
+      "email": "إرسال نسخة بالبريد الإلكتروني",
+      "docsExpiry": "تذكير المستندات المنتهية",
+      "saveNotifications": "حفظ إعدادات الإشعارات"
+    },
+    "sessions": {
+      "cardTitle": "إدارة الجلسات",
+      "resetHour": "ساعة إعادة التعيين (0–23)",
+      "idleLogoutMinutes": "تسجيل الخروج التلقائي (بالدقائق)",
+      "saveSessionSettings": "حفظ إعدادات الجلسات",
+      "logoutOthers": "تسجيل الخروج من الجلسات الأخرى",
+      "todayTitle": "جلسات اليوم",
+      "historyTitle": "سجل الجلسات",
+      "from": "من",
+      "to": "إلى",
+      "apply": "تطبيق",
+      "table": {
+        "user": "المستخدم",
+        "date": "تاريخ الجلسة",
+        "firstSeen": "أول نشاط",
+        "lastSeen": "آخر نشاط",
+        "totalActivityMinutes": "إجمالي النشاط (دقائق)"
+      },
+      "noToday": "لا يوجد نشاط مسجل اليوم.",
+      "noHistory": "لا يوجد سجل للجلسات."
+    },
+    "activity": {
+      "cardTitle": "سجل النشاط",
+      "from": "من",
+      "to": "إلى",
+      "apply": "تطبيق",
+      "table": {
+        "time": "الوقت",
+        "event": "الحدث",
+        "description": "الوصف"
+      },
+      "empty": "لا يوجد نشاط مسجل."
+    },
+    "shipmentStatuses": {
+      "cardTitle": "حالات الشحنات",
+      "addTitle": "إضافة حالة",
+      "editTitle": "تعديل الحالة",
+      "nameAr": "الاسم (عربي)",
+      "nameEn": "الاسم (إنجليزي)",
+      "color": "اللون (hex)",
+      "description": "الوصف",
+      "active": "نشط",
+      "sortOrder": "ترتيب الفرز",
+      "create": "إنشاء الحالة",
+      "update": "تحديث الحالة",
+      "cancel": "إلغاء",
+      "table": {
+        "nameAr": "الاسم (عربي)",
+        "nameEn": "الاسم (إنجليزي)",
+        "color": "اللون",
+        "active": "نشط",
+        "actions": "إجراءات"
+      },
+      "noStatuses": "لا توجد حالات شحنات بعد.",
+      "edit": "تعديل",
+      "delete": "حذف",
+      "deleteConfirm": "هل تريد حذف حالة الشحنة هذه؟"
+    },
+    "errors": {
+      "load": "فشل تحميل الإعدادات.",
+      "saveCompanyProfile": "فشل حفظ بيانات الشركة.",
+      "saveLocation": "فشل حفظ موقع الشركة.",
+      "saveSystem": "فشل حفظ إعدادات النظام.",
+      "saveNotifications": "فشل حفظ إعدادات الإشعارات.",
+      "saveSessions": "فشل حفظ إعدادات الجلسات.",
+      "refreshSessions": "فشل تحديث الجلسات.",
+      "refreshActivity": "فشل تحديث سجل النشاط.",
+      "logoutOthers": "فشل تسجيل الخروج من الجلسات الأخرى.",
+      "saveShipmentStatus": "فشل حفظ حالة الشحنة.",
+      "deleteShipmentStatus": "فشل حذف حالة الشحنة."
     }
   }
 }

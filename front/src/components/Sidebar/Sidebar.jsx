@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getResolvedTheme } from '../../theme'
+import HeaderActions from '../HeaderActions'
 import {
   DashboardIcon,
   ContactsIcon,
@@ -166,6 +167,13 @@ export default function Sidebar({
             )}
           </Link>
         </div>
+
+        {/* Notifications, theme toggle, language – visible on mobile only (hidden on desktop) */}
+        <HeaderActions
+          variant="sidebar"
+          className="sidebar-mobile-actions"
+          alertsCount={alertsCount}
+        />
 
         <nav className="sidebar-nav" aria-label="Main navigation">
           {SIDEBAR_SECTIONS.map(({ sectionKey, items }) => (

@@ -42,6 +42,14 @@
   box-sizing: border-box;
 }
 
+/* Notifications, theme, language – visible on mobile only */
+.sidebar-mobile-actions {
+  display: none;
+  flex-shrink: 0;
+  padding: 12px 12px 8px;
+  border-bottom: 1px solid var(--sidebar-border);
+}
+
 /* Toggle button – logical position for RTL/LTR */
 .sidebar-toggle {
   position: absolute;
@@ -561,7 +569,7 @@
   box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
 }
 
-/* Responsive: mobile */
+/* Responsive: tablet – sidebar fixed overlay; keep 3-dot toggle visible when collapsed so user can open sidebar */
 @media (max-width: 768px) {
   .sidebar {
     position: fixed;
@@ -574,5 +582,63 @@
   }
   .sidebar--collapsed {
     transform: translateX(calc(-1 * var(--sidebar-width-collapsed)));
+  }
+  /* When collapsed on mobile, pin the toggle so it stays visible and tappable */
+  .sidebar--collapsed .sidebar-toggle {
+    position: fixed;
+    left: 0;
+    top: 16px;
+    z-index: 1001;
+    transform: none;
+    right: auto;
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    border-radius: 0 8px 8px 0;
+    background: var(--sidebar-bg);
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+  }
+  .sidebar--rtl.sidebar--collapsed .sidebar-toggle {
+    left: auto;
+    right: 0;
+    border-radius: 8px 0 0 8px;
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+  }
+}
+
+/* Responsive: show notifications/theme/language in sidebar on mobile */
+@media (max-width: 768px) {
+  .sidebar-mobile-actions {
+    display: block;
+  }
+}
+
+/* Responsive: mobile (e.g. iPhone 14) – narrower sidebar when expanded so content peeks; touch-friendly spacing */
+@media (max-width: 480px) {
+  .sidebar {
+    width: min(240px, 78vw);
+    min-width: min(240px, 78vw);
+  }
+
+  .sidebar--collapsed {
+    width: var(--sidebar-width-collapsed);
+    min-width: var(--sidebar-width-collapsed);
+  }
+
+  .sidebar-header {
+    padding: 40px 12px 12px;
+  }
+
+  .sidebar-nav {
+    padding: 12px 8px;
+  }
+
+  .sidebar-item {
+    padding: 10px 10px;
+    font-size: 13px;
+  }
+
+  .sidebar-footer-wrap {
+    padding: 10px 8px 12px;
   }
 }

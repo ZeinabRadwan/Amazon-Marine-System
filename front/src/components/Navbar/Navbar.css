@@ -44,9 +44,95 @@
   }
 }
 
-/* —— Left: page header —— */
+/* Open sidebar button – visible only on mobile when sidebar is collapsed */
+.navbar__open-sidebar {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-inline-end: 8px;
+  padding: 0;
+  border: 1px solid var(--navbar-border);
+  border-radius: 10px;
+  background: var(--navbar-bg);
+  color: var(--navbar-text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.navbar__open-sidebar:hover {
+  background: var(--navbar-hover);
+  color: var(--navbar-text);
+}
+.navbar__open-sidebar-icon {
+  width: 22px;
+  height: 22px;
+}
+@media (max-width: 768px) {
+  .navbar--sidebar-collapsed .navbar__open-sidebar {
+    display: inline-flex;
+  }
+}
+
+/* Hide notifications, theme toggle, language on mobile – they move to Sidebar */
+@media (max-width: 768px) {
+  .navbar__actions--desktop {
+    display: none !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .navbar {
+    padding: 0 16px;
+    gap: 12px;
+    min-height: 56px;
+  }
+
+  .navbar__title {
+    font-size: 1.0625rem;
+  }
+
+  .navbar__breadcrumb-list {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar {
+    padding: 0 12px;
+    min-height: 52px;
+  }
+
+  .navbar__title {
+    font-size: 1rem;
+  }
+
+  .navbar__action-group {
+    gap: 4px;
+  }
+
+  .navbar__btn {
+    min-width: 36px;
+    height: 36px;
+    padding: 0 8px;
+  }
+
+  .navbar__btn--icon {
+    padding: 0;
+  }
+
+  .navbar__btn-icon {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* —— Left: open sidebar btn (mobile) + page header —— */
 .navbar__left {
   min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .navbar__page-header {
