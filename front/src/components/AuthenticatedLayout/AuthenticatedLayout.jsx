@@ -123,6 +123,10 @@ export default function AuthenticatedLayout() {
       navigate('/notifications')
       return
     }
+    if (id === 'settings') {
+      navigate('/settings')
+      return
+    }
   }
 
   const pathToMenu = {
@@ -175,7 +179,7 @@ export default function AuthenticatedLayout() {
       pageTitle={pageHeaderConfig.title}
       pageBreadcrumbs={pageHeaderConfig.breadcrumbs}
     >
-      <Outlet context={{ user }} />
+      <Outlet context={{ user, token }} />
     </AppLayout>
   )
 }
