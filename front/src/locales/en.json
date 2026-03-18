@@ -85,6 +85,14 @@
     "sortedDesc": "Sorted descending by {{column}}. Click to sort ascending.",
     "sortable": "Sort by this column"
   },
+  "pagination": {
+    "ariaLabel": "Pagination",
+    "prev": "Previous page",
+    "next": "Next page",
+    "pageOfTotal": "Page {{current}} of {{total}}",
+    "currentPage": "Current page, page {{num}}",
+    "goToPage": "Go to page {{num}}"
+  },
   "statsCard": {
     "changeLabel": "Change: {{change}}, trend: {{trend}}",
     "trendUp": "Trend up",

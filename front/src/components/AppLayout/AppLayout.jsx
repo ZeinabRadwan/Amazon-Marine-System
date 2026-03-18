@@ -58,6 +58,8 @@ export default function AppLayout({
           alertsCount={alertsCount}
           pageTitle={pageTitle}
           pageBreadcrumbs={pageBreadcrumbs}
+          sidebarCollapsed={!sidebarExpanded}
+          onOpenSidebar={() => setSidebarExpanded(true)}
         />
         <div className="app-layout-content">
           <div className="app-layout-page">{children}</div>

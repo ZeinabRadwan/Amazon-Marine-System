@@ -833,7 +833,7 @@ export default function Clients() {
         </div>
       )}
       {stats && typeof stats === 'object' && (
-        <div className="grid grid-cols-4 gap-4 mb-6">
+        <div className="clients-stats-grid">
           {[
             {
               key: 'total_clients',

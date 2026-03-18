@@ -85,6 +85,14 @@
     "sortedDesc": "مرتب تنازلياً حسب {{column}}. انقر للترتيب تصاعدياً.",
     "sortable": "ترتيب حسب هذا العمود"
   },
+  "pagination": {
+    "ariaLabel": "ترقيم الصفحات",
+    "prev": "الصفحة السابقة",
+    "next": "الصفحة التالية",
+    "pageOfTotal": "صفحة {{current}} من {{total}}",
+    "currentPage": "الصفحة الحالية، صفحة {{num}}",
+    "goToPage": "الانتقال إلى صفحة {{num}}"
+  },
   "statsCard": {
     "changeLabel": "التغيير: {{change}}، الاتجاه: {{trend}}",
     "trendUp": "اتجاه صاعد",
