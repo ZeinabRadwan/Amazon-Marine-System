@@ -37,6 +37,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   flex: 1;
   min-width: 0;
   height: var(--tabs-pill-height);
@@ -50,6 +51,11 @@
   border: none;
   background: transparent;
   color: var(--tabs-pill-text);
+}
+
+.tabs-pill__tab .bx {
+  font-size: 1.1rem;
+  flex-shrink: 0;
 }
 
 .tabs-pill__tab:hover {

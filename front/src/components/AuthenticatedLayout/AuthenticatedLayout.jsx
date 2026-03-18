@@ -30,6 +30,8 @@ function getPageHeaderForPath(pathname, t) {
       return { title: t('sdForms.title'), breadcrumbs: [home, { label: t('sdForms.title') }] }
     case '/notifications':
       return { title: t('notifications.title'), breadcrumbs: [home, { label: t('notifications.title') }] }
+    case '/customer-services':
+      return { title: t('customerServices.title'), breadcrumbs: [home, { label: t('customerServices.title') }] }
     default:
       return { title: t('pageHeader.dashboard'), breadcrumbs: [home] }
   }
@@ -123,6 +125,10 @@ export default function AuthenticatedLayout() {
       navigate('/notifications')
       return
     }
+    if (id === 'customerService') {
+      navigate('/customer-services')
+      return
+    }
   }
 
   const pathToMenu = {
@@ -133,6 +139,7 @@ export default function AuthenticatedLayout() {
     '/user-permissions': 'usersPermissions',
     '/clients': 'clientsCrm',
     '/client-lookups': 'clientLookups',
+    '/customer-services': 'customerService',
     '/attendance': 'attendance',
     '/sd-forms': 'sdForms',
     '/notifications': 'notifications',

@@ -11,7 +11,7 @@ function getDir() {
  * Optional badge per tab (e.g. notification count).
  * Respects locale direction (RTL/LTR) for glider position and keyboard navigation.
  *
- * @param {Array<{ id: string, label: string, badge?: number }>} tabs - List of tab items
+ * @param {Array<{ id: string, label: string, icon?: React.ReactNode, badge?: number }>} tabs - List of tab items
  * @param {string} activeTab - Id of the currently active tab
  * @param {(id: string) => void} onChange - Called when selection changes
  * @param {string} [className] - Optional class for the container
@@ -75,6 +75,7 @@ export default function Tabs({ tabs = [], activeTab, onChange, className = '' })
               onKeyDown={(e) => handleKeyDown(e, index)}
               className={`tabs-pill__tab ${isActive ? 'tabs-pill__tab--active' : ''}`}
             >
+              {tab.icon}
               {tab.label}
               {tab.badge != null && (
                 <span className="tabs-pill__notification" aria-hidden>

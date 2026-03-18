@@ -1,0 +1,734 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   AMAZON MARINE CRM — Customer Services (matches UI/css/styles.css)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Page enter animation ─── */
+@keyframes csPageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cs-page-enter {
+  animation: csPageEnter 0.4s ease-out forwards;
+}
+
+.customer-services-page {
+  --navy-900: #0f1535;
+  --navy-800: #1a2150;
+  --navy-700: #1e2a5a;
+  --navy-600: #263474;
+  --navy-500: #2e3f8e;
+  --navy-400: #4a5bb5;
+  --accent-cyan: #17a2b8;
+  --accent-light-cyan: #3fc1d3;
+  --accent-gold: #d4a853;
+  --bg-body: #f0f4f8;
+  --bg-card: #ffffff;
+  --text-primary: #1a2150;
+  --text-secondary: #5a6788;
+  --text-muted: #8896ad;
+  --border: #e3e8f0;
+  --success: #10b981;
+  --success-light: #d1fae5;
+  --danger: #ef4444;
+  --danger-light: #fee2e2;
+  --warning: #f59e0b;
+  --warning-light: #fef3c7;
+  --info: #3b82f6;
+  --info-light: #dbeafe;
+  --radius: 14px;
+  --radius-sm: 8px;
+  padding: 0;
+  position: relative;
+}
+
+[data-theme="dark"] .customer-services-page {
+  --bg-body: #111827;
+  --bg-card: #1f2937;
+  --text-primary: #f3f4f6;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+  --border: #374151;
+}
+
+.customer-services-page-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(240, 244, 248, 0.9);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .customer-services-page-loader,
+.dark .customer-services-page-loader {
+  background: rgba(17, 24, 39, 0.95);
+}
+
+.customer-services-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.customer-services-page h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--navy-800);
+}
+
+/* ——— 3-tab layout ——— */
+.cs-intro {
+  margin: 0 0 24px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.cs-tabs-wrap {
+  margin-bottom: 24px;
+}
+
+.customer-services-page .cs-tabs-wrap .tabs-pill {
+  max-width: 100%;
+  background: var(--bg-body) !important;
+  padding: 4px !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+  border: 1px solid var(--border) !important;
+  --tabs-pill-radius: 8px;
+  --tabs-pill-bg: transparent;
+  --tabs-pill-text: var(--text-muted);
+  --tabs-pill-text-hover: var(--text-primary);
+  --tabs-pill-text-active: var(--navy-800);
+  --tabs-pill-glider: transparent;
+}
+
+.customer-services-page .cs-tabs-wrap .tabs-pill__glider {
+  display: none;
+}
+
+.customer-services-page .cs-tabs-wrap .tabs-pill__tab {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: background-color 0.25s ease, color 0.2s ease, box-shadow 0.25s ease;
+}
+
+.customer-services-page .cs-tabs-wrap .tabs-pill__tab--active {
+  background: var(--bg-card) !important;
+  color: var(--navy-800) !important;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.customer-services-page .cs-tabs-wrap .tabs-pill__tab:hover:not(.tabs-pill__tab--active) {
+  color: var(--text-primary);
+}
+
+.customer-services-page .cs-tabs-wrap .tabs-pill__tab .bx {
+  font-size: 1.2rem;
+  width: 1.2em;
+  text-align: center;
+}
+
+@keyframes csTabPanelIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cs-tab-panel {
+  margin-top: 0;
+  display: none;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: none;
+}
+
+.cs-tab-panel.cs-tab-panel--active {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+  animation: csTabPanelIn 0.3s ease-out forwards;
+}
+
+/* Card */
+.cs-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.cs-card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.cs-card-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.cs-card-desc {
+  padding: 0 0 12px;
+  margin: 0 0 20px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* Filter bar */
+.cs-filter-bar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.cs-filter-bar .cs-input {
+  width: auto;
+  min-width: 150px;
+  max-width: 200px;
+  padding: 8px 12px;
+  font-size: 0.82rem;
+}
+
+.cs-filter-bar .cs-select {
+  width: auto;
+  min-width: 120px;
+  padding: 8px 12px;
+  font-size: 0.82rem;
+}
+
+.cs-input,
+.cs-select {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 0.85rem;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.cs-input:focus,
+.cs-select:focus {
+  outline: none;
+  border-color: var(--navy-400);
+}
+
+.cs-input[readonly] {
+  background: var(--bg-body);
+  cursor: default;
+}
+
+/* Buttons */
+.cs-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.25s;
+  font-family: inherit;
+  text-decoration: none;
+}
+
+.cs-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.cs-btn-outline {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+.cs-btn-outline:hover:not(:disabled) {
+  border-color: var(--navy-400);
+  color: var(--navy-700);
+}
+
+.cs-btn-primary {
+  background: linear-gradient(135deg, var(--navy-700), var(--navy-500));
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(30, 42, 90, 0.2);
+}
+
+.cs-btn-primary:hover:not(:disabled) {
+  box-shadow: 0 4px 15px rgba(30, 42, 90, 0.3);
+}
+
+.cs-btn-sm {
+  padding: 6px 14px;
+  font-size: 0.78rem;
+  border-radius: 8px;
+}
+
+.cs-btn-icon {
+  font-size: 1.1rem;
+  width: 1.2em;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cs-btn-icon.bx {
+  font-style: normal;
+}
+
+.cs-btn-icon-only {
+  padding: 8px;
+  min-width: 36px;
+  width: 36px;
+  height: 36px;
+  justify-content: center;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+}
+
+.cs-btn-icon-only:hover:not(:disabled) {
+  border-color: var(--navy-400);
+  color: var(--navy-700);
+}
+
+.cs-table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.cs-table-actions .cs-btn {
+  white-space: nowrap;
+}
+
+.cs-fw-600 {
+  font-weight: 600;
+  color: var(--navy-700);
+}
+
+.cs-text-muted {
+  color: var(--text-muted);
+}
+
+.cs-fs-sm {
+  font-size: 0.78rem;
+}
+
+/* Status badges */
+.cs-status-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.cs-status-badge--in-transit {
+  background: var(--warning-light);
+  color: var(--warning);
+}
+
+.cs-status-badge--booked {
+  background: var(--info-light);
+  color: var(--info);
+}
+
+.cs-status-badge--pending {
+  background: var(--warning-light);
+  color: var(--warning);
+}
+
+.cs-status-badge--open {
+  background: var(--info-light);
+  color: var(--info);
+}
+
+.cs-status-badge--in_progress {
+  background: var(--info-light);
+  color: var(--info);
+}
+
+.cs-status-badge--waiting {
+  background: var(--warning-light);
+  color: var(--warning);
+}
+
+.cs-status-badge--closed {
+  background: var(--success-light);
+  color: var(--success);
+}
+
+/* Table inside card */
+.cs-tracking-shimmer {
+  margin-top: 8px;
+}
+
+.cs-tracking-error {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 0;
+}
+
+.cs-card .responsive-table__scroll {
+  margin: 0 -24px 0;
+  padding: 0 24px 24px;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+}
+
+.cs-card .responsive-table__table th {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  font-weight: 600;
+  padding: 0 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.cs-card .responsive-table__table td {
+  padding: 14px 12px;
+  font-size: 0.85rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.cs-card .responsive-table__table tbody tr:hover td {
+  background: rgba(240, 244, 248, 0.5);
+}
+
+/* Modals */
+.cs-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.cs-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 21, 53, 0.5);
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+}
+
+.cs-modal-content {
+  position: relative;
+  width: 90%;
+  max-width: 600px;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 0;
+  background: var(--bg-card);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  animation: csModalSlideIn 0.3s ease;
+}
+
+@keyframes csModalSlideIn {
+  from { opacity: 0; transform: translateY(-20px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.cs-modal-lg .cs-modal-content {
+  max-width: 800px;
+}
+
+.cs-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.cs-modal-header h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cs-modal-header h2 .cs-btn-icon {
+  flex-shrink: 0;
+}
+
+.cs-modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: var(--bg-body);
+  cursor: pointer;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: all 0.2s;
+}
+
+.cs-modal-close:hover {
+  background: var(--danger-light);
+  color: var(--danger);
+}
+
+.cs-modal-body {
+  padding: 24px;
+}
+
+.cs-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+}
+
+/* Form */
+.cs-form-group {
+  margin-bottom: 18px;
+}
+
+.cs-form-group:last-child {
+  margin-bottom: 0;
+}
+
+.cs-form-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.cs-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.cs-form-group .cs-input,
+.cs-form-group .cs-select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.cs-form-group textarea.cs-input {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.cs-radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.cs-radio-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.cs-form-section {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-body);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  margin-top: 16px;
+  border-bottom: none;
+}
+
+[data-theme="dark"] .cs-form-section {
+  background: rgba(31, 41, 55, 0.5);
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 768px) {
+  .customer-services-page h1 {
+    font-size: 1.25rem;
+  }
+
+  .customer-services-page .cs-tabs-wrap .tabs-pill {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .customer-services-page .cs-tabs-wrap .tabs-pill__tab {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 0.75rem;
+    padding: 10px 12px;
+  }
+
+  .customer-services-page .cs-tabs-wrap .tabs-pill__tab .bx {
+    font-size: 1rem;
+  }
+
+  .cs-card {
+    padding: 16px;
+  }
+
+  .cs-card-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .cs-card-header .cs-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .cs-filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .cs-filter-bar .cs-input,
+  .cs-filter-bar .cs-select {
+    min-width: 0;
+    max-width: none;
+    width: 100%;
+  }
+
+  .cs-filter-bar .cs-btn-icon-only {
+    align-self: flex-end;
+  }
+
+  .cs-table-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cs-table-actions .cs-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .cs-card .responsive-table__scroll {
+    margin: 0 -16px 0;
+    padding: 0 16px 16px;
+  }
+
+  .cs-modal {
+    padding: 12px;
+    align-items: flex-end;
+  }
+
+  .cs-modal-content {
+    width: 100%;
+    max-width: none;
+    max-height: 90vh;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .cs-modal-lg .cs-modal-content {
+    max-width: none;
+  }
+
+  .cs-modal-header {
+    padding: 16px 20px;
+  }
+
+  .cs-modal-header h2 {
+    font-size: 0.95rem;
+  }
+
+  .cs-modal-body {
+    padding: 20px;
+  }
+
+  .cs-modal-footer {
+    flex-wrap: wrap;
+    padding: 12px 20px;
+    gap: 8px;
+  }
+
+  .cs-modal-footer .cs-btn {
+    flex: 1 1 auto;
+    min-width: 100px;
+  }
+
+  .cs-form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .customer-services-header {
+    margin-bottom: 16px;
+  }
+
+  .customer-services-page h1 {
+    font-size: 1.1rem;
+  }
+
+  .cs-intro {
+    margin-bottom: 16px;
+    font-size: 0.75rem;
+  }
+
+  .cs-tabs-wrap {
+    margin-bottom: 16px;
+  }
+
+  .cs-card-title {
+    font-size: 0.9rem;
+  }
+}

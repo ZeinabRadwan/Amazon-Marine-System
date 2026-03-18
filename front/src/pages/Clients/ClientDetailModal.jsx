@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X } from 'lucide-react'
+import { X, Package } from 'lucide-react'
 import Tabs from '../../components/Tabs'
+import Shimmer from '../../components/Shimmer'
+import { useShipmentTrackingUpdates } from '../../hooks/useShipmentTrackingUpdates'
 import './ClientDetailModal.css'
 
 /** Info tab: grouped sections with title keys for better layout */
@@ -48,6 +50,8 @@ export default function ClientDetailModal({
 }) {
   const { t, i18n } = useTranslation()
   const [noteContent, setNoteContent] = useState('')
+  const [expandedShipmentId, setExpandedShipmentId] = useState(null)
+  const { data: trackingUpdates, loading: trackingUpdatesLoading, error: trackingUpdatesError, refetch: refetchTrackingUpdates } = useShipmentTrackingUpdates(expandedShipmentId)
   const [followUpForm, setFollowUpForm] = useState({
     type: 'phone',
     occurred_at: new Date().toISOString().slice(0, 16),
@@ -180,14 +184,56 @@ export default function ClientDetailModal({
               {shipments.length === 0 ? (
                 <p className="client-detail-modal__empty">{t('clients.noShipments')}</p>
               ) : (
-                <ul className="client-detail-modal__list">
-                  {shipments.map((s) => (
-                    <li key={s.id} className="client-detail-modal__list-item">
-                      <span className="client-detail-modal__list-label">{s.bl_number ?? s.reference ?? s.id}</span>
-                      <span className="client-detail-modal__list-value">{s.status ?? s.amount ?? '—'}</span>
-                    </li>
-                  ))}
-                </ul>
+                <>
+                  <ul className="client-detail-modal__list">
+                    {shipments.map((s) => (
+                      <li key={s.id} className="client-detail-modal__list-item client-detail-modal__list-item--with-action">
+                        <div className="client-detail-modal__shipment-row">
+                          <span className="client-detail-modal__list-label">{s.bl_number ?? s.reference ?? s.id}</span>
+                          <span className="client-detail-modal__list-value">{s.status ?? s.amount ?? '—'}</span>
+                        </div>
+                        <button
+                          type="button"
+                          className="client-detail-modal__btn client-detail-modal__btn--secondary client-detail-modal__btn--sm"
+                          onClick={() => setExpandedShipmentId(expandedShipmentId === s.id ? null : s.id)}
+                          aria-expanded={expandedShipmentId === s.id}
+                        >
+                          <Package size={14} aria-hidden />
+                          {expandedShipmentId === s.id ? t('clients.closeTrackingUpdates') : t('clients.viewTrackingUpdates')}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                  {expandedShipmentId != null && (
+                    <div className="client-detail-modal__tracking-updates">
+                      <h4 className="client-detail-modal__tracking-updates-title">{t('clients.trackingUpdates')}</h4>
+                      {trackingUpdatesLoading ? (
+                        <Shimmer rows={4} className="client-detail-modal__shimmer" />
+                      ) : trackingUpdatesError ? (
+                        <div className="client-detail-modal__tracking-error">
+                          <p className="client-detail-modal__empty">{trackingUpdatesError}</p>
+                          <button type="button" className="client-detail-modal__btn client-detail-modal__btn--secondary" onClick={() => refetchTrackingUpdates()}>
+                            {t('clients.retry')}
+                          </button>
+                        </div>
+                      ) : trackingUpdates.length === 0 ? (
+                        <p className="client-detail-modal__empty">{t('clients.noTrackingUpdates')}</p>
+                      ) : (
+                        <ul className="client-detail-modal__list client-detail-modal__list--tracking">
+                          {trackingUpdates.map((u) => (
+                            <li key={u.id} className="client-detail-modal__list-item">
+                              <span className="client-detail-modal__list-label">
+                                {formatDate(u.created_at)}
+                                {u.created_by?.name ? ` · ${u.created_by.name}` : ''}
+                              </span>
+                              <span className="client-detail-modal__list-value">{u.update_text ?? '—'}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
             </section>
           )}
