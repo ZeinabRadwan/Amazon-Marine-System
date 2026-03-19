@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useOutletContext } from 'react-router-dom'
 import { getStoredToken, clearToken } from '../Login'
-import { getProfile, updateProfile, changePassword, logout } from '../../api/auth'
+import { getProfile, updateProfile, uploadProfileAvatar, changePassword, logout } from '../../api/auth'
 import { Container } from '../../components/Container'
 import LoaderDots from '../../components/LoaderDots'
 import Alert from '../../components/Alert'
@@ -12,14 +12,23 @@ import '../Clients/Clients.css'
 import '../Clients/ClientDetailModal.css'
 import './Profile.css'
 
+const FALLBACK_AVATAR = 'https://www.svgrepo.com/show/384670/account-avatar-profile-user.svg'
+const ACCEPT_IMAGES = 'image/jpeg,image/png,image/jpg'
+const MAX_SIZE_MB = 2
+
 export default function Profile() {
   const { t } = useTranslation()
   const token = getStoredToken()
   const navigate = useNavigate()
+  const { refreshUser } = useOutletContext() || {}
+  const fileInputRef = useRef(null)
   const [loading, setLoading] = useState(true)
   const [alert, setAlert] = useState(null)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [avatarUrl, setAvatarUrl] = useState(null)
+  const [avatarUploading, setAvatarUploading] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState(null)
   const [profileSaving, setProfileSaving] = useState(false)
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -37,6 +46,7 @@ export default function Profile() {
         const u = data.user ?? data.data ?? data
         setName(u?.name ?? '')
         setEmail(u?.email ?? '')
+        setAvatarUrl(u?.avatar_url ?? u?.avatarUrl ?? null)
       })
       .catch((err) => {
         if (!cancelled) setAlert({ type: 'error', message: err.message || t('profile.error') })
@@ -47,12 +57,19 @@ export default function Profile() {
     return () => { cancelled = true }
   }, [token, t])
 
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl)
+    }
+  }, [previewUrl])
+
   const handleUpdateProfile = async (e) => {
     e.preventDefault()
     setAlert(null)
     setProfileSaving(true)
     try {
       await updateProfile(token, { name, email })
+      if (typeof refreshUser === 'function') refreshUser()
       setAlert({ type: 'success', message: t('profile.saved') })
     } catch (err) {
       setAlert({ type: 'error', message: err.message || t('profile.error') })
@@ -60,6 +77,55 @@ export default function Profile() {
       setProfileSaving(false)
     }
   }
+
+  const clearPreview = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl)
+    setPreviewUrl(null)
+  }
+
+  const handleAvatarChange = (e) => {
+    clearPreview()
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+      setAlert({ type: 'error', message: t('profile.avatarTooBig', { max: MAX_SIZE_MB }) })
+      e.target.value = ''
+      return
+    }
+    const allowed = ['image/jpeg', 'image/jpg', 'image/png']
+    if (!allowed.includes(file.type)) {
+      setAlert({ type: 'error', message: t('profile.avatarInvalidType') })
+      e.target.value = ''
+      return
+    }
+    setPreviewUrl(URL.createObjectURL(file))
+  }
+
+  const handleAvatarUpload = async () => {
+    const input = fileInputRef.current
+    const file = input?.files?.[0]
+    if (!file) {
+      setAlert({ type: 'error', message: t('profile.selectImage') })
+      return
+    }
+    setAlert(null)
+    setAvatarUploading(true)
+    try {
+      const data = await uploadProfileAvatar(token, file)
+      const u = data.user ?? data.data ?? data
+      setAvatarUrl(u?.avatar_url ?? u?.avatarUrl ?? null)
+      clearPreview()
+      if (input) input.value = ''
+      if (typeof refreshUser === 'function') refreshUser()
+      setAlert({ type: 'success', message: t('profile.avatarUpdated') })
+    } catch (err) {
+      setAlert({ type: 'error', message: err.message || t('profile.avatarError') })
+    } finally {
+      setAvatarUploading(false)
+    }
+  }
+
+  const displayAvatarUrl = previewUrl || avatarUrl || FALLBACK_AVATAR
 
   const handleChangePassword = async (e) => {
     e.preventDefault()
@@ -124,6 +190,54 @@ export default function Profile() {
         )}
 
         <div className="profile-sections">
+          <section className="clients-filters-card profile-card profile-card--avatar">
+            <h2 className="client-detail-modal__section-title">{t('profile.avatar')}</h2>
+            <div className="profile-avatar-block">
+              <div className="profile-avatar-wrap">
+                <img
+                  src={displayAvatarUrl}
+                  alt=""
+                  className="profile-avatar-img"
+                  onError={(e) => { e.target.src = FALLBACK_AVATAR }}
+                />
+                {avatarUploading && (
+                  <div className="profile-avatar-loading" aria-hidden="true">
+                    <LoaderDots />
+                  </div>
+                )}
+              </div>
+              <div className="profile-avatar-actions">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={ACCEPT_IMAGES}
+                  onChange={handleAvatarChange}
+                  className="profile-avatar-input"
+                  aria-label={t('profile.chooseImage')}
+                  disabled={avatarUploading}
+                />
+                <button
+                  type="button"
+                  className="client-detail-modal__btn client-detail-modal__btn--secondary"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={avatarUploading}
+                >
+                  {avatarUploading ? t('profile.uploading') : t('profile.changeAvatar')}
+                </button>
+                {previewUrl && (
+                  <button
+                    type="button"
+                    className="client-detail-modal__btn client-detail-modal__btn--primary"
+                    onClick={handleAvatarUpload}
+                    disabled={avatarUploading}
+                  >
+                    {avatarUploading ? t('profile.uploading') : t('profile.uploadAvatar')}
+                  </button>
+                )}
+              </div>
+            </div>
+          </section>
+
           <section className="clients-filters-card profile-card">
             <h2 className="client-detail-modal__section-title">{t('profile.updateProfile')}</h2>
             <form onSubmit={handleUpdateProfile} className="profile-form">

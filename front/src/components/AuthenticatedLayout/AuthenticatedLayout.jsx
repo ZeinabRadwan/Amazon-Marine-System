@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getStoredToken, clearToken } from '../../pages/Login'
@@ -32,6 +32,8 @@ function getPageHeaderForPath(pathname, t) {
       return { title: t('notifications.title'), breadcrumbs: [home, { label: t('notifications.title') }] }
     case '/customer-services':
       return { title: t('customerServices.title'), breadcrumbs: [home, { label: t('customerServices.title') }] }
+    case '/settings':
+      return { title: t('settings.title'), breadcrumbs: [home, { label: t('settings.title') }] }
     default:
       return { title: t('pageHeader.dashboard'), breadcrumbs: [home] }
   }
@@ -45,6 +47,15 @@ export default function AuthenticatedLayout() {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [loggingOut, setLoggingOut] = useState(false)
+
+  const refreshUser = useCallback(() => {
+    if (!token) return Promise.resolve()
+    return getProfile(token).then((data) => {
+      const u = data.user ?? data.data ?? data
+      setUser(u)
+      return u
+    })
+  }, [token])
 
   useEffect(() => {
     if (!token) return
@@ -129,6 +140,10 @@ export default function AuthenticatedLayout() {
       navigate('/customer-services')
       return
     }
+    if (id === 'settings') {
+      navigate('/settings')
+      return
+    }
   }
 
   const pathToMenu = {
@@ -143,6 +158,7 @@ export default function AuthenticatedLayout() {
     '/attendance': 'attendance',
     '/sd-forms': 'sdForms',
     '/notifications': 'notifications',
+    '/settings': 'settings',
   }
   const activeMenu = pathToMenu[location.pathname] ?? 'dashboard'
 
@@ -182,7 +198,7 @@ export default function AuthenticatedLayout() {
       pageTitle={pageHeaderConfig.title}
       pageBreadcrumbs={pageHeaderConfig.breadcrumbs}
     >
-      <Outlet context={{ user }} />
+      <Outlet context={{ user, refreshUser }} />
     </AppLayout>
   )
 }

@@ -141,6 +141,16 @@
   "profile": {
     "title": "الملف الشخصي",
     "loading": "جاري تحميل الملف…",
+    "avatar": "الصورة الشخصية",
+    "chooseImage": "اختر صورة",
+    "changeAvatar": "تغيير الصورة",
+    "uploadAvatar": "رفع",
+    "uploading": "جاري الرفع…",
+    "avatarUpdated": "تم تحديث الصورة.",
+    "avatarError": "فشل رفع الصورة.",
+    "avatarTooBig": "يجب أن تكون الصورة أصغر من {{max}} ميجابايت.",
+    "avatarInvalidType": "يرجى اختيار صورة JPG أو PNG.",
+    "selectImage": "يرجى اختيار صورة أولاً.",
     "updateProfile": "تحديث الملف",
     "name": "الاسم",
     "email": "البريد الإلكتروني",
@@ -834,6 +844,7 @@
       "from": "من",
       "to": "إلى",
       "apply": "تطبيق",
+      "refresh": "تحديث",
       "table": {
         "user": "المستخدم",
         "date": "تاريخ الجلسة",
@@ -849,6 +860,7 @@
       "from": "من",
       "to": "إلى",
       "apply": "تطبيق",
+      "refresh": "تحديث",
       "table": {
         "time": "الوقت",
         "event": "الحدث",
@@ -879,7 +891,8 @@
       "noStatuses": "لا توجد حالات شحنات بعد.",
       "edit": "تعديل",
       "delete": "حذف",
-      "deleteConfirm": "هل تريد حذف حالة الشحنة هذه؟"
+      "deleteConfirm": "هل تريد حذف حالة الشحنة هذه؟",
+      "deleteConfirmTitle": "حذف حالة الشحنة"
     },
     "errors": {
       "load": "فشل تحميل الإعدادات.",

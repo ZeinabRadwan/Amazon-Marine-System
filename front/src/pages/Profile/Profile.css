@@ -34,6 +34,69 @@
   color: var(--form-text);
 }
 
+/* Avatar block */
+.profile-card--avatar {
+  margin-bottom: 0;
+}
+
+.profile-avatar-block {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 24px;
+  margin-top: 8px;
+}
+
+.profile-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.profile-avatar-img {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  border: 2px solid var(--border-color, #e5e7eb);
+}
+
+[data-theme="dark"] .profile-avatar-img,
+.dark .profile-avatar-img {
+  border-color: var(--border-color);
+}
+
+.profile-avatar-loading {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+[data-theme="dark"] .profile-avatar-loading,
+.dark .profile-avatar-loading {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.profile-avatar-input {
+  position: absolute;
+  width: 0.1px;
+  height: 0.1px;
+  opacity: 0;
+  overflow: hidden;
+  z-index: -1;
+}
+
+.profile-avatar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
 .profile-card--danger {
   border-color: rgba(185, 28, 28, 0.25);
 }

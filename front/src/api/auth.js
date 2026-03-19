@@ -68,6 +68,30 @@ export async function updateProfile(token, body) {
 }
 
 /**
+ * POST {{base_url}}/profile/avatar – Upload profile avatar (multipart/form-data)
+ * Body: FormData with "avatar" file (image: jpg, jpeg, png, max 2MB)
+ * Returns: { user } with avatar_url
+ */
+export async function uploadProfileAvatar(token, file) {
+  const formData = new FormData()
+  formData.append('avatar', file)
+  const res = await fetch(`${getBaseUrl()}/profile/avatar`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    const msg = data.message || data.errors?.avatar?.[0] || data.error || `Upload failed (${res.status})`
+    throw new Error(msg)
+  }
+  return data
+}
+
+/**
  * PUT {{base_url}}/profile/password – Change password (self), requires Bearer token
  * Body: { current_password, password, password_confirmation }
  */

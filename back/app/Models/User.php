@@ -27,6 +27,7 @@ class User extends Authenticatable
         'password',
         'initials',
         'status',
+        'avatar',
     ];
 
     /**
@@ -152,6 +153,7 @@ class User extends Authenticatable
             $name = $override->name;
             $rolePermissions[$name] = $override->pivot->allowed ? $name : null;
         }
+
         return $rolePermissions->filter()->values()->all();
     }
 
@@ -166,6 +168,7 @@ class User extends Authenticatable
         if ($override !== null) {
             return (bool) $override->pivot->allowed;
         }
+
         return $this->can($ability);
     }
 }

@@ -57,6 +57,7 @@ Route::prefix('v1')->group(function () {
         // Profile APIs
         Route::get('profile', [AuthController::class, 'profile']);
         Route::put('profile', [AuthController::class, 'updateProfile']);
+        Route::post('profile/avatar', [AuthController::class, 'uploadProfileAvatar']);
         Route::put('profile/password', [AuthController::class, 'updatePassword']);
 
         // Settings APIs (company/system/notifications/sessions)

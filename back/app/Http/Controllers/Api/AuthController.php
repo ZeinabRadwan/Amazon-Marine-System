@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -116,6 +117,37 @@ class AuthController extends Controller
         ]);
     }
 
+    public function uploadProfileAvatar(Request $request)
+    {
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+
+        $request->validate([
+            'avatar' => ['required', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
+        ], [
+            'avatar.required' => 'Please select an image to upload.',
+            'avatar.image' => 'The file must be an image.',
+            'avatar.mimes' => 'The avatar must be a file of type: jpg, jpeg, png.',
+            'avatar.max' => 'The avatar may not be greater than 2 megabytes.',
+        ]);
+
+        $file = $request->file('avatar');
+        $oldPath = $user->avatar;
+
+        $path = $file->store('avatars', 'public');
+
+        $user->avatar = $path;
+        $user->save();
+
+        if ($oldPath && Storage::disk('public')->exists($oldPath)) {
+            Storage::disk('public')->delete($oldPath);
+        }
+
+        return response()->json([
+            'user' => $this->transformUser($user->fresh()),
+        ]);
+    }
+
     public function updatePassword(Request $request)
     {
         /** @var \App\Models\User $user */
@@ -151,6 +183,8 @@ class AuthController extends Controller
             'email' => $user->email,
             'initials' => $user->initials,
             'status' => $user->status,
+            'avatar' => $user->avatar,
+            'avatar_url' => $user->avatar ? (request()->getSchemeAndHttpHost() . '/storage/' . ltrim($user->avatar, '/')) : null,
             'roles' => $user->getRoleNames(),
         ];
     }
