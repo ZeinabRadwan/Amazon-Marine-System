@@ -16,7 +16,6 @@ import {
   ReportsIcon,
   FileTextIcon,
   HeadsetIcon,
-  TicketIcon,
   ClockIcon,
   ClipboardIcon,
   UsersIcon,
@@ -68,7 +67,6 @@ const SIDEBAR_SECTIONS = [
     sectionKey: 'customerService',
     items: [
       { id: 'customerService', menuKey: 'customerService', Icon: HeadsetIcon },
-      { id: 'supportTickets', menuKey: 'supportTickets', Icon: TicketIcon, badge: 'tickets' },
     ],
   },
   {
@@ -102,7 +100,6 @@ const BADGE_CONFIG = {
   shipments: { class: 'sidebar-badge--yellow', countKey: 'shipmentsCount' },
   sdForms: { class: 'sidebar-badge--orange', countKey: 'sdFormsCount' },
   alerts: { class: 'sidebar-badge--green', countKey: 'alertsCount' },
-  tickets: { class: 'sidebar-badge--yellow', countKey: 'ticketsCount' },
 }
 
 export default function Sidebar({

@@ -36,7 +36,7 @@
       "dashboard": "Dashboard",
       "notifications": "Notifications",
       "profile": "Profile (me)",
-      "clientsCrm": "Clients / CRM",
+      "clientsCrm": "Clients",
       "clientLookups": "Client Lookups",
       "shipments": "Shipments",
       "sdForms": "SD Forms",
@@ -404,7 +404,10 @@
       "statusInTransit": "In transit",
       "statusCustomsClearance": "Customs clearance",
       "statusReadyForDelivery": "Ready for delivery",
-      "statusDelivered": "Delivered"
+      "statusDelivered": "Delivered",
+      "viewShipment": "Shipment details",
+      "updatesHistory": "Tracking updates history",
+      "noUpdates": "No tracking updates yet."
     },
     "tickets": {
       "cardTitle": "Tickets — inquiries, complaints, requests",

@@ -36,7 +36,7 @@
       "dashboard": "لوحة التحكم",
       "notifications": "الإشعارات",
       "profile": "الملف الشخصي",
-      "clientsCrm": "العملاء / CRM",
+      "clientsCrm": "العملاء",
       "clientLookups": "بيانات العملاء المرجعية",
       "shipments": "الشحنات",
       "sdForms": "نماذج SD",
@@ -404,7 +404,10 @@
       "statusInTransit": "في الطريق",
       "statusCustomsClearance": "التخليص الجمركي",
       "statusReadyForDelivery": "جاهز للتسليم",
-      "statusDelivered": "تم التسليم"
+      "statusDelivered": "تم التسليم",
+      "viewShipment": "تفاصيل الشحنة",
+      "updatesHistory": "سجل تحديثات التتبع",
+      "noUpdates": "لا توجد تحديثات تتبع بعد."
     },
     "tickets": {
       "cardTitle": "التذاكر — استفسارات، شكاوى، طلبات",

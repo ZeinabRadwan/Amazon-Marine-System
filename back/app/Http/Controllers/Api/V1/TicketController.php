@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateTicketRequest;
 use App\Models\Ticket;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TicketController extends Controller
@@ -48,8 +49,27 @@ class TicketController extends Controller
             $query->where('assigned_to_id', $assignedId);
         }
 
+        $sort = $request->query('sort', 'date');
+        $direction = strtolower((string) $request->query('direction', 'desc'));
+        if (! in_array($direction, ['asc', 'desc'], true)) {
+            $direction = 'desc';
+        }
+        if ($sort === 'ticket_number') {
+            $query->orderBy('tickets.ticket_number', $direction);
+        } elseif ($sort === 'client') {
+            $query->leftJoin('clients', 'tickets.client_id', '=', 'clients.id')
+                ->orderBy(DB::raw('COALESCE(clients.company_name, clients.name)'), $direction)
+                ->select('tickets.*');
+        } elseif ($sort === 'status') {
+            $query->orderBy('tickets.status', $direction);
+        } elseif ($sort === 'date') {
+            $query->orderBy('tickets.created_at', $direction);
+        } else {
+            $query->orderBy('tickets.created_at', $direction);
+        }
+
         $perPage = $request->integer('per_page', 15);
-        $tickets = $query->orderByDesc('created_at')->paginate($perPage);
+        $tickets = $query->paginate($perPage);
 
         return response()->json([
             'data' => $tickets->items(),
@@ -181,8 +201,14 @@ class TicketController extends Controller
 
         return new StreamedResponse(function () use ($tickets) {
             $out = fopen('php://output', 'w');
+            // UTF-8 BOM so Excel opens the file with correct encoding
+            fwrite($out, "\xEF\xBB\xBF");
             fputcsv($out, ['ticket_number', 'client', 'shipment_bl', 'type', 'priority', 'status', 'assigned_to', 'created_at']);
             foreach ($tickets as $t) {
+                // Format as text so Excel displays it (avoids ##########); zero-width space forces text
+                $createdAt = $t->created_at
+                    ? "\xE2\x80\x8B".$t->created_at->format('Y-m-d H:i:s')
+                    : '';
                 fputcsv($out, [
                     $t->ticket_number ?? '',
                     $t->client?->name ?? $t->client?->company_name ?? '',
@@ -191,7 +217,7 @@ class TicketController extends Controller
                     $t->priority?->name ?? '',
                     $t->status ?? '',
                     $t->assignedTo?->name ?? '',
-                    $t->created_at?->toDateTimeString() ?? '',
+                    $createdAt,
                 ]);
             }
             fclose($out);

@@ -1,11 +1,12 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
 import { getStoredToken } from '../../../pages/Login'
-import { listShipments, postShipmentTrackingUpdate } from '../../../api/shipments'
+import { listShipments, postShipmentTrackingUpdate, getShipmentTrackingUpdates } from '../../../api/shipments'
 import {
   listTickets,
+  exportTickets,
   listCommunicationLogs,
+  createCommunicationLog,
   listTicketTypes,
   getTicketStats,
   getTicket,
@@ -25,8 +26,28 @@ import {
   TICKET_PRIORITY_KEYS,
   TICKET_PRIORITIES,
   COMMS_TYPE_ICONS,
+  TICKET_TYPE_ICONS,
 } from '../constants'
+import { Eye, Pencil, Send, Trash2, MessageSquare } from 'lucide-react'
 import { Bx } from '../components/BxIcon'
+import { IconActionButton } from '../../../components/Table'
+
+/** Normalize Laravel-style pagination meta from API response */
+function normalizeMeta(meta, fallback = {}) {
+  return {
+    total: Number(meta?.total ?? fallback.total ?? 0),
+    last_page: Math.max(1, Number(meta?.last_page ?? fallback.last_page ?? 1)),
+    current_page: Math.max(1, Number(meta?.current_page ?? meta?.page ?? fallback.current_page ?? 1)),
+    per_page: Math.max(1, Number(meta?.per_page ?? fallback.per_page ?? 50)),
+  }
+}
+
+/** Map ticket type name to API ticket_type_id (seeded: 1=inquiry, 2=complaint, 3=request) */
+const TICKET_TYPE_IDS = { inquiry: 1, complaint: 2, request: 3 }
+/** Map priority name to API priority_id (seeded: 1=low, 2=medium, 3=high) */
+const PRIORITY_IDS = { low: 1, medium: 2, high: 3 }
+/** Map communication type name to API communication_log_type_id (1=call, 2=whatsapp, 3=email, 4=meeting, 5=note) */
+const COMMS_TYPE_IDS = { call: 1, whatsapp: 2, email: 3, meeting: 4, note: 5 }
 
 function mapShipmentToRow(shipment, formatDate) {
   const latest = shipment.latest_tracking_update
@@ -56,6 +77,8 @@ function mapTicketToRow(t) {
   }
 }
 
+const COMMS_TYPE_ID_TO_NAME = { 1: 'call', 2: 'whatsapp', 3: 'email', 4: 'meeting', 5: 'note' }
+
 function mapCommsLogToRow(log, formatDateTime) {
   const related = log.client
     ? `${log.client.company_name || log.client.name} (Client)`
@@ -64,10 +87,11 @@ function mapCommsLogToRow(log, formatDateTime) {
       : log.ticket
         ? `${log.ticket.ticket_number} (Ticket)`
         : '—'
+  const typeName = log.type?.name ?? (log.communication_log_type_id && COMMS_TYPE_ID_TO_NAME[log.communication_log_type_id]) ?? 'note'
   return {
     id: log.id,
     date_time: formatDateTime(log.occurred_at) || formatDateTime(log.created_at) || '—',
-    type: log.type?.name ?? 'note',
+    type: typeName,
     related_to: related,
     subject: log.subject ?? '—',
     agent: log.created_by?.name ?? '—',
@@ -80,9 +104,18 @@ export function useCustomerServicesState() {
   const [alert, setAlert] = useState(null)
 
   const [trackingList, setTrackingList] = useState([])
+  const [trackingPaginationState, setTrackingPaginationState] = useState({ total: 0, last_page: 1, current_page: 1, per_page: 50 })
   const [trackingLoading, setTrackingLoading] = useState(true)
   const [trackingError, setTrackingError] = useState(null)
-  const [trackingFilters, setTrackingFilters] = useState({ qBl: '', qClient: '', status: '' })
+  const [trackingFilters, setTrackingFilters] = useState({
+    qBl: '',
+    qClient: '',
+    status: '',
+    sort: 'bl_number',
+    direction: 'asc',
+    page: 1,
+    per_page: 50,
+  })
   const [showAddUpdate, setShowAddUpdate] = useState(false)
   const [showSendToClient, setShowSendToClient] = useState(false)
   const [addUpdateBl, setAddUpdateBl] = useState('')
@@ -93,11 +126,28 @@ export function useCustomerServicesState() {
   const [sendTemplate, setSendTemplate] = useState('')
   const [sendMessage, setSendMessage] = useState('')
   const [trackingSubmitting, setTrackingSubmitting] = useState(false)
+  const [viewShipmentRow, setViewShipmentRow] = useState(null)
+  const [viewTrackingUpdates, setViewTrackingUpdates] = useState([])
+  const [viewTrackingLoading, setViewTrackingLoading] = useState(false)
 
-  const [ticketFilters, setTicketFilters] = useState({ q: '', type: '', assigned: '', status: '', priority: '' })
+  const [ticketFilters, setTicketFilters] = useState({
+    q: '',
+    type: '',
+    assigned: '',
+    status: '',
+    priority: '',
+    client_id: '',
+    assigned_to_id: '',
+    sort: 'date',
+    direction: 'desc',
+    page: 1,
+    per_page: 50,
+  })
   const [tickets, setTickets] = useState([])
+  const [ticketPaginationState, setTicketPaginationState] = useState({ total: 0, last_page: 1, current_page: 1, per_page: 50 })
   const [ticketsLoading, setTicketsLoading] = useState(true)
   const [ticketsError, setTicketsError] = useState(null)
+  const [replyTicket, setReplyTicket] = useState(null)
   const [ticketTypes, setTicketTypes] = useState([])
   const [ticketStats, setTicketStats] = useState(null)
   const [clientsForTicket, setClientsForTicket] = useState([])
@@ -117,14 +167,26 @@ export function useCustomerServicesState() {
   })
   const [replyForm, setReplyForm] = useState({ text: '', status: 'open' })
   const [ticketSubmitting, setTicketSubmitting] = useState(false)
+  const [ticketExportLoading, setTicketExportLoading] = useState(false)
 
-  const [commsFilters, setCommsFilters] = useState({ q: '', type: '', related: '' })
+  const [commsFilters, setCommsFilters] = useState({
+    q: '',
+    type: '',
+    related: '',
+    client_id: '',
+    sort: 'date_time',
+    direction: 'desc',
+    page: 1,
+    per_page: 50,
+  })
   const [comms, setComms] = useState([])
+  const [commsPaginationState, setCommsPaginationState] = useState({ total: 0, last_page: 1, current_page: 1, per_page: 50 })
   const [commsLoading, setCommsLoading] = useState(true)
   const [commsError, setCommsError] = useState(null)
   const [showAddComms, setShowAddComms] = useState(false)
-  const [commsForm, setCommsForm] = useState({ type: 'call', related: 'client', ref: '', subject: '', client_said: '', issue: '', reply: '' })
+  const [commsForm, setCommsForm] = useState({ client_id: '', type: 'call', related: 'client', ref: '', subject: '', client_said: '', issue: '', reply: '' })
   const [commsSubmitting, setCommsSubmitting] = useState(false)
+  const [clientsForComms, setClientsForComms] = useState([])
 
   const locale = i18n.language === 'ar' ? 'ar-EG' : 'en-US'
   const formatDate = useCallback((d) => {
@@ -154,18 +216,31 @@ export function useCustomerServicesState() {
     }
     setTrackingLoading(true)
     setTrackingError(null)
-    listShipments(token, { include: 'latest_tracking_update', per_page: 100 })
+    const { page, per_page, sort, direction, status, qBl, qClient } = trackingFilters
+    const apiSort = sort === 'bl_number' ? 'bl' : (sort === 'client' ? 'client' : 'created_at')
+    const params = {
+      page,
+      per_page,
+      sort: apiSort,
+      direction: (direction || 'asc') === 'asc' ? 'asc' : 'desc',
+      include: 'latest_tracking_update',
+    }
+    if (status) params.status = status
+    if (qBl) params.bl_number = qBl
+    if (qClient) params.search = qClient
+    listShipments(token, params)
       .then((res) => {
         const raw = res.data ?? res.shipments ?? []
-        const rows = raw.map((s) => mapShipmentToRow(s, formatDate))
+        const rows = (Array.isArray(raw) ? raw : []).map((s) => mapShipmentToRow(s, formatDate))
         setTrackingList(rows)
+        setTrackingPaginationState(normalizeMeta(res.meta ?? res.pagination, { per_page }))
       })
       .catch((err) => {
         setTrackingError(err.message || t('clients.trackingUpdatesError') || 'Failed to load shipments')
         setTrackingList([])
       })
       .finally(() => setTrackingLoading(false))
-  }, [formatDate, t])
+  }, [formatDate, t, trackingFilters.page, trackingFilters.per_page, trackingFilters.sort, trackingFilters.direction, trackingFilters.status, trackingFilters.qBl, trackingFilters.qClient])
 
   useEffect(() => {
     loadTracking()
@@ -180,17 +255,27 @@ export function useCustomerServicesState() {
     }
     setTicketsLoading(true)
     setTicketsError(null)
-    listTickets(token, { per_page: 100 })
+    const { page, per_page, q, status, type, priority, client_id, assigned_to_id, sort, direction } = ticketFilters
+    const params = { page, per_page, sort: sort || 'date', direction: direction || 'desc' }
+    if (q) params.search = q
+    if (status) params.status = status
+    if (type && TICKET_TYPE_IDS[type] != null) params.ticket_type_id = TICKET_TYPE_IDS[type]
+    if (priority && PRIORITY_IDS[priority] != null) params.priority_id = PRIORITY_IDS[priority]
+    if (client_id) params.client_id = client_id
+    if (assigned_to_id) params.assigned_to_id = assigned_to_id
+    listTickets(token, params)
       .then((res) => {
         const raw = res.data ?? res.tickets ?? []
-        setTickets(raw.map(mapTicketToRow))
+        const rows = (Array.isArray(raw) ? raw : []).map(mapTicketToRow)
+        setTickets(rows)
+        setTicketPaginationState(normalizeMeta(res.meta ?? res.pagination, { per_page }))
       })
       .catch((err) => {
         setTicketsError(err.message || t('customerServices.errorLoad') || 'Failed to load tickets')
         setTickets([])
       })
       .finally(() => setTicketsLoading(false))
-  }, [t])
+  }, [t, ticketFilters.page, ticketFilters.per_page, ticketFilters.q, ticketFilters.status, ticketFilters.type, ticketFilters.priority, ticketFilters.client_id, ticketFilters.assigned_to_id, ticketFilters.sort, ticketFilters.direction])
 
   useEffect(() => {
     loadTickets()
@@ -220,21 +305,23 @@ export function useCustomerServicesState() {
     loadTicketStats()
   }, [loadTicketStats])
 
+  /** Load clients and users for Tickets tab (New ticket modal + filters: Assigned to, Client) */
   useEffect(() => {
-    if (!showNewTicket) return
     const token = getStoredToken()
     if (!token) return
     Promise.all([
       listClients(token, { per_page: 500 }),
-      listUsers(token),
+      listUsers(token, { per_page: 500 }),
     ]).then(([clientsRes, usersRes]) => {
-      setClientsForTicket(clientsRes.data ?? [])
-      setUsersForTicket(usersRes.data ?? usersRes.users ?? [])
+      const clients = clientsRes.data ?? clientsRes.clients ?? []
+      const users = usersRes.data ?? usersRes.users ?? (Array.isArray(usersRes) ? usersRes : [])
+      setClientsForTicket(Array.isArray(clients) ? clients : [])
+      setUsersForTicket(Array.isArray(users) ? users : [])
     }).catch(() => {
       setClientsForTicket([])
       setUsersForTicket([])
     })
-  }, [showNewTicket])
+  }, [])
 
   useEffect(() => {
     const clientId = newTicketForm.client_id ? Number(newTicketForm.client_id) : null
@@ -258,57 +345,91 @@ export function useCustomerServicesState() {
     }
     setCommsLoading(true)
     setCommsError(null)
-    listCommunicationLogs(token, { per_page: 100 })
+    const { page, per_page, q, type, related, client_id, sort, direction } = commsFilters
+    const params = { page, per_page, sort: sort || 'date_time', direction: direction || 'desc' }
+    if (q) params.search = q
+    if (type && COMMS_TYPE_IDS[type] != null) params.communication_log_type_id = COMMS_TYPE_IDS[type]
+    if (related) params.related = related
+    if (client_id) params.client_id = client_id
+    listCommunicationLogs(token, params)
       .then((res) => {
         const raw = res.data ?? res.communication_logs ?? []
-        setComms(raw.map((log) => mapCommsLogToRow(log, formatDateTime)))
+        const rows = (Array.isArray(raw) ? raw : []).map((log) => mapCommsLogToRow(log, formatDateTime))
+        setComms(rows)
+        setCommsPaginationState(normalizeMeta(res.meta ?? res.pagination, { per_page }))
       })
       .catch((err) => {
         setCommsError(err.message || t('customerServices.errorLoad') || 'Failed to load communication logs')
         setComms([])
       })
       .finally(() => setCommsLoading(false))
-  }, [formatDateTime, t])
+  }, [formatDateTime, t, commsFilters.page, commsFilters.per_page, commsFilters.q, commsFilters.type, commsFilters.related, commsFilters.client_id, commsFilters.sort, commsFilters.direction])
 
   useEffect(() => {
     loadComms()
   }, [loadComms])
 
-  const filteredTracking = useMemo(() => {
-    return trackingList.filter((row) => {
-      if (trackingFilters.qBl && !String(row.bl_number).toLowerCase().includes(trackingFilters.qBl.toLowerCase())) return false
-      if (trackingFilters.qClient && !String(row.client).toLowerCase().includes(trackingFilters.qClient.toLowerCase())) return false
-      if (trackingFilters.status && row.status !== trackingFilters.status) return false
-      return true
-    })
-  }, [trackingList, trackingFilters])
+  /** Load full ticket when reply modal is opened (for server-side pagination we may not have it in current page) */
+  useEffect(() => {
+    if (!replyTicketId || !getStoredToken()) {
+      setReplyTicket(null)
+      return
+    }
+    getTicket(getStoredToken(), replyTicketId)
+      .then((data) => {
+        const raw = data.ticket ?? data.data ?? data
+        setReplyTicket(raw ? mapTicketToRow(raw) : null)
+      })
+      .catch(() => setReplyTicket(null))
+  }, [replyTicketId])
 
-  const filteredTickets = useMemo(() => {
-    return tickets.filter((row) => {
-      const q = ticketFilters.q.toLowerCase()
-      if (ticketFilters.q && !row.ticket_number.toLowerCase().includes(q) && !row.client.toLowerCase().includes(q)) return false
-      if (ticketFilters.type && row.type !== ticketFilters.type) return false
-      if (ticketFilters.assigned && row.assigned_to !== ticketFilters.assigned) return false
-      if (ticketFilters.status && row.status !== ticketFilters.status) return false
-      if (ticketFilters.priority && row.priority !== ticketFilters.priority) return false
-      return true
-    })
-  }, [tickets, ticketFilters])
+  /** Load clients when Add Comms modal opens */
+  useEffect(() => {
+    if (!showAddComms) return
+    const token = getStoredToken()
+    if (!token) return
+    listClients(token, { per_page: 500 })
+      .then((res) => setClientsForComms(res.data ?? []))
+      .catch(() => setClientsForComms([]))
+  }, [showAddComms])
 
-  const filteredComms = useMemo(() => {
-    return comms.filter((row) => {
-      const q = commsFilters.q.toLowerCase()
-      if (commsFilters.q && !row.related_to.toLowerCase().includes(q) && !row.subject.toLowerCase().includes(q)) return false
-      if (commsFilters.type && row.type !== commsFilters.type) return false
-      if (commsFilters.related) {
-        const r = commsFilters.related
-        if (r === 'client' && !row.related_to.includes('Client')) return false
-        if (r === 'shipment' && !row.related_to.includes('BL-')) return false
-        if (r === 'ticket' && !row.related_to.includes('TKT-')) return false
-      }
-      return true
-    })
-  }, [comms, commsFilters])
+  const openViewShipment = useCallback((row) => {
+    if (!row?.id) return
+    setViewShipmentRow(row)
+    setViewTrackingUpdates([])
+    const token = getStoredToken()
+    if (!token) return
+    setViewTrackingLoading(true)
+    getShipmentTrackingUpdates(token, row.id)
+      .then((res) => {
+        const list = res.data ?? []
+        const locale = i18n.language === 'ar' ? 'ar-EG' : 'en-US'
+        const fmt = (d) => {
+          if (!d) return '—'
+          try {
+            return new Date(d).toLocaleString(locale, { dateStyle: 'short', timeStyle: 'short' })
+          } catch {
+            return d
+          }
+        }
+        setViewTrackingUpdates(
+          list.map((u) => ({
+            id: u.id,
+            update_text: u.update_text,
+            date_time: fmt(u.created_at),
+            created_at: u.created_at,
+            created_by: u.created_by,
+          }))
+        )
+      })
+      .catch(() => setViewTrackingUpdates([]))
+      .finally(() => setViewTrackingLoading(false))
+  }, [i18n.language])
+
+  const closeViewShipment = useCallback(() => {
+    setViewShipmentRow(null)
+    setViewTrackingUpdates([])
+  }, [])
 
   const openAddUpdate = useCallback((row) => {
     setAddUpdateRow(row)
@@ -405,7 +526,8 @@ export function useCustomerServicesState() {
 
   const openReplyTicket = useCallback((ticket) => {
     setReplyTicketId(ticket.id)
-    setReplyForm({ text: '', status: ticket.status })
+    setReplyTicket(ticket)
+    setReplyForm({ text: '' })
     setShowReplyTicket(true)
   }, [])
 
@@ -415,7 +537,8 @@ export function useCustomerServicesState() {
     const token = getStoredToken()
     if (!token) return
     setTicketSubmitting(true)
-    updateTicket(token, replyTicketId, { status: replyForm.status })
+    const statusToKeep = replyTicket?.status ?? 'open'
+    updateTicket(token, replyTicketId, { status: statusToKeep })
       .then(() => {
         setShowReplyTicket(false)
         setReplyTicketId(null)
@@ -427,38 +550,47 @@ export function useCustomerServicesState() {
         setAlert({ type: 'error', message: err.message || t('customerServices.tickets.updateError') || 'Failed to update ticket' })
       })
       .finally(() => setTicketSubmitting(false))
-  }, [replyTicketId, replyForm.status, t, loadTickets, loadTicketStats])
+  }, [replyTicketId, replyTicket?.status, t, loadTickets, loadTicketStats])
 
-  const handleCloseTicket = useCallback(() => {
-    if (!replyTicketId) return
+  const [updatingStatusId, setUpdatingStatusId] = useState(null)
+
+  const handleUpdateTicketStatus = useCallback((ticketId, newStatus) => {
     const token = getStoredToken()
-    if (!token) return
-    setTicketSubmitting(true)
-    updateTicket(token, replyTicketId, { status: 'closed' })
+    if (!token || !newStatus) return
+    setUpdatingStatusId(ticketId)
+    updateTicket(token, ticketId, { status: newStatus })
       .then(() => {
-        setShowReplyTicket(false)
-        setReplyTicketId(null)
-        setAlert({ type: 'success', message: t('customerServices.tickets.closeTicket') })
+        setAlert({ type: 'success', message: t('customerServices.tickets.statusUpdated', 'Status updated.') })
         loadTickets()
         loadTicketStats()
       })
       .catch((err) => {
         setAlert({ type: 'error', message: err.message || t('customerServices.tickets.updateError') || 'Failed to update ticket' })
       })
-      .finally(() => setTicketSubmitting(false))
-  }, [replyTicketId, t, loadTickets, loadTicketStats])
+      .finally(() => setUpdatingStatusId(null))
+  }, [t, loadTickets, loadTicketStats])
+
+  const [deleteTicketId, setDeleteTicketIdState] = useState(null)
+  const [deleteTicketSubmitting, setDeleteTicketSubmitting] = useState(false)
 
   const handleDeleteTicket = useCallback((ticketId) => {
-    if (!window.confirm(t('customerServices.deleteConfirm') || 'Delete this ticket?')) return
+    setDeleteTicketIdState(ticketId)
+    if (replyTicketId === ticketId) {
+      setShowReplyTicket(false)
+      setReplyTicketId(null)
+    }
+  }, [replyTicketId])
+
+  const handleDeleteTicketConfirm = useCallback(() => {
+    const ticketId = deleteTicketId
+    if (!ticketId) return
     const token = getStoredToken()
     if (!token) return
-    setTicketSubmitting(true)
+    setAlert(null)
+    setDeleteTicketSubmitting(true)
     deleteTicket(token, ticketId)
       .then(() => {
-        if (replyTicketId === ticketId) {
-          setShowReplyTicket(false)
-          setReplyTicketId(null)
-        }
+        setDeleteTicketIdState(null)
         setAlert({ type: 'success', message: t('customerServices.tickets.deleted') || 'Ticket deleted.' })
         loadTickets()
         loadTicketStats()
@@ -466,29 +598,65 @@ export function useCustomerServicesState() {
       .catch((err) => {
         setAlert({ type: 'error', message: err.message || t('customerServices.tickets.deleteError') || 'Failed to delete ticket' })
       })
-      .finally(() => setTicketSubmitting(false))
-  }, [replyTicketId, t, loadTickets, loadTicketStats])
+      .finally(() => setDeleteTicketSubmitting(false))
+  }, [deleteTicketId, t, loadTickets, loadTicketStats])
+
+  const handleExportTickets = useCallback(() => {
+    const token = getStoredToken()
+    if (!token) return
+    setTicketExportLoading(true)
+    setAlert(null)
+    const params = {}
+    if (ticketFilters.status) params.status = ticketFilters.status
+    if (ticketFilters.priority && PRIORITY_IDS[ticketFilters.priority] != null) params.priority_id = PRIORITY_IDS[ticketFilters.priority]
+    if (ticketFilters.client_id) params.client_id = ticketFilters.client_id
+    exportTickets(token, params)
+      .then((blob) => {
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `tickets-export-${new Date().toISOString().slice(0, 10)}.csv`
+        a.click()
+        URL.revokeObjectURL(url)
+        setAlert({ type: 'success', message: t('customerServices.tickets.exportSuccess', 'Tickets exported.') })
+      })
+      .catch((err) => setAlert({ type: 'error', message: err.message || t('customerServices.errorExport', 'Export failed.') }))
+      .finally(() => setTicketExportLoading(false))
+  }, [ticketFilters.status, ticketFilters.priority, ticketFilters.client_id, t])
 
   const handleSaveCommsLog = useCallback((e) => {
     e.preventDefault()
-    setCommsSubmitting(true)
-    const relatedLabel = commsForm.related === 'shipment' ? t('customerServices.comms.relatedShipment') : commsForm.related === 'ticket' ? t('customerServices.comms.relatedTicket') : t('customerServices.comms.relatedClient')
-    const newLog = {
-      id: `c-${Date.now()}`,
-      date_time: new Date().toLocaleString(locale, { dateStyle: 'short', timeStyle: 'short' }),
-      type: commsForm.type,
-      related_to: commsForm.ref ? `${commsForm.ref} (${relatedLabel})` : relatedLabel,
-      subject: commsForm.subject || '—',
-      agent: 'Support Agent',
+    const token = getStoredToken()
+    if (!token) {
+      setAlert({ type: 'error', message: t('customerServices.errorLoad') || 'Not authenticated' })
+      return
     }
-    setTimeout(() => {
-      setComms((prev) => [newLog, ...prev])
-      setCommsForm({ type: 'call', related: 'client', ref: '', subject: '', client_said: '', issue: '', reply: '' })
-      setShowAddComms(false)
-      setAlert({ type: 'success', message: t('customerServices.comms.addLog') })
-      setCommsSubmitting(false)
-    }, 400)
-  }, [commsForm, locale, t])
+    const clientId = Number(commsForm.client_id)
+    if (!clientId) {
+      setAlert({ type: 'error', message: t('customerServices.comms.selectClient', 'Please select a client.') })
+      return
+    }
+    setCommsSubmitting(true)
+    const body = {
+      client_id: clientId,
+      communication_log_type_id: COMMS_TYPE_IDS[commsForm.type] ?? 1,
+      subject: commsForm.subject?.trim() || null,
+      client_said: commsForm.client_said?.trim() || null,
+      issue: commsForm.issue?.trim() || null,
+      reply: commsForm.reply?.trim() || null,
+    }
+    createCommunicationLog(token, body)
+      .then(() => {
+        setCommsForm({ client_id: '', type: 'call', related: 'client', ref: '', subject: '', client_said: '', issue: '', reply: '' })
+        setShowAddComms(false)
+        setAlert({ type: 'success', message: t('customerServices.comms.addLog') })
+        loadComms()
+      })
+      .catch((err) => {
+        setAlert({ type: 'error', message: err.message || t('customerServices.errorCreate') || 'Failed to add log' })
+      })
+      .finally(() => setCommsSubmitting(false))
+  }, [commsForm, t, loadComms])
 
   const ticketStatusKey = (s) => TICKET_STATUS_KEYS[s] || TICKET_STATUS_KEYS.open
   const commsTypeIcon = (type) => <Bx name={COMMS_TYPE_ICONS[type] || 'bx-note'} className="cs-btn-icon" />
@@ -511,27 +679,47 @@ export function useCustomerServicesState() {
       label: t('customerServices.actions'),
       sortable: false,
       render: (_, r) => (
-        <div className="cs-table-actions">
-          <button type="button" className="cs-btn cs-btn-outline cs-btn-sm" onClick={() => openAddUpdate(r)}>
-            <Bx name="bx-edit" className="cs-btn-icon" /> {t('customerServices.tracking.addUpdate')}
-          </button>
-          <button type="button" className="cs-btn cs-btn-outline cs-btn-sm" onClick={() => openSendToClient(r)}>
-            <Bx name="bx-send" className="cs-btn-icon" /> {t('customerServices.tracking.sendToClient')}
-          </button>
-          <Link to="/shipments" className="cs-btn cs-btn-outline cs-btn-sm">
-            <Bx name="bx-show" className="cs-btn-icon" /> {t('customerServices.view')}
-          </Link>
+        <div className="clients-table-actions flex flex-wrap gap-2 justify-end" role="group" aria-label={t('customerServices.actions')}>
+          <IconActionButton
+            icon={<Eye className="h-4 w-4" />}
+            label={t('customerServices.view')}
+            onClick={() => openViewShipment(r)}
+          />
+          <IconActionButton
+            icon={<Pencil className="h-4 w-4" />}
+            label={t('customerServices.tracking.addUpdate')}
+            onClick={() => openAddUpdate(r)}
+          />
+          <IconActionButton
+            icon={<Send className="h-4 w-4" />}
+            label={t('customerServices.tracking.sendToClient')}
+            onClick={() => openSendToClient(r)}
+          />
         </div>
       ),
     },
-  ], [t, openAddUpdate, openSendToClient])
+  ], [t, openAddUpdate, openSendToClient, openViewShipment])
+
+  const ticketTypeIcon = (type) => <Bx name={TICKET_TYPE_ICONS[type] || 'bx-message-alt-detail'} className="cs-ticket-type-icon" aria-hidden />
 
   const ticketColumns = useMemo(() => [
     { key: 'ticket_number', label: t('customerServices.tickets.ticketNumber'), render: (_, r) => r.ticket_number },
     { key: 'client', label: t('customerServices.tracking.client'), render: (_, r) => r.client },
     { key: 'shipment', label: t('customerServices.tickets.shipment'), render: (_, r) => r.shipment },
-    { key: 'type', label: t('customerServices.tickets.type'), render: (_, r) => t(TICKET_TYPE_KEYS[r.type] || '') },
-    { key: 'priority', label: t('customerServices.tickets.priority'), render: (_, r) => t(TICKET_PRIORITY_KEYS[r.priority] || '') },
+    { key: 'type', label: t('customerServices.tickets.type'), render: (_, r) => (
+      <span className="cs-ticket-type-cell">
+        {ticketTypeIcon(r.type)}
+        <span>{t(TICKET_TYPE_KEYS[r.type] || '')}</span>
+      </span>
+    ) },
+    { key: 'priority', label: t('customerServices.tickets.priority'), render: (_, r) => {
+      const p = r.priority || 'medium'
+      return (
+        <span className={`cs-priority-badge cs-priority-badge--${p}`} title={t(TICKET_PRIORITY_KEYS[p] || '')}>
+          {t(TICKET_PRIORITY_KEYS[p] || '')}
+        </span>
+      )
+    } },
     { key: 'assigned_to', label: t('customerServices.tickets.assignedTo'), render: (_, r) => r.assigned_to ?? '—' },
     { key: 'status', label: t('customerServices.fields.status'), render: (_, r) => <span className={`cs-status-badge cs-status-badge--${r.status}`}>{t(ticketStatusKey(r.status))}</span> },
     { key: 'date', label: t('customerServices.tickets.date'), render: (_, r) => formatDate(r.date) },
@@ -540,17 +728,34 @@ export function useCustomerServicesState() {
       label: t('customerServices.actions'),
       sortable: false,
       render: (_, r) => (
-        <div className="cs-table-actions">
-          <button type="button" className="cs-btn cs-btn-outline cs-btn-sm" onClick={() => openReplyTicket(r)}>
-            {t('customerServices.tickets.sendReply')}
-          </button>
-          <button type="button" className="cs-btn cs-btn-outline cs-btn-sm cs-btn-danger" onClick={() => handleDeleteTicket(r.id)}>
-            {t('customerServices.delete')}
-          </button>
+        <div className="clients-table-actions flex flex-wrap gap-2 justify-end items-center" role="group" aria-label={t('customerServices.actions')}>
+          <IconActionButton
+            icon={<MessageSquare className="h-4 w-4" />}
+            label={t('customerServices.tickets.sendReply')}
+            onClick={() => openReplyTicket(r)}
+          />
+          <select
+            className="clients-select cs-status-select"
+            value={r.status ?? 'open'}
+            onChange={(e) => handleUpdateTicketStatus(r.id, e.target.value)}
+            disabled={updatingStatusId === r.id}
+            aria-label={t('customerServices.tickets.updateStatusLabel')}
+            title={t('customerServices.tickets.updateStatusLabel')}
+          >
+            {Object.entries(TICKET_STATUS_KEYS).map(([value, key]) => (
+              <option key={value} value={value}>{t(key)}</option>
+            ))}
+          </select>
+          <IconActionButton
+            icon={<Trash2 className="h-4 w-4" />}
+            label={t('customerServices.delete')}
+            onClick={() => handleDeleteTicket(r.id)}
+            variant="danger"
+          />
         </div>
       ),
     },
-  ], [t, formatDate, openReplyTicket, handleDeleteTicket])
+  ], [t, formatDate, openReplyTicket, handleUpdateTicketStatus, handleDeleteTicket, updatingStatusId])
 
   const commsColumns = useMemo(() => [
     { key: 'date_time', label: t('customerServices.comms.dateTime'), render: (_, r) => <span className="cs-text-muted cs-fs-sm">{r.date_time}</span> },
@@ -565,8 +770,6 @@ export function useCustomerServicesState() {
     { id: 'tickets', label: t('customerServices.tabTickets'), icon: <Bx name="bx-message-alt-detail" /> },
     { id: 'comms', label: t('customerServices.tabComms'), icon: <Bx name="bx-chat" /> },
   ], [t])
-
-  const replyTicket = useMemo(() => tickets.find((tk) => tk.id === replyTicketId) ?? null, [tickets, replyTicketId])
 
   return {
     t,
@@ -583,7 +786,8 @@ export function useCustomerServicesState() {
     refetchTracking: loadTracking,
     trackingFilters,
     setTrackingFilters,
-    filteredTracking,
+    paginatedTracking: trackingList,
+    trackingPagination: trackingPaginationState,
     trackingColumns,
     showAddUpdate,
     setShowAddUpdate,
@@ -607,6 +811,11 @@ export function useCustomerServicesState() {
     handleSaveAddUpdate,
     handleSendToClient,
     trackingSubmitting,
+    viewShipmentRow,
+    viewTrackingUpdates,
+    viewTrackingLoading,
+    openViewShipment,
+    closeViewShipment,
     // Tickets
     ticketsLoading,
     ticketsError,
@@ -614,7 +823,8 @@ export function useCustomerServicesState() {
     ticketFilters,
     setTicketFilters,
     tickets,
-    filteredTickets,
+    paginatedTickets: tickets,
+    ticketPagination: ticketPaginationState,
     ticketColumns,
     ticketTypes,
     ticketStats,
@@ -635,16 +845,24 @@ export function useCustomerServicesState() {
     setReplyForm,
     openReplyTicket,
     handleReplyTicket,
-    handleCloseTicket,
+    handleUpdateTicketStatus,
+    updatingStatusId,
     handleDeleteTicket,
+    handleDeleteTicketConfirm,
+    deleteTicketId,
+    setDeleteTicketId: setDeleteTicketIdState,
+    deleteTicketSubmitting,
     ticketSubmitting,
+    ticketExportLoading,
+    handleExportTickets,
     // Comms
     commsLoading,
     commsError,
     refetchComms: loadComms,
     commsFilters,
     setCommsFilters,
-    filteredComms,
+    paginatedComms: comms,
+    commsPagination: commsPaginationState,
     commsColumns,
     showAddComms,
     setShowAddComms,
@@ -652,7 +870,8 @@ export function useCustomerServicesState() {
     setCommsForm,
     handleSaveCommsLog,
     commsSubmitting,
+    clientsForComms,
     // Busy
-    isBusy: trackingSubmitting || ticketSubmitting || commsSubmitting,
+    isBusy: trackingSubmitting || ticketSubmitting || commsSubmitting || ticketExportLoading || deleteTicketSubmitting,
   }
 }

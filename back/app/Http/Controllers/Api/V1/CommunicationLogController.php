@@ -50,8 +50,23 @@ class CommunicationLogController extends Controller
             });
         }
 
+        $sort = $request->query('sort', 'date_time');
+        $direction = strtolower((string) $request->query('direction', 'desc'));
+        if (! in_array($direction, ['asc', 'desc'], true)) {
+            $direction = 'desc';
+        }
+        if ($sort === 'date_time' || $sort === 'occurred_at') {
+            $query->orderBy('communication_logs.occurred_at', $direction)->orderBy('communication_logs.created_at', $direction);
+        } elseif ($sort === 'subject') {
+            $query->orderBy('communication_logs.subject', $direction);
+        } elseif ($sort === 'type') {
+            $query->orderBy('communication_logs.communication_log_type_id', $direction)->orderBy('communication_logs.occurred_at', $direction);
+        } else {
+            $query->orderBy('communication_logs.occurred_at', $direction)->orderBy('communication_logs.created_at', $direction);
+        }
+
         $perPage = $request->integer('per_page', 15);
-        $logs = $query->orderByDesc('occurred_at')->orderByDesc('created_at')->paginate($perPage);
+        $logs = $query->paginate($perPage);
 
         return response()->json([
             'data' => $logs->items(),

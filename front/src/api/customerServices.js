@@ -1,6 +1,6 @@
 /**
- * Customer Services API – stub for future backend integration.
- * Replace with real endpoints when backend is ready.
+ * Customer Services API – integrates with backend Customer Service endpoints.
+ * Tickets, Ticket Types, Communication Logs, Shipment Tracking (see api/shipments).
  */
 
 const getBaseUrl = () => {
@@ -17,110 +17,10 @@ function authHeaders(token) {
   }
 }
 
-/** Mock list when backend is not ready (404/5xx). */
-function mockList(params = {}) {
-  const page = Number(params.page) || 1
-  const perPage = Number(params.per_page) || 50
-  const total = 0
-  return {
-    data: [],
-    meta: { total, last_page: 1, current_page: page, per_page: perPage },
-  }
-}
-
-/**
- * List customer service items (search/filter/sort/pagination).
- * Returns mock empty data if endpoint is not available (404/501).
- */
-export async function listCustomerServices(token, params = {}) {
-  const searchParams = new URLSearchParams()
-  if (params.q != null && params.q !== '') searchParams.set('q', params.q)
-  if (params.status != null && params.status !== '') searchParams.set('status', params.status)
-  if (params.sort != null) searchParams.set('sort', params.sort)
-  if (params.direction != null) searchParams.set('direction', params.direction)
-  if (params.page != null) searchParams.set('page', String(params.page))
-  if (params.per_page != null) searchParams.set('per_page', String(params.per_page))
-  const query = searchParams.toString()
-  const url = `${getBaseUrl()}/customer-services${query ? `?${query}` : ''}`
-  try {
-    const res = await fetch(url, { headers: authHeaders(token) })
-    const data = await res.json().catch(() => ({}))
-    if (!res.ok) {
-      if (res.status === 404 || res.status === 501) return mockList(params)
-      throw new Error(data.message || data.error || `Failed to list (${res.status})`)
-    }
-    return data
-  } catch (err) {
-    if (err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError')) {
-      return mockList(params)
-    }
-    throw err
-  }
-}
-
-/**
- * Get single customer service item.
- */
-export async function getCustomerService(token, id) {
-  const res = await fetch(`${getBaseUrl()}/customer-services/${id}`, {
-    headers: authHeaders(token),
-  })
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.message || data.error || `Failed to get customer service (${res.status})`)
-  return data
-}
-
-/**
- * Create customer service item.
- */
-export async function createCustomerService(token, body) {
-  const res = await fetch(`${getBaseUrl()}/customer-services`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...authHeaders(token),
-    },
-    body: JSON.stringify(body),
-  })
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.message || data.error || `Failed to create (${res.status})`)
-  return data
-}
-
-/**
- * Update customer service item.
- */
-export async function updateCustomerService(token, id, body) {
-  const res = await fetch(`${getBaseUrl()}/customer-services/${id}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      ...authHeaders(token),
-    },
-    body: JSON.stringify(body),
-  })
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.message || data.error || `Failed to update (${res.status})`)
-  return data
-}
-
-/**
- * Delete customer service item.
- */
-export async function deleteCustomerService(token, id) {
-  const res = await fetch(`${getBaseUrl()}/customer-services/${id}`, {
-    method: 'DELETE',
-    headers: authHeaders(token),
-  })
-  if (res.status === 204) return {}
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.message || data.error || `Failed to delete (${res.status})`)
-  return data
-}
-
 /**
  * GET {{base_url}}/tickets
- * Query: per_page, page, search, status, ticket_type_id, priority_id, client_id, assigned_to_id
+ * Query: per_page, page, search, status, ticket_type_id, priority_id, client_id, assigned_to_id, sort, direction
+ * Response: { data: Ticket[], meta: { total, last_page, current_page, per_page } }
  */
 export async function listTickets(token, params = {}) {
   const searchParams = new URLSearchParams()
@@ -132,6 +32,8 @@ export async function listTickets(token, params = {}) {
   if (params.priority_id != null) searchParams.set('priority_id', String(params.priority_id))
   if (params.client_id != null) searchParams.set('client_id', String(params.client_id))
   if (params.assigned_to_id != null) searchParams.set('assigned_to_id', String(params.assigned_to_id))
+  if (params.sort != null && params.sort !== '') searchParams.set('sort', params.sort)
+  if (params.direction != null && params.direction !== '') searchParams.set('direction', params.direction)
   const query = searchParams.toString()
   const res = await fetch(`${getBaseUrl()}/tickets${query ? `?${query}` : ''}`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
@@ -140,8 +42,28 @@ export async function listTickets(token, params = {}) {
 }
 
 /**
+ * GET {{base_url}}/tickets/export
+ * Query: status, priority_id, client_id
+ * Returns: blob (CSV)
+ */
+export async function exportTickets(token, params = {}) {
+  const searchParams = new URLSearchParams()
+  if (params.status != null && params.status !== '') searchParams.set('status', params.status)
+  if (params.priority_id != null) searchParams.set('priority_id', String(params.priority_id))
+  if (params.client_id != null && params.client_id !== '') searchParams.set('client_id', String(params.client_id))
+  const query = searchParams.toString()
+  const res = await fetch(`${getBaseUrl()}/tickets/export${query ? `?${query}` : ''}`, { headers: authHeaders(token) })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.message || data.error || `Failed to export tickets (${res.status})`)
+  }
+  return res.blob()
+}
+
+/**
  * GET {{base_url}}/communication-logs
- * Query: per_page, page, communication_log_type_id, related (client|shipment|ticket)
+ * Query: per_page, page, communication_log_type_id, related, client_id, search
+ * Response: { data: CommunicationLog[], meta: { total, last_page, current_page, per_page } }
  */
 export async function listCommunicationLogs(token, params = {}) {
   const searchParams = new URLSearchParams()
@@ -149,10 +71,39 @@ export async function listCommunicationLogs(token, params = {}) {
   if (params.page != null) searchParams.set('page', String(params.page))
   if (params.communication_log_type_id != null) searchParams.set('communication_log_type_id', String(params.communication_log_type_id))
   if (params.related != null && params.related !== '') searchParams.set('related', params.related)
+  if (params.client_id != null && params.client_id !== '') searchParams.set('client_id', String(params.client_id))
+  if (params.search != null && params.search !== '') searchParams.set('search', params.search)
+  if (params.sort != null && params.sort !== '') searchParams.set('sort', params.sort)
+  if (params.direction != null && params.direction !== '') searchParams.set('direction', params.direction)
   const query = searchParams.toString()
   const res = await fetch(`${getBaseUrl()}/communication-logs${query ? `?${query}` : ''}`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to list communication logs (${res.status})`)
+  return data
+}
+
+/**
+ * POST {{base_url}}/communication-logs
+ * Body: { client_id, communication_log_type_id, subject?, client_said?, issue?, reply? }
+ */
+export async function createCommunicationLog(token, body) {
+  const res = await fetch(`${getBaseUrl()}/communication-logs`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+    body: JSON.stringify(body),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to create communication log (${res.status})`)
+  return data
+}
+
+/**
+ * GET {{base_url}}/communication-logs/:id
+ */
+export async function getCommunicationLog(token, id) {
+  const res = await fetch(`${getBaseUrl()}/communication-logs/${id}`, { headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to get communication log (${res.status})`)
   return data
 }
 

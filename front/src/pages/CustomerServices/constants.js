@@ -83,6 +83,13 @@ export const COMMS_TYPE_ICONS = {
   whatsapp: 'bxl-whatsapp',
 }
 
+/** Icons for ticket type column (النوع) */
+export const TICKET_TYPE_ICONS = {
+  inquiry: 'bx-help-circle',
+  complaint: 'bx-error-circle',
+  request: 'bx-file-blank',
+}
+
 export const CLIENT_OPTIONS = [
   'Mansour & Partners',
   'Al Eman Foods',

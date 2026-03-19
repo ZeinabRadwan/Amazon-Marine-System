@@ -1,5 +1,6 @@
 export { AddShipmentUpdateModal } from './AddShipmentUpdateModal'
 export { SendToClientModal } from './SendToClientModal'
+export { ViewShipmentModal } from './ViewShipmentModal'
 export { NewTicketModal } from './NewTicketModal'
 export { ReplyTicketModal } from './ReplyTicketModal'
 export { AddCommsLogModal } from './AddCommsLogModal'

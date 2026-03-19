@@ -18,11 +18,18 @@ function authHeaders(token) {
 
 /**
  * GET {{base_url}}/users – List Users
+ * Params: per_page, page, search, status, role (backend may return all if not paginated)
  */
-export async function listUsers(token) {
-  const res = await fetch(`${getBaseUrl()}/users`, {
-    headers: authHeaders(token),
-  })
+export async function listUsers(token, params = {}) {
+  const searchParams = new URLSearchParams()
+  if (params.per_page != null) searchParams.set('per_page', String(params.per_page))
+  if (params.page != null) searchParams.set('page', String(params.page))
+  if (params.search != null && params.search !== '') searchParams.set('search', params.search)
+  if (params.status != null && params.status !== '') searchParams.set('status', params.status)
+  if (params.role != null && params.role !== '') searchParams.set('role', params.role)
+  const query = searchParams.toString()
+  const url = `${getBaseUrl()}/users${query ? `?${query}` : ''}`
+  const res = await fetch(url, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to list users (${res.status})`)
   return data
