@@ -30,6 +30,7 @@ import '../../components/Tabs/Tabs.css'
 import '../Clients/Clients.css'
 import '../CustomerServices/styles/CustomerServices.css'
 import './Settings.css'
+import GoogleMapsCompanyLocationPicker from '../../components/GoogleMapsCompanyLocationPicker/GoogleMapsCompanyLocationPicker'
 
 function SectionCard({ title, subtitle, children, actions, compact }) {
   return (
@@ -220,10 +221,18 @@ export default function Settings() {
     setSaving(true)
     setError('')
     try {
+      const lat = parseFloat(companyLocation.lat)
+      const lng = parseFloat(companyLocation.lng)
+      const radius = parseInt(companyLocation.radius_m, 10)
+
+      if (!Number.isFinite(lat) || !Number.isFinite(lng) || !Number.isFinite(radius) || radius <= 0) {
+        throw new Error('Invalid company location values.')
+      }
+
       await updateCompanyLocation(token, {
-        lat: parseFloat(companyLocation.lat),
-        lng: parseFloat(companyLocation.lng),
-        radius_m: companyLocation.radius_m ? parseInt(companyLocation.radius_m, 10) : null,
+        lat,
+        lng,
+        radius_m: radius,
       })
       setAlert({ type: 'success', message: t('settings.company.saveLocation') })
     } catch (e) {
@@ -446,9 +455,9 @@ export default function Settings() {
 
   return (
     <Container size="xl">
-      <div className="settings-page settings-page-enter">
-        <div className="cs-tabs-wrap">
-          <Tabs tabs={csTabs} activeTab={activeTab} onChange={setActiveTab} className="cs-tabs" />
+      <div className="settings-page settings-page-enter" data-active-tab={activeTab}>
+        <div className="settings-tabs-wrap cs-tabs-wrap">
+          <Tabs tabs={csTabs} activeTab={activeTab} onChange={setActiveTab} className="cs-tabs settings-tabs" />
         </div>
 
         {(error || alert) && (
@@ -465,9 +474,9 @@ export default function Settings() {
         ) : (
           <>
             {/* Tab: Company */}
-            <div role="tabpanel" className={`cs-tab-panel ${activeTab === 'company' ? 'cs-tab-panel--active' : ''}`}>
+            <div role="tabpanel" className={`cs-tab-panel settings-tab-panel ${activeTab === 'company' ? 'cs-tab-panel--active' : ''}`}>
               {activeTab === 'company' && (
-                <div className="settings-tab-content">
+                <div className="settings-tab-content settings-tab-content--animate">
                   <div className="settings-cards-grid settings-cards-grid--two">
                     <SectionCard title={t('settings.company.profileTitle')} subtitle={t('settings.company.cardTitle')}>
                       <form className="settings-form settings-form--stacked" onSubmit={handleSaveCompanyProfile}>
@@ -495,11 +504,11 @@ export default function Settings() {
                     </SectionCard>
                     <SectionCard title={t('settings.company.locationTitle')} subtitle={t('settings.company.locationHint')}>
                       <form className="settings-form settings-form--stacked" onSubmit={handleSaveCompanyLocation}>
-                        <div className="settings-form-row three">
-                          <Input label={t('settings.company.lat')} value={companyLocation.lat} onChange={(e) => setCompanyLocation((p) => ({ ...p, lat: e.target.value }))} />
-                          <Input label={t('settings.company.lng')} value={companyLocation.lng} onChange={(e) => setCompanyLocation((p) => ({ ...p, lng: e.target.value }))} />
-                          <Input label={t('settings.company.radius')} value={companyLocation.radius_m} onChange={(e) => setCompanyLocation((p) => ({ ...p, radius_m: e.target.value }))} />
-                        </div>
+                        <GoogleMapsCompanyLocationPicker
+                          value={companyLocation}
+                          onChange={(next) => setCompanyLocation(next)}
+                          disabled={saving}
+                        />
                         <div className="settings-form-actions">
                           <button type="submit" disabled={saving} className="page-header__btn page-header__btn--primary">
                             {t('settings.company.saveLocation')}
@@ -513,9 +522,9 @@ export default function Settings() {
             </div>
 
             {/* Tab: System & Notifications */}
-            <div role="tabpanel" className={`cs-tab-panel ${activeTab === 'system' ? 'cs-tab-panel--active' : ''}`}>
+            <div role="tabpanel" className={`cs-tab-panel settings-tab-panel ${activeTab === 'system' ? 'cs-tab-panel--active' : ''}`}>
               {activeTab === 'system' && (
-                <div className="settings-tab-content">
+                <div className="settings-tab-content settings-tab-content--animate">
                   <div className="settings-cards-grid settings-cards-grid--two">
                     <SectionCard title={t('settings.system.systemTitle')} subtitle={t('settings.system.cardTitle')}>
                       <form className="settings-form settings-form--stacked" onSubmit={handleSaveSystemPrefs}>
@@ -556,9 +565,9 @@ export default function Settings() {
             </div>
 
             {/* Tab: Sessions */}
-            <div role="tabpanel" className={`cs-tab-panel ${activeTab === 'sessions' ? 'cs-tab-panel--active' : ''}`}>
+            <div role="tabpanel" className={`cs-tab-panel settings-tab-panel ${activeTab === 'sessions' ? 'cs-tab-panel--active' : ''}`}>
               {activeTab === 'sessions' && (
-                <div className="settings-tab-content">
+                <div className="settings-tab-content settings-tab-content--animate">
                   <SectionCard title={t('settings.sessions.cardTitle')} compact actions={
                     <button type="button" className="page-header__btn page-header__btn--primary" onClick={handleLogoutOthers}>
                       {t('settings.sessions.logoutOthers')}
@@ -651,9 +660,9 @@ export default function Settings() {
             </div>
 
             {/* Tab: Activity */}
-            <div role="tabpanel" className={`cs-tab-panel ${activeTab === 'activity' ? 'cs-tab-panel--active' : ''}`}>
+            <div role="tabpanel" className={`cs-tab-panel settings-tab-panel ${activeTab === 'activity' ? 'cs-tab-panel--active' : ''}`}>
               {activeTab === 'activity' && (
-                <div className="settings-tab-content">
+                <div className="settings-tab-content settings-tab-content--animate">
                   <SectionCard
                     title={t('settings.activity.cardTitle')}
                     actions={
@@ -708,9 +717,9 @@ export default function Settings() {
 
             {/* Tab: Shipment Statuses */}
             {isAdminLike && (
-              <div role="tabpanel" className={`cs-tab-panel ${activeTab === 'shipment-statuses' ? 'cs-tab-panel--active' : ''}`}>
+              <div role="tabpanel" className={`cs-tab-panel settings-tab-panel ${activeTab === 'shipment-statuses' ? 'cs-tab-panel--active' : ''}`}>
                 {activeTab === 'shipment-statuses' && (
-                  <div className="settings-tab-content">
+                  <div className="settings-tab-content settings-tab-content--animate">
                     <SectionCard
                       title={t('settings.shipmentStatuses.cardTitle')}
                       actions={

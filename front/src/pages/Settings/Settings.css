@@ -1,25 +1,78 @@
-/* Settings page – enhanced layout per tab, aligned with CustomerServices / Clients */
+/* Settings page – enhanced layout and animations */
 
 .settings-page {
   --settings-space: 1.25rem;
   --settings-radius: 12px;
   --settings-radius-sm: 8px;
+  --settings-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --settings-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --settings-duration: 0.35s;
+  --settings-duration-slow: 0.5s;
   padding: 0;
   position: relative;
 }
 
+/* ─── Page enter ─── */
+@keyframes settingsPageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .settings-page-enter {
-  animation: csPageEnter 0.4s ease-out forwards;
+  animation: settingsPageEnter 0.5s var(--settings-ease-out) forwards;
 }
 
-.settings-alerts {
-  margin-bottom: var(--settings-space);
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+/* ─── Tabs area ─── */
+.settings-tabs-wrap {
+  margin-bottom: 1.5rem;
 }
 
-/* Tab content container */
+.settings-page .settings-tabs .tabs-pill {
+  transition: box-shadow var(--settings-duration) var(--settings-ease);
+}
+
+.settings-page .settings-tabs .tabs-pill:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="dark"] .settings-page .settings-tabs .tabs-pill:hover {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Tab panel enter ─── */
+@keyframes settingsTabPanelIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.settings-tab-panel {
+  margin-top: 0;
+  display: none;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: none;
+}
+
+.settings-tab-panel.cs-tab-panel--active {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+  animation: settingsTabPanelIn 0.4s var(--settings-ease-out) forwards;
+}
+
+/* ─── Tab content: staggered children ─── */
 .settings-tab-content {
   display: flex;
   flex-direction: column;
@@ -27,7 +80,63 @@
   margin-top: 0;
 }
 
-/* Cards grid – two equal columns on desktop */
+.settings-tab-content--animate .settings-section-card {
+  opacity: 0;
+  transform: translateY(14px);
+  animation: settingsCardIn 0.45s var(--settings-ease-out) forwards;
+}
+
+.settings-tab-content--animate .settings-section-card:nth-child(1) {
+  animation-delay: 0.05s;
+}
+
+.settings-tab-content--animate .settings-section-card:nth-child(2) {
+  animation-delay: 0.12s;
+}
+
+.settings-tab-content--animate .settings-section-card:nth-child(3) {
+  animation-delay: 0.19s;
+}
+
+.settings-tab-content--animate .settings-section-card:nth-child(4) {
+  animation-delay: 0.26s;
+}
+
+@keyframes settingsCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ─── Alerts ─── */
+.settings-alerts {
+  margin-bottom: var(--settings-space);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+@keyframes settingsAlertIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.settings-alerts > * {
+  animation: settingsAlertIn 0.3s var(--settings-ease-out);
+}
+
+/* ─── Cards grid ─── */
 .settings-cards-grid {
   display: grid;
   gap: var(--settings-space);
@@ -53,7 +162,7 @@
   }
 }
 
-/* Section card */
+/* ─── Section card + hover animation ─── */
 .settings-section-card {
   background: var(--bg-card, #fff);
   border: 1px solid var(--form-divider, #e5e7eb);
@@ -61,20 +170,38 @@
   padding: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   overflow: hidden;
+  transition: transform var(--settings-duration) var(--settings-ease),
+    box-shadow var(--settings-duration) var(--settings-ease),
+    border-color 0.2s ease;
 }
 
-.settings-section-card--compact {
-  padding: 1rem 1.5rem;
-}
-
-.settings-section-card--compact .settings-section-header {
-  margin-bottom: 0.75rem;
+.settings-section-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.08);
 }
 
 [data-theme="dark"] .settings-section-card {
   background: var(--form-bg);
   border-color: var(--form-divider);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .settings-section-card:hover {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.settings-section-card--compact {
+  padding: 1rem 1.5rem;
+}
+
+.settings-section-card--compact:hover {
+  transform: translateY(-1px);
+}
+
+.settings-section-card--compact .settings-section-header {
+  margin-bottom: 0.75rem;
 }
 
 .settings-section-header {
@@ -86,6 +213,7 @@
   margin-bottom: 1.25rem;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--form-divider, #e5e7eb);
+  transition: border-color 0.2s ease;
 }
 
 .settings-section-card--compact .settings-section-header {
@@ -103,6 +231,7 @@
   font-weight: 600;
   color: var(--text-primary, #1a2150);
   letter-spacing: -0.01em;
+  transition: color 0.2s ease;
 }
 
 .settings-section-subtitle {
@@ -111,6 +240,7 @@
   color: var(--text-muted, #8896ad);
   font-weight: 400;
   line-height: 1.4;
+  transition: color 0.2s ease;
 }
 
 .settings-section-actions {
@@ -120,11 +250,26 @@
   flex-shrink: 0;
 }
 
+.settings-section-actions .page-header__btn,
+.settings-section-actions .clients-btn {
+  transition: transform 0.2s var(--settings-ease), box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.settings-section-actions .page-header__btn:hover:not(:disabled),
+.settings-section-actions .clients-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.settings-section-actions .page-header__btn:active:not(:disabled),
+.settings-section-actions .clients-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
 .settings-section-body {
   min-width: 0;
 }
 
-/* Form groups and rows */
+/* ─── Form ─── */
 .settings-form,
 .settings-modal-form {
   display: flex;
@@ -164,6 +309,18 @@
   padding-top: 0.5rem;
 }
 
+.settings-form-actions .page-header__btn {
+  transition: transform 0.2s var(--settings-ease), box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.settings-form-actions .page-header__btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.settings-form-actions .page-header__btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
 .settings-form-title {
   margin: 0 0 0.5rem;
   font-size: 0.875rem;
@@ -171,7 +328,7 @@
   color: var(--text-primary, #1a2150);
 }
 
-/* Input wrap */
+/* ─── Inputs (with focus transition) ─── */
 .settings-input-wrap {
   display: flex;
   flex-direction: column;
@@ -182,11 +339,18 @@
   font-size: 0.8125rem;
   font-weight: 500;
   color: var(--text-secondary, #5a6788);
+  transition: color 0.2s ease;
 }
 
-.settings-input {
+.settings-input,
+.settings-page .settings-input.clients-input {
   width: 100%;
   box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.settings-page .settings-input.clients-input:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
 .settings-hint {
@@ -196,7 +360,7 @@
   line-height: 1.4;
 }
 
-/* Checkbox group – vertical list with spacing */
+/* ─── Checkbox group ─── */
 .settings-checkbox-group {
   display: flex;
   flex-direction: column;
@@ -213,12 +377,16 @@
   border-radius: var(--settings-radius-sm);
   cursor: pointer;
   font-size: 0.875rem;
-  transition: border-color 0.15s, background-color 0.15s;
+  transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s var(--settings-ease);
 }
 
 .settings-checkbox-row:hover {
   border-color: var(--navy-400, #4a5bb5);
   background: rgba(74, 91, 181, 0.03);
+}
+
+.settings-checkbox-row:active {
+  transform: scale(0.995);
 }
 
 [data-theme="dark"] .settings-checkbox-row:hover {
@@ -235,7 +403,7 @@
   flex-shrink: 0;
 }
 
-/* Inline form (session settings bar) */
+/* ─── Inline form (session bar) ─── */
 .settings-inline-form {
   display: flex;
   flex-wrap: wrap;
@@ -258,7 +426,7 @@
   }
 }
 
-/* Filters bar – consistent with clients-filters-card */
+/* ─── Filters bar ─── */
 .settings-filters-bar {
   margin-bottom: 1rem;
 }
@@ -267,12 +435,17 @@
   margin-bottom: 0;
 }
 
-/* Table card wrapper – gives table a contained look */
+/* ─── Table card ─── */
 .settings-table-card {
   border: 1px solid var(--form-divider, #e5e7eb);
   border-radius: var(--settings-radius-sm);
   overflow: hidden;
   background: var(--bg-body, #f8fafc);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.settings-table-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 [data-theme="dark"] .settings-table-card {
@@ -289,7 +462,7 @@
   border-radius: 0;
 }
 
-/* Today session table */
+/* ─── Today session table (row hover) ─── */
 .settings-today-table-wrap {
   overflow-x: auto;
 }
@@ -303,6 +476,7 @@
   padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--form-divider, #e5e7eb);
   font-size: 0.875rem;
+  transition: background-color 0.15s ease;
 }
 
 .settings-today-table-wrap .responsive-table__th {
@@ -325,7 +499,6 @@
   background: rgba(255, 255, 255, 0.04);
 }
 
-/* Subtitle (legacy – kept for any remaining use) */
 .settings-subtitle {
   margin: 1.25rem 0 0.5rem;
   font-size: 0.875rem;
@@ -333,7 +506,7 @@
   color: var(--text-primary, #1a2150);
 }
 
-/* Status badge in shipment statuses table */
+/* ─── Status badge ─── */
 .settings-status-badge {
   display: inline-flex;
   align-items: center;
@@ -344,9 +517,14 @@
   font-size: 0.7rem;
   font-weight: 600;
   color: #fff;
+  transition: transform 0.2s var(--settings-ease);
 }
 
-/* Modal form */
+.settings-status-badge:hover {
+  transform: scale(1.05);
+}
+
+/* ─── Modal form ─── */
 .settings-modal-form .clients-modal-actions {
   margin-top: 1rem;
   padding-top: 0.75rem;
@@ -359,4 +537,14 @@
 
 .settings-modal-form .settings-checkbox-row {
   margin-top: 0.25rem;
+}
+
+/* ─── Loading wrap (subtle pulse) ─── */
+.settings-page .cs-loading-wrap {
+  animation: settingsLoadingPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes settingsLoadingPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }

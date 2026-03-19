@@ -1,0 +1,35 @@
+.settings-map-picker {
+  width: 100%;
+}
+
+.settings-map {
+  width: 100%;
+  height: 360px;
+  border-radius: 12px;
+  border: 1px solid var(--form-divider, #e5e7eb);
+  overflow: hidden;
+}
+
+.settings-map-hint {
+  margin: 0.6rem 0 0;
+  font-size: 0.75rem;
+  color: var(--text-muted, #8896ad);
+  line-height: 1.4;
+}
+
+.settings-map-error {
+  margin-bottom: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: #b91c1c;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 640px) {
+  .settings-map {
+    height: 280px;
+  }
+}
+
