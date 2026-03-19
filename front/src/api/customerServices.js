@@ -115,6 +115,30 @@ export async function listTicketTypes(token) {
   return data
 }
 
+// ——— Ticket priorities ———
+export async function listTicketPriorities(token) {
+  const res = await fetch(`${getBaseUrl()}/ticket-priorities`, { headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to list ticket priorities (${res.status})`)
+  return data
+}
+
+// ——— Ticket statuses ———
+export async function listTicketStatuses(token) {
+  const res = await fetch(`${getBaseUrl()}/ticket-statuses`, { headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to list ticket statuses (${res.status})`)
+  return data
+}
+
+// ——— Communication log types ———
+export async function listCommunicationLogTypes(token) {
+  const res = await fetch(`${getBaseUrl()}/communication-log-types`, { headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to list communication log types (${res.status})`)
+  return data
+}
+
 export async function getTicketType(token, id) {
   const res = await fetch(`${getBaseUrl()}/ticket-types/${id}`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))

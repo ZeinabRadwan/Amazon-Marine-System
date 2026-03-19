@@ -10,7 +10,7 @@ export function ReplyTicketModal({
   onSubmit,
   submitting,
   t: tProp,
-  ticketStatusKey,
+  ticketStatusLabel,
 }) {
   const { t: tI18n } = useTranslation()
   const t = tProp ?? tI18n
@@ -44,7 +44,7 @@ export function ReplyTicketModal({
                   </div>
                   <div className="client-detail-modal__form-field">
                     <label htmlFor="reply-status">{t('customerServices.tickets.currentStatus')}</label>
-                    <input id="reply-status" type="text" value={t(ticketStatusKey(ticket.status))} readOnly disabled />
+                    <input id="reply-status" type="text" value={ticketStatusLabel?.(ticket.status) ?? ticket.status} readOnly disabled />
                   </div>
                   <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
                     <label htmlFor="reply-text">{t('customerServices.tickets.sendReply')}</label>

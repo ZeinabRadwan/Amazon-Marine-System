@@ -25,6 +25,8 @@ class DatabaseSeeder extends Seeder
             TicketTypesAndPrioritiesSeeder::class,
             CommunicationLogTypesSeeder::class,
             CustomerServiceSeeder::class,
+            TicketStatusesSeeder::class,
+            ShipmentStatusesSeeder::class,
         ]);
     }
 }

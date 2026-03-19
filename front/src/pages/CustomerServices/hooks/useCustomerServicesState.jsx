@@ -8,6 +8,9 @@ import {
   listCommunicationLogs,
   createCommunicationLog,
   listTicketTypes,
+  listTicketPriorities,
+  listTicketStatuses,
+  listCommunicationLogTypes,
   getTicketStats,
   getTicket,
   createTicket,
@@ -17,14 +20,8 @@ import {
 import { listClients } from '../../../api/clients'
 import { listUsers } from '../../../api/users'
 import { getClientShipments } from '../../../api/clients'
+import { listShipmentStatuses } from '../../../api/settings'
 import {
-  TRACKING_STATUS_KEYS,
-  TRACKING_TEMPLATE_KEYS,
-  COMMS_TYPES,
-  TICKET_STATUS_KEYS,
-  TICKET_TYPE_KEYS,
-  TICKET_PRIORITY_KEYS,
-  TICKET_PRIORITIES,
   COMMS_TYPE_ICONS,
   TICKET_TYPE_ICONS,
 } from '../constants'
@@ -41,13 +38,6 @@ function normalizeMeta(meta, fallback = {}) {
     per_page: Math.max(1, Number(meta?.per_page ?? fallback.per_page ?? 50)),
   }
 }
-
-/** Map ticket type name to API ticket_type_id (seeded: 1=inquiry, 2=complaint, 3=request) */
-const TICKET_TYPE_IDS = { inquiry: 1, complaint: 2, request: 3 }
-/** Map priority name to API priority_id (seeded: 1=low, 2=medium, 3=high) */
-const PRIORITY_IDS = { low: 1, medium: 2, high: 3 }
-/** Map communication type name to API communication_log_type_id (1=call, 2=whatsapp, 3=email, 4=meeting, 5=note) */
-const COMMS_TYPE_IDS = { call: 1, whatsapp: 2, email: 3, meeting: 4, note: 5 }
 
 function mapShipmentToRow(shipment, formatDate) {
   const latest = shipment.latest_tracking_update
@@ -98,6 +88,22 @@ function mapCommsLogToRow(log, formatDateTime) {
   }
 }
 
+function deriveStatusKeyFromName(name) {
+  return String(name ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+}
+
+function normalizeShipmentStatusKey(statusKey) {
+  // Backend/seed data uses `booked`, while UI conventions use `booking_confirmed`.
+  // We treat them as the same for labels + CSS.
+  if (statusKey === 'booked') return 'booking_confirmed'
+  return statusKey
+}
+
 export function useCustomerServicesState() {
   const { t, i18n } = useTranslation()
   const [activeTab, setActiveTab] = useState('tracking')
@@ -107,6 +113,11 @@ export function useCustomerServicesState() {
   const [trackingPaginationState, setTrackingPaginationState] = useState({ total: 0, last_page: 1, current_page: 1, per_page: 50 })
   const [trackingLoading, setTrackingLoading] = useState(true)
   const [trackingError, setTrackingError] = useState(null)
+  const [trackingStatuses, setTrackingStatuses] = useState([])
+  const [trackingStatusesLoading, setTrackingStatusesLoading] = useState(true)
+  const [trackingStatusesError, setTrackingStatusesError] = useState(null)
+  // Some seed data uses `booked` instead of `booking_confirmed`. Detect once and alias filter requests.
+  const [useApiBookedAlias, setUseApiBookedAlias] = useState(false)
   const [trackingFilters, setTrackingFilters] = useState({
     qBl: '',
     qClient: '',
@@ -183,12 +194,16 @@ export function useCustomerServicesState() {
   const [commsPaginationState, setCommsPaginationState] = useState({ total: 0, last_page: 1, current_page: 1, per_page: 50 })
   const [commsLoading, setCommsLoading] = useState(true)
   const [commsError, setCommsError] = useState(null)
+  const [commsTypes, setCommsTypes] = useState([])
+  const [ticketPriorities, setTicketPriorities] = useState([])
+  const [ticketStatuses, setTicketStatuses] = useState([])
   const [showAddComms, setShowAddComms] = useState(false)
   const [commsForm, setCommsForm] = useState({ client_id: '', type: 'call', related: 'client', ref: '', subject: '', client_said: '', issue: '', reply: '' })
   const [commsSubmitting, setCommsSubmitting] = useState(false)
   const [clientsForComms, setClientsForComms] = useState([])
 
   const locale = i18n.language === 'ar' ? 'ar-EG' : 'en-US'
+  const isArabicLang = i18n.language === 'ar'
   const formatDate = useCallback((d) => {
     if (!d) return '—'
     try {
@@ -206,6 +221,114 @@ export function useCustomerServicesState() {
       return d
     }
   }, [locale])
+
+  const trackingStatusByKey = useMemo(() => {
+    const map = {}
+    for (const s of trackingStatuses || []) {
+      if (s?.key) map[s.key] = s
+    }
+    return map
+  }, [trackingStatuses])
+
+  const ticketTypeIdByName = useMemo(() => {
+    const map = {}
+    for (const tt of ticketTypes || []) {
+      if (tt?.name != null && tt?.id != null) map[tt.name] = tt.id
+    }
+    return map
+  }, [ticketTypes])
+
+  const ticketPriorityIdByName = useMemo(() => {
+    const map = {}
+    for (const p of ticketPriorities || []) {
+      if (p?.name != null && p?.id != null) map[p.name] = p.id
+    }
+    return map
+  }, [ticketPriorities])
+
+  const ticketTypeLabelByName = useMemo(() => {
+    const map = {}
+    for (const tt of ticketTypes || []) {
+      if (!tt?.name) continue
+      map[tt.name] = isArabicLang && tt?.label_ar ? tt.label_ar : (tt?.name ?? '')
+    }
+    return map
+  }, [ticketTypes, isArabicLang])
+
+  const ticketPriorityLabelByName = useMemo(() => {
+    const map = {}
+    for (const p of ticketPriorities || []) {
+      if (!p?.name) continue
+      map[p.name] = isArabicLang && p?.label_ar ? p.label_ar : (p?.name ?? '')
+    }
+    return map
+  }, [ticketPriorities, isArabicLang])
+
+  const ticketStatusLabelByKey = useMemo(() => {
+    const map = {}
+    for (const s of ticketStatuses || []) {
+      if (!s?.key) continue
+      map[s.key] = isArabicLang ? (s?.label_ar || s?.label_en || s.key) : (s?.label_en || s?.label_ar || s.key)
+    }
+    return map
+  }, [ticketStatuses, isArabicLang])
+
+  const commsTypeIdByName = useMemo(() => {
+    const map = {}
+    for (const t of commsTypes || []) {
+      if (t?.name != null && t?.id != null) map[t.name] = t.id
+    }
+    return map
+  }, [commsTypes])
+
+  const commsTypeLabelByName = useMemo(() => {
+    const map = {}
+    for (const t of commsTypes || []) {
+      if (!t?.name) continue
+      map[t.name] = isArabicLang && t?.label_ar ? t.label_ar : (t?.name ?? '')
+    }
+    return map
+  }, [commsTypes, isArabicLang])
+
+  const loadShipmentStatuses = useCallback(() => {
+    const token = getStoredToken()
+    if (!token) {
+      setTrackingStatusesError(t('customerServices.errorLoad') || 'Not authenticated')
+      setTrackingStatuses([])
+      setTrackingStatusesLoading(false)
+      return
+    }
+
+    setTrackingStatusesLoading(true)
+    setTrackingStatusesError(null)
+
+    listShipmentStatuses(token)
+      .then((res) => {
+        const raw = res?.data ?? []
+        const list = (Array.isArray(raw) ? raw : [])
+          .map((s) => {
+            const key = deriveStatusKeyFromName(s?.name_en) || deriveStatusKeyFromName(s?.name_ar) || ''
+            if (!key) return null
+            return {
+              key,
+              name_ar: s?.name_ar ?? '',
+              name_en: s?.name_en ?? '',
+              color: s?.color ?? '',
+              description: s?.description ?? '',
+              active: s?.active !== false,
+              sort_order: s?.sort_order ?? 0,
+            }
+          })
+          .filter(Boolean)
+
+        setTrackingStatuses(list)
+      })
+      .catch((err) => {
+        setTrackingStatusesError(err.message || 'Failed to load shipment statuses')
+        setTrackingStatuses([])
+      })
+      .finally(() => setTrackingStatusesLoading(false))
+  }, [t])
 
   const loadTracking = useCallback(() => {
     const token = getStoredToken()
@@ -225,7 +348,10 @@ export function useCustomerServicesState() {
       direction: (direction || 'asc') === 'asc' ? 'asc' : 'desc',
       include: 'latest_tracking_update',
     }
-    if (status) params.status = status
+    const uiStatus = status
+    // Alias: if backend uses `booked`, map UI `booking_confirmed` to `booked`.
+    const apiStatus = uiStatus && uiStatus === 'booking_confirmed' && useApiBookedAlias ? 'booked' : uiStatus
+    if (apiStatus) params.status = apiStatus
     if (qBl) params.bl_number = qBl
     if (qClient) params.search = qClient
     listShipments(token, params)
@@ -234,13 +360,24 @@ export function useCustomerServicesState() {
         const rows = (Array.isArray(raw) ? raw : []).map((s) => mapShipmentToRow(s, formatDate))
         setTrackingList(rows)
         setTrackingPaginationState(normalizeMeta(res.meta ?? res.pagination, { per_page }))
+
+        // Detect which key the backend uses for the "booking confirmed" state.
+        if (!uiStatus) {
+          const hasBooked = rows.some((r) => r.status === 'booked')
+          const hasBookingConfirmed = rows.some((r) => r.status === 'booking_confirmed')
+          if (hasBooked && !hasBookingConfirmed) setUseApiBookedAlias(true)
+        }
       })
       .catch((err) => {
         setTrackingError(err.message || t('clients.trackingUpdatesError') || 'Failed to load shipments')
         setTrackingList([])
       })
       .finally(() => setTrackingLoading(false))
-  }, [formatDate, t, trackingFilters.page, trackingFilters.per_page, trackingFilters.sort, trackingFilters.direction, trackingFilters.status, trackingFilters.qBl, trackingFilters.qClient])
+  }, [formatDate, t, trackingFilters.page, trackingFilters.per_page, trackingFilters.sort, trackingFilters.direction, trackingFilters.status, trackingFilters.qBl, trackingFilters.qClient, useApiBookedAlias])
+
+  useEffect(() => {
+    loadShipmentStatuses()
+  }, [loadShipmentStatuses])
 
   useEffect(() => {
     loadTracking()
@@ -259,8 +396,8 @@ export function useCustomerServicesState() {
     const params = { page, per_page, sort: sort || 'date', direction: direction || 'desc' }
     if (q) params.search = q
     if (status) params.status = status
-    if (type && TICKET_TYPE_IDS[type] != null) params.ticket_type_id = TICKET_TYPE_IDS[type]
-    if (priority && PRIORITY_IDS[priority] != null) params.priority_id = PRIORITY_IDS[priority]
+    if (type && ticketTypeIdByName[type] != null) params.ticket_type_id = ticketTypeIdByName[type]
+    if (priority && ticketPriorityIdByName[priority] != null) params.priority_id = ticketPriorityIdByName[priority]
     if (client_id) params.client_id = client_id
     if (assigned_to_id) params.assigned_to_id = assigned_to_id
     listTickets(token, params)
@@ -275,7 +412,7 @@ export function useCustomerServicesState() {
         setTickets([])
       })
       .finally(() => setTicketsLoading(false))
-  }, [t, ticketFilters.page, ticketFilters.per_page, ticketFilters.q, ticketFilters.status, ticketFilters.type, ticketFilters.priority, ticketFilters.client_id, ticketFilters.assigned_to_id, ticketFilters.sort, ticketFilters.direction])
+  }, [t, ticketFilters.page, ticketFilters.per_page, ticketFilters.q, ticketFilters.status, ticketFilters.type, ticketFilters.priority, ticketFilters.client_id, ticketFilters.assigned_to_id, ticketFilters.sort, ticketFilters.direction, ticketTypeIdByName, ticketPriorityIdByName])
 
   useEffect(() => {
     loadTickets()
@@ -289,6 +426,30 @@ export function useCustomerServicesState() {
       .catch(() => setTicketTypes([]))
   }, [])
 
+  const loadTicketPriorities = useCallback(() => {
+    const token = getStoredToken()
+    if (!token) return
+    listTicketPriorities(token)
+      .then((res) => setTicketPriorities(res.data ?? []))
+      .catch(() => setTicketPriorities([]))
+  }, [])
+
+  const loadTicketStatuses = useCallback(() => {
+    const token = getStoredToken()
+    if (!token) return
+    listTicketStatuses(token)
+      .then((res) => setTicketStatuses(res.data ?? []))
+      .catch(() => setTicketStatuses([]))
+  }, [])
+
+  const loadCommsTypes = useCallback(() => {
+    const token = getStoredToken()
+    if (!token) return
+    listCommunicationLogTypes(token)
+      .then((res) => setCommsTypes(res.data ?? []))
+      .catch(() => setCommsTypes([]))
+  }, [])
+
   const loadTicketStats = useCallback(() => {
     const token = getStoredToken()
     if (!token) return
@@ -300,6 +461,18 @@ export function useCustomerServicesState() {
   useEffect(() => {
     loadTicketTypes()
   }, [loadTicketTypes])
+
+  useEffect(() => {
+    loadTicketPriorities()
+  }, [loadTicketPriorities])
+
+  useEffect(() => {
+    loadTicketStatuses()
+  }, [loadTicketStatuses])
+
+  useEffect(() => {
+    loadCommsTypes()
+  }, [loadCommsTypes])
 
   useEffect(() => {
     loadTicketStats()
@@ -348,7 +521,7 @@ export function useCustomerServicesState() {
     const { page, per_page, q, type, related, client_id, sort, direction } = commsFilters
     const params = { page, per_page, sort: sort || 'date_time', direction: direction || 'desc' }
     if (q) params.search = q
-    if (type && COMMS_TYPE_IDS[type] != null) params.communication_log_type_id = COMMS_TYPE_IDS[type]
+    if (type && commsTypeIdByName[type] != null) params.communication_log_type_id = commsTypeIdByName[type]
     if (related) params.related = related
     if (client_id) params.client_id = client_id
     listCommunicationLogs(token, params)
@@ -363,7 +536,7 @@ export function useCustomerServicesState() {
         setComms([])
       })
       .finally(() => setCommsLoading(false))
-  }, [formatDateTime, t, commsFilters.page, commsFilters.per_page, commsFilters.q, commsFilters.type, commsFilters.related, commsFilters.client_id, commsFilters.sort, commsFilters.direction])
+  }, [formatDateTime, t, commsFilters.page, commsFilters.per_page, commsFilters.q, commsFilters.type, commsFilters.related, commsFilters.client_id, commsFilters.sort, commsFilters.direction, commsTypeIdByName])
 
   useEffect(() => {
     loadComms()
@@ -608,7 +781,7 @@ export function useCustomerServicesState() {
     setAlert(null)
     const params = {}
     if (ticketFilters.status) params.status = ticketFilters.status
-    if (ticketFilters.priority && PRIORITY_IDS[ticketFilters.priority] != null) params.priority_id = PRIORITY_IDS[ticketFilters.priority]
+    if (ticketFilters.priority && ticketPriorityIdByName[ticketFilters.priority] != null) params.priority_id = ticketPriorityIdByName[ticketFilters.priority]
     if (ticketFilters.client_id) params.client_id = ticketFilters.client_id
     exportTickets(token, params)
       .then((blob) => {
@@ -622,7 +795,7 @@ export function useCustomerServicesState() {
       })
       .catch((err) => setAlert({ type: 'error', message: err.message || t('customerServices.errorExport', 'Export failed.') }))
       .finally(() => setTicketExportLoading(false))
-  }, [ticketFilters.status, ticketFilters.priority, ticketFilters.client_id, t])
+  }, [ticketFilters.status, ticketFilters.priority, ticketFilters.client_id, t, ticketPriorityIdByName])
 
   const handleSaveCommsLog = useCallback((e) => {
     e.preventDefault()
@@ -639,7 +812,7 @@ export function useCustomerServicesState() {
     setCommsSubmitting(true)
     const body = {
       client_id: clientId,
-      communication_log_type_id: COMMS_TYPE_IDS[commsForm.type] ?? 1,
+      communication_log_type_id: commsTypeIdByName[commsForm.type] ?? 1,
       subject: commsForm.subject?.trim() || null,
       client_said: commsForm.client_said?.trim() || null,
       issue: commsForm.issue?.trim() || null,
@@ -656,9 +829,9 @@ export function useCustomerServicesState() {
         setAlert({ type: 'error', message: err.message || t('customerServices.errorCreate') || 'Failed to add log' })
       })
       .finally(() => setCommsSubmitting(false))
-  }, [commsForm, t, loadComms])
+  }, [commsForm, t, loadComms, commsTypeIdByName])
 
-  const ticketStatusKey = (s) => TICKET_STATUS_KEYS[s] || TICKET_STATUS_KEYS.open
+  const ticketStatusLabel = (s) => ticketStatusLabelByKey[s] ?? s
   const commsTypeIcon = (type) => <Bx name={COMMS_TYPE_ICONS[type] || 'bx-note'} className="cs-btn-icon" />
 
   const trackingColumns = useMemo(() => [
@@ -669,8 +842,15 @@ export function useCustomerServicesState() {
       key: 'status',
       label: t('customerServices.tracking.statusCustomerView'),
       render: (_, r) => {
-        const key = TRACKING_STATUS_KEYS[r.status] || 'customerServices.tracking.statusInTransit'
-        return <span className={`cs-status-badge cs-status-badge--${r.status === 'in_transit' || r.status === 'vessel_departed' ? 'in-transit' : r.status === 'booking_confirmed' ? 'booked' : 'pending'}`}>{t(key)}</span>
+        const displayKey = normalizeShipmentStatusKey(r.status)
+        const statusInfo = trackingStatusByKey[displayKey]
+        const label = statusInfo ? (isArabicLang ? statusInfo.name_ar : statusInfo.name_en) : displayKey
+        const badgeKind = displayKey === 'in_transit' || displayKey === 'vessel_departed'
+          ? 'in-transit'
+          : displayKey === 'booking_confirmed'
+            ? 'booked'
+            : 'pending'
+        return <span className={`cs-status-badge cs-status-badge--${badgeKind}`}>{label}</span>
       },
     },
     { key: 'last_update', label: t('customerServices.tracking.lastUpdate'), render: (_, r) => <span className="cs-text-muted cs-fs-sm">{r.last_update}</span> },
@@ -698,7 +878,7 @@ export function useCustomerServicesState() {
         </div>
       ),
     },
-  ], [t, openAddUpdate, openSendToClient, openViewShipment])
+  ], [t, openAddUpdate, openSendToClient, openViewShipment, trackingStatusByKey, isArabicLang])
 
   const ticketTypeIcon = (type) => <Bx name={TICKET_TYPE_ICONS[type] || 'bx-message-alt-detail'} className="cs-ticket-type-icon" aria-hidden />
 
@@ -709,19 +889,19 @@ export function useCustomerServicesState() {
     { key: 'type', label: t('customerServices.tickets.type'), render: (_, r) => (
       <span className="cs-ticket-type-cell">
         {ticketTypeIcon(r.type)}
-        <span>{t(TICKET_TYPE_KEYS[r.type] || '')}</span>
+        <span>{ticketTypeLabelByName[r.type] || r.type}</span>
       </span>
     ) },
     { key: 'priority', label: t('customerServices.tickets.priority'), render: (_, r) => {
       const p = r.priority || 'medium'
       return (
-        <span className={`cs-priority-badge cs-priority-badge--${p}`} title={t(TICKET_PRIORITY_KEYS[p] || '')}>
-          {t(TICKET_PRIORITY_KEYS[p] || '')}
+        <span className={`cs-priority-badge cs-priority-badge--${p}`} title={ticketPriorityLabelByName[p] || p}>
+          {ticketPriorityLabelByName[p] || p}
         </span>
       )
     } },
     { key: 'assigned_to', label: t('customerServices.tickets.assignedTo'), render: (_, r) => r.assigned_to ?? '—' },
-    { key: 'status', label: t('customerServices.fields.status'), render: (_, r) => <span className={`cs-status-badge cs-status-badge--${r.status}`}>{t(ticketStatusKey(r.status))}</span> },
+    { key: 'status', label: t('customerServices.fields.status'), render: (_, r) => <span className={`cs-status-badge cs-status-badge--${r.status}`}>{ticketStatusLabel(r.status)}</span> },
     { key: 'date', label: t('customerServices.tickets.date'), render: (_, r) => formatDate(r.date) },
     {
       key: 'actions',
@@ -742,9 +922,11 @@ export function useCustomerServicesState() {
             aria-label={t('customerServices.tickets.updateStatusLabel')}
             title={t('customerServices.tickets.updateStatusLabel')}
           >
-            {Object.entries(TICKET_STATUS_KEYS).map(([value, key]) => (
-              <option key={value} value={value}>{t(key)}</option>
-            ))}
+            {(ticketStatuses || [])
+              .filter((s) => s?.active !== false)
+              .map((s) => (
+                <option key={s.key} value={s.key}>{ticketStatusLabelByKey[s.key] || s.key}</option>
+              ))}
           </select>
           <IconActionButton
             icon={<Trash2 className="h-4 w-4" />}
@@ -755,15 +937,15 @@ export function useCustomerServicesState() {
         </div>
       ),
     },
-  ], [t, formatDate, openReplyTicket, handleUpdateTicketStatus, handleDeleteTicket, updatingStatusId])
+  ], [t, formatDate, ticketTypeLabelByName, ticketPriorityLabelByName, ticketStatusLabelByKey, openReplyTicket, handleUpdateTicketStatus, handleDeleteTicket, updatingStatusId])
 
   const commsColumns = useMemo(() => [
     { key: 'date_time', label: t('customerServices.comms.dateTime'), render: (_, r) => <span className="cs-text-muted cs-fs-sm">{r.date_time}</span> },
-    { key: 'type', label: t('customerServices.comms.commsType'), render: (_, r) => <>{commsTypeIcon(r.type)} {t(COMMS_TYPES[r.type] || COMMS_TYPES.note)}</> },
+    { key: 'type', label: t('customerServices.comms.commsType'), render: (_, r) => <>{commsTypeIcon(r.type)} {commsTypeLabelByName[r.type] || r.type}</> },
     { key: 'related_to', label: t('customerServices.comms.relatedTo'), render: (_, r) => r.related_to },
     { key: 'subject', label: t('customerServices.comms.subjectSummary'), render: (_, r) => r.subject },
     { key: 'agent', label: t('customerServices.comms.agent'), render: (_, r) => r.agent },
-  ], [t])
+  ], [t, commsTypeLabelByName])
 
   const csTabs = useMemo(() => [
     { id: 'tracking', label: t('customerServices.tabTracking'), icon: <Bx name="bx-package" /> },
@@ -779,10 +961,13 @@ export function useCustomerServicesState() {
     setAlert,
     csTabs,
     formatDate,
-    ticketStatusKey,
+    ticketStatusLabel,
     // Tracking
     trackingLoading,
     trackingError,
+    trackingStatuses,
+    trackingStatusesLoading,
+    trackingStatusesError,
     refetchTracking: loadTracking,
     trackingFilters,
     setTrackingFilters,
@@ -827,6 +1012,8 @@ export function useCustomerServicesState() {
     ticketPagination: ticketPaginationState,
     ticketColumns,
     ticketTypes,
+    ticketPriorities,
+    ticketStatuses,
     ticketStats,
     clientsForTicket,
     usersForTicket,
@@ -864,6 +1051,7 @@ export function useCustomerServicesState() {
     paginatedComms: comms,
     commsPagination: commsPaginationState,
     commsColumns,
+    commsTypes,
     showAddComms,
     setShowAddComms,
     commsForm,

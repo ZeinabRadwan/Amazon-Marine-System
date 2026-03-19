@@ -1,6 +1,5 @@
 import { X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { TRACKING_TEMPLATE_KEYS } from '../../constants'
 
 export function SendToClientModal({
   open,
@@ -14,11 +13,14 @@ export function SendToClientModal({
   setSendMessage,
   onSubmit,
   submitting,
+  shipmentStatuses = [],
   t: tProp,
 }) {
-  const { t: tI18n } = useTranslation()
+  const { t: tI18n, i18n } = useTranslation()
   const t = tProp ?? tI18n
   if (!open || !row) return null
+  const isArabicLang = i18n.language === 'ar'
+  const activeStatuses = (shipmentStatuses || []).filter((s) => s?.active !== false)
   return (
     <div className="client-detail-modal" role="dialog" aria-modal="true" aria-labelledby="cs-modal-send-title">
       <div className="client-detail-modal__backdrop" onClick={onClose} />
@@ -67,8 +69,8 @@ export function SendToClientModal({
                     <label htmlFor="send-template">{t('customerServices.tracking.template')}</label>
                     <select id="send-template" value={sendTemplate} onChange={(e) => { setSendTemplate(e.target.value); setSendMessage('') }} disabled={submitting}>
                       <option value="">{t('customerServices.tracking.templatePlaceholder')}</option>
-                      {Object.keys(TRACKING_TEMPLATE_KEYS).map((k) => (
-                        <option key={k} value={k}>{t(TRACKING_TEMPLATE_KEYS[k])}</option>
+                      {activeStatuses.map((s) => (
+                        <option key={s.key} value={s.key}>{isArabicLang ? s.name_ar : s.name_en}</option>
                       ))}
                     </select>
                   </div>

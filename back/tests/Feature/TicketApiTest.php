@@ -8,6 +8,7 @@ use App\Models\TicketPriority;
 use App\Models\TicketType;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Database\Seeders\TicketStatusesSeeder;
 use Database\Seeders\TicketTypesAndPrioritiesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -20,6 +21,7 @@ class TicketApiTest extends TestCase
     {
         $this->seed(RolesAndPermissionsSeeder::class);
         $this->seed(TicketTypesAndPrioritiesSeeder::class);
+        $this->seed(TicketStatusesSeeder::class);
 
         /** @var User $user */
         $user = User::factory()->create();
@@ -32,6 +34,7 @@ class TicketApiTest extends TestCase
     {
         $this->seed(RolesAndPermissionsSeeder::class);
         $this->seed(TicketTypesAndPrioritiesSeeder::class);
+        $this->seed(TicketStatusesSeeder::class);
 
         $user = User::factory()->create();
         $user->givePermissionTo(['tickets.view']);

@@ -22,7 +22,7 @@ class UpdateTicketRequest extends FormRequest
             'priority_id' => ['sometimes', 'integer', 'exists:ticket_priorities,id'],
             'subject' => ['sometimes', 'string', 'max:255'],
             'description' => ['sometimes', 'nullable', 'string'],
-            'status' => ['sometimes', 'string', 'in:open,in_progress,waiting,closed'],
+            'status' => ['sometimes', 'string', 'exists:ticket_statuses,key'],
         ];
     }
 }

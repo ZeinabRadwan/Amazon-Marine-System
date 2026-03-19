@@ -1,19 +1,27 @@
 import { X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { TRACKING_STATUS_KEYS } from '../../constants'
+
+function normalizeShipmentStatusKey(statusKey) {
+  if (statusKey === 'booked') return 'booking_confirmed'
+  return statusKey
+}
 
 export function ViewShipmentModal({
   open,
   shipment,
   trackingUpdates = [],
+  shipmentStatuses = [],
   loading = false,
   onClose,
   t: tProp,
 }) {
-  const { t: tI18n } = useTranslation()
+  const { t: tI18n, i18n } = useTranslation()
   const t = tProp ?? tI18n
   if (!open) return null
-  const statusKey = shipment?.status ? (TRACKING_STATUS_KEYS[shipment.status] || 'customerServices.tracking.statusInTransit') : ''
+  const displayKey = normalizeShipmentStatusKey(shipment?.status)
+  const statusInfo = shipmentStatuses?.find((s) => s?.key === displayKey)
+  const isArabicLang = i18n.language === 'ar'
+  const statusLabel = statusInfo ? (isArabicLang ? statusInfo.name_ar : statusInfo.name_en) : (displayKey || shipment?.status || '')
   return (
     <div className="client-detail-modal" role="dialog" aria-modal="true" aria-labelledby="cs-view-shipment-title">
       <div className="client-detail-modal__backdrop" onClick={onClose} />
@@ -48,7 +56,7 @@ export function ViewShipmentModal({
                 </div>
                 <div className="client-detail-modal__row">
                   <span className="client-detail-modal__label">{t('customerServices.tracking.statusCustomerView')}</span>
-                  <span className="client-detail-modal__value">{statusKey ? t(statusKey) : (shipment.status ?? '—')}</span>
+                  <span className="client-detail-modal__value">{statusLabel || '—'}</span>
                 </div>
                 <div className="client-detail-modal__row">
                   <span className="client-detail-modal__label">{t('customerServices.tracking.lastUpdate')}</span>

@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\V1\ClientFollowUpController;
 use App\Http\Controllers\Api\V1\ClientNoteController;
 use App\Http\Controllers\Api\V1\ClientStatusController;
 use App\Http\Controllers\Api\V1\CommunicationLogController;
+use App\Http\Controllers\Api\V1\CommunicationLogTypeController;
 use App\Http\Controllers\Api\V1\CompanyTypeController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\DecisionMakerTitleController;
@@ -37,6 +38,8 @@ use App\Http\Controllers\Api\V1\ShipmentNoteController;
 use App\Http\Controllers\Api\V1\ShipmentStatusController;
 use App\Http\Controllers\Api\V1\ShipmentTrackingUpdateController;
 use App\Http\Controllers\Api\V1\TicketController;
+use App\Http\Controllers\Api\V1\TicketPriorityController;
+use App\Http\Controllers\Api\V1\TicketStatusController;
 use App\Http\Controllers\Api\V1\TicketTypeController;
 use App\Http\Controllers\Api\V1\TreasuryController;
 use App\Http\Controllers\Api\V1\UserController;
@@ -245,6 +248,20 @@ Route::prefix('v1')->group(function () {
         Route::put('ticket-types/{ticket_type}', [TicketTypeController::class, 'update']);
         Route::delete('ticket-types/{ticket_type}', [TicketTypeController::class, 'destroy']);
 
+        // Ticket priorities (lookup – CRUD)
+        Route::get('ticket-priorities', [TicketPriorityController::class, 'index']);
+        Route::post('ticket-priorities', [TicketPriorityController::class, 'store']);
+        Route::get('ticket-priorities/{ticketPriority}', [TicketPriorityController::class, 'show']);
+        Route::put('ticket-priorities/{ticketPriority}', [TicketPriorityController::class, 'update']);
+        Route::delete('ticket-priorities/{ticketPriority}', [TicketPriorityController::class, 'destroy']);
+
+        // Ticket statuses (lookup – CRUD)
+        Route::get('ticket-statuses', [TicketStatusController::class, 'index']);
+        Route::post('ticket-statuses', [TicketStatusController::class, 'store']);
+        Route::get('ticket-statuses/{ticketStatus}', [TicketStatusController::class, 'show']);
+        Route::put('ticket-statuses/{ticketStatus}', [TicketStatusController::class, 'update']);
+        Route::delete('ticket-statuses/{ticketStatus}', [TicketStatusController::class, 'destroy']);
+
         // Tickets (customer service)
         Route::get('tickets/stats', [TicketController::class, 'stats']);
         Route::get('tickets/export', [TicketController::class, 'export']);
@@ -258,6 +275,13 @@ Route::prefix('v1')->group(function () {
         Route::get('communication-logs', [CommunicationLogController::class, 'index']);
         Route::post('communication-logs', [CommunicationLogController::class, 'store']);
         Route::get('communication-logs/{communicationLog}', [CommunicationLogController::class, 'show']);
+
+        // Communication log types (lookup – CRUD)
+        Route::get('communication-log-types', [CommunicationLogTypeController::class, 'index']);
+        Route::post('communication-log-types', [CommunicationLogTypeController::class, 'store']);
+        Route::get('communication-log-types/{communicationLogType}', [CommunicationLogTypeController::class, 'show']);
+        Route::put('communication-log-types/{communicationLogType}', [CommunicationLogTypeController::class, 'update']);
+        Route::delete('communication-log-types/{communicationLogType}', [CommunicationLogTypeController::class, 'destroy']);
 
         // Vendors (partners)
         Route::get('vendors/stats', [VendorController::class, 'stats']);

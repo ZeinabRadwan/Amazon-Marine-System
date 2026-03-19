@@ -10,10 +10,16 @@ export function AddCommsLogModal({
   submitting,
   t: tProp,
   clients = [],
+  commsTypes = [],
 }) {
-  const { t: tI18n } = useTranslation()
+  const { t: tI18n, i18n } = useTranslation()
   const t = tProp ?? tI18n
   if (!open) return null
+  const isRtl = i18n.language === 'ar' || i18n.dir() === 'rtl'
+  const typeLabel = (type) => {
+    if (isRtl && type?.label_ar) return type.label_ar
+    return type?.name ?? ''
+  }
   return (
     <div className="client-detail-modal" role="dialog" aria-modal="true" aria-labelledby="cs-modal-comms-title">
       <div className="client-detail-modal__backdrop" onClick={onClose} />
@@ -57,11 +63,18 @@ export function AddCommsLogModal({
                   <div className="client-detail-modal__form-field">
                     <label htmlFor="comms-type">{t('customerServices.comms.commsType')}</label>
                     <select id="comms-type" value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))} disabled={submitting}>
-                      <option value="call">{t('customerServices.comms.typeCall')}</option>
-                      <option value="whatsapp">{t('customerServices.comms.typeWhatsapp')}</option>
-                      <option value="email">{t('customerServices.comms.typeEmail')}</option>
-                      <option value="meeting">{t('customerServices.comms.typeMeeting')}</option>
-                      <option value="note">{t('customerServices.comms.typeNote')}</option>
+                      {(commsTypes || []).map((ct) => (
+                        <option key={ct.id} value={ct.name}>{typeLabel(ct)}</option>
+                      ))}
+                      {(commsTypes || []).length === 0 && (
+                        <>
+                          <option value="call">{t('customerServices.comms.typeCall')}</option>
+                          <option value="whatsapp">{t('customerServices.comms.typeWhatsapp')}</option>
+                          <option value="email">{t('customerServices.comms.typeEmail')}</option>
+                          <option value="meeting">{t('customerServices.comms.typeMeeting')}</option>
+                          <option value="note">{t('customerServices.comms.typeNote')}</option>
+                        </>
+                      )}
                     </select>
                   </div>
                   <div className="client-detail-modal__form-field">

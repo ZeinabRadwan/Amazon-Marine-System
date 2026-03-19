@@ -21,6 +21,8 @@ export function NewTicketModal({
   if (!open) return null
   const isRtl = i18n.language === 'ar' || i18n.dir() === 'rtl'
   const typeLabel = (type) => (isRtl && type?.label_ar ? type.label_ar : type?.name ?? '')
+  const defaultTicketTypeId = ticketTypes?.[0]?.id ?? 1
+  const defaultPriorityId = priorities?.[0]?.id ?? 2
 
   return (
     <div className="client-detail-modal" role="dialog" aria-modal="true" aria-labelledby="cs-modal-new-ticket-title">
@@ -78,8 +80,8 @@ export function NewTicketModal({
                     <label htmlFor="new-ticket-type">{t('customerServices.tickets.type')}</label>
                     <select
                       id="new-ticket-type"
-                      value={form.ticket_type_id ?? 1}
-                      onChange={(e) => setForm((f) => ({ ...f, ticket_type_id: Number(e.target.value) || 1 }))}
+                      value={form.ticket_type_id ?? defaultTicketTypeId}
+                      onChange={(e) => setForm((f) => ({ ...f, ticket_type_id: Number(e.target.value) || defaultTicketTypeId }))}
                       disabled={submitting}
                     >
                       {ticketTypes.map((tt) => (
@@ -98,12 +100,14 @@ export function NewTicketModal({
                     <label htmlFor="new-ticket-priority">{t('customerServices.tickets.priority')}</label>
                     <select
                       id="new-ticket-priority"
-                      value={form.priority_id ?? 2}
-                      onChange={(e) => setForm((f) => ({ ...f, priority_id: Number(e.target.value) || 2 }))}
+                      value={form.priority_id ?? defaultPriorityId}
+                      onChange={(e) => setForm((f) => ({ ...f, priority_id: Number(e.target.value) || defaultPriorityId }))}
                       disabled={submitting}
                     >
                       {priorities.map((p) => (
-                        <option key={p.id} value={p.id}>{isRtl && p.label_ar ? p.label_ar : t(`customerServices.tickets.priority${p.name.charAt(0).toUpperCase() + p.name.slice(1)}`)}</option>
+                        <option key={p.id} value={p.id}>
+                          {isRtl && p.label_ar ? p.label_ar : (p?.name ? p.name.charAt(0).toUpperCase() + p.name.slice(1) : '')}
+                        </option>
                       ))}
                     </select>
                   </div>

@@ -18,7 +18,6 @@ import {
   ReplyTicketModal,
   AddCommsLogModal,
 } from './components/modals'
-import { TRACKING_STATUS_KEYS } from './constants'
 import '../../components/LoaderDots/LoaderDots.css'
 import '../../components/Tabs/Tabs.css'
 import '../../components/PageHeader/PageHeader.css'
@@ -44,6 +43,8 @@ export default function CustomerServices() {
     // Tracking
     trackingLoading,
     trackingError,
+    trackingStatuses,
+    trackingStatusesLoading,
     refetchTracking,
     trackingFilters,
     setTrackingFilters,
@@ -86,6 +87,8 @@ export default function CustomerServices() {
     ticketPagination,
     ticketColumns,
     ticketTypes,
+    ticketPriorities,
+    ticketStatuses,
     ticketStats,
     clientsForTicket,
     usersForTicket,
@@ -102,7 +105,6 @@ export default function CustomerServices() {
     replyForm,
     setReplyForm,
     handleReplyTicket,
-    handleDeleteTicket,
     handleDeleteTicketConfirm,
     deleteTicketId,
     setDeleteTicketId,
@@ -110,7 +112,7 @@ export default function CustomerServices() {
     ticketSubmitting,
     ticketExportLoading,
     handleExportTickets,
-    ticketStatusKey,
+    ticketStatusLabel,
     // Comms
     commsLoading,
     commsError,
@@ -120,6 +122,7 @@ export default function CustomerServices() {
     paginatedComms,
     commsPagination,
     commsColumns,
+    commsTypes,
     showAddComms,
     setShowAddComms,
     commsForm,
@@ -143,6 +146,7 @@ export default function CustomerServices() {
   }
 
   const dir = i18n.language === 'ar' ? 'rtl' : 'ltr'
+  const isRtl = i18n.language === 'ar' || i18n.dir() === 'rtl'
 
   const renderTrackingPanel = () => {
     const loading = trackingLoading
@@ -183,8 +187,8 @@ export default function CustomerServices() {
                 aria-label={t('customerServices.tracking.statusLabel')}
               >
                 <option value="">{t('customerServices.tracking.statusLabel')}</option>
-                {Object.keys(TRACKING_STATUS_KEYS).map((k) => (
-                  <option key={k} value={k}>{t(TRACKING_STATUS_KEYS[k])}</option>
+                {!trackingStatusesLoading && trackingStatuses.filter((s) => s?.active !== false).map((s) => (
+                  <option key={s.key} value={s.key}>{i18n.language === 'ar' ? s.name_ar : s.name_en}</option>
                 ))}
               </select>
             </div>
@@ -346,9 +350,9 @@ export default function CustomerServices() {
                 aria-label={t('customerServices.tickets.type')}
               >
                 <option value="">{t('customerServices.tickets.type')}</option>
-                <option value="inquiry">{t('customerServices.tickets.typeInquiry')}</option>
-                <option value="complaint">{t('customerServices.tickets.typeComplaint')}</option>
-                <option value="request">{t('customerServices.tickets.typeRequest')}</option>
+                {(ticketTypes || []).map((tt) => (
+                  <option key={tt.id} value={tt.name}>{isRtl && tt.label_ar ? tt.label_ar : tt.name}</option>
+                ))}
               </select>
               <select
                 value={filters.assigned_to_id ?? ''}
@@ -383,10 +387,11 @@ export default function CustomerServices() {
                 aria-label={t('customerServices.fields.status')}
               >
                 <option value="">{t('customerServices.fields.status')}</option>
-                <option value="open">{t('customerServices.statusOpen')}</option>
-                <option value="in_progress">{t('customerServices.tickets.statusInProgress')}</option>
-                <option value="waiting">{t('customerServices.tickets.statusWaiting')}</option>
-                <option value="closed">{t('customerServices.statusClosed')}</option>
+                {(ticketStatuses || [])
+                  .filter((s) => s?.active !== false)
+                  .map((s) => (
+                    <option key={s.key} value={s.key}>{isRtl ? s.label_ar : (s.label_en || s.label_ar || s.key)}</option>
+                  ))}
               </select>
               <select
                 value={filters.priority ?? ''}
@@ -395,9 +400,9 @@ export default function CustomerServices() {
                 aria-label={t('customerServices.tickets.priority')}
               >
                 <option value="">{t('customerServices.tickets.priority')}</option>
-                <option value="low">{t('customerServices.tickets.priorityLow')}</option>
-                <option value="medium">{t('customerServices.tickets.priorityMedium')}</option>
-                <option value="high">{t('customerServices.tickets.priorityHigh')}</option>
+                {(ticketPriorities || []).map((p) => (
+                  <option key={p.id} value={p.name}>{isRtl && p.label_ar ? p.label_ar : (p?.name ? p.name.charAt(0).toUpperCase() + p.name.slice(1) : '')}</option>
+                ))}
               </select>
             </div>
             <button
@@ -600,11 +605,9 @@ export default function CustomerServices() {
                 aria-label={t('customerServices.comms.commsType')}
               >
                 <option value="">{t('customerServices.comms.commsType')}</option>
-                <option value="call">{t('customerServices.comms.typeCall')}</option>
-                <option value="whatsapp">{t('customerServices.comms.typeWhatsapp')}</option>
-                <option value="email">{t('customerServices.comms.typeEmail')}</option>
-                <option value="meeting">{t('customerServices.comms.typeMeeting')}</option>
-                <option value="note">{t('customerServices.comms.typeNote')}</option>
+                {(commsTypes || []).map((ct) => (
+                  <option key={ct.id} value={ct.name}>{isRtl && ct.label_ar ? ct.label_ar : ct.name}</option>
+                ))}
               </select>
               <select
                 value={filters.related ?? ''}
@@ -781,6 +784,7 @@ export default function CustomerServices() {
             loading={viewTrackingLoading}
             onClose={closeViewShipment}
             t={t}
+            shipmentStatuses={trackingStatuses}
           />
           <AddShipmentUpdateModal
             open={showAddUpdate}
@@ -807,6 +811,7 @@ export default function CustomerServices() {
             onSubmit={handleSendToClient}
             submitting={trackingSubmitting}
             t={t}
+            shipmentStatuses={trackingStatuses}
           />
           <NewTicketModal
             open={showNewTicket}
@@ -817,6 +822,7 @@ export default function CustomerServices() {
             submitting={ticketSubmitting}
             t={t}
             ticketTypes={ticketTypes}
+            priorities={ticketPriorities}
             clients={clientsForTicket}
             users={usersForTicket}
             clientShipments={clientShipmentsForTicket}
@@ -830,7 +836,7 @@ export default function CustomerServices() {
             onSubmit={handleReplyTicket}
             submitting={ticketSubmitting}
             t={t}
-            ticketStatusKey={ticketStatusKey}
+            ticketStatusLabel={ticketStatusLabel}
           />
           <AddCommsLogModal
             open={showAddComms}
@@ -841,6 +847,7 @@ export default function CustomerServices() {
             submitting={commsSubmitting}
             t={t}
             clients={clientsForComms}
+            commsTypes={commsTypes}
           />
           {/* Delete confirm modal (same style as Clients page) */}
           {deleteTicketId != null && (
