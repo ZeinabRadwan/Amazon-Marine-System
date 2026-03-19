@@ -4,7 +4,8 @@
     "language": "اللغة",
     "english": "English",
     "arabic": "العربية",
-    "logOut": "تسجيل الخروج"
+    "logOut": "تسجيل الخروج",
+    "cancel": "إلغاء"
   },
   "topNav": {
     "searchPlaceholder": "البحث في الشحنات، العملاء، الفواتير...",

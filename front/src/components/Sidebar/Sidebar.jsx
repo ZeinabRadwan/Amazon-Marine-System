@@ -80,7 +80,7 @@ const SIDEBAR_SECTIONS = [
     sectionKey: 'system',
     items: [
       { id: 'users', menuKey: 'users', Icon: UsersIcon },
-      { id: 'usersPermissions', menuKey: 'usersPermissions', Icon: UsersIcon },
+      // { id: 'usersPermissions', menuKey: 'usersPermissions', Icon: UsersIcon },
       { id: 'rolesPermissions', menuKey: 'rolesPermissions', Icon: ShieldIcon },
       { id: 'settings', menuKey: 'settings', Icon: SettingsIcon },
     ],

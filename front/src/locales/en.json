@@ -4,7 +4,8 @@
     "language": "Language",
     "english": "English",
     "arabic": "العربية",
-    "logOut": "Log out"
+    "logOut": "Log out",
+    "cancel": "Cancel"
   },
   "topNav": {
     "searchPlaceholder": "Search shipments, clients, invoices...",

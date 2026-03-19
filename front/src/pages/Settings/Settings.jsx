@@ -31,14 +31,17 @@ import '../Clients/Clients.css'
 import '../CustomerServices/styles/CustomerServices.css'
 import './Settings.css'
 
-function SectionCard({ title, children, actions }) {
+function SectionCard({ title, subtitle, children, actions, compact }) {
   return (
-    <section className="settings-section-card">
+    <section className={`settings-section-card ${compact ? 'settings-section-card--compact' : ''}`.trim()}>
       <header className="settings-section-header">
-        <h2 className="settings-section-title">{title}</h2>
+        <div className="settings-section-title-wrap">
+          <h2 className="settings-section-title">{title}</h2>
+          {subtitle ? <p className="settings-section-subtitle">{subtitle}</p> : null}
+        </div>
         {actions ? <div className="settings-section-actions">{actions}</div> : null}
       </header>
-      {children}
+      <div className="settings-section-body">{children}</div>
     </section>
   )
 }
@@ -465,39 +468,46 @@ export default function Settings() {
             <div role="tabpanel" className={`cs-tab-panel ${activeTab === 'company' ? 'cs-tab-panel--active' : ''}`}>
               {activeTab === 'company' && (
                 <div className="settings-tab-content">
-                  <SectionCard title={t('settings.company.cardTitle')}>
-                    <div className="settings-forms-grid">
-                      <form className="settings-form" onSubmit={handleSaveCompanyProfile}>
-                        <h3 className="settings-form-title">{t('settings.company.profileTitle')}</h3>
-                        <Input label={t('settings.company.nameAr')} value={companyProfile.name_ar} onChange={(e) => setCompanyProfile((p) => ({ ...p, name_ar: e.target.value }))} />
-                        <Input label={t('settings.company.nameEn')} value={companyProfile.name_en} onChange={(e) => setCompanyProfile((p) => ({ ...p, name_en: e.target.value }))} />
+                  <div className="settings-cards-grid settings-cards-grid--two">
+                    <SectionCard title={t('settings.company.profileTitle')} subtitle={t('settings.company.cardTitle')}>
+                      <form className="settings-form settings-form--stacked" onSubmit={handleSaveCompanyProfile}>
+                        <div className="settings-form-group">
+                          <Input label={t('settings.company.nameAr')} value={companyProfile.name_ar} onChange={(e) => setCompanyProfile((p) => ({ ...p, name_ar: e.target.value }))} />
+                          <Input label={t('settings.company.nameEn')} value={companyProfile.name_en} onChange={(e) => setCompanyProfile((p) => ({ ...p, name_en: e.target.value }))} />
+                        </div>
                         <div className="settings-form-row">
                           <Input label={t('settings.company.phone')} value={companyProfile.phone} onChange={(e) => setCompanyProfile((p) => ({ ...p, phone: e.target.value }))} />
                           <Input label={t('settings.company.email')} type="email" value={companyProfile.email} onChange={(e) => setCompanyProfile((p) => ({ ...p, email: e.target.value }))} />
                         </div>
-                        <Input label={t('settings.company.address')} value={companyProfile.address} onChange={(e) => setCompanyProfile((p) => ({ ...p, address: e.target.value }))} />
+                        <div className="settings-form-group">
+                          <Input label={t('settings.company.address')} value={companyProfile.address} onChange={(e) => setCompanyProfile((p) => ({ ...p, address: e.target.value }))} />
+                        </div>
                         <div className="settings-form-row">
                           <Input label={t('settings.company.commercialRegister')} value={companyProfile.commercial_register} onChange={(e) => setCompanyProfile((p) => ({ ...p, commercial_register: e.target.value }))} />
                           <Input label={t('settings.company.taxCard')} value={companyProfile.tax_card} onChange={(e) => setCompanyProfile((p) => ({ ...p, tax_card: e.target.value }))} />
                         </div>
-                        <button type="submit" disabled={saving} className="page-header__btn page-header__btn--primary">
-                          {t('settings.company.saveProfile')}
-                        </button>
+                        <div className="settings-form-actions">
+                          <button type="submit" disabled={saving} className="page-header__btn page-header__btn--primary">
+                            {t('settings.company.saveProfile')}
+                          </button>
+                        </div>
                       </form>
-                      <form className="settings-form" onSubmit={handleSaveCompanyLocation}>
-                        <h3 className="settings-form-title">{t('settings.company.locationTitle')}</h3>
+                    </SectionCard>
+                    <SectionCard title={t('settings.company.locationTitle')} subtitle={t('settings.company.locationHint')}>
+                      <form className="settings-form settings-form--stacked" onSubmit={handleSaveCompanyLocation}>
                         <div className="settings-form-row three">
                           <Input label={t('settings.company.lat')} value={companyLocation.lat} onChange={(e) => setCompanyLocation((p) => ({ ...p, lat: e.target.value }))} />
                           <Input label={t('settings.company.lng')} value={companyLocation.lng} onChange={(e) => setCompanyLocation((p) => ({ ...p, lng: e.target.value }))} />
                           <Input label={t('settings.company.radius')} value={companyLocation.radius_m} onChange={(e) => setCompanyLocation((p) => ({ ...p, radius_m: e.target.value }))} />
                         </div>
-                        <p className="settings-hint">{t('settings.company.locationHint')}</p>
-                        <button type="submit" disabled={saving} className="page-header__btn page-header__btn--primary">
-                          {t('settings.company.saveLocation')}
-                        </button>
+                        <div className="settings-form-actions">
+                          <button type="submit" disabled={saving} className="page-header__btn page-header__btn--primary">
+                            {t('settings.company.saveLocation')}
+                          </button>
+                        </div>
                       </form>
-                    </div>
-                  </SectionCard>
+                    </SectionCard>
+                  </div>
                 </div>
               )}
             </div>
@@ -506,31 +516,41 @@ export default function Settings() {
             <div role="tabpanel" className={`cs-tab-panel ${activeTab === 'system' ? 'cs-tab-panel--active' : ''}`}>
               {activeTab === 'system' && (
                 <div className="settings-tab-content">
-                  <SectionCard title={t('settings.system.cardTitle')}>
-                    <div className="settings-forms-grid">
-                      <form className="settings-form" onSubmit={handleSaveSystemPrefs}>
-                        <h3 className="settings-form-title">{t('settings.system.systemTitle')}</h3>
-                        <Input label={t('settings.system.timezone')} value={systemPrefs.timezone} onChange={(e) => setSystemPrefs((p) => ({ ...p, timezone: e.target.value }))} />
-                        <Input label={t('settings.system.currency')} value={systemPrefs.currency} onChange={(e) => setSystemPrefs((p) => ({ ...p, currency: e.target.value }))} />
-                        <Input label={t('settings.system.dateFormat')} value={systemPrefs.date_format} onChange={(e) => setSystemPrefs((p) => ({ ...p, date_format: e.target.value }))} />
-                        <Input label={t('settings.system.defaultTax')} type="number" value={systemPrefs.default_tax_pct} onChange={(e) => setSystemPrefs((p) => ({ ...p, default_tax_pct: e.target.value }))} />
-                        <button type="submit" disabled={saving} className="page-header__btn page-header__btn--primary">
-                          {t('settings.system.saveSystem')}
-                        </button>
+                  <div className="settings-cards-grid settings-cards-grid--two">
+                    <SectionCard title={t('settings.system.systemTitle')} subtitle={t('settings.system.cardTitle')}>
+                      <form className="settings-form settings-form--stacked" onSubmit={handleSaveSystemPrefs}>
+                        <div className="settings-form-row">
+                          <Input label={t('settings.system.timezone')} value={systemPrefs.timezone} onChange={(e) => setSystemPrefs((p) => ({ ...p, timezone: e.target.value }))} />
+                          <Input label={t('settings.system.currency')} value={systemPrefs.currency} onChange={(e) => setSystemPrefs((p) => ({ ...p, currency: e.target.value }))} />
+                        </div>
+                        <div className="settings-form-row">
+                          <Input label={t('settings.system.dateFormat')} value={systemPrefs.date_format} onChange={(e) => setSystemPrefs((p) => ({ ...p, date_format: e.target.value }))} />
+                          <Input label={t('settings.system.defaultTax')} type="number" value={systemPrefs.default_tax_pct} onChange={(e) => setSystemPrefs((p) => ({ ...p, default_tax_pct: e.target.value }))} />
+                        </div>
+                        <div className="settings-form-actions">
+                          <button type="submit" disabled={saving} className="page-header__btn page-header__btn--primary">
+                            {t('settings.system.saveSystem')}
+                          </button>
+                        </div>
                       </form>
-                      <form className="settings-form" onSubmit={handleSaveNotifPrefs}>
-                        <h3 className="settings-form-title">{t('settings.system.notificationsTitle')}</h3>
-                        <CheckboxRow label={t('settings.system.shipments')} checked={notifPrefs.shipments} onChange={(v) => setNotifPrefs((p) => ({ ...p, shipments: v }))} />
-                        <CheckboxRow label={t('settings.system.finance')} checked={notifPrefs.finance} onChange={(v) => setNotifPrefs((p) => ({ ...p, finance: v }))} />
-                        <CheckboxRow label={t('settings.system.crm')} checked={notifPrefs.crm} onChange={(v) => setNotifPrefs((p) => ({ ...p, crm: v }))} />
-                        <CheckboxRow label={t('settings.system.email')} checked={notifPrefs.email} onChange={(v) => setNotifPrefs((p) => ({ ...p, email: v }))} />
-                        <CheckboxRow label={t('settings.system.docsExpiry')} checked={notifPrefs.docs_expiry} onChange={(v) => setNotifPrefs((p) => ({ ...p, docs_expiry: v }))} />
-                        <button type="submit" disabled={saving} className="page-header__btn page-header__btn--primary">
-                          {t('settings.system.saveNotifications')}
-                        </button>
+                    </SectionCard>
+                    <SectionCard title={t('settings.system.notificationsTitle')} subtitle={t('settings.system.cardTitle')}>
+                      <form className="settings-form settings-form--stacked" onSubmit={handleSaveNotifPrefs}>
+                        <div className="settings-checkbox-group">
+                          <CheckboxRow label={t('settings.system.shipments')} checked={notifPrefs.shipments} onChange={(v) => setNotifPrefs((p) => ({ ...p, shipments: v }))} />
+                          <CheckboxRow label={t('settings.system.finance')} checked={notifPrefs.finance} onChange={(v) => setNotifPrefs((p) => ({ ...p, finance: v }))} />
+                          <CheckboxRow label={t('settings.system.crm')} checked={notifPrefs.crm} onChange={(v) => setNotifPrefs((p) => ({ ...p, crm: v }))} />
+                          <CheckboxRow label={t('settings.system.email')} checked={notifPrefs.email} onChange={(v) => setNotifPrefs((p) => ({ ...p, email: v }))} />
+                          <CheckboxRow label={t('settings.system.docsExpiry')} checked={notifPrefs.docs_expiry} onChange={(v) => setNotifPrefs((p) => ({ ...p, docs_expiry: v }))} />
+                        </div>
+                        <div className="settings-form-actions">
+                          <button type="submit" disabled={saving} className="page-header__btn page-header__btn--primary">
+                            {t('settings.system.saveNotifications')}
+                          </button>
+                        </div>
                       </form>
-                    </div>
-                  </SectionCard>
+                    </SectionCard>
+                  </div>
                 </div>
               )}
             </div>
@@ -539,14 +559,11 @@ export default function Settings() {
             <div role="tabpanel" className={`cs-tab-panel ${activeTab === 'sessions' ? 'cs-tab-panel--active' : ''}`}>
               {activeTab === 'sessions' && (
                 <div className="settings-tab-content">
-                  <SectionCard
-                    title={t('settings.sessions.cardTitle')}
-                    actions={
-                      <button type="button" className="page-header__btn page-header__btn--primary" onClick={handleLogoutOthers}>
-                        {t('settings.sessions.logoutOthers')}
-                      </button>
-                    }
-                  >
+                  <SectionCard title={t('settings.sessions.cardTitle')} compact actions={
+                    <button type="button" className="page-header__btn page-header__btn--primary" onClick={handleLogoutOthers}>
+                      {t('settings.sessions.logoutOthers')}
+                    </button>
+                  }>
                     <form className="settings-inline-form" onSubmit={handleSaveSessionSettings}>
                       <Input label={t('settings.sessions.resetHour')} type="number" min="0" max="23" value={sessionSettings.reset_hour} onChange={(e) => setSessionSettings((p) => ({ ...p, reset_hour: e.target.value }))} />
                       <Input label={t('settings.sessions.idleLogoutMinutes')} type="number" min="1" value={sessionSettings.idle_logout_minutes} onChange={(e) => setSessionSettings((p) => ({ ...p, idle_logout_minutes: e.target.value }))} />
@@ -554,78 +571,79 @@ export default function Settings() {
                         {t('settings.sessions.saveSessionSettings')}
                       </button>
                     </form>
+                  </SectionCard>
 
-                    <div className="clients-filters-card">
+                  <SectionCard title={t('settings.sessions.todayTitle')}>
+                    <div className="settings-table-card">
+                      <div className="settings-today-table-wrap">
+                        <table className="responsive-table__table w-full border-collapse text-sm">
+                          <thead>
+                            <tr>
+                              <th className="responsive-table__th">{t('settings.sessions.table.user')}</th>
+                              <th className="responsive-table__th">{t('settings.sessions.table.date')}</th>
+                              <th className="responsive-table__th">{t('settings.sessions.table.firstSeen')}</th>
+                              <th className="responsive-table__th">{t('settings.sessions.table.lastSeen')}</th>
+                              <th className="responsive-table__th">{t('settings.sessions.table.totalActivityMinutes')}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {todaySession ? (
+                              <tr>
+                                <td className="responsive-table__td">{todaySession.user_name || user?.name || todaySession.user_id || '—'}</td>
+                                <td className="responsive-table__td">{todaySession.session_date}</td>
+                                <td className="responsive-table__td">{todaySession.first_seen_at ? new Date(todaySession.first_seen_at).toLocaleTimeString() : '—'}</td>
+                                <td className="responsive-table__td">{todaySession.last_seen_at ? new Date(todaySession.last_seen_at).toLocaleTimeString() : '—'}</td>
+                                <td className="responsive-table__td">{todaySession.total_active_minutes ?? Math.floor((todaySession.total_active_seconds || 0) / 60)}</td>
+                              </tr>
+                            ) : (
+                              <tr>
+                                <td colSpan={5} className="responsive-table__td clients-empty">
+                                  {t('settings.sessions.noToday')}
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </SectionCard>
+
+                  <SectionCard title={t('settings.sessions.historyTitle')} actions={
+                    <button type="button" className="page-header__btn page-header__btn--primary" onClick={refreshSessions} disabled={sessionsLoading}>
+                      {sessionsLoading ? t('clients.loading', 'Loading…') : t('settings.sessions.refresh')}
+                    </button>
+                  }>
+                    <div className="settings-filters-bar clients-filters-card">
                       <div className="clients-filters__row clients-filters__row--main">
                         <div className="clients-filters__search-wrap" dir={dir}>
                           <Search className="clients-filters__search-icon" aria-hidden />
                           <input
                             type="date"
-                            placeholder={t('settings.sessions.from')}
                             value={sessionsFilters.from}
                             onChange={(e) => setSessionsFilters((f) => ({ ...f, from: e.target.value }))}
                             className="clients-input clients-filters__search"
                             aria-label={t('settings.sessions.from')}
                           />
                         </div>
-                        <input
-                          type="date"
-                          placeholder={t('settings.sessions.to')}
-                          value={sessionsFilters.to}
-                          onChange={(e) => setSessionsFilters((f) => ({ ...f, to: e.target.value }))}
-                          className="clients-input"
-                          aria-label={t('settings.sessions.to')}
-                        />
+                        <input type="date" value={sessionsFilters.to} onChange={(e) => setSessionsFilters((f) => ({ ...f, to: e.target.value }))} className="clients-input" aria-label={t('settings.sessions.to')} />
                         <button type="button" className="clients-filters__clear clients-filters__btn-icon" onClick={() => setSessionsFilters({ from: '', to: '' })} aria-label={t('customerServices.clearFilters')}>
                           <RotateCcw className="clients-filters__btn-icon-svg" aria-hidden />
                         </button>
                         <div className="clients-filters__actions">
                           <button type="button" className="page-header__btn page-header__btn--primary" onClick={refreshSessions} disabled={sessionsLoading}>
-                            {sessionsLoading ? t('clients.loading', 'Loading…') : t('settings.sessions.refresh')}
+                            {t('settings.sessions.apply')}
                           </button>
                         </div>
                       </div>
                     </div>
-
-                    <h3 className="settings-subtitle">{t('settings.sessions.todayTitle')}</h3>
-                    <div className="settings-today-table-wrap">
-                      <table className="responsive-table__table w-full border-collapse text-sm">
-                        <thead>
-                          <tr>
-                            <th className="responsive-table__th">{t('settings.sessions.table.user')}</th>
-                            <th className="responsive-table__th">{t('settings.sessions.table.date')}</th>
-                            <th className="responsive-table__th">{t('settings.sessions.table.firstSeen')}</th>
-                            <th className="responsive-table__th">{t('settings.sessions.table.lastSeen')}</th>
-                            <th className="responsive-table__th">{t('settings.sessions.table.totalActivityMinutes')}</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {todaySession ? (
-                            <tr>
-                              <td className="responsive-table__td">{todaySession.user_name || user?.name || todaySession.user_id || '—'}</td>
-                              <td className="responsive-table__td">{todaySession.session_date}</td>
-                              <td className="responsive-table__td">{todaySession.first_seen_at ? new Date(todaySession.first_seen_at).toLocaleTimeString() : '—'}</td>
-                              <td className="responsive-table__td">{todaySession.last_seen_at ? new Date(todaySession.last_seen_at).toLocaleTimeString() : '—'}</td>
-                              <td className="responsive-table__td">{todaySession.total_active_minutes ?? Math.floor((todaySession.total_active_seconds || 0) / 60)}</td>
-                            </tr>
-                          ) : (
-                            <tr>
-                              <td colSpan={5} className="responsive-table__td clients-empty">
-                                {t('settings.sessions.noToday')}
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <h3 className="settings-subtitle">{t('settings.sessions.historyTitle')}</h3>
                     {sessionsLoading ? (
                       <div className="cs-loading-wrap">
                         <LoaderDots />
                       </div>
                     ) : (
-                      <Table columns={sessionsHistoryColumns} data={sessionsHistory} getRowKey={(r) => r.id} emptyMessage={t('settings.sessions.noHistory')} />
+                      <div className="settings-table-card">
+                        <Table columns={sessionsHistoryColumns} data={sessionsHistory} getRowKey={(r) => r.id} emptyMessage={t('settings.sessions.noHistory')} />
+                      </div>
                     )}
                   </SectionCard>
                 </div>
@@ -644,7 +662,7 @@ export default function Settings() {
                       </button>
                     }
                   >
-                    <div className="clients-filters-card">
+                    <div className="settings-filters-bar clients-filters-card">
                       <div className="clients-filters__row clients-filters__row--main">
                         <div className="clients-filters__search-wrap" dir={dir}>
                           <Search className="clients-filters__search-icon" aria-hidden />
@@ -679,7 +697,9 @@ export default function Settings() {
                         <LoaderDots />
                       </div>
                     ) : (
-                      <Table columns={activityColumns} data={activities} getRowKey={(r) => r.id} emptyMessage={t('settings.activity.empty')} />
+                      <div className="settings-table-card">
+                        <Table columns={activityColumns} data={activities} getRowKey={(r) => r.id} emptyMessage={t('settings.activity.empty')} />
+                      </div>
                     )}
                   </SectionCard>
                 </div>
@@ -699,7 +719,9 @@ export default function Settings() {
                         </button>
                       }
                     >
-                      <Table columns={shipmentStatusColumns} data={shipmentStatuses} getRowKey={(r) => r.id} emptyMessage={t('settings.shipmentStatuses.noStatuses')} />
+                      <div className="settings-table-card">
+                        <Table columns={shipmentStatusColumns} data={shipmentStatuses} getRowKey={(r) => r.id} emptyMessage={t('settings.shipmentStatuses.noStatuses')} />
+                      </div>
                     </SectionCard>
                   </div>
                 )}
