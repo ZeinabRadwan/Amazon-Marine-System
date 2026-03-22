@@ -202,6 +202,21 @@ export async function updateTicket(token, id, body) {
   return data
 }
 
+/**
+ * POST {{base_url}}/tickets/:id/replies
+ * Body: { body: string }
+ */
+export async function createTicketReply(token, ticketId, body) {
+  const res = await fetch(`${getBaseUrl()}/tickets/${ticketId}/replies`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+    body: JSON.stringify(body),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to add reply (${res.status})`)
+  return data
+}
+
 export async function deleteTicket(token, id) {
   const res = await fetch(`${getBaseUrl()}/tickets/${id}`, { method: 'DELETE', headers: authHeaders(token) })
   if (res.status === 204) return { message: 'Ticket deleted.' }

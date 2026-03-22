@@ -16,6 +16,7 @@ import {
   createTicket,
   updateTicket,
   deleteTicket,
+  createTicketReply,
 } from '../../../api/customerServices'
 import { listClients } from '../../../api/clients'
 import { listUsers } from '../../../api/users'
@@ -53,6 +54,8 @@ function mapShipmentToRow(shipment, formatDate) {
 }
 
 function mapTicketToRow(t) {
+  const repliesRaw = Array.isArray(t.replies) ? t.replies : []
+  const replies = [...repliesRaw].sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
   return {
     id: t.id,
     ticket_number: t.ticket_number ?? '—',
@@ -64,6 +67,16 @@ function mapTicketToRow(t) {
     assigned_to_id: t.assigned_to_id,
     status: t.status ?? 'open',
     date: t.created_at,
+    subject: t.subject ?? '',
+    description: t.description ?? null,
+    created_at: t.created_at,
+    created_by_name: t.created_by?.name ?? '—',
+    replies: replies.map((r) => ({
+      id: r.id,
+      body: r.body ?? '',
+      created_at: r.created_at,
+      author: r.user?.name ?? '—',
+    })),
   }
 }
 
@@ -709,21 +722,27 @@ export function useCustomerServicesState() {
     if (!replyTicketId) return
     const token = getStoredToken()
     if (!token) return
+    const body = String(replyForm.text ?? '').trim()
+    if (!body) {
+      setAlert({ type: 'error', message: t('customerServices.tickets.replyRequired', 'Please enter a reply.') })
+      return
+    }
     setTicketSubmitting(true)
-    const statusToKeep = replyTicket?.status ?? 'open'
-    updateTicket(token, replyTicketId, { status: statusToKeep })
-      .then(() => {
-        setShowReplyTicket(false)
-        setReplyTicketId(null)
-        setAlert({ type: 'success', message: t('customerServices.tickets.sendReply') })
+    createTicketReply(token, replyTicketId, { body })
+      .then(() => getTicket(token, replyTicketId))
+      .then((data) => {
+        const raw = data.ticket ?? data.data ?? data
+        setReplyTicket(raw ? mapTicketToRow(raw) : null)
+        setReplyForm({ text: '' })
+        setAlert({ type: 'success', message: t('customerServices.tickets.replySent', 'Reply added.') })
         loadTickets()
         loadTicketStats()
       })
       .catch((err) => {
-        setAlert({ type: 'error', message: err.message || t('customerServices.tickets.updateError') || 'Failed to update ticket' })
+        setAlert({ type: 'error', message: err.message || t('customerServices.tickets.replyError', 'Failed to send reply') })
       })
       .finally(() => setTicketSubmitting(false))
-  }, [replyTicketId, replyTicket?.status, t, loadTickets, loadTicketStats])
+  }, [replyTicketId, replyForm.text, t, loadTickets, loadTicketStats])
 
   const [updatingStatusId, setUpdatingStatusId] = useState(null)
 
@@ -961,6 +980,7 @@ export function useCustomerServicesState() {
     setAlert,
     csTabs,
     formatDate,
+    formatDateTime,
     ticketStatusLabel,
     // Tracking
     trackingLoading,

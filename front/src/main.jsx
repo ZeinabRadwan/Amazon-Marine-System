@@ -1,5 +1,5 @@
 import { createRoot } from 'react-dom/client'
-import 'boxicons/css/boxicons.min.css'
+// import 'boxicons/css/boxicons.min.css'
 import './i18n'
 import { initTheme } from './theme'
 import './index.css'

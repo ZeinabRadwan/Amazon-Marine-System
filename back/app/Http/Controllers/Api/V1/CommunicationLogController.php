@@ -21,13 +21,18 @@ class CommunicationLogController extends Controller
             $query->where('communication_log_type_id', $typeId);
         }
 
-        if ($request->query('related') === 'client') {
+        $related = $request->query('related') ?? $request->query('related_to');
+        if (is_string($related)) {
+            $related = strtolower(trim($related));
+        } else {
+            $related = null;
+        }
+
+        if ($related === 'client') {
             $query->whereNotNull('client_id');
-        }
-        if ($request->query('related') === 'shipment') {
+        } elseif ($related === 'shipment') {
             $query->whereNotNull('shipment_id');
-        }
-        if ($request->query('related') === 'ticket') {
+        } elseif ($related === 'ticket') {
             $query->whereNotNull('ticket_id');
         }
 

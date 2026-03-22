@@ -113,6 +113,7 @@ export default function CustomerServices() {
     ticketExportLoading,
     handleExportTickets,
     ticketStatusLabel,
+    formatDateTime,
     // Comms
     commsLoading,
     commsError,
@@ -837,6 +838,7 @@ export default function CustomerServices() {
             submitting={ticketSubmitting}
             t={t}
             ticketStatusLabel={ticketStatusLabel}
+            formatDateTime={formatDateTime}
           />
           <AddCommsLogModal
             open={showAddComms}
