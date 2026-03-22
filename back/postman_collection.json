@@ -6807,7 +6807,7 @@
         },
         {
           "name": "Tickets",
-          "description": "Use ticket_type_id and priority_id (see folder description for seeded ID meanings).",
+          "description": "Use ticket_type_id and priority_id (see folder description for seeded ID meanings). Show Ticket includes `replies` (chronological, oldest first) each with `user`. Add Ticket Reply: POST `tickets/:ticket_id/replies` with JSON `{ \"body\": \"...\" }` (requires permission to update the ticket).",
           "item": [
             {
               "name": "List Tickets",
@@ -6896,6 +6896,27 @@
                   { "key": "Authorization", "value": "Bearer {{token}}" }
                 ],
                 "url": { "raw": "{{base_url}}/tickets/{{ticket_id}}", "host": ["{{base_url}}"], "path": ["tickets", "{{ticket_id}}"] }
+              },
+              "response": []
+            },
+            {
+              "name": "Add Ticket Reply",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Accept", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"body\": \"We are looking into this and will update you shortly.\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/tickets/{{ticket_id}}/replies",
+                  "host": ["{{base_url}}"],
+                  "path": ["tickets", "{{ticket_id}}", "replies"]
+                }
               },
               "response": []
             },
