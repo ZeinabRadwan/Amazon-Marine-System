@@ -5,7 +5,6 @@ export function getApiBaseUrl() {
   const host = import.meta.env.VITE_API_URL
   if (host) return `${host.replace(/\/$/, '')}/api/v1`
 
-  // If env vars are missing in a production build, default to same-origin.
   if (typeof window !== 'undefined') {
     const { origin, hostname } = window.location
     const isLocal =
@@ -13,10 +12,16 @@ export function getApiBaseUrl() {
       hostname === '127.0.0.1' ||
       hostname === '[::1]'
 
+    // Vite dev: empty VITE_API_URL + proxy — same-origin /api/v1 (see vite.config.js server.proxy)
+    if (import.meta.env.DEV && isLocal) {
+      return `${origin}/api/v1`
+    }
+
+    // Production build without VITE_API_URL: same-origin API
     if (!isLocal) return `${origin}/api/v1`
   }
 
-  // Local dev fallback: Vite dev server (5173) -> Laravel (8000)
+  // Local Laravel (php artisan serve) when you set VITE_API_URL=http://localhost:8000 in .env.local
   return 'http://localhost:8000/api/v1'
 }
 
