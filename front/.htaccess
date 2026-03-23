@@ -1,0 +1,8 @@
+# You uploaded the whole "front" folder → Apache was serving ./index.html (Vite dev → /src/main.jsx).
+# Serve the production build first instead.
+<IfModule mod_dir.c>
+  DirectoryIndex dist/index.html index.html
+</IfModule>
+
+# If document root is THIS folder (front/), built index references /dist/assets/... only when
+# VITE_BASE_PATH=/dist/ is set before "npm run build". Otherwise upload ONLY the files inside dist/.

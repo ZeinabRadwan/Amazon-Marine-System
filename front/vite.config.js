@@ -5,12 +5,23 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 // Vite normally lets existing process.env override .env files. If VITE_API_URL is set in the OS
 // (e.g. to http://localhost:8000), it would ignore front/.env — define from loadEnv() so .env wins.
+function viteBaseFromEnv(raw) {
+  const p = (raw ?? '').trim()
+  if (!p || p === '/') {
+    return '/'
+  }
+  const withLead = p.startsWith('/') ? p : `/${p}`
+  return withLead.endsWith('/') ? withLead : `${withLead}/`
+}
+
 export default defineConfig(({ mode }) => {
   const fileEnv = loadEnv(mode, process.cwd(), '')
   const devProxyTarget =
     fileEnv.DEV_API_PROXY_TARGET || 'https://back.crm-amazonltd.online'
+  const base = viteBaseFromEnv(fileEnv.VITE_BASE_PATH)
 
   return {
+    base,
     plugins: [react(), tailwindcss()],
     define: {
       'import.meta.env.VITE_API_URL': JSON.stringify(fileEnv.VITE_API_URL ?? ''),
