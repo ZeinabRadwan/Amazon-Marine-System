@@ -11,8 +11,11 @@ return new class extends Migration
         Schema::create('pricing_offers', function (Blueprint $table) {
             $table->id();
             $table->string('pricing_type', 20); // sea or inland
-            $table->string('region')->nullable();
-            $table->string('pod')->nullable();
+            // Shared-host MySQL often limits indexed key length to ~1000 bytes.
+            // This table includes a composite index on (`pricing_type`, `region`, `pod`),
+            // so we keep `region`/`pod` lengths bounded to avoid "Specified key was too long".
+            $table->string('region', 100)->nullable();
+            $table->string('pod', 100)->nullable();
             $table->string('shipping_line')->nullable();
             $table->string('pol')->nullable();
             $table->string('dnd')->nullable();
@@ -59,4 +62,3 @@ return new class extends Migration
         Schema::dropIfExists('pricing_offers');
     }
 };
-
