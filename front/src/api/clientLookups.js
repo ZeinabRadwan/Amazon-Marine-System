@@ -3,12 +3,9 @@
  * Company Types (5) + Preferred Comm Methods (5) = 10 APIs.
  */
 
-const getBaseUrl = () => {
-  const base = import.meta.env.VITE_API_BASE_URL
-  if (base) return base
-  const host = import.meta.env.VITE_API_URL
-  return host ? `${host.replace(/\/$/, '')}/api/v1` : 'http://localhost:8000/api/v1'
-}
+import { getApiBaseUrl } from './apiBaseUrl'
+
+const getBaseUrl = getApiBaseUrl
 
 function authHeaders(token) {
   return {

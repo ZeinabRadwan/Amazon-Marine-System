@@ -3,30 +3,9 @@
  * Base URL: http://localhost:8000/api/v1 (or VITE_API_BASE_URL).
  */
 
-const getBaseUrl = () => {
-  const base = import.meta.env.VITE_API_BASE_URL
-  if (base) return base
+import { getApiBaseUrl } from './apiBaseUrl'
 
-  const host = import.meta.env.VITE_API_URL
-  if (host) return `${host.replace(/\/$/, '')}/api/v1`
-
-  if (typeof window !== 'undefined') {
-    const { origin, hostname } = window.location
-
-    const isLocal =
-      hostname === 'localhost' ||
-      hostname === '127.0.0.1' ||
-      hostname === '::1'
-
-    if (!isLocal) {
-      // 👈 في السيرفر يرجع نفس الدومين بدل localhost
-      return `${origin}/api/v1`
-    }
-  }
-
-  // 👈 ده بس للـ local development
-  return 'http://localhost:8000/api/v1'
-}
+const getBaseUrl = getApiBaseUrl
 
 /**
  * POST {{base_url}}/auth/login

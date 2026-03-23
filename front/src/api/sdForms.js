@@ -3,12 +3,9 @@
  * List, stats, charts, CRUD, submit, send-to-operations, link-shipment, email-operations, pdf, export.
  */
 
-const getBaseUrl = () => {
-  const base = import.meta.env.VITE_API_BASE_URL
-  if (base) return base
-  const host = import.meta.env.VITE_API_URL
-  return host ? `${host.replace(/\/$/, '')}/api/v1` : 'http://localhost:8000/api/v1'
-}
+import { getApiBaseUrl } from './apiBaseUrl'
+
+const getBaseUrl = getApiBaseUrl
 
 function authHeaders(token) {
   return {
