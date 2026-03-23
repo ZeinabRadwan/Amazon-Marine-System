@@ -35,6 +35,22 @@ return [
     'remote' => [
         'repo_dir' => env('DEPLOY_REMOTE_REPO_DIR', '~/Amazon-Marine-System'),
         'public_front' => env('DEPLOY_REMOTE_PUBLIC_FRONT', '~/public_html/front'),
+        'back_path' => env('DEPLOY_REMOTE_BACK_PATH'),
+        'php_binary' => env('DEPLOY_REMOTE_PHP', 'php'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Git (push front build to GitHub)
+    |--------------------------------------------------------------------------
+    |
+    | Runs from the monorepo root (parent directory of /front).
+    |
+    */
+
+    'git' => [
+        'remote' => env('DEPLOY_GIT_REMOTE', 'origin'),
+        'commit_message' => env('DEPLOY_GIT_COMMIT_MESSAGE', 'chore(front): deploy build'),
     ],
 
 ];

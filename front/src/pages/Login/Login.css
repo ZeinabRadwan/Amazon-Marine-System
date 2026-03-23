@@ -477,6 +477,8 @@
   padding: 8px 12px;
   background: var(--form-error-bg);
   border-radius: 4px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .login-root .animationRightLeft {
