@@ -45,6 +45,7 @@ export default function AuthenticatedLayout() {
   const { t } = useTranslation()
   const token = getStoredToken()
   const [user, setUser] = useState(null)
+  const [permissions, setPermissions] = useState([])
   const [loading, setLoading] = useState(true)
   const [loggingOut, setLoggingOut] = useState(false)
 
@@ -53,6 +54,7 @@ export default function AuthenticatedLayout() {
     return getProfile(token).then((data) => {
       const u = data.user ?? data.data ?? data
       setUser(u)
+      setPermissions(Array.isArray(data.permissions) ? data.permissions : [])
       return u
     })
   }, [token])
@@ -198,7 +200,7 @@ export default function AuthenticatedLayout() {
       pageTitle={pageHeaderConfig.title}
       pageBreadcrumbs={pageHeaderConfig.breadcrumbs}
     >
-      <Outlet context={{ user, refreshUser }} />
+      <Outlet context={{ user, permissions, refreshUser }} />
     </AppLayout>
   )
 }

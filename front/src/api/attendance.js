@@ -1,10 +1,10 @@
 /**
- * Attendance API – matches back/postman_collection.json Attendance module.
- * - POST /attendance/check-in   – Check-in (body: { notes? })
- * - POST /attendance/check-out  – Check-out (body: { notes? })
- * - GET  /attendance            – List Attendance (query: user_id, date, from, to)
- * - GET  /attendance/stats      – Attendance Stats (query: date)
- * - GET  /attendance/today      – Attendance Today
+ * Attendance API – /api/v1
+ * Clock: POST /attendance/clock-in | clock-out (body: latitude?, longitude?, notes?)
+ * Legacy aliases: check-in, check-out
+ * List: GET /attendance, stats, today
+ * Excuses: GET|POST /attendance/excuses
+ * Admin: GET /admin/attendance, /admin/attendance/summary, GET|PATCH /admin/excuses
  */
 
 import { getApiBaseUrl } from './apiBaseUrl'
@@ -18,40 +18,71 @@ function authHeaders(token) {
   }
 }
 
+function unwrapPayload(data) {
+  if (data && typeof data === 'object' && 'success' in data) {
+    if (!data.success && data.message) {
+      const err = new Error(data.message)
+      err.payload = data.data
+      throw err
+    }
+    return data.data !== undefined ? data.data : data
+  }
+  return data
+}
+
 /**
- * POST {{base_url}}/attendance/check-in – Check-in
- * Body: { notes?: string }
+ * @param {GeolocationPosition} [position]
  */
+export function buildClockBody(position, notes = '') {
+  const body = {}
+  if (notes) body.notes = notes
+  if (position?.coords) {
+    const lat = position.coords.latitude
+    const lng = position.coords.longitude
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      body.latitude = lat
+      body.longitude = lng
+    }
+  }
+  return body
+}
+
+export async function clockIn(token, body = {}) {
+  const res = await fetch(`${getBaseUrl()}/attendance/clock-in`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+    body: JSON.stringify(body),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(data.message || data.error || `Clock-in failed (${res.status})`)
+  }
+  return unwrapPayload(data)
+}
+
+export async function clockOut(token, body = {}) {
+  const res = await fetch(`${getBaseUrl()}/attendance/clock-out`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+    body: JSON.stringify(body),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(data.message || data.error || `Clock-out failed (${res.status})`)
+  }
+  return unwrapPayload(data)
+}
+
+/** @deprecated use clockIn */
 export async function checkIn(token, body = {}) {
-  const res = await fetch(`${getBaseUrl()}/attendance/check-in`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
-    body: JSON.stringify(body),
-  })
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.message || data.error || `Check-in failed (${res.status})`)
-  return data
+  return clockIn(token, body)
 }
 
-/**
- * POST {{base_url}}/attendance/check-out – Check-out
- * Body: { notes?: string }
- */
+/** @deprecated use clockOut */
 export async function checkOut(token, body = {}) {
-  const res = await fetch(`${getBaseUrl()}/attendance/check-out`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
-    body: JSON.stringify(body),
-  })
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.message || data.error || `Check-out failed (${res.status})`)
-  return data
+  return clockOut(token, body)
 }
 
-/**
- * GET {{base_url}}/attendance – List Attendance
- * Query: user_id, date, from, to
- */
 export async function listAttendance(token, params = {}) {
   const searchParams = new URLSearchParams()
   if (params.user_id != null && params.user_id !== '') searchParams.set('user_id', String(params.user_id))
@@ -63,28 +94,94 @@ export async function listAttendance(token, params = {}) {
   const res = await fetch(url, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to list attendance (${res.status})`)
-  return data
+  return unwrapPayload(data)
 }
 
-/**
- * GET {{base_url}}/attendance/stats – Attendance Stats
- * Query: date (YYYY-MM-DD, default today)
- */
 export async function getAttendanceStats(token, params = {}) {
   const date = params.date != null && params.date !== '' ? params.date : ''
   const url = `${getBaseUrl()}/attendance/stats${date ? `?date=${encodeURIComponent(date)}` : ''}`
   const res = await fetch(url, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to get attendance stats (${res.status})`)
-  return data
+  return unwrapPayload(data)
 }
 
-/**
- * GET {{base_url}}/attendance/today – Attendance Today
- */
 export async function getAttendanceToday(token) {
   const res = await fetch(`${getBaseUrl()}/attendance/today`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to get today's attendance (${res.status})`)
-  return data
+  return unwrapPayload(data)
+}
+
+export async function listMyExcuses(token, params = {}) {
+  const q = new URLSearchParams()
+  if (params.status) q.set('status', params.status)
+  const url = `${getBaseUrl()}/attendance/excuses${q.toString() ? `?${q}` : ''}`
+  const res = await fetch(url, { headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to load excuses (${res.status})`)
+  return unwrapPayload(data)
+}
+
+export async function submitExcuse(token, { date, reason, attachment }) {
+  const form = new FormData()
+  form.set('date', date)
+  form.set('reason', reason)
+  if (attachment) form.set('attachment', attachment)
+  const res = await fetch(`${getBaseUrl()}/attendance/excuses`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: form,
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to submit excuse (${res.status})`)
+  return unwrapPayload(data)
+}
+
+export async function adminListAttendance(token, params = {}) {
+  const q = new URLSearchParams()
+  const keys = ['employee_id', 'date_from', 'date_to', 'status', 'device_type', 'is_within_radius', 'page', 'per_page']
+  keys.forEach((k) => {
+    if (params[k] != null && params[k] !== '') q.set(k, String(params[k]))
+  })
+  const url = `${getBaseUrl()}/admin/attendance${q.toString() ? `?${q}` : ''}`
+  const res = await fetch(url, { headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Admin attendance failed (${res.status})`)
+  return unwrapPayload(data)
+}
+
+export async function adminAttendanceSummary(token, params = {}) {
+  const q = new URLSearchParams()
+  ;['employee_id', 'date_from', 'date_to', 'status', 'device_type', 'is_within_radius'].forEach((k) => {
+    if (params[k] != null && params[k] !== '') q.set(k, String(params[k]))
+  })
+  const url = `${getBaseUrl()}/admin/attendance/summary${q.toString() ? `?${q}` : ''}`
+  const res = await fetch(url, { headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Summary failed (${res.status})`)
+  return unwrapPayload(data)
+}
+
+export async function adminListExcuses(token, params = {}) {
+  const q = new URLSearchParams()
+  ;['status', 'employee_id', 'date_from', 'date_to', 'page', 'per_page'].forEach((k) => {
+    if (params[k] != null && params[k] !== '') q.set(k, String(params[k]))
+  })
+  const url = `${getBaseUrl()}/admin/excuses${q.toString() ? `?${q}` : ''}`
+  const res = await fetch(url, { headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Admin excuses failed (${res.status})`)
+  return unwrapPayload(data)
+}
+
+export async function adminPatchExcuse(token, id, body) {
+  const res = await fetch(`${getBaseUrl()}/admin/excuses/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+    body: JSON.stringify(body),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Update failed (${res.status})`)
+  return unwrapPayload(data)
 }

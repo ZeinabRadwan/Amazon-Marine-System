@@ -88,6 +88,7 @@ class AuthController extends Controller
         $validated = $request->validate([
             'name' => ['sometimes', 'string', 'max:255'],
             'email' => ['sometimes', 'email', 'max:255', 'unique:users,email,'.$user->id],
+            'timezone' => ['sometimes', 'nullable', 'timezone:all'],
             'current_password' => ['sometimes', 'required_with:password,password_confirmation', 'string'],
             'password' => ['sometimes', 'required_with:current_password', 'string', 'min:8', 'confirmed'],
         ]);
@@ -98,6 +99,10 @@ class AuthController extends Controller
 
         if (array_key_exists('email', $validated)) {
             $user->email = $validated['email'];
+        }
+
+        if (array_key_exists('timezone', $validated)) {
+            $user->timezone = $validated['timezone'];
         }
 
         if (array_key_exists('password', $validated)) {
@@ -183,8 +188,9 @@ class AuthController extends Controller
             'email' => $user->email,
             'initials' => $user->initials,
             'status' => $user->status,
+            'timezone' => $user->timezone,
             'avatar' => $user->avatar,
-            'avatar_url' => $user->avatar ? (request()->getSchemeAndHttpHost() . '/storage/' . ltrim($user->avatar, '/')) : null,
+            'avatar_url' => $user->avatar ? (request()->getSchemeAndHttpHost().'/storage/'.ltrim($user->avatar, '/')) : null,
             'roles' => $user->getRoleNames(),
         ];
     }

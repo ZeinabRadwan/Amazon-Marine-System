@@ -51,6 +51,10 @@ return [
         'reports' => [
             'reports.view',
         ],
+        'attendance' => [
+            'attendance.view',
+            'attendance.admin',
+        ],
         'pricing' => [
             'pricing.view_offers',
             'pricing.manage_offers',

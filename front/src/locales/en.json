@@ -521,6 +521,41 @@
     "checkInSuccess": "Checked in successfully.",
     "checkOutSuccess": "Checked out successfully.",
     "saving": "Saving…",
+    "tabs": {
+      "my": "My attendance",
+      "excuses": "Excuses",
+      "admin": "Admin sheet"
+    },
+    "geoHint": "Allow location access for accurate office distance. If disabled, clock-in may fail when location is required.",
+    "status": "Status",
+    "workedHours": "Worked hours",
+    "workedHoursAvg": "Avg. worked hours",
+    "device": "Device",
+    "withinRadius": "Within radius",
+    "distanceM": "Distance (m)",
+    "no": "No",
+    "excuses": {
+      "submitTitle": "Submit excuse",
+      "reason": "Reason",
+      "attachment": "Attachment (PDF or image)",
+      "submit": "Submit excuse",
+      "submitSuccess": "Excuse submitted.",
+      "myList": "My excuses",
+      "empty": "No excuses yet."
+    },
+    "admin": {
+      "employeeId": "Employee ID",
+      "all": "All",
+      "apply": "Apply filters",
+      "exportCsv": "Export CSV",
+      "summaryTitle": "Summary by employee",
+      "summaryEmpty": "No summary for this filter.",
+      "pendingExcuses": "Pending excuses",
+      "noPendingExcuses": "No pending excuses.",
+      "approve": "Approve",
+      "reject": "Reject",
+      "excuseUpdated": "Excuse updated."
+    },
     "user": "User",
     "date": "Date",
     "late": "Late",
@@ -827,6 +862,18 @@
       "locationHint": "This location will be used when evaluating employee attendance.",
       "saveLocation": "Save Location"
     },
+    "attendancePolicy": {
+      "title": "Attendance policy",
+      "subtitle": "Grace period, work hours, geofence and location requirements.",
+      "graceMinutes": "Grace period (minutes)",
+      "workdayStart": "Workday start",
+      "workdayEnd": "Workday end",
+      "enforceGeofence": "Enforce office radius (reject clock-in/out outside)",
+      "enforceSchedule": "Enforce clock-in window (schedule gate)",
+      "requireLocation": "Require GPS coordinates on clock-in/out",
+      "save": "Save attendance policy",
+      "saved": "Attendance policy saved."
+    },
     "system": {
       "cardTitle": "System & Notifications",
       "systemTitle": "System",
@@ -915,7 +962,8 @@
       "refreshActivity": "Failed to refresh activity history.",
       "logoutOthers": "Failed to logout other sessions.",
       "saveShipmentStatus": "Failed to save shipment status.",
-      "deleteShipmentStatus": "Failed to delete shipment status."
+      "deleteShipmentStatus": "Failed to delete shipment status.",
+      "saveAttendancePolicy": "Failed to save attendance policy."
     }
   }
 }

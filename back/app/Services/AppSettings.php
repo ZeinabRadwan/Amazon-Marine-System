@@ -18,6 +18,8 @@ class AppSettings
 
     public const KEY_SESSIONS_IDLE_LOGOUT_MINUTES = 'sessions.idle_logout_minutes';
 
+    public const KEY_ATTENDANCE_POLICY = 'attendance.policy';
+
     /**
      * @return array<string, mixed>|null
      */

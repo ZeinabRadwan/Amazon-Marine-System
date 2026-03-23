@@ -47,6 +47,20 @@ export async function updateCompanyProfile(token, body) {
   return data
 }
 
+export async function updateAttendancePolicy(token, body) {
+  const res = await fetch(`${getBaseUrl()}/settings/attendance/policy`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...authHeaders(token),
+    },
+    body: JSON.stringify(body),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to save attendance policy (${res.status})`)
+  return data
+}
+
 export async function updateCompanyLocation(token, body) {
   const res = await fetch(`${getBaseUrl()}/settings/company/location`, {
     method: 'PUT',

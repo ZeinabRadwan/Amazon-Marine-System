@@ -521,6 +521,41 @@
     "checkInSuccess": "تم تسجيل الدخول بنجاح.",
     "checkOutSuccess": "تم تسجيل الخروج بنجاح.",
     "saving": "جاري الحفظ…",
+    "tabs": {
+      "my": "حضوري",
+      "excuses": "الأعذار",
+      "admin": "تقرير المسؤول"
+    },
+    "geoHint": "اسمح بالوصول للموقع لحساب المسافة من المكتب. بدون الموقع قد يُرفض التسجيل إذا كان مطلوباً.",
+    "status": "الحالة",
+    "workedHours": "ساعات العمل",
+    "workedHoursAvg": "متوسط ساعات العمل",
+    "device": "الجهاز",
+    "withinRadius": "ضمن النطاق",
+    "distanceM": "المسافة (م)",
+    "no": "لا",
+    "excuses": {
+      "submitTitle": "تقديم عذر",
+      "reason": "السبب",
+      "attachment": "مرفق (PDF أو صورة)",
+      "submit": "إرسال العذر",
+      "submitSuccess": "تم إرسال العذر.",
+      "myList": "أعذاري",
+      "empty": "لا توجد أعذار بعد."
+    },
+    "admin": {
+      "employeeId": "رقم الموظف",
+      "all": "الكل",
+      "apply": "تطبيق المرشحات",
+      "exportCsv": "تصدير CSV",
+      "summaryTitle": "ملخص حسب الموظف",
+      "summaryEmpty": "لا يوجد ملخص لهذا المرشح.",
+      "pendingExcuses": "أعذار قيد المراجعة",
+      "noPendingExcuses": "لا توجد أعذار معلقة.",
+      "approve": "موافقة",
+      "reject": "رفض",
+      "excuseUpdated": "تم تحديث العذر."
+    },
     "user": "المستخدم",
     "date": "التاريخ",
     "late": "متأخر",
@@ -826,6 +861,18 @@
       "locationHint": "سيتم استخدام هذا الموقع عند تقييم حضور الموظفين.",
       "saveLocation": "حفظ الموقع"
     },
+    "attendancePolicy": {
+      "title": "سياسة الحضور",
+      "subtitle": "فترة السماح، ساعات العمل، السياج الجغرافي ومتطلبات الموقع.",
+      "graceMinutes": "فترة السماح (دقائق)",
+      "workdayStart": "بداية يوم العمل",
+      "workdayEnd": "نهاية يوم العمل",
+      "enforceGeofence": "فرض نطاق المكتب (رفض التسجيل خارج النطاق)",
+      "enforceSchedule": "فرض نافذة تسجيل الدخول",
+      "requireLocation": "إلزام إحداثيات GPS عند التسجيل",
+      "save": "حفظ سياسة الحضور",
+      "saved": "تم حفظ سياسة الحضور."
+    },
     "system": {
       "cardTitle": "النظام والإشعارات",
       "systemTitle": "إعدادات النظام",
@@ -914,7 +961,8 @@
       "refreshActivity": "فشل تحديث سجل النشاط.",
       "logoutOthers": "فشل تسجيل الخروج من الجلسات الأخرى.",
       "saveShipmentStatus": "فشل حفظ حالة الشحنة.",
-      "deleteShipmentStatus": "فشل حذف حالة الشحنة."
+      "deleteShipmentStatus": "فشل حذف حالة الشحنة.",
+      "saveAttendancePolicy": "فشل حفظ سياسة الحضور."
     }
   }
 }

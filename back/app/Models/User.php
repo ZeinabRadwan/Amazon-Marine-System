@@ -27,6 +27,7 @@ class User extends Authenticatable
         'password',
         'initials',
         'status',
+        'timezone',
         'avatar',
     ];
 

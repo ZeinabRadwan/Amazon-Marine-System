@@ -15,6 +15,7 @@ import {
   updateSystemPreferences,
   updateNotificationPreferences,
   updateSessionSettings,
+  updateAttendancePolicy,
   getTodaySession,
   listSessionsHistory,
   logoutOtherSessions,
@@ -186,6 +187,19 @@ export default function Settings() {
           idle_logout_minutes: sessions.idle_logout_minutes ?? 30,
         })
 
+        const ap = s.attendance?.policy
+        if (ap && typeof ap === 'object') {
+          setAttendancePolicy((prev) => ({
+            ...prev,
+            grace_minutes: ap.grace_minutes ?? prev.grace_minutes,
+            workday_start: ap.workday_start ?? prev.workday_start,
+            workday_end: ap.workday_end ?? prev.workday_end,
+            enforce_geofence: Boolean(ap.enforce_geofence),
+            enforce_schedule: Boolean(ap.enforce_schedule),
+            require_location: ap.require_location !== undefined ? Boolean(ap.require_location) : prev.require_location,
+          }))
+        }
+
         setTodaySession(todayRes?.data ?? todayRes ?? null)
         setSessionsHistory(Array.isArray(historyRes?.data) ? historyRes.data : [])
         setActivities(Array.isArray(activitiesRes?.data) ? activitiesRes.data : [])
@@ -288,6 +302,32 @@ export default function Settings() {
       setAlert({ type: 'success', message: t('settings.sessions.saveSessionSettings') })
     } catch (e) {
       setError(e.message || t('settings.errors.saveSessions'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleSaveAttendancePolicy(e) {
+    e.preventDefault()
+    if (!token) return
+    setSaving(true)
+    setError('')
+    try {
+      const res = await updateAttendancePolicy(token, {
+        grace_minutes: Number(attendancePolicy.grace_minutes),
+        workday_start: attendancePolicy.workday_start,
+        workday_end: attendancePolicy.workday_end,
+        enforce_geofence: attendancePolicy.enforce_geofence,
+        enforce_schedule: attendancePolicy.enforce_schedule,
+        require_location: attendancePolicy.require_location,
+      })
+      const policy = res?.data?.policy ?? res?.policy
+      if (policy && typeof policy === 'object') {
+        setAttendancePolicy((prev) => ({ ...prev, ...policy }))
+      }
+      setAlert({ type: 'success', message: t('settings.attendancePolicy.saved') })
+    } catch (e) {
+      setError(e.message || t('settings.errors.saveAttendancePolicy'))
     } finally {
       setSaving(false)
     }
@@ -516,6 +556,56 @@ export default function Settings() {
                         </div>
                       </form>
                     </SectionCard>
+                    {isAdminLike && (
+                      <SectionCard title={t('settings.attendancePolicy.title')} subtitle={t('settings.attendancePolicy.subtitle')} compact>
+                        <form className="settings-form settings-form--stacked" onSubmit={handleSaveAttendancePolicy}>
+                          <div className="settings-form-row">
+                            <Input
+                              label={t('settings.attendancePolicy.graceMinutes')}
+                              type="number"
+                              min="0"
+                              max="240"
+                              value={attendancePolicy.grace_minutes}
+                              onChange={(e) => setAttendancePolicy((p) => ({ ...p, grace_minutes: e.target.value }))}
+                            />
+                            <Input
+                              label={t('settings.attendancePolicy.workdayStart')}
+                              type="time"
+                              value={attendancePolicy.workday_start}
+                              onChange={(e) => setAttendancePolicy((p) => ({ ...p, workday_start: e.target.value }))}
+                            />
+                            <Input
+                              label={t('settings.attendancePolicy.workdayEnd')}
+                              type="time"
+                              value={attendancePolicy.workday_end}
+                              onChange={(e) => setAttendancePolicy((p) => ({ ...p, workday_end: e.target.value }))}
+                            />
+                          </div>
+                          <div className="settings-checkbox-group">
+                            <CheckboxRow
+                              label={t('settings.attendancePolicy.enforceGeofence')}
+                              checked={attendancePolicy.enforce_geofence}
+                              onChange={(v) => setAttendancePolicy((p) => ({ ...p, enforce_geofence: v }))}
+                            />
+                            <CheckboxRow
+                              label={t('settings.attendancePolicy.enforceSchedule')}
+                              checked={attendancePolicy.enforce_schedule}
+                              onChange={(v) => setAttendancePolicy((p) => ({ ...p, enforce_schedule: v }))}
+                            />
+                            <CheckboxRow
+                              label={t('settings.attendancePolicy.requireLocation')}
+                              checked={attendancePolicy.require_location}
+                              onChange={(v) => setAttendancePolicy((p) => ({ ...p, require_location: v }))}
+                            />
+                          </div>
+                          <div className="settings-form-actions">
+                            <button type="submit" disabled={saving} className="page-header__btn page-header__btn--primary">
+                              {t('settings.attendancePolicy.save')}
+                            </button>
+                          </div>
+                        </form>
+                      </SectionCard>
+                    )}
                   </div>
                 </div>
               )}

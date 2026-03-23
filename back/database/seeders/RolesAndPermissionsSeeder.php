@@ -64,6 +64,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 $permissions['sd_forms.manage_any'],
                 $permissions['shipments.view_own'],
                 $permissions['reports.view'],
+                $permissions['attendance.view'],
             ]);
         }
 
@@ -78,6 +79,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 $permissions['sd_forms.view'],
                 $permissions['sd_forms.manage'],
                 $permissions['sd_forms.manage_any'],
+                $permissions['attendance.view'],
                 $permissions['shipments.view_own'],
                 $permissions['reports.view'],
             ]);

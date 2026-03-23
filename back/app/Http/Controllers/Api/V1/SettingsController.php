@@ -3,11 +3,15 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Settings\UpdateAttendancePolicyRequest;
 use App\Http\Requests\Settings\UpdateCompanyLocationRequest;
 use App\Http\Requests\Settings\UpdateCompanyProfileRequest;
 use App\Http\Requests\Settings\UpdateNotificationPreferencesRequest;
+use App\Http\Requests\Settings\UpdateOfficeLocationRequest;
 use App\Http\Requests\Settings\UpdateSessionSettingsRequest;
 use App\Http\Requests\Settings\UpdateSystemPreferencesRequest;
+use App\Http\Responses\ApiResponse;
+use App\Models\OfficeLocation;
 use App\Services\AppSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,12 +25,17 @@ class SettingsController extends Controller
     public function show(Request $request): JsonResponse
     {
         $companyProfile = $this->settings->getArray(AppSettings::KEY_COMPANY_PROFILE) ?? [];
-        $companyLocation = $this->settings->getArray(AppSettings::KEY_COMPANY_LOCATION) ?? null;
+        $companyLocation = $this->resolveCompanyLocationForShow();
         $systemPreferences = $this->settings->getArray(AppSettings::KEY_SYSTEM_PREFERENCES) ?? [];
         $notificationPreferences = $this->settings->getArray(AppSettings::KEY_NOTIFICATIONS_PREFERENCES) ?? [];
 
         $resetHour = $this->settings->getInt(AppSettings::KEY_SESSIONS_RESET_HOUR, 0);
         $idleLogoutMinutes = $this->settings->getInt(AppSettings::KEY_SESSIONS_IDLE_LOGOUT_MINUTES, 30);
+
+        $attendancePolicy = array_merge(
+            $this->defaultAttendancePolicy(),
+            $this->settings->getArray(AppSettings::KEY_ATTENDANCE_POLICY) ?? []
+        );
 
         return response()->json([
             'data' => [
@@ -55,8 +64,61 @@ class SettingsController extends Controller
                     'reset_hour' => $resetHour,
                     'idle_logout_minutes' => $idleLogoutMinutes,
                 ],
+                'attendance' => [
+                    'policy' => $attendancePolicy,
+                ],
             ],
         ]);
+    }
+
+    public function officeLocationShow(): JsonResponse
+    {
+        $row = OfficeLocation::current();
+        if ($row === null || $row->lat === null || $row->lng === null) {
+            $fallback = $this->settings->getArray(AppSettings::KEY_COMPANY_LOCATION);
+
+            return ApiResponse::success([
+                'lat' => isset($fallback['lat']) ? (float) $fallback['lat'] : null,
+                'lng' => isset($fallback['lng']) ? (float) $fallback['lng'] : null,
+                'radius_meters' => isset($fallback['radius_m']) ? ($fallback['radius_m'] !== null ? (int) $fallback['radius_m'] : null) : null,
+            ]);
+        }
+
+        return ApiResponse::success([
+            'lat' => (float) $row->lat,
+            'lng' => (float) $row->lng,
+            'radius_meters' => $row->radius_meters,
+        ]);
+    }
+
+    public function officeLocationUpdate(UpdateOfficeLocationRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+        $radiusMeters = array_key_exists('radius_meters', $validated)
+            ? ($validated['radius_meters'] === null ? null : (int) $validated['radius_meters'])
+            : null;
+
+        $this->persistOfficeLocation(
+            (float) $validated['lat'],
+            (float) $validated['lng'],
+            $radiusMeters
+        );
+
+        return ApiResponse::success([
+            'lat' => (float) $validated['lat'],
+            'lng' => (float) $validated['lng'],
+            'radius_meters' => $radiusMeters,
+        ], 'Office location saved.');
+    }
+
+    public function updateAttendancePolicy(UpdateAttendancePolicyRequest $request): JsonResponse
+    {
+        $existing = $this->settings->getArray(AppSettings::KEY_ATTENDANCE_POLICY) ?? [];
+        $updated = array_merge($this->defaultAttendancePolicy(), $existing, $request->validated());
+
+        $this->settings->setArray(AppSettings::KEY_ATTENDANCE_POLICY, $updated);
+
+        return ApiResponse::success(['policy' => $updated], 'Attendance policy saved.');
     }
 
     public function updateCompanyProfile(UpdateCompanyProfileRequest $request): JsonResponse
@@ -72,11 +134,13 @@ class SettingsController extends Controller
     public function updateCompanyLocation(UpdateCompanyLocationRequest $request): JsonResponse
     {
         $validated = $request->validated();
-        $this->settings->setArray(AppSettings::KEY_COMPANY_LOCATION, [
-            'lat' => (float) $validated['lat'],
-            'lng' => (float) $validated['lng'],
-            'radius_m' => array_key_exists('radius_m', $validated) ? ($validated['radius_m'] === null ? null : (int) $validated['radius_m']) : null,
-        ]);
+        $radiusM = array_key_exists('radius_m', $validated) ? ($validated['radius_m'] === null ? null : (int) $validated['radius_m']) : null;
+
+        $this->persistOfficeLocation(
+            (float) $validated['lat'],
+            (float) $validated['lng'],
+            $radiusM
+        );
 
         return $this->show($request);
     }
@@ -114,5 +178,54 @@ class SettingsController extends Controller
         }
 
         return $this->show($request);
+    }
+
+    /**
+     * @return array{lat: float, lng: float, radius_m: int|null}|null
+     */
+    private function resolveCompanyLocationForShow(): ?array
+    {
+        $row = OfficeLocation::current();
+        if ($row !== null && $row->lat !== null && $row->lng !== null) {
+            return [
+                'lat' => (float) $row->lat,
+                'lng' => (float) $row->lng,
+                'radius_m' => $row->radius_meters,
+            ];
+        }
+
+        $fromSettings = $this->settings->getArray(AppSettings::KEY_COMPANY_LOCATION);
+
+        return is_array($fromSettings) ? $fromSettings : null;
+    }
+
+    private function persistOfficeLocation(float $lat, float $lng, ?int $radiusMeters): void
+    {
+        OfficeLocation::upsertSingleton([
+            'lat' => $lat,
+            'lng' => $lng,
+            'radius_meters' => $radiusMeters,
+        ]);
+
+        $this->settings->setArray(AppSettings::KEY_COMPANY_LOCATION, [
+            'lat' => $lat,
+            'lng' => $lng,
+            'radius_m' => $radiusMeters,
+        ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function defaultAttendancePolicy(): array
+    {
+        return [
+            'grace_minutes' => 15,
+            'workday_start' => '09:00',
+            'workday_end' => '17:00',
+            'enforce_geofence' => false,
+            'enforce_schedule' => false,
+            'require_location' => true,
+        ];
     }
 }

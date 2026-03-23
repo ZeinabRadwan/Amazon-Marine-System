@@ -7,6 +7,8 @@ use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\UserPermissionsController;
 use App\Http\Controllers\Api\V1\AccountingController;
 use App\Http\Controllers\Api\V1\ActivityController;
+use App\Http\Controllers\Api\V1\AdminAttendanceController;
+use App\Http\Controllers\Api\V1\AdminExcuseController;
 use App\Http\Controllers\Api\V1\AttendanceController;
 use App\Http\Controllers\Api\V1\ClientAttachmentController;
 use App\Http\Controllers\Api\V1\ClientContactController;
@@ -20,6 +22,7 @@ use App\Http\Controllers\Api\V1\CompanyTypeController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\DecisionMakerTitleController;
 use App\Http\Controllers\Api\V1\DocumentController;
+use App\Http\Controllers\Api\V1\ExcuseController;
 use App\Http\Controllers\Api\V1\ExpensesController;
 use App\Http\Controllers\Api\V1\InterestLevelController;
 use App\Http\Controllers\Api\V1\InvoiceController;
@@ -67,6 +70,9 @@ Route::prefix('v1')->group(function () {
         Route::get('settings', [SettingsController::class, 'show']);
         Route::put('settings/company/profile', [SettingsController::class, 'updateCompanyProfile']);
         Route::put('settings/company/location', [SettingsController::class, 'updateCompanyLocation']);
+        Route::get('settings/office-location', [SettingsController::class, 'officeLocationShow']);
+        Route::put('settings/office-location', [SettingsController::class, 'officeLocationUpdate']);
+        Route::put('settings/attendance/policy', [SettingsController::class, 'updateAttendancePolicy']);
         Route::put('settings/system/preferences', [SettingsController::class, 'updateSystemPreferences']);
         Route::put('settings/notifications/preferences', [SettingsController::class, 'updateNotificationPreferences']);
         Route::put('settings/sessions', [SettingsController::class, 'updateSessionSettings']);
@@ -314,11 +320,22 @@ Route::prefix('v1')->group(function () {
         Route::get('reports/team-performance/export', [ReportController::class, 'teamPerformanceExport']);
 
         // Attendance
-        Route::post('attendance/check-in', [AttendanceController::class, 'checkIn']);
-        Route::post('attendance/check-out', [AttendanceController::class, 'checkOut']);
+        Route::post('attendance/clock-in', [AttendanceController::class, 'clockIn']);
+        Route::post('attendance/clock-out', [AttendanceController::class, 'clockOut']);
+        Route::post('attendance/check-in', [AttendanceController::class, 'clockIn']);
+        Route::post('attendance/check-out', [AttendanceController::class, 'clockOut']);
         Route::get('attendance', [AttendanceController::class, 'index']);
         Route::get('attendance/stats', [AttendanceController::class, 'stats']);
         Route::get('attendance/today', [AttendanceController::class, 'today']);
+        Route::get('attendance/excuses', [ExcuseController::class, 'index']);
+        Route::post('attendance/excuses', [ExcuseController::class, 'store']);
+
+        Route::middleware('can:attendance.admin')->group(function () {
+            Route::get('admin/attendance', [AdminAttendanceController::class, 'index']);
+            Route::get('admin/attendance/summary', [AdminAttendanceController::class, 'summary']);
+            Route::get('admin/excuses', [AdminExcuseController::class, 'index']);
+            Route::patch('admin/excuses/{excuse}', [AdminExcuseController::class, 'update']);
+        });
 
         // Accounting
         Route::get('accounting/summary', [AccountingController::class, 'summary']);
