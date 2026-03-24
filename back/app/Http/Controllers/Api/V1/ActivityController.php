@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\Shipment;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -10,16 +11,56 @@ use Spatie\Activitylog\Models\Activity;
 
 class ActivityController extends Controller
 {
+    /**
+     * @return class-string
+     */
+    private static function resolveSubjectModelClass(string $subjectType): string
+    {
+        $map = [
+            'shipment' => Shipment::class,
+        ];
+
+        if (isset($map[$subjectType])) {
+            return $map[$subjectType];
+        }
+
+        if (class_exists($subjectType)) {
+            return $subjectType;
+        }
+
+        abort(422, 'Invalid subject_type.');
+    }
+
     public function index(Request $request): JsonResponse
     {
         $viewer = $request->user();
-        $targetUserId = (int) ($request->query('user_id') ?: $viewer->id);
-
-        if ($targetUserId !== (int) $viewer->id && ! $viewer?->can('reports.view')) {
-            abort(403, 'You do not have permission to view other users activities.');
-        }
 
         $query = Activity::query()->orderByDesc('created_at');
+
+        $subjectTypeRaw = $request->query('subject_type');
+        $subjectIdRaw = $request->query('subject_id');
+        $subjectMode = $subjectTypeRaw !== null && $subjectTypeRaw !== ''
+            && $subjectIdRaw !== null && $subjectIdRaw !== '';
+
+        if ($subjectMode) {
+            abort_unless(
+                $viewer?->can('financial.view') || $viewer?->can('accounting.view'),
+                403,
+                'You do not have permission to view activities for this subject.'
+            );
+
+            $subjectClass = self::resolveSubjectModelClass((string) $subjectTypeRaw);
+            $query->where('subject_type', $subjectClass)
+                ->where('subject_id', (int) $subjectIdRaw);
+        } else {
+            $targetUserId = (int) ($request->query('user_id') ?: $viewer->id);
+
+            if ($targetUserId !== (int) $viewer->id && ! $viewer?->can('reports.view')) {
+                abort(403, 'You do not have permission to view other users activities.');
+            }
+
+            $query->where('causer_type', User::class)->where('causer_id', $targetUserId);
+        }
 
         if ($from = $request->query('from')) {
             $query->whereDate('created_at', '>=', $from);
@@ -33,15 +74,15 @@ class ActivityController extends Controller
             $query->where('event', $event);
         }
 
-        if ($subjectType = $request->query('subject_type')) {
-            $query->where('subject_type', $subjectType);
-        }
+        if (! $subjectMode) {
+            if ($subjectTypeRaw = $request->query('subject_type')) {
+                $query->where('subject_type', $subjectTypeRaw);
+            }
 
-        if ($subjectId = $request->query('subject_id')) {
-            $query->where('subject_id', $subjectId);
+            if ($subjectIdRaw = $request->query('subject_id')) {
+                $query->where('subject_id', $subjectIdRaw);
+            }
         }
-
-        $query->where('causer_type', User::class)->where('causer_id', $targetUserId);
 
         $rows = $query->limit(500)->get();
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Payment;
+use App\Models\Shipment;
 use App\Services\ActivityLogger;
 use App\Services\FinancialService;
 use Illuminate\Http\Request;
@@ -307,20 +308,66 @@ class InvoiceController extends Controller
             ], 422);
         }
 
-        $validated = $request->validate([
+        $rules = [
             'due_date' => ['sometimes', 'nullable', 'date'],
             'notes' => ['sometimes', 'nullable', 'string'],
-        ]);
+            'items' => ['sometimes', 'array', 'min:1'],
+            'items.*.description' => ['required_with:items', 'string', 'max:255'],
+            'items.*.quantity' => ['required_with:items', 'numeric', 'min:0'],
+            'items.*.unit_price' => ['required_with:items', 'numeric', 'min:0'],
+        ];
 
-        $invoice->fill($validated);
-        $invoice->save();
+        $validated = $request->validate($rules);
 
-        ActivityLogger::log('invoice.updated', $invoice, [
-            'changes' => $invoice->getChanges(),
+        if (array_key_exists('items', $validated) && $invoice->status !== 'draft') {
+            return response()->json([
+                'message' => 'Only draft invoices can have line items replaced.',
+            ], 422);
+        }
+
+        DB::transaction(function () use ($invoice, $validated): void {
+            if (array_key_exists('items', $validated)) {
+                $invoice->items()->delete();
+
+                foreach ($validated['items'] as $itemData) {
+                    $lineTotal = $itemData['quantity'] * $itemData['unit_price'];
+
+                    InvoiceItem::create([
+                        'invoice_id' => $invoice->id,
+                        'description' => $itemData['description'],
+                        'quantity' => $itemData['quantity'],
+                        'unit_price' => $itemData['unit_price'],
+                        'line_total' => $lineTotal,
+                    ]);
+                }
+
+                $invoice->refresh();
+                FinancialService::syncInvoiceTotals($invoice);
+
+                if ($invoice->shipment_id) {
+                    $shipment = Shipment::find($invoice->shipment_id);
+                    if ($shipment) {
+                        ActivityLogger::log('shipment.client_invoice_items_updated', $shipment, [
+                            'invoice_id' => $invoice->id,
+                        ]);
+                    }
+                }
+            }
+
+            $fill = array_intersect_key($validated, array_flip(['due_date', 'notes']));
+            if ($fill !== []) {
+                $invoice->fill($fill);
+                $invoice->save();
+            }
+        });
+
+        $fresh = $invoice->fresh(['client', 'shipment', 'items', 'payments']);
+        ActivityLogger::log('invoice.updated', $fresh, [
+            'line_items_replaced' => array_key_exists('items', $validated),
         ]);
 
         return response()->json([
-            'data' => $invoice->fresh(),
+            'data' => $fresh,
         ]);
     }
 
@@ -393,6 +440,18 @@ class InvoiceController extends Controller
         ActivityLogger::log('invoice.payment_recorded', $invoice, [
             'payment_id' => $payment->id,
         ]);
+
+        if ($invoice->shipment_id) {
+            $shipment = Shipment::find($invoice->shipment_id);
+            if ($shipment) {
+                ActivityLogger::log('shipment.invoice_payment_recorded', $shipment, [
+                    'invoice_id' => $invoice->id,
+                    'payment_id' => $payment->id,
+                    'amount' => (float) $payment->amount,
+                    'currency_code' => $payment->currency_code,
+                ]);
+            }
+        }
 
         return response()->json([
             'data' => $invoice->fresh(['client', 'shipment', 'items', 'payments']),

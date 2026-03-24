@@ -403,4 +403,31 @@ class ShipmentController extends Controller
 
         return $query;
     }
+
+    /**
+     * Log that vendor bill / financial documentation is ready for sales follow-up.
+     */
+    public function notifySalesFinancials(Request $request, Shipment $shipment)
+    {
+        $this->authorize('view', $shipment);
+
+        $user = $request->user();
+        abort_unless(
+            $user && (
+                $user->can('accounting.manage')
+                || $user->can('shipments.manage_ops')
+                || $user->can('financial.manage')
+            ),
+            403,
+            'You do not have permission to notify sales for this shipment.'
+        );
+
+        ActivityLogger::log('shipment.notify_sales_financials', $shipment, [
+            'bl_number' => $shipment->bl_number,
+        ]);
+
+        return response()->json([
+            'message' => 'Notification recorded.',
+        ]);
+    }
 }

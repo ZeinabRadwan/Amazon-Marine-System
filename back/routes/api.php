@@ -279,6 +279,7 @@ Route::prefix('v1')->group(function () {
         Route::get('shipments/{shipment}', [ShipmentController::class, 'show']);
         Route::put('shipments/{shipment}', [ShipmentController::class, 'update']);
         Route::delete('shipments/{shipment}', [ShipmentController::class, 'destroy']);
+        Route::post('shipments/{shipment}/notify-sales-financials', [ShipmentController::class, 'notifySalesFinancials']);
         Route::get('shipments/{shipment}/tracking-updates', [ShipmentTrackingUpdateController::class, 'index']);
         Route::post('shipments/{shipment}/tracking-updates', [ShipmentTrackingUpdateController::class, 'store']);
         Route::get('shipments/{shipment}/notes', [ShipmentNoteController::class, 'index']);

@@ -7,6 +7,8 @@ use App\Http\Requests\StoreExpenseRequest;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\Invoice;
+use App\Models\Shipment;
+use App\Services\ActivityLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -154,6 +156,7 @@ class ExpensesController extends Controller
                 'amount' => (float) $expense->amount,
                 'currency_code' => $expense->currency_code,
                 'vendor_name' => $expense->vendor?->name ?? '',
+                'vendor_id' => $expense->vendor_id,
                 'expense_date' => $expense->expense_date?->toDateString(),
                 'invoice_number' => $expense->invoice_number,
                 'has_receipt' => (bool) $expense->has_receipt,
@@ -255,6 +258,17 @@ class ExpensesController extends Controller
 
         $expense->save();
 
+        if ($expense->shipment_id) {
+            $shipment = Shipment::find($expense->shipment_id);
+            if ($shipment) {
+                ActivityLogger::log('shipment.financial_expense_created', $shipment, [
+                    'expense_id' => $expense->id,
+                    'amount' => (float) $expense->amount,
+                    'currency_code' => $expense->currency_code,
+                ]);
+            }
+        }
+
         return response()->json([
             'data' => $expense->load(['category', 'vendor', 'shipment']),
         ], 201);
@@ -275,8 +289,9 @@ class ExpensesController extends Controller
 
     public function update(Request $request, Expense $expense): JsonResponse
     {
+        $user = $request->user();
         abort_unless(
-            $request->user()?->can('accounting.manage'),
+            $user && ($user->can('accounting.manage') || $user->hasRole('admin')),
             403,
             'You do not have permission to update expenses.'
         );
@@ -328,6 +343,16 @@ class ExpensesController extends Controller
 
         $expense->save();
 
+        if ($expense->shipment_id) {
+            $shipment = Shipment::find($expense->shipment_id);
+            if ($shipment) {
+                ActivityLogger::log('shipment.financial_expense_updated', $shipment, [
+                    'expense_id' => $expense->id,
+                    'changes' => $expense->getChanges(),
+                ]);
+            }
+        }
+
         return response()->json([
             'data' => $expense->fresh(['category', 'vendor', 'shipment']),
         ]);
@@ -335,8 +360,9 @@ class ExpensesController extends Controller
 
     public function destroy(Request $request, Expense $expense): JsonResponse
     {
+        $user = $request->user();
         abort_unless(
-            $request->user()?->can('accounting.manage'),
+            $user && ($user->can('accounting.manage') || $user->hasRole('admin')),
             403,
             'You do not have permission to delete expenses.'
         );
@@ -350,8 +376,9 @@ class ExpensesController extends Controller
 
     public function uploadReceipt(Request $request, Expense $expense): JsonResponse
     {
+        $user = $request->user();
         abort_unless(
-            $request->user()?->can('accounting.manage'),
+            $user && ($user->can('accounting.manage') || $user->hasRole('admin')),
             403,
             'You do not have permission to upload expense receipts.'
         );
@@ -366,6 +393,15 @@ class ExpensesController extends Controller
         $expense->receipt_path = $path;
         $expense->has_receipt = true;
         $expense->save();
+
+        if ($expense->shipment_id) {
+            $shipment = Shipment::find($expense->shipment_id);
+            if ($shipment) {
+                ActivityLogger::log('shipment.financial_expense_receipt_uploaded', $shipment, [
+                    'expense_id' => $expense->id,
+                ]);
+            }
+        }
 
         return response()->json([
             'data' => [
