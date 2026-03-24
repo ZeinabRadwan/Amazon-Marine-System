@@ -19,15 +19,19 @@ use App\Http\Controllers\Api\V1\ClientStatusController;
 use App\Http\Controllers\Api\V1\CommunicationLogController;
 use App\Http\Controllers\Api\V1\CommunicationLogTypeController;
 use App\Http\Controllers\Api\V1\CompanyTypeController;
+use App\Http\Controllers\Api\V1\ContainerSizeController;
+use App\Http\Controllers\Api\V1\ContainerTypeController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\DecisionMakerTitleController;
 use App\Http\Controllers\Api\V1\DocumentController;
 use App\Http\Controllers\Api\V1\ExcuseController;
 use App\Http\Controllers\Api\V1\ExpensesController;
+use App\Http\Controllers\Api\V1\FreightTermController;
 use App\Http\Controllers\Api\V1\InterestLevelController;
 use App\Http\Controllers\Api\V1\InvoiceController;
 use App\Http\Controllers\Api\V1\LeadSourceController;
 use App\Http\Controllers\Api\V1\NotificationController;
+use App\Http\Controllers\Api\V1\NotifyPartyModeController;
 use App\Http\Controllers\Api\V1\PdfLayoutController;
 use App\Http\Controllers\Api\V1\PortController;
 use App\Http\Controllers\Api\V1\PreferredCommMethodController;
@@ -37,6 +41,7 @@ use App\Http\Controllers\Api\V1\SDFormController;
 use App\Http\Controllers\Api\V1\SessionController;
 use App\Http\Controllers\Api\V1\SettingsController;
 use App\Http\Controllers\Api\V1\ShipmentController;
+use App\Http\Controllers\Api\V1\ShipmentDirectionController;
 use App\Http\Controllers\Api\V1\ShipmentNoteController;
 use App\Http\Controllers\Api\V1\ShipmentStatusController;
 use App\Http\Controllers\Api\V1\ShipmentTrackingUpdateController;
@@ -160,6 +165,37 @@ Route::prefix('v1')->group(function () {
         Route::get('ports/{port}', [PortController::class, 'show']);
         Route::put('ports/{port}', [PortController::class, 'update']);
         Route::delete('ports/{port}', [PortController::class, 'destroy']);
+
+        // SD form lookups (Postman: SD Form Lookups)
+        Route::get('shipment-directions', [ShipmentDirectionController::class, 'index']);
+        Route::post('shipment-directions', [ShipmentDirectionController::class, 'store']);
+        Route::get('shipment-directions/{shipmentDirection}', [ShipmentDirectionController::class, 'show']);
+        Route::put('shipment-directions/{shipmentDirection}', [ShipmentDirectionController::class, 'update']);
+        Route::delete('shipment-directions/{shipmentDirection}', [ShipmentDirectionController::class, 'destroy']);
+
+        Route::get('notify-party-modes', [NotifyPartyModeController::class, 'index']);
+        Route::post('notify-party-modes', [NotifyPartyModeController::class, 'store']);
+        Route::get('notify-party-modes/{notifyPartyMode}', [NotifyPartyModeController::class, 'show']);
+        Route::put('notify-party-modes/{notifyPartyMode}', [NotifyPartyModeController::class, 'update']);
+        Route::delete('notify-party-modes/{notifyPartyMode}', [NotifyPartyModeController::class, 'destroy']);
+
+        Route::get('freight-terms', [FreightTermController::class, 'index']);
+        Route::post('freight-terms', [FreightTermController::class, 'store']);
+        Route::get('freight-terms/{freightTerm}', [FreightTermController::class, 'show']);
+        Route::put('freight-terms/{freightTerm}', [FreightTermController::class, 'update']);
+        Route::delete('freight-terms/{freightTerm}', [FreightTermController::class, 'destroy']);
+
+        Route::get('container-types', [ContainerTypeController::class, 'index']);
+        Route::post('container-types', [ContainerTypeController::class, 'store']);
+        Route::get('container-types/{containerType}', [ContainerTypeController::class, 'show']);
+        Route::put('container-types/{containerType}', [ContainerTypeController::class, 'update']);
+        Route::delete('container-types/{containerType}', [ContainerTypeController::class, 'destroy']);
+
+        Route::get('container-sizes', [ContainerSizeController::class, 'index']);
+        Route::post('container-sizes', [ContainerSizeController::class, 'store']);
+        Route::get('container-sizes/{containerSize}', [ContainerSizeController::class, 'show']);
+        Route::put('container-sizes/{containerSize}', [ContainerSizeController::class, 'update']);
+        Route::delete('container-sizes/{containerSize}', [ContainerSizeController::class, 'destroy']);
 
         // CRM: clients & contacts
         Route::get('clients', [ClientController::class, 'index'])
