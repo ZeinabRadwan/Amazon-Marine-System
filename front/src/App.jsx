@@ -13,6 +13,7 @@ import Users from './pages/Users'
 import RolesPermissions from './pages/RolesPermissions'
 import UserPermissions from './pages/UserPermissions'
 import Clients from './pages/Clients'
+import Visits from './pages/Visits'
 import ClientLookups from './pages/ClientLookups'
 import CustomerServices from './pages/CustomerServices'
 import Attendance from './pages/Attendance'
@@ -189,6 +190,7 @@ function App() {
           <Route path="/roles-permissions" element={<RolesPermissions />} />
           <Route path="/user-permissions" element={<UserPermissions />} />
           <Route path="/clients" element={<Clients />} />
+          <Route path="/visits" element={<Visits />} />
           <Route path="/client-lookups" element={<ClientLookups />} />
           <Route path="/customer-services" element={<CustomerServices />} />
           <Route path="/attendance" element={<Attendance />} />

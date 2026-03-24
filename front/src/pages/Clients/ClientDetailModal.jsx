@@ -4,7 +4,23 @@ import { X, Package } from 'lucide-react'
 import Tabs from '../../components/Tabs'
 import Shimmer from '../../components/Shimmer'
 import { useShipmentTrackingUpdates } from '../../hooks/useShipmentTrackingUpdates'
+import VisitStatusBadge from '../Visits/VisitStatusBadge'
+import './Clients.css'
 import './ClientDetailModal.css'
+
+/** API may return visit_date as ISO string (e.g. 2026-03-23T00:00:00.000000Z). */
+function formatVisitDateDisplay(value, locale) {
+  if (value == null || value === '') return '—'
+  const s = String(value).trim()
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10)
+  const d = new Date(s)
+  if (Number.isNaN(d.getTime())) return '—'
+  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-GB', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  }).format(d)
+}
 
 /** Info tab: grouped sections with title keys for better layout */
 const infoSectionGroups = [
@@ -151,9 +167,27 @@ export default function ClientDetailModal({
               ) : (
                 <ul className="client-detail-modal__list">
                   {visits.map((v) => (
-                    <li key={v.id ?? v.visit_date} className="client-detail-modal__list-item">
-                      <span className="client-detail-modal__list-label">{v.visit_date ?? v.date ?? '—'}</span>
-                      <span className="client-detail-modal__list-value">{v.notes ?? v.summary ?? '—'}</span>
+                    <li key={v.id ?? v.visit_date} className="client-detail-modal__list-item client-detail-modal__list-item--visit">
+                      <div className="client-detail-modal__list-label client-detail-modal__visit-date">
+                        <span className="client-detail-modal__visit-date-main">
+                          {formatVisitDateDisplay(v.visit_date ?? v.date, i18n.language)}
+                        </span>
+                        {(v.user_name || v.user?.name) && (
+                          <span className="client-detail-modal__visit-user">{v.user_name ?? v.user?.name}</span>
+                        )}
+                        <span className="client-detail-modal__visit-status-badge">
+                          <VisitStatusBadge status={v.status} t={t} />
+                        </span>
+                      </div>
+                      <div className="client-detail-modal__list-value client-detail-modal__visit-body">
+                        <div className="client-detail-modal__visit-subject">{v.subject?.trim() || '—'}</div>
+                        {v.purpose?.trim() ? (
+                          <div className="client-detail-modal__visit-purpose">{v.purpose}</div>
+                        ) : null}
+                        {v.notes?.trim() ? (
+                          <div className="client-detail-modal__visit-notes">{v.notes}</div>
+                        ) : null}
+                      </div>
                     </li>
                   ))}
                 </ul>

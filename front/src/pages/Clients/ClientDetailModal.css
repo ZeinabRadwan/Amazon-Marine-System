@@ -34,6 +34,101 @@
   max-height: 92vh;
 }
 
+/* Visits page – read-only visit detail (تفاصيل الزيارة) */
+.client-detail-modal__box--visit-detail {
+  max-width: 520px;
+  width: 100%;
+}
+
+.client-detail-modal__visit-detail-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.client-detail-modal__visit-detail-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 160px;
+  padding: 24px 16px;
+}
+
+.client-detail-modal__visit-detail-loading-text {
+  margin: 0;
+  font-size: 14px;
+  color: var(--form-text, #6b7280);
+}
+
+.client-detail-modal__visit-detail-loading--error {
+  min-height: 120px;
+}
+
+.client-detail-modal__visit-detail-error {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--form-error-text, #b91c1c);
+  text-align: center;
+  max-width: 28rem;
+}
+
+.client-detail-modal__visit-detail-notes-wrap {
+  margin-top: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--form-divider, #e5e7eb);
+}
+
+.client-detail-modal__visit-detail-notes-label {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.client-detail-modal__visit-detail-notes {
+  margin: 0;
+  padding: 12px 14px;
+  background: var(--root-bg, #f8fafc);
+  border-radius: 10px;
+  border: 1px solid var(--form-divider, #e5e7eb);
+  font-size: 14px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--root-text, #1c2030);
+  min-height: 2.75rem;
+}
+
+.client-detail-modal__subtitle--visit-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.35rem;
+}
+
+.client-detail-modal__visit-meta-sep {
+  color: var(--form-text, #9ca3af);
+  user-select: none;
+  font-weight: 500;
+}
+
+.client-detail-modal__value--visit-status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+[data-theme="dark"] .client-detail-modal__visit-detail-notes,
+.dark .client-detail-modal__visit-detail-notes {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--form-divider);
+}
+
+.client-detail-modal__row--stack {
+  align-items: start;
+}
+
 /* Header */
 .client-detail-modal__header {
   flex-shrink: 0;
@@ -340,6 +435,60 @@
 .client-detail-modal__list-value {
   word-break: break-word;
   color: var(--root-text, #1c2030);
+}
+
+.client-detail-modal__list-item--visit {
+  align-items: start;
+  grid-template-columns: minmax(7.5rem, 9.5rem) 1fr;
+}
+
+.client-detail-modal__visit-date {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.client-detail-modal__visit-date-main {
+  font-weight: 600;
+  color: var(--root-text, #1c2030);
+}
+
+.client-detail-modal__visit-user {
+  font-size: 12px;
+  color: var(--form-text, #4b5563);
+}
+
+.client-detail-modal__visit-status-badge {
+  margin-top: 6px;
+}
+
+.client-detail-modal__visit-status-badge .clients-status-badge {
+  font-size: 11px;
+  padding: 3px 9px;
+}
+
+.client-detail-modal__visit-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.client-detail-modal__visit-subject {
+  font-weight: 600;
+  color: var(--root-text, #1c2030);
+}
+
+.client-detail-modal__visit-purpose {
+  font-size: 13px;
+  color: var(--form-text, #4b5563);
+}
+
+.client-detail-modal__visit-notes {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--form-text, #4b5563);
+  white-space: pre-wrap;
 }
 
 .client-detail-modal__list--attachments .client-detail-modal__list-item {
