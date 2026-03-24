@@ -2,19 +2,44 @@
 
 // Do NOT run `php artisan config:publish cors` after editing this file — it replaces this file with the default stub.
 
+/**
+ * Origins that must always be allowed for this product (SPA + local dev).
+ * Env CORS_ALLOWED_ORIGINS is merged in so production cannot accidentally drop the CRM front URL.
+ */
+$defaultOrigins = [
+    'https://crm-amazonltd.online',
+    'https://www.crm-amazonltd.online',
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+];
+
 $raw = env('CORS_ALLOWED_ORIGINS');
 
+// Safari/WebKit often blocks credentialed or preflight flows when ACAO is literally "*".
 if ($raw === '*') {
-    $allowedOrigins = ['*'];
+    $allowedOrigins = $defaultOrigins;
 } elseif (is_string($raw) && trim($raw) !== '') {
-    $allowedOrigins = array_values(array_filter(array_map('trim', explode(',', $raw))));
+    $fromEnv = array_values(array_filter(array_map('trim', explode(',', $raw))));
+    $allowedOrigins = array_values(array_unique(array_merge($defaultOrigins, $fromEnv)));
 } else {
-    $allowedOrigins = [
-        'https://crm-amazonltd.online',
-        'https://www.crm-amazonltd.online',
-        'http://localhost:5173',
-        'http://127.0.0.1:5173',
-    ];
+    $allowedOrigins = $defaultOrigins;
+}
+
+/*
+| Regexes checked against the request Origin header (in addition to allowed_origins).
+| Covers any subdomain (e.g. future staging) without editing .env.
+*/
+$allowedOriginPatterns = [
+    '#^https://([a-z0-9-]+\.)*crm-amazonltd\.online$#i',
+    '#^http://localhost(:\d+)?$#',
+    '#^http://127\.0\.0\.1(:\d+)?$#',
+];
+
+$extraPatterns = env('CORS_ALLOWED_ORIGIN_PATTERNS');
+if (is_string($extraPatterns) && trim($extraPatterns) !== '') {
+    foreach (array_filter(array_map('trim', explode(',', $extraPatterns))) as $p) {
+        $allowedOriginPatterns[] = $p;
+    }
 }
 
 return [
@@ -31,8 +56,10 @@ return [
     | To learn more: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
     |
     | Mobile Safari/WebKit often rejects Access-Control-Allow-Origin: * for
-    | JSON POSTs (preflight). Use explicit origins — set CORS_ALLOWED_ORIGINS
-    | in .env (comma-separated) or rely on the defaults below.
+    | JSON POSTs (preflight). Avoid CORS_ALLOWED_ORIGINS=* in production.
+    |
+    | Optional: CORS_ALLOWED_ORIGIN_PATTERNS — comma-separated regex strings
+    | (e.g. #^https://app\.example\.com$#).
     |
     */
 
@@ -42,7 +69,7 @@ return [
 
     'allowed_origins' => $allowedOrigins,
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => $allowedOriginPatterns,
 
     'allowed_headers' => ['*'],
 
