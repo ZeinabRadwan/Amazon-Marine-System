@@ -27,7 +27,11 @@ class InvoiceController extends Controller
 
     public function index(Request $request)
     {
-        abort_unless($request->user()?->can('financial.view'), 403);
+        $user = $request->user();
+        abort_unless(
+            $user && ($user->can('financial.view') || $user->can('accounting.view')),
+            403
+        );
 
         $query = Invoice::query()->with(['client', 'shipment']);
 
@@ -143,7 +147,11 @@ class InvoiceController extends Controller
 
     public function summary(Request $request)
     {
-        abort_unless($request->user()?->can('financial.view'), 403);
+        $user = $request->user();
+        abort_unless(
+            $user && ($user->can('financial.view') || $user->can('accounting.view')),
+            403
+        );
 
         $months = max(1, (int) $request->query('months', 6));
         $from = now()->subMonths($months - 1)->startOfMonth();
@@ -227,7 +235,11 @@ class InvoiceController extends Controller
 
     public function store(Request $request)
     {
-        abort_unless($request->user()?->can('financial.manage'), 403);
+        $user = $request->user();
+        abort_unless(
+            $user && ($user->can('financial.manage') || $user->can('accounting.manage')),
+            403
+        );
 
         $validated = $request->validate([
             'invoice_type_id' => ['required', 'integer', 'in:0,1'],
@@ -291,7 +303,11 @@ class InvoiceController extends Controller
 
     public function show(Request $request, Invoice $invoice)
     {
-        abort_unless($request->user()?->can('financial.view'), 403);
+        $user = $request->user();
+        abort_unless(
+            $user && ($user->can('financial.view') || $user->can('accounting.view')),
+            403
+        );
 
         return response()->json([
             'data' => $invoice->load(['client', 'shipment', 'items', 'payments']),
@@ -300,7 +316,11 @@ class InvoiceController extends Controller
 
     public function update(Request $request, Invoice $invoice)
     {
-        abort_unless($request->user()?->can('financial.manage'), 403);
+        $user = $request->user();
+        abort_unless(
+            $user && ($user->can('financial.manage') || $user->can('accounting.manage')),
+            403
+        );
 
         if (! in_array($invoice->status, ['draft', 'issued'], true)) {
             return response()->json([
@@ -373,7 +393,11 @@ class InvoiceController extends Controller
 
     public function issue(Request $request, Invoice $invoice)
     {
-        abort_unless($request->user()?->can('financial.manage'), 403);
+        $user = $request->user();
+        abort_unless(
+            $user && ($user->can('financial.manage') || $user->can('accounting.manage')),
+            403
+        );
 
         if ($invoice->status !== 'draft') {
             return response()->json([
@@ -413,7 +437,11 @@ class InvoiceController extends Controller
 
     public function recordPayment(Request $request, Invoice $invoice)
     {
-        abort_unless($request->user()?->can('financial.manage'), 403);
+        $user = $request->user();
+        abort_unless(
+            $user && ($user->can('financial.manage') || $user->can('accounting.manage')),
+            403
+        );
 
         $validated = $request->validate([
             'amount' => ['required', 'numeric', 'min:0'],
@@ -460,7 +488,11 @@ class InvoiceController extends Controller
 
     public function export(Request $request)
     {
-        abort_unless($request->user()?->can('financial.view'), 403);
+        $user = $request->user();
+        abort_unless(
+            $user && ($user->can('financial.view') || $user->can('accounting.view')),
+            403
+        );
 
         $query = Invoice::query()->with(['client', 'shipment']);
 
