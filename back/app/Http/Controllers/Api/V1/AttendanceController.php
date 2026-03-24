@@ -89,7 +89,7 @@ class AttendanceController extends Controller
         $records = $query->orderByDesc('date')->orderByDesc('check_in_at')->limit(500)->get();
         $viewer = $request->user();
 
-        $clockInLogMap = $this->acceptedClockInLogsByUserAndRecordDate($records);
+        $clockInLogMap = $this->attendanceService->acceptedClockInLogsByUserAndRecordDate($records);
 
         $data = $records->map(function (AttendanceRecord $r) use ($viewer, $clockInLogMap) {
             $key = $r->date ? $r->user_id.'|'.$r->date->toDateString() : null;
