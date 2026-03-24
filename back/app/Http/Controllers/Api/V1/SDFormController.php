@@ -7,11 +7,11 @@ use App\Http\Requests\StoreSDFormRequest;
 use App\Http\Requests\SubmitSDFormRequest;
 use App\Http\Requests\UpdateSDFormRequest;
 use App\Models\Client;
+use App\Models\PdfLayout;
 use App\Models\SDForm;
 use App\Models\Shipment;
 use App\Models\User;
 use App\Notifications\OperationSDFormNotification;
-use App\Models\PdfLayout;
 use App\Services\ActivityLogger;
 use App\Services\SDFormService;
 use Illuminate\Http\Request;
@@ -49,20 +49,20 @@ class SDFormController extends Controller
 
         if ($search = $request->query('search')) {
             $query->where(function ($q) use ($search) {
-                $q->where('sd_number', 'like', '%' . $search . '%')
-                    ->orWhere('cargo_description', 'like', '%' . $search . '%');
+                $q->where('sd_number', 'like', '%'.$search.'%')
+                    ->orWhere('cargo_description', 'like', '%'.$search.'%');
             });
         }
 
         $sort = $request->query('sort', 'date');
         $direction = strtolower($request->query('direction', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-        $sdFormsTable = (new SDForm())->getTable();
+        $sdFormsTable = (new SDForm)->getTable();
 
         if ($sort === 'client') {
             $query->orderBy(
                 Client::select('name')
-                    ->whereColumn('clients.id', $sdFormsTable . '.client_id'),
+                    ->whereColumn('clients.id', $sdFormsTable.'.client_id'),
                 $direction
             );
         } else {
@@ -233,6 +233,12 @@ class SDFormController extends Controller
     {
         $this->authorize('update', $sdForm);
 
+        if ($sdForm->status !== 'submitted') {
+            abort(422, $sdForm->status === 'draft'
+                ? 'Submit the SD form first before sending it to operations.'
+                : 'Only SD forms in Submitted status can be sent to operations.');
+        }
+
         SDFormService::transitionStatus($sdForm, 'sent_to_operations');
 
         ActivityLogger::log('sd_form.sent_to_operations', $sdForm, [
@@ -273,7 +279,7 @@ class SDFormController extends Controller
 
         $headers = [
             'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="sd-forms-export-' . date('Y-m-d') . '.csv"',
+            'Content-Disposition' => 'attachment; filename="sd-forms-export-'.date('Y-m-d').'.csv"',
         ];
 
         $callback = function () use ($rows) {
@@ -415,7 +421,7 @@ class SDFormController extends Controller
         $to = $operationsUsers->pluck('email')->all();
 
         Mail::send([], [], function ($message) use ($to, $sdForm) {
-            $subject = sprintf('SD %s sent to operations', $sdForm->sd_number ?? ('#' . $sdForm->id));
+            $subject = sprintf('SD %s sent to operations', $sdForm->sd_number ?? ('#'.$sdForm->id));
 
             $body = view('emails.sd_form_plain', [
                 'form' => $sdForm,
@@ -443,7 +449,7 @@ class SDFormController extends Controller
 
         $layout = PdfLayout::where('document_type', 'sd_form')->first();
 
-        $filename = ($sdForm->sd_number ?: 'SD-' . $sdForm->id) . '.pdf';
+        $filename = ($sdForm->sd_number ?: 'SD-'.$sdForm->id).'.pdf';
 
         $html = view('sd_forms.pdf', [
             'form' => $sdForm,
@@ -465,8 +471,7 @@ class SDFormController extends Controller
 
         return response($mpdf->Output($filename, 'S'), 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);
     }
 }
-

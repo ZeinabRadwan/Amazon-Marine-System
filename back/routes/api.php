@@ -259,6 +259,7 @@ Route::prefix('v1')->group(function () {
         Route::post('sd-forms', [SDFormController::class, 'store']);
         Route::get('sd-forms/stats', [SDFormController::class, 'stats']);
         Route::get('sd-forms/charts', [SDFormController::class, 'charts']);
+        Route::get('sd-forms/export', [SDFormController::class, 'export']);
         Route::get('sd-forms/{sdForm}', [SDFormController::class, 'show']);
         Route::put('sd-forms/{sdForm}', [SDFormController::class, 'update']);
         Route::delete('sd-forms/{sdForm}', [SDFormController::class, 'destroy']);
@@ -267,7 +268,6 @@ Route::prefix('v1')->group(function () {
         Route::post('sd-forms/{sdForm}/link-shipment', [SDFormController::class, 'linkShipment']);
         Route::post('sd-forms/{sdForm}/email-operations', [SDFormController::class, 'emailToOperations']);
         Route::get('sd-forms/{sdForm}/pdf', [SDFormController::class, 'pdf']);
-        Route::get('sd-forms/export', [SDFormController::class, 'export']);
 
         // Shipments
         Route::get('shipments/stats', [ShipmentController::class, 'stats']);

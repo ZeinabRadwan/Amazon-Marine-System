@@ -1380,10 +1380,12 @@ export default function SDForms() {
                           {t('sdForms.submit')}
                         </button>
                       )}
-                      <button type="button" className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs" onClick={() => runSendOps(detail.id)}>
-                        <Send className="h-4 w-4" aria-hidden />
-                        {t('sdForms.sendOps')}
-                      </button>
+                      {detail.status === 'submitted' && (
+                        <button type="button" className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs" onClick={() => runSendOps(detail.id)}>
+                          <Send className="h-4 w-4" aria-hidden />
+                          {t('sdForms.sendOps')}
+                        </button>
+                      )}
                       <button type="button" className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs" onClick={() => runEmailOps(detail.id)}>
                         <Mail className="h-4 w-4" aria-hidden />
                         {t('sdForms.emailOps')}
