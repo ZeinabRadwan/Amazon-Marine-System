@@ -8,6 +8,7 @@ use App\Models\OfficeLocation;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 class AttendanceService
 {
@@ -214,6 +215,101 @@ class AttendanceService
         }
 
         return config('app.timezone', 'UTC');
+    }
+
+    /**
+     * Latest accepted clock-in log per user per calendar day (UTC date of attempted_at).
+     *
+     * @param  Collection<int, AttendanceRecord>  $records
+     * @return array<string, AttendanceLog>
+     */
+    public function acceptedClockInLogsByUserAndRecordDate(Collection $records): array
+    {
+        if ($records->isEmpty()) {
+            return [];
+        }
+
+        $userIds = $records->pluck('user_id')->unique()->values()->all();
+        $dates = $records->pluck('date')->filter()->map(fn ($d) => $d->toDateString())->unique()->values()->all();
+        if ($userIds === [] || $dates === []) {
+            return [];
+        }
+
+        $minDate = min($dates);
+        $maxDate = max($dates);
+
+        $logs = AttendanceLog::query()
+            ->where('type', AttendanceLog::TYPE_CLOCK_IN)
+            ->where('accepted', true)
+            ->whereIn('user_id', $userIds)
+            ->whereDate('attempted_at', '>=', $minDate)
+            ->whereDate('attempted_at', '<=', $maxDate)
+            ->orderByDesc('attempted_at')
+            ->get();
+
+        $map = [];
+        foreach ($logs as $log) {
+            $key = $log->user_id.'|'.$log->attempted_at->utc()->toDateString();
+            if (! array_key_exists($key, $map)) {
+                $map[$key] = $log;
+            }
+        }
+
+        return $map;
+    }
+
+    /**
+     * @return array{device_type: string|null, is_within_radius: bool|null, distance_from_office_m: float|null}
+     */
+    public function clockInGeoMetaFromRecordAndLog(AttendanceRecord $r, ?AttendanceLog $clockInLog = null): array
+    {
+        $deviceType = $r->clock_in_device_type;
+        $distanceM = $r->clock_in_distance_from_office;
+        $withinRadius = $r->clock_in_is_within_radius;
+
+        if ($clockInLog !== null) {
+            if ($deviceType === null || $deviceType === '') {
+                $deviceType = $clockInLog->device_type;
+            }
+            if ($distanceM === null && $clockInLog->distance_from_office !== null) {
+                $distanceM = (float) $clockInLog->distance_from_office;
+            }
+            if ($withinRadius === null && $clockInLog->is_within_radius !== null) {
+                $withinRadius = (bool) $clockInLog->is_within_radius;
+            }
+        }
+
+        if ($deviceType === '') {
+            $deviceType = null;
+        }
+
+        return [
+            'device_type' => $deviceType,
+            'is_within_radius' => $withinRadius,
+            'distance_from_office_m' => $distanceM,
+        ];
+    }
+
+    public function workedHoursForList(AttendanceRecord $r): ?float
+    {
+        if ($r->worked_minutes !== null) {
+            return round((float) $r->worked_minutes / 60, 2);
+        }
+
+        $in = $r->check_in_at;
+        if (! $in) {
+            return null;
+        }
+
+        $end = $r->check_out_at ?? Carbon::now('UTC');
+        $mins = (int) round($in->diffInSeconds($end) / 60);
+
+        return round(max(0, $mins) / 60, 2);
+    }
+
+    public function shiftOpenForList(AttendanceRecord $r): bool
+    {
+        return (bool) ($r->check_in_at && ! $r->check_out_at);
     }
 
     /**

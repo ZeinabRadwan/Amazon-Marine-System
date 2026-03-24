@@ -11,7 +11,6 @@ use App\Models\User;
 use App\Services\AttendanceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 
 class AttendanceController extends Controller
 {
@@ -137,7 +136,7 @@ class AttendanceController extends Controller
             $records = AttendanceRecord::where('user_id', $request->user()->id)->whereDate('date', $date)->with('user')->get();
         }
 
-        $clockInLogMap = $this->acceptedClockInLogsByUserAndRecordDate($records);
+        $clockInLogMap = $this->attendanceService->acceptedClockInLogsByUserAndRecordDate($records);
 
         return ApiResponse::success([
             'date' => $date,
@@ -151,68 +150,12 @@ class AttendanceController extends Controller
     }
 
     /**
-     * Latest accepted clock-in log per user per calendar day (UTC date of attempted_at).
-     *
-     * @param  Collection<int, AttendanceRecord>  $records
-     * @return array<string, AttendanceLog>
-     */
-    private function acceptedClockInLogsByUserAndRecordDate(Collection $records): array
-    {
-        if ($records->isEmpty()) {
-            return [];
-        }
-
-        $userIds = $records->pluck('user_id')->unique()->values()->all();
-        $dates = $records->pluck('date')->filter()->map(fn ($d) => $d->toDateString())->unique()->values()->all();
-        if ($userIds === [] || $dates === []) {
-            return [];
-        }
-
-        $minDate = min($dates);
-        $maxDate = max($dates);
-
-        $logs = AttendanceLog::query()
-            ->where('type', AttendanceLog::TYPE_CLOCK_IN)
-            ->where('accepted', true)
-            ->whereIn('user_id', $userIds)
-            ->whereDate('attempted_at', '>=', $minDate)
-            ->whereDate('attempted_at', '<=', $maxDate)
-            ->orderByDesc('attempted_at')
-            ->get();
-
-        $map = [];
-        foreach ($logs as $log) {
-            $key = $log->user_id.'|'.$log->attempted_at->utc()->toDateString();
-            if (! array_key_exists($key, $map)) {
-                $map[$key] = $log;
-            }
-        }
-
-        return $map;
-    }
-
-    /**
      * @return array<string, mixed>
      */
     private function serializeListRecord(AttendanceRecord $r, User $viewer, ?AttendanceLog $clockInLog = null): array
     {
         $tz = $this->attendanceService->resolveTimezone($viewer);
-
-        $deviceType = $r->clock_in_device_type;
-        $distanceM = $r->clock_in_distance_from_office;
-        $withinRadius = $r->clock_in_is_within_radius;
-
-        if ($clockInLog !== null) {
-            if ($deviceType === null || $deviceType === '') {
-                $deviceType = $clockInLog->device_type;
-            }
-            if ($distanceM === null && $clockInLog->distance_from_office !== null) {
-                $distanceM = (float) $clockInLog->distance_from_office;
-            }
-            if ($withinRadius === null && $clockInLog->is_within_radius !== null) {
-                $withinRadius = (bool) $clockInLog->is_within_radius;
-            }
-        }
+        $geo = $this->attendanceService->clockInGeoMetaFromRecordAndLog($r, $clockInLog);
 
         return [
             'id' => $r->id,
@@ -226,9 +169,11 @@ class AttendanceController extends Controller
             'is_late' => (bool) $r->is_late,
             'status' => $r->status,
             'worked_minutes' => $r->worked_minutes,
-            'device_type' => $deviceType,
-            'is_within_radius' => $withinRadius,
-            'distance_from_office_m' => $distanceM,
+            'worked_hours' => $this->attendanceService->workedHoursForList($r),
+            'shift_open' => $this->attendanceService->shiftOpenForList($r),
+            'device_type' => $geo['device_type'],
+            'is_within_radius' => $geo['is_within_radius'],
+            'distance_from_office_m' => $geo['distance_from_office_m'],
             'notes' => $r->notes,
             'timezone_used' => $tz,
         ];
