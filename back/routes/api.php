@@ -25,6 +25,7 @@ use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\DecisionMakerTitleController;
 use App\Http\Controllers\Api\V1\DocumentController;
 use App\Http\Controllers\Api\V1\ExcuseController;
+use App\Http\Controllers\Api\V1\ExpenseCategoryController;
 use App\Http\Controllers\Api\V1\ExpensesController;
 use App\Http\Controllers\Api\V1\FreightTermController;
 use App\Http\Controllers\Api\V1\InterestLevelController;
@@ -422,6 +423,9 @@ Route::prefix('v1')->group(function () {
         Route::post('treasury/transfers', [TreasuryController::class, 'storeTransfer']);
         Route::get('treasury/expenses', [TreasuryController::class, 'expenses']);
         Route::post('treasury/expenses', [TreasuryController::class, 'storeExpense']);
+
+        // Expense categories (for expense forms & shipment financials)
+        Route::get('expense-categories', [ExpenseCategoryController::class, 'index']);
 
         // Expenses (shipment & general)
         Route::get('expenses/summary', [ExpensesController::class, 'summary']);

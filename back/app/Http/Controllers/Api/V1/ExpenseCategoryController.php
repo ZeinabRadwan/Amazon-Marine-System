@@ -10,7 +10,12 @@ class ExpenseCategoryController extends Controller
 {
     public function index(Request $request)
     {
-        abort_unless($request->user()?->can('financial.view'), 403);
+        $user = $request->user();
+        abort_unless(
+            $user && ($user->can('financial.view') || $user->can('accounting.view') || $user->hasRole('admin')),
+            403,
+            'You do not have permission to list expense categories.'
+        );
 
         $categories = ExpenseCategory::query()
             ->orderBy('name')

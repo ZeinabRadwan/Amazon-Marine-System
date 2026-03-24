@@ -8,7 +8,9 @@ class StoreExpenseRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('accounting.manage') ?? false;
+        $user = $this->user();
+
+        return $user && ($user->can('accounting.manage') || $user->hasRole('admin'));
     }
 
     /**
