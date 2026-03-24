@@ -6524,7 +6524,7 @@
     },
     {
       "name": "Admin Attendance",
-      "description": "Requires permission attendance.admin.",
+      "description": "admin/attendance and admin/attendance/summary require attendance.admin. admin/excuses (list/patch) require attendance.excuses.manage OR attendance.admin.",
       "item": [
         {
           "name": "Admin Attendance List",

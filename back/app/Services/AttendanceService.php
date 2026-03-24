@@ -275,11 +275,10 @@ class AttendanceService
 
         $nowLocal = $nowUtc->copy()->timezone($tz);
         $dateStr = $nowLocal->toDateString();
-        $grace = (int) ($policy['grace_minutes'] ?? 0);
 
         try {
             $start = Carbon::parse($dateStr.' '.$startStr, $tz);
-            $end = Carbon::parse($dateStr.' '.$endStr, $tz);
+            Carbon::parse($dateStr.' '.$endStr, $tz);
         } catch (\Throwable) {
             return 'Invalid work schedule configuration.';
         }
@@ -288,9 +287,8 @@ class AttendanceService
             if ($nowLocal->lt($start)) {
                 return 'Before allowed clock-in time.';
             }
-            if ($nowLocal->gt($end->copy()->addMinutes($grace))) {
-                return 'After allowed clock-in window.';
-            }
+            // No upper bound on clock-in time: workday_end + grace is not enforced here so late same-day
+            // arrivals are not rejected after the nominal shift end (lateness is reflected in status).
         } else {
             if ($nowLocal->lt($start)) {
                 return 'Before work hours.';

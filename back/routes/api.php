@@ -369,6 +369,9 @@ Route::prefix('v1')->group(function () {
         Route::middleware('can:attendance.admin')->group(function () {
             Route::get('admin/attendance', [AdminAttendanceController::class, 'index']);
             Route::get('admin/attendance/summary', [AdminAttendanceController::class, 'summary']);
+        });
+
+        Route::middleware('can_manage_attendance_excuses')->group(function () {
             Route::get('admin/excuses', [AdminExcuseController::class, 'index']);
             Route::patch('admin/excuses/{excuse}', [AdminExcuseController::class, 'update']);
         });

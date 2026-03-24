@@ -17,6 +17,9 @@ import {
   adminPatchExcuse,
 } from '../../api/attendance'
 import { getProfile } from '../../api/auth'
+import { listUsers } from '../../api/users'
+import { getSettings } from '../../api/settings'
+import { haversineMeters, wallClockToUtc, formatYmdInTimeZone, durationPartsFromMs } from '../../utils/geoTime'
 import { Container } from '../../components/Container'
 import '../../components/PageHeader/PageHeader.css'
 import { Table } from '../../components/Table'
@@ -25,7 +28,7 @@ import Tabs from '../../components/Tabs'
 import { StatsCard } from '../../components/StatsCard'
 import LoaderDots from '../../components/LoaderDots'
 import Alert from '../../components/Alert'
-import { LogIn, LogOut, RefreshCw, Clock, UserX, Download } from 'lucide-react'
+import { LogIn, LogOut, RefreshCw, Clock, UserX, Download, MapPin, Navigation, Building2, Timer } from 'lucide-react'
 import '../../components/LoaderDots/LoaderDots.css'
 import '../Clients/Clients.css'
 import './Attendance.css'
@@ -74,19 +77,41 @@ function downloadCsv(filename, rows) {
 
 export default function Attendance() {
   const { t } = useTranslation()
-  const { permissions = [] } = useOutletContext() || {}
+  const { permissions = [], user: outletUser } = useOutletContext() || {}
   const token = getStoredToken()
   const today = new Date().toISOString().slice(0, 10)
-  const canAdmin = Array.isArray(permissions) && permissions.includes('attendance.admin')
+  const canAdminAttendance = useMemo(
+    () => Array.isArray(permissions) && permissions.includes('attendance.admin'),
+    [permissions]
+  )
+  const canManageAttendanceExcuses = useMemo(
+    () =>
+      Array.isArray(permissions) &&
+      (permissions.includes('attendance.excuses.manage') || permissions.includes('attendance.admin')),
+    [permissions]
+  )
+  const canShowAdminTab = canAdminAttendance || canManageAttendanceExcuses
+
+  const canFilterAll = useMemo(
+    () =>
+      Array.isArray(permissions) &&
+      (permissions.includes('attendance.view') || permissions.includes('reports.view')),
+    [permissions]
+  )
 
   const sectionTabs = useMemo(() => {
     const base = [
       { id: 'my', labelKey: 'attendance.tabs.my' },
       { id: 'excuses', labelKey: 'attendance.tabs.excuses' },
     ]
-    if (canAdmin) base.push({ id: 'admin', labelKey: 'attendance.tabs.admin' })
+    if (canShowAdminTab) {
+      base.push({
+        id: 'admin',
+        labelKey: canAdminAttendance ? 'attendance.tabs.admin' : 'attendance.tabs.excusesAdmin',
+      })
+    }
     return base.map((tab) => ({ id: tab.id, label: t(tab.labelKey) }))
-  }, [canAdmin, t])
+  }, [canShowAdminTab, canAdminAttendance, t])
 
   const [activeSection, setActiveSection] = useState('my')
   const [list, setList] = useState([])
@@ -95,9 +120,14 @@ export default function Attendance() {
   const [filters, setFilters] = useState({
     from: today,
     to: today,
+    user_id: '',
+    status: '',
+    device_type: '',
+    is_within_radius: '',
     page: 1,
     per_page: 15,
   })
+  const [employeeOptions, setEmployeeOptions] = useState([])
   const [stats, setStats] = useState(null)
   const [statsLoading, setStatsLoading] = useState(false)
   const [todayData, setTodayData] = useState(null)
@@ -105,6 +135,17 @@ export default function Attendance() {
   const [checkInSubmitting, setCheckInSubmitting] = useState(false)
   const [checkOutSubmitting, setCheckOutSubmitting] = useState(false)
   const [currentUserId, setCurrentUserId] = useState(null)
+
+  const [dashboardTick, setDashboardTick] = useState(() => Date.now())
+  const [workspaceSnapshot, setWorkspaceSnapshot] = useState(null)
+  const [userGeo, setUserGeo] = useState({
+    status: 'idle',
+    lat: null,
+    lng: null,
+    accuracy: null,
+    error: null,
+    updatedAt: null,
+  })
 
   const [myExcuses, setMyExcuses] = useState([])
   const [excusesLoading, setExcusesLoading] = useState(false)
@@ -145,17 +186,47 @@ export default function Attendance() {
       .catch(() => setCurrentUserId(null))
   }, [token])
 
+  useEffect(() => {
+    if (!token || !canFilterAll || activeSection !== 'my') return
+    listUsers(token, { status: 'active' })
+      .then((data) => {
+        const list = data.data ?? data.users ?? data
+        setEmployeeOptions(Array.isArray(list) ? list : [])
+      })
+      .catch(() => setEmployeeOptions([]))
+  }, [token, canFilterAll, activeSection])
+
   const loadList = useCallback(() => {
     if (!token) return
     setLoading(true)
     setAlert(null)
-    listAttendance(token, { from: filters.from, to: filters.to })
+    listAttendance(token, {
+      from: filters.from,
+      to: filters.to,
+      user_id: canFilterAll && filters.user_id ? filters.user_id : undefined,
+      status: filters.status || undefined,
+      device_type: filters.device_type || undefined,
+      is_within_radius:
+        filters.is_within_radius === '' || filters.is_within_radius === undefined
+          ? undefined
+          : filters.is_within_radius,
+    })
       .then((data) => {
         setList(Array.isArray(data) ? data : [])
       })
       .catch(() => setAlert({ type: 'error', message: t('attendance.errorLoad') }))
       .finally(() => setLoading(false))
-  }, [token, filters.from, filters.to, t])
+  }, [
+    token,
+    filters.from,
+    filters.to,
+    filters.user_id,
+    filters.status,
+    filters.device_type,
+    filters.is_within_radius,
+    canFilterAll,
+    t,
+  ])
 
   useEffect(() => {
     if (activeSection === 'my') loadList()
@@ -183,6 +254,70 @@ export default function Attendance() {
     if (activeSection === 'my') refreshToday()
   }, [activeSection, refreshToday, checkInSubmitting, checkOutSubmitting])
 
+  useEffect(() => {
+    if (activeSection !== 'my') return undefined
+    const id = setInterval(() => setDashboardTick(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [activeSection])
+
+  useEffect(() => {
+    if (!token || activeSection !== 'my') return undefined
+    let cancelled = false
+    getSettings(token)
+      .then((res) => {
+        if (cancelled) return
+        const s = res?.data ?? res
+        const loc = s?.company?.location
+        const pol = s?.attendance?.policy
+        const sysTz = s?.system?.preferences?.timezone
+        const office =
+          loc && loc.lat != null && loc.lng != null
+            ? { lat: Number(loc.lat), lng: Number(loc.lng), radius_m: loc.radius_m }
+            : null
+        setWorkspaceSnapshot({
+          office,
+          policy: pol && typeof pol === 'object' ? pol : null,
+          systemTimezone: typeof sysTz === 'string' ? sysTz : null,
+        })
+      })
+      .catch(() => {
+        if (!cancelled) setWorkspaceSnapshot({ office: null, policy: null, systemTimezone: null })
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [token, activeSection])
+
+  const refreshUserLocation = useCallback(() => {
+    setUserGeo((prev) => ({ ...prev, status: 'loading', error: null }))
+    getCurrentPosition()
+      .then((pos) => {
+        setUserGeo({
+          status: 'ok',
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          accuracy: pos.coords.accuracy ?? null,
+          error: null,
+          updatedAt: Date.now(),
+        })
+      })
+      .catch((err) => {
+        setUserGeo({
+          status: 'error',
+          lat: null,
+          lng: null,
+          accuracy: null,
+          error: err?.message || 'denied',
+          updatedAt: Date.now(),
+        })
+      })
+  }, [])
+
+  useEffect(() => {
+    if (activeSection !== 'my') return
+    refreshUserLocation()
+  }, [activeSection, refreshUserLocation])
+
   const loadMyExcuses = useCallback(() => {
     if (!token) return
     setExcusesLoading(true)
@@ -197,7 +332,7 @@ export default function Attendance() {
   }, [activeSection, loadMyExcuses])
 
   const loadAdminExcuses = useCallback(() => {
-    if (!token || !canAdmin) return
+    if (!token || !canManageAttendanceExcuses) return
     setAdminExcusesLoading(true)
     adminListExcuses(token, { status: 'pending', per_page: 50 })
       .then((res) => {
@@ -207,10 +342,10 @@ export default function Attendance() {
         setAdminExcuses([])
       })
       .finally(() => setAdminExcusesLoading(false))
-  }, [token, canAdmin])
+  }, [token, canManageAttendanceExcuses])
 
   useEffect(() => {
-    if (activeSection !== 'admin' || !canAdmin || !token) return
+    if (activeSection !== 'admin' || !canAdminAttendance || !token) return
     let cancelled = false
     setAdminLoading(true)
     const f = adminFiltersRef.current
@@ -244,14 +379,19 @@ export default function Attendance() {
     return () => {
       cancelled = true
     }
-  }, [activeSection, canAdmin, token, adminRefresh, adminFilters.page, adminFilters.per_page])
+  }, [activeSection, canAdminAttendance, token, adminRefresh, adminFilters.page, adminFilters.per_page])
 
   useEffect(() => {
-    if (activeSection === 'admin' && canAdmin) {
+    if (activeSection === 'admin' && canAdminAttendance) {
       setAdminRefresh((n) => n + 1)
+    }
+  }, [activeSection, canAdminAttendance])
+
+  useEffect(() => {
+    if (activeSection === 'admin' && canManageAttendanceExcuses) {
       loadAdminExcuses()
     }
-  }, [activeSection, canAdmin, loadAdminExcuses])
+  }, [activeSection, canManageAttendanceExcuses, loadAdminExcuses])
 
   const handleCheckIn = async () => {
     if (!token) return
@@ -268,6 +408,7 @@ export default function Attendance() {
       setAlert({ type: 'success', message: t('attendance.checkInSuccess') })
       loadList()
       refreshToday()
+      refreshUserLocation()
     } catch (err) {
       setAlert({ type: 'error', message: err.message || t('attendance.error') })
     } finally {
@@ -290,6 +431,7 @@ export default function Attendance() {
       setAlert({ type: 'success', message: t('attendance.checkOutSuccess') })
       loadList()
       refreshToday()
+      refreshUserLocation()
     } catch (err) {
       setAlert({ type: 'error', message: err.message || t('attendance.error') })
     } finally {
@@ -326,7 +468,7 @@ export default function Attendance() {
       await adminPatchExcuse(token, id, { status })
       setAlert({ type: 'success', message: t('attendance.admin.excuseUpdated') })
       loadAdminExcuses()
-      setAdminRefresh((n) => n + 1)
+      if (canAdminAttendance) setAdminRefresh((n) => n + 1)
     } catch (err) {
       setAlert({ type: 'error', message: err.message || t('attendance.error') })
     } finally {
@@ -399,39 +541,189 @@ export default function Attendance() {
   const hasCheckedIn = !!myRecordToday?.check_in_at
   const hasCheckedOut = !!myRecordToday?.check_out_at
 
+  const liveDashboard = useMemo(() => {
+    const now = new Date(dashboardTick)
+    const policy = workspaceSnapshot?.policy ?? {}
+    const workdayStart = typeof policy.workday_start === 'string' ? policy.workday_start : '09:00'
+    const workdayEnd = typeof policy.workday_end === 'string' ? policy.workday_end : '17:00'
+    const enforceSchedule = policy.enforce_schedule === true || policy.enforce_schedule === 1
+    const profileTz =
+      outletUser?.timezone && typeof outletUser.timezone === 'string' && outletUser.timezone.trim() !== ''
+        ? outletUser.timezone.trim()
+        : null
+    const systemTz =
+      workspaceSnapshot?.systemTimezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+    const workTz = myRecordToday?.timezone_used || profileTz || systemTz
+    const refYmd =
+      myRecordToday?.date ||
+      todayData?.date ||
+      formatYmdInTimeZone(now, workTz)
+
+    const workEnd = wallClockToUtc(refYmd, workdayEnd, workTz)
+    const workStart = wallClockToUtc(refYmd, workdayStart, workTz)
+
+    let shiftPhase = 'not_in'
+    if (hasCheckedIn && !hasCheckedOut) shiftPhase = 'on_shift'
+    if (hasCheckedOut) shiftPhase = 'done'
+
+    let elapsedMs = null
+    if (hasCheckedIn && myRecordToday?.check_in_at) {
+      const t0 = new Date(myRecordToday.check_in_at_local || myRecordToday.check_in_at).getTime()
+      const t1 =
+        hasCheckedOut && myRecordToday?.check_out_at
+          ? new Date(myRecordToday.check_out_at_local || myRecordToday.check_out_at).getTime()
+          : now.getTime()
+      elapsedMs = Math.max(0, t1 - t0)
+    }
+
+    let remainingToEndMs = null
+    if (shiftPhase === 'on_shift' && workEnd) {
+      remainingToEndMs = Math.max(0, workEnd.getTime() - now.getTime())
+    }
+
+    let untilStartMs = null
+    if (shiftPhase === 'not_in' && workStart && now.getTime() < workStart.getTime()) {
+      untilStartMs = Math.max(0, workStart.getTime() - now.getTime())
+    }
+
+    const office = workspaceSnapshot?.office
+    let distanceNowM = null
+    if (
+      office &&
+      Number.isFinite(office.lat) &&
+      Number.isFinite(office.lng) &&
+      userGeo.status === 'ok' &&
+      userGeo.lat != null &&
+      userGeo.lng != null
+    ) {
+      distanceNowM = haversineMeters(userGeo.lat, userGeo.lng, office.lat, office.lng)
+    }
+
+    const radiusM =
+      office?.radius_m != null && office.radius_m !== '' && Number.isFinite(Number(office.radius_m))
+        ? Number(office.radius_m)
+        : null
+
+    const checkInMs = myRecordToday?.check_in_at
+      ? new Date(myRecordToday.check_in_at_local || myRecordToday.check_in_at).getTime()
+      : null
+    const checkOutMs =
+      hasCheckedOut && myRecordToday?.check_out_at
+        ? new Date(myRecordToday.check_out_at_local || myRecordToday.check_out_at).getTime()
+        : null
+
+    let timelineNowPct = null
+    if (checkInMs != null && workEnd) {
+      const span = workEnd.getTime() - checkInMs
+      if (span > 0) {
+        const x = (now.getTime() - checkInMs) / span
+        timelineNowPct = Math.min(100, Math.max(0, x * 100))
+      }
+    }
+
+    let scheduleDayPct = null
+    if (workStart && workEnd) {
+      const span = workEnd.getTime() - workStart.getTime()
+      if (span > 0) {
+        scheduleDayPct = Math.min(100, Math.max(0, ((now.getTime() - workStart.getTime()) / span) * 100))
+      }
+    }
+
+    const clockInBlockedBySchedule =
+      enforceSchedule && workStart != null && now.getTime() < workStart.getTime()
+
+    return {
+      now,
+      workTz,
+      refYmd,
+      workdayStart,
+      workdayEnd,
+      enforceSchedule,
+      clockInBlockedBySchedule,
+      workEnd,
+      workStart,
+      shiftPhase,
+      elapsedMs,
+      remainingToEndMs,
+      untilStartMs,
+      office,
+      distanceNowM,
+      radiusM,
+      checkInMs,
+      checkOutMs,
+      timelineNowPct,
+      scheduleDayPct,
+    }
+  }, [
+    dashboardTick,
+    workspaceSnapshot,
+    myRecordToday,
+    todayData,
+    hasCheckedIn,
+    hasCheckedOut,
+    userGeo.status,
+    userGeo.lat,
+    userGeo.lng,
+    outletUser?.timezone,
+  ])
+
   const pageLoading = loading || statsLoading || checkInSubmitting || checkOutSubmitting
 
-  const columns = [
-    { key: 'user_name', label: t('attendance.user'), sortable: true, render: (_, r) => r.user_name ?? '—' },
-    { key: 'date', label: t('attendance.date'), sortable: true, render: (_, r) => formatDateOnly(r.date) },
-    { key: 'check_in_at', label: t('attendance.checkIn'), render: (_, r) => formatTime(r.check_in_at_local || r.check_in_at) },
-    { key: 'check_out_at', label: t('attendance.checkOut'), render: (_, r) => formatTime(r.check_out_at_local || r.check_out_at) },
-    {
-      key: 'status',
-      label: t('attendance.status'),
-      sortable: true,
-      render: (_, r) => r.status || '—',
-    },
-    {
-      key: 'worked_minutes',
-      label: t('attendance.workedHours'),
-      sortable: true,
-      render: (_, r) =>
-        r.worked_minutes != null ? `${(r.worked_minutes / 60).toFixed(2)} h` : '—',
-    },
-    {
-      key: 'is_late',
-      label: t('attendance.late'),
-      render: (_, r) =>
-        r.is_late ? (
-          <span className="attendance-badge attendance-badge--late" title={t('attendance.late')}>
-            {t('attendance.late')}
-          </span>
-        ) : (
-          '—'
-        ),
-    },
-  ]
+  const columns = useMemo(
+    () => [
+      ...(canFilterAll
+        ? [{ key: 'user_name', label: t('attendance.user'), sortable: true, render: (_, r) => r.user_name ?? '—' }]
+        : []),
+      { key: 'date', label: t('attendance.date'), sortable: true, render: (_, r) => formatDateOnly(r.date) },
+      { key: 'check_in_at', label: t('attendance.checkIn'), render: (_, r) => formatTime(r.check_in_at_local || r.check_in_at) },
+      { key: 'check_out_at', label: t('attendance.checkOut'), render: (_, r) => formatTime(r.check_out_at_local || r.check_out_at) },
+      {
+        key: 'status',
+        label: t('attendance.status'),
+        sortable: true,
+        render: (_, r) => r.status || '—',
+      },
+      {
+        key: 'worked_minutes',
+        label: t('attendance.workedHours'),
+        sortable: true,
+        render: (_, r) =>
+          r.worked_minutes != null ? `${(r.worked_minutes / 60).toFixed(2)} h` : '—',
+      },
+      {
+        key: 'device_type',
+        label: t('attendance.device'),
+        sortable: true,
+        render: (_, r) => r.device_type ?? '—',
+      },
+      {
+        key: 'is_within_radius',
+        label: t('attendance.withinRadius'),
+        sortable: true,
+        render: (_, r) =>
+          r.is_within_radius === true ? t('attendance.yes') : r.is_within_radius === false ? t('attendance.no') : '—',
+      },
+      {
+        key: 'distance_from_office_m',
+        label: t('attendance.distanceM'),
+        sortable: true,
+        render: (_, r) => (r.distance_from_office_m != null ? Math.round(r.distance_from_office_m) : '—'),
+      },
+      {
+        key: 'is_late',
+        label: t('attendance.late'),
+        render: (_, r) =>
+          r.is_late ? (
+            <span className="attendance-badge attendance-badge--late" title={t('attendance.late')}>
+              {t('attendance.late')}
+            </span>
+          ) : (
+            '—'
+          ),
+      },
+    ],
+    [canFilterAll, t]
+  )
 
   const adminColumns = [
     { key: 'employee_name', label: t('attendance.user'), sortable: true },
@@ -472,6 +764,276 @@ export default function Attendance() {
 
         {activeSection === 'my' && (
           <>
+            <div className="attendance-dashboard" role="region" aria-label={t('attendance.dashboard.regionLabel')}>
+              <div className="attendance-dashboard__grid">
+                <section className="attendance-dashboard__card attendance-dashboard__card--time">
+                  <div className="attendance-dashboard__card-head">
+                    <Timer className="attendance-dashboard__head-icon" size={22} aria-hidden />
+                    <h2 className="attendance-dashboard__card-title">{t('attendance.dashboard.timeTitle')}</h2>
+                  </div>
+                  <time
+                    className="attendance-dashboard__now-clock"
+                    dateTime={liveDashboard.now.toISOString()}
+                    suppressHydrationWarning
+                  >
+                    {liveDashboard.now.toLocaleTimeString(undefined, {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit',
+                    })}
+                  </time>
+                  <p className="attendance-dashboard__tz-hint">
+                    {t('attendance.dashboard.tzNote', { tz: liveDashboard.workTz })}
+                  </p>
+                  <p className="attendance-dashboard__schedule-hint">
+                    {t('attendance.dashboard.scheduleWindow', {
+                      start: liveDashboard.workdayStart,
+                      end: liveDashboard.workdayEnd,
+                    })}
+                  </p>
+                  <div
+                    className={`attendance-dashboard__pill attendance-dashboard__pill--${liveDashboard.shiftPhase}`}
+                    role="status"
+                  >
+                    {liveDashboard.shiftPhase === 'on_shift' && t('attendance.dashboard.statusOnShift')}
+                    {liveDashboard.shiftPhase === 'not_in' && t('attendance.dashboard.statusNotIn')}
+                    {liveDashboard.shiftPhase === 'done' && t('attendance.dashboard.statusDone')}
+                  </div>
+                  <div className="attendance-dashboard__pairs">
+                    <div className="attendance-dashboard__pair">
+                      <span className="attendance-dashboard__k">{t('attendance.dashboard.clockInTime')}</span>
+                      <span className="attendance-dashboard__v">
+                        {formatTime(myRecordToday?.check_in_at_local || myRecordToday?.check_in_at)}
+                      </span>
+                    </div>
+                    <div className="attendance-dashboard__pair">
+                      <span className="attendance-dashboard__k">{t('attendance.dashboard.clockOutTime')}</span>
+                      <span className="attendance-dashboard__v">
+                        {formatTime(myRecordToday?.check_out_at_local || myRecordToday?.check_out_at)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="attendance-dashboard__timeline" aria-hidden={false}>
+                    <div className="attendance-dashboard__timeline-labels">
+                      <span>{t('attendance.dashboard.axisStart')}</span>
+                      <span>{t('attendance.dashboard.axisNow')}</span>
+                      <span>{t('attendance.dashboard.axisEnd')}</span>
+                    </div>
+                    <div className="attendance-dashboard__timeline-track">
+                      {(() => {
+                        const pct =
+                          liveDashboard.shiftPhase === 'on_shift' &&
+                          liveDashboard.timelineNowPct != null
+                            ? liveDashboard.timelineNowPct
+                            : liveDashboard.scheduleDayPct
+                        const softFill =
+                          !(liveDashboard.shiftPhase === 'on_shift' && liveDashboard.timelineNowPct != null)
+                        return (
+                          <>
+                            <div
+                              className={
+                                softFill
+                                  ? 'attendance-dashboard__timeline-fill attendance-dashboard__timeline-fill--soft'
+                                  : 'attendance-dashboard__timeline-fill'
+                              }
+                              style={{ width: pct != null ? `${pct}%` : '0%' }}
+                            />
+                            {pct != null ? (
+                              <span
+                                className="attendance-dashboard__timeline-now"
+                                style={{ left: `${pct}%` }}
+                              />
+                            ) : null}
+                          </>
+                        )
+                      })()}
+                    </div>
+                    <p className="attendance-dashboard__timeline-caption">
+                      {liveDashboard.shiftPhase === 'on_shift'
+                        ? t('attendance.dashboard.timelineOnShift')
+                        : t('attendance.dashboard.timelineSchedule')}
+                    </p>
+                  </div>
+                  <ul className="attendance-dashboard__stats">
+                    {liveDashboard.elapsedMs != null && (
+                      <li>
+                        <span className="attendance-dashboard__stats-k">{t('attendance.dashboard.elapsed')}</span>
+                        <span className="attendance-dashboard__stats-v">
+                          {(() => {
+                            const { h, m } = durationPartsFromMs(liveDashboard.elapsedMs)
+                            return h > 0
+                              ? t('attendance.dashboard.durationHM', { h, m })
+                              : t('attendance.dashboard.durationM', { m })
+                          })()}
+                        </span>
+                      </li>
+                    )}
+                    {liveDashboard.shiftPhase === 'on_shift' && liveDashboard.remainingToEndMs != null && (
+                      <li>
+                        <span className="attendance-dashboard__stats-k">{t('attendance.dashboard.remainingToEnd')}</span>
+                        <span className="attendance-dashboard__stats-v">
+                          {(() => {
+                            const { h, m } = durationPartsFromMs(liveDashboard.remainingToEndMs)
+                            return h > 0
+                              ? t('attendance.dashboard.durationHM', { h, m })
+                              : t('attendance.dashboard.durationM', { m })
+                          })()}
+                        </span>
+                      </li>
+                    )}
+                    {liveDashboard.shiftPhase === 'not_in' && liveDashboard.untilStartMs != null && (
+                      <li>
+                        <span className="attendance-dashboard__stats-k">{t('attendance.dashboard.untilWindowOpens')}</span>
+                        <span className="attendance-dashboard__stats-v">
+                          {(() => {
+                            const { h, m } = durationPartsFromMs(liveDashboard.untilStartMs)
+                            return h > 0
+                              ? t('attendance.dashboard.durationHM', { h, m })
+                              : t('attendance.dashboard.durationM', { m })
+                          })()}
+                        </span>
+                      </li>
+                    )}
+                  </ul>
+                </section>
+
+                <section className="attendance-dashboard__card attendance-dashboard__card--geo">
+                  <div className="attendance-dashboard__card-head">
+                    <Navigation className="attendance-dashboard__head-icon" size={22} aria-hidden />
+                    <h2 className="attendance-dashboard__card-title">{t('attendance.locationPanel.title')}</h2>
+                  </div>
+                  <div className="attendance-dashboard__geo-cols">
+                    <div className="attendance-dashboard__geo-block">
+                      <div className="attendance-dashboard__geo-label">
+                        <Building2 size={16} aria-hidden />
+                        {t('attendance.locationPanel.office')}
+                      </div>
+                      {liveDashboard.office &&
+                      Number.isFinite(liveDashboard.office.lat) &&
+                      Number.isFinite(liveDashboard.office.lng) ? (
+                        <>
+                          <p className="attendance-dashboard__geo-coords" dir="ltr">
+                            {liveDashboard.office.lat.toFixed(5)}, {liveDashboard.office.lng.toFixed(5)}
+                          </p>
+                          {liveDashboard.radiusM != null ? (
+                            <p className="attendance-dashboard__geo-meta">
+                              {t('attendance.locationPanel.radius', { m: liveDashboard.radiusM })}
+                            </p>
+                          ) : null}
+                          <a
+                            className="attendance-dashboard__map-link"
+                            href={`https://www.openstreetmap.org/?mlat=${liveDashboard.office.lat}&mlon=${liveDashboard.office.lng}#map=17/${liveDashboard.office.lat}/${liveDashboard.office.lng}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <MapPin size={14} aria-hidden />
+                            {t('attendance.locationPanel.openMap')}
+                          </a>
+                        </>
+                      ) : (
+                        <p className="attendance-dashboard__geo-empty">{t('attendance.locationPanel.noOffice')}</p>
+                      )}
+                    </div>
+                    <div className="attendance-dashboard__geo-block">
+                      <div className="attendance-dashboard__geo-label">
+                        <MapPin size={16} aria-hidden />
+                        {t('attendance.locationPanel.you')}
+                      </div>
+                      {userGeo.status === 'loading' && (
+                        <p className="attendance-dashboard__geo-empty">{t('attendance.locationPanel.geoLoading')}</p>
+                      )}
+                      {userGeo.status === 'error' && (
+                        <p className="attendance-dashboard__geo-empty">{t('attendance.locationPanel.geoError')}</p>
+                      )}
+                      {userGeo.status === 'ok' && userGeo.lat != null && userGeo.lng != null && (
+                        <>
+                          <p className="attendance-dashboard__geo-coords" dir="ltr">
+                            {userGeo.lat.toFixed(5)}, {userGeo.lng.toFixed(5)}
+                          </p>
+                          {userGeo.accuracy != null && Number.isFinite(userGeo.accuracy) ? (
+                            <p className="attendance-dashboard__geo-meta">
+                              {t('attendance.locationPanel.accuracy', { m: Math.round(userGeo.accuracy) })}
+                            </p>
+                          ) : null}
+                          <a
+                            className="attendance-dashboard__map-link"
+                            href={`https://www.openstreetmap.org/?mlat=${userGeo.lat}&mlon=${userGeo.lng}#map=17/${userGeo.lat}/${userGeo.lng}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <MapPin size={14} aria-hidden />
+                            {t('attendance.locationPanel.openMap')}
+                          </a>
+                        </>
+                      )}
+                      {userGeo.status === 'idle' && (
+                        <p className="attendance-dashboard__geo-empty">{t('attendance.locationPanel.geoIdle')}</p>
+                      )}
+                      <button
+                        type="button"
+                        className="attendance-dashboard__geo-refresh page-header__btn"
+                        onClick={refreshUserLocation}
+                        disabled={userGeo.status === 'loading'}
+                      >
+                        <RefreshCw size={16} aria-hidden />
+                        {t('attendance.locationPanel.refreshGps')}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="attendance-dashboard__distance-banner">
+                    {liveDashboard.distanceNowM != null ? (
+                      <>
+                        <strong>{t('attendance.locationPanel.distanceNow')}</strong>
+                        <span>
+                          {Math.round(liveDashboard.distanceNowM)} {t('attendance.locationPanel.metersAbbr')}
+                          {liveDashboard.radiusM != null ? (
+                            <span
+                              className={
+                                liveDashboard.distanceNowM <= liveDashboard.radiusM
+                                  ? 'attendance-dashboard__radius-tag'
+                                  : 'attendance-dashboard__radius-tag attendance-dashboard__radius-tag--warn'
+                              }
+                            >
+                              {liveDashboard.distanceNowM <= liveDashboard.radiusM
+                                ? t('attendance.locationPanel.insideRadius')
+                                : t('attendance.locationPanel.outsideRadius')}
+                            </span>
+                          ) : null}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="attendance-dashboard__geo-muted">
+                        {t('attendance.locationPanel.distanceNeedBoth')}
+                      </span>
+                    )}
+                    {myRecordToday?.distance_from_office_m != null && (
+                      <p className="attendance-dashboard__at-checkin">
+                        {t('attendance.locationPanel.atCheckIn', {
+                          m: Math.round(Number(myRecordToday.distance_from_office_m)),
+                        })}
+                      </p>
+                    )}
+                    {liveDashboard.enforceSchedule ? (
+                      <p className="attendance-dashboard__schedule-geo-note">
+                        {t('attendance.scheduleVsGeoHint', {
+                          tz: liveDashboard.workTz,
+                          start: liveDashboard.workdayStart,
+                        })}
+                      </p>
+                    ) : null}
+                    {liveDashboard.clockInBlockedBySchedule ? (
+                      <p className="attendance-dashboard__schedule-block-alert" role="alert">
+                        {t('attendance.scheduleBlockBeforeStart', {
+                          start: liveDashboard.workdayStart,
+                          tz: liveDashboard.workTz,
+                        })}
+                      </p>
+                    ) : null}
+                  </div>
+                </section>
+              </div>
+            </div>
+
             {pageLoading && (
               <div className="clients-page-loader" aria-live="polite" aria-busy="true">
                 <LoaderDots />
@@ -499,8 +1061,18 @@ export default function Attendance() {
                   type="button"
                   className="page-header__btn attendance-refresh-btn"
                   onClick={() => {
-                    setFilters((f) => ({ ...f, from: today, to: today, page: 1 }))
+                    setFilters((f) => ({
+                      ...f,
+                      from: today,
+                      to: today,
+                      user_id: '',
+                      status: '',
+                      device_type: '',
+                      is_within_radius: '',
+                      page: 1,
+                    }))
                     refreshToday()
+                    refreshUserLocation()
                   }}
                   disabled={loading}
                   aria-label={t('attendance.refresh')}
@@ -552,10 +1124,19 @@ export default function Attendance() {
                     type="button"
                     className="attendance-btn attendance-btn--checkin page-header__btn page-header__btn--primary"
                     onClick={handleCheckIn}
-                    disabled={checkInSubmitting || hasCheckedIn}
+                    disabled={checkInSubmitting || hasCheckedIn || liveDashboard.clockInBlockedBySchedule}
                     aria-label={t('attendance.checkIn')}
                     aria-pressed={hasCheckedIn}
-                    title={hasCheckedIn ? t('attendance.checkedIn') : t('attendance.checkIn')}
+                    title={
+                      hasCheckedIn
+                        ? t('attendance.checkedIn')
+                        : liveDashboard.clockInBlockedBySchedule
+                          ? t('attendance.scheduleBlockBeforeStart', {
+                              start: liveDashboard.workdayStart,
+                              tz: liveDashboard.workTz,
+                            })
+                          : t('attendance.checkIn')
+                    }
                   >
                     <LogIn size={18} aria-hidden />
                     {checkInSubmitting ? t('attendance.saving') : hasCheckedIn ? t('attendance.checkedIn') : t('attendance.checkIn')}
@@ -578,7 +1159,28 @@ export default function Attendance() {
             </div>
 
             <div className="clients-filters-card attendance-filters-card">
-              <div className="clients-filters__row clients-filters__row--main attendance-filters-row">
+              <h3 className="attendance-filters-title text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">
+                {t('attendance.filters.title')}
+              </h3>
+              <div className="clients-filters__row clients-filters__row--main attendance-filters-row flex-wrap gap-3">
+                {canFilterAll && (
+                  <label className="attendance-filter-label min-w-[200px] flex-1">
+                    <span>{t('attendance.filters.employee')}</span>
+                    <select
+                      className="clients-select w-full"
+                      value={filters.user_id}
+                      onChange={(e) => setFilters((f) => ({ ...f, user_id: e.target.value, page: 1 }))}
+                      aria-label={t('attendance.filters.employee')}
+                    >
+                      <option value="">{t('attendance.filters.allEmployees')}</option>
+                      {employeeOptions.map((u) => (
+                        <option key={u.id} value={String(u.id)}>
+                          {u.name ?? u.email ?? `#${u.id}`}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
                 <label className="attendance-filter-label">
                   <span>{t('attendance.from')}</span>
                   <input
@@ -598,6 +1200,52 @@ export default function Attendance() {
                     className="clients-input"
                     aria-label={t('attendance.to')}
                   />
+                </label>
+                <label className="attendance-filter-label">
+                  <span>{t('attendance.status')}</span>
+                  <select
+                    className="clients-select"
+                    value={filters.status}
+                    onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value, page: 1 }))}
+                    aria-label={t('attendance.status')}
+                  >
+                    <option value="">{t('attendance.admin.all')}</option>
+                    <option value="on_time">on_time</option>
+                    <option value="late">late</option>
+                    <option value="early_leave">early_leave</option>
+                    <option value="absent">absent</option>
+                    <option value="excused">excused</option>
+                  </select>
+                </label>
+                <label className="attendance-filter-label">
+                  <span>{t('attendance.device')}</span>
+                  <select
+                    className="clients-select"
+                    value={filters.device_type}
+                    onChange={(e) => setFilters((f) => ({ ...f, device_type: e.target.value, page: 1 }))}
+                    aria-label={t('attendance.device')}
+                  >
+                    <option value="">{t('attendance.admin.all')}</option>
+                    <option value="android">android</option>
+                    <option value="ios">ios</option>
+                    <option value="windows">windows</option>
+                    <option value="mac">mac</option>
+                    <option value="linux">linux</option>
+                    <option value="unknown">unknown</option>
+                  </select>
+                </label>
+                <label className="attendance-filter-label">
+                  <span>{t('attendance.withinRadius')}</span>
+                  <select
+                    className="clients-select"
+                    value={filters.is_within_radius}
+                    onChange={(e) => setFilters((f) => ({ ...f, is_within_radius: e.target.value, page: 1 }))}
+                    aria-label={t('attendance.withinRadius')}
+                  >
+                    <option value="">{t('attendance.admin.all')}</option>
+                    <option value="1">{t('attendance.yes')}</option>
+                    <option value="0">{t('attendance.no')}</option>
+                  </select>
                 </label>
               </div>
             </div>
@@ -704,8 +1352,10 @@ export default function Attendance() {
           </div>
         )}
 
-        {activeSection === 'admin' && canAdmin && (
+        {activeSection === 'admin' && canShowAdminTab && (
           <div className="space-y-6">
+            {canAdminAttendance ? (
+              <>
             <div className="clients-filters-card flex flex-wrap items-end gap-3">
               <label className="attendance-filter-label">
                 <span>{t('attendance.admin.employeeId')}</span>
@@ -777,6 +1427,23 @@ export default function Attendance() {
                   <option value="0">{t('attendance.no')}</option>
                 </select>
               </label>
+              <label className="attendance-filter-label">
+                <span>{t('attendance.perPage')}</span>
+                <select
+                  className="clients-select"
+                  value={adminFilters.per_page}
+                  onChange={(e) =>
+                    setAdminFilters((f) => ({ ...f, per_page: Number(e.target.value), page: 1 }))
+                  }
+                  aria-label={t('attendance.perPage')}
+                >
+                  {[10, 15, 25, 50, 100].map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <button
                 type="button"
                 className="page-header__btn page-header__btn--primary"
@@ -835,7 +1502,11 @@ export default function Attendance() {
                 getRowKey={(r) => r.employee_id}
               />
             )}
+              </>
+            ) : null}
 
+            {canManageAttendanceExcuses ? (
+              <>
             <h2 className="text-lg font-semibold">{t('attendance.admin.pendingExcuses')}</h2>
             {adminExcusesLoading ? (
               <LoaderDots />
@@ -872,6 +1543,8 @@ export default function Attendance() {
                 ))}
               </ul>
             )}
+              </>
+            ) : null}
           </div>
         )}
 

@@ -89,6 +89,11 @@ export async function listAttendance(token, params = {}) {
   if (params.date != null && params.date !== '') searchParams.set('date', params.date)
   if (params.from != null && params.from !== '') searchParams.set('from', params.from)
   if (params.to != null && params.to !== '') searchParams.set('to', params.to)
+  if (params.status != null && params.status !== '') searchParams.set('status', String(params.status))
+  if (params.device_type != null && params.device_type !== '') searchParams.set('device_type', String(params.device_type))
+  if (params.is_within_radius !== undefined && params.is_within_radius !== null && params.is_within_radius !== '') {
+    searchParams.set('is_within_radius', String(params.is_within_radius))
+  }
   const query = searchParams.toString()
   const url = `${getBaseUrl()}/attendance${query ? `?${query}` : ''}`
   const res = await fetch(url, { headers: authHeaders(token) })

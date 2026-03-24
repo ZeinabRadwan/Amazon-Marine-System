@@ -63,6 +63,28 @@ class AttendanceController extends Controller
             $query->whereDate('date', '<=', $to);
         }
 
+        if ($request->filled('status')) {
+            $status = (string) $request->query('status');
+            if ($status === AttendanceRecord::STATUS_ABSENT) {
+                $query->whereNull('check_in_at');
+            } elseif ($status === AttendanceRecord::STATUS_EXCUSED) {
+                $query->where('status', AttendanceRecord::STATUS_EXCUSED);
+            } else {
+                $query->where('status', $status);
+            }
+        }
+
+        if ($request->filled('device_type')) {
+            $query->where('clock_in_device_type', $request->query('device_type'));
+        }
+
+        if ($request->filled('is_within_radius')) {
+            $raw = $request->query('is_within_radius');
+            if ($raw === '1' || $raw === '0' || $raw === 1 || $raw === 0) {
+                $query->where('clock_in_is_within_radius', filter_var($raw, FILTER_VALIDATE_BOOLEAN));
+            }
+        }
+
         $records = $query->orderByDesc('date')->orderByDesc('check_in_at')->limit(500)->get();
         $viewer = $request->user();
 
@@ -131,6 +153,9 @@ class AttendanceController extends Controller
             'is_late' => (bool) $r->is_late,
             'status' => $r->status,
             'worked_minutes' => $r->worked_minutes,
+            'device_type' => $r->clock_in_device_type,
+            'is_within_radius' => $r->clock_in_is_within_radius,
+            'distance_from_office_m' => $r->clock_in_distance_from_office,
             'notes' => $r->notes,
             'timezone_used' => $tz,
         ];

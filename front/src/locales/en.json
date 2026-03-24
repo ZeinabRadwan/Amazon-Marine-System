@@ -524,9 +524,12 @@
     "tabs": {
       "my": "My attendance",
       "excuses": "Excuses",
-      "admin": "Admin sheet"
+      "admin": "Admin sheet",
+      "excusesAdmin": "Excuse approvals"
     },
     "geoHint": "Allow location access for accurate office distance. If disabled, clock-in may fail when location is required.",
+    "scheduleVsGeoHint": "Schedule checks use timezone {{tz}} (profile → system → app). First allowed clock-in is {{start}} when schedule enforcement is on. “Inside radius” only means you are near the office on the map — it does not override schedule rules.",
+    "scheduleBlockBeforeStart": "Clock-in is not allowed yet: before {{start}} ({{tz}}). Wait until the scheduled start or ask an admin to adjust policy / your timezone.",
     "status": "Status",
     "workedHours": "Worked hours",
     "workedHoursAvg": "Avg. worked hours",
@@ -569,7 +572,52 @@
     "statsAbsent": "Absent",
     "noRecords": "No attendance records.",
     "total": "Total",
-    "perPage": "Per page"
+    "perPage": "Per page",
+    "filters": {
+      "title": "Filters",
+      "employee": "Employee",
+      "allEmployees": "All employees"
+    },
+    "dashboard": {
+      "regionLabel": "Live attendance overview",
+      "timeTitle": "Time",
+      "tzNote": "Times use zone: {{tz}}",
+      "scheduleWindow": "Scheduled window {{start}} – {{end}}",
+      "statusOnShift": "Clocked in — “now” is during your shift (until you clock out).",
+      "statusNotIn": "Not clocked in. “Now” is only your device clock; use clock-in when you arrive.",
+      "statusDone": "Clocked out for today.",
+      "clockInTime": "Clock-in time",
+      "clockOutTime": "Clock-out time",
+      "axisStart": "Start",
+      "axisNow": "Now",
+      "axisEnd": "Scheduled end",
+      "timelineOnShift": "Progress from clock-in toward scheduled end (approximate).",
+      "timelineSchedule": "Where “now” sits inside today’s scheduled window.",
+      "elapsed": "Time on shift",
+      "remainingToEnd": "Remaining until scheduled end",
+      "untilWindowOpens": "Until scheduled start",
+      "durationHM": "{{h}} h {{m}} min",
+      "durationM": "{{m}} min"
+    },
+    "locationPanel": {
+      "title": "Locations & distance",
+      "office": "Office",
+      "you": "Your position (GPS)",
+      "radius": "Allowed radius: {{m}} m",
+      "openMap": "Open map",
+      "noOffice": "Office location is not set. Ask an admin to configure it in Settings.",
+      "geoLoading": "Getting your location…",
+      "geoError": "Could not read GPS. Check browser permissions.",
+      "geoIdle": "Waiting for location…",
+      "refreshGps": "Refresh GPS",
+      "distanceNow": "Straight-line distance to office (now)",
+      "metersAbbr": "m",
+      "insideRadius": "Inside allowed radius",
+      "outsideRadius": "Outside allowed radius",
+      "distanceNeedBoth": "Enable GPS and ensure the office is configured to see live distance.",
+      "atCheckIn": "At clock-in you were about {{m}} m from the office.",
+      "accuracy": "GPS accuracy ±{{m}} m"
+    }
   },
   "notifications": {
     "title": "Notifications",

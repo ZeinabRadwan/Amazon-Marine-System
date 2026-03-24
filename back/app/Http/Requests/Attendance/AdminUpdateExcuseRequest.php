@@ -10,7 +10,13 @@ class AdminUpdateExcuseRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('attendance.admin') ?? false;
+        $user = $this->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        return $user->can('attendance.excuses.manage') || $user->can('attendance.admin');
     }
 
     /**

@@ -72,6 +72,7 @@ export default function AuthenticatedLayout() {
         if (!cancelled) {
           const u = data.user ?? data.data ?? data
           setUser(u)
+          if (Array.isArray(data.permissions)) setPermissions(data.permissions)
         }
       })
       .catch(() => {
