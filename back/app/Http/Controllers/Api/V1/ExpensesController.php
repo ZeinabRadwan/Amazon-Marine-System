@@ -85,8 +85,9 @@ class ExpensesController extends Controller
 
     public function shipmentIndex(Request $request): JsonResponse
     {
+        $user = $request->user();
         abort_unless(
-            $request->user()?->can('accounting.view'),
+            $user && ($user->hasRole('admin') || $user->can('accounting.view')),
             403,
             'You do not have permission to view shipment expenses.'
         );
