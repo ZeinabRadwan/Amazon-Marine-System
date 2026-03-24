@@ -15,6 +15,7 @@ import {
   adminAttendanceSummary,
   adminListExcuses,
   adminPatchExcuse,
+  openAdminExcuseAttachment,
 } from '../../api/attendance'
 import { getProfile } from '../../api/auth'
 import { listUsers } from '../../api/users'
@@ -28,7 +29,19 @@ import Tabs from '../../components/Tabs'
 import { StatsCard } from '../../components/StatsCard'
 import LoaderDots from '../../components/LoaderDots'
 import Alert from '../../components/Alert'
-import { LogIn, LogOut, RefreshCw, Clock, UserX, Download, MapPin, Navigation, Building2, Timer } from 'lucide-react'
+import {
+  LogIn,
+  LogOut,
+  RefreshCw,
+  Clock,
+  UserX,
+  Download,
+  MapPin,
+  Navigation,
+  Building2,
+  Timer,
+  Paperclip,
+} from 'lucide-react'
 import '../../components/LoaderDots/LoaderDots.css'
 import '../Clients/Clients.css'
 import './Attendance.css'
@@ -49,6 +62,48 @@ function formatDateOnly(dateStr) {
   } catch {
     return dateStr
   }
+}
+
+/** Prefer API `worked_minutes`; then closed-shift `worked_hours`; else derive from timestamps (open shift uses nowMs). */
+function resolveWorkedMinutes(r, nowMs = Date.now()) {
+  const raw = r.worked_minutes ?? r.workedMinutes
+  if (raw != null && raw !== '' && Number.isFinite(Number(raw))) {
+    return { minutes: Math.max(0, Math.round(Number(raw))), openShift: false }
+  }
+  const inT = r.check_in_at_local || r.check_in_at
+  const outT = r.check_out_at_local || r.check_out_at
+  const open = r.shift_open === true || (!!inT && !outT)
+  if (!open && r.worked_hours != null && Number.isFinite(Number(r.worked_hours))) {
+    return { minutes: Math.max(0, Math.round(Number(r.worked_hours) * 60)), openShift: false }
+  }
+  if (!inT) return null
+  if (outT) {
+    const mins = Math.round((new Date(outT).getTime() - new Date(inT).getTime()) / 60000)
+    return mins >= 0 ? { minutes: mins, openShift: false } : null
+  }
+  const mins = Math.round((nowMs - new Date(inT).getTime()) / 60000)
+  return mins >= 0 ? { minutes: mins, openShift: true } : null
+}
+
+function resolveDeviceType(r) {
+  return r.device_type ?? r.clock_in_device_type ?? null
+}
+
+function resolveWithinRadius(r) {
+  const v = r.is_within_radius ?? r.clock_in_is_within_radius
+  if (v === true || v === false) return v
+  return null
+}
+
+function resolveDistanceM(r) {
+  const d = r.distance_from_office_m ?? r.clock_in_distance_from_office
+  if (d == null || d === '') return null
+  const n = Number(d)
+  return Number.isFinite(n) ? n : null
+}
+
+function rowIsLate(r) {
+  return r.is_late === true || r.status === 'late'
 }
 
 function getCurrentPosition() {
@@ -172,6 +227,7 @@ export default function Attendance() {
   const [adminExcuses, setAdminExcuses] = useState([])
   const [adminExcusesLoading, setAdminExcusesLoading] = useState(false)
   const [excuseActionId, setExcuseActionId] = useState(null)
+  const [openingAttachmentId, setOpeningAttachmentId] = useState(null)
   const [adminRefresh, setAdminRefresh] = useState(0)
   const adminFiltersRef = useRef(adminFilters)
   adminFiltersRef.current = adminFilters
@@ -187,14 +243,17 @@ export default function Attendance() {
   }, [token])
 
   useEffect(() => {
-    if (!token || !canFilterAll || activeSection !== 'my') return
+    if (!token) return
+    const needUsers =
+      (activeSection === 'my' && canFilterAll) || (activeSection === 'admin' && canAdminAttendance)
+    if (!needUsers) return
     listUsers(token, { status: 'active' })
       .then((data) => {
         const list = data.data ?? data.users ?? data
         setEmployeeOptions(Array.isArray(list) ? list : [])
       })
       .catch(() => setEmployeeOptions([]))
-  }, [token, canFilterAll, activeSection])
+  }, [token, canFilterAll, canAdminAttendance, activeSection])
 
   const loadList = useCallback(() => {
     if (!token) return
@@ -460,6 +519,19 @@ export default function Attendance() {
     }
   }
 
+  const handleOpenAdminExcuseAttachment = async (id) => {
+    if (!token) return
+    setOpeningAttachmentId(id)
+    setAlert(null)
+    try {
+      await openAdminExcuseAttachment(token, id)
+    } catch (err) {
+      setAlert({ type: 'error', message: err.message || t('attendance.error') })
+    } finally {
+      setOpeningAttachmentId(null)
+    }
+  }
+
   const handleAdminExcuseDecision = async (id, status) => {
     if (!token) return
     setExcuseActionId(id)
@@ -671,9 +743,19 @@ export default function Attendance() {
 
   const columns = useMemo(
     () => [
-      ...(canFilterAll
-        ? [{ key: 'user_name', label: t('attendance.user'), sortable: true, render: (_, r) => r.user_name ?? '—' }]
-        : []),
+      {
+        key: 'user_name',
+        label: t('attendance.user'),
+        sortable: true,
+        render: (_, r) => {
+          const name = r.user_name ?? r.employee_name
+          if (name) return name
+          if (currentUserId != null && Number(r.user_id) === Number(currentUserId) && outletUser?.name) {
+            return outletUser.name
+          }
+          return '—'
+        },
+      },
       { key: 'date', label: t('attendance.date'), sortable: true, render: (_, r) => formatDateOnly(r.date) },
       { key: 'check_in_at', label: t('attendance.checkIn'), render: (_, r) => formatTime(r.check_in_at_local || r.check_in_at) },
       { key: 'check_out_at', label: t('attendance.checkOut'), render: (_, r) => formatTime(r.check_out_at_local || r.check_out_at) },
@@ -687,42 +769,53 @@ export default function Attendance() {
         key: 'worked_minutes',
         label: t('attendance.workedHours'),
         sortable: true,
-        render: (_, r) =>
-          r.worked_minutes != null ? `${(r.worked_minutes / 60).toFixed(2)} h` : '—',
+        render: (_, r) => {
+          const w = resolveWorkedMinutes(r, dashboardTick)
+          if (!w) return '—'
+          const hrs = `${(w.minutes / 60).toFixed(2)} h`
+          return w.openShift ? `${hrs} (${t('attendance.shiftOpen')})` : hrs
+        },
       },
       {
         key: 'device_type',
         label: t('attendance.device'),
         sortable: true,
-        render: (_, r) => r.device_type ?? '—',
+        render: (_, r) => resolveDeviceType(r) ?? '—',
       },
       {
         key: 'is_within_radius',
         label: t('attendance.withinRadius'),
         sortable: true,
-        render: (_, r) =>
-          r.is_within_radius === true ? t('attendance.yes') : r.is_within_radius === false ? t('attendance.no') : '—',
+        render: (_, r) => {
+          const v = resolveWithinRadius(r)
+          return v === true ? t('attendance.yes') : v === false ? t('attendance.no') : '—'
+        },
       },
       {
         key: 'distance_from_office_m',
         label: t('attendance.distanceM'),
         sortable: true,
-        render: (_, r) => (r.distance_from_office_m != null ? Math.round(r.distance_from_office_m) : '—'),
+        render: (_, r) => {
+          const d = resolveDistanceM(r)
+          return d != null ? Math.round(d) : '—'
+        },
       },
       {
         key: 'is_late',
         label: t('attendance.late'),
         render: (_, r) =>
-          r.is_late ? (
+          rowIsLate(r) ? (
             <span className="attendance-badge attendance-badge--late" title={t('attendance.late')}>
               {t('attendance.late')}
             </span>
+          ) : r.check_in_at && r.status !== 'early_leave' ? (
+            <span className="text-gray-500 dark:text-gray-400">{t('attendance.onTime')}</span>
           ) : (
             '—'
           ),
       },
     ],
-    [canFilterAll, t]
+    [t, currentUserId, outletUser?.name, dashboardTick]
   )
 
   const adminColumns = [
@@ -738,7 +831,18 @@ export default function Attendance() {
       label: t('attendance.checkOut'),
       render: (_, r) => formatTime(r.clock_out_at_local || r.clock_out_at),
     },
-    { key: 'worked_hours', label: t('attendance.workedHours'), sortable: true },
+    {
+      key: 'worked_hours',
+      label: t('attendance.workedHours'),
+      sortable: true,
+      render: (_, r) => {
+        if (r.worked_hours != null && Number.isFinite(Number(r.worked_hours))) {
+          const hrs = `${Number(r.worked_hours).toFixed(2)} h`
+          return r.shift_open ? `${hrs} (${t('attendance.shiftOpen')})` : hrs
+        }
+        return '—'
+      },
+    },
     { key: 'device_type', label: t('attendance.device'), sortable: true },
     {
       key: 'is_within_radius',
@@ -1357,14 +1461,21 @@ export default function Attendance() {
             {canAdminAttendance ? (
               <>
             <div className="clients-filters-card flex flex-wrap items-end gap-3">
-              <label className="attendance-filter-label">
-                <span>{t('attendance.admin.employeeId')}</span>
-                <input
-                  type="number"
-                  className="clients-input w-28"
+              <label className="attendance-filter-label min-w-[200px] flex-1">
+                <span>{t('attendance.filters.employee')}</span>
+                <select
+                  className="clients-select w-full"
                   value={adminFilters.employee_id}
                   onChange={(e) => setAdminFilters((f) => ({ ...f, employee_id: e.target.value, page: 1 }))}
-                />
+                  aria-label={t('attendance.filters.employee')}
+                >
+                  <option value="">{t('attendance.filters.allEmployees')}</option>
+                  {employeeOptions.map((u) => (
+                    <option key={u.id} value={String(u.id)}>
+                      {u.name ?? u.email ?? `#${u.id}`}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label className="attendance-filter-label">
                 <span>{t('attendance.from')}</span>
@@ -1496,7 +1607,7 @@ export default function Attendance() {
                   { key: 'total_days', label: t('attendance.admin.totalDays'), sortable: false },
                   { key: 'late_count', label: t('attendance.statsLate'), sortable: false },
                   { key: 'absent_count', label: t('attendance.statsAbsent'), sortable: false },
-                  { key: 'avg_worked_hours', label: t('attendance.workedHoursAvg'), sortable: false },
+                  { key: 'avg_worked_hours', label: t('attendance.admin.avgWorkedHours'), sortable: false },
                 ]}
                 data={adminSummary}
                 getRowKey={(r) => r.employee_id}
@@ -1521,7 +1632,20 @@ export default function Attendance() {
                       <span>{formatDateOnly(ex.date)}</span>
                     </div>
                     <p className="mt-2 text-sm whitespace-pre-wrap">{ex.reason}</p>
-                    <div className="mt-3 flex gap-2">
+                    {(ex.has_attachment || ex.attachment_path) && (
+                      <div className="mt-2">
+                        <button
+                          type="button"
+                          className="page-header__btn inline-flex items-center gap-2 text-sm"
+                          disabled={excuseActionId === ex.id || openingAttachmentId === ex.id}
+                          onClick={() => handleOpenAdminExcuseAttachment(ex.id)}
+                        >
+                          <Paperclip size={16} aria-hidden />
+                          {openingAttachmentId === ex.id ? t('attendance.saving') : t('attendance.admin.viewAttachment')}
+                        </button>
+                      </div>
+                    )}
+                    <div className="mt-3 flex flex-wrap gap-2">
                       <button
                         type="button"
                         className="page-header__btn page-header__btn--primary text-sm"

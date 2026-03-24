@@ -1,0 +1,1699 @@
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
+import { X, ChevronDown, ChevronUp, FileText, DollarSign, FileType, History, Ship, Car, ShieldCheck, Shield, Package, Upload, Bell } from 'lucide-react'
+import { createExpense, updateExpense, deleteExpense, uploadExpenseReceipt, listExpenseCategories } from '../../api/expenses'
+import {
+  listInvoices,
+  getInvoice,
+  createInvoice,
+  updateInvoice,
+  recordInvoicePayment,
+  INVOICE_CURRENCY_CODE_TO_ID,
+} from '../../api/invoices'
+import { listActivitiesBySubject } from '../../api/activities'
+import { notifyShipmentSalesFinancials } from '../../api/shipments'
+
+const BUCKET_DEFS = [
+  {
+    id: 'shipping',
+    icon: Ship,
+    titleKey: 'shipments.fin.bucketShippingTitle',
+    subKey: 'shipments.fin.bucketShippingSub',
+    matchers: [/ship|line|ocean|freight|thc|b\/?l|telex|courier|dhl|container|of\b|بحري|ملاحي|شحن/i],
+  },
+  {
+    id: 'inland',
+    icon: Car,
+    titleKey: 'shipments.fin.bucketInlandTitle',
+    subKey: 'shipments.fin.bucketInlandSub',
+    matchers: [/inland|transport|truck|haul|genset|overnight|receipt|داخلي|نقل|برّي/i],
+  },
+  {
+    id: 'customs',
+    icon: ShieldCheck,
+    titleKey: 'shipments.fin.bucketCustomsTitle',
+    subKey: 'shipments.fin.bucketCustomsSub',
+    matchers: [/custom|clearance|declar|duty|جمرك|تخليص/i],
+  },
+  {
+    id: 'insurance',
+    icon: Shield,
+    titleKey: 'shipments.fin.bucketInsuranceTitle',
+    subKey: 'shipments.fin.bucketInsuranceSub',
+    matchers: [/insur|premium|تأمين/i],
+  },
+]
+
+/** Standard cost lines per `UI/shipments.html` — matchers map posted expenses into rows. Order: specific → broad. */
+const LINE_TEMPLATES = {
+  shipping: [
+    { id: 'thc', labelKey: 'shipments.fin.lines.thc', matchers: [/\bthc\b/i] },
+    { id: 'telex', labelKey: 'shipments.fin.lines.telex', matchers: [/telex|تيلكس/i] },
+    { id: 'dhl', labelKey: 'shipments.fin.lines.dhl', optional: true, matchers: [/\bdhl\b|courier|سريع|بريد/i] },
+    {
+      id: 'bl',
+      labelKey: 'shipments.fin.lines.blFee',
+      matchers: [/b\/?l\s*fee|^bl\s|bill of lading|رسوم.*\bb\/l\b|بي.?إل/i],
+    },
+    {
+      id: 'power',
+      labelKey: 'shipments.fin.lines.powerCharge',
+      reeferOnly: true,
+      matchers: [/power\s*charg|reefer.*power|كهر|ريفير.*كهرب/i],
+    },
+    {
+      id: 'of',
+      labelKey: 'shipments.fin.lines.oceanFreight',
+      matchers: [/ocean\s*freight|^\s*of\s|شحن\s*بحري|^freight\b|sea\s*freight|خط\s*ملاحي|فريت/i],
+    },
+  ],
+  inland: [
+    { id: 'genset', labelKey: 'shipments.fin.lines.genset', reeferOnly: true, matchers: [/genset|مولد|جينسيت/i] },
+    {
+      id: 'overnight',
+      labelKey: 'shipments.fin.lines.overnight',
+      optional: true,
+      matchers: [/overnight|مبيت|إقامة\s*ليل/i],
+    },
+    {
+      id: 'receipts',
+      labelKey: 'shipments.fin.lines.officialReceipts',
+      matchers: [/official\s*receipt|receipts?\s*cost|إيصال\s*رسمي|إيصالات/i],
+    },
+    {
+      id: 'inlandFreight',
+      labelKey: 'shipments.fin.lines.inlandFreight',
+      matchers: [/inland|internal\s*transport|truck|haul|نقل\s*داخلي|برّي|سيارات/i],
+    },
+  ],
+  customs: [
+    {
+      id: 'decl',
+      labelKey: 'shipments.fin.lines.customsDeclaration',
+      matchers: [/declaration\s*opening|فتح\s*ملف|أجور\s*فتح|تصريح\s*جمركي/i],
+    },
+    {
+      id: 'custReceipts',
+      labelKey: 'shipments.fin.lines.customsReceipts',
+      matchers: [/customs.*receipt|clearance.*receipt|جمرك.*إيصال|تخليص.*إيصال/i],
+    },
+  ],
+  insurance: [{ id: 'premium', labelKey: 'shipments.fin.lines.insurancePremium', matchers: [/premium|تأمين|insurance|قسط/i] }],
+}
+
+function expenseHaystack(ex) {
+  return `${ex.category_name || ''} ${ex.description || ''} ${ex.invoice_number || ''}`.toLowerCase()
+}
+
+function partitionBucketRows(bucketId, bucketRows, isReefer) {
+  const templates = LINE_TEMPLATES[bucketId]
+  if (!templates) {
+    return { sections: [], orphans: bucketRows }
+  }
+  const used = new Set()
+  const sections = []
+  for (const tpl of templates) {
+    if (tpl.reeferOnly && !isReefer) {
+      sections.push({ tpl, matched: [] })
+      continue
+    }
+    const matched = []
+    for (const ex of bucketRows) {
+      if (used.has(ex.id)) continue
+      if (tpl.matchers.some((re) => re.test(expenseHaystack(ex)))) {
+        matched.push(ex)
+        used.add(ex.id)
+      }
+    }
+    sections.push({ tpl, matched })
+  }
+  const orphans = bucketRows.filter((ex) => !used.has(ex.id))
+  return { sections, orphans }
+}
+
+const OTHER_DESC_PREFIX = {
+  shipping: 'Other (Shipping)',
+  inland: 'Other (Inland)',
+  customs: 'Other (Customs)',
+  insurance: 'Other (Insurance)',
+}
+
+/** Matches draft client invoice line used for handling / service fee. */
+const HANDLING_FEE_DESCRIPTION = 'Handling Fee'
+
+function otherLineCategoryCode(bucketId) {
+  if (bucketId === 'insurance') return 'OTH'
+  if (bucketId === 'customs') return 'CUST'
+  if (bucketId === 'inland') return 'DOM_TR'
+  return 'FRT'
+}
+
+function expenseBucket(expense) {
+  const rawDesc = (expense.description || '').trim()
+  if (/^other\s*\(shipping\)/i.test(rawDesc)) return 'shipping'
+  if (/^other\s*\(inland\)/i.test(rawDesc)) return 'inland'
+  if (/^other\s*\(customs\)/i.test(rawDesc)) return 'customs'
+  if (/^other\s*\(insurance\)/i.test(rawDesc)) return 'insurance'
+  const hay = `${expense.category_name || ''} ${expense.description || ''}`.toLowerCase()
+  for (const b of BUCKET_DEFS) {
+    if (b.matchers.some((re) => re.test(hay))) return b.id
+  }
+  return 'other'
+}
+
+function sumByCurrency(rows) {
+  const map = {}
+  for (const r of rows) {
+    const cur = (r.currency_code || '—').toUpperCase()
+    const amt = Number(r.amount) || 0
+    map[cur] = (map[cur] || 0) + amt
+  }
+  return map
+}
+
+function formatMoney(amount, locale) {
+  return new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(amount)
+}
+
+function clientLabel(shipment) {
+  return shipment?.client?.company_name ?? shipment?.client?.name ?? '—'
+}
+
+const CURRENCIES = ['USD', 'EGP', 'EUR']
+
+/** English prefixes stored in `description` so template matchers keep working. */
+const LINE_DESC_PREFIX = {
+  thc: 'THC',
+  telex: 'Telex Release',
+  dhl: 'DHL Courier',
+  bl: 'B/L Fee',
+  power: 'Power Charge',
+  of: 'Ocean Freight',
+  genset: 'Genset',
+  overnight: 'Overnight Stay',
+  receipts: 'Official Receipts',
+  inlandFreight: 'Inland Freight',
+  decl: 'Customs Declaration',
+  custReceipts: 'Customs Receipts',
+  premium: 'Insurance Premium',
+}
+
+function categoryCodeForTemplate(bucketId, tplId) {
+  if (bucketId === 'shipping' && tplId === 'thc') return 'THC'
+  if (bucketId === 'customs') return 'CUST'
+  if (bucketId === 'inland') return 'DOM_TR'
+  if (bucketId === 'insurance') return 'OTH'
+  return 'FRT'
+}
+
+function extractUserDescription(stored, prefix) {
+  if (!stored || typeof stored !== 'string') return ''
+  const p = `${prefix}:`
+  const s = stored.trim()
+  if (s.startsWith(p)) return s.slice(p.length).trim()
+  return s
+}
+
+function FinSingleExpenseRow({
+  tpl,
+  bucketId,
+  expense,
+  showLineLabel,
+  shipment,
+  token,
+  editMode,
+  categoriesByCode,
+  t,
+  numberLocale,
+  renderLineLabelCell,
+  onSaved,
+  saveRegisterKey,
+  onRegisterSave,
+}) {
+  const descPrefix = LINE_DESC_PREFIX[tpl.id] || tpl.id
+  const categoryCode = categoryCodeForTemplate(bucketId, tpl.id)
+  const categoryMeta = categoriesByCode[categoryCode]
+
+  const [desc, setDesc] = useState(() => extractUserDescription(expense?.description, descPrefix))
+  const [amount, setAmount] = useState(expense?.amount != null ? String(expense.amount) : '')
+  const [currency, setCurrency] = useState(expense?.currency_code || 'USD')
+  const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [rowError, setRowError] = useState(null)
+
+  const handleSaveRef = useRef(async () => {})
+
+  useEffect(() => {
+    setDesc(extractUserDescription(expense?.description, descPrefix))
+    setAmount(expense?.amount != null ? String(expense.amount) : '')
+    setCurrency(expense?.currency_code || 'USD')
+    setRowError(null)
+  }, [expense?.id, expense?.description, expense?.amount, expense?.currency_code, descPrefix])
+
+  const buildFullDescription = () => `${descPrefix}: ${(desc || '').trim() || '—'}`
+
+  const handleSave = async () => {
+    setRowError(null)
+    if (!categoryMeta?.id) {
+      setRowError(t('shipments.fin.errorNoCategory'))
+      return
+    }
+    const amt = Number(amount)
+    if (Number.isNaN(amt) || amt < 0) {
+      setRowError(t('shipments.fin.errorInvalidAmount'))
+      return
+    }
+    const dateStr = new Date().toISOString().slice(0, 10)
+    setSaving(true)
+    try {
+      if (expense?.id) {
+        await updateExpense(token, expense.id, {
+          description: buildFullDescription(),
+          amount: amt,
+          currency_code: currency,
+          expense_date: expense.expense_date || dateStr,
+          vendor_id: expense.vendor_id ?? null,
+        })
+      } else {
+        await createExpense(token, {
+          type: 'shipment',
+          shipment_id: shipment.id,
+          expense_category_id: categoryMeta.id,
+          description: buildFullDescription(),
+          amount: amt,
+          currency_code: currency,
+          expense_date: dateStr,
+          vendor_id: expense.vendor_id ?? undefined,
+        })
+      }
+      onSaved?.()
+    } catch (err) {
+      setRowError(err.message || t('shipments.fin.errorSaveLine'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  handleSaveRef.current = handleSave
+
+  useEffect(() => {
+    if (!editMode || !saveRegisterKey || !onRegisterSave) return undefined
+    return onRegisterSave(saveRegisterKey, async () => {
+      await handleSaveRef.current()
+    })
+  }, [editMode, saveRegisterKey, onRegisterSave])
+
+  const handleDelete = async () => {
+    if (!expense?.id) return
+    if (!window.confirm(t('shipments.fin.confirmDeleteLine'))) return
+    setRowError(null)
+    setSaving(true)
+    try {
+      await deleteExpense(token, expense.id)
+      onSaved?.()
+    } catch (err) {
+      setRowError(err.message || t('shipments.fin.errorDeleteLine'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleReceipt = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file || !expense?.id) return
+    setRowError(null)
+    setUploading(true)
+    try {
+      await uploadExpenseReceipt(token, expense.id, file)
+      onSaved?.()
+    } catch (err) {
+      setRowError(err.message || t('shipments.fin.errorReceipt'))
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const actionsCell = editMode ? (
+    <td className="shipment-fin-actions">
+      <div className="shipment-fin-actions__inner">
+        <button type="button" className="shipment-fin-btn shipment-fin-btn--primary" disabled={saving || !categoryMeta?.id} onClick={handleSave}>
+          {saving ? t('shipments.saving') : t('shipments.save')}
+        </button>
+        {expense?.id ? (
+          <button type="button" className="shipment-fin-btn shipment-fin-btn--danger" disabled={saving} onClick={handleDelete}>
+            {t('shipments.delete')}
+          </button>
+        ) : null}
+        {expense?.id ? (
+          <label className="shipment-fin-upload" title={t('shipments.fin.uploadReceipt')}>
+            <Upload className="shipment-fin-upload__icon" aria-hidden />
+            <input type="file" accept=".pdf,.png,.jpg,.jpeg" className="shipment-fin-upload__input" onChange={handleReceipt} disabled={uploading || saving} />
+          </label>
+        ) : null}
+      </div>
+      {rowError ? <div className="shipment-fin-row-error">{rowError}</div> : null}
+    </td>
+  ) : null
+
+  if (!editMode) {
+    if (!expense) {
+      return (
+        <tr key={`${tpl.id}-empty`}>
+          <td>{showLineLabel ? renderLineLabelCell(tpl) : null}</td>
+          <td>—</td>
+          <td>—</td>
+          <td className="shipment-fin-num">—</td>
+          <td>—</td>
+          <td>—</td>
+        </tr>
+      )
+    }
+    return (
+      <tr key={expense.id}>
+        <td>{showLineLabel ? renderLineLabelCell(tpl) : null}</td>
+        <td>{expense.description?.trim() || '—'}</td>
+        <td>{expense.category_name || '—'}</td>
+        <td className="shipment-fin-num">{formatMoney(Number(expense.amount) || 0, numberLocale)}</td>
+        <td>{expense.currency_code || '—'}</td>
+        <td>{expense.has_receipt ? t('shipments.fin.receiptYes') : t('shipments.fin.receiptNo')}</td>
+      </tr>
+    )
+  }
+
+  return (
+    <tr key={expense?.id ?? `${tpl.id}-new`}>
+      <td>{showLineLabel ? renderLineLabelCell(tpl) : null}</td>
+      <td>
+        <input
+          type="text"
+          className="shipment-fin-input"
+          value={desc}
+          onChange={(e) => setDesc(e.target.value)}
+          placeholder={t('shipments.fin.descPlaceholder')}
+          disabled={saving}
+        />
+      </td>
+      <td className="shipment-fin-cat-cell" title={categoryCode}>
+        {categoryMeta?.name || categoryCode}
+        {!categoryMeta ? <span className="shipment-fin-warn"> ({t('shipments.fin.missingCategory')})</span> : null}
+      </td>
+      <td>
+        <input
+          type="number"
+          min="0"
+          step="0.01"
+          className="shipment-fin-input shipment-fin-input--num"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          disabled={saving}
+        />
+      </td>
+      <td>
+        <select className="shipment-fin-select" value={currency} onChange={(e) => setCurrency(e.target.value)} disabled={saving}>
+          {CURRENCIES.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+      </td>
+      <td className="shipment-fin-receipt-cell">
+        {expense?.has_receipt ? t('shipments.fin.receiptYes') : t('shipments.fin.receiptNo')}
+        {uploading ? <span className="shipment-fin-muted"> {t('shipments.loading')}</span> : null}
+      </td>
+      {actionsCell}
+    </tr>
+  )
+}
+
+function FinPendingOtherChargeRow({
+  bucketId,
+  line,
+  token,
+  shipment,
+  categoriesByCode,
+  t,
+  editMode,
+  onSaved,
+  onRemove,
+}) {
+  const prefix = OTHER_DESC_PREFIX[bucketId] || 'Other'
+  const categoryCode = otherLineCategoryCode(bucketId)
+  const categoryMeta = categoriesByCode[categoryCode]
+  const [desc, setDesc] = useState(line.desc || '')
+  const [amount, setAmount] = useState(line.amount != null ? String(line.amount) : '')
+  const [currency, setCurrency] = useState(line.currency || 'USD')
+  const [saving, setSaving] = useState(false)
+  const [rowError, setRowError] = useState(null)
+
+  const handleSave = async () => {
+    setRowError(null)
+    if (!categoryMeta?.id) {
+      setRowError(t('shipments.fin.errorNoCategory'))
+      return
+    }
+    const amt = Number(amount)
+    if (Number.isNaN(amt) || amt < 0) {
+      setRowError(t('shipments.fin.errorInvalidAmount'))
+      return
+    }
+    const dateStr = new Date().toISOString().slice(0, 10)
+    const fullDesc = `${prefix}: ${(desc || '').trim() || '—'}`
+    setSaving(true)
+    try {
+      await createExpense(token, {
+        type: 'shipment',
+        shipment_id: shipment.id,
+        expense_category_id: categoryMeta.id,
+        description: fullDesc,
+        amount: amt,
+        currency_code: currency,
+        expense_date: dateStr,
+      })
+      onSaved?.()
+      onRemove?.()
+    } catch (err) {
+      setRowError(err.message || t('shipments.fin.errorSaveLine'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (!editMode) return null
+
+  return (
+    <tr key={line.tempId} className="shipment-fin-other-pending-row">
+      <td>
+        <span className="shipment-fin-line-label">{t('shipments.fin.otherChargeLine')}</span>
+      </td>
+      <td>
+        <input
+          type="text"
+          className="shipment-fin-input"
+          value={desc}
+          onChange={(e) => setDesc(e.target.value)}
+          placeholder={t('shipments.fin.descPlaceholder')}
+          disabled={saving}
+        />
+      </td>
+      <td className="shipment-fin-cat-cell" title={categoryCode}>
+        {categoryMeta?.name || categoryCode}
+        {!categoryMeta ? <span className="shipment-fin-warn"> ({t('shipments.fin.missingCategory')})</span> : null}
+      </td>
+      <td>
+        <input
+          type="number"
+          min="0"
+          step="0.01"
+          className="shipment-fin-input shipment-fin-input--num"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          disabled={saving}
+        />
+      </td>
+      <td>
+        <select className="shipment-fin-select" value={currency} onChange={(e) => setCurrency(e.target.value)} disabled={saving}>
+          {CURRENCIES.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+      </td>
+      <td className="shipment-fin-receipt-cell">—</td>
+      <td className="shipment-fin-actions">
+        <div className="shipment-fin-actions__inner">
+          <button type="button" className="shipment-fin-btn shipment-fin-btn--primary" disabled={saving || !categoryMeta?.id} onClick={handleSave}>
+            {saving ? t('shipments.saving') : t('shipments.save')}
+          </button>
+          <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary" disabled={saving} onClick={onRemove}>
+            {t('shipments.cancel')}
+          </button>
+        </div>
+        {rowError ? <div className="shipment-fin-row-error">{rowError}</div> : null}
+      </td>
+    </tr>
+  )
+}
+
+/**
+ * @param {{
+ *   open: boolean,
+ *   shipment: object | null,
+ *   expenses: Array<object>,
+ *   loading: boolean,
+ *   onClose: () => void,
+ *   numberLocale: string,
+ *   canViewSelling: boolean,
+ *   token: string | null,
+ *   canManageExpenses: boolean,
+ *   onExpensesChanged?: () => void,
+ *   vendors?: Array<{ id: number, name?: string }>,
+ *   canManageFinancial?: boolean,
+ *   onShipmentTotalsRefresh?: () => void,
+ *   canNotifySales?: boolean,
+ * }} props
+ */
+export default function ShipmentFinancialsModal({
+  open,
+  shipment,
+  expenses,
+  loading,
+  onClose,
+  numberLocale,
+  canViewSelling,
+  token,
+  canManageExpenses = false,
+  onExpensesChanged,
+  vendors = [],
+  canManageFinancial = false,
+  onShipmentTotalsRefresh,
+  canNotifySales = false,
+}) {
+  const { t, i18n } = useTranslation()
+  const [tab, setTab] = useState('A')
+  const [expanded, setExpanded] = useState(() => new Set(['shipping', 'inland', 'customs', 'insurance', 'other']))
+  const [sectionVendorChoice, setSectionVendorChoice] = useState({})
+  const [pendingOtherByBucket, setPendingOtherByBucket] = useState({})
+  const [batchSavingBucket, setBatchSavingBucket] = useState(null)
+  const [finBanner, setFinBanner] = useState(null)
+  const [notifySending, setNotifySending] = useState(false)
+
+  const saveHandlersRef = useRef(new Map())
+  const bucketBatchKeysRef = useRef({})
+
+  const [clientInvoice, setClientInvoice] = useState(null)
+  const [invoiceLoading, setInvoiceLoading] = useState(false)
+  const [pricingSaving, setPricingSaving] = useState(false)
+  const [tabBRows, setTabBRows] = useState([])
+  const [handlingRow, setHandlingRow] = useState({ sell: '', include: true })
+
+  const [activityRows, setActivityRows] = useState([])
+  const [activityLoading, setActivityLoading] = useState(false)
+
+  const [paymentForm, setPaymentForm] = useState({ amount: '', currency_id: '1', method: 'bank', reference: '', paid_at: '' })
+  const [paymentSaving, setPaymentSaving] = useState(false)
+
+  useEffect(() => {
+    if (open && shipment?.id != null) {
+      setTab('A')
+      setExpanded(new Set(['shipping', 'inland', 'customs', 'insurance', 'other']))
+      setSectionVendorChoice({})
+      setPendingOtherByBucket({})
+      setFinBanner(null)
+      setClientInvoice(null)
+      setTabBRows([])
+      setHandlingRow({ sell: '', include: true })
+      setActivityRows([])
+      setPaymentForm({ amount: '', currency_id: '1', method: 'bank', reference: '', paid_at: '' })
+    }
+  }, [open, shipment?.id])
+
+  const [categoriesByCode, setCategoriesByCode] = useState({})
+
+  useEffect(() => {
+    if (!open || !token || !canManageExpenses) {
+      setCategoriesByCode({})
+      return
+    }
+    listExpenseCategories(token)
+      .then((res) => {
+        const list = res.data ?? []
+        const m = {}
+        if (Array.isArray(list)) {
+          for (const c of list) {
+            if (c.code) m[c.code] = c
+          }
+        }
+        setCategoriesByCode(m)
+      })
+      .catch(() => setCategoriesByCode({}))
+  }, [open, token, canManageExpenses])
+
+  const toggleCard = useCallback((id) => {
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
+
+  const byBucket = useMemo(() => {
+    const buckets = { shipping: [], inland: [], customs: [], insurance: [], other: [] }
+    for (const ex of expenses) {
+      buckets[expenseBucket(ex)].push(ex)
+    }
+    return buckets
+  }, [expenses])
+
+  const totalsByCurrencyAll = useMemo(() => sumByCurrency(expenses), [expenses])
+
+  const netBreakdownStr = useMemo(() => {
+    const parts = Object.entries(totalsByCurrencyAll)
+      .filter(([, v]) => v !== 0)
+      .map(([c, v]) => `${c} ${formatMoney(v, numberLocale)}`)
+    return parts.length ? parts.join(' · ') : '—'
+  }, [totalsByCurrencyAll, numberLocale])
+
+  const invoiceDate = useMemo(() => {
+    try {
+      return new Intl.DateTimeFormat(i18n.language === 'ar' ? 'ar-EG' : 'en-US', {
+        dateStyle: 'medium',
+      }).format(new Date())
+    } catch {
+      return '—'
+    }
+  }, [i18n.language])
+
+  const printInvoice = useCallback(() => {
+    document.body.classList.add('shipment-fin-print-invoice')
+    window.print()
+    setTimeout(() => document.body.classList.remove('shipment-fin-print-invoice'), 400)
+  }, [])
+
+  const registerRowSave = useCallback((key, fn) => {
+    saveHandlersRef.current.set(key, fn)
+    return () => saveHandlersRef.current.delete(key)
+  }, [])
+
+  const applyVendorToSection = useCallback(
+    async (bucketId) => {
+      if (!token) return
+      const raw = sectionVendorChoice[bucketId]
+      let vendorId = null
+      if (raw != null && raw !== '') {
+        const n = Number(raw)
+        if (!Number.isNaN(n)) vendorId = n
+      }
+      const rows = byBucket[bucketId] || []
+      try {
+        for (const ex of rows) {
+          if (ex?.id) {
+            await updateExpense(token, ex.id, { vendor_id: vendorId })
+          }
+        }
+        onExpensesChanged?.()
+        setFinBanner({ type: 'success', message: t('shipments.fin.vendorApplied') })
+      } catch (e) {
+        setFinBanner({ type: 'error', message: e?.message || t('shipments.fin.errorSaveLine') })
+      }
+    },
+    [token, byBucket, sectionVendorChoice, onExpensesChanged, t]
+  )
+
+  const saveBucketBatch = useCallback(
+    async (bucketId) => {
+      const keys = bucketBatchKeysRef.current[bucketId] || []
+      setBatchSavingBucket(bucketId)
+      try {
+        for (const k of keys) {
+          await saveHandlersRef.current.get(k)?.()
+        }
+        onExpensesChanged?.()
+        setFinBanner({ type: 'success', message: t('shipments.fin.batchSaved') })
+      } catch (e) {
+        setFinBanner({ type: 'error', message: e?.message || t('shipments.fin.errorSaveLine') })
+      } finally {
+        setBatchSavingBucket(null)
+      }
+    },
+    [onExpensesChanged, t]
+  )
+
+  const addPendingOtherLine = useCallback((bucketId) => {
+    setPendingOtherByBucket((prev) => {
+      const list = [...(prev[bucketId] || [])]
+      list.push({ tempId: `t-${Date.now()}`, desc: '', amount: '', currency: 'USD' })
+      return { ...prev, [bucketId]: list }
+    })
+  }, [])
+
+  const removePendingOtherLine = useCallback((bucketId, tempId) => {
+    setPendingOtherByBucket((prev) => ({
+      ...prev,
+      [bucketId]: (prev[bucketId] || []).filter((l) => l.tempId !== tempId),
+    }))
+  }, [])
+
+  const handleNotifySales = useCallback(async () => {
+    if (!token || !shipment?.id) return
+    setNotifySending(true)
+    try {
+      await notifyShipmentSalesFinancials(token, shipment.id)
+      setFinBanner({ type: 'success', message: t('shipments.fin.notifySalesOk') })
+    } catch (e) {
+      setFinBanner({ type: 'error', message: e?.message || t('shipments.fin.notifySalesFail') })
+    } finally {
+      setNotifySending(false)
+    }
+  }, [token, shipment?.id, t])
+
+  const canAccessInvoices = Boolean(token && (canManageFinancial || canViewSelling))
+
+  useEffect(() => {
+    if (!open || !shipment?.id || !token || !canAccessInvoices) return undefined
+    if (tab !== 'B' && tab !== 'C') return undefined
+    let cancelled = false
+    setInvoiceLoading(true)
+    listInvoices(token, { shipment_id: shipment.id, invoice_type: 'client' })
+      .then(({ data }) => {
+        if (cancelled) return undefined
+        const list = Array.isArray(data) ? data : []
+        const draft = list.find((i) => i.status === 'draft')
+        const pick = draft || list[0]
+        if (!pick?.id) {
+          setClientInvoice(null)
+          return undefined
+        }
+        return getInvoice(token, pick.id).then((full) => {
+          if (!cancelled) setClientInvoice(full)
+        })
+      })
+      .catch(() => {
+        if (!cancelled) setClientInvoice(null)
+      })
+      .finally(() => {
+        if (!cancelled) setInvoiceLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [open, shipment?.id, token, tab, canAccessInvoices])
+
+  useEffect(() => {
+    if (!open || !shipment?.id || !token || tab !== 'D') return undefined
+    let cancelled = false
+    setActivityLoading(true)
+    listActivitiesBySubject(token, { subjectType: 'shipment', subjectId: shipment.id })
+      .then(({ data }) => {
+        if (!cancelled) setActivityRows(Array.isArray(data) ? data : [])
+      })
+      .catch(() => {
+        if (!cancelled) setActivityRows([])
+      })
+      .finally(() => {
+        if (!cancelled) setActivityLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [open, shipment?.id, token, tab])
+
+  useEffect(() => {
+    if (!expenses.length) {
+      setTabBRows([])
+      setHandlingRow({ sell: '', include: true })
+      return
+    }
+    const items = clientInvoice?.items || []
+    const handlingItem = items.find((it) => it.description === HANDLING_FEE_DESCRIPTION)
+    setHandlingRow({
+      sell: handlingItem != null ? String(handlingItem.unit_price ?? '') : '',
+      include: handlingItem ? Number(handlingItem.quantity) > 0 : true,
+    })
+    setTabBRows(
+      expenses.map((ex) => {
+        const match = items.find((it) => it.description === ex.description)
+        const cost = Number(ex.amount) || 0
+        const sellVal = match != null ? Number(match.unit_price) : cost
+        const include = match ? Number(match.quantity) > 0 : true
+        return {
+          expenseId: ex.id,
+          description: ex.description,
+          category_name: ex.category_name || '—',
+          cost,
+          currency: ex.currency_code || 'USD',
+          sell: Number.isNaN(sellVal) ? '' : String(sellVal),
+          include,
+        }
+      })
+    )
+  }, [expenses, clientInvoice])
+
+  const savePricingInvoice = useCallback(async () => {
+    if (!token || !shipment?.id) return
+    if (!shipment.client_id) {
+      setFinBanner({ type: 'error', message: t('shipments.fin.invoiceNoClient') })
+      return
+    }
+    const curCode = expenses[0]?.currency_code || 'USD'
+    const currencyId = INVOICE_CURRENCY_CODE_TO_ID[curCode] || 1
+    const items = []
+    for (const row of tabBRows) {
+      if (!row.include) continue
+      const sell = Number(row.sell)
+      if (Number.isNaN(sell) || sell < 0) continue
+      items.push({ description: row.description, quantity: 1, unit_price: sell })
+    }
+    if (handlingRow.include) {
+      const h = Number(handlingRow.sell)
+      if (!Number.isNaN(h) && h >= 0) {
+        items.push({ description: HANDLING_FEE_DESCRIPTION, quantity: 1, unit_price: h })
+      }
+    }
+    if (items.length === 0) {
+      setFinBanner({ type: 'error', message: t('shipments.fin.pricingNoLines') })
+      return
+    }
+    setPricingSaving(true)
+    try {
+      let inv = clientInvoice
+      if (!inv?.id) {
+        inv = await createInvoice(token, {
+          invoice_type_id: 0,
+          shipment_id: shipment.id,
+          client_id: shipment.client_id,
+          issue_date: new Date().toISOString().slice(0, 10),
+          currency_id: currencyId,
+          items,
+        })
+      } else if (inv.status === 'draft') {
+        inv = await updateInvoice(token, inv.id, { items })
+      } else {
+        setFinBanner({ type: 'error', message: t('shipments.fin.pricingNotDraft') })
+        return
+      }
+      setClientInvoice(inv)
+      onShipmentTotalsRefresh?.()
+      setFinBanner({ type: 'success', message: t('shipments.fin.pricingSaved') })
+    } catch (e) {
+      setFinBanner({ type: 'error', message: e?.message || t('shipments.fin.errorSaveLine') })
+    } finally {
+      setPricingSaving(false)
+    }
+  }, [
+    token,
+    shipment,
+    expenses,
+    tabBRows,
+    handlingRow,
+    clientInvoice,
+    t,
+    onShipmentTotalsRefresh,
+  ])
+
+  const submitInvoicePayment = useCallback(async () => {
+    if (!token || !clientInvoice?.id) return
+    const amt = Number(paymentForm.amount)
+    if (Number.isNaN(amt) || amt <= 0) {
+      setFinBanner({ type: 'error', message: t('shipments.fin.paymentInvalidAmount') })
+      return
+    }
+    const currencyId = Number(paymentForm.currency_id) || 1
+    setPaymentSaving(true)
+    try {
+      const inv = await recordInvoicePayment(token, clientInvoice.id, {
+        amount: amt,
+        currency_id: currencyId,
+        method: paymentForm.method || 'bank',
+        reference: paymentForm.reference || null,
+        paid_at: paymentForm.paid_at || null,
+      })
+      setClientInvoice(inv)
+      setPaymentForm((f) => ({ ...f, amount: '', reference: '' }))
+      onShipmentTotalsRefresh?.()
+      setFinBanner({ type: 'success', message: t('shipments.fin.paymentRecorded') })
+    } catch (e) {
+      setFinBanner({ type: 'error', message: e?.message || t('shipments.fin.paymentFailed') })
+    } finally {
+      setPaymentSaving(false)
+    }
+  }, [token, clientInvoice, paymentForm, t, onShipmentTotalsRefresh])
+
+  if (!open || !shipment) return null
+
+  const bl = shipment.bl_number?.trim() || `—`
+  const hasBl = Boolean(shipment.bl_number?.trim())
+  const isReefer = Boolean(shipment?.is_reefer)
+  const editMode = Boolean(token && canManageExpenses && hasBl && shipment?.id)
+
+  const paidTotal = (clientInvoice?.payments || []).reduce((s, p) => s + (Number(p.amount) || 0), 0)
+  const netAmt = Number(clientInvoice?.net_amount) || 0
+  const remainingInvoice = Math.max(0, netAmt - paidTotal)
+  const invCurrency = clientInvoice?.currency_code || 'USD'
+
+  let displayInvoiceDate = invoiceDate
+  if (clientInvoice?.issue_date) {
+    try {
+      displayInvoiceDate = new Intl.DateTimeFormat(i18n.language === 'ar' ? 'ar-EG' : 'en-US', { dateStyle: 'medium' }).format(
+        new Date(clientInvoice.issue_date)
+      )
+    } catch {
+      displayInvoiceDate = String(clientInvoice.issue_date)
+    }
+  }
+
+  const tabCItems = clientInvoice?.items
+  const tabCInvoiceLines =
+    Array.isArray(tabCItems) && tabCItems.length > 0
+      ? tabCItems.map((it) => ({
+          key: it.id ?? it.description,
+          label: it.description,
+          amount: Number(it.line_total ?? Number(it.quantity) * Number(it.unit_price)) || 0,
+          currency: invCurrency,
+        }))
+      : expenses.map((ex) => ({
+          key: ex.id,
+          label: ex.description?.trim() || ex.category_name || '—',
+          amount: Number(ex.amount) || 0,
+          currency: ex.currency_code || '—',
+        }))
+
+  const patchTabBRow = (idx, patch) => {
+    setTabBRows((rows) => rows.map((r, i) => (i === idx ? { ...r, ...patch } : r)))
+  }
+
+  const renderLineLabelCell = (tpl) => (
+    <span className="shipment-fin-line-label">
+      {t(tpl.labelKey)}
+      {tpl.optional ? <span className="shipment-fin-mini-badge">{t('shipments.fin.lines.optionalBadge')}</span> : null}
+      {tpl.reeferOnly ? <span className="shipment-fin-mini-badge">{t('shipments.fin.lines.reeferBadge')}</span> : null}
+    </span>
+  )
+
+  const renderBucketCard = (bucketId, def) => {
+    const rows = byBucket[bucketId]
+    const Icon = def?.icon ?? Package
+    const sums = sumByCurrency(rows)
+    const subtotalParts = Object.entries(sums)
+      .filter(([, v]) => v !== 0)
+      .map(([c, v]) => `${c} ${formatMoney(v, numberLocale)}`)
+    const subtotalLabel = subtotalParts.length ? subtotalParts.join(' · ') : formatMoney(0, numberLocale)
+    const linesWithAmount = rows.filter((r) => Number(r.amount) > 0)
+    const allReceipt = linesWithAmount.length > 0 && linesWithAmount.every((r) => r.has_receipt)
+    const partialReceipt = !allReceipt && linesWithAmount.some((r) => r.has_receipt)
+    const isOpen = expanded.has(bucketId)
+
+    let receiptBadgeClass = 'shipment-fin-badge--draft'
+    let receiptBadgeKey = 'shipments.fin.statusDraft'
+    if (allReceipt) {
+      receiptBadgeClass = 'shipment-fin-badge--ok'
+      receiptBadgeKey = 'shipments.fin.statusReceiptComplete'
+    } else if (partialReceipt) {
+      receiptBadgeClass = 'shipment-fin-badge--partial'
+      receiptBadgeKey = 'shipments.fin.statusReceiptPartial'
+    }
+
+    const tableHead = (
+      <thead>
+        <tr>
+          <th>{t('shipments.fin.colItem')}</th>
+          <th>{t('shipments.fin.colDescription')}</th>
+          <th>{t('shipments.expColCategory')}</th>
+          <th>{t('shipments.expColAmount')}</th>
+          <th>{t('shipments.fin.colCurrency')}</th>
+          <th>{t('shipments.fin.colReceipt')}</th>
+        </tr>
+      </thead>
+    )
+
+    const renderExpenseCells = (ex) => (
+      <>
+        <td>{ex.description?.trim() || ex.invoice_number || '—'}</td>
+        <td>{ex.category_name || '—'}</td>
+        <td className="shipment-fin-num">{formatMoney(Number(ex.amount) || 0, numberLocale)}</td>
+        <td>{ex.currency_code || '—'}</td>
+        <td>{ex.has_receipt ? t('shipments.fin.receiptYes') : t('shipments.fin.receiptNo')}</td>
+      </>
+    )
+
+    const otherTableHead = (
+      <thead>
+        <tr>
+          <th>{t('shipments.expColCategory')}</th>
+          <th>{t('shipments.fin.colDescription')}</th>
+          <th>{t('shipments.expColAmount')}</th>
+          <th>{t('shipments.fin.colCurrency')}</th>
+          <th>{t('shipments.fin.colReceipt')}</th>
+        </tr>
+      </thead>
+    )
+
+    let bodyContent
+    if (bucketId === 'other') {
+      bodyContent =
+        rows.length === 0 ? (
+          <p className="shipment-fin-empty-inline">{t('shipments.fin.bucketOtherEmpty')}</p>
+        ) : (
+          <div className="shipment-fin-table-wrap">
+            <table className="shipment-fin-line-table">
+              {otherTableHead}
+              <tbody>
+                {rows.map((ex) => (
+                  <tr key={ex.id}>
+                    <td>{ex.category_name || '—'}</td>
+                    <td>{ex.description?.trim() || ex.invoice_number || '—'}</td>
+                    <td className="shipment-fin-num">{formatMoney(Number(ex.amount) || 0, numberLocale)}</td>
+                    <td>{ex.currency_code || '—'}</td>
+                    <td>{ex.has_receipt ? t('shipments.fin.receiptYes') : t('shipments.fin.receiptNo')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
+    } else {
+      const { sections, orphans } = partitionBucketRows(bucketId, rows, isReefer)
+      const sectionRows = []
+      const batchKeys = []
+      for (const { tpl, matched } of sections) {
+        const rowsForTpl = matched.length > 0 ? matched : [null]
+        rowsForTpl.forEach((ex, idx) => {
+          const rowKey = `${bucketId}::${tpl.id}::${ex?.id ?? 'new'}::${idx}`
+          batchKeys.push(rowKey)
+          sectionRows.push(
+            <FinSingleExpenseRow
+              key={ex?.id ?? `${bucketId}-${tpl.id}-new-${idx}`}
+              tpl={tpl}
+              bucketId={bucketId}
+              expense={ex}
+              showLineLabel={idx === 0}
+              shipment={shipment}
+              token={token}
+              editMode={editMode}
+              categoriesByCode={categoriesByCode}
+              t={t}
+              numberLocale={numberLocale}
+              renderLineLabelCell={renderLineLabelCell}
+              onSaved={onExpensesChanged}
+              saveRegisterKey={editMode ? rowKey : null}
+              onRegisterSave={editMode ? registerRowSave : null}
+            />
+          )
+        })
+      }
+      const pendingOthers = pendingOtherByBucket[bucketId] || []
+      for (const line of pendingOthers) {
+        sectionRows.push(
+          <FinPendingOtherChargeRow
+            key={line.tempId}
+            bucketId={bucketId}
+            line={line}
+            token={token}
+            shipment={shipment}
+            categoriesByCode={categoriesByCode}
+            t={t}
+            editMode={editMode}
+            onSaved={onExpensesChanged}
+            onRemove={() => removePendingOtherLine(bucketId, line.tempId)}
+          />
+        )
+      }
+      if (orphans.length > 0) {
+        sectionRows.push(
+          <tr key="__orphan-sep" className="shipment-fin-template-sep">
+            <td colSpan={editMode ? 7 : 6}>{t('shipments.fin.otherPosted')}</td>
+          </tr>
+        )
+        orphans.forEach((ex) => {
+          sectionRows.push(
+            <tr key={ex.id}>
+              <td>—</td>
+              {renderExpenseCells(ex)}
+            </tr>
+          )
+        })
+      }
+      bucketBatchKeysRef.current[bucketId] = batchKeys
+
+      const sectionToolbar =
+        editMode && bucketId !== 'other' ? (
+          <div className="shipment-fin-section-toolbar">
+            <select
+              className="shipment-fin-select shipment-fin-select--vendor"
+              value={sectionVendorChoice[bucketId] ?? ''}
+              onChange={(e) => setSectionVendorChoice((s) => ({ ...s, [bucketId]: e.target.value }))}
+            >
+              <option value="">{t('shipments.fin.sectionVendorPlaceholder')}</option>
+              {vendors.map((v) => (
+                <option key={v.id} value={String(v.id)}>
+                  {v.name || `#${v.id}`}
+                </option>
+              ))}
+            </select>
+            <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary" onClick={() => applyVendorToSection(bucketId)}>
+              {t('shipments.fin.applyVendor')}
+            </button>
+            <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary" onClick={() => addPendingOtherLine(bucketId)}>
+              {t('shipments.fin.addOtherCharge')}
+            </button>
+            <button
+              type="button"
+              className="shipment-fin-btn shipment-fin-btn--primary"
+              disabled={batchSavingBucket === bucketId}
+              onClick={() => saveBucketBatch(bucketId)}
+            >
+              {batchSavingBucket === bucketId ? t('shipments.saving') : t('shipments.fin.saveSection')}
+            </button>
+          </div>
+        ) : null
+
+      bodyContent = (
+        <>
+          {sectionToolbar}
+          <div className="shipment-fin-table-wrap">
+            <table className="shipment-fin-line-table">
+              {tableHead}
+              <tbody>{sectionRows}</tbody>
+            </table>
+          </div>
+        </>
+      )
+    }
+
+    return (
+      <div key={bucketId} className="shipment-fin-card">
+        <button type="button" className="shipment-fin-card__head" onClick={() => toggleCard(bucketId)}>
+          <div className="shipment-fin-card__head-main">
+            <Icon className="shipment-fin-card__icon" aria-hidden />
+            <div>
+              <div className="shipment-fin-card__title">{t(def.titleKey)}</div>
+              <div className="shipment-fin-card__sub">{t(def.subKey)}</div>
+            </div>
+          </div>
+          <div className="shipment-fin-card__head-meta">
+            <span className="shipment-fin-card__subtotal">{subtotalLabel}</span>
+            <span className={`shipment-fin-badge ${receiptBadgeClass}`}>{t(receiptBadgeKey)}</span>
+            {isOpen ? <ChevronUp className="shipment-fin-chevron" /> : <ChevronDown className="shipment-fin-chevron" />}
+          </div>
+        </button>
+        {isOpen && <div className="shipment-fin-card__body">{bodyContent}</div>}
+      </div>
+    )
+  }
+
+  const otherDef = {
+    icon: Package,
+    titleKey: 'shipments.fin.bucketOtherTitle',
+    subKey: 'shipments.fin.bucketOtherSub',
+  }
+
+  return (
+    <div className="client-detail-modal shipments-no-print shipment-fin-modal-root" role="dialog" aria-modal="true" aria-labelledby="shipment-fin-modal-title">
+      <div className="client-detail-modal__backdrop" onClick={onClose} />
+      <div className="client-detail-modal__box shipment-fin-modal__box">
+        <header className="client-detail-modal__header shipment-fin-modal__header">
+          <div className="client-detail-modal__header-inner">
+            <span className="client-detail-modal__header-label">{t('shipments.financialsModalTitle')}</span>
+            <h2 id="shipment-fin-modal-title" className="client-detail-modal__title client-detail-modal__title--client shipment-fin-modal__title-bl">
+              {bl}
+            </h2>
+            <div className="shipment-fin-modal__client">{clientLabel(shipment)}</div>
+          </div>
+          <button type="button" className="client-detail-modal__close" onClick={onClose} aria-label={t('shipments.close')}>
+            <X className="client-detail-modal__close-icon" aria-hidden />
+          </button>
+        </header>
+
+        <div className="shipment-fin-tab-bar" role="tablist">
+          <button type="button" role="tab" aria-selected={tab === 'A'} className={`shipment-fin-tab ${tab === 'A' ? 'shipment-fin-tab--active' : ''}`} onClick={() => setTab('A')}>
+            <FileText className="shipment-fin-tab__icon" aria-hidden />
+            {t('shipments.fin.tabA')}
+          </button>
+          <button type="button" role="tab" aria-selected={tab === 'B'} className={`shipment-fin-tab ${tab === 'B' ? 'shipment-fin-tab--active' : ''}`} onClick={() => setTab('B')}>
+            <DollarSign className="shipment-fin-tab__icon" aria-hidden />
+            {t('shipments.fin.tabB')}
+          </button>
+          <button type="button" role="tab" aria-selected={tab === 'C'} className={`shipment-fin-tab ${tab === 'C' ? 'shipment-fin-tab--active' : ''}`} onClick={() => setTab('C')}>
+            <FileType className="shipment-fin-tab__icon" aria-hidden />
+            {t('shipments.fin.tabC')}
+          </button>
+          <button type="button" role="tab" aria-selected={tab === 'D'} className={`shipment-fin-tab ${tab === 'D' ? 'shipment-fin-tab--active' : ''}`} onClick={() => setTab('D')}>
+            <History className="shipment-fin-tab__icon" aria-hidden />
+            {t('shipments.fin.tabD')}
+          </button>
+        </div>
+
+        <div className="client-detail-modal__body shipment-fin-modal__body">
+          {finBanner ? (
+            <div className={`shipment-fin-flash shipment-fin-flash--${finBanner.type}`} role="status">
+              {finBanner.message}
+            </div>
+          ) : null}
+          {tab === 'A' && (
+            <div className="shipment-fin-panel">
+              {!hasBl ? (
+                <p className="client-detail-modal__empty">{t('shipments.financialsNoBl')}</p>
+              ) : loading ? (
+                <p className="client-detail-modal__empty">{t('shipments.loading')}</p>
+              ) : (
+                <>
+                  {editMode ? <p className="shipment-fin-tab-a-hint">{t('shipments.fin.tabAEditHint')}</p> : null}
+                  {BUCKET_DEFS.map((d) => renderBucketCard(d.id, d))}
+                  {renderBucketCard('other', otherDef)}
+                  <div className="shipment-fin-total-bar">
+                    <div className="shipment-fin-total-bar__label">
+                      <span className="fw-700">{t('shipments.fin.netCostLabel')}</span>
+                    </div>
+                    <div className="shipment-fin-total-bar__vals">
+                      <span className="shipment-fin-total-bar__break text-muted">{netBreakdownStr}</span>
+                      <span className="shipment-fin-grand">
+                        {shipment.cost_total != null
+                          ? formatMoney(Number(shipment.cost_total), numberLocale)
+                          : Object.values(totalsByCurrencyAll).reduce((a, b) => a + b, 0) > 0
+                            ? t('shipments.fin.seeBreakdown')
+                            : '—'}
+                      </span>
+                    </div>
+                  </div>
+                  {shipment.cost_total != null && (
+                    <p className="shipment-fin-hint text-muted fs-xs">{t('shipments.fin.netCostHint')}</p>
+                  )}
+                  <p className="shipment-fin-notify-hint text-center text-muted fs-sm">{t('shipments.fin.notifySalesHint')}</p>
+                  {canNotifySales ? (
+                    <div className="shipment-fin-notify-actions">
+                      <button
+                        type="button"
+                        className="client-detail-modal__btn client-detail-modal__btn--primary"
+                        disabled={notifySending}
+                        onClick={handleNotifySales}
+                      >
+                        <Bell className="shipment-fin-notify-icon" aria-hidden />
+                        {notifySending ? t('shipments.saving') : t('shipments.fin.notifySalesButton')}
+                      </button>
+                    </div>
+                  ) : null}
+                </>
+              )}
+            </div>
+          )}
+
+          {tab === 'B' && (
+            <div className="shipment-fin-panel">
+              <div className="shipment-fin-sales-banner">
+                <div className="fw-600">{t('shipments.fin.salesBannerTitle')}</div>
+                <div className="fs-xs text-muted">{t('shipments.fin.salesBannerSub')}</div>
+              </div>
+              {!hasBl ? (
+                <p className="client-detail-modal__empty">{t('shipments.financialsNoBl')}</p>
+              ) : loading || invoiceLoading ? (
+                <p className="client-detail-modal__empty">{t('shipments.loading')}</p>
+              ) : expenses.length === 0 ? (
+                <p className="client-detail-modal__empty">{t('shipments.fin.tabBEmpty')}</p>
+              ) : (
+                <>
+                  <p className="shipment-fin-hint text-muted fs-xs mb-2">{t('shipments.fin.tabBInvoiceHint')}</p>
+                  <div className="shipment-fin-table-wrap">
+                    <table className="shipment-fin-sell-table shipment-fin-sell-table--wide">
+                      <thead>
+                        <tr>
+                          <th>{t('shipments.fin.colVendorType')}</th>
+                          <th>{t('shipments.fin.colCharge')}</th>
+                          <th>{t('shipments.fields.cost_total')}</th>
+                          {canViewSelling && canManageFinancial ? <th className="shipment-fin-th-center">{t('shipments.fin.colInclude')}</th> : null}
+                          {canViewSelling && <th>{t('shipments.fin.colSell')}</th>}
+                          <th>{t('shipments.fin.colCurrency')}</th>
+                          <th>{t('shipments.fin.colMargin')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {tabBRows.map((row, idx) => {
+                          const sellNum = Number(row.sell)
+                          const margin =
+                            canViewSelling && !Number.isNaN(sellNum) ? sellNum - row.cost : null
+                          return (
+                            <tr key={row.expenseId}>
+                              <td>{row.category_name || '—'}</td>
+                              <td>{row.description?.trim() || '—'}</td>
+                              <td className="shipment-fin-num">{formatMoney(row.cost, numberLocale)}</td>
+                              {canViewSelling && canManageFinancial ? (
+                                <td className="shipment-fin-td-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={row.include}
+                                    onChange={(e) => patchTabBRow(idx, { include: e.target.checked })}
+                                    disabled={!canManageFinancial}
+                                    aria-label={t('shipments.fin.colInclude')}
+                                  />
+                                </td>
+                              ) : null}
+                              {canViewSelling ? (
+                                <td>
+                                  {canManageFinancial ? (
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      className="shipment-fin-input shipment-fin-input--num"
+                                      value={row.sell}
+                                      onChange={(e) => patchTabBRow(idx, { sell: e.target.value })}
+                                    />
+                                  ) : (
+                                    <span className="shipment-fin-num">{formatMoney(sellNum || 0, numberLocale)}</span>
+                                  )}
+                                </td>
+                              ) : null}
+                              <td>{row.currency || '—'}</td>
+                              <td className="shipment-fin-num text-muted">
+                                {margin != null && !Number.isNaN(margin) ? formatMoney(margin, numberLocale) : '—'}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                        {canViewSelling ? (
+                          <tr className="shipment-fin-handling-row">
+                            <td className="fw-600" colSpan={2}>
+                              {t('shipments.fin.handlingFee')}
+                            </td>
+                            <td className="shipment-fin-num">—</td>
+                            {canManageFinancial ? (
+                              <td className="shipment-fin-td-center">
+                                <input
+                                  type="checkbox"
+                                  checked={handlingRow.include}
+                                  onChange={(e) => setHandlingRow((h) => ({ ...h, include: e.target.checked }))}
+                                  aria-label={t('shipments.fin.colInclude')}
+                                />
+                              </td>
+                            ) : null}
+                            <td className="shipment-fin-num">
+                              {canManageFinancial ? (
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  className="shipment-fin-input shipment-fin-input--num"
+                                  value={handlingRow.sell}
+                                  onChange={(e) => setHandlingRow((h) => ({ ...h, sell: e.target.value }))}
+                                />
+                              ) : (
+                                formatMoney(Number(handlingRow.sell) || 0, numberLocale)
+                              )}
+                            </td>
+                            <td>{invCurrency}</td>
+                            <td className="text-muted">—</td>
+                          </tr>
+                        ) : null}
+                      </tbody>
+                      <tfoot>
+                        <tr className="shipment-fin-foot-row">
+                          <td colSpan={2} className="fw-700">
+                            {t('shipments.fin.footerTotalCost')}
+                          </td>
+                          <td className="shipment-fin-num fw-700">
+                            {shipment.cost_total != null ? formatMoney(Number(shipment.cost_total), numberLocale) : '—'}
+                          </td>
+                          {canViewSelling && canManageFinancial ? <td /> : null}
+                          {canViewSelling ? <td /> : null}
+                          <td colSpan={2} className="text-muted fs-xs">
+                            {t('shipments.fin.footerByCurrency')}
+                            {Object.entries(totalsByCurrencyAll)
+                              .filter(([, v]) => v !== 0)
+                              .map(([c, v]) => (
+                                <span key={c} className="shipment-fin-cur-pill">
+                                  {c}: <strong>{formatMoney(v, numberLocale)}</strong>
+                                </span>
+                              ))}
+                          </td>
+                        </tr>
+                        {canViewSelling && (
+                          <>
+                            <tr className="shipment-fin-foot-row">
+                              <td colSpan={2} className="fw-700">
+                                {t('shipments.fields.selling_price_total')}
+                              </td>
+                              <td />
+                              {canManageFinancial ? <td /> : null}
+                              <td className="shipment-fin-num fw-700">
+                                {shipment.selling_price_total != null ? formatMoney(Number(shipment.selling_price_total), numberLocale) : '—'}
+                              </td>
+                              <td colSpan={2} className="text-muted fs-xs">
+                                {clientInvoice?.invoice_number ? `${t('shipments.fin.invoiceRef')}: ${clientInvoice.invoice_number}` : t('shipments.fin.draftPricingInvoice')}
+                              </td>
+                            </tr>
+                            <tr className="shipment-fin-foot-row shipment-fin-foot-row--profit">
+                              <td colSpan={2} className="fw-700">
+                                {t('shipments.fields.profit_total')}
+                              </td>
+                              <td />
+                              {canManageFinancial ? <td /> : null}
+                              <td className="shipment-fin-num fw-700 text-emerald-600">
+                                {shipment.profit_total != null ? formatMoney(Number(shipment.profit_total), numberLocale) : '—'}
+                              </td>
+                              <td colSpan={2} className="text-muted fs-xs">
+                                {t('shipments.fin.marginNote')}
+                              </td>
+                            </tr>
+                          </>
+                        )}
+                      </tfoot>
+                    </table>
+                  </div>
+                  {canManageFinancial ? (
+                    <div className="shipment-fin-pricing-actions mt-3">
+                      <button
+                        type="button"
+                        className="client-detail-modal__btn client-detail-modal__btn--primary"
+                        disabled={pricingSaving}
+                        onClick={savePricingInvoice}
+                      >
+                        {pricingSaving ? t('shipments.saving') : t('shipments.fin.saveSalesPricing')}
+                      </button>
+                    </div>
+                  ) : null}
+                  <p className="shipment-fin-hint text-muted fs-xs mt-3">{t('shipments.fin.savePricingHint')}</p>
+                </>
+              )}
+            </div>
+          )}
+
+          {tab === 'C' && (
+            <div className="shipment-fin-panel">
+              {!hasBl ? (
+                <p className="client-detail-modal__empty">{t('shipments.financialsNoBl')}</p>
+              ) : invoiceLoading ? (
+                <p className="client-detail-modal__empty">{t('shipments.loading')}</p>
+              ) : (
+                <>
+                  <div className="shipment-fin-client-invoice shipment-fin-print-target">
+                    <div className="shipment-fin-invoice-head">
+                      <div>
+                        <div className="shipment-fin-invoice-brand">{t('common.brand')}</div>
+                        <div className="fs-xs text-muted">{t('shipments.fin.invoiceTagline')}</div>
+                      </div>
+                      <div className="shipment-fin-invoice-head-right">
+                        <div className="shipment-fin-invoice-word">{t('shipments.fin.invoiceWord')}</div>
+                        <div className="fw-600">{bl}</div>
+                        {clientInvoice?.invoice_number ? (
+                          <div className="fs-xs text-muted">
+                            {t('shipments.fin.invoiceNumberLabel')}: {clientInvoice.invoice_number}
+                          </div>
+                        ) : null}
+                        <div className="fs-xs text-muted">{displayInvoiceDate}</div>
+                      </div>
+                    </div>
+                    <div className="shipment-fin-invoice-to">
+                      <div className="fs-xs text-muted">{t('shipments.fin.billTo')}</div>
+                      <div className="fw-700">{clientLabel(shipment)}</div>
+                    </div>
+                    <table className="shipment-fin-invoice-table">
+                      <thead>
+                        <tr>
+                          <th>{t('shipments.fin.colLine')}</th>
+                          <th>{t('shipments.expColAmount')}</th>
+                          <th>{t('shipments.fin.colCurrency')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {tabCInvoiceLines.length === 0 ? (
+                          <tr>
+                            <td colSpan={3} className="text-center text-muted py-4">
+                              {t('shipments.fin.invoiceLinesEmpty')}
+                            </td>
+                          </tr>
+                        ) : (
+                          tabCInvoiceLines.map((line) => (
+                            <tr key={line.key}>
+                              <td>{line.label}</td>
+                              <td className="shipment-fin-num">{formatMoney(line.amount, numberLocale)}</td>
+                              <td>{line.currency}</td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                      {tabCInvoiceLines.length > 0 && clientInvoice?.id ? (
+                        <tfoot>
+                          <tr>
+                            <td className="fw-700">{t('shipments.fin.invoiceNet')}</td>
+                            <td className="fw-700 shipment-fin-num">{formatMoney(netAmt, numberLocale)}</td>
+                            <td className="text-muted fs-xs">{invCurrency}</td>
+                          </tr>
+                        </tfoot>
+                      ) : null}
+                    </table>
+                  </div>
+
+                  <div className="shipment-fin-invoice-actions">
+                    <div className="shipment-fin-invoice-card">
+                      <p className="fw-700 fs-sm mb-2">{t('shipments.fin.sendInvoice')}</p>
+                      <div className="shipment-fin-stack">
+                        <button type="button" className="client-detail-modal__btn client-detail-modal__btn--primary" onClick={printInvoice}>
+                          {t('shipments.fin.printPdf')}
+                        </button>
+                        <button type="button" className="client-detail-modal__btn client-detail-modal__btn--secondary" disabled title={t('shipments.fin.emailSoon')}>
+                          {t('shipments.fin.emailInvoice')}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="shipment-fin-invoice-card">
+                      <p className="fw-700 fs-sm mb-2">{t('shipments.fin.invoiceStatus')}</p>
+                      <p className="text-muted fs-xs mb-2">{t('shipments.fin.invoiceStatusHint')}</p>
+                      <span
+                        className={`shipment-fin-badge ${
+                          clientInvoice?.status === 'paid'
+                            ? 'shipment-fin-badge--ok'
+                            : clientInvoice?.status === 'partial'
+                              ? 'shipment-fin-badge--partial'
+                              : 'shipment-fin-badge--draft'
+                        }`}
+                      >
+                        {clientInvoice?.status
+                          ? t(`shipments.fin.invoiceStatusValue.${clientInvoice.status}`, { defaultValue: clientInvoice.status })
+                          : t('shipments.fin.noClientInvoiceYet')}
+                      </span>
+                      <div className="shipment-fin-payment-summary">
+                        <div>
+                          <div className="fs-xs text-muted">{t('shipments.fin.paidAmount')}</div>
+                          <div className="fw-700">{formatMoney(paidTotal, numberLocale)}</div>
+                        </div>
+                        <div>
+                          <div className="fs-xs text-muted">{t('shipments.fin.remainingAmount')}</div>
+                          <div className="fw-700">{formatMoney(remainingInvoice, numberLocale)}</div>
+                        </div>
+                      </div>
+                      {clientInvoice?.payments?.length ? (
+                        <ul className="shipment-fin-payment-list fs-xs text-muted mt-2">
+                          {clientInvoice.payments.map((p) => (
+                            <li key={p.id}>
+                              {p.paid_at ? String(p.paid_at).slice(0, 10) : '—'} · {formatMoney(Number(p.amount) || 0, numberLocale)}{' '}
+                              {p.currency_code || invCurrency} · {p.method || '—'}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="shipment-fin-payment-section">
+                    <div className="shipment-fin-payment-section__head">
+                      <span className="fw-600">{t('shipments.fin.addPaymentTitle')}</span>
+                    </div>
+                    {canManageFinancial && clientInvoice?.id ? (
+                      <div className="shipment-fin-payment-form px-4 py-3">
+                        <div className="shipment-fin-payment-form__grid">
+                          <label className="shipment-fin-payment-field">
+                            <span className="fs-xs text-muted">{t('shipments.expColAmount')}</span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              className="shipment-fin-input shipment-fin-input--num"
+                              value={paymentForm.amount}
+                              onChange={(e) => setPaymentForm((f) => ({ ...f, amount: e.target.value }))}
+                            />
+                          </label>
+                          <label className="shipment-fin-payment-field">
+                            <span className="fs-xs text-muted">{t('shipments.fin.colCurrency')}</span>
+                            <select
+                              className="shipment-fin-select"
+                              value={paymentForm.currency_id}
+                              onChange={(e) => setPaymentForm((f) => ({ ...f, currency_id: e.target.value }))}
+                            >
+                              <option value="1">USD</option>
+                              <option value="2">EGP</option>
+                              <option value="3">EUR</option>
+                            </select>
+                          </label>
+                          <label className="shipment-fin-payment-field">
+                            <span className="fs-xs text-muted">{t('shipments.fin.paymentMethod')}</span>
+                            <input
+                              type="text"
+                              className="shipment-fin-input"
+                              value={paymentForm.method}
+                              onChange={(e) => setPaymentForm((f) => ({ ...f, method: e.target.value }))}
+                            />
+                          </label>
+                          <label className="shipment-fin-payment-field">
+                            <span className="fs-xs text-muted">{t('shipments.fin.paymentReference')}</span>
+                            <input
+                              type="text"
+                              className="shipment-fin-input"
+                              value={paymentForm.reference}
+                              onChange={(e) => setPaymentForm((f) => ({ ...f, reference: e.target.value }))}
+                            />
+                          </label>
+                          <label className="shipment-fin-payment-field">
+                            <span className="fs-xs text-muted">{t('shipments.fin.paymentDate')}</span>
+                            <input
+                              type="date"
+                              className="shipment-fin-input"
+                              value={paymentForm.paid_at}
+                              onChange={(e) => setPaymentForm((f) => ({ ...f, paid_at: e.target.value }))}
+                            />
+                          </label>
+                        </div>
+                        <button
+                          type="button"
+                          className="client-detail-modal__btn client-detail-modal__btn--primary mt-2"
+                          disabled={paymentSaving}
+                          onClick={submitInvoicePayment}
+                        >
+                          {paymentSaving ? t('shipments.saving') : t('shipments.fin.recordPayment')}
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="text-muted fs-xs px-4 py-3 mb-0">{t('shipments.fin.addPaymentHint')}</p>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {tab === 'D' && (
+            <div className="shipment-fin-panel">
+              <div className="shipment-fin-audit-head">
+                <h4 className="shipment-fin-audit-title">{t('shipments.fin.auditTitle')}</h4>
+                <span className="fs-xs text-muted">{t('shipments.fin.auditSub')}</span>
+              </div>
+              {!hasBl ? (
+                <p className="client-detail-modal__empty">{t('shipments.financialsNoBl')}</p>
+              ) : activityLoading ? (
+                <p className="client-detail-modal__empty">{t('shipments.loading')}</p>
+              ) : activityRows.length === 0 ? (
+                <div className="shipment-fin-audit-empty">
+                  <History className="shipment-fin-audit-empty__icon" />
+                  <div>{t('shipments.fin.auditEmpty')}</div>
+                </div>
+              ) : (
+                <ul className="shipment-fin-audit-list">
+                  {activityRows.map((a) => (
+                    <li key={a.id} className="shipment-fin-audit-item">
+                      <div className="shipment-fin-audit-item__dot" />
+                      <div>
+                        <div className="shipment-fin-audit-item__meta">
+                          {a.created_at ? String(a.created_at).replace('T', ' ').slice(0, 19) : '—'}
+                          {a.causer_id ? ` · ${t('shipments.fin.auditUser')} #${a.causer_id}` : ''}
+                        </div>
+                        <div className="shipment-fin-audit-item__body">
+                          <span className="fw-600">{a.event || a.description || '—'}</span>
+                        </div>
+                        {a.properties && Object.keys(a.properties).length > 0 ? (
+                          <div className="fs-xs text-muted mt-1 shipment-fin-audit-props">
+                            {JSON.stringify(a.properties)}
+                          </div>
+                        ) : null}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
