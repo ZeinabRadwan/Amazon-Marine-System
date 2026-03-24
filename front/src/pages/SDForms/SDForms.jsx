@@ -24,10 +24,10 @@ import { Container } from '../../components/Container'
 import '../../components/PageHeader/PageHeader.css'
 import { Table, IconActionButton } from '../../components/Table'
 import Pagination from '../../components/Pagination'
-import { StatsCard } from '../../components/StatsCard'
 import LoaderDots from '../../components/LoaderDots'
 import Alert from '../../components/Alert'
 import SdFormLookupsPanel from './SdFormLookupsPanel'
+import { SDFormsStatsSection, SDFormsChartsSection } from './components'
 import {
   FileSpreadsheet,
   Search,
@@ -35,8 +35,6 @@ import {
   ArrowUpDown,
   ChevronDown,
   ChevronUp,
-  FileText,
-  Plus,
   X,
   Eye,
   Pencil,
@@ -46,7 +44,6 @@ import {
   Mail,
   Link2,
 } from 'lucide-react'
-import { BarChart } from '../../components/Charts'
 import '../../components/Charts/Charts.css'
 import '../../components/LoaderDots/LoaderDots.css'
 import '../Clients/Clients.css'
@@ -1060,55 +1057,9 @@ export default function SDForms() {
           </div>
         )}
 
-        <div className="clients-header">
-          <h1 className="sd-forms-page-title">{t('sdForms.title')}</h1>
-          <div className="flex flex-wrap items-center gap-2">
-            <button type="button" className="clients-btn clients-btn--primary inline-flex items-center gap-2" onClick={() => setShowCreate(true)}>
-              <Plus className="h-4 w-4" aria-hidden />
-              {t('sdForms.newForm')}
-            </button>
-          </div>
-        </div>
+        <SDFormsStatsSection stats={stats} />
 
-        {stats && (
-          <div className="sd-forms-stats-grid">
-            <StatsCard
-              title={t('sdForms.statsTotal')}
-              value={stats.total_forms ?? 0}
-              icon={<FileText className="h-6 w-6" />}
-              variant="blue"
-            />
-            {(stats.by_status ?? []).map((item) => (
-              <StatsCard
-                key={item.status}
-                title={t(`sdForms.status.${item.status}`, item.status)}
-                value={item.count ?? 0}
-                icon={<FileText className="h-6 w-6" />}
-                variant="default"
-              />
-            ))}
-          </div>
-        )}
-
-        {charts?.monthly?.length > 0 && (
-          <div className="clients-extra-panel clients-charts-panel mb-4">
-            <div className="clients-chart-wrap">
-              <BarChart
-                data={charts.monthly.map((d) => ({
-                  ...d,
-                  monthLabel: d.month ? monthFormat.format(new Date(d.month)) : d.month,
-                }))}
-                xKey="monthLabel"
-                yKey="count"
-                xLabel={t('sdForms.chartMonth')}
-                yLabel={t('sdForms.chartCount')}
-                valueLabel={t('sdForms.chartCount')}
-                title={t('sdForms.chartTitle')}
-                height={260}
-              />
-            </div>
-          </div>
-        )}
+        <SDFormsChartsSection charts={charts} monthFormat={monthFormat} />
 
         <div className="clients-filters-card">
           <div className="clients-filters__row clients-filters__row--main">
@@ -1123,7 +1074,7 @@ export default function SDForms() {
                 aria-label={t('sdForms.search')}
               />
             </div>
-            <div className="clients-filters__fields flex flex-wrap gap-2">
+            <div className="clients-filters__fields">
               <select
                 value={filters.status}
                 onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value, page: 1 }))}
@@ -1195,7 +1146,7 @@ export default function SDForms() {
               <ArrowUpDown className="clients-filters__btn-icon-svg" aria-hidden />
               {showSort ? <ChevronUp className="clients-filters__sort-toggle-chevron" aria-hidden /> : <ChevronDown className="clients-filters__sort-toggle-chevron" aria-hidden />}
             </button>
-            <div className="clients-filters__actions flex flex-wrap gap-1">
+            <div className="clients-filters__actions">
               <button
                 type="button"
                 className="clients-btn clients-btn--secondary text-xs px-2 py-1"
@@ -1226,6 +1177,9 @@ export default function SDForms() {
                 title={t('sdForms.exportSelected')}
               >
                 <FileSpreadsheet className="clients-filters__btn-icon-svg h-4 w-4 opacity-80" aria-hidden />
+              </button>
+              <button type="button" className="page-header__btn page-header__btn--primary" onClick={() => setShowCreate(true)}>
+                {t('sdForms.newForm')}
               </button>
             </div>
           </div>

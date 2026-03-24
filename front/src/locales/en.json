@@ -645,6 +645,7 @@
     "chartTitle": "SD forms by month",
     "chartMonth": "Month",
     "chartCount": "Count",
+    "chartsNoData": "No chart data for this range.",
     "actions": "Actions",
     "view": "View",
     "edit": "Edit",

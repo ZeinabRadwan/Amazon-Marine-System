@@ -645,6 +645,7 @@
     "chartTitle": "نماذج SD حسب الشهر",
     "chartMonth": "الشهر",
     "chartCount": "العدد",
+    "chartsNoData": "لا توجد بيانات للرسم في هذه الفترة.",
     "actions": "إجراءات",
     "view": "عرض",
     "edit": "تعديل",
