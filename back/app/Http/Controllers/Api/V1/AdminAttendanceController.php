@@ -28,12 +28,15 @@ class AdminAttendanceController extends Controller
         $viewer = $request->user();
         $records = $paginator->getCollection();
         $excuseMap = $this->loadExcuseMapForRecords($records);
+        $clockInLogMap = $this->attendanceService->acceptedClockInLogsByUserAndRecordDate($records);
 
-        $items = $records->map(function (AttendanceRecord $r) use ($viewer, $excuseMap) {
+        $items = $records->map(function (AttendanceRecord $r) use ($viewer, $excuseMap, $clockInLogMap) {
             $user = $r->user ?? $viewer;
             $tz = $this->attendanceService->resolveTimezone($user);
             $key = $r->user_id.'|'.$r->date->toDateString();
             $excuse = $excuseMap[$key] ?? null;
+            $log = $clockInLogMap[$key] ?? null;
+            $geo = $this->attendanceService->clockInGeoMetaFromRecordAndLog($r, $log);
 
             return [
                 'id' => $r->id,
@@ -45,11 +48,12 @@ class AdminAttendanceController extends Controller
                 'clock_out_at' => $r->check_out_at?->toIso8601String(),
                 'clock_in_at_local' => $r->check_in_at ? $r->check_in_at->copy()->timezone($tz)->toIso8601String() : null,
                 'clock_out_at_local' => $r->check_out_at ? $r->check_out_at->copy()->timezone($tz)->toIso8601String() : null,
-                'worked_hours' => $r->worked_minutes !== null ? round($r->worked_minutes / 60, 2) : null,
+                'worked_hours' => $this->attendanceService->workedHoursForList($r),
+                'shift_open' => $this->attendanceService->shiftOpenForList($r),
                 'worked_minutes' => $r->worked_minutes,
-                'device_type' => $r->clock_in_device_type,
-                'is_within_radius' => $r->clock_in_is_within_radius,
-                'distance_from_office_m' => $r->clock_in_distance_from_office,
+                'device_type' => $geo['device_type'],
+                'is_within_radius' => $geo['is_within_radius'],
+                'distance_from_office_m' => $geo['distance_from_office_m'],
                 'status' => $r->status,
                 'is_late' => (bool) $r->is_late,
                 'excuse' => $excuse ? [
