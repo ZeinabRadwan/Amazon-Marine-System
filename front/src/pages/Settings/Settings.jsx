@@ -113,6 +113,14 @@ export default function Settings() {
     reset_hour: 0,
     idle_logout_minutes: 30,
   })
+  const [attendancePolicy, setAttendancePolicy] = useState({
+    grace_minutes: 15,
+    workday_start: '09:00',
+    workday_end: '17:00',
+    enforce_geofence: false,
+    enforce_schedule: false,
+    require_location: true,
+  })
 
   const [todaySession, setTodaySession] = useState(null)
   const [sessionsHistory, setSessionsHistory] = useState([])
