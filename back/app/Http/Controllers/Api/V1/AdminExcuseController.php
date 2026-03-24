@@ -11,6 +11,7 @@ use App\Notifications\ExcuseDecisionNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class AdminExcuseController extends Controller
 {
@@ -61,6 +62,28 @@ class AdminExcuseController extends Controller
                 'per_page' => $paginator->perPage(),
                 'total' => $paginator->total(),
             ],
+        ]);
+    }
+
+    /**
+     * Stream excuse attachment (PDF / image) for reviewers with manage permission.
+     */
+    public function attachment(Excuse $excuse)
+    {
+        if ($excuse->attachment_path === null || $excuse->attachment_path === '') {
+            return ApiResponse::failure('No attachment for this excuse.', null, 404);
+        }
+
+        $disk = Storage::disk('excuses');
+        if (! $disk->exists($excuse->attachment_path)) {
+            return ApiResponse::failure('Attachment file is missing.', null, 404);
+        }
+
+        $absolute = $disk->path($excuse->attachment_path);
+        $filename = basename($excuse->attachment_path);
+
+        return response()->file($absolute, [
+            'Content-Disposition' => 'inline; filename="'.$filename.'"',
         ]);
     }
 

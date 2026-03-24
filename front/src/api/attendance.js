@@ -190,3 +190,31 @@ export async function adminPatchExcuse(token, id, body) {
   if (!res.ok) throw new Error(data.message || data.error || `Update failed (${res.status})`)
   return unwrapPayload(data)
 }
+
+/**
+ * Open excuse attachment in a new tab (Bearer auth; blob URL — works cross-origin).
+ * @param {string} token
+ * @param {number|string} excuseId
+ */
+export async function openAdminExcuseAttachment(token, excuseId) {
+  const url = `${getBaseUrl()}/admin/excuses/${excuseId}/attachment`
+  const res = await fetch(url, { headers: authHeaders(token) })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.message || data.error || `Failed to load attachment (${res.status})`)
+  }
+  const blob = await res.blob()
+  const objectUrl = URL.createObjectURL(blob)
+  const cd = res.headers.get('Content-Disposition')
+  const m = cd && /filename\*?=(?:UTF-8'')?["']?([^"';]+)/i.exec(cd)
+  const filename = m ? decodeURIComponent(m[1].replace(/"/g, '')) : `excuse-${excuseId}-attachment`
+  const w = window.open(objectUrl, '_blank', 'noopener,noreferrer')
+  if (!w) {
+    const a = document.createElement('a')
+    a.href = objectUrl
+    a.download = filename
+    a.rel = 'noopener'
+    a.click()
+  }
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 120_000)
+}
