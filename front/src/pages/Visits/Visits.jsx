@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getStoredToken } from '../Login'
 import { listClients } from '../../api/clients'
+import { listVendors } from '../../api/vendors'
 import { listUsers } from '../../api/users'
 import {
   listVisits,
@@ -41,6 +42,14 @@ function normalizeClientOption(c) {
   const company = c.company_name ?? ''
   const label = company ? `${company}${name ? ` — ${name}` : ''}` : name || `#${c.id}`
   return { id: c.id, label }
+}
+
+function normalizeVendorOption(v) {
+  if (!v || v.id == null) return null
+  const name = v.name ?? ''
+  const typeKey = v.type ? String(v.type) : ''
+  const typeLabel = typeKey ? ` (${typeKey})` : ''
+  return { id: v.id, label: `${name}${typeLabel}`.trim() || `#${v.id}` }
 }
 
 function visitVisitableName(v) {
@@ -158,6 +167,7 @@ export default function Visits() {
   const [followUpsLoading, setFollowUpsLoading] = useState(false)
 
   const [clientOptions, setClientOptions] = useState([])
+  const [vendorOptions, setVendorOptions] = useState([])
   const [userOptions, setUserOptions] = useState([])
 
   const [showCreate, setShowCreate] = useState(false)
@@ -254,6 +264,17 @@ export default function Visits() {
         setClientOptions(list.map(normalizeClientOption).filter(Boolean))
       })
       .catch(() => setClientOptions([]))
+  }, [token])
+
+  useEffect(() => {
+    if (!token) return
+    listVendors(token, {})
+      .then((data) => {
+        const arr = data.data ?? data.vendors ?? data
+        const list = Array.isArray(arr) ? arr : []
+        setVendorOptions(list.map(normalizeVendorOption).filter(Boolean))
+      })
+      .catch(() => setVendorOptions([]))
   }, [token])
 
   useEffect(() => {
@@ -524,15 +545,20 @@ export default function Visits() {
           ) : (
             <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
               <label htmlFor="visit-vendor">{t('visits.fields.vendor_id')}</label>
-              <input
+              <select
                 id="visit-vendor"
-                type="number"
-                min={1}
-                placeholder={t('visits.vendorPlaceholder')}
                 value={form.vendor_id}
                 onChange={(e) => setForm((f) => ({ ...f, vendor_id: e.target.value }))}
                 disabled={disabled}
-              />
+                required={isCreate}
+              >
+                <option value="">—</option>
+                {vendorOptions.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.label}
+                  </option>
+                ))}
+              </select>
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t('visits.vendorHint')}</p>
             </div>
           )}
@@ -766,15 +792,19 @@ export default function Visits() {
                   </option>
                 ))}
               </select>
-              <input
-                type="number"
-                min={1}
-                placeholder={t('visits.filterVendorId')}
+              <select
                 value={apiFilters.vendor_id}
                 onChange={(e) => setApiFilters((f) => ({ ...f, vendor_id: e.target.value }))}
-                className="clients-input w-28 min-w-[7rem]"
-                aria-label={t('visits.filterVendorId')}
-              />
+                className="clients-input min-w-[10rem]"
+                aria-label={t('visits.filterVendor')}
+              >
+                <option value="">{t('visits.allVendors')}</option>
+                {vendorOptions.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.label}
+                  </option>
+                ))}
+              </select>
               <select
                 value={apiFilters.user_id}
                 onChange={(e) => setApiFilters((f) => ({ ...f, user_id: e.target.value }))}
