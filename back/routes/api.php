@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AbilitiesController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\GitDeployController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\UserPermissionsController;
@@ -58,6 +59,8 @@ use App\Http\Controllers\Api\V1\VisitController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
+    Route::match(['get', 'post'], 'deploy/git-pull', GitDeployController::class);
+
     // Public auth routes
     Route::post('auth/login', [AuthController::class, 'login']);
 
