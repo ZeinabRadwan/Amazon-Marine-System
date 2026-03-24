@@ -31,6 +31,7 @@ import {
   listInterestLevels,
   listDecisionMakerTitles,
 } from '../../api/clientLookups'
+import { useAuthAccess } from '../../hooks/useAuthAccess'
 import { Container } from '../../components/Container'
 import '../../components/PageHeader/PageHeader.css'
 import { Table, IconActionButton } from '../../components/Table'
@@ -122,6 +123,7 @@ const defaultClientForm = () => ({
 
 export default function Clients() {
   const { t, i18n } = useTranslation()
+  const { hasPermission } = useAuthAccess()
   const token = getStoredToken()
   const numberLocale = 'en-US'
   const monthFormat = getMonthFormat(i18n.language)
@@ -808,17 +810,21 @@ export default function Clients() {
             label={t('clients.view')}
             onClick={() => setDetailId(c.id)}
           />
-          <IconActionButton
-            icon={<Pencil className="h-4 w-4" />}
-            label={t('clients.edit')}
-            onClick={() => openEdit(c)}
-          />
-          <IconActionButton
-            icon={<Trash2 className="h-4 w-4" />}
-            label={t('clients.delete')}
-            onClick={() => setDeleteId(c.id)}
-            variant="danger"
-          />
+          {hasPermission('clients', 'update') && (
+            <IconActionButton
+              icon={<Pencil className="h-4 w-4" />}
+              label={t('clients.edit')}
+              onClick={() => openEdit(c)}
+            />
+          )}
+          {hasPermission('clients', 'delete') && (
+            <IconActionButton
+              icon={<Trash2 className="h-4 w-4" />}
+              label={t('clients.delete')}
+              onClick={() => setDeleteId(c.id)}
+              variant="danger"
+            />
+          )}
         </div>
       ),
     },
@@ -1032,13 +1038,15 @@ export default function Clients() {
                 <FileSpreadsheet className="clients-filters__btn-icon-svg" aria-hidden />
               )}
             </button>
-            <button
-              type="button"
-              className="page-header__btn page-header__btn--primary"
-              onClick={() => setShowCreate(true)}
-            >
-              {t('clients.createClient')}
-            </button>
+            {hasPermission('clients', 'update') && (
+              <button
+                type="button"
+                className="page-header__btn page-header__btn--primary"
+                onClick={() => setShowCreate(true)}
+              >
+                {t('clients.createClient')}
+              </button>
+            )}
           </div>
         </div>
         <div
