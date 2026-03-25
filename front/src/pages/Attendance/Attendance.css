@@ -210,16 +210,77 @@
   margin-bottom: 24px;
 }
 
-.attendance-dashboard__grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 16px;
+.attendance-dashboard__location-block {
+  margin-top: 20px;
 }
 
-@media (min-width: 960px) {
-  .attendance-dashboard__grid {
-    grid-template-columns: 1fr 1fr;
-    align-items: stretch;
+/* Time + location merged card — responsive split & rhythm */
+.attendance-dashboard__time-location.attendance-dashboard__card {
+  padding: clamp(18px, 2.2vw, 28px);
+}
+
+.attendance-dashboard__time-location-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .attendance-dashboard__time-location-inner {
+    grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+    gap: 28px 36px;
+  }
+}
+
+.attendance-dashboard__time-location-primary {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.attendance-dashboard__time-location-primary > .attendance-dashboard__timeline--visual {
+  padding: 4px 2px 0;
+}
+
+.attendance-dashboard__time-location-primary .attendance-dashboard__shifts-section {
+  margin-top: 0;
+}
+
+.attendance-dashboard__time-location-primary .attendance-dashboard__pairs {
+  margin-top: 12px;
+}
+
+.attendance-dashboard__time-location-primary .attendance-dashboard__shift-duration-card {
+  margin-top: 14px;
+}
+
+.attendance-dashboard__time-location-maps {
+  min-width: 0;
+  position: relative;
+}
+
+.attendance-dashboard__time-location-maps .attendance-dashboard__location-block {
+  margin-top: 0;
+  padding: 18px 18px 20px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.42);
+  border: 1px solid rgba(0, 57, 197, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+[data-theme='dark'] .attendance-dashboard__time-location-maps .attendance-dashboard__location-block,
+.dark .attendance-dashboard__time-location-maps .attendance-dashboard__location-block {
+  background: rgba(15, 23, 42, 0.58);
+  border-color: rgba(148, 163, 184, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+@media (max-width: 1023px) {
+  .attendance-dashboard__time-location-inner {
+    gap: 20px;
   }
 }
 
@@ -292,225 +353,84 @@
   color: var(--form-text, #64748b);
 }
 
-/* Time card — live clock + meta */
-.attendance-dashboard__card--time .attendance-dashboard__now-block {
-  padding: 14px 16px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.55);
-  border: 1px solid rgba(0, 57, 197, 0.12);
-  margin-bottom: 14px;
+.attendance-dashboard__shift-timeline-track-wrap {
+  position: relative;
+  padding-top: 1.35rem;
 }
 
-[data-theme='dark'] .attendance-dashboard__card--time .attendance-dashboard__now-block,
-.dark .attendance-dashboard__card--time .attendance-dashboard__now-block {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(96, 165, 250, 0.2);
+.attendance-dashboard__shift-progress-pct {
+  font-size: 1.125rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: var(--form-primary, #0039c5);
+  line-height: 1.2;
 }
 
-.attendance-dashboard__now-label {
-  display: block;
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--form-text, #64748b);
-  margin-bottom: 6px;
+.attendance-dashboard__shift-progress-pct--on-track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  pointer-events: none;
 }
 
-.attendance-dashboard__meta-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.attendance-dashboard__meta-chip {
-  display: inline-flex;
-  align-items: center;
-  max-width: 100%;
-  padding: 6px 10px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  line-height: 1.35;
-  color: var(--form-text, #64748b);
-  background: rgba(0, 0, 0, 0.04);
-  border-radius: 9999px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-.attendance-dashboard__meta-chip--accent {
-  font-weight: 600;
-  color: var(--root-text, #334155);
-  background: rgba(0, 57, 197, 0.08);
-  border-color: rgba(0, 57, 197, 0.15);
-}
-
-[data-theme='dark'] .attendance-dashboard__meta-chip,
-.dark .attendance-dashboard__meta-chip {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.08);
-  color: #94a3b8;
-}
-
-[data-theme='dark'] .attendance-dashboard__meta-chip--accent,
-.dark .attendance-dashboard__meta-chip--accent {
-  color: #e2e8f0;
-  background: rgba(37, 99, 235, 0.15);
-  border-color: rgba(96, 165, 250, 0.25);
-}
-
-.attendance-dashboard__section-heading {
-  margin: 0 0 10px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--form-text, #64748b);
-}
-
-.attendance-dashboard__section-heading--timeline {
-  margin-bottom: 8px;
+[data-theme='dark'] .attendance-dashboard__shift-progress-pct,
+.dark .attendance-dashboard__shift-progress-pct {
+  color: #93c5fd;
 }
 
 .attendance-dashboard__shifts-section {
-  padding-top: 14px;
-  border-top: 1px solid var(--form-divider, #e5e7eb);
-  margin-top: 2px;
-}
-
-[data-theme='dark'] .attendance-dashboard__shifts-section,
-.dark .attendance-dashboard__shifts-section {
-  border-top-color: rgba(255, 255, 255, 0.1);
+  margin-top: 0;
 }
 
 .attendance-dashboard__shifts-section .attendance-dashboard__pairs {
   margin-top: 0;
 }
 
-.attendance-dashboard__now-clock {
-  display: block;
-  font-size: clamp(2rem, 5vw, 2.75rem);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.04em;
-  line-height: 1.1;
-  color: var(--root-text, #0f172a);
-}
-
-[data-theme='dark'] .attendance-dashboard__now-clock,
-.dark .attendance-dashboard__now-clock {
-  color: #f1f5f9;
-}
-
-.attendance-dashboard__tz-hint,
-.attendance-dashboard__schedule-hint {
-  margin: 8px 0 0;
-  font-size: 0.8125rem;
-  color: var(--form-text, #64748b);
-  line-height: 1.45;
-}
-
-.attendance-dashboard__pill {
-  margin-top: 0;
-  margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  width: 100%;
-  box-sizing: border-box;
-  padding: 10px 14px;
-  border-radius: 12px;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  line-height: 1.45;
-  text-align: start;
-  border-left: 4px solid transparent;
-}
-
-.attendance-dashboard__card--time .attendance-dashboard__pill {
-  border-radius: 12px;
-}
-
-[dir='rtl'] .attendance-dashboard__pill {
-  border-left: none;
-  border-right: 4px solid transparent;
-}
-
-.attendance-dashboard__pill--on_shift {
-  border-left-color: #22c55e;
-  background: rgba(34, 197, 94, 0.18);
-  color: #166534;
-}
-
-.attendance-dashboard__pill--not_in {
-  border-left-color: #eab308;
-  background: rgba(234, 179, 8, 0.2);
-  color: #a16207;
-}
-
-.attendance-dashboard__pill--done {
-  border-left-color: #3b82f6;
-  background: rgba(59, 130, 246, 0.18);
-  color: #1d4ed8;
-}
-
-[dir='rtl'] .attendance-dashboard__pill--on_shift {
-  border-right-color: #22c55e;
-}
-
-[dir='rtl'] .attendance-dashboard__pill--not_in {
-  border-right-color: #eab308;
-}
-
-[dir='rtl'] .attendance-dashboard__pill--done {
-  border-right-color: #3b82f6;
-}
-
-[data-theme='dark'] .attendance-dashboard__pill--on_shift,
-.dark .attendance-dashboard__pill--on_shift {
-  background: rgba(34, 197, 94, 0.25);
-  color: #86efac;
-}
-
-[data-theme='dark'] .attendance-dashboard__pill--not_in,
-.dark .attendance-dashboard__pill--not_in {
-  background: rgba(234, 179, 8, 0.22);
-  color: #fde047;
-}
-
-[data-theme='dark'] .attendance-dashboard__pill--done,
-.dark .attendance-dashboard__pill--done {
-  background: rgba(59, 130, 246, 0.25);
-  color: #93c5fd;
-}
-
 .attendance-dashboard__pairs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: stretch;
   gap: 12px;
   margin-top: 18px;
 }
 
-@media (max-width: 480px) {
-  .attendance-dashboard__pairs {
-    grid-template-columns: 1fr;
-  }
-}
-
 .attendance-dashboard__pair {
+  flex: 1 1 160px;
+  min-width: 0;
   padding: 12px 14px;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.65);
   border: 1px solid var(--form-divider, #e5e7eb);
 }
 
-.attendance-dashboard__pair-value-row {
+.attendance-dashboard__pair-head-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  gap: 6px 10px;
+}
+
+.attendance-dashboard__pair-head-row .attendance-dashboard__k {
+  margin-bottom: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.attendance-dashboard__pair-inline {
+  display: inline-flex;
+  align-items: center;
   gap: 8px;
-  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.attendance-dashboard__pair-inline .attendance-dashboard__v:empty {
+  display: none;
 }
 
 .attendance-dashboard__done-pill {
@@ -528,6 +448,19 @@
 .attendance-dashboard__done-pill--yes {
   background: rgba(34, 197, 94, 0.22);
   color: #15803d;
+}
+
+/* Invisible spacer when a third column is needed for alignment */
+.attendance-dashboard__done-pill--ghost {
+  visibility: hidden;
+  min-width: 3.25rem;
+  padding-left: 10px;
+  padding-right: 10px;
+  pointer-events: none;
+}
+
+.attendance-dashboard__pair--stat .attendance-dashboard__done-pill--ghost {
+  display: none;
 }
 
 [data-theme='dark'] .attendance-dashboard__done-pill,
@@ -594,19 +527,40 @@
   color: #e2e8f0;
 }
 
-.attendance-dashboard__timeline {
-  margin-top: 20px;
+.attendance-dashboard__timeline--visual {
+  margin-top: 0;
+  margin-bottom: 4px;
 }
 
-.attendance-dashboard__timeline-labels {
+.attendance-dashboard__shift-timeline {
   display: flex;
-  justify-content: space-between;
-  font-size: 0.65rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--form-text, #94a3b8);
-  margin-bottom: 6px;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px 12px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.attendance-dashboard__shift-timeline-edge {
+  flex-shrink: 0;
+  min-width: 2.75rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  color: var(--root-text, #0f172a);
+  padding-top: 2px;
+  text-align: center;
+}
+
+[data-theme='dark'] .attendance-dashboard__shift-timeline-edge,
+.dark .attendance-dashboard__shift-timeline-edge {
+  color: #f1f5f9;
+}
+
+.attendance-dashboard__shift-timeline-core {
+  flex: 1;
+  min-width: 0;
 }
 
 .attendance-dashboard__timeline-track {
@@ -615,6 +569,62 @@
   border-radius: 9999px;
   background: rgba(0, 0, 0, 0.08);
   overflow: visible;
+}
+
+.attendance-dashboard__timeline-track--shift {
+  height: 12px;
+}
+
+.attendance-dashboard__shift-timeline-below {
+  position: relative;
+  min-height: 3.35rem;
+  margin-top: 10px;
+}
+
+.attendance-dashboard__shift-timeline-now-card {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  max-width: min(220px, 90vw);
+  text-align: center;
+  pointer-events: none;
+}
+
+.attendance-dashboard__shift-timeline-arrow {
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--form-primary, #0039c5);
+}
+
+.attendance-dashboard__shift-timeline-now-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--form-text, #64748b);
+}
+
+.attendance-dashboard__shift-timeline-now-clock {
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: var(--root-text, #0f172a);
+}
+
+[data-theme='dark'] .attendance-dashboard__shift-timeline-now-clock,
+.dark .attendance-dashboard__shift-timeline-now-clock {
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .attendance-dashboard__shift-timeline-arrow,
+.dark .attendance-dashboard__shift-timeline-arrow {
+  color: #60a5fa;
 }
 
 [data-theme='dark'] .attendance-dashboard__timeline-track,
@@ -656,52 +666,301 @@
   border-color: #60a5fa;
 }
 
-.attendance-dashboard__timeline-caption {
-  margin: 8px 0 0;
-  font-size: 0.75rem;
-  color: var(--form-text, #64748b);
-  line-height: 1.4;
+.attendance-dashboard__pair--stat {
+  margin: 0;
 }
 
-.attendance-dashboard__stats {
-  list-style: none;
-  margin: 16px 0 0;
+.attendance-dashboard__pair--stat .attendance-dashboard__pair-head-row {
+  align-items: center;
+}
+
+.attendance-dashboard__pair-compare {
+  margin: 8px 0 0;
   padding: 0;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--form-text, #64748b);
+}
+
+.attendance-dashboard__pair-compare-delta {
+  font-weight: 600;
+  color: var(--form-text, #475569);
+}
+
+[data-theme='dark'] .attendance-dashboard__pair-compare,
+.dark .attendance-dashboard__pair-compare {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .attendance-dashboard__pair-compare-delta,
+.dark .attendance-dashboard__pair-compare-delta {
+  color: #cbd5e1;
+}
+
+/* Shift duration — circular progress card */
+.attendance-dashboard__shift-duration-card {
+  width: 100%;
+  margin-top: 18px;
+  padding: 16px 16px 18px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid var(--form-divider, #e5e7eb);
+  box-sizing: border-box;
+}
+
+[data-theme='dark'] .attendance-dashboard__shift-duration-card,
+.dark .attendance-dashboard__shift-duration-card {
+  background: rgba(15, 23, 42, 0.45);
+  border-color: rgba(148, 163, 184, 0.25);
+}
+
+.attendance-dashboard__shift-duration-card__title {
+  margin: 0 0 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--form-divider, #e5e7eb);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--form-text, #64748b);
+}
+
+[data-theme='dark'] .attendance-dashboard__shift-duration-card__title,
+.dark .attendance-dashboard__shift-duration-card__title {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+}
+
+.attendance-dashboard__shift-duration-card__body {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0 12px;
+}
+
+.attendance-dashboard__shift-duration-card__ring-wrap {
+  position: relative;
+  width: 168px;
+  height: 168px;
+  flex-shrink: 0;
+}
+
+.attendance-dashboard__shift-ring-svg {
+  display: block;
+  vertical-align: middle;
+}
+
+.attendance-dashboard__shift-ring-track {
+  stroke: rgba(148, 163, 184, 0.35);
+}
+
+.attendance-dashboard__shift-ring-progress {
+  transition: stroke-dashoffset 0.85s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.attendance-dashboard__shift-ring-progress--ok {
+  stroke: #22c55e;
+}
+
+.attendance-dashboard__shift-ring-progress--over {
+  stroke: #ef4444;
+}
+
+.attendance-dashboard__shift-ring-progress--warning {
+  stroke: #f59e0b;
+}
+
+.attendance-dashboard__shift-ring-progress--neutral {
+  stroke: #94a3b8;
+}
+
+[data-theme='dark'] .attendance-dashboard__shift-ring-track,
+.dark .attendance-dashboard__shift-ring-track {
+  stroke: rgba(148, 163, 184, 0.22);
+}
+
+.attendance-dashboard__shift-duration-card__center {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 12px;
+  text-align: center;
+  pointer-events: none;
 }
 
-.attendance-dashboard__stats li {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 12px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  background: rgba(0, 57, 197, 0.06);
-}
-
-[data-theme='dark'] .attendance-dashboard__stats li,
-.dark .attendance-dashboard__stats li {
-  background: rgba(96, 165, 250, 0.1);
-}
-
-.attendance-dashboard__stats-k {
-  font-size: 0.8125rem;
-  color: var(--form-text, #64748b);
-}
-
-.attendance-dashboard__stats-v {
-  font-size: 0.9375rem;
-  font-weight: 700;
+.attendance-dashboard__shift-duration-card__value {
+  font-size: 1.5rem;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
+  line-height: 1.15;
   color: var(--root-text, #0f172a);
 }
 
-[data-theme='dark'] .attendance-dashboard__stats-v,
-.dark .attendance-dashboard__stats-v {
-  color: #f8fafc;
+[data-theme='dark'] .attendance-dashboard__shift-duration-card__value,
+.dark .attendance-dashboard__shift-duration-card__value {
+  color: #f1f5f9;
+}
+
+.attendance-dashboard__shift-duration-card__actual-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--form-text, #64748b);
+}
+
+.attendance-dashboard__shift-duration-card__actual-label svg {
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.attendance-dashboard__shift-duration-card__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 4px;
+  border-top: 1px solid var(--form-divider, #e5e7eb);
+}
+
+[data-theme='dark'] .attendance-dashboard__shift-duration-card__footer,
+.dark .attendance-dashboard__shift-duration-card__footer {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+.attendance-dashboard__shift-duration-card__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 12px;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.attendance-dashboard__shift-duration-card__row-k {
+  font-weight: 600;
+  color: var(--form-text, #64748b);
+}
+
+.attendance-dashboard__shift-duration-card__row-v {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--root-text, #1e293b);
+}
+
+[data-theme='dark'] .attendance-dashboard__shift-duration-card__row-v,
+.dark .attendance-dashboard__shift-duration-card__row-v {
+  color: #e2e8f0;
+}
+
+.attendance-dashboard__shift-duration-card__row-v--diff.attendance-dashboard__shift-duration-card__row-v--ok {
+  color: #15803d;
+}
+
+.attendance-dashboard__shift-duration-card__row-v--diff.attendance-dashboard__shift-duration-card__row-v--over {
+  color: #dc2626;
+}
+
+.attendance-dashboard__shift-duration-card__row-v--diff.attendance-dashboard__shift-duration-card__row-v--warning {
+  color: #d97706;
+}
+
+.attendance-dashboard__shift-duration-card__row-v--diff.attendance-dashboard__shift-duration-card__row-v--neutral {
+  color: #64748b;
+}
+
+[data-theme='dark'] .attendance-dashboard__shift-duration-card__row-v--diff.attendance-dashboard__shift-duration-card__row-v--ok,
+.dark .attendance-dashboard__shift-duration-card__row-v--diff.attendance-dashboard__shift-duration-card__row-v--ok {
+  color: #86efac;
+}
+
+[data-theme='dark'] .attendance-dashboard__shift-duration-card__row-v--diff.attendance-dashboard__shift-duration-card__row-v--over,
+.dark .attendance-dashboard__shift-duration-card__row-v--diff.attendance-dashboard__shift-duration-card__row-v--over {
+  color: #fca5a5;
+}
+
+[data-theme='dark'] .attendance-dashboard__shift-duration-card__row-v--diff.attendance-dashboard__shift-duration-card__row-v--warning,
+.dark .attendance-dashboard__shift-duration-card__row-v--diff.attendance-dashboard__shift-duration-card__row-v--warning {
+  color: #fcd34d;
+}
+
+.attendance-dashboard__shift-duration-card__status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 4px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.attendance-dashboard__shift-duration-card__status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.attendance-dashboard__shift-duration-card__status--ok .attendance-dashboard__shift-duration-card__status-dot {
+  background: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25);
+}
+
+.attendance-dashboard__shift-duration-card__status--over .attendance-dashboard__shift-duration-card__status-dot {
+  background: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25);
+}
+
+.attendance-dashboard__shift-duration-card__status--warning .attendance-dashboard__shift-duration-card__status-dot {
+  background: #f59e0b;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3);
+}
+
+.attendance-dashboard__shift-duration-card__status--neutral .attendance-dashboard__shift-duration-card__status-dot {
+  background: #94a3b8;
+}
+
+.attendance-dashboard__shift-duration-card__status--ok {
+  color: #15803d;
+}
+
+.attendance-dashboard__shift-duration-card__status--over {
+  color: #dc2626;
+}
+
+.attendance-dashboard__shift-duration-card__status--warning {
+  color: #d97706;
+}
+
+.attendance-dashboard__shift-duration-card__status--neutral {
+  color: #64748b;
+}
+
+[data-theme='dark'] .attendance-dashboard__shift-duration-card__status--ok,
+.dark .attendance-dashboard__shift-duration-card__status--ok {
+  color: #86efac;
+}
+
+[data-theme='dark'] .attendance-dashboard__shift-duration-card__status--over,
+.dark .attendance-dashboard__shift-duration-card__status--over {
+  color: #fca5a5;
+}
+
+[data-theme='dark'] .attendance-dashboard__shift-duration-card__status--warning,
+.dark .attendance-dashboard__shift-duration-card__status--warning {
+  color: #fcd34d;
+}
+
+[data-theme='dark'] .attendance-dashboard__shift-duration-card__status--neutral,
+.dark .attendance-dashboard__shift-duration-card__status--neutral {
+  color: #94a3b8;
 }
 
 .attendance-dashboard__geo-cols {
@@ -799,26 +1058,68 @@
   color: #fdba74;
 }
 
-.attendance-dashboard__geo-muted {
-  font-size: 0.8125rem;
-  color: var(--form-text, #64748b);
+.attendance-dashboard__geo-error-alert {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(234, 179, 8, 0.45);
+  background: rgba(254, 243, 199, 0.45);
 }
 
-.attendance-dashboard__at-checkin {
-  margin: 10px 0 0;
-  padding-top: 10px;
-  border-top: 1px dashed var(--form-divider, #e5e7eb);
-  font-size: 0.8125rem;
-  color: var(--form-text, #64748b);
+[data-theme='dark'] .attendance-dashboard__geo-error-alert,
+.dark .attendance-dashboard__geo-error-alert {
+  background: rgba(234, 179, 8, 0.12);
+  border-color: rgba(250, 204, 21, 0.35);
 }
 
-.attendance-dashboard__schedule-geo-note {
-  margin: 12px 0 0;
-  padding-top: 10px;
-  border-top: 1px dashed var(--form-divider, #e5e7eb);
-  font-size: 0.75rem;
-  line-height: 1.45;
-  color: var(--form-text, #64748b);
+.attendance-dashboard__geo-error-alert__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.attendance-dashboard__geo-error-alert__icon {
+  flex-shrink: 0;
+  color: #d97706;
+  margin-top: 1px;
+}
+
+[data-theme='dark'] .attendance-dashboard__geo-error-alert__icon,
+.dark .attendance-dashboard__geo-error-alert__icon {
+  color: #fbbf24;
+}
+
+.attendance-dashboard__geo-error-alert__title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #92400e;
+}
+
+[data-theme='dark'] .attendance-dashboard__geo-error-alert__title,
+.dark .attendance-dashboard__geo-error-alert__title {
+  color: #fde68a;
+}
+
+.attendance-dashboard__geo-error-alert__hint {
+  margin: 0.6rem 0 0;
+  padding: 0;
+  padding-inline-start: 32px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.5;
+  color: #a16207;
+}
+
+[dir='rtl'] .attendance-dashboard__geo-error-alert__hint {
+  padding-inline-start: 0;
+  padding-inline-end: 32px;
+}
+
+[data-theme='dark'] .attendance-dashboard__geo-error-alert__hint,
+.dark .attendance-dashboard__geo-error-alert__hint {
+  color: #fcd34d;
 }
 
 .attendance-dashboard__schedule-block-alert {

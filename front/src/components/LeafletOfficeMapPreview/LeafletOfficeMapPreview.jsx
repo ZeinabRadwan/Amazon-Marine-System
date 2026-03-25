@@ -13,17 +13,34 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 })
 
+const USER_MARKER = {
+  radius: 8,
+  color: '#15803d',
+  fillColor: '#22c55e',
+  fillOpacity: 0.95,
+  weight: 2,
+}
+
 /**
  * Read-only map: office point + geofence circle; optional user position (green dot).
- * Same tiles/style pattern as Settings (LeafletCompanyLocationPicker).
+ * If office lat/lng are missing but user lat/lng are set, shows a user-only map (same tiles/style).
  */
-export default function LeafletOfficeMapPreview({ lat, lng, radiusMeters, userLat, userLng }) {
+export default function LeafletOfficeMapPreview({
+  lat,
+  lng,
+  radiusMeters,
+  userLat,
+  userLng,
+  ariaLabel: ariaLabelProp,
+}) {
   const { t } = useTranslation()
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const officeMarkerRef = useRef(null)
   const circleRef = useRef(null)
   const userMarkerRef = useRef(null)
+
+  const label = ariaLabelProp ?? t('attendance.locationPanel.officeMapAria')
 
   useEffect(() => {
     return () => {
@@ -39,10 +56,49 @@ export default function LeafletOfficeMapPreview({ lat, lng, radiusMeters, userLa
 
   useEffect(() => {
     if (!containerRef.current) return
+
     const olat = Number(lat)
     const olng = Number(lng)
-    if (!Number.isFinite(olat) || !Number.isFinite(olng)) return
+    const hasOffice = Number.isFinite(olat) && Number.isFinite(olng)
 
+    const ulat = userLat != null ? Number(userLat) : NaN
+    const ulng = userLng != null ? Number(userLng) : NaN
+    const userOk = Number.isFinite(ulat) && Number.isFinite(ulng)
+
+    if (!hasOffice && !userOk) return
+
+    /* User-only map (no office configured) */
+    if (!hasOffice && userOk) {
+      let map = mapRef.current
+      if (!map) {
+        map = L.map(containerRef.current, {
+          center: [ulat, ulng],
+          zoom: 16,
+          zoomControl: true,
+        })
+        mapRef.current = map
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '&copy; OpenStreetMap contributors',
+        }).addTo(map)
+
+        userMarkerRef.current = L.circleMarker([ulat, ulng], USER_MARKER).addTo(map)
+      } else {
+        if (!userMarkerRef.current) {
+          userMarkerRef.current = L.circleMarker([ulat, ulng], USER_MARKER).addTo(map)
+        } else {
+          userMarkerRef.current.setLatLng([ulat, ulng])
+        }
+        map.setView([ulat, ulng], Math.max(map.getZoom(), 15))
+      }
+
+      const id = requestAnimationFrame(() => {
+        mapRef.current?.invalidateSize()
+      })
+      return () => cancelAnimationFrame(id)
+    }
+
+    /* Office (+ optional user) map */
     const r = Number(radiusMeters)
     const radius = Number.isFinite(r) && r > 0 ? r : 250
 
@@ -78,19 +134,9 @@ export default function LeafletOfficeMapPreview({ lat, lng, radiusMeters, userLa
       }
     }
 
-    const ulat = userLat != null ? Number(userLat) : NaN
-    const ulng = userLng != null ? Number(userLng) : NaN
-    const userOk = Number.isFinite(ulat) && Number.isFinite(ulng)
-
     if (userOk) {
       if (!userMarkerRef.current) {
-        userMarkerRef.current = L.circleMarker([ulat, ulng], {
-          radius: 8,
-          color: '#15803d',
-          fillColor: '#22c55e',
-          fillOpacity: 0.95,
-          weight: 2,
-        }).addTo(map)
+        userMarkerRef.current = L.circleMarker([ulat, ulng], USER_MARKER).addTo(map)
       } else {
         userMarkerRef.current.setLatLng([ulat, ulng])
       }
@@ -117,7 +163,7 @@ export default function LeafletOfficeMapPreview({ lat, lng, radiusMeters, userLa
     <div
       ref={containerRef}
       className="leaflet-office-map-preview"
-      aria-label={t('attendance.locationPanel.officeMapAria')}
+      aria-label={label}
     />
   )
 }
