@@ -311,7 +311,7 @@ class AdminAttendanceController extends Controller
             'device_type' => null,
             'is_within_radius' => null,
             'distance_from_office_m' => null,
-            'status' => AttendanceRecord::STATUS_ABSENT,
+            'status' => null,
             'is_late' => false,
             'excuse' => $excuse ? [
                 'id' => $excuse->id,

@@ -48,7 +48,7 @@ class AttendanceListApiTest extends TestCase
         $this->assertNotNull($absentRow);
         $this->assertNull($absentRow['check_in_at']);
         $this->assertNull($absentRow['check_out_at']);
-        $this->assertSame(AttendanceRecord::STATUS_ABSENT, $absentRow['status']);
+        $this->assertNull($absentRow['status']);
     }
 
     public function test_date_range_does_not_fill_missing_users(): void

@@ -243,7 +243,7 @@ class AttendanceController extends Controller
             'check_in_at_local' => null,
             'check_out_at_local' => null,
             'is_late' => false,
-            'status' => AttendanceRecord::STATUS_ABSENT,
+            'status' => null,
             'worked_minutes' => null,
             'worked_hours' => null,
             'shift_open' => false,
