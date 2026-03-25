@@ -25,22 +25,36 @@ function permissionNamesFor(resource, action) {
 
 /**
  * Fine-grained UI gates aligned with backend `permissions` from AuthenticatedLayout.
- * @returns {{ hasPermission: (resource: string, action: string) => boolean }}
+ * Admins match policy-style bypass (e.g. pricing policies).
+ *
+ * @returns {{ hasPermission: (resource: string, action: string) => boolean, permissions: string[], user: object|undefined, isAdminRole: boolean }}
  */
 export function useAuthAccess() {
-  const { permissions = [] } = useOutletContext() || {}
+  const { user, permissions = [] } = useOutletContext() || {}
   const permSet = useMemo(
     () => new Set(Array.isArray(permissions) ? permissions.filter(Boolean) : []),
     [permissions]
   )
+  const perms = useMemo(
+    () => (Array.isArray(permissions) ? permissions.filter(Boolean) : []),
+    [permissions]
+  )
+
+  const isAdminRole = useMemo(() => {
+    const primary = (user?.primary_role ?? user?.roles?.[0] ?? '').toString().toLowerCase()
+    return primary === 'admin'
+  }, [user])
 
   const hasPermission = useCallback(
     (resource, action) => {
       if (!resource || !action) return false
-      return permissionNamesFor(String(resource), String(action)).some((n) => permSet.has(n))
+      const r = String(resource)
+      const names = permissionNamesFor(r, String(action))
+      if (isAdminRole && r === 'clients') return true
+      return names.some((n) => permSet.has(n))
     },
-    [permSet]
+    [permSet, isAdminRole]
   )
 
-  return { hasPermission }
+  return { hasPermission, permissions: perms, user, isAdminRole }
 }

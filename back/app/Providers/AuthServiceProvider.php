@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Models\Client;
 use App\Models\CommunicationLog;
 use App\Models\Note;
+use App\Models\PricingOffer;
+use App\Models\PricingQuote;
 use App\Models\SDForm;
 use App\Models\Shipment;
 use App\Models\ShipmentTrackingUpdate;
@@ -12,19 +14,19 @@ use App\Models\Ticket;
 use App\Models\TicketType;
 use App\Models\User;
 use App\Models\UserPermission;
-use App\Models\PricingQuote;
 use App\Policies\ClientPolicy;
-use Illuminate\Support\Facades\Gate;
 use App\Policies\CommunicationLogPolicy;
 use App\Policies\NotePolicy;
+use App\Policies\PricingOfferPolicy;
+use App\Policies\PricingQuotePolicy;
 use App\Policies\SDFormPolicy;
 use App\Policies\ShipmentPolicy;
 use App\Policies\ShipmentTrackingUpdatePolicy;
 use App\Policies\TicketPolicy;
 use App\Policies\TicketTypePolicy;
 use App\Policies\UserPolicy;
-use App\Policies\PricingQuotePolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
+use Illuminate\Support\Facades\Gate;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -43,6 +45,7 @@ class AuthServiceProvider extends ServiceProvider
         TicketType::class => TicketTypePolicy::class,
         CommunicationLog::class => CommunicationLogPolicy::class,
         Note::class => NotePolicy::class,
+        PricingOffer::class => PricingOfferPolicy::class,
         PricingQuote::class => PricingQuotePolicy::class,
     ];
 
@@ -61,6 +64,7 @@ class AuthServiceProvider extends ServiceProvider
             if ($override !== null) {
                 return $override->allowed;
             }
+
             return null;
         });
     }

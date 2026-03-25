@@ -21,49 +21,36 @@ class AdminAttendanceController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $q = $this->filteredQuery($request)->orderByDesc('date')->orderByDesc('check_in_at');
+        $viewer = $request->user();
         $perPage = min(200, max(1, (int) $request->query('per_page', 50)));
+
+        if ($this->shouldFillMissingAdminEmployees($request)) {
+            $date = (string) $request->query('date_from');
+            $items = $this->buildAdminItemsWithMissingEmployees($request, $viewer, $date);
+            $page = max(1, (int) $request->query('page', 1));
+            $total = $items->count();
+            $lastPage = max(1, (int) ceil($total / $perPage));
+            $slice = $items->forPage($page, $perPage)->values();
+
+            return ApiResponse::success([
+                'items' => $slice,
+                'meta' => [
+                    'current_page' => $page,
+                    'last_page' => $lastPage,
+                    'per_page' => $perPage,
+                    'total' => $total,
+                ],
+            ]);
+        }
+
+        $q = $this->filteredQuery($request)->orderByDesc('date')->orderByDesc('check_in_at');
         $paginator = $q->paginate($perPage);
 
-        $viewer = $request->user();
         $records = $paginator->getCollection();
         $excuseMap = $this->loadExcuseMapForRecords($records);
         $clockInLogMap = $this->attendanceService->acceptedClockInLogsByUserAndRecordDate($records);
 
-        $items = $records->map(function (AttendanceRecord $r) use ($viewer, $excuseMap, $clockInLogMap) {
-            $user = $r->user ?? $viewer;
-            $tz = $this->attendanceService->resolveTimezone($user);
-            $key = $r->user_id.'|'.$r->date->toDateString();
-            $excuse = $excuseMap[$key] ?? null;
-            $log = $clockInLogMap[$key] ?? null;
-            $geo = $this->attendanceService->clockInGeoMetaFromRecordAndLog($r, $log);
-
-            return [
-                'id' => $r->id,
-                'employee_id' => $r->user_id,
-                'employee_name' => $r->user?->name,
-                'department' => null,
-                'date' => $r->date->toDateString(),
-                'clock_in_at' => $r->check_in_at?->toIso8601String(),
-                'clock_out_at' => $r->check_out_at?->toIso8601String(),
-                'clock_in_at_local' => $r->check_in_at ? $r->check_in_at->copy()->timezone($tz)->toIso8601String() : null,
-                'clock_out_at_local' => $r->check_out_at ? $r->check_out_at->copy()->timezone($tz)->toIso8601String() : null,
-                'worked_hours' => $this->attendanceService->workedHoursForList($r),
-                'shift_open' => $this->attendanceService->shiftOpenForList($r),
-                'worked_minutes' => $r->worked_minutes,
-                'device_type' => $geo['device_type'],
-                'is_within_radius' => $geo['is_within_radius'],
-                'distance_from_office_m' => $geo['distance_from_office_m'],
-                'status' => $r->status,
-                'is_late' => (bool) $r->is_late,
-                'excuse' => $excuse ? [
-                    'id' => $excuse->id,
-                    'status' => $excuse->status,
-                    'reason' => $excuse->reason,
-                ] : null,
-                'timezone_used' => $tz,
-            ];
-        });
+        $items = $records->map(fn (AttendanceRecord $r) => $this->mapRecordToAdminItem($r, $viewer, $excuseMap, $clockInLogMap));
 
         return ApiResponse::success([
             'items' => $items,
@@ -183,5 +170,174 @@ class AdminAttendanceController extends Controller
         }
 
         return $map;
+    }
+
+    private function shouldFillMissingAdminEmployees(Request $request): bool
+    {
+        if (! $request->filled('date_from') || ! $request->filled('date_to')) {
+            return false;
+        }
+        if ((string) $request->query('date_from') !== (string) $request->query('date_to')) {
+            return false;
+        }
+        if ($request->filled('employee_id')) {
+            return false;
+        }
+        if ($request->filled('device_type')) {
+            return false;
+        }
+        if ($request->filled('is_within_radius')) {
+            return false;
+        }
+        if ($request->filled('status')) {
+            $status = (string) $request->query('status');
+            if ($status !== AttendanceRecord::STATUS_ABSENT) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function buildAdminItemsWithMissingEmployees(Request $request, User $viewer, string $date): Collection
+    {
+        $users = User::query()->where('status', 'active')->orderBy('name')->get();
+        $records = AttendanceRecord::query()
+            ->whereDate('date', $date)
+            ->with('user')
+            ->get()
+            ->keyBy('user_id');
+
+        $excuseMap = $this->loadExcuseMapForDate($date);
+        $clockInLogMap = $this->attendanceService->acceptedClockInLogsByUserAndRecordDate($records->values());
+
+        $rows = collect();
+        foreach ($users as $user) {
+            $r = $records->get($user->id);
+            if ($r) {
+                $rows->push($this->mapRecordToAdminItem($r, $viewer, $excuseMap, $clockInLogMap));
+            } else {
+                $rows->push($this->syntheticAdminItemForDate($user, $date, $viewer, $excuseMap));
+            }
+        }
+
+        return $rows
+            ->filter(fn (array $row) => $this->adminMergedItemMatchesFilters($row, $request))
+            ->sortBy(fn (array $row) => mb_strtolower((string) ($row['employee_name'] ?? '')))
+            ->values();
+    }
+
+    /**
+     * @return array<string, Excuse>
+     */
+    private function loadExcuseMapForDate(string $date): array
+    {
+        $map = [];
+        foreach (Excuse::query()->whereDate('date', $date)->get() as $excuse) {
+            $key = $excuse->user_id.'|'.$excuse->date->toDateString();
+            $map[$key] = $excuse;
+        }
+
+        return $map;
+    }
+
+    /**
+     * @param  array<string, Excuse>  $excuseMap
+     * @param  array<string, \App\Models\AttendanceLog>  $clockInLogMap
+     * @return array<string, mixed>
+     */
+    private function mapRecordToAdminItem(AttendanceRecord $r, User $viewer, array $excuseMap, array $clockInLogMap): array
+    {
+        $user = $r->user ?? $viewer;
+        $tz = $this->attendanceService->resolveTimezone($user);
+        $key = $r->user_id.'|'.$r->date->toDateString();
+        $excuse = $excuseMap[$key] ?? null;
+        $log = $clockInLogMap[$key] ?? null;
+        $geo = $this->attendanceService->clockInGeoMetaFromRecordAndLog($r, $log);
+
+        return [
+            'id' => $r->id,
+            'employee_id' => $r->user_id,
+            'employee_name' => $r->user?->name,
+            'department' => null,
+            'date' => $r->date->toDateString(),
+            'clock_in_at' => $r->check_in_at?->toIso8601String(),
+            'clock_out_at' => $r->check_out_at?->toIso8601String(),
+            'clock_in_at_local' => $r->check_in_at ? $r->check_in_at->copy()->timezone($tz)->toIso8601String() : null,
+            'clock_out_at_local' => $r->check_out_at ? $r->check_out_at->copy()->timezone($tz)->toIso8601String() : null,
+            'worked_hours' => $this->attendanceService->workedHoursForList($r),
+            'shift_open' => $this->attendanceService->shiftOpenForList($r),
+            'worked_minutes' => $r->worked_minutes,
+            'device_type' => $geo['device_type'],
+            'is_within_radius' => $geo['is_within_radius'],
+            'distance_from_office_m' => $geo['distance_from_office_m'],
+            'status' => $r->status,
+            'is_late' => (bool) $r->is_late,
+            'excuse' => $excuse ? [
+                'id' => $excuse->id,
+                'status' => $excuse->status,
+                'reason' => $excuse->reason,
+            ] : null,
+            'timezone_used' => $tz,
+        ];
+    }
+
+    /**
+     * @param  array<string, Excuse>  $excuseMap
+     * @return array<string, mixed>
+     */
+    private function syntheticAdminItemForDate(User $employee, string $date, User $viewer, array $excuseMap): array
+    {
+        $tz = $this->attendanceService->resolveTimezone($employee);
+        $key = $employee->id.'|'.$date;
+        $excuse = $excuseMap[$key] ?? null;
+
+        return [
+            'id' => 'absent-'.$employee->id.'-'.$date,
+            'employee_id' => $employee->id,
+            'employee_name' => $employee->name,
+            'department' => null,
+            'date' => $date,
+            'clock_in_at' => null,
+            'clock_out_at' => null,
+            'clock_in_at_local' => null,
+            'clock_out_at_local' => null,
+            'worked_hours' => null,
+            'shift_open' => false,
+            'worked_minutes' => null,
+            'device_type' => null,
+            'is_within_radius' => null,
+            'distance_from_office_m' => null,
+            'status' => null,
+            'is_late' => false,
+            'excuse' => $excuse ? [
+                'id' => $excuse->id,
+                'status' => $excuse->status,
+                'reason' => $excuse->reason,
+            ] : null,
+            'timezone_used' => $tz,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     */
+    private function adminMergedItemMatchesFilters(array $row, Request $request): bool
+    {
+        if (! $request->filled('status')) {
+            return true;
+        }
+        $status = (string) $request->query('status');
+        if ($status === AttendanceRecord::STATUS_ABSENT) {
+            return $row['clock_in_at'] === null;
+        }
+        if ($status === AttendanceRecord::STATUS_EXCUSED) {
+            return ($row['status'] ?? null) === AttendanceRecord::STATUS_EXCUSED;
+        }
+
+        return ($row['status'] ?? null) === $status;
     }
 }
