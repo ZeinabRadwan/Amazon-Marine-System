@@ -81,9 +81,10 @@ class InvoiceController extends Controller
             $query->orderByDesc('issue_date');
         }
 
-        $invoices = $query->get();
+        $perPage = $request->integer('per_page', 20);
+        $paginator = $query->paginate($perPage);
 
-        $rows = $invoices->map(static function (Invoice $invoice): array {
+        $rows = $paginator->getCollection()->map(static function (Invoice $invoice): array {
             $partyName = $invoice->client?->name ?? '';
 
             return [
@@ -104,6 +105,12 @@ class InvoiceController extends Controller
 
         return response()->json([
             'data' => $rows,
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+            ],
         ]);
     }
 
