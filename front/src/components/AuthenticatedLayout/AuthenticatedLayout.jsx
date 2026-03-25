@@ -34,6 +34,8 @@ function getPageHeaderForPath(pathname, t) {
       return { title: t('sdForms.title'), breadcrumbs: [home, { label: t('sdForms.title') }] }
     case '/shipments':
       return { title: t('shipments.title'), breadcrumbs: [home, { label: t('shipments.title') }] }
+    case '/pricing':
+      return { title: t('pricing.title', 'Pricing'), breadcrumbs: [home, { label: t('pricing.title', 'Pricing') }] }
     case '/notifications':
       return { title: t('notifications.title'), breadcrumbs: [home, { label: t('notifications.title') }] }
     case '/customer-services':
@@ -153,6 +155,10 @@ export default function AuthenticatedLayout() {
       navigate('/shipments')
       return
     }
+    if (id === 'pricing') {
+      navigate('/pricing')
+      return
+    }
     if (id === 'notifications') {
       navigate('/notifications')
       return
@@ -181,6 +187,7 @@ export default function AuthenticatedLayout() {
     '/attendance': 'attendance',
     '/sd-forms': 'sdForms',
     '/shipments': 'shipments',
+    '/pricing': 'pricing',
     '/notifications': 'notifications',
     '/settings': 'settings',
   }
