@@ -15,7 +15,8 @@ class PricingOfferController extends Controller
     {
         $this->authorize('viewAny', PricingOffer::class);
 
-        $query = PricingOffer::query();
+        $query = PricingOffer::query()
+            ->with(['items', 'sailingDates']);
 
         if ($type = $request->query('pricing_type')) {
             $query->where('pricing_type', $type);
@@ -71,22 +72,9 @@ class PricingOfferController extends Controller
         $perPage = $request->integer('per_page', 20);
         $paginator = $query->paginate($perPage);
 
-        $rows = $paginator->getCollection()->map(function (PricingOffer $offer): array {
-            return [
-                'id' => $offer->id,
-                'pricing_type' => $offer->pricing_type,
-                'region' => $offer->region,
-                'pod' => $offer->pod,
-                'shipping_line' => $offer->shipping_line,
-                'pol' => $offer->pol,
-                'dnd' => $offer->dnd,
-                'transit_time' => $offer->transit_time,
-                'inland_port' => $offer->inland_port,
-                'destination' => $offer->destination,
-                'valid_to' => $offer->valid_to?->toDateString(),
-                'status' => $offer->status,
-            ];
-        })->values();
+        $rows = $paginator->getCollection()
+            ->map(fn (PricingOffer $offer): array => $this->transformOffer($offer))
+            ->values();
 
         return response()->json([
             'data' => $rows,

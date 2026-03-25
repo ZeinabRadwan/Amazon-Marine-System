@@ -59,6 +59,8 @@ return [
         'pricing' => [
             'pricing.view_offers',
             'pricing.manage_offers',
+            'pricing.view_quotes',
+            'pricing.manage_quotes',
             'pricing.view_client_pricing',
             'pricing.manage_client_pricing',
         ],

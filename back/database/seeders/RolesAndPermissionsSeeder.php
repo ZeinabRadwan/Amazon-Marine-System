@@ -107,6 +107,8 @@ class RolesAndPermissionsSeeder extends Seeder
             $pricing->syncPermissions([
                 $permissions['pricing.view_offers'],
                 $permissions['pricing.manage_offers'],
+                $permissions['pricing.view_quotes'],
+                $permissions['pricing.manage_quotes'],
                 $permissions['pricing.view_client_pricing'],
                 $permissions['pricing.manage_client_pricing'],
                 $permissions['clients.view'],
