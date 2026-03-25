@@ -46,12 +46,16 @@ class ExcuseController extends Controller
     }
 
     /**
-     * Stream the excuse attachment for the owning user only.
+     * Stream the excuse attachment for the submitter, or for attendance admins / excuse reviewers.
      */
     public function attachment(Request $request, Excuse $excuse)
     {
-        if ($excuse->user_id !== $request->user()->id) {
-            abort(403);
+        $user = $request->user();
+        $isOwner = (int) $excuse->user_id === (int) $user->id;
+        $canReview = $user->can('attendance.excuses.manage') || $user->can('attendance.admin');
+
+        if (! $isOwner && ! $canReview) {
+            abort(403, __('You do not have permission to view this attachment.'));
         }
 
         if ($excuse->attachment_path === null || $excuse->attachment_path === '') {
