@@ -22,7 +22,7 @@ class CommunicationLogTypesSeeder extends Seeder
         ];
 
         foreach ($types as $data) {
-            CommunicationLogType::firstOrCreate(
+            CommunicationLogType::updateOrCreate(
                 ['name' => $data['name']],
                 $data
             );
