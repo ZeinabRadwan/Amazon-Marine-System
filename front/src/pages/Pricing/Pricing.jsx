@@ -13,13 +13,14 @@ export default function Pricing() {
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState('rates')
   const [modalConfig, setModalConfig] = useState({ isOpen: false, offer: null })
+  const [quoteCreateSignal, setQuoteCreateSignal] = useState(0)
   const [refreshKey, setRefreshKey] = useState(0)
 
   const handleAddClick = () => {
     if (activeTab === 'rates') {
       setModalConfig({ isOpen: true, offer: null })
     } else {
-      // Create Quote logic
+      setQuoteCreateSignal((n) => n + 1)
     }
   }
 
@@ -68,7 +69,11 @@ export default function Pricing() {
             onEdit={(offer) => setModalConfig({ isOpen: true, offer })} 
           />
         ) : (
-          <QuotationTable />
+          <QuotationTable
+            refreshKey={refreshKey}
+            openCreateSignal={quoteCreateSignal}
+            onCreateClosed={() => {}}
+          />
         )}
       </main>
 

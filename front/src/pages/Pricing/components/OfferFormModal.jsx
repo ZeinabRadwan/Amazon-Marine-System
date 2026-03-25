@@ -1,12 +1,32 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X, Save, FileText, Ship, Truck } from 'lucide-react'
+import { X, Save, Plus, Trash2, Ship, Truck } from 'lucide-react'
 import { useMutateOffer } from '../../../hooks/usePricing'
 
 // A single reusable modal for both Create and Edit, switching between Sea/Inland form fields.
 export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit }) {
   const { t } = useTranslation()
   const { create, update, loading, error } = useMutateOffer()
+
+  const SEA_PRICE_KEYS = [
+    { key: 'of20', label: "OF 20'DC", defaultCurrency: 'USD' },
+    { key: 'of40', label: "OF 40'HQ", defaultCurrency: 'USD' },
+    { key: 'thc20', label: "THC 20'DC", defaultCurrency: 'USD' },
+    { key: 'thc40', label: "THC 40'HQ", defaultCurrency: 'USD' },
+    { key: 'of40rf', label: "OF 40'RF (Reefer)", defaultCurrency: 'USD' },
+    { key: 'thcRf', label: "THC 40'RF", defaultCurrency: 'USD' },
+    { key: 'powerDay', label: 'Power/day (Reefer)', defaultCurrency: 'USD' },
+    { key: 'pti', label: 'PTI (Reefer)', defaultCurrency: 'USD' },
+  ]
+
+  const INLAND_PRICE_KEYS = [
+    { key: 't20d', label: "20' Dry", defaultCurrency: 'EGP' },
+    { key: 't40d', label: "40' Dry", defaultCurrency: 'EGP' },
+    { key: 't40hq', label: "40' HQ", defaultCurrency: 'EGP' },
+    { key: 't20r', label: "20' Reefer", defaultCurrency: 'EGP' },
+    { key: 't40r', label: "40' Reefer", defaultCurrency: 'EGP' },
+    { key: 'generator', label: 'Generator', defaultCurrency: 'EGP' },
+  ]
   
   const [formData, setFormData] = useState({
     pricing_type: 'sea',
@@ -72,13 +92,37 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
     }))
   }
 
+  const addSailingDate = () => {
+    setFormData(p => ({ ...p, sailing_dates: [...(p.sailing_dates || []), ''] }))
+  }
+
+  const updateSailingDate = (idx, value) => {
+    setFormData(p => {
+      const next = [...(p.sailing_dates || [])]
+      next[idx] = value
+      return { ...p, sailing_dates: next }
+    })
+  }
+
+  const removeSailingDate = (idx) => {
+    setFormData(p => {
+      const next = [...(p.sailing_dates || [])]
+      next.splice(idx, 1)
+      return { ...p, sailing_dates: next }
+    })
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
+      const cleaned = {
+        ...formData,
+        sailing_dates: (formData.sailing_dates || []).filter(Boolean),
+      }
       if (offerToEdit?.id) {
-        await update(offerToEdit.id, formData)
+        await update(offerToEdit.id, cleaned)
       } else {
-        await create(formData)
+        await create(cleaned)
       }
       onSuccess?.()
       onClose()
@@ -90,6 +134,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
   if (!isOpen) return null
 
   const isSea = formData.pricing_type === 'sea'
+  const priceKeys = isSea ? SEA_PRICE_KEYS : INLAND_PRICE_KEYS
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -157,28 +202,87 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                   </div>
                   <div className="space-y-1">
                     <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Shipping Line</label>
-                    <input type="text" name="shipping_line" value={formData.shipping_line} onChange={handleChange} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 rounded-xl" />
+                    <input required type="text" name="shipping_line" value={formData.shipping_line} onChange={handleChange} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 rounded-xl" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-bold text-gray-700 dark:text-gray-300">POL</label>
+                    <input required type="text" name="pol" value={formData.pol} onChange={handleChange} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 rounded-xl" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Transit Time</label>
                     <input type="text" name="transit_time" placeholder="e.g. 5 days" value={formData.transit_time} onChange={handleChange} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 rounded-xl" />
                   </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-bold text-gray-700 dark:text-gray-300">D&D / Free Days</label>
+                    <input type="text" name="dnd" value={formData.dnd} onChange={handleChange} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 rounded-xl" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1 col-span-2">
+                    <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Other Charges</label>
+                    <input type="text" name="other_charges" value={formData.other_charges} onChange={handleChange} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 rounded-xl" />
+                  </div>
                 </div>
 
                 <div className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl space-y-4">
-                  <h4 className="font-bold text-sm text-gray-800 dark:text-gray-200 uppercase tracking-widest">Pricing</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold w-12 shrink-0">OF 20'</span>
-                      <input type="number" placeholder="Price" value={formData.pricing?.of20?.price || ''} onChange={e => handlePriceChange('of20', 'price', Number(e.target.value))} className="w-full px-3 py-1.5 border rounded-lg text-sm" />
-                      <input type="text" placeholder="USD" value={formData.pricing?.of20?.currency || 'USD'} onChange={e => handlePriceChange('of20', 'currency', e.target.value)} className="w-16 px-3 py-1.5 border rounded-lg text-sm" />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold w-12 shrink-0">OF 40'</span>
-                      <input type="number" placeholder="Price" value={formData.pricing?.of40?.price || ''} onChange={e => handlePriceChange('of40', 'price', Number(e.target.value))} className="w-full px-3 py-1.5 border rounded-lg text-sm" />
-                       <input type="text" placeholder="USD" value={formData.pricing?.of40?.currency || 'USD'} onChange={e => handlePriceChange('of40', 'currency', e.target.value)} className="w-16 px-3 py-1.5 border rounded-lg text-sm" />
-                    </div>
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-sm text-gray-800 dark:text-gray-200 uppercase tracking-widest">Pricing</h4>
                   </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {priceKeys.map((row) => (
+                      <div key={row.key} className="flex items-center gap-2">
+                        <span className="text-xs font-bold w-32 shrink-0">{row.label}</span>
+                        <input
+                          type="number"
+                          placeholder="Price"
+                          value={formData.pricing?.[row.key]?.price ?? ''}
+                          onChange={(e) => handlePriceChange(row.key, 'price', e.target.value === '' ? '' : Number(e.target.value))}
+                          className="w-full px-3 py-1.5 border rounded-lg text-sm"
+                        />
+                        <select
+                          value={formData.pricing?.[row.key]?.currency || row.defaultCurrency}
+                          onChange={(e) => handlePriceChange(row.key, 'currency', e.target.value)}
+                          className="w-20 px-2 py-1.5 border rounded-lg text-sm"
+                        >
+                          <option value="USD">USD</option>
+                          <option value="EUR">EUR</option>
+                          <option value="EGP">EGP</option>
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-sm text-gray-800 dark:text-gray-200 uppercase tracking-widest">
+                      {t('pricing.sailingDates', 'Sailing Dates')}
+                    </h4>
+                    <button type="button" onClick={addSailingDate} className="inline-flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                      <Plus className="h-4 w-4" /> {t('common.add', 'Add')}
+                    </button>
+                  </div>
+
+                  {(formData.sailing_dates || []).length === 0 ? (
+                    <div className="text-sm text-gray-500">{t('pricing.noSailingDates', 'No sailing dates added')}</div>
+                  ) : (
+                    <div className="space-y-2">
+                      {(formData.sailing_dates || []).map((d, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <input
+                            type="date"
+                            value={d || ''}
+                            onChange={(e) => updateSailingDate(idx, e.target.value)}
+                            className="flex-1 px-3 py-2 border rounded-lg text-sm bg-white dark:bg-gray-900"
+                          />
+                          <button type="button" onClick={() => removeSailingDate(idx)} className="p-2 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <Trash2 className="h-4 w-4 text-gray-500" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </>
             ) : (
@@ -196,21 +300,36 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                     <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Destination</label>
                     <input required type="text" name="destination" value={formData.destination} onChange={handleChange} className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl" />
                   </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Inland City</label>
+                    <input type="text" name="inland_city" value={formData.inland_city} onChange={handleChange} className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl" />
+                  </div>
                 </div>
 
                 <div className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl space-y-4">
                   <h4 className="font-bold text-sm text-gray-800 dark:text-gray-200 uppercase tracking-widest">Pricing</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold w-16 shrink-0">20' Dry</span>
-                      <input type="number" placeholder="Price" value={formData.pricing?.t20d?.price || ''} onChange={e => handlePriceChange('t20d', 'price', Number(e.target.value))} className="w-full px-3 py-1.5 border rounded-lg text-sm" />
-                      <input type="text" placeholder="EGP" value={formData.pricing?.t20d?.currency || 'EGP'} onChange={e => handlePriceChange('t20d', 'currency', e.target.value)} className="w-16 px-3 py-1.5 border rounded-lg text-sm" />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold w-16 shrink-0">40' HQ/Dry</span>
-                      <input type="number" placeholder="Price" value={formData.pricing?.t40d?.price || ''} onChange={e => handlePriceChange('t40d', 'price', Number(e.target.value))} className="w-full px-3 py-1.5 border rounded-lg text-sm" />
-                       <input type="text" placeholder="EGP" value={formData.pricing?.t40d?.currency || 'EGP'} onChange={e => handlePriceChange('t40d', 'currency', e.target.value)} className="w-16 px-3 py-1.5 border rounded-lg text-sm" />
-                    </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {priceKeys.map((row) => (
+                      <div key={row.key} className="flex items-center gap-2">
+                        <span className="text-xs font-bold w-32 shrink-0">{row.label}</span>
+                        <input
+                          type="number"
+                          placeholder="Price"
+                          value={formData.pricing?.[row.key]?.price ?? ''}
+                          onChange={(e) => handlePriceChange(row.key, 'price', e.target.value === '' ? '' : Number(e.target.value))}
+                          className="w-full px-3 py-1.5 border rounded-lg text-sm"
+                        />
+                        <select
+                          value={formData.pricing?.[row.key]?.currency || row.defaultCurrency}
+                          onChange={(e) => handlePriceChange(row.key, 'currency', e.target.value)}
+                          className="w-20 px-2 py-1.5 border rounded-lg text-sm"
+                        >
+                          <option value="USD">USD</option>
+                          <option value="EUR">EUR</option>
+                          <option value="EGP">EGP</option>
+                        </select>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </>

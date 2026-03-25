@@ -1,18 +1,63 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Search, Filter, Eye, MoreHorizontal, Download, CheckCircle2, Clock, XCircle } from 'lucide-react'
 import Table from '../../../components/Table/Table'
 import { DropdownMenu } from '../../../components/DropdownMenu'
+import { useQuotes, useMutateQuote } from '../../../hooks/usePricing'
+import CreateQuoteModal from './CreateQuoteModal'
+import QuoteDetailModal from './QuoteDetailModal'
 
-const QUOTATIONS_DEMO = [
-  { id: 'Q-2026-0048', client: 'Mansour & Co', route: 'Alexandria → Jeddah', type: '2×40\'HC', price: '$5,450', status: 'Accepted', sales: 'Ahmed Khairy', date: '18/02' },
-  { id: 'Q-2026-0047', client: 'Taha Textiles', route: 'Sokhna → Hamburg', type: '1×40\'HC', price: '$10,200', status: 'Pending', sales: 'Zeinab Radwan', date: '17/02' },
-  { id: 'Q-2026-0046', client: 'Arab Shipping', route: 'Port Said → Marseille', type: '1×20\'DC', price: '$3,200', status: 'Rejected', sales: 'Mohamed Said', date: '15/02' },
-]
-
-export default function QuotationTable() {
+export default function QuotationTable({ refreshKey, openCreateSignal, onCreateClosed }) {
   const { t } = useTranslation()
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const [createOpen, setCreateOpen] = useState(false)
+  const [detail, setDetail] = useState(null)
+  const { accept, reject, get, loading: mutateLoading } = useMutateQuote()
+
+  const { data: quotes, meta, loading, error, refetch } = useQuotes({
+    q: search || undefined,
+    page,
+    per_page: 12,
+  })
+
+  useEffect(() => {
+    if (refreshKey > 0) refetch()
+  }, [refreshKey])
+
+  useEffect(() => {
+    if (openCreateSignal > 0) {
+      setCreateOpen(true)
+      onCreateClosed?.()
+    }
+  }, [openCreateSignal])
+
+  const handleView = async (row) => {
+    try {
+      const res = await get(row.id)
+      setDetail(res.data)
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const handleAccept = async (row) => {
+    try {
+      await accept(row.id)
+      refetch()
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const handleReject = async (row) => {
+    try {
+      await reject(row.id)
+      refetch()
+    } catch (e) {
+      console.error(e)
+    }
+  }
 
   const getStatusBadge = (status) => {
     switch (status.toLowerCase()) {
@@ -28,14 +73,14 @@ export default function QuotationTable() {
   }
 
   const columns = [
-    { key: 'id', label: t('pricing.quoteId', 'ID'), render: (val) => <span className="font-bold text-blue-600 dark:text-blue-400">{val}</span> },
-    { key: 'client', label: t('pricing.client', 'Client'), render: (val) => <span className="font-semibold">{val}</span> },
-    { key: 'route', label: t('pricing.route', 'Route') },
-    { key: 'type', label: t('pricing.containerType', 'Container') },
-    { key: 'price', label: t('pricing.price', 'Price'), render: (val) => <span className="font-bold text-gray-900 dark:text-white">{val}</span> },
+    { key: 'quote_no', label: t('pricing.quoteId', 'ID'), render: (val) => <span className="font-bold text-blue-600 dark:text-blue-400">{val}</span> },
+    { key: 'client', label: t('pricing.client', 'Client'), render: (val) => <span className="font-semibold">{val?.name || '—'}</span> },
+    { key: 'route', label: t('pricing.route', 'Route'), render: (_, row) => <span>{row.pol ? `${row.pol} → ${row.pod || ''}` : row.pod || '—'}</span> },
+    { key: 'container_type', label: t('pricing.containerType', 'Container'), render: (val) => val || '—' },
+    { key: 'price', label: t('pricing.price', 'Price'), render: (_, row) => <span className="font-bold text-gray-900 dark:text-white">$ {(row.total_amount ?? 0).toLocaleString('en-US')}</span> },
     { key: 'status', label: t('pricing.status', 'Status'), render: (val) => getStatusBadge(val) },
-    { key: 'sales', label: t('pricing.sales', 'Sales'), hideOnMobile: true },
-    { key: 'date', label: t('pricing.date', 'Date'), hideOnMobile: true },
+    { key: 'sales', label: t('pricing.sales', 'Sales'), hideOnMobile: true, render: (_, row) => row.sales_user?.name || '—' },
+    { key: 'date', label: t('pricing.date', 'Date'), hideOnMobile: true, render: (_, row) => (row.created_at ? new Date(row.created_at).toLocaleDateString() : '—') },
     {
       key: 'actions',
       label: '',
@@ -49,7 +94,9 @@ export default function QuotationTable() {
               </button>
             }
             items={[
-              { label: t('common.view', 'View Details'), icon: <Eye className="h-4 w-4" />, onClick: () => console.log('View', row.id) },
+              { label: t('common.view', 'View Details'), icon: <Eye className="h-4 w-4" />, onClick: () => handleView(row) },
+              { label: t('pricing.accept', 'Accept'), onClick: () => handleAccept(row) },
+              { label: t('pricing.reject', 'Reject'), onClick: () => handleReject(row) },
               { label: t('common.download', 'Download PDF'), icon: <Download className="h-4 w-4" />, onClick: () => console.log('Download', row.id) },
             ]}
           />
@@ -58,10 +105,7 @@ export default function QuotationTable() {
     },
   ]
 
-  const filteredData = QUOTATIONS_DEMO.filter(q => 
-    q.client.toLowerCase().includes(search.toLowerCase()) || 
-    q.id.toLowerCase().includes(search.toLowerCase())
-  )
+  const tableData = useMemo(() => quotes || [], [quotes])
 
   return (
     <div className="quotation-table space-y-4">
@@ -85,8 +129,29 @@ export default function QuotationTable() {
       </div>
 
       <div className="glass-panel rounded-2xl overflow-hidden shadow-sm">
-        <Table columns={columns} data={filteredData} getRowKey={(r) => r.id} />
+        {error ? (
+          <div className="p-6 text-sm text-red-700">{error}</div>
+        ) : (
+          <Table
+            columns={columns}
+            data={tableData}
+            getRowKey={(r) => r.id}
+            emptyMessage={loading ? t('common.loading', 'Loading...') : undefined}
+          />
+        )}
       </div>
+
+      <CreateQuoteModal
+        isOpen={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onSuccess={() => refetch()}
+      />
+
+      <QuoteDetailModal
+        isOpen={!!detail}
+        quote={detail}
+        onClose={() => setDetail(null)}
+      />
     </div>
   )
 }

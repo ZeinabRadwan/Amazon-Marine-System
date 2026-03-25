@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             CustomerServiceSeeder::class,
             TicketStatusesSeeder::class,
             ShipmentStatusesSeeder::class,
+            PricingSeeder::class,
         ]);
     }
 }

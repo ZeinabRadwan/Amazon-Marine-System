@@ -16,6 +16,11 @@ return new class extends Migration
             return;
         }
 
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            return;
+        }
+
+        $foreignKey = null;
         $foreignKey = DB::selectOne(
             'SELECT CONSTRAINT_NAME as constraint_name
             FROM information_schema.KEY_COLUMN_USAGE

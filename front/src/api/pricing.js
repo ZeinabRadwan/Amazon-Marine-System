@@ -92,3 +92,68 @@ export async function archiveOffer(token, id) {
   if (!res.ok) throw new Error(data.message || data.error || `Failed to archive offer (${res.status})`)
   return data
 }
+
+export async function listQuotes(token, params = {}) {
+  const searchParams = new URLSearchParams()
+  if (params.status) searchParams.set('status', params.status)
+  if (params.client_id) searchParams.set('client_id', String(params.client_id))
+  if (params.q) searchParams.set('q', params.q)
+  if (params.per_page) searchParams.set('per_page', String(params.per_page))
+  if (params.page) searchParams.set('page', String(params.page))
+
+  const query = searchParams.toString()
+  const url = `${getBaseUrl()}/pricing/quotes${query ? `?${query}` : ''}`
+
+  const res = await fetch(url, { headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to list quotes (${res.status})`)
+  return data
+}
+
+export async function getQuote(token, id) {
+  const url = `${getBaseUrl()}/pricing/quotes/${id}`
+  const res = await fetch(url, { headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to get quote (${res.status})`)
+  return data
+}
+
+export async function createQuote(token, payload) {
+  const url = `${getBaseUrl()}/pricing/quotes`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(payload),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to create quote (${res.status})`)
+  return data
+}
+
+export async function updateQuote(token, id, payload) {
+  const url = `${getBaseUrl()}/pricing/quotes/${id}`
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: authHeaders(token),
+    body: JSON.stringify(payload),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to update quote (${res.status})`)
+  return data
+}
+
+export async function acceptQuote(token, id) {
+  const url = `${getBaseUrl()}/pricing/quotes/${id}/accept`
+  const res = await fetch(url, { method: 'POST', headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to accept quote (${res.status})`)
+  return data
+}
+
+export async function rejectQuote(token, id) {
+  const url = `${getBaseUrl()}/pricing/quotes/${id}/reject`
+  const res = await fetch(url, { method: 'POST', headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to reject quote (${res.status})`)
+  return data
+}

@@ -4,12 +4,19 @@ namespace Tests\Feature;
 
 use App\Models\PricingOffer;
 use App\Models\User;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class PricingOfferApiTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->seed(RolesAndPermissionsSeeder::class);
+    }
 
     protected function actingAsPricingUser(): User
     {
@@ -50,7 +57,7 @@ class PricingOfferApiTest extends TestCase
 
         $response->assertCreated()
             ->assertJsonPath('data.region', 'البحر الأحمر')
-            ->assertJsonPath('data.pricing.of20.price', 70.0);
+            ->assertJsonPath('data.pricing.of20.price', 70);
 
         $offerId = $response->json('data.id');
         $this->assertNotNull($offerId);
@@ -74,9 +81,16 @@ class PricingOfferApiTest extends TestCase
             'shipping_line' => 'MSC',
             'status' => 'active',
         ]);
+        $this->assertDatabaseCount('pricing_offers', 1);
+
+        $query = http_build_query([
+            'pricing_type' => 'sea',
+            'region' => 'البحر الأحمر',
+            'pod' => 'جدة',
+        ], '', '&', PHP_QUERY_RFC3986);
 
         $response = $this->actingAs($user, 'sanctum')
-            ->getJson('/api/v1/pricing/offers?pricing_type=sea&region=البحر الأحمر&pod=جدة');
+            ->getJson('/api/v1/pricing/offers?'.$query);
 
         $response->assertOk()
             ->assertJsonPath('data.0.pod', 'جدة');
