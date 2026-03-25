@@ -22,7 +22,7 @@ class CheckPagePermission
         $user = $request->user();
 
         if ($user === null || ! $this->pagePermissionService->can($user, $page, $action)) {
-            abort(403, 'You do not have permission to perform this action.');
+            abort(403, __('You do not have permission to perform this action.'));
         }
 
         return $next($request);

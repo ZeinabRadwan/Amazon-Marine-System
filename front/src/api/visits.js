@@ -10,6 +10,7 @@
  */
 
 import { getApiBaseUrl } from './apiBaseUrl'
+import { apiFetch } from './http'
 
 const getBaseUrl = getApiBaseUrl
 
@@ -52,7 +53,7 @@ export async function listVisits(token, params = {}) {
   if (params.to != null && params.to !== '') searchParams.set('to', String(params.to))
   const query = searchParams.toString()
   const url = `${getBaseUrl()}/visits${query ? `?${query}` : ''}`
-  const res = await fetch(url, { headers: authHeaders(token) })
+  const res = await apiFetch(url, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to list visits (${res.status})`)
   return data
@@ -66,7 +67,7 @@ export async function getVisitStats(token, params = {}) {
   const vt = params.visitable_type
   if (vt != null && vt !== '') searchParams.set('visitable_type', String(vt))
   const query = searchParams.toString()
-  const res = await fetch(`${getBaseUrl()}/visits/stats${query ? `?${query}` : ''}`, {
+  const res = await apiFetch(`${getBaseUrl()}/visits/stats${query ? `?${query}` : ''}`, {
     headers: authHeaders(token),
   })
   const data = await res.json().catch(() => ({}))
@@ -83,7 +84,7 @@ export async function getVisitCharts(token, params = {}) {
     searchParams.set('visitable_type', String(params.visitable_type))
   }
   const query = searchParams.toString()
-  const res = await fetch(`${getBaseUrl()}/visits/charts${query ? `?${query}` : ''}`, {
+  const res = await apiFetch(`${getBaseUrl()}/visits/charts${query ? `?${query}` : ''}`, {
     headers: authHeaders(token),
   })
   const data = await res.json().catch(() => ({}))
@@ -92,7 +93,7 @@ export async function getVisitCharts(token, params = {}) {
 }
 
 export async function getFollowUpsPending(token) {
-  const res = await fetch(`${getBaseUrl()}/visits/follow-ups-pending`, {
+  const res = await apiFetch(`${getBaseUrl()}/visits/follow-ups-pending`, {
     headers: authHeaders(token),
   })
   const data = await res.json().catch(() => ({}))
@@ -101,7 +102,7 @@ export async function getFollowUpsPending(token) {
 }
 
 export async function getVisit(token, visitId) {
-  const res = await fetch(`${getBaseUrl()}/visits/${visitId}`, {
+  const res = await apiFetch(`${getBaseUrl()}/visits/${visitId}`, {
     headers: authHeaders(token),
   })
   const data = await res.json().catch(() => ({}))
@@ -110,7 +111,7 @@ export async function getVisit(token, visitId) {
 }
 
 export async function createVisit(token, body) {
-  const res = await fetch(`${getBaseUrl()}/visits`, {
+  const res = await apiFetch(`${getBaseUrl()}/visits`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -124,7 +125,7 @@ export async function createVisit(token, body) {
 }
 
 export async function updateVisit(token, visitId, body) {
-  const res = await fetch(`${getBaseUrl()}/visits/${visitId}`, {
+  const res = await apiFetch(`${getBaseUrl()}/visits/${visitId}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -138,7 +139,7 @@ export async function updateVisit(token, visitId, body) {
 }
 
 export async function deleteVisit(token, visitId) {
-  const res = await fetch(`${getBaseUrl()}/visits/${visitId}`, {
+  const res = await apiFetch(`${getBaseUrl()}/visits/${visitId}`, {
     method: 'DELETE',
     headers: authHeaders(token),
   })
@@ -151,7 +152,7 @@ export async function deleteVisit(token, visitId) {
  * GET /vendors/:vendorId/visits
  */
 export async function listVendorVisits(token, vendorId) {
-  const res = await fetch(`${getBaseUrl()}/vendors/${vendorId}/visits`, {
+  const res = await apiFetch(`${getBaseUrl()}/vendors/${vendorId}/visits`, {
     headers: authHeaders(token),
   })
   const data = await res.json().catch(() => ({}))

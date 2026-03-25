@@ -14,11 +14,11 @@ class CommunicationLogTypesSeeder extends Seeder
     public function run(): void
     {
         $types = [
-            ['name' => 'call', 'label_ar' => 'مكالمة', 'sort_order' => 1],
-            ['name' => 'whatsapp', 'label_ar' => 'واتساب', 'sort_order' => 2],
-            ['name' => 'email', 'label_ar' => 'بريد إلكتروني', 'sort_order' => 3],
-            ['name' => 'meeting', 'label_ar' => 'اجتماع', 'sort_order' => 4],
-            ['name' => 'note', 'label_ar' => 'ملاحظة', 'sort_order' => 5],
+            ['name' => 'call', 'label_ar' => 'مكالمة', 'label_en' => 'Call', 'sort_order' => 1],
+            ['name' => 'whatsapp', 'label_ar' => 'واتساب', 'label_en' => 'WhatsApp', 'sort_order' => 2],
+            ['name' => 'email', 'label_ar' => 'بريد إلكتروني', 'label_en' => 'Email', 'sort_order' => 3],
+            ['name' => 'meeting', 'label_ar' => 'اجتماع', 'label_en' => 'Meeting', 'sort_order' => 4],
+            ['name' => 'note', 'label_ar' => 'ملاحظة', 'label_en' => 'Note', 'sort_order' => 5],
         ];
 
         foreach ($types as $data) {

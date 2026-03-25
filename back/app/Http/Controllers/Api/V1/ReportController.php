@@ -18,7 +18,7 @@ class ReportController extends Controller
     public function shipments(Request $request)
     {
         if (! $request->user()?->can('reports.view')) {
-            abort(403, 'You do not have permission to view reports.');
+            abort(403, __('You do not have permission to view reports.'));
         }
 
         $byDirection = Shipment::selectRaw('shipment_direction, COUNT(*) as count')
@@ -43,7 +43,7 @@ class ReportController extends Controller
     public function finance(Request $request)
     {
         if (! $request->user()?->can('reports.view')) {
-            abort(403, 'You do not have permission to view reports.');
+            abort(403, __('You do not have permission to view reports.'));
         }
 
         $totalRevenue = (float) Invoice::whereNotIn('status', ['cancelled'])->sum('net_amount');
@@ -59,7 +59,7 @@ class ReportController extends Controller
     public function salesPerformance(Request $request)
     {
         if (! $request->user()?->can('reports.view')) {
-            abort(403, 'You do not have permission to view reports.');
+            abort(403, __('You do not have permission to view reports.'));
         }
 
         $from = $request->query('from') ? Carbon::parse($request->query('from'))->startOfDay() : now()->copy()->startOfMonth();
@@ -94,7 +94,7 @@ class ReportController extends Controller
     public function teamPerformance(Request $request)
     {
         if (! $request->user()?->can('reports.view')) {
-            abort(403, 'You do not have permission to view reports.');
+            abort(403, __('You do not have permission to view reports.'));
         }
 
         $from = $request->query('from') ? Carbon::parse($request->query('from'))->startOfDay() : now()->copy()->startOfMonth();
@@ -155,7 +155,7 @@ class ReportController extends Controller
     public function teamPerformanceExport(Request $request): StreamedResponse
     {
         if (! $request->user()?->can('reports.view')) {
-            abort(403, 'You do not have permission to view reports.');
+            abort(403, __('You do not have permission to view reports.'));
         }
 
         $from = $request->query('from') ? Carbon::parse($request->query('from'))->startOfDay() : now()->copy()->startOfMonth();

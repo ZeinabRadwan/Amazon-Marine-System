@@ -20,7 +20,7 @@ class EnsureCanManageAttendanceExcuses
         }
 
         if (! $user->can('attendance.excuses.manage') && ! $user->can('attendance.admin')) {
-            abort(403, 'You do not have permission to manage attendance excuses.');
+            abort(403, __('You do not have permission to manage attendance excuses.'));
         }
 
         return $next($request);

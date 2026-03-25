@@ -103,7 +103,7 @@ class VisitController extends Controller
         $visit->delete();
 
         return response()->json([
-            'message' => 'Visit deleted.',
+            'message' => __('Visit deleted.'),
         ]);
     }
 

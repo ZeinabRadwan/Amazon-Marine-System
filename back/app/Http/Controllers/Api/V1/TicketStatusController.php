@@ -95,7 +95,7 @@ class TicketStatusController extends Controller
         $ticketStatus->delete();
 
         return response()->json([
-            'message' => 'Ticket status deleted.',
+            'message' => __('Ticket status deleted.'),
         ]);
     }
 }

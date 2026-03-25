@@ -60,7 +60,7 @@ class RoleController extends Controller
 
         if ($role->name === 'admin') {
             return response()->json([
-                'message' => 'The admin role cannot be modified.',
+                'message' => __('The admin role cannot be modified.'),
             ], 422);
         }
 
@@ -98,14 +98,14 @@ class RoleController extends Controller
 
         if ($role->name === 'admin') {
             return response()->json([
-                'message' => 'The admin role cannot be deleted.',
+                'message' => __('The admin role cannot be deleted.'),
             ], 422);
         }
 
         $role->delete();
 
         return response()->json([
-            'message' => 'Role deleted.',
+            'message' => __('Role deleted.'),
         ]);
     }
 }

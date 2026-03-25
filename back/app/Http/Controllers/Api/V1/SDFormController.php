@@ -149,7 +149,7 @@ class SDFormController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'SD form deleted.',
+            'message' => __('SD form deleted.'),
         ]);
     }
 
@@ -235,8 +235,8 @@ class SDFormController extends Controller
 
         if ($sdForm->status !== 'submitted') {
             abort(422, $sdForm->status === 'draft'
-                ? 'Submit the SD form first before sending it to operations.'
-                : 'Only SD forms in Submitted status can be sent to operations.');
+                ? __('Submit the SD form first before sending it to operations.')
+                : __('Only SD forms in Submitted status can be sent to operations.'));
         }
 
         SDFormService::transitionStatus($sdForm, 'sent_to_operations');
@@ -414,7 +414,7 @@ class SDFormController extends Controller
 
         if ($operationsUsers->isEmpty()) {
             return response()->json([
-                'message' => 'No operation users with email found to notify.',
+                'message' => __('No operation users with email found to notify.'),
             ], 200);
         }
 
@@ -437,7 +437,7 @@ class SDFormController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'SD form emailed to operations.',
+            'message' => __('SD form emailed to operations.'),
         ]);
     }
 

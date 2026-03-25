@@ -4,6 +4,7 @@
  */
 
 import { getApiBaseUrl } from './apiBaseUrl'
+import { apiFetch as apiFetchWithLocale } from './http'
 
 const getBaseUrl = getApiBaseUrl
 
@@ -59,7 +60,7 @@ function wrapNetworkError(err, url) {
 
 async function apiFetch(url, init) {
   try {
-    return await fetch(url, init)
+    return await apiFetchWithLocale(url, init)
   } catch (err) {
     throw wrapNetworkError(err, url)
   }

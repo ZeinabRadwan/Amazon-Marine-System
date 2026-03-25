@@ -104,7 +104,7 @@ class AttendanceController extends Controller
     public function stats(Request $request): JsonResponse
     {
         if (! $request->user()?->can('attendance.view') && ! $request->user()?->can('reports.view')) {
-            abort(403, 'You do not have permission to view attendance stats.');
+            abort(403, __('You do not have permission to view attendance stats.'));
         }
 
         $date = $request->query('date', now()->toDateString());

@@ -568,6 +568,9 @@
     "no": "لا",
     "excuses": {
       "submitTitle": "تقديم عذر",
+      "submitHint": "املأ النموذج وأرسل طلب عذرك.",
+      "noFile": "لم يتم اختيار ملف",
+      "reasonPlaceholder": "اكتب السبب بالتفصيل...",
       "reason": "السبب",
       "attachment": "مرفق (PDF أو صورة)",
       "submit": "إرسال العذر",
@@ -581,8 +584,11 @@
       "all": "الكل",
       "apply": "تطبيق المرشحات",
       "exportCsv": "تصدير CSV",
+      "reportHint": "تصفية ومراجعة بيانات تقرير الحضور حسب الموظف والفترة والحالة.",
       "summaryTitle": "ملخص حسب الموظف",
       "summaryEmpty": "لا يوجد ملخص لهذا المرشح.",
+      "records": "سجلات",
+      "employees": "موظفون",
       "pendingExcuses": "أعذار قيد المراجعة",
       "noPendingExcuses": "لا توجد أعذار معلقة.",
       "approve": "موافقة",
@@ -593,6 +599,8 @@
     "user": "المستخدم",
     "date": "التاريخ",
     "late": "متأخر",
+    "earlyLeave": "انصراف مبكر",
+    "excused": "معذور",
     "onTime": "في الوقت",
     "shiftOpen": "داخل الدوام",
     "yes": "نعم",
@@ -1555,7 +1563,17 @@
       "system": "النظام والإشعارات",
       "sessions": "إدارة الجلسات",
       "activity": "سجل النشاط",
-      "shipmentStatuses": "حالات الشحنات"
+      "statuses": "الحالات"
+    },
+    "statuses": {
+      "intro": "إدارة تسميات تتبع الشحنات وحالات العملاء في CRM وجميع قوائم خدمة العملاء (حالات التذاكر، الأنواع، الأولويات، أنواع سجل التواصل) في مكان واحد.",
+      "shipmentsHint": "تُستخدم في تتبع الشحنات وفي واجهات خدمة العملاء المرتبطة.",
+      "clientsHint": "تُستخدم عند تصنيف العملاء في CRM.",
+      "ticketsHint": "تُستخدم كمراحل سير عمل التذاكر في خدمة العملاء.",
+      "displayName": "الاسم (حسب لغة الواجهة)",
+      "ticketTypesHint": "تصنيفات عند إنشاء التذاكر أو تصفيتها.",
+      "ticketPrioritiesHint": "خيارات أولوية التذاكر (الترتيب والتسميات).",
+      "communicationLogTypesHint": "تصنيفات لإدخالات سجل التواصل في خدمة العملاء."
     },
     "company": {
       "cardTitle": "بيانات الشركة",
@@ -1664,6 +1682,112 @@
       "deleteConfirm": "هل تريد حذف حالة الشحنة هذه؟",
       "deleteConfirmTitle": "حذف حالة الشحنة"
     },
+    "clientStatuses": {
+      "cardTitle": "حالات العملاء",
+      "addTitle": "إضافة حالة عميل",
+      "editTitle": "تعديل حالة عميل",
+      "name": "الاسم",
+      "nameAr": "الاسم (عربي)",
+      "nameEn": "الاسم (إنجليزي)",
+      "sortOrder": "ترتيب الفرز",
+      "save": "حفظ",
+      "empty": "لا توجد حالات عملاء بعد.",
+      "saved": "تم حفظ حالة العميل.",
+      "deleted": "تم حذف حالة العميل.",
+      "deleteTitle": "حذف حالة عميل",
+      "deleteConfirm": "هل تريد حذف حالة العميل هذه؟",
+      "table": {
+        "name": "الاسم",
+        "sortOrder": "ترتيب الفرز"
+      }
+    },
+    "ticketStatuses": {
+      "cardTitle": "حالات التذاكر",
+      "addTitle": "إضافة حالة تذكرة",
+      "editTitle": "تعديل حالة تذكرة",
+      "key": "المفتاح (معرف داخلي)",
+      "labelAr": "التسمية (عربي)",
+      "labelEn": "التسمية (إنجليزي)",
+      "sortOrder": "ترتيب الفرز",
+      "create": "إنشاء",
+      "save": "حفظ",
+      "empty": "لا توجد حالات تذاكر.",
+      "created": "تم إنشاء حالة التذكرة.",
+      "updated": "تم تحديث حالة التذكرة.",
+      "deleted": "تم حذف حالة التذكرة.",
+      "deleteTitle": "حذف حالة تذكرة",
+      "deleteConfirm": "هل تريد حذف حالة التذكرة هذه؟",
+      "table": {
+        "key": "المفتاح",
+        "labelAr": "التسمية (ع)",
+        "labelEn": "التسمية (إ)",
+        "sortOrder": "الترتيب"
+      }
+    },
+    "ticketTypes": {
+      "cardTitle": "أنواع التذاكر",
+      "addTitle": "إضافة نوع تذكرة",
+      "editTitle": "تعديل نوع تذكرة",
+      "name": "الاسم (مفتاح)",
+      "labelAr": "التسمية (عربي)",
+      "labelEn": "التسمية (إنجليزي)",
+      "create": "إنشاء",
+      "save": "حفظ",
+      "empty": "لا توجد أنواع تذاكر.",
+      "created": "تم إنشاء نوع التذكرة.",
+      "updated": "تم تحديث نوع التذكرة.",
+      "deleted": "تم حذف نوع التذكرة.",
+      "deleteTitle": "حذف نوع تذكرة",
+      "deleteConfirm": "هل تريد حذف نوع التذكرة هذا؟",
+      "table": {
+        "name": "الاسم",
+        "labelAr": "التسمية (ع)"
+      }
+    },
+    "ticketPriorities": {
+      "cardTitle": "أولويات التذاكر",
+      "addTitle": "إضافة أولوية",
+      "editTitle": "تعديل أولوية",
+      "name": "الاسم (مفتاح)",
+      "labelAr": "التسمية (عربي)",
+      "labelEn": "التسمية (إنجليزي)",
+      "sortOrder": "ترتيب الفرز",
+      "create": "إنشاء",
+      "save": "حفظ",
+      "empty": "لا توجد أولويات تذاكر.",
+      "created": "تم إنشاء أولوية التذكرة.",
+      "updated": "تم تحديث أولوية التذكرة.",
+      "deleted": "تم حذف أولوية التذكرة.",
+      "deleteTitle": "حذف أولوية تذكرة",
+      "deleteConfirm": "هل تريد حذف أولوية التذكرة هذه؟",
+      "table": {
+        "name": "الاسم",
+        "labelAr": "التسمية (ع)",
+        "sortOrder": "الترتيب"
+      }
+    },
+    "communicationLogTypes": {
+      "cardTitle": "أنواع سجل التواصل",
+      "addTitle": "إضافة نوع سجل",
+      "editTitle": "تعديل نوع سجل",
+      "name": "الاسم (مفتاح)",
+      "labelAr": "التسمية (عربي)",
+      "labelEn": "التسمية (إنجليزي)",
+      "sortOrder": "ترتيب الفرز",
+      "create": "إنشاء",
+      "save": "حفظ",
+      "empty": "لا توجد أنواع سجل تواصل.",
+      "created": "تم إنشاء نوع سجل التواصل.",
+      "updated": "تم تحديث نوع سجل التواصل.",
+      "deleted": "تم حذف نوع سجل التواصل.",
+      "deleteTitle": "حذف نوع سجل تواصل",
+      "deleteConfirm": "هل تريد حذف نوع سجل التواصل هذا؟",
+      "table": {
+        "name": "الاسم",
+        "labelAr": "التسمية (ع)",
+        "sortOrder": "الترتيب"
+      }
+    },
     "errors": {
       "load": "فشل تحميل الإعدادات.",
       "saveCompanyProfile": "فشل حفظ بيانات الشركة.",
@@ -1676,7 +1800,18 @@
       "logoutOthers": "فشل تسجيل الخروج من الجلسات الأخرى.",
       "saveShipmentStatus": "فشل حفظ حالة الشحنة.",
       "deleteShipmentStatus": "فشل حذف حالة الشحنة.",
-      "saveAttendancePolicy": "فشل حفظ سياسة الحضور."
+      "saveAttendancePolicy": "فشل حفظ سياسة الحضور.",
+      "loadStatusesTab": "فشل تحميل قوائم الحالات.",
+      "saveClientStatus": "فشل حفظ حالة العميل.",
+      "deleteClientStatus": "فشل حذف حالة العميل.",
+      "saveTicketStatus": "فشل حفظ حالة التذكرة.",
+      "deleteTicketStatus": "فشل حذف حالة التذكرة.",
+      "saveTicketType": "فشل حفظ نوع التذكرة.",
+      "deleteTicketType": "فشل حذف نوع التذكرة.",
+      "saveTicketPriority": "فشل حفظ أولوية التذكرة.",
+      "deleteTicketPriority": "فشل حذف أولوية التذكرة.",
+      "saveCommunicationLogType": "فشل حفظ نوع سجل التواصل.",
+      "deleteCommunicationLogType": "فشل حذف نوع سجل التواصل."
     }
   }
 }

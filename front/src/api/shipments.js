@@ -3,6 +3,7 @@
  */
 
 import { getApiBaseUrl } from './apiBaseUrl'
+import { apiFetch } from './http'
 
 const getBaseUrl = getApiBaseUrl
 
@@ -50,7 +51,7 @@ export async function listShipments(token, params = {}) {
   appendShipmentListParams(searchParams, params)
   const query = searchParams.toString()
   const url = `${getBaseUrl()}/shipments${query ? `?${query}` : ''}`
-  const res = await fetch(url, { headers: authHeaders(token) })
+  const res = await apiFetch(url, { headers: authHeaders(token) })
   const json = await res.json().catch(() => ({}))
   if (!res.ok) {
     throw new Error(json.message || json.error || `Failed to list shipments (${res.status})`)
@@ -59,7 +60,7 @@ export async function listShipments(token, params = {}) {
 }
 
 export async function getShipment(token, shipmentId) {
-  const res = await fetch(`${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}`, {
+  const res = await apiFetch(`${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}`, {
     headers: authHeaders(token),
   })
   const json = await res.json().catch(() => ({}))
@@ -68,7 +69,7 @@ export async function getShipment(token, shipmentId) {
 }
 
 export async function createShipment(token, body) {
-  const res = await fetch(`${getBaseUrl()}/shipments`, {
+  const res = await apiFetch(`${getBaseUrl()}/shipments`, {
     method: 'POST',
     headers: authHeaders(token),
     body: JSON.stringify(body),
@@ -79,7 +80,7 @@ export async function createShipment(token, body) {
 }
 
 export async function updateShipment(token, shipmentId, body) {
-  const res = await fetch(`${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}`, {
+  const res = await apiFetch(`${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}`, {
     method: 'PUT',
     headers: authHeaders(token),
     body: JSON.stringify(body),
@@ -90,7 +91,7 @@ export async function updateShipment(token, shipmentId, body) {
 }
 
 export async function deleteShipment(token, shipmentId) {
-  const res = await fetch(`${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}`, {
+  const res = await apiFetch(`${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}`, {
     method: 'DELETE',
     headers: authHeaders(token),
   })
@@ -100,7 +101,7 @@ export async function deleteShipment(token, shipmentId) {
 }
 
 export async function getShipmentStats(token) {
-  const res = await fetch(`${getBaseUrl()}/shipments/stats`, { headers: authHeaders(token) })
+  const res = await apiFetch(`${getBaseUrl()}/shipments/stats`, { headers: authHeaders(token) })
   const json = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(json.message || json.error || `Failed to load shipment stats (${res.status})`)
   return json
@@ -110,7 +111,7 @@ export async function getShipmentCharts(token, params = {}) {
   const searchParams = new URLSearchParams()
   if (params.months != null) searchParams.set('months', String(params.months))
   const query = searchParams.toString()
-  const res = await fetch(`${getBaseUrl()}/shipments/charts${query ? `?${query}` : ''}`, {
+  const res = await apiFetch(`${getBaseUrl()}/shipments/charts${query ? `?${query}` : ''}`, {
     headers: authHeaders(token),
   })
   const json = await res.json().catch(() => ({}))
@@ -125,7 +126,7 @@ export async function exportShipments(token, params = {}) {
   if (params.ids != null && params.ids !== '') searchParams.set('ids', String(params.ids))
   const query = searchParams.toString()
   const url = `${getBaseUrl()}/shipments/export${query ? `?${query}` : ''}`
-  const res = await fetch(url, { headers: authHeaders(token, false) })
+  const res = await apiFetch(url, { headers: authHeaders(token, false) })
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))
     throw new Error(data.message || data.error || `Failed to export shipments (${res.status})`)
@@ -134,7 +135,7 @@ export async function exportShipments(token, params = {}) {
 }
 
 export async function listShipmentNotes(token, shipmentId) {
-  const res = await fetch(`${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}/notes`, {
+  const res = await apiFetch(`${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}/notes`, {
     headers: authHeaders(token),
   })
   const json = await res.json().catch(() => ({}))
@@ -144,7 +145,7 @@ export async function listShipmentNotes(token, shipmentId) {
 }
 
 export async function postShipmentNote(token, shipmentId, body) {
-  const res = await fetch(`${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}/notes`, {
+  const res = await apiFetch(`${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}/notes`, {
     method: 'POST',
     headers: authHeaders(token),
     body: JSON.stringify(body),
@@ -158,7 +159,7 @@ export async function postShipmentNote(token, shipmentId, body) {
  * GET {{base_url}}/shipments/:shipmentId/tracking-updates
  */
 export async function getShipmentTrackingUpdates(token, shipmentId) {
-  const res = await fetch(`${getBaseUrl()}/shipments/${shipmentId}/tracking-updates`, {
+  const res = await apiFetch(`${getBaseUrl()}/shipments/${shipmentId}/tracking-updates`, {
     headers: authHeaders(token),
   })
   const json = await res.json().catch(() => ({}))
@@ -174,7 +175,7 @@ export async function getShipmentTrackingUpdates(token, shipmentId) {
  * Body: { update_text: string }
  */
 export async function postShipmentTrackingUpdate(token, shipmentId, body) {
-  const res = await fetch(`${getBaseUrl()}/shipments/${shipmentId}/tracking-updates`, {
+  const res = await apiFetch(`${getBaseUrl()}/shipments/${shipmentId}/tracking-updates`, {
     method: 'POST',
     headers: authHeaders(token),
     body: JSON.stringify(body),
@@ -190,7 +191,7 @@ export async function postShipmentTrackingUpdate(token, shipmentId, body) {
  * POST {{base_url}}/shipments/:shipmentId/notify-sales-financials
  */
 export async function notifyShipmentSalesFinancials(token, shipmentId) {
-  const res = await fetch(`${getBaseUrl()}/shipments/${shipmentId}/notify-sales-financials`, {
+  const res = await apiFetch(`${getBaseUrl()}/shipments/${shipmentId}/notify-sales-financials`, {
     method: 'POST',
     headers: authHeaders(token),
     body: JSON.stringify({}),

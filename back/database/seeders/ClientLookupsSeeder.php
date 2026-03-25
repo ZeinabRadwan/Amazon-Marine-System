@@ -82,15 +82,18 @@ class ClientLookupsSeeder extends Seeder
         }
 
         $statuses = [
-            ['name' => 'New', 'sort_order' => 1],
-            ['name' => 'Active', 'sort_order' => 2],
-            ['name' => 'Inactive', 'sort_order' => 3],
-            ['name' => 'Pending', 'sort_order' => 4],
+            ['name_en' => 'New', 'name_ar' => 'جديد', 'sort_order' => 1],
+            ['name_en' => 'Active', 'name_ar' => 'نشط', 'sort_order' => 2],
+            ['name_en' => 'Inactive', 'name_ar' => 'غير نشط', 'sort_order' => 3],
+            ['name_en' => 'Pending', 'name_ar' => 'قيد الانتظار', 'sort_order' => 4],
         ];
         foreach ($statuses as $i => $row) {
             ClientStatus::updateOrCreate(
-                ['name' => $row['name']],
-                ['sort_order' => $row['sort_order'] ?? $i + 1]
+                ['name_en' => $row['name_en']],
+                [
+                    'name_ar' => $row['name_ar'],
+                    'sort_order' => $row['sort_order'] ?? $i + 1,
+                ]
             );
         }
     }

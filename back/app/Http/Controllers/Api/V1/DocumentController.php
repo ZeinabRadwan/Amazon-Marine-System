@@ -14,7 +14,7 @@ class DocumentController extends Controller
     public function index(Request $request): JsonResponse
     {
         if (! $request->user()?->can('documents.view') && ! $request->user()?->can('reports.view')) {
-            abort(403, 'You do not have permission to view documents.');
+            abort(403, __('You do not have permission to view documents.'));
         }
 
         $query = Document::query()->with('uploadedBy');
@@ -42,7 +42,7 @@ class DocumentController extends Controller
     public function store(Request $request): JsonResponse
     {
         if (! $request->user()?->can('documents.manage') && ! $request->user()?->can('reports.view')) {
-            abort(403, 'You do not have permission to upload documents.');
+            abort(403, __('You do not have permission to upload documents.'));
         }
 
         $validated = $request->validate([
@@ -76,11 +76,11 @@ class DocumentController extends Controller
     public function download(Request $request, Document $document): StreamedResponse|JsonResponse
     {
         if (! $request->user()?->can('documents.view') && ! $request->user()?->can('reports.view')) {
-            abort(403, 'You do not have permission to download documents.');
+            abort(403, __('You do not have permission to download documents.'));
         }
 
         if (! Storage::disk('local')->exists($document->path)) {
-            return response()->json(['message' => 'File not found.'], 404);
+            return response()->json(['message' => __('File not found.')], 404);
         }
 
         return Storage::disk('local')->download(
@@ -95,7 +95,7 @@ class DocumentController extends Controller
     public function destroy(Request $request, Document $document): JsonResponse
     {
         if (! $request->user()?->can('documents.manage') && ! $request->user()?->can('reports.view')) {
-            abort(403, 'You do not have permission to delete documents.');
+            abort(403, __('You do not have permission to delete documents.'));
         }
 
         if (Storage::disk('local')->exists($document->path)) {
@@ -105,7 +105,7 @@ class DocumentController extends Controller
         $document->delete();
 
         return response()->json([
-            'message' => 'Document deleted.',
+            'message' => __('Document deleted.'),
         ]);
     }
 }

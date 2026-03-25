@@ -3,6 +3,7 @@
  */
 
 import { getApiBaseUrl } from './apiBaseUrl'
+import { apiFetch } from './http'
 
 const getBaseUrl = getApiBaseUrl
 
@@ -26,7 +27,7 @@ export async function listUsers(token, params = {}) {
   if (params.role != null && params.role !== '') searchParams.set('role', params.role)
   const query = searchParams.toString()
   const url = `${getBaseUrl()}/users${query ? `?${query}` : ''}`
-  const res = await fetch(url, { headers: authHeaders(token) })
+  const res = await apiFetch(url, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to list users (${res.status})`)
   return data
@@ -37,7 +38,7 @@ export async function listUsers(token, params = {}) {
  * Body: { name, email, password, password_confirmation, role?, status? }
  */
 export async function createUser(token, body) {
-  const res = await fetch(`${getBaseUrl()}/users`, {
+  const res = await apiFetch(`${getBaseUrl()}/users`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -55,7 +56,7 @@ export async function createUser(token, body) {
  * Body: { password, password_confirmation }
  */
 export async function changeUserPassword(token, userId, body) {
-  const res = await fetch(`${getBaseUrl()}/users/${userId}/password`, {
+  const res = await apiFetch(`${getBaseUrl()}/users/${userId}/password`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -72,7 +73,7 @@ export async function changeUserPassword(token, userId, body) {
  * GET {{base_url}}/users/:id – Show User
  */
 export async function showUser(token, userId) {
-  const res = await fetch(`${getBaseUrl()}/users/${userId}`, {
+  const res = await apiFetch(`${getBaseUrl()}/users/${userId}`, {
     headers: authHeaders(token),
   })
   const data = await res.json().catch(() => ({}))
@@ -85,7 +86,7 @@ export async function showUser(token, userId) {
  * Body: { name?, email?, initials?, status?, role? }
  */
 export async function updateUser(token, userId, body) {
-  const res = await fetch(`${getBaseUrl()}/users/${userId}`, {
+  const res = await apiFetch(`${getBaseUrl()}/users/${userId}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -102,7 +103,7 @@ export async function updateUser(token, userId, body) {
  * DELETE {{base_url}}/users/:id – Delete User
  */
 export async function deleteUser(token, userId) {
-  const res = await fetch(`${getBaseUrl()}/users/${userId}`, {
+  const res = await apiFetch(`${getBaseUrl()}/users/${userId}`, {
     method: 'DELETE',
     headers: authHeaders(token),
   })
@@ -115,7 +116,7 @@ export async function deleteUser(token, userId) {
  * POST {{base_url}}/users/:id/activate – Activate User
  */
 export async function activateUser(token, userId) {
-  const res = await fetch(`${getBaseUrl()}/users/${userId}/activate`, {
+  const res = await apiFetch(`${getBaseUrl()}/users/${userId}/activate`, {
     method: 'POST',
     headers: authHeaders(token),
   })
@@ -128,7 +129,7 @@ export async function activateUser(token, userId) {
  * POST {{base_url}}/users/:id/deactivate – Deactivate User
  */
 export async function deactivateUser(token, userId) {
-  const res = await fetch(`${getBaseUrl()}/users/${userId}/deactivate`, {
+  const res = await apiFetch(`${getBaseUrl()}/users/${userId}/deactivate`, {
     method: 'POST',
     headers: authHeaders(token),
   })
@@ -142,7 +143,7 @@ export async function deactivateUser(token, userId) {
  * Body: { role }
  */
 export async function assignRole(token, userId, body) {
-  const res = await fetch(`${getBaseUrl()}/users/${userId}/assign-role`, {
+  const res = await apiFetch(`${getBaseUrl()}/users/${userId}/assign-role`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

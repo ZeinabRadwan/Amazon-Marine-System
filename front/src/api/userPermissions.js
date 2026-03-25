@@ -4,6 +4,7 @@
  */
 
 import { getApiBaseUrl } from './apiBaseUrl'
+import { apiFetch } from './http'
 
 const getBaseUrl = getApiBaseUrl
 
@@ -18,7 +19,7 @@ function authHeaders(token) {
  * GET /users-with-permissions – list users with role and effective permissions
  */
 export async function listUsersWithPermissions(token) {
-  const res = await fetch(`${getBaseUrl()}/users-with-permissions`, {
+  const res = await apiFetch(`${getBaseUrl()}/users-with-permissions`, {
     headers: authHeaders(token),
   })
   const data = await res.json().catch(() => ({}))
@@ -30,7 +31,7 @@ export async function listUsersWithPermissions(token) {
  * GET /users/{id}/permissions – get user's permissions (role + overrides + effective)
  */
 export async function getUserPermissions(token, userId) {
-  const res = await fetch(`${getBaseUrl()}/users/${userId}/permissions`, {
+  const res = await apiFetch(`${getBaseUrl()}/users/${userId}/permissions`, {
     headers: authHeaders(token),
   })
   const data = await res.json().catch(() => ({}))
@@ -43,7 +44,7 @@ export async function getUserPermissions(token, userId) {
  * Body: { permissions: [ { name: "clients.view", allowed: true }, ... ] }
  */
 export async function updateUserPermissions(token, userId, body) {
-  const res = await fetch(`${getBaseUrl()}/users/${userId}/permissions`, {
+  const res = await apiFetch(`${getBaseUrl()}/users/${userId}/permissions`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -60,7 +61,7 @@ export async function updateUserPermissions(token, userId, body) {
  * POST /users/{id}/permissions/reset – reset user to role default (clear overrides)
  */
 export async function resetUserPermissions(token, userId) {
-  const res = await fetch(`${getBaseUrl()}/users/${userId}/permissions/reset`, {
+  const res = await apiFetch(`${getBaseUrl()}/users/${userId}/permissions/reset`, {
     method: 'POST',
     headers: authHeaders(token),
   })

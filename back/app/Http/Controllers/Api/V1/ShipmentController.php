@@ -187,7 +187,7 @@ class ShipmentController extends Controller
 
         $shipment->delete();
 
-        return response()->json(['message' => 'Shipment deleted.']);
+        return response()->json(['message' => __('Shipment deleted.')]);
     }
 
     /**
@@ -419,7 +419,7 @@ class ShipmentController extends Controller
                 || $user->can('financial.manage')
             ),
             403,
-            'You do not have permission to notify sales for this shipment.'
+            __('You do not have permission to notify sales for this shipment.')
         );
 
         ActivityLogger::log('shipment.notify_sales_financials', $shipment, [
@@ -427,7 +427,7 @@ class ShipmentController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Notification recorded.',
+            'message' => __('Notification recorded.'),
         ]);
     }
 }

@@ -102,16 +102,6 @@ function resolveWorkedMinutes(r, nowMs = Date.now()) {
   return mins >= 0 ? { minutes: mins, openShift: true } : null
 }
 
-function resolveDeviceType(r) {
-  return r.device_type ?? r.clock_in_device_type ?? null
-}
-
-function resolveWithinRadius(r) {
-  const v = r.is_within_radius ?? r.clock_in_is_within_radius
-  if (v === true || v === false) return v
-  return null
-}
-
 function resolveDistanceM(r) {
   const d = r.distance_from_office_m ?? r.clock_in_distance_from_office
   if (d == null || d === '') return null
@@ -119,8 +109,61 @@ function resolveDistanceM(r) {
   return Number.isFinite(n) ? n : null
 }
 
-function rowIsLate(r) {
-  return r.is_late === true || r.status === 'late'
+function attendanceStatusLabel(t, status) {
+  if (!status) return '—'
+  const key = String(status).trim()
+  if (key === 'on_time') {
+    return t('attendance.onTime')
+  }
+  if (key === 'late') {
+    return t('attendance.late')
+  }
+  if (key === 'early_leave') {
+    return t('attendance.earlyLeave')
+  }
+  if (key === 'absent') {
+    return t('attendance.statsAbsent')
+  }
+  if (key === 'excused') {
+    return t('attendance.excused')
+  }
+
+  return key.replace(/_/g, ' ')
+}
+
+function attendanceStatusBadgeClass(status) {
+  const key = status ? String(status).trim() : ''
+  const base = 'attendance-badge'
+  if (key === 'on_time') {
+    return `${base} attendance-badge--on-time`
+  }
+  if (key === 'late') {
+    return `${base} attendance-badge--late`
+  }
+  if (key === 'early_leave') {
+    return `${base} attendance-badge--early-leave`
+  }
+  if (key === 'absent') {
+    return `${base} attendance-badge--absent`
+  }
+  if (key === 'excused') {
+    return `${base} attendance-badge--excused`
+  }
+
+  return `${base} attendance-badge--muted`
+}
+
+function renderAttendanceStatusBadge(t, r) {
+  const status = r.status
+  if (!status) {
+    return '—'
+  }
+
+  return (
+    <span className={attendanceStatusBadgeClass(status)} title={String(status)}>
+      {attendanceStatusLabel(t, status)}
+    </span>
+  )
 }
 
 function getCurrentPosition() {
@@ -194,7 +237,6 @@ export default function Attendance() {
     to: today,
     user_id: '',
     status: '',
-    device_type: '',
     is_within_radius: '',
     page: 1,
     per_page: 15,
@@ -230,7 +272,6 @@ export default function Attendance() {
     date_from: today,
     date_to: today,
     status: '',
-    device_type: '',
     is_within_radius: '',
     page: 1,
     per_page: 25,
@@ -283,7 +324,6 @@ export default function Attendance() {
       to: filters.to,
       user_id: canFilterAll && filters.user_id ? filters.user_id : undefined,
       status: filters.status || undefined,
-      device_type: filters.device_type || undefined,
       is_within_radius:
         filters.is_within_radius === '' || filters.is_within_radius === undefined
           ? undefined
@@ -300,7 +340,6 @@ export default function Attendance() {
     filters.to,
     filters.user_id,
     filters.status,
-    filters.device_type,
     filters.is_within_radius,
     canFilterAll,
     t,
@@ -432,7 +471,6 @@ export default function Attendance() {
       date_from: f.date_from || undefined,
       date_to: f.date_to || undefined,
       status: f.status || undefined,
-      device_type: f.device_type || undefined,
       is_within_radius: f.is_within_radius === '' ? undefined : f.is_within_radius,
       page: f.page,
       per_page: f.per_page,
@@ -588,8 +626,6 @@ export default function Attendance() {
       'clock_in_at',
       'clock_out_at',
       'worked_hours',
-      'device_type',
-      'is_within_radius',
       'distance_m',
       'status',
     ]
@@ -607,7 +643,6 @@ export default function Attendance() {
           esc(r.clock_in_at),
           esc(r.clock_out_at),
           esc(r.worked_hours),
-          esc(r.device_type),
           esc(r.is_within_radius),
           esc(r.distance_from_office_m),
           esc(r.status),
@@ -883,7 +918,7 @@ export default function Attendance() {
         key: 'status',
         label: t('attendance.status'),
         sortable: true,
-        render: (_, r) => r.status || '—',
+        render: (_, r) => renderAttendanceStatusBadge(t, r),
       },
       {
         key: 'worked_minutes',
@@ -897,21 +932,6 @@ export default function Attendance() {
         },
       },
       {
-        key: 'device_type',
-        label: t('attendance.device'),
-        sortable: true,
-        render: (_, r) => resolveDeviceType(r) ?? '—',
-      },
-      {
-        key: 'is_within_radius',
-        label: t('attendance.withinRadius'),
-        sortable: true,
-        render: (_, r) => {
-          const v = resolveWithinRadius(r)
-          return v === true ? t('attendance.yes') : v === false ? t('attendance.no') : '—'
-        },
-      },
-      {
         key: 'distance_from_office_m',
         label: t('attendance.distanceM'),
         sortable: true,
@@ -919,20 +939,6 @@ export default function Attendance() {
           const d = resolveDistanceM(r)
           return d != null ? Math.round(d) : '—'
         },
-      },
-      {
-        key: 'is_late',
-        label: t('attendance.late'),
-        render: (_, r) =>
-          rowIsLate(r) ? (
-            <span className="attendance-badge attendance-badge--late" title={t('attendance.late')}>
-              {t('attendance.late')}
-            </span>
-          ) : r.check_in_at && r.status !== 'early_leave' ? (
-            <span className="text-gray-500 dark:text-gray-400">{t('attendance.onTime')}</span>
-          ) : (
-            '—'
-          ),
       },
     ],
     [t, currentUserId, outletUser?.name, dashboardTick]
@@ -963,20 +969,18 @@ export default function Attendance() {
         return '—'
       },
     },
-    { key: 'device_type', label: t('attendance.device'), sortable: true },
-    {
-      key: 'is_within_radius',
-      label: t('attendance.withinRadius'),
-      sortable: true,
-      render: (v) => (v === true ? t('attendance.yes') : v === false ? t('attendance.no') : '—'),
-    },
     {
       key: 'distance_from_office_m',
       label: t('attendance.distanceM'),
       sortable: true,
       render: (v) => (v != null ? Math.round(v) : '—'),
     },
-    { key: 'status', label: t('attendance.status'), sortable: true },
+    {
+      key: 'status',
+      label: t('attendance.status'),
+      sortable: true,
+      render: (_, r) => renderAttendanceStatusBadge(t, r),
+    },
   ]
 
   const adminReportMetrics = useMemo(() => {
@@ -1522,20 +1526,6 @@ export default function Attendance() {
                   </select>
                   <select
                     className="clients-input min-w-[8rem]"
-                    value={filters.device_type}
-                    onChange={(e) => setFilters((f) => ({ ...f, device_type: e.target.value, page: 1 }))}
-                    aria-label={t('attendance.device')}
-                  >
-                    <option value="">{t('attendance.admin.all')}</option>
-                    <option value="android">android</option>
-                    <option value="ios">ios</option>
-                    <option value="windows">windows</option>
-                    <option value="mac">mac</option>
-                    <option value="linux">linux</option>
-                    <option value="unknown">unknown</option>
-                  </select>
-                  <select
-                    className="clients-input min-w-[8rem]"
                     value={filters.is_within_radius}
                     onChange={(e) => setFilters((f) => ({ ...f, is_within_radius: e.target.value, page: 1 }))}
                     aria-label={t('attendance.withinRadius')}
@@ -1555,7 +1545,6 @@ export default function Attendance() {
                       to: today,
                       user_id: '',
                       status: '',
-                      device_type: '',
                       is_within_radius: '',
                       page: 1,
                     }))
@@ -1790,20 +1779,6 @@ export default function Attendance() {
                   </select>
                   <select
                     className="clients-input min-w-[8rem]"
-                    value={adminFilters.device_type}
-                    onChange={(e) => setAdminFilters((f) => ({ ...f, device_type: e.target.value, page: 1 }))}
-                    aria-label={t('attendance.device')}
-                  >
-                    <option value="">{t('attendance.admin.all')}</option>
-                    <option value="android">android</option>
-                    <option value="ios">ios</option>
-                    <option value="windows">windows</option>
-                    <option value="mac">mac</option>
-                    <option value="linux">linux</option>
-                    <option value="unknown">unknown</option>
-                  </select>
-                  <select
-                    className="clients-input min-w-[8rem]"
                     value={adminFilters.is_within_radius}
                     onChange={(e) => setAdminFilters((f) => ({ ...f, is_within_radius: e.target.value, page: 1 }))}
                     aria-label={t('attendance.withinRadius')}
@@ -1847,7 +1822,6 @@ export default function Attendance() {
                       date_from: today,
                       date_to: today,
                       status: '',
-                      device_type: '',
                       is_within_radius: '',
                       page: 1,
                     }))

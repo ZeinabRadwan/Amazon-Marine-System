@@ -19,7 +19,7 @@ class StoreTicketStatusRequest extends FormRequest
         return [
             'key' => ['required', 'string', 'max:40', 'unique:ticket_statuses,key'],
             'label_ar' => ['required', 'string', 'max:100'],
-            'label_en' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'label_en' => ['required', 'string', 'max:100'],
             'active' => ['sometimes', 'boolean'],
             'sort_order' => ['sometimes', 'integer', 'min:0', 'max:1000000'],
         ];

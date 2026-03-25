@@ -70,7 +70,7 @@ class PortController extends Controller
     {
         $port->delete();
 
-        return response()->json(['message' => 'Port deleted.']);
+        return response()->json(['message' => __('Port deleted.')]);
     }
 }
 

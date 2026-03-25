@@ -3,6 +3,7 @@
  */
 
 import { getApiBaseUrl } from './apiBaseUrl'
+import { apiFetch } from './http'
 
 const getBaseUrl = getApiBaseUrl
 
@@ -22,7 +23,7 @@ export async function listActivitiesBySubject(token, { subjectType, subjectId })
   const searchParams = new URLSearchParams()
   searchParams.set('subject_type', String(subjectType))
   searchParams.set('subject_id', String(subjectId))
-  const res = await fetch(`${getBaseUrl()}/activities?${searchParams.toString()}`, {
+  const res = await apiFetch(`${getBaseUrl()}/activities?${searchParams.toString()}`, {
     headers: authHeaders(token),
   })
   const json = await res.json().catch(() => ({}))

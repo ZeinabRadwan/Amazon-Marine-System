@@ -36,7 +36,7 @@ class NotifyPartyModeController extends Controller
     public function destroy(NotifyPartyMode $notifyPartyMode): JsonResponse
     {
         $notifyPartyMode->delete();
-        return response()->json(['message' => 'Notify party mode deleted.']);
+        return response()->json(['message' => __('Notify party mode deleted.')]);
     }
 }
 

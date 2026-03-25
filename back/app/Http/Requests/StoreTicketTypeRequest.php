@@ -18,7 +18,8 @@ class StoreTicketTypeRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:50', 'unique:ticket_types,name'],
-            'label_ar' => ['nullable', 'string', 'max:100'],
+            'label_ar' => ['required', 'string', 'max:100'],
+            'label_en' => ['required', 'string', 'max:100'],
         ];
     }
 }

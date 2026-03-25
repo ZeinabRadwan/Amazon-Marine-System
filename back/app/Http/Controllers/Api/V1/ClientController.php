@@ -129,7 +129,7 @@ class ClientController extends Controller
         $client->delete();
 
         return response()->json([
-            'message' => 'Client deleted.',
+            'message' => __('Client deleted.'),
         ]);
     }
 

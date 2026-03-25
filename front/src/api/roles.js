@@ -3,6 +3,7 @@
  */
 
 import { getApiBaseUrl } from './apiBaseUrl'
+import { apiFetch } from './http'
 
 const getBaseUrl = getApiBaseUrl
 
@@ -17,7 +18,7 @@ function authHeaders(token) {
  * GET {{base_url}}/roles – List Roles
  */
 export async function listRoles(token) {
-  const res = await fetch(`${getBaseUrl()}/roles`, {
+  const res = await apiFetch(`${getBaseUrl()}/roles`, {
     headers: authHeaders(token),
   })
   const data = await res.json().catch(() => ({}))
@@ -29,7 +30,7 @@ export async function listRoles(token) {
  * GET {{base_url}}/permissions – List Page Permissions
  */
 export async function listPermissions(token) {
-  const res = await fetch(`${getBaseUrl()}/permissions`, {
+  const res = await apiFetch(`${getBaseUrl()}/permissions`, {
     headers: authHeaders(token),
   })
   const data = await res.json().catch(() => ({}))
@@ -41,7 +42,7 @@ export async function listPermissions(token) {
  * GET {{base_url}}/permissions/by-role/{{role_id}} – Get Page Permissions By Role
  */
 export async function getPermissionsByRole(token, roleId) {
-  const res = await fetch(`${getBaseUrl()}/permissions/by-role/${roleId}`, {
+  const res = await apiFetch(`${getBaseUrl()}/permissions/by-role/${roleId}`, {
     headers: authHeaders(token),
   })
   const data = await res.json().catch(() => ({}))
@@ -59,7 +60,7 @@ export async function getPermissionsForRole(token, roleId) {
  * Body: { role_id, page, can_view, can_edit, can_delete, can_approve }
  */
 export async function upsertPermission(token, body) {
-  const res = await fetch(`${getBaseUrl()}/permissions`, {
+  const res = await apiFetch(`${getBaseUrl()}/permissions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -76,7 +77,7 @@ export async function upsertPermission(token, body) {
  * DELETE {{base_url}}/permissions/{{page_permission_id}} – Delete Page Permission
  */
 export async function deletePagePermission(token, pagePermissionId) {
-  const res = await fetch(`${getBaseUrl()}/permissions/${pagePermissionId}`, {
+  const res = await apiFetch(`${getBaseUrl()}/permissions/${pagePermissionId}`, {
     method: 'DELETE',
     headers: authHeaders(token),
   })
@@ -89,7 +90,7 @@ export async function deletePagePermission(token, pagePermissionId) {
  * GET {{base_url}}/abilities – List Abilities (Spatie)
  */
 export async function listAbilities(token) {
-  const res = await fetch(`${getBaseUrl()}/abilities`, {
+  const res = await apiFetch(`${getBaseUrl()}/abilities`, {
     headers: authHeaders(token),
   })
   const data = await res.json().catch(() => ({}))
@@ -102,7 +103,7 @@ export async function listAbilities(token) {
  * Body: { name, permissions?: string[] }
  */
 export async function createRole(token, body) {
-  const res = await fetch(`${getBaseUrl()}/roles`, {
+  const res = await apiFetch(`${getBaseUrl()}/roles`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -120,7 +121,7 @@ export async function createRole(token, body) {
  * Body: { name?, permissions?: string[] }
  */
 export async function updateRole(token, roleId, body) {
-  const res = await fetch(`${getBaseUrl()}/roles/${roleId}`, {
+  const res = await apiFetch(`${getBaseUrl()}/roles/${roleId}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -137,7 +138,7 @@ export async function updateRole(token, roleId, body) {
  * DELETE {{base_url}}/roles/{{role_id}} – Delete Role
  */
 export async function deleteRole(token, roleId) {
-  const res = await fetch(`${getBaseUrl()}/roles/${roleId}`, {
+  const res = await apiFetch(`${getBaseUrl()}/roles/${roleId}`, {
     method: 'DELETE',
     headers: authHeaders(token),
   })

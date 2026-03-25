@@ -62,13 +62,13 @@ class PaymentController extends Controller
 
         if ($validated['type'] === 'client_receipt' && empty($validated['invoice_id']) && empty($validated['client_id'])) {
             return response()->json([
-                'message' => 'Client receipt must be linked to an invoice or client.',
+                'message' => __('Client receipt must be linked to an invoice or client.'),
             ], 422);
         }
 
         if ($validated['type'] === 'vendor_payment' && empty($validated['vendor_bill_id']) && empty($validated['vendor_id'])) {
             return response()->json([
-                'message' => 'Vendor payment must be linked to a vendor bill or vendor.',
+                'message' => __('Vendor payment must be linked to a vendor bill or vendor.'),
             ], 422);
         }
 

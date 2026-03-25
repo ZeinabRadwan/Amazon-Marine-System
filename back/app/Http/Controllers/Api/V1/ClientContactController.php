@@ -57,7 +57,7 @@ class ClientContactController extends Controller
         $contact->delete();
 
         return response()->json([
-            'message' => 'Contact deleted.',
+            'message' => __('Contact deleted.'),
         ]);
     }
 }

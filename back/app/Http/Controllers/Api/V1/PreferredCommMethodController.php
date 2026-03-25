@@ -36,6 +36,6 @@ class PreferredCommMethodController extends Controller
     public function destroy(PreferredCommMethod $preferredCommMethod): JsonResponse
     {
         $preferredCommMethod->delete();
-        return response()->json(['message' => 'Preferred comm method deleted.']);
+        return response()->json(['message' => __('Preferred comm method deleted.')]);
     }
 }

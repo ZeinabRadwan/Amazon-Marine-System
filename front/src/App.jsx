@@ -21,6 +21,7 @@ import Attendance from './pages/Attendance'
 import SDForms from './pages/SDForms'
 import Shipments from './pages/Shipments/Shipments'
 import Pricing from './pages/Pricing/Pricing'
+import Invoices from './pages/Invoices/Invoices'
 import Notifications from './pages/Notifications'
 import Settings from './pages/Settings'
 import './App.css'
@@ -201,6 +202,7 @@ function App() {
           <Route path="/sd-forms" element={<SDForms />} />
           <Route path="/shipments" element={<Shipments />} />
           <Route path="/pricing" element={<Pricing />} />
+          <Route path="/invoices" element={<Invoices />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/settings" element={<Settings />} />
         </Route>

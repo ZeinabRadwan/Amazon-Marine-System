@@ -36,7 +36,7 @@ class FreightTermController extends Controller
     public function destroy(FreightTerm $freightTerm): JsonResponse
     {
         $freightTerm->delete();
-        return response()->json(['message' => 'Freight term deleted.']);
+        return response()->json(['message' => __('Freight term deleted.')]);
     }
 }
 

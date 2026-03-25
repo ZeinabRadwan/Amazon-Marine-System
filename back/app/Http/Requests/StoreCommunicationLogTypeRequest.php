@@ -18,7 +18,8 @@ class StoreCommunicationLogTypeRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:50', 'unique:communication_log_types,name'],
-            'label_ar' => ['nullable', 'string', 'max:100'],
+            'label_ar' => ['required', 'string', 'max:100'],
+            'label_en' => ['required', 'string', 'max:100'],
             'sort_order' => ['sometimes', 'integer', 'min:0', 'max:1000000'],
         ];
     }

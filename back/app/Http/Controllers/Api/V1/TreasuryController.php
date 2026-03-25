@@ -17,7 +17,7 @@ class TreasuryController extends Controller
         abort_unless(
             $request->user()?->can('accounting.view'),
             403,
-            'You do not have permission to view treasury summary.'
+            __('You do not have permission to view treasury summary.')
         );
 
         $months = max(1, (int) $request->query('months', 6));
@@ -116,7 +116,7 @@ class TreasuryController extends Controller
         abort_unless(
             $request->user()?->can('accounting.view'),
             403,
-            'You do not have permission to view treasury entries.'
+            __('You do not have permission to view treasury entries.')
         );
 
         $query = TreasuryEntry::query();
@@ -174,7 +174,7 @@ class TreasuryController extends Controller
         abort_unless(
             $request->user()?->can('accounting.view'),
             403,
-            'You do not have permission to view expenses.'
+            __('You do not have permission to view expenses.')
         );
 
         $query = Expense::query()->with('category');
@@ -226,7 +226,7 @@ class TreasuryController extends Controller
         abort_unless(
             $request->user()?->can('accounting.manage'),
             403,
-            'You do not have permission to create treasury entries.'
+            __('You do not have permission to create treasury entries.')
         );
 
         $validated = $request->validate([
@@ -260,7 +260,7 @@ class TreasuryController extends Controller
         abort_unless(
             $request->user()?->can('accounting.manage'),
             403,
-            'You do not have permission to update treasury entries.'
+            __('You do not have permission to update treasury entries.')
         );
 
         $validated = $request->validate([
@@ -307,13 +307,13 @@ class TreasuryController extends Controller
         abort_unless(
             $request->user()?->can('accounting.manage'),
             403,
-            'You do not have permission to delete treasury entries.'
+            __('You do not have permission to delete treasury entries.')
         );
 
         $treasury_entry->delete();
 
         return response()->json([
-            'message' => 'Treasury entry deleted.',
+            'message' => __('Treasury entry deleted.'),
         ]);
     }
 
@@ -322,7 +322,7 @@ class TreasuryController extends Controller
         abort_unless(
             $request->user()?->can('accounting.manage'),
             403,
-            'You do not have permission to create transfers.'
+            __('You do not have permission to create transfers.')
         );
 
         $validated = $request->validate([
@@ -362,7 +362,7 @@ class TreasuryController extends Controller
         });
 
         return response()->json([
-            'message' => 'Transfer recorded.',
+            'message' => __('Transfer recorded.'),
         ], 201);
     }
 
@@ -371,7 +371,7 @@ class TreasuryController extends Controller
         abort_unless(
             $request->user()?->can('accounting.manage'),
             403,
-            'You do not have permission to create expenses.'
+            __('You do not have permission to create expenses.')
         );
 
         $validated = $request->validate([

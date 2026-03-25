@@ -40,6 +40,6 @@ class ContainerTypeController extends Controller
     {
         $containerType->delete();
 
-        return response()->json(['message' => 'Container type deleted.']);
+        return response()->json(['message' => __('Container type deleted.')]);
     }
 }

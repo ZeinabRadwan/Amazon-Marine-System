@@ -31,7 +31,7 @@ import {
   listInterestLevels,
   listDecisionMakerTitles,
 } from '../../api/clientLookups'
-// import { useAuthAccess } from '../../hooks/useAuthAccess'
+import { useAuthAccess } from '../../hooks/useAuthAccess'
 import { Container } from '../../components/Container'
 import '../../components/PageHeader/PageHeader.css'
 import { Table, IconActionButton } from '../../components/Table'
@@ -46,6 +46,7 @@ import { BarChart, DonutChart } from '../../components/Charts'
 import '../../components/Charts/Charts.css'
 import '../../components/LoaderDots/LoaderDots.css'
 import './Clients.css'
+import { localizedStatusLabel } from '../../utils/localizedStatusLabel'
 
 function getMonthFormat(locale) {
   return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-US', { month: 'short', year: 'numeric' })
@@ -62,19 +63,6 @@ function getStatusBadgeVariant(statusName, statusId) {
   if (name === 'prospect' || name === 'عميل محتمل') return 'prospect'
   if (name === 'lead' || name === 'عميل متوقع') return 'lead'
   return 'default'
-}
-
-/** Map status name (from API) to i18n key for localized label */
-function getStatusLabelKey(statusName) {
-  if (!statusName) return null
-  const name = String(statusName).toLowerCase().trim()
-  if (name === 'new' || name === 'جديد') return 'clients.statusNew'
-  if (name === 'active' || name === 'نشط') return 'clients.statusActive'
-  if (name === 'inactive' || name === 'غير نشط') return 'clients.statusInactive'
-  if (name === 'pending' || name === 'قيد الانتظار' || name === 'معلق') return 'clients.statusPending'
-  if (name === 'prospect' || name === 'عميل محتمل') return 'clients.statusProspect'
-  if (name === 'lead' || name === 'عميل متوقع') return 'clients.statusLead'
-  return null
 }
 
 /** Normalize API client: backend may return client_name/source instead of name/contact_name/lead_source */
@@ -700,7 +688,9 @@ export default function Clients() {
                       <option value="">—</option>
                       {options.map((opt) => (
                         <option key={opt.id} value={opt.id}>
-                          {opt.name}
+                          {opt.name_ar != null || opt.name_en != null
+                            ? localizedStatusLabel(opt, i18n.language)
+                            : (opt.name ?? '')}
                         </option>
                       ))}
                     </select>
@@ -790,12 +780,13 @@ export default function Clients() {
       key: 'status',
       label: t('clients.fields.status'),
       render: (_, c) => {
-        const statusName = c.status ?? clientStatuses.find((s) => Number(s.id) === Number(c.status_id))?.name ?? '—'
-        const variant = getStatusBadgeVariant(statusName, c.status_id)
-        const label = getStatusLabelKey(statusName) ? t(getStatusLabelKey(statusName)) : statusName
+        const st = clientStatuses.find((s) => Number(s.id) === Number(c.status_id))
+        const display = st ? localizedStatusLabel(st, i18n.language) : (c.status ?? '—')
+        const variantKey = (st?.name_en ?? st?.name ?? c.status ?? '').toString().toLowerCase().trim()
+        const variant = getStatusBadgeVariant(variantKey, c.status_id)
         return (
-          <span className={`clients-status-badge clients-status-badge--${variant}`} title={label}>
-            {label}
+          <span className={`clients-status-badge clients-status-badge--${variant}`} title={display}>
+            {display}
           </span>
         )
       },
@@ -971,14 +962,11 @@ export default function Clients() {
               aria-label={t('clients.status')}
             >
               <option value="">{t('clients.statusAll')}</option>
-              {clientStatuses.map((s) => {
-                const label = getStatusLabelKey(s.name) ? t(getStatusLabelKey(s.name)) : s.name
-                return (
-                  <option key={s.id} value={s.id}>
-                    {label}
-                  </option>
-                )
-              })}
+              {clientStatuses.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {localizedStatusLabel(s, i18n.language)}
+                </option>
+              ))}
             </select>
             <select
               value={filters.lead_source_id ?? ''}

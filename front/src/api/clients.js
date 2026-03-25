@@ -18,6 +18,7 @@
  */
 
 import { getApiBaseUrl } from './apiBaseUrl'
+import { apiFetch } from './http'
 
 const getBaseUrl = getApiBaseUrl
 
@@ -44,7 +45,7 @@ export async function listClients(token, params = {}) {
   if (params.per_page != null) searchParams.set('per_page', String(params.per_page))
   const query = searchParams.toString()
   const url = `${getBaseUrl()}/clients${query ? `?${query}` : ''}`
-  const res = await fetch(url, { headers: authHeaders(token) })
+  const res = await apiFetch(url, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to list clients (${res.status})`)
   return data
@@ -54,7 +55,7 @@ export async function listClients(token, params = {}) {
  * GET {{base_url}}/clients/:id – Get Client Detail
  */
 export async function getClient(token, clientId) {
-  const res = await fetch(`${getBaseUrl()}/clients/${clientId}`, {
+  const res = await apiFetch(`${getBaseUrl()}/clients/${clientId}`, {
     headers: authHeaders(token),
   })
   const data = await res.json().catch(() => ({}))
@@ -66,7 +67,7 @@ export async function getClient(token, clientId) {
  * POST {{base_url}}/clients – Create Client
  */
 export async function createClient(token, body) {
-  const res = await fetch(`${getBaseUrl()}/clients`, {
+  const res = await apiFetch(`${getBaseUrl()}/clients`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -83,7 +84,7 @@ export async function createClient(token, body) {
  * PUT {{base_url}}/clients/:id – Update Client
  */
 export async function updateClient(token, clientId, body) {
-  const res = await fetch(`${getBaseUrl()}/clients/${clientId}`, {
+  const res = await apiFetch(`${getBaseUrl()}/clients/${clientId}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -100,7 +101,7 @@ export async function updateClient(token, clientId, body) {
  * DELETE {{base_url}}/clients/:id – Delete Client
  */
 export async function deleteClient(token, clientId) {
-  const res = await fetch(`${getBaseUrl()}/clients/${clientId}`, {
+  const res = await apiFetch(`${getBaseUrl()}/clients/${clientId}`, {
     method: 'DELETE',
     headers: authHeaders(token),
   })
@@ -115,7 +116,7 @@ export async function deleteClient(token, clientId) {
  * GET {{base_url}}/clients/stats – Client Stats
  */
 export async function getClientStats(token) {
-  const res = await fetch(`${getBaseUrl()}/clients/stats`, { headers: authHeaders(token) })
+  const res = await apiFetch(`${getBaseUrl()}/clients/stats`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to get client stats (${res.status})`)
   return data
@@ -126,7 +127,7 @@ export async function getClientStats(token) {
  */
 export async function getClientCharts(token, params = {}) {
   const months = params.months != null ? params.months : 6
-  const res = await fetch(`${getBaseUrl()}/clients/charts?months=${months}`, { headers: authHeaders(token) })
+  const res = await apiFetch(`${getBaseUrl()}/clients/charts?months=${months}`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to get client charts (${res.status})`)
   return data
@@ -136,7 +137,7 @@ export async function getClientCharts(token, params = {}) {
  * GET {{base_url}}/clients/financial-summary – Financial Summary (global)
  */
 export async function getFinancialSummary(token) {
-  const res = await fetch(`${getBaseUrl()}/clients/financial-summary`, { headers: authHeaders(token) })
+  const res = await apiFetch(`${getBaseUrl()}/clients/financial-summary`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to get financial summary (${res.status})`)
   return data
@@ -146,7 +147,7 @@ export async function getFinancialSummary(token) {
  * GET {{base_url}}/clients/:id/financial-summary – Financial Summary for one client
  */
 export async function getClientFinancialSummary(token, clientId) {
-  const res = await fetch(`${getBaseUrl()}/clients/${clientId}/financial-summary`, { headers: authHeaders(token) })
+  const res = await apiFetch(`${getBaseUrl()}/clients/${clientId}/financial-summary`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to get client financial summary (${res.status})`)
   return data
@@ -166,7 +167,7 @@ export async function getPricingList(token, params = {}) {
   if (params.direction != null) searchParams.set('direction', params.direction)
   const query = searchParams.toString()
   const url = `${getBaseUrl()}/clients/pricing${query ? `?${query}` : ''}`
-  const res = await fetch(url, { headers: authHeaders(token) })
+  const res = await apiFetch(url, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to get pricing list (${res.status})`)
   return data
@@ -176,7 +177,7 @@ export async function getPricingList(token, params = {}) {
  * GET {{base_url}}/clients/:id/pricing – Pricing List for one client
  */
 export async function getClientPricingList(token, clientId) {
-  const res = await fetch(`${getBaseUrl()}/clients/${clientId}/pricing`, { headers: authHeaders(token) })
+  const res = await apiFetch(`${getBaseUrl()}/clients/${clientId}/pricing`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to get client pricing list (${res.status})`)
   return data
@@ -189,7 +190,7 @@ export async function exportClients(token, params = {}) {
   const searchParams = new URLSearchParams(params)
   const query = searchParams.toString()
   const url = `${getBaseUrl()}/clients/export${query ? `?${query}` : ''}`
-  const res = await fetch(url, { headers: authHeaders(token) })
+  const res = await apiFetch(url, { headers: authHeaders(token) })
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))
     throw new Error(data.message || data.error || `Failed to export clients (${res.status})`)
@@ -202,7 +203,7 @@ export async function exportClients(token, params = {}) {
  * Body: { client_ids: number[], assigned_sales_id: number }
  */
 export async function bulkAssignSales(token, body) {
-  const res = await fetch(`${getBaseUrl()}/clients/bulk-assign`, {
+  const res = await apiFetch(`${getBaseUrl()}/clients/bulk-assign`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: JSON.stringify(body),
@@ -216,7 +217,7 @@ export async function bulkAssignSales(token, body) {
  * GET {{base_url}}/clients/:id/visits – Get Client Visits
  */
 export async function getClientVisits(token, clientId) {
-  const res = await fetch(`${getBaseUrl()}/clients/${clientId}/visits`, { headers: authHeaders(token) })
+  const res = await apiFetch(`${getBaseUrl()}/clients/${clientId}/visits`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to get client visits (${res.status})`)
   return data
@@ -232,7 +233,7 @@ export async function getClientShipments(token, clientId, params = {}) {
   else searchParams.set('per_page', '10')
   if (params.page != null) searchParams.set('page', String(params.page))
   const query = searchParams.toString()
-  const res = await fetch(`${getBaseUrl()}/clients/${clientId}/shipments?${query}`, { headers: authHeaders(token) })
+  const res = await apiFetch(`${getBaseUrl()}/clients/${clientId}/shipments?${query}`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to get client shipments (${res.status})`)
   return data
@@ -242,7 +243,7 @@ export async function getClientShipments(token, clientId, params = {}) {
  * GET {{base_url}}/clients/:id/attachments – Get Client Attachments
  */
 export async function getClientAttachments(token, clientId) {
-  const res = await fetch(`${getBaseUrl()}/clients/${clientId}/attachments`, { headers: authHeaders(token) })
+  const res = await apiFetch(`${getBaseUrl()}/clients/${clientId}/attachments`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to get client attachments (${res.status})`)
   return data
@@ -254,7 +255,7 @@ export async function getClientAttachments(token, clientId) {
 export async function postClientAttachment(token, clientId, file) {
   const form = new FormData()
   form.append('file', file)
-  const res = await fetch(`${getBaseUrl()}/clients/${clientId}/attachments`, {
+  const res = await apiFetch(`${getBaseUrl()}/clients/${clientId}/attachments`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
     body: form,
@@ -268,7 +269,7 @@ export async function postClientAttachment(token, clientId, file) {
  * GET {{base_url}}/clients/:id/attachments/:attachmentId/download – Download Client Attachment (returns blob)
  */
 export async function getClientAttachmentDownload(token, clientId, attachmentId) {
-  const res = await fetch(`${getBaseUrl()}/clients/${clientId}/attachments/${attachmentId}/download`, {
+  const res = await apiFetch(`${getBaseUrl()}/clients/${clientId}/attachments/${attachmentId}/download`, {
     headers: authHeaders(token),
   })
   if (!res.ok) {
@@ -282,7 +283,7 @@ export async function getClientAttachmentDownload(token, clientId, attachmentId)
  * DELETE {{base_url}}/clients/:id/attachments/:attachmentId – Delete Client Attachment
  */
 export async function deleteClientAttachment(token, clientId, attachmentId) {
-  const res = await fetch(`${getBaseUrl()}/clients/${clientId}/attachments/${attachmentId}`, {
+  const res = await apiFetch(`${getBaseUrl()}/clients/${clientId}/attachments/${attachmentId}`, {
     method: 'DELETE',
     headers: authHeaders(token),
   })
@@ -297,7 +298,7 @@ export async function deleteClientAttachment(token, clientId, attachmentId) {
  * GET {{base_url}}/clients/:id/notes – List Client Notes (Quick Notes)
  */
 export async function getClientNotes(token, clientId) {
-  const res = await fetch(`${getBaseUrl()}/clients/${clientId}/notes`, { headers: authHeaders(token) })
+  const res = await apiFetch(`${getBaseUrl()}/clients/${clientId}/notes`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to get client notes (${res.status})`)
   return data
@@ -308,7 +309,7 @@ export async function getClientNotes(token, clientId) {
  * Body: { content?: string } or sales-guidance fields (current_need, pain_points, opportunity, special_requirements)
  */
 export async function postClientNote(token, clientId, body = {}) {
-  const res = await fetch(`${getBaseUrl()}/clients/${clientId}/notes`, {
+  const res = await apiFetch(`${getBaseUrl()}/clients/${clientId}/notes`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: JSON.stringify(body),
@@ -322,7 +323,7 @@ export async function postClientNote(token, clientId, body = {}) {
  * GET {{base_url}}/clients/:id/follow-ups – List Client Follow-ups
  */
 export async function getClientFollowUps(token, clientId) {
-  const res = await fetch(`${getBaseUrl()}/clients/${clientId}/follow-ups`, { headers: authHeaders(token) })
+  const res = await apiFetch(`${getBaseUrl()}/clients/${clientId}/follow-ups`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to get follow-ups (${res.status})`)
   return data
@@ -333,7 +334,7 @@ export async function getClientFollowUps(token, clientId) {
  * Body: { type: 'phone'|'email'|'visit'|'whatsapp'|'meeting', occurred_at, summary?, next_follow_up_at? }
  */
 export async function postClientFollowUp(token, clientId, body) {
-  const res = await fetch(`${getBaseUrl()}/clients/${clientId}/follow-ups`, {
+  const res = await apiFetch(`${getBaseUrl()}/clients/${clientId}/follow-ups`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: JSON.stringify(body),
@@ -348,7 +349,7 @@ export async function postClientFollowUp(token, clientId, body) {
  * Body: optional origin_port_id, destination_port_id, shipment_direction, mode, shipment_type, status, container_*, loading_*, cargo_description, is_reefer, etc.
  */
 export async function createClientShipment(token, clientId, body = {}) {
-  const res = await fetch(`${getBaseUrl()}/clients/${clientId}/shipments`, {
+  const res = await apiFetch(`${getBaseUrl()}/clients/${clientId}/shipments`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: JSON.stringify(body),

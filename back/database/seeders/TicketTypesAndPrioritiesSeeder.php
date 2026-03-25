@@ -15,9 +15,9 @@ class TicketTypesAndPrioritiesSeeder extends Seeder
     public function run(): void
     {
         $types = [
-            ['name' => 'inquiry', 'label_ar' => 'استفسار'],
-            ['name' => 'complaint', 'label_ar' => 'شكوى'],
-            ['name' => 'request', 'label_ar' => 'طلب'],
+            ['name' => 'inquiry', 'label_ar' => 'استفسار', 'label_en' => 'Inquiry'],
+            ['name' => 'complaint', 'label_ar' => 'شكوى', 'label_en' => 'Complaint'],
+            ['name' => 'request', 'label_ar' => 'طلب', 'label_en' => 'Request'],
         ];
 
         foreach ($types as $data) {
@@ -28,9 +28,9 @@ class TicketTypesAndPrioritiesSeeder extends Seeder
         }
 
         $priorities = [
-            ['name' => 'low', 'label_ar' => 'منخفض', 'sort_order' => 1],
-            ['name' => 'medium', 'label_ar' => 'متوسط', 'sort_order' => 2],
-            ['name' => 'high', 'label_ar' => 'عالي', 'sort_order' => 3],
+            ['name' => 'low', 'label_ar' => 'منخفض', 'label_en' => 'Low', 'sort_order' => 1],
+            ['name' => 'medium', 'label_ar' => 'متوسط', 'label_en' => 'Medium', 'sort_order' => 2],
+            ['name' => 'high', 'label_ar' => 'عالي', 'label_en' => 'High', 'sort_order' => 3],
         ];
 
         foreach ($priorities as $data) {

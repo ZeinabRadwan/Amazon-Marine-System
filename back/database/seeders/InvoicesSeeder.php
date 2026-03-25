@@ -102,6 +102,74 @@ class InvoicesSeeder extends Seeder
             true,
             7800
         );
+
+        // Partner (vendor) invoices
+        $this->createInvoice(
+            'INV-2026-0091',
+            $client,
+            $shipment,
+            'vendor',
+            'paid',
+            1,
+            'USD',
+            '2026-02-16',
+            '2026-03-01',
+            [
+                ['desc' => 'Shipping Line Charges', 'qty' => 1, 'price' => 3250],
+            ],
+            false,
+            3250
+        );
+
+        $this->createInvoice(
+            'INV-2026-0090',
+            $client,
+            $shipment,
+            'vendor',
+            'issued',
+            2,
+            'EGP',
+            '2026-02-16',
+            '2026-02-01',
+            [
+                ['desc' => 'Inland Transport (Partner)', 'qty' => 1, 'price' => 18000],
+            ],
+            false
+        );
+
+        // Draft invoice to exercise create/edit flows
+        $this->createInvoice(
+            'INV-2026-0089',
+            $client,
+            $shipment,
+            'client',
+            'draft',
+            1,
+            'USD',
+            '2026-02-15',
+            '2026-03-01',
+            [
+                ['desc' => 'Draft item', 'qty' => 1, 'price' => 500],
+            ],
+            false
+        );
+
+        // Cancelled invoice
+        $this->createInvoice(
+            'INV-2026-0088',
+            $client,
+            $shipment,
+            'client',
+            'cancelled',
+            1,
+            'USD',
+            '2026-02-14',
+            '2026-02-28',
+            [
+                ['desc' => 'Cancelled item', 'qty' => 1, 'price' => 100],
+            ],
+            false
+        );
     }
 
     /**

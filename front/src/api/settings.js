@@ -14,6 +14,7 @@
  */
 
 import { getApiBaseUrl } from './apiBaseUrl'
+import { apiFetch } from './http'
 
 const getBaseUrl = getApiBaseUrl
 
@@ -25,7 +26,7 @@ function authHeaders(token) {
 }
 
 export async function getSettings(token) {
-  const res = await fetch(`${getBaseUrl()}/settings`, {
+  const res = await apiFetch(`${getBaseUrl()}/settings`, {
     headers: authHeaders(token),
   })
   const data = await res.json().catch(() => ({}))
@@ -34,7 +35,7 @@ export async function getSettings(token) {
 }
 
 export async function updateCompanyProfile(token, body) {
-  const res = await fetch(`${getBaseUrl()}/settings/company/profile`, {
+  const res = await apiFetch(`${getBaseUrl()}/settings/company/profile`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -48,7 +49,7 @@ export async function updateCompanyProfile(token, body) {
 }
 
 export async function updateAttendancePolicy(token, body) {
-  const res = await fetch(`${getBaseUrl()}/settings/attendance/policy`, {
+  const res = await apiFetch(`${getBaseUrl()}/settings/attendance/policy`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -62,7 +63,7 @@ export async function updateAttendancePolicy(token, body) {
 }
 
 export async function updateCompanyLocation(token, body) {
-  const res = await fetch(`${getBaseUrl()}/settings/company/location`, {
+  const res = await apiFetch(`${getBaseUrl()}/settings/company/location`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -76,7 +77,7 @@ export async function updateCompanyLocation(token, body) {
 }
 
 export async function updateSystemPreferences(token, body) {
-  const res = await fetch(`${getBaseUrl()}/settings/system/preferences`, {
+  const res = await apiFetch(`${getBaseUrl()}/settings/system/preferences`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -90,7 +91,7 @@ export async function updateSystemPreferences(token, body) {
 }
 
 export async function updateNotificationPreferences(token, body) {
-  const res = await fetch(`${getBaseUrl()}/settings/notifications/preferences`, {
+  const res = await apiFetch(`${getBaseUrl()}/settings/notifications/preferences`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -104,7 +105,7 @@ export async function updateNotificationPreferences(token, body) {
 }
 
 export async function updateSessionSettings(token, body) {
-  const res = await fetch(`${getBaseUrl()}/settings/sessions`, {
+  const res = await apiFetch(`${getBaseUrl()}/settings/sessions`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -122,7 +123,7 @@ export async function getTodaySession(token, params = {}) {
   if (params.user_id != null && params.user_id !== '') searchParams.set('user_id', String(params.user_id))
   const q = searchParams.toString()
   const url = `${getBaseUrl()}/sessions/today${q ? `?${q}` : ''}`
-  const res = await fetch(url, {
+  const res = await apiFetch(url, {
     headers: authHeaders(token),
   })
   const data = await res.json().catch(() => ({}))
@@ -137,7 +138,7 @@ export async function listSessionsHistory(token, params = {}) {
   if (params.user_id != null && params.user_id !== '') searchParams.set('user_id', String(params.user_id))
   const q = searchParams.toString()
   const url = `${getBaseUrl()}/sessions/history${q ? `?${q}` : ''}`
-  const res = await fetch(url, {
+  const res = await apiFetch(url, {
     headers: authHeaders(token),
   })
   const data = await res.json().catch(() => ({}))
@@ -146,7 +147,7 @@ export async function listSessionsHistory(token, params = {}) {
 }
 
 export async function logoutOtherSessions(token) {
-  const res = await fetch(`${getBaseUrl()}/sessions/logout-others`, {
+  const res = await apiFetch(`${getBaseUrl()}/sessions/logout-others`, {
     method: 'POST',
     headers: authHeaders(token),
   })
@@ -165,7 +166,7 @@ export async function listActivities(token, params = {}) {
   if (params.user_id != null && params.user_id !== '') searchParams.set('user_id', String(params.user_id))
   const q = searchParams.toString()
   const url = `${getBaseUrl()}/activities${q ? `?${q}` : ''}`
-  const res = await fetch(url, {
+  const res = await apiFetch(url, {
     headers: authHeaders(token),
   })
   const data = await res.json().catch(() => ({}))
@@ -174,7 +175,7 @@ export async function listActivities(token, params = {}) {
 }
 
 export async function listShipmentStatuses(token) {
-  const res = await fetch(`${getBaseUrl()}/shipment-statuses`, {
+  const res = await apiFetch(`${getBaseUrl()}/shipment-statuses`, {
     headers: authHeaders(token),
   })
   const data = await res.json().catch(() => ({}))
@@ -183,7 +184,7 @@ export async function listShipmentStatuses(token) {
 }
 
 export async function createShipmentStatus(token, body) {
-  const res = await fetch(`${getBaseUrl()}/shipment-statuses`, {
+  const res = await apiFetch(`${getBaseUrl()}/shipment-statuses`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -197,7 +198,7 @@ export async function createShipmentStatus(token, body) {
 }
 
 export async function updateShipmentStatus(token, id, body) {
-  const res = await fetch(`${getBaseUrl()}/shipment-statuses/${encodeURIComponent(id)}`, {
+  const res = await apiFetch(`${getBaseUrl()}/shipment-statuses/${encodeURIComponent(id)}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -211,7 +212,7 @@ export async function updateShipmentStatus(token, id, body) {
 }
 
 export async function deleteShipmentStatus(token, id) {
-  const res = await fetch(`${getBaseUrl()}/shipment-statuses/${encodeURIComponent(id)}`, {
+  const res = await apiFetch(`${getBaseUrl()}/shipment-statuses/${encodeURIComponent(id)}`, {
     method: 'DELETE',
     headers: authHeaders(token),
   })
