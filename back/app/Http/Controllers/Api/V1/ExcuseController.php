@@ -51,7 +51,10 @@ class ExcuseController extends Controller
     public function attachment(Request $request, Excuse $excuse)
     {
         $user = $request->user();
-        $isOwner = (int) $excuse->user_id === (int) $user->id;
+        $authId = $user->getAuthIdentifier();
+        $isOwner = $authId !== null
+            && $excuse->user_id !== null
+            && (string) $excuse->user_id === (string) $authId;
         $canReview = $user->can('attendance.excuses.manage') || $user->can('attendance.admin');
 
         if (! $isOwner && ! $canReview) {
@@ -86,7 +89,7 @@ class ExcuseController extends Controller
             'date' => $e->date?->toDateString(),
             'reason' => $e->reason,
             'attachment_path' => $e->attachment_path,
-            'has_attachment' => $e->attachment_path !== null,
+            'has_attachment' => filled($e->attachment_path),
             'status' => $e->status,
             'admin_note' => $e->admin_note,
             'created_at' => $e->created_at?->toIso8601String(),
