@@ -13,6 +13,7 @@ class CommunicationLogType extends Model
     protected $fillable = [
         'name',
         'label_ar',
+        'label_en',
         'sort_order',
     ];
 

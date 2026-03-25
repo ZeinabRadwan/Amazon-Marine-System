@@ -21,7 +21,8 @@ class UpdateTicketPriorityRequest extends FormRequest
 
         return [
             'name' => ['sometimes', 'string', 'max:50', Rule::unique('ticket_priorities', 'name')->ignore($id)],
-            'label_ar' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'label_ar' => ['sometimes', 'required', 'string', 'max:100'],
+            'label_en' => ['sometimes', 'required', 'string', 'max:100'],
             'sort_order' => ['sometimes', 'integer', 'min:0', 'max:1000000'],
         ];
     }

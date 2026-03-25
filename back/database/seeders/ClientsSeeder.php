@@ -99,7 +99,7 @@ class ClientsSeeder extends Seeder
                 ? LeadSource::where('name', $data['lead_source'])->first()
                 : null;
             $clientStatus = isset($data['status_name'])
-                ? ClientStatus::where('name', $data['status_name'])->first()
+                ? ClientStatus::where('name_en', $data['status_name'])->first()
                 : null;
 
             unset(

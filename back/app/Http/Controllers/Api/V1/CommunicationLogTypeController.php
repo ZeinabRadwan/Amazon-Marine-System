@@ -27,6 +27,7 @@ class CommunicationLogTypeController extends Controller
                 'id' => $t->id,
                 'name' => $t->name,
                 'label_ar' => $t->label_ar,
+                'label_en' => $t->label_en,
                 'sort_order' => (int) $t->sort_order,
             ]),
         ]);
@@ -41,6 +42,7 @@ class CommunicationLogTypeController extends Controller
                 'id' => $type->id,
                 'name' => $type->name,
                 'label_ar' => $type->label_ar,
+                'label_en' => $type->label_en,
                 'sort_order' => (int) $type->sort_order,
             ],
         ], 201);
@@ -57,6 +59,7 @@ class CommunicationLogTypeController extends Controller
                 'id' => $communicationLogType->id,
                 'name' => $communicationLogType->name,
                 'label_ar' => $communicationLogType->label_ar,
+                'label_en' => $communicationLogType->label_en,
                 'sort_order' => (int) $communicationLogType->sort_order,
             ],
         ]);
@@ -72,6 +75,7 @@ class CommunicationLogTypeController extends Controller
                 'id' => $communicationLogType->id,
                 'name' => $communicationLogType->name,
                 'label_ar' => $communicationLogType->label_ar,
+                'label_en' => $communicationLogType->label_en,
                 'sort_order' => (int) $communicationLogType->sort_order,
             ],
         ]);

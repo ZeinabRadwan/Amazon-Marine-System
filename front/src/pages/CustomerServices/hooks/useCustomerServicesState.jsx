@@ -29,6 +29,7 @@ import {
 import { Eye, Pencil, Send, Trash2, MessageSquare } from 'lucide-react'
 import { Bx } from '../components/BxIcon'
 import { IconActionButton } from '../../../components/Table'
+import { localizedStatusLabel } from '../../../utils/localizedStatusLabel'
 
 /** Normalize Laravel-style pagination meta from API response */
 function normalizeMeta(meta, fallback = {}) {
@@ -261,27 +262,30 @@ export function useCustomerServicesState() {
 
   const ticketTypeLabelByName = useMemo(() => {
     const map = {}
+    const lang = isArabicLang ? 'ar' : 'en'
     for (const tt of ticketTypes || []) {
       if (!tt?.name) continue
-      map[tt.name] = isArabicLang && tt?.label_ar ? tt.label_ar : (tt?.name ?? '')
+      map[tt.name] = localizedStatusLabel(tt, lang)
     }
     return map
   }, [ticketTypes, isArabicLang])
 
   const ticketPriorityLabelByName = useMemo(() => {
     const map = {}
+    const lang = isArabicLang ? 'ar' : 'en'
     for (const p of ticketPriorities || []) {
       if (!p?.name) continue
-      map[p.name] = isArabicLang && p?.label_ar ? p.label_ar : (p?.name ?? '')
+      map[p.name] = localizedStatusLabel(p, lang)
     }
     return map
   }, [ticketPriorities, isArabicLang])
 
   const ticketStatusLabelByKey = useMemo(() => {
     const map = {}
+    const lang = isArabicLang ? 'ar' : 'en'
     for (const s of ticketStatuses || []) {
       if (!s?.key) continue
-      map[s.key] = isArabicLang ? (s?.label_ar || s?.label_en || s.key) : (s?.label_en || s?.label_ar || s.key)
+      map[s.key] = localizedStatusLabel(s, lang)
     }
     return map
   }, [ticketStatuses, isArabicLang])
@@ -296,9 +300,10 @@ export function useCustomerServicesState() {
 
   const commsTypeLabelByName = useMemo(() => {
     const map = {}
+    const lang = isArabicLang ? 'ar' : 'en'
     for (const t of commsTypes || []) {
       if (!t?.name) continue
-      map[t.name] = isArabicLang && t?.label_ar ? t.label_ar : (t?.name ?? '')
+      map[t.name] = localizedStatusLabel(t, lang)
     }
     return map
   }, [commsTypes, isArabicLang])

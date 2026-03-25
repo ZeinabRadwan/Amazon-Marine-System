@@ -88,12 +88,6 @@ function resolveWorkedMinutes(r, nowMs = Date.now()) {
   return mins >= 0 ? { minutes: mins, openShift: true } : null
 }
 
-function resolveWithinRadius(r) {
-  const v = r.is_within_radius ?? r.clock_in_is_within_radius
-  if (v === true || v === false) return v
-  return null
-}
-
 function resolveDistanceM(r) {
   const d = r.distance_from_office_m ?? r.clock_in_distance_from_office
   if (d == null || d === '') return null
@@ -156,18 +150,6 @@ function renderAttendanceStatusBadge(t, r) {
       {attendanceStatusLabel(t, status)}
     </span>
   )
-}
-
-function renderWithinRadiusBadge(t, r) {
-  const v = resolveWithinRadius(r)
-  if (v === true) {
-    return <span className="attendance-badge attendance-badge--radius-yes">{t('attendance.yes')}</span>
-  }
-  if (v === false) {
-    return <span className="attendance-badge attendance-badge--radius-no">{t('attendance.no')}</span>
-  }
-
-  return '—'
 }
 
 function getCurrentPosition() {
@@ -630,7 +612,6 @@ export default function Attendance() {
       'clock_in_at',
       'clock_out_at',
       'worked_hours',
-      'is_within_radius',
       'distance_m',
       'status',
     ]
@@ -850,12 +831,6 @@ export default function Attendance() {
         },
       },
       {
-        key: 'is_within_radius',
-        label: t('attendance.withinRadius'),
-        sortable: true,
-        render: (_, r) => renderWithinRadiusBadge(t, r),
-      },
-      {
         key: 'distance_from_office_m',
         label: t('attendance.distanceM'),
         sortable: true,
@@ -892,12 +867,6 @@ export default function Attendance() {
         }
         return '—'
       },
-    },
-    {
-      key: 'is_within_radius',
-      label: t('attendance.withinRadius'),
-      sortable: true,
-      render: (_, r) => renderWithinRadiusBadge(t, r),
     },
     {
       key: 'distance_from_office_m',

@@ -27,6 +27,7 @@ class TicketPriorityController extends Controller
                 'id' => $p->id,
                 'name' => $p->name,
                 'label_ar' => $p->label_ar,
+                'label_en' => $p->label_en,
                 'sort_order' => (int) $p->sort_order,
             ]),
         ]);
@@ -41,6 +42,7 @@ class TicketPriorityController extends Controller
                 'id' => $priority->id,
                 'name' => $priority->name,
                 'label_ar' => $priority->label_ar,
+                'label_en' => $priority->label_en,
                 'sort_order' => (int) $priority->sort_order,
             ],
         ], 201);
@@ -57,6 +59,7 @@ class TicketPriorityController extends Controller
                 'id' => $ticketPriority->id,
                 'name' => $ticketPriority->name,
                 'label_ar' => $ticketPriority->label_ar,
+                'label_en' => $ticketPriority->label_en,
                 'sort_order' => (int) $ticketPriority->sort_order,
             ],
         ]);
@@ -72,6 +75,7 @@ class TicketPriorityController extends Controller
                 'id' => $ticketPriority->id,
                 'name' => $ticketPriority->name,
                 'label_ar' => $ticketPriority->label_ar,
+                'label_en' => $ticketPriority->label_en,
                 'sort_order' => (int) $ticketPriority->sort_order,
             ],
         ]);

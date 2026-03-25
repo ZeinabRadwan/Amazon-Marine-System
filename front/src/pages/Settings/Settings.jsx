@@ -56,6 +56,7 @@ import '../Clients/Clients.css'
 import '../CustomerServices/styles/CustomerServices.css'
 import './Settings.css'
 import LeafletCompanyLocationPicker from '../../components/LeafletCompanyLocationPicker/LeafletCompanyLocationPicker'
+import { localizedStatusLabel } from '../../utils/localizedStatusLabel'
 
 function SectionCard({ title, subtitle, children, actions, compact }) {
   return (
@@ -171,7 +172,7 @@ export default function Settings() {
 
   const [clientStatuses, setClientStatuses] = useState([])
   const [clientStatusModal, setClientStatusModal] = useState(null)
-  const [clientStatusForm, setClientStatusForm] = useState({ name: '', sort_order: 1 })
+  const [clientStatusForm, setClientStatusForm] = useState({ name_ar: '', name_en: '', sort_order: 1 })
   const [clientStatusSubmitting, setClientStatusSubmitting] = useState(false)
   const [deleteClientStatusId, setDeleteClientStatusId] = useState(null)
   const [deleteClientStatusSubmitting, setDeleteClientStatusSubmitting] = useState(false)
@@ -192,21 +193,21 @@ export default function Settings() {
   const [ticketTypes, setTicketTypes] = useState([])
   const [showTicketTypeModal, setShowTicketTypeModal] = useState(false)
   const [editingTicketType, setEditingTicketType] = useState(null)
-  const [ticketTypeForm, setTicketTypeForm] = useState({ name: '', label_ar: '' })
+  const [ticketTypeForm, setTicketTypeForm] = useState({ name: '', label_ar: '', label_en: '' })
   const [deleteTicketTypeId, setDeleteTicketTypeId] = useState(null)
   const [ticketTypeSubmitting, setTicketTypeSubmitting] = useState(false)
 
   const [ticketPriorities, setTicketPriorities] = useState([])
   const [showTicketPriorityModal, setShowTicketPriorityModal] = useState(false)
   const [editingTicketPriority, setEditingTicketPriority] = useState(null)
-  const [ticketPriorityForm, setTicketPriorityForm] = useState({ name: '', label_ar: '', sort_order: 0 })
+  const [ticketPriorityForm, setTicketPriorityForm] = useState({ name: '', label_ar: '', label_en: '', sort_order: 0 })
   const [deleteTicketPriorityId, setDeleteTicketPriorityId] = useState(null)
   const [ticketPrioritySubmitting, setTicketPrioritySubmitting] = useState(false)
 
   const [communicationLogTypes, setCommunicationLogTypes] = useState([])
   const [showCommLogTypeModal, setShowCommLogTypeModal] = useState(false)
   const [editingCommLogType, setEditingCommLogType] = useState(null)
-  const [commLogTypeForm, setCommLogTypeForm] = useState({ name: '', label_ar: '', sort_order: 0 })
+  const [commLogTypeForm, setCommLogTypeForm] = useState({ name: '', label_ar: '', label_en: '', sort_order: 0 })
   const [deleteCommLogTypeId, setDeleteCommLogTypeId] = useState(null)
   const [commLogTypeSubmitting, setCommLogTypeSubmitting] = useState(false)
 
@@ -602,12 +603,16 @@ export default function Settings() {
   }
 
   function openNewClientStatus() {
-    setClientStatusForm({ name: '', sort_order: 1 })
+    setClientStatusForm({ name_ar: '', name_en: '', sort_order: 1 })
     setClientStatusModal('create')
   }
 
   function openEditClientStatus(row) {
-    setClientStatusForm({ name: row.name ?? '', sort_order: row.sort_order ?? 1 })
+    setClientStatusForm({
+      name_ar: row.name_ar ?? row.name ?? '',
+      name_en: row.name_en ?? row.name ?? '',
+      sort_order: row.sort_order ?? 1,
+    })
     setClientStatusModal({ mode: 'edit', id: row.id })
   }
 
@@ -617,7 +622,11 @@ export default function Settings() {
     setClientStatusSubmitting(true)
     setError('')
     try {
-      const body = { name: clientStatusForm.name, sort_order: Number(clientStatusForm.sort_order) || 0 }
+      const body = {
+        name_ar: clientStatusForm.name_ar.trim(),
+        name_en: clientStatusForm.name_en.trim(),
+        sort_order: Number(clientStatusForm.sort_order) || 0,
+      }
       if (clientStatusModal?.mode === 'edit' && clientStatusModal.id != null) {
         await updateClientStatus(token, clientStatusModal.id, body)
       } else {
@@ -677,11 +686,11 @@ export default function Settings() {
     setSaving(true)
     setError('')
     try {
-      const labelEn = ticketStatusForm.label_en?.trim() || null
+      const labelEn = ticketStatusForm.label_en?.trim() ?? ''
       const sortOrder = Number(ticketStatusForm.sort_order || 0)
       if (editingTicketStatus) {
         await updateTicketStatus(token, editingTicketStatus.id, {
-          label_ar: ticketStatusForm.label_ar,
+          label_ar: ticketStatusForm.label_ar.trim(),
           label_en: labelEn,
           active: ticketStatusForm.active,
           sort_order: sortOrder,
@@ -689,7 +698,7 @@ export default function Settings() {
       } else {
         await createTicketStatus(token, {
           key: ticketStatusForm.key.trim(),
-          label_ar: ticketStatusForm.label_ar,
+          label_ar: ticketStatusForm.label_ar.trim(),
           label_en: labelEn,
           active: ticketStatusForm.active,
           sort_order: sortOrder,
@@ -726,13 +735,17 @@ export default function Settings() {
 
   function openNewTicketType() {
     setEditingTicketType(null)
-    setTicketTypeForm({ name: '', label_ar: '' })
+    setTicketTypeForm({ name: '', label_ar: '', label_en: '' })
     setShowTicketTypeModal(true)
   }
 
   function openEditTicketType(row) {
     setEditingTicketType(row)
-    setTicketTypeForm({ name: row.name || '', label_ar: row.label_ar || '' })
+    setTicketTypeForm({
+      name: row.name || '',
+      label_ar: row.label_ar || '',
+      label_en: row.label_en || '',
+    })
     setShowTicketTypeModal(true)
   }
 
@@ -744,7 +757,8 @@ export default function Settings() {
     try {
       const body = {
         name: ticketTypeForm.name.trim(),
-        label_ar: ticketTypeForm.label_ar?.trim() || null,
+        label_ar: ticketTypeForm.label_ar.trim(),
+        label_en: ticketTypeForm.label_en.trim(),
       }
       if (editingTicketType) {
         await updateTicketType(token, editingTicketType.id, body)
@@ -782,7 +796,7 @@ export default function Settings() {
 
   function openNewTicketPriority() {
     setEditingTicketPriority(null)
-    setTicketPriorityForm({ name: '', label_ar: '', sort_order: 0 })
+    setTicketPriorityForm({ name: '', label_ar: '', label_en: '', sort_order: 0 })
     setShowTicketPriorityModal(true)
   }
 
@@ -791,6 +805,7 @@ export default function Settings() {
     setTicketPriorityForm({
       name: row.name || '',
       label_ar: row.label_ar || '',
+      label_en: row.label_en || '',
       sort_order: row.sort_order ?? 0,
     })
     setShowTicketPriorityModal(true)
@@ -804,7 +819,8 @@ export default function Settings() {
     try {
       const body = {
         name: ticketPriorityForm.name.trim(),
-        label_ar: ticketPriorityForm.label_ar?.trim() || null,
+        label_ar: ticketPriorityForm.label_ar.trim(),
+        label_en: ticketPriorityForm.label_en.trim(),
         sort_order: Number(ticketPriorityForm.sort_order || 0),
       }
       if (editingTicketPriority) {
@@ -843,7 +859,7 @@ export default function Settings() {
 
   function openNewCommLogType() {
     setEditingCommLogType(null)
-    setCommLogTypeForm({ name: '', label_ar: '', sort_order: 0 })
+    setCommLogTypeForm({ name: '', label_ar: '', label_en: '', sort_order: 0 })
     setShowCommLogTypeModal(true)
   }
 
@@ -852,6 +868,7 @@ export default function Settings() {
     setCommLogTypeForm({
       name: row.name || '',
       label_ar: row.label_ar || '',
+      label_en: row.label_en || '',
       sort_order: row.sort_order ?? 0,
     })
     setShowCommLogTypeModal(true)
@@ -865,7 +882,8 @@ export default function Settings() {
     try {
       const body = {
         name: commLogTypeForm.name.trim(),
-        label_ar: commLogTypeForm.label_ar?.trim() || null,
+        label_ar: commLogTypeForm.label_ar.trim(),
+        label_en: commLogTypeForm.label_en.trim(),
         sort_order: Number(commLogTypeForm.sort_order || 0),
       }
       if (editingCommLogType) {
@@ -922,11 +940,15 @@ export default function Settings() {
   ]
 
   const shipmentStatusColumns = [
-    { key: 'name_ar', label: t('settings.shipmentStatuses.table.nameAr'), sortable: false },
-    { key: 'name_en', label: t('settings.shipmentStatuses.table.nameEn'), sortable: false, render: (val) => val || '—' },
+    {
+      key: 'display',
+      label: t('settings.statuses.displayName'),
+      sortable: false,
+      render: (_, row) => localizedStatusLabel(row, i18n.language),
+    },
     { key: 'color', label: t('settings.shipmentStatuses.table.color'), sortable: false, render: (val, row) => (
       <span className="settings-status-badge" style={{ backgroundColor: val || '#3B82F6' }}>
-        {row.name_ar || row.name_en || '—'}
+        {localizedStatusLabel(row, i18n.language) || '—'}
       </span>
     ) },
     { key: 'active', label: t('settings.shipmentStatuses.table.active'), sortable: false, render: (val) => (val ? t('common.yes', 'Yes') : t('common.no', 'No')) },
@@ -948,7 +970,12 @@ export default function Settings() {
   ]
 
   const clientStatusColumns = [
-    { key: 'name', label: t('settings.clientStatuses.table.name'), sortable: false },
+    {
+      key: 'display',
+      label: t('settings.statuses.displayName'),
+      sortable: false,
+      render: (_, row) => localizedStatusLabel(row, i18n.language),
+    },
     { key: 'sort_order', label: t('settings.clientStatuses.table.sortOrder'), sortable: false, render: (val) => val ?? '—' },
     {
       key: 'actions',
@@ -969,8 +996,12 @@ export default function Settings() {
 
   const ticketStatusColumns = [
     { key: 'key', label: t('settings.ticketStatuses.table.key'), sortable: false },
-    { key: 'label_ar', label: t('settings.ticketStatuses.table.labelAr'), sortable: false },
-    { key: 'label_en', label: t('settings.ticketStatuses.table.labelEn'), sortable: false, render: (val) => val || '—' },
+    {
+      key: 'display',
+      label: t('settings.statuses.displayName'),
+      sortable: false,
+      render: (_, row) => localizedStatusLabel(row, i18n.language),
+    },
     { key: 'active', label: t('settings.shipmentStatuses.table.active'), sortable: false, render: (val) => (val ? t('common.yes', 'Yes') : t('common.no', 'No')) },
     { key: 'sort_order', label: t('settings.ticketStatuses.table.sortOrder'), sortable: false },
     ...(canManageTicketStatuses
@@ -994,7 +1025,12 @@ export default function Settings() {
 
   const ticketTypeColumns = [
     { key: 'name', label: t('settings.ticketTypes.table.name'), sortable: false },
-    { key: 'label_ar', label: t('settings.ticketTypes.table.labelAr'), sortable: false, render: (val) => val || '—' },
+    {
+      key: 'display',
+      label: t('settings.statuses.displayName'),
+      sortable: false,
+      render: (_, row) => localizedStatusLabel(row, i18n.language),
+    },
     ...(canManageTicketTypes
       ? [{
         key: 'actions',
@@ -1016,7 +1052,12 @@ export default function Settings() {
 
   const ticketPriorityColumns = [
     { key: 'name', label: t('settings.ticketPriorities.table.name'), sortable: false },
-    { key: 'label_ar', label: t('settings.ticketPriorities.table.labelAr'), sortable: false, render: (val) => val || '—' },
+    {
+      key: 'display',
+      label: t('settings.statuses.displayName'),
+      sortable: false,
+      render: (_, row) => localizedStatusLabel(row, i18n.language),
+    },
     { key: 'sort_order', label: t('settings.ticketPriorities.table.sortOrder'), sortable: false },
     ...(canManageTicketStatuses
       ? [{
@@ -1039,7 +1080,12 @@ export default function Settings() {
 
   const commLogTypeColumns = [
     { key: 'name', label: t('settings.communicationLogTypes.table.name'), sortable: false },
-    { key: 'label_ar', label: t('settings.communicationLogTypes.table.labelAr'), sortable: false, render: (val) => val || '—' },
+    {
+      key: 'display',
+      label: t('settings.statuses.displayName'),
+      sortable: false,
+      render: (_, row) => localizedStatusLabel(row, i18n.language),
+    },
     { key: 'sort_order', label: t('settings.communicationLogTypes.table.sortOrder'), sortable: false },
     ...(canManageCommLogTypes
       ? [{
@@ -1560,7 +1606,8 @@ export default function Settings() {
                 {clientStatusModal?.mode === 'edit' ? t('settings.clientStatuses.editTitle') : t('settings.clientStatuses.addTitle')}
               </h2>
               <form onSubmit={handleSaveClientStatus} className="settings-modal-form">
-                <Input label={t('settings.clientStatuses.name')} value={clientStatusForm.name} onChange={(e) => setClientStatusForm((p) => ({ ...p, name: e.target.value }))} required />
+                <Input label={t('settings.clientStatuses.nameAr')} value={clientStatusForm.name_ar} onChange={(e) => setClientStatusForm((p) => ({ ...p, name_ar: e.target.value }))} required />
+                <Input label={t('settings.clientStatuses.nameEn')} value={clientStatusForm.name_en} onChange={(e) => setClientStatusForm((p) => ({ ...p, name_en: e.target.value }))} required />
                 <Input label={t('settings.clientStatuses.sortOrder')} type="number" min={0} value={clientStatusForm.sort_order} onChange={(e) => setClientStatusForm((p) => ({ ...p, sort_order: e.target.value }))} />
                 <div className="clients-modal-actions">
                   <button type="button" className="clients-btn" onClick={() => setClientStatusModal(null)} disabled={clientStatusSubmitting}>
@@ -1607,7 +1654,7 @@ export default function Settings() {
                   disabled={!!editingTicketStatus}
                 />
                 <Input label={t('settings.ticketStatuses.labelAr')} value={ticketStatusForm.label_ar} onChange={(e) => setTicketStatusForm((p) => ({ ...p, label_ar: e.target.value }))} required />
-                <Input label={t('settings.ticketStatuses.labelEn')} value={ticketStatusForm.label_en} onChange={(e) => setTicketStatusForm((p) => ({ ...p, label_en: e.target.value }))} />
+                <Input label={t('settings.ticketStatuses.labelEn')} value={ticketStatusForm.label_en} onChange={(e) => setTicketStatusForm((p) => ({ ...p, label_en: e.target.value }))} required />
                 <Input label={t('settings.ticketStatuses.sortOrder')} type="number" min={0} value={ticketStatusForm.sort_order} onChange={(e) => setTicketStatusForm((p) => ({ ...p, sort_order: e.target.value }))} />
                 <label className="settings-checkbox-row">
                   <span className="settings-checkbox-label">{t('settings.shipmentStatuses.active')}</span>
@@ -1656,7 +1703,8 @@ export default function Settings() {
                   onChange={(e) => setTicketTypeForm((p) => ({ ...p, name: e.target.value }))}
                   required
                 />
-                <Input label={t('settings.ticketTypes.labelAr')} value={ticketTypeForm.label_ar} onChange={(e) => setTicketTypeForm((p) => ({ ...p, label_ar: e.target.value }))} />
+                <Input label={t('settings.ticketTypes.labelAr')} value={ticketTypeForm.label_ar} onChange={(e) => setTicketTypeForm((p) => ({ ...p, label_ar: e.target.value }))} required />
+                <Input label={t('settings.ticketTypes.labelEn')} value={ticketTypeForm.label_en} onChange={(e) => setTicketTypeForm((p) => ({ ...p, label_en: e.target.value }))} required />
                 <div className="clients-modal-actions">
                   <button type="button" className="clients-btn" onClick={() => { setShowTicketTypeModal(false); setEditingTicketType(null) }} disabled={ticketTypeSubmitting}>
                     {t('settings.shipmentStatuses.cancel')}
@@ -1700,7 +1748,8 @@ export default function Settings() {
                   onChange={(e) => setTicketPriorityForm((p) => ({ ...p, name: e.target.value }))}
                   required
                 />
-                <Input label={t('settings.ticketPriorities.labelAr')} value={ticketPriorityForm.label_ar} onChange={(e) => setTicketPriorityForm((p) => ({ ...p, label_ar: e.target.value }))} />
+                <Input label={t('settings.ticketPriorities.labelAr')} value={ticketPriorityForm.label_ar} onChange={(e) => setTicketPriorityForm((p) => ({ ...p, label_ar: e.target.value }))} required />
+                <Input label={t('settings.ticketPriorities.labelEn')} value={ticketPriorityForm.label_en} onChange={(e) => setTicketPriorityForm((p) => ({ ...p, label_en: e.target.value }))} required />
                 <Input label={t('settings.ticketPriorities.sortOrder')} type="number" min={0} value={ticketPriorityForm.sort_order} onChange={(e) => setTicketPriorityForm((p) => ({ ...p, sort_order: e.target.value }))} />
                 <div className="clients-modal-actions">
                   <button type="button" className="clients-btn" onClick={() => { setShowTicketPriorityModal(false); setEditingTicketPriority(null) }} disabled={ticketPrioritySubmitting}>
@@ -1745,7 +1794,8 @@ export default function Settings() {
                   onChange={(e) => setCommLogTypeForm((p) => ({ ...p, name: e.target.value }))}
                   required
                 />
-                <Input label={t('settings.communicationLogTypes.labelAr')} value={commLogTypeForm.label_ar} onChange={(e) => setCommLogTypeForm((p) => ({ ...p, label_ar: e.target.value }))} />
+                <Input label={t('settings.communicationLogTypes.labelAr')} value={commLogTypeForm.label_ar} onChange={(e) => setCommLogTypeForm((p) => ({ ...p, label_ar: e.target.value }))} required />
+                <Input label={t('settings.communicationLogTypes.labelEn')} value={commLogTypeForm.label_en} onChange={(e) => setCommLogTypeForm((p) => ({ ...p, label_en: e.target.value }))} required />
                 <Input label={t('settings.communicationLogTypes.sortOrder')} type="number" min={0} value={commLogTypeForm.sort_order} onChange={(e) => setCommLogTypeForm((p) => ({ ...p, sort_order: e.target.value }))} />
                 <div className="clients-modal-actions">
                   <button type="button" className="clients-btn" onClick={() => { setShowCommLogTypeModal(false); setEditingCommLogType(null) }} disabled={commLogTypeSubmitting}>
