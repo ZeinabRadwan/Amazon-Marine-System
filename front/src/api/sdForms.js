@@ -4,6 +4,7 @@
  */
 
 import { getApiBaseUrl } from './apiBaseUrl'
+import { apiFetch } from './http'
 
 const getBaseUrl = getApiBaseUrl
 
@@ -32,7 +33,7 @@ export async function listSDForms(token, params = {}) {
   if (params.per_page != null) searchParams.set('per_page', String(params.per_page))
   const query = searchParams.toString()
   const url = `${getBaseUrl()}/sd-forms${query ? `?${query}` : ''}`
-  const res = await fetch(url, { headers: authHeaders(token) })
+  const res = await apiFetch(url, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to list SD forms (${res.status})`)
   return data
@@ -42,7 +43,7 @@ export async function listSDForms(token, params = {}) {
  * GET {{base_url}}/sd-forms/stats – SD Forms Stats
  */
 export async function getSDFormStats(token) {
-  const res = await fetch(`${getBaseUrl()}/sd-forms/stats`, { headers: authHeaders(token) })
+  const res = await apiFetch(`${getBaseUrl()}/sd-forms/stats`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to get SD form stats (${res.status})`)
   return data
@@ -53,7 +54,7 @@ export async function getSDFormStats(token) {
  */
 export async function getSDFormCharts(token, params = {}) {
   const months = params.months != null ? params.months : 6
-  const res = await fetch(`${getBaseUrl()}/sd-forms/charts?months=${months}`, { headers: authHeaders(token) })
+  const res = await apiFetch(`${getBaseUrl()}/sd-forms/charts?months=${months}`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to get SD form charts (${res.status})`)
   return data
@@ -63,7 +64,7 @@ export async function getSDFormCharts(token, params = {}) {
  * GET {{base_url}}/sd-forms/:id – Show SD Form
  */
 export async function getSDForm(token, id) {
-  const res = await fetch(`${getBaseUrl()}/sd-forms/${id}`, { headers: authHeaders(token) })
+  const res = await apiFetch(`${getBaseUrl()}/sd-forms/${id}`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to get SD form (${res.status})`)
   return data
@@ -73,7 +74,7 @@ export async function getSDForm(token, id) {
  * POST {{base_url}}/sd-forms – Create SD Form (draft)
  */
 export async function createSDForm(token, body) {
-  const res = await fetch(`${getBaseUrl()}/sd-forms`, {
+  const res = await apiFetch(`${getBaseUrl()}/sd-forms`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: JSON.stringify(body),
@@ -87,7 +88,7 @@ export async function createSDForm(token, body) {
  * PUT {{base_url}}/sd-forms/:id – Update SD Form
  */
 export async function updateSDForm(token, id, body) {
-  const res = await fetch(`${getBaseUrl()}/sd-forms/${id}`, {
+  const res = await apiFetch(`${getBaseUrl()}/sd-forms/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: JSON.stringify(body),
@@ -101,7 +102,7 @@ export async function updateSDForm(token, id, body) {
  * DELETE {{base_url}}/sd-forms/:id – Delete SD Form
  */
 export async function deleteSDForm(token, id) {
-  const res = await fetch(`${getBaseUrl()}/sd-forms/${id}`, {
+  const res = await apiFetch(`${getBaseUrl()}/sd-forms/${id}`, {
     method: 'DELETE',
     headers: authHeaders(token),
   })
@@ -116,7 +117,7 @@ export async function deleteSDForm(token, id) {
  * POST {{base_url}}/sd-forms/:id/submit – Submit SD Form
  */
 export async function submitSDForm(token, id, body = {}) {
-  const res = await fetch(`${getBaseUrl()}/sd-forms/${id}/submit`, {
+  const res = await apiFetch(`${getBaseUrl()}/sd-forms/${id}/submit`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: JSON.stringify(body),
@@ -130,7 +131,7 @@ export async function submitSDForm(token, id, body = {}) {
  * POST {{base_url}}/sd-forms/:id/send-to-operations – Send to Operations
  */
 export async function sendSDFormToOperations(token, id) {
-  const res = await fetch(`${getBaseUrl()}/sd-forms/${id}/send-to-operations`, {
+  const res = await apiFetch(`${getBaseUrl()}/sd-forms/${id}/send-to-operations`, {
     method: 'POST',
     headers: authHeaders(token),
   })
@@ -143,7 +144,7 @@ export async function sendSDFormToOperations(token, id) {
  * POST {{base_url}}/sd-forms/:id/link-shipment – Link Shipment. Body: { shipment_id }
  */
 export async function linkSDFormShipment(token, id, body) {
-  const res = await fetch(`${getBaseUrl()}/sd-forms/${id}/link-shipment`, {
+  const res = await apiFetch(`${getBaseUrl()}/sd-forms/${id}/link-shipment`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: JSON.stringify(body),
@@ -157,7 +158,7 @@ export async function linkSDFormShipment(token, id, body) {
  * POST {{base_url}}/sd-forms/:id/email-operations – Email to Operations
  */
 export async function emailSDFormToOperations(token, id) {
-  const res = await fetch(`${getBaseUrl()}/sd-forms/${id}/email-operations`, {
+  const res = await apiFetch(`${getBaseUrl()}/sd-forms/${id}/email-operations`, {
     method: 'POST',
     headers: authHeaders(token),
   })
@@ -170,7 +171,7 @@ export async function emailSDFormToOperations(token, id) {
  * GET {{base_url}}/sd-forms/:id/pdf – Download SD Form PDF (returns blob)
  */
 export async function getSDFormPdf(token, id) {
-  const res = await fetch(`${getBaseUrl()}/sd-forms/${id}/pdf`, { headers: authHeaders(token) })
+  const res = await apiFetch(`${getBaseUrl()}/sd-forms/${id}/pdf`, { headers: authHeaders(token) })
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))
     throw new Error(data.message || data.error || `Failed to get PDF (${res.status})`)
@@ -186,7 +187,7 @@ export async function exportSDForms(token, params = {}) {
   if (params.ids != null && params.ids !== '') searchParams.set('ids', params.ids)
   const query = searchParams.toString()
   const url = `${getBaseUrl()}/sd-forms/export${query ? `?${query}` : ''}`
-  const res = await fetch(url, { headers: authHeaders(token) })
+  const res = await apiFetch(url, { headers: authHeaders(token) })
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))
     throw new Error(data.message || data.error || `Failed to export (${res.status})`)

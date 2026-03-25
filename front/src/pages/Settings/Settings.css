@@ -102,6 +102,31 @@
   animation-delay: 0.26s;
 }
 
+.settings-tab-content--animate .settings-section-card:nth-child(5) {
+  animation-delay: 0.33s;
+}
+
+.settings-tab-content--animate .settings-section-card:nth-child(6) {
+  animation-delay: 0.4s;
+}
+
+.settings-statuses-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--settings-space);
+}
+
+.settings-statuses-tab .settings-statuses-intro {
+  margin: 0 0 0.25rem;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--text-muted, #64748b);
+}
+
+[data-theme="dark"] .settings-statuses-tab .settings-statuses-intro {
+  color: var(--text-muted, #94a3b8);
+}
+
 @keyframes settingsCardIn {
   from {
     opacity: 0;

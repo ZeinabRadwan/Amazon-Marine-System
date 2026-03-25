@@ -3,6 +3,7 @@
  */
 
 import { getApiBaseUrl } from './apiBaseUrl'
+import { apiFetch } from './http'
 
 const getBaseUrl = getApiBaseUrl
 
@@ -54,7 +55,7 @@ export async function listInvoices(token, params = {}) {
   if (params.per_page != null && params.per_page !== '') searchParams.set('per_page', String(params.per_page))
   if (params.page != null && params.page !== '') searchParams.set('page', String(params.page))
   const q = searchParams.toString()
-  const res = await fetch(`${getBaseUrl()}/invoices${q ? `?${q}` : ''}`, { headers: authHeaders(token, false) })
+  const res = await apiFetch(`${getBaseUrl()}/invoices${q ? `?${q}` : ''}`, { headers: authHeaders(token, false) })
   const json = await res.json().catch(() => ({}))
   if (!res.ok) {
     throw new Error(json.message || json.error || `Failed to list invoices (${res.status})`)
@@ -67,7 +68,7 @@ export async function listInvoices(token, params = {}) {
  * @param {number} invoiceId
  */
 export async function getInvoice(token, invoiceId) {
-  const res = await fetch(`${getBaseUrl()}/invoices/${invoiceId}`, { headers: authHeaders(token, false) })
+  const res = await apiFetch(`${getBaseUrl()}/invoices/${invoiceId}`, { headers: authHeaders(token, false) })
   const json = await res.json().catch(() => ({}))
   if (!res.ok) {
     throw new Error(json.message || json.error || `Failed to load invoice (${res.status})`)
@@ -109,7 +110,7 @@ export async function createInvoice(token, body) {
     items: body.items ?? [],
   }
 
-  const res = await fetch(`${getBaseUrl()}/invoices`, {
+  const res = await apiFetch(`${getBaseUrl()}/invoices`, {
     method: 'POST',
     headers: authHeaders(token),
     body: JSON.stringify(payload),
@@ -131,7 +132,7 @@ export async function createInvoice(token, body) {
  * }} body
  */
 export async function updateInvoice(token, invoiceId, body) {
-  const res = await fetch(`${getBaseUrl()}/invoices/${invoiceId}`, {
+  const res = await apiFetch(`${getBaseUrl()}/invoices/${invoiceId}`, {
     method: 'PUT',
     headers: authHeaders(token),
     body: JSON.stringify(body),
@@ -167,7 +168,7 @@ export async function recordInvoicePayment(token, invoiceId, body) {
     paid_at: body.paid_at ?? null,
   }
 
-  const res = await fetch(`${getBaseUrl()}/invoices/${invoiceId}/payments`, {
+  const res = await apiFetch(`${getBaseUrl()}/invoices/${invoiceId}/payments`, {
     method: 'POST',
     headers: authHeaders(token),
     body: JSON.stringify(payload),
@@ -183,14 +184,14 @@ export async function getInvoicesSummary(token, params = {}) {
   const searchParams = new URLSearchParams()
   if (params.months != null && params.months !== '') searchParams.set('months', String(params.months))
   const q = searchParams.toString()
-  const res = await fetch(`${getBaseUrl()}/invoices/summary${q ? `?${q}` : ''}`, { headers: authHeaders(token, false) })
+  const res = await apiFetch(`${getBaseUrl()}/invoices/summary${q ? `?${q}` : ''}`, { headers: authHeaders(token, false) })
   const json = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(json.message || json.error || `Failed to load invoices summary (${res.status})`)
   return json
 }
 
 export async function issueInvoice(token, invoiceId) {
-  const res = await fetch(`${getBaseUrl()}/invoices/${invoiceId}/issue`, {
+  const res = await apiFetch(`${getBaseUrl()}/invoices/${invoiceId}/issue`, {
     method: 'POST',
     headers: authHeaders(token, false),
   })
@@ -200,7 +201,7 @@ export async function issueInvoice(token, invoiceId) {
 }
 
 export async function cancelInvoice(token, invoiceId) {
-  const res = await fetch(`${getBaseUrl()}/invoices/${invoiceId}/cancel`, {
+  const res = await apiFetch(`${getBaseUrl()}/invoices/${invoiceId}/cancel`, {
     method: 'POST',
     headers: authHeaders(token, false),
   })
@@ -221,7 +222,7 @@ export async function exportInvoicesCsv(token, params = {}) {
   if (Array.isArray(params.ids) && params.ids.length) searchParams.set('ids', params.ids.join(','))
 
   const q = searchParams.toString()
-  const res = await fetch(`${getBaseUrl()}/invoices/export${q ? `?${q}` : ''}`, {
+  const res = await apiFetch(`${getBaseUrl()}/invoices/export${q ? `?${q}` : ''}`, {
     headers: authHeaders(token, false),
   })
 

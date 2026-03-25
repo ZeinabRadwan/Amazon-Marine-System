@@ -122,6 +122,72 @@
   color: #9ca3af;
 }
 
+.attendance-badge--on-time {
+  background: rgba(34, 197, 94, 0.18);
+  color: #166534;
+}
+
+[data-theme="dark"] .attendance-badge--on-time,
+.dark .attendance-badge--on-time {
+  background: rgba(34, 197, 94, 0.28);
+  color: #4ade80;
+}
+
+.attendance-badge--early-leave {
+  background: rgba(234, 179, 8, 0.2);
+  color: #a16207;
+}
+
+[data-theme="dark"] .attendance-badge--early-leave,
+.dark .attendance-badge--early-leave {
+  background: rgba(234, 179, 8, 0.3);
+  color: #facc15;
+}
+
+.attendance-badge--excused {
+  background: rgba(59, 130, 246, 0.18);
+  color: #1d4ed8;
+}
+
+[data-theme="dark"] .attendance-badge--excused,
+.dark .attendance-badge--excused {
+  background: rgba(59, 130, 246, 0.28);
+  color: #60a5fa;
+}
+
+.attendance-badge--muted {
+  background: rgba(148, 163, 184, 0.2);
+  color: #64748b;
+}
+
+[data-theme="dark"] .attendance-badge--muted,
+.dark .attendance-badge--muted {
+  background: rgba(148, 163, 184, 0.28);
+  color: #94a3b8;
+}
+
+.attendance-badge--radius-yes {
+  background: rgba(34, 197, 94, 0.18);
+  color: #166534;
+}
+
+[data-theme="dark"] .attendance-badge--radius-yes,
+.dark .attendance-badge--radius-yes {
+  background: rgba(34, 197, 94, 0.28);
+  color: #4ade80;
+}
+
+.attendance-badge--radius-no {
+  background: rgba(239, 68, 68, 0.18);
+  color: #b91c1c;
+}
+
+[data-theme="dark"] .attendance-badge--radius-no,
+.dark .attendance-badge--radius-no {
+  background: rgba(239, 68, 68, 0.28);
+  color: #f87171;
+}
+
 .attendance-filter-label {
   display: flex;
   flex-direction: column;

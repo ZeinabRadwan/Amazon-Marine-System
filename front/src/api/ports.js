@@ -3,6 +3,7 @@
  */
 
 import { getApiBaseUrl } from './apiBaseUrl'
+import { apiFetch } from './http'
 
 const getBaseUrl = getApiBaseUrl
 
@@ -22,7 +23,7 @@ export async function listPorts(token, params = {}) {
   if (params.active != null && params.active !== '') searchParams.set('active', String(params.active))
   const query = searchParams.toString()
   const url = `${getBaseUrl()}/ports${query ? `?${query}` : ''}`
-  const res = await fetch(url, { headers: authHeaders(token) })
+  const res = await apiFetch(url, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to list ports (${res.status})`)
   return data

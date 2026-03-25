@@ -569,6 +569,9 @@
     "no": "No",
     "excuses": {
       "submitTitle": "Submit excuse",
+      "submitHint": "Fill in the form and submit your excuse request.",
+      "noFile": "No file selected",
+      "reasonPlaceholder": "Write the reason in detail...",
       "reason": "Reason",
       "attachment": "Attachment (PDF or image)",
       "submit": "Submit excuse",
@@ -582,6 +585,7 @@
       "all": "All",
       "apply": "Apply filters",
       "exportCsv": "Export CSV",
+      "reportHint": "Filter and review attendance report data by employee, period, and status.",
       "summaryTitle": "Summary by employee",
       "summaryEmpty": "No summary for this filter.",
       "pendingExcuses": "Pending excuses",
@@ -594,6 +598,8 @@
     "user": "User",
     "date": "Date",
     "late": "Late",
+    "earlyLeave": "Early leave",
+    "excused": "Excused",
     "onTime": "On time",
     "shiftOpen": "open shift",
     "yes": "Yes",
@@ -1554,7 +1560,16 @@
       "system": "System & Notifications",
       "sessions": "Session Management",
       "activity": "Activity History",
-      "shipmentStatuses": "Shipment Statuses"
+      "statuses": "Statuses"
+    },
+    "statuses": {
+      "intro": "Manage shipment tracking labels, CRM client statuses, and all customer-service lookups (ticket states, types, priorities, communication categories) in one place.",
+      "shipmentsHint": "Used on shipment tracking and related customer service views.",
+      "clientsHint": "Used when classifying clients in CRM.",
+      "ticketsHint": "Used as ticket workflow states in Customer Service.",
+      "ticketTypesHint": "Categories when creating or filtering tickets.",
+      "ticketPrioritiesHint": "Priority options on tickets (ordering and labels).",
+      "communicationLogTypesHint": "Categories for communication log entries in Customer Service."
     },
     "company": {
       "cardTitle": "Company",
@@ -1663,6 +1678,107 @@
       "deleteConfirm": "Are you sure you want to delete this shipment status?",
       "deleteConfirmTitle": "Delete Shipment Status"
     },
+    "clientStatuses": {
+      "cardTitle": "Client statuses",
+      "addTitle": "Add client status",
+      "editTitle": "Edit client status",
+      "name": "Name",
+      "sortOrder": "Sort order",
+      "save": "Save",
+      "empty": "No client statuses yet.",
+      "saved": "Client status saved.",
+      "deleted": "Client status deleted.",
+      "deleteTitle": "Delete client status",
+      "deleteConfirm": "Are you sure you want to delete this client status?",
+      "table": {
+        "name": "Name",
+        "sortOrder": "Sort order"
+      }
+    },
+    "ticketStatuses": {
+      "cardTitle": "Ticket statuses",
+      "addTitle": "Add ticket status",
+      "editTitle": "Edit ticket status",
+      "key": "Key (internal id)",
+      "labelAr": "Label (Arabic)",
+      "labelEn": "Label (English)",
+      "sortOrder": "Sort order",
+      "create": "Create",
+      "save": "Save",
+      "empty": "No ticket statuses.",
+      "created": "Ticket status created.",
+      "updated": "Ticket status updated.",
+      "deleted": "Ticket status deleted.",
+      "deleteTitle": "Delete ticket status",
+      "deleteConfirm": "Are you sure you want to delete this ticket status?",
+      "table": {
+        "key": "Key",
+        "labelAr": "Label (Ar)",
+        "labelEn": "Label (En)",
+        "sortOrder": "Sort"
+      }
+    },
+    "ticketTypes": {
+      "cardTitle": "Ticket types",
+      "addTitle": "Add ticket type",
+      "editTitle": "Edit ticket type",
+      "name": "Name (key)",
+      "labelAr": "Label (Arabic)",
+      "create": "Create",
+      "save": "Save",
+      "empty": "No ticket types.",
+      "created": "Ticket type created.",
+      "updated": "Ticket type updated.",
+      "deleted": "Ticket type deleted.",
+      "deleteTitle": "Delete ticket type",
+      "deleteConfirm": "Are you sure you want to delete this ticket type?",
+      "table": {
+        "name": "Name",
+        "labelAr": "Label (Ar)"
+      }
+    },
+    "ticketPriorities": {
+      "cardTitle": "Ticket priorities",
+      "addTitle": "Add priority",
+      "editTitle": "Edit priority",
+      "name": "Name (key)",
+      "labelAr": "Label (Arabic)",
+      "sortOrder": "Sort order",
+      "create": "Create",
+      "save": "Save",
+      "empty": "No ticket priorities.",
+      "created": "Ticket priority created.",
+      "updated": "Ticket priority updated.",
+      "deleted": "Ticket priority deleted.",
+      "deleteTitle": "Delete ticket priority",
+      "deleteConfirm": "Are you sure you want to delete this ticket priority?",
+      "table": {
+        "name": "Name",
+        "labelAr": "Label (Ar)",
+        "sortOrder": "Sort"
+      }
+    },
+    "communicationLogTypes": {
+      "cardTitle": "Communication log types",
+      "addTitle": "Add log type",
+      "editTitle": "Edit log type",
+      "name": "Name (key)",
+      "labelAr": "Label (Arabic)",
+      "sortOrder": "Sort order",
+      "create": "Create",
+      "save": "Save",
+      "empty": "No communication log types.",
+      "created": "Communication log type created.",
+      "updated": "Communication log type updated.",
+      "deleted": "Communication log type deleted.",
+      "deleteTitle": "Delete communication log type",
+      "deleteConfirm": "Are you sure you want to delete this communication log type?",
+      "table": {
+        "name": "Name",
+        "labelAr": "Label (Ar)",
+        "sortOrder": "Sort"
+      }
+    },
     "errors": {
       "load": "Failed to load settings.",
       "saveCompanyProfile": "Failed to save company profile.",
@@ -1675,7 +1791,18 @@
       "logoutOthers": "Failed to logout other sessions.",
       "saveShipmentStatus": "Failed to save shipment status.",
       "deleteShipmentStatus": "Failed to delete shipment status.",
-      "saveAttendancePolicy": "Failed to save attendance policy."
+      "saveAttendancePolicy": "Failed to save attendance policy.",
+      "loadStatusesTab": "Failed to load status lists.",
+      "saveClientStatus": "Failed to save client status.",
+      "deleteClientStatus": "Failed to delete client status.",
+      "saveTicketStatus": "Failed to save ticket status.",
+      "deleteTicketStatus": "Failed to delete ticket status.",
+      "saveTicketType": "Failed to save ticket type.",
+      "deleteTicketType": "Failed to delete ticket type.",
+      "saveTicketPriority": "Failed to save ticket priority.",
+      "deleteTicketPriority": "Failed to delete ticket priority.",
+      "saveCommunicationLogType": "Failed to save communication log type.",
+      "deleteCommunicationLogType": "Failed to delete communication log type."
     }
   }
 }

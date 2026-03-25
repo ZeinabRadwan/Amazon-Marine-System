@@ -7,6 +7,7 @@
  */
 
 import { getApiBaseUrl } from './apiBaseUrl'
+import { apiFetch } from './http'
 
 const getBaseUrl = getApiBaseUrl
 
@@ -23,7 +24,7 @@ function authHeaders(token) {
 export async function listNotifications(token, params = {}) {
   const { page = 1, per_page = 20 } = params
   const q = new URLSearchParams({ page: String(page), per_page: String(per_page) })
-  const res = await fetch(`${getBaseUrl()}/notifications?${q}`, {
+  const res = await apiFetch(`${getBaseUrl()}/notifications?${q}`, {
     method: 'GET',
     headers: authHeaders(token),
   })
@@ -36,7 +37,7 @@ export async function listNotifications(token, params = {}) {
  * GET {{base_url}}/notifications/unread-count
  */
 export async function getUnreadCount(token) {
-  const res = await fetch(`${getBaseUrl()}/notifications/unread-count`, {
+  const res = await apiFetch(`${getBaseUrl()}/notifications/unread-count`, {
     method: 'GET',
     headers: authHeaders(token),
   })
@@ -49,7 +50,7 @@ export async function getUnreadCount(token) {
  * POST {{base_url}}/notifications/:id/read
  */
 export async function markNotificationRead(token, notificationId) {
-  const res = await fetch(`${getBaseUrl()}/notifications/${encodeURIComponent(notificationId)}/read`, {
+  const res = await apiFetch(`${getBaseUrl()}/notifications/${encodeURIComponent(notificationId)}/read`, {
     method: 'POST',
     headers: authHeaders(token),
   })
@@ -62,7 +63,7 @@ export async function markNotificationRead(token, notificationId) {
  * POST {{base_url}}/notifications/read-all
  */
 export async function markAllNotificationsRead(token) {
-  const res = await fetch(`${getBaseUrl()}/notifications/read-all`, {
+  const res = await apiFetch(`${getBaseUrl()}/notifications/read-all`, {
     method: 'POST',
     headers: authHeaders(token),
   })

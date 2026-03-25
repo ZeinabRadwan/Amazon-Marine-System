@@ -3,6 +3,7 @@
  */
 
 import { getApiBaseUrl } from './apiBaseUrl'
+import { apiFetch } from './http'
 
 const getBaseUrl = getApiBaseUrl
 
@@ -26,7 +27,7 @@ export async function listShipmentExpenses(token, params = {}) {
   if (params.currency != null && params.currency !== '') searchParams.set('currency', params.currency)
   if (params.sort != null && params.sort !== '') searchParams.set('sort', params.sort)
   const query = searchParams.toString()
-  const res = await fetch(`${getBaseUrl()}/expenses/shipment${query ? `?${query}` : ''}`, {
+  const res = await apiFetch(`${getBaseUrl()}/expenses/shipment${query ? `?${query}` : ''}`, {
     headers: authHeaders(token),
   })
   const json = await res.json().catch(() => ({}))
@@ -41,7 +42,7 @@ export async function listShipmentExpenses(token, params = {}) {
  * @param {string} token
  */
 export async function listExpenseCategories(token) {
-  const res = await fetch(`${getBaseUrl()}/expense-categories`, {
+  const res = await apiFetch(`${getBaseUrl()}/expense-categories`, {
     headers: authHeaders(token),
   })
   const json = await res.json().catch(() => ({}))
@@ -67,7 +68,7 @@ export async function listExpenseCategories(token) {
  * }} body
  */
 export async function createExpense(token, body) {
-  const res = await fetch(`${getBaseUrl()}/expenses`, {
+  const res = await apiFetch(`${getBaseUrl()}/expenses`, {
     method: 'POST',
     headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -85,7 +86,7 @@ export async function createExpense(token, body) {
  * @param {Record<string, unknown>} body
  */
 export async function updateExpense(token, id, body) {
-  const res = await fetch(`${getBaseUrl()}/expenses/${id}`, {
+  const res = await apiFetch(`${getBaseUrl()}/expenses/${id}`, {
     method: 'PUT',
     headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -102,7 +103,7 @@ export async function updateExpense(token, id, body) {
  * @param {number} id
  */
 export async function deleteExpense(token, id) {
-  const res = await fetch(`${getBaseUrl()}/expenses/${id}`, {
+  const res = await apiFetch(`${getBaseUrl()}/expenses/${id}`, {
     method: 'DELETE',
     headers: authHeaders(token),
   })
@@ -121,7 +122,7 @@ export async function deleteExpense(token, id) {
 export async function uploadExpenseReceipt(token, expenseId, file) {
   const fd = new FormData()
   fd.append('file', file)
-  const res = await fetch(`${getBaseUrl()}/expenses/${expenseId}/receipt`, {
+  const res = await apiFetch(`${getBaseUrl()}/expenses/${expenseId}/receipt`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
     body: fd,

@@ -4,6 +4,7 @@
  */
 
 import { getApiBaseUrl } from './apiBaseUrl'
+import { apiFetch } from './http'
 
 const getBaseUrl = getApiBaseUrl
 
@@ -20,13 +21,13 @@ function buildLookupCrud(segment) {
 
   return {
     async list(token) {
-      const res = await fetch(root(), { headers: authHeaders(token) })
+      const res = await apiFetch(root(), { headers: authHeaders(token) })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.message || data.error || `Failed to list ${segment} (${res.status})`)
       return data
     },
     async create(token, body) {
-      const res = await fetch(root(), {
+      const res = await apiFetch(root(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
         body: JSON.stringify(body),
@@ -36,13 +37,13 @@ function buildLookupCrud(segment) {
       return data
     },
     async show(token, id) {
-      const res = await fetch(one(id), { headers: authHeaders(token) })
+      const res = await apiFetch(one(id), { headers: authHeaders(token) })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.message || data.error || `Failed to load ${segment} (${res.status})`)
       return data
     },
     async update(token, id, body) {
-      const res = await fetch(one(id), {
+      const res = await apiFetch(one(id), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
         body: JSON.stringify(body),
@@ -52,7 +53,7 @@ function buildLookupCrud(segment) {
       return data
     },
     async remove(token, id) {
-      const res = await fetch(one(id), {
+      const res = await apiFetch(one(id), {
         method: 'DELETE',
         headers: authHeaders(token),
       })

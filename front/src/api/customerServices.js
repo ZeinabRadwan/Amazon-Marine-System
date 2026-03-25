@@ -4,6 +4,7 @@
  */
 
 import { getApiBaseUrl } from './apiBaseUrl'
+import { apiFetch } from './http'
 
 const getBaseUrl = getApiBaseUrl
 
@@ -32,7 +33,7 @@ export async function listTickets(token, params = {}) {
   if (params.sort != null && params.sort !== '') searchParams.set('sort', params.sort)
   if (params.direction != null && params.direction !== '') searchParams.set('direction', params.direction)
   const query = searchParams.toString()
-  const res = await fetch(`${getBaseUrl()}/tickets${query ? `?${query}` : ''}`, { headers: authHeaders(token) })
+  const res = await apiFetch(`${getBaseUrl()}/tickets${query ? `?${query}` : ''}`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to list tickets (${res.status})`)
   return data
@@ -49,7 +50,7 @@ export async function exportTickets(token, params = {}) {
   if (params.priority_id != null) searchParams.set('priority_id', String(params.priority_id))
   if (params.client_id != null && params.client_id !== '') searchParams.set('client_id', String(params.client_id))
   const query = searchParams.toString()
-  const res = await fetch(`${getBaseUrl()}/tickets/export${query ? `?${query}` : ''}`, { headers: authHeaders(token) })
+  const res = await apiFetch(`${getBaseUrl()}/tickets/export${query ? `?${query}` : ''}`, { headers: authHeaders(token) })
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))
     throw new Error(data.message || data.error || `Failed to export tickets (${res.status})`)
@@ -73,7 +74,7 @@ export async function listCommunicationLogs(token, params = {}) {
   if (params.sort != null && params.sort !== '') searchParams.set('sort', params.sort)
   if (params.direction != null && params.direction !== '') searchParams.set('direction', params.direction)
   const query = searchParams.toString()
-  const res = await fetch(`${getBaseUrl()}/communication-logs${query ? `?${query}` : ''}`, { headers: authHeaders(token) })
+  const res = await apiFetch(`${getBaseUrl()}/communication-logs${query ? `?${query}` : ''}`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to list communication logs (${res.status})`)
   return data
@@ -84,7 +85,7 @@ export async function listCommunicationLogs(token, params = {}) {
  * Body: { client_id, communication_log_type_id, subject?, client_said?, issue?, reply? }
  */
 export async function createCommunicationLog(token, body) {
-  const res = await fetch(`${getBaseUrl()}/communication-logs`, {
+  const res = await apiFetch(`${getBaseUrl()}/communication-logs`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: JSON.stringify(body),
@@ -98,7 +99,7 @@ export async function createCommunicationLog(token, body) {
  * GET {{base_url}}/communication-logs/:id
  */
 export async function getCommunicationLog(token, id) {
-  const res = await fetch(`${getBaseUrl()}/communication-logs/${id}`, { headers: authHeaders(token) })
+  const res = await apiFetch(`${getBaseUrl()}/communication-logs/${id}`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to get communication log (${res.status})`)
   return data
@@ -106,45 +107,164 @@ export async function getCommunicationLog(token, id) {
 
 // ——— Ticket types ———
 export async function listTicketTypes(token) {
-  const res = await fetch(`${getBaseUrl()}/ticket-types`, { headers: authHeaders(token) })
+  const res = await apiFetch(`${getBaseUrl()}/ticket-types`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to list ticket types (${res.status})`)
   return data
 }
 
+export async function createTicketType(token, body) {
+  const res = await apiFetch(`${getBaseUrl()}/ticket-types`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+    body: JSON.stringify(body),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to create ticket type (${res.status})`)
+  return data
+}
+
 // ——— Ticket priorities ———
 export async function listTicketPriorities(token) {
-  const res = await fetch(`${getBaseUrl()}/ticket-priorities`, { headers: authHeaders(token) })
+  const res = await apiFetch(`${getBaseUrl()}/ticket-priorities`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to list ticket priorities (${res.status})`)
   return data
 }
 
+export async function showTicketPriority(token, id) {
+  const res = await apiFetch(`${getBaseUrl()}/ticket-priorities/${encodeURIComponent(id)}`, { headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to load ticket priority (${res.status})`)
+  return data
+}
+
+export async function createTicketPriority(token, body) {
+  const res = await apiFetch(`${getBaseUrl()}/ticket-priorities`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+    body: JSON.stringify(body),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to create ticket priority (${res.status})`)
+  return data
+}
+
+export async function updateTicketPriority(token, id, body) {
+  const res = await apiFetch(`${getBaseUrl()}/ticket-priorities/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+    body: JSON.stringify(body),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to update ticket priority (${res.status})`)
+  return data
+}
+
+export async function deleteTicketPriority(token, id) {
+  const res = await apiFetch(`${getBaseUrl()}/ticket-priorities/${encodeURIComponent(id)}`, { method: 'DELETE', headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to delete ticket priority (${res.status})`)
+  return data
+}
+
 // ——— Ticket statuses ———
 export async function listTicketStatuses(token) {
-  const res = await fetch(`${getBaseUrl()}/ticket-statuses`, { headers: authHeaders(token) })
+  const res = await apiFetch(`${getBaseUrl()}/ticket-statuses`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to list ticket statuses (${res.status})`)
   return data
 }
 
+export async function showTicketStatus(token, id) {
+  const res = await apiFetch(`${getBaseUrl()}/ticket-statuses/${encodeURIComponent(id)}`, { headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to load ticket status (${res.status})`)
+  return data
+}
+
+export async function createTicketStatus(token, body) {
+  const res = await apiFetch(`${getBaseUrl()}/ticket-statuses`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+    body: JSON.stringify(body),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to create ticket status (${res.status})`)
+  return data
+}
+
+export async function updateTicketStatus(token, id, body) {
+  const res = await apiFetch(`${getBaseUrl()}/ticket-statuses/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+    body: JSON.stringify(body),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to update ticket status (${res.status})`)
+  return data
+}
+
+export async function deleteTicketStatus(token, id) {
+  const res = await apiFetch(`${getBaseUrl()}/ticket-statuses/${encodeURIComponent(id)}`, { method: 'DELETE', headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to delete ticket status (${res.status})`)
+  return data
+}
+
 // ——— Communication log types ———
 export async function listCommunicationLogTypes(token) {
-  const res = await fetch(`${getBaseUrl()}/communication-log-types`, { headers: authHeaders(token) })
+  const res = await apiFetch(`${getBaseUrl()}/communication-log-types`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to list communication log types (${res.status})`)
   return data
 }
 
+export async function showCommunicationLogType(token, id) {
+  const res = await apiFetch(`${getBaseUrl()}/communication-log-types/${encodeURIComponent(id)}`, { headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to load communication log type (${res.status})`)
+  return data
+}
+
+export async function createCommunicationLogType(token, body) {
+  const res = await apiFetch(`${getBaseUrl()}/communication-log-types`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+    body: JSON.stringify(body),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to create communication log type (${res.status})`)
+  return data
+}
+
+export async function updateCommunicationLogType(token, id, body) {
+  const res = await apiFetch(`${getBaseUrl()}/communication-log-types/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+    body: JSON.stringify(body),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to update communication log type (${res.status})`)
+  return data
+}
+
+export async function deleteCommunicationLogType(token, id) {
+  const res = await apiFetch(`${getBaseUrl()}/communication-log-types/${encodeURIComponent(id)}`, { method: 'DELETE', headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to delete communication log type (${res.status})`)
+  return data
+}
+
 export async function getTicketType(token, id) {
-  const res = await fetch(`${getBaseUrl()}/ticket-types/${id}`, { headers: authHeaders(token) })
+  const res = await apiFetch(`${getBaseUrl()}/ticket-types/${id}`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to get ticket type (${res.status})`)
   return data
 }
 
 export async function updateTicketType(token, id, body) {
-  const res = await fetch(`${getBaseUrl()}/ticket-types/${id}`, {
+  const res = await apiFetch(`${getBaseUrl()}/ticket-types/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: JSON.stringify(body),
@@ -155,7 +275,7 @@ export async function updateTicketType(token, id, body) {
 }
 
 export async function deleteTicketType(token, id) {
-  const res = await fetch(`${getBaseUrl()}/ticket-types/${id}`, { method: 'DELETE', headers: authHeaders(token) })
+  const res = await apiFetch(`${getBaseUrl()}/ticket-types/${id}`, { method: 'DELETE', headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to delete ticket type (${res.status})`)
   return data
@@ -163,7 +283,7 @@ export async function deleteTicketType(token, id) {
 
 // ——— Ticket stats ———
 export async function getTicketStats(token) {
-  const res = await fetch(`${getBaseUrl()}/tickets/stats`, { headers: authHeaders(token) })
+  const res = await apiFetch(`${getBaseUrl()}/tickets/stats`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to get ticket stats (${res.status})`)
   return data
@@ -171,14 +291,14 @@ export async function getTicketStats(token) {
 
 // ——— Single ticket ———
 export async function getTicket(token, id) {
-  const res = await fetch(`${getBaseUrl()}/tickets/${id}`, { headers: authHeaders(token) })
+  const res = await apiFetch(`${getBaseUrl()}/tickets/${id}`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to get ticket (${res.status})`)
   return data
 }
 
 export async function createTicket(token, body) {
-  const res = await fetch(`${getBaseUrl()}/tickets`, {
+  const res = await apiFetch(`${getBaseUrl()}/tickets`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: JSON.stringify(body),
@@ -189,7 +309,7 @@ export async function createTicket(token, body) {
 }
 
 export async function updateTicket(token, id, body) {
-  const res = await fetch(`${getBaseUrl()}/tickets/${id}`, {
+  const res = await apiFetch(`${getBaseUrl()}/tickets/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: JSON.stringify(body),
@@ -204,7 +324,7 @@ export async function updateTicket(token, id, body) {
  * Body: { body: string }
  */
 export async function createTicketReply(token, ticketId, body) {
-  const res = await fetch(`${getBaseUrl()}/tickets/${ticketId}/replies`, {
+  const res = await apiFetch(`${getBaseUrl()}/tickets/${ticketId}/replies`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: JSON.stringify(body),
@@ -215,7 +335,7 @@ export async function createTicketReply(token, ticketId, body) {
 }
 
 export async function deleteTicket(token, id) {
-  const res = await fetch(`${getBaseUrl()}/tickets/${id}`, { method: 'DELETE', headers: authHeaders(token) })
+  const res = await apiFetch(`${getBaseUrl()}/tickets/${id}`, { method: 'DELETE', headers: authHeaders(token) })
   if (res.status === 204) return { message: 'Ticket deleted.' }
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to delete ticket (${res.status})`)

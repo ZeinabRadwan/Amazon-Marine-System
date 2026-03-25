@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from './apiBaseUrl'
+import { apiFetch } from './http'
 
 const getBaseUrl = getApiBaseUrl
 
@@ -33,7 +34,7 @@ export async function listOffers(token, params = {}) {
   const query = searchParams.toString()
   const url = `${getBaseUrl()}/pricing/offers${query ? `?${query}` : ''}`
   
-  const res = await fetch(url, { headers: authHeaders(token) })
+  const res = await apiFetch(url, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to list offers (${res.status})`)
   return data
@@ -41,7 +42,7 @@ export async function listOffers(token, params = {}) {
 
 export async function getOffer(token, id) {
   const url = `${getBaseUrl()}/pricing/offers/${id}`
-  const res = await fetch(url, { headers: authHeaders(token) })
+  const res = await apiFetch(url, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to get offer (${res.status})`)
   return data
@@ -49,7 +50,7 @@ export async function getOffer(token, id) {
 
 export async function createOffer(token, payload) {
   const url = `${getBaseUrl()}/pricing/offers`
-  const res = await fetch(url, {
+  const res = await apiFetch(url, {
     method: 'POST',
     headers: authHeaders(token),
     body: JSON.stringify(payload),
@@ -61,7 +62,7 @@ export async function createOffer(token, payload) {
 
 export async function updateOffer(token, id, payload) {
   const url = `${getBaseUrl()}/pricing/offers/${id}`
-  const res = await fetch(url, {
+  const res = await apiFetch(url, {
     method: 'PUT',
     headers: authHeaders(token),
     body: JSON.stringify(payload),
@@ -73,7 +74,7 @@ export async function updateOffer(token, id, payload) {
 
 export async function activateOffer(token, id) {
   const url = `${getBaseUrl()}/pricing/offers/${id}/activate`
-  const res = await fetch(url, {
+  const res = await apiFetch(url, {
     method: 'POST',
     headers: authHeaders(token),
   })
@@ -84,7 +85,7 @@ export async function activateOffer(token, id) {
 
 export async function archiveOffer(token, id) {
   const url = `${getBaseUrl()}/pricing/offers/${id}/archive`
-  const res = await fetch(url, {
+  const res = await apiFetch(url, {
     method: 'POST',
     headers: authHeaders(token),
   })
@@ -104,7 +105,7 @@ export async function listQuotes(token, params = {}) {
   const query = searchParams.toString()
   const url = `${getBaseUrl()}/pricing/quotes${query ? `?${query}` : ''}`
 
-  const res = await fetch(url, { headers: authHeaders(token) })
+  const res = await apiFetch(url, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to list quotes (${res.status})`)
   return data
@@ -112,7 +113,7 @@ export async function listQuotes(token, params = {}) {
 
 export async function getQuote(token, id) {
   const url = `${getBaseUrl()}/pricing/quotes/${id}`
-  const res = await fetch(url, { headers: authHeaders(token) })
+  const res = await apiFetch(url, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to get quote (${res.status})`)
   return data
@@ -120,7 +121,7 @@ export async function getQuote(token, id) {
 
 export async function createQuote(token, payload) {
   const url = `${getBaseUrl()}/pricing/quotes`
-  const res = await fetch(url, {
+  const res = await apiFetch(url, {
     method: 'POST',
     headers: authHeaders(token),
     body: JSON.stringify(payload),
@@ -132,7 +133,7 @@ export async function createQuote(token, payload) {
 
 export async function updateQuote(token, id, payload) {
   const url = `${getBaseUrl()}/pricing/quotes/${id}`
-  const res = await fetch(url, {
+  const res = await apiFetch(url, {
     method: 'PUT',
     headers: authHeaders(token),
     body: JSON.stringify(payload),
@@ -144,7 +145,7 @@ export async function updateQuote(token, id, payload) {
 
 export async function acceptQuote(token, id) {
   const url = `${getBaseUrl()}/pricing/quotes/${id}/accept`
-  const res = await fetch(url, { method: 'POST', headers: authHeaders(token) })
+  const res = await apiFetch(url, { method: 'POST', headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to accept quote (${res.status})`)
   return data
@@ -152,7 +153,7 @@ export async function acceptQuote(token, id) {
 
 export async function rejectQuote(token, id) {
   const url = `${getBaseUrl()}/pricing/quotes/${id}/reject`
-  const res = await fetch(url, { method: 'POST', headers: authHeaders(token) })
+  const res = await apiFetch(url, { method: 'POST', headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to reject quote (${res.status})`)
   return data

@@ -8,6 +8,7 @@
  */
 
 import { getApiBaseUrl } from './apiBaseUrl'
+import { apiFetch } from './http'
 
 const getBaseUrl = getApiBaseUrl
 
@@ -48,7 +49,7 @@ export function buildClockBody(position, notes = '') {
 }
 
 export async function clockIn(token, body = {}) {
-  const res = await fetch(`${getBaseUrl()}/attendance/clock-in`, {
+  const res = await apiFetch(`${getBaseUrl()}/attendance/clock-in`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: JSON.stringify(body),
@@ -61,7 +62,7 @@ export async function clockIn(token, body = {}) {
 }
 
 export async function clockOut(token, body = {}) {
-  const res = await fetch(`${getBaseUrl()}/attendance/clock-out`, {
+  const res = await apiFetch(`${getBaseUrl()}/attendance/clock-out`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: JSON.stringify(body),
@@ -96,7 +97,7 @@ export async function listAttendance(token, params = {}) {
   }
   const query = searchParams.toString()
   const url = `${getBaseUrl()}/attendance${query ? `?${query}` : ''}`
-  const res = await fetch(url, { headers: authHeaders(token) })
+  const res = await apiFetch(url, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to list attendance (${res.status})`)
   return unwrapPayload(data)
@@ -105,14 +106,14 @@ export async function listAttendance(token, params = {}) {
 export async function getAttendanceStats(token, params = {}) {
   const date = params.date != null && params.date !== '' ? params.date : ''
   const url = `${getBaseUrl()}/attendance/stats${date ? `?date=${encodeURIComponent(date)}` : ''}`
-  const res = await fetch(url, { headers: authHeaders(token) })
+  const res = await apiFetch(url, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to get attendance stats (${res.status})`)
   return unwrapPayload(data)
 }
 
 export async function getAttendanceToday(token) {
-  const res = await fetch(`${getBaseUrl()}/attendance/today`, { headers: authHeaders(token) })
+  const res = await apiFetch(`${getBaseUrl()}/attendance/today`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to get today's attendance (${res.status})`)
   return unwrapPayload(data)
@@ -122,7 +123,7 @@ export async function listMyExcuses(token, params = {}) {
   const q = new URLSearchParams()
   if (params.status) q.set('status', params.status)
   const url = `${getBaseUrl()}/attendance/excuses${q.toString() ? `?${q}` : ''}`
-  const res = await fetch(url, { headers: authHeaders(token) })
+  const res = await apiFetch(url, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to load excuses (${res.status})`)
   return unwrapPayload(data)
@@ -133,7 +134,7 @@ export async function submitExcuse(token, { date, reason, attachment }) {
   form.set('date', date)
   form.set('reason', reason)
   if (attachment) form.set('attachment', attachment)
-  const res = await fetch(`${getBaseUrl()}/attendance/excuses`, {
+  const res = await apiFetch(`${getBaseUrl()}/attendance/excuses`, {
     method: 'POST',
     headers: authHeaders(token),
     body: form,
@@ -150,7 +151,7 @@ export async function adminListAttendance(token, params = {}) {
     if (params[k] != null && params[k] !== '') q.set(k, String(params[k]))
   })
   const url = `${getBaseUrl()}/admin/attendance${q.toString() ? `?${q}` : ''}`
-  const res = await fetch(url, { headers: authHeaders(token) })
+  const res = await apiFetch(url, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Admin attendance failed (${res.status})`)
   return unwrapPayload(data)
@@ -162,7 +163,7 @@ export async function adminAttendanceSummary(token, params = {}) {
     if (params[k] != null && params[k] !== '') q.set(k, String(params[k]))
   })
   const url = `${getBaseUrl()}/admin/attendance/summary${q.toString() ? `?${q}` : ''}`
-  const res = await fetch(url, { headers: authHeaders(token) })
+  const res = await apiFetch(url, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Summary failed (${res.status})`)
   return unwrapPayload(data)
@@ -174,14 +175,14 @@ export async function adminListExcuses(token, params = {}) {
     if (params[k] != null && params[k] !== '') q.set(k, String(params[k]))
   })
   const url = `${getBaseUrl()}/admin/excuses${q.toString() ? `?${q}` : ''}`
-  const res = await fetch(url, { headers: authHeaders(token) })
+  const res = await apiFetch(url, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Admin excuses failed (${res.status})`)
   return unwrapPayload(data)
 }
 
 export async function adminPatchExcuse(token, id, body) {
-  const res = await fetch(`${getBaseUrl()}/admin/excuses/${id}`, {
+  const res = await apiFetch(`${getBaseUrl()}/admin/excuses/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: JSON.stringify(body),
@@ -198,7 +199,7 @@ export async function adminPatchExcuse(token, id, body) {
  */
 export async function openAdminExcuseAttachment(token, excuseId) {
   const url = `${getBaseUrl()}/admin/excuses/${excuseId}/attachment`
-  const res = await fetch(url, { headers: authHeaders(token) })
+  const res = await apiFetch(url, { headers: authHeaders(token) })
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))
     throw new Error(data.message || data.error || `Failed to load attachment (${res.status})`)
