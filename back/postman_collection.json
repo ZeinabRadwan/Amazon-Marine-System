@@ -6364,6 +6364,124 @@
       ]
     },
     {
+      "name": "Pricing Quotes",
+      "item": [
+        {
+          "name": "List Pricing Quotes",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/pricing/quotes?status=&client_id=&q=&per_page=20&page=1",
+              "host": ["{{base_url}}"],
+              "path": ["pricing", "quotes"],
+              "query": [
+                { "key": "status", "value": "" },
+                { "key": "client_id", "value": "" },
+                { "key": "q", "value": "" },
+                { "key": "per_page", "value": "20" },
+                { "key": "page", "value": "1" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Show Pricing Quote",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/pricing/quotes/{{pricing_quote_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["pricing", "quotes", "{{pricing_quote_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Pricing Quote (demo)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"client_id\": {{client_id}},\n  \"pol\": \"Sokhna\",\n  \"pod\": \"Jeddah\",\n  \"shipping_line\": \"MSC\",\n  \"container_type\": \"40HQ Dry\",\n  \"qty\": 1,\n  \"transit_time\": \"5 days\",\n  \"free_time\": \"7 days\",\n  \"valid_from\": \"2026-03-01\",\n  \"valid_to\": \"2026-03-31\",\n  \"notes\": \"Demo quote from Postman\",\n  \"sailing_dates\": [\"2026-03-14\", \"2026-03-21\"],\n  \"items\": [\n    { \"code\": \"ocean\", \"name\": \"Ocean Freight\", \"description\": \"Base\", \"amount\": 1000, \"currency\": \"USD\" },\n    { \"code\": \"thc\", \"name\": \"THC\", \"description\": \"\", \"amount\": 250, \"currency\": \"USD\" }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/pricing/quotes",
+              "host": ["{{base_url}}"],
+              "path": ["pricing", "quotes"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Pricing Quote",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Updated notes from Postman\",\n  \"status\": \"pending\",\n  \"items\": [\n    { \"code\": \"ocean\", \"name\": \"Ocean Freight\", \"description\": \"Updated\", \"amount\": 1100, \"currency\": \"USD\" }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/pricing/quotes/{{pricing_quote_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["pricing", "quotes", "{{pricing_quote_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Accept Pricing Quote",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/pricing/quotes/{{pricing_quote_id}}/accept",
+              "host": ["{{base_url}}"],
+              "path": ["pricing", "quotes", "{{pricing_quote_id}}", "accept"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reject Pricing Quote",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/pricing/quotes/{{pricing_quote_id}}/reject",
+              "host": ["{{base_url}}"],
+              "path": ["pricing", "quotes", "{{pricing_quote_id}}", "reject"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Attendance",
       "description": "Clock-in/out (with optional latitude/longitude), logs, stats. Responses: { success, data, message }. attendance.view or reports.view for org-wide list/stats; otherwise own data only.",
       "item": [
@@ -7264,6 +7382,14 @@
     },
     {
       "key": "client_id",
+      "value": "1"
+    },
+    {
+      "key": "pricing_offer_id",
+      "value": "1"
+    },
+    {
+      "key": "pricing_quote_id",
       "value": "1"
     },
     {
