@@ -1,7 +1,9 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Ship, Truck, Search, Filter, X } from 'lucide-react'
+import { Ship, Truck, Search, Filter, X, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react'
 import PricingCard from './PricingCard'
+import OfferSkeleton from './OfferSkeleton'
+import { useOffers } from '../../../hooks/usePricing'
 
 const REGIONS_PODS = {
   'Red Sea': ['Jeddah', 'Port Sudan', 'Aqaba', 'Hodeidah'],
@@ -18,46 +20,53 @@ const INLAND_PORTS = [
   { value: 'Sokhna', label: 'Ain Sokhna' }
 ]
 
-const DEMO_OFFERS = [
-  { id: 'PS-001', region: 'Red Sea', pod: 'Jeddah', type: 'sea', shippingLine: 'MSC', pol: 'Sokhna', dnd: '7det', transitTime: '5 days', sailingDates: ['2026-03-14', '2026-03-21'], pricing: { of20: { price: 70, currency: 'USD' }, of40: { price: 103, currency: 'USD' } }, total: 433 },
-  { id: 'PS-002', region: 'Red Sea', pod: 'Jeddah', type: 'sea', shippingLine: 'CMA CGM', pol: 'Alex', dnd: '7d&d', transitTime: '3 days', sailingDates: ['2026-03-05', '2026-03-15'], pricing: { of20: { price: 225, currency: 'USD' }, of40: { price: 275, currency: 'USD' } }, total: 975 },
-  { id: 'PI-001', region: 'Cairo', pod: 'Alex', type: 'inland', destination: 'Cairo - Obour', validTo: '2026-12-31', pricing: { t20d: { price: 8500, currency: 'EGP' }, t40hq: { price: 9700, currency: 'EGP' } } },
-]
-
-export default function RateSheet() {
+export default function RateSheet({ refreshKey, onEdit }) {
   const { t } = useTranslation()
   const [type, setType] = useState('sea')
   const [region, setRegion] = useState('')
   const [pod, setPod] = useState('')
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
 
-  const filteredOffers = useMemo(() => {
-    return DEMO_OFFERS.filter(o => {
-      if (o.type !== type) return false
-      if (region && o.region !== region) return false
-      if (pod && o.pod !== pod) return false
-      if (search && !JSON.stringify(o).toLowerCase().includes(search.toLowerCase())) return false
-      return true
-    })
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1)
   }, [type, region, pod, search])
+
+  // Watch refreshKey to re-fetch on successful create/edit
+  useEffect(() => {
+    if (refreshKey > 0) refetch()
+  }, [refreshKey])
+
+  const { data: offers, meta, loading, error, refetch } = useOffers({
+    pricing_type: type,
+    region: region || undefined,
+    pod: type === 'sea' ? pod || undefined : undefined,
+    inland_port: type === 'inland' ? pod || undefined : undefined,
+    q: search || undefined,
+    page,
+    per_page: 12
+  })
 
   return (
     <div className="rate-sheet">
-      <div className="mb-6 flex items-center gap-2 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl w-fit">
-        <button
-          onClick={() => setType('sea')}
-          className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold transition-all ${type === 'sea' ? 'bg-white dark:bg-gray-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
-        >
-          <Ship className="h-4 w-4" />
-          {t('pricing.shippingLines', 'Shipping Lines')}
-        </button>
-        <button
-          onClick={() => setType('inland')}
-          className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold transition-all ${type === 'inland' ? 'bg-white dark:bg-gray-700 shadow-sm text-amber-600 dark:text-amber-400' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
-        >
-          <Truck className="h-4 w-4" />
-          {t('pricing.inlandTransport', 'Inland Transport')}
-        </button>
+      <div className="mb-6 flex items-center justify-between flex-wrap gap-4">
+        <div className="flex items-center gap-2 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl w-fit">
+          <button
+            onClick={() => setType('sea')}
+            className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold transition-all ${type === 'sea' ? 'bg-white dark:bg-gray-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+          >
+            <Ship className="h-4 w-4" />
+            {t('pricing.shippingLines', 'Shipping Lines')}
+          </button>
+          <button
+            onClick={() => setType('inland')}
+            className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold transition-all ${type === 'inland' ? 'bg-white dark:bg-gray-700 shadow-sm text-amber-600 dark:text-amber-400' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+          >
+            <Truck className="h-4 w-4" />
+            {t('pricing.inlandTransport', 'Inland Transport')}
+          </button>
+        </div>
       </div>
 
       <div className="glass-panel rounded-2xl p-6 mb-8 shadow-sm">
@@ -90,7 +99,7 @@ export default function RateSheet() {
               <option value="">{t('common.all', 'All')}</option>
               {type === 'sea' 
                 ? Object.keys(REGIONS_PODS).map(r => <option key={r} value={r}>{r}</option>)
-                : ['Cairo', 'Giza', 'Alexandria', 'Delta'].map(r => <option key={r} value={r}>{r}</option>)
+                : ['القاهرة الكبرى', 'الإسكندرية', 'الدلتا'].map(r => <option key={r} value={r}>{r}</option>) // Updated inline with mock data
               }
             </select>
           </div>
@@ -121,16 +130,53 @@ export default function RateSheet() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredOffers.map(offer => (
-          <PricingCard key={offer.id} offer={offer} />
-        ))}
-        {filteredOffers.length === 0 && (
-          <div className="col-span-full py-12 text-center text-gray-500 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-700">
-            <p>{t('pricing.noOffers', 'No offers found matching your filters')}</p>
+      {error ? (
+        <div className="flex flex-col items-center justify-center py-16 bg-red-50 dark:bg-red-900/20 rounded-2xl border border-red-100 dark:border-red-900/50">
+          <AlertCircle className="h-10 w-10 text-red-500 mb-4" />
+          <p className="text-red-700 dark:text-red-400 font-medium">{error}</p>
+          <button onClick={refetch} className="mt-4 px-4 py-2 bg-white dark:bg-gray-800 rounded-lg text-sm font-bold shadow-sm border border-gray-200 dark:border-gray-700">
+            {t('common.retry', 'Retry')}
+          </button>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {loading ? (
+              Array.from({ length: 6 }).map((_, i) => <OfferSkeleton key={i} />)
+            ) : offers?.length > 0 ? (
+              offers.map(offer => (
+                <PricingCard key={offer.id} offer={offer} onMutate={refetch} onEdit={onEdit} />
+              ))
+            ) : (
+              <div className="col-span-full py-16 text-center text-gray-500 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-700">
+                <p className="text-lg font-medium">{t('pricing.noOffers', 'No offers found matching your filters')}</p>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+
+          {!loading && meta?.last_page > 1 && (
+            <div className="flex items-center justify-center gap-2">
+              <button
+                disabled={page === 1}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                {t('common.page', 'Page')} {meta.current_page} {t('common.of', 'of')} {meta.last_page}
+              </span>
+              <button
+                disabled={page === meta.last_page}
+                onClick={() => setPage(p => Math.min(meta.last_page, p + 1))}
+                className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }

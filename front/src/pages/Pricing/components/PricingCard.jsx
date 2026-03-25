@@ -1,9 +1,13 @@
 import { useTranslation } from 'react-i18next'
-import { Calendar, Clock, Ship, Truck, Eye, Edit2 } from 'lucide-react'
+import { Calendar, Clock, Ship, Truck, Eye, Edit2, CheckCircle, Archive, Loader2 } from 'lucide-react'
+import { useState } from 'react'
+import { useMutateOffer } from '../../../hooks/usePricing'
 
-export default function PricingCard({ offer }) {
+export default function PricingCard({ offer, onMutate, onEdit }) {
   const { t } = useTranslation()
-  const isSea = offer.type === 'sea'
+  const isSea = offer.pricing_type === 'sea'
+  const { activate, archive, loading } = useMutateOffer()
+  const [actionLoading, setActionLoading] = useState(null) // 'activate' or 'archive'
 
   const formatPrice = (price, currency) => {
     return new Intl.NumberFormat('en-US', {
@@ -13,33 +17,66 @@ export default function PricingCard({ offer }) {
     }).format(price || 0)
   }
 
+  const handleActivate = async () => {
+    setActionLoading('activate')
+    try {
+      await activate(offer.id)
+      if (onMutate) onMutate()
+    } catch(e) {
+      console.error(e)
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const handleArchive = async () => {
+    setActionLoading('archive')
+    try {
+      await archive(offer.id)
+      if (onMutate) onMutate()
+    } catch(e) {
+      console.error(e)
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
   return (
-    <div className="premium-card bg-white dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700 flex flex-col">
+    <div className={`premium-card bg-white dark:bg-gray-800 rounded-2xl overflow-hidden border flex flex-col transition-all ${offer.status === 'archived' ? 'opacity-70 border-gray-300 dark:border-gray-700 grayscale' : 'border-gray-100 dark:border-gray-700 hover:shadow-md hover:border-blue-200 dark:hover:border-blue-800'}`}>
       <div className="p-5 border-b border-gray-100 dark:border-gray-700">
         <div className="flex items-center justify-between mb-3">
-          <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${isSea ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'}`}>
-            {isSea ? offer.shippingLine : t('pricing.inland', 'Inland')}
-          </span>
-          <span className="text-xs font-bold text-gray-400">{offer.id}</span>
+          <div className="flex items-center gap-2">
+            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${isSea ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'}`}>
+              {isSea ? offer.shipping_line || t('pricing.sea', 'Sea') : t('pricing.inland', 'Inland')}
+            </span>
+            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                offer.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                offer.status === 'archived' ? 'bg-gray-100 text-gray-600 dark:bg-gray-900/30 dark:text-gray-400' :
+                'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+              }`}>
+                {offer.status || 'draft'}
+            </span>
+          </div>
+          <span className="text-xs font-bold text-gray-400">#{offer.id}</span>
         </div>
         
         <h3 className="text-base font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-          {isSea ? <Ship className="h-4 w-4 text-blue-500" /> : <Truck className="h-4 w-4 text-amber-500" />}
-          {isSea ? `${offer.pol} → ${offer.pod}` : offer.destination}
+          {isSea ? <Ship className="h-4 w-4 text-blue-500 shrink-0" /> : <Truck className="h-4 w-4 text-amber-500 shrink-0" />}
+          <span className="truncate" title={isSea ? `${offer.pol} → ${offer.pod}` : offer.destination}>
+            {isSea ? `${offer.pol || ''} → ${offer.pod || ''}` : offer.destination || ''}
+          </span>
         </h3>
 
         <div className="flex flex-wrap gap-x-4 gap-y-2 text-[11px] font-semibold text-gray-500 dark:text-gray-400">
           {isSea && (
             <>
-              <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {offer.transitTime}</span>
-              <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {offer.sailingDates?.length} {t('pricing.sailings', 'Sailings')}</span>
+              {offer.transit_time && <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {offer.transit_time}</span>}
+              {offer.sailing_dates?.length > 0 && <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {offer.sailing_dates.length} {t('pricing.sailings', 'Sailings')}</span>}
             </>
           )}
-          {!isSea && (
-            <span className="flex items-center gap-1 font-bold text-green-600 dark:text-green-400">
-              <Calendar className="h-3 w-3" /> {t('pricing.validTo', 'Valid until')} {offer.validTo}
-            </span>
-          )}
+          <span className="flex items-center gap-1 font-bold text-green-600 dark:text-green-400">
+            <Calendar className="h-3 w-3" /> {t('pricing.validTo', 'Valid until')} {offer.valid_to}
+          </span>
         </div>
       </div>
 
@@ -47,11 +84,11 @@ export default function PricingCard({ offer }) {
         {isSea ? (
           <>
             <div className="p-4 border-r border-gray-100 dark:border-gray-700 text-center">
-              <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">OF 20'DC</p>
+              <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">OF 20'</p>
               <p className="text-sm font-bold text-gray-900 dark:text-white">{formatPrice(offer.pricing?.of20?.price, offer.pricing?.of20?.currency)}</p>
             </div>
             <div className="p-4 text-center">
-              <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">OF 40'HQ</p>
+              <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">OF 40'</p>
               <p className="text-sm font-bold text-gray-900 dark:text-white">{formatPrice(offer.pricing?.of40?.price, offer.pricing?.of40?.currency)}</p>
             </div>
           </>
@@ -62,27 +99,51 @@ export default function PricingCard({ offer }) {
               <p className="text-sm font-bold text-gray-900 dark:text-white">{formatPrice(offer.pricing?.t20d?.price, offer.pricing?.t20d?.currency)}</p>
             </div>
             <div className="p-4 text-center">
-              <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">40' HQ</p>
-              <p className="text-sm font-bold text-gray-900 dark:text-white">{formatPrice(offer.pricing?.t40hq?.price, offer.pricing?.t40hq?.currency)}</p>
+              <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">40' Dry / HQ</p>
+              <p className="text-sm font-bold text-gray-900 dark:text-white">{formatPrice(offer.pricing?.t40d?.price, offer.pricing?.t40d?.currency)}</p>
             </div>
           </>
         )}
       </div>
 
-      <div className="p-4 mt-auto border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
-        <div className="flex flex-col">
-          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('pricing.approxTotal', 'Approx Total')}</span>
-          <span className="text-lg font-black text-blue-600 dark:text-blue-400">
-            {offer.total ? `$${offer.total}` : '—'}
-          </span>
-        </div>
-        <div className="flex gap-2">
-          <button className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-            <Eye className="h-4 w-4" />
-          </button>
-          <button className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors">
-            <Edit2 className="h-4 w-4" />
-          </button>
+      <div className="p-4 flex flex-col gap-3 mt-auto border-t border-gray-100 dark:border-gray-700">
+        <div className="flex items-center justify-between">
+          <div className="flex gap-2">
+            <button
+               onClick={() => onEdit?.(offer)}
+               className="p-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/40 transition-colors"
+               title={t('common.edit', 'Edit')}
+            >
+              <Edit2 className="h-4 w-4" />
+            </button>
+            
+            {offer.status !== 'active' && (
+              <button
+                 onClick={handleActivate}
+                 disabled={loading}
+                 className="p-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/40 transition-colors disabled:opacity-50"
+                 title={t('common.activate', 'Activate')}
+              >
+                {actionLoading === 'activate' ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+              </button>
+            )}
+
+            {offer.status !== 'archived' && (
+              <button
+                 onClick={handleArchive}
+                 disabled={loading}
+                 className="p-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+                 title={t('common.archive', 'Archive')}
+              >
+                {actionLoading === 'archive' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Archive className="h-4 w-4" />}
+              </button>
+            )}
+          </div>
+          <div className="flex gap-1.5">
+             <button className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+               <Eye className="h-3 w-3" /> {t('common.view', 'View')}
+             </button>
+          </div>
         </div>
       </div>
     </div>

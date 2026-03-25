@@ -6,11 +6,22 @@ import Tabs from '../../components/Tabs'
 import { DropdownMenu } from '../../components/DropdownMenu'
 import RateSheet from './components/RateSheet'
 import QuotationTable from './components/QuotationTable'
+import OfferFormModal from './components/OfferFormModal'
 import './Pricing.css'
 
 export default function Pricing() {
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState('rates')
+  const [modalConfig, setModalConfig] = useState({ isOpen: false, offer: null })
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  const handleAddClick = () => {
+    if (activeTab === 'rates') {
+      setModalConfig({ isOpen: true, offer: null })
+    } else {
+      // Create Quote logic
+    }
+  }
 
   const PRICING_TABS = [
     { id: 'rates', label: t('pricing.rateSheet', 'Rate Sheet'), icon: <Table className="h-4 w-4" /> },
@@ -27,7 +38,9 @@ export default function Pricing() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
+          <button 
+            onClick={handleAddClick}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
             <Plus className="h-4 w-4" />
             {activeTab === 'rates' ? t('pricing.addRate', 'Add Rate') : t('pricing.createQuote', 'Create Quote')}
           </button>
@@ -49,8 +62,22 @@ export default function Pricing() {
       <Tabs tabs={PRICING_TABS} activeTab={activeTab} onChange={setActiveTab} className="mb-6" />
 
       <main className="pricing-content">
-        {activeTab === 'rates' ? <RateSheet /> : <QuotationTable />}
+        {activeTab === 'rates' ? (
+          <RateSheet 
+            refreshKey={refreshKey} 
+            onEdit={(offer) => setModalConfig({ isOpen: true, offer })} 
+          />
+        ) : (
+          <QuotationTable />
+        )}
       </main>
+
+      <OfferFormModal 
+        isOpen={modalConfig.isOpen}
+        offerToEdit={modalConfig.offer}
+        onClose={() => setModalConfig({ isOpen: false, offer: null })}
+        onSuccess={() => setRefreshKey(k => k + 1)}
+      />
     </Container>
   )
 }
