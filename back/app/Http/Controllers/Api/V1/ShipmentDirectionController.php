@@ -36,7 +36,7 @@ class ShipmentDirectionController extends Controller
     public function destroy(ShipmentDirection $shipmentDirection): JsonResponse
     {
         $shipmentDirection->delete();
-        return response()->json(['message' => 'Shipment direction deleted.']);
+        return response()->json(['message' => __('Shipment direction deleted.')]);
     }
 }
 

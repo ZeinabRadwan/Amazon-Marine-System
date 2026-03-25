@@ -98,7 +98,7 @@ class ExpenseController extends Controller
         $expense->delete();
 
         return response()->json([
-            'message' => 'Expense deleted.',
+            'message' => __('Expense deleted.'),
         ]);
     }
 }

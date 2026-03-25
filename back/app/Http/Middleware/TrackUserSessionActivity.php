@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\UserDailySession;
 use App\Services\AppSettings;
+use App\Services\DeviceTypeResolver;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -14,6 +15,7 @@ class TrackUserSessionActivity
 {
     public function __construct(
         private readonly AppSettings $settings,
+        private readonly DeviceTypeResolver $deviceTypeResolver,
     ) {}
 
     /**
@@ -35,10 +37,11 @@ class TrackUserSessionActivity
         $idleLogoutSeconds = max(1, $idleLogoutMinutes) * 60;
 
         $sessionDate = $this->resolveSessionDate($now, $resetHour);
+        $deviceType = $this->deviceTypeResolver->resolve($request->userAgent());
 
         $shouldLogout = false;
 
-        DB::transaction(function () use ($user, $token, $now, $sessionDate, $idleLogoutSeconds, &$shouldLogout): void {
+        DB::transaction(function () use ($user, $token, $now, $sessionDate, $idleLogoutSeconds, $deviceType, &$shouldLogout): void {
             $row = UserDailySession::query()
                 ->where('user_id', $user->id)
                 ->whereDate('session_date', $sessionDate)
@@ -46,12 +49,13 @@ class TrackUserSessionActivity
                 ->first();
 
             if (! $row) {
-                $row = UserDailySession::query()->create([
+                UserDailySession::query()->create([
                     'user_id' => $user->id,
                     'session_date' => $sessionDate,
                     'first_seen_at' => $now,
                     'last_seen_at' => $now,
                     'total_active_seconds' => 0,
+                    'device_type' => $deviceType,
                 ]);
 
                 return;
@@ -71,6 +75,7 @@ class TrackUserSessionActivity
                         $row->first_seen_at = $now;
                         $row->last_seen_at = $now;
                         $row->total_active_seconds = 0;
+                        $row->device_type = $deviceType;
                         $row->save();
 
                         return;
@@ -85,6 +90,7 @@ class TrackUserSessionActivity
             }
 
             $row->last_seen_at = $now;
+            $row->device_type = $deviceType;
             $row->save();
         });
 
@@ -95,7 +101,7 @@ class TrackUserSessionActivity
             }
 
             return response()->json([
-                'message' => 'Session expired due to inactivity.',
+                'message' => __('Session expired due to inactivity.'),
             ], 401);
         }
 

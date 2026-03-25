@@ -36,6 +36,6 @@ class LeadSourceController extends Controller
     public function destroy(LeadSource $leadSource): JsonResponse
     {
         $leadSource->delete();
-        return response()->json(['message' => 'Lead source deleted.']);
+        return response()->json(['message' => __('Lead source deleted.')]);
     }
 }

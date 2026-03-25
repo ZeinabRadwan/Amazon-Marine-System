@@ -22,7 +22,7 @@ class SessionController extends Controller
         $targetUserId = (int) ($request->query('user_id') ?: $viewer->id);
 
         if ($targetUserId !== (int) $viewer->id && ! $viewer?->can('reports.view')) {
-            abort(403, 'You do not have permission to view other users sessions.');
+            abort(403, __('You do not have permission to view other users sessions.'));
         }
 
         $resetHour = $this->settings->getInt(AppSettings::KEY_SESSIONS_RESET_HOUR, 0);
@@ -44,6 +44,7 @@ class SessionController extends Controller
                 'last_seen_at' => $row?->last_seen_at?->toIso8601String(),
                 'total_active_seconds' => (int) ($row?->total_active_seconds ?? 0),
                 'total_active_minutes' => (int) floor(((int) ($row?->total_active_seconds ?? 0)) / 60),
+                'device_type' => $row?->device_type,
             ],
         ]);
     }
@@ -54,7 +55,7 @@ class SessionController extends Controller
         $targetUserId = (int) ($request->query('user_id') ?: $viewer->id);
 
         if ($targetUserId !== (int) $viewer->id && ! $viewer?->can('reports.view')) {
-            abort(403, 'You do not have permission to view other users sessions.');
+            abort(403, __('You do not have permission to view other users sessions.'));
         }
 
         $query = UserDailySession::query()->where('user_id', $targetUserId);
@@ -78,6 +79,7 @@ class SessionController extends Controller
                 'last_seen_at' => $r->last_seen_at?->toIso8601String(),
                 'total_active_seconds' => (int) $r->total_active_seconds,
                 'total_active_minutes' => (int) floor($r->total_active_seconds / 60),
+                'device_type' => $r->device_type,
             ]),
         ]);
     }
@@ -90,14 +92,14 @@ class SessionController extends Controller
 
         if (! $currentToken) {
             return response()->json([
-                'message' => 'No current session token found.',
+                'message' => __('No current session token found.'),
             ], 422);
         }
 
         $deleted = $user->tokens()->where('id', '!=', $currentToken->id)->delete();
 
         return response()->json([
-            'message' => 'Other sessions logged out.',
+            'message' => __('Other sessions logged out.'),
             'deleted_tokens' => $deleted,
         ]);
     }

@@ -40,6 +40,6 @@ class ClientStatusController extends Controller
     {
         $clientStatus->delete();
 
-        return response()->json(['message' => 'Client status deleted.']);
+        return response()->json(['message' => __('Client status deleted.')]);
     }
 }

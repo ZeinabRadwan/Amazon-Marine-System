@@ -21,7 +21,7 @@ class AuthController extends Controller
 
         if (! Auth::attempt($credentials)) {
             throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
+                'email' => [__('The provided credentials are incorrect.')],
             ]);
         }
 
@@ -55,7 +55,7 @@ class AuthController extends Controller
             $user->currentAccessToken()?->delete();
         }
 
-        return response()->json(['message' => 'Logged out']);
+        return response()->json(['message' => __('Logged out')]);
     }
 
     public function me(Request $request)

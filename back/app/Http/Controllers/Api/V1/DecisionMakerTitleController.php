@@ -36,6 +36,6 @@ class DecisionMakerTitleController extends Controller
     public function destroy(DecisionMakerTitle $decisionMakerTitle): JsonResponse
     {
         $decisionMakerTitle->delete();
-        return response()->json(['message' => 'Decision maker title deleted.']);
+        return response()->json(['message' => __('Decision maker title deleted.')]);
     }
 }

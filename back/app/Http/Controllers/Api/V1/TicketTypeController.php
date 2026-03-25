@@ -46,6 +46,6 @@ class TicketTypeController extends Controller
 
         $ticketType->delete();
 
-        return response()->json(['message' => 'Ticket type deleted.']);
+        return response()->json(['message' => __('Ticket type deleted.')]);
     }
 }

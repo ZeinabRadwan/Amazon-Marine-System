@@ -18,7 +18,7 @@ class AccountingController extends Controller
         abort_unless(
             $request->user()?->can('accounting.view'),
             403,
-            'You do not have permission to view accounting summary.'
+            __('You do not have permission to view accounting summary.')
         );
 
         $months = max(1, (int) $request->query('months', 6));
@@ -101,7 +101,7 @@ class AccountingController extends Controller
         abort_unless(
             $request->user()?->can('accounting.view'),
             403,
-            'You do not have permission to view client accounts.'
+            __('You do not have permission to view client accounts.')
         );
 
         $query = Client::query();
@@ -164,7 +164,7 @@ class AccountingController extends Controller
         abort_unless(
             $request->user()?->can('accounting.view'),
             403,
-            'You do not have permission to view partner accounts.'
+            __('You do not have permission to view partner accounts.')
         );
 
         $query = Vendor::query();
@@ -225,7 +225,7 @@ class AccountingController extends Controller
         abort_unless(
             $request->user()?->can('accounting.view'),
             403,
-            'You do not have permission to export client accounts.'
+            __('You do not have permission to export client accounts.')
         );
 
         $ids = $request->query('ids');
@@ -293,7 +293,7 @@ class AccountingController extends Controller
         abort_unless(
             $request->user()?->can('accounting.view'),
             403,
-            'You do not have permission to export partner accounts.'
+            __('You do not have permission to export partner accounts.')
         );
 
         $ids = $request->query('ids');

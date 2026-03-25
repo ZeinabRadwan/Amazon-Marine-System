@@ -40,6 +40,6 @@ class ContainerSizeController extends Controller
     {
         $containerSize->delete();
 
-        return response()->json(['message' => 'Container size deleted.']);
+        return response()->json(['message' => __('Container size deleted.')]);
     }
 }

@@ -69,7 +69,7 @@ class ClientAttachmentController extends Controller
         $fullPath = Storage::disk('local')->path($client_attachment->path);
 
         if (! file_exists($fullPath)) {
-            abort(404, 'File not found.');
+            abort(404, __('File not found.'));
         }
 
         return response()->download($fullPath, $client_attachment->name, [
@@ -88,6 +88,6 @@ class ClientAttachmentController extends Controller
         Storage::disk('local')->delete($client_attachment->path);
         $client_attachment->delete();
 
-        return response()->json(['message' => 'Attachment deleted.']);
+        return response()->json(['message' => __('Attachment deleted.')]);
     }
 }

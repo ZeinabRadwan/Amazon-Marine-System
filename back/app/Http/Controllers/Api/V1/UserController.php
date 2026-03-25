@@ -123,7 +123,7 @@ class UserController extends Controller
         $user->delete();
 
         return response()->json([
-            'message' => 'User deleted.',
+            'message' => __('User deleted.'),
         ]);
     }
 
@@ -136,7 +136,7 @@ class UserController extends Controller
 
         return response()->json([
             'data' => $this->transformUser($user->load('roles')),
-            'message' => 'User activated. They can log in again.',
+            'message' => __('User activated. They can log in again.'),
         ]);
     }
 
@@ -147,7 +147,7 @@ class UserController extends Controller
         $currentUser = $request->user();
         if ($currentUser && $user->id === $currentUser->id) {
             return response()->json([
-                'message' => 'You cannot deactivate your own account.',
+                'message' => __('You cannot deactivate your own account.'),
             ], 422);
         }
 
@@ -158,7 +158,7 @@ class UserController extends Controller
 
         return response()->json([
             'data' => $this->transformUser($user->load('roles')),
-            'message' => 'User deactivated. They can no longer log in until activated again.',
+            'message' => __('User deactivated. They can no longer log in until activated again.'),
         ]);
     }
 
@@ -209,7 +209,7 @@ class UserController extends Controller
 
         return response()->json([
             'data' => $this->transformUser($user),
-            'message' => 'User permissions updated.',
+            'message' => __('User permissions updated.'),
         ]);
     }
 

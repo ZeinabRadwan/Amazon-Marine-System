@@ -28,7 +28,7 @@ class ActivityController extends Controller
             return $subjectType;
         }
 
-        abort(422, 'Invalid subject_type.');
+        abort(422, __('Invalid subject_type.'));
     }
 
     public function index(Request $request): JsonResponse
@@ -46,7 +46,7 @@ class ActivityController extends Controller
             abort_unless(
                 $viewer?->can('financial.view') || $viewer?->can('accounting.view'),
                 403,
-                'You do not have permission to view activities for this subject.'
+                __('You do not have permission to view activities for this subject.')
             );
 
             $subjectClass = self::resolveSubjectModelClass((string) $subjectTypeRaw);
@@ -56,7 +56,7 @@ class ActivityController extends Controller
             $targetUserId = (int) ($request->query('user_id') ?: $viewer->id);
 
             if ($targetUserId !== (int) $viewer->id && ! $viewer?->can('reports.view')) {
-                abort(403, 'You do not have permission to view other users activities.');
+                abort(403, __('You do not have permission to view other users activities.'));
             }
 
             $query->where('causer_type', User::class)->where('causer_id', $targetUserId);

@@ -20,7 +20,7 @@ class ExpensesController extends Controller
         abort_unless(
             $request->user()?->can('accounting.view'),
             403,
-            'You do not have permission to view expenses summary.'
+            __('You do not have permission to view expenses summary.')
         );
 
         $months = max(1, (int) $request->query('months', 6));
@@ -91,7 +91,7 @@ class ExpensesController extends Controller
         abort_unless(
             $user && ($user->hasRole('admin') || $user->can('accounting.view')),
             403,
-            'You do not have permission to view shipment expenses.'
+            __('You do not have permission to view shipment expenses.')
         );
 
         $query = Expense::query()
@@ -171,7 +171,7 @@ class ExpensesController extends Controller
         abort_unless(
             $request->user()?->can('accounting.view'),
             403,
-            'You do not have permission to view general expenses.'
+            __('You do not have permission to view general expenses.')
         );
 
         $query = Expense::query()
@@ -279,7 +279,7 @@ class ExpensesController extends Controller
         abort_unless(
             $request->user()?->can('accounting.view'),
             403,
-            'You do not have permission to view this expense.'
+            __('You do not have permission to view this expense.')
         );
 
         return response()->json([
@@ -293,7 +293,7 @@ class ExpensesController extends Controller
         abort_unless(
             $user && ($user->can('accounting.manage') || $user->hasRole('admin')),
             403,
-            'You do not have permission to update expenses.'
+            __('You do not have permission to update expenses.')
         );
 
         $validated = $request->validate([
@@ -364,13 +364,13 @@ class ExpensesController extends Controller
         abort_unless(
             $user && ($user->can('accounting.manage') || $user->hasRole('admin')),
             403,
-            'You do not have permission to delete expenses.'
+            __('You do not have permission to delete expenses.')
         );
 
         $expense->delete();
 
         return response()->json([
-            'message' => 'Expense deleted.',
+            'message' => __('Expense deleted.'),
         ]);
     }
 
@@ -380,7 +380,7 @@ class ExpensesController extends Controller
         abort_unless(
             $user && ($user->can('accounting.manage') || $user->hasRole('admin')),
             403,
-            'You do not have permission to upload expense receipts.'
+            __('You do not have permission to upload expense receipts.')
         );
 
         $request->validate([
@@ -420,7 +420,7 @@ class ExpensesController extends Controller
         abort_unless(
             $request->user()?->can('accounting.view'),
             403,
-            'You do not have permission to export expenses.'
+            __('You do not have permission to export expenses.')
         );
 
         $type = $request->query('type', 'all');

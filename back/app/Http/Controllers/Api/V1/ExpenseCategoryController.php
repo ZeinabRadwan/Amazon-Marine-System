@@ -14,7 +14,7 @@ class ExpenseCategoryController extends Controller
         abort_unless(
             $user && ($user->can('financial.view') || $user->can('accounting.view') || $user->hasRole('admin')),
             403,
-            'You do not have permission to list expense categories.'
+            __('You do not have permission to list expense categories.')
         );
 
         $categories = ExpenseCategory::query()
@@ -66,7 +66,7 @@ class ExpenseCategoryController extends Controller
         $expenseCategory->delete();
 
         return response()->json([
-            'message' => 'Expense category deleted.',
+            'message' => __('Expense category deleted.'),
         ]);
     }
 }

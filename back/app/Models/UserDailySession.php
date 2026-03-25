@@ -16,6 +16,7 @@ class UserDailySession extends Model
         'first_seen_at',
         'last_seen_at',
         'total_active_seconds',
+        'device_type',
     ];
 
     /**

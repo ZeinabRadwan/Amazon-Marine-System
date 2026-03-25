@@ -36,6 +36,6 @@ class CompanyTypeController extends Controller
     public function destroy(CompanyType $companyType): JsonResponse
     {
         $companyType->delete();
-        return response()->json(['message' => 'Company type deleted.']);
+        return response()->json(['message' => __('Company type deleted.')]);
     }
 }

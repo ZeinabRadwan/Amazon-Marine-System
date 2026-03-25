@@ -86,7 +86,7 @@ class TicketPriorityController extends Controller
         $ticketPriority->delete();
 
         return response()->json([
-            'message' => 'Ticket priority deleted.',
+            'message' => __('Ticket priority deleted.'),
         ]);
     }
 }

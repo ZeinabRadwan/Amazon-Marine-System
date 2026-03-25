@@ -63,6 +63,7 @@ class SettingsSessionsApiTest extends TestCase
                     'last_seen_at',
                     'total_active_seconds',
                     'total_active_minutes',
+                    'device_type',
                 ],
             ]);
 
@@ -85,7 +86,12 @@ class SettingsSessionsApiTest extends TestCase
         );
 
         $user = User::factory()->create();
-        $token = $user->createToken('test')->plainTextToken;
+        $tokenResult = $user->createToken('test');
+        $token = $tokenResult->plainTextToken;
+        DB::table('personal_access_tokens')
+            ->where('id', $tokenResult->accessToken->getKey())
+            ->update(['created_at' => now()->subMinutes(10)]);
+
         DB::table('user_daily_sessions')->insert([
             'user_id' => $user->id,
             'session_date' => now()->toDateString(),

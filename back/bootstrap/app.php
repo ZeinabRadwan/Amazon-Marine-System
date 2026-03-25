@@ -15,6 +15,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->api(prepend: [
+            \App\Http\Middleware\SetApiLocale::class,
+        ]);
+
         $middleware->alias([
             'page_permission' => \App\Http\Middleware\CheckPagePermission::class,
             'track_session' => \App\Http\Middleware\TrackUserSessionActivity::class,
@@ -33,7 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->renderable(function (AuthenticationException $e, $request) {
             if ($request->expectsJson() || $request->is('api/*') || $request->is('api')) {
                 return response()->json([
-                    'message' => $e->getMessage() ?: 'Unauthenticated.',
+                    'message' => $e->getMessage() ?: __('Unauthenticated.'),
                 ], 401);
             }
         });
@@ -45,7 +49,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->renderable(function (AuthorizationException $e, $request) {
             if ($request->expectsJson()) {
                 return response()->json([
-                    'message' => $e->getMessage() ?: 'You are not authorized to perform this action.',
+                    'message' => $e->getMessage() ?: __('You are not authorized to perform this action.'),
                 ], 403);
             }
         });
@@ -53,7 +57,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->renderable(function (HttpExceptionInterface $e, $request) {
             if ($e->getStatusCode() === 403 && $request->expectsJson()) {
                 return response()->json([
-                    'message' => $e->getMessage() ?: 'You do not have permission to access this resource.',
+                    'message' => $e->getMessage() ?: __('You do not have permission to access this resource.'),
                 ], 403);
             }
         });

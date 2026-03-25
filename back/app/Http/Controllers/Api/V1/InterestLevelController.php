@@ -36,6 +36,6 @@ class InterestLevelController extends Controller
     public function destroy(InterestLevel $interestLevel): JsonResponse
     {
         $interestLevel->delete();
-        return response()->json(['message' => 'Interest level deleted.']);
+        return response()->json(['message' => __('Interest level deleted.')]);
     }
 }

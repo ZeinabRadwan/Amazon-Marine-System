@@ -125,7 +125,7 @@ class VendorBillController extends Controller
 
         if (! in_array($vendorBill->status, ['draft', 'approved'], true)) {
             return response()->json([
-                'message' => 'Only draft or approved vendor bills can be edited.',
+                'message' => __('Only draft or approved vendor bills can be edited.'),
             ], 422);
         }
 
@@ -152,7 +152,7 @@ class VendorBillController extends Controller
 
         if ($vendorBill->status !== 'draft') {
             return response()->json([
-                'message' => 'Only draft vendor bills can be approved.',
+                'message' => __('Only draft vendor bills can be approved.'),
             ], 422);
         }
 
@@ -172,7 +172,7 @@ class VendorBillController extends Controller
 
         if (! in_array($vendorBill->status, ['draft', 'approved'], true)) {
             return response()->json([
-                'message' => 'Only draft or approved vendor bills can be cancelled.',
+                'message' => __('Only draft or approved vendor bills can be cancelled.'),
             ], 422);
         }
 

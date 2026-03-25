@@ -32,7 +32,7 @@ class AttendanceService
         if (($policy['require_location'] ?? true) && ! $coords['ok']) {
             $this->writeLog($user->id, AttendanceLog::TYPE_CLOCK_IN, $now, $deviceType, $ip, null, null, null, null, false, 'Invalid or missing coordinates.');
 
-            return ['success' => false, 'message' => 'Valid latitude and longitude are required.'];
+            return ['success' => false, 'message' => __('Valid latitude and longitude are required.')];
         }
 
         $lat = $coords['ok'] ? $coords['lat'] : null;
@@ -44,7 +44,7 @@ class AttendanceService
         if (($policy['enforce_geofence'] ?? false) && ! $this->geofenceIsSatisfied($office, $within)) {
             $this->writeLog($user->id, AttendanceLog::TYPE_CLOCK_IN, $now, $deviceType, $ip, $lat, $lng, $distance, $within, false, 'Outside office radius or geofence not configured.');
 
-            return ['success' => false, 'message' => 'Clock-in rejected: you are outside the allowed office area.'];
+            return ['success' => false, 'message' => __('Clock-in rejected: you are outside the allowed office area.')];
         }
 
         $tz = $this->resolveTimezone($user);
@@ -52,7 +52,7 @@ class AttendanceService
         if ($scheduleNote !== null) {
             $this->writeLog($user->id, AttendanceLog::TYPE_CLOCK_IN, $now, $deviceType, $ip, $lat, $lng, $distance, $within, false, $scheduleNote);
 
-            return ['success' => false, 'message' => 'Clock-in rejected: '.$scheduleNote];
+            return ['success' => false, 'message' => __('Clock-in rejected: ').$scheduleNote];
         }
 
         $existing = AttendanceRecord::query()
@@ -63,13 +63,13 @@ class AttendanceService
         if ($existing && $existing->check_in_at && $existing->check_out_at) {
             $this->writeLog($user->id, AttendanceLog::TYPE_CLOCK_IN, $now, $deviceType, $ip, $lat, $lng, $distance, $within, false, 'Duplicate clock-in: attendance already complete for this date.');
 
-            return ['success' => false, 'message' => 'Attendance for today is already complete.'];
+            return ['success' => false, 'message' => __('Attendance for today is already complete.')];
         }
 
         if ($existing && $existing->check_in_at && ! $existing->check_out_at) {
             $this->writeLog($user->id, AttendanceLog::TYPE_CLOCK_IN, $now, $deviceType, $ip, $lat, $lng, $distance, $within, false, 'Duplicate clock-in: already checked in without clock-out.');
 
-            return ['success' => false, 'message' => 'Already checked in. Clock out before checking in again.'];
+            return ['success' => false, 'message' => __('Already checked in. Clock out before checking in again.')];
         }
 
         $isLate = $this->isLateForClockIn($policy, $now, $tz);
@@ -106,7 +106,7 @@ class AttendanceService
 
         return [
             'success' => true,
-            'message' => 'Clock-in recorded.',
+            'message' => __('Clock-in recorded.'),
             'data' => $this->serializeRecord($record, $user, [
                 'distance_from_office_m' => $distance,
                 'is_within_radius' => $within,
@@ -130,7 +130,7 @@ class AttendanceService
         if (($policy['require_location'] ?? true) && ! $coords['ok']) {
             $this->writeLog($user->id, AttendanceLog::TYPE_CLOCK_OUT, $now, $deviceType, $ip, null, null, null, null, false, 'Invalid or missing coordinates.');
 
-            return ['success' => false, 'message' => 'Valid latitude and longitude are required.'];
+            return ['success' => false, 'message' => __('Valid latitude and longitude are required.')];
         }
 
         $lat = $coords['ok'] ? $coords['lat'] : null;
@@ -142,7 +142,7 @@ class AttendanceService
         if (($policy['enforce_geofence'] ?? false) && ! $this->geofenceIsSatisfied($office, $within)) {
             $this->writeLog($user->id, AttendanceLog::TYPE_CLOCK_OUT, $now, $deviceType, $ip, $lat, $lng, $distance, $within, false, 'Outside office radius or geofence not configured.');
 
-            return ['success' => false, 'message' => 'Clock-out rejected: you are outside the allowed office area.'];
+            return ['success' => false, 'message' => __('Clock-out rejected: you are outside the allowed office area.')];
         }
 
         $tz = $this->resolveTimezone($user);
@@ -150,7 +150,7 @@ class AttendanceService
         if ($scheduleNote !== null) {
             $this->writeLog($user->id, AttendanceLog::TYPE_CLOCK_OUT, $now, $deviceType, $ip, $lat, $lng, $distance, $within, false, $scheduleNote);
 
-            return ['success' => false, 'message' => 'Clock-out rejected: '.$scheduleNote];
+            return ['success' => false, 'message' => __('Clock-out rejected: ').$scheduleNote];
         }
 
         $record = AttendanceRecord::query()
@@ -161,13 +161,13 @@ class AttendanceService
         if (! $record || ! $record->check_in_at) {
             $this->writeLog($user->id, AttendanceLog::TYPE_CLOCK_OUT, $now, $deviceType, $ip, $lat, $lng, $distance, $within, false, 'No check-in found for today.');
 
-            return ['success' => false, 'message' => 'No check-in found for today. Check in first.'];
+            return ['success' => false, 'message' => __('No check-in found for today. Check in first.')];
         }
 
         if ($record->check_out_at) {
             $this->writeLog($user->id, AttendanceLog::TYPE_CLOCK_OUT, $now, $deviceType, $ip, $lat, $lng, $distance, $within, false, 'Duplicate clock-out.');
 
-            return ['success' => false, 'message' => 'Already checked out for today.'];
+            return ['success' => false, 'message' => __('Already checked out for today.')];
         }
 
         $record->check_out_at = $now;
@@ -194,7 +194,7 @@ class AttendanceService
 
         return [
             'success' => true,
-            'message' => 'Clock-out recorded.',
+            'message' => __('Clock-out recorded.'),
             'data' => $this->serializeRecord($record, $user, [
                 'distance_from_office_m' => $distance,
                 'is_within_radius' => $within,

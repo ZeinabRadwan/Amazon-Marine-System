@@ -86,7 +86,7 @@ class CommunicationLogTypeController extends Controller
         $communicationLogType->delete();
 
         return response()->json([
-            'message' => 'Communication log type deleted.',
+            'message' => __('Communication log type deleted.'),
         ]);
     }
 }

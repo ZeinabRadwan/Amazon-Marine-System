@@ -76,7 +76,7 @@ class ShipmentStatusController extends Controller
         $shipmentStatus->delete();
 
         return response()->json([
-            'message' => 'Shipment status deleted.',
+            'message' => __('Shipment status deleted.'),
         ]);
     }
 }

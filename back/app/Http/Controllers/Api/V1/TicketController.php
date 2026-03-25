@@ -154,7 +154,7 @@ class TicketController extends Controller
         $ticket->delete();
 
         return response()->json([
-            'message' => 'Ticket deleted.',
+            'message' => __('Ticket deleted.'),
         ]);
     }
 

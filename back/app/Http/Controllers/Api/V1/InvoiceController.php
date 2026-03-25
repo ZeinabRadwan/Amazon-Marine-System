@@ -331,7 +331,7 @@ class InvoiceController extends Controller
 
         if (! in_array($invoice->status, ['draft', 'issued'], true)) {
             return response()->json([
-                'message' => 'Only draft or issued invoices can be edited.',
+                'message' => __('Only draft or issued invoices can be edited.'),
             ], 422);
         }
 
@@ -348,7 +348,7 @@ class InvoiceController extends Controller
 
         if (array_key_exists('items', $validated) && $invoice->status !== 'draft') {
             return response()->json([
-                'message' => 'Only draft invoices can have line items replaced.',
+                'message' => __('Only draft invoices can have line items replaced.'),
             ], 422);
         }
 
@@ -408,7 +408,7 @@ class InvoiceController extends Controller
 
         if ($invoice->status !== 'draft') {
             return response()->json([
-                'message' => 'Only draft invoices can be issued.',
+                'message' => __('Only draft invoices can be issued.'),
             ], 422);
         }
 
@@ -428,7 +428,7 @@ class InvoiceController extends Controller
 
         if (! in_array($invoice->status, ['draft', 'issued'], true)) {
             return response()->json([
-                'message' => 'Only draft or issued invoices can be cancelled.',
+                'message' => __('Only draft or issued invoices can be cancelled.'),
             ], 422);
         }
 

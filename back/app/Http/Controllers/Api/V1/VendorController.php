@@ -67,7 +67,7 @@ class VendorController extends Controller
         $vendor->delete();
 
         return response()->json([
-            'message' => 'Vendor deleted.',
+            'message' => __('Vendor deleted.'),
         ]);
     }
 
