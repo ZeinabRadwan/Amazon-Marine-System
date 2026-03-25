@@ -576,7 +576,8 @@
       "submit": "إرسال العذر",
       "submitSuccess": "تم إرسال العذر.",
       "myList": "أعذاري",
-      "empty": "لا توجد أعذار بعد."
+      "empty": "لا توجد أعذار بعد.",
+      "viewAttachment": "عرض المرفق"
     },
     "admin": {
       "totalDays": "إجمالي الأيام",

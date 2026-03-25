@@ -371,6 +371,7 @@ Route::prefix('v1')->group(function () {
         Route::get('attendance/today', [AttendanceController::class, 'today']);
         Route::get('attendance/excuses', [ExcuseController::class, 'index']);
         Route::post('attendance/excuses', [ExcuseController::class, 'store']);
+        Route::get('attendance/excuses/{excuse}/attachment', [ExcuseController::class, 'attachment']);
 
         Route::middleware('can:attendance.admin')->group(function () {
             Route::get('admin/attendance', [AdminAttendanceController::class, 'index']);

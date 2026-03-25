@@ -16,6 +16,7 @@ import {
   adminListExcuses,
   adminPatchExcuse,
   openAdminExcuseAttachment,
+  openMyExcuseAttachment,
 } from '../../api/attendance'
 import { getProfile } from '../../api/auth'
 import { listUsers } from '../../api/users'
@@ -596,6 +597,19 @@ export default function Attendance() {
     setAlert(null)
     try {
       await openAdminExcuseAttachment(token, id)
+    } catch (err) {
+      setAlert({ type: 'error', message: err.message || t('attendance.error') })
+    } finally {
+      setOpeningAttachmentId(null)
+    }
+  }
+
+  const handleOpenMyExcuseAttachment = async (id) => {
+    if (!token) return
+    setOpeningAttachmentId(id)
+    setAlert(null)
+    try {
+      await openMyExcuseAttachment(token, id)
     } catch (err) {
       setAlert({ type: 'error', message: err.message || t('attendance.error') })
     } finally {
@@ -1718,6 +1732,19 @@ export default function Attendance() {
                         </span>
                       </div>
                       <p className="attendance-my-excuses-item__reason">{ex.reason}</p>
+                      {(ex.has_attachment || ex.attachment_path) && (
+                        <div className="attendance-my-excuses-item__attachment">
+                          <button
+                            type="button"
+                            className="page-header__btn inline-flex items-center gap-2 text-sm"
+                            disabled={openingAttachmentId === ex.id}
+                            onClick={() => handleOpenMyExcuseAttachment(ex.id)}
+                          >
+                            <Paperclip size={16} aria-hidden />
+                            {openingAttachmentId === ex.id ? t('attendance.saving') : t('attendance.excuses.viewAttachment')}
+                          </button>
+                        </div>
+                      )}
                     </li>
                   ))}
                 </ul>

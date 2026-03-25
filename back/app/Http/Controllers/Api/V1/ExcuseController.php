@@ -8,6 +8,7 @@ use App\Http\Responses\ApiResponse;
 use App\Models\Excuse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ExcuseController extends Controller
 {
@@ -42,6 +43,32 @@ class ExcuseController extends Controller
         ]);
 
         return ApiResponse::success($this->serializeExcuse($excuse->fresh()), 'Excuse submitted.', 201);
+    }
+
+    /**
+     * Stream the excuse attachment for the owning user only.
+     */
+    public function attachment(Request $request, Excuse $excuse)
+    {
+        if ($excuse->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        if ($excuse->attachment_path === null || $excuse->attachment_path === '') {
+            return ApiResponse::failure('No attachment for this excuse.', null, 404);
+        }
+
+        $disk = Storage::disk('excuses');
+        if (! $disk->exists($excuse->attachment_path)) {
+            return ApiResponse::failure('Attachment file is missing.', null, 404);
+        }
+
+        $absolute = $disk->path($excuse->attachment_path);
+        $filename = basename($excuse->attachment_path);
+
+        return response()->file($absolute, [
+            'Content-Disposition' => 'inline; filename="'.$filename.'"',
+        ]);
     }
 
     /**
