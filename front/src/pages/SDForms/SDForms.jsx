@@ -16,7 +16,13 @@ import {
   emailSDFormToOperations,
   getSDFormPdf,
 } from '../../api/sdForms'
-import { listShipmentDirections, listFreightTerms, listContainerTypes, listContainerSizes } from '../../api/sdFormLookups'
+import {
+  listShipmentDirections,
+  listNotifyPartyModes,
+  listFreightTerms,
+  listContainerTypes,
+  listContainerSizes,
+} from '../../api/sdFormLookups'
 import { listPorts } from '../../api/ports'
 import { listClients } from '../../api/clients'
 import { listUsers } from '../../api/users'
@@ -26,7 +32,6 @@ import { Table, IconActionButton } from '../../components/Table'
 import Pagination from '../../components/Pagination'
 import LoaderDots from '../../components/LoaderDots'
 import Alert from '../../components/Alert'
-import SdFormLookupsPanel from './SdFormLookupsPanel'
 import { SDFormsStatsSection, SDFormsChartsSection } from './components'
 import {
   FileSpreadsheet,
@@ -206,8 +211,8 @@ export default function SDForms() {
   const [showSort, setShowSort] = useState(false)
 
   const [refsLoading, setRefsLoading] = useState(true)
-  const [refsTick, setRefsTick] = useState(0)
   const [shipmentDirections, setShipmentDirections] = useState([])
+  const [notifyPartyModes, setNotifyPartyModes] = useState([])
   const [freightTerms, setFreightTerms] = useState([])
   const [containerTypesList, setContainerTypesList] = useState([])
   const [containerSizesList, setContainerSizesList] = useState([])
@@ -569,37 +574,38 @@ export default function SDForms() {
     }
   }
 
-  const shipmentDirOptions = useMemo(() => {
-    if (shipmentDirections.length) {
-      return shipmentDirections.map((d) => ({ value: d.name, label: d.name }))
+  const shipmentDirOptions = useMemo(
+    () => shipmentDirections.map((d) => ({ value: d.name, label: d.name })),
+    [shipmentDirections],
+  )
+
+  const notifyPartyOptions = useMemo(() => {
+    const optional = { value: '', label: t('sdForms.form.optional') }
+    const labelByKey = {
+      same: t('sdForms.form.notifySame'),
+      different: t('sdForms.form.notifyDifferent'),
     }
-    return [
-      { value: 'Export', label: 'Export' },
-      { value: 'Import', label: 'Import' },
-    ]
-  }, [shipmentDirections])
+    const fromApi = notifyPartyModes
+      .map((m) => {
+        const key = String(m.name || '').trim().toLowerCase()
+        if (key !== 'same' && key !== 'different') return null
+        return { value: key, label: labelByKey[key] }
+      })
+      .filter(Boolean)
+    return [optional, ...fromApi]
+  }, [notifyPartyModes, t])
 
   const freightOptions = useMemo(() => {
-    const base = [
-      { value: '', label: t('sdForms.form.freightUnset') },
-      { value: 'Prepaid', label: 'Prepaid' },
-      { value: 'Collect', label: 'Collect' },
-    ]
+    const unset = { value: '', label: t('sdForms.form.freightUnset') }
+    const allowed = new Set(['Prepaid', 'Collect'])
     const fromApi = freightTerms
       .map((f) => {
         const n = String(f.name || '').trim()
-        const lower = n.toLowerCase()
-        const v = lower === 'prepaid' ? 'Prepaid' : lower === 'collect' ? 'Collect' : null
-        return v ? { value: v, label: n || v } : null
+        if (!allowed.has(n)) return null
+        return { value: n, label: n }
       })
       .filter(Boolean)
-    const merged = [...base, ...fromApi]
-    const seen = new Set()
-    return merged.filter((o) => {
-      if (seen.has(o.value)) return false
-      seen.add(o.value)
-      return true
-    })
+    return [unset, ...fromApi]
   }, [freightTerms, t])
 
   const renderFormFields = (form, setForm, disabled) => (
@@ -773,9 +779,11 @@ export default function SDForms() {
           onChange={(e) => setForm((f) => ({ ...f, notify_party_mode: e.target.value }))}
           disabled={disabled}
         >
-          <option value="">{t('sdForms.form.optional')}</option>
-          <option value="same">{t('sdForms.form.notifySame')}</option>
-          <option value="different">{t('sdForms.form.notifyDifferent')}</option>
+          {notifyPartyOptions.map((o) => (
+            <option key={o.value || 'unset'} value={o.value}>
+              {o.label}
+            </option>
+          ))}
         </select>
       </div>
       <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
@@ -1267,8 +1275,6 @@ export default function SDForms() {
             />
           </div>
         )}
-
-        <SdFormLookupsPanel token={token} onChanged={reloadReferences} />
 
         {showCreate && (
           <div className="client-detail-modal" role="dialog" aria-modal="true" aria-labelledby="sd-create-title">
