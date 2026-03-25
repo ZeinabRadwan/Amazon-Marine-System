@@ -65,6 +65,25 @@ function getStatusBadgeVariant(statusName, statusId) {
   return 'default'
 }
 
+/** i18n keys for table/filter status text when UI is Arabic but API/lookup is English-only */
+const CLIENT_STATUS_VARIANT_TKEY = {
+  new: 'clients.statusNew',
+  active: 'clients.statusActive',
+  inactive: 'clients.statusInactive',
+  pending: 'clients.statusPending',
+  prospect: 'clients.statusProspect',
+  lead: 'clients.statusLead',
+}
+
+function clientStatusTableLabel(st, clientRow, i18n, t, variant) {
+  const isAr = String(i18n.language ?? '').toLowerCase().startsWith('ar')
+  if (isAr && CLIENT_STATUS_VARIANT_TKEY[variant]) {
+    return t(CLIENT_STATUS_VARIANT_TKEY[variant])
+  }
+  if (st) return localizedStatusLabel(st, i18n.language) || '—'
+  return clientRow?.status ?? '—'
+}
+
 /** Normalize API client: backend may return client_name/source instead of name/contact_name/lead_source */
 function normalizeClient(c) {
   if (!c) return c
@@ -781,9 +800,9 @@ export default function Clients() {
       label: t('clients.fields.status'),
       render: (_, c) => {
         const st = clientStatuses.find((s) => Number(s.id) === Number(c.status_id))
-        const display = st ? localizedStatusLabel(st, i18n.language) : (c.status ?? '—')
         const variantKey = (st?.name_en ?? st?.name ?? c.status ?? '').toString().toLowerCase().trim()
         const variant = getStatusBadgeVariant(variantKey, c.status_id)
+        const display = clientStatusTableLabel(st, c, i18n, t, variant)
         return (
           <span className={`clients-status-badge clients-status-badge--${variant}`} title={display}>
             {display}

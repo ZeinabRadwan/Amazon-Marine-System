@@ -157,6 +157,21 @@
   min-width: 0;
 }
 
+.client-detail-modal__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.client-detail-modal__checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
 .client-detail-modal__header-label {
   display: block;
   font-size: 0.75rem;

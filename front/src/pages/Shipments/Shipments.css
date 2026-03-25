@@ -1,5 +1,17 @@
 /* Shipments page: pipeline strip, financial card, tracking timeline, print */
 
+/* Row actions ⋮ menu above table scroll / sticky layers */
+.shipments-row-actions-menu [role='menu'] {
+  z-index: 60;
+}
+
+/* Analytics: status donut + revenue + profit in one row on desktop (Clients.css uses 2 cols) */
+@media (min-width: 769px) {
+  .clients-charts-grid.shipments-charts-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 .shipment-pipeline {
   display: flex;
   align-items: flex-start;
@@ -171,23 +183,6 @@
 
 .shipment-tracking-timeline__text {
   font-size: 0.875rem;
-}
-
-.shipments-bulk-bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.625rem 1rem;
-  margin-bottom: 0.75rem;
-  border-radius: 0.5rem;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-}
-
-.dark .shipments-bulk-bar {
-  background: #1e3a5f33;
-  border-color: #3b82f680;
 }
 
 .shipments-client-cell {

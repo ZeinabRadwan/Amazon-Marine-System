@@ -1205,6 +1205,7 @@
     "salesRepAll": "كل المندوبين",
     "lineVendorAll": "كل الخطوط",
     "clearFilters": "مسح المرشحات",
+    "filtersToggle": "المرشحات",
     "empty": "لا توجد شحنات بعد.",
     "total": "الإجمالي",
     "perPage": "لكل صفحة",
@@ -1223,6 +1224,7 @@
     "deleteConfirm": "حذف الشحنة؟",
     "deleteConfirmMessage": "لا يمكن التراجع عن هذا الإجراء.",
     "sortBy": "ترتيب حسب",
+    "sortOrder": "ترتيب الفرز",
     "sortCreated": "تاريخ الإنشاء",
     "sortBl": "رقم BL",
     "sortClient": "العميل",
@@ -1251,6 +1253,8 @@
     },
     "sections": {
       "main": "الشحنة",
+      "cargoLoading": "الحاويات والتحميل والبضاعة",
+      "loadingReefer": "التحميل والمبرد",
       "sdForm": "نموذج SD",
       "operation": "التشغيل",
       "tasks": "المهام"
@@ -1331,6 +1335,14 @@
       "in_transit": "في الطريق",
       "customs_clearance": "تخليص جمركي",
       "delivered": "تم التسليم"
+    },
+    "statusLegacy": {
+      "booked": "تم الحجز",
+      "in_transit": "في الطريق",
+      "customs_clearance": "تخليص جمركي",
+      "delivered": "تم التسليم",
+      "unknown": "غير معروف",
+      "draft": "مسودة"
     },
     "financialSummary": "الملخص المالي",
     "trackingAddLabel": "إضافة تحديث تتبع",

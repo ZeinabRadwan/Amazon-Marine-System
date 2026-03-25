@@ -4,6 +4,7 @@ import { X } from 'lucide-react'
 import { getStoredToken } from '../Login'
 import { listShipmentNotes, postShipmentNote, getShipmentTrackingUpdates, postShipmentTrackingUpdate } from '../../api/shipments'
 import Tabs from '../../components/Tabs'
+import ShipmentStatusBadge from '../../components/ShipmentStatusBadge'
 import { getPipelineStepIndex, PIPELINE_STEP_KEYS } from './shipmentPipeline'
 import './Shipments.css'
 import '../Clients/Clients.css'
@@ -40,6 +41,7 @@ export default function ShipmentDetailModal({
   canManageOps = false,
   canViewFinancialTotals = false,
   canViewSelling = false,
+  statusOptions = [],
 }) {
   const { t, i18n } = useTranslation()
   const token = getStoredToken()
@@ -161,22 +163,18 @@ export default function ShipmentDetailModal({
             <h2 id="shipment-detail-title" className="client-detail-modal__title client-detail-modal__title--client">
               {shipmentLoading ? '…' : (shipment?.bl_number ?? shipment?.booking_number ?? `#${shipment?.id}` ?? '—')}
             </h2>
-          </div>
-          <div className="flex items-center gap-2">
-            {!shipmentLoading && shipment && canManageOps && (
-              <button type="button" className="cs-btn cs-btn-sm cs-btn-outline" onClick={() => onEdit?.(shipment)}>
-                {t('shipments.edit')}
-              </button>
+            {!shipmentLoading && shipment && clientLabel !== '—' && (
+              <p className="client-detail-modal__subtitle">{clientLabel}</p>
             )}
-            <button type="button" className="client-detail-modal__close" onClick={onClose} aria-label={t('shipments.close')}>
-              <X className="client-detail-modal__close-icon" aria-hidden />
-            </button>
           </div>
+          <button type="button" className="client-detail-modal__close" onClick={onClose} aria-label={t('shipments.close')}>
+            <X className="client-detail-modal__close-icon" aria-hidden />
+          </button>
         </header>
 
         <Tabs tabs={tabs} activeTab={detailTab} onChange={onTabChange} className="client-detail-modal__tabs" />
 
-        <div className="client-detail-modal__body" role="tabpanel">
+        <div className="client-detail-modal__body" role="tabpanel" id={`panel-${detailTab}`} aria-labelledby={`tab-${detailTab}`}>
           {detailTab === 'info' && (
             <section className="client-detail-modal__section client-detail-modal__section--info">
               {shipmentLoading || !shipment ? (
@@ -224,7 +222,18 @@ export default function ShipmentDetailModal({
                             <div key={key} className="client-detail-modal__row">
                               <span className="client-detail-modal__label">{t(`shipments.fields.${key}`)}</span>
                               <span className="client-detail-modal__value">
-                                {val != null && val !== '' ? String(val) : '—'}
+                                {key === 'status' ? (
+                                  <ShipmentStatusBadge
+                                    statusOptions={statusOptions}
+                                    rawStatus={shipment.status}
+                                    lang={i18n.language}
+                                    t={t}
+                                  />
+                                ) : val != null && val !== '' ? (
+                                  String(val)
+                                ) : (
+                                  '—'
+                                )}
                               </span>
                             </div>
                           ))}
@@ -333,7 +342,7 @@ export default function ShipmentDetailModal({
                   {trackingError && <p className="text-sm text-red-600 mb-2">{trackingError}</p>}
                   <button
                     type="submit"
-                    className="page-header__btn page-header__btn--primary"
+                    className="client-detail-modal__btn client-detail-modal__btn--primary"
                     disabled={trackingSubmitting || !trackingText.trim() || !shipment?.id}
                   >
                     {trackingSubmitting ? t('shipments.saving') : t('shipments.trackingSubmit')}
@@ -381,7 +390,7 @@ export default function ShipmentDetailModal({
                   {noteError && <p className="text-sm text-red-600 mb-2">{noteError}</p>}
                   <button
                     type="submit"
-                    className="page-header__btn page-header__btn--primary"
+                    className="client-detail-modal__btn client-detail-modal__btn--primary"
                     disabled={noteSubmitting || !noteText.trim() || !shipment?.id}
                   >
                     {noteSubmitting ? t('shipments.saving') : t('shipments.saveNote')}
@@ -408,6 +417,24 @@ export default function ShipmentDetailModal({
             </section>
           )}
         </div>
+
+        <footer className="client-detail-modal__footer">
+          <button type="button" className="client-detail-modal__btn client-detail-modal__btn--secondary" onClick={onClose}>
+            {t('shipments.close')}
+          </button>
+          {!shipmentLoading && shipment && canManageOps && detailTab === 'info' && (
+            <button
+              type="button"
+              className="client-detail-modal__btn client-detail-modal__btn--primary"
+              onClick={() => {
+                onEdit?.(shipment)
+                onClose()
+              }}
+            >
+              {t('shipments.edit')}
+            </button>
+          )}
+        </footer>
       </div>
     </div>
   )

@@ -1,23 +1,44 @@
-import { useMemo, useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useOutletContext } from 'react-router-dom'
 
-/** Maps (resource, action) to Spatie-style permission names from the API */
-const RESOURCE_ACTION_TO_PERMISSION = {
-  clients: {
-    view: 'clients.view',
-    create: 'clients.manage',
-    update: 'clients.manage',
-    delete: 'clients.delete',
-  },
+/** Spatie-style names checked by ClientPolicy / API */
+function clientPermissionNames(action) {
+  switch (action) {
+    case 'update':
+    case 'create':
+      return ['clients.manage', 'pricing.manage_client_pricing']
+    case 'delete':
+      return ['clients.delete']
+    case 'view':
+      return ['clients.view', 'pricing.view_client_pricing']
+    default:
+      return [`clients.${action}`]
+  }
+}
+
+function permissionNamesFor(resource, action) {
+  if (resource === 'clients') {
+    return clientPermissionNames(action)
+  }
+  return [`${resource}.${action}`]
 }
 
 /**
- * Permissions and user from AuthenticatedLayout outlet context.
- * Use hasPermission('clients', 'update') etc. aligned with Laravel policies.
+ * Fine-grained UI gates aligned with backend `permissions` from AuthenticatedLayout.
+ * Admins match policy-style bypass (e.g. pricing policies).
+ *
+ * @returns {{ hasPermission: (resource: string, action: string) => boolean, permissions: string[], user: object|undefined, isAdminRole: boolean }}
  */
 export function useAuthAccess() {
   const { user, permissions = [] } = useOutletContext() || {}
-  const perms = Array.isArray(permissions) ? permissions : []
+  const permSet = useMemo(
+    () => new Set(Array.isArray(permissions) ? permissions.filter(Boolean) : []),
+    [permissions]
+  )
+  const perms = useMemo(
+    () => (Array.isArray(permissions) ? permissions.filter(Boolean) : []),
+    [permissions]
+  )
 
   const isAdminRole = useMemo(() => {
     const primary = (user?.primary_role ?? user?.roles?.[0] ?? '').toString().toLowerCase()
@@ -26,11 +47,13 @@ export function useAuthAccess() {
 
   const hasPermission = useCallback(
     (resource, action) => {
-      const perm = RESOURCE_ACTION_TO_PERMISSION[resource]?.[action]
-      if (!perm) return false
-      return isAdminRole || perms.includes(perm)
+      if (!resource || !action) return false
+      const r = String(resource)
+      const names = permissionNamesFor(r, String(action))
+      if (isAdminRole && r === 'clients') return true
+      return names.some((n) => permSet.has(n))
     },
-    [isAdminRole, perms],
+    [permSet, isAdminRole]
   )
 
   return { hasPermission, permissions: perms, user, isAdminRole }
