@@ -760,6 +760,7 @@
     "deleteConfirm": "حذف نموذج SD؟",
     "deleteConfirmMessage": "لا يمكن التراجع عن هذا الإجراء.",
     "selectRow": "تحديد الصف",
+    "selectAllPage": "تحديد الكل في هذه الصفحة",
     "selectPage": "تحديد الصفحة",
     "clearSelection": "مسح التحديد",
     "selectedCount": "{{count}} محدد",

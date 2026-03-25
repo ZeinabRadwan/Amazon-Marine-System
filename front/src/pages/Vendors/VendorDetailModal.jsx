@@ -4,6 +4,7 @@ import Tabs from '../../components/Tabs'
 import VisitStatusBadge from '../Visits/VisitStatusBadge'
 import '../Clients/Clients.css'
 import '../Clients/ClientDetailModal.css'
+import { getVendorTypeBadgeVariant } from './vendorTypeHelpers'
 
 function formatVisitDate(value, locale) {
   if (value == null || value === '') return '—'
@@ -51,7 +52,14 @@ export default function VendorDetailModal({
               {vendorLoading ? '…' : (vendor?.name ?? '—')}
             </h2>
             {!vendorLoading && vendor?.type && (
-              <p className="client-detail-modal__subtitle">{typeLabel}</p>
+              <p className="client-detail-modal__subtitle">
+                <span
+                  className={`clients-status-badge clients-status-badge--${getVendorTypeBadgeVariant(vendor.type)}`}
+                  title={typeLabel}
+                >
+                  {typeLabel}
+                </span>
+              </p>
             )}
           </div>
           <button type="button" className="client-detail-modal__close" onClick={onClose} aria-label={t('vendors.close')}>
@@ -79,7 +87,18 @@ export default function VendorDetailModal({
                       ].map(([key, val]) => (
                         <div key={key} className="client-detail-modal__row">
                           <span className="client-detail-modal__label">{t(`vendors.fields.${key}`)}</span>
-                          <span className="client-detail-modal__value">{(val ?? '').toString().trim() || '—'}</span>
+                          <span className="client-detail-modal__value">
+                            {key === 'type' && vendor?.type ? (
+                              <span
+                                className={`clients-status-badge clients-status-badge--${getVendorTypeBadgeVariant(vendor.type)}`}
+                                title={typeLabel}
+                              >
+                                {typeLabel}
+                              </span>
+                            ) : (
+                              (val ?? '').toString().trim() || '—'
+                            )}
+                          </span>
                         </div>
                       ))}
                     </div>

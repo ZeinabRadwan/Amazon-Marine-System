@@ -12,10 +12,10 @@ export default function SDFormsChartsSection({ charts, monthFormat }) {
   const hasData = monthly.length > 0
 
   return (
-    <div className="clients-extra-panel clients-charts-panel mb-4">
+    <div className="clients-extra-panel clients-charts-panel sd-forms-charts-panel mb-4">
       {hasData ? (
-        <div className="clients-charts-grid">
-          <div className="clients-chart-wrap">
+        <div className="sd-forms-charts-grid">
+          <div className="clients-chart-wrap sd-forms-chart-wrap">
             <BarChart
               data={monthly.map((d) => ({
                 ...d,

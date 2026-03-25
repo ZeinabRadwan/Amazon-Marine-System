@@ -1,3 +1,28 @@
+/* Charts: one full-width column (avoid half-width from clients-charts-grid 2-col layout) */
+.sd-forms-charts-panel {
+  width: 100%;
+  max-width: 100%;
+}
+
+.sd-forms-charts-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  width: 100%;
+  align-items: start;
+}
+
+.sd-forms-chart-wrap {
+  width: 100%;
+  min-width: 0;
+}
+
+.sd-forms-chart-wrap .chart-wrap,
+.sd-forms-chart-wrap .recharts-responsive-container {
+  width: 100% !important;
+  max-width: 100%;
+}
+
 .sd-forms-badge {
   display: inline-block;
   padding: 2px 8px;

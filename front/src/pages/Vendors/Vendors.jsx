@@ -38,6 +38,8 @@ import '../../components/Charts/Charts.css'
 import '../../components/LoaderDots/LoaderDots.css'
 import '../Clients/Clients.css'
 import '../Clients/ClientDetailModal.css'
+import './Vendors.css'
+import { getVendorTypeBadgeVariant } from './vendorTypeHelpers'
 
 export const VENDOR_TYPE_KEYS = ['shipping', 'transport', 'customs', 'other']
 
@@ -454,11 +456,16 @@ export default function Vendors() {
       key: 'type',
       sortKey: 'type',
       label: t('vendors.fields.type'),
-      render: (val) => (
-        <span className="clients-status-badge clients-status-badge--default">
-          {val ? t(`vendors.types.${val}`, val) : '—'}
-        </span>
-      ),
+      render: (val) => {
+        if (!val) return '—'
+        const display = t(`vendors.types.${val}`, val)
+        const variant = getVendorTypeBadgeVariant(val)
+        return (
+          <span className={`clients-status-badge clients-status-badge--${variant}`} title={display}>
+            {display}
+          </span>
+        )
+      },
     },
     { key: 'email', sortKey: 'email', label: t('vendors.fields.email'), render: (v) => v || '—' },
     { key: 'phone', sortKey: 'phone', label: t('vendors.fields.phone'), render: (v) => v || '—' },
@@ -506,7 +513,7 @@ export default function Vendors() {
         )}
 
         {stats && typeof stats === 'object' && (
-          <div className="clients-stats-grid">
+          <div className="vendors-stats-grid">
             <StatsCard
               title={t('vendors.stats.total_count')}
               value={new Intl.NumberFormat(numberLocale).format(stats.total_count ?? 0)}
@@ -524,16 +531,18 @@ export default function Vendors() {
               variant="amber"
             />
             {stats.top_partner?.name && (
-              <StatsCard
-                title={t('vendors.stats.top_partner')}
-                value={`${stats.top_partner.name} (${new Intl.NumberFormat(numberLocale, {
-                  style: 'currency',
-                  currency: stats.currency || 'USD',
-                  maximumFractionDigits: 0,
-                }).format(stats.top_partner.revenue ?? 0)})`}
-                icon={<Building2 className="h-6 w-6" />}
-                variant="green"
-              />
+              <div className="vendors-stats-grid__full">
+                <StatsCard
+                  title={t('vendors.stats.top_partner')}
+                  value={`${stats.top_partner.name} (${new Intl.NumberFormat(numberLocale, {
+                    style: 'currency',
+                    currency: stats.currency || 'USD',
+                    maximumFractionDigits: 0,
+                  }).format(stats.top_partner.revenue ?? 0)})`}
+                  icon={<Building2 className="h-6 w-6" />}
+                  variant="green"
+                />
+              </div>
             )}
           </div>
         )}
