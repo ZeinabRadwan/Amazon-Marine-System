@@ -214,47 +214,38 @@
   margin-top: 20px;
 }
 
-/* Time + location merged card — responsive split & rhythm */
+/* Time + location merged card — matches clients-filters-card / page panels */
 .attendance-dashboard__time-location.attendance-dashboard__card {
-  padding: clamp(18px, 2.2vw, 28px);
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  overflow: visible;
 }
 
 .attendance-dashboard__time-location-inner {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  display: flex;
+  flex-direction: row;
   gap: 22px;
-  align-items: start;
+  align-items: stretch;
   min-width: 0;
-}
-
-@media (min-width: 1024px) {
-  .attendance-dashboard__time-location-inner {
-    grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
-    gap: 28px 36px;
-  }
+  flex-wrap: nowrap;
 }
 
 .attendance-dashboard__time-location-primary {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
   min-width: 0;
 }
 
-.attendance-dashboard__time-location-primary > .attendance-dashboard__timeline--visual {
+.attendance-dashboard__section--time .attendance-dashboard__timeline--visual {
   padding: 4px 2px 0;
 }
 
-.attendance-dashboard__time-location-primary .attendance-dashboard__shifts-section {
+.attendance-dashboard__section--time .attendance-dashboard__shifts-section {
   margin-top: 0;
 }
 
-.attendance-dashboard__time-location-primary .attendance-dashboard__pairs {
+.attendance-dashboard__section--time .attendance-dashboard__pairs {
   margin-top: 12px;
-}
-
-.attendance-dashboard__time-location-primary .attendance-dashboard__shift-duration-card {
-  margin-top: 14px;
 }
 
 .attendance-dashboard__time-location-maps {
@@ -262,56 +253,84 @@
   position: relative;
 }
 
-.attendance-dashboard__time-location-maps .attendance-dashboard__location-block {
-  margin-top: 0;
-  padding: 18px 18px 20px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.42);
-  border: 1px solid rgba(0, 57, 197, 0.1);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+.attendance-dashboard__section {
+  flex: 1 1 0;
+  min-width: 0;
+  background: var(--form-bg, #fff);
+  border: 1px solid var(--form-divider, #e5e7eb);
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center; /* equal-ish visual centering */
 }
 
-[data-theme='dark'] .attendance-dashboard__time-location-maps .attendance-dashboard__location-block,
-.dark .attendance-dashboard__time-location-maps .attendance-dashboard__location-block {
-  background: rgba(15, 23, 42, 0.58);
-  border-color: rgba(148, 163, 184, 0.22);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+.attendance-dashboard__section-inner {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+}
+
+.attendance-dashboard__section-inner > * {
+  width: 100%;
+}
+
+.attendance-dashboard__section--map .attendance-dashboard__location-block {
+  margin-top: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+[data-theme='dark'] .attendance-dashboard__section--map .attendance-dashboard__location-block,
+.dark .attendance-dashboard__section--map .attendance-dashboard__location-block {
+  background: transparent;
 }
 
 @media (max-width: 1023px) {
   .attendance-dashboard__time-location-inner {
+    flex-wrap: wrap;
     gap: 20px;
+  }
+
+  .attendance-dashboard__section {
+    flex: 1 1 calc(50% - 10px); /* 2 columns + wrap */
+  }
+}
+
+@media (max-width: 640px) {
+  .attendance-dashboard__time-location-inner {
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .attendance-dashboard__section {
+    flex: 1 1 100%;
   }
 }
 
 .attendance-dashboard__card {
   position: relative;
-  border-radius: 16px;
-  padding: 20px 22px;
-  background: linear-gradient(145deg, rgba(0, 57, 197, 0.06), rgba(255, 255, 255, 0.92));
+  border-radius: 12px;
+  padding: 20px;
+  background: var(--form-bg, #fff);
   border: 1px solid var(--form-divider, #e5e7eb);
-  box-shadow: 0 10px 40px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   overflow: hidden;
-}
-
-.attendance-dashboard__card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(135deg, rgba(0, 57, 197, 0.35), rgba(34, 197, 94, 0.2), transparent 55%);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
 }
 
 [data-theme='dark'] .attendance-dashboard__card,
 .dark .attendance-dashboard__card {
-  background: linear-gradient(145deg, rgba(37, 99, 235, 0.12), rgba(15, 23, 42, 0.85));
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.35);
+  background: var(--form-bg);
+  border-color: var(--form-divider);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .attendance-dashboard__card-head {
@@ -404,7 +423,7 @@
   min-width: 0;
   padding: 12px 14px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.65);
+  background: var(--form-input-bg, #fefeff);
   border: 1px solid var(--form-divider, #e5e7eb);
 }
 
@@ -501,8 +520,8 @@
 
 [data-theme='dark'] .attendance-dashboard__pair,
 .dark .attendance-dashboard__pair {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: var(--form-input-bg);
+  border-color: var(--form-divider);
 }
 
 .attendance-dashboard__k {
@@ -701,27 +720,36 @@
 /* Shift duration — circular progress card */
 .attendance-dashboard__shift-duration-card {
   width: 100%;
-  margin-top: 18px;
-  padding: 16px 16px 18px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.55);
+  margin-top: 12px;
+  padding: 12px 12px 14px;
+  border-radius: 12px;
+  background: var(--form-input-bg, #fefeff);
   border: 1px solid var(--form-divider, #e5e7eb);
   box-sizing: border-box;
 }
 
+.attendance-dashboard__section--shift .attendance-dashboard__shift-duration-card {
+  margin-top: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
 [data-theme='dark'] .attendance-dashboard__shift-duration-card,
 .dark .attendance-dashboard__shift-duration-card {
-  background: rgba(15, 23, 42, 0.45);
-  border-color: rgba(148, 163, 184, 0.25);
+  background: var(--form-input-bg);
+  border-color: var(--form-divider);
 }
 
 .attendance-dashboard__shift-duration-card__title {
-  margin: 0 0 14px;
-  padding-bottom: 12px;
+  margin: 0 0 10px;
+  padding-bottom: 8px;
   border-bottom: 1px solid var(--form-divider, #e5e7eb);
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   text-align: center;
   color: var(--form-text, #64748b);
@@ -736,13 +764,13 @@
 .attendance-dashboard__shift-duration-card__body {
   display: flex;
   justify-content: center;
-  padding: 8px 0 12px;
+  padding: 4px 0 8px;
 }
 
 .attendance-dashboard__shift-duration-card__ring-wrap {
   position: relative;
-  width: 168px;
-  height: 168px;
+  width: 144px;
+  height: 144px;
   flex-shrink: 0;
 }
 
@@ -794,10 +822,10 @@
 }
 
 .attendance-dashboard__shift-duration-card__value {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
-  line-height: 1.15;
+  line-height: 1.1;
   color: var(--root-text, #0f172a);
 }
 
@@ -811,7 +839,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 600;
   color: var(--form-text, #64748b);
 }
@@ -821,10 +849,27 @@
   opacity: 0.85;
 }
 
+/* Make "actual time" label follow the same status coloring */
+.attendance-dashboard__shift-duration-card--ok .attendance-dashboard__shift-duration-card__actual-label {
+  color: #15803d;
+}
+
+.attendance-dashboard__shift-duration-card--over .attendance-dashboard__shift-duration-card__actual-label {
+  color: #dc2626;
+}
+
+.attendance-dashboard__shift-duration-card--warning .attendance-dashboard__shift-duration-card__actual-label {
+  color: #d97706;
+}
+
+.attendance-dashboard__shift-duration-card--neutral .attendance-dashboard__shift-duration-card__actual-label {
+  color: var(--form-text, #64748b);
+}
+
 .attendance-dashboard__shift-duration-card__footer {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   padding-top: 4px;
   border-top: 1px solid var(--form-divider, #e5e7eb);
 }
@@ -839,9 +884,9 @@
   flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: 8px 12px;
-  font-size: 0.8125rem;
-  line-height: 1.4;
+  gap: 6px 10px;
+  font-size: 0.75rem;
+  line-height: 1.35;
 }
 
 .attendance-dashboard__shift-duration-card__row-k {
@@ -1234,6 +1279,16 @@
   justify-content: flex-end;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
+}
+
+.attendance-excuse-actions .page-header__btn {
+  flex-shrink: 0;
+}
+
+.attendance-excuse-actions .page-header__btn--primary {
+  min-width: max-content;
+  max-width: 100%;
 }
 
 .attendance-admin-card {
@@ -1270,10 +1325,6 @@
   margin: 0;
   font-size: 0.98rem;
   font-weight: 700;
-}
-
-.attendance-admin-pagination {
-  margin-top: 8px;
 }
 
 .attendance-my-excuses-head {
@@ -1327,7 +1378,7 @@
 
 .attendance-my-excuses-item__status {
   font-size: 0.72rem;
-  text-transform: uppercase;
+  text-transform: none;
   border-radius: 9999px;
   padding: 4px 10px;
   font-weight: 700;
