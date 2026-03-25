@@ -68,4 +68,35 @@ class ExcuseAttachmentApiTest extends TestCase
 
         $response->assertForbidden();
     }
+
+    public function test_attendance_admin_can_download_another_users_excuse_attachment(): void
+    {
+        $this->seed(RolesAndPermissionsSeeder::class);
+
+        Storage::fake('excuses');
+        Storage::disk('excuses')->put('2026/03/doc.pdf', 'fake-pdf');
+
+        /** @var User $owner */
+        $owner = User::factory()->create();
+        /** @var User $admin */
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        $excuse = Excuse::query()->create([
+            'user_id' => $owner->id,
+            'date' => '2026-03-20',
+            'reason' => 'Test',
+            'attachment_path' => '2026/03/doc.pdf',
+            'status' => Excuse::STATUS_PENDING,
+        ]);
+
+        $token = $admin->createToken('test')->plainTextToken;
+
+        $response = $this->get('/api/v1/attendance/excuses/'.$excuse->id.'/attachment', [
+            'Authorization' => 'Bearer '.$token,
+        ]);
+
+        $response->assertOk();
+        $response->assertHeader('content-disposition');
+    }
 }
