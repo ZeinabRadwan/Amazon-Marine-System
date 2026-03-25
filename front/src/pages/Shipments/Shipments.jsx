@@ -98,6 +98,14 @@ function numOrUndef(v) {
   return Number.isNaN(n) ? undefined : n
 }
 
+function normalizeShipmentResponse(payload) {
+  // Some backends return `{ data: [...] }` even for "single" shipment requests.
+  // The modal expects a single shipment object.
+  const d = payload?.data ?? payload
+  if (Array.isArray(d)) return d[0] ?? null
+  return d ?? null
+}
+
 function buildCreatePayload(form) {
   const body = {}
   const cid = numOrUndef(form.client_id)
@@ -347,8 +355,8 @@ export default function Shipments() {
     if (!financialRow?.id || !token) return
     getShipment(token, financialRow.id)
       .then((res) => {
-        const d = res.data ?? res
-        setFinancialRow((prev) => (prev && prev.id === d.id ? { ...prev, ...d } : prev))
+        const d = normalizeShipmentResponse(res)
+        setFinancialRow((prev) => (prev && d && prev.id === d.id ? { ...prev, ...d } : prev))
       })
       .catch(() => {})
   }, [financialRow?.id, token])
@@ -419,7 +427,7 @@ export default function Shipments() {
     }
     setDetailLoading(true)
     getShipment(token, detailId)
-      .then((data) => setDetailShipment(data.data ?? data))
+      .then((data) => setDetailShipment(normalizeShipmentResponse(data)))
       .catch(() => {
         setDetailShipment(null)
         setAlert({ type: 'error', message: t('shipments.errorDetail') })

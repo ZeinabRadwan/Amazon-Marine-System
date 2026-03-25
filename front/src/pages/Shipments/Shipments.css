@@ -993,3 +993,217 @@
     box-shadow: none;
   }
 }
+
+/* ── Shipment Modern Detail Grid ── */
+.shipment-details-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  margin-top: 1rem;
+}
+
+@media (min-width: 768px) {
+  .shipment-details-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.shipment-detail-card {
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.dark .shipment-detail-card {
+  background: #1f2937;
+  border-color: #374151;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+}
+
+.shipment-detail-card--status {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(255, 255, 255, 0) 100%);
+}
+
+.shipment-detail-card--financial {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(255, 255, 255, 0) 100%);
+}
+
+.shipment-detail-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.shipment-detail-card__title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--navy-700, #1e3a5f);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dark .shipment-detail-card__title {
+  color: #fbbf24;
+  border-bottom-color: #374151;
+}
+
+.shipment-details-grid .col-span-2 {
+  grid-column: span 2 / span 2;
+}
+
+.shipment-detail-card__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.shipment-detail-card__row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.shipment-detail-card__label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.dark .shipment-detail-card__label {
+  color: #9ca3af;
+}
+
+.shipment-detail-card__value {
+  font-size: 0.9rem;
+  color: #111827;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.dark .shipment-detail-card__value {
+  color: #f3f4f6;
+}
+
+.shipment-status-badge-ops {
+  display: inline-flex;
+  padding: 0.25rem 0.75rem;
+  background: #f3f4f6;
+  border-radius: 2rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #4b5563;
+}
+
+.dark .shipment-status-badge-ops {
+  background: #374151;
+  color: #e5e7eb;
+}
+
+.shipment-latest-tracking {
+  background: rgba(59, 130, 246, 0.08);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  border-inline-start: 4px solid #3b82f6;
+}
+
+/* RTL Support for Tracking Line */
+[dir="rtl"] .shipment-latest-tracking {
+  border-inline-start: none;
+  border-inline-end: 4px solid #3b82f6;
+}
+
+.shipment-latest-tracking__text {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #1e3a5f;
+  font-weight: 500;
+}
+
+.dark .shipment-latest-tracking__text {
+  color: #e5e7eb;
+}
+
+.shipment-latest-tracking__meta {
+  font-size: 0.7rem;
+  color: #64748b;
+  margin-top: 0.5rem;
+  text-align: end;
+}
+
+/* Route Visualization */
+.shipment-route-visual {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  position: relative;
+  padding-inline-start: 0.5rem;
+}
+
+.shipment-route-point {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  position: relative;
+  z-index: 2;
+}
+
+.shipment-route-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  color: #3b82f6;
+  font-weight: bold;
+  background: var(--card-bg, #fff);
+  border-radius: 50%;
+}
+
+.dark .shipment-route-icon {
+  background: #1f2937;
+}
+
+.shipment-route-icon--end {
+  color: #f06620; /* Primary brand color */
+}
+
+.shipment-route-line {
+  position: absolute;
+  top: 0.625rem;
+  bottom: 0.625rem;
+  left: 1rem;
+  width: 1.5px;
+  background: #e5e7eb;
+  z-index: 1;
+}
+
+[dir="rtl"] .shipment-route-line {
+  left: auto;
+  right: 1.125rem;
+}
+
+.dark .shipment-route-line {
+  background: #374151;
+}
+
+.shipment-route-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.shipment-detail-card__empty {
+  font-size: 0.85rem;
+  color: #9ca3af;
+  font-style: italic;
+}
+

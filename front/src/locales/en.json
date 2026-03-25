@@ -431,8 +431,16 @@
       "selectShipmentFirst": "Select a shipment from the table to add an update.",
       "modalSendTitle": "Send update to client",
       "sendVia": "Send via",
+      "sendViaEmailHint": "Opens your email app",
+      "sendViaWhatsappHint": "Opens WhatsApp chat",
       "email": "Email",
       "whatsapp": "WhatsApp",
+      "clientEmail": "Client email",
+      "clientPhone": "Client phone",
+      "noEmail": "No email address available for this client.",
+      "noPhone": "No phone number available for this client.",
+      "openEmail": "Open email",
+      "openWhatsapp": "Open WhatsApp",
       "template": "Template",
       "templatePlaceholder": "— Select a template —",
       "messageLabel": "Message (editable)",
@@ -534,7 +542,11 @@
       "issue": "Issue / Opportunity",
       "issuePlaceholder": "The specific business challenge or opportunity…",
       "replyAction": "Reply / Action taken",
-      "replyActionPlaceholder": "How you replied or what the next action is…"
+      "replyActionPlaceholder": "How you replied or what the next action is…",
+      "modalViewTitle": "Communication log details",
+      "logId": "Log ID",
+      "occurredAt": "Occurred at",
+      "detailContent": "Content"
     }
   },
   "attendance": {
@@ -1259,7 +1271,13 @@
       "loadingReefer": "Loading & reefer",
       "sdForm": "SD form",
       "operation": "Operation",
-      "tasks": "Tasks"
+      "tasks": "Tasks",
+      "basicInfo": "Basic Information",
+      "latestTracking": "Latest Tracking Update",
+      "route": "Route & Movement",
+      "cargoDetails": "Cargo & Container Details",
+      "clientInfo": "Client Information",
+      "vendorSales": "Vendor & Sales Representative"
     },
     "fields": {
       "bl_number": "BL number",

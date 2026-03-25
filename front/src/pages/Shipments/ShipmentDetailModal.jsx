@@ -199,122 +199,216 @@ export default function ShipmentDetailModal({
                     })}
                   </div>
 
-                  <div className="shipment-detail-two-col">
-                    <div>
-                      <div className="client-detail-modal__info-group">
-                        <h3 className="client-detail-modal__info-group-title">{t('shipments.sections.main')}</h3>
-                        <div className="client-detail-modal__grid client-detail-modal__grid--info">
-                          {[
-                            ['bl_number', shipment.bl_number],
-                            ['booking_number', shipment.booking_number],
-                            ['client', clientLabel],
-                            ['status', shipment.status],
-                            ['operations_status', shipment.operations_status != null ? String(shipment.operations_status) : '—'],
-                            ['shipment_direction', shipment.shipment_direction],
-                            ['mode', shipment.mode],
-                            ['shipment_type', shipment.shipment_type],
-                            ['route', [origin, dest].filter((x) => x !== '—').join(' → ') || shipment.route_text || '—'],
-                            ['line_vendor', lineVendor],
-                            ['loading_place', shipment.loading_place],
-                            ['loading_date', shipment.loading_date],
-                            ['cargo_description', shipment.cargo_description],
-                          ].map(([key, val]) => (
-                            <div key={key} className="client-detail-modal__row">
-                              <span className="client-detail-modal__label">{t(`shipments.fields.${key}`)}</span>
-                              <span className="client-detail-modal__value">
-                                {key === 'status' ? (
-                                  <ShipmentStatusBadge
-                                    statusOptions={statusOptions}
-                                    rawStatus={shipment.status}
-                                    lang={i18n.language}
-                                    t={t}
-                                  />
-                                ) : val != null && val !== '' ? (
-                                  String(val)
-                                ) : (
-                                  '—'
-                                )}
-                              </span>
-                            </div>
-                          ))}
+                  <div className="shipment-details-grid">
+                    {/* 1. Basic Info */}
+                    <div className="shipment-detail-card">
+                      <h3 className="shipment-detail-card__title">{t('shipments.sections.basicInfo')}</h3>
+                      <div className="shipment-detail-card__grid">
+                        <div className="shipment-detail-card__row">
+                          <span className="shipment-detail-card__label">ID</span>
+                          <span className="shipment-detail-card__value">#{shipment.id}</span>
+                        </div>
+                        <div className="shipment-detail-card__row">
+                          <span className="shipment-detail-card__label">{t('shipments.fields.bl_number')}</span>
+                          <span className="shipment-detail-card__value font-semibold">{shipment.bl_number || '—'}</span>
+                        </div>
+                        <div className="shipment-detail-card__row">
+                          <span className="shipment-detail-card__label">{t('shipments.fields.booking_number')}</span>
+                          <span className="shipment-detail-card__value font-semibold">{shipment.booking_number || '—'}</span>
+                        </div>
+                        <div className="shipment-detail-card__row">
+                          <span className="shipment-detail-card__label">{t('shipments.fields.shipment_direction')}</span>
+                          <span className="shipment-detail-card__value">{shipment.shipment_direction || '—'}</span>
+                        </div>
+                        <div className="shipment-detail-card__row">
+                          <span className="shipment-detail-card__label">{t('shipments.fields.mode')}</span>
+                          <span className="shipment-detail-card__value">{shipment.mode || '—'}</span>
+                        </div>
+                        <div className="shipment-detail-card__row">
+                          <span className="shipment-detail-card__label">{t('shipments.fields.shipment_type')}</span>
+                          <span className="shipment-detail-card__value">{shipment.shipment_type || '—'}</span>
+                        </div>
+                        <div className="shipment-detail-card__row">
+                          <span className="shipment-detail-card__label">{t('shipments.fields.status')}</span>
+                          <span className="shipment-detail-card__value">
+                            <ShipmentStatusBadge
+                              statusOptions={statusOptions}
+                              rawStatus={shipment.status}
+                              lang={i18n.language}
+                              t={t}
+                            />
+                          </span>
                         </div>
                       </div>
-
-                      {shipment.sd_form && (
-                        <div className="client-detail-modal__info-group">
-                          <h3 className="client-detail-modal__info-group-title">{t('shipments.sections.sdForm')}</h3>
-                          <div className="client-detail-modal__grid client-detail-modal__grid--info">
-                            <div className="client-detail-modal__row">
-                              <span className="client-detail-modal__label">{t('shipments.fields.sd_number')}</span>
-                              <span className="client-detail-modal__value">{shipment.sd_form?.sd_number ?? shipment.sd_form_id ?? '—'}</span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {shipment.operation && (
-                        <div className="client-detail-modal__info-group">
-                          <h3 className="client-detail-modal__info-group-title">{t('shipments.sections.operation')}</h3>
-                          <div className="client-detail-modal__grid client-detail-modal__grid--info">
-                            {Object.entries(shipment.operation)
-                              .filter(([k]) => !['id', 'shipment_id', 'created_at', 'updated_at'].includes(k))
-                              .map(([k, val]) => {
-                                let display = '—'
-                                if (val != null && val !== '') {
-                                  if (typeof val === 'object' && val !== null && 'name' in val) {
-                                    display = String(val.name)
-                                  } else if (typeof val === 'object') {
-                                    display = JSON.stringify(val)
-                                  } else {
-                                    display = String(val)
-                                  }
-                                }
-                                return (
-                                  <div key={k} className="client-detail-modal__row">
-                                    <span className="client-detail-modal__label">{k}</span>
-                                    <span className="client-detail-modal__value">{display}</span>
-                                  </div>
-                                )
-                              })}
-                          </div>
-                        </div>
-                      )}
-
-                      {Array.isArray(shipment.tasks) && shipment.tasks.length > 0 && (
-                        <div className="client-detail-modal__info-group">
-                          <h3 className="client-detail-modal__info-group-title">{t('shipments.sections.tasks')}</h3>
-                          <ul className="client-detail-modal__list">
-                            {shipment.tasks.map((task) => (
-                              <li key={task.id} className="client-detail-modal__list-item">
-                                <span className="client-detail-modal__list-label">{task.name ?? '—'}</span>
-                                <span className="client-detail-modal__list-value">
-                                  {[task.status, task.due_date].filter(Boolean).join(' · ') || '—'}
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
                     </div>
 
+                    {/* 2. Status & Latest Tracking */}
+                    <div className="shipment-detail-card shipment-detail-card--status">
+                      <h3 className="shipment-detail-card__title">{t('shipments.sections.latestTracking')}</h3>
+                      <div className="shipment-detail-card__content">
+                        {shipment.operations_status != null && (
+                          <div className="mb-3">
+                            <span className="shipment-detail-card__label block mb-1">{t('shipments.fields.operations_status')}</span>
+                            <span className="shipment-status-badge-ops">{shipment.operations_status}</span>
+                          </div>
+                        )}
+                        {shipment.latest_tracking_update ? (
+                          <div className="shipment-latest-tracking">
+                            <div className="shipment-latest-tracking__text">
+                              {shipment.latest_tracking_update.update_text}
+                            </div>
+                            <div className="shipment-latest-tracking__meta">
+                              {formatDate(shipment.latest_tracking_update.created_at, i18n.language)}
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="shipment-detail-card__empty">{t('shipments.trackingEmpty')}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 3. Route / Movement */}
+                    <div className="shipment-detail-card">
+                      <h3 className="shipment-detail-card__title">{t('shipments.sections.route')}</h3>
+                      <div className="shipment-detail-card__content">
+                        <div className="shipment-route-visual">
+                          <div className="shipment-route-point">
+                            <div className="shipment-route-icon">○</div>
+                            <div className="shipment-route-info">
+                              <span className="shipment-detail-card__label">{t('shipments.fields.loading_place')}</span>
+                              <span className="shipment-detail-card__value">{shipment.loading_place || '—'}</span>
+                            </div>
+                          </div>
+                          <div className="shipment-route-line" />
+                          <div className="shipment-route-point">
+                            <div className="shipment-route-icon shipment-route-icon--end">●</div>
+                            <div className="shipment-route-info">
+                              <span className="shipment-detail-card__label">{t('shipments.fields.destination_port')}</span>
+                              <span className="shipment-detail-card__value">{shipment.destination_port?.name || '—'}</span>
+                            </div>
+                          </div>
+                        </div>
+                        {shipment.route_text && (
+                          <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                            <span className="shipment-detail-card__label block mb-1">{t('shipments.fields.route')}</span>
+                            <span className="shipment-detail-card__value">{shipment.route_text}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 4. Shipment Details (Cargo) */}
+                    <div className="shipment-detail-card">
+                      <h3 className="shipment-detail-card__title">{t('shipments.sections.cargoDetails')}</h3>
+                      <div className="shipment-detail-card__grid">
+                        <div className="shipment-detail-card__row">
+                          <span className="shipment-detail-card__label">{t('shipments.fields.container_count')}</span>
+                          <span className="shipment-detail-card__value">{shipment.container_count || '—'}</span>
+                        </div>
+                        <div className="shipment-detail-card__row">
+                          <span className="shipment-detail-card__label">{t('shipments.fields.container_size')}</span>
+                          <span className="shipment-detail-card__value">{shipment.container_size || '—'}</span>
+                        </div>
+                        <div className="shipment-detail-card__row">
+                          <span className="shipment-detail-card__label">{t('shipments.fields.container_type')}</span>
+                          <span className="shipment-detail-card__value">{shipment.container_type || '—'}</span>
+                        </div>
+                        <div className="shipment-detail-card__row">
+                          <span className="shipment-detail-card__label">{t('shipments.fields.loading_date')}</span>
+                          <span className="shipment-detail-card__value">{formatDate(shipment.loading_date, i18n.language)}</span>
+                        </div>
+                        <div className="shipment-detail-card__row col-span-2">
+                          <span className="shipment-detail-card__label">{t('shipments.fields.cargo_description')}</span>
+                          <span className="shipment-detail-card__value block mt-1">{shipment.cargo_description || '—'}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 5. Client Information */}
+                    <div className="shipment-detail-card">
+                      <h3 className="shipment-detail-card__title">{t('shipments.sections.clientInfo')}</h3>
+                      <div className="shipment-detail-card__content">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="shipments-client-avatar">
+                            {(shipment.client?.company_name || shipment.client?.name || '?')[0].toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="font-bold text-gray-900 dark:text-white">
+                              {shipment.client?.name || '—'}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {shipment.client?.company_name}
+                            </div>
+                          </div>
+                        </div>
+                        {shipment.client?.phone && (
+                          <div className="shipment-detail-card__row">
+                            <span className="shipment-detail-card__label">{t('clients.fields.phone')}</span>
+                            <span className="shipment-detail-card__value">{shipment.client.phone}</span>
+                          </div>
+                        )}
+                        {shipment.client?.email && (
+                          <div className="shipment-detail-card__row">
+                            <span className="shipment-detail-card__label">{t('clients.fields.email')}</span>
+                            <span className="shipment-detail-card__value text-xs">{shipment.client.email}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 6. Financials (Optional) */}
                     {canViewFinancialTotals && (
-                      <div className="shipment-financial-card">
-                        <h3 className="client-detail-modal__info-group-title">{t('shipments.financialSummary')}</h3>
-                        <div className="shipment-financial-card__rows">
-                          <div className="shipment-financial-card__row">
-                            <span>{t('shipments.fields.cost_total')}</span>
-                            <span className="fw-600">{formatMoney(shipment.cost_total, locale)}</span>
+                      <div className="shipment-detail-card shipment-detail-card--financial">
+                        <h3 className="shipment-detail-card__title">{t('shipments.sections.financials') || t('shipments.financialSummary')}</h3>
+                        <div className="shipment-detail-card__content">
+                          <div className="shipment-detail-card__row flex justify-between">
+                            <span className="shipment-detail-card__label">{t('shipments.fields.cost_total')}</span>
+                            <span className="shipment-detail-card__value">{formatMoney(shipment.cost_total, locale)}</span>
                           </div>
                           {canViewSelling && (
-                            <div className="shipment-financial-card__row">
-                              <span>{t('shipments.fields.selling_price_total')}</span>
-                              <span className="fw-600">{formatMoney(shipment.selling_price_total, locale)}</span>
+                            <div className="shipment-detail-card__row flex justify-between">
+                              <span className="shipment-detail-card__label">{t('shipments.fields.selling_price_total')}</span>
+                              <span className="shipment-detail-card__value">{formatMoney(shipment.selling_price_total, locale)}</span>
                             </div>
                           )}
-                          <div className="shipment-financial-card__row shipment-financial-card__row--emphasis">
-                            <span>{t('shipments.fields.profit_total')}</span>
-                            <span className="text-emerald-600 dark:text-emerald-400 fw-700">{formatMoney(shipment.profit_total, locale)}</span>
+                          <div className="mt-3 pt-3 border-t border-emerald-100 dark:border-emerald-900 flex justify-between items-center">
+                            <span className="font-bold text-emerald-700 dark:text-emerald-400">{t('shipments.fields.profit_total')}</span>
+                            <span className="text-lg font-black text-emerald-600 dark:text-emerald-400">
+                              {formatMoney(shipment.profit_total, locale)}
+                            </span>
                           </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 7. Vendor / Sales */}
+                    <div className="shipment-detail-card">
+                      <h3 className="shipment-detail-card__title">{t('shipments.sections.vendorSales')}</h3>
+                      <div className="shipment-detail-card__grid">
+                        <div className="shipment-detail-card__row">
+                          <span className="shipment-detail-card__label">{t('shipments.fields.line_vendor')}</span>
+                          <span className="shipment-detail-card__value font-semibold">
+                            {shipment.line_vendor?.name || shipment.lineVendor?.name || '—'}
+                          </span>
+                        </div>
+                        <div className="shipment-detail-card__row">
+                          <span className="shipment-detail-card__label">{t('shipments.fields.sales_rep_id')}</span>
+                          <span className="shipment-detail-card__value font-semibold">
+                            {shipment.sales_rep?.name || '—'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Optional: SD Form Link */}
+                    {shipment.sd_form && (
+                      <div className="shipment-detail-card">
+                        <h3 className="shipment-detail-card__title">{t('shipments.sections.sdForm')}</h3>
+                        <div className="shipment-detail-card__row">
+                          <span className="shipment-detail-card__label">{t('shipments.fields.sd_number')}</span>
+                          <span className="shipment-detail-card__value font-mono">
+                            {shipment.sd_form?.sd_number || shipment.sd_form_id || '—'}
+                          </span>
                         </div>
                       </div>
                     )}

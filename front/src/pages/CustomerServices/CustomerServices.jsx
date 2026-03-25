@@ -17,6 +17,7 @@ import {
   NewTicketModal,
   ReplyTicketModal,
   AddCommsLogModal,
+  ViewCommsLogModal,
 } from './components/modals'
 import '../../components/LoaderDots/LoaderDots.css'
 import '../../components/Tabs/Tabs.css'
@@ -66,12 +67,7 @@ export default function CustomerServices() {
     setSendToClientRow,
     sendChannel,
     setSendChannel,
-    sendTemplate,
-    setSendTemplate,
-    sendMessage,
-    setSendMessage,
     handleSaveAddUpdate,
-    handleSendToClient,
     trackingSubmitting,
     viewShipmentRow,
     viewTrackingUpdates,
@@ -131,6 +127,11 @@ export default function CustomerServices() {
     handleSaveCommsLog,
     commsSubmitting,
     clientsForComms,
+    viewCommsLogId,
+    viewCommsLog,
+    viewCommsLogLoading,
+    viewCommsLogError,
+    closeViewCommsLog,
   } = state
 
   const closeAddUpdate = () => {
@@ -805,14 +806,8 @@ export default function CustomerServices() {
             onClose={closeSendToClient}
             sendChannel={sendChannel}
             setSendChannel={setSendChannel}
-            sendTemplate={sendTemplate}
-            setSendTemplate={setSendTemplate}
-            sendMessage={sendMessage}
-            setSendMessage={setSendMessage}
-            onSubmit={handleSendToClient}
             submitting={trackingSubmitting}
             t={t}
-            shipmentStatuses={trackingStatuses}
           />
           <NewTicketModal
             open={showNewTicket}
@@ -850,6 +845,15 @@ export default function CustomerServices() {
             t={t}
             clients={clientsForComms}
             commsTypes={commsTypes}
+          />
+          <ViewCommsLogModal
+            open={viewCommsLogId != null}
+            log={viewCommsLog}
+            loading={viewCommsLogLoading}
+            error={viewCommsLogError}
+            formatDateTime={formatDateTime}
+            onClose={closeViewCommsLog}
+            t={t}
           />
           {/* Delete confirm modal (same style as Clients page) */}
           {deleteTicketId != null && (

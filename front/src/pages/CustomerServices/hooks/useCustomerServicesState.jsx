@@ -6,6 +6,7 @@ import {
   listTickets,
   exportTickets,
   listCommunicationLogs,
+  getCommunicationLog,
   createCommunicationLog,
   listTicketTypes,
   listTicketPriorities,
@@ -48,6 +49,8 @@ function mapShipmentToRow(shipment, formatDate) {
     id: shipment.id,
     bl_number: shipment.bl_number ?? '—',
     client: shipment.client?.company_name ?? shipment.client?.name ?? '—',
+    client_email: shipment.client?.email ?? '',
+    client_phone: shipment.client?.phone ?? '',
     route,
     status: shipment.status ?? 'booking_confirmed',
     last_update: latest ? `${formatDate(latest.created_at)} — ${latest.update_text || ''}`.trim() : '—',
@@ -148,8 +151,6 @@ export function useCustomerServicesState() {
   const [addUpdateText, setAddUpdateText] = useState('')
   const [sendToClientRow, setSendToClientRow] = useState(null)
   const [sendChannel, setSendChannel] = useState('email')
-  const [sendTemplate, setSendTemplate] = useState('')
-  const [sendMessage, setSendMessage] = useState('')
   const [trackingSubmitting, setTrackingSubmitting] = useState(false)
   const [viewShipmentRow, setViewShipmentRow] = useState(null)
   const [viewTrackingUpdates, setViewTrackingUpdates] = useState([])
@@ -215,6 +216,10 @@ export function useCustomerServicesState() {
   const [commsForm, setCommsForm] = useState({ client_id: '', type: 'call', related: 'client', ref: '', subject: '', client_said: '', issue: '', reply: '' })
   const [commsSubmitting, setCommsSubmitting] = useState(false)
   const [clientsForComms, setClientsForComms] = useState([])
+  const [viewCommsLogId, setViewCommsLogId] = useState(null)
+  const [viewCommsLog, setViewCommsLog] = useState(null)
+  const [viewCommsLogLoading, setViewCommsLogLoading] = useState(false)
+  const [viewCommsLogError, setViewCommsLogError] = useState(null)
 
   const locale = i18n.language === 'ar' ? 'ar-EG' : 'en-US'
   const isArabicLang = i18n.language === 'ar'
@@ -560,6 +565,41 @@ export function useCustomerServicesState() {
     loadComms()
   }, [loadComms])
 
+  const openViewCommsLog = useCallback((id) => {
+    if (id == null) return
+    setViewCommsLogId(id)
+  }, [])
+
+  const closeViewCommsLog = useCallback(() => {
+    setViewCommsLogId(null)
+    setViewCommsLog(null)
+    setViewCommsLogError(null)
+    setViewCommsLogLoading(false)
+  }, [])
+
+  useEffect(() => {
+    if (viewCommsLogId == null) return
+    const token = getStoredToken()
+    if (!token) {
+      setViewCommsLogError(t('customerServices.errorLoad'))
+      setViewCommsLogLoading(false)
+      return
+    }
+    setViewCommsLogLoading(true)
+    setViewCommsLogError(null)
+    setViewCommsLog(null)
+    getCommunicationLog(token, viewCommsLogId)
+      .then((res) => {
+        const d = res?.data ?? res
+        setViewCommsLog(d && typeof d === 'object' && !Array.isArray(d) ? d : null)
+      })
+      .catch((err) => {
+        setViewCommsLog(null)
+        setViewCommsLogError(err.message || t('customerServices.errorDetail'))
+      })
+      .finally(() => setViewCommsLogLoading(false))
+  }, [viewCommsLogId, t])
+
   /** Load full ticket when reply modal is opened (for server-side pagination we may not have it in current page) */
   useEffect(() => {
     if (!replyTicketId || !getStoredToken()) {
@@ -631,8 +671,6 @@ export function useCustomerServicesState() {
 
   const openSendToClient = useCallback((row) => {
     setSendToClientRow(row)
-    setSendTemplate('')
-    setSendMessage('')
     setSendChannel('email')
     setShowSendToClient(true)
   }, [])
@@ -663,17 +701,6 @@ export function useCustomerServicesState() {
       })
       .finally(() => setTrackingSubmitting(false))
   }, [t, addUpdateRow?.id, addUpdateText, loadTracking])
-
-  const handleSendToClient = useCallback((e) => {
-    e.preventDefault()
-    setTrackingSubmitting(true)
-    setTimeout(() => {
-      setAlert({ type: 'success', message: t('customerServices.tracking.send') })
-      setShowSendToClient(false)
-      setSendToClientRow(null)
-      setTrackingSubmitting(false)
-    }, 400)
-  }, [t])
 
   const handleCreateTicket = useCallback((e) => {
     e.preventDefault()
@@ -969,7 +996,19 @@ export function useCustomerServicesState() {
     { key: 'related_to', label: t('customerServices.comms.relatedTo'), render: (_, r) => r.related_to },
     { key: 'subject', label: t('customerServices.comms.subjectSummary'), render: (_, r) => r.subject },
     { key: 'agent', label: t('customerServices.comms.agent'), render: (_, r) => r.agent },
-  ], [t, commsTypeLabelByName])
+    {
+      key: 'actions',
+      label: t('customerServices.actions'),
+      sortable: false,
+      render: (_, r) => (
+        <IconActionButton
+          icon={<Eye className="h-4 w-4" />}
+          label={t('customerServices.view')}
+          onClick={() => openViewCommsLog(r.id)}
+        />
+      ),
+    },
+  ], [t, commsTypeLabelByName, commsTypeIcon, openViewCommsLog])
 
   const csTabs = useMemo(() => [
     { id: 'tracking', label: t('customerServices.tabTracking'), icon: <Bx name="bx-package" /> },
@@ -1014,12 +1053,7 @@ export function useCustomerServicesState() {
     setSendToClientRow,
     sendChannel,
     setSendChannel,
-    sendTemplate,
-    setSendTemplate,
-    sendMessage,
-    setSendMessage,
     handleSaveAddUpdate,
-    handleSendToClient,
     trackingSubmitting,
     viewShipmentRow,
     viewTrackingUpdates,
@@ -1084,6 +1118,11 @@ export function useCustomerServicesState() {
     handleSaveCommsLog,
     commsSubmitting,
     clientsForComms,
+    viewCommsLogId,
+    viewCommsLog,
+    viewCommsLogLoading,
+    viewCommsLogError,
+    closeViewCommsLog,
     // Busy
     isBusy: trackingSubmitting || ticketSubmitting || commsSubmitting || ticketExportLoading || deleteTicketSubmitting,
   }
