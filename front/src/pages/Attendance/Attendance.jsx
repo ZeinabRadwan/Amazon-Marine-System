@@ -41,6 +41,7 @@ import {
   Building2,
   Timer,
   Paperclip,
+  RotateCcw,
 } from 'lucide-react'
 import '../../components/LoaderDots/LoaderDots.css'
 import '../Clients/Clients.css'
@@ -1189,7 +1190,7 @@ export default function Attendance() {
             </div>
 
             {stats && typeof stats === 'object' && (
-              <div className="grid grid-cols-2 gap-4 mb-6 sm:grid-cols-4">
+              <div className="clients-stats-grid">
                 <StatsCard
                   title={t('attendance.statsPresent')}
                   value={stats.present ?? 0}
@@ -1218,54 +1219,55 @@ export default function Attendance() {
             )}
 
             <div className="attendance-actions-card clients-filters-card">
-              <h2 className="attendance-actions-title">{t('attendance.myAttendance')}</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{t('attendance.geoHint')}</p>
-              {todayLoading ? (
-                <p className="attendance-actions-loading">{t('attendance.loading')}</p>
-              ) : (
-                <div className="attendance-actions-buttons">
-                  <button
-                    type="button"
-                    className="attendance-btn attendance-btn--checkin page-header__btn page-header__btn--primary"
-                    onClick={handleCheckIn}
-                    disabled={checkInSubmitting || hasCheckedIn || liveDashboard.clockInBlockedBySchedule}
-                    aria-label={t('attendance.checkIn')}
-                    aria-pressed={hasCheckedIn}
-                    title={
-                      hasCheckedIn
-                        ? t('attendance.checkedIn')
-                        : liveDashboard.clockInBlockedBySchedule
-                          ? t('attendance.scheduleBlockBeforeStart', {
-                              start: liveDashboard.workdayStart,
-                              tz: liveDashboard.workTz,
-                            })
-                          : t('attendance.checkIn')
-                    }
-                  >
-                    <LogIn size={18} aria-hidden />
-                    {checkInSubmitting ? t('attendance.saving') : hasCheckedIn ? t('attendance.checkedIn') : t('attendance.checkIn')}
-                  </button>
-                  {hasCheckedIn && !hasCheckedOut && (
+              <div className="clients-filters__row clients-filters__row--main">
+                <div className="min-w-0 flex-1">
+                  <h2 className="attendance-actions-title">{t('attendance.myAttendance')}</h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-0">{t('attendance.geoHint')}</p>
+                </div>
+                {todayLoading ? (
+                  <p className="attendance-actions-loading">{t('attendance.loading')}</p>
+                ) : (
+                  <div className="attendance-actions-buttons">
                     <button
                       type="button"
-                      className="attendance-btn attendance-btn--checkout page-header__btn"
-                      onClick={handleCheckOut}
-                      disabled={checkOutSubmitting}
-                      aria-label={t('attendance.checkOut')}
-                      title={t('attendance.checkOut')}
+                      className="attendance-btn attendance-btn--checkin page-header__btn page-header__btn--primary"
+                      onClick={handleCheckIn}
+                      disabled={checkInSubmitting || hasCheckedIn || liveDashboard.clockInBlockedBySchedule}
+                      aria-label={t('attendance.checkIn')}
+                      aria-pressed={hasCheckedIn}
+                      title={
+                        hasCheckedIn
+                          ? t('attendance.checkedIn')
+                          : liveDashboard.clockInBlockedBySchedule
+                            ? t('attendance.scheduleBlockBeforeStart', {
+                                start: liveDashboard.workdayStart,
+                                tz: liveDashboard.workTz,
+                              })
+                            : t('attendance.checkIn')
+                      }
                     >
-                      <LogOut size={18} aria-hidden />
-                      {checkOutSubmitting ? t('attendance.saving') : t('attendance.checkOut')}
+                      <LogIn size={18} aria-hidden />
+                      {checkInSubmitting ? t('attendance.saving') : hasCheckedIn ? t('attendance.checkedIn') : t('attendance.checkIn')}
                     </button>
-                  )}
-                </div>
-              )}
+                    {hasCheckedIn && !hasCheckedOut && (
+                      <button
+                        type="button"
+                        className="attendance-btn attendance-btn--checkout page-header__btn"
+                        onClick={handleCheckOut}
+                        disabled={checkOutSubmitting}
+                        aria-label={t('attendance.checkOut')}
+                        title={t('attendance.checkOut')}
+                      >
+                        <LogOut size={18} aria-hidden />
+                        {checkOutSubmitting ? t('attendance.saving') : t('attendance.checkOut')}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="clients-filters-card attendance-filters-card">
-              <h3 className="attendance-filters-title text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">
-                {t('attendance.filters.title')}
-              </h3>
               <div className="clients-filters__row clients-filters__row--main attendance-filters-row flex-wrap gap-3">
                 {canFilterAll && (
                   <label className="attendance-filter-label min-w-[200px] flex-1">
@@ -1351,6 +1353,28 @@ export default function Attendance() {
                     <option value="0">{t('attendance.no')}</option>
                   </select>
                 </label>
+                <div className="clients-filters__actions">
+                  <button
+                    type="button"
+                    className="clients-filters__clear clients-filters__btn-icon"
+                    onClick={() =>
+                      setFilters((f) => ({
+                        ...f,
+                        from: today,
+                        to: today,
+                        user_id: '',
+                        status: '',
+                        device_type: '',
+                        is_within_radius: '',
+                        page: 1,
+                      }))
+                    }
+                    aria-label={t('attendance.refresh')}
+                    title={t('attendance.refresh')}
+                  >
+                    <RotateCcw className="clients-filters__btn-icon-svg" aria-hidden />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -1460,7 +1484,8 @@ export default function Attendance() {
           <div className="space-y-6">
             {canAdminAttendance ? (
               <>
-            <div className="clients-filters-card flex flex-wrap items-end gap-3">
+            <div className="clients-filters-card">
+              <div className="clients-filters__row clients-filters__row--main flex-wrap items-end gap-3">
               <label className="attendance-filter-label min-w-[200px] flex-1">
                 <span>{t('attendance.filters.employee')}</span>
                 <select
@@ -1565,10 +1590,33 @@ export default function Attendance() {
               >
                 {t('attendance.admin.apply')}
               </button>
-              <button type="button" className="page-header__btn inline-flex items-center gap-2" onClick={exportAdminCsv}>
-                <Download size={18} aria-hidden />
-                {t('attendance.admin.exportCsv')}
-              </button>
+              <div className="clients-filters__actions">
+                <button
+                  type="button"
+                  className="clients-filters__clear clients-filters__btn-icon"
+                  onClick={() =>
+                    setAdminFilters((f) => ({
+                      ...f,
+                      employee_id: '',
+                      date_from: today,
+                      date_to: today,
+                      status: '',
+                      device_type: '',
+                      is_within_radius: '',
+                      page: 1,
+                    }))
+                  }
+                  aria-label={t('attendance.refresh')}
+                  title={t('attendance.refresh')}
+                >
+                  <RotateCcw className="clients-filters__btn-icon-svg" aria-hidden />
+                </button>
+                <button type="button" className="page-header__btn inline-flex items-center gap-2" onClick={exportAdminCsv}>
+                  <Download size={18} aria-hidden />
+                  {t('attendance.admin.exportCsv')}
+                </button>
+              </div>
+              </div>
             </div>
 
             {adminLoading ? (
