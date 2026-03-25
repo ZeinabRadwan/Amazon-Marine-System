@@ -306,6 +306,7 @@ export default function SDForms() {
     setRefsLoading(true)
     Promise.all([
       listShipmentDirections(token).catch(() => ({ data: [] })),
+      listNotifyPartyModes(token).catch(() => ({ data: [] })),
       listFreightTerms(token).catch(() => ({ data: [] })),
       listContainerTypes(token).catch(() => ({ data: [] })),
       listContainerSizes(token).catch(() => ({ data: [] })),
@@ -313,19 +314,18 @@ export default function SDForms() {
       listClients(token, { per_page: 100, page: 1 }).catch(() => ({ data: [] })),
       listUsers(token, { per_page: 200 }).catch(() => ({ data: [] })),
     ])
-      .then(([d1, d2, d3, d4, ports, clients, users]) => {
-        setShipmentDirections(normalizeListResponse(d1))
-        setFreightTerms(normalizeListResponse(d2))
-        setContainerTypesList(normalizeListResponse(d3))
-        setContainerSizesList(normalizeListResponse(d4))
+      .then(([dirs, npm, ft, ct, cs, ports, clients, users]) => {
+        setShipmentDirections(normalizeListResponse(dirs))
+        setNotifyPartyModes(normalizeListResponse(npm))
+        setFreightTerms(normalizeListResponse(ft))
+        setContainerTypesList(normalizeListResponse(ct))
+        setContainerSizesList(normalizeListResponse(cs))
         setPortsList(normalizeListResponse(ports))
         setClientsList(normalizeListResponse(clients))
         setUsersList(normalizeListResponse(users))
       })
       .finally(() => setRefsLoading(false))
-  }, [token, refsTick])
-
-  const reloadReferences = useCallback(() => setRefsTick((n) => n + 1), [])
+  }, [token])
 
   const handleExport = useCallback(() => {
     if (!token) return

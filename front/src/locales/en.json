@@ -576,7 +576,8 @@
       "submit": "Submit excuse",
       "submitSuccess": "Excuse submitted.",
       "myList": "My excuses",
-      "empty": "No excuses yet."
+      "empty": "No excuses yet.",
+      "viewAttachment": "View attachment"
     },
     "admin": {
       "totalDays": "Total days",

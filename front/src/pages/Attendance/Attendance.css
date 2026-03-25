@@ -1357,6 +1357,10 @@
   white-space: pre-wrap;
 }
 
+.attendance-my-excuses-item__attachment {
+  margin-top: 10px;
+}
+
 @media (max-width: 768px) {
   .attendance-excuse-grid {
     grid-template-columns: 1fr;
