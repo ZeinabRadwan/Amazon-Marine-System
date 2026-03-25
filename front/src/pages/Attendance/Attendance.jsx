@@ -37,7 +37,6 @@ import {
   LogOut,
   Clock,
   UserX,
-  Download,
   MapPin,
   Building2,
   Timer,
@@ -45,6 +44,7 @@ import {
   XCircle,
   RotateCcw,
   AlertTriangle,
+  FileSpreadsheet,
 } from 'lucide-react'
 import '../../components/LoaderDots/LoaderDots.css'
 import '../Clients/Clients.css'
@@ -59,13 +59,31 @@ function formatTime(iso) {
   }
 }
 
-function formatDateOnly(dateStr) {
+function dateLocaleForLang(lang) {
+  if (!lang) return undefined
+  const base = String(lang).split('-')[0].toLowerCase()
+  if (base === 'ar') return 'ar-EG'
+  if (base === 'en') return 'en-GB'
+  return undefined
+}
+
+function formatDateOnly(dateStr, lang) {
   if (!dateStr) return '—'
   try {
-    return new Date(`${dateStr}T12:00:00`).toLocaleDateString(undefined, { dateStyle: 'medium' })
+    const loc = dateLocaleForLang(lang)
+    return new Date(`${dateStr}T12:00:00`).toLocaleDateString(loc, { dateStyle: 'medium' })
   } catch {
     return dateStr
   }
+}
+
+function excuseStatusLabel(t, status) {
+  if (status == null || String(status).trim() === '') return '—'
+  const key = String(status).trim().toLowerCase().replace(/\s+/g, '_')
+  if (key === 'pending' || key === 'approved' || key === 'rejected') {
+    return t(`attendance.excuses.status.${key}`)
+  }
+  return String(status).replace(/_/g, ' ')
 }
 
 /** Policy `HH:mm` / `H:mm` → 12h label for the shift timeline (locale-aware). */
@@ -192,7 +210,7 @@ function downloadCsv(filename, rows) {
 }
 
 export default function Attendance() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { permissions = [], user: outletUser } = useOutletContext() || {}
   const token = getStoredToken()
   const today = new Date().toISOString().slice(0, 10)
@@ -496,7 +514,19 @@ export default function Attendance() {
     return () => {
       cancelled = true
     }
-  }, [activeSection, canAdminAttendance, token, adminRefresh, adminFilters.page, adminFilters.per_page])
+  }, [
+    activeSection,
+    canAdminAttendance,
+    token,
+    adminRefresh,
+    adminFilters.employee_id,
+    adminFilters.date_from,
+    adminFilters.date_to,
+    adminFilters.status,
+    adminFilters.is_within_radius,
+    adminFilters.page,
+    adminFilters.per_page,
+  ])
 
   useEffect(() => {
     if (activeSection === 'admin' && canAdminAttendance) {
@@ -877,8 +907,8 @@ export default function Attendance() {
       }
     }
 
-    const ringSize = 168
-    const ringStroke = 11
+    const ringSize = 144
+    const ringStroke = 10
     const ringR = (ringSize - ringStroke) / 2
     const ringCircumference = 2 * Math.PI * ringR
     const ringCx = ringSize / 2
@@ -925,7 +955,12 @@ export default function Attendance() {
           return '—'
         },
       },
-      { key: 'date', label: t('attendance.date'), sortable: true, render: (_, r) => formatDateOnly(r.date) },
+      {
+        key: 'date',
+        label: t('attendance.date'),
+        sortable: true,
+        render: (_, r) => formatDateOnly(r.date, i18n.language),
+      },
       { key: 'check_in_at', label: t('attendance.checkIn'), render: (_, r) => formatTime(r.check_in_at_local || r.check_in_at) },
       { key: 'check_out_at', label: t('attendance.checkOut'), render: (_, r) => formatTime(r.check_out_at_local || r.check_out_at) },
       {
@@ -955,12 +990,17 @@ export default function Attendance() {
         },
       },
     ],
-    [t, currentUserId, outletUser?.name, dashboardTick]
+    [t, i18n.language, currentUserId, outletUser?.name, dashboardTick]
   )
 
   const adminColumns = [
     { key: 'employee_name', label: t('attendance.user'), sortable: true },
-    { key: 'date', label: t('attendance.date'), sortable: true },
+    {
+      key: 'date',
+      label: t('attendance.date'),
+      sortable: true,
+      render: (_, r) => formatDateOnly(r.date, i18n.language),
+    },
     {
       key: 'clock_in_at',
       label: t('attendance.checkIn'),
@@ -1031,7 +1071,8 @@ export default function Attendance() {
             <div className="attendance-dashboard" role="region" aria-label={t('attendance.dashboard.regionLabel')}>
               <div className="attendance-dashboard__card attendance-dashboard__time-location">
                 <div className="attendance-dashboard__time-location-inner">
-                  <div className="attendance-dashboard__time-location-primary">
+                  <section className="attendance-dashboard__section attendance-dashboard__section--time attendance-dashboard__time-location-primary">
+                    <div className="attendance-dashboard__section-inner">
                   <div className="attendance-dashboard__timeline attendance-dashboard__timeline--visual" dir="ltr">
                     {(() => {
                       const pct =
@@ -1187,57 +1228,17 @@ export default function Attendance() {
                         </div>
                       )}
                     </div>
-                    {liveDashboard.shiftPhase === 'on_shift' && liveDashboard.remainingToEndMs != null && (
-                      <div className="attendance-dashboard__pair attendance-dashboard__pair--stat">
-                        <div className="attendance-dashboard__pair-head-row">
-                          <span className="attendance-dashboard__k">{t('attendance.dashboard.remainingToEnd')}</span>
-                          <div className="attendance-dashboard__pair-inline">
-                            <span className="attendance-dashboard__v">
-                              {(() => {
-                                const { h, m } = durationPartsFromMs(liveDashboard.remainingToEndMs)
-                                return h > 0
-                                  ? t('attendance.dashboard.durationHM', { h, m })
-                                  : t('attendance.dashboard.durationM', { m })
-                              })()}
-                            </span>
-                            <span
-                              className="attendance-dashboard__done-pill attendance-dashboard__done-pill--ghost"
-                              aria-hidden="true"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    {liveDashboard.shiftPhase === 'not_in' && liveDashboard.untilStartMs != null && (
-                      <div className="attendance-dashboard__pair attendance-dashboard__pair--stat">
-                        <div className="attendance-dashboard__pair-head-row">
-                          <span className="attendance-dashboard__k">{t('attendance.dashboard.untilWindowOpens')}</span>
-                          <div className="attendance-dashboard__pair-inline">
-                            <span className="attendance-dashboard__v">
-                              {(() => {
-                                const { h, m } = durationPartsFromMs(liveDashboard.untilStartMs)
-                                return h > 0
-                                  ? t('attendance.dashboard.durationHM', { h, m })
-                                  : t('attendance.dashboard.durationM', { m })
-                              })()}
-                            </span>
-                            <span
-                              className="attendance-dashboard__done-pill attendance-dashboard__done-pill--ghost"
-                              aria-hidden="true"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
+                  </div>
+                </div>
+                </section>
+                <section className="attendance-dashboard__section attendance-dashboard__section--shift">
+                  <div className="attendance-dashboard__section-inner">
                   {shiftDurationCardState && (
                     <section
                       className="attendance-dashboard__shift-duration-card"
                       aria-label={t('attendance.dashboard.shiftDurationCardTitle')}
                     >
-                      <h3 className="attendance-dashboard__shift-duration-card__title">
-                        {t('attendance.dashboard.shiftDurationCardTitle')}
-                      </h3>
                       <div className="attendance-dashboard__shift-duration-card__body">
                         <div className="attendance-dashboard__shift-duration-card__ring-wrap">
                           <svg
@@ -1273,7 +1274,6 @@ export default function Attendance() {
                               {formatDashboardDuration(shiftDurationCardState.act)}
                             </span>
                             <span className="attendance-dashboard__shift-duration-card__actual-label">
-                              <Timer size={15} aria-hidden />
                               {t('attendance.dashboard.actualTimeLabel')}
                             </span>
                           </div>
@@ -1316,9 +1316,10 @@ export default function Attendance() {
                     </section>
                   )}
                   </div>
-                  </div>
+                </section>
 
-                  <div className="attendance-dashboard__time-location-maps">
+                  <section className="attendance-dashboard__section attendance-dashboard__section--map attendance-dashboard__time-location-maps">
+                    <div className="attendance-dashboard__section-inner">
                     <div className="attendance-dashboard__location-block">
                       <div className="attendance-dashboard__geo-cols">
                     <div className="attendance-dashboard__geo-block">
@@ -1454,6 +1455,7 @@ export default function Attendance() {
                   )}
                 </div>
                   </div>
+                </section>
                 </div>
               </div>
             </div>
@@ -1622,9 +1624,7 @@ export default function Attendance() {
               <div className="clients-filters__row clients-filters__row--main">
                 <div className="min-w-0 flex-1">
                   <h2 className="attendance-excuse-title">{t('attendance.excuses.submitTitle')}</h2>
-                  <p className="attendance-excuse-subtitle">
-                    {t('attendance.excuses.submitHint', 'Fill in the form and submit your excuse request.')}
-                  </p>
+                  <p className="attendance-excuse-subtitle">{t('attendance.excuses.submitHint')}</p>
                 </div>
               </div>
 
@@ -1634,6 +1634,7 @@ export default function Attendance() {
                     <span className="settings-input-label">{t('attendance.date')}</span>
                     <input
                       type="date"
+                      lang={i18n.language}
                       className={`clients-input ${excuseErrors.date ? 'attendance-input--error' : ''}`}
                       value={excuseForm.date}
                       onChange={(e) => {
@@ -1644,7 +1645,7 @@ export default function Attendance() {
                     />
                     {excuseErrors.date && (
                       <span className="attendance-field-error">
-                        {t('attendance.excuses.requiredField', { field: excuseErrors.date, defaultValue: `${excuseErrors.date} is required` })}
+                        {t('attendance.excuses.requiredField', { field: excuseErrors.date })}
                       </span>
                     )}
                   </label>
@@ -1654,7 +1655,7 @@ export default function Attendance() {
                     <div className="attendance-file-upload">
                       <label className="page-header__btn attendance-file-upload__choose">
                         <Paperclip size={16} aria-hidden />
-                        <span>{t('attendance.excuses.chooseFile', 'Choose file')}</span>
+                        <span>{t('attendance.excuses.chooseFile')}</span>
                         <input
                           type="file"
                           className="attendance-file-upload__input"
@@ -1669,14 +1670,14 @@ export default function Attendance() {
                             type="button"
                             className="clients-filters__btn-icon"
                             onClick={() => setExcuseForm((f) => ({ ...f, file: null }))}
-                            aria-label={t('attendance.excuses.removeFile', 'Remove file')}
-                            title={t('attendance.excuses.removeFile', 'Remove file')}
+                            aria-label={t('attendance.excuses.removeFile')}
+                            title={t('attendance.excuses.removeFile')}
                           >
                             <XCircle className="clients-filters__btn-icon-svg" aria-hidden />
                           </button>
                         </div>
                       ) : (
-                        <span className="attendance-file-upload__hint">{t('attendance.excuses.noFile', 'No file selected')}</span>
+                        <span className="attendance-file-upload__hint">{t('attendance.excuses.noFile')}</span>
                       )}
                     </div>
                   </label>
@@ -1690,12 +1691,12 @@ export default function Attendance() {
                         setExcuseForm((f) => ({ ...f, reason: e.target.value }))
                         if (excuseErrors.reason) setExcuseErrors((prev) => ({ ...prev, reason: undefined }))
                       }}
-                      placeholder={t('attendance.excuses.reasonPlaceholder', 'Write the reason in detail...')}
+                      placeholder={t('attendance.excuses.reasonPlaceholder')}
                       required
                     />
                     {excuseErrors.reason && (
                       <span className="attendance-field-error">
-                        {t('attendance.excuses.requiredField', { field: excuseErrors.reason, defaultValue: `${excuseErrors.reason} is required` })}
+                        {t('attendance.excuses.requiredField', { field: excuseErrors.reason })}
                       </span>
                     )}
                   </label>
@@ -1703,7 +1704,7 @@ export default function Attendance() {
 
                 <div className="attendance-excuse-actions">
                   <button type="button" className="page-header__btn" onClick={handleResetExcuseForm} disabled={excuseSubmitting}>
-                    {t('attendance.clear', 'Reset')}
+                    {t('attendance.excuses.reset')}
                   </button>
                   <button type="submit" className="page-header__btn page-header__btn--primary" disabled={excuseSubmitting}>
                     {excuseSubmitting ? t('attendance.saving') : t('attendance.excuses.submit')}
@@ -1726,9 +1727,9 @@ export default function Attendance() {
                   {myExcuses.map((ex) => (
                     <li key={ex.id} className="attendance-my-excuses-item">
                       <div className="attendance-my-excuses-item__head">
-                        <span className="attendance-my-excuses-item__date">{formatDateOnly(ex.date)}</span>
+                        <span className="attendance-my-excuses-item__date">{formatDateOnly(ex.date, i18n.language)}</span>
                         <span className={`attendance-my-excuses-item__status attendance-my-excuses-item__status--${String(ex.status || '').toLowerCase()}`}>
-                          {String(ex.status || '—').replace(/_/g, ' ')}
+                          {excuseStatusLabel(t, ex.status)}
                         </span>
                       </div>
                       <p className="attendance-my-excuses-item__reason">{ex.reason}</p>
@@ -1757,11 +1758,14 @@ export default function Attendance() {
           <div className="space-y-6">
             {canAdminAttendance ? (
               <>
+            <div className="attendance-admin-metrics">
+              <StatsCard title={t('attendance.admin.records', 'Records')} value={adminReportMetrics.recordsCount} icon={<Clock className="h-6 w-6" />} variant="blue" />
+              <StatsCard title={t('attendance.admin.employees', 'Employees')} value={adminReportMetrics.employeesCount} icon={<UserX className="h-6 w-6" />} variant="green" />
+              <StatsCard title={t('attendance.admin.totalDays', 'Total days')} value={adminReportMetrics.totalDays} icon={<Timer className="h-6 w-6" />} variant="amber" />
+              <StatsCard title={t('attendance.admin.avgWorkedHours', 'Avg worked hours')} value={adminReportMetrics.avgWorked} icon={<Building2 className="h-6 w-6" />} variant="default" />
+            </div>
+
             <div className="clients-filters-card attendance-admin-card">
-              <div className="attendance-admin-head">
-                <h2 className="attendance-admin-title">{t('attendance.tabs.admin')}</h2>
-                <p className="attendance-admin-subtitle">{t('attendance.admin.reportHint', 'Filter and review attendance report data by employee, period, and status.')}</p>
-              </div>
               <div className="clients-filters__row clients-filters__row--main">
                 <div className="clients-filters__fields flex flex-wrap gap-2">
                   <select
@@ -1814,30 +1818,6 @@ export default function Attendance() {
                     <option value="1">{t('attendance.yes')}</option>
                     <option value="0">{t('attendance.no')}</option>
                   </select>
-                  <select
-                    className="clients-input min-w-[8rem]"
-                    value={adminFilters.per_page}
-                    onChange={(e) =>
-                      setAdminFilters((f) => ({ ...f, per_page: Number(e.target.value), page: 1 }))
-                    }
-                    aria-label={t('attendance.perPage')}
-                  >
-                    {[10, 15, 25, 50, 100].map((n) => (
-                      <option key={n} value={n}>
-                        {n}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    className="page-header__btn page-header__btn--primary"
-                    onClick={() => {
-                      setAdminFilters((f) => ({ ...f, page: 1 }))
-                      setAdminRefresh((n) => n + 1)
-                    }}
-                  >
-                    {t('attendance.admin.apply')}
-                  </button>
                 </div>
                 <button
                   type="button"
@@ -1859,48 +1839,70 @@ export default function Attendance() {
                   <RotateCcw className="clients-filters__btn-icon-svg" aria-hidden />
                 </button>
                 <div className="clients-filters__actions">
-                  <button type="button" className="page-header__btn inline-flex items-center gap-2" onClick={exportAdminCsv}>
-                    <Download size={18} aria-hidden />
-                    {t('attendance.admin.exportCsv')}
+                  <button
+                    type="button"
+                    className="clients-filters__btn-icon clients-filters__btn-icon--export"
+                    onClick={exportAdminCsv}
+                    aria-label={t('attendance.admin.exportCsv')}
+                    title={t('attendance.admin.exportCsv')}
+                  >
+                    <FileSpreadsheet className="clients-filters__btn-icon-svg" aria-hidden />
                   </button>
                 </div>
               </div>
             </div>
 
-            <div className="attendance-admin-metrics">
-              <StatsCard title={t('attendance.admin.records', 'Records')} value={adminReportMetrics.recordsCount} icon={<Clock className="h-6 w-6" />} variant="blue" />
-              <StatsCard title={t('attendance.admin.employees', 'Employees')} value={adminReportMetrics.employeesCount} icon={<UserX className="h-6 w-6" />} variant="green" />
-              <StatsCard title={t('attendance.admin.totalDays', 'Total days')} value={adminReportMetrics.totalDays} icon={<Timer className="h-6 w-6" />} variant="amber" />
-              <StatsCard title={t('attendance.admin.avgWorkedHours', 'Avg worked hours')} value={adminReportMetrics.avgWorked} icon={<Building2 className="h-6 w-6" />} variant="default" />
-            </div>
-
             {adminLoading ? (
               <LoaderDots />
             ) : (
-              <div className="clients-filters-card attendance-admin-card">
-                <h3 className="attendance-admin-section-title">{t('attendance.admin.detailsTitle', 'Detailed report')}</h3>
-                <Table
-                  columns={adminColumns}
-                  data={sortedAdminItems}
-                  getRowKey={(r) => r.id}
-                  emptyMessage={t('attendance.noRecords')}
-                  sortKey={adminSortKey}
-                  sortDirection={adminSortDir}
-                  onSort={(key, dir) => {
-                    setAdminSortKey(key)
-                    setAdminSortDir(dir)
-                  }}
-                />
-                {adminMeta && adminMeta.total > adminMeta.per_page && (
-                  <div className="attendance-admin-pagination">
+              <>
+                <div className="clients-filters-card attendance-admin-card">
+                  <h3 className="attendance-admin-section-title">{t('attendance.admin.detailsTitle')}</h3>
+                  <Table
+                    columns={adminColumns}
+                    data={sortedAdminItems}
+                    getRowKey={(r) => r.id}
+                    emptyMessage={t('attendance.noRecords')}
+                    sortKey={adminSortKey}
+                    sortDirection={adminSortDir}
+                    onSort={(key, dir) => {
+                      setAdminSortKey(key)
+                      setAdminSortDir(dir)
+                    }}
+                  />
+                </div>
+                {adminMeta && adminMeta.total > 0 && adminMeta.last_page > 0 && (
+                  <div className="clients-pagination">
+                    <div className="clients-pagination__left">
+                      <span className="clients-pagination__total">
+                        {t('attendance.total')}: {adminMeta.total}
+                      </span>
+                      <label className="clients-pagination__per-page">
+                        <span className="clients-pagination__per-page-label">{t('attendance.perPage')}</span>
+                        <select
+                          value={adminFilters.per_page}
+                          onChange={(e) =>
+                            setAdminFilters((f) => ({ ...f, per_page: Number(e.target.value), page: 1 }))
+                          }
+                          className="clients-select clients-pagination__select"
+                          aria-label={t('attendance.perPage')}
+                        >
+                          {[10, 15, 25, 50, 100].map((n) => (
+                            <option key={n} value={n}>
+                              {n}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
                     <Pagination
                       currentPage={adminMeta.current_page}
-                      totalPages={adminMeta.last_page}
+                      totalPages={Math.max(1, adminMeta.last_page)}
                       onPageChange={(page) => setAdminFilters((f) => ({ ...f, page }))}
                     />
                   </div>
                 )}
-              </div>
+              </>
             )}
 
             <div className="clients-filters-card attendance-admin-card">
@@ -1937,7 +1939,7 @@ export default function Attendance() {
                   <li key={ex.id} className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="font-medium">{ex.employee_name}</span>
-                      <span>{formatDateOnly(ex.date)}</span>
+                      <span>{formatDateOnly(ex.date, i18n.language)}</span>
                     </div>
                     <p className="mt-2 text-sm whitespace-pre-wrap">{ex.reason}</p>
                     {(ex.has_attachment || ex.attachment_path) && (

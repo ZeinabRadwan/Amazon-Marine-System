@@ -569,15 +569,24 @@
     "excuses": {
       "submitTitle": "Submit excuse",
       "submitHint": "Fill in the form and submit your excuse request.",
+      "chooseFile": "Choose file",
+      "removeFile": "Remove file",
       "noFile": "No file selected",
       "reasonPlaceholder": "Write the reason in detail...",
       "reason": "Reason",
       "attachment": "Attachment (PDF or image)",
+      "requiredField": "{{field}} is required.",
+      "reset": "Reset",
       "submit": "Submit excuse",
       "submitSuccess": "Excuse submitted.",
       "myList": "My excuses",
       "empty": "No excuses yet.",
-      "viewAttachment": "View attachment"
+      "viewAttachment": "View attachment",
+      "status": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      }
     },
     "admin": {
       "totalDays": "Total days",
@@ -586,6 +595,7 @@
       "apply": "Apply filters",
       "exportCsv": "Export CSV",
       "reportHint": "Filter and review attendance report data by employee, period, and status.",
+      "detailsTitle": "Detailed report",
       "summaryTitle": "Summary by employee",
       "summaryEmpty": "No summary for this filter.",
       "records": "Records",

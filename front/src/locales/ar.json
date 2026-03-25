@@ -569,15 +569,24 @@
     "excuses": {
       "submitTitle": "تقديم عذر",
       "submitHint": "املأ النموذج وأرسل طلب عذرك.",
+      "chooseFile": "اختيار ملف",
+      "removeFile": "إزالة الملف",
       "noFile": "لم يتم اختيار ملف",
       "reasonPlaceholder": "اكتب السبب بالتفصيل...",
       "reason": "السبب",
       "attachment": "مرفق (PDF أو صورة)",
+      "requiredField": "{{field}} مطلوب.",
+      "reset": "إعادة التعيين",
       "submit": "إرسال العذر",
       "submitSuccess": "تم إرسال العذر.",
       "myList": "أعذاري",
       "empty": "لا توجد أعذار بعد.",
-      "viewAttachment": "عرض المرفق"
+      "viewAttachment": "عرض المرفق",
+      "status": {
+        "pending": "قيد المراجعة",
+        "approved": "معتمد",
+        "rejected": "مرفوض"
+      }
     },
     "admin": {
       "totalDays": "إجمالي الأيام",
@@ -586,6 +595,7 @@
       "apply": "تطبيق المرشحات",
       "exportCsv": "تصدير CSV",
       "reportHint": "تصفية ومراجعة بيانات تقرير الحضور حسب الموظف والفترة والحالة.",
+      "detailsTitle": "تقرير تفصيلي",
       "summaryTitle": "ملخص حسب الموظف",
       "summaryEmpty": "لا يوجد ملخص لهذا المرشح.",
       "records": "سجلات",
