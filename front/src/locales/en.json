@@ -759,6 +759,7 @@
     "deleteConfirm": "Delete SD form?",
     "deleteConfirmMessage": "This action cannot be undone.",
     "selectRow": "Select row",
+    "selectAllPage": "Select all on this page",
     "selectPage": "Select page",
     "clearSelection": "Clear selection",
     "selectedCount": "{{count}} selected",

@@ -215,7 +215,7 @@ export default function SDForms() {
   const [clientsList, setClientsList] = useState([])
   const [usersList, setUsersList] = useState([])
 
-  const [selectedIds, setSelectedIds] = useState(() => new Set())
+  const [selectedIds, setSelectedIds] = useState({})
 
   const [showCreate, setShowCreate] = useState(false)
   const [createForm, setCreateForm] = useState(emptySdForm)
@@ -279,6 +279,10 @@ export default function SDForms() {
   }, [loadList])
 
   useEffect(() => {
+    setSelectedIds({})
+  }, [filters.page])
+
+  useEffect(() => {
     if (!token) return
     setStatsLoading(true)
     getSDFormStats(token)
@@ -326,53 +330,59 @@ export default function SDForms() {
     if (!token) return
     setAlert(null)
     setExportLoading(true)
-    exportSDForms(token)
+    const ids = Object.keys(selectedIds).filter((id) => selectedIds[id])
+    const params = ids.length > 0 ? { ids: ids.join(',') } : {}
+    exportSDForms(token, params)
       .then((blob) => {
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = `sd-forms-export-${new Date().toISOString().slice(0, 10)}.csv`
+        const day = new Date().toISOString().slice(0, 10)
+        a.download = ids.length > 0 ? `sd-forms-selected-${day}.csv` : `sd-forms-export-${day}.csv`
         a.click()
         URL.revokeObjectURL(url)
-        setAlert({ type: 'success', message: t('sdForms.exportSuccess') })
-      })
-      .catch((err) => setAlert({ type: 'error', message: err.message || t('sdForms.exportError') }))
-      .finally(() => setExportLoading(false))
-  }, [token, t])
-
-  const handleExportSelected = useCallback(() => {
-    if (!token || selectedIds.size === 0) return
-    setAlert(null)
-    setExportLoading(true)
-    const ids = Array.from(selectedIds).join(',')
-    exportSDForms(token, { ids })
-      .then((blob) => {
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `sd-forms-selected-${new Date().toISOString().slice(0, 10)}.csv`
-        a.click()
-        URL.revokeObjectURL(url)
-        setAlert({ type: 'success', message: t('sdForms.exportSelectedSuccess') })
+        setAlert({
+          type: 'success',
+          message: ids.length > 0 ? t('sdForms.exportSelectedSuccess') : t('sdForms.exportSuccess'),
+        })
       })
       .catch((err) => setAlert({ type: 'error', message: err.message || t('sdForms.exportError') }))
       .finally(() => setExportLoading(false))
   }, [token, selectedIds, t])
 
-  const toggleSelect = useCallback((id) => {
+  const pageRowIds = useMemo(() => list.map((r) => String(r.id)), [list])
+  const allPageSelected = pageRowIds.length > 0 && pageRowIds.every((id) => selectedIds[id])
+
+  const toggleSelectAllPage = useCallback(() => {
     setSelectedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
+      const next = { ...prev }
+      if (allPageSelected) {
+        pageRowIds.forEach((id) => {
+          delete next[id]
+        })
+      } else {
+        pageRowIds.forEach((id) => {
+          next[id] = true
+        })
+      }
+      return next
+    })
+  }, [allPageSelected, pageRowIds])
+
+  const toggleSelectRow = useCallback((id) => {
+    const sid = String(id)
+    setSelectedIds((prev) => {
+      const next = { ...prev }
+      if (next[sid]) delete next[sid]
+      else next[sid] = true
       return next
     })
   }, [])
 
-  const selectAllOnPage = useCallback(() => {
-    setSelectedIds(new Set(list.map((r) => r.id)))
-  }, [list])
-
-  const clearSelection = useCallback(() => setSelectedIds(new Set()), [])
+  const selectedCount = useMemo(
+    () => Object.keys(selectedIds).filter((k) => selectedIds[k]).length,
+    [selectedIds]
+  )
 
   const openDetail = (id) => {
     setDetailId(id)
@@ -999,14 +1009,22 @@ export default function SDForms() {
     () => [
       {
         key: 'select',
-        label: '',
+        label: (
+          <input
+            type="checkbox"
+            checked={allPageSelected}
+            onChange={toggleSelectAllPage}
+            aria-label={t('sdForms.selectAllPage')}
+          />
+        ),
         sortable: false,
         render: (_, r) => (
           <input
             type="checkbox"
-            checked={selectedIds.has(r.id)}
-            onChange={() => toggleSelect(r.id)}
+            checked={!!selectedIds[String(r.id)]}
+            onChange={() => toggleSelectRow(r.id)}
             aria-label={t('sdForms.selectRow')}
+            onClick={(e) => e.stopPropagation()}
           />
         ),
       },
@@ -1043,7 +1061,7 @@ export default function SDForms() {
         ),
       },
     ],
-    [t, selectedIds, toggleSelect]
+    [t, selectedIds, allPageSelected, toggleSelectAllPage, toggleSelectRow]
   )
 
   const detail = detailRecord
@@ -1114,80 +1132,55 @@ export default function SDForms() {
                 ))}
               </select>
             </div>
-            <button
-              type="button"
-              className="clients-filters__clear clients-filters__btn-icon"
-              onClick={() =>
-                setFilters((f) => ({
-                  ...f,
-                  search: '',
-                  status: '',
-                  client_id: '',
-                  sales_rep_id: '',
-                  sort: 'date',
-                  direction: 'desc',
-                  page: 1,
-                }))
-              }
-              aria-label={t('sdForms.clearFilters')}
-              title={t('sdForms.clearFilters')}
-            >
-              <RotateCcw className="clients-filters__btn-icon-svg" aria-hidden />
-            </button>
-            <button
-              type="button"
-              className="clients-filters__sort-toggle clients-filters__btn-icon"
-              onClick={() => setShowSort((v) => !v)}
-              aria-expanded={showSort}
-              aria-controls="sd-forms-sort-panel"
-              id="sd-forms-sort-toggle"
-              title={t('sdForms.sortBy')}
-            >
-              <ArrowUpDown className="clients-filters__btn-icon-svg" aria-hidden />
-              {showSort ? <ChevronUp className="clients-filters__sort-toggle-chevron" aria-hidden /> : <ChevronDown className="clients-filters__sort-toggle-chevron" aria-hidden />}
-            </button>
             <div className="clients-filters__actions">
               <button
                 type="button"
-                className="clients-btn clients-btn--secondary text-xs px-2 py-1"
-                onClick={selectAllOnPage}
-                disabled={list.length === 0}
+                className="clients-filters__clear clients-filters__btn-icon"
+                onClick={() => {
+                  setSelectedIds({})
+                  setFilters((f) => ({
+                    ...f,
+                    search: '',
+                    status: '',
+                    client_id: '',
+                    sales_rep_id: '',
+                    sort: 'date',
+                    direction: 'desc',
+                    page: 1,
+                  }))
+                }}
+                aria-label={t('sdForms.clearFilters')}
+                title={t('sdForms.clearFilters')}
               >
-                {t('sdForms.selectPage')}
+                <RotateCcw className="clients-filters__btn-icon-svg" aria-hidden />
               </button>
-              <button type="button" className="clients-btn clients-btn--secondary text-xs px-2 py-1" onClick={clearSelection} disabled={selectedIds.size === 0}>
-                {t('sdForms.clearSelection')}
+              <button
+                type="button"
+                className="clients-filters__sort-toggle clients-filters__btn-icon"
+                onClick={() => setShowSort((v) => !v)}
+                aria-expanded={showSort}
+                aria-controls="sd-forms-sort-panel"
+                id="sd-forms-sort-toggle"
+                title={t('sdForms.sortBy')}
+              >
+                <ArrowUpDown className="clients-filters__btn-icon-svg" aria-hidden />
+                {showSort ? <ChevronUp className="clients-filters__sort-toggle-chevron" aria-hidden /> : <ChevronDown className="clients-filters__sort-toggle-chevron" aria-hidden />}
               </button>
               <button
                 type="button"
                 className="clients-filters__btn-icon clients-filters__btn-icon--export"
                 onClick={handleExport}
                 disabled={exportLoading}
-                aria-label={t('pageHeader.export')}
-                title={t('sdForms.exportAll')}
+                aria-label={selectedCount > 0 ? t('sdForms.exportSelected') : t('pageHeader.export', 'Export')}
+                title={selectedCount > 0 ? t('sdForms.exportSelected') : t('sdForms.exportAll')}
               >
                 {exportLoading ? <span className="clients-filters__export-spinner" aria-hidden /> : <FileSpreadsheet className="clients-filters__btn-icon-svg" aria-hidden />}
-              </button>
-              <button
-                type="button"
-                className="clients-filters__btn-icon clients-filters__btn-icon--export"
-                onClick={handleExportSelected}
-                disabled={exportLoading || selectedIds.size === 0}
-                aria-label={t('sdForms.exportSelected')}
-                title={t('sdForms.exportSelected')}
-              >
-                <FileSpreadsheet className="clients-filters__btn-icon-svg h-4 w-4 opacity-80" aria-hidden />
               </button>
               <button type="button" className="page-header__btn page-header__btn--primary" onClick={() => setShowCreate(true)}>
                 {t('sdForms.newForm')}
               </button>
             </div>
           </div>
-          {selectedIds.size > 0 && (
-            <p className="text-sm text-gray-600 dark:text-gray-400 px-1 pb-2">
-              {t('sdForms.selectedCount', { count: selectedIds.size })}
-            </p>
-          )}
           <div
             id="sd-forms-sort-panel"
             className="clients-filters__row clients-filters__row--sort"

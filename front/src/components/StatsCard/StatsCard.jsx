@@ -6,6 +6,7 @@ const ICON_VARIANTS = {
   blue: 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400',
   green: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400',
   amber: 'bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400',
+  red: 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400',
   default: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
 }
 
@@ -18,7 +19,7 @@ const ICON_VARIANTS = {
  *   - icon: ReactNode – icon (use h-6 w-6 for 24px; container is styled by variant)
  *   - change: string | number – optional percentage (e.g. 12 or "+12%")
  *   - trend: 'up' | 'down' – optional trend direction
- *   - variant: 'blue' | 'green' | 'amber' | 'default' – icon container color (blue/green/amber for context)
+ *   - variant: 'blue' | 'green' | 'amber' | 'red' | 'default' – icon container color
  *   - className: string – optional root classes
  *
  * Layout: Two-row flex. Row 1: colored icon (top-left), trend pill (top-right). Row 2: number + title stacked.

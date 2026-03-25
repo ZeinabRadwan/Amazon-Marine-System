@@ -11,6 +11,9 @@ const LOOKUP_TABS = [
   { id: 'containerSizes', labelKey: 'sdForms.lookups.tabs.containerSizes', titleKey: 'sdForms.lookups.titles.containerSizes', emptyKey: 'sdForms.lookups.empty.containerSizes' },
 ]
 
+/** Create form omits sort order UI for these tabs (اتجاهات الشحن، أوضاع الطرف المُبلَغ، …). */
+const LOOKUP_TABS_OMIT_CREATE_SORT_ORDER = new Set(LOOKUP_TABS.map((x) => x.id))
+
 function normalizeRows(data) {
   const list = data?.data ?? data
   return Array.isArray(list) ? list : []
@@ -101,7 +104,9 @@ export default function SdFormLookupsPanel({ token, onChanged }) {
     try {
       await api.create(token, {
         name: createForm.name,
-        sort_order: Number(createForm.sort_order) || 0,
+        sort_order: LOOKUP_TABS_OMIT_CREATE_SORT_ORDER.has(tab)
+          ? 0
+          : Number(createForm.sort_order) || 0,
       })
       setCreateOpen(false)
       setCreateForm({ name: '', sort_order: 1 })
@@ -235,16 +240,18 @@ export default function SdFormLookupsPanel({ token, onChanged }) {
                   disabled={createSubmitting}
                 />
               </div>
-              <div className="cl-field">
-                <label>{t('sdForms.lookups.sortOrder')}</label>
-                <input
-                  type="number"
-                  min={0}
-                  value={createForm.sort_order}
-                  onChange={(e) => setCreateForm((f) => ({ ...f, sort_order: e.target.value }))}
-                  disabled={createSubmitting}
-                />
-              </div>
+              {!LOOKUP_TABS_OMIT_CREATE_SORT_ORDER.has(tab) && (
+                <div className="cl-field">
+                  <label>{t('sdForms.lookups.sortOrder')}</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={createForm.sort_order}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, sort_order: e.target.value }))}
+                    disabled={createSubmitting}
+                  />
+                </div>
+              )}
               <div className="cl-modal-actions">
                 <button type="button" className="cl-btn" onClick={() => setCreateOpen(false)} disabled={createSubmitting}>
                   {t('sdForms.lookups.cancel')}
