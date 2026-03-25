@@ -10,6 +10,13 @@
   overflow: hidden;
 }
 
+.settings-map-coords {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
 .settings-map-hint {
   margin: 0.6rem 0 0;
   font-size: 0.75rem;
@@ -27,9 +34,14 @@
   font-size: 0.85rem;
 }
 
+@media (max-width: 900px) {
+  .settings-map-coords {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 640px) {
   .settings-map {
     height: 280px;
   }
 }
-

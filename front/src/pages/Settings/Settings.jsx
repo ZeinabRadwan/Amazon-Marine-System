@@ -31,7 +31,7 @@ import '../../components/Tabs/Tabs.css'
 import '../Clients/Clients.css'
 import '../CustomerServices/styles/CustomerServices.css'
 import './Settings.css'
-import GoogleMapsCompanyLocationPicker from '../../components/GoogleMapsCompanyLocationPicker/GoogleMapsCompanyLocationPicker'
+import LeafletCompanyLocationPicker from '../../components/LeafletCompanyLocationPicker/LeafletCompanyLocationPicker'
 
 function SectionCard({ title, subtitle, children, actions, compact }) {
   return (
@@ -552,7 +552,7 @@ export default function Settings() {
                     </SectionCard>
                     <SectionCard title={t('settings.company.locationTitle')} subtitle={t('settings.company.locationHint')}>
                       <form className="settings-form settings-form--stacked" onSubmit={handleSaveCompanyLocation}>
-                        <GoogleMapsCompanyLocationPicker
+                        <LeafletCompanyLocationPicker
                           value={companyLocation}
                           onChange={(next) => setCompanyLocation(next)}
                           disabled={saving}

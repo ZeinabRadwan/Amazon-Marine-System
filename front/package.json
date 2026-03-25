@@ -13,6 +13,7 @@
     "@tailwindcss/vite": "^4.2.1",
     "boxicons": "^2.1.4",
     "i18next": "^25.8.14",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.577.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
