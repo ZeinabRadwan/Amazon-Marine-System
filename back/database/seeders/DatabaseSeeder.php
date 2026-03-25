@@ -17,16 +17,13 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolesAndPermissionsSeeder::class,
             AdminUserSeeder::class,
+            BilingualStatusesSeeder::class,
             ClientLookupsSeeder::class,
             ClientsSeeder::class,
             SDFormsSeeder::class,
             ExpensesSeeder::class,
             InvoicesSeeder::class,
-            TicketTypesAndPrioritiesSeeder::class,
-            CommunicationLogTypesSeeder::class,
             CustomerServiceSeeder::class,
-            TicketStatusesSeeder::class,
-            ShipmentStatusesSeeder::class,
             PricingSeeder::class,
         ]);
     }

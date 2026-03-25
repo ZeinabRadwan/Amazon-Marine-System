@@ -21,7 +21,7 @@ class TicketTypesAndPrioritiesSeeder extends Seeder
         ];
 
         foreach ($types as $data) {
-            TicketType::firstOrCreate(
+            TicketType::updateOrCreate(
                 ['name' => $data['name']],
                 $data
             );
@@ -34,7 +34,7 @@ class TicketTypesAndPrioritiesSeeder extends Seeder
         ];
 
         foreach ($priorities as $data) {
-            TicketPriority::firstOrCreate(
+            TicketPriority::updateOrCreate(
                 ['name' => $data['name']],
                 $data
             );
