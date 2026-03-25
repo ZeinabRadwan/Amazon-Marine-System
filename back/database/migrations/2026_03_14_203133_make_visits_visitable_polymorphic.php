@@ -22,6 +22,14 @@ return new class extends Migration
             }
         });
 
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            Schema::table('visits', function (Blueprint $table) {
+                $table->index(['visitable_type', 'visitable_id']);
+            });
+
+            return;
+        }
+
         if (Schema::hasColumn('visits', 'client_id')) {
             DB::table('visits')->update([
                 'visitable_type' => 'App\Models\Client',

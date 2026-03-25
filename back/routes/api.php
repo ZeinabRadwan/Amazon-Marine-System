@@ -38,6 +38,7 @@ use App\Http\Controllers\Api\V1\PdfLayoutController;
 use App\Http\Controllers\Api\V1\PortController;
 use App\Http\Controllers\Api\V1\PreferredCommMethodController;
 use App\Http\Controllers\Api\V1\PricingOfferController;
+use App\Http\Controllers\Api\V1\PricingQuoteController;
 use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\SDFormController;
 use App\Http\Controllers\Api\V1\SessionController;
@@ -417,6 +418,14 @@ Route::prefix('v1')->group(function () {
         Route::put('pricing/offers/{offer}', [PricingOfferController::class, 'update']);
         Route::post('pricing/offers/{offer}/activate', [PricingOfferController::class, 'activate']);
         Route::post('pricing/offers/{offer}/archive', [PricingOfferController::class, 'archive']);
+
+        // Pricing quotes (customer quotations)
+        Route::get('pricing/quotes', [PricingQuoteController::class, 'index']);
+        Route::get('pricing/quotes/{quote}', [PricingQuoteController::class, 'show']);
+        Route::post('pricing/quotes', [PricingQuoteController::class, 'store']);
+        Route::put('pricing/quotes/{quote}', [PricingQuoteController::class, 'update']);
+        Route::post('pricing/quotes/{quote}/accept', [PricingQuoteController::class, 'accept']);
+        Route::post('pricing/quotes/{quote}/reject', [PricingQuoteController::class, 'reject']);
 
         // Treasury
         Route::get('treasury/summary', [TreasuryController::class, 'summary']);
