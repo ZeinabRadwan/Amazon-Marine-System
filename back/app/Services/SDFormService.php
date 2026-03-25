@@ -21,7 +21,7 @@ class SDFormService
 
             $nextSequence = 1;
 
-            if ($lastForYear && preg_match('/^SD-' . $year . '-(\d{4})$/', (string) $lastForYear->sd_number, $matches)) {
+            if ($lastForYear && preg_match('/^SD-'.$year.'-(\d{4})$/', (string) $lastForYear->sd_number, $matches)) {
                 $nextSequence = ((int) $matches[1]) + 1;
             }
 
@@ -48,15 +48,17 @@ class SDFormService
         $fromKey = $from ?? 'draft';
 
         if (! array_key_exists($fromKey, $allowedTransitions)) {
-            abort(422, 'Invalid SD form status: ' . $fromKey);
+            abort(422, __('Invalid SD form status: :status', ['status' => $fromKey]));
         }
 
         if (! in_array($toStatus, $allowedTransitions[$fromKey], true)) {
-            abort(422, "Transition from {$fromKey} to {$toStatus} is not allowed.");
+            abort(422, __('Transition from :from to :to is not allowed.', [
+                'from' => $fromKey,
+                'to' => $toStatus,
+            ]));
         }
 
         $form->status = $toStatus;
         $form->save();
     }
 }
-

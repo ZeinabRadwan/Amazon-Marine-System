@@ -52,7 +52,7 @@ class AttendanceService
         if ($scheduleNote !== null) {
             $this->writeLog($user->id, AttendanceLog::TYPE_CLOCK_IN, $now, $deviceType, $ip, $lat, $lng, $distance, $within, false, $scheduleNote);
 
-            return ['success' => false, 'message' => __('Clock-in rejected: ').$scheduleNote];
+            return ['success' => false, 'message' => __('Clock-in rejected.').' '.__($scheduleNote)];
         }
 
         $existing = AttendanceRecord::query()
@@ -150,7 +150,7 @@ class AttendanceService
         if ($scheduleNote !== null) {
             $this->writeLog($user->id, AttendanceLog::TYPE_CLOCK_OUT, $now, $deviceType, $ip, $lat, $lng, $distance, $within, false, $scheduleNote);
 
-            return ['success' => false, 'message' => __('Clock-out rejected: ').$scheduleNote];
+            return ['success' => false, 'message' => __('Clock-out rejected.').' '.__($scheduleNote)];
         }
 
         $record = AttendanceRecord::query()
@@ -376,18 +376,18 @@ class AttendanceService
             $start = Carbon::parse($dateStr.' '.$startStr, $tz);
             Carbon::parse($dateStr.' '.$endStr, $tz);
         } catch (\Throwable) {
-            return 'Invalid work schedule configuration.';
+            return __('Invalid work schedule configuration.');
         }
 
         if ($isClockIn) {
             if ($nowLocal->lt($start)) {
-                return 'Before allowed clock-in time.';
+                return __('Before allowed clock-in time.');
             }
             // No upper bound on clock-in time: workday_end + grace is not enforced here so late same-day
             // arrivals are not rejected after the nominal shift end (lateness is reflected in status).
         } else {
             if ($nowLocal->lt($start)) {
-                return 'Before work hours.';
+                return __('Before work hours.');
             }
         }
 

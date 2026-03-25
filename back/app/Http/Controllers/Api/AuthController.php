@@ -31,7 +31,7 @@ class AuthController extends Controller
         if ($user->status !== 'active') {
             Auth::logout();
             throw ValidationException::withMessages([
-                'email' => ['Your account has been deactivated. Please contact an administrator.'],
+                'email' => [__('Your account has been deactivated. Please contact an administrator.')],
             ]);
         }
 
@@ -108,7 +108,7 @@ class AuthController extends Controller
         if (array_key_exists('password', $validated)) {
             if (empty($validated['current_password']) || ! Hash::check($validated['current_password'], $user->password)) {
                 throw ValidationException::withMessages([
-                    'current_password' => ['The current password is incorrect.'],
+                    'current_password' => [__('The current password is incorrect.')],
                 ]);
             }
 
@@ -130,10 +130,10 @@ class AuthController extends Controller
         $request->validate([
             'avatar' => ['required', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
         ], [
-            'avatar.required' => 'Please select an image to upload.',
-            'avatar.image' => 'The file must be an image.',
-            'avatar.mimes' => 'The avatar must be a file of type: jpg, jpeg, png.',
-            'avatar.max' => 'The avatar may not be greater than 2 megabytes.',
+            'avatar.required' => __('Please select an image to upload.'),
+            'avatar.image' => __('The file must be an image.'),
+            'avatar.mimes' => __('The avatar must be a file of type: jpg, jpeg, png.'),
+            'avatar.max' => __('The avatar may not be greater than 2 megabytes.'),
         ]);
 
         $file = $request->file('avatar');
@@ -165,7 +165,7 @@ class AuthController extends Controller
 
         if (! Hash::check($validated['current_password'], $user->password)) {
             throw ValidationException::withMessages([
-                'current_password' => ['The current password is incorrect.'],
+                'current_password' => [__('The current password is incorrect.')],
             ]);
         }
 

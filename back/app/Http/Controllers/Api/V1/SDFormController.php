@@ -235,8 +235,8 @@ class SDFormController extends Controller
 
         if ($sdForm->status !== 'submitted') {
             abort(422, $sdForm->status === 'draft'
-                ? 'Submit the SD form first before sending it to operations.'
-                : 'Only SD forms in Submitted status can be sent to operations.');
+                ? __('Submit the SD form first before sending it to operations.')
+                : __('Only SD forms in Submitted status can be sent to operations.'));
         }
 
         SDFormService::transitionStatus($sdForm, 'sent_to_operations');
