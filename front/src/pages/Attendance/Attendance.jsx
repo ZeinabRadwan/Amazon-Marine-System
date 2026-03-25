@@ -38,19 +38,19 @@ import {
   UserX,
   Download,
   MapPin,
-  Navigation,
   Building2,
   Timer,
   Paperclip,
   XCircle,
   RotateCcw,
+  AlertTriangle,
 } from 'lucide-react'
 import '../../components/LoaderDots/LoaderDots.css'
 import '../Clients/Clients.css'
 import './Attendance.css'
 
 function formatTime(iso) {
-  if (!iso) return '—'
+  if (!iso) return ''
   try {
     return new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
   } catch {
@@ -65,6 +65,20 @@ function formatDateOnly(dateStr) {
   } catch {
     return dateStr
   }
+}
+
+/** Policy `HH:mm` / `H:mm` → 12h label for the shift timeline (locale-aware). */
+function formatWorkdayClockLabel(timeStr) {
+  if (!timeStr || typeof timeStr !== 'string') return timeStr
+  const m = timeStr.trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/)
+  if (!m) return timeStr
+  const h = Number(m[1])
+  const min = Number(m[2])
+  const sec = m[3] != null ? Number(m[3]) : 0
+  if (!Number.isFinite(h) || !Number.isFinite(min)) return timeStr
+  const d = new Date()
+  d.setHours(h, min, sec, 0)
+  return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', hour12: true })
 }
 
 /** Prefer API `worked_minutes`; then closed-shift `worked_hours`; else derive from timestamps (open shift uses nowMs). */
@@ -723,6 +737,12 @@ export default function Attendance() {
     const clockInBlockedBySchedule =
       enforceSchedule && workStart != null && now.getTime() < workStart.getTime()
 
+    let expectedShiftDurationMs = null
+    if (workStart && workEnd) {
+      const span = workEnd.getTime() - workStart.getTime()
+      if (span > 0) expectedShiftDurationMs = span
+    }
+
     return {
       now,
       workTz,
@@ -735,6 +755,7 @@ export default function Attendance() {
       workStart,
       shiftPhase,
       elapsedMs,
+      expectedShiftDurationMs,
       remainingToEndMs,
       untilStartMs,
       office,
@@ -756,6 +777,86 @@ export default function Attendance() {
     userGeo.lat,
     userGeo.lng,
     outletUser?.timezone,
+  ])
+
+  const formatDashboardDuration = useCallback(
+    (ms) => {
+      const { h, m } = durationPartsFromMs(ms)
+      return h > 0
+        ? t('attendance.dashboard.durationHM', { h, m })
+        : t('attendance.dashboard.durationM', { m })
+    },
+    [t]
+  )
+
+  const formatSignedDiff = useCallback(
+    (diffMs) => {
+      if (diffMs == null) return '—'
+      const sign = diffMs > 0 ? '+' : diffMs < 0 ? '−' : ''
+      return `${sign}${formatDashboardDuration(Math.abs(diffMs))}`
+    },
+    [formatDashboardDuration]
+  )
+
+  const shiftDurationCardState = useMemo(() => {
+    const act = liveDashboard.elapsedMs
+    if (act == null) return null
+    const exp = liveDashboard.expectedShiftDurationMs
+    const remaining = liveDashboard.remainingToEndMs
+    const phase = liveDashboard.shiftPhase
+    const hasSchedule = exp != null && exp > 0
+
+    let progressPct = 0
+    if (hasSchedule) {
+      progressPct = Math.min(100, (act / exp) * 100)
+    }
+
+    const diffMs = hasSchedule ? act - exp : null
+    const WARN_MS = 30 * 60 * 1000
+    let status = 'neutral'
+    if (hasSchedule) {
+      if (diffMs > 60000) status = 'over'
+      else if (
+        phase === 'on_shift' &&
+        remaining != null &&
+        remaining > 0 &&
+        remaining <= WARN_MS
+      ) {
+        status = 'warning'
+      } else {
+        status = 'ok'
+      }
+    }
+
+    const ringSize = 168
+    const ringStroke = 11
+    const ringR = (ringSize - ringStroke) / 2
+    const ringCircumference = 2 * Math.PI * ringR
+    const ringCx = ringSize / 2
+    const ringDashOffset = ringCircumference * (1 - progressPct / 100)
+
+    return {
+      act,
+      exp,
+      hasSchedule,
+      progressPct,
+      diffMs,
+      status,
+      ring: {
+        size: ringSize,
+        stroke: ringStroke,
+        r: ringR,
+        circumference: ringCircumference,
+        cx: ringCx,
+        cy: ringCx,
+        dashOffset: ringDashOffset,
+      },
+    }
+  }, [
+    liveDashboard.elapsedMs,
+    liveDashboard.expectedShiftDurationMs,
+    liveDashboard.remainingToEndMs,
+    liveDashboard.shiftPhase,
   ])
 
   const pageLoading = loading || statsLoading || checkInSubmitting || checkOutSubmitting
@@ -910,62 +1011,107 @@ export default function Attendance() {
         {activeSection === 'my' && (
           <>
             <div className="attendance-dashboard" role="region" aria-label={t('attendance.dashboard.regionLabel')}>
-              <div className="attendance-dashboard__grid">
-                <section className="attendance-dashboard__card attendance-dashboard__card--time">
-                  <div className="attendance-dashboard__card-head">
-                    <div className="attendance-dashboard__card-head-text">
-                      <Timer className="attendance-dashboard__head-icon" size={22} aria-hidden />
-                      <h2 className="attendance-dashboard__card-title">{t('attendance.dashboard.timeTitle')}</h2>
-                    </div>
-                  </div>
-
-                  <div className="attendance-dashboard__now-block">
-                    <span className="attendance-dashboard__now-label">{t('attendance.dashboard.nowLiveLabel')}</span>
-                    <time
-                      className="attendance-dashboard__now-clock"
-                      dateTime={liveDashboard.now.toISOString()}
-                      suppressHydrationWarning
-                    >
-                      {liveDashboard.now.toLocaleTimeString(undefined, {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                      })}
-                    </time>
-                    <div className="attendance-dashboard__meta-chips" aria-label={t('attendance.dashboard.timeTitle')}>
-                      <span className="attendance-dashboard__meta-chip">{t('attendance.dashboard.tzNote', { tz: liveDashboard.workTz })}</span>
-                      <span className="attendance-dashboard__meta-chip attendance-dashboard__meta-chip--accent">
-                        {t('attendance.dashboard.scheduleWindow', {
-                          start: liveDashboard.workdayStart,
-                          end: liveDashboard.workdayEnd,
-                        })}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div
-                    className={`attendance-dashboard__pill attendance-dashboard__pill--${liveDashboard.shiftPhase}`}
-                    role="status"
-                  >
-                    {liveDashboard.shiftPhase === 'on_shift' && t('attendance.dashboard.statusOnShift')}
-                    {liveDashboard.shiftPhase === 'not_in' && t('attendance.dashboard.statusNotIn')}
-                    {liveDashboard.shiftPhase === 'done' && t('attendance.dashboard.statusDone')}
+              <div className="attendance-dashboard__card attendance-dashboard__time-location">
+                <div className="attendance-dashboard__time-location-inner">
+                  <div className="attendance-dashboard__time-location-primary">
+                  <div className="attendance-dashboard__timeline attendance-dashboard__timeline--visual" dir="ltr">
+                    {(() => {
+                      const pct =
+                        liveDashboard.shiftPhase === 'on_shift' &&
+                        liveDashboard.timelineNowPct != null
+                          ? liveDashboard.timelineNowPct
+                          : liveDashboard.scheduleDayPct
+                      const softFill =
+                        !(liveDashboard.shiftPhase === 'on_shift' && liveDashboard.timelineNowPct != null)
+                      const safePct =
+                        pct != null && Number.isFinite(pct) ? Math.min(100, Math.max(0, pct)) : 0
+                      const pctRounded = Math.round(safePct)
+                      const nowLine =
+                        liveDashboard.now.toLocaleTimeString(undefined, {
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          second: '2-digit',
+                          hour12: true,
+                        })
+                      return (
+                        <>
+                        <div
+                          className="attendance-dashboard__shift-timeline"
+                          role="group"
+                          aria-label={`${t('attendance.dashboard.timelineSectionTitle')} ${t('attendance.dashboard.shiftProgressPercent', { pct: pctRounded })}`}
+                        >
+                          <span className="attendance-dashboard__shift-timeline-edge">
+                            {formatWorkdayClockLabel(liveDashboard.workdayStart)}
+                          </span>
+                          <div className="attendance-dashboard__shift-timeline-core">
+                            <div className="attendance-dashboard__shift-timeline-track-wrap">
+                              <span
+                                className="attendance-dashboard__shift-progress-pct attendance-dashboard__shift-progress-pct--on-track"
+                                style={{ left: `${safePct}%` }}
+                                title={t('attendance.dashboard.shiftProgressPercent', { pct: pctRounded })}
+                              >
+                                {t('attendance.dashboard.shiftProgressPercent', { pct: pctRounded })}
+                              </span>
+                              <div className="attendance-dashboard__timeline-track attendance-dashboard__timeline-track--shift">
+                                <div
+                                  className={
+                                    softFill
+                                      ? 'attendance-dashboard__timeline-fill attendance-dashboard__timeline-fill--soft'
+                                      : 'attendance-dashboard__timeline-fill'
+                                  }
+                                  style={{ width: `${safePct}%` }}
+                                />
+                                <span
+                                  className="attendance-dashboard__timeline-now"
+                                  style={{ left: `${safePct}%` }}
+                                />
+                              </div>
+                            </div>
+                            <div className="attendance-dashboard__shift-timeline-below">
+                              <div
+                                className="attendance-dashboard__shift-timeline-now-card"
+                                style={{ left: `${safePct}%` }}
+                              >
+                                <span className="attendance-dashboard__shift-timeline-arrow" aria-hidden>
+                                  ↑
+                                </span>
+                                <span className="attendance-dashboard__shift-timeline-now-label">
+                                  {t('attendance.dashboard.axisNow')}
+                                </span>
+                                <time
+                                  className="attendance-dashboard__shift-timeline-now-clock"
+                                  dateTime={liveDashboard.now.toISOString()}
+                                  suppressHydrationWarning
+                                >
+                                  {nowLine}
+                                </time>
+                              </div>
+                            </div>
+                          </div>
+                          <span className="attendance-dashboard__shift-timeline-edge">
+                            {formatWorkdayClockLabel(liveDashboard.workdayEnd)}
+                          </span>
+                        </div>
+                        </>
+                      )
+                    })()}
                   </div>
 
                   <div className="attendance-dashboard__shifts-section">
-                    <h3 className="attendance-dashboard__section-heading">{t('attendance.dashboard.shiftsSectionTitle')}</h3>
-                    <div className="attendance-dashboard__pairs">
+                    <div className="attendance-dashboard__pairs attendance-dashboard__pairs--with-stats">
                     <div className="attendance-dashboard__pair">
-                      <span className="attendance-dashboard__k">{t('attendance.dashboard.clockInTime')}</span>
-                      <div className="attendance-dashboard__pair-value-row">
-                        <span className="attendance-dashboard__v">
-                          {formatTime(myRecordToday?.check_in_at_local || myRecordToday?.check_in_at)}
-                        </span>
-                        <span
-                          className={`attendance-dashboard__done-pill ${hasCheckedIn ? 'attendance-dashboard__done-pill--yes' : ''}`}
-                        >
-                          {hasCheckedIn ? t('attendance.yes') : t('attendance.dashboard.notYet')}
-                        </span>
+                      <div className="attendance-dashboard__pair-head-row">
+                        <span className="attendance-dashboard__k">{t('attendance.dashboard.clockInTime')}</span>
+                        <div className="attendance-dashboard__pair-inline">
+                          <span className="attendance-dashboard__v">
+                            {formatTime(myRecordToday?.check_in_at_local || myRecordToday?.check_in_at)}
+                          </span>
+                          <span
+                            className={`attendance-dashboard__done-pill ${hasCheckedIn ? 'attendance-dashboard__done-pill--yes' : ''}`}
+                          >
+                            {hasCheckedIn ? t('attendance.yes') : t('attendance.dashboard.notYet')}
+                          </span>
+                        </div>
                       </div>
                       {todayLoading && (
                         <p className="attendance-dashboard__pair-loading">{t('attendance.loading')}</p>
@@ -994,16 +1140,18 @@ export default function Attendance() {
                       )}
                     </div>
                     <div className="attendance-dashboard__pair">
-                      <span className="attendance-dashboard__k">{t('attendance.dashboard.clockOutTime')}</span>
-                      <div className="attendance-dashboard__pair-value-row">
-                        <span className="attendance-dashboard__v">
-                          {formatTime(myRecordToday?.check_out_at_local || myRecordToday?.check_out_at)}
-                        </span>
-                        <span
-                          className={`attendance-dashboard__done-pill ${hasCheckedOut ? 'attendance-dashboard__done-pill--yes' : ''}`}
-                        >
-                          {hasCheckedOut ? t('attendance.yes') : t('attendance.dashboard.notYet')}
-                        </span>
+                      <div className="attendance-dashboard__pair-head-row">
+                        <span className="attendance-dashboard__k">{t('attendance.dashboard.clockOutTime')}</span>
+                        <div className="attendance-dashboard__pair-inline">
+                          <span className="attendance-dashboard__v">
+                            {formatTime(myRecordToday?.check_out_at_local || myRecordToday?.check_out_at)}
+                          </span>
+                          <span
+                            className={`attendance-dashboard__done-pill ${hasCheckedOut ? 'attendance-dashboard__done-pill--yes' : ''}`}
+                          >
+                            {hasCheckedOut ? t('attendance.yes') : t('attendance.dashboard.notYet')}
+                          </span>
+                        </div>
                       </div>
                       {!todayLoading && hasCheckedIn && !hasCheckedOut && (
                         <div className="attendance-dashboard__pair-action">
@@ -1021,106 +1169,140 @@ export default function Attendance() {
                         </div>
                       )}
                     </div>
-                  </div>
-                  </div>
-
-                  <div className="attendance-dashboard__timeline" aria-hidden={false}>
-                    <h3 className="attendance-dashboard__section-heading attendance-dashboard__section-heading--timeline">
-                      {t('attendance.dashboard.timelineSectionTitle')}
-                    </h3>
-                    <div className="attendance-dashboard__timeline-labels">
-                      <span>{t('attendance.dashboard.axisStart')}</span>
-                      <span>{t('attendance.dashboard.axisNow')}</span>
-                      <span>{t('attendance.dashboard.axisEnd')}</span>
-                    </div>
-                    <div className="attendance-dashboard__timeline-track">
-                      {(() => {
-                        const pct =
-                          liveDashboard.shiftPhase === 'on_shift' &&
-                          liveDashboard.timelineNowPct != null
-                            ? liveDashboard.timelineNowPct
-                            : liveDashboard.scheduleDayPct
-                        const softFill =
-                          !(liveDashboard.shiftPhase === 'on_shift' && liveDashboard.timelineNowPct != null)
-                        return (
-                          <>
-                            <div
-                              className={
-                                softFill
-                                  ? 'attendance-dashboard__timeline-fill attendance-dashboard__timeline-fill--soft'
-                                  : 'attendance-dashboard__timeline-fill'
-                              }
-                              style={{ width: pct != null ? `${pct}%` : '0%' }}
-                            />
-                            {pct != null ? (
-                              <span
-                                className="attendance-dashboard__timeline-now"
-                                style={{ left: `${pct}%` }}
-                              />
-                            ) : null}
-                          </>
-                        )
-                      })()}
-                    </div>
-                    {(() => {
-                      const timelineCaption =
-                        liveDashboard.shiftPhase === 'on_shift'
-                          ? t('attendance.dashboard.timelineOnShift')
-                          : t('attendance.dashboard.timelineSchedule')
-                      return timelineCaption?.trim() ? (
-                        <p className="attendance-dashboard__timeline-caption">{timelineCaption}</p>
-                      ) : null
-                    })()}
-                  </div>
-                  <ul className="attendance-dashboard__stats">
-                    {liveDashboard.elapsedMs != null && (
-                      <li>
-                        <span className="attendance-dashboard__stats-k">{t('attendance.dashboard.elapsed')}</span>
-                        <span className="attendance-dashboard__stats-v">
-                          {(() => {
-                            const { h, m } = durationPartsFromMs(liveDashboard.elapsedMs)
-                            return h > 0
-                              ? t('attendance.dashboard.durationHM', { h, m })
-                              : t('attendance.dashboard.durationM', { m })
-                          })()}
-                        </span>
-                      </li>
-                    )}
                     {liveDashboard.shiftPhase === 'on_shift' && liveDashboard.remainingToEndMs != null && (
-                      <li>
-                        <span className="attendance-dashboard__stats-k">{t('attendance.dashboard.remainingToEnd')}</span>
-                        <span className="attendance-dashboard__stats-v">
-                          {(() => {
-                            const { h, m } = durationPartsFromMs(liveDashboard.remainingToEndMs)
-                            return h > 0
-                              ? t('attendance.dashboard.durationHM', { h, m })
-                              : t('attendance.dashboard.durationM', { m })
-                          })()}
-                        </span>
-                      </li>
+                      <div className="attendance-dashboard__pair attendance-dashboard__pair--stat">
+                        <div className="attendance-dashboard__pair-head-row">
+                          <span className="attendance-dashboard__k">{t('attendance.dashboard.remainingToEnd')}</span>
+                          <div className="attendance-dashboard__pair-inline">
+                            <span className="attendance-dashboard__v">
+                              {(() => {
+                                const { h, m } = durationPartsFromMs(liveDashboard.remainingToEndMs)
+                                return h > 0
+                                  ? t('attendance.dashboard.durationHM', { h, m })
+                                  : t('attendance.dashboard.durationM', { m })
+                              })()}
+                            </span>
+                            <span
+                              className="attendance-dashboard__done-pill attendance-dashboard__done-pill--ghost"
+                              aria-hidden="true"
+                            />
+                          </div>
+                        </div>
+                      </div>
                     )}
                     {liveDashboard.shiftPhase === 'not_in' && liveDashboard.untilStartMs != null && (
-                      <li>
-                        <span className="attendance-dashboard__stats-k">{t('attendance.dashboard.untilWindowOpens')}</span>
-                        <span className="attendance-dashboard__stats-v">
-                          {(() => {
-                            const { h, m } = durationPartsFromMs(liveDashboard.untilStartMs)
-                            return h > 0
-                              ? t('attendance.dashboard.durationHM', { h, m })
-                              : t('attendance.dashboard.durationM', { m })
-                          })()}
-                        </span>
-                      </li>
+                      <div className="attendance-dashboard__pair attendance-dashboard__pair--stat">
+                        <div className="attendance-dashboard__pair-head-row">
+                          <span className="attendance-dashboard__k">{t('attendance.dashboard.untilWindowOpens')}</span>
+                          <div className="attendance-dashboard__pair-inline">
+                            <span className="attendance-dashboard__v">
+                              {(() => {
+                                const { h, m } = durationPartsFromMs(liveDashboard.untilStartMs)
+                                return h > 0
+                                  ? t('attendance.dashboard.durationHM', { h, m })
+                                  : t('attendance.dashboard.durationM', { m })
+                              })()}
+                            </span>
+                            <span
+                              className="attendance-dashboard__done-pill attendance-dashboard__done-pill--ghost"
+                              aria-hidden="true"
+                            />
+                          </div>
+                        </div>
+                      </div>
                     )}
-                  </ul>
-                </section>
-
-                <section className="attendance-dashboard__card attendance-dashboard__card--geo">
-                  <div className="attendance-dashboard__card-head">
-                    <Navigation className="attendance-dashboard__head-icon" size={22} aria-hidden />
-                    <h2 className="attendance-dashboard__card-title">{t('attendance.locationPanel.title')}</h2>
                   </div>
-                  <div className="attendance-dashboard__geo-cols">
+                  {shiftDurationCardState && (
+                    <section
+                      className="attendance-dashboard__shift-duration-card"
+                      aria-label={t('attendance.dashboard.shiftDurationCardTitle')}
+                    >
+                      <h3 className="attendance-dashboard__shift-duration-card__title">
+                        {t('attendance.dashboard.shiftDurationCardTitle')}
+                      </h3>
+                      <div className="attendance-dashboard__shift-duration-card__body">
+                        <div className="attendance-dashboard__shift-duration-card__ring-wrap">
+                          <svg
+                            className="attendance-dashboard__shift-ring-svg"
+                            width={shiftDurationCardState.ring.size}
+                            height={shiftDurationCardState.ring.size}
+                            viewBox={`0 0 ${shiftDurationCardState.ring.size} ${shiftDurationCardState.ring.size}`}
+                            aria-hidden
+                          >
+                            <circle
+                              className="attendance-dashboard__shift-ring-track"
+                              cx={shiftDurationCardState.ring.cx}
+                              cy={shiftDurationCardState.ring.cy}
+                              r={shiftDurationCardState.ring.r}
+                              fill="none"
+                              strokeWidth={shiftDurationCardState.ring.stroke}
+                            />
+                            <circle
+                              className={`attendance-dashboard__shift-ring-progress attendance-dashboard__shift-ring-progress--${shiftDurationCardState.status}`}
+                              cx={shiftDurationCardState.ring.cx}
+                              cy={shiftDurationCardState.ring.cy}
+                              r={shiftDurationCardState.ring.r}
+                              fill="none"
+                              strokeWidth={shiftDurationCardState.ring.stroke}
+                              strokeLinecap="round"
+                              strokeDasharray={shiftDurationCardState.ring.circumference}
+                              strokeDashoffset={shiftDurationCardState.ring.dashOffset}
+                              transform={`rotate(-90 ${shiftDurationCardState.ring.cx} ${shiftDurationCardState.ring.cy})`}
+                            />
+                          </svg>
+                          <div className="attendance-dashboard__shift-duration-card__center">
+                            <span className="attendance-dashboard__shift-duration-card__value">
+                              {formatDashboardDuration(shiftDurationCardState.act)}
+                            </span>
+                            <span className="attendance-dashboard__shift-duration-card__actual-label">
+                              <Timer size={15} aria-hidden />
+                              {t('attendance.dashboard.actualTimeLabel')}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="attendance-dashboard__shift-duration-card__footer">
+                        {shiftDurationCardState.hasSchedule ? (
+                          <>
+                            <div className="attendance-dashboard__shift-duration-card__row">
+                              <span className="attendance-dashboard__shift-duration-card__row-k">
+                                {t('attendance.dashboard.scheduledDurationLabel')}
+                              </span>
+                              <span className="attendance-dashboard__shift-duration-card__row-v">
+                                {formatDashboardDuration(shiftDurationCardState.exp)}
+                              </span>
+                            </div>
+                            <div className="attendance-dashboard__shift-duration-card__row">
+                              <span className="attendance-dashboard__shift-duration-card__row-k">
+                                {t('attendance.dashboard.differenceLabel')}
+                              </span>
+                              <span
+                                className={`attendance-dashboard__shift-duration-card__row-v attendance-dashboard__shift-duration-card__row-v--diff attendance-dashboard__shift-duration-card__row-v--${shiftDurationCardState.status}`}
+                              >
+                                {formatSignedDiff(shiftDurationCardState.diffMs)}
+                              </span>
+                            </div>
+                          </>
+                        ) : null}
+                        <div
+                          className={`attendance-dashboard__shift-duration-card__status attendance-dashboard__shift-duration-card__status--${shiftDurationCardState.status}`}
+                        >
+                          <span className="attendance-dashboard__shift-duration-card__status-dot" aria-hidden />
+                          {shiftDurationCardState.status === 'ok' && t('attendance.dashboard.statusWithinTime')}
+                          {shiftDurationCardState.status === 'over' && t('attendance.dashboard.statusLate')}
+                          {shiftDurationCardState.status === 'warning' &&
+                            t('attendance.dashboard.statusEndingSoon')}
+                          {shiftDurationCardState.status === 'neutral' && t('attendance.dashboard.statusNeutral')}
+                        </div>
+                      </div>
+                    </section>
+                  )}
+                  </div>
+                  </div>
+
+                  <div className="attendance-dashboard__time-location-maps">
+                    <div className="attendance-dashboard__location-block">
+                      <div className="attendance-dashboard__geo-cols">
                     <div className="attendance-dashboard__geo-block">
                       <div className="attendance-dashboard__geo-label">
                         <Building2 size={16} aria-hidden />
@@ -1131,6 +1313,7 @@ export default function Attendance() {
                       Number.isFinite(liveDashboard.office.lng) ? (
                         <div className="attendance-dashboard__office-map-wrap">
                           <LeafletOfficeMapPreview
+                            key={`office-map-${liveDashboard.office.lat}-${liveDashboard.office.lng}-${userGeo.status === 'ok' ? `${userGeo.lat}-${userGeo.lng}` : 'nou'}`}
                             lat={liveDashboard.office.lat}
                             lng={liveDashboard.office.lng}
                             radiusMeters={liveDashboard.radiusM}
@@ -1151,7 +1334,58 @@ export default function Attendance() {
                         <p className="attendance-dashboard__geo-empty">{t('attendance.locationPanel.geoLoading')}</p>
                       )}
                       {userGeo.status === 'error' && (
-                        <p className="attendance-dashboard__geo-empty">{t('attendance.locationPanel.geoError')}</p>
+                        <div className="attendance-dashboard__geo-error-alert" role="alert">
+                          <div className="attendance-dashboard__geo-error-alert__head">
+                            <AlertTriangle
+                              className="attendance-dashboard__geo-error-alert__icon"
+                              size={22}
+                              aria-hidden
+                            />
+                            <strong className="attendance-dashboard__geo-error-alert__title">
+                              {t('attendance.locationPanel.geoErrorTitle')}
+                            </strong>
+                          </div>
+                          <p className="attendance-dashboard__geo-error-alert__hint">
+                            {t('attendance.locationPanel.geoErrorInstructions')}
+                          </p>
+                        </div>
+                      )}
+                      {userGeo.status === 'ok' && userGeo.lat != null && userGeo.lng != null && (
+                        <div className="attendance-dashboard__office-map-wrap">
+                          <LeafletOfficeMapPreview
+                            key={
+                              liveDashboard.office &&
+                              Number.isFinite(liveDashboard.office.lat) &&
+                              Number.isFinite(liveDashboard.office.lng)
+                                ? `you-office-${liveDashboard.office.lat}-${liveDashboard.office.lng}-${userGeo.lat}-${userGeo.lng}`
+                                : `you-only-${userGeo.lat}-${userGeo.lng}`
+                            }
+                            lat={
+                              liveDashboard.office &&
+                              Number.isFinite(liveDashboard.office.lat) &&
+                              Number.isFinite(liveDashboard.office.lng)
+                                ? liveDashboard.office.lat
+                                : undefined
+                            }
+                            lng={
+                              liveDashboard.office &&
+                              Number.isFinite(liveDashboard.office.lat) &&
+                              Number.isFinite(liveDashboard.office.lng)
+                                ? liveDashboard.office.lng
+                                : undefined
+                            }
+                            radiusMeters={
+                              liveDashboard.office &&
+                              Number.isFinite(liveDashboard.office.lat) &&
+                              Number.isFinite(liveDashboard.office.lng)
+                                ? liveDashboard.radiusM
+                                : undefined
+                            }
+                            userLat={userGeo.lat}
+                            userLng={userGeo.lng}
+                            ariaLabel={t('attendance.locationPanel.userMapAria')}
+                          />
+                        </div>
                       )}
                       {userGeo.status === 'ok' &&
                         userGeo.lat != null &&
@@ -1167,57 +1401,42 @@ export default function Attendance() {
                       )}
                     </div>
                   </div>
-                  <div className="attendance-dashboard__distance-banner">
-                    {liveDashboard.distanceNowM != null ? (
-                      <>
-                        <strong>{t('attendance.locationPanel.distanceNow')}</strong>
-                        <span>
-                          {Math.round(liveDashboard.distanceNowM)} {t('attendance.locationPanel.metersAbbr')}
-                          {liveDashboard.radiusM != null ? (
-                            <span
-                              className={
-                                liveDashboard.distanceNowM <= liveDashboard.radiusM
-                                  ? 'attendance-dashboard__radius-tag'
-                                  : 'attendance-dashboard__radius-tag attendance-dashboard__radius-tag--warn'
-                              }
-                            >
-                              {liveDashboard.distanceNowM <= liveDashboard.radiusM
-                                ? t('attendance.locationPanel.insideRadius')
-                                : t('attendance.locationPanel.outsideRadius')}
-                            </span>
-                          ) : null}
-                        </span>
-                      </>
-                    ) : (
-                      <span className="attendance-dashboard__geo-muted">
-                        {t('attendance.locationPanel.distanceNeedBoth')}
-                      </span>
-                    )}
-                    {myRecordToday?.distance_from_office_m != null && (
-                      <p className="attendance-dashboard__at-checkin">
-                        {t('attendance.locationPanel.atCheckIn', {
-                          m: Math.round(Number(myRecordToday.distance_from_office_m)),
-                        })}
-                      </p>
-                    )}
-                    {liveDashboard.enforceSchedule ? (
-                      <p className="attendance-dashboard__schedule-geo-note">
-                        {t('attendance.scheduleVsGeoHint', {
-                          tz: liveDashboard.workTz,
-                          start: liveDashboard.workdayStart,
-                        })}
-                      </p>
-                    ) : null}
-                    {liveDashboard.clockInBlockedBySchedule ? (
-                      <p className="attendance-dashboard__schedule-block-alert" role="alert">
-                        {t('attendance.scheduleBlockBeforeStart', {
-                          start: liveDashboard.workdayStart,
-                          tz: liveDashboard.workTz,
-                        })}
-                      </p>
-                    ) : null}
+                  {(liveDashboard.distanceNowM != null || liveDashboard.clockInBlockedBySchedule) && (
+                    <div className="attendance-dashboard__distance-banner">
+                      {liveDashboard.distanceNowM != null && (
+                        <>
+                          <strong>{t('attendance.locationPanel.distanceNow')}</strong>
+                          <span>
+                            {Math.round(liveDashboard.distanceNowM)} {t('attendance.locationPanel.metersAbbr')}
+                            {liveDashboard.radiusM != null ? (
+                              <span
+                                className={
+                                  liveDashboard.distanceNowM <= liveDashboard.radiusM
+                                    ? 'attendance-dashboard__radius-tag'
+                                    : 'attendance-dashboard__radius-tag attendance-dashboard__radius-tag--warn'
+                                }
+                              >
+                                {liveDashboard.distanceNowM <= liveDashboard.radiusM
+                                  ? t('attendance.locationPanel.insideRadius')
+                                  : t('attendance.locationPanel.outsideRadius')}
+                              </span>
+                            ) : null}
+                          </span>
+                        </>
+                      )}
+                      {liveDashboard.clockInBlockedBySchedule ? (
+                        <p className="attendance-dashboard__schedule-block-alert" role="alert">
+                          {t('attendance.scheduleBlockBeforeStart', {
+                            start: liveDashboard.workdayStart,
+                            tz: liveDashboard.workTz,
+                          })}
+                        </p>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
                   </div>
-                </section>
+                </div>
               </div>
             </div>
 
