@@ -86,7 +86,10 @@ class AttendanceController extends Controller
             }
         }
 
-        $records = $query->orderByDesc('date')->orderByDesc('check_in_at')->limit(500)->get();
+        $fillMissingUsers = $this->shouldFillMissingUsersOnAttendanceList($request);
+        $listLimit = $fillMissingUsers ? 5000 : 500;
+
+        $records = $query->orderByDesc('date')->orderByDesc('check_in_at')->limit($listLimit)->get();
         $viewer = $request->user();
 
         $clockInLogMap = $this->attendanceService->acceptedClockInLogsByUserAndRecordDate($records);
@@ -97,6 +100,22 @@ class AttendanceController extends Controller
 
             return $this->serializeListRecord($r, $viewer, $log);
         });
+
+        if ($fillMissingUsers) {
+            $dateStr = $this->resolveSingleCalendarDayForAttendanceList($request);
+            if ($dateStr !== null) {
+                $presentIds = $data->pluck('user_id')->unique()->filter()->all();
+                $missingUsers = User::query()
+                    ->where('status', 'active')
+                    ->whereNotIn('id', $presentIds)
+                    ->orderBy('name')
+                    ->get();
+                foreach ($missingUsers as $u) {
+                    $data->push($this->serializeNoRecordAttendanceListRow($u, $dateStr, $viewer));
+                }
+                $data = $data->sortBy(fn (array $row) => mb_strtolower((string) ($row['user_name'] ?? '')))->values();
+            }
+        }
 
         return ApiResponse::success($data);
     }
@@ -138,15 +157,102 @@ class AttendanceController extends Controller
 
         $clockInLogMap = $this->attendanceService->acceptedClockInLogsByUserAndRecordDate($records);
 
+        $recordRows = $records->map(function (AttendanceRecord $r) use ($viewer, $clockInLogMap) {
+            $key = $r->date ? $r->user_id.'|'.$r->date->toDateString() : null;
+            $log = $key !== null ? ($clockInLogMap[$key] ?? null) : null;
+
+            return $this->serializeListRecord($r, $viewer, $log);
+        });
+
+        if ($request->user()?->can('attendance.view') || $request->user()?->can('reports.view')) {
+            $presentIds = $recordRows->pluck('user_id')->unique()->filter()->all();
+            $missingUsers = User::query()
+                ->where('status', 'active')
+                ->whereNotIn('id', $presentIds)
+                ->orderBy('name')
+                ->get();
+            foreach ($missingUsers as $u) {
+                $recordRows->push($this->serializeNoRecordAttendanceListRow($u, $date, $viewer));
+            }
+            $recordRows = $recordRows->sortBy(fn (array $row) => mb_strtolower((string) ($row['user_name'] ?? '')))->values();
+        }
+
         return ApiResponse::success([
             'date' => $date,
-            'records' => $records->map(function (AttendanceRecord $r) use ($viewer, $clockInLogMap) {
-                $key = $r->date ? $r->user_id.'|'.$r->date->toDateString() : null;
-                $log = $key !== null ? ($clockInLogMap[$key] ?? null) : null;
-
-                return $this->serializeListRecord($r, $viewer, $log);
-            }),
+            'records' => $recordRows,
         ]);
+    }
+
+    private function shouldFillMissingUsersOnAttendanceList(Request $request): bool
+    {
+        $user = $request->user();
+        if ($user === null) {
+            return false;
+        }
+        if (! $user->can('attendance.view') && ! $user->can('reports.view')) {
+            return false;
+        }
+        if ($request->filled('user_id')) {
+            return false;
+        }
+        if ($request->filled('device_type')) {
+            return false;
+        }
+        if ($request->filled('is_within_radius')) {
+            return false;
+        }
+        if ($request->filled('status')) {
+            $status = (string) $request->query('status');
+            if ($status !== AttendanceRecord::STATUS_ABSENT) {
+                return false;
+            }
+        }
+
+        return $this->resolveSingleCalendarDayForAttendanceList($request) !== null;
+    }
+
+    private function resolveSingleCalendarDayForAttendanceList(Request $request): ?string
+    {
+        $from = $request->query('from');
+        $to = $request->query('to');
+        if (is_string($from) && is_string($to) && $from !== '' && $from === $to) {
+            return $from;
+        }
+        $date = $request->query('date');
+        if (is_string($date) && $date !== '' && ! $request->filled('from') && ! $request->filled('to')) {
+            return $date;
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function serializeNoRecordAttendanceListRow(User $target, string $date, User $viewer): array
+    {
+        $tz = $this->attendanceService->resolveTimezone($viewer);
+
+        return [
+            'id' => null,
+            'user_id' => $target->id,
+            'user_name' => $target->name,
+            'date' => $date,
+            'check_in_at' => null,
+            'check_out_at' => null,
+            'check_in_at_local' => null,
+            'check_out_at_local' => null,
+            'is_late' => false,
+            'status' => AttendanceRecord::STATUS_ABSENT,
+            'worked_minutes' => null,
+            'worked_hours' => null,
+            'shift_open' => false,
+            'device_type' => null,
+            'is_within_radius' => null,
+            'distance_from_office_m' => null,
+            'notes' => null,
+            'timezone_used' => $tz,
+        ];
     }
 
     /**
