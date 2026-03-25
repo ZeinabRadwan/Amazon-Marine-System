@@ -47,14 +47,16 @@ export default function DonutChart({
             paddingAngle={2}
             label={showLabel ? { offset: 14, formatter: (value, name) => `${name}: ${value}` } : false}
           >
-            {data.map((_, i) => (
-              <Cell
-                key={i}
-                fill={colors[i % colors.length]}
-                stroke="var(--chart-bg, #fff)"
-                strokeWidth={2}
-              />
-            ))}
+            {data.map((entry, i) => {
+              const c = entry?.color
+              const fill =
+                typeof c === 'string' && /^#?[0-9a-fA-F]{6}$/.test(c.trim())
+                  ? (c.trim().startsWith('#') ? c.trim() : `#${c.trim()}`)
+                  : colors[i % colors.length]
+              return (
+                <Cell key={i} fill={fill} stroke="var(--chart-bg, #fff)" strokeWidth={2} />
+              )
+            })}
           </Pie>
           <Tooltip formatter={(value) => [value, valueLabel]} />
           <Legend layout="horizontal" align="center" verticalAlign="bottom" />

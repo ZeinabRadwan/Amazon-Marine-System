@@ -1205,6 +1205,7 @@
     "salesRepAll": "All sales reps",
     "lineVendorAll": "All lines",
     "clearFilters": "Clear filters",
+    "filtersToggle": "Filters",
     "empty": "No shipments yet.",
     "total": "Total",
     "perPage": "Per page",
@@ -1223,6 +1224,7 @@
     "deleteConfirm": "Delete shipment?",
     "deleteConfirmMessage": "This action cannot be undone.",
     "sortBy": "Sort by",
+    "sortOrder": "Sort order",
     "sortCreated": "Created date",
     "sortBl": "BL number",
     "sortClient": "Client",
@@ -1251,6 +1253,8 @@
     },
     "sections": {
       "main": "Shipment",
+      "cargoLoading": "Containers, loading & cargo",
+      "loadingReefer": "Loading & reefer",
       "sdForm": "SD form",
       "operation": "Operation",
       "tasks": "Tasks"
@@ -1331,6 +1335,14 @@
       "in_transit": "In transit",
       "customs_clearance": "Customs clearance",
       "delivered": "Delivered"
+    },
+    "statusLegacy": {
+      "booked": "Booked",
+      "in_transit": "In transit",
+      "customs_clearance": "Customs clearance",
+      "delivered": "Delivered",
+      "unknown": "Unknown",
+      "draft": "Draft"
     },
     "financialSummary": "Financial summary",
     "trackingAddLabel": "Add tracking update",

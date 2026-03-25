@@ -21,9 +21,11 @@ import { listPorts } from '../../api/ports'
 import { listShipmentStatuses } from '../../api/settings'
 import { Container } from '../../components/Container'
 import '../../components/PageHeader/PageHeader.css'
-import { Table, IconActionButton } from '../../components/Table'
+import { Table } from '../../components/Table'
+import { DropdownMenu } from '../../components/DropdownMenu'
 import Pagination from '../../components/Pagination'
 import { StatsCard } from '../../components/StatsCard'
+import ShipmentStatusBadge from '../../components/ShipmentStatusBadge'
 import ShipmentDetailModal from './ShipmentDetailModal'
 import ShipmentFinancialsModal from './ShipmentFinancialsModal'
 import LoaderDots from '../../components/LoaderDots'
@@ -45,6 +47,8 @@ import {
   Receipt,
   StickyNote,
   ClipboardList,
+  Menu,
+  ListFilter,
 } from 'lucide-react'
 import { BarChart, DonutChart } from '../../components/Charts'
 import '../../components/Charts/Charts.css'
@@ -52,6 +56,12 @@ import '../../components/LoaderDots/LoaderDots.css'
 import '../Clients/Clients.css'
 import '../Clients/ClientDetailModal.css'
 import './Shipments.css'
+import {
+  findShipmentStatusOption,
+  shipmentStatusFilterValue,
+  shipmentStatusLegacyLabel,
+  shipmentStatusLocalizedLabel,
+} from '../../utils/shipmentStatusHelpers'
 
 function getMonthFormat(locale) {
   return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-US', { month: 'short', year: 'numeric' })
@@ -191,7 +201,6 @@ export default function Shipments() {
     client_id: '',
     sales_rep_id: '',
     line_vendor_id: '',
-    month: '',
     from: '',
     to: '',
     sd_number: '',
@@ -200,15 +209,14 @@ export default function Shipments() {
     page: 1,
     per_page: 25,
   })
+  const [showFilters, setShowFilters] = useState(false)
   const [showSort, setShowSort] = useState(false)
 
   const [stats, setStats] = useState(null)
   const [statsLoading, setStatsLoading] = useState(false)
   const [charts, setCharts] = useState(null)
   const [chartsLoading, setChartsLoading] = useState(false)
-  const [chartMonths, setChartMonths] = useState(6)
   const [exportLoading, setExportLoading] = useState(false)
-  const [bulkExportLoading, setBulkExportLoading] = useState(false)
   const [selectedIds, setSelectedIds] = useState({})
 
   const [clientOptions, setClientOptions] = useState([])
@@ -260,7 +268,6 @@ export default function Shipments() {
       client_id: filters.client_id || undefined,
       sales_rep_id: filters.sales_rep_id || undefined,
       line_vendor_id: filters.line_vendor_id || undefined,
-      month: filters.month || undefined,
       from: filters.from || undefined,
       to: filters.to || undefined,
       sd_number: filters.sd_number?.trim() || undefined,
@@ -316,11 +323,11 @@ export default function Shipments() {
   useEffect(() => {
     if (!token) return
     setChartsLoading(true)
-    getShipmentCharts(token, { months: chartMonths })
+    getShipmentCharts(token, { months: 6 })
       .then((data) => setCharts(data.data ?? data))
       .catch(() => setCharts(null))
       .finally(() => setChartsLoading(false))
-  }, [token, chartMonths])
+  }, [token])
 
   useEffect(() => {
     setSelectedIds({})
@@ -394,12 +401,16 @@ export default function Shipments() {
     filters.client_id,
     filters.sales_rep_id,
     filters.line_vendor_id,
-    filters.month,
     filters.from,
     filters.to,
     filters.sd_number,
     filters.per_page,
   ])
+
+  useEffect(() => {
+    if (filters.sort !== 'cost' && filters.sort !== 'profit') return
+    setFilters((f) => ({ ...f, sort: 'created_at' }))
+  }, [filters.sort])
 
   useEffect(() => {
     if (!detailId || !token) {
@@ -421,7 +432,6 @@ export default function Shipments() {
     statsLoading ||
     chartsLoading ||
     exportLoading ||
-    bulkExportLoading ||
     createSubmitting ||
     editSubmitting ||
     deleteSubmitting ||
@@ -508,11 +518,14 @@ export default function Shipments() {
     setAlert(null)
     setExportLoading(true)
     try {
-      const blob = await exportShipments(token, exportParams)
+      const ids = Object.keys(selectedIds).filter((id) => selectedIds[id])
+      const params = ids.length > 0 ? { ...exportParams, ids: ids.join(',') } : exportParams
+      const blob = await exportShipments(token, params)
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `shipments-export-${new Date().toISOString().slice(0, 10)}.csv`
+      const day = new Date().toISOString().slice(0, 10)
+      a.download = ids.length > 0 ? `shipments-selected-${day}.csv` : `shipments-export-${day}.csv`
       a.click()
       URL.revokeObjectURL(url)
       setAlert({ type: 'success', message: t('shipments.exportSuccess') })
@@ -520,27 +533,6 @@ export default function Shipments() {
       setAlert({ type: 'error', message: err.message || t('shipments.errorExport') })
     } finally {
       setExportLoading(false)
-    }
-  }
-
-  const handleBulkExport = async () => {
-    const ids = Object.keys(selectedIds).filter((id) => selectedIds[id])
-    if (ids.length === 0) return
-    setAlert(null)
-    setBulkExportLoading(true)
-    try {
-      const blob = await exportShipments(token, { ...exportParams, ids: ids.join(',') })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `shipments-selected-${new Date().toISOString().slice(0, 10)}.csv`
-      a.click()
-      URL.revokeObjectURL(url)
-      setAlert({ type: 'success', message: t('shipments.exportSuccess') })
-    } catch (err) {
-      setAlert({ type: 'error', message: err.message || t('shipments.errorExport') })
-    } finally {
-      setBulkExportLoading(false)
     }
   }
 
@@ -612,11 +604,16 @@ export default function Shipments() {
   const statusDistributionData = useMemo(() => {
     const dist = charts?.status_distribution
     if (!Array.isArray(dist) || dist.length === 0) return []
-    return dist.map((item) => ({
-      name: item.status ?? '—',
-      count: item.count ?? 0,
-    }))
-  }, [charts])
+    return dist.map((item) => {
+      const raw = item.status ?? '—'
+      const opt = findShipmentStatusOption(statusOptions, raw)
+      const name = opt
+        ? shipmentStatusLocalizedLabel(opt, i18n.language)
+        : shipmentStatusLegacyLabel(raw, t)
+      const color = opt && typeof opt.color === 'string' ? opt.color.trim() : undefined
+      return { name, count: item.count ?? 0, color }
+    })
+  }, [charts, statusOptions, i18n.language, t])
 
   const monthlyChartData = useMemo(() => {
     const m = charts?.monthly_revenue_profit
@@ -633,9 +630,6 @@ export default function Shipments() {
   }
 
   const columns = useMemo(() => {
-    const money = (v) =>
-      v != null ? new Intl.NumberFormat(numberLocale, { maximumFractionDigits: 2 }).format(Number(v)) : '—'
-
     const base = [
       {
         key: '_select',
@@ -701,7 +695,9 @@ export default function Shipments() {
         key: 'status',
         label: t('shipments.fields.status'),
         sortable: false,
-        render: (v) => v || '—',
+        render: (v) => (
+          <ShipmentStatusBadge statusOptions={statusOptions} rawStatus={v} lang={i18n.language} t={t} />
+        ),
       },
       {
         key: 'operations_status',
@@ -710,38 +706,6 @@ export default function Shipments() {
         render: (v) => (v != null ? String(v) : '—'),
       },
     ]
-
-    if (canViewAccounting) {
-      base.push(
-        {
-          key: 'cost_total',
-          sortKey: 'cost',
-          label: t('shipments.fields.cost_total'),
-          sortable: true,
-          render: (v) => money(v),
-        },
-        {
-          key: 'selling_price_total',
-          label: t('shipments.fields.selling_price_total'),
-          sortable: false,
-          render: (v) => (canViewSelling ? money(v) : '—'),
-        },
-        {
-          key: 'profit_total',
-          sortKey: 'profit',
-          label: t('shipments.fields.profit_total'),
-          sortable: true,
-          render: (v) => money(v),
-        }
-      )
-    } else if (canViewSelling) {
-      base.push({
-        key: 'selling_price_total',
-        label: t('shipments.fields.selling_price_total'),
-        sortable: false,
-        render: (v) => money(v),
-      })
-    }
 
     base.push({
       key: 'created_at',
@@ -755,83 +719,113 @@ export default function Shipments() {
       key: 'actions',
       label: t('shipments.actions'),
       sortable: false,
-      render: (_, row) => (
-        <div className="clients-table-actions flex flex-wrap gap-2 justify-end" role="group" aria-label={t('shipments.actions')}>
-          <IconActionButton
-            icon={<Eye className="h-4 w-4" />}
-            label={t('shipments.view')}
-            onClick={() => {
+      render: (_, row) => {
+        const menuItems = [
+          {
+            id: 'view',
+            label: t('shipments.view'),
+            icon: <Eye className="h-4 w-4" />,
+            onClick: () => {
               setDetailTab('info')
               setDetailId(row.id)
-            }}
-          />
-          <IconActionButton
-            icon={<MapPin className="h-4 w-4" />}
-            label={t('shipments.track')}
-            onClick={() => {
+            },
+          },
+          {
+            id: 'track',
+            label: t('shipments.track'),
+            icon: <MapPin className="h-4 w-4" />,
+            onClick: () => {
               setDetailTab('tracking')
               setDetailId(row.id)
-            }}
-          />
-          {canManageOps && (
-            <IconActionButton
-              icon={<ClipboardList className="h-4 w-4" />}
-              label={t('shipments.stageUpdate')}
-              onClick={() => {
-                setStageRow(row)
-                setStageForm({
-                  statusKey: row.status ?? '',
-                  eventDate: new Date().toISOString().slice(0, 10),
-                  message: '',
-                })
-              }}
+            },
+          },
+        ]
+        if (canManageOps) {
+          menuItems.push({
+            id: 'stage',
+            label: t('shipments.stageUpdate'),
+            icon: <ClipboardList className="h-4 w-4" />,
+            onClick: () => {
+              setStageRow(row)
+              setStageForm({
+                statusKey: row.status ?? '',
+                eventDate: new Date().toISOString().slice(0, 10),
+                message: '',
+              })
+            },
+          })
+        }
+        menuItems.push({
+          id: 'print',
+          label: t('shipments.print'),
+          icon: <Printer className="h-4 w-4" />,
+          onClick: () => window.print(),
+        })
+        if (canViewShipmentFinancials) {
+          menuItems.push({
+            id: 'financials',
+            label: t('shipments.financials'),
+            icon: <Receipt className="h-4 w-4" />,
+            onClick: () => setFinancialRow(row),
+          })
+        }
+        menuItems.push({
+          id: 'notes',
+          label: t('shipments.notesQuick'),
+          icon: <StickyNote className="h-4 w-4" />,
+          onClick: () => {
+            setDetailTab('notes')
+            setDetailId(row.id)
+          },
+        })
+        if (canManageOps) {
+          menuItems.push(
+            {
+              id: 'edit',
+              label: t('shipments.edit'),
+              icon: <Pencil className="h-4 w-4" />,
+              onClick: () => openEdit(row),
+            },
+            {
+              id: 'delete',
+              label: t('shipments.delete'),
+              icon: <Trash2 className="h-4 w-4" />,
+              onClick: () => setDeleteId(row.id),
+            }
+          )
+        }
+        return (
+          <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenu
+              portaled
+              align={i18n.language === 'ar' ? 'start' : 'end'}
+              className="shipments-row-actions-menu"
+              trigger={
+                <button
+                  type="button"
+                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white p-0 text-gray-700 transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 dark:focus:ring-offset-gray-800"
+                  title={t('shipments.actions')}
+                  aria-label={t('shipments.actions')}
+                >
+                  <Menu className="h-4 w-4 shrink-0" aria-hidden />
+                </button>
+              }
+              items={menuItems}
             />
-          )}
-          <IconActionButton
-            icon={<Printer className="h-4 w-4" />}
-            label={t('shipments.print')}
-            onClick={() => window.print()}
-          />
-          {canViewShipmentFinancials && (
-            <IconActionButton
-              icon={<Receipt className="h-4 w-4" />}
-              label={t('shipments.financials')}
-              onClick={() => setFinancialRow(row)}
-            />
-          )}
-          <IconActionButton
-            icon={<StickyNote className="h-4 w-4" />}
-            label={t('shipments.notesQuick')}
-            onClick={() => {
-              setDetailTab('notes')
-              setDetailId(row.id)
-            }}
-          />
-          {canManageOps && (
-            <>
-              <IconActionButton icon={<Pencil className="h-4 w-4" />} label={t('shipments.edit')} onClick={() => openEdit(row)} />
-              <IconActionButton
-                icon={<Trash2 className="h-4 w-4" />}
-                label={t('shipments.delete')}
-                onClick={() => setDeleteId(row.id)}
-                variant="danger"
-              />
-            </>
-          )}
-        </div>
-      ),
+          </div>
+        )
+      },
     })
 
     return base
   }, [
     t,
-    numberLocale,
+    i18n.language,
     canManageOps,
-    canViewAccounting,
-    canViewSelling,
     canViewShipmentFinancials,
     selectedIds,
     allPageSelected,
+    statusOptions,
   ])
 
   const renderCreateForm = (form, setForm, disabled) => (
@@ -1005,6 +999,11 @@ export default function Shipments() {
               ))}
             </select>
           </div>
+        </div>
+      </section>
+      <section className="client-detail-modal__section">
+        <h3 className="client-detail-modal__section-title">{t('shipments.sections.cargoLoading')}</h3>
+        <div className="client-detail-modal__form-grid">
           <div className="client-detail-modal__form-field">
             <label htmlFor="sh-cc">{t('shipments.fields.container_count')}</label>
             <input
@@ -1067,7 +1066,7 @@ export default function Shipments() {
             />
           </div>
           <div className="client-detail-modal__form-field">
-            <label className="flex items-center gap-2">
+            <label className="client-detail-modal__checkbox-label">
               <input
                 type="checkbox"
                 checked={form.is_reefer}
@@ -1119,7 +1118,7 @@ export default function Shipments() {
   const renderEditForm = (form, setForm, disabled) => (
     <div className="clients-form-sections">
       <section className="client-detail-modal__section">
-        <h3 className="client-detail-modal__section-title">{t('shipments.editTitle')}</h3>
+        <h3 className="client-detail-modal__section-title">{t('shipments.sections.main')}</h3>
         <div className="client-detail-modal__form-grid">
           <div className="client-detail-modal__form-field">
             <label htmlFor="ed-bl">{t('shipments.fields.bl_number')}</label>
@@ -1167,6 +1166,11 @@ export default function Shipments() {
               ))}
             </select>
           </div>
+        </div>
+      </section>
+      <section className="client-detail-modal__section">
+        <h3 className="client-detail-modal__section-title">{t('shipments.sections.loadingReefer')}</h3>
+        <div className="client-detail-modal__form-grid">
           <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
             <label htmlFor="ed-lp">{t('shipments.fields.loading_place')}</label>
             <input
@@ -1188,7 +1192,7 @@ export default function Shipments() {
             />
           </div>
           <div className="client-detail-modal__form-field">
-            <label className="flex items-center gap-2">
+            <label className="client-detail-modal__checkbox-label">
               <input
                 type="checkbox"
                 checked={form.is_reefer}
@@ -1276,20 +1280,8 @@ export default function Shipments() {
         )}
 
         <div className="clients-extra-panel clients-charts-panel mb-4 shipments-no-print">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">{t('shipments.chartsCardTitle')}</h3>
-            <select
-              className="clients-input min-w-[120px]"
-              value={chartMonths}
-              onChange={(e) => setChartMonths(Number(e.target.value))}
-              aria-label={t('shipments.chartMonths')}
-            >
-              <option value={6}>{t('shipments.chartMonths6')}</option>
-              <option value={12}>{t('shipments.chartMonths12')}</option>
-            </select>
-          </div>
-          {(statusDistributionData.length > 0 || monthlyChartData.length > 0) && (
-            <div className="clients-charts-grid">
+          {charts && (statusDistributionData.length > 0 || monthlyChartData.length > 0) ? (
+            <div className="clients-charts-grid shipments-charts-grid">
               {statusDistributionData.length > 0 && (
                 <div className="clients-chart-wrap">
                   <DonutChart
@@ -1334,170 +1326,93 @@ export default function Shipments() {
                 </div>
               )}
             </div>
-          )}
-          {charts && !statusDistributionData.length && !monthlyChartData.length && (
+          ) : charts ? (
             <p className="text-sm text-gray-500 dark:text-gray-400">{t('shipments.chartsNoData')}</p>
-          )}
+          ) : null}
         </div>
 
         <div className="clients-filters-card shipments-no-print">
-          <div className="clients-filters__row clients-filters__row--main flex-wrap">
-            <div className="clients-filters__search-wrap min-w-[200px] flex-1" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}>
+          <div className="clients-filters__row clients-filters__row--main">
+            <div className="clients-filters__search-wrap" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}>
               <Search className="clients-filters__search-icon" aria-hidden />
               <input
                 type="search"
                 placeholder={t('shipments.searchPlaceholder')}
                 value={filters.search}
-                onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
+                onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value, page: 1 }))}
                 className="clients-input clients-filters__search"
                 aria-label={t('shipments.search')}
               />
             </div>
-            <div className="clients-filters__fields flex flex-wrap gap-2">
-              <select
-                value={filters.status}
-                onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
-                className="clients-input min-w-[140px]"
-                aria-label={t('shipments.filterStatus')}
+            <div className="clients-filters__actions">
+              <button
+                type="button"
+                className="clients-filters__clear clients-filters__btn-icon"
+                onClick={() => {
+                  setSelectedIds({})
+                  setFilters((f) => ({
+                    ...f,
+                    search: '',
+                    status: '',
+                    operations_status: '',
+                    client_id: '',
+                    sales_rep_id: '',
+                    line_vendor_id: '',
+                    from: '',
+                    to: '',
+                    sd_number: '',
+                    sort: 'created_at',
+                    direction: 'desc',
+                    page: 1,
+                  }))
+                }}
+                aria-label={t('shipments.clearFilters')}
+                title={t('shipments.clearFilters')}
               >
-                <option value="">{t('shipments.statusAll')}</option>
-                {statusOptions.map((s) => (
-                  <option key={s.id} value={s.key}>
-                    {i18n.language === 'ar' ? s.name_ar : s.name_en || s.key}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={filters.operations_status}
-                onChange={(e) => setFilters((f) => ({ ...f, operations_status: e.target.value }))}
-                className="clients-input min-w-[120px]"
-                aria-label={t('shipments.filterOpsStatus')}
+                <RotateCcw className="clients-filters__btn-icon-svg" aria-hidden />
+              </button>
+              <button
+                type="button"
+                id="shipments-filters-toggle"
+                className="clients-filters__sort-toggle clients-filters__btn-icon"
+                onClick={() => setShowFilters((v) => !v)}
+                aria-expanded={showFilters}
+                aria-controls="shipments-filters-panel"
+                title={t('shipments.filtersToggle')}
+                aria-label={t('shipments.filtersToggle')}
               >
-                <option value="">{t('shipments.opsStatusAll')}</option>
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={filters.client_id}
-                onChange={(e) => setFilters((f) => ({ ...f, client_id: e.target.value }))}
-                className="clients-input min-w-[160px]"
-                aria-label={t('shipments.filterClient')}
+                <ListFilter className="clients-filters__btn-icon-svg" aria-hidden />
+                {showFilters ? (
+                  <ChevronUp className="clients-filters__sort-toggle-chevron" aria-hidden />
+                ) : (
+                  <ChevronDown className="clients-filters__sort-toggle-chevron" aria-hidden />
+                )}
+              </button>
+              <button
+                type="button"
+                id="shipments-sort-toggle"
+                className="clients-filters__sort-toggle clients-filters__btn-icon"
+                onClick={() => setShowSort((v) => !v)}
+                aria-expanded={showSort}
+                aria-controls="shipments-sort-panel"
+                title={t('shipments.sortBy')}
               >
-                <option value="">{t('shipments.clientAll')}</option>
-                {clientOptions.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.company_name || c.name}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={filters.sales_rep_id}
-                onChange={(e) => setFilters((f) => ({ ...f, sales_rep_id: e.target.value }))}
-                className="clients-input min-w-[140px]"
-                aria-label={t('shipments.filterSalesRep')}
-              >
-                <option value="">{t('shipments.salesRepAll')}</option>
-                {userOptions.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={filters.line_vendor_id}
-                onChange={(e) => setFilters((f) => ({ ...f, line_vendor_id: e.target.value }))}
-                className="clients-input min-w-[140px]"
-                aria-label={t('shipments.filterLineVendor')}
-              >
-                <option value="">{t('shipments.lineVendorAll')}</option>
-                {vendorOptions.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.name}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="month"
-                className="clients-input min-w-[140px]"
-                value={filters.month}
-                onChange={(e) => setFilters((f) => ({ ...f, month: e.target.value }))}
-                aria-label={t('shipments.filterMonth')}
-              />
-              <input
-                type="date"
-                className="clients-input min-w-[130px]"
-                value={filters.from}
-                onChange={(e) => setFilters((f) => ({ ...f, from: e.target.value }))}
-                aria-label={t('shipments.filterFrom')}
-              />
-              <input
-                type="date"
-                className="clients-input min-w-[130px]"
-                value={filters.to}
-                onChange={(e) => setFilters((f) => ({ ...f, to: e.target.value }))}
-                aria-label={t('shipments.filterTo')}
-              />
-              <input
-                type="text"
-                className="clients-input min-w-[120px]"
-                placeholder={t('shipments.sdNumberPlaceholder')}
-                value={filters.sd_number}
-                onChange={(e) => setFilters((f) => ({ ...f, sd_number: e.target.value }))}
-                aria-label={t('shipments.filterSdNumber')}
-              />
-            </div>
-            <button
-              type="button"
-              className="clients-filters__clear clients-filters__btn-icon"
-              onClick={() =>
-                setFilters((f) => ({
-                  ...f,
-                  search: '',
-                  status: '',
-                  operations_status: '',
-                  client_id: '',
-                  sales_rep_id: '',
-                  line_vendor_id: '',
-                  month: '',
-                  from: '',
-                  to: '',
-                  sd_number: '',
-                  sort: 'created_at',
-                  direction: 'desc',
-                  page: 1,
-                }))
-              }
-              aria-label={t('shipments.clearFilters')}
-              title={t('shipments.clearFilters')}
-            >
-              <RotateCcw className="clients-filters__btn-icon-svg" aria-hidden />
-            </button>
-            <button
-              type="button"
-              className="clients-filters__sort-toggle clients-filters__btn-icon"
-              onClick={() => setShowSort((v) => !v)}
-              aria-expanded={showSort}
-              aria-controls="shipments-sort-panel"
-              title={t('shipments.sortBy')}
-            >
-              <ArrowUpDown className="clients-filters__btn-icon-svg" aria-hidden />
-              {showSort ? (
-                <ChevronUp className="clients-filters__sort-toggle-chevron" aria-hidden />
-              ) : (
-                <ChevronDown className="clients-filters__sort-toggle-chevron" aria-hidden />
-              )}
-            </button>
-            <div className="clients-filters__actions flex gap-2">
+                <ArrowUpDown className="clients-filters__btn-icon-svg" aria-hidden />
+                {showSort ? (
+                  <ChevronUp className="clients-filters__sort-toggle-chevron" aria-hidden />
+                ) : (
+                  <ChevronDown className="clients-filters__sort-toggle-chevron" aria-hidden />
+                )}
+              </button>
               <button
                 type="button"
                 className="clients-filters__btn-icon clients-filters__btn-icon--export"
                 onClick={handleExport}
                 disabled={exportLoading}
-                aria-label={t('shipments.export')}
-                title={t('shipments.export')}
+                aria-label={
+                  selectedCount > 0 ? t('shipments.bulkExport') : t('pageHeader.export', 'Export')
+                }
+                title={selectedCount > 0 ? t('shipments.bulkExport') : t('pageHeader.export', 'Export')}
               >
                 {exportLoading ? (
                   <span className="clients-filters__export-spinner" aria-hidden />
@@ -1513,9 +1428,107 @@ export default function Shipments() {
             </div>
           </div>
           <div
+            id="shipments-filters-panel"
+            className="clients-filters__row clients-filters__row--sort"
+            role="region"
+            aria-labelledby="shipments-filters-toggle"
+            hidden={!showFilters}
+          >
+            <div className="clients-filters__fields w-full min-w-0">
+              <select
+                value={filters.status}
+                onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value, page: 1 }))}
+                className="clients-input"
+                aria-label={t('shipments.filterStatus')}
+              >
+                <option value="">{t('shipments.statusAll')}</option>
+                {statusOptions.map((s) => (
+                  <option key={s.id} value={shipmentStatusFilterValue(s)}>
+                    {shipmentStatusLocalizedLabel(s, i18n.language)}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={filters.operations_status}
+                onChange={(e) => setFilters((f) => ({ ...f, operations_status: e.target.value, page: 1 }))}
+                className="clients-input"
+                aria-label={t('shipments.filterOpsStatus')}
+              >
+                <option value="">{t('shipments.opsStatusAll')}</option>
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={filters.client_id}
+                onChange={(e) => setFilters((f) => ({ ...f, client_id: e.target.value, page: 1 }))}
+                className="clients-input"
+                aria-label={t('shipments.filterClient')}
+              >
+                <option value="">{t('shipments.clientAll')}</option>
+                {clientOptions.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.company_name || c.name}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={filters.sales_rep_id}
+                onChange={(e) => setFilters((f) => ({ ...f, sales_rep_id: e.target.value, page: 1 }))}
+                className="clients-input"
+                aria-label={t('shipments.filterSalesRep')}
+              >
+                <option value="">{t('shipments.salesRepAll')}</option>
+                {userOptions.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={filters.line_vendor_id}
+                onChange={(e) => setFilters((f) => ({ ...f, line_vendor_id: e.target.value, page: 1 }))}
+                className="clients-input"
+                aria-label={t('shipments.filterLineVendor')}
+              >
+                <option value="">{t('shipments.lineVendorAll')}</option>
+                {vendorOptions.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.name}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="date"
+                className="clients-input"
+                value={filters.from}
+                onChange={(e) => setFilters((f) => ({ ...f, from: e.target.value, page: 1 }))}
+                aria-label={t('shipments.filterFrom')}
+              />
+              <input
+                type="date"
+                className="clients-input"
+                value={filters.to}
+                onChange={(e) => setFilters((f) => ({ ...f, to: e.target.value, page: 1 }))}
+                aria-label={t('shipments.filterTo')}
+              />
+              <input
+                type="text"
+                className="clients-input"
+                placeholder={t('shipments.sdNumberPlaceholder')}
+                value={filters.sd_number}
+                onChange={(e) => setFilters((f) => ({ ...f, sd_number: e.target.value, page: 1 }))}
+                aria-label={t('shipments.filterSdNumber')}
+              />
+            </div>
+          </div>
+          <div
             id="shipments-sort-panel"
             className="clients-filters__row clients-filters__row--sort"
             role="region"
+            aria-labelledby="shipments-sort-toggle"
             hidden={!showSort}
           >
             <div className="clients-filters__sort-group">
@@ -1527,17 +1540,17 @@ export default function Shipments() {
                 value={filters.sort}
                 onChange={(e) => setFilters((f) => ({ ...f, sort: e.target.value }))}
                 className="clients-select"
+                aria-label={t('shipments.sortBy')}
               >
                 <option value="created_at">{t('shipments.sortCreated')}</option>
                 <option value="bl">{t('shipments.sortBl')}</option>
                 <option value="client">{t('shipments.sortClient')}</option>
-                <option value="cost">{t('shipments.sortCost')}</option>
-                <option value="profit">{t('shipments.sortProfit')}</option>
               </select>
               <select
                 value={filters.direction}
                 onChange={(e) => setFilters((f) => ({ ...f, direction: e.target.value }))}
                 className="clients-select clients-filters__direction"
+                aria-label={t('shipments.sortOrder')}
               >
                 <option value="asc">{t('shipments.directionAsc')}</option>
                 <option value="desc">{t('shipments.directionDesc')}</option>
@@ -1548,23 +1561,6 @@ export default function Shipments() {
 
         {alert && <Alert variant={alert.type} message={alert.message} onClose={() => setAlert(null)} className="shipments-no-print" />}
 
-        {selectedCount > 0 && (
-          <div className="shipments-bulk-bar shipments-no-print" role="status">
-            <span>{t('shipments.bulkSelected', { count: selectedCount })}</span>
-            <button
-              type="button"
-              className="page-header__btn page-header__btn--primary text-sm py-1.5"
-              onClick={handleBulkExport}
-              disabled={bulkExportLoading}
-            >
-              {bulkExportLoading ? t('shipments.exporting') : t('shipments.bulkExport')}
-            </button>
-            <button type="button" className="cs-btn cs-btn-sm cs-btn-outline" onClick={() => setSelectedIds({})}>
-              {t('shipments.bulkClear')}
-            </button>
-          </div>
-        )}
-
         <div className="shipments-print-root">
           <h1 className="shipments-print-title">{t('shipments.title')}</h1>
 
@@ -1572,6 +1568,7 @@ export default function Shipments() {
             <p className="clients-empty">{t('shipments.empty')}</p>
           ) : (
             <Table
+              className="shipments-data-table"
               columns={columns}
               data={rows}
               getRowKey={(r) => r.id}
@@ -1582,32 +1579,33 @@ export default function Shipments() {
             />
           )}
 
-          {meta.total > 0 && (
+          {rows.length > 0 && meta.total > 0 && (
             <div className="clients-pagination">
-            <div className="clients-pagination__left">
-              <span className="clients-pagination__total">
-                {t('shipments.total')}: {meta.total}
-              </span>
-              <label className="clients-pagination__per-page">
-                <span className="clients-pagination__per-page-label">{t('shipments.perPage')}</span>
-                <select
-                  value={filters.per_page}
-                  onChange={(e) => setFilters((f) => ({ ...f, per_page: Number(e.target.value), page: 1 }))}
-                  className="clients-select clients-pagination__select"
-                >
-                  <option value={10}>10</option>
-                  <option value={15}>15</option>
-                  <option value={25}>25</option>
-                  <option value={50}>50</option>
-                </select>
-              </label>
+              <div className="clients-pagination__left">
+                <span className="clients-pagination__total">
+                  {t('shipments.total')}: {meta.total}
+                </span>
+                <label className="clients-pagination__per-page">
+                  <span className="clients-pagination__per-page-label">{t('shipments.perPage')}</span>
+                  <select
+                    value={filters.per_page}
+                    onChange={(e) => setFilters((f) => ({ ...f, per_page: Number(e.target.value), page: 1 }))}
+                    className="clients-select clients-pagination__select"
+                    aria-label={t('shipments.perPage')}
+                  >
+                    <option value={10}>10</option>
+                    <option value={15}>15</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                  </select>
+                </label>
+              </div>
+              <Pagination
+                currentPage={meta.current_page}
+                totalPages={Math.max(1, meta.last_page)}
+                onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
+              />
             </div>
-            <Pagination
-              currentPage={meta.current_page}
-              totalPages={meta.last_page}
-              onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
-            />
-          </div>
           )}
         </div>
 
@@ -1631,7 +1629,7 @@ export default function Shipments() {
               </header>
               <form onSubmit={handleCreateSubmit} className="client-detail-modal__form">
                 <div className="client-detail-modal__body client-detail-modal__body--form">
-                  <div className="client-detail-modal__body-inner max-h-[70vh] overflow-y-auto">
+                  <div className="client-detail-modal__body-inner">
                     {renderCreateForm(createForm, setCreateForm, createSubmitting)}
                   </div>
                 </div>
@@ -1659,6 +1657,7 @@ export default function Shipments() {
           shipmentLoading={detailLoading}
           detailTab={detailTab}
           onTabChange={setDetailTab}
+          statusOptions={statusOptions}
           onClose={() => {
             setDetailId(null)
             setDetailShipment(null)
@@ -1688,6 +1687,7 @@ export default function Shipments() {
               </header>
               <form onSubmit={handleStageSubmit} className="client-detail-modal__form">
                 <div className="client-detail-modal__body client-detail-modal__body--form">
+                  <div className="client-detail-modal__body-inner">
                   <div className="client-detail-modal__form-grid">
                     <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
                       <label htmlFor="stage-status">{t('shipments.stageNewStatus')}</label>
@@ -1699,8 +1699,8 @@ export default function Shipments() {
                       >
                         <option value="">{t('shipments.stageSelectStatus')}</option>
                         {statusOptions.map((s) => (
-                          <option key={s.id} value={s.key}>
-                            {i18n.language === 'ar' ? s.name_ar : s.name_en || s.key}
+                          <option key={s.id} value={shipmentStatusFilterValue(s)}>
+                            {shipmentStatusLocalizedLabel(s, i18n.language)}
                           </option>
                         ))}
                       </select>
@@ -1724,6 +1724,7 @@ export default function Shipments() {
                         placeholder={t('shipments.stageMessagePlaceholder')}
                       />
                     </div>
+                  </div>
                   </div>
                 </div>
                 <footer className="client-detail-modal__footer client-detail-modal__footer--form">
