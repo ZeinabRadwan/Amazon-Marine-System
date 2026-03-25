@@ -35,14 +35,7 @@ import {
   isPredefinedVisitStatus,
 } from './visitStatus'
 import VisitStatusBadge from './VisitStatusBadge'
-
-function normalizeClientOption(c) {
-  if (!c || c.id == null) return null
-  const name = c.name ?? c.client_name ?? ''
-  const company = c.company_name ?? ''
-  const label = company ? `${company}${name ? ` — ${name}` : ''}` : name || `#${c.id}`
-  return { id: c.id, label }
-}
+import { normalizeClientOption } from '../../utils/entitySelectOptions'
 
 function normalizeVendorOption(v) {
   if (!v || v.id == null) return null
@@ -659,7 +652,8 @@ export default function Visits() {
               { key: 'total_visits', variant: 'blue', icon: ClipboardList },
               { key: 'successful_count', variant: 'green', icon: Calendar },
               { key: 'new_clients_from_visits', variant: 'amber', icon: User },
-            ].map(({ key, variant, icon: Icon }) => {
+            ].map(({ key, variant, icon }) => {
+              const StatIcon = icon
               const value = stats[key]
               const title = t(`visits.stats.${key}`, key.replace(/_/g, ' '))
               const displayValue = typeof value === 'number' ? new Intl.NumberFormat(numberLocale).format(value) : String(value ?? '—')
@@ -668,7 +662,7 @@ export default function Visits() {
                   key={key}
                   title={title}
                   value={displayValue}
-                  icon={<Icon className="h-6 w-6" />}
+                  icon={<StatIcon className="h-6 w-6" />}
                   variant={variant}
                 />
               )

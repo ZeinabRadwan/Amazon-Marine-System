@@ -1010,21 +1010,21 @@ export default function SDForms() {
           />
         ),
       },
-      { key: 'sd_number', label: t('sdForms.sdNumber'), sortKey: 'sd', render: (_, r) => r.sd_number ?? '—' },
-      { key: 'client_name', label: t('sdForms.client'), sortKey: 'client', render: (_, r) => r.client_name ?? '—' },
-      { key: 'pol', label: t('sdForms.pol'), render: (_, r) => r.pol ?? '—' },
-      { key: 'pod', label: t('sdForms.pod'), render: (_, r) => r.pod ?? '—' },
-      {
-        key: 'status',
-        label: t('sdForms.statusLabel'),
-        render: (_, r) => (
-          <span className={`sd-forms-badge ${getStatusBadgeClass(r.status)}`}>
-            {t(`sdForms.status.${r.status}`, r.status)}
-          </span>
-        ),
-      },
-      { key: 'sales_rep_name', label: t('sdForms.salesRep'), render: (_, r) => r.sales_rep_name ?? '—' },
-      { key: 'created_at', label: t('sdForms.createdAt'), sortKey: 'date', render: (_, r) => formatDate(r.created_at) },
+    { key: 'sd_number', label: t('sdForms.sdNumber'), sortKey: 'sd', render: (_, r) => r.sd_number ?? '—' },
+    { key: 'client_name', label: t('sdForms.client'), sortKey: 'client', render: (_, r) => r.client_name ?? '—' },
+    { key: 'pol', label: t('sdForms.pol'), render: (_, r) => r.pol ?? '—' },
+    { key: 'pod', label: t('sdForms.pod'), render: (_, r) => r.pod ?? '—' },
+    {
+      key: 'status',
+      label: t('sdForms.statusLabel'),
+      render: (_, r) => (
+        <span className={`sd-forms-badge ${getStatusBadgeClass(r.status)}`}>
+          {t(`sdForms.status.${r.status}`, r.status)}
+        </span>
+      ),
+    },
+    { key: 'sales_rep_name', label: t('sdForms.salesRep'), render: (_, r) => r.sales_rep_name ?? '—' },
+    { key: 'created_at', label: t('sdForms.createdAt'), sortKey: 'date', render: (_, r) => formatDate(r.created_at) },
       {
         key: 'actions',
         label: t('sdForms.actions'),

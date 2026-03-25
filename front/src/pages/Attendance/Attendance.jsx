@@ -21,6 +21,7 @@ import { getProfile } from '../../api/auth'
 import { listUsers } from '../../api/users'
 import { getSettings } from '../../api/settings'
 import { haversineMeters, wallClockToUtc, formatYmdInTimeZone, durationPartsFromMs } from '../../utils/geoTime'
+import { normalizeEmployeeOption } from '../../utils/entitySelectOptions'
 import { Container } from '../../components/Container'
 import '../../components/PageHeader/PageHeader.css'
 import { Table } from '../../components/Table'
@@ -28,11 +29,11 @@ import Pagination from '../../components/Pagination'
 import Tabs from '../../components/Tabs'
 import { StatsCard } from '../../components/StatsCard'
 import LoaderDots from '../../components/LoaderDots'
+import LeafletOfficeMapPreview from '../../components/LeafletOfficeMapPreview/LeafletOfficeMapPreview'
 import Alert from '../../components/Alert'
 import {
   LogIn,
   LogOut,
-  RefreshCw,
   Clock,
   UserX,
   Download,
@@ -41,6 +42,7 @@ import {
   Building2,
   Timer,
   Paperclip,
+  XCircle,
   RotateCcw,
 } from 'lucide-react'
 import '../../components/LoaderDots/LoaderDots.css'
@@ -206,6 +208,7 @@ export default function Attendance() {
   const [myExcuses, setMyExcuses] = useState([])
   const [excusesLoading, setExcusesLoading] = useState(false)
   const [excuseForm, setExcuseForm] = useState({ date: today, reason: '', file: null })
+  const [excuseErrors, setExcuseErrors] = useState({})
   const [excuseSubmitting, setExcuseSubmitting] = useState(false)
 
   const [adminFilters, setAdminFilters] = useState({
@@ -248,10 +251,11 @@ export default function Attendance() {
     const needUsers =
       (activeSection === 'my' && canFilterAll) || (activeSection === 'admin' && canAdminAttendance)
     if (!needUsers) return
-    listUsers(token, { status: 'active' })
+    listUsers(token, { per_page: 500, status: 'active' })
       .then((data) => {
         const list = data.data ?? data.users ?? data
-        setEmployeeOptions(Array.isArray(list) ? list : [])
+        const arr = Array.isArray(list) ? list : []
+        setEmployeeOptions(arr.map(normalizeEmployeeOption).filter(Boolean))
       })
       .catch(() => setEmployeeOptions([]))
   }, [token, canFilterAll, canAdminAttendance, activeSection])
@@ -502,6 +506,14 @@ export default function Attendance() {
   const handleSubmitExcuse = async (e) => {
     e.preventDefault()
     if (!token) return
+    const nextErrors = {}
+    if (!excuseForm.date) nextErrors.date = t('attendance.date')
+    if (!excuseForm.reason?.trim()) nextErrors.reason = t('attendance.excuses.reason')
+    if (Object.keys(nextErrors).length > 0) {
+      setExcuseErrors(nextErrors)
+      return
+    }
+    setExcuseErrors({})
     setExcuseSubmitting(true)
     setAlert(null)
     try {
@@ -512,12 +524,18 @@ export default function Attendance() {
       })
       setAlert({ type: 'success', message: t('attendance.excuses.submitSuccess') })
       setExcuseForm({ date: today, reason: '', file: null })
+      setExcuseErrors({})
       loadMyExcuses()
     } catch (err) {
       setAlert({ type: 'error', message: err.message || t('attendance.error') })
     } finally {
       setExcuseSubmitting(false)
     }
+  }
+
+  const handleResetExcuseForm = () => {
+    setExcuseForm({ date: today, reason: '', file: null })
+    setExcuseErrors({})
   }
 
   const handleOpenAdminExcuseAttachment = async (id) => {
@@ -860,6 +878,28 @@ export default function Attendance() {
     { key: 'status', label: t('attendance.status'), sortable: true },
   ]
 
+  const adminReportMetrics = useMemo(() => {
+    const employeesCount = Array.isArray(adminSummary) ? adminSummary.length : 0
+    const totalDays = Array.isArray(adminSummary)
+      ? adminSummary.reduce((sum, row) => sum + Number(row.total_days || 0), 0)
+      : 0
+    const avgWorked =
+      employeesCount > 0
+        ? (
+            adminSummary.reduce((sum, row) => sum + Number(row.avg_worked_hours || 0), 0) /
+            employeesCount
+          ).toFixed(2)
+        : '0.00'
+    const recordsCount = adminMeta?.total ?? sortedAdminItems.length ?? 0
+
+    return {
+      recordsCount,
+      employeesCount,
+      totalDays,
+      avgWorked,
+    }
+  }, [adminSummary, adminMeta?.total, sortedAdminItems.length])
+
   return (
     <Container size="xl">
       <div className="clients-page attendance-page">
@@ -873,29 +913,36 @@ export default function Attendance() {
               <div className="attendance-dashboard__grid">
                 <section className="attendance-dashboard__card attendance-dashboard__card--time">
                   <div className="attendance-dashboard__card-head">
-                    <Timer className="attendance-dashboard__head-icon" size={22} aria-hidden />
-                    <h2 className="attendance-dashboard__card-title">{t('attendance.dashboard.timeTitle')}</h2>
+                    <div className="attendance-dashboard__card-head-text">
+                      <Timer className="attendance-dashboard__head-icon" size={22} aria-hidden />
+                      <h2 className="attendance-dashboard__card-title">{t('attendance.dashboard.timeTitle')}</h2>
+                    </div>
                   </div>
-                  <time
-                    className="attendance-dashboard__now-clock"
-                    dateTime={liveDashboard.now.toISOString()}
-                    suppressHydrationWarning
-                  >
-                    {liveDashboard.now.toLocaleTimeString(undefined, {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      second: '2-digit',
-                    })}
-                  </time>
-                  <p className="attendance-dashboard__tz-hint">
-                    {t('attendance.dashboard.tzNote', { tz: liveDashboard.workTz })}
-                  </p>
-                  <p className="attendance-dashboard__schedule-hint">
-                    {t('attendance.dashboard.scheduleWindow', {
-                      start: liveDashboard.workdayStart,
-                      end: liveDashboard.workdayEnd,
-                    })}
-                  </p>
+
+                  <div className="attendance-dashboard__now-block">
+                    <span className="attendance-dashboard__now-label">{t('attendance.dashboard.nowLiveLabel')}</span>
+                    <time
+                      className="attendance-dashboard__now-clock"
+                      dateTime={liveDashboard.now.toISOString()}
+                      suppressHydrationWarning
+                    >
+                      {liveDashboard.now.toLocaleTimeString(undefined, {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                      })}
+                    </time>
+                    <div className="attendance-dashboard__meta-chips" aria-label={t('attendance.dashboard.timeTitle')}>
+                      <span className="attendance-dashboard__meta-chip">{t('attendance.dashboard.tzNote', { tz: liveDashboard.workTz })}</span>
+                      <span className="attendance-dashboard__meta-chip attendance-dashboard__meta-chip--accent">
+                        {t('attendance.dashboard.scheduleWindow', {
+                          start: liveDashboard.workdayStart,
+                          end: liveDashboard.workdayEnd,
+                        })}
+                      </span>
+                    </div>
+                  </div>
+
                   <div
                     className={`attendance-dashboard__pill attendance-dashboard__pill--${liveDashboard.shiftPhase}`}
                     role="status"
@@ -904,21 +951,83 @@ export default function Attendance() {
                     {liveDashboard.shiftPhase === 'not_in' && t('attendance.dashboard.statusNotIn')}
                     {liveDashboard.shiftPhase === 'done' && t('attendance.dashboard.statusDone')}
                   </div>
-                  <div className="attendance-dashboard__pairs">
+
+                  <div className="attendance-dashboard__shifts-section">
+                    <h3 className="attendance-dashboard__section-heading">{t('attendance.dashboard.shiftsSectionTitle')}</h3>
+                    <div className="attendance-dashboard__pairs">
                     <div className="attendance-dashboard__pair">
                       <span className="attendance-dashboard__k">{t('attendance.dashboard.clockInTime')}</span>
-                      <span className="attendance-dashboard__v">
-                        {formatTime(myRecordToday?.check_in_at_local || myRecordToday?.check_in_at)}
-                      </span>
+                      <div className="attendance-dashboard__pair-value-row">
+                        <span className="attendance-dashboard__v">
+                          {formatTime(myRecordToday?.check_in_at_local || myRecordToday?.check_in_at)}
+                        </span>
+                        <span
+                          className={`attendance-dashboard__done-pill ${hasCheckedIn ? 'attendance-dashboard__done-pill--yes' : ''}`}
+                        >
+                          {hasCheckedIn ? t('attendance.yes') : t('attendance.dashboard.notYet')}
+                        </span>
+                      </div>
+                      {todayLoading && (
+                        <p className="attendance-dashboard__pair-loading">{t('attendance.loading')}</p>
+                      )}
+                      {!todayLoading && !hasCheckedIn && (
+                        <div className="attendance-dashboard__pair-action">
+                          <button
+                            type="button"
+                            className="attendance-btn attendance-btn--checkin page-header__btn page-header__btn--primary attendance-dashboard__clock-btn"
+                            onClick={handleCheckIn}
+                            disabled={checkInSubmitting || liveDashboard.clockInBlockedBySchedule}
+                            aria-label={t('attendance.checkIn')}
+                            title={
+                              liveDashboard.clockInBlockedBySchedule
+                                ? t('attendance.scheduleBlockBeforeStart', {
+                                    start: liveDashboard.workdayStart,
+                                    tz: liveDashboard.workTz,
+                                  })
+                                : t('attendance.checkIn')
+                            }
+                          >
+                            <LogIn size={18} aria-hidden />
+                            {checkInSubmitting ? t('attendance.saving') : t('attendance.checkIn')}
+                          </button>
+                        </div>
+                      )}
                     </div>
                     <div className="attendance-dashboard__pair">
                       <span className="attendance-dashboard__k">{t('attendance.dashboard.clockOutTime')}</span>
-                      <span className="attendance-dashboard__v">
-                        {formatTime(myRecordToday?.check_out_at_local || myRecordToday?.check_out_at)}
-                      </span>
+                      <div className="attendance-dashboard__pair-value-row">
+                        <span className="attendance-dashboard__v">
+                          {formatTime(myRecordToday?.check_out_at_local || myRecordToday?.check_out_at)}
+                        </span>
+                        <span
+                          className={`attendance-dashboard__done-pill ${hasCheckedOut ? 'attendance-dashboard__done-pill--yes' : ''}`}
+                        >
+                          {hasCheckedOut ? t('attendance.yes') : t('attendance.dashboard.notYet')}
+                        </span>
+                      </div>
+                      {!todayLoading && hasCheckedIn && !hasCheckedOut && (
+                        <div className="attendance-dashboard__pair-action">
+                          <button
+                            type="button"
+                            className="attendance-btn attendance-btn--checkout page-header__btn attendance-dashboard__clock-btn"
+                            onClick={handleCheckOut}
+                            disabled={checkOutSubmitting}
+                            aria-label={t('attendance.checkOut')}
+                            title={t('attendance.checkOut')}
+                          >
+                            <LogOut size={18} aria-hidden />
+                            {checkOutSubmitting ? t('attendance.saving') : t('attendance.checkOut')}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
+                  </div>
+
                   <div className="attendance-dashboard__timeline" aria-hidden={false}>
+                    <h3 className="attendance-dashboard__section-heading attendance-dashboard__section-heading--timeline">
+                      {t('attendance.dashboard.timelineSectionTitle')}
+                    </h3>
                     <div className="attendance-dashboard__timeline-labels">
                       <span>{t('attendance.dashboard.axisStart')}</span>
                       <span>{t('attendance.dashboard.axisNow')}</span>
@@ -953,11 +1062,15 @@ export default function Attendance() {
                         )
                       })()}
                     </div>
-                    <p className="attendance-dashboard__timeline-caption">
-                      {liveDashboard.shiftPhase === 'on_shift'
-                        ? t('attendance.dashboard.timelineOnShift')
-                        : t('attendance.dashboard.timelineSchedule')}
-                    </p>
+                    {(() => {
+                      const timelineCaption =
+                        liveDashboard.shiftPhase === 'on_shift'
+                          ? t('attendance.dashboard.timelineOnShift')
+                          : t('attendance.dashboard.timelineSchedule')
+                      return timelineCaption?.trim() ? (
+                        <p className="attendance-dashboard__timeline-caption">{timelineCaption}</p>
+                      ) : null
+                    })()}
                   </div>
                   <ul className="attendance-dashboard__stats">
                     {liveDashboard.elapsedMs != null && (
@@ -1016,25 +1129,15 @@ export default function Attendance() {
                       {liveDashboard.office &&
                       Number.isFinite(liveDashboard.office.lat) &&
                       Number.isFinite(liveDashboard.office.lng) ? (
-                        <>
-                          <p className="attendance-dashboard__geo-coords" dir="ltr">
-                            {liveDashboard.office.lat.toFixed(5)}, {liveDashboard.office.lng.toFixed(5)}
-                          </p>
-                          {liveDashboard.radiusM != null ? (
-                            <p className="attendance-dashboard__geo-meta">
-                              {t('attendance.locationPanel.radius', { m: liveDashboard.radiusM })}
-                            </p>
-                          ) : null}
-                          <a
-                            className="attendance-dashboard__map-link"
-                            href={`https://www.openstreetmap.org/?mlat=${liveDashboard.office.lat}&mlon=${liveDashboard.office.lng}#map=17/${liveDashboard.office.lat}/${liveDashboard.office.lng}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            <MapPin size={14} aria-hidden />
-                            {t('attendance.locationPanel.openMap')}
-                          </a>
-                        </>
+                        <div className="attendance-dashboard__office-map-wrap">
+                          <LeafletOfficeMapPreview
+                            lat={liveDashboard.office.lat}
+                            lng={liveDashboard.office.lng}
+                            radiusMeters={liveDashboard.radiusM}
+                            userLat={userGeo.status === 'ok' ? userGeo.lat : undefined}
+                            userLng={userGeo.status === 'ok' ? userGeo.lng : undefined}
+                          />
+                        </div>
                       ) : (
                         <p className="attendance-dashboard__geo-empty">{t('attendance.locationPanel.noOffice')}</p>
                       )}
@@ -1050,39 +1153,18 @@ export default function Attendance() {
                       {userGeo.status === 'error' && (
                         <p className="attendance-dashboard__geo-empty">{t('attendance.locationPanel.geoError')}</p>
                       )}
-                      {userGeo.status === 'ok' && userGeo.lat != null && userGeo.lng != null && (
-                        <>
-                          <p className="attendance-dashboard__geo-coords" dir="ltr">
-                            {userGeo.lat.toFixed(5)}, {userGeo.lng.toFixed(5)}
+                      {userGeo.status === 'ok' &&
+                        userGeo.lat != null &&
+                        userGeo.lng != null &&
+                        userGeo.accuracy != null &&
+                        Number.isFinite(userGeo.accuracy) && (
+                          <p className="attendance-dashboard__geo-meta">
+                            {t('attendance.locationPanel.accuracy', { m: Math.round(userGeo.accuracy) })}
                           </p>
-                          {userGeo.accuracy != null && Number.isFinite(userGeo.accuracy) ? (
-                            <p className="attendance-dashboard__geo-meta">
-                              {t('attendance.locationPanel.accuracy', { m: Math.round(userGeo.accuracy) })}
-                            </p>
-                          ) : null}
-                          <a
-                            className="attendance-dashboard__map-link"
-                            href={`https://www.openstreetmap.org/?mlat=${userGeo.lat}&mlon=${userGeo.lng}#map=17/${userGeo.lat}/${userGeo.lng}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            <MapPin size={14} aria-hidden />
-                            {t('attendance.locationPanel.openMap')}
-                          </a>
-                        </>
-                      )}
+                        )}
                       {userGeo.status === 'idle' && (
                         <p className="attendance-dashboard__geo-empty">{t('attendance.locationPanel.geoIdle')}</p>
                       )}
-                      <button
-                        type="button"
-                        className="attendance-dashboard__geo-refresh page-header__btn"
-                        onClick={refreshUserLocation}
-                        disabled={userGeo.status === 'loading'}
-                      >
-                        <RefreshCw size={16} aria-hidden />
-                        {t('attendance.locationPanel.refreshGps')}
-                      </button>
                     </div>
                   </div>
                   <div className="attendance-dashboard__distance-banner">
@@ -1145,50 +1227,6 @@ export default function Attendance() {
               </div>
             )}
 
-            <div className="clients-header attendance-header">
-              <div className="attendance-header-actions">
-                <div className="attendance-status-strip" aria-live="polite" role="status">
-                  <span className="attendance-status-item attendance-status-item--label">{t('attendance.myAttendance')}</span>
-                  <span
-                    className={`attendance-status-item attendance-status-item--checkin ${hasCheckedIn ? 'attendance-status-item--active' : ''}`}
-                    title={t('attendance.checkedIn')}
-                  >
-                    {t('attendance.checkedIn')}
-                  </span>
-                  <span
-                    className={`attendance-status-item attendance-status-item--checkout ${hasCheckedOut ? 'attendance-status-item--active' : ''}`}
-                    title={t('attendance.checkedOut')}
-                  >
-                    {t('attendance.checkedOut')}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  className="page-header__btn attendance-refresh-btn"
-                  onClick={() => {
-                    setFilters((f) => ({
-                      ...f,
-                      from: today,
-                      to: today,
-                      user_id: '',
-                      status: '',
-                      device_type: '',
-                      is_within_radius: '',
-                      page: 1,
-                    }))
-                    refreshToday()
-                    refreshUserLocation()
-                  }}
-                  disabled={loading}
-                  aria-label={t('attendance.refresh')}
-                  title={t('attendance.refresh')}
-                >
-                  <RefreshCw className="clients-filters__btn-icon-svg" size={18} aria-hidden />
-                  {t('attendance.refresh')}
-                </button>
-              </div>
-            </div>
-
             {stats && typeof stats === 'object' && (
               <div className="clients-stats-grid">
                 <StatsCard
@@ -1218,77 +1256,24 @@ export default function Attendance() {
               </div>
             )}
 
-            <div className="attendance-actions-card clients-filters-card">
-              <div className="clients-filters__row clients-filters__row--main">
-                <div className="min-w-0 flex-1">
-                  <h2 className="attendance-actions-title">{t('attendance.myAttendance')}</h2>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-0">{t('attendance.geoHint')}</p>
-                </div>
-                {todayLoading ? (
-                  <p className="attendance-actions-loading">{t('attendance.loading')}</p>
-                ) : (
-                  <div className="attendance-actions-buttons">
-                    <button
-                      type="button"
-                      className="attendance-btn attendance-btn--checkin page-header__btn page-header__btn--primary"
-                      onClick={handleCheckIn}
-                      disabled={checkInSubmitting || hasCheckedIn || liveDashboard.clockInBlockedBySchedule}
-                      aria-label={t('attendance.checkIn')}
-                      aria-pressed={hasCheckedIn}
-                      title={
-                        hasCheckedIn
-                          ? t('attendance.checkedIn')
-                          : liveDashboard.clockInBlockedBySchedule
-                            ? t('attendance.scheduleBlockBeforeStart', {
-                                start: liveDashboard.workdayStart,
-                                tz: liveDashboard.workTz,
-                              })
-                            : t('attendance.checkIn')
-                      }
-                    >
-                      <LogIn size={18} aria-hidden />
-                      {checkInSubmitting ? t('attendance.saving') : hasCheckedIn ? t('attendance.checkedIn') : t('attendance.checkIn')}
-                    </button>
-                    {hasCheckedIn && !hasCheckedOut && (
-                      <button
-                        type="button"
-                        className="attendance-btn attendance-btn--checkout page-header__btn"
-                        onClick={handleCheckOut}
-                        disabled={checkOutSubmitting}
-                        aria-label={t('attendance.checkOut')}
-                        title={t('attendance.checkOut')}
-                      >
-                        <LogOut size={18} aria-hidden />
-                        {checkOutSubmitting ? t('attendance.saving') : t('attendance.checkOut')}
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-
             <div className="clients-filters-card attendance-filters-card">
-              <div className="clients-filters__row clients-filters__row--main attendance-filters-row flex-wrap gap-3">
-                {canFilterAll && (
-                  <label className="attendance-filter-label min-w-[200px] flex-1">
-                    <span>{t('attendance.filters.employee')}</span>
+              <div className="clients-filters__row clients-filters__row--main">
+                <div className="clients-filters__fields flex flex-wrap gap-2">
+                  {canFilterAll && (
                     <select
-                      className="clients-select w-full"
                       value={filters.user_id}
                       onChange={(e) => setFilters((f) => ({ ...f, user_id: e.target.value, page: 1 }))}
+                      className="clients-input min-w-[10rem]"
                       aria-label={t('attendance.filters.employee')}
                     >
                       <option value="">{t('attendance.filters.allEmployees')}</option>
                       {employeeOptions.map((u) => (
-                        <option key={u.id} value={String(u.id)}>
-                          {u.name ?? u.email ?? `#${u.id}`}
+                        <option key={u.id} value={u.id}>
+                          {u.label}
                         </option>
                       ))}
                     </select>
-                  </label>
-                )}
-                <label className="attendance-filter-label">
-                  <span>{t('attendance.from')}</span>
+                  )}
                   <input
                     type="date"
                     value={filters.from}
@@ -1296,9 +1281,6 @@ export default function Attendance() {
                     className="clients-input"
                     aria-label={t('attendance.from')}
                   />
-                </label>
-                <label className="attendance-filter-label">
-                  <span>{t('attendance.to')}</span>
                   <input
                     type="date"
                     value={filters.to}
@@ -1306,11 +1288,8 @@ export default function Attendance() {
                     className="clients-input"
                     aria-label={t('attendance.to')}
                   />
-                </label>
-                <label className="attendance-filter-label">
-                  <span>{t('attendance.status')}</span>
                   <select
-                    className="clients-select"
+                    className="clients-input min-w-[8rem]"
                     value={filters.status}
                     onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value, page: 1 }))}
                     aria-label={t('attendance.status')}
@@ -1322,11 +1301,8 @@ export default function Attendance() {
                     <option value="absent">absent</option>
                     <option value="excused">excused</option>
                   </select>
-                </label>
-                <label className="attendance-filter-label">
-                  <span>{t('attendance.device')}</span>
                   <select
-                    className="clients-select"
+                    className="clients-input min-w-[8rem]"
                     value={filters.device_type}
                     onChange={(e) => setFilters((f) => ({ ...f, device_type: e.target.value, page: 1 }))}
                     aria-label={t('attendance.device')}
@@ -1339,11 +1315,8 @@ export default function Attendance() {
                     <option value="linux">linux</option>
                     <option value="unknown">unknown</option>
                   </select>
-                </label>
-                <label className="attendance-filter-label">
-                  <span>{t('attendance.withinRadius')}</span>
                   <select
-                    className="clients-select"
+                    className="clients-input min-w-[8rem]"
                     value={filters.is_within_radius}
                     onChange={(e) => setFilters((f) => ({ ...f, is_within_radius: e.target.value, page: 1 }))}
                     aria-label={t('attendance.withinRadius')}
@@ -1352,29 +1325,27 @@ export default function Attendance() {
                     <option value="1">{t('attendance.yes')}</option>
                     <option value="0">{t('attendance.no')}</option>
                   </select>
-                </label>
-                <div className="clients-filters__actions">
-                  <button
-                    type="button"
-                    className="clients-filters__clear clients-filters__btn-icon"
-                    onClick={() =>
-                      setFilters((f) => ({
-                        ...f,
-                        from: today,
-                        to: today,
-                        user_id: '',
-                        status: '',
-                        device_type: '',
-                        is_within_radius: '',
-                        page: 1,
-                      }))
-                    }
-                    aria-label={t('attendance.refresh')}
-                    title={t('attendance.refresh')}
-                  >
-                    <RotateCcw className="clients-filters__btn-icon-svg" aria-hidden />
-                  </button>
                 </div>
+                <button
+                  type="button"
+                  className="clients-filters__clear clients-filters__btn-icon"
+                  onClick={() =>
+                    setFilters((f) => ({
+                      ...f,
+                      from: today,
+                      to: today,
+                      user_id: '',
+                      status: '',
+                      device_type: '',
+                      is_within_radius: '',
+                      page: 1,
+                    }))
+                  }
+                  aria-label={t('attendance.refresh')}
+                  title={t('attendance.refresh')}
+                >
+                  <RotateCcw className="clients-filters__btn-icon-svg" aria-hidden />
+                </button>
               </div>
             </div>
 
@@ -1424,59 +1395,126 @@ export default function Attendance() {
         )}
 
         {activeSection === 'excuses' && (
-          <div className="clients-filters-card space-y-6">
-            <h2 className="text-lg font-semibold">{t('attendance.excuses.submitTitle')}</h2>
-            <form className="settings-form settings-form--stacked max-w-xl" onSubmit={handleSubmitExcuse}>
-              <label className="settings-input-wrap">
-                <span className="settings-input-label">{t('attendance.date')}</span>
-                <input
-                  type="date"
-                  className="clients-input"
-                  value={excuseForm.date}
-                  onChange={(e) => setExcuseForm((f) => ({ ...f, date: e.target.value }))}
-                  required
-                />
-              </label>
-              <label className="settings-input-wrap">
-                <span className="settings-input-label">{t('attendance.excuses.reason')}</span>
-                <textarea
-                  className="clients-input min-h-[120px]"
-                  value={excuseForm.reason}
-                  onChange={(e) => setExcuseForm((f) => ({ ...f, reason: e.target.value }))}
-                  required
-                />
-              </label>
-              <label className="settings-input-wrap">
-                <span className="settings-input-label">{t('attendance.excuses.attachment')}</span>
-                <input
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png,.webp"
-                  onChange={(e) => setExcuseForm((f) => ({ ...f, file: e.target.files?.[0] || null }))}
-                />
-              </label>
-              <button type="submit" className="page-header__btn page-header__btn--primary" disabled={excuseSubmitting}>
-                {excuseSubmitting ? t('attendance.saving') : t('attendance.excuses.submit')}
-              </button>
-            </form>
+          <div className="space-y-6">
+            <div className="clients-filters-card attendance-excuse-card">
+              <div className="clients-filters__row clients-filters__row--main">
+                <div className="min-w-0 flex-1">
+                  <h2 className="attendance-excuse-title">{t('attendance.excuses.submitTitle')}</h2>
+                  <p className="attendance-excuse-subtitle">
+                    {t('attendance.excuses.submitHint', 'Fill in the form and submit your excuse request.')}
+                  </p>
+                </div>
+              </div>
 
-            <h2 className="text-lg font-semibold">{t('attendance.excuses.myList')}</h2>
-            {excusesLoading ? (
-              <LoaderDots />
-            ) : myExcuses.length === 0 ? (
-              <p className="clients-empty">{t('attendance.excuses.empty')}</p>
-            ) : (
-              <ul className="space-y-3">
-                {myExcuses.map((ex) => (
-                  <li key={ex.id} className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
-                    <div className="flex flex-wrap justify-between gap-2">
-                      <span className="font-medium">{formatDateOnly(ex.date)}</span>
-                      <span className="text-sm uppercase text-gray-600 dark:text-gray-400">{ex.status}</span>
+              <form className="attendance-excuse-form" onSubmit={handleSubmitExcuse}>
+                <div className="attendance-excuse-grid">
+                  <label className="settings-input-wrap">
+                    <span className="settings-input-label">{t('attendance.date')}</span>
+                    <input
+                      type="date"
+                      className={`clients-input ${excuseErrors.date ? 'attendance-input--error' : ''}`}
+                      value={excuseForm.date}
+                      onChange={(e) => {
+                        setExcuseForm((f) => ({ ...f, date: e.target.value }))
+                        if (excuseErrors.date) setExcuseErrors((prev) => ({ ...prev, date: undefined }))
+                      }}
+                      required
+                    />
+                    {excuseErrors.date && (
+                      <span className="attendance-field-error">
+                        {t('attendance.excuses.requiredField', { field: excuseErrors.date, defaultValue: `${excuseErrors.date} is required` })}
+                      </span>
+                    )}
+                  </label>
+
+                  <label className="settings-input-wrap">
+                    <span className="settings-input-label">{t('attendance.excuses.attachment')}</span>
+                    <div className="attendance-file-upload">
+                      <label className="page-header__btn attendance-file-upload__choose">
+                        <Paperclip size={16} aria-hidden />
+                        <span>{t('attendance.excuses.chooseFile', 'Choose file')}</span>
+                        <input
+                          type="file"
+                          className="attendance-file-upload__input"
+                          accept=".pdf,.jpg,.jpeg,.png,.webp"
+                          onChange={(e) => setExcuseForm((f) => ({ ...f, file: e.target.files?.[0] || null }))}
+                        />
+                      </label>
+                      {excuseForm.file ? (
+                        <div className="attendance-file-upload__selected">
+                          <span className="attendance-file-upload__name">{excuseForm.file.name}</span>
+                          <button
+                            type="button"
+                            className="clients-filters__btn-icon"
+                            onClick={() => setExcuseForm((f) => ({ ...f, file: null }))}
+                            aria-label={t('attendance.excuses.removeFile', 'Remove file')}
+                            title={t('attendance.excuses.removeFile', 'Remove file')}
+                          >
+                            <XCircle className="clients-filters__btn-icon-svg" aria-hidden />
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="attendance-file-upload__hint">{t('attendance.excuses.noFile', 'No file selected')}</span>
+                      )}
                     </div>
-                    <p className="mt-2 text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{ex.reason}</p>
-                  </li>
-                ))}
-              </ul>
-            )}
+                  </label>
+
+                  <label className="settings-input-wrap attendance-excuse-grid__full">
+                    <span className="settings-input-label">{t('attendance.excuses.reason')}</span>
+                    <textarea
+                      className={`clients-input min-h-[120px] ${excuseErrors.reason ? 'attendance-input--error' : ''}`}
+                      value={excuseForm.reason}
+                      onChange={(e) => {
+                        setExcuseForm((f) => ({ ...f, reason: e.target.value }))
+                        if (excuseErrors.reason) setExcuseErrors((prev) => ({ ...prev, reason: undefined }))
+                      }}
+                      placeholder={t('attendance.excuses.reasonPlaceholder', 'Write the reason in detail...')}
+                      required
+                    />
+                    {excuseErrors.reason && (
+                      <span className="attendance-field-error">
+                        {t('attendance.excuses.requiredField', { field: excuseErrors.reason, defaultValue: `${excuseErrors.reason} is required` })}
+                      </span>
+                    )}
+                  </label>
+                </div>
+
+                <div className="attendance-excuse-actions">
+                  <button type="button" className="page-header__btn" onClick={handleResetExcuseForm} disabled={excuseSubmitting}>
+                    {t('attendance.clear', 'Reset')}
+                  </button>
+                  <button type="submit" className="page-header__btn page-header__btn--primary" disabled={excuseSubmitting}>
+                    {excuseSubmitting ? t('attendance.saving') : t('attendance.excuses.submit')}
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <div className="clients-filters-card attendance-my-excuses-card">
+              <div className="attendance-my-excuses-head">
+                <h2 className="text-lg font-semibold">{t('attendance.excuses.myList')}</h2>
+                <span className="attendance-my-excuses-count">{myExcuses.length}</span>
+              </div>
+              {excusesLoading ? (
+                <LoaderDots />
+              ) : myExcuses.length === 0 ? (
+                <p className="clients-empty">{t('attendance.excuses.empty')}</p>
+              ) : (
+                <ul className="attendance-my-excuses-list">
+                  {myExcuses.map((ex) => (
+                    <li key={ex.id} className="attendance-my-excuses-item">
+                      <div className="attendance-my-excuses-item__head">
+                        <span className="attendance-my-excuses-item__date">{formatDateOnly(ex.date)}</span>
+                        <span className={`attendance-my-excuses-item__status attendance-my-excuses-item__status--${String(ex.status || '').toLowerCase()}`}>
+                          {String(ex.status || '—').replace(/_/g, ' ')}
+                        </span>
+                      </div>
+                      <p className="attendance-my-excuses-item__reason">{ex.reason}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         )}
 
@@ -1484,113 +1522,102 @@ export default function Attendance() {
           <div className="space-y-6">
             {canAdminAttendance ? (
               <>
-            <div className="clients-filters-card">
-              <div className="clients-filters__row clients-filters__row--main flex-wrap items-end gap-3">
-              <label className="attendance-filter-label min-w-[200px] flex-1">
-                <span>{t('attendance.filters.employee')}</span>
-                <select
-                  className="clients-select w-full"
-                  value={adminFilters.employee_id}
-                  onChange={(e) => setAdminFilters((f) => ({ ...f, employee_id: e.target.value, page: 1 }))}
-                  aria-label={t('attendance.filters.employee')}
-                >
-                  <option value="">{t('attendance.filters.allEmployees')}</option>
-                  {employeeOptions.map((u) => (
-                    <option key={u.id} value={String(u.id)}>
-                      {u.name ?? u.email ?? `#${u.id}`}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="attendance-filter-label">
-                <span>{t('attendance.from')}</span>
-                <input
-                  type="date"
-                  className="clients-input"
-                  value={adminFilters.date_from}
-                  onChange={(e) => setAdminFilters((f) => ({ ...f, date_from: e.target.value, page: 1 }))}
-                />
-              </label>
-              <label className="attendance-filter-label">
-                <span>{t('attendance.to')}</span>
-                <input
-                  type="date"
-                  className="clients-input"
-                  value={adminFilters.date_to}
-                  onChange={(e) => setAdminFilters((f) => ({ ...f, date_to: e.target.value, page: 1 }))}
-                />
-              </label>
-              <label className="attendance-filter-label">
-                <span>{t('attendance.status')}</span>
-                <select
-                  className="clients-select"
-                  value={adminFilters.status}
-                  onChange={(e) => setAdminFilters((f) => ({ ...f, status: e.target.value, page: 1 }))}
-                >
-                  <option value="">{t('attendance.admin.all')}</option>
-                  <option value="on_time">on_time</option>
-                  <option value="late">late</option>
-                  <option value="early_leave">early_leave</option>
-                  <option value="absent">absent</option>
-                  <option value="excused">excused</option>
-                </select>
-              </label>
-              <label className="attendance-filter-label">
-                <span>{t('attendance.device')}</span>
-                <select
-                  className="clients-select"
-                  value={adminFilters.device_type}
-                  onChange={(e) => setAdminFilters((f) => ({ ...f, device_type: e.target.value, page: 1 }))}
-                >
-                  <option value="">{t('attendance.admin.all')}</option>
-                  <option value="android">android</option>
-                  <option value="ios">ios</option>
-                  <option value="windows">windows</option>
-                  <option value="mac">mac</option>
-                  <option value="linux">linux</option>
-                  <option value="unknown">unknown</option>
-                </select>
-              </label>
-              <label className="attendance-filter-label">
-                <span>{t('attendance.withinRadius')}</span>
-                <select
-                  className="clients-select"
-                  value={adminFilters.is_within_radius}
-                  onChange={(e) => setAdminFilters((f) => ({ ...f, is_within_radius: e.target.value, page: 1 }))}
-                >
-                  <option value="">{t('attendance.admin.all')}</option>
-                  <option value="1">{t('attendance.yes')}</option>
-                  <option value="0">{t('attendance.no')}</option>
-                </select>
-              </label>
-              <label className="attendance-filter-label">
-                <span>{t('attendance.perPage')}</span>
-                <select
-                  className="clients-select"
-                  value={adminFilters.per_page}
-                  onChange={(e) =>
-                    setAdminFilters((f) => ({ ...f, per_page: Number(e.target.value), page: 1 }))
-                  }
-                  aria-label={t('attendance.perPage')}
-                >
-                  {[10, 15, 25, 50, 100].map((n) => (
-                    <option key={n} value={n}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <button
-                type="button"
-                className="page-header__btn page-header__btn--primary"
-                onClick={() => {
-                  setAdminFilters((f) => ({ ...f, page: 1 }))
-                  setAdminRefresh((n) => n + 1)
-                }}
-              >
-                {t('attendance.admin.apply')}
-              </button>
-              <div className="clients-filters__actions">
+            <div className="clients-filters-card attendance-admin-card">
+              <div className="attendance-admin-head">
+                <h2 className="attendance-admin-title">{t('attendance.tabs.admin')}</h2>
+                <p className="attendance-admin-subtitle">{t('attendance.admin.reportHint', 'Filter and review attendance report data by employee, period, and status.')}</p>
+              </div>
+              <div className="clients-filters__row clients-filters__row--main">
+                <div className="clients-filters__fields flex flex-wrap gap-2">
+                  <select
+                    className="clients-input min-w-[10rem]"
+                    value={adminFilters.employee_id}
+                    onChange={(e) => setAdminFilters((f) => ({ ...f, employee_id: e.target.value, page: 1 }))}
+                    aria-label={t('attendance.filters.employee')}
+                  >
+                    <option value="">{t('attendance.filters.allEmployees')}</option>
+                    {employeeOptions.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.label}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="date"
+                    className="clients-input"
+                    value={adminFilters.date_from}
+                    onChange={(e) => setAdminFilters((f) => ({ ...f, date_from: e.target.value, page: 1 }))}
+                    aria-label={t('attendance.from')}
+                  />
+                  <input
+                    type="date"
+                    className="clients-input"
+                    value={adminFilters.date_to}
+                    onChange={(e) => setAdminFilters((f) => ({ ...f, date_to: e.target.value, page: 1 }))}
+                    aria-label={t('attendance.to')}
+                  />
+                  <select
+                    className="clients-input min-w-[8rem]"
+                    value={adminFilters.status}
+                    onChange={(e) => setAdminFilters((f) => ({ ...f, status: e.target.value, page: 1 }))}
+                    aria-label={t('attendance.status')}
+                  >
+                    <option value="">{t('attendance.admin.all')}</option>
+                    <option value="on_time">on_time</option>
+                    <option value="late">late</option>
+                    <option value="early_leave">early_leave</option>
+                    <option value="absent">absent</option>
+                    <option value="excused">excused</option>
+                  </select>
+                  <select
+                    className="clients-input min-w-[8rem]"
+                    value={adminFilters.device_type}
+                    onChange={(e) => setAdminFilters((f) => ({ ...f, device_type: e.target.value, page: 1 }))}
+                    aria-label={t('attendance.device')}
+                  >
+                    <option value="">{t('attendance.admin.all')}</option>
+                    <option value="android">android</option>
+                    <option value="ios">ios</option>
+                    <option value="windows">windows</option>
+                    <option value="mac">mac</option>
+                    <option value="linux">linux</option>
+                    <option value="unknown">unknown</option>
+                  </select>
+                  <select
+                    className="clients-input min-w-[8rem]"
+                    value={adminFilters.is_within_radius}
+                    onChange={(e) => setAdminFilters((f) => ({ ...f, is_within_radius: e.target.value, page: 1 }))}
+                    aria-label={t('attendance.withinRadius')}
+                  >
+                    <option value="">{t('attendance.admin.all')}</option>
+                    <option value="1">{t('attendance.yes')}</option>
+                    <option value="0">{t('attendance.no')}</option>
+                  </select>
+                  <select
+                    className="clients-input min-w-[8rem]"
+                    value={adminFilters.per_page}
+                    onChange={(e) =>
+                      setAdminFilters((f) => ({ ...f, per_page: Number(e.target.value), page: 1 }))
+                    }
+                    aria-label={t('attendance.perPage')}
+                  >
+                    {[10, 15, 25, 50, 100].map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    className="page-header__btn page-header__btn--primary"
+                    onClick={() => {
+                      setAdminFilters((f) => ({ ...f, page: 1 }))
+                      setAdminRefresh((n) => n + 1)
+                    }}
+                  >
+                    {t('attendance.admin.apply')}
+                  </button>
+                </div>
                 <button
                   type="button"
                   className="clients-filters__clear clients-filters__btn-icon"
@@ -1611,18 +1638,27 @@ export default function Attendance() {
                 >
                   <RotateCcw className="clients-filters__btn-icon-svg" aria-hidden />
                 </button>
-                <button type="button" className="page-header__btn inline-flex items-center gap-2" onClick={exportAdminCsv}>
-                  <Download size={18} aria-hidden />
-                  {t('attendance.admin.exportCsv')}
-                </button>
+                <div className="clients-filters__actions">
+                  <button type="button" className="page-header__btn inline-flex items-center gap-2" onClick={exportAdminCsv}>
+                    <Download size={18} aria-hidden />
+                    {t('attendance.admin.exportCsv')}
+                  </button>
+                </div>
               </div>
-              </div>
+            </div>
+
+            <div className="attendance-admin-metrics">
+              <StatsCard title={t('attendance.admin.records', 'Records')} value={adminReportMetrics.recordsCount} icon={<Clock className="h-6 w-6" />} variant="blue" />
+              <StatsCard title={t('attendance.admin.employees', 'Employees')} value={adminReportMetrics.employeesCount} icon={<UserX className="h-6 w-6" />} variant="green" />
+              <StatsCard title={t('attendance.admin.totalDays', 'Total days')} value={adminReportMetrics.totalDays} icon={<Timer className="h-6 w-6" />} variant="amber" />
+              <StatsCard title={t('attendance.admin.avgWorkedHours', 'Avg worked hours')} value={adminReportMetrics.avgWorked} icon={<Building2 className="h-6 w-6" />} variant="default" />
             </div>
 
             {adminLoading ? (
               <LoaderDots />
             ) : (
-              <>
+              <div className="clients-filters-card attendance-admin-card">
+                <h3 className="attendance-admin-section-title">{t('attendance.admin.detailsTitle', 'Detailed report')}</h3>
                 <Table
                   columns={adminColumns}
                   data={sortedAdminItems}
@@ -1636,31 +1672,35 @@ export default function Attendance() {
                   }}
                 />
                 {adminMeta && adminMeta.total > adminMeta.per_page && (
-                  <Pagination
-                    currentPage={adminMeta.current_page}
-                    totalPages={adminMeta.last_page}
-                    onPageChange={(page) => setAdminFilters((f) => ({ ...f, page }))}
-                  />
+                  <div className="attendance-admin-pagination">
+                    <Pagination
+                      currentPage={adminMeta.current_page}
+                      totalPages={adminMeta.last_page}
+                      onPageChange={(page) => setAdminFilters((f) => ({ ...f, page }))}
+                    />
+                  </div>
                 )}
-              </>
+              </div>
             )}
 
-            <h2 className="text-lg font-semibold">{t('attendance.admin.summaryTitle')}</h2>
-            {adminSummary.length === 0 ? (
-              <p className="clients-empty">{t('attendance.admin.summaryEmpty')}</p>
-            ) : (
-              <Table
-                columns={[
-                  { key: 'employee_name', label: t('attendance.user'), sortable: false },
-                  { key: 'total_days', label: t('attendance.admin.totalDays'), sortable: false },
-                  { key: 'late_count', label: t('attendance.statsLate'), sortable: false },
-                  { key: 'absent_count', label: t('attendance.statsAbsent'), sortable: false },
-                  { key: 'avg_worked_hours', label: t('attendance.admin.avgWorkedHours'), sortable: false },
-                ]}
-                data={adminSummary}
-                getRowKey={(r) => r.employee_id}
-              />
-            )}
+            <div className="clients-filters-card attendance-admin-card">
+              <h3 className="attendance-admin-section-title">{t('attendance.admin.summaryTitle')}</h3>
+              {adminSummary.length === 0 ? (
+                <p className="clients-empty">{t('attendance.admin.summaryEmpty')}</p>
+              ) : (
+                <Table
+                  columns={[
+                    { key: 'employee_name', label: t('attendance.user'), sortable: false },
+                    { key: 'total_days', label: t('attendance.admin.totalDays'), sortable: false },
+                    { key: 'late_count', label: t('attendance.statsLate'), sortable: false },
+                    { key: 'absent_count', label: t('attendance.statsAbsent'), sortable: false },
+                    { key: 'avg_worked_hours', label: t('attendance.admin.avgWorkedHours'), sortable: false },
+                  ]}
+                  data={adminSummary}
+                  getRowKey={(r) => r.employee_id}
+                />
+              )}
+            </div>
               </>
             ) : null}
 
