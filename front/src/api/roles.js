@@ -50,14 +50,9 @@ export async function getPermissionsByRole(token, roleId) {
   return data
 }
 
-/** @deprecated Use getPermissionsByRole. Kept for backward compatibility. */
-export async function getPermissionsForRole(token, roleId) {
-  return getPermissionsByRole(token, roleId)
-}
-
 /**
  * POST {{base_url}}/permissions – Upsert Page Permission
- * Body: { role_id, page, can_view, can_edit, can_delete, can_approve }
+ * Body: { role_id, page, can_view }
  */
 export async function upsertPermission(token, body) {
   const res = await apiFetch(`${getBaseUrl()}/permissions`, {
@@ -87,20 +82,8 @@ export async function deletePagePermission(token, pagePermissionId) {
 }
 
 /**
- * GET {{base_url}}/abilities – List Abilities (Spatie)
- */
-export async function listAbilities(token) {
-  const res = await apiFetch(`${getBaseUrl()}/abilities`, {
-    headers: authHeaders(token),
-  })
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.message || data.error || `Failed to list abilities (${res.status})`)
-  return data
-}
-
-/**
  * POST {{base_url}}/roles – Create Role
- * Body: { name, permissions?: string[] }
+ * Body: { name, name_ar, name_en }
  */
 export async function createRole(token, body) {
   const res = await apiFetch(`${getBaseUrl()}/roles`, {
@@ -117,8 +100,20 @@ export async function createRole(token, body) {
 }
 
 /**
+ * GET {{base_url}}/roles/{{role_id}} – Show Role
+ */
+export async function showRole(token, roleId) {
+  const res = await apiFetch(`${getBaseUrl()}/roles/${roleId}`, {
+    headers: authHeaders(token),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to load role (${res.status})`)
+  return data
+}
+
+/**
  * PUT {{base_url}}/roles/{{role_id}} – Update Role
- * Body: { name?, permissions?: string[] }
+ * Body: { name?, name_ar?, name_en? }
  */
 export async function updateRole(token, roleId, body) {
   const res = await apiFetch(`${getBaseUrl()}/roles/${roleId}`, {

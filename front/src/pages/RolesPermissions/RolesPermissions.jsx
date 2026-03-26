@@ -1,301 +1,250 @@
-import { useState, useEffect } from "react";
-import { useTranslation } from "react-i18next";
-import { getStoredToken } from "../Login";
+import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
+import { getStoredToken } from '../Login'
 import {
   listRoles,
   listPermissions,
   upsertPermission,
   deletePagePermission,
-  listAbilities,
   getPermissionsByRole,
   createRole,
   updateRole,
   deleteRole,
-} from "../../api/roles";
-import { Container } from "../../components/Container";
-import "../../components/PageHeader/PageHeader.css";
-import LoaderDots from "../../components/LoaderDots";
-import Alert from "../../components/Alert";
-import Tabs from "../../components/Tabs";
-import Pagination from "../../components/Pagination";
-import { X, Pencil, Trash2, Eye } from "lucide-react";
-import "../../components/LoaderDots/LoaderDots.css";
-import "../Clients/Clients.css";
-import "../Clients/ClientDetailModal.css";
-import "./RolesPermissions.css";
+} from '../../api/roles'
+import { Container } from '../../components/Container'
+import '../../components/PageHeader/PageHeader.css'
+import LoaderDots from '../../components/LoaderDots'
+import Alert from '../../components/Alert'
+import Tabs from '../../components/Tabs'
+import Pagination from '../../components/Pagination'
+import { X, Pencil, Trash2, Eye } from 'lucide-react'
+import '../../components/LoaderDots/LoaderDots.css'
+import '../Clients/Clients.css'
+import '../Clients/ClientDetailModal.css'
+import './RolesPermissions.css'
 
 export default function RolesPermissions() {
-  const { t } = useTranslation();
-  const token = getStoredToken();
-  const [roles, setRoles] = useState([]);
-  const [allPermissions, setAllPermissions] = useState([]);
-  const [abilities, setAbilities] = useState([]);
-  const [abilitiesLoading, setAbilitiesLoading] = useState(true);
-  const [loading, setLoading] = useState(true);
-  const [alert, setAlert] = useState(null);
-  const [loadingAllPerms, setLoadingAllPerms] = useState(false);
-  const [showUpsert, setShowUpsert] = useState(false);
-  const [upsertSubmitting, setUpsertSubmitting] = useState(false);
-  const [upsertForm, setUpsertForm] = useState({
-    role_id: "",
-    page: "",
-    can_view: true,
-    can_edit: false,
-    can_delete: false,
-    can_approve: false,
-  });
-  const [deletePermissionId, setDeletePermissionId] = useState(null);
-  const [deletePermissionSubmitting, setDeletePermissionSubmitting] =
-    useState(false);
-  const [showCreateRole, setShowCreateRole] = useState(false);
-  const [createRoleForm, setCreateRoleForm] = useState({
-    name: "",
-    permissions: [],
-  });
-  const [createRoleSubmitting, setCreateRoleSubmitting] = useState(false);
-  const [showEditRole, setShowEditRole] = useState(false);
-  const [editRoleId, setEditRoleId] = useState(null);
-  const [editRoleForm, setEditRoleForm] = useState({
-    name: "",
-    permissions: [],
-  });
-  const [editRoleSubmitting, setEditRoleSubmitting] = useState(false);
-  const [deleteRoleId, setDeleteRoleId] = useState(null);
-  const [deleteRoleSubmitting, setDeleteRoleSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState("roles");
-  const [permPage, setPermPage] = useState(1);
-  const [permPerPage, setPermPerPage] = useState(25);
-  const [viewByRoleId, setViewByRoleId] = useState(null);
-  const [viewByRolePerms, setViewByRolePerms] = useState([]);
-  const [viewByRoleLoading, setViewByRoleLoading] = useState(false);
+  const { t, i18n } = useTranslation()
+  const token = getStoredToken()
+  const [roles, setRoles] = useState([])
+  const [allPermissions, setAllPermissions] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [alert, setAlert] = useState(null)
+  const [loadingAllPerms, setLoadingAllPerms] = useState(false)
+  const [showUpsert, setShowUpsert] = useState(false)
+  const [upsertSubmitting, setUpsertSubmitting] = useState(false)
+  const [upsertForm, setUpsertForm] = useState({ role_id: '', page: '', can_view: true })
+  const [deletePermissionId, setDeletePermissionId] = useState(null)
+  const [deletePermissionSubmitting, setDeletePermissionSubmitting] = useState(false)
+  const [showCreateRole, setShowCreateRole] = useState(false)
+  const [createRoleForm, setCreateRoleForm] = useState({ name: '', name_ar: '', name_en: '' })
+  const [createRoleSubmitting, setCreateRoleSubmitting] = useState(false)
+  const [showEditRole, setShowEditRole] = useState(false)
+  const [editRoleId, setEditRoleId] = useState(null)
+  const [editRoleForm, setEditRoleForm] = useState({ name: '', name_ar: '', name_en: '' })
+  const [editRoleSubmitting, setEditRoleSubmitting] = useState(false)
+  const [deleteRoleId, setDeleteRoleId] = useState(null)
+  const [deleteRoleSubmitting, setDeleteRoleSubmitting] = useState(false)
+  const [activeTab, setActiveTab] = useState('roles')
+  const [selectedPermissionRoleId, setSelectedPermissionRoleId] = useState('')
+  const [permPage, setPermPage] = useState(1)
+  const [permPerPage, setPermPerPage] = useState(25)
+  const [viewByRoleId, setViewByRoleId] = useState(null)
+  const [viewByRolePerms, setViewByRolePerms] = useState([])
+  const [viewByRoleLoading, setViewByRoleLoading] = useState(false)
+
+  const roleLabel = (role) => (i18n.language === 'ar' ? role?.name_ar || role?.name_en || role?.name : role?.name_en || role?.name_ar || role?.name)
+
+  const loadRoles = async () => {
+    const data = await listRoles(token)
+    const list = data.data ?? data.roles ?? data
+    setRoles(Array.isArray(list) ? list : [])
+  }
+
+  const loadPermissions = async () => {
+    const data = await listPermissions(token)
+    const list = data.data ?? data.permissions ?? data
+    setAllPermissions(Array.isArray(list) ? list : [])
+  }
+
+  const filteredPermissions = selectedPermissionRoleId
+    ? allPermissions.filter((p) => String(p.role_id) === String(selectedPermissionRoleId))
+    : []
+  const totalPermPages = Math.max(1, Math.ceil(filteredPermissions.length / permPerPage))
+  const safePermPage = Math.min(permPage, totalPermPages)
+  const paginatedPerms = filteredPermissions.slice(
+    (safePermPage - 1) * permPerPage,
+    safePermPage * permPerPage
+  )
 
   useEffect(() => {
-    if (!token) return;
-    setLoading(true);
-    setAlert(null);
-    listRoles(token)
-      .then((data) => {
-        const list = data.data ?? data.roles ?? data;
-        setRoles(Array.isArray(list) ? list : []);
-      })
-      .catch(() =>
-        setAlert({ type: "error", message: t("rolesPermissions.error") }),
-      )
-      .finally(() => setLoading(false));
-  }, [token]);
+    if (!token) return
+    setLoading(true)
+    setAlert(null)
+    Promise.all([loadRoles(), loadPermissions()])
+      .catch(() => setAlert({ type: 'error', message: t('rolesPermissions.error') }))
+      .finally(() => setLoading(false))
+  }, [token])
 
   useEffect(() => {
-    if (!token) return;
-    setLoadingAllPerms(true);
-    listPermissions(token)
-      .then((data) => {
-        const list = data.data ?? data.permissions ?? data;
-        setAllPermissions(Array.isArray(list) ? list : []);
-      })
-      .catch(() => setAllPermissions([]))
-      .finally(() => setLoadingAllPerms(false));
-  }, [token]);
+    const maxPage = Math.max(1, Math.ceil(filteredPermissions.length / permPerPage))
+    if (permPage > maxPage) setPermPage(maxPage)
+  }, [filteredPermissions.length, permPerPage, permPage])
 
   useEffect(() => {
-    if (!token) return;
-    setAbilitiesLoading(true);
-    listAbilities(token)
-      .then((data) => {
-        const raw = data.data ?? data.abilities ?? data;
-        if (Array.isArray(raw)) {
-          setAbilities(raw);
-        } else if (raw && typeof raw === "object" && !Array.isArray(raw)) {
-          // Backend returns { data: { users: [...], clients: [...], ... } }
-          const flattened = Object.values(raw).flat().filter(Boolean);
-          setAbilities(flattened);
-        } else {
-          setAbilities([]);
-        }
-      })
-      .catch(() => setAbilities([]))
-      .finally(() => setAbilitiesLoading(false));
-  }, [token]);
-
-  useEffect(() => {
-    const maxPage = Math.max(1, Math.ceil(allPermissions.length / permPerPage));
-    if (permPage > maxPage) setPermPage(maxPage);
-  }, [allPermissions.length, permPerPage, permPage]);
+    if (roles.length > 0 && !selectedPermissionRoleId) {
+      setSelectedPermissionRoleId(String(roles[0].id))
+    }
+  }, [roles, selectedPermissionRoleId])
 
   const getRoleName = (roleId) => {
-    const r = roles.find((x) => String(x.id) === String(roleId));
-    return r?.name ?? r?.slug ?? roleId ?? t("rolesPermissions.dash");
-  };
+    const r = roles.find((x) => String(x.id) === String(roleId))
+    return roleLabel(r) || roleId || t('rolesPermissions.dash')
+  }
+
+  const pageLabel = (permission) => {
+    if (i18n.language === 'ar') {
+      return permission?.page_name_ar || permission?.page_name_en || permission?.page || t('rolesPermissions.dash')
+    }
+    return permission?.page_name_en || permission?.page_name_ar || permission?.page || t('rolesPermissions.dash')
+  }
 
   const handleUpsertSubmit = async (e) => {
-    e.preventDefault();
-    setAlert(null);
-    setUpsertSubmitting(true);
+    e.preventDefault()
+    setAlert(null)
+    setUpsertSubmitting(true)
     try {
       await upsertPermission(token, {
         role_id: Number(upsertForm.role_id) || upsertForm.role_id,
         page: upsertForm.page,
         can_view: !!upsertForm.can_view,
-        can_edit: !!upsertForm.can_edit,
-        can_delete: !!upsertForm.can_delete,
-        can_approve: !!upsertForm.can_approve,
-      });
-      setShowUpsert(false);
-      const allRes = await listPermissions(token);
-      const allList = allRes.data ?? allRes.permissions ?? allRes;
-      setAllPermissions(Array.isArray(allList) ? allList : []);
+      })
+      setShowUpsert(false)
+      await loadPermissions()
       setAlert({
-        type: "success",
-        message: t("rolesPermissions.saved", "Permission saved."),
-      });
+        type: 'success',
+        message: t('rolesPermissions.saved', 'Permission saved.'),
+      })
     } catch {
-      setAlert({ type: "error", message: t("rolesPermissions.error") });
+      setAlert({ type: 'error', message: t('rolesPermissions.error') })
     } finally {
-      setUpsertSubmitting(false);
+      setUpsertSubmitting(false)
     }
-  };
+  }
 
   const openUpsert = (perm = null) => {
     setUpsertForm({
-      role_id: perm?.role_id ?? roles[0]?.id ?? "",
-      page: perm?.page ?? "",
+      role_id: perm?.role_id ?? roles[0]?.id ?? '',
+      page: perm?.page ?? '',
       can_view: perm?.can_view ?? true,
-      can_edit: perm?.can_edit ?? false,
-      can_delete: perm?.can_delete ?? false,
-      can_approve: perm?.can_approve ?? false,
-    });
-    setShowUpsert(true);
-  };
+    })
+    setShowUpsert(true)
+  }
 
   const handleDeletePermissionConfirm = async () => {
-    if (!deletePermissionId || !token) return;
-    setAlert(null);
-    setDeletePermissionSubmitting(true);
+    if (!deletePermissionId || !token) return
+    setAlert(null)
+    setDeletePermissionSubmitting(true)
     try {
-      await deletePagePermission(token, deletePermissionId);
-      setDeletePermissionId(null);
-      const res = await listPermissions(token);
-      const list = res.data ?? res.permissions ?? res;
-      setAllPermissions(Array.isArray(list) ? list : []);
+      await deletePagePermission(token, deletePermissionId)
+      setDeletePermissionId(null)
+      await loadPermissions()
       setAlert({
-        type: "success",
-        message: t("rolesPermissions.permissionDeleted"),
-      });
+        type: 'success',
+        message: t('rolesPermissions.permissionDeleted'),
+      })
     } catch {
-      setAlert({ type: "error", message: t("rolesPermissions.error") });
+      setAlert({ type: 'error', message: t('rolesPermissions.error') })
     } finally {
-      setDeletePermissionSubmitting(false);
+      setDeletePermissionSubmitting(false)
     }
-  };
+  }
 
   const openCreateRole = () => {
-    setCreateRoleForm({ name: "", permissions: [] });
-    setShowCreateRole(true);
-  };
+    setCreateRoleForm({ name: '', name_ar: '', name_en: '' })
+    setShowCreateRole(true)
+  }
 
   const handleCreateRoleSubmit = async (e) => {
-    e.preventDefault();
-    setAlert(null);
-    setCreateRoleSubmitting(true);
+    e.preventDefault()
+    setAlert(null)
+    setCreateRoleSubmitting(true)
     try {
       await createRole(token, {
         name: createRoleForm.name.trim(),
-        permissions: createRoleForm.permissions,
-      });
-      setShowCreateRole(false);
-      const data = await listRoles(token);
-      const list = data.data ?? data.roles ?? data;
-      setRoles(Array.isArray(list) ? list : []);
-      setAlert({ type: "success", message: t("rolesPermissions.roleCreated") });
+        name_ar: createRoleForm.name_ar.trim(),
+        name_en: createRoleForm.name_en.trim(),
+      })
+      setShowCreateRole(false)
+      await loadRoles()
+      setAlert({ type: 'success', message: t('rolesPermissions.roleCreated') })
     } catch {
-      setAlert({ type: "error", message: t("rolesPermissions.error") });
+      setAlert({ type: 'error', message: t('rolesPermissions.error') })
     } finally {
-      setCreateRoleSubmitting(false);
+      setCreateRoleSubmitting(false)
     }
-  };
+  }
 
   const openEditRole = (role) => {
-    setEditRoleId(role.id);
-    const perms = role.permissions ?? [];
+    setEditRoleId(role.id)
     setEditRoleForm({
-      name: role.name ?? role.slug ?? "",
-      permissions: Array.isArray(perms) ? perms : [],
-    });
-    setShowEditRole(true);
-  };
+      name: role.name ?? '',
+      name_ar: role.name_ar ?? '',
+      name_en: role.name_en ?? '',
+    })
+    setShowEditRole(true)
+  }
 
   const openViewByRole = (role) => {
-    setViewByRoleId(role.id);
-    setViewByRolePerms([]);
-    setViewByRoleLoading(true);
+    setViewByRoleId(role.id)
+    setViewByRolePerms([])
+    setViewByRoleLoading(true)
     getPermissionsByRole(token, role.id)
       .then((data) => {
-        const list = data.data ?? data.permissions ?? data;
-        setViewByRolePerms(Array.isArray(list) ? list : []);
+        const list = data.data ?? data.permissions ?? data
+        setViewByRolePerms(Array.isArray(list) ? list : [])
       })
       .catch(() => setViewByRolePerms([]))
-      .finally(() => setViewByRoleLoading(false));
-  };
+      .finally(() => setViewByRoleLoading(false))
+  }
 
   const handleEditRoleSubmit = async (e) => {
-    e.preventDefault();
-    if (!editRoleId || !token) return;
-    setAlert(null);
-    setEditRoleSubmitting(true);
+    e.preventDefault()
+    if (!editRoleId || !token) return
+    setAlert(null)
+    setEditRoleSubmitting(true)
     try {
       await updateRole(token, editRoleId, {
         name: editRoleForm.name.trim(),
-        permissions: editRoleForm.permissions,
-      });
-      setShowEditRole(false);
-      setEditRoleId(null);
-      const data = await listRoles(token);
-      const list = data.data ?? data.roles ?? data;
-      setRoles(Array.isArray(list) ? list : []);
-      setAlert({ type: "success", message: t("rolesPermissions.roleUpdated") });
+        name_ar: editRoleForm.name_ar.trim(),
+        name_en: editRoleForm.name_en.trim(),
+      })
+      setShowEditRole(false)
+      setEditRoleId(null)
+      await loadRoles()
+      setAlert({ type: 'success', message: t('rolesPermissions.roleUpdated') })
     } catch {
-      setAlert({ type: "error", message: t("rolesPermissions.error") });
+      setAlert({ type: 'error', message: t('rolesPermissions.error') })
     } finally {
-      setEditRoleSubmitting(false);
+      setEditRoleSubmitting(false)
     }
-  };
+  }
 
   const handleDeleteRoleConfirm = async () => {
-    if (!deleteRoleId || !token) return;
-    setAlert(null);
-    setDeleteRoleSubmitting(true);
+    if (!deleteRoleId || !token) return
+    setAlert(null)
+    setDeleteRoleSubmitting(true)
     try {
-      await deleteRole(token, deleteRoleId);
-      setDeleteRoleId(null);
-      const data = await listRoles(token);
-      const list = data.data ?? data.roles ?? data;
-      setRoles(Array.isArray(list) ? list : []);
-      const res = await listPermissions(token);
-      const permList = res.data ?? res.permissions ?? res;
-      setAllPermissions(Array.isArray(permList) ? permList : []);
-      setAlert({ type: "success", message: t("rolesPermissions.roleDeleted") });
+      await deleteRole(token, deleteRoleId)
+      setDeleteRoleId(null)
+      await Promise.all([loadRoles(), loadPermissions()])
+      setAlert({ type: 'success', message: t('rolesPermissions.roleDeleted') })
     } catch {
-      setAlert({ type: "error", message: t("rolesPermissions.error") });
+      setAlert({ type: 'error', message: t('rolesPermissions.error') })
     } finally {
-      setDeleteRoleSubmitting(false);
+      setDeleteRoleSubmitting(false)
     }
-  };
-
-  const abilityList = abilities
-    .map((a) => (typeof a === "string" ? a : (a.name ?? a.ability ?? a)))
-    .filter(Boolean);
-  const totalPermPages = Math.max(
-    1,
-    Math.ceil(allPermissions.length / permPerPage),
-  );
-  const safePermPage = Math.min(permPage, totalPermPages);
-  const paginatedPerms = allPermissions.slice(
-    (safePermPage - 1) * permPerPage,
-    safePermPage * permPerPage,
-  );
-  const toggleAbility = (list, name, setter) => {
-    if (list.includes(name)) setter(list.filter((x) => x !== name));
-    else setter([...list, name]);
-  };
+  }
 
   const pageLoading =
     loading ||
@@ -303,7 +252,7 @@ export default function RolesPermissions() {
     createRoleSubmitting ||
     editRoleSubmitting ||
     deleteRoleSubmitting ||
-    deletePermissionSubmitting;
+    deletePermissionSubmitting
 
   const PermissionBadge = ({ on }) =>
     on ? (
@@ -322,7 +271,7 @@ export default function RolesPermissions() {
       >
         —
       </span>
-    );
+    )
 
   return (
     <Container size="xl">
@@ -408,7 +357,7 @@ export default function RolesPermissions() {
                           <tr key={r.id}>
                             <td>
                               <span className="rp-cell-role">
-                                {r.name ?? r.slug ?? r.id}
+                                {roleLabel(r)}
                               </span>
                             </td>
                             <td className="rp-td--actions">
@@ -479,24 +428,47 @@ export default function RolesPermissions() {
                     <h2 className="rp-panel__title">
                       {t("rolesPermissions.allPagePermissions")}
                     </h2>
+                    <div className="rp-panel__actions">
+                      <select
+                        value={selectedPermissionRoleId}
+                        onChange={(e) => {
+                          setSelectedPermissionRoleId(e.target.value)
+                          setPermPage(1)
+                        }}
+                        className="clients-select"
+                        aria-label={t('rolesPermissions.role')}
+                      >
+                        {roles.map((r) => (
+                          <option key={r.id} value={r.id}>
+                            {roleLabel(r)}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        className="page-header__btn page-header__btn--primary"
+                        onClick={() =>
+                          openUpsert({
+                            role_id: selectedPermissionRoleId || roles[0]?.id || '',
+                            page: '',
+                            can_view: true,
+                          })
+                        }
+                        disabled={roles.length === 0}
+                      >
+                        {t("rolesPermissions.upsertPermission")}
+                      </button>
+                    </div>
                   </div>
                   {loadingAllPerms ? (
                     <p className="rp-section__loading">
                       {t("rolesPermissions.loading")}
                     </p>
-                  ) : allPermissions.length === 0 ? (
+                  ) : filteredPermissions.length === 0 ? (
                     <div className="rp-empty-state rp-empty-state--inline">
                       <p className="clients-empty">
                         {t("rolesPermissions.noPermissionsList")}
                       </p>
-                      <button
-                        type="button"
-                        className="page-header__btn page-header__btn--primary"
-                        onClick={() => openUpsert()}
-                        disabled={roles.length === 0}
-                      >
-                        {t("rolesPermissions.upsertPermission")}
-                      </button>
                     </div>
                   ) : (
                     <>
@@ -507,16 +479,7 @@ export default function RolesPermissions() {
                               <th>{t("rolesPermissions.role")}</th>
                               <th>{t("rolesPermissions.page")}</th>
                               <th className="rp-th--center">
-                                {t("rolesPermissions.canView")}
-                              </th>
-                              <th className="rp-th--center">
-                                {t("rolesPermissions.canEdit")}
-                              </th>
-                              <th className="rp-th--center">
-                                {t("rolesPermissions.canDelete")}
-                              </th>
-                              <th className="rp-th--center">
-                                {t("rolesPermissions.canApprove")}
+                                {t("rolesPermissions.canView", "Visible")}
                               </th>
                               <th className="rp-th--actions"></th>
                             </tr>
@@ -536,20 +499,11 @@ export default function RolesPermissions() {
                                 </td>
                                 <td>
                                   <span className="rp-cell-page">
-                                    {p.page ?? t("rolesPermissions.dash")}
+                                    {pageLabel(p)}
                                   </span>
                                 </td>
                                 <td className="rp-td--center">
                                   <PermissionBadge on={p.can_view} />
-                                </td>
-                                <td className="rp-td--center">
-                                  <PermissionBadge on={p.can_edit} />
-                                </td>
-                                <td className="rp-td--center">
-                                  <PermissionBadge on={p.can_delete} />
-                                </td>
-                                <td className="rp-td--center">
-                                  <PermissionBadge on={p.can_approve} />
                                 </td>
                                 <td className="rp-td--actions">
                                   <div className="rp-table-actions">
@@ -604,7 +558,7 @@ export default function RolesPermissions() {
                 <footer className="rp-pagination-bar">
                   <div className="rp-pagination-bar__left">
                     <span className="rp-pagination-bar__total">
-                      {t("rolesPermissions.total")}: {allPermissions.length}
+                      {t("rolesPermissions.total")}: {filteredPermissions.length}
                     </span>
                     <label className="rp-pagination-bar__per-page">
                       <span className="rp-pagination-bar__per-page-label">
@@ -693,7 +647,7 @@ export default function RolesPermissions() {
                           >
                             {roles.map((r) => (
                               <option key={r.id} value={r.id}>
-                                {r.name ?? r.slug ?? r.id}
+                                {roleLabel(r)}
                               </option>
                             ))}
                           </select>
@@ -730,55 +684,7 @@ export default function RolesPermissions() {
                               }
                               disabled={upsertSubmitting}
                             />
-                            {t("rolesPermissions.canView")}
-                          </label>
-                        </div>
-                        <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
-                          <label className="client-detail-modal__form-field--check-label">
-                            <input
-                              type="checkbox"
-                              checked={upsertForm.can_edit}
-                              onChange={(e) =>
-                                setUpsertForm((f) => ({
-                                  ...f,
-                                  can_edit: e.target.checked,
-                                }))
-                              }
-                              disabled={upsertSubmitting}
-                            />
-                            {t("rolesPermissions.canEdit")}
-                          </label>
-                        </div>
-                        <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
-                          <label className="client-detail-modal__form-field--check-label">
-                            <input
-                              type="checkbox"
-                              checked={upsertForm.can_delete}
-                              onChange={(e) =>
-                                setUpsertForm((f) => ({
-                                  ...f,
-                                  can_delete: e.target.checked,
-                                }))
-                              }
-                              disabled={upsertSubmitting}
-                            />
-                            {t("rolesPermissions.canDelete")}
-                          </label>
-                        </div>
-                        <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
-                          <label className="client-detail-modal__form-field--check-label">
-                            <input
-                              type="checkbox"
-                              checked={upsertForm.can_approve}
-                              onChange={(e) =>
-                                setUpsertForm((f) => ({
-                                  ...f,
-                                  can_approve: e.target.checked,
-                                }))
-                              }
-                              disabled={upsertSubmitting}
-                            />
-                            {t("rolesPermissions.canApprove")}
+                            {t("rolesPermissions.canView", "Visible")}
                           </label>
                         </div>
                       </div>
@@ -898,9 +804,7 @@ export default function RolesPermissions() {
                   <div className="client-detail-modal__body-inner">
                     <section className="client-detail-modal__section">
                       <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
-                        <label htmlFor="create-role-name">
-                          {t("rolesPermissions.roleName")}
-                        </label>
+                        <label htmlFor="create-role-name">{t("rolesPermissions.roleName", "Role code")}</label>
                         <input
                           id="create-role-name"
                           type="text"
@@ -916,45 +820,40 @@ export default function RolesPermissions() {
                         />
                       </div>
                       <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
-                        <label>{t("rolesPermissions.abilities")}</label>
-                        <div className="rp-abilities-list">
-                          {abilitiesLoading ? (
-                            <p className="rp-empty-small">
-                              {t("rolesPermissions.loading")}
-                            </p>
-                          ) : abilityList.length === 0 ? (
-                            <p className="rp-empty-small">
-                              {t("rolesPermissions.noAbilities")}
-                            </p>
-                          ) : (
-                            abilityList.map((name) => (
-                              <label
-                                key={name}
-                                className="client-detail-modal__form-field--check-label"
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={createRoleForm.permissions.includes(
-                                    name,
-                                  )}
-                                  onChange={() =>
-                                    toggleAbility(
-                                      createRoleForm.permissions,
-                                      name,
-                                      (next) =>
-                                        setCreateRoleForm((f) => ({
-                                          ...f,
-                                          permissions: next,
-                                        })),
-                                    )
-                                  }
-                                  disabled={createRoleSubmitting}
-                                />
-                                {name}
-                              </label>
-                            ))
-                          )}
-                        </div>
+                        <label htmlFor="create-role-name-ar">
+                          {t("rolesPermissions.roleNameAr", "Role name (Arabic)")}
+                        </label>
+                        <input
+                          id="create-role-name-ar"
+                          type="text"
+                          value={createRoleForm.name_ar}
+                          onChange={(e) =>
+                            setCreateRoleForm((f) => ({
+                              ...f,
+                              name_ar: e.target.value,
+                            }))
+                          }
+                          required
+                          disabled={createRoleSubmitting}
+                        />
+                      </div>
+                      <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+                        <label htmlFor="create-role-name-en">
+                          {t("rolesPermissions.roleNameEn", "Role name (English)")}
+                        </label>
+                        <input
+                          id="create-role-name-en"
+                          type="text"
+                          value={createRoleForm.name_en}
+                          onChange={(e) =>
+                            setCreateRoleForm((f) => ({
+                              ...f,
+                              name_en: e.target.value,
+                            }))
+                          }
+                          required
+                          disabled={createRoleSubmitting}
+                        />
                       </div>
                     </section>
                   </div>
@@ -1017,9 +916,7 @@ export default function RolesPermissions() {
                   <div className="client-detail-modal__body-inner">
                     <section className="client-detail-modal__section">
                       <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
-                        <label htmlFor="edit-role-name">
-                          {t("rolesPermissions.roleName")}
-                        </label>
+                        <label htmlFor="edit-role-name">{t("rolesPermissions.roleName", "Role code")}</label>
                         <input
                           id="edit-role-name"
                           type="text"
@@ -1035,45 +932,40 @@ export default function RolesPermissions() {
                         />
                       </div>
                       <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
-                        <label>{t("rolesPermissions.abilities")}</label>
-                        <div className="rp-abilities-list">
-                          {abilitiesLoading ? (
-                            <p className="rp-empty-small">
-                              {t("rolesPermissions.loading")}
-                            </p>
-                          ) : abilityList.length === 0 ? (
-                            <p className="rp-empty-small">
-                              {t("rolesPermissions.noAbilities")}
-                            </p>
-                          ) : (
-                            abilityList.map((name) => (
-                              <label
-                                key={name}
-                                className="client-detail-modal__form-field--check-label"
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={editRoleForm.permissions.includes(
-                                    name,
-                                  )}
-                                  onChange={() =>
-                                    toggleAbility(
-                                      editRoleForm.permissions,
-                                      name,
-                                      (next) =>
-                                        setEditRoleForm((f) => ({
-                                          ...f,
-                                          permissions: next,
-                                        })),
-                                    )
-                                  }
-                                  disabled={editRoleSubmitting}
-                                />
-                                {name}
-                              </label>
-                            ))
-                          )}
-                        </div>
+                        <label htmlFor="edit-role-name-ar">
+                          {t("rolesPermissions.roleNameAr", "Role name (Arabic)")}
+                        </label>
+                        <input
+                          id="edit-role-name-ar"
+                          type="text"
+                          value={editRoleForm.name_ar}
+                          onChange={(e) =>
+                            setEditRoleForm((f) => ({
+                              ...f,
+                              name_ar: e.target.value,
+                            }))
+                          }
+                          required
+                          disabled={editRoleSubmitting}
+                        />
+                      </div>
+                      <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+                        <label htmlFor="edit-role-name-en">
+                          {t("rolesPermissions.roleNameEn", "Role name (English)")}
+                        </label>
+                        <input
+                          id="edit-role-name-en"
+                          type="text"
+                          value={editRoleForm.name_en}
+                          onChange={(e) =>
+                            setEditRoleForm((f) => ({
+                              ...f,
+                              name_en: e.target.value,
+                            }))
+                          }
+                          required
+                          disabled={editRoleSubmitting}
+                        />
                       </div>
                     </section>
                   </div>
@@ -1198,26 +1090,14 @@ export default function RolesPermissions() {
                         <tr>
                           <th>{t("rolesPermissions.page")}</th>
                           <th>{t("rolesPermissions.canView")}</th>
-                          <th>{t("rolesPermissions.canEdit")}</th>
-                          <th>{t("rolesPermissions.canDelete")}</th>
-                          <th>{t("rolesPermissions.canApprove")}</th>
                         </tr>
                       </thead>
                       <tbody>
                         {viewByRolePerms.map((p, i) => (
                           <tr key={p.id ?? (p.page ?? "") + "-" + i}>
-                            <td>{p.page ?? t("rolesPermissions.dash")}</td>
+                            <td>{pageLabel(p)}</td>
                             <td>
                               <PermissionBadge on={p.can_view} />
-                            </td>
-                            <td>
-                              <PermissionBadge on={p.can_edit} />
-                            </td>
-                            <td>
-                              <PermissionBadge on={p.can_delete} />
-                            </td>
-                            <td>
-                              <PermissionBadge on={p.can_approve} />
                             </td>
                           </tr>
                         ))}

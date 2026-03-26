@@ -12,6 +12,7 @@ import {
   changeUserPassword,
   assignRole,
 } from '../../api/users'
+import { listRoles } from '../../api/roles'
 import { Container } from '../../components/Container'
 import '../../components/PageHeader/PageHeader.css'
 import { Table, IconActionButton } from '../../components/Table'
@@ -41,6 +42,7 @@ export default function Users() {
   const { t, i18n } = useTranslation()
   const token = getStoredToken()
   const [users, setUsers] = useState([])
+  const [roles, setRoles] = useState([])
   const [loading, setLoading] = useState(true)
   const [alert, setAlert] = useState(null)
   const [filters, setFilters] = useState({
@@ -60,17 +62,17 @@ export default function Users() {
     email: '',
     password: '',
     password_confirmation: '',
-    role: 'sales',
+    role_id: '',
     status: 'active',
   })
   const [passwordUserId, setPasswordUserId] = useState(null)
   const [passwordForm, setPasswordForm] = useState({ password: '', password_confirmation: '' })
   const [passwordSubmitting, setPasswordSubmitting] = useState(false)
   const [roleUserId, setRoleUserId] = useState(null)
-  const [roleValue, setRoleValue] = useState('sales')
+  const [roleValue, setRoleValue] = useState('')
   const [roleSubmitting, setRoleSubmitting] = useState(false)
   const [editUserId, setEditUserId] = useState(null)
-  const [editForm, setEditForm] = useState({ name: '', email: '', initials: '', status: 'active', role: 'sales' })
+  const [editForm, setEditForm] = useState({ name: '', email: '', initials: '', status: 'active', role_id: '' })
   const [editSubmitting, setEditSubmitting] = useState(false)
   const [editLoading, setEditLoading] = useState(false)
   const [viewUserId, setViewUserId] = useState(null)
@@ -104,7 +106,11 @@ export default function Users() {
       )
     }
     if (filters.role) {
-      list = list.filter((u) => (u.primary_role ?? u.roles?.[0] ?? u.role ?? '') === filters.role)
+      list = list.filter((u) => {
+        const roleName = u.primary_role ?? u.roles?.[0] ?? u.role ?? ''
+        const roleId = getRoleIdByName(roleName)
+        return String(roleId) === String(filters.role)
+      })
     }
     if (filters.status) {
       list = list.filter((u) => (u.status ?? '') === filters.status)
@@ -128,19 +134,38 @@ export default function Users() {
     return filteredAndSortedUsers.slice(start, start + per)
   }, [filteredAndSortedUsers, currentPage, filters.per_page])
 
-  const roleOptions = [
-    { value: 'admin', labelKey: 'users.roleAdmin' },
-    { value: 'sales', labelKey: 'users.roleSales' },
-    { value: 'user', labelKey: 'users.roleUser' },
-  ]
+  const roleOptions = roles.map((r) => ({ value: String(r.id), role: r }))
   const getRoleLabel = (value) => {
-    const opt = roleOptions.find((o) => o.value === value)
-    return opt ? t(opt.labelKey) : value || '—'
+    const role = roles.find((r) => r.name === value || String(r.id) === String(value))
+    if (!role) return value || '—'
+    return i18n.language === 'ar'
+      ? role.name_ar || role.name_en || role.name
+      : role.name_en || role.name_ar || role.name
+  }
+
+  const getRoleIdByName = (name) => {
+    const role = roles.find((r) => r.name === name)
+    return role ? String(role.id) : ''
   }
 
   useEffect(() => {
     loadUsers()
+    if (token) {
+      listRoles(token)
+        .then((data) => {
+          const list = data.data ?? data.roles ?? data
+          setRoles(Array.isArray(list) ? list : [])
+        })
+        .catch(() => setRoles([]))
+    }
   }, [token])
+
+  useEffect(() => {
+    if (roles.length === 0) return
+    if (!createForm.role_id) {
+      setCreateForm((f) => ({ ...f, role_id: String(roles[0].id) }))
+    }
+  }, [roles, createForm.role_id])
 
   const handleCreateSubmit = async (e) => {
     e.preventDefault()
@@ -149,7 +174,7 @@ export default function Users() {
     try {
       await createUser(token, createForm)
       setShowCreate(false)
-      setCreateForm({ name: '', email: '', password: '', password_confirmation: '', role: 'sales', status: 'active' })
+      setCreateForm({ name: '', email: '', password: '', password_confirmation: '', role_id: roles[0] ? String(roles[0].id) : '', status: 'active' })
       loadUsers()
       setAlert({ type: 'success', message: t('users.userCreated') })
     } catch {
@@ -182,7 +207,7 @@ export default function Users() {
     setAlert(null)
     setRoleSubmitting(true)
     try {
-      await assignRole(token, roleUserId, { role: roleValue })
+      await assignRole(token, roleUserId, { role_id: Number(roleValue) })
       setRoleUserId(null)
       loadUsers()
       setAlert({ type: 'success', message: t('users.roleAssigned') })
@@ -205,7 +230,7 @@ export default function Users() {
           email: user.email ?? '',
           initials: user.initials ?? '',
           status: user.status ?? 'active',
-          role: user.primary_role ?? user.roles?.[0] ?? user.role ?? 'sales',
+          role_id: getRoleIdByName(user.primary_role ?? user.roles?.[0] ?? user.role ?? ''),
         })
       })
       .catch(() => setAlert({ type: 'error', message: t('users.error') }))
@@ -218,7 +243,10 @@ export default function Users() {
     setAlert(null)
     setEditSubmitting(true)
     try {
-      await updateUser(token, editUserId, editForm)
+      await updateUser(token, editUserId, {
+        ...editForm,
+        role_id: Number(editForm.role_id),
+      })
       setEditUserId(null)
       loadUsers()
       setAlert({ type: 'success', message: t('users.userUpdated', 'User updated.') })
@@ -333,7 +361,7 @@ export default function Users() {
             label={t('users.assignRole')}
             onClick={() => {
               setRoleUserId(u.id)
-              setRoleValue(u.primary_role ?? u.roles?.[0] ?? 'sales')
+              setRoleValue(getRoleIdByName(u.primary_role ?? u.roles?.[0] ?? '') || (roles[0] ? String(roles[0].id) : ''))
             }}
           />
           {(u.status === 'inactive' || u.status === 'suspended') ? (
@@ -398,7 +426,7 @@ export default function Users() {
               <option value="">{t('users.roleAll', 'All roles')}</option>
               {roleOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
-                  {t(opt.labelKey)}
+                  {getRoleLabel(opt.value)}
                 </option>
               ))}
             </select>
@@ -601,13 +629,14 @@ export default function Users() {
                         <label htmlFor="create-user-role">{t('users.role')}</label>
                         <select
                           id="create-user-role"
-                          value={createForm.role}
-                          onChange={(e) => setCreateForm((f) => ({ ...f, role: e.target.value }))}
+                          value={createForm.role_id}
+                          onChange={(e) => setCreateForm((f) => ({ ...f, role_id: e.target.value }))}
                           disabled={createSubmitting}
+                          required
                         >
                           {roleOptions.map((opt) => (
                             <option key={opt.value} value={opt.value}>
-                              {t(opt.labelKey)}
+                              {getRoleLabel(opt.value)}
                             </option>
                           ))}
                         </select>
@@ -697,7 +726,7 @@ export default function Users() {
                         <select id="role-select" value={roleValue} onChange={(e) => setRoleValue(e.target.value)} disabled={roleSubmitting}>
                           {roleOptions.map((opt) => (
                             <option key={opt.value} value={opt.value}>
-                              {t(opt.labelKey)}
+                              {getRoleLabel(opt.value)}
                             </option>
                           ))}
                         </select>
@@ -749,10 +778,10 @@ export default function Users() {
                         </div>
                         <div className="client-detail-modal__form-field">
                           <label htmlFor="edit-user-role">{t('users.role')}</label>
-                          <select id="edit-user-role" value={editForm.role} onChange={(e) => setEditForm((f) => ({ ...f, role: e.target.value }))} disabled={editSubmitting}>
+                          <select id="edit-user-role" value={editForm.role_id} onChange={(e) => setEditForm((f) => ({ ...f, role_id: e.target.value }))} disabled={editSubmitting}>
                             {roleOptions.map((opt) => (
                               <option key={opt.value} value={opt.value}>
-                                {t(opt.labelKey)}
+                                {getRoleLabel(opt.value)}
                               </option>
                             ))}
                           </select>

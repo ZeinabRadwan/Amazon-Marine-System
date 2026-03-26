@@ -11,7 +11,6 @@ import Tabs from './components/Tabs'
 import Profile from './pages/Profile'
 import Users from './pages/Users'
 import RolesPermissions from './pages/RolesPermissions'
-import UserPermissions from './pages/UserPermissions'
 import Clients from './pages/Clients'
 import Vendors from './pages/Vendors'
 import Visits from './pages/Visits'
@@ -192,7 +191,6 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/users" element={<Users />} />
           <Route path="/roles-permissions" element={<RolesPermissions />} />
-          <Route path="/user-permissions" element={<UserPermissions />} />
           <Route path="/clients" element={<Clients />} />
           <Route path="/vendors" element={<Vendors />} />
           <Route path="/visits" element={<Visits />} />

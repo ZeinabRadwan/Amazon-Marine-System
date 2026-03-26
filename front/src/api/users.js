@@ -35,7 +35,7 @@ export async function listUsers(token, params = {}) {
 
 /**
  * POST {{base_url}}/users – Create User (admin)
- * Body: { name, email, password, password_confirmation, role?, status? }
+ * Body: { name, email, password, password_confirmation, role_id, status? }
  */
 export async function createUser(token, body) {
   const res = await apiFetch(`${getBaseUrl()}/users`, {
@@ -83,7 +83,7 @@ export async function showUser(token, userId) {
 
 /**
  * PUT {{base_url}}/users/:id – Update User
- * Body: { name?, email?, initials?, status?, role? }
+ * Body: { name?, email?, initials?, status?, role_id? }
  */
 export async function updateUser(token, userId, body) {
   const res = await apiFetch(`${getBaseUrl()}/users/${userId}`, {
@@ -140,7 +140,7 @@ export async function deactivateUser(token, userId) {
 
 /**
  * POST {{base_url}}/users/:id/assign-role – Assign Role
- * Body: { role }
+ * Body: { role_id }
  */
 export async function assignRole(token, userId, body) {
   const res = await apiFetch(`${getBaseUrl()}/users/${userId}/assign-role`, {
