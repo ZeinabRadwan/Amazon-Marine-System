@@ -8,6 +8,27 @@ use Illuminate\Http\Request;
 
 class PermissionController extends Controller
 {
+    /**
+     * @return array{name_ar: string, name_en: string}
+     */
+    private function resolvePageNames(string $page): array
+    {
+        $pageLabels = config('permissions.pages', []);
+        $labels = $pageLabels[$page] ?? null;
+
+        if (! is_array($labels)) {
+            return [
+                'name_ar' => $page,
+                'name_en' => $page,
+            ];
+        }
+
+        return [
+            'name_ar' => (string) ($labels['name_ar'] ?? $page),
+            'name_en' => (string) ($labels['name_en'] ?? $page),
+        ];
+    }
+
     public function index(Request $request)
     {
         abort_unless($request->user()?->can('permissions.view'), 403);
@@ -20,6 +41,8 @@ class PermissionController extends Controller
 
         return response()->json([
             'data' => $permissions->map(function (PagePermission $permission): array {
+                $pageNames = $this->resolvePageNames($permission->page);
+
                 return [
                     'id' => $permission->id,
                     'role_id' => $permission->role_id,
@@ -27,6 +50,8 @@ class PermissionController extends Controller
                     'role_name_ar' => $permission->role?->name_ar,
                     'role_name_en' => $permission->role?->name_en,
                     'page' => $permission->page,
+                    'page_name_ar' => $pageNames['name_ar'],
+                    'page_name_en' => $pageNames['name_en'],
                     'can_view' => $permission->can_view,
                 ];
             }),
@@ -54,6 +79,7 @@ class PermissionController extends Controller
         );
 
         $permission->load('role');
+        $pageNames = $this->resolvePageNames($permission->page);
 
         return response()->json([
             'data' => [
@@ -63,6 +89,8 @@ class PermissionController extends Controller
                 'role_name_ar' => $permission->role?->name_ar,
                 'role_name_en' => $permission->role?->name_en,
                 'page' => $permission->page,
+                'page_name_ar' => $pageNames['name_ar'],
+                'page_name_en' => $pageNames['name_en'],
                 'can_view' => $permission->can_view,
             ],
         ], 201);
@@ -79,10 +107,14 @@ class PermissionController extends Controller
 
         return response()->json([
             'data' => $permissions->map(function (PagePermission $permission): array {
+                $pageNames = $this->resolvePageNames($permission->page);
+
                 return [
                     'id' => $permission->id,
                     'role_id' => $permission->role_id,
                     'page' => $permission->page,
+                    'page_name_ar' => $pageNames['name_ar'],
+                    'page_name_en' => $pageNames['name_en'],
                     'can_view' => $permission->can_view,
                 ];
             }),
