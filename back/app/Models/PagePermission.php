@@ -18,9 +18,6 @@ class PagePermission extends Model
         'role_id',
         'page',
         'can_view',
-        'can_edit',
-        'can_delete',
-        'can_approve',
     ];
 
     /**
@@ -28,9 +25,6 @@ class PagePermission extends Model
      */
     protected $casts = [
         'can_view' => 'bool',
-        'can_edit' => 'bool',
-        'can_delete' => 'bool',
-        'can_approve' => 'bool',
     ];
 
     /**
@@ -41,4 +35,3 @@ class PagePermission extends Model
         return $this->belongsTo(Role::class);
     }
 }
-

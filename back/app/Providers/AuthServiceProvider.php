@@ -56,6 +56,14 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
+        Gate::before(function (User $user, string $ability) {
+            if (! config('permissions.verification_enabled')) {
+                return true;
+            }
+
+            return null;
+        });
+
         // User-level permission overrides take priority over role permissions
         Gate::before(function (User $user, string $ability) {
             $override = UserPermission::where('user_id', $user->id)

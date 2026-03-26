@@ -11,14 +11,17 @@ class CheckPagePermission
 {
     public function __construct(
         private readonly PagePermissionService $pagePermissionService,
-    ) {
-    }
+    ) {}
 
     /**
-     * @param Closure(Request): (Response) $next
+     * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next, string $page, string $action): Response
     {
+        if (! config('permissions.verification_enabled')) {
+            return $next($request);
+        }
+
         $user = $request->user();
 
         if ($user === null || ! $this->pagePermissionService->can($user, $page, $action)) {
@@ -28,4 +31,3 @@ class CheckPagePermission
         return $next($request);
     }
 }
-

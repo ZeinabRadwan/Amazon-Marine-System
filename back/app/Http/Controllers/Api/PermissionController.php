@@ -24,11 +24,10 @@ class PermissionController extends Controller
                     'id' => $permission->id,
                     'role_id' => $permission->role_id,
                     'role_name' => $permission->role?->name,
+                    'role_name_ar' => $permission->role?->name_ar,
+                    'role_name_en' => $permission->role?->name_en,
                     'page' => $permission->page,
                     'can_view' => $permission->can_view,
-                    'can_edit' => $permission->can_edit,
-                    'can_delete' => $permission->can_delete,
-                    'can_approve' => $permission->can_approve,
                 ];
             }),
         ]);
@@ -41,10 +40,7 @@ class PermissionController extends Controller
         $validated = $request->validate([
             'role_id' => ['required', 'integer', 'exists:roles,id'],
             'page' => ['required', 'string', 'max:255'],
-            'can_view' => ['sometimes', 'boolean'],
-            'can_edit' => ['sometimes', 'boolean'],
-            'can_delete' => ['sometimes', 'boolean'],
-            'can_approve' => ['sometimes', 'boolean'],
+            'can_view' => ['required', 'boolean'],
         ]);
 
         $permission = PagePermission::updateOrCreate(
@@ -53,10 +49,7 @@ class PermissionController extends Controller
                 'page' => $validated['page'],
             ],
             [
-                'can_view' => $validated['can_view'] ?? false,
-                'can_edit' => $validated['can_edit'] ?? false,
-                'can_delete' => $validated['can_delete'] ?? false,
-                'can_approve' => $validated['can_approve'] ?? false,
+                'can_view' => $validated['can_view'],
             ],
         );
 
@@ -67,11 +60,10 @@ class PermissionController extends Controller
                 'id' => $permission->id,
                 'role_id' => $permission->role_id,
                 'role_name' => $permission->role?->name,
+                'role_name_ar' => $permission->role?->name_ar,
+                'role_name_en' => $permission->role?->name_en,
                 'page' => $permission->page,
                 'can_view' => $permission->can_view,
-                'can_edit' => $permission->can_edit,
-                'can_delete' => $permission->can_delete,
-                'can_approve' => $permission->can_approve,
             ],
         ], 201);
     }
@@ -92,9 +84,6 @@ class PermissionController extends Controller
                     'role_id' => $permission->role_id,
                     'page' => $permission->page,
                     'can_view' => $permission->can_view,
-                    'can_edit' => $permission->can_edit,
-                    'can_delete' => $permission->can_delete,
-                    'can_approve' => $permission->can_approve,
                 ];
             }),
         ]);

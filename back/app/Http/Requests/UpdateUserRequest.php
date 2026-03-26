@@ -20,12 +20,11 @@ class UpdateUserRequest extends FormRequest
 
         return [
             'name' => ['sometimes', 'string', 'max:255'],
-            'email' => ['sometimes', 'string', 'email', 'max:255', 'unique:users,email,' . $userId],
+            'email' => ['sometimes', 'string', 'email', 'max:255', 'unique:users,email,'.$userId],
             'password' => ['sometimes', 'string', 'min:8'],
             'initials' => ['sometimes', 'nullable', 'string', 'max:4'],
             'status' => ['sometimes', 'string', 'in:active,inactive'],
-            'role' => ['sometimes', 'string', 'exists:roles,name'],
+            'role_id' => ['sometimes', 'integer', 'exists:roles,id'],
         ];
     }
 }
-

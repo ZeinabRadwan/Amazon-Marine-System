@@ -1,11 +1,9 @@
 <?php
 
-use App\Http\Controllers\Api\AbilitiesController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\GitDeployController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\RoleController;
-use App\Http\Controllers\Api\UserPermissionsController;
 use App\Http\Controllers\Api\V1\AccountingController;
 use App\Http\Controllers\Api\V1\ActivityController;
 use App\Http\Controllers\Api\V1\AdminAttendanceController;
@@ -101,12 +99,12 @@ Route::prefix('v1')->group(function () {
         Route::put('shipment-statuses/{shipmentStatus}', [ShipmentStatusController::class, 'update']);
         Route::delete('shipment-statuses/{shipmentStatus}', [ShipmentStatusController::class, 'destroy']);
 
-        // Roles & Spatie abilities (for permission page)
+        // Roles & page visibility permissions
         Route::get('roles', [RoleController::class, 'index']);
         Route::post('roles', [RoleController::class, 'store']);
+        Route::get('roles/{role}', [RoleController::class, 'show']);
         Route::put('roles/{role}', [RoleController::class, 'update']);
         Route::delete('roles/{role}', [RoleController::class, 'destroy']);
-        Route::get('abilities', [AbilitiesController::class, 'index']);
 
         Route::get('permissions', [PermissionController::class, 'index']);
         Route::post('permissions', [PermissionController::class, 'store']);
@@ -115,16 +113,12 @@ Route::prefix('v1')->group(function () {
 
         // User management
         Route::get('users', [UserController::class, 'index']);
-        Route::get('users-with-permissions', [UserPermissionsController::class, 'index']);
         Route::post('users', [UserController::class, 'store']);
         Route::get('users/{user}', [UserController::class, 'show']);
         Route::put('users/{user}', [UserController::class, 'update']);
         Route::delete('users/{user}', [UserController::class, 'destroy']);
         Route::put('users/{user}/password', [UserController::class, 'updatePassword']);
         Route::post('users/{user}/assign-role', [UserController::class, 'assignRole']);
-        Route::get('users/{user}/permissions', [UserPermissionsController::class, 'show']);
-        Route::put('users/{user}/permissions', [UserPermissionsController::class, 'update']);
-        Route::post('users/{user}/permissions/reset', [UserPermissionsController::class, 'reset']);
         Route::post('users/{user}/activate', [UserController::class, 'activate']);
         Route::post('users/{user}/deactivate', [UserController::class, 'deactivate']);
 

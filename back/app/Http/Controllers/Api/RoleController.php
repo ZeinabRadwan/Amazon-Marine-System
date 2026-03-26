@@ -4,25 +4,41 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 class RoleController extends Controller
 {
+    /**
+     * @return array<string, mixed>
+     */
+    private function transformRole(Role $role): array
+    {
+        return [
+            'id' => $role->id,
+            'name' => $role->name,
+            'name_ar' => $role->name_ar,
+            'name_en' => $role->name_en,
+            'guard_name' => $role->guard_name,
+        ];
+    }
+
     public function index(Request $request)
     {
         abort_unless($request->user()?->can('roles.view'), 403);
 
-        $roles = Role::with('permissions')->get();
+        $roles = Role::query()->orderBy('id')->get();
 
         return response()->json([
-            'data' => $roles->map(function (Role $role) {
-                return [
-                    'id' => $role->id,
-                    'name' => $role->name,
-                    'permissions' => $role->permissions->pluck('name'),
-                ];
-            }),
+            'data' => $roles->map(fn (Role $role): array => $this->transformRole($role)),
+        ]);
+    }
+
+    public function show(Request $request, Role $role)
+    {
+        abort_unless($request->user()?->can('roles.view'), 403);
+
+        return response()->json([
+            'data' => $this->transformRole($role),
         ]);
     }
 
@@ -32,25 +48,19 @@ class RoleController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:roles,name'],
-            'permissions' => ['array'],
-            'permissions.*' => ['string', 'exists:permissions,name'],
+            'name_ar' => ['required', 'string', 'max:255'],
+            'name_en' => ['required', 'string', 'max:255'],
         ]);
 
-        $role = Role::create([
-            'name' => $validated['name'],
-        ]);
-
-        if (! empty($validated['permissions'])) {
-            $permissions = Permission::whereIn('name', $validated['permissions'])->get();
-            $role->syncPermissions($permissions);
-        }
+        $role = new Role;
+        $role->name = $validated['name'];
+        $role->name_ar = $validated['name_ar'];
+        $role->name_en = $validated['name_en'];
+        $role->guard_name = 'web';
+        $role->save();
 
         return response()->json([
-            'data' => [
-                'id' => $role->id,
-                'name' => $role->name,
-                'permissions' => $role->permissions->pluck('name'),
-            ],
+            'data' => $this->transformRole($role),
         ], 201);
     }
 
@@ -65,30 +75,27 @@ class RoleController extends Controller
         }
 
         $validated = $request->validate([
-            'name' => ['sometimes', 'string', 'max:255', 'unique:roles,name,' . $role->id],
-            'permissions' => ['sometimes', 'array'],
-            'permissions.*' => ['string', 'exists:permissions,name'],
+            'name' => ['sometimes', 'string', 'max:255', 'unique:roles,name,'.$role->id],
+            'name_ar' => ['sometimes', 'string', 'max:255'],
+            'name_en' => ['sometimes', 'string', 'max:255'],
         ]);
 
         if (array_key_exists('name', $validated)) {
             $role->name = $validated['name'];
         }
 
-        $role->save();
-
-        if (array_key_exists('permissions', $validated)) {
-            $permissions = Permission::whereIn('name', $validated['permissions'])->get();
-            $role->syncPermissions($permissions);
+        if (array_key_exists('name_ar', $validated)) {
+            $role->name_ar = $validated['name_ar'];
         }
 
-        $role->load('permissions');
+        if (array_key_exists('name_en', $validated)) {
+            $role->name_en = $validated['name_en'];
+        }
+
+        $role->save();
 
         return response()->json([
-            'data' => [
-                'id' => $role->id,
-                'name' => $role->name,
-                'permissions' => $role->permissions->pluck('name'),
-            ],
+            'data' => $this->transformRole($role),
         ]);
     }
 

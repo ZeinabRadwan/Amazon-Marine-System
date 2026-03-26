@@ -23,20 +23,45 @@ class RolesAndPermissionsSeeder extends Seeder
             return [$permKey => Permission::firstOrCreate(['name' => $permKey])];
         });
 
-        $roleKeys = [
-            'admin',
-            'sales',
-            'sales_supervisor',
-            'sales_manager',
-            'accounting',
-            'pricing',
-            'operation',
-            'support',
+        $rolesSeed = [
+            'admin' => [
+                'name_ar' => 'مدير النظام',
+                'name_en' => 'System Manager',
+            ],
+            'sales_manager' => [
+                'name_ar' => 'مدير المبيعات',
+                'name_en' => 'Sales Manager',
+            ],
+            'sales' => [
+                'name_ar' => 'موظف مبيعات',
+                'name_en' => 'Sales Employee',
+            ],
+            'accounting' => [
+                'name_ar' => 'المحاسب',
+                'name_en' => 'Accountant',
+            ],
+            'pricing' => [
+                'name_ar' => 'فريق التسعير',
+                'name_en' => 'Pricing Team',
+            ],
+            'operations' => [
+                'name_ar' => 'موظف العمليات',
+                'name_en' => 'Operations Employee',
+            ],
+            'support' => [
+                'name_ar' => 'موظف دعم فني',
+                'name_en' => 'Support Employee',
+            ],
         ];
 
-        $roles = collect($roleKeys)
-            ->mapWithKeys(function (string $roleKey): array {
-                return [$roleKey => Role::firstOrCreate(['name' => $roleKey])];
+        $roles = collect($rolesSeed)
+            ->mapWithKeys(function (array $roleData, string $roleKey): array {
+                $role = Role::firstOrCreate(['name' => $roleKey], ['guard_name' => 'web']);
+                $role->name_ar = $roleData['name_ar'];
+                $role->name_en = $roleData['name_en'];
+                $role->save();
+
+                return [$roleKey => $role];
             })
             ->all();
 
@@ -44,88 +69,9 @@ class RolesAndPermissionsSeeder extends Seeder
             $admin->syncPermissions($permissions->values());
         }
 
-        if ($sales = $roles['sales'] ?? null) {
-            $sales->syncPermissions([
-                $permissions['clients.view'],
-                $permissions['clients.manage'],
-                $permissions['sd_forms.view'],
-                $permissions['sd_forms.manage'],
-                $permissions['shipments.view_own'],
-            ]);
-        }
-
-        if ($salesSupervisor = $roles['sales_supervisor'] ?? null) {
-            $salesSupervisor->syncPermissions([
-                $permissions['clients.view'],
-                $permissions['clients.manage'],
-                $permissions['clients.delete'],
-                $permissions['sd_forms.view'],
-                $permissions['sd_forms.manage'],
-                $permissions['sd_forms.manage_any'],
-                $permissions['shipments.view_own'],
-                $permissions['reports.view'],
-                $permissions['attendance.view'],
-            ]);
-        }
-
-        if ($salesManager = $roles['sales_manager'] ?? null) {
-            $salesManager->syncPermissions([
-                $permissions['clients.view'],
-                $permissions['clients.manage'],
-                $permissions['clients.delete'],
-                $permissions['users.view'],
-                $permissions['users.manage'],
-                $permissions['users.manage_admins'],
-                $permissions['sd_forms.view'],
-                $permissions['sd_forms.manage'],
-                $permissions['sd_forms.manage_any'],
-                $permissions['attendance.view'],
-                $permissions['shipments.view_own'],
-                $permissions['reports.view'],
-            ]);
-        }
-
-        if ($operation = $roles['operation'] ?? null) {
-            $operation->syncPermissions([
-                $permissions['sd_forms.view'],
-                $permissions['sd_forms.manage'],
-                $permissions['shipments.view'],
-                $permissions['shipments.manage_ops'],
-            ]);
-        }
-
-        if ($accounting = $roles['accounting'] ?? null) {
-            $accounting->syncPermissions([
-                $permissions['accounting.view'],
-                $permissions['accounting.manage'],
-                $permissions['financial.view'],
-                $permissions['financial.manage'],
-            ]);
-        }
-
-        if ($pricing = $roles['pricing'] ?? null) {
-            $pricing->syncPermissions([
-                $permissions['pricing.view_offers'],
-                $permissions['pricing.manage_offers'],
-                $permissions['pricing.view_quotes'],
-                $permissions['pricing.manage_quotes'],
-                $permissions['pricing.view_client_pricing'],
-                $permissions['pricing.manage_client_pricing'],
-                $permissions['clients.view'],
-            ]);
-        }
-
-        if ($support = $roles['support'] ?? null) {
-            $support->syncPermissions([
-                $permissions['clients.view'],
-                $permissions['tickets.view'],
-                $permissions['tickets.manage'],
-                $permissions['customer_service.view_comms'],
-                $permissions['customer_service.manage_comms'],
-                $permissions['customer_service.view_tracking_updates'],
-                $permissions['customer_service.manage_tracking_updates'],
-            ]);
-        }
+        collect($roles)->except('admin')->each(function (Role $role): void {
+            $role->syncPermissions([]);
+        });
 
         $this->seedPagePermissions($roles);
     }
@@ -136,101 +82,92 @@ class RolesAndPermissionsSeeder extends Seeder
     protected function seedPagePermissions(array $roles): void
     {
         $pages = [
-            'auth',
-            'users',
-            'roles',
-            'permissions',
+            'dashboard',
             'clients',
+            'shipments',
+            'sd_forms',
+            'operations',
+            'invoices',
+            'accounting',
+            'treasury',
+            'expenses',
+            'pricing',
+            'partners',
+            'reports',
+            'official_documents',
+            'customer_service',
+            'support_tickets',
+            'team_performance',
+            'attendance',
+            'visits',
+            'settings',
+            'profile',
+            'cost_viewer',
         ];
 
-        if ($admin = $roles['admin'] ?? null) {
+        $visibilityMatrix = [
+            'admin' => collect($pages)->mapWithKeys(fn (string $page): array => [$page => $page !== 'team_performance'])->all(),
+            'sales_manager' => [
+                'dashboard' => true, 'clients' => true, 'shipments' => true, 'sd_forms' => true, 'operations' => false,
+                'invoices' => false, 'accounting' => false, 'treasury' => false, 'expenses' => false, 'pricing' => false,
+                'partners' => false, 'reports' => true, 'official_documents' => false, 'customer_service' => false,
+                'support_tickets' => false, 'team_performance' => true, 'attendance' => true, 'visits' => true,
+                'settings' => true, 'profile' => true, 'cost_viewer' => false,
+            ],
+            'sales' => [
+                'dashboard' => true, 'clients' => true, 'shipments' => true, 'sd_forms' => true, 'operations' => false,
+                'invoices' => false, 'accounting' => false, 'treasury' => false, 'expenses' => false, 'pricing' => true,
+                'partners' => false, 'reports' => true, 'official_documents' => false, 'customer_service' => false,
+                'support_tickets' => false, 'team_performance' => false, 'attendance' => true, 'visits' => true,
+                'settings' => true, 'profile' => true, 'cost_viewer' => false,
+            ],
+            'accounting' => [
+                'dashboard' => true, 'clients' => true, 'shipments' => true, 'sd_forms' => false, 'operations' => false,
+                'invoices' => true, 'accounting' => true, 'treasury' => true, 'expenses' => true, 'pricing' => false,
+                'partners' => true, 'reports' => true, 'official_documents' => false, 'customer_service' => false,
+                'support_tickets' => false, 'team_performance' => false, 'attendance' => true, 'visits' => false,
+                'settings' => true, 'profile' => true, 'cost_viewer' => false,
+            ],
+            'pricing' => [
+                'dashboard' => true, 'clients' => true, 'shipments' => true, 'sd_forms' => false, 'operations' => false,
+                'invoices' => true, 'accounting' => false, 'treasury' => false, 'expenses' => false, 'pricing' => true,
+                'partners' => false, 'reports' => true, 'official_documents' => false, 'customer_service' => false,
+                'support_tickets' => false, 'team_performance' => false, 'attendance' => true, 'visits' => false,
+                'settings' => true, 'profile' => true, 'cost_viewer' => true,
+            ],
+            'operations' => [
+                'dashboard' => true, 'clients' => false, 'shipments' => true, 'sd_forms' => false, 'operations' => true,
+                'invoices' => false, 'accounting' => false, 'treasury' => false, 'expenses' => false, 'pricing' => false,
+                'partners' => false, 'reports' => false, 'official_documents' => false, 'customer_service' => false,
+                'support_tickets' => false, 'team_performance' => false, 'attendance' => true, 'visits' => false,
+                'settings' => true, 'profile' => true, 'cost_viewer' => false,
+            ],
+            'support' => [
+                'dashboard' => true, 'clients' => true, 'shipments' => true, 'sd_forms' => false, 'operations' => false,
+                'invoices' => true, 'accounting' => false, 'treasury' => false, 'expenses' => false, 'pricing' => false,
+                'partners' => false, 'reports' => false, 'official_documents' => false, 'customer_service' => true,
+                'support_tickets' => true, 'team_performance' => false, 'attendance' => true, 'visits' => true,
+                'settings' => true, 'profile' => true, 'cost_viewer' => false,
+            ],
+        ];
+
+        foreach ($visibilityMatrix as $roleKey => $rolePages) {
+            $role = $roles[$roleKey] ?? null;
+            if (! $role) {
+                continue;
+            }
+
             foreach ($pages as $page) {
                 PagePermission::updateOrCreate(
                     [
-                        'role_id' => $admin->id,
+                        'role_id' => $role->id,
                         'page' => $page,
                     ],
                     [
-                        'can_view' => true,
-                        'can_edit' => true,
-                        'can_delete' => true,
-                        'can_approve' => true,
+                        'can_view' => (bool) ($rolePages[$page] ?? false),
                     ],
                 );
             }
-        }
-
-        if ($sales = $roles['sales'] ?? null) {
-            PagePermission::updateOrCreate(
-                [
-                    'role_id' => $sales->id,
-                    'page' => 'clients',
-                ],
-                [
-                    'can_view' => true,
-                    'can_edit' => true,
-                    'can_delete' => false,
-                    'can_approve' => false,
-                ],
-            );
-        }
-
-        if ($salesSupervisor = $roles['sales_supervisor'] ?? null) {
-            PagePermission::updateOrCreate(
-                [
-                    'role_id' => $salesSupervisor->id,
-                    'page' => 'clients',
-                ],
-                [
-                    'can_view' => true,
-                    'can_edit' => true,
-                    'can_delete' => true,
-                    'can_approve' => false,
-                ],
-            );
-        }
-
-        if ($salesManager = $roles['sales_manager'] ?? null) {
-            PagePermission::updateOrCreate(
-                [
-                    'role_id' => $salesManager->id,
-                    'page' => 'clients',
-                ],
-                [
-                    'can_view' => true,
-                    'can_edit' => true,
-                    'can_delete' => true,
-                    'can_approve' => true,
-                ],
-            );
-
-            PagePermission::updateOrCreate(
-                [
-                    'role_id' => $salesManager->id,
-                    'page' => 'users',
-                ],
-                [
-                    'can_view' => true,
-                    'can_edit' => true,
-                    'can_delete' => false,
-                    'can_approve' => false,
-                ],
-            );
-        }
-
-        if ($support = $roles['support'] ?? null) {
-            PagePermission::updateOrCreate(
-                [
-                    'role_id' => $support->id,
-                    'page' => 'clients',
-                ],
-                [
-                    'can_view' => true,
-                    'can_edit' => false,
-                    'can_delete' => false,
-                    'can_approve' => false,
-                ],
-            );
         }
     }
 }

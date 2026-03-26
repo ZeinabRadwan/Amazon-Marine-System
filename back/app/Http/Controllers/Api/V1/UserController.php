@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
@@ -57,7 +58,8 @@ class UserController extends Controller
         $user->status = $validated['status'] ?? 'active';
         $user->save();
 
-        $user->syncRoles([$validated['role']]);
+        $role = Role::query()->findOrFail($validated['role_id']);
+        $user->syncRoles([$role->name]);
 
         $user->load('roles');
 
@@ -105,8 +107,9 @@ class UserController extends Controller
 
         $user->save();
 
-        if (array_key_exists('role', $validated)) {
-            $user->syncRoles([$validated['role']]);
+        if (array_key_exists('role_id', $validated)) {
+            $role = Role::query()->findOrFail($validated['role_id']);
+            $user->syncRoles([$role->name]);
         }
 
         $user->load('roles');
@@ -183,10 +186,11 @@ class UserController extends Controller
         $this->authorize('update', $user);
 
         $validated = $request->validate([
-            'role' => ['required', 'string'],
+            'role_id' => ['required', 'integer', 'exists:roles,id'],
         ]);
 
-        $user->syncRoles([$validated['role']]);
+        $role = Role::query()->findOrFail($validated['role_id']);
+        $user->syncRoles([$role->name]);
         $user->load('roles');
 
         return response()->json([

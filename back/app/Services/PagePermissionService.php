@@ -10,6 +10,10 @@ class PagePermissionService
 {
     public function can(User $user, string $page, string $action): bool
     {
+        if ($action !== 'view' && $action !== 'edit' && $action !== 'delete' && $action !== 'approve') {
+            return false;
+        }
+
         $roleIds = $user->roles()->pluck('id');
 
         if ($roleIds->isEmpty()) {
@@ -26,26 +30,8 @@ class PagePermissionService
             return false;
         }
 
-        $column = $this->actionToColumn($action);
-
-        if ($column === null) {
-            return false;
-        }
-
-        return $permissions->contains(function (PagePermission $permission) use ($column): bool {
-            return (bool) $permission->{$column};
+        return $permissions->contains(function (PagePermission $permission): bool {
+            return (bool) $permission->can_view;
         });
     }
-
-    private function actionToColumn(string $action): ?string
-    {
-        return match ($action) {
-            'view' => 'can_view',
-            'edit' => 'can_edit',
-            'delete' => 'can_delete',
-            'approve' => 'can_approve',
-            default => null,
-        };
-    }
 }
-

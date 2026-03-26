@@ -4,6 +4,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Authorization verification switch
+    |--------------------------------------------------------------------------
+    |
+    | Set to false to bypass backend permission verification temporarily.
+    | Set to true to reactivate all permission checks.
+    |
+    */
+
+    'verification_enabled' => (bool) env('PERMISSIONS_VERIFICATION_ENABLED', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Permission groups (for API and seeder)
     |--------------------------------------------------------------------------
     |
