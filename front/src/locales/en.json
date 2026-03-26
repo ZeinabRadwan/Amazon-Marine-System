@@ -431,8 +431,16 @@
       "selectShipmentFirst": "Select a shipment from the table to add an update.",
       "modalSendTitle": "Send update to client",
       "sendVia": "Send via",
+      "sendViaEmailHint": "Opens your email app",
+      "sendViaWhatsappHint": "Opens WhatsApp chat",
       "email": "Email",
       "whatsapp": "WhatsApp",
+      "clientEmail": "Client email",
+      "clientPhone": "Client phone",
+      "noEmail": "No email address available for this client.",
+      "noPhone": "No phone number available for this client.",
+      "openEmail": "Open email",
+      "openWhatsapp": "Open WhatsApp",
       "template": "Template",
       "templatePlaceholder": "— Select a template —",
       "messageLabel": "Message (editable)",
@@ -534,7 +542,11 @@
       "issue": "Issue / Opportunity",
       "issuePlaceholder": "The specific business challenge or opportunity…",
       "replyAction": "Reply / Action taken",
-      "replyActionPlaceholder": "How you replied or what the next action is…"
+      "replyActionPlaceholder": "How you replied or what the next action is…",
+      "modalViewTitle": "Communication log details",
+      "logId": "Log ID",
+      "occurredAt": "Occurred at",
+      "detailContent": "Content"
     }
   },
   "attendance": {
@@ -569,15 +581,24 @@
     "excuses": {
       "submitTitle": "Submit excuse",
       "submitHint": "Fill in the form and submit your excuse request.",
+      "chooseFile": "Choose file",
+      "removeFile": "Remove file",
       "noFile": "No file selected",
       "reasonPlaceholder": "Write the reason in detail...",
       "reason": "Reason",
       "attachment": "Attachment (PDF or image)",
+      "requiredField": "{{field}} is required.",
+      "reset": "Reset",
       "submit": "Submit excuse",
       "submitSuccess": "Excuse submitted.",
       "myList": "My excuses",
       "empty": "No excuses yet.",
-      "viewAttachment": "View attachment"
+      "viewAttachment": "View attachment",
+      "status": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      }
     },
     "admin": {
       "totalDays": "Total days",
@@ -586,6 +607,7 @@
       "apply": "Apply filters",
       "exportCsv": "Export CSV",
       "reportHint": "Filter and review attendance report data by employee, period, and status.",
+      "detailsTitle": "Detailed report",
       "summaryTitle": "Summary by employee",
       "summaryEmpty": "No summary for this filter.",
       "records": "Records",
@@ -1259,7 +1281,13 @@
       "loadingReefer": "Loading & reefer",
       "sdForm": "SD form",
       "operation": "Operation",
-      "tasks": "Tasks"
+      "tasks": "Tasks",
+      "basicInfo": "Basic Information",
+      "latestTracking": "Latest Tracking Update",
+      "route": "Route & Movement",
+      "cargoDetails": "Cargo & Container Details",
+      "clientInfo": "Client Information",
+      "vendorSales": "Vendor & Sales Representative"
     },
     "fields": {
       "bl_number": "BL number",

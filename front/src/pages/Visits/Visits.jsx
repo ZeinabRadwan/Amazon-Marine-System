@@ -33,9 +33,13 @@ import {
   VISIT_STATUS_ORDERED,
   normalizeVisitStatusKey,
   isPredefinedVisitStatus,
+  getVisitStatusLabel,
 } from './visitStatus'
 import VisitStatusBadge from './VisitStatusBadge'
 import { normalizeClientOption } from '../../utils/entitySelectOptions'
+
+/** Pending client follow-ups block; flip to re-enable. */
+const SHOW_VISITS_FOLLOW_UPS_SECTION = false
 
 function normalizeVendorOption(v) {
   if (!v || v.id == null) return null
@@ -237,7 +241,7 @@ export default function Visits() {
   }, [token, statsQueryParams])
 
   useEffect(() => {
-    if (!token) return
+    if (!SHOW_VISITS_FOLLOW_UPS_SECTION || !token) return
     setFollowUpsLoading(true)
     getFollowUpsPending(token)
       .then((data) => {
@@ -703,7 +707,10 @@ export default function Visits() {
                   <DonutChart
                     data={charts.visits_by_status.map((item) => ({
                       ...item,
-                      statusLabel: item.status ?? t('visits.unknownStatus', 'Unknown'),
+                      statusLabel:
+                        item.status != null && String(item.status).trim() !== ''
+                          ? getVisitStatusLabel(item.status, t)
+                          : t('visits.unknownStatus'),
                     }))}
                     nameKey="statusLabel"
                     valueKey="count"
@@ -719,35 +726,37 @@ export default function Visits() {
           )}
         </div>
 
-        <div className="clients-extra-panel mb-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <h3 className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-100">{t('visits.followUpsTitle')}</h3>
-          {followUpsLoading ? (
-            <p className="text-sm text-gray-500">{t('visits.followUpsLoading')}</p>
-          ) : followUps.length === 0 ? (
-            <p className="text-sm text-gray-500">{t('visits.followUpsEmpty')}</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px] border-collapse text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-600">
-                    <th className="px-2 py-2 text-start font-semibold">{t('visits.followUpClient')}</th>
-                    <th className="px-2 py-2 text-start font-semibold">{t('visits.followUpNext')}</th>
-                    <th className="px-2 py-2 text-start font-semibold">{t('visits.followUpSummary')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {followUps.map((f) => (
-                    <tr key={f.id} className="border-b border-gray-100 dark:border-gray-700">
-                      <td className="px-2 py-2">{f.client_name || '—'}</td>
-                      <td className="px-2 py-2 whitespace-nowrap">{f.next_follow_up_at || '—'}</td>
-                      <td className="px-2 py-2 text-gray-600 dark:text-gray-300">{f.summary || '—'}</td>
+        {SHOW_VISITS_FOLLOW_UPS_SECTION && (
+          <div className="clients-extra-panel mb-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <h3 className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-100">{t('visits.followUpsTitle')}</h3>
+            {followUpsLoading ? (
+              <p className="text-sm text-gray-500">{t('visits.followUpsLoading')}</p>
+            ) : followUps.length === 0 ? (
+              <p className="text-sm text-gray-500">{t('visits.followUpsEmpty')}</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[640px] border-collapse text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200 dark:border-gray-600">
+                      <th className="px-2 py-2 text-start font-semibold">{t('visits.followUpClient')}</th>
+                      <th className="px-2 py-2 text-start font-semibold">{t('visits.followUpNext')}</th>
+                      <th className="px-2 py-2 text-start font-semibold">{t('visits.followUpSummary')}</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+                  </thead>
+                  <tbody>
+                    {followUps.map((f) => (
+                      <tr key={f.id} className="border-b border-gray-100 dark:border-gray-700">
+                        <td className="px-2 py-2">{f.client_name || '—'}</td>
+                        <td className="px-2 py-2 whitespace-nowrap">{f.next_follow_up_at || '—'}</td>
+                        <td className="px-2 py-2 text-gray-600 dark:text-gray-300">{f.summary || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="clients-filters-card">
           <div className="clients-filters__row clients-filters__row--main">

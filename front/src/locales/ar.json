@@ -431,8 +431,16 @@
       "selectShipmentFirst": "اختر شحنة من الجدول لإضافة تحديث.",
       "modalSendTitle": "إرسال تحديث للعميل",
       "sendVia": "إرسال عبر",
+      "sendViaEmailHint": "يفتح تطبيق البريد",
+      "sendViaWhatsappHint": "يفتح محادثة واتساب",
       "email": "بريد إلكتروني",
       "whatsapp": "واتساب",
+      "clientEmail": "بريد العميل",
+      "clientPhone": "هاتف العميل",
+      "noEmail": "لا يوجد بريد إلكتروني مسجّل لهذا العميل.",
+      "noPhone": "لا يوجد رقم هاتف مسجّل لهذا العميل.",
+      "openEmail": "فتح البريد",
+      "openWhatsapp": "فتح واتساب",
       "template": "قالب جاهز",
       "templatePlaceholder": "— اختر قالبًا —",
       "messageLabel": "نص الرسالة (يمكن التعديل)",
@@ -534,7 +542,11 @@
       "issue": "المشكلة / الفرصة",
       "issuePlaceholder": "التحدي أو الفرصة التجارية المُحددة…",
       "replyAction": "الرد / الإجراء المتخذ",
-      "replyActionPlaceholder": "كيف تم الرد أو ما الإجراء التالي…"
+      "replyActionPlaceholder": "كيف تم الرد أو ما الإجراء التالي…",
+      "modalViewTitle": "تفاصيل سجل التواصل",
+      "logId": "رقم السجل",
+      "occurredAt": "وقت الحدوث",
+      "detailContent": "المحتوى"
     }
   },
   "attendance": {
@@ -569,15 +581,24 @@
     "excuses": {
       "submitTitle": "تقديم عذر",
       "submitHint": "املأ النموذج وأرسل طلب عذرك.",
+      "chooseFile": "اختيار ملف",
+      "removeFile": "إزالة الملف",
       "noFile": "لم يتم اختيار ملف",
       "reasonPlaceholder": "اكتب السبب بالتفصيل...",
       "reason": "السبب",
       "attachment": "مرفق (PDF أو صورة)",
+      "requiredField": "{{field}} مطلوب.",
+      "reset": "إعادة التعيين",
       "submit": "إرسال العذر",
       "submitSuccess": "تم إرسال العذر.",
       "myList": "أعذاري",
       "empty": "لا توجد أعذار بعد.",
-      "viewAttachment": "عرض المرفق"
+      "viewAttachment": "عرض المرفق",
+      "status": {
+        "pending": "قيد المراجعة",
+        "approved": "معتمد",
+        "rejected": "مرفوض"
+      }
     },
     "admin": {
       "totalDays": "إجمالي الأيام",
@@ -586,6 +607,7 @@
       "apply": "تطبيق المرشحات",
       "exportCsv": "تصدير CSV",
       "reportHint": "تصفية ومراجعة بيانات تقرير الحضور حسب الموظف والفترة والحالة.",
+      "detailsTitle": "تقرير تفصيلي",
       "summaryTitle": "ملخص حسب الموظف",
       "summaryEmpty": "لا يوجد ملخص لهذا المرشح.",
       "records": "سجلات",
@@ -1259,7 +1281,13 @@
       "loadingReefer": "التحميل والمبرد",
       "sdForm": "نموذج SD",
       "operation": "التشغيل",
-      "tasks": "المهام"
+      "tasks": "المهام",
+      "basicInfo": "المعلومات الأساسية",
+      "latestTracking": "آخر تحديث تتبع",
+      "route": "المسار والحركة",
+      "cargoDetails": "تفاصيل الشحنة والحاوية",
+      "clientInfo": "بيانات العميل",
+      "vendorSales": "المورد ومندوب المبيعات"
     },
     "fields": {
       "bl_number": "رقم BL",
