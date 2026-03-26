@@ -14,6 +14,10 @@ class RolesAndPermissionsSeeder extends Seeder
      */
     public function run(): void
     {
+        // reset everything first
+        Permission::truncate();
+        Role::truncate();
+        PagePermission::truncate();
         app()->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
 
         $permissionGroups = config('permissions.groups', []);
