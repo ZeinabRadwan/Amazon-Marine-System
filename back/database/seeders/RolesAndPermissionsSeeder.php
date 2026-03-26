@@ -90,7 +90,6 @@ class RolesAndPermissionsSeeder extends Seeder
             'clients',
             'shipments',
             'sd_forms',
-            'operations',
             'invoices',
             'accounting',
             'treasury',
@@ -100,11 +99,14 @@ class RolesAndPermissionsSeeder extends Seeder
             'reports',
             'official_documents',
             'customer_service',
-            'support_tickets',
-            'team_performance',
             'attendance',
             'visits',
+            'users',
+            'roles_permissions',
             'settings',
+            'operations',
+            'support_tickets',
+            'team_performance',
             'profile',
             'cost_viewer',
         ];
@@ -116,6 +118,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'invoices' => false, 'accounting' => false, 'treasury' => false, 'expenses' => false, 'pricing' => false,
                 'partners' => false, 'reports' => true, 'official_documents' => false, 'customer_service' => false,
                 'support_tickets' => false, 'team_performance' => true, 'attendance' => true, 'visits' => true,
+                'users' => false, 'roles_permissions' => false,
                 'settings' => true, 'profile' => true, 'cost_viewer' => false,
             ],
             'sales' => [
@@ -123,6 +126,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'invoices' => false, 'accounting' => false, 'treasury' => false, 'expenses' => false, 'pricing' => true,
                 'partners' => false, 'reports' => true, 'official_documents' => false, 'customer_service' => false,
                 'support_tickets' => false, 'team_performance' => false, 'attendance' => true, 'visits' => true,
+                'users' => false, 'roles_permissions' => false,
                 'settings' => true, 'profile' => true, 'cost_viewer' => false,
             ],
             'accounting' => [
@@ -130,6 +134,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'invoices' => true, 'accounting' => true, 'treasury' => true, 'expenses' => true, 'pricing' => false,
                 'partners' => true, 'reports' => true, 'official_documents' => false, 'customer_service' => false,
                 'support_tickets' => false, 'team_performance' => false, 'attendance' => true, 'visits' => false,
+                'users' => false, 'roles_permissions' => false,
                 'settings' => true, 'profile' => true, 'cost_viewer' => false,
             ],
             'pricing' => [
@@ -137,6 +142,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'invoices' => true, 'accounting' => false, 'treasury' => false, 'expenses' => false, 'pricing' => true,
                 'partners' => false, 'reports' => true, 'official_documents' => false, 'customer_service' => false,
                 'support_tickets' => false, 'team_performance' => false, 'attendance' => true, 'visits' => false,
+                'users' => false, 'roles_permissions' => false,
                 'settings' => true, 'profile' => true, 'cost_viewer' => true,
             ],
             'operations' => [
@@ -144,6 +150,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'invoices' => false, 'accounting' => false, 'treasury' => false, 'expenses' => false, 'pricing' => false,
                 'partners' => false, 'reports' => false, 'official_documents' => false, 'customer_service' => false,
                 'support_tickets' => false, 'team_performance' => false, 'attendance' => true, 'visits' => false,
+                'users' => false, 'roles_permissions' => false,
                 'settings' => true, 'profile' => true, 'cost_viewer' => false,
             ],
             'support' => [
@@ -151,6 +158,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'invoices' => true, 'accounting' => false, 'treasury' => false, 'expenses' => false, 'pricing' => false,
                 'partners' => false, 'reports' => false, 'official_documents' => false, 'customer_service' => true,
                 'support_tickets' => true, 'team_performance' => false, 'attendance' => true, 'visits' => true,
+                'users' => false, 'roles_permissions' => false,
                 'settings' => true, 'profile' => true, 'cost_viewer' => false,
             ],
         ];

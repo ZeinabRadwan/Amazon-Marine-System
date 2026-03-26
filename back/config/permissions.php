@@ -25,11 +25,11 @@ return [
     */
 
     'pages' => [
+        // Sidebar order
         'dashboard' => ['name_ar' => 'لوحة التحكم', 'name_en' => 'Dashboard'],
         'clients' => ['name_ar' => 'العملاء / CRM', 'name_en' => 'Clients / CRM'],
         'shipments' => ['name_ar' => 'الشحنات', 'name_en' => 'Shipments'],
         'sd_forms' => ['name_ar' => 'نماذج SD', 'name_en' => 'SD Forms'],
-        'operations' => ['name_ar' => 'العمليات', 'name_en' => 'Operations'],
         'invoices' => ['name_ar' => 'الفواتير', 'name_en' => 'Invoices'],
         'accounting' => ['name_ar' => 'الحسابات', 'name_en' => 'Accounts'],
         'treasury' => ['name_ar' => 'الخزينة', 'name_en' => 'Treasury'],
@@ -39,11 +39,16 @@ return [
         'reports' => ['name_ar' => 'التقارير', 'name_en' => 'Reports'],
         'official_documents' => ['name_ar' => 'المستندات الرسمية', 'name_en' => 'Official Documents'],
         'customer_service' => ['name_ar' => 'خدمة العملاء', 'name_en' => 'Customer Service'],
-        'support_tickets' => ['name_ar' => 'تذاكر الدعم', 'name_en' => 'Support Tickets'],
-        'team_performance' => ['name_ar' => 'أداء الفريق', 'name_en' => 'Team Performance'],
         'attendance' => ['name_ar' => 'الحضور والانصراف', 'name_en' => 'Attendance'],
         'visits' => ['name_ar' => 'سجل الزيارات', 'name_en' => 'Visit Log'],
+        'users' => ['name_ar' => 'المستخدمون', 'name_en' => 'Users'],
+        'roles_permissions' => ['name_ar' => 'الأدوار والصلاحيات', 'name_en' => 'Roles & Permissions'],
         'settings' => ['name_ar' => 'الإعدادات', 'name_en' => 'Settings'],
+
+        // Extra pages still used by business rules
+        'operations' => ['name_ar' => 'العمليات', 'name_en' => 'Operations'],
+        'support_tickets' => ['name_ar' => 'تذاكر الدعم', 'name_en' => 'Support Tickets'],
+        'team_performance' => ['name_ar' => 'أداء الفريق', 'name_en' => 'Team Performance'],
         'profile' => ['name_ar' => 'الملف الشخصي', 'name_en' => 'Profile'],
         'cost_viewer' => ['name_ar' => 'عرض التكاليف', 'name_en' => 'Cost Viewer'],
     ],
