@@ -44,13 +44,6 @@ return [
         'users' => ['name_ar' => 'المستخدمون', 'name_en' => 'Users'],
         'roles_permissions' => ['name_ar' => 'الأدوار والصلاحيات', 'name_en' => 'Roles & Permissions'],
         'settings' => ['name_ar' => 'الإعدادات', 'name_en' => 'Settings'],
-
-        // Extra pages still used by business rules
-        'operations' => ['name_ar' => 'العمليات', 'name_en' => 'Operations'],
-        'support_tickets' => ['name_ar' => 'تذاكر الدعم', 'name_en' => 'Support Tickets'],
-        'team_performance' => ['name_ar' => 'أداء الفريق', 'name_en' => 'Team Performance'],
-        'profile' => ['name_ar' => 'الملف الشخصي', 'name_en' => 'Profile'],
-        'cost_viewer' => ['name_ar' => 'عرض التكاليف', 'name_en' => 'Cost Viewer'],
     ],
 
     /*
