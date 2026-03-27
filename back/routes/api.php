@@ -379,6 +379,8 @@ Route::prefix('v1')->group(function () {
         });
 
         // Accounting
+        Route::get('accounting/stats', [AccountingController::class, 'stats']);
+        Route::get('accounting/charts', [AccountingController::class, 'charts']);
         Route::get('accounting/summary', [AccountingController::class, 'summary']);
         Route::get('accounting/clients', [AccountingController::class, 'clientAccounts']);
         Route::get('accounting/partners', [AccountingController::class, 'partnerAccounts']);

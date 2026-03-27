@@ -13,6 +13,41 @@ use Illuminate\Http\Request;
 
 class AccountingController extends Controller
 {
+    public function stats(Request $request): JsonResponse
+    {
+        abort_unless(
+            $request->user()?->can('accounting.view'),
+            403,
+            __('You do not have permission to view accounting stats.')
+        );
+
+        $months = max(1, (int) $request->query('months', 6));
+        $summary = $this->buildAccountingSummaryData($months);
+
+        return response()->json([
+            'data' => $summary['totals'],
+        ]);
+    }
+
+    public function charts(Request $request): JsonResponse
+    {
+        abort_unless(
+            $request->user()?->can('accounting.view'),
+            403,
+            __('You do not have permission to view accounting charts.')
+        );
+
+        $months = max(1, (int) $request->query('months', 6));
+        $summary = $this->buildAccountingSummaryData($months);
+
+        return response()->json([
+            'data' => [
+                'receivables_payables' => $summary['receivables_payables'],
+                'balance_by_currency' => $summary['balance_by_currency'],
+            ],
+        ]);
+    }
+
     public function summary(Request $request): JsonResponse
     {
         abort_unless(
@@ -22,6 +57,22 @@ class AccountingController extends Controller
         );
 
         $months = max(1, (int) $request->query('months', 6));
+        $summary = $this->buildAccountingSummaryData($months);
+
+        return response()->json([
+            'data' => $summary,
+        ]);
+    }
+
+    /**
+     * @return array{
+     *   totals: array{receivables: float, payables: float, net: float, currencies: \Illuminate\Support\Collection<int, string>},
+     *   receivables_payables: array{labels: array<int, string>, receivables: array<int, float>, payables: array<int, float>},
+     *   balance_by_currency: \Illuminate\Support\Collection<int, array{currency: string, balance: float}>
+     * }
+     */
+    private function buildAccountingSummaryData(int $months): array
+    {
         $from = now()->subMonths($months - 1)->startOfMonth();
 
         $invoices = Invoice::query()
@@ -40,8 +91,8 @@ class AccountingController extends Controller
             return (float) $group->sum('total_amount');
         });
 
-        $totalReceivables = $clientTotals->sum();
-        $totalPayables = $partnerTotals->sum();
+        $totalReceivables = (float) $clientTotals->sum();
+        $totalPayables = (float) $partnerTotals->sum();
         $netBalance = $totalReceivables - $totalPayables;
 
         $monthsCursor = $from->copy();
@@ -73,27 +124,25 @@ class AccountingController extends Controller
             return $value - $payables;
         });
 
-        return response()->json([
-            'data' => [
-                'totals' => [
-                    'receivables' => $totalReceivables,
-                    'payables' => $totalPayables,
-                    'net' => $netBalance,
-                    'currencies' => $balanceByCurrency->keys()->values(),
-                ],
-                'receivables_payables' => [
-                    'labels' => $labels,
-                    'receivables' => $receivablesSeries,
-                    'payables' => $payablesSeries,
-                ],
-                'balance_by_currency' => $balanceByCurrency->map(function (float $value, string $currency) {
-                    return [
-                        'currency' => $currency,
-                        'balance' => $value,
-                    ];
-                })->values(),
+        return [
+            'totals' => [
+                'receivables' => $totalReceivables,
+                'payables' => $totalPayables,
+                'net' => $netBalance,
+                'currencies' => $balanceByCurrency->keys()->values(),
             ],
-        ]);
+            'receivables_payables' => [
+                'labels' => $labels,
+                'receivables' => $receivablesSeries,
+                'payables' => $payablesSeries,
+            ],
+            'balance_by_currency' => $balanceByCurrency->map(function (float $value, string $currency) {
+                return [
+                    'currency' => $currency,
+                    'balance' => $value,
+                ];
+            })->values(),
+        ];
     }
 
     public function clientAccounts(Request $request): JsonResponse
@@ -356,4 +405,3 @@ class AccountingController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 }
-

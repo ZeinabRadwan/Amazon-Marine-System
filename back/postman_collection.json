@@ -5395,6 +5395,72 @@
       "name": "Accounting",
       "item": [
         {
+          "name": "Accounting Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/accounting/stats?months=6",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounting",
+                "stats"
+              ],
+              "query": [
+                {
+                  "key": "months",
+                  "value": "6"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Accounting Charts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/accounting/charts?months=6",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounting",
+                "charts"
+              ],
+              "query": [
+                {
+                  "key": "months",
+                  "value": "6"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Accounting Summary",
           "request": {
             "method": "GET",
