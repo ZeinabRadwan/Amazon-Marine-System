@@ -192,6 +192,7 @@ class AuthController extends Controller
             'avatar' => $user->avatar,
             'avatar_url' => $user->avatar ? (request()->getSchemeAndHttpHost().'/storage/'.ltrim($user->avatar, '/')) : null,
             'roles' => $user->getRoleNames(),
+            'role_id' => $user->roles->first()?->id,
         ];
     }
 }
