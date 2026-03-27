@@ -12,6 +12,9 @@ import Profile from './pages/Profile'
 import Users from './pages/Users'
 import RolesPermissions from './pages/RolesPermissions'
 import Clients from './pages/Clients'
+import Accountings from './pages/Accountings'
+import Treasury from './pages/Treasury'
+import Expenses from './pages/Expenses'
 import Vendors from './pages/Vendors'
 import Visits from './pages/Visits'
 import ClientLookups from './pages/ClientLookups'
@@ -192,6 +195,9 @@ function App() {
           <Route path="/users" element={<Users />} />
           <Route path="/roles-permissions" element={<RolesPermissions />} />
           <Route path="/clients" element={<Clients />} />
+          <Route path="/accountings" element={<Accountings />} />
+          <Route path="/treasury" element={<Treasury />} />
+          <Route path="/expenses" element={<Expenses />} />
           <Route path="/vendors" element={<Vendors />} />
           <Route path="/visits" element={<Visits />} />
           <Route path="/client-lookups" element={<ClientLookups />} />

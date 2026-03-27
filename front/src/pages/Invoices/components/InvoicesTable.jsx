@@ -17,7 +17,7 @@ function statusBadge(status, t) {
   return { label: status || '—', cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300', icon: <AlertCircle className="h-3 w-3" /> }
 }
 
-export default function InvoicesTable({ refreshKey, invoiceType, onChanged }) {
+export default function InvoicesTable({ refreshKey, invoiceType, onChanged, onFiltersChange, canManage = true }) {
   const { t } = useTranslation()
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')
@@ -65,6 +65,16 @@ export default function InvoicesTable({ refreshKey, invoiceType, onChanged }) {
   useEffect(() => {
     fetchData()
   }, [refreshKey, invoiceType, search, status, currencyId, month, sort, page])
+
+  useEffect(() => {
+    onFiltersChange?.({
+      search,
+      status,
+      currencyId,
+      month,
+      sort,
+    })
+  }, [search, status, currencyId, month, sort, onFiltersChange])
 
   const allSelected = rows.length > 0 && selectedIds.size === rows.length
 
@@ -283,6 +293,7 @@ export default function InvoicesTable({ refreshKey, invoiceType, onChanged }) {
         invoiceId={detailId}
         isOpen={!!detailId}
         onClose={() => setDetailId(null)}
+        canManage={canManage}
         onChanged={() => {
           setDetailId(null)
           onChanged?.()

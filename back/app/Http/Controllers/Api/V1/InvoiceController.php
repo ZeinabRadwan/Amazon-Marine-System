@@ -503,8 +503,21 @@ class InvoiceController extends Controller
 
         $query = Invoice::query()->with(['client', 'shipment']);
 
+        if ($invoiceType = $request->query('invoice_type')) {
+            $query->where('invoice_type', $invoiceType === 'partner' ? 'vendor' : $invoiceType);
+        }
+
         if ($status = $request->query('status')) {
             $query->where('status', $status);
+        }
+
+        if ($search = $request->query('search')) {
+            $query->where(function ($q) use ($search): void {
+                $q->where('invoice_number', 'like', '%'.$search.'%')
+                    ->orWhereHas('client', function ($q2) use ($search): void {
+                        $q2->where('name', 'like', '%'.$search.'%');
+                    });
+            });
         }
 
         if ($currencyId = $request->query('currency_id')) {

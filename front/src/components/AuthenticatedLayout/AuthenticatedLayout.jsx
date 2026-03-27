@@ -46,6 +46,12 @@ function getPageHeaderForPath(pathname, t) {
       return { title: t('settings.title'), breadcrumbs: [home, { label: t('settings.title') }] }
     default:
       return { title: t('pageHeader.dashboard'), breadcrumbs: [home] }
+    case '/accountings':
+      return { title: t('accountings.title'), breadcrumbs: [home, { label: t('accountings.title') }] }
+    case '/treasury':
+      return { title: t('treasury.title'), breadcrumbs: [home, { label: t('treasury.title') }] }
+    case '/expenses':
+      return { title: t('expensesPage.title'), breadcrumbs: [home, { label: t('expensesPage.title') }] }
   }
 }
 
@@ -177,6 +183,18 @@ export default function AuthenticatedLayout() {
       navigate('/settings')
       return
     }
+    if (id === 'accounts') {
+      navigate('/accountings')
+      return
+    }
+    if (id === 'treasury') {
+      navigate('/treasury')
+      return
+    }
+    if (id === 'expenses') {
+      navigate('/expenses')
+      return
+    }
   }
 
   const pathToMenu = {
@@ -197,6 +215,9 @@ export default function AuthenticatedLayout() {
     '/invoices': 'invoices',
     '/notifications': 'notifications',
     '/settings': 'settings',
+    '/accountings': 'accounts',
+    '/treasury': 'treasury',
+    '/expenses': 'expenses',
   }
   const activeMenu = pathToMenu[location.pathname] ?? 'dashboard'
 

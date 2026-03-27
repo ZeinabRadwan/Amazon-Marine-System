@@ -30,6 +30,10 @@ import {
   createClientStatus,
   updateClientStatus,
   deleteClientStatus,
+  listVendorPartnerTypes,
+  createVendorPartnerType,
+  updateVendorPartnerType,
+  deleteVendorPartnerType,
 } from '../../api/clientLookups'
 import {
   listTicketStatuses,
@@ -177,6 +181,18 @@ export default function Settings() {
   const [deleteClientStatusId, setDeleteClientStatusId] = useState(null)
   const [deleteClientStatusSubmitting, setDeleteClientStatusSubmitting] = useState(false)
 
+  const [vendorPartnerTypes, setVendorPartnerTypes] = useState([])
+  const [vendorPartnerTypeModal, setVendorPartnerTypeModal] = useState(null)
+  const [vendorPartnerTypeForm, setVendorPartnerTypeForm] = useState({
+    code: '',
+    name_ar: '',
+    name_en: '',
+    sort_order: 1,
+  })
+  const [vendorPartnerTypeSubmitting, setVendorPartnerTypeSubmitting] = useState(false)
+  const [deleteVendorPartnerTypeId, setDeleteVendorPartnerTypeId] = useState(null)
+  const [deleteVendorPartnerTypeSubmitting, setDeleteVendorPartnerTypeSubmitting] = useState(false)
+
   const [ticketStatuses, setTicketStatuses] = useState([])
   const [showTicketStatusModal, setShowTicketStatusModal] = useState(false)
   const [editingTicketStatus, setEditingTicketStatus] = useState(null)
@@ -281,13 +297,20 @@ export default function Settings() {
         const commLogTypesP = canSeeCommLogTypes
           ? listCommunicationLogTypes(token).then((res) => (Array.isArray(res?.data) ? res.data : [])).catch(() => [])
           : Promise.resolve([])
+        const vendorPartnerTypesP = listVendorPartnerTypes(token)
+          .then((data) => {
+            const list = data.data ?? data
+            return Array.isArray(list) ? list : []
+          })
+          .catch(() => [])
 
-        const [clients, tickets, types, priorities, commTypes] = await Promise.all([
+        const [clients, tickets, types, priorities, commTypes, partnerTypesList] = await Promise.all([
           clientP,
           ticketStatusesP,
           ticketTypesP,
           ticketPrioritiesP,
           commLogTypesP,
+          vendorPartnerTypesP,
         ])
         if (!cancelled) {
           setClientStatuses(clients)
@@ -295,6 +318,7 @@ export default function Settings() {
           setTicketTypes(types)
           setTicketPriorities(priorities)
           setCommunicationLogTypes(commTypes)
+          setVendorPartnerTypes(partnerTypesList)
         }
       } catch (e) {
         if (!cancelled) setError(e.message || t('settings.errors.loadStatusesTab'))
@@ -662,6 +686,68 @@ export default function Settings() {
     }
   }
 
+  function openNewVendorPartnerType() {
+    setVendorPartnerTypeForm({ code: '', name_ar: '', name_en: '', sort_order: 1 })
+    setVendorPartnerTypeModal('create')
+  }
+
+  function openEditVendorPartnerType(row) {
+    setVendorPartnerTypeForm({
+      code: row.code ?? '',
+      name_ar: row.name_ar ?? '',
+      name_en: row.name_en ?? '',
+      sort_order: row.sort_order ?? 1,
+    })
+    setVendorPartnerTypeModal({ mode: 'edit', id: row.id })
+  }
+
+  async function handleSaveVendorPartnerType(e) {
+    e.preventDefault()
+    if (!token) return
+    setVendorPartnerTypeSubmitting(true)
+    setError('')
+    try {
+      const body = {
+        code: vendorPartnerTypeForm.code.trim().replace(/\s+/g, '_'),
+        name_ar: vendorPartnerTypeForm.name_ar.trim(),
+        name_en: vendorPartnerTypeForm.name_en.trim(),
+        sort_order: Number(vendorPartnerTypeForm.sort_order) || 0,
+      }
+      if (vendorPartnerTypeModal?.mode === 'edit' && vendorPartnerTypeModal.id != null) {
+        await updateVendorPartnerType(token, vendorPartnerTypeModal.id, body)
+      } else {
+        await createVendorPartnerType(token, body)
+      }
+      const data = await listVendorPartnerTypes(token)
+      const list = data.data ?? data
+      setVendorPartnerTypes(Array.isArray(list) ? list : [])
+      setVendorPartnerTypeModal(null)
+      setAlert({ type: 'success', message: t('settings.vendorPartnerTypes.saved') })
+    } catch (err) {
+      setError(err.message || t('settings.errors.saveVendorPartnerType'))
+    } finally {
+      setVendorPartnerTypeSubmitting(false)
+    }
+  }
+
+  async function handleDeleteVendorPartnerTypeConfirm() {
+    if (!token || deleteVendorPartnerTypeId == null) return
+    setDeleteVendorPartnerTypeSubmitting(true)
+    setError('')
+    try {
+      await deleteVendorPartnerType(token, deleteVendorPartnerTypeId)
+      const data = await listVendorPartnerTypes(token)
+      const list = data.data ?? data
+      setVendorPartnerTypes(Array.isArray(list) ? list : [])
+      setDeleteVendorPartnerTypeId(null)
+      setAlert({ type: 'success', message: t('settings.vendorPartnerTypes.deleted') })
+    } catch (err) {
+      setError(err.message || t('settings.errors.deleteVendorPartnerType'))
+    } finally {
+      setDeleteVendorPartnerTypeSubmitting(false)
+    }
+  }
+
   function openNewTicketStatus() {
     setEditingTicketStatus(null)
     setTicketStatusForm({ key: '', label_ar: '', label_en: '', active: true, sort_order: 0 })
@@ -987,6 +1073,32 @@ export default function Settings() {
             {t('settings.shipmentStatuses.edit')}
           </button>
           <button type="button" className="cs-btn cs-btn-sm cs-btn-outline" style={{ color: 'var(--danger, #dc3545)' }} onClick={() => setDeleteClientStatusId(row.id)}>
+            {t('settings.shipmentStatuses.delete')}
+          </button>
+        </div>
+      ),
+    },
+  ]
+
+  const vendorPartnerTypeColumns = [
+    { key: 'code', label: t('settings.vendorPartnerTypes.table.code'), sortable: false },
+    {
+      key: 'display',
+      label: t('settings.statuses.displayName'),
+      sortable: false,
+      render: (_, row) => localizedStatusLabel(row, i18n.language),
+    },
+    { key: 'sort_order', label: t('settings.vendorPartnerTypes.table.sortOrder'), sortable: false, render: (val) => val ?? '—' },
+    {
+      key: 'actions',
+      label: t('settings.shipmentStatuses.table.actions'),
+      sortable: false,
+      render: (_, row) => (
+        <div className="cs-table-actions">
+          <button type="button" className="cs-btn cs-btn-sm cs-btn-outline" onClick={() => openEditVendorPartnerType(row)}>
+            {t('settings.shipmentStatuses.edit')}
+          </button>
+          <button type="button" className="cs-btn cs-btn-sm cs-btn-outline" style={{ color: 'var(--danger, #dc3545)' }} onClick={() => setDeleteVendorPartnerTypeId(row.id)}>
             {t('settings.shipmentStatuses.delete')}
           </button>
         </div>
@@ -1470,6 +1582,20 @@ export default function Settings() {
                           </div>
                         </SectionCard>
 
+                        <SectionCard
+                          title={t('settings.vendorPartnerTypes.cardTitle')}
+                          subtitle={t('settings.statuses.vendorPartnerTypesHint')}
+                          actions={
+                            <button type="button" className="page-header__btn page-header__btn--primary" onClick={openNewVendorPartnerType}>
+                              {t('settings.vendorPartnerTypes.addTitle')}
+                            </button>
+                          }
+                        >
+                          <div className="settings-table-card">
+                            <Table columns={vendorPartnerTypeColumns} data={vendorPartnerTypes} getRowKey={(r) => r.id} emptyMessage={t('settings.vendorPartnerTypes.empty')} />
+                          </div>
+                        </SectionCard>
+
                         {canSeeTicketStatuses ? (
                           <SectionCard
                             title={t('settings.ticketStatuses.cardTitle')}
@@ -1634,6 +1760,56 @@ export default function Settings() {
                 </button>
                 <button type="button" className="clients-btn clients-btn--danger" onClick={handleDeleteClientStatusConfirm} disabled={deleteClientStatusSubmitting}>
                   {deleteClientStatusSubmitting ? t('clients.deleting') : t('clients.delete')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {(vendorPartnerTypeModal === 'create' || vendorPartnerTypeModal?.mode === 'edit') && (
+          <div className="clients-modal" role="dialog" aria-modal="true" aria-labelledby="settings-vendor-partner-type-modal-title">
+            <div className="clients-modal-backdrop" onClick={() => !vendorPartnerTypeSubmitting && setVendorPartnerTypeModal(null)} />
+            <div className="clients-modal-content">
+              <h2 id="settings-vendor-partner-type-modal-title">
+                {vendorPartnerTypeModal?.mode === 'edit' ? t('settings.vendorPartnerTypes.editTitle') : t('settings.vendorPartnerTypes.addTitle')}
+              </h2>
+              <form onSubmit={handleSaveVendorPartnerType} className="settings-modal-form">
+                <Input
+                  label={t('settings.vendorPartnerTypes.code')}
+                  value={vendorPartnerTypeForm.code}
+                  onChange={(e) => setVendorPartnerTypeForm((p) => ({ ...p, code: e.target.value }))}
+                  required
+                  disabled={vendorPartnerTypeModal?.mode === 'edit'}
+                  maxLength={40}
+                />
+                <Input label={t('settings.vendorPartnerTypes.nameAr')} value={vendorPartnerTypeForm.name_ar} onChange={(e) => setVendorPartnerTypeForm((p) => ({ ...p, name_ar: e.target.value }))} required />
+                <Input label={t('settings.vendorPartnerTypes.nameEn')} value={vendorPartnerTypeForm.name_en} onChange={(e) => setVendorPartnerTypeForm((p) => ({ ...p, name_en: e.target.value }))} required />
+                <Input label={t('settings.vendorPartnerTypes.sortOrder')} type="number" min={0} value={vendorPartnerTypeForm.sort_order} onChange={(e) => setVendorPartnerTypeForm((p) => ({ ...p, sort_order: e.target.value }))} />
+                <div className="clients-modal-actions">
+                  <button type="button" className="clients-btn" onClick={() => setVendorPartnerTypeModal(null)} disabled={vendorPartnerTypeSubmitting}>
+                    {t('settings.shipmentStatuses.cancel')}
+                  </button>
+                  <button type="submit" disabled={vendorPartnerTypeSubmitting} className="clients-btn clients-btn--primary">
+                    {vendorPartnerTypeSubmitting ? t('clients.saving', 'Saving…') : t('settings.vendorPartnerTypes.save')}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {deleteVendorPartnerTypeId != null && (
+          <div className="clients-modal" role="dialog" aria-modal="true">
+            <div className="clients-modal-backdrop" onClick={() => !deleteVendorPartnerTypeSubmitting && setDeleteVendorPartnerTypeId(null)} />
+            <div className="clients-modal-content">
+              <h2>{t('settings.vendorPartnerTypes.deleteTitle')}</h2>
+              <p>{t('settings.vendorPartnerTypes.deleteConfirm')}</p>
+              <div className="clients-modal-actions">
+                <button type="button" className="clients-btn" onClick={() => setDeleteVendorPartnerTypeId(null)} disabled={deleteVendorPartnerTypeSubmitting}>
+                  {t('clients.cancel')}
+                </button>
+                <button type="button" className="clients-btn clients-btn--danger" onClick={handleDeleteVendorPartnerTypeConfirm} disabled={deleteVendorPartnerTypeSubmitting}>
+                  {deleteVendorPartnerTypeSubmitting ? t('clients.deleting') : t('clients.delete')}
                 </button>
               </div>
             </div>

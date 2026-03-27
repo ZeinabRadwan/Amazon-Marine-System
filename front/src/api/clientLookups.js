@@ -203,3 +203,48 @@ export async function deleteClientStatus(token, id) {
   if (!res.ok) throw new Error(data.message || data.error || `Failed to delete client status (${res.status})`)
   return data
 }
+
+// —— Vendor partner types (for partners / vendors) ——
+
+/** GET {{base_url}}/vendor-partner-types – List partner type lookups */
+export async function listVendorPartnerTypes(token) {
+  const res = await apiFetch(`${getBaseUrl()}/vendor-partner-types`, { headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to list vendor partner types (${res.status})`)
+  return data
+}
+
+/** POST {{base_url}}/vendor-partner-types */
+export async function createVendorPartnerType(token, body) {
+  const res = await apiFetch(`${getBaseUrl()}/vendor-partner-types`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+    body: JSON.stringify(body),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to create vendor partner type (${res.status})`)
+  return data
+}
+
+/** PUT {{base_url}}/vendor-partner-types/:id */
+export async function updateVendorPartnerType(token, id, body) {
+  const res = await apiFetch(`${getBaseUrl()}/vendor-partner-types/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+    body: JSON.stringify(body),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to update vendor partner type (${res.status})`)
+  return data
+}
+
+/** DELETE {{base_url}}/vendor-partner-types/:id */
+export async function deleteVendorPartnerType(token, id) {
+  const res = await apiFetch(`${getBaseUrl()}/vendor-partner-types/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(token),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to delete vendor partner type (${res.status})`)
+  return data
+}

@@ -15,7 +15,7 @@ function money(amount, currency) {
   }
 }
 
-export default function InvoiceDetailModal({ isOpen, invoiceId, onClose, onChanged }) {
+export default function InvoiceDetailModal({ isOpen, invoiceId, onClose, onChanged, canManage = true }) {
   const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -172,12 +172,12 @@ export default function InvoiceDetailModal({ isOpen, invoiceId, onClose, onChang
         </div>
 
         <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3 flex-wrap">
-          {invoice?.status === 'draft' && (
+          {canManage && invoice?.status === 'draft' && (
             <button onClick={handleIssue} className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold inline-flex items-center gap-2">
               <CheckCircle className="h-4 w-4" /> {t('invoices.issue', 'Issue')}
             </button>
           )}
-          {invoice && invoice.status !== 'cancelled' && (
+          {canManage && invoice && invoice.status !== 'cancelled' && (
             <button onClick={handleCancel} className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm font-bold inline-flex items-center gap-2">
               <Ban className="h-4 w-4" /> {t('invoices.cancel', 'Cancel')}
             </button>
@@ -185,7 +185,7 @@ export default function InvoiceDetailModal({ isOpen, invoiceId, onClose, onChang
           <button onClick={() => setPreviewOpen(true)} className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm font-bold inline-flex items-center gap-2">
             <FileText className="h-4 w-4" /> {t('invoices.previewPdf', 'Preview PDF')}
           </button>
-          {canRecordPayment && (
+          {canManage && canRecordPayment && (
             <button onClick={() => setPaymentOpen(true)} className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold inline-flex items-center gap-2">
               <DollarSign className="h-4 w-4" /> {t('invoices.recordPayment', 'Record payment')}
             </button>

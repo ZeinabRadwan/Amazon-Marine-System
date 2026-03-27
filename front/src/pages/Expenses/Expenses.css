@@ -1,0 +1,60 @@
+.expenses-page {
+  padding: 0 0 2rem;
+}
+
+.expenses-muted {
+  color: var(--form-text, #6b7280);
+  font-size: 0.9375rem;
+}
+
+.expenses-disclaimer {
+  margin: 0 0 1rem;
+  font-size: 0.8125rem;
+  color: var(--form-text, #6b7280);
+  opacity: 0.9;
+}
+
+.expenses-stats {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .expenses-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .expenses-stats {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.expenses-charts-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 900px) {
+  .expenses-charts-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.expenses-chart-empty {
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  color: var(--form-text, #6b7280);
+}
+
+.expenses-hidden-input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}

@@ -6086,6 +6086,7 @@
     },
     {
       "name": "Expenses",
+      "description": "Expense summary, shipment vs general lists, CRUD, CSV export, and receipt upload. List rows include expense_category_id; shipment rows include shipment_id and bl_number. Query params: summary (months), shipment/general (search, category id or name, currency, month YYYY-MM, sort=date|amount|category|bl), export (type=all|shipment|general, search, month, currency).",
       "item": [
         {
           "name": "Expenses Summary",
@@ -6135,7 +6136,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/expenses/shipment?search=&bl=&category=&currency=&month=&sort=amount",
+              "raw": "{{base_url}}/expenses/shipment?search=&bl=&category=&currency=&month=&sort=date",
               "host": [
                 "{{base_url}}"
               ],
@@ -6166,7 +6167,7 @@
                 },
                 {
                   "key": "sort",
-                  "value": "amount"
+                  "value": "date"
                 }
               ]
             }
@@ -6188,7 +6189,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/expenses/general?search=&category=&currency=&month=&sort=amount",
+              "raw": "{{base_url}}/expenses/general?search=&category=&currency=&month=&sort=date",
               "host": [
                 "{{base_url}}"
               ],
@@ -6215,7 +6216,7 @@
                 },
                 {
                   "key": "sort",
-                  "value": "amount"
+                  "value": "date"
                 }
               ]
             }
@@ -6273,13 +6274,13 @@
               ]
             },
             "url": {
-              "raw": "{{base_url}}/expenses/1/receipt",
+              "raw": "{{base_url}}/expenses/{{expense_id}}/receipt",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "expenses",
-                "1",
+                "{{expense_id}}",
                 "receipt"
               ]
             }
@@ -6297,7 +6298,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/expenses/export?type=all&month=&currency=",
+              "raw": "{{base_url}}/expenses/export?type=all&search=&month=&currency=",
               "host": [
                 "{{base_url}}"
               ],
@@ -6309,6 +6310,10 @@
                 {
                   "key": "type",
                   "value": "all"
+                },
+                {
+                  "key": "search",
+                  "value": ""
                 },
                 {
                   "key": "month",
@@ -6338,13 +6343,13 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/expenses/1",
+              "raw": "{{base_url}}/expenses/{{expense_id}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "expenses",
-                "1"
+                "{{expense_id}}"
               ]
             }
           },
@@ -6369,13 +6374,13 @@
               "raw": "{\n  \"description\": \"Updated expense\",\n  \"amount\": 200,\n  \"expense_date\": \"2026-03-12\",\n  \"currency_code\": \"EGP\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/expenses/1",
+              "raw": "{{base_url}}/expenses/{{expense_id}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "expenses",
-                "1"
+                "{{expense_id}}"
               ]
             }
           },
@@ -6392,13 +6397,13 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/expenses/1",
+              "raw": "{{base_url}}/expenses/{{expense_id}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "expenses",
-                "1"
+                "{{expense_id}}"
               ]
             }
           },
@@ -6682,7 +6687,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/invoices/export?status=&currency_id=&month=&ids=",
+              "raw": "{{base_url}}/invoices/export?search=&invoice_type=&status=&currency_id=&month=&ids=",
               "host": [
                 "{{base_url}}"
               ],
@@ -6691,6 +6696,16 @@
                 "export"
               ],
               "query": [
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Invoice number or client name"
+                },
+                {
+                  "key": "invoice_type",
+                  "value": "",
+                  "description": "client or partner (maps partner to vendor on server)"
+                },
                 {
                   "key": "status",
                   "value": ""
@@ -6705,7 +6720,8 @@
                 },
                 {
                   "key": "ids",
-                  "value": ""
+                  "value": "",
+                  "description": "Comma-separated ids; when set, exports only those rows"
                 }
               ]
             }
@@ -9314,6 +9330,14 @@
     },
     {
       "key": "treasury_entry_id",
+      "value": "1"
+    },
+    {
+      "key": "expense_id",
+      "value": "1"
+    },
+    {
+      "key": "invoice_id",
       "value": "1"
     }
   ]

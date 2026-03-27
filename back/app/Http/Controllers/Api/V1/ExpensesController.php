@@ -150,6 +150,8 @@ class ExpensesController extends Controller
         $rows = $expenses->map(function (Expense $expense): array {
             return [
                 'id' => $expense->id,
+                'shipment_id' => $expense->shipment_id,
+                'expense_category_id' => $expense->expense_category_id,
                 'bl_number' => $expense->shipment?->bl_number ?? '',
                 'category_name' => $expense->category?->name ?? '',
                 'description' => $expense->description,
@@ -222,12 +224,14 @@ class ExpensesController extends Controller
         $rows = $expenses->map(function (Expense $expense): array {
             return [
                 'id' => $expense->id,
+                'expense_category_id' => $expense->expense_category_id,
                 'category_name' => $expense->category?->name ?? '',
                 'description' => $expense->description,
                 'amount' => (float) $expense->amount,
                 'currency_code' => $expense->currency_code,
                 'payment_method' => $expense->payment_method,
                 'expense_date' => $expense->expense_date?->toDateString(),
+                'invoice_number' => $expense->invoice_number,
                 'has_receipt' => (bool) $expense->has_receipt,
             ];
         })->values();
