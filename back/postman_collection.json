@@ -2131,6 +2131,161 @@
           ]
         },
         {
+          "name": "Vendor Partner Types",
+          "description": "CRUD for partner (vendor) type lookups. Each row has a unique `code` stored on `vendors.type`. Accounting `GET /accounting/partners` accepts `partner_type` (code). Delete returns 422 if any vendor still uses the code.",
+          "item": [
+            {
+              "name": "List Vendor Partner Types",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/vendor-partner-types",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "vendor-partner-types"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create Vendor Partner Type",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"shipping_line\",\n  \"name_ar\": \"خط ملاحي\",\n  \"name_en\": \"Shipping line\",\n  \"sort_order\": 1\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/vendor-partner-types",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "vendor-partner-types"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Show Vendor Partner Type",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/vendor-partner-types/{{vendor_partner_type_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "vendor-partner-types",
+                    "{{vendor_partner_type_id}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update Vendor Partner Type",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"shipping_line\",\n  \"name_ar\": \"خط ملاحي\",\n  \"name_en\": \"Shipping line\",\n  \"sort_order\": 2\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/vendor-partner-types/{{vendor_partner_type_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "vendor-partner-types",
+                    "{{vendor_partner_type_id}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Vendor Partner Type",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/vendor-partner-types/{{vendor_partner_type_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "vendor-partner-types",
+                    "{{vendor_partner_type_id}}"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
           "name": "Ports",
           "item": [
             {
@@ -5534,10 +5689,11 @@
           },
           "response": []
         },
-        {
-          "name": "Partner Accounts",
+    {
+      "name": "Partner Accounts",
           "request": {
             "method": "GET",
+            "description": "Filters vendors by `partner_type` = code from Vendor Partner Types (same value as `vendors.type`). Sort: balance | total_due | partner_name.",
             "header": [
               {
                 "key": "Accept",
@@ -5549,7 +5705,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/accounting/partners?search=&partner_type=&currency=&sort=balance",
+              "raw": "{{base_url}}/accounting/partners?search=&partner_type=shipping_line&currency=&sort=balance",
               "host": [
                 "{{base_url}}"
               ],
@@ -5564,7 +5720,8 @@
                 },
                 {
                   "key": "partner_type",
-                  "value": ""
+                  "value": "shipping_line",
+                  "description": "Vendor type code (e.g. shipping_line, inland_transport, customs_clearance). See Vendor Partner Types."
                 },
                 {
                   "key": "currency",
@@ -5643,6 +5800,7 @@
     },
     {
       "name": "Treasury",
+      "description": "Treasury summary, movements (entries), transfers, and general expenses. Query params: summary (months), entries (search, type=in|out, from, to, sort=date|amount), expenses (category_id, from, to, search, sort=date|amount). Client export is CSV from loaded rows; no server export endpoint in v1.",
       "item": [
         {
           "name": "Treasury Summary",
@@ -5692,7 +5850,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/treasury/entries?search=&type=&sort=date",
+              "raw": "{{base_url}}/treasury/entries?search=&type=&from=&to=&sort=date",
               "host": [
                 "{{base_url}}"
               ],
@@ -5707,6 +5865,14 @@
                 },
                 {
                   "key": "type",
+                  "value": ""
+                },
+                {
+                  "key": "from",
+                  "value": ""
+                },
+                {
+                  "key": "to",
                   "value": ""
                 },
                 {
@@ -5768,14 +5934,14 @@
               "raw": "{\n  \"amount\": 1200,\n  \"entry_date\": \"2026-03-10\",\n  \"description\": \"Updated entry\",\n  \"notes\": \"Corrected amount\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/treasury/entries/1",
+              "raw": "{{base_url}}/treasury/entries/{{treasury_entry_id}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "treasury",
                 "entries",
-                "1"
+                "{{treasury_entry_id}}"
               ]
             }
           },
@@ -5792,14 +5958,14 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/treasury/entries/1",
+              "raw": "{{base_url}}/treasury/entries/{{treasury_entry_id}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "treasury",
                 "entries",
-                "1"
+                "{{treasury_entry_id}}"
               ]
             }
           },
@@ -5851,7 +6017,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/treasury/expenses?category_id=&sort=date",
+              "raw": "{{base_url}}/treasury/expenses?category_id=&from=&to=&search=&sort=date",
               "host": [
                 "{{base_url}}"
               ],
@@ -5862,6 +6028,18 @@
               "query": [
                 {
                   "key": "category_id",
+                  "value": ""
+                },
+                {
+                  "key": "from",
+                  "value": ""
+                },
+                {
+                  "key": "to",
+                  "value": ""
+                },
+                {
+                  "key": "search",
                   "value": ""
                 },
                 {
@@ -9128,6 +9306,14 @@
     },
     {
       "key": "vendor_id",
+      "value": "1"
+    },
+    {
+      "key": "vendor_partner_type_id",
+      "value": "1"
+    },
+    {
+      "key": "treasury_entry_id",
       "value": "1"
     }
   ]

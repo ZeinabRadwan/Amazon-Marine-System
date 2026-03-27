@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             AdminUserSeeder::class,
             BilingualStatusesSeeder::class,
             ClientLookupsSeeder::class,
+            VendorPartnerTypesSeeder::class,
             ClientsSeeder::class,
             PortsSeeder::class,
             SDFormLookupsSeeder::class,

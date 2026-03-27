@@ -54,6 +54,7 @@ use App\Http\Controllers\Api\V1\TreasuryController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\VendorBillController;
 use App\Http\Controllers\Api\V1\VendorController;
+use App\Http\Controllers\Api\V1\VendorPartnerTypeController;
 use App\Http\Controllers\Api\V1\VisitController;
 use Illuminate\Support\Facades\Route;
 
@@ -158,6 +159,12 @@ Route::prefix('v1')->group(function () {
         Route::get('client-statuses/{clientStatus}', [ClientStatusController::class, 'show']);
         Route::put('client-statuses/{clientStatus}', [ClientStatusController::class, 'update']);
         Route::delete('client-statuses/{clientStatus}', [ClientStatusController::class, 'destroy']);
+
+        Route::get('vendor-partner-types', [VendorPartnerTypeController::class, 'index']);
+        Route::post('vendor-partner-types', [VendorPartnerTypeController::class, 'store']);
+        Route::get('vendor-partner-types/{vendorPartnerType}', [VendorPartnerTypeController::class, 'show']);
+        Route::put('vendor-partner-types/{vendorPartnerType}', [VendorPartnerTypeController::class, 'update']);
+        Route::delete('vendor-partner-types/{vendorPartnerType}', [VendorPartnerTypeController::class, 'destroy']);
 
         Route::get('ports', [PortController::class, 'index']);
         Route::post('ports', [PortController::class, 'store']);

@@ -222,6 +222,10 @@ class AccountingController extends Controller
             $query->where('name', 'like', '%'.$search.'%');
         }
 
+        if ($partnerType = $request->query('partner_type')) {
+            $query->where('type', $partnerType);
+        }
+
         $vendors = $query->orderBy('name')->get();
 
         $currencyFilter = $request->query('currency');
