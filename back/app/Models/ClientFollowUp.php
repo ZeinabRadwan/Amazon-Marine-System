@@ -12,10 +12,13 @@ class ClientFollowUp extends Model
      */
     protected $fillable = [
         'client_id',
-        'type',
+        'channel',
+        'followup_type',
+        'outcome',
         'occurred_at',
         'summary',
         'next_follow_up_at',
+        'reminder_at',
         'created_by_id',
     ];
 
@@ -26,7 +29,8 @@ class ClientFollowUp extends Model
     {
         return [
             'occurred_at' => 'datetime',
-            'next_follow_up_at' => 'date',
+            'next_follow_up_at' => 'datetime',
+            'reminder_at' => 'datetime',
         ];
     }
 

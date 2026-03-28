@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X, Package } from 'lucide-react'
+import DateTimePicker from '../../components/DateTimePicker'
 import Tabs from '../../components/Tabs'
 import Shimmer from '../../components/Shimmer'
 import { useShipmentTrackingUpdates } from '../../hooks/useShipmentTrackingUpdates'
@@ -8,6 +9,32 @@ import VisitStatusBadge from '../Visits/VisitStatusBadge'
 import { localizedStatusLabel } from '../../utils/localizedStatusLabel'
 import './Clients.css'
 import './ClientDetailModal.css'
+
+function defaultLocalDateTime() {
+  const d = new Date()
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+const FOLLOWUP_CHANNELS = ['phone', 'whatsapp', 'email', 'visit', 'meeting']
+const FOLLOWUP_KINDS = [
+  'cold_call',
+  'consultation',
+  'price_followup',
+  'collection_followup',
+  'shipment_followup',
+  'other',
+]
+const FOLLOWUP_OUTCOMES = [
+  'no_answer',
+  'contacted',
+  'interested',
+  'not_interested',
+  'price_requested',
+  'postponed',
+  'deal_done',
+  'needs_followup',
+]
 
 /** API may return visit_date as ISO string (e.g. 2026-03-23T00:00:00.000000Z). */
 function formatVisitDateDisplay(value, locale) {
@@ -71,10 +98,13 @@ export default function ClientDetailModal({
   const [expandedShipmentId, setExpandedShipmentId] = useState(null)
   const { data: trackingUpdates, loading: trackingUpdatesLoading, error: trackingUpdatesError, refetch: refetchTrackingUpdates } = useShipmentTrackingUpdates(expandedShipmentId)
   const [followUpForm, setFollowUpForm] = useState({
-    type: 'phone',
-    occurred_at: new Date().toISOString().slice(0, 16),
-    summary: '',
+    channel: 'phone',
+    followup_type: 'consultation',
+    outcome: '',
+    occurred_at: defaultLocalDateTime(),
     next_follow_up_at: '',
+    reminder_at: '',
+    notes: '',
   })
 
   if (!open) return null
@@ -93,6 +123,16 @@ export default function ClientDetailModal({
     v
       ? new Intl.DateTimeFormat(i18n.language === 'ar' ? 'ar-EG' : 'en-US', { dateStyle: 'medium' }).format(new Date(v))
       : '—'
+
+  const formatDateTime = (v) => {
+    if (v == null || v === '') return '—'
+    const d = new Date(v)
+    if (Number.isNaN(d.getTime())) return '—'
+    return new Intl.DateTimeFormat(i18n.language === 'ar' ? 'ar-EG' : 'en-GB', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(d)
+  }
 
   const clientFinancial = financialSummaryList.find((item) => Number(item.id) === Number(detailId))
 
@@ -337,50 +377,99 @@ export default function ClientDetailModal({
             <section className="client-detail-modal__section">
               <h3 className="client-detail-modal__section-title">{t('clients.tabs.followups')}</h3>
               {onAddFollowUp && (
-                <div className="client-detail-modal__form-grid client-detail-modal__grid--card" style={{ marginBottom: 16 }}>
+                <div className="client-detail-modal__form-grid client-detail-modal__grid--card client-detail-modal__followup-form" style={{ marginBottom: 16 }}>
                   <div className="client-detail-modal__form-field">
-                    <label htmlFor="followup-type">{t('clients.followUpType', 'Type')}</label>
+                    <label htmlFor="followup-channel">{t('clients.followUpChannelLabel', 'Follow-up channel')}</label>
                     <select
-                      id="followup-type"
-                      value={followUpForm.type}
-                      onChange={(e) => setFollowUpForm((f) => ({ ...f, type: e.target.value }))}
+                      id="followup-channel"
+                      value={followUpForm.channel}
+                      onChange={(e) => setFollowUpForm((prev) => ({ ...prev, channel: e.target.value }))}
                       disabled={followUpSubmitting}
+                      required
                     >
-                      <option value="phone">{t('clients.followUpTypePhone', 'Phone')}</option>
-                      <option value="email">{t('clients.followUpTypeEmail', 'Email')}</option>
-                      <option value="visit">{t('clients.followUpTypeVisit', 'Visit')}</option>
-                      <option value="whatsapp">{t('clients.followUpTypeWhatsapp', 'WhatsApp')}</option>
-                      <option value="meeting">{t('clients.followUpTypeMeeting', 'Meeting')}</option>
+                      {FOLLOWUP_CHANNELS.map((c) => (
+                        <option key={c} value={c}>
+                          {t(`clients.followUpChannel.${c}`, c)}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <div className="client-detail-modal__form-field">
-                    <label htmlFor="followup-occurred">{t('clients.followUpOccurred', 'Occurred at')}</label>
-                    <input
-                      id="followup-occurred"
-                      type="datetime-local"
-                      value={followUpForm.occurred_at}
-                      onChange={(e) => setFollowUpForm((f) => ({ ...f, occurred_at: e.target.value }))}
+                    <label htmlFor="followup-kind">{t('clients.followUpKindLabel', 'Follow-up type')}</label>
+                    <select
+                      id="followup-kind"
+                      value={followUpForm.followup_type}
+                      onChange={(e) => setFollowUpForm((prev) => ({ ...prev, followup_type: e.target.value }))}
                       disabled={followUpSubmitting}
+                      required
+                    >
+                      {FOLLOWUP_KINDS.map((k) => (
+                        <option key={k} value={k}>
+                          {t(`clients.followUpKind.${k}`, k)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="client-detail-modal__form-field">
+                    <label htmlFor="followup-outcome">{t('clients.followUpOutcomeLabel', 'Outcome')}</label>
+                    <select
+                      id="followup-outcome"
+                      value={followUpForm.outcome}
+                      onChange={(e) => setFollowUpForm((prev) => ({ ...prev, outcome: e.target.value }))}
+                      disabled={followUpSubmitting}
+                    >
+                      <option value="">{t('clients.followUpOutcomeUnset', '— Later / not set —')}</option>
+                      {FOLLOWUP_OUTCOMES.map((o) => (
+                        <option key={o} value={o}>
+                          {t(`clients.followUpOutcome.${o}`, o)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+                    <label htmlFor="followup-occurred">{t('clients.followUpOccurred', 'Occurred at')}</label>
+                    <DateTimePicker
+                      id="followup-occurred"
+                      value={followUpForm.occurred_at}
+                      onChange={(v) => setFollowUpForm((prev) => ({ ...prev, occurred_at: v || defaultLocalDateTime() }))}
+                      disabled={followUpSubmitting}
+                      locale={i18n.language}
+                      className="client-detail-modal__datetime-input"
+                      placeholder={t('clients.followUpPickDateTime', 'Select date and time')}
                     />
                   </div>
                   <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
-                    <label htmlFor="followup-summary">{t('clients.followUpSummary', 'Summary')}</label>
-                    <textarea
-                      id="followup-summary"
-                      value={followUpForm.summary}
-                      onChange={(e) => setFollowUpForm((f) => ({ ...f, summary: e.target.value }))}
+                    <label htmlFor="followup-next">{t('clients.followUpNext', 'Next follow-up')}</label>
+                    <DateTimePicker
+                      id="followup-next"
+                      value={followUpForm.next_follow_up_at}
+                      onChange={(v) => setFollowUpForm((prev) => ({ ...prev, next_follow_up_at: v }))}
                       disabled={followUpSubmitting}
-                      rows={2}
+                      locale={i18n.language}
+                      className="client-detail-modal__datetime-input"
+                      placeholder={t('clients.followUpNextPlaceholder', 'Optional')}
                     />
                   </div>
-                  <div className="client-detail-modal__form-field">
-                    <label htmlFor="followup-next">{t('clients.followUpNext', 'Next follow-up')}</label>
-                    <input
-                      id="followup-next"
-                      type="date"
-                      value={followUpForm.next_follow_up_at}
-                      onChange={(e) => setFollowUpForm((f) => ({ ...f, next_follow_up_at: e.target.value }))}
+                  <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+                    <label htmlFor="followup-reminder">{t('clients.followUpReminder', 'Reminder time')}</label>
+                    <DateTimePicker
+                      id="followup-reminder"
+                      value={followUpForm.reminder_at}
+                      onChange={(v) => setFollowUpForm((prev) => ({ ...prev, reminder_at: v }))}
                       disabled={followUpSubmitting}
+                      locale={i18n.language}
+                      className="client-detail-modal__datetime-input"
+                      placeholder={t('clients.followUpReminderPlaceholder', 'Optional — before next follow-up')}
+                    />
+                  </div>
+                  <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+                    <label htmlFor="followup-notes">{t('clients.followUpNotes', 'Notes')}</label>
+                    <textarea
+                      id="followup-notes"
+                      value={followUpForm.notes}
+                      onChange={(e) => setFollowUpForm((prev) => ({ ...prev, notes: e.target.value }))}
+                      disabled={followUpSubmitting}
+                      rows={3}
                     />
                   </div>
                   <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
@@ -389,12 +478,23 @@ export default function ClientDetailModal({
                       className="client-detail-modal__btn client-detail-modal__btn--primary"
                       onClick={() => {
                         onAddFollowUp({
-                          type: followUpForm.type,
+                          channel: followUpForm.channel,
+                          followup_type: followUpForm.followup_type,
+                          outcome: followUpForm.outcome || undefined,
                           occurred_at: followUpForm.occurred_at,
-                          summary: followUpForm.summary || undefined,
+                          notes: followUpForm.notes || undefined,
                           next_follow_up_at: followUpForm.next_follow_up_at || undefined,
+                          reminder_at: followUpForm.reminder_at || undefined,
                         })
-                        setFollowUpForm({ type: 'phone', occurred_at: new Date().toISOString().slice(0, 16), summary: '', next_follow_up_at: '' })
+                        setFollowUpForm({
+                          channel: 'phone',
+                          followup_type: 'consultation',
+                          outcome: '',
+                          occurred_at: defaultLocalDateTime(),
+                          next_follow_up_at: '',
+                          reminder_at: '',
+                          notes: '',
+                        })
                       }}
                       disabled={followUpSubmitting}
                     >
@@ -409,12 +509,44 @@ export default function ClientDetailModal({
                 <p className="client-detail-modal__empty">{t('clients.noFollowUps', 'No follow-ups yet.')}</p>
               ) : (
                 <ul className="client-detail-modal__list">
-                  {followUps.map((f) => (
-                    <li key={f.id} className="client-detail-modal__list-item">
-                      <span className="client-detail-modal__list-label">{formatDate(f.occurred_at)} · {f.type}</span>
-                      <span className="client-detail-modal__list-value">{f.summary ?? '—'}</span>
-                    </li>
-                  ))}
+                  {followUps.map((f) => {
+                    const ch = f.channel ?? f.type ?? ''
+                    const kind = f.followup_type
+                    return (
+                      <li key={f.id} className="client-detail-modal__list-item client-detail-modal__list-item--followup">
+                        <div className="client-detail-modal__followup-head">
+                          <span className="client-detail-modal__list-label">
+                            {formatDateTime(f.occurred_at)}
+                            {ch ? ` · ${t(`clients.followUpChannel.${ch}`, ch)}` : ''}
+                            {kind ? ` · ${t(`clients.followUpKind.${kind}`, kind)}` : ''}
+                          </span>
+                          {f.created_by?.name ? (
+                            <span className="client-detail-modal__followup-author">{f.created_by.name}</span>
+                          ) : null}
+                        </div>
+                        {f.outcome ? (
+                          <div className="client-detail-modal__followup-outcome">
+                            {t('clients.followUpOutcomeLabel')}: {t(`clients.followUpOutcome.${f.outcome}`, f.outcome)}
+                          </div>
+                        ) : null}
+                        {(f.next_follow_up_at || f.reminder_at) ? (
+                          <div className="client-detail-modal__followup-schedule">
+                            {f.next_follow_up_at ? (
+                              <span>
+                                {t('clients.followUpNextShort', 'Next')}: {formatDateTime(f.next_follow_up_at)}
+                              </span>
+                            ) : null}
+                            {f.reminder_at ? (
+                              <span>
+                                {t('clients.followUpReminderShort', 'Reminder')}: {formatDateTime(f.reminder_at)}
+                              </span>
+                            ) : null}
+                          </div>
+                        ) : null}
+                        <span className="client-detail-modal__list-value">{f.summary?.trim() ? f.summary : '—'}</span>
+                      </li>
+                    )
+                  })}
                 </ul>
               )}
             </section>

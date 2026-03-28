@@ -129,5 +129,7 @@
     "You do not have permission to view this expense.": "ليس لديك صلاحية لعرض هذا المصروف.",
     "You do not have permission to view treasury entries.": "ليس لديك صلاحية لعرض قيود الخزينة.",
     "You do not have permission to view treasury summary.": "ليس لديك صلاحية لعرض ملخص الخزينة.",
-    "Your account has been deactivated. Please contact an administrator.": "تم تعطيل حسابك. يرجى التواصل مع المسؤول."
+    "Your account has been deactivated. Please contact an administrator.": "تم تعطيل حسابك. يرجى التواصل مع المسؤول.",
+    "Reminder time must be before the next follow-up time.": "يجب أن يكون وقت التذكير قبل وقت المتابعة القادمة.",
+    "Follow-up reminder: :client — next at :when (:kind).": "تذكير متابعة: :client — المتابعة القادمة :when (:kind)."
 }

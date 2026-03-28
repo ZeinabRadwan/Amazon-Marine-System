@@ -1,3 +1,58 @@
+/* Flatpickr attaches to body — stay above modal (z-index 1000) */
+body .flatpickr-calendar {
+  z-index: 11000;
+}
+
+.client-detail-modal__datetime-input {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 1.4;
+  border: 1px solid var(--form-divider, #e5e7eb);
+  border-radius: 10px;
+  background: var(--form-bg, #fff);
+  color: var(--root-text, #1c2030);
+  box-sizing: border-box;
+}
+
+.client-detail-modal__followup-form .client-detail-modal__form-field--full {
+  grid-column: 1 / -1;
+}
+
+.client-detail-modal__followup-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.client-detail-modal__followup-author {
+  font-size: 12px;
+  color: var(--form-text, #6b7280);
+}
+
+.client-detail-modal__followup-outcome,
+.client-detail-modal__followup-schedule {
+  font-size: 13px;
+  color: var(--form-text, #4b5563);
+  margin-bottom: 6px;
+}
+
+.client-detail-modal__followup-schedule {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.client-detail-modal__list-item--followup .client-detail-modal__list-value {
+  display: block;
+  margin-top: 4px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 /* Client detail modal – overlay and box */
 .client-detail-modal {
   position: fixed;
