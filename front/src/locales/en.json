@@ -1029,7 +1029,8 @@
       "special_requirements": "Special requirements",
       "pricing_tier": "Pricing tier",
       "pricing_discount_pct": "Pricing discount %",
-      "pricing_updated_at": "Pricing updated at"
+      "pricing_updated_at": "Pricing updated at",
+      "assigned_sales_id": "Assigned salesperson"
     },
     "stats": {
       "total_clients": "Total clients",
@@ -1107,6 +1108,13 @@
     "followUpReminderPlaceholder": "Optional — before next follow-up",
     "followUpNextShort": "Next",
     "followUpReminderShort": "Reminder",
+    "followUpWorkloadTitle": "Your follow-up workload",
+    "followUpWorkloadError": "Could not load follow-up workload.",
+    "followUpWidgetOverdue": "Overdue follow-ups",
+    "followUpWidgetToday": "Due today",
+    "followUpWidgetUpcoming": "Upcoming follow-ups",
+    "followUpWidgetEmpty": "None",
+    "followUpOutcomePending": "Outcome pending",
     "followUpChannel": {
       "phone": "Phone",
       "whatsapp": "WhatsApp",

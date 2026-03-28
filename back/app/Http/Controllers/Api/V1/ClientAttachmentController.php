@@ -23,7 +23,7 @@ class ClientAttachmentController extends Controller
 
     public function store(Request $request, Client $client)
     {
-        $this->authorize('update', $client);
+        $this->authorize('manageClientContent', $client);
 
         $validated = $request->validate([
             'file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx,csv,txt', 'max:10240'],
@@ -63,7 +63,7 @@ class ClientAttachmentController extends Controller
 
     public function destroy(Client $client, int|string $attachment)
     {
-        $this->authorize('update', $client);
+        $this->authorize('manageClientContent', $client);
 
         $client_attachment = $this->resolveClientAttachment($client, $attachment);
 

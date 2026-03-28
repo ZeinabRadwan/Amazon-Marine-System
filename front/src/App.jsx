@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BrowserRouter, Routes, Route, Navigate, useOutletContext } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useOutletContext, useNavigate } from 'react-router-dom'
 import { Package, Users as UsersIcon, DollarSign, ChevronDown, Download, Filter, RefreshCw, Calendar } from 'lucide-react'
 import Login from './pages/Login'
 import AuthenticatedLayout from './components/AuthenticatedLayout'
@@ -26,6 +26,10 @@ import Pricing from './pages/Pricing/Pricing'
 import Invoices from './pages/Invoices/Invoices'
 import Notifications from './pages/Notifications'
 import Settings from './pages/Settings'
+import { getStoredToken } from './pages/Login'
+import { getFollowUpMySummary } from './api/clients'
+import FollowUpWorkloadWidgets from './components/FollowUpWorkloadWidgets'
+import { useAuthAccess } from './hooks/useAuthAccess'
 import './App.css'
 
 function SignupPlaceholder() {
@@ -45,9 +49,39 @@ const DASHBOARD_TABS = [
 
 function Home() {
   const { t, i18n } = useTranslation()
+  const navigate = useNavigate()
+  const { hasPermission } = useAuthAccess()
+  const token = getStoredToken()
+  const canClientsView = hasPermission('clients', 'view')
   const [activeTab, setActiveTab] = useState('clients')
+  const [dashFollowUpSummary, setDashFollowUpSummary] = useState(null)
+  const [dashFollowUpLoading, setDashFollowUpLoading] = useState(false)
+  const [dashFollowUpError, setDashFollowUpError] = useState(null)
   const { user } = useOutletContext() || {}
   const displayName = user?.name || 'User'
+
+  useEffect(() => {
+    if (!token || !canClientsView) return
+    let cancelled = false
+    setDashFollowUpLoading(true)
+    setDashFollowUpError(null)
+    getFollowUpMySummary(token)
+      .then((res) => {
+        if (!cancelled) setDashFollowUpSummary(res)
+      })
+      .catch((e) => {
+        if (!cancelled) {
+          setDashFollowUpSummary(null)
+          setDashFollowUpError(e?.message || t('clients.followUpWorkloadError'))
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setDashFollowUpLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [token, canClientsView, t])
   const role = (user?.primary_role ?? user?.roles?.[0] ?? 'user')?.toLowerCase?.() || 'user'
   const dateOnly = new Date().toLocaleDateString(i18n.language === 'ar' ? 'ar-EG' : 'en-US', {
     weekday: 'long',
@@ -102,6 +136,22 @@ function Home() {
           variant="green"
         />
       </div>
+
+      {canClientsView ? (
+        <section className="mt-8 text-start" aria-labelledby="home-followup-workload-heading">
+          <h2 id="home-followup-workload-heading" className="mb-3 text-lg font-semibold text-gray-900 dark:text-gray-100">
+            {t('clients.followUpWorkloadTitle')}
+          </h2>
+          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-[#1F2937] dark:bg-[#1F2937]">
+            <FollowUpWorkloadWidgets
+              summary={dashFollowUpSummary}
+              loading={dashFollowUpLoading}
+              error={dashFollowUpError}
+              onClientClick={(cid) => navigate('/clients', { state: { focusClientId: cid } })}
+            />
+          </div>
+        </section>
+      ) : null}
 
       <section className="mt-8" aria-labelledby="dashboard-tabs-heading">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3 text-start">

@@ -1029,7 +1029,8 @@
       "special_requirements": "متطلبات خاصة",
       "pricing_tier": "مستوى التسعير",
       "pricing_discount_pct": "نسبة خصم التسعير %",
-      "pricing_updated_at": "تاريخ تحديث التسعير"
+      "pricing_updated_at": "تاريخ تحديث التسعير",
+      "assigned_sales_id": "مندوب المبيعات المعيّن"
     },
     "stats": {
       "total_clients": "إجمالي العملاء",
@@ -1107,6 +1108,13 @@
     "followUpReminderPlaceholder": "اختياري — قبل المتابعة القادمة",
     "followUpNextShort": "التالية",
     "followUpReminderShort": "التذكير",
+    "followUpWorkloadTitle": "عبء المتابعات لديك",
+    "followUpWorkloadError": "تعذر تحميل ملخص المتابعات.",
+    "followUpWidgetOverdue": "متابعات متأخرة",
+    "followUpWidgetToday": "مطلوبة اليوم",
+    "followUpWidgetUpcoming": "متابعات قادمة",
+    "followUpWidgetEmpty": "لا يوجد",
+    "followUpOutcomePending": "بانتظار النتيجة",
     "followUpChannel": {
       "phone": "هاتف",
       "whatsapp": "واتساب",

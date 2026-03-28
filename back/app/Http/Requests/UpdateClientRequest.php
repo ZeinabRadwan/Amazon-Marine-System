@@ -51,6 +51,7 @@ class UpdateClientRequest extends FormRequest
             'pricing_tier' => ['sometimes', 'nullable', 'string', 'max:100'],
             'pricing_discount_pct' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:100'],
             'pricing_updated_at' => ['sometimes', 'nullable', 'date'],
+            'assigned_sales_id' => ['sometimes', 'nullable', 'integer', 'exists:users,id'],
         ];
     }
 

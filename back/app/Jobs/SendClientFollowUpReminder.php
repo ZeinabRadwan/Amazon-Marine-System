@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\ClientFollowUp;
+use App\Models\User;
 use App\Notifications\ClientFollowUpReminderNotification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -23,7 +24,13 @@ class SendClientFollowUpReminder implements ShouldQueue
             return;
         }
 
-        $user = $followUp->createdBy;
+        $followUp->loadMissing(['client', 'createdBy']);
+
+        $assigneeId = $followUp->client?->assigned_sales_id;
+        $user = $assigneeId
+            ? User::query()->find($assigneeId)
+            : $followUp->createdBy;
+
         if ($user === null) {
             return;
         }

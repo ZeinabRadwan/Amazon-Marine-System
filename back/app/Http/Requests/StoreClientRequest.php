@@ -50,6 +50,7 @@ class StoreClientRequest extends FormRequest
             'pricing_tier' => ['nullable', 'string', 'max:100'],
             'pricing_discount_pct' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'pricing_updated_at' => ['nullable', 'date'],
+            'assigned_sales_id' => ['nullable', 'integer', 'exists:users,id'],
         ];
     }
 

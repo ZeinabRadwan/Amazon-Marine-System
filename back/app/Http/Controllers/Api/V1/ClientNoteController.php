@@ -39,7 +39,7 @@ class ClientNoteController extends Controller
      */
     public function store(Request $request, Client $client): JsonResponse
     {
-        $this->authorize('update', $client);
+        $this->authorize('manageClientContent', $client);
 
         $validated = $request->validate([
             'content' => ['nullable', 'string', 'max:65535'],

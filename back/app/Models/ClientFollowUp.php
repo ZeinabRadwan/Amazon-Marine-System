@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -48,5 +49,19 @@ class ClientFollowUp extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by_id');
+    }
+
+    /**
+     * @param  Builder<ClientFollowUp>  $query
+     */
+    public function scopeForSalespersonPortfolio(Builder $query, int $userId): void
+    {
+        $query->where(function (Builder $w) use ($userId) {
+            $w->whereHas('client', fn (Builder $c) => $c->where('assigned_sales_id', $userId))
+                ->orWhere(function (Builder $w2) use ($userId) {
+                    $w2->where('created_by_id', $userId)
+                        ->whereHas('client', fn (Builder $c) => $c->whereNull('assigned_sales_id'));
+                });
+        });
     }
 }

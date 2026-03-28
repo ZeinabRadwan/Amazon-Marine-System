@@ -27,6 +27,17 @@ class ClientPolicy
         return $user->can('pricing.manage_client_pricing') || $user->can('clients.manage');
     }
 
+    /**
+     * Notes, follow-ups, attachments, and similar CRM sub-resources.
+     * Allowed when the user can edit clients via the UI (page permission) but may not have clients.manage.
+     */
+    public function manageClientContent(User $user, Client $client): bool
+    {
+        return $user->can('clients.manage')
+            || $user->can('pricing.manage_client_pricing')
+            || $this->view($user, $client);
+    }
+
     public function delete(User $user, Client $client): bool
     {
         return $user->can('clients.delete');

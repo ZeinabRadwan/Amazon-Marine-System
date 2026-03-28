@@ -40,7 +40,7 @@ class ClientFollowUpController extends Controller
      */
     public function store(Request $request, Client $client): JsonResponse
     {
-        $this->authorize('update', $client);
+        $this->authorize('manageClientContent', $client);
 
         $payload = $request->all();
         if (($payload['channel'] ?? null) === null && ($payload['type'] ?? null) !== null) {
@@ -77,10 +77,14 @@ class ClientFollowUpController extends Controller
         $followUp->channel = $this->enumOrString($validated['channel']);
         $followUp->followup_type = $this->enumOrString($validated['followup_type']);
         $followUp->outcome = isset($validated['outcome']) ? $this->enumOrString($validated['outcome']) : null;
-        $followUp->occurred_at = $validated['occurred_at'];
+        $followUp->occurred_at = Carbon::parse($validated['occurred_at']);
         $followUp->summary = $summary;
-        $followUp->next_follow_up_at = $validated['next_follow_up_at'] ?? null;
-        $followUp->reminder_at = $validated['reminder_at'] ?? null;
+        $followUp->next_follow_up_at = ! empty($validated['next_follow_up_at'])
+            ? Carbon::parse($validated['next_follow_up_at'])
+            : null;
+        $followUp->reminder_at = ! empty($validated['reminder_at'])
+            ? Carbon::parse($validated['reminder_at'])
+            : null;
         $followUp->created_by_id = $request->user()->id;
         $followUp->save();
 

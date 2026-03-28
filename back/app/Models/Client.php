@@ -49,6 +49,7 @@ class Client extends Model
         'pricing_tier',
         'pricing_discount_pct',
         'pricing_updated_at',
+        'assigned_sales_id',
     ];
 
     /**
@@ -108,6 +109,14 @@ class Client extends Model
     public function clientStatus(): BelongsTo
     {
         return $this->belongsTo(ClientStatus::class, 'status_id');
+    }
+
+    /**
+     * @return BelongsTo<User, Client>
+     */
+    public function assignedSales(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_sales_id');
     }
 
     /**

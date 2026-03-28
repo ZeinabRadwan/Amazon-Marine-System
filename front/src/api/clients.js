@@ -339,6 +339,14 @@ export async function getClientFollowUps(token, clientId) {
  * POST {{base_url}}/clients/:id/follow-ups – Create Client Follow-up
  * Body: { type: 'phone'|'email'|'visit'|'whatsapp'|'meeting', occurred_at, summary?, next_follow_up_at? }
  */
+function firstValidationMessage(data) {
+  if (!data?.errors || typeof data.errors !== 'object') return null
+  const msgs = Object.values(data.errors)
+    .flat()
+    .filter((m) => typeof m === 'string' && m.trim() !== '')
+  return msgs.length ? msgs.join(' ') : null
+}
+
 export async function postClientFollowUp(token, clientId, body) {
   const res = await apiFetch(`${getBaseUrl()}/clients/${clientId}/follow-ups`, {
     method: 'POST',
@@ -346,7 +354,22 @@ export async function postClientFollowUp(token, clientId, body) {
     body: JSON.stringify(body),
   })
   const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.message || data.error || `Failed to create follow-up (${res.status})`)
+  if (!res.ok) {
+    const v = firstValidationMessage(data)
+    throw new Error(
+      v || data.message || data.error || `Failed to create follow-up (${res.status})`,
+    )
+  }
+  return data
+}
+
+/**
+ * GET {{base_url}}/follow-ups/my-summary — Upcoming / due today / overdue (current user portfolio).
+ */
+export async function getFollowUpMySummary(token) {
+  const res = await apiFetch(`${getBaseUrl()}/follow-ups/my-summary`, { headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to load follow-up summary (${res.status})`)
   return data
 }
 

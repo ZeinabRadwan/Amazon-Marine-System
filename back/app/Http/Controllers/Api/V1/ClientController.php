@@ -26,6 +26,7 @@ class ClientController extends Controller
             'decisionMakerTitle',
             'leadSource',
             'clientStatus',
+            'assignedSales:id,name',
         ];
     }
 
@@ -61,6 +62,10 @@ class ClientController extends Controller
         $clientType = $request->query('client_type');
         if (in_array($clientType, ['lead', 'client'], true)) {
             $query->where('client_type', $clientType);
+        }
+
+        if ($request->filled('assigned_sales_id')) {
+            $query->where('assigned_sales_id', (int) $request->query('assigned_sales_id'));
         }
 
         $sort = $request->query('sort', 'client');
@@ -564,6 +569,11 @@ class ClientController extends Controller
             'pricing_tier' => $client->pricing_tier,
             'pricing_discount_pct' => $client->pricing_discount_pct,
             'pricing_updated_at' => $client->pricing_updated_at,
+            'assigned_sales_id' => $client->assigned_sales_id,
+            'assigned_sales' => $client->assignedSales ? [
+                'id' => $client->assignedSales->id,
+                'name' => $client->assignedSales->name,
+            ] : null,
         ];
     }
 

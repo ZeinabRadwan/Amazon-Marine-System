@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X, Package } from 'lucide-react'
+import { X, Package, Phone, Mail, MapPin, MessageCircle, Users } from 'lucide-react'
 import DateTimePicker from '../../components/DateTimePicker'
+import FollowUpWorkloadWidgets from '../../components/FollowUpWorkloadWidgets'
 import Tabs from '../../components/Tabs'
 import Shimmer from '../../components/Shimmer'
 import { useShipmentTrackingUpdates } from '../../hooks/useShipmentTrackingUpdates'
@@ -35,6 +36,42 @@ const FOLLOWUP_OUTCOMES = [
   'deal_done',
   'needs_followup',
 ]
+
+function FollowUpChannelGlyph({ channel }) {
+  const ch = channel ?? ''
+  const Icon =
+    {
+      phone: Phone,
+      whatsapp: MessageCircle,
+      email: Mail,
+      visit: MapPin,
+      meeting: Users,
+    }[ch] ?? Phone
+  return <Icon aria-hidden="true" className="client-followup-timeline__channel-icon" />
+}
+
+function followUpOutcomeTone(outcome) {
+  if (!outcome) return 'default'
+  const m = {
+    interested: 'success',
+    deal_done: 'success',
+    price_requested: 'info',
+    contacted: 'info',
+    needs_followup: 'warning',
+    postponed: 'warning',
+    no_answer: 'muted',
+    not_interested: 'danger',
+  }
+  return m[outcome] ?? 'default'
+}
+
+/** Ensure backend parses local `Y-m-d H:i` consistently (MySQL datetime). */
+function normalizeDateTimeForApi(s) {
+  if (s == null || String(s).trim() === '') return undefined
+  const v = String(s).trim()
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(v)) return `${v}:00`
+  return v
+}
 
 /** API may return visit_date as ISO string (e.g. 2026-03-23T00:00:00.000000Z). */
 function formatVisitDateDisplay(value, locale) {
@@ -88,6 +125,10 @@ export default function ClientDetailModal({
   followUpsLoading = false,
   followUpSubmitting = false,
   onAddFollowUp,
+  workloadSummary = null,
+  workloadSummaryLoading = false,
+  workloadSummaryError = null,
+  onWorkloadClientId,
   shipmentCreating = false,
   onCreateShipment,
   financialSummaryList = [],
@@ -376,6 +417,15 @@ export default function ClientDetailModal({
           {detailTab === 'followups' && (
             <section className="client-detail-modal__section">
               <h3 className="client-detail-modal__section-title">{t('clients.tabs.followups')}</h3>
+              <div className="client-detail-modal__followup-widgets-wrap">
+                <p className="client-detail-modal__followup-widgets-label">{t('clients.followUpWorkloadTitle', 'Your follow-up workload')}</p>
+                <FollowUpWorkloadWidgets
+                  summary={workloadSummary}
+                  loading={workloadSummaryLoading}
+                  error={workloadSummaryError}
+                  onClientClick={onWorkloadClientId}
+                />
+              </div>
               {onAddFollowUp && (
                 <div className="client-detail-modal__form-grid client-detail-modal__grid--card client-detail-modal__followup-form" style={{ marginBottom: 16 }}>
                   <div className="client-detail-modal__form-field">
@@ -481,10 +531,10 @@ export default function ClientDetailModal({
                           channel: followUpForm.channel,
                           followup_type: followUpForm.followup_type,
                           outcome: followUpForm.outcome || undefined,
-                          occurred_at: followUpForm.occurred_at,
+                          occurred_at: normalizeDateTimeForApi(followUpForm.occurred_at) ?? followUpForm.occurred_at,
                           notes: followUpForm.notes || undefined,
-                          next_follow_up_at: followUpForm.next_follow_up_at || undefined,
-                          reminder_at: followUpForm.reminder_at || undefined,
+                          next_follow_up_at: normalizeDateTimeForApi(followUpForm.next_follow_up_at),
+                          reminder_at: normalizeDateTimeForApi(followUpForm.reminder_at),
                         })
                         setFollowUpForm({
                           channel: 'phone',
@@ -508,42 +558,51 @@ export default function ClientDetailModal({
               ) : followUps.length === 0 ? (
                 <p className="client-detail-modal__empty">{t('clients.noFollowUps', 'No follow-ups yet.')}</p>
               ) : (
-                <ul className="client-detail-modal__list">
+                <ul className="client-followup-timeline">
                   {followUps.map((f) => {
                     const ch = f.channel ?? f.type ?? ''
                     const kind = f.followup_type
+                    const tone = followUpOutcomeTone(f.outcome)
                     return (
-                      <li key={f.id} className="client-detail-modal__list-item client-detail-modal__list-item--followup">
-                        <div className="client-detail-modal__followup-head">
-                          <span className="client-detail-modal__list-label">
-                            {formatDateTime(f.occurred_at)}
-                            {ch ? ` · ${t(`clients.followUpChannel.${ch}`, ch)}` : ''}
-                            {kind ? ` · ${t(`clients.followUpKind.${kind}`, kind)}` : ''}
-                          </span>
-                          {f.created_by?.name ? (
-                            <span className="client-detail-modal__followup-author">{f.created_by.name}</span>
-                          ) : null}
+                      <li key={f.id} className="client-followup-timeline__item">
+                        <div className="client-followup-timeline__dot" title={ch ? t(`clients.followUpChannel.${ch}`, ch) : ''}>
+                          <FollowUpChannelGlyph channel={ch} />
                         </div>
-                        {f.outcome ? (
-                          <div className="client-detail-modal__followup-outcome">
-                            {t('clients.followUpOutcomeLabel')}: {t(`clients.followUpOutcome.${f.outcome}`, f.outcome)}
-                          </div>
-                        ) : null}
-                        {(f.next_follow_up_at || f.reminder_at) ? (
-                          <div className="client-detail-modal__followup-schedule">
-                            {f.next_follow_up_at ? (
-                              <span>
-                                {t('clients.followUpNextShort', 'Next')}: {formatDateTime(f.next_follow_up_at)}
+                        <article className="client-followup-timeline__card">
+                          <div className="client-followup-timeline__row">
+                            {kind ? (
+                              <span className="client-followup-timeline__kind">{t(`clients.followUpKind.${kind}`, kind)}</span>
+                            ) : null}
+                            {ch ? (
+                              <span className={`client-followup-outcome-badge client-followup-outcome-badge--default`}>
+                                {t(`clients.followUpChannel.${ch}`, ch)}
                               </span>
                             ) : null}
-                            {f.reminder_at ? (
-                              <span>
-                                {t('clients.followUpReminderShort', 'Reminder')}: {formatDateTime(f.reminder_at)}
+                            {f.outcome ? (
+                              <span className={`client-followup-outcome-badge client-followup-outcome-badge--${tone}`}>
+                                {t(`clients.followUpOutcome.${f.outcome}`, f.outcome)}
                               </span>
-                            ) : null}
+                            ) : (
+                              <span className="client-followup-outcome-badge client-followup-outcome-badge--muted">
+                                {t('clients.followUpOutcomePending', 'Outcome pending')}
+                              </span>
+                            )}
                           </div>
-                        ) : null}
-                        <span className="client-detail-modal__list-value">{f.summary?.trim() ? f.summary : '—'}</span>
+                          <div className="client-followup-timeline__when">
+                            {t('clients.followUpOccurred')}: {formatDateTime(f.occurred_at)}
+                          </div>
+                          {f.next_follow_up_at ? (
+                            <div className="client-followup-timeline__next">
+                              {t('clients.followUpNextShort', 'Next')}: {formatDateTime(f.next_follow_up_at)}
+                            </div>
+                          ) : null}
+                          {f.summary?.trim() ? (
+                            <div className="client-followup-timeline__notes">{f.summary}</div>
+                          ) : null}
+                          {f.created_by?.name ? (
+                            <div className="client-followup-timeline__author">{f.created_by.name}</div>
+                          ) : null}
+                        </article>
                       </li>
                     )
                   })}

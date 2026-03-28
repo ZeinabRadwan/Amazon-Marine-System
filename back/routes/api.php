@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\ClientAttachmentController;
 use App\Http\Controllers\Api\V1\ClientContactController;
 use App\Http\Controllers\Api\V1\ClientController;
 use App\Http\Controllers\Api\V1\ClientFollowUpController;
+use App\Http\Controllers\Api\V1\ClientFollowUpSummaryController;
 use App\Http\Controllers\Api\V1\ClientNoteController;
 use App\Http\Controllers\Api\V1\ClientStatusController;
 use App\Http\Controllers\Api\V1\CommunicationLogController;
@@ -236,6 +237,9 @@ Route::prefix('v1')->group(function () {
             ->middleware('page_permission:clients,view');
         Route::post('clients/{client}/notes', [ClientNoteController::class, 'store'])
             ->middleware('page_permission:clients,edit');
+
+        Route::get('follow-ups/my-summary', [ClientFollowUpSummaryController::class, 'show'])
+            ->middleware('page_permission:clients,view');
 
         Route::get('clients/{client}/follow-ups', [ClientFollowUpController::class, 'index'])
             ->middleware('page_permission:clients,view');

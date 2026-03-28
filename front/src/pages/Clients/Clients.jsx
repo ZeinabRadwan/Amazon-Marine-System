@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { getStoredToken } from '../Login'
+import { listUsers } from '../../api/users'
 import {
   listClients,
   getClient,
@@ -20,6 +22,7 @@ import {
   getClientNotes,
   postClientNote,
   getClientFollowUps,
+  getFollowUpMySummary,
   postClientFollowUp,
   createClientShipment,
 } from '../../api/clients'
@@ -136,11 +139,14 @@ const defaultClientForm = () => ({
   pricing_tier: '',
   pricing_discount_pct: '',
   pricing_updated_at: '',
+  assigned_sales_id: '',
 })
 
 export default function Clients() {
   const { t, i18n } = useTranslation()
   const { hasPermission } = useAuthAccess()
+  const location = useLocation()
+  const navigate = useNavigate()
   const token = getStoredToken()
   const numberLocale = 'en-US'
   const monthFormat = getMonthFormat(i18n.language)
@@ -188,6 +194,11 @@ export default function Clients() {
   const [followUps, setFollowUps] = useState([])
   const [followUpsLoading, setFollowUpsLoading] = useState(false)
   const [followUpSubmitting, setFollowUpSubmitting] = useState(false)
+  const [workloadSummary, setWorkloadSummary] = useState(null)
+  const [workloadSummaryLoading, setWorkloadSummaryLoading] = useState(false)
+  const [workloadSummaryError, setWorkloadSummaryError] = useState(null)
+  const [workloadRefreshKey, setWorkloadRefreshKey] = useState(0)
+  const [salesUsers, setSalesUsers] = useState([])
   const [shipmentCreating, setShipmentCreating] = useState(false)
   const [charts, setCharts] = useState(null)
   const [chartsLoading, setChartsLoading] = useState(false)
@@ -386,6 +397,48 @@ export default function Clients() {
 
   useEffect(() => {
     if (!token) return
+    listUsers(token, { per_page: 200 })
+      .then((data) => {
+        const arr = data.data ?? data
+        const list = Array.isArray(arr) ? arr : []
+        setSalesUsers(list.map((u) => ({ id: u.id, name: u.name ?? u.email ?? `#${u.id}` })))
+      })
+      .catch(() => setSalesUsers([]))
+  }, [token])
+
+  useEffect(() => {
+    if (!token || detailTab !== 'followups') return
+    let cancelled = false
+    setWorkloadSummaryLoading(true)
+    setWorkloadSummaryError(null)
+    getFollowUpMySummary(token)
+      .then((res) => {
+        if (!cancelled) setWorkloadSummary(res)
+      })
+      .catch((e) => {
+        if (!cancelled) {
+          setWorkloadSummary(null)
+          setWorkloadSummaryError(e?.message || t('clients.followUpWorkloadError', 'Could not load workload summary.'))
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setWorkloadSummaryLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [token, detailTab, workloadRefreshKey, t])
+
+  useEffect(() => {
+    const id = location.state?.focusClientId
+    if (id == null) return
+    setDetailId(Number(id))
+    setDetailTab('followups')
+    navigate(`${location.pathname}${location.search}`, { replace: true, state: {} })
+  }, [location.state, location.pathname, location.search, navigate])
+
+  useEffect(() => {
+    if (!token) return
     setFinancialLoading(true)
     getFinancialSummary(token)
       .then((data) => setFinancialSummaryList(Array.isArray(data.data) ? data.data : []))
@@ -427,6 +480,7 @@ export default function Clients() {
       pricing_tier: n.pricing_tier ?? '',
       pricing_discount_pct: n.pricing_discount_pct ?? '',
       pricing_updated_at: n.pricing_updated_at ?? '',
+      assigned_sales_id: n.assigned_sales_id ?? '',
     })
   }
 
@@ -464,6 +518,7 @@ export default function Clients() {
       pricing_tier: str(form.pricing_tier),
       pricing_discount_pct: form.pricing_discount_pct !== '' && form.pricing_discount_pct != null ? Number(form.pricing_discount_pct) : null,
       pricing_updated_at: str(form.pricing_updated_at) || null,
+      assigned_sales_id: num(form.assigned_sales_id),
     }
   }
 
@@ -643,6 +698,7 @@ export default function Clients() {
       const data = await getClientFollowUps(token, detailId)
       const arr = data.data ?? data.follow_ups ?? data
       setFollowUps(Array.isArray(arr) ? arr : [])
+      setWorkloadRefreshKey((k) => k + 1)
       setAlert({ type: 'success', message: t('clients.followUpAdded', 'Follow-up added.') })
     } catch (err) {
       setAlert({ type: 'error', message: err.message || t('clients.error') })
@@ -705,6 +761,7 @@ export default function Clients() {
         { key: 'lead_source_id', type: 'select', options: leadSources },
         { key: 'lead_source_other', type: 'text' },
         { key: 'status_id', type: 'select', options: clientStatuses },
+        { key: 'assigned_sales_id', type: 'select', options: salesUsers },
       ],
     },
     {
@@ -1347,6 +1404,15 @@ export default function Clients() {
         followUpsLoading={followUpsLoading}
         followUpSubmitting={followUpSubmitting}
         onAddFollowUp={handleAddFollowUp}
+        workloadSummary={workloadSummary}
+        workloadSummaryLoading={workloadSummaryLoading}
+        workloadSummaryError={workloadSummaryError}
+        onWorkloadClientId={(cid) => {
+          if (cid != null && Number(cid) !== Number(detailId)) {
+            setDetailId(Number(cid))
+            setDetailTab('followups')
+          }
+        }}
         shipmentCreating={shipmentCreating}
         onCreateShipment={handleCreateShipment}
         financialSummaryList={financialSummaryList}
