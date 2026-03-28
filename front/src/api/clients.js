@@ -267,10 +267,15 @@ export async function postClientAttachment(token, clientId, file) {
 }
 
 /**
- * GET {{base_url}}/clients/:id/attachments/:attachmentId/download – Download Client Attachment (returns blob)
+ * GET {{base_url}}/clients/:id/attachments/:attachmentId/download – Download Client Attachment (returns blob).
+ * Pass absoluteDownloadUrl from the attachments list `url` when the API provides it.
  */
-export async function getClientAttachmentDownload(token, clientId, attachmentId) {
-  const res = await apiFetch(`${getBaseUrl()}/clients/${clientId}/attachments/${attachmentId}/download`, {
+export async function getClientAttachmentDownload(token, clientId, attachmentId, absoluteDownloadUrl) {
+  const url =
+    typeof absoluteDownloadUrl === 'string' && absoluteDownloadUrl.startsWith('http')
+      ? absoluteDownloadUrl
+      : `${getBaseUrl()}/clients/${clientId}/attachments/${attachmentId}/download`
+  const res = await apiFetch(url, {
     headers: authHeaders(token),
   })
   if (!res.ok) {

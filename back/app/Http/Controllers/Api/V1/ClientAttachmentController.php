@@ -10,21 +10,14 @@ use Illuminate\Support\Facades\Storage;
 
 class ClientAttachmentController extends Controller
 {
-    public function index(Client $client)
+    public function index(Request $request, Client $client)
     {
         $this->authorize('view', $client);
 
         $attachments = $client->attachments()->orderByDesc('created_at')->get();
 
         return response()->json([
-            'data' => $attachments->map(fn (ClientAttachment $a) => [
-                'id' => $a->id,
-                'name' => $a->name,
-                'path' => Storage::disk('local')->path($a->path),
-                'mime_type' => $a->mime_type,
-                'size' => $a->size,
-                'created_at' => $a->created_at,
-            ]),
+            'data' => $attachments->map(fn (ClientAttachment $a) => $this->attachmentPayload($request, $client, $a)),
         ]);
     }
 
@@ -37,7 +30,7 @@ class ClientAttachmentController extends Controller
         ]);
 
         $file = $request->file('file');
-        $path = $file->store('client-attachments/' . $client->id, 'local');
+        $path = $file->store('client-attachments/'.$client->id, 'local');
 
         $attachment = $client->attachments()->create([
             'name' => $file->getClientOriginalName(),
@@ -47,14 +40,7 @@ class ClientAttachmentController extends Controller
         ]);
 
         return response()->json([
-            'data' => [
-                'id' => $attachment->id,
-                'name' => $attachment->name,
-                'path' => Storage::disk('local')->path($attachment->path),
-                'mime_type' => $attachment->mime_type,
-                'size' => $attachment->size,
-                'created_at' => $attachment->created_at,
-            ],
+            'data' => $this->attachmentPayload($request, $client, $attachment),
         ], 201);
     }
 
@@ -89,5 +75,27 @@ class ClientAttachmentController extends Controller
         $client_attachment->delete();
 
         return response()->json(['message' => __('Attachment deleted.')]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function attachmentPayload(Request $request, Client $client, ClientAttachment $attachment): array
+    {
+        return [
+            'id' => $attachment->id,
+            'name' => $attachment->name,
+            'url' => $this->downloadUrl($request, $client, $attachment),
+            'mime_type' => $attachment->mime_type,
+            'size' => $attachment->size,
+            'created_at' => $attachment->created_at,
+        ];
+    }
+
+    protected function downloadUrl(Request $request, Client $client, ClientAttachment $attachment): string
+    {
+        $base = $request->getSchemeAndHttpHost();
+
+        return $base.'/api/v1/clients/'.$client->id.'/attachments/'.$attachment->id.'/download';
     }
 }

@@ -439,15 +439,18 @@ export default function ClientDetailModal({
                 <ul className="client-detail-modal__list client-detail-modal__list--attachments">
                   {attachments.map((a) => {
                     const displayName = a.name ?? a.file_name ?? `attachment-${a.id}`
+                    const downloadUrl = a.url ?? a.download_url
                     return (
                       <li key={a.id} className="client-detail-modal__list-item client-detail-modal__list-item--with-action">
-                        <span className="client-detail-modal__list-value">{displayName}</span>
+                        <span className="client-detail-modal__list-value" title={downloadUrl || undefined}>
+                          {displayName}
+                        </span>
                         <div className="client-detail-modal__list-actions">
                           {onAttachmentDownload && detailId && (
                             <button
                               type="button"
                               className="client-detail-modal__btn client-detail-modal__btn--secondary"
-                              onClick={() => onAttachmentDownload(detailId, a.id, displayName)}
+                              onClick={() => onAttachmentDownload(detailId, a.id, displayName, downloadUrl)}
                             >
                               {t('clients.download')}
                             </button>

@@ -562,11 +562,11 @@ export default function Clients() {
     }
   }
 
-  const handleAttachmentDownload = async (clientId, attachmentId, fileName) => {
+  const handleAttachmentDownload = async (clientId, attachmentId, fileName, downloadUrl) => {
     if (!clientId || !attachmentId || !token) return
     setAlert(null)
     try {
-      const blob = await getClientAttachmentDownload(token, clientId, attachmentId)
+      const blob = await getClientAttachmentDownload(token, clientId, attachmentId, downloadUrl)
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
