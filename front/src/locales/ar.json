@@ -969,6 +969,10 @@
     "attachmentUploaded": "تم رفع المرفق.",
     "attachmentDeleted": "تم حذف المرفق.",
     "download": "تحميل",
+    "viewAttachment": "عرض",
+    "viewAttachmentLoading": "جاري الفتح…",
+    "errorAttachmentPreview": "تعذر فتح المعاينة.",
+    "errorAttachmentPreviewPopup": "اسمح بالنوافذ المنبثقة لهذا الموقع لمعاينة الملفات في تبويب جديد.",
     "errorAttachmentDownload": "فشل تحميل المرفق.",
     "sections": {
       "basic": "معلومات أساسية",

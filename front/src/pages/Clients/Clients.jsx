@@ -181,6 +181,7 @@ export default function Clients() {
   const [attachmentsLoading, setAttachmentsLoading] = useState(false)
   const [attachmentUploading, setAttachmentUploading] = useState(false)
   const [attachmentDeletingId, setAttachmentDeletingId] = useState(null)
+  const [attachmentViewingId, setAttachmentViewingId] = useState(null)
   const [notes, setNotes] = useState([])
   const [notesLoading, setNotesLoading] = useState(false)
   const [noteSubmitting, setNoteSubmitting] = useState(false)
@@ -575,6 +576,29 @@ export default function Clients() {
       URL.revokeObjectURL(url)
     } catch (err) {
       setAlert({ type: 'error', message: t('clients.errorAttachmentDownload') })
+    }
+  }
+
+  const handleAttachmentView = async (clientId, attachmentId, downloadUrl, mimeType) => {
+    if (!clientId || !attachmentId || !token) return
+    setAlert(null)
+    setAttachmentViewingId(attachmentId)
+    try {
+      let blob = await getClientAttachmentDownload(token, clientId, attachmentId, downloadUrl)
+      if ((!blob.type || blob.type === 'application/octet-stream') && mimeType && String(mimeType).trim()) {
+        blob = new Blob([blob], { type: String(mimeType).trim() })
+      }
+      const objectUrl = URL.createObjectURL(blob)
+      const win = window.open(objectUrl, '_blank', 'noopener,noreferrer')
+      if (!win) {
+        URL.revokeObjectURL(objectUrl)
+        setAlert({ type: 'warning', message: t('clients.errorAttachmentPreviewPopup') })
+        return
+      }
+    } catch {
+      setAlert({ type: 'error', message: t('clients.errorAttachmentPreview') })
+    } finally {
+      setAttachmentViewingId(null)
     }
   }
 
@@ -1310,8 +1334,10 @@ export default function Clients() {
         attachments={attachments}
         attachmentUploading={attachmentUploading}
         attachmentDeletingId={attachmentDeletingId}
+        attachmentViewingId={attachmentViewingId}
         onAttachmentUpload={handleAttachmentUpload}
         onAttachmentDownload={handleAttachmentDownload}
+        onAttachmentView={handleAttachmentView}
         onAttachmentDelete={handleAttachmentDelete}
         notes={notes}
         notesLoading={notesLoading}

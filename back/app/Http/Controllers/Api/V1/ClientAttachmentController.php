@@ -44,17 +44,15 @@ class ClientAttachmentController extends Controller
         ], 201);
     }
 
-    public function download(Client $client, ClientAttachment $client_attachment)
+    public function download(Client $client, int|string $attachment)
     {
         $this->authorize('view', $client);
 
-        if ($client_attachment->client_id !== $client->id) {
-            abort(404);
-        }
+        $client_attachment = $this->resolveClientAttachment($client, $attachment);
 
-        $fullPath = Storage::disk('local')->path($client_attachment->path);
+        $fullPath = $this->resolveAttachmentFilesystemPath($client_attachment);
 
-        if (! file_exists($fullPath)) {
+        if ($fullPath === null) {
             abort(404, __('File not found.'));
         }
 
@@ -63,15 +61,13 @@ class ClientAttachmentController extends Controller
         ]);
     }
 
-    public function destroy(Client $client, ClientAttachment $client_attachment)
+    public function destroy(Client $client, int|string $attachment)
     {
         $this->authorize('update', $client);
 
-        if ($client_attachment->client_id !== $client->id) {
-            abort(404);
-        }
+        $client_attachment = $this->resolveClientAttachment($client, $attachment);
 
-        Storage::disk('local')->delete($client_attachment->path);
+        $this->deleteAttachmentFiles($client_attachment);
         $client_attachment->delete();
 
         return response()->json(['message' => __('Attachment deleted.')]);
@@ -97,5 +93,51 @@ class ClientAttachmentController extends Controller
         $base = $request->getSchemeAndHttpHost();
 
         return $base.'/api/v1/clients/'.$client->id.'/attachments/'.$attachment->id.'/download';
+    }
+
+    protected function resolveClientAttachment(Client $client, int|string $attachmentId): ClientAttachment
+    {
+        return ClientAttachment::query()
+            ->where('client_id', $client->id)
+            ->whereKey((int) $attachmentId)
+            ->firstOrFail();
+    }
+
+    /**
+     * Prefer the configured local disk (storage/app/private); fall back to legacy storage/app paths.
+     *
+     * @return string|null Absolute path if the file exists
+     */
+    protected function resolveAttachmentFilesystemPath(ClientAttachment $attachment): ?string
+    {
+        $relative = $attachment->path;
+        if ($relative === '' || str_contains($relative, '..')) {
+            return null;
+        }
+
+        $primary = Storage::disk('local')->path($relative);
+        if (is_file($primary)) {
+            return $primary;
+        }
+
+        $legacy = storage_path('app/'.$relative);
+        if (is_file($legacy)) {
+            return $legacy;
+        }
+
+        return null;
+    }
+
+    protected function deleteAttachmentFiles(ClientAttachment $attachment): void
+    {
+        Storage::disk('local')->delete($attachment->path);
+
+        $relative = $attachment->path;
+        if ($relative !== '' && ! str_contains($relative, '..')) {
+            $legacy = storage_path('app/'.$relative);
+            if (is_file($legacy)) {
+                @unlink($legacy);
+            }
+        }
     }
 }

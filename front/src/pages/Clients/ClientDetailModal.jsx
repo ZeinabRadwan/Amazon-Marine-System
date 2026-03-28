@@ -48,8 +48,10 @@ export default function ClientDetailModal({
   attachments = [],
   attachmentUploading,
   attachmentDeletingId,
+  attachmentViewingId,
   onAttachmentUpload,
   onAttachmentDownload,
+  onAttachmentView,
   onAttachmentDelete,
   notes = [],
   notesLoading = false,
@@ -446,11 +448,22 @@ export default function ClientDetailModal({
                           {displayName}
                         </span>
                         <div className="client-detail-modal__list-actions">
+                          {onAttachmentView && detailId && (
+                            <button
+                              type="button"
+                              className="client-detail-modal__btn client-detail-modal__btn--secondary"
+                              onClick={() => onAttachmentView(detailId, a.id, downloadUrl, a.mime_type)}
+                              disabled={attachmentViewingId === a.id}
+                            >
+                              {attachmentViewingId === a.id ? t('clients.viewAttachmentLoading') : t('clients.viewAttachment')}
+                            </button>
+                          )}
                           {onAttachmentDownload && detailId && (
                             <button
                               type="button"
                               className="client-detail-modal__btn client-detail-modal__btn--secondary"
                               onClick={() => onAttachmentDownload(detailId, a.id, displayName, downloadUrl)}
+                              disabled={attachmentViewingId === a.id}
                             >
                               {t('clients.download')}
                             </button>

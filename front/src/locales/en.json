@@ -969,6 +969,10 @@
     "attachmentUploaded": "Attachment uploaded.",
     "attachmentDeleted": "Attachment deleted.",
     "download": "Download",
+    "viewAttachment": "View",
+    "viewAttachmentLoading": "Opening…",
+    "errorAttachmentPreview": "Could not open preview.",
+    "errorAttachmentPreviewPopup": "Allow pop-ups for this site to preview files in a new tab.",
     "errorAttachmentDownload": "Failed to download attachment.",
     "sections": {
       "basic": "Basic information",
