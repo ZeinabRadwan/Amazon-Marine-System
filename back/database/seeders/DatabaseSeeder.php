@@ -28,6 +28,7 @@ class DatabaseSeeder extends Seeder
             InvoicesSeeder::class,
             CustomerServiceSeeder::class,
             PricingSeeder::class,
+            ClientStatusesSeeder::class,
         ]);
     }
 }
