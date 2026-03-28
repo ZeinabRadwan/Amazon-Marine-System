@@ -2,7 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Models\ClientStatus;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StoreClientRequest extends FormRequest
 {
@@ -30,6 +33,7 @@ class StoreClientRequest extends FormRequest
             'website_url' => ['nullable', 'string', 'max:255'],
             'facebook_url' => ['nullable', 'string', 'max:255'],
             'linkedin_url' => ['nullable', 'string', 'max:255'],
+            'client_type' => ['required', 'string', Rule::in(['lead', 'client'])],
             'status_id' => ['nullable', 'integer', 'exists:client_statuses,id'],
             'lead_source_id' => ['nullable', 'integer', 'exists:lead_sources,id'],
             'lead_source_other' => ['nullable', 'string', 'max:255'],
@@ -47,5 +51,23 @@ class StoreClientRequest extends FormRequest
             'pricing_discount_pct' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'pricing_updated_at' => ['nullable', 'date'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            $type = $this->input('client_type');
+            $statusId = $this->input('status_id');
+            if ($type === null || $statusId === null || $statusId === '') {
+                return;
+            }
+            $status = ClientStatus::query()->find((int) $statusId);
+            if ($status && $status->applies_to !== $type) {
+                $validator->errors()->add(
+                    'status_id',
+                    __('The selected status does not belong to this client type.')
+                );
+            }
+        });
     }
 }

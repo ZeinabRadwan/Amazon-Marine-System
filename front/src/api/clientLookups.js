@@ -153,9 +153,12 @@ export async function listLeadSources(token) {
 
 // —— Client Statuses ——
 
-/** GET {{base_url}}/client-statuses – List Client Statuses */
-export async function listClientStatuses(token) {
-  const res = await apiFetch(`${getBaseUrl()}/client-statuses`, { headers: authHeaders(token) })
+/** GET {{base_url}}/client-statuses – List Client Statuses (optional applies_to: 'lead' | 'client') */
+export async function listClientStatuses(token, params = {}) {
+  const searchParams = new URLSearchParams()
+  if (params.applies_to != null && params.applies_to !== '') searchParams.set('applies_to', String(params.applies_to))
+  const query = searchParams.toString()
+  const res = await apiFetch(`${getBaseUrl()}/client-statuses${query ? `?${query}` : ''}`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to list client statuses (${res.status})`)
   return data

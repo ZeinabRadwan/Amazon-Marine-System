@@ -29,6 +29,7 @@ class Client extends Model
         'website_url',
         'facebook_url',
         'linkedin_url',
+        'client_type',
         'status_id',
         'lead_source_id',
         'lead_source_other',

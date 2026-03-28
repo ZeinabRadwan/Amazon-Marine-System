@@ -7,17 +7,23 @@ use App\Http\Requests\StoreClientStatusRequest;
 use App\Http\Requests\UpdateClientStatusRequest;
 use App\Models\ClientStatus;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class ClientStatusController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $items = ClientStatus::query()
+        $query = ClientStatus::query()
+            ->orderBy('applies_to')
             ->orderBy('sort_order')
-            ->orderBy('name_en')
-            ->get();
+            ->orderBy('name_en');
 
-        return response()->json(['data' => $items]);
+        $appliesTo = $request->query('applies_to');
+        if (in_array($appliesTo, ['lead', 'client'], true)) {
+            $query->where('applies_to', $appliesTo);
+        }
+
+        return response()->json(['data' => $query->get()]);
     }
 
     public function store(StoreClientStatusRequest $request): JsonResponse

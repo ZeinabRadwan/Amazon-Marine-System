@@ -921,6 +921,13 @@
     "searchPlaceholder": "بحث بالاسم، الشركة، الهاتف، البريد…",
     "status": "الحالة",
     "statusAll": "جميع الحالات",
+    "salesStage": "مرحلة البيع",
+    "statusColumnMixed": "الحالة / مرحلة البيع",
+    "filterClientTypeAll": "كل الأنواع",
+    "clientType": {
+      "lead": "عميل محتمل",
+      "client": "عميل"
+    },
     "statusNew": "جديد",
     "statusActive": "نشط",
     "statusInactive": "غير نشط",
@@ -994,6 +1001,7 @@
       "website_url": "الموقع",
       "facebook_url": "فيسبوك",
       "linkedin_url": "لينكدإن",
+      "client_type": "نوع العميل",
       "status": "الحالة",
       "status_id": "الحالة",
       "lead_source": "مصدر العميل",
@@ -1009,6 +1017,8 @@
       "default_currency": "العملة",
       "notes": "ملاحظات",
       "shipping_problems": "مشاكل الشحن",
+      "shipping_problems_hint": "اكتب المشاكل أو التحديات اللي العميل واجهها قبل كده في الشحن (تأخير، غرامات، مشاكل مستندات، تلف بضاعة، سوء تعامل مع شركة شحن أخرى).",
+      "shipping_problems_hint_btn": "مساعدة حقل مشاكل الشحن",
       "current_need": "الاحتياج الحالي",
       "pain_points": "نقاط الألم",
       "opportunity": "الفرصة",
@@ -2089,9 +2099,13 @@
       "deleted": "تم حذف حالة العميل.",
       "deleteTitle": "حذف حالة عميل",
       "deleteConfirm": "هل تريد حذف حالة العميل هذه؟",
+      "appliesTo": "ينطبق على",
+      "appliesToLead": "مسار العميل المحتمل",
+      "appliesToClient": "دورة العميل التعاقدي",
       "table": {
         "name": "الاسم",
-        "sortOrder": "ترتيب الفرز"
+        "sortOrder": "ترتيب الفرز",
+        "appliesTo": "ينطبق على"
       }
     },
     "ticketStatuses": {

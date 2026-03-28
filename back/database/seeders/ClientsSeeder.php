@@ -77,7 +77,7 @@ class ClientsSeeder extends Seeder
                 'linkedin_url' => null,
                 'lead_source' => 'LinkedIn',
                 'interest_level' => 'High',
-                'status_name' => 'Pending',
+                'status_name' => 'In progress',
                 'notes' => 'عميل جديد يحتاج متابعة مكثفة',
                 'shipments_count' => 0,
                 'total_profit' => 0,

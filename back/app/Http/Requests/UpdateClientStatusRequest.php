@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateClientStatusRequest extends FormRequest
 {
@@ -20,6 +21,7 @@ class UpdateClientStatusRequest extends FormRequest
             'name_ar' => ['sometimes', 'required', 'string', 'max:255'],
             'name_en' => ['sometimes', 'required', 'string', 'max:255'],
             'sort_order' => ['sometimes', 'nullable', 'integer', 'min:0'],
+            'applies_to' => ['sometimes', 'required', 'string', Rule::in(['lead', 'client'])],
         ];
     }
 }

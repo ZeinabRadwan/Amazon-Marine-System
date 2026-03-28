@@ -54,8 +54,13 @@ class ClientController extends Controller
             if (is_numeric($statusParam)) {
                 $query->where('status_id', (int) $statusParam);
             } else {
-                $query->whereHas('clientStatus', fn ($q) => $q->where('name', $statusParam));
+                $query->whereHas('clientStatus', fn ($q) => $q->where('name_en', $statusParam));
             }
+        }
+
+        $clientType = $request->query('client_type');
+        if (in_array($clientType, ['lead', 'client'], true)) {
+            $query->where('client_type', $clientType);
         }
 
         $sort = $request->query('sort', 'client');
@@ -157,7 +162,7 @@ class ClientController extends Controller
         ];
         $callback = function () use ($rows) {
             $fh = fopen('php://output', 'w');
-            fputcsv($fh, ['id', 'name', 'company_name', 'phone', 'email', 'lead_source', 'status', 'shipments', 'profit', 'last_contact_at']);
+            fputcsv($fh, ['id', 'name', 'company_name', 'phone', 'email', 'client_type', 'lead_source', 'status', 'shipments', 'profit', 'last_contact_at']);
             foreach ($rows as $r) {
                 fputcsv($fh, [
                     $r['id'] ?? '',
@@ -165,6 +170,7 @@ class ClientController extends Controller
                     $r['company_name'] ?? '',
                     $r['phone'] ?? '',
                     $r['email'] ?? '',
+                    $r['client_type'] ?? '',
                     $r['lead_source'] ?? '',
                     $r['status'] ?? '',
                     $r['shipments'] ?? '',
@@ -540,10 +546,17 @@ class ClientController extends Controller
             'tax_id' => $client->tax_id,
             'facebook_url' => $client->facebook_url,
             'linkedin_url' => $client->linkedin_url,
+            'client_type' => $client->client_type,
             'lead_source_id' => $client->lead_source_id,
             'lead_source' => $client->leadSource?->name,
             'status_id' => $client->status_id,
-            'status' => $client->clientStatus?->name,
+            'client_status' => $client->clientStatus ? [
+                'id' => $client->clientStatus->id,
+                'name_ar' => $client->clientStatus->name_ar,
+                'name_en' => $client->clientStatus->name_en,
+                'applies_to' => $client->clientStatus->applies_to,
+            ] : null,
+            'status' => $client->clientStatus?->name_en,
             'shipments' => $client->shipments_count,
             'profit' => $client->total_profit,
             'last_contact_at' => $lastContactAt,

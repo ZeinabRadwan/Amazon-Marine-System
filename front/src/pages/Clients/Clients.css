@@ -504,6 +504,21 @@
   color: #9ca3af;
 }
 
+.clients-status-cell--lead {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.clients-status-cell__kind {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--form-text, #6b7280);
+}
+
 .clients-table td .clients-btn + .clients-btn {
   margin-inline-start: 8px;
 }

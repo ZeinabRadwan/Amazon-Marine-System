@@ -21,7 +21,7 @@ class ClientFactory extends Factory
             'company_name' => $name.' Co',
             'email' => $this->faker->unique()->safeEmail(),
             'phone' => $this->faker->phoneNumber(),
+            'client_type' => 'client',
         ];
     }
 }
-

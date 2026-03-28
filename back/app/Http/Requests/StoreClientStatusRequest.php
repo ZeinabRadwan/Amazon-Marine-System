@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreClientStatusRequest extends FormRequest
 {
@@ -20,6 +21,7 @@ class StoreClientStatusRequest extends FormRequest
             'name_ar' => ['required', 'string', 'max:255'],
             'name_en' => ['required', 'string', 'max:255'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
+            'applies_to' => ['required', 'string', Rule::in(['lead', 'client'])],
         ];
     }
 }

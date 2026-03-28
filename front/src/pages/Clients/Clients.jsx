@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getStoredToken } from '../Login'
 import {
@@ -41,7 +41,7 @@ import { StatsCard } from '../../components/StatsCard'
 import ClientDetailModal from './ClientDetailModal'
 import LoaderDots from '../../components/LoaderDots'
 import Alert from '../../components/Alert'
-import { Eye, Pencil, Trash2, FileSpreadsheet, Users, Search, X, ArrowUpDown, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react'
+import { Eye, Pencil, Trash2, FileSpreadsheet, Users, Search, X, ArrowUpDown, ChevronDown, ChevronUp, RotateCcw, Info } from 'lucide-react'
 import { BarChart, DonutChart } from '../../components/Charts'
 import '../../components/Charts/Charts.css'
 import '../../components/LoaderDots/LoaderDots.css'
@@ -61,7 +61,15 @@ function getStatusBadgeVariant(statusName, statusId) {
   if (name === 'inactive' || name === 'غير نشط') return 'inactive'
   if (name === 'pending' || name === 'قيد الانتظار' || name === 'معلق') return 'pending'
   if (name === 'prospect' || name === 'عميل محتمل') return 'prospect'
-  if (name === 'lead' || name === 'عميل متوقع') return 'lead'
+  if (name === 'lead' || name === 'عميل متوقع' || name === 'expected') return 'lead'
+  if (name === 'contacted' || name === 'تم التواصل') return 'pending'
+  if (name === 'interested' || name === 'مهتم') return 'active'
+  if (name === 'quotation' || name === 'عرض سعر') return 'pending'
+  if (name === 'negotiation' || name === 'تفاوض') return 'lead'
+  if (name.includes('lost')) return 'inactive'
+  if (name === 'recurring' || name === 'متكرر') return 'active'
+  if (name === 'in progress' || name === 'قيد التنفيذ') return 'pending'
+  if (name === 'on hold' || name === 'متوقف') return 'inactive'
   return 'default'
 }
 
@@ -92,6 +100,7 @@ function normalizeClient(c) {
     name: c.name ?? c.client_name ?? '',
     contact_name: c.contact_name ?? c.client_name ?? '',
     lead_source: c.lead_source ?? c.source ?? '',
+    client_type: c.client_type ?? 'client',
   }
 }
 
@@ -110,6 +119,7 @@ const defaultClientForm = () => ({
   website_url: '',
   facebook_url: '',
   linkedin_url: '',
+  client_type: 'lead',
   status_id: '',
   lead_source_id: '',
   lead_source_other: '',
@@ -139,6 +149,7 @@ export default function Clients() {
   const [alert, setAlert] = useState(null)
   const [filters, setFilters] = useState({
     q: '',
+    client_type: '',
     status_id: '',
     lead_source_id: '',
     sort: 'client',
@@ -221,7 +232,7 @@ export default function Clients() {
       })
       .catch(() => setAlert({ type: 'error', message: t('clients.errorLoad') }))
       .finally(() => setLoading(false))
-  }, [token, filters.q, filters.status_id, filters.lead_source_id, filters.sort, filters.direction, filters.page, filters.per_page, t])
+  }, [token, filters.q, filters.client_type, filters.status_id, filters.lead_source_id, filters.sort, filters.direction, filters.page, filters.per_page, t])
 
   useEffect(() => {
     loadList()
@@ -398,6 +409,7 @@ export default function Clients() {
       website_url: n.website_url ?? '',
       facebook_url: n.facebook_url ?? '',
       linkedin_url: n.linkedin_url ?? '',
+      client_type: n.client_type ?? 'client',
       status_id: n.status_id ?? '',
       lead_source_id: n.lead_source_id ?? '',
       lead_source_other: n.lead_source_other ?? '',
@@ -434,6 +446,7 @@ export default function Clients() {
       website_url: str(form.website_url),
       facebook_url: str(form.facebook_url),
       linkedin_url: str(form.linkedin_url),
+      client_type: form.client_type === 'client' || form.client_type === 'lead' ? form.client_type : 'client',
       status_id: num(form.status_id),
       lead_source_id: num(form.lead_source_id),
       lead_source_other: str(form.lead_source_other),
@@ -664,6 +677,7 @@ export default function Clients() {
     {
       titleKey: 'clients.sections.sourceSales',
       fields: [
+        { key: 'client_type', type: 'client_type', required: true },
         { key: 'lead_source_id', type: 'select', options: leadSources },
         { key: 'lead_source_other', type: 'text' },
         { key: 'status_id', type: 'select', options: clientStatuses },
@@ -681,7 +695,7 @@ export default function Clients() {
     },
   ]
 
-  const renderForm = (form, setForm, disabled) => (
+  const renderForm = (form, setForm, disabled, formGroupId = 'client') => (
     <div className="clients-form-sections">
       {clientFormSections.map((section) => (
         <section key={section.titleKey} className="client-detail-modal__section">
@@ -692,17 +706,57 @@ export default function Clients() {
               const labelKey = `clients.fields.${key}`
               const value = form[key] ?? ''
               const update = (v) => setForm((f) => ({ ...f, [key]: v }))
+              if (field.type === 'client_type') {
+                return (
+                  <div key={key} className="client-detail-modal__form-field client-detail-modal__form-field--full">
+                    <span id={`${formGroupId}-client-type-legend`} className="client-detail-modal__form-field-legend">
+                      {t(labelKey)}
+                    </span>
+                    <div
+                      className="client-detail-modal__radio-row"
+                      role="radiogroup"
+                      aria-labelledby={`${formGroupId}-client-type-legend`}
+                    >
+                      {[
+                        { v: 'lead', label: t('clients.clientType.lead') },
+                        { v: 'client', label: t('clients.clientType.client') },
+                      ].map(({ v, label }) => (
+                        <label key={v} className="client-detail-modal__radio-label">
+                          <input
+                            type="radio"
+                            name={`client_type_${formGroupId}`}
+                            value={v}
+                            checked={form.client_type === v}
+                            onChange={() => setForm((f) => ({ ...f, client_type: v, status_id: '' }))}
+                            disabled={disabled}
+                          />
+                          <span>{label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )
+              }
               if (field.type === 'select') {
-                const options = field.options ?? []
+                const options =
+                  key === 'status_id'
+                    ? clientStatuses.filter((s) => String(s.applies_to) === String(form.client_type))
+                    : (field.options ?? [])
+                const statusLabelKey =
+                  key === 'status_id'
+                    ? form.client_type === 'lead'
+                      ? 'clients.salesStage'
+                      : 'clients.fields.status_id'
+                    : labelKey
                 return (
                   <div key={key} className="client-detail-modal__form-field">
-                    <label htmlFor={`client-${key}`}>{t(labelKey)}</label>
+                    <label htmlFor={`${formGroupId}-${key}`}>{t(statusLabelKey)}</label>
                     <select
-                      id={`client-${key}`}
+                      id={`${formGroupId}-${key}`}
                       value={value}
                       onChange={(e) => update(e.target.value)}
-                      disabled={disabled}
-                      aria-label={t(labelKey)}
+                      disabled={disabled || (key === 'status_id' && !form.client_type)}
+                      aria-label={t(statusLabelKey)}
                     >
                       <option value="">—</option>
                       {options.map((opt) => (
@@ -717,16 +771,41 @@ export default function Clients() {
                 )
               }
               if (field.type === 'textarea') {
+                const shippingHintId = `${formGroupId}-shipping_problems-hint-desc`
+                const hintText =
+                  key === 'shipping_problems' ? t('clients.fields.shipping_problems_hint') : null
                 return (
                   <div key={key} className="client-detail-modal__form-field client-detail-modal__form-field--full">
-                    <label htmlFor={`client-${key}`}>{t(labelKey)}</label>
+                    <div className="client-detail-modal__label-row">
+                      <label htmlFor={`${formGroupId}-${key}`}>{t(labelKey)}</label>
+                      {key === 'shipping_problems' && (
+                        <span className="client-field-hint">
+                          <button
+                            type="button"
+                            className="client-field-hint__btn"
+                            aria-label={t('clients.fields.shipping_problems_hint_btn')}
+                          >
+                            <Info className="client-field-hint__icon" aria-hidden />
+                          </button>
+                          <span className="client-field-hint__popover" role="tooltip">
+                            {hintText}
+                          </span>
+                        </span>
+                      )}
+                    </div>
+                    {key === 'shipping_problems' && (
+                      <span id={shippingHintId} className="client-field-hint__sr-only">
+                        {hintText}
+                      </span>
+                    )}
                     <textarea
-                      id={`client-${key}`}
+                      id={`${formGroupId}-${key}`}
                       value={value}
                       onChange={(e) => update(e.target.value)}
                       disabled={disabled}
                       rows={field.rows ?? 3}
                       aria-label={t(labelKey)}
+                      aria-describedby={key === 'shipping_problems' ? shippingHintId : undefined}
                     />
                   </div>
                 )
@@ -734,9 +813,9 @@ export default function Clients() {
               if (field.type === 'number') {
                 return (
                   <div key={key} className="client-detail-modal__form-field">
-                    <label htmlFor={`client-${key}`}>{t(labelKey)}</label>
+                    <label htmlFor={`${formGroupId}-${key}`}>{t(labelKey)}</label>
                     <input
-                      id={`client-${key}`}
+                      id={`${formGroupId}-${key}`}
                       type="number"
                       min={field.min ?? 0}
                       max={field.max}
@@ -752,9 +831,9 @@ export default function Clients() {
               if (field.type === 'date') {
                 return (
                   <div key={key} className="client-detail-modal__form-field">
-                    <label htmlFor={`client-${key}`}>{t(labelKey)}</label>
+                    <label htmlFor={`${formGroupId}-${key}`}>{t(labelKey)}</label>
                     <input
-                      id={`client-${key}`}
+                      id={`${formGroupId}-${key}`}
                       type="date"
                       value={value}
                       onChange={(e) => update(e.target.value)}
@@ -766,9 +845,9 @@ export default function Clients() {
               }
               return (
                 <div key={key} className="client-detail-modal__form-field">
-                  <label htmlFor={`client-${key}`}>{t(labelKey)}</label>
+                  <label htmlFor={`${formGroupId}-${key}`}>{t(labelKey)}</label>
                   <input
-                    id={`client-${key}`}
+                    id={`${formGroupId}-${key}`}
                     type={field.type === 'email' ? 'email' : 'text'}
                     value={value}
                     onChange={(e) => update(e.target.value)}
@@ -785,60 +864,79 @@ export default function Clients() {
     </div>
   )
 
-  const clientColumns = [
-    {
-      key: 'name',
-      sortKey: 'client',
-      label: t('clients.fields.name'),
-      render: (_, c) => c.client_name ?? c.name ?? '—',
-    },
-    { key: 'company_name', label: t('clients.fields.company_name') },
-    { key: 'email', label: t('clients.fields.email') },
-    { key: 'phone', label: t('clients.fields.phone') },
-    {
-      key: 'status',
-      label: t('clients.fields.status'),
-      render: (_, c) => {
-        const st = clientStatuses.find((s) => Number(s.id) === Number(c.status_id))
-        const variantKey = (st?.name_en ?? st?.name ?? c.status ?? '').toString().toLowerCase().trim()
-        const variant = getStatusBadgeVariant(variantKey, c.status_id)
-        const display = clientStatusTableLabel(st, c, i18n, t, variant)
-        return (
-          <span className={`clients-status-badge clients-status-badge--${variant}`} title={display}>
-            {display}
-          </span>
-        )
+  const clientColumns = useMemo(() => {
+    const statusColumnLabel =
+      filters.client_type === 'lead'
+        ? t('clients.salesStage')
+        : filters.client_type === 'client'
+          ? t('clients.fields.status_id')
+          : t('clients.statusColumnMixed')
+
+    return [
+      {
+        key: 'name',
+        sortKey: 'client',
+        label: t('clients.fields.name'),
+        render: (_, c) => c.client_name ?? c.name ?? '—',
       },
-    },
-    {
-      key: 'actions',
-      label: t('clients.actions'),
-      render: (_, c) => (
-        <div className="clients-table-actions flex flex-wrap gap-2 justify-end" role="group" aria-label={t('clients.actions')}>
-          <IconActionButton
-            icon={<Eye className="h-4 w-4" />}
-            label={t('clients.view')}
-            onClick={() => setDetailId(c.id)}
-          />
-          {hasPermission('clients', 'update') && (
+      { key: 'company_name', label: t('clients.fields.company_name') },
+      { key: 'email', label: t('clients.fields.email') },
+      { key: 'phone', label: t('clients.fields.phone') },
+      {
+        key: 'status',
+        label: statusColumnLabel,
+        render: (_, c) => {
+          const row = normalizeClient(c)
+          const st =
+            clientStatuses.find((s) => Number(s.id) === Number(c.status_id)) ?? c.client_status ?? null
+          const variantKey = (st?.name_en ?? st?.name ?? c.status ?? '').toString().toLowerCase().trim()
+          const variant = getStatusBadgeVariant(variantKey, c.status_id)
+          const display = clientStatusTableLabel(st, row, i18n, t, variant)
+          const badge = (
+            <span className={`clients-status-badge clients-status-badge--${variant}`} title={display}>
+              {display}
+            </span>
+          )
+          return row.client_type === 'lead' ? (
+            <span className="clients-status-cell clients-status-cell--lead">
+              <span className="clients-status-cell__kind">{t('clients.salesStage')}</span>
+              {badge}
+            </span>
+          ) : (
+            badge
+          )
+        },
+      },
+      {
+        key: 'actions',
+        label: t('clients.actions'),
+        render: (_, c) => (
+          <div className="clients-table-actions flex flex-wrap gap-2 justify-end" role="group" aria-label={t('clients.actions')}>
             <IconActionButton
-              icon={<Pencil className="h-4 w-4" />}
-              label={t('clients.edit')}
-              onClick={() => openEdit(c)}
+              icon={<Eye className="h-4 w-4" />}
+              label={t('clients.view')}
+              onClick={() => setDetailId(c.id)}
             />
-          )}
-          {hasPermission('clients', 'delete') && (
-            <IconActionButton
-              icon={<Trash2 className="h-4 w-4" />}
-              label={t('clients.delete')}
-              onClick={() => setDeleteId(c.id)}
-              variant="danger"
-            />
-          )}
-        </div>
-      ),
-    },
-  ]
+            {hasPermission('clients', 'update') && (
+              <IconActionButton
+                icon={<Pencil className="h-4 w-4" />}
+                label={t('clients.edit')}
+                onClick={() => openEdit(c)}
+              />
+            )}
+            {hasPermission('clients', 'delete') && (
+              <IconActionButton
+                icon={<Trash2 className="h-4 w-4" />}
+                label={t('clients.delete')}
+                onClick={() => setDeleteId(c.id)}
+                variant="danger"
+              />
+            )}
+          </div>
+        ),
+      },
+    ]
+  }, [t, i18n, clientStatuses, filters.client_type, hasPermission])
 
   return (
     <Container size="xl">
@@ -975,13 +1073,33 @@ export default function Clients() {
           </div>
           <div className="clients-filters__fields">
             <select
+              value={filters.client_type ?? ''}
+              onChange={(e) =>
+                setFilters((f) => ({
+                  ...f,
+                  client_type: e.target.value,
+                  status_id: '',
+                  page: 1,
+                }))
+              }
+              className="clients-input"
+              aria-label={t('clients.fields.client_type')}
+            >
+              <option value="">{t('clients.filterClientTypeAll')}</option>
+              <option value="lead">{t('clients.clientType.lead')}</option>
+              <option value="client">{t('clients.clientType.client')}</option>
+            </select>
+            <select
               value={filters.status_id ?? ''}
               onChange={(e) => setFilters((f) => ({ ...f, status_id: e.target.value, page: 1 }))}
               className="clients-input"
               aria-label={t('clients.status')}
             >
               <option value="">{t('clients.statusAll')}</option>
-              {clientStatuses.map((s) => (
+              {(filters.client_type
+                ? clientStatuses.filter((s) => String(s.applies_to) === String(filters.client_type))
+                : clientStatuses
+              ).map((s) => (
                 <option key={s.id} value={s.id}>
                   {localizedStatusLabel(s, i18n.language)}
                 </option>
@@ -1007,6 +1125,7 @@ export default function Clients() {
             onClick={() => setFilters((f) => ({
               ...f,
               q: '',
+              client_type: '',
               status_id: '',
               lead_source_id: '',
               sort: 'client',
@@ -1163,7 +1282,7 @@ export default function Clients() {
             </header>
             <form onSubmit={handleCreateSubmit} className="client-detail-modal__form">
               <div className="client-detail-modal__body client-detail-modal__body--form">
-                <div className="client-detail-modal__body-inner">{renderForm(createForm, setCreateForm, createSubmitting)}</div>
+                <div className="client-detail-modal__body-inner">{renderForm(createForm, setCreateForm, createSubmitting, 'create')}</div>
               </div>
               <footer className="client-detail-modal__footer client-detail-modal__footer--form">
                 <button type="button" className="client-detail-modal__btn client-detail-modal__btn--secondary" onClick={() => setShowCreate(false)} disabled={createSubmitting}>
@@ -1229,7 +1348,7 @@ export default function Clients() {
             </header>
             <form onSubmit={handleEditSubmit} className="client-detail-modal__form">
               <div className="client-detail-modal__body client-detail-modal__body--form">
-                <div className="client-detail-modal__body-inner">{renderForm(editForm, setEditForm, editSubmitting)}</div>
+                <div className="client-detail-modal__body-inner">{renderForm(editForm, setEditForm, editSubmitting, 'edit')}</div>
               </div>
               <footer className="client-detail-modal__footer client-detail-modal__footer--form">
                 <button type="button" className="client-detail-modal__btn client-detail-modal__btn--secondary" onClick={() => setEditId(null)} disabled={editSubmitting}>

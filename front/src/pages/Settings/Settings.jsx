@@ -176,7 +176,7 @@ export default function Settings() {
 
   const [clientStatuses, setClientStatuses] = useState([])
   const [clientStatusModal, setClientStatusModal] = useState(null)
-  const [clientStatusForm, setClientStatusForm] = useState({ name_ar: '', name_en: '', sort_order: 1 })
+  const [clientStatusForm, setClientStatusForm] = useState({ name_ar: '', name_en: '', sort_order: 1, applies_to: 'client' })
   const [clientStatusSubmitting, setClientStatusSubmitting] = useState(false)
   const [deleteClientStatusId, setDeleteClientStatusId] = useState(null)
   const [deleteClientStatusSubmitting, setDeleteClientStatusSubmitting] = useState(false)
@@ -627,7 +627,7 @@ export default function Settings() {
   }
 
   function openNewClientStatus() {
-    setClientStatusForm({ name_ar: '', name_en: '', sort_order: 1 })
+    setClientStatusForm({ name_ar: '', name_en: '', sort_order: 1, applies_to: 'lead' })
     setClientStatusModal('create')
   }
 
@@ -636,6 +636,7 @@ export default function Settings() {
       name_ar: row.name_ar ?? row.name ?? '',
       name_en: row.name_en ?? row.name ?? '',
       sort_order: row.sort_order ?? 1,
+      applies_to: row.applies_to === 'client' ? 'client' : 'lead',
     })
     setClientStatusModal({ mode: 'edit', id: row.id })
   }
@@ -650,6 +651,7 @@ export default function Settings() {
         name_ar: clientStatusForm.name_ar.trim(),
         name_en: clientStatusForm.name_en.trim(),
         sort_order: Number(clientStatusForm.sort_order) || 0,
+        applies_to: clientStatusForm.applies_to === 'client' ? 'client' : 'lead',
       }
       if (clientStatusModal?.mode === 'edit' && clientStatusModal.id != null) {
         await updateClientStatus(token, clientStatusModal.id, body)
@@ -1061,6 +1063,13 @@ export default function Settings() {
       label: t('settings.statuses.displayName'),
       sortable: false,
       render: (_, row) => localizedStatusLabel(row, i18n.language),
+    },
+    {
+      key: 'applies_to',
+      label: t('settings.clientStatuses.table.appliesTo'),
+      sortable: false,
+      render: (val) =>
+        val === 'client' ? t('settings.clientStatuses.appliesToClient') : t('settings.clientStatuses.appliesToLead'),
     },
     { key: 'sort_order', label: t('settings.clientStatuses.table.sortOrder'), sortable: false, render: (val) => val ?? '—' },
     {
@@ -1734,6 +1743,18 @@ export default function Settings() {
               <form onSubmit={handleSaveClientStatus} className="settings-modal-form">
                 <Input label={t('settings.clientStatuses.nameAr')} value={clientStatusForm.name_ar} onChange={(e) => setClientStatusForm((p) => ({ ...p, name_ar: e.target.value }))} required />
                 <Input label={t('settings.clientStatuses.nameEn')} value={clientStatusForm.name_en} onChange={(e) => setClientStatusForm((p) => ({ ...p, name_en: e.target.value }))} required />
+                <label className="settings-checkbox-row">
+                  <span className="settings-checkbox-label">{t('settings.clientStatuses.appliesTo')}</span>
+                  <select
+                    className="clients-input"
+                    value={clientStatusForm.applies_to}
+                    onChange={(e) => setClientStatusForm((p) => ({ ...p, applies_to: e.target.value }))}
+                    required
+                  >
+                    <option value="lead">{t('settings.clientStatuses.appliesToLead')}</option>
+                    <option value="client">{t('settings.clientStatuses.appliesToClient')}</option>
+                  </select>
+                </label>
                 <Input label={t('settings.clientStatuses.sortOrder')} type="number" min={0} value={clientStatusForm.sort_order} onChange={(e) => setClientStatusForm((p) => ({ ...p, sort_order: e.target.value }))} />
                 <div className="clients-modal-actions">
                   <button type="button" className="clients-btn" onClick={() => setClientStatusModal(null)} disabled={clientStatusSubmitting}>

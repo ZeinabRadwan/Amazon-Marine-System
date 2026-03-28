@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ClientStatus extends Model
 {
-    protected $fillable = ['name_ar', 'name_en', 'sort_order'];
+    protected $fillable = ['name_ar', 'name_en', 'sort_order', 'applies_to'];
 
     protected $casts = [
         'sort_order' => 'integer',

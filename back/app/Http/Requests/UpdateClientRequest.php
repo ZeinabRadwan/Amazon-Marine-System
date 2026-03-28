@@ -2,7 +2,11 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Client;
+use App\Models\ClientStatus;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class UpdateClientRequest extends FormRequest
 {
@@ -30,6 +34,7 @@ class UpdateClientRequest extends FormRequest
             'website_url' => ['sometimes', 'nullable', 'string', 'max:255'],
             'facebook_url' => ['sometimes', 'nullable', 'string', 'max:255'],
             'linkedin_url' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'client_type' => ['sometimes', 'string', Rule::in(['lead', 'client'])],
             'status_id' => ['sometimes', 'nullable', 'integer', 'exists:client_statuses,id'],
             'lead_source_id' => ['sometimes', 'nullable', 'integer', 'exists:lead_sources,id'],
             'lead_source_other' => ['sometimes', 'nullable', 'string', 'max:255'],
@@ -47,5 +52,37 @@ class UpdateClientRequest extends FormRequest
             'pricing_discount_pct' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:100'],
             'pricing_updated_at' => ['sometimes', 'nullable', 'date'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $client = $this->route('client');
+        if ($client instanceof Client && ! $this->has('client_type')) {
+            $this->merge(['client_type' => $client->client_type]);
+        }
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            $client = $this->route('client');
+            if (! $client instanceof Client) {
+                return;
+            }
+            $type = $this->input('client_type', $client->client_type);
+            $statusId = $this->has('status_id')
+                ? $this->input('status_id')
+                : $client->status_id;
+            if ($statusId === null || $statusId === '') {
+                return;
+            }
+            $status = ClientStatus::query()->find((int) $statusId);
+            if ($status && $status->applies_to !== $type) {
+                $validator->errors()->add(
+                    'status_id',
+                    __('The selected status does not belong to this client type.')
+                );
+            }
+        });
     }
 }

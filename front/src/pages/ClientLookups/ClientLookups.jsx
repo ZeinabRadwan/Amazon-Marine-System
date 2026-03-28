@@ -62,13 +62,13 @@ export default function ClientLookups() {
   const [clientStatuses, setClientStatuses] = useState([])
   const [clientStatusesLoading, setClientStatusesLoading] = useState(true)
   const [csCreateOpen, setCsCreateOpen] = useState(false)
-  const [csCreateForm, setCsCreateForm] = useState({ name_ar: '', name_en: '', sort_order: 1 })
+  const [csCreateForm, setCsCreateForm] = useState({ name_ar: '', name_en: '', sort_order: 1, applies_to: 'lead' })
   const [csCreateSubmitting, setCsCreateSubmitting] = useState(false)
   const [csViewId, setCsViewId] = useState(null)
   const [csViewItem, setCsViewItem] = useState(null)
   const [csViewLoading, setCsViewLoading] = useState(false)
   const [csEditId, setCsEditId] = useState(null)
-  const [csEditForm, setCsEditForm] = useState({ name_ar: '', name_en: '', sort_order: 1 })
+  const [csEditForm, setCsEditForm] = useState({ name_ar: '', name_en: '', sort_order: 1, applies_to: 'client' })
   const [csEditLoading, setCsEditLoading] = useState(false)
   const [csEditSubmitting, setCsEditSubmitting] = useState(false)
   const [csDeleteId, setCsDeleteId] = useState(null)
@@ -139,6 +139,7 @@ export default function ClientLookups() {
           name_ar: item.name_ar ?? item.name ?? '',
           name_en: item.name_en ?? item.name ?? '',
           sort_order: item.sort_order ?? 1,
+          applies_to: item.applies_to === 'client' ? 'client' : 'lead',
         })
       })
       .catch((err) => setError(err.message))
@@ -154,9 +155,10 @@ export default function ClientLookups() {
         name_ar: csCreateForm.name_ar.trim(),
         name_en: csCreateForm.name_en.trim(),
         sort_order: Number(csCreateForm.sort_order) || 1,
+        applies_to: csCreateForm.applies_to === 'client' ? 'client' : 'lead',
       })
       setCsCreateOpen(false)
-      setCsCreateForm({ name_ar: '', name_en: '', sort_order: 1 })
+      setCsCreateForm({ name_ar: '', name_en: '', sort_order: 1, applies_to: 'lead' })
       loadClientStatuses()
     } catch (err) {
       setError(err.message)
@@ -175,6 +177,7 @@ export default function ClientLookups() {
         name_ar: csEditForm.name_ar.trim(),
         name_en: csEditForm.name_en.trim(),
         sort_order: Number(csEditForm.sort_order) ?? 1,
+        applies_to: csEditForm.applies_to === 'client' ? 'client' : 'lead',
       })
       setCsEditId(null)
       loadClientStatuses()
@@ -483,6 +486,7 @@ export default function ClientLookups() {
                   <thead>
                     <tr>
                       <th>{t('settings.statuses.displayName')}</th>
+                      <th>{t('settings.clientStatuses.table.appliesTo')}</th>
                       <th>{t('clientLookups.sortOrder')}</th>
                       <th>{t('clientLookups.actions')}</th>
                     </tr>
@@ -491,6 +495,11 @@ export default function ClientLookups() {
                     {clientStatuses.map((row) => (
                       <tr key={row.id}>
                         <td>{localizedStatusLabel(row, i18n.language) || '—'}</td>
+                        <td>
+                          {row.applies_to === 'client'
+                            ? t('settings.clientStatuses.appliesToClient')
+                            : t('settings.clientStatuses.appliesToLead')}
+                        </td>
                         <td>{row.sort_order ?? '—'}</td>
                         <td>
                           <button type="button" className="cl-btn cl-btn--small" onClick={() => openCsView(row.id)}>{t('clientLookups.view')}</button>
@@ -684,6 +693,18 @@ export default function ClientLookups() {
                   <input type="text" value={csCreateForm.name_en} onChange={(e) => setCsCreateForm((f) => ({ ...f, name_en: e.target.value }))} required disabled={csCreateSubmitting} />
                 </div>
                 <div className="cl-field">
+                  <label>{t('settings.clientStatuses.appliesTo')}</label>
+                  <select
+                    value={csCreateForm.applies_to}
+                    onChange={(e) => setCsCreateForm((f) => ({ ...f, applies_to: e.target.value }))}
+                    disabled={csCreateSubmitting}
+                    required
+                  >
+                    <option value="lead">{t('settings.clientStatuses.appliesToLead')}</option>
+                    <option value="client">{t('settings.clientStatuses.appliesToClient')}</option>
+                  </select>
+                </div>
+                <div className="cl-field">
                   <label>{t('clientLookups.sortOrder')}</label>
                   <input type="number" min={0} value={csCreateForm.sort_order} onChange={(e) => setCsCreateForm((f) => ({ ...f, sort_order: e.target.value }))} disabled={csCreateSubmitting} />
                 </div>
@@ -705,6 +726,12 @@ export default function ClientLookups() {
                 <div className="cl-view">
                   <p><strong>{t('settings.clientStatuses.nameAr')}:</strong> {csViewItem.name_ar ?? csViewItem.name ?? '—'}</p>
                   <p><strong>{t('settings.clientStatuses.nameEn')}:</strong> {csViewItem.name_en ?? csViewItem.name ?? '—'}</p>
+                  <p>
+                    <strong>{t('settings.clientStatuses.appliesTo')}:</strong>{' '}
+                    {csViewItem.applies_to === 'client'
+                      ? t('settings.clientStatuses.appliesToClient')
+                      : t('settings.clientStatuses.appliesToLead')}
+                  </p>
                   <p><strong>{t('clientLookups.sortOrder')}:</strong> {csViewItem.sort_order ?? '—'}</p>
                   <div className="cl-modal-actions">
                     <button type="button" className="cl-btn" onClick={() => setCsViewId(null)}>{t('clientLookups.close')}</button>
@@ -729,6 +756,18 @@ export default function ClientLookups() {
                   <div className="cl-field">
                     <label>{t('settings.clientStatuses.nameEn')}</label>
                     <input type="text" value={csEditForm.name_en} onChange={(e) => setCsEditForm((f) => ({ ...f, name_en: e.target.value }))} required disabled={csEditSubmitting} />
+                  </div>
+                  <div className="cl-field">
+                    <label>{t('settings.clientStatuses.appliesTo')}</label>
+                    <select
+                      value={csEditForm.applies_to}
+                      onChange={(e) => setCsEditForm((f) => ({ ...f, applies_to: e.target.value }))}
+                      disabled={csEditSubmitting}
+                      required
+                    >
+                      <option value="lead">{t('settings.clientStatuses.appliesToLead')}</option>
+                      <option value="client">{t('settings.clientStatuses.appliesToClient')}</option>
+                    </select>
                   </div>
                   <div className="cl-field">
                     <label>{t('clientLookups.sortOrder')}</label>

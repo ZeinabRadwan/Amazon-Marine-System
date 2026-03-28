@@ -921,6 +921,13 @@
     "searchPlaceholder": "Search by name, company, phone, email…",
     "status": "Status",
     "statusAll": "All statuses",
+    "salesStage": "Sales stage",
+    "statusColumnMixed": "Status / sales stage",
+    "filterClientTypeAll": "All types",
+    "clientType": {
+      "lead": "Lead",
+      "client": "Client"
+    },
     "statusNew": "New",
     "statusActive": "Active",
     "statusInactive": "Inactive",
@@ -994,6 +1001,7 @@
       "website_url": "Website",
       "facebook_url": "Facebook",
       "linkedin_url": "LinkedIn",
+      "client_type": "Client type",
       "status": "Status",
       "status_id": "Status",
       "lead_source": "Lead source",
@@ -1009,6 +1017,8 @@
       "default_currency": "Currency",
       "notes": "Notes",
       "shipping_problems": "Shipping problems",
+      "shipping_problems_hint": "Describe problems or challenges the client has faced with shipping before (delays, fines, documentation issues, cargo damage, poor treatment from another shipping company).",
+      "shipping_problems_hint_btn": "Help for shipping problems field",
       "current_need": "Current need",
       "pain_points": "Pain points",
       "opportunity": "Opportunity",
@@ -2090,9 +2100,13 @@
       "deleted": "Client status deleted.",
       "deleteTitle": "Delete client status",
       "deleteConfirm": "Are you sure you want to delete this client status?",
+      "appliesTo": "Applies to",
+      "appliesToLead": "Lead pipeline",
+      "appliesToClient": "Client lifecycle",
       "table": {
         "name": "Name",
-        "sortOrder": "Sort order"
+        "sortOrder": "Sort order",
+        "appliesTo": "Applies to"
       }
     },
     "ticketStatuses": {

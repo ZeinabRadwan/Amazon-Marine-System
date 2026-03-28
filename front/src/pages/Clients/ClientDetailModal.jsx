@@ -5,6 +5,7 @@ import Tabs from '../../components/Tabs'
 import Shimmer from '../../components/Shimmer'
 import { useShipmentTrackingUpdates } from '../../hooks/useShipmentTrackingUpdates'
 import VisitStatusBadge from '../Visits/VisitStatusBadge'
+import { localizedStatusLabel } from '../../utils/localizedStatusLabel'
 import './Clients.css'
 import './ClientDetailModal.css'
 
@@ -28,7 +29,7 @@ const infoSectionGroups = [
   { titleKey: 'clients.sections.contact', fields: ['email', 'phone', 'preferred_comm_method'] },
   { titleKey: 'clients.sections.address', fields: ['city', 'country', 'address'] },
   { titleKey: 'clients.sections.links', fields: ['website_url', 'facebook_url', 'linkedin_url'] },
-  { titleKey: 'clients.sections.sourceSales', fields: ['status', 'lead_source', 'interest_level'] },
+  { titleKey: 'clients.sections.sourceSales', fields: ['client_type', 'status', 'lead_source', 'interest_level'] },
   { titleKey: 'clients.sections.decisionMaker', fields: ['decision_maker_name', 'decision_maker_title'] },
   { titleKey: 'clients.sections.payment', fields: ['default_payment_terms', 'default_currency'] },
   { titleKey: 'clients.sections.notes', fields: ['notes'] },
@@ -145,8 +146,28 @@ export default function ClientDetailModal({
                       <div className="client-detail-modal__grid client-detail-modal__grid--info">
                         {group.fields.map((key) => (
                           <div key={key} className="client-detail-modal__row">
-                            <span className="client-detail-modal__label">{t(`clients.fields.${key}`)}</span>
-                            <span className="client-detail-modal__value">{(detailClient[key] ?? '').toString().trim() || '—'}</span>
+                            <span className="client-detail-modal__label">
+                              {key === 'status' && detailClient?.client_type === 'lead'
+                                ? t('clients.salesStage')
+                                : t(`clients.fields.${key}`)}
+                            </span>
+                            <span className="client-detail-modal__value">
+                              {key === 'client_type'
+                                ? detailClient?.client_type === 'lead'
+                                  ? t('clients.clientType.lead')
+                                  : detailClient?.client_type === 'client'
+                                    ? t('clients.clientType.client')
+                                    : '—'
+                                : key === 'status'
+                                  ? (() => {
+                                      const st = detailClient?.client_status
+                                      if (st) {
+                                        return localizedStatusLabel(st, i18n.language) || '—'
+                                      }
+                                      return (detailClient?.[key] ?? '').toString().trim() || '—'
+                                    })()
+                                  : (detailClient[key] ?? '').toString().trim() || '—'}
+                            </span>
                           </div>
                         ))}
                       </div>

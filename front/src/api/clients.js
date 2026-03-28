@@ -39,6 +39,7 @@ export async function listClients(token, params = {}) {
   if (params.status_id != null && params.status_id !== '') searchParams.set('status', String(params.status_id))
   if (params.assigned_sales_id != null && params.assigned_sales_id !== '') searchParams.set('assigned_sales_id', params.assigned_sales_id)
   if (params.lead_source_id != null && params.lead_source_id !== '') searchParams.set('lead_source_id', params.lead_source_id)
+  if (params.client_type != null && params.client_type !== '') searchParams.set('client_type', String(params.client_type))
   if (params.sort != null) searchParams.set('sort', params.sort)
   if (params.direction != null) searchParams.set('direction', params.direction)
   if (params.page != null) searchParams.set('page', String(params.page))
