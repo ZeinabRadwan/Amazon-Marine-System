@@ -47,6 +47,10 @@ class ClientFollowUpController extends Controller
             $payload['channel'] = $payload['type'];
         }
 
+        if (array_key_exists('outcome', $payload) && $payload['outcome'] === '') {
+            $payload['outcome'] = null;
+        }
+
         $validated = Validator::make($payload, [
             'channel' => ['required', Rule::enum(FollowUpChannel::class)],
             'followup_type' => ['required', Rule::enum(FollowUpKind::class)],
