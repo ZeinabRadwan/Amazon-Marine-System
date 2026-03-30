@@ -1396,7 +1396,11 @@
   "treasury": {
     "title": "الخزينة",
     "noPermission": "ليس لديك صلاحية عرض الخزينة.",
-    "totalsDisclaimer": "الإجماليات تعرض أرقاماً مختصرة ومختلطة العملات؛ راجع الحركات والرصيد التراكمي لكل عملة للتفاصيل.",
+    "tabs": {
+      "movements": "لوحة الخزينة — حركات الصندوق",
+      "reconciliation": "التسوية البنكية",
+      "expenses": "إدارة المصروفات"
+    },
     "stats": {
       "cash": "رصيد الخزينة النقدية",
       "bank": "الحسابات البنكية",
@@ -1413,7 +1417,6 @@
     "seriesInbound": "وارد",
     "seriesOutbound": "صادر",
     "seriesBalance": "الرصيد",
-    "movementsTitle": "لوحة الخزينة — حركات الصندوق",
     "export": "تصدير CSV",
     "addMovement": "إضافة حركة",
     "transfer": "تحويل",
@@ -1443,7 +1446,7 @@
     "reconFillFromEntries": "تعبئة رصيد الدفاتر من حركات البنك (القائمة المصفاة)",
     "reconDiff": "الفرق",
     "reconMatched": "مطابق",
-    "expensesTitle": "إدارة المصروفات",
+    "reconRowsPerPage": "{{count}} حركة في الصفحة",
     "expenseCategory": "الفئة",
     "allCategories": "كل الفئات",
     "addExpense": "إضافة مصروف",
@@ -1499,7 +1502,6 @@
   "expensesPage": {
     "title": "المصروفات",
     "noPermission": "ليس لديك صلاحية عرض المصروفات.",
-    "disclaimer": "الرسوم والإجماليات قد تمزج العملات؛ استخدم الجداول والمرشحات للتفاصيل.",
     "stats": {
       "totalMonth": "إجمالي المصروفات (هذا الشهر)",
       "shipmentMonth": "مصروفات الشحنات",

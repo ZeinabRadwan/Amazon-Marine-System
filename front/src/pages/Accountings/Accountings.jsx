@@ -28,6 +28,7 @@ import {
   Building2,
   Landmark,
   FileSpreadsheet,
+  FileText,
   Printer,
   X,
   Search,
@@ -715,11 +716,16 @@ export default function Accountings() {
                   </button>
                   <button
                     type="button"
-                    className="page-header__btn"
+                    className="clients-filters__btn-icon"
                     disabled={exportBusy}
                     onClick={() => handleExportMenu('summary_pdf')}
+                    aria-label={t('accountings.exportSummaryPdf', 'Export financial summary (PDF)')}
+                    title={t('accountings.exportSummaryPdf', 'Export financial summary (PDF)')}
                   >
-                    {t('accountings.exportSummaryPdf', 'Export financial summary (PDF)')}
+                    <FileText
+                      className="clients-filters__btn-icon-svg text-red-600 dark:text-red-400"
+                      aria-hidden
+                    />
                   </button>
                 </div>
               </div>
@@ -900,11 +906,16 @@ export default function Accountings() {
                   </button>
                   <button
                     type="button"
-                    className="page-header__btn"
+                    className="clients-filters__btn-icon"
                     disabled={exportBusy}
                     onClick={() => handleExportMenu('summary_pdf')}
+                    aria-label={t('accountings.exportSummaryPdf', 'Export financial summary (PDF)')}
+                    title={t('accountings.exportSummaryPdf', 'Export financial summary (PDF)')}
                   >
-                    {t('accountings.exportSummaryPdf', 'Export financial summary (PDF)')}
+                    <FileText
+                      className="clients-filters__btn-icon-svg text-red-600 dark:text-red-400"
+                      aria-hidden
+                    />
                   </button>
                 </div>
               </div>
@@ -1000,11 +1011,16 @@ export default function Accountings() {
                 <div className="clients-filters__actions">
                   <button
                     type="button"
-                    className="page-header__btn"
+                    className="clients-filters__btn-icon"
                     disabled={exportBusy}
                     onClick={() => handleExportMenu('summary_pdf')}
+                    aria-label={t('accountings.exportSummaryPdf', 'Export financial summary (PDF)')}
+                    title={t('accountings.exportSummaryPdf', 'Export financial summary (PDF)')}
                   >
-                    {t('accountings.exportSummaryPdf', 'Export financial summary (PDF)')}
+                    <FileText
+                      className="clients-filters__btn-icon-svg text-red-600 dark:text-red-400"
+                      aria-hidden
+                    />
                   </button>
                 </div>
               </div>

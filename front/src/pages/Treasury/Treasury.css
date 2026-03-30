@@ -2,13 +2,6 @@
   padding: 0 0 2rem;
 }
 
-.treasury-disclaimer {
-  margin: 0 0 1rem;
-  font-size: 0.8125rem;
-  color: var(--form-text, #6b7280);
-  opacity: 0.9;
-}
-
 .treasury-muted {
   color: var(--form-text, #6b7280);
   font-size: 0.9375rem;

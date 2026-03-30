@@ -32,9 +32,15 @@ import {
   RotateCcw,
 } from 'lucide-react'
 import '../../components/PageHeader/PageHeader.css'
+import '../../components/Tabs/Tabs.css'
 import '../Clients/Clients.css'
 import '../Accountings/Accountings.css'
+import '../Invoices/Invoices.css'
+import Tabs from '../../components/Tabs'
+import Pagination from '../../components/Pagination'
 import './Treasury.css'
+
+const RECON_ROWS_PER_PAGE = 12
 
 const SOURCE_GROUPS = [
   {
@@ -149,9 +155,12 @@ export default function Treasury() {
   const canManageAccounting =
     isAdminRole || (Array.isArray(permissions) && permissions.includes('accounting.manage'))
 
-  const [chartMonths, setChartMonths] = useState(6)
-  const [summary, setSummary] = useState(null)
-  const [summaryLoading, setSummaryLoading] = useState(false)
+  const [monthsBar, setMonthsBar] = useState(6)
+  const [monthsLine, setMonthsLine] = useState(6)
+  const [summaryCf, setSummaryCf] = useState(null)
+  const [summaryBal, setSummaryBal] = useState(null)
+  const [summaryCfLoading, setSummaryCfLoading] = useState(false)
+  const [summaryBalLoading, setSummaryBalLoading] = useState(false)
 
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebounced(search, 400)
@@ -186,6 +195,35 @@ export default function Treasury() {
     currency_code: 'USD',
     expense_date: '',
   })
+
+  const [treasuryTab, setTreasuryTab] = useState('movements')
+
+  const [entriesPage, setEntriesPage] = useState(1)
+  const [entriesPerPage, setEntriesPerPage] = useState(15)
+  const [expensesPage, setExpensesPage] = useState(1)
+  const [expensesPerPage, setExpensesPerPage] = useState(15)
+  const [reconPage, setReconPage] = useState(1)
+
+  const treasuryTabs = useMemo(
+    () => [
+      {
+        id: 'movements',
+        label: t('treasury.tabs.movements'),
+        icon: <ArrowLeftRight className="h-4 w-4" aria-hidden />,
+      },
+      {
+        id: 'reconciliation',
+        label: t('treasury.tabs.reconciliation'),
+        icon: <Landmark className="h-4 w-4" aria-hidden />,
+      },
+      {
+        id: 'expenses',
+        label: t('treasury.tabs.expenses'),
+        icon: <Receipt className="h-4 w-4" aria-hidden />,
+      },
+    ],
+    [t],
+  )
 
   const loadSummaryCf = useCallback(() => {
     if (!token || !canViewAccounting) return
@@ -250,6 +288,49 @@ export default function Treasury() {
   useEffect(() => {
     loadExpenses()
   }, [loadExpenses])
+
+  useEffect(() => {
+    setEntriesPage(1)
+  }, [debouncedSearch, typeFilter, fromDate, toDate, sortKey])
+
+  useEffect(() => {
+    setExpensesPage(1)
+  }, [expenseCategoryId])
+
+  useEffect(() => {
+    setReconPage(1)
+  }, [debouncedSearch, typeFilter, fromDate, toDate, sortKey])
+
+  const entriesLastPage = Math.max(1, Math.ceil(entries.length / entriesPerPage))
+  const expensesLastPage = Math.max(1, Math.ceil(expenseRows.length / expensesPerPage))
+  const reconLastPage = Math.max(1, Math.ceil(entries.length / RECON_ROWS_PER_PAGE))
+
+  useEffect(() => {
+    setEntriesPage((p) => Math.min(p, entriesLastPage))
+  }, [entriesLastPage])
+
+  useEffect(() => {
+    setExpensesPage((p) => Math.min(p, expensesLastPage))
+  }, [expensesLastPage])
+
+  useEffect(() => {
+    setReconPage((p) => Math.min(p, reconLastPage))
+  }, [reconLastPage])
+
+  const pagedEntries = useMemo(() => {
+    const start = (entriesPage - 1) * entriesPerPage
+    return entries.slice(start, start + entriesPerPage)
+  }, [entries, entriesPage, entriesPerPage])
+
+  const pagedExpenseRows = useMemo(() => {
+    const start = (expensesPage - 1) * expensesPerPage
+    return expenseRows.slice(start, start + expensesPerPage)
+  }, [expenseRows, expensesPage, expensesPerPage])
+
+  const pagedReconEntries = useMemo(() => {
+    const start = (reconPage - 1) * RECON_ROWS_PER_PAGE
+    return entries.slice(start, start + RECON_ROWS_PER_PAGE)
+  }, [entries, reconPage])
 
   useEffect(() => {
     if (!token || !canViewAccounting) return
@@ -541,8 +622,6 @@ export default function Treasury() {
         </div>
       )}
 
-      <p className="treasury-disclaimer">{t('treasury.totalsDisclaimer')}</p>
-
       <div className="clients-stats-grid treasury-stats">
         <StatsCard
           title={t('treasury.stats.cash')}
@@ -636,23 +715,14 @@ export default function Treasury() {
         </div>
       </div>
 
-      <div className="accountings-table-section">
+      <div className="invoices-tabs-section">
+        <div className="invoices-tabs-wrap">
+          <Tabs tabs={treasuryTabs} activeTab={treasuryTab} onChange={setTreasuryTab} />
+        </div>
+
+        {treasuryTab === 'movements' && (
+            <div className="accountings-table-section">
         <div className="clients-filters-card">
-          <div className="clients-filters__row clients-filters__row--main treasury-filters__title-row">
-            <h2 className="treasury-section-title m-0 min-w-0 flex-1 text-lg font-semibold">{t('treasury.movementsTitle')}</h2>
-            <div className="clients-filters__actions shrink-0">
-              {canManageAccounting && (
-                <>
-                  <button type="button" className="page-header__btn page-header__btn--primary" onClick={openAddEntry}>
-                    <Plus className="inline h-3.5 w-3.5" /> {t('treasury.addMovement')}
-                  </button>
-                  <button type="button" className="page-header__btn" onClick={openTransfer}>
-                    <ArrowLeftRight className="inline h-3.5 w-3.5" /> {t('treasury.transfer')}
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
           <div className="clients-filters__row clients-filters__row--main">
             <div className="clients-filters__search-wrap" dir={isAr ? 'rtl' : 'ltr'}>
               <Search className="clients-filters__search-icon" aria-hidden />
@@ -701,6 +771,22 @@ export default function Treasury() {
               </select>
             </div>
             <div className="clients-filters__actions">
+              {canManageAccounting && (
+                <>
+                  <button type="button" className="page-header__btn page-header__btn--primary" onClick={openAddEntry}>
+                    <Plus className="inline h-3.5 w-3.5" /> {t('treasury.addMovement')}
+                  </button>
+                  <button
+                    type="button"
+                    className="clients-filters__btn-icon"
+                    onClick={openTransfer}
+                    aria-label={t('treasury.transfer')}
+                    title={t('treasury.transfer')}
+                  >
+                    <ArrowLeftRight className="clients-filters__btn-icon-svg" aria-hidden />
+                  </button>
+                </>
+              )}
               <button
                 type="button"
                 className="clients-filters__clear clients-filters__btn-icon"
@@ -754,7 +840,7 @@ export default function Treasury() {
                 </tr>
               )}
               {!entriesLoading &&
-                entries.map((row) => {
+                pagedEntries.map((row) => {
                   const rb = runningById.get(row.id)
                   const runDisplay =
                     rb != null ? formatAmount(rb.running, rb.currency, locale) : '—'
@@ -809,8 +895,42 @@ export default function Treasury() {
             </tbody>
           </table>
         </div>
-      </div>
 
+        {!entriesLoading && entries.length > 0 && (
+          <div className="clients-pagination">
+            <div className="clients-pagination__left">
+              <span className="clients-pagination__total">
+                {t('clients.total', 'Total')}: {entries.length}
+              </span>
+              <label className="clients-pagination__per-page">
+                <span className="clients-pagination__per-page-label">{t('clients.perPage', 'Per page')}</span>
+                <select
+                  value={entriesPerPage}
+                  onChange={(e) => {
+                    setEntriesPerPage(Number(e.target.value))
+                    setEntriesPage(1)
+                  }}
+                  className="clients-select clients-pagination__select"
+                  aria-label={t('clients.perPage', 'Per page')}
+                >
+                  <option value={10}>10</option>
+                  <option value={15}>15</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                </select>
+              </label>
+            </div>
+            <Pagination
+              currentPage={Math.min(entriesPage, entriesLastPage)}
+              totalPages={entriesLastPage}
+              onPageChange={setEntriesPage}
+            />
+          </div>
+        )}
+            </div>
+        )}
+
+        {treasuryTab === 'reconciliation' && (
       <div className="treasury-recon card-like mb-4">
         <h3 className="treasury-section-title">{t('treasury.reconTitle')}</h3>
         <p className="treasury-muted treasury-recon-note">{t('treasury.reconNote')}</p>
@@ -858,7 +978,7 @@ export default function Treasury() {
               </tr>
             </thead>
             <tbody>
-              {entries.slice(0, 12).map((row) => (
+              {pagedReconEntries.map((row) => (
                 <tr key={`recon-${row.id}`}>
                   <td>
                     <input
@@ -878,27 +998,30 @@ export default function Treasury() {
             </tbody>
           </table>
         </div>
-      </div>
 
-      <div className="accountings-table-section">
-        <div className="clients-filters-card">
-          <div className="clients-filters__row clients-filters__row--main treasury-filters__title-row">
-            <h2 className="treasury-section-title m-0 min-w-0 flex-1 text-lg font-semibold">{t('treasury.expensesTitle')}</h2>
-            <div className="clients-filters__actions shrink-0">
-              {canManageAccounting && (
-                <button
-                  type="button"
-                  className="page-header__btn page-header__btn--primary"
-                  onClick={() => {
-                    setExpenseForm((f) => ({ ...f, expense_date: todayStr }))
-                    setExpenseModalOpen(true)
-                  }}
-                >
-                  <Plus className="inline h-3.5 w-3.5" /> {t('treasury.addExpense')}
-                </button>
-              )}
+        {entries.length > 0 && (
+          <div className="clients-pagination">
+            <div className="clients-pagination__left">
+              <span className="clients-pagination__total">
+                {t('clients.total', 'Total')}: {entries.length}
+              </span>
+              <span className="clients-pagination__total text-sm opacity-80">
+                {t('treasury.reconRowsPerPage', { count: RECON_ROWS_PER_PAGE })}
+              </span>
             </div>
+            <Pagination
+              currentPage={Math.min(reconPage, reconLastPage)}
+              totalPages={reconLastPage}
+              onPageChange={setReconPage}
+            />
           </div>
+        )}
+      </div>
+        )}
+
+        {treasuryTab === 'expenses' && (
+          <div className="accountings-table-section">
+        <div className="clients-filters-card">
           <div className="clients-filters__row clients-filters__row--main">
             <div className="clients-filters__fields flex-1">
               <select
@@ -916,6 +1039,18 @@ export default function Treasury() {
               </select>
             </div>
             <div className="clients-filters__actions">
+              {canManageAccounting && (
+                <button
+                  type="button"
+                  className="page-header__btn page-header__btn--primary"
+                  onClick={() => {
+                    setExpenseForm((f) => ({ ...f, expense_date: todayStr }))
+                    setExpenseModalOpen(true)
+                  }}
+                >
+                  <Plus className="inline h-3.5 w-3.5" /> {t('treasury.addExpense')}
+                </button>
+              )}
               <button
                 type="button"
                 className="clients-filters__clear clients-filters__btn-icon"
@@ -959,7 +1094,7 @@ export default function Treasury() {
                 </tr>
               )}
               {!expensesLoading &&
-                expenseRows.map((row) => (
+                pagedExpenseRows.map((row) => (
                   <tr key={row.id}>
                     <td>{row.expense_date}</td>
                     <td>{row.description}</td>
@@ -978,6 +1113,41 @@ export default function Treasury() {
             </tbody>
           </table>
         </div>
+
+        {!expensesLoading && expenseRows.length > 0 && (
+          <div className="clients-pagination">
+            <div className="clients-pagination__left">
+              <span className="clients-pagination__total">
+                {t('clients.total', 'Total')}: {expenseRows.length}
+              </span>
+              <label className="clients-pagination__per-page">
+                <span className="clients-pagination__per-page-label">{t('clients.perPage', 'Per page')}</span>
+                <select
+                  value={expensesPerPage}
+                  onChange={(e) => {
+                    setExpensesPerPage(Number(e.target.value))
+                    setExpensesPage(1)
+                  }}
+                  className="clients-select clients-pagination__select"
+                  aria-label={t('clients.perPage', 'Per page')}
+                >
+                  <option value={10}>10</option>
+                  <option value={15}>15</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                </select>
+              </label>
+            </div>
+            <Pagination
+              currentPage={Math.min(expensesPage, expensesLastPage)}
+              totalPages={expensesLastPage}
+              onPageChange={setExpensesPage}
+            />
+          </div>
+        )}
+      </div>
+        )}
+
       </div>
 
       {txModal?.kind === 'entry' && (

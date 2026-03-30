@@ -1396,7 +1396,11 @@
   "treasury": {
     "title": "Treasury",
     "noPermission": "You do not have permission to view treasury.",
-    "totalsDisclaimer": "Stat totals mix currencies as compact numbers; use movements and per-currency running balances for detail.",
+    "tabs": {
+      "movements": "Treasury board — fund movements",
+      "reconciliation": "Bank reconciliation",
+      "expenses": "Expense management"
+    },
     "stats": {
       "cash": "Cash on hand",
       "bank": "Bank accounts",
@@ -1413,7 +1417,6 @@
     "seriesInbound": "Inbound",
     "seriesOutbound": "Outbound",
     "seriesBalance": "Balance",
-    "movementsTitle": "Treasury movements",
     "export": "Export CSV",
     "addMovement": "Add movement",
     "transfer": "Transfer",
@@ -1443,7 +1446,7 @@
     "reconFillFromEntries": "Fill ledger from bank movements (filtered list)",
     "reconDiff": "Difference",
     "reconMatched": "Matched",
-    "expensesTitle": "Expenses",
+    "reconRowsPerPage": "{{count}} entries per page",
     "expenseCategory": "Category",
     "allCategories": "All categories",
     "addExpense": "Add expense",
@@ -1499,7 +1502,6 @@
   "expensesPage": {
     "title": "Expenses",
     "noPermission": "You do not have permission to view expenses.",
-    "disclaimer": "Charts and totals may mix currencies; use tables and filters for detail.",
     "stats": {
       "totalMonth": "Total expenses (this month)",
       "shipmentMonth": "Shipment expenses",
