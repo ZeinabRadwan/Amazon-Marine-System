@@ -23,13 +23,16 @@ import {
   Wallet,
   Landmark,
   Receipt,
-  Download,
+  FileSpreadsheet,
   Plus,
   Search,
   Pencil,
   Trash2,
   ArrowLeftRight,
+  RotateCcw,
 } from 'lucide-react'
+import '../../components/PageHeader/PageHeader.css'
+import '../Clients/Clients.css'
 import '../Accountings/Accountings.css'
 import './Treasury.css'
 
@@ -184,14 +187,23 @@ export default function Treasury() {
     expense_date: '',
   })
 
-  const loadSummary = useCallback(() => {
+  const loadSummaryCf = useCallback(() => {
     if (!token || !canViewAccounting) return
-    setSummaryLoading(true)
-    getTreasurySummary(token, { months: chartMonths })
-      .then((data) => setSummary(data))
-      .catch(() => setSummary(null))
-      .finally(() => setSummaryLoading(false))
-  }, [token, chartMonths, canViewAccounting])
+    setSummaryCfLoading(true)
+    getTreasurySummary(token, { months: monthsBar })
+      .then((data) => setSummaryCf(data))
+      .catch(() => setSummaryCf(null))
+      .finally(() => setSummaryCfLoading(false))
+  }, [token, monthsBar, canViewAccounting])
+
+  const loadSummaryBal = useCallback(() => {
+    if (!token || !canViewAccounting) return
+    setSummaryBalLoading(true)
+    getTreasurySummary(token, { months: monthsLine })
+      .then((data) => setSummaryBal(data))
+      .catch(() => setSummaryBal(null))
+      .finally(() => setSummaryBalLoading(false))
+  }, [token, monthsLine, canViewAccounting])
 
   const loadEntries = useCallback(() => {
     if (!token || !canViewAccounting) return
@@ -224,8 +236,12 @@ export default function Treasury() {
   }, [token, expenseCategoryId, canViewAccounting])
 
   useEffect(() => {
-    loadSummary()
-  }, [loadSummary])
+    loadSummaryCf()
+  }, [loadSummaryCf])
+
+  useEffect(() => {
+    loadSummaryBal()
+  }, [loadSummaryBal])
 
   useEffect(() => {
     loadEntries()
@@ -245,25 +261,25 @@ export default function Treasury() {
   const runningById = useMemo(() => computeRunningBalances(entries), [entries])
 
   const cashFlowChartData = useMemo(() => {
-    const cf = summary?.cash_flow
+    const cf = summaryCf?.cash_flow
     if (!cf?.labels?.length) return []
     return cf.labels.map((label, i) => ({
       label: formatMonthLabel(label, locale),
       in: Number(cf.inbound?.[i]) || 0,
       out: Number(cf.outbound?.[i]) || 0,
     }))
-  }, [summary, locale])
+  }, [summaryCf, locale])
 
   const balanceChartData = useMemo(() => {
-    const b = summary?.balance
+    const b = summaryBal?.balance
     if (!b?.labels?.length) return []
     return b.labels.map((label, i) => ({
       label: formatMonthLabel(label, locale),
       balance: Number(b.balance?.[i]) || 0,
     }))
-  }, [summary, locale])
+  }, [summaryBal, locale])
 
-  const totals = summary?.totals ?? {}
+  const totals = summaryCf?.totals ?? summaryBal?.totals ?? {}
 
   const exportEntriesCsv = () => {
     const headers = [
@@ -393,7 +409,8 @@ export default function Treasury() {
       }
       setTxModal(null)
       loadEntries()
-      loadSummary()
+      loadSummaryCf()
+      loadSummaryBal()
     } catch (e) {
       window.alert(e?.message || t('treasury.errorSave'))
     } finally {
@@ -429,7 +446,8 @@ export default function Treasury() {
       await createTreasuryTransfer(token, body)
       setTxModal(null)
       loadEntries()
-      loadSummary()
+      loadSummaryCf()
+      loadSummaryBal()
     } catch (e) {
       window.alert(e?.message || t('treasury.errorSave'))
     } finally {
@@ -443,7 +461,8 @@ export default function Treasury() {
     try {
       await deleteTreasuryEntry(token, row.id)
       loadEntries()
-      loadSummary()
+      loadSummaryCf()
+      loadSummaryBal()
     } catch (e) {
       window.alert(e?.message || t('treasury.errorDelete'))
     }
@@ -475,7 +494,8 @@ export default function Treasury() {
         expense_date: todayStr,
       })
       loadExpenses()
-      loadSummary()
+      loadSummaryCf()
+      loadSummaryBal()
     } catch (e) {
       window.alert(e?.message || t('treasury.errorSave'))
     } finally {
@@ -502,15 +522,20 @@ export default function Treasury() {
 
   if (!canViewAccounting) {
     return (
-      <Container size="xl" className="treasury-page">
-        <p className="treasury-muted">{t('treasury.noPermission')}</p>
+      <Container size="xl">
+        <div className="clients-page treasury-page">
+          <p className="treasury-muted">{t('treasury.noPermission')}</p>
+        </div>
       </Container>
     )
   }
 
+  const chartsBootLoading = !summaryCf && !summaryBal && (summaryCfLoading || summaryBalLoading)
+
   return (
-    <Container size="xl" className="treasury-page">
-      {summaryLoading && !summary && (
+    <Container size="xl">
+      <div className="clients-page treasury-page">
+      {chartsBootLoading && (
         <div className="accountings-page-loader" aria-live="polite" aria-busy="true">
           <LoaderDots />
         </div>
@@ -518,7 +543,7 @@ export default function Treasury() {
 
       <p className="treasury-disclaimer">{t('treasury.totalsDisclaimer')}</p>
 
-      <div className="accountings-stats-grid treasury-stats">
+      <div className="clients-stats-grid treasury-stats">
         <StatsCard
           title={t('treasury.stats.cash')}
           value={formatCompactNumber(totals.cash_balance, locale)}
@@ -539,97 +564,110 @@ export default function Treasury() {
         />
       </div>
 
-      <div className="accountings-chart-card accountings-extra-panel mb-4">
-        <div className="accountings-chart-card__header">
-          <span className="accountings-chart-card__title">{t('treasury.cashFlowTitle')}</span>
-          <select
-            className="accountings-select accountings-chart-card__months"
-            value={chartMonths}
-            onChange={(e) => setChartMonths(Number(e.target.value))}
-            aria-label={t('treasury.chartPeriod')}
-          >
-            <option value={6}>{t('treasury.months6')}</option>
-            <option value={12}>{t('treasury.months12')}</option>
-          </select>
-        </div>
-        <div className="accountings-charts-grid accountings-charts-grid--padded treasury-charts-grid">
-          <div className="accountings-chart-wrap">
-            <p className="accountings-chart-subtitle">{t('treasury.cashFlowInboundOutbound')}</p>
-            {summaryLoading && !cashFlowChartData.length ? (
-              <div className="treasury-chart-empty">{t('treasury.loadingCharts')}</div>
-            ) : cashFlowChartData.length ? (
-              <GroupedBarChart
-                data={cashFlowChartData}
-                xKey="label"
-                series={[
-                  { key: 'in', color: '#10b981', name: t('treasury.seriesInbound') },
-                  { key: 'out', color: '#ef4444', name: t('treasury.seriesOutbound') },
-                ]}
-                title=""
-                height={240}
-              />
-            ) : (
-              <div className="treasury-chart-empty">{t('treasury.chartsNoData')}</div>
-            )}
+      <div className="clients-extra-panel clients-charts-panel mb-4">
+        <div className="clients-charts-grid">
+          <div className="clients-chart-wrap">
+            <div className="chart-wrap">
+              <div className="accountings-chart-card-head">
+                <h4 className="chart-title accountings-chart-card-head__title">
+                  {t('treasury.cashFlowInboundOutbound')}
+                </h4>
+                <select
+                  className="clients-input accountings-chart-card__period min-w-[140px]"
+                  value={monthsBar}
+                  onChange={(e) => setMonthsBar(Number(e.target.value))}
+                  aria-label={t('treasury.chartPeriod')}
+                >
+                  <option value={6}>{t('treasury.months6')}</option>
+                  <option value={12}>{t('treasury.months12')}</option>
+                </select>
+              </div>
+              {summaryCfLoading && !cashFlowChartData.length ? (
+                <div className="treasury-chart-empty">{t('treasury.loadingCharts')}</div>
+              ) : cashFlowChartData.length ? (
+                <GroupedBarChart
+                  className="chart--nested"
+                  data={cashFlowChartData}
+                  xKey="label"
+                  series={[
+                    { key: 'in', color: '#10b981', name: t('treasury.seriesInbound') },
+                    { key: 'out', color: '#ef4444', name: t('treasury.seriesOutbound') },
+                  ]}
+                  title=""
+                  height={260}
+                />
+              ) : (
+                <div className="treasury-chart-empty">{t('treasury.chartsNoData')}</div>
+              )}
+            </div>
           </div>
-          <div className="accountings-chart-wrap">
-            <p className="accountings-chart-subtitle">{t('treasury.balanceEndOfMonth')}</p>
-            {summaryLoading && !balanceChartData.length ? (
-              <div className="treasury-chart-empty">{t('treasury.loadingCharts')}</div>
-            ) : balanceChartData.length ? (
-              <LineChart
-                data={balanceChartData}
-                xKey="label"
-                lines={[{ dataKey: 'balance', name: t('treasury.seriesBalance'), stroke: '#3b82f6' }]}
-                height={240}
-                allowDecimals
-              />
-            ) : (
-              <div className="treasury-chart-empty">{t('treasury.chartsNoData')}</div>
-            )}
+          <div className="clients-chart-wrap">
+            <div className="chart-wrap">
+              <div className="accountings-chart-card-head">
+                <h4 className="chart-title accountings-chart-card-head__title">
+                  {t('treasury.balanceEndOfMonth')}
+                </h4>
+                <select
+                  className="clients-input accountings-chart-card__period min-w-[140px]"
+                  value={monthsLine}
+                  onChange={(e) => setMonthsLine(Number(e.target.value))}
+                  aria-label={t('treasury.chartPeriod')}
+                >
+                  <option value={6}>{t('treasury.months6')}</option>
+                  <option value={12}>{t('treasury.months12')}</option>
+                </select>
+              </div>
+              {summaryBalLoading && !balanceChartData.length ? (
+                <div className="treasury-chart-empty">{t('treasury.loadingCharts')}</div>
+              ) : balanceChartData.length ? (
+                <LineChart
+                  className="chart--nested"
+                  data={balanceChartData}
+                  xKey="label"
+                  lines={[{ dataKey: 'balance', name: t('treasury.seriesBalance'), stroke: '#3b82f6' }]}
+                  height={260}
+                  allowDecimals
+                />
+              ) : (
+                <div className="treasury-chart-empty">{t('treasury.chartsNoData')}</div>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       <div className="accountings-table-section">
-        <div className="accountings-filters-card">
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-            <h2 className="treasury-section-title m-0 text-lg font-semibold">{t('treasury.movementsTitle')}</h2>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                className="accountings-btn accountings-btn--small"
-                onClick={exportEntriesCsv}
-                disabled={!entries.length}
-              >
-                <Download className="inline h-3.5 w-3.5" /> {t('treasury.export')}
-              </button>
+        <div className="clients-filters-card">
+          <div className="clients-filters__row clients-filters__row--main treasury-filters__title-row">
+            <h2 className="treasury-section-title m-0 min-w-0 flex-1 text-lg font-semibold">{t('treasury.movementsTitle')}</h2>
+            <div className="clients-filters__actions shrink-0">
               {canManageAccounting && (
                 <>
-                  <button type="button" className="accountings-btn accountings-btn--small accountings-btn--primary" onClick={openAddEntry}>
+                  <button type="button" className="page-header__btn page-header__btn--primary" onClick={openAddEntry}>
                     <Plus className="inline h-3.5 w-3.5" /> {t('treasury.addMovement')}
                   </button>
-                  <button type="button" className="accountings-btn accountings-btn--small" onClick={openTransfer}>
+                  <button type="button" className="page-header__btn" onClick={openTransfer}>
                     <ArrowLeftRight className="inline h-3.5 w-3.5" /> {t('treasury.transfer')}
                   </button>
                 </>
               )}
             </div>
           </div>
-          <div className="accountings-filters__row accountings-filters__row--main">
-            <div className="accountings-filters__search-wrap" dir={isAr ? 'rtl' : 'ltr'}>
-              <Search className="accountings-filters__search-icon" aria-hidden />
+          <div className="clients-filters__row clients-filters__row--main">
+            <div className="clients-filters__search-wrap" dir={isAr ? 'rtl' : 'ltr'}>
+              <Search className="clients-filters__search-icon" aria-hidden />
               <input
                 type="search"
-                className="accountings-input accountings-filters__search"
+                className="clients-input clients-filters__search"
                 placeholder={t('treasury.searchPlaceholder')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                aria-label={t('treasury.searchPlaceholder')}
               />
             </div>
-            <div className="accountings-filters__fields">
+            <div className="clients-filters__fields">
               <select
-                className="accountings-select"
+                className="clients-input min-w-[140px]"
                 value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value)}
                 aria-label={t('treasury.filterType')}
@@ -640,20 +678,20 @@ export default function Treasury() {
               </select>
               <input
                 type="date"
-                className="accountings-input"
+                className="clients-input min-w-[140px]"
                 value={fromDate}
                 onChange={(e) => setFromDate(e.target.value)}
                 aria-label={t('treasury.dateFrom')}
               />
               <input
                 type="date"
-                className="accountings-input"
+                className="clients-input min-w-[140px]"
                 value={toDate}
                 onChange={(e) => setToDate(e.target.value)}
                 aria-label={t('treasury.dateTo')}
               />
               <select
-                className="accountings-select"
+                className="clients-input min-w-[140px]"
                 value={sortKey}
                 onChange={(e) => setSortKey(e.target.value)}
                 aria-label={t('treasury.sortBy')}
@@ -661,6 +699,33 @@ export default function Treasury() {
                 <option value="date">{t('treasury.sortDate')}</option>
                 <option value="amount">{t('treasury.sortAmount')}</option>
               </select>
+            </div>
+            <div className="clients-filters__actions">
+              <button
+                type="button"
+                className="clients-filters__clear clients-filters__btn-icon"
+                onClick={() => {
+                  setSearch('')
+                  setTypeFilter('')
+                  setFromDate('')
+                  setToDate('')
+                  setSortKey('date')
+                }}
+                aria-label={t('invoices.clearFilters', 'Clear filters')}
+                title={t('invoices.clearFilters', 'Clear filters')}
+              >
+                <RotateCcw className="clients-filters__btn-icon-svg" aria-hidden />
+              </button>
+              <button
+                type="button"
+                className="clients-filters__btn-icon clients-filters__btn-icon--export"
+                onClick={exportEntriesCsv}
+                disabled={!entries.length}
+                aria-label={t('treasury.export')}
+                title={t('treasury.export')}
+              >
+                <FileSpreadsheet className="clients-filters__btn-icon-svg" aria-hidden />
+              </button>
             </div>
           </div>
         </div>
@@ -816,22 +881,14 @@ export default function Treasury() {
       </div>
 
       <div className="accountings-table-section">
-        <div className="accountings-filters-card">
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-            <h2 className="treasury-section-title m-0 text-lg font-semibold">{t('treasury.expensesTitle')}</h2>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                className="accountings-btn accountings-btn--small"
-                onClick={exportExpensesCsv}
-                disabled={!expenseRows.length}
-              >
-                <Download className="inline h-3.5 w-3.5" /> {t('treasury.export')}
-              </button>
+        <div className="clients-filters-card">
+          <div className="clients-filters__row clients-filters__row--main treasury-filters__title-row">
+            <h2 className="treasury-section-title m-0 min-w-0 flex-1 text-lg font-semibold">{t('treasury.expensesTitle')}</h2>
+            <div className="clients-filters__actions shrink-0">
               {canManageAccounting && (
                 <button
                   type="button"
-                  className="accountings-btn accountings-btn--small accountings-btn--primary"
+                  className="page-header__btn page-header__btn--primary"
                   onClick={() => {
                     setExpenseForm((f) => ({ ...f, expense_date: todayStr }))
                     setExpenseModalOpen(true)
@@ -842,20 +899,43 @@ export default function Treasury() {
               )}
             </div>
           </div>
-          <div className="accountings-filters__row">
-            <select
-              className="accountings-select"
-              value={expenseCategoryId}
-              onChange={(e) => setExpenseCategoryId(e.target.value)}
-              aria-label={t('treasury.expenseCategory')}
-            >
-              <option value="">{t('treasury.allCategories')}</option>
-              {categories.map((c) => (
-                <option key={c.id} value={String(c.id)}>
-                  {c.name ?? c.code ?? c.id}
-                </option>
-              ))}
-            </select>
+          <div className="clients-filters__row clients-filters__row--main">
+            <div className="clients-filters__fields flex-1">
+              <select
+                className="clients-input min-w-[200px]"
+                value={expenseCategoryId}
+                onChange={(e) => setExpenseCategoryId(e.target.value)}
+                aria-label={t('treasury.expenseCategory')}
+              >
+                <option value="">{t('treasury.allCategories')}</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={String(c.id)}>
+                    {c.name ?? c.code ?? c.id}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="clients-filters__actions">
+              <button
+                type="button"
+                className="clients-filters__clear clients-filters__btn-icon"
+                onClick={() => setExpenseCategoryId('')}
+                aria-label={t('invoices.clearFilters', 'Clear filters')}
+                title={t('invoices.clearFilters', 'Clear filters')}
+              >
+                <RotateCcw className="clients-filters__btn-icon-svg" aria-hidden />
+              </button>
+              <button
+                type="button"
+                className="clients-filters__btn-icon clients-filters__btn-icon--export"
+                onClick={exportExpensesCsv}
+                disabled={!expenseRows.length}
+                aria-label={t('treasury.export')}
+                title={t('treasury.export')}
+              >
+                <FileSpreadsheet className="clients-filters__btn-icon-svg" aria-hidden />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1235,6 +1315,7 @@ export default function Treasury() {
           </div>
         </div>
       )}
+      </div>
     </Container>
   )
 }
