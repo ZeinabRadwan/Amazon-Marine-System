@@ -114,6 +114,8 @@
     "quotations": "Quotations",
     "addRate": "Add Rate",
     "createQuote": "Create Quote",
+    "exportExcelSoon": "Export to Excel will be available in a future update.",
+    "exportPdfSoon": "Export to PDF will be available in a future update.",
     "shippingLines": "Shipping Lines",
     "inlandTransport": "Inland Transport",
     "quickSearch": "Quick Search (Port Name)",

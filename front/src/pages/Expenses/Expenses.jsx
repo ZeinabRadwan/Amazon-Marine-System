@@ -25,14 +25,17 @@ import Tabs from '../../components/Tabs'
 import {
   Package,
   Building2,
-  Download,
+  FileSpreadsheet,
   Plus,
   Search,
   Pencil,
   Trash2,
   Paperclip,
   TrendingUp,
+  RotateCcw,
 } from 'lucide-react'
+import '../../components/PageHeader/PageHeader.css'
+import '../Clients/Clients.css'
 import '../Accountings/Accountings.css'
 import './Expenses.css'
 
@@ -104,9 +107,12 @@ export default function Expenses() {
   const canManageAccounting =
     isAdminRole || (Array.isArray(permissions) && permissions.includes('accounting.manage'))
 
-  const [chartMonths, setChartMonths] = useState(6)
-  const [summary, setSummary] = useState(null)
-  const [summaryLoading, setSummaryLoading] = useState(false)
+  const [monthsLine, setMonthsLine] = useState(6)
+  const [monthsDonut, setMonthsDonut] = useState(6)
+  const [summaryLine, setSummaryLine] = useState(null)
+  const [summaryDonut, setSummaryDonut] = useState(null)
+  const [summaryLineLoading, setSummaryLineLoading] = useState(false)
+  const [summaryDonutLoading, setSummaryDonutLoading] = useState(false)
 
   const [activeTab, setActiveTab] = useState('shipment')
 
@@ -146,14 +152,23 @@ export default function Expenses() {
 
   const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), [])
 
-  const loadSummary = useCallback(() => {
+  const loadSummaryLine = useCallback(() => {
     if (!token || !canViewAccounting) return
-    setSummaryLoading(true)
-    getExpensesSummary(token, { months: chartMonths })
-      .then((data) => setSummary(data))
-      .catch(() => setSummary(null))
-      .finally(() => setSummaryLoading(false))
-  }, [token, chartMonths, canViewAccounting])
+    setSummaryLineLoading(true)
+    getExpensesSummary(token, { months: monthsLine })
+      .then((data) => setSummaryLine(data))
+      .catch(() => setSummaryLine(null))
+      .finally(() => setSummaryLineLoading(false))
+  }, [token, monthsLine, canViewAccounting])
+
+  const loadSummaryDonut = useCallback(() => {
+    if (!token || !canViewAccounting) return
+    setSummaryDonutLoading(true)
+    getExpensesSummary(token, { months: monthsDonut })
+      .then((data) => setSummaryDonut(data))
+      .catch(() => setSummaryDonut(null))
+      .finally(() => setSummaryDonutLoading(false))
+  }, [token, monthsDonut, canViewAccounting])
 
   const loadShip = useCallback(() => {
     if (!token || !canViewAccounting) return
@@ -195,8 +210,12 @@ export default function Expenses() {
   }, [token, debouncedGenSearch, genCategory, genCurrency, genMonth, genSort, canViewAccounting])
 
   useEffect(() => {
-    loadSummary()
-  }, [loadSummary])
+    loadSummaryLine()
+  }, [loadSummaryLine])
+
+  useEffect(() => {
+    loadSummaryDonut()
+  }, [loadSummaryDonut])
 
   useEffect(() => {
     loadShip()
@@ -234,28 +253,28 @@ export default function Expenses() {
       .catch(() => setShipmentOptions([]))
   }, [token, modal, shipmentSearch])
 
-  const cards = summary?.cards ?? {}
+  const cards = (summaryLine ?? summaryDonut)?.cards ?? {}
   const totalMonth = Number(cards.total_month) || 0
   const shipPct = totalMonth > 0 ? Math.round((Number(cards.shipment_month) / totalMonth) * 100) : 0
   const genPct = totalMonth > 0 ? Math.round((Number(cards.general_month) / totalMonth) * 100) : 0
 
   const monthlyChartData = useMemo(() => {
-    const m = summary?.monthly
+    const m = summaryLine?.monthly
     if (!m?.labels?.length) return []
     return m.labels.map((label, i) => ({
       label: formatMonthLabel(label, locale),
       total: Number(m.totals?.[i]) || 0,
     }))
-  }, [summary, locale])
+  }, [summaryLine, locale])
 
   const donutData = useMemo(() => {
-    const bc = summary?.by_category
+    const bc = summaryDonut?.by_category
     if (!Array.isArray(bc) || !bc.length) return []
     return bc.map((c) => ({
       name: c.label || '—',
       value: Number(c.total) || 0,
     }))
-  }, [summary])
+  }, [summaryDonut])
 
   const openCreate = () => {
     setShipmentSearch('')
@@ -345,7 +364,8 @@ export default function Expenses() {
         await updateExpense(token, modal.id, body)
       }
       setModal(null)
-      loadSummary()
+      loadSummaryLine()
+      loadSummaryDonut()
       loadShip()
       loadGen()
     } catch (e) {
@@ -360,7 +380,8 @@ export default function Expenses() {
     if (!window.confirm(t('expensesPage.confirmDelete'))) return
     try {
       await deleteExpense(token, row.id)
-      loadSummary()
+      loadSummaryLine()
+      loadSummaryDonut()
       loadShip()
       loadGen()
     } catch (e) {
@@ -413,7 +434,8 @@ export default function Expenses() {
       await uploadExpenseReceipt(token, receiptExpenseId, file)
       loadShip()
       loadGen()
-      loadSummary()
+      loadSummaryLine()
+      loadSummaryDonut()
     } catch (err) {
       window.alert(err?.message || t('expensesPage.receiptError'))
     } finally {
@@ -423,14 +445,17 @@ export default function Expenses() {
 
   if (!canViewAccounting) {
     return (
-      <Container size="xl" className="expenses-page">
-        <p className="expenses-muted">{t('expensesPage.noPermission')}</p>
+      <Container size="xl">
+        <div className="clients-page expenses-page">
+          <p className="expenses-muted">{t('expensesPage.noPermission')}</p>
+        </div>
       </Container>
     )
   }
 
   return (
-    <Container size="xl" className="expenses-page">
+    <Container size="xl">
+      <div className="clients-page expenses-page">
       <input
         ref={receiptInputRef}
         type="file"
@@ -442,7 +467,7 @@ export default function Expenses() {
 
       <p className="expenses-disclaimer">{t('expensesPage.disclaimer')}</p>
 
-      <div className="accountings-stats-grid expenses-stats">
+      <div className="clients-stats-grid expenses-stats">
         <StatsCard
           title={t('expensesPage.stats.totalMonth')}
           value={formatCompactNumber(cards.total_month, locale)}
@@ -473,57 +498,73 @@ export default function Expenses() {
         />
       </div>
 
-      <div className="accountings-chart-card accountings-extra-panel mb-4">
-        <div className="accountings-chart-card__header">
-          <span className="accountings-chart-card__title">{t('expensesPage.chartsTitle')}</span>
-          <select
-            className="accountings-select accountings-chart-card__months"
-            value={chartMonths}
-            onChange={(e) => setChartMonths(Number(e.target.value))}
-            aria-label={t('expensesPage.chartPeriod')}
-          >
-            <option value={6}>{t('expensesPage.months6')}</option>
-            <option value={12}>{t('expensesPage.months12')}</option>
-          </select>
-        </div>
-        <div className="accountings-charts-grid accountings-charts-grid--padded expenses-charts-grid">
-          <div className="accountings-chart-wrap">
-            <p className="accountings-chart-subtitle">{t('expensesPage.monthlyTrend')}</p>
-            {summaryLoading && !monthlyChartData.length ? (
-              <div className="expenses-chart-empty">{t('expensesPage.loadingCharts')}</div>
-            ) : monthlyChartData.length ? (
-              <LineChart
-                data={monthlyChartData}
-                xKey="label"
-                lines={[{ dataKey: 'total', name: t('expensesPage.seriesTotal'), stroke: '#3b82f6' }]}
-                height={240}
-                allowDecimals
-              />
-            ) : (
-              <div className="expenses-chart-empty">{t('expensesPage.chartsNoData')}</div>
-            )}
+      <div className="clients-extra-panel clients-charts-panel mb-4">
+        <div className="clients-charts-grid">
+          <div className="clients-chart-wrap">
+            <div className="chart-wrap">
+              <div className="accountings-chart-card-head">
+                <h4 className="chart-title accountings-chart-card-head__title">{t('expensesPage.monthlyTrend')}</h4>
+                <select
+                  className="clients-input accountings-chart-card__period min-w-[140px]"
+                  value={monthsLine}
+                  onChange={(e) => setMonthsLine(Number(e.target.value))}
+                  aria-label={t('expensesPage.chartPeriod')}
+                >
+                  <option value={6}>{t('expensesPage.months6')}</option>
+                  <option value={12}>{t('expensesPage.months12')}</option>
+                </select>
+              </div>
+              {summaryLineLoading && !monthlyChartData.length ? (
+                <div className="expenses-chart-empty">{t('expensesPage.loadingCharts')}</div>
+              ) : monthlyChartData.length ? (
+                <LineChart
+                  className="chart--nested"
+                  data={monthlyChartData}
+                  xKey="label"
+                  lines={[{ dataKey: 'total', name: t('expensesPage.seriesTotal'), stroke: '#3b82f6' }]}
+                  height={260}
+                  allowDecimals
+                />
+              ) : (
+                <div className="expenses-chart-empty">{t('expensesPage.chartsNoData')}</div>
+              )}
+            </div>
           </div>
-          <div className="accountings-chart-wrap">
-            <p className="accountings-chart-subtitle">{t('expensesPage.byCategory')}</p>
-            {summaryLoading && !donutData.length ? (
-              <div className="expenses-chart-empty">{t('expensesPage.loadingCharts')}</div>
-            ) : donutData.length ? (
-              <DonutChart
-                data={donutData}
-                nameKey="name"
-                valueKey="value"
-                valueLabel={t('expensesPage.seriesTotal')}
-                title=""
-                height={260}
-              />
-            ) : (
-              <div className="expenses-chart-empty">{t('expensesPage.chartsNoData')}</div>
-            )}
+          <div className="clients-chart-wrap">
+            <div className="chart-wrap">
+              <div className="accountings-chart-card-head">
+                <h4 className="chart-title accountings-chart-card-head__title">{t('expensesPage.byCategory')}</h4>
+                <select
+                  className="clients-input accountings-chart-card__period min-w-[140px]"
+                  value={monthsDonut}
+                  onChange={(e) => setMonthsDonut(Number(e.target.value))}
+                  aria-label={t('expensesPage.chartPeriod')}
+                >
+                  <option value={6}>{t('expensesPage.months6')}</option>
+                  <option value={12}>{t('expensesPage.months12')}</option>
+                </select>
+              </div>
+              {summaryDonutLoading && !donutData.length ? (
+                <div className="expenses-chart-empty">{t('expensesPage.loadingCharts')}</div>
+              ) : donutData.length ? (
+                <DonutChart
+                  className="chart--nested"
+                  data={donutData}
+                  nameKey="name"
+                  valueKey="value"
+                  valueLabel={t('expensesPage.seriesTotal')}
+                  title=""
+                  height={260}
+                />
+              ) : (
+                <div className="expenses-chart-empty">{t('expensesPage.chartsNoData')}</div>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="accountings-tabs-row mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="invoices-tabs-wrap mb-4">
         <Tabs
           tabs={[
             {
@@ -540,54 +581,37 @@ export default function Expenses() {
           activeTab={activeTab}
           onChange={setActiveTab}
         />
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            className="accountings-btn accountings-btn--small"
-            disabled={exportBusy}
-            onClick={handleExport}
-          >
-            <Download className="inline h-3.5 w-3.5" /> {t('expensesPage.export')}
-          </button>
-          {canManageAccounting && (
-            <button
-              type="button"
-              className="accountings-btn accountings-btn--small accountings-btn--primary"
-              onClick={openCreate}
-            >
-              <Plus className="inline h-3.5 w-3.5" /> {t('expensesPage.add')}
-            </button>
-          )}
-        </div>
       </div>
 
       {activeTab === 'shipment' && (
         <div className="accountings-table-section">
-          <div className="accountings-filters-card">
-            <div className="accountings-filters__row accountings-filters__row--main">
-              <div className="accountings-filters__search-wrap" dir={isAr ? 'rtl' : 'ltr'}>
-                <Search className="accountings-filters__search-icon" aria-hidden />
+          <div className="clients-filters-card">
+            <div className="clients-filters__row clients-filters__row--main">
+              <div className="clients-filters__search-wrap" dir={isAr ? 'rtl' : 'ltr'}>
+                <Search className="clients-filters__search-icon" aria-hidden />
                 <input
                   type="search"
-                  className="accountings-input accountings-filters__search"
+                  className="clients-input clients-filters__search"
                   placeholder={t('expensesPage.searchPlaceholder')}
                   value={shipSearch}
                   onChange={(e) => setShipSearch(e.target.value)}
+                  aria-label={t('expensesPage.searchPlaceholder')}
                 />
               </div>
-              <div className="accountings-filters__fields">
+              <div className="clients-filters__fields">
                 <input
                   type="text"
-                  className="accountings-input"
+                  className="clients-input min-w-[120px]"
                   placeholder={t('expensesPage.filterBl')}
                   value={shipBl}
                   onChange={(e) => setShipBl(e.target.value)}
                   aria-label={t('expensesPage.filterBl')}
                 />
                 <select
-                  className="accountings-select"
+                  className="clients-input min-w-[140px]"
                   value={shipCategory}
                   onChange={(e) => setShipCategory(e.target.value)}
+                  aria-label={t('expensesPage.colCategory')}
                 >
                   <option value="">{t('expensesPage.allCategories')}</option>
                   {categories.map((c) => (
@@ -597,9 +621,10 @@ export default function Expenses() {
                   ))}
                 </select>
                 <select
-                  className="accountings-select"
+                  className="clients-input min-w-[140px]"
                   value={shipCurrency}
                   onChange={(e) => setShipCurrency(e.target.value)}
+                  aria-label={t('expensesPage.allCurrencies')}
                 >
                   <option value="">{t('expensesPage.allCurrencies')}</option>
                   <option value="USD">USD</option>
@@ -608,20 +633,59 @@ export default function Expenses() {
                 </select>
                 <input
                   type="month"
-                  className="accountings-input"
+                  className="clients-input min-w-[140px]"
                   value={shipMonth}
                   onChange={(e) => setShipMonth(e.target.value)}
+                  aria-label={t('expensesPage.colDate')}
                 />
                 <select
-                  className="accountings-select"
+                  className="clients-input min-w-[140px]"
                   value={shipSort}
                   onChange={(e) => setShipSort(e.target.value)}
+                  aria-label={t('expensesPage.sortDate')}
                 >
                   <option value="date">{t('expensesPage.sortDate')}</option>
                   <option value="amount">{t('expensesPage.sortAmount')}</option>
                   <option value="category">{t('expensesPage.sortCategory')}</option>
                   <option value="bl">{t('expensesPage.sortBl')}</option>
                 </select>
+              </div>
+              <div className="clients-filters__actions">
+                <button
+                  type="button"
+                  className="clients-filters__clear clients-filters__btn-icon"
+                  onClick={() => {
+                    setShipSearch('')
+                    setShipBl('')
+                    setShipCategory('')
+                    setShipCurrency('')
+                    setShipMonth(defaultMonth())
+                    setShipSort('date')
+                  }}
+                  aria-label={t('invoices.clearFilters', 'Clear filters')}
+                  title={t('invoices.clearFilters', 'Clear filters')}
+                >
+                  <RotateCcw className="clients-filters__btn-icon-svg" aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  className="clients-filters__btn-icon clients-filters__btn-icon--export"
+                  disabled={exportBusy}
+                  onClick={handleExport}
+                  aria-label={t('expensesPage.export')}
+                  title={t('expensesPage.export')}
+                >
+                  {exportBusy ? (
+                    <span className="clients-filters__export-spinner" aria-hidden />
+                  ) : (
+                    <FileSpreadsheet className="clients-filters__btn-icon-svg" aria-hidden />
+                  )}
+                </button>
+                {canManageAccounting && (
+                  <button type="button" className="page-header__btn page-header__btn--primary" onClick={openCreate}>
+                    <Plus className="inline h-3.5 w-3.5" /> {t('expensesPage.add')}
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -707,23 +771,25 @@ export default function Expenses() {
 
       {activeTab === 'general' && (
         <div className="accountings-table-section">
-          <div className="accountings-filters-card">
-            <div className="accountings-filters__row accountings-filters__row--main">
-              <div className="accountings-filters__search-wrap" dir={isAr ? 'rtl' : 'ltr'}>
-                <Search className="accountings-filters__search-icon" aria-hidden />
+          <div className="clients-filters-card">
+            <div className="clients-filters__row clients-filters__row--main">
+              <div className="clients-filters__search-wrap" dir={isAr ? 'rtl' : 'ltr'}>
+                <Search className="clients-filters__search-icon" aria-hidden />
                 <input
                   type="search"
-                  className="accountings-input accountings-filters__search"
+                  className="clients-input clients-filters__search"
                   placeholder={t('expensesPage.searchPlaceholder')}
                   value={genSearch}
                   onChange={(e) => setGenSearch(e.target.value)}
+                  aria-label={t('expensesPage.searchPlaceholder')}
                 />
               </div>
-              <div className="accountings-filters__fields">
+              <div className="clients-filters__fields">
                 <select
-                  className="accountings-select"
+                  className="clients-input min-w-[140px]"
                   value={genCategory}
                   onChange={(e) => setGenCategory(e.target.value)}
+                  aria-label={t('expensesPage.colCategory')}
                 >
                   <option value="">{t('expensesPage.allCategories')}</option>
                   {categories.map((c) => (
@@ -733,9 +799,10 @@ export default function Expenses() {
                   ))}
                 </select>
                 <select
-                  className="accountings-select"
+                  className="clients-input min-w-[140px]"
                   value={genCurrency}
                   onChange={(e) => setGenCurrency(e.target.value)}
+                  aria-label={t('expensesPage.allCurrencies')}
                 >
                   <option value="">{t('expensesPage.allCurrencies')}</option>
                   <option value="USD">USD</option>
@@ -744,19 +811,57 @@ export default function Expenses() {
                 </select>
                 <input
                   type="month"
-                  className="accountings-input"
+                  className="clients-input min-w-[140px]"
                   value={genMonth}
                   onChange={(e) => setGenMonth(e.target.value)}
+                  aria-label={t('expensesPage.colDate')}
                 />
                 <select
-                  className="accountings-select"
+                  className="clients-input min-w-[140px]"
                   value={genSort}
                   onChange={(e) => setGenSort(e.target.value)}
+                  aria-label={t('expensesPage.sortDate')}
                 >
                   <option value="date">{t('expensesPage.sortDate')}</option>
                   <option value="amount">{t('expensesPage.sortAmount')}</option>
                   <option value="category">{t('expensesPage.sortCategory')}</option>
                 </select>
+              </div>
+              <div className="clients-filters__actions">
+                <button
+                  type="button"
+                  className="clients-filters__clear clients-filters__btn-icon"
+                  onClick={() => {
+                    setGenSearch('')
+                    setGenCategory('')
+                    setGenCurrency('')
+                    setGenMonth(defaultMonth())
+                    setGenSort('date')
+                  }}
+                  aria-label={t('invoices.clearFilters', 'Clear filters')}
+                  title={t('invoices.clearFilters', 'Clear filters')}
+                >
+                  <RotateCcw className="clients-filters__btn-icon-svg" aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  className="clients-filters__btn-icon clients-filters__btn-icon--export"
+                  disabled={exportBusy}
+                  onClick={handleExport}
+                  aria-label={t('expensesPage.export')}
+                  title={t('expensesPage.export')}
+                >
+                  {exportBusy ? (
+                    <span className="clients-filters__export-spinner" aria-hidden />
+                  ) : (
+                    <FileSpreadsheet className="clients-filters__btn-icon-svg" aria-hidden />
+                  )}
+                </button>
+                {canManageAccounting && (
+                  <button type="button" className="page-header__btn page-header__btn--primary" onClick={openCreate}>
+                    <Plus className="inline h-3.5 w-3.5" /> {t('expensesPage.add')}
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -1008,6 +1113,7 @@ export default function Expenses() {
           </div>
         </div>
       )}
+      </div>
     </Container>
   )
 }
