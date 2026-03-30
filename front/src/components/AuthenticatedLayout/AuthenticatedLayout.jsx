@@ -97,7 +97,6 @@ export default function AuthenticatedLayout() {
   const [allowedPages, setAllowedPages] = useState(() => readPageAccessCache()?.allowedPages ?? [])
   const [pageAccessVersion, setPageAccessVersion] = useState(() => readPageAccessCache()?.pageAccessVersion ?? '')
   const [loading, setLoading] = useState(true)
-  const [loggingOut, setLoggingOut] = useState(false)
 
   const refreshUser = useCallback(() => {
     if (!token) return Promise.resolve()
@@ -155,10 +154,7 @@ export default function AuthenticatedLayout() {
     return () => { cancelled = true }
   }, [token, navigate])
 
-  if (!token) return <Navigate to="/login" replace />
-
   const handleLogout = async () => {
-    setLoggingOut(true)
     try {
       await logoutApi(token)
     } catch {
@@ -167,7 +163,6 @@ export default function AuthenticatedLayout() {
       clearToken()
       navigate('/login', { replace: true })
     }
-    setLoggingOut(false)
   }
 
   const handleMenuChange = (id) => {
@@ -291,6 +286,17 @@ export default function AuthenticatedLayout() {
     [location.pathname, t]
   )
 
+  const allowedPagesSet = useMemo(
+    () => new Set(Array.isArray(allowedPages) ? allowedPages.filter(Boolean) : []),
+    [allowedPages]
+  )
+  const hasPageAccess = useCallback((pageKey) => {
+    if (!pageKey) return false
+    return allowedPagesSet.has(String(pageKey))
+  }, [allowedPagesSet])
+
+  if (!token) return <Navigate to="/login" replace />
+
   if (loading) {
     return (
       <div className="app-layout" style={{ alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }} aria-label="Loading">
@@ -298,12 +304,6 @@ export default function AuthenticatedLayout() {
       </div>
     )
   }
-
-  const allowedPagesSet = useMemo(() => new Set(Array.isArray(allowedPages) ? allowedPages.filter(Boolean) : []), [allowedPages])
-  const hasPageAccess = useCallback((pageKey) => {
-    if (!pageKey) return false
-    return allowedPagesSet.has(String(pageKey))
-  }, [allowedPagesSet])
 
   return (
     <AppLayout

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useOutletContext } from 'react-router-dom'
 import { Search, RotateCcw, X, Pencil, Trash2 } from 'lucide-react'
 import { getStoredToken } from '../Login'
+import { useAuthAccess } from '../../hooks/useAuthAccess'
 import { Container } from '../../components/Container'
 import LoaderDots from '../../components/LoaderDots'
 import Alert from '../../components/Alert'
@@ -217,7 +217,7 @@ const SETTINGS_TABS = [
 ]
 
 export default function Settings() {
-  const { user, permissions = [] } = useOutletContext() || {}
+  const { user, hasPageAccess } = useAuthAccess()
   const token = getStoredToken()
   const { t, i18n } = useTranslation()
   const dir = i18n.language === 'ar' ? 'rtl' : 'ltr'
@@ -357,37 +357,14 @@ export default function Settings() {
     return name === 'admin' || name === 'sales_manager'
   }, [user])
 
-  const isAdminRole = useMemo(() => {
-    const primary = (user?.primary_role ?? user?.roles?.[0] ?? '').toString().toLowerCase()
-    return primary === 'admin'
-  }, [user])
+  const canSeeTicketStatuses = useMemo(() => hasPageAccess('settings'), [hasPageAccess])
+  const canManageTicketStatuses = useMemo(() => hasPageAccess('settings'), [hasPageAccess])
 
-  const canSeeTicketStatuses = useMemo(
-    () => permissions.includes('tickets.view') || permissions.includes('tickets.manage') || isAdminRole,
-    [permissions, isAdminRole],
-  )
-  const canManageTicketStatuses = useMemo(
-    () => permissions.includes('tickets.manage') || isAdminRole,
-    [permissions, isAdminRole],
-  )
+  const canSeeTicketTypes = useMemo(() => hasPageAccess('settings'), [hasPageAccess])
+  const canManageTicketTypes = useMemo(() => hasPageAccess('settings'), [hasPageAccess])
 
-  const canSeeTicketTypes = useMemo(
-    () => permissions.includes('tickets.view') || permissions.includes('tickets.manage') || isAdminRole,
-    [permissions, isAdminRole],
-  )
-  const canManageTicketTypes = useMemo(
-    () => permissions.includes('tickets.manage') || isAdminRole,
-    [permissions, isAdminRole],
-  )
-
-  const canSeeCommLogTypes = useMemo(
-    () => permissions.includes('customer_service.view_comms') || permissions.includes('customer_service.manage_comms') || isAdminRole,
-    [permissions, isAdminRole],
-  )
-  const canManageCommLogTypes = useMemo(
-    () => permissions.includes('customer_service.manage_comms') || isAdminRole,
-    [permissions, isAdminRole],
-  )
+  const canSeeCommLogTypes = useMemo(() => hasPageAccess('settings'), [hasPageAccess])
+  const canManageCommLogTypes = useMemo(() => hasPageAccess('settings'), [hasPageAccess])
 
   const contentMgmtNavItems = useMemo(() => {
     const items = [

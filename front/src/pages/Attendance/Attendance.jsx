@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useOutletContext } from 'react-router-dom'
 import { getStoredToken } from '../Login'
+import { useAuthAccess } from '../../hooks/useAuthAccess'
 import {
   clockIn,
   clockOut,
@@ -211,27 +211,14 @@ function downloadCsv(filename, rows) {
 
 export default function Attendance() {
   const { t, i18n } = useTranslation()
-  const { permissions = [], user: outletUser } = useOutletContext() || {}
+  const { user: outletUser, isAdminRole, hasPageAccess } = useAuthAccess()
   const token = getStoredToken()
   const today = new Date().toISOString().slice(0, 10)
-  const canAdminAttendance = useMemo(
-    () => Array.isArray(permissions) && permissions.includes('attendance.admin'),
-    [permissions]
-  )
-  const canManageAttendanceExcuses = useMemo(
-    () =>
-      Array.isArray(permissions) &&
-      (permissions.includes('attendance.excuses.manage') || permissions.includes('attendance.admin')),
-    [permissions]
-  )
+  const canAdminAttendance = useMemo(() => Boolean(isAdminRole && hasPageAccess('attendance')), [isAdminRole, hasPageAccess])
+  const canManageAttendanceExcuses = useMemo(() => Boolean(isAdminRole && hasPageAccess('attendance')), [isAdminRole, hasPageAccess])
   const canShowAdminTab = canAdminAttendance || canManageAttendanceExcuses
 
-  const canFilterAll = useMemo(
-    () =>
-      Array.isArray(permissions) &&
-      (permissions.includes('attendance.view') || permissions.includes('reports.view')),
-    [permissions]
-  )
+  const canFilterAll = useMemo(() => Boolean(isAdminRole && hasPageAccess('attendance')), [isAdminRole, hasPageAccess])
 
   const sectionTabs = useMemo(() => {
     const base = [
