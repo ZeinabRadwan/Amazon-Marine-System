@@ -1121,3 +1121,31 @@
 .accountings-bank-card__meta {
   margin: 8px 0 0;
 }
+
+/* Chart cards — same shell as Invoices/Clients (inside .chart-wrap) */
+.accountings-chart-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--chart-border, rgba(0, 0, 0, 0.06));
+}
+
+[data-theme='dark'] .accountings-chart-card-head {
+  border-bottom-color: var(--chart-border, rgba(255, 255, 255, 0.08));
+}
+
+.accountings-chart-card-head__title {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  flex: 1;
+  min-width: 0;
+}
+
+.accountings-chart-card__period {
+  flex-shrink: 0;
+}

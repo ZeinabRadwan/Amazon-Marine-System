@@ -1,21 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  Search,
-  Download,
-  Eye,
-  FileSpreadsheet,
-  Plus,
-  RotateCcw,
-  ArrowUpDown,
-  ChevronDown,
-  ChevronUp,
-} from 'lucide-react'
+import { Search, Eye, FileSpreadsheet, RotateCcw, ArrowUpDown, ChevronDown, ChevronUp } from 'lucide-react'
 import { Table, IconActionButton } from '../../../components/Table'
 import Pagination from '../../../components/Pagination'
 import Alert from '../../../components/Alert'
 import { getStoredToken } from '../../Login'
-import { listInvoices, exportInvoicesCsv } from '../../../api/invoices'
+import { listInvoices } from '../../../api/invoices'
 import InvoiceDetailModal from './InvoiceDetailModal'
 
 /** Map invoice status to Clients-style badge variant (Clients.css) */
@@ -139,18 +129,6 @@ export default function InvoicesTable({
     })
   }
 
-  const handleExportSelected = async () => {
-    const token = getStoredToken()
-    if (!token) return
-    const ids = Array.from(selectedIds)
-    if (ids.length === 0) return
-    try {
-      await exportInvoicesCsv(token, { ids })
-    } catch (e) {
-      console.error(e)
-    }
-  }
-
   const clearFilters = () => {
     setSearch('')
     setStatus('')
@@ -247,25 +225,10 @@ export default function InvoicesTable({
     },
   ]
 
+  const selectedCount = selectedIds.size
+
   return (
     <div className="invoices-table-root">
-      {selectedIds.size > 0 && (
-        <div className="invoices-bulk-toolbar" role="region" aria-label={t('invoices.bulk.region')}>
-          <p className="invoices-bulk-toolbar__label">
-            {t('invoices.bulk.selected', { count: selectedIds.size, defaultValue: `${selectedIds.size} selected` })}
-          </p>
-          <div className="invoices-bulk-toolbar__actions">
-            <button type="button" className="page-header__btn" onClick={handleExportSelected}>
-              <Download className="clients-filters__btn-icon-svg" size={18} aria-hidden />
-              {t('invoices.exportSelected')}
-            </button>
-            <button type="button" className="page-header__btn" onClick={() => setSelectedIds(new Set())}>
-              {t('invoices.clearSelection')}
-            </button>
-          </div>
-        </div>
-      )}
-
       <div className="clients-filters-card">
         <div className="clients-filters__row clients-filters__row--main">
           <div className="clients-filters__search-wrap" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}>
@@ -282,14 +245,14 @@ export default function InvoicesTable({
               aria-label={t('clients.search')}
             />
           </div>
-          <div className="clients-filters__fields flex flex-wrap gap-2">
+          <div className="clients-filters__fields">
             <select
               value={status}
               onChange={(e) => {
                 setPage(1)
                 setStatus(e.target.value)
               }}
-              className="clients-input"
+              className="clients-input min-w-[140px]"
               aria-label={t('invoices.filters.status', 'Status')}
             >
               <option value="">{t('invoices.filterAll')}</option>
@@ -305,7 +268,7 @@ export default function InvoicesTable({
                 setPage(1)
                 setCurrencyId(e.target.value)
               }}
-              className="clients-input"
+              className="clients-input min-w-[140px]"
               aria-label={t('invoices.filters.currency', 'Currency')}
             >
               <option value="">{t('invoices.filterAll')}</option>
@@ -334,39 +297,42 @@ export default function InvoicesTable({
               aria-label={t('invoices.dateTo')}
             />
           </div>
-          <button
-            type="button"
-            className="clients-filters__clear clients-filters__btn-icon"
-            onClick={clearFilters}
-            aria-label={t('invoices.clearFilters')}
-            title={t('invoices.clearFilters')}
-          >
-            <RotateCcw className="clients-filters__btn-icon-svg" aria-hidden />
-          </button>
-          <button
-            type="button"
-            className="clients-filters__sort-toggle clients-filters__btn-icon"
-            onClick={() => setShowSort((v) => !v)}
-            aria-expanded={showSort}
-            aria-controls="invoices-sort-panel"
-            id="invoices-sort-toggle"
-            title={t('invoices.sortBy')}
-          >
-            <ArrowUpDown className="clients-filters__btn-icon-svg" aria-hidden />
-            {showSort ? (
-              <ChevronUp className="clients-filters__sort-toggle-chevron" aria-hidden />
-            ) : (
-              <ChevronDown className="clients-filters__sort-toggle-chevron" aria-hidden />
-            )}
-          </button>
           <div className="clients-filters__actions">
             <button
               type="button"
+              className="clients-filters__clear clients-filters__btn-icon"
+              onClick={() => {
+                setSelectedIds(new Set())
+                clearFilters()
+              }}
+              aria-label={t('invoices.clearFilters')}
+              title={t('invoices.clearFilters')}
+            >
+              <RotateCcw className="clients-filters__btn-icon-svg" aria-hidden />
+            </button>
+            <button
+              type="button"
+              className="clients-filters__sort-toggle clients-filters__btn-icon"
+              onClick={() => setShowSort((v) => !v)}
+              aria-expanded={showSort}
+              aria-controls="invoices-sort-panel"
+              id="invoices-sort-toggle"
+              title={t('invoices.sortBy')}
+            >
+              <ArrowUpDown className="clients-filters__btn-icon-svg" aria-hidden />
+              {showSort ? (
+                <ChevronUp className="clients-filters__sort-toggle-chevron" aria-hidden />
+              ) : (
+                <ChevronDown className="clients-filters__sort-toggle-chevron" aria-hidden />
+              )}
+            </button>
+            <button
+              type="button"
               className="clients-filters__btn-icon clients-filters__btn-icon--export"
-              onClick={() => onExportCsv?.()}
+              onClick={() => onExportCsv?.(selectedCount > 0 ? Array.from(selectedIds) : undefined)}
               disabled={exportLoading}
-              aria-label={t('pageHeader.export', 'Export')}
-              title={t('pageHeader.export', 'Export')}
+              aria-label={selectedCount > 0 ? t('invoices.exportSelected') : t('pageHeader.export', 'Export')}
+              title={selectedCount > 0 ? t('invoices.exportSelected') : t('invoices.exportAll')}
             >
               {exportLoading ? (
                 <span className="clients-filters__export-spinner" aria-hidden />
@@ -376,7 +342,6 @@ export default function InvoicesTable({
             </button>
             {typeof onCreateInvoice === 'function' && (
               <button type="button" className="page-header__btn page-header__btn--primary" onClick={onCreateInvoice}>
-                <Plus className="clients-filters__btn-icon-svg" size={18} aria-hidden />
                 {t('invoices.create', 'Create Invoice')}
               </button>
             )}

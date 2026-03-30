@@ -8,44 +8,6 @@
   margin-bottom: 1.25rem;
 }
 
-.invoices-bulk-toolbar {
-  margin-bottom: 1rem;
-  padding: 14px 18px;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  background: var(--form-bg, #fff);
-  border: 1px solid var(--form-divider, #e5e7eb);
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-}
-
-[data-theme='dark'] .invoices-bulk-toolbar {
-  background: var(--form-bg);
-  border-color: var(--form-divider);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-}
-
-.invoices-bulk-toolbar__label {
-  margin: 0;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--root-text, #1c2030);
-}
-
-[data-theme='dark'] .invoices-bulk-toolbar__label {
-  color: var(--root-text, #e5e7eb);
-}
-
-.invoices-bulk-toolbar__actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
 /* Chart card header (toolbar + period) — inside same .chart-wrap as Clients-style charts */
 .invoices-chart-card-head {
   display: flex;
@@ -72,7 +34,6 @@
 
 .invoices-chart-card__period {
   flex-shrink: 0;
-  min-width: 8rem;
 }
 
 .invoices-stats-grid {

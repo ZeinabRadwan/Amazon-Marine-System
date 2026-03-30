@@ -28,15 +28,14 @@ import {
   Building2,
   Landmark,
   FileSpreadsheet,
-  Download,
-  ChevronDown,
   Printer,
   X,
   Search,
+  RotateCcw,
 } from 'lucide-react'
 import Tabs from '../../components/Tabs'
-import { DropdownMenu } from '../../components/DropdownMenu'
 import '../../components/PageHeader/PageHeader.css'
+import '../Clients/Clients.css'
 import './Accountings.css'
 
 function formatMonthLabel(ym, locale) {
@@ -113,11 +112,14 @@ export default function Accountings() {
   const locale = String(i18n?.language ?? '').toLowerCase().startsWith('ar') ? 'ar-EG' : 'en-US'
   const isAr = locale.startsWith('ar')
 
-  const [chartMonths, setChartMonths] = useState(6)
+  const [monthsBar, setMonthsBar] = useState(6)
+  const [monthsDonut, setMonthsDonut] = useState(6)
   const [stats, setStats] = useState(null)
   const [statsLoading, setStatsLoading] = useState(false)
-  const [charts, setCharts] = useState(null)
-  const [chartsLoading, setChartsLoading] = useState(false)
+  const [chartsBar, setChartsBar] = useState(null)
+  const [chartsDonut, setChartsDonut] = useState(null)
+  const [chartsBarLoading, setChartsBarLoading] = useState(false)
+  const [chartsDonutLoading, setChartsDonutLoading] = useState(false)
 
   const [activeTab, setActiveTab] = useState('clients')
 
@@ -153,20 +155,29 @@ export default function Accountings() {
   useEffect(() => {
     if (!token) return
     setStatsLoading(true)
-    getAccountingsStats(token, { months: chartMonths })
+    getAccountingsStats(token, { months: monthsBar })
       .then((data) => setStats(data.data ?? data.stats ?? data))
       .catch(() => setStats(null))
       .finally(() => setStatsLoading(false))
-  }, [token, chartMonths])
+  }, [token, monthsBar])
 
   useEffect(() => {
     if (!token) return
-    setChartsLoading(true)
-    getAccountingsCharts(token, { months: chartMonths })
-      .then((data) => setCharts(data.data ?? data.charts ?? data))
-      .catch(() => setCharts(null))
-      .finally(() => setChartsLoading(false))
-  }, [token, chartMonths])
+    setChartsBarLoading(true)
+    getAccountingsCharts(token, { months: monthsBar })
+      .then((data) => setChartsBar(data.data ?? data.charts ?? data))
+      .catch(() => setChartsBar(null))
+      .finally(() => setChartsBarLoading(false))
+  }, [token, monthsBar])
+
+  useEffect(() => {
+    if (!token) return
+    setChartsDonutLoading(true)
+    getAccountingsCharts(token, { months: monthsDonut })
+      .then((data) => setChartsDonut(data.data ?? data.charts ?? data))
+      .catch(() => setChartsDonut(null))
+      .finally(() => setChartsDonutLoading(false))
+  }, [token, monthsDonut])
 
   const loadClients = useCallback(() => {
     if (!token) return
@@ -254,8 +265,8 @@ export default function Accountings() {
   }, [token])
 
   useEffect(() => {
-    if (!statsLoading && !chartsLoading) setChartsBootDone(true)
-  }, [statsLoading, chartsLoading])
+    if (!statsLoading && !chartsBarLoading && !chartsDonutLoading) setChartsBootDone(true)
+  }, [statsLoading, chartsBarLoading, chartsDonutLoading])
 
   const clientCurrencies = useMemo(() => {
     const s = new Set()
@@ -275,13 +286,13 @@ export default function Accountings() {
     partnerRows.forEach((row) => {
       if (row.currency) s.add(row.currency)
     })
-    if (charts?.balance_by_currency?.length) {
-      charts.balance_by_currency.forEach((item) => {
+    if (chartsDonut?.balance_by_currency?.length) {
+      chartsDonut.balance_by_currency.forEach((item) => {
         if (item?.currency) s.add(item.currency)
       })
     }
     return Array.from(s).sort()
-  }, [partnerRows, charts])
+  }, [partnerRows, chartsDonut])
 
   const bankCards = useMemo(() => aggregateBankByCurrency(treasuryEntries), [treasuryEntries])
 
@@ -307,8 +318,6 @@ export default function Accountings() {
     }
     return out.slice(0, 8)
   }, [clientRows, partnerRows])
-
-  const bulkTotal = selectedClients.size + selectedPartners.size
 
   const toggleClient = (id, checked) => {
     setSelectedClients((prev) => {
@@ -342,11 +351,6 @@ export default function Accountings() {
       return
     }
     setSelectedPartners(new Set(visibleIds))
-  }
-
-  const clearBulk = () => {
-    setSelectedClients(new Set())
-    setSelectedPartners(new Set())
   }
 
   const handleExportMenu = async (kind) => {
@@ -384,45 +388,15 @@ export default function Accountings() {
     }
   }
 
-  const handleBulkExport = async () => {
-    if (!bulkTotal || !token) return
-    setExportBusy(true)
-    try {
-      const day = new Date().toISOString().slice(0, 10)
-      if (selectedClients.size) {
-        const blob = await exportAccountingsClients(token, { ids: [...selectedClients] })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `accounting-clients-selected-${day}.csv`
-        a.click()
-        URL.revokeObjectURL(url)
-      }
-      if (selectedPartners.size) {
-        const blob = await exportAccountingsPartners(token, { ids: [...selectedPartners] })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `accounting-partners-selected-${day}.csv`
-        a.click()
-        URL.revokeObjectURL(url)
-      }
-    } catch (e) {
-      window.alert(e?.message || t('accountings.exportError', 'Export failed.'))
-    } finally {
-      setExportBusy(false)
-    }
-  }
-
   const receivablesPayablesData = useMemo(() => {
-    if (!charts?.receivables_payables?.labels?.length) return []
-    const { labels, receivables, payables } = charts.receivables_payables
+    if (!chartsBar?.receivables_payables?.labels?.length) return []
+    const { labels, receivables, payables } = chartsBar.receivables_payables
     return labels.map((ym, index) => ({
       label: formatMonthLabel(ym, i18n.language),
       receivables: receivables[index] ?? 0,
       payables: payables[index] ?? 0,
     }))
-  }, [charts, i18n.language])
+  }, [chartsBar, i18n.language])
 
   const statsCardsConfig = useMemo(
     () => [
@@ -457,11 +431,11 @@ export default function Accountings() {
     [t],
   )
 
-  const pageBootLoading = !chartsBootDone && (statsLoading || chartsLoading)
+  const pageBootLoading = !chartsBootDone && (statsLoading || chartsBarLoading || chartsDonutLoading)
 
   return (
     <Container size="xl">
-      <div className="accountings-page">
+      <div className="clients-page accountings-page">
         {pageBootLoading && (
           <div className="accountings-page-loader" aria-live="polite" aria-busy="true">
             <LoaderDots />
@@ -469,7 +443,7 @@ export default function Accountings() {
         )}
 
         {stats && typeof stats === 'object' && (
-          <div className="accountings-stats-grid">
+          <div className="clients-stats-grid accountings-stats-grid">
             {statsCardsConfig.map((cfg) => {
               let value
               let change = cfg.change
@@ -504,79 +478,87 @@ export default function Accountings() {
           </div>
         )}
 
-        <div className="accountings-chart-card accountings-extra-panel mb-4">
-          <div className="accountings-chart-card__header">
-            <span className="accountings-chart-card__title">
-              {t('accountings.chartsTrendTitle', 'Receivables & payables trend')}
-            </span>
-            <select
-              className="accountings-select accountings-chart-card__months"
-              value={chartMonths}
-              onChange={(e) => setChartMonths(Number(e.target.value))}
-              aria-label={t('accountings.chartPeriod', 'Chart period')}
-            >
-              <option value={6}>{t('accountings.months6', '6 months')}</option>
-              <option value={12}>{t('accountings.months12', '12 months')}</option>
-            </select>
-          </div>
-          <div className="accountings-charts-grid accountings-charts-grid--padded">
-            {chartsLoading && (
-              <div className="accountings-chart-wrap flex min-h-[200px] items-center justify-center text-sm text-gray-500">
-                {t('accountings.loadingCharts', 'Loading charts…')}
+        <div className="clients-extra-panel clients-charts-panel mb-4">
+          <div className="clients-charts-grid">
+            <div className="clients-chart-wrap">
+              <div className="chart-wrap">
+                <div className="accountings-chart-card-head">
+                  <h4 className="chart-title accountings-chart-card-head__title">
+                    {t('accountings.chartsReceivablesPayablesSubtitle', 'Receivables (clients) vs payables (partners)')}
+                  </h4>
+                  <select
+                    id="accountings-chart-months-bar"
+                    className="clients-input accountings-chart-card__period min-w-[140px]"
+                    value={monthsBar}
+                    onChange={(e) => setMonthsBar(Number(e.target.value))}
+                    aria-label={t('accountings.chartPeriod', 'Chart period')}
+                  >
+                    <option value={6}>{t('accountings.months6', '6 months')}</option>
+                    <option value={12}>{t('accountings.months12', '12 months')}</option>
+                  </select>
+                </div>
+                {chartsBarLoading && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{t('accountings.loadingCharts', 'Loading charts…')}</p>
+                )}
+                {!chartsBarLoading && receivablesPayablesData.length > 0 ? (
+                  <GroupedBarChart
+                    className="chart--nested"
+                    data={receivablesPayablesData}
+                    xKey="label"
+                    series={[
+                      { key: 'receivables', color: '#10b981', name: t('accountings.seriesReceivables', 'Receivables') },
+                      { key: 'payables', color: '#ef4444', name: t('accountings.seriesPayables', 'Payables') },
+                    ]}
+                    xLabel={t('accountings.chartsMonth', 'Month')}
+                    yLabel={t('accountings.chartsAmount', 'Amount')}
+                    title=""
+                    height={260}
+                  />
+                ) : null}
+                {!chartsBarLoading && receivablesPayablesData.length === 0 && chartsBar && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{t('clients.chartsNoData', 'No chart data')}</p>
+                )}
               </div>
-            )}
-            {!chartsLoading &&
-              receivablesPayablesData.length > 0 &&
-              charts?.balance_by_currency?.length > 0 && (
-                <>
-                  <div className="accountings-chart-wrap">
-                    <p className="accountings-chart-subtitle">
-                      {t('accountings.chartsReceivablesPayablesSubtitle', 'Receivables (clients) vs payables (partners)')}
-                    </p>
-                    <GroupedBarChart
-                      data={receivablesPayablesData}
-                      xKey="label"
-                      series={[
-                        {
-                          key: 'receivables',
-                          color: '#10b981',
-                          name: t('accountings.seriesReceivables', 'Receivables'),
-                        },
-                        {
-                          key: 'payables',
-                          color: '#ef4444',
-                          name: t('accountings.seriesPayables', 'Payables'),
-                        },
-                      ]}
-                      xLabel={t('accountings.chartsMonth', 'Month')}
-                      yLabel={t('accountings.chartsAmount', 'Amount')}
-                      title=""
-                      height={240}
-                    />
-                  </div>
-                  <div className="accountings-chart-wrap">
-                    <p className="accountings-chart-subtitle">
-                      {t('accountings.chartsBalanceByCurrencySubtitle', 'Net balance by currency')}
-                    </p>
-                    <DonutChart
-                      data={charts.balance_by_currency.map((item) => ({
-                        ...item,
-                        displayName: item.currency,
-                      }))}
-                      nameKey="displayName"
-                      valueKey="balance"
-                      valueLabel={t('accountings.chartsBalance', 'Balance')}
-                      title=""
-                      height={240}
-                    />
-                  </div>
-                </>
-              )}
-            {!chartsLoading &&
-              !(receivablesPayablesData.length > 0 || charts?.balance_by_currency?.length > 0) &&
-              charts && (
-                <p className="text-sm text-gray-500 dark:text-gray-400">{t('clients.chartsNoData', 'No chart data')}</p>
-              )}
+            </div>
+            <div className="clients-chart-wrap">
+              <div className="chart-wrap">
+                <div className="accountings-chart-card-head">
+                  <h4 className="chart-title accountings-chart-card-head__title">
+                    {t('accountings.chartsBalanceByCurrencySubtitle', 'Net balance by currency')}
+                  </h4>
+                  <select
+                    id="accountings-chart-months-donut"
+                    className="clients-input accountings-chart-card__period min-w-[140px]"
+                    value={monthsDonut}
+                    onChange={(e) => setMonthsDonut(Number(e.target.value))}
+                    aria-label={t('accountings.chartPeriod', 'Chart period')}
+                  >
+                    <option value={6}>{t('accountings.months6', '6 months')}</option>
+                    <option value={12}>{t('accountings.months12', '12 months')}</option>
+                  </select>
+                </div>
+                {chartsDonutLoading && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{t('accountings.loadingCharts', 'Loading charts…')}</p>
+                )}
+                {!chartsDonutLoading && chartsDonut?.balance_by_currency?.length > 0 ? (
+                  <DonutChart
+                    className="chart--nested"
+                    data={chartsDonut.balance_by_currency.map((item) => ({
+                      ...item,
+                      displayName: item.currency,
+                    }))}
+                    nameKey="displayName"
+                    valueKey="balance"
+                    valueLabel={t('accountings.chartsBalance', 'Balance')}
+                    title=""
+                    height={260}
+                  />
+                ) : null}
+                {!chartsDonutLoading && !chartsDonut?.balance_by_currency?.length && chartsDonut && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{t('clients.chartsNoData', 'No chart data')}</p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -632,7 +614,7 @@ export default function Accountings() {
           </div>
         )}
 
-        <div className="accountings-tabs-row mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="invoices-tabs-wrap mb-4">
           <Tabs
             className="min-w-0 flex-1"
             activeTab={activeTab}
@@ -655,76 +637,26 @@ export default function Accountings() {
               },
             ]}
           />
-          <DropdownMenu
-            align="end"
-            portaled
-            trigger={
-              <button type="button" className="page-header__btn inline-flex items-center gap-1.5" disabled={exportBusy}>
-                <Download className="h-4 w-4" />
-                {t('accountings.export', 'Export')}
-                <ChevronDown className="h-4 w-4 opacity-70" />
-              </button>
-            }
-            items={[
-              {
-                id: 'clients',
-                label: t('accountings.exportClientsCsv', 'Export client accounts (CSV)'),
-                onClick: () => handleExportMenu('clients'),
-              },
-              {
-                id: 'partners',
-                label: t('accountings.exportPartnersCsv', 'Export partner accounts (CSV)'),
-                onClick: () => handleExportMenu('partners'),
-              },
-              {
-                id: 'pdf',
-                label: t('accountings.exportSummaryPdf', 'Export financial summary (PDF)'),
-                onClick: () => handleExportMenu('summary_pdf'),
-              },
-            ]}
-          />
         </div>
-
-        {bulkTotal > 0 && (
-          <div className="accountings-bulk-bar mb-4" role="region" aria-label={t('accountings.bulkRegion', 'Bulk actions')}>
-            <span className="accountings-bulk-bar__count">
-              {t('accountings.bulkSelected', { count: bulkTotal })}
-            </span>
-            <button type="button" className="accountings-btn accountings-btn--small" disabled={exportBusy} onClick={handleBulkExport}>
-              <Download className="inline h-3.5 w-3.5" /> {t('accountings.bulkExport', 'Export selected')}
-            </button>
-            <button
-              type="button"
-              className="accountings-btn accountings-btn--small"
-              onClick={() =>
-                window.alert(t('accountings.bulkReminderSoon', 'Balance reminders will be available in a future update.'))
-              }
-            >
-              {t('accountings.bulkReminder', 'Send balance reminder')}
-            </button>
-            <button type="button" className="accountings-btn accountings-btn--small" onClick={clearBulk}>
-              {t('accountings.bulkClear', 'Clear selection')}
-            </button>
-          </div>
-        )}
 
         {activeTab === 'clients' && (
           <div className="accountings-table-section" role="tabpanel" id="panel-clients">
-            <div className="accountings-filters-card">
-              <div className="accountings-filters__row accountings-filters__row--main">
-                <div className="accountings-filters__search-wrap" dir={isAr ? 'rtl' : 'ltr'}>
-                  <Search className="accountings-filters__search-icon" aria-hidden />
+            <div className="clients-filters-card">
+              <div className="clients-filters__row clients-filters__row--main">
+                <div className="clients-filters__search-wrap" dir={isAr ? 'rtl' : 'ltr'}>
+                  <Search className="clients-filters__search-icon" aria-hidden />
                   <input
                     type="search"
-                    className="accountings-input accountings-filters__search"
+                    className="clients-input clients-filters__search"
                     placeholder={t('accountings.clientSearchPlaceholder', 'Search by client…')}
                     value={clientSearch}
                     onChange={(e) => setClientSearch(e.target.value)}
+                    aria-label={t('accountings.clientSearchPlaceholder', 'Search by client…')}
                   />
                 </div>
-                <div className="accountings-filters__fields">
+                <div className="clients-filters__fields">
                   <select
-                    className="accountings-select"
+                    className="clients-input min-w-[140px]"
                     value={clientCurrency}
                     onChange={(e) => setClientCurrency(e.target.value)}
                     aria-label={t('accountings.filterCurrency', 'Currency')}
@@ -736,22 +668,59 @@ export default function Accountings() {
                       </option>
                     ))}
                   </select>
-                  <div className="accountings-filters__sort-group">
-                    <span className="accountings-filters__sort-label">
-                      {t('accountings.orderBy', 'Order by')}
-                    </span>
-                    <select
-                      className="accountings-select"
-                      value={clientSort}
-                      onChange={(e) => setClientSort(e.target.value)}
-                      aria-label={t('accountings.sortBy', 'Sort by')}
-                    >
-                      <option value="balance">{t('accountings.sortBalance', 'Outstanding balance')}</option>
-                      <option value="sales">{t('accountings.sortSales', 'Total sales')}</option>
-                      <option value="lastPayment">{t('accountings.sortLastPayment', 'Last payment')}</option>
-                      <option value="client">{t('accountings.sortClientName', 'Client name')}</option>
-                    </select>
-                  </div>
+                  <select
+                    className="clients-input min-w-[160px]"
+                    value={clientSort}
+                    onChange={(e) => setClientSort(e.target.value)}
+                    aria-label={t('accountings.sortBy', 'Sort by')}
+                  >
+                    <option value="balance">{t('accountings.sortBalance', 'Outstanding balance')}</option>
+                    <option value="sales">{t('accountings.sortSales', 'Total sales')}</option>
+                    <option value="lastPayment">{t('accountings.sortLastPayment', 'Last payment')}</option>
+                    <option value="client">{t('accountings.sortClientName', 'Client name')}</option>
+                  </select>
+                </div>
+                <div className="clients-filters__actions">
+                  <button
+                    type="button"
+                    className="clients-filters__clear clients-filters__btn-icon"
+                    onClick={() => {
+                      setSelectedClients(new Set())
+                      setClientSearch('')
+                      setClientCurrency('')
+                      setClientSort('balance')
+                    }}
+                    aria-label={t('invoices.clearFilters', 'Clear filters')}
+                    title={t('invoices.clearFilters', 'Clear filters')}
+                  >
+                    <RotateCcw className="clients-filters__btn-icon-svg" aria-hidden />
+                  </button>
+                  <button
+                    type="button"
+                    className="clients-filters__btn-icon clients-filters__btn-icon--export"
+                    disabled={exportBusy}
+                    onClick={() => handleExportMenu('clients')}
+                    aria-label={
+                      selectedClients.size > 0
+                        ? t('accountings.exportClientsCsv')
+                        : t('accountings.exportClientsAll')
+                    }
+                    title={selectedClients.size > 0 ? t('accountings.exportClientsCsv') : t('accountings.exportClientsAll')}
+                  >
+                    {exportBusy ? (
+                      <span className="clients-filters__export-spinner" aria-hidden />
+                    ) : (
+                      <FileSpreadsheet className="clients-filters__btn-icon-svg" aria-hidden />
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    className="page-header__btn"
+                    disabled={exportBusy}
+                    onClick={() => handleExportMenu('summary_pdf')}
+                  >
+                    {t('accountings.exportSummaryPdf', 'Export financial summary (PDF)')}
+                  </button>
                 </div>
               </div>
             </div>
@@ -844,21 +813,22 @@ export default function Accountings() {
 
         {activeTab === 'partners' && (
           <div className="accountings-table-section" role="tabpanel" id="panel-partners">
-            <div className="accountings-filters-card">
-              <div className="accountings-filters__row accountings-filters__row--main">
-                <div className="accountings-filters__search-wrap" dir={isAr ? 'rtl' : 'ltr'}>
-                  <Search className="accountings-filters__search-icon" aria-hidden />
+            <div className="clients-filters-card">
+              <div className="clients-filters__row clients-filters__row--main">
+                <div className="clients-filters__search-wrap" dir={isAr ? 'rtl' : 'ltr'}>
+                  <Search className="clients-filters__search-icon" aria-hidden />
                   <input
                     type="search"
-                    className="accountings-input accountings-filters__search"
+                    className="clients-input clients-filters__search"
                     placeholder={t('accountings.partnerSearchPlaceholder', 'Search by partner…')}
                     value={partnerSearch}
                     onChange={(e) => setPartnerSearch(e.target.value)}
+                    aria-label={t('accountings.partnerSearchPlaceholder', 'Search by partner…')}
                   />
                 </div>
-                <div className="accountings-filters__fields">
+                <div className="clients-filters__fields">
                   <select
-                    className="accountings-select"
+                    className="clients-input min-w-[140px]"
                     value={partnerType}
                     onChange={(e) => setPartnerType(e.target.value)}
                     aria-label={t('accountings.filterPartnerType', 'Partner type')}
@@ -871,9 +841,10 @@ export default function Accountings() {
                     ))}
                   </select>
                   <select
-                    className="accountings-select"
+                    className="clients-input min-w-[140px]"
                     value={partnerCurrency}
                     onChange={(e) => setPartnerCurrency(e.target.value)}
+                    aria-label={t('accountings.filterCurrency', 'Currency')}
                   >
                     <option value="">{t('accountings.allCurrencies', 'All currencies')}</option>
                     {partnerCurrencies.map((cur) => (
@@ -882,20 +853,59 @@ export default function Accountings() {
                       </option>
                     ))}
                   </select>
-                  <div className="accountings-filters__sort-group">
-                    <span className="accountings-filters__sort-label">
-                      {t('accountings.orderBy', 'Order by')}
-                    </span>
-                    <select
-                      className="accountings-select"
-                      value={partnerSort}
-                      onChange={(e) => setPartnerSort(e.target.value)}
-                    >
-                      <option value="balance">{t('accountings.sortBalance', 'Outstanding balance')}</option>
-                      <option value="total">{t('accountings.sortTotalDue', 'Total due')}</option>
-                      <option value="partner">{t('accountings.sortPartnerName', 'Partner name')}</option>
-                    </select>
-                  </div>
+                  <select
+                    className="clients-input min-w-[160px]"
+                    value={partnerSort}
+                    onChange={(e) => setPartnerSort(e.target.value)}
+                    aria-label={t('accountings.sortBy', 'Sort by')}
+                  >
+                    <option value="balance">{t('accountings.sortBalance', 'Outstanding balance')}</option>
+                    <option value="total">{t('accountings.sortTotalDue', 'Total due')}</option>
+                    <option value="partner">{t('accountings.sortPartnerName', 'Partner name')}</option>
+                  </select>
+                </div>
+                <div className="clients-filters__actions">
+                  <button
+                    type="button"
+                    className="clients-filters__clear clients-filters__btn-icon"
+                    onClick={() => {
+                      setSelectedPartners(new Set())
+                      setPartnerSearch('')
+                      setPartnerType('')
+                      setPartnerCurrency('')
+                      setPartnerSort('balance')
+                    }}
+                    aria-label={t('invoices.clearFilters', 'Clear filters')}
+                    title={t('invoices.clearFilters', 'Clear filters')}
+                  >
+                    <RotateCcw className="clients-filters__btn-icon-svg" aria-hidden />
+                  </button>
+                  <button
+                    type="button"
+                    className="clients-filters__btn-icon clients-filters__btn-icon--export"
+                    disabled={exportBusy}
+                    onClick={() => handleExportMenu('partners')}
+                    aria-label={
+                      selectedPartners.size > 0
+                        ? t('accountings.exportPartnersCsv')
+                        : t('accountings.exportPartnersAll')
+                    }
+                    title={selectedPartners.size > 0 ? t('accountings.exportPartnersCsv') : t('accountings.exportPartnersAll')}
+                  >
+                    {exportBusy ? (
+                      <span className="clients-filters__export-spinner" aria-hidden />
+                    ) : (
+                      <FileSpreadsheet className="clients-filters__btn-icon-svg" aria-hidden />
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    className="page-header__btn"
+                    disabled={exportBusy}
+                    onClick={() => handleExportMenu('summary_pdf')}
+                  >
+                    {t('accountings.exportSummaryPdf', 'Export financial summary (PDF)')}
+                  </button>
                 </div>
               </div>
             </div>
@@ -983,7 +993,23 @@ export default function Accountings() {
         )}
 
         {activeTab === 'bank' && (
-          <div className="accountings-bank-grid" role="tabpanel" id="panel-bank">
+          <div className="accountings-bank-panel" role="tabpanel" id="panel-bank">
+            <div className="clients-filters-card mb-4">
+              <div className="clients-filters__row clients-filters__row--main">
+                <div className="clients-filters__fields flex-1" />
+                <div className="clients-filters__actions">
+                  <button
+                    type="button"
+                    className="page-header__btn"
+                    disabled={exportBusy}
+                    onClick={() => handleExportMenu('summary_pdf')}
+                  >
+                    {t('accountings.exportSummaryPdf', 'Export financial summary (PDF)')}
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="accountings-bank-grid">
             {treasuryLoading && (
               <div className="accountings-empty py-12 text-center">{t('accountings.loading', 'Loading…')}</div>
             )}
@@ -1012,6 +1038,7 @@ export default function Accountings() {
                   )}
                 </div>
               ))}
+            </div>
           </div>
         )}
 
