@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useAuthAccess } from '../../hooks/useAuthAccess'
 import { getResolvedTheme } from '../../theme'
 import HeaderActions from '../HeaderActions'
 import {
@@ -127,7 +128,7 @@ export default function Sidebar({
   appName = 'Marketerz',
   activeMenu = 'dashboard',
   onMenuChange,
-  allowedPages,
+  allowedPages: allowedPagesProp,
   crmCount = 0,
   ticketsCount = 0,
   alertsCount = 0,
@@ -141,6 +142,8 @@ export default function Sidebar({
 }) {
   const badgeCounts = { crmCount, ticketsCount, alertsCount, shipmentsCount, sdFormsCount }
   const { t, i18n } = useTranslation()
+  const { allowedPages: hookAllowedPages, isAccountant } = useAuthAccess()
+  const allowedPages = allowedPagesProp ?? hookAllowedPages
   const isRtl = i18n.language === 'ar'
   const [theme, setTheme] = useState(() => getResolvedTheme())
   const [internalExpanded, setInternalExpanded] = useState(true)
@@ -200,6 +203,9 @@ export default function Sidebar({
 
         <nav className="sidebar-nav" aria-label="Main navigation">
           {SIDEBAR_SECTIONS.map(({ sectionKey, items }) => {
+            // Rule: Accountant only sees Finance section
+            if (isAccountant && sectionKey !== 'financial') return null
+
             const filteredItems = allowedPagesSet
               ? items.filter(({ id }) => {
                   const pageKey = SIDEBAR_ID_TO_PAGE_KEY[id]

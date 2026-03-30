@@ -27,6 +27,7 @@ import { listPorts } from '../../api/ports'
 import { listShippingLines, createShippingLine } from '../../api/shippingLines'
 import { listClients } from '../../api/clients'
 import { listUsers } from '../../api/users'
+import { useAuthAccess } from '../../hooks/useAuthAccess'
 import { Container } from '../../components/Container'
 import '../../components/PageHeader/PageHeader.css'
 import { Table, IconActionButton } from '../../components/Table'
@@ -200,6 +201,7 @@ function normalizeListResponse(data) {
 export default function SDForms() {
   const { t, i18n } = useTranslation()
   const token = getStoredToken()
+  const { isOperations } = useAuthAccess()
 
   const [list, setList] = useState([])
   const [loading, setLoading] = useState(true)
@@ -1906,16 +1908,18 @@ export default function SDForms() {
                           {t('sdForms.submit')}
                         </button>
                       )}
-                      {detail.status === 'submitted' && (
+                      {detail.status === 'submitted' && !isOperations && (
                         <button type="button" className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs" onClick={() => runSendOps(detail.id)}>
                           <Send className="h-4 w-4" aria-hidden />
                           {t('sdForms.sendOps')}
                         </button>
                       )}
-                      <button type="button" className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs" onClick={() => runEmailOps(detail.id)}>
-                        <Mail className="h-4 w-4" aria-hidden />
-                        {t('sdForms.emailOps')}
-                      </button>
+                      {!isOperations && (
+                        <button type="button" className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs" onClick={() => runEmailOps(detail.id)}>
+                          <Mail className="h-4 w-4" aria-hidden />
+                          {t('sdForms.emailOps')}
+                        </button>
+                      )}
                       <button type="button" className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs" onClick={() => openLinkModal(detail.id)}>
                         <Link2 className="h-4 w-4" aria-hidden />
                         {t('sdForms.linkShipment')}

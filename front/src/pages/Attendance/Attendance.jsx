@@ -211,30 +211,22 @@ function downloadCsv(filename, rows) {
 
 export default function Attendance() {
   const { t, i18n } = useTranslation()
-  const { user: outletUser, isAdminRole, hasPageAccess } = useAuthAccess()
+  const { isAdminRole } = useAuthAccess()
   const token = getStoredToken()
-  const today = new Date().toISOString().slice(0, 10)
-  const canAdminAttendance = useMemo(() => Boolean(isAdminRole && hasPageAccess('attendance')), [isAdminRole, hasPageAccess])
-  const canManageAttendanceExcuses = useMemo(() => Boolean(isAdminRole && hasPageAccess('attendance')), [isAdminRole, hasPageAccess])
-  const canShowAdminTab = canAdminAttendance || canManageAttendanceExcuses
-
-  const canFilterAll = useMemo(() => Boolean(isAdminRole && hasPageAccess('attendance')), [isAdminRole, hasPageAccess])
 
   const sectionTabs = useMemo(() => {
-    const base = [
-      { id: 'my', labelKey: 'attendance.tabs.my' },
-      { id: 'excuses', labelKey: 'attendance.tabs.excuses' },
-    ]
-    if (canShowAdminTab) {
-      base.push({
-        id: 'admin',
-        labelKey: canAdminAttendance ? 'attendance.tabs.admin' : 'attendance.tabs.excusesAdmin',
-      })
+    // Admin (role 1): Only sees Admin/Reports tab, loses personal recording/excuses
+    if (isAdminRole) {
+      return [{ id: 'admin', label: t('attendance.tabs.admin') }]
     }
-    return base.map((tab) => ({ id: tab.id, label: t(tab.labelKey) }))
-  }, [canShowAdminTab, canAdminAttendance, t])
+    // Regular User: Sees personal tabs, loses Admin/Reports
+    return [
+      { id: 'my', label: t('attendance.tabs.my') },
+      { id: 'excuses', label: t('attendance.tabs.excuses') },
+    ]
+  }, [isAdminRole, t])
 
-  const [activeSection, setActiveSection] = useState('my')
+  const [activeSection, setActiveSection] = useState(isAdminRole ? 'admin' : 'my')
   const [list, setList] = useState([])
   const [loading, setLoading] = useState(true)
   const [alert, setAlert] = useState(null)
@@ -308,10 +300,7 @@ export default function Attendance() {
   }, [token])
 
   useEffect(() => {
-    if (!token) return
-    const needUsers =
-      (activeSection === 'my' && canFilterAll) || (activeSection === 'admin' && canAdminAttendance)
-    if (!needUsers) return
+    if (!token || !isAdminRole) return
     listUsers(token, { per_page: 500, status: 'active' })
       .then((data) => {
         const list = data.data ?? data.users ?? data
@@ -319,7 +308,7 @@ export default function Attendance() {
         setEmployeeOptions(arr.map(normalizeEmployeeOption).filter(Boolean))
       })
       .catch(() => setEmployeeOptions([]))
-  }, [token, canFilterAll, canAdminAttendance, activeSection])
+  }, [token, isAdminRole, activeSection])
 
   const loadList = useCallback(() => {
     if (!token) return
