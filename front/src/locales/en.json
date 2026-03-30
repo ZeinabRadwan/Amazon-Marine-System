@@ -2050,14 +2050,17 @@
     "subtitle": "Manage company information, notifications, and session behaviour.",
     "loading": "Loading settings…",
     "tabs": {
-      "company": "Company",
+      "company": "Company settings",
       "system": "System & Notifications",
       "sessions": "Session Management",
       "activity": "Activity History",
       "statuses": "Content management"
     },
+    "contentMgmt": {
+      "sidebarTitle": "Modules",
+      "sidebarAria": "Content management modules"
+    },
     "statuses": {
-      "intro": "Manage shipping ports (POL/POD) for SD forms, shipment tracking labels, CRM client statuses, partner (vendor) types, and customer-service lookups (ticket states, types, priorities, communication categories) in one place.",
       "shipmentsHint": "Used on shipment tracking and related customer service views.",
       "clientsHint": "Used when classifying clients in CRM.",
       "vendorPartnerTypesHint": "Used when classifying partners (vendors). The code is stored on each vendor and used in accounting filters.",
@@ -2096,6 +2099,8 @@
     },
     "company": {
       "cardTitle": "Company",
+      "sidebarTitle": "Sections",
+      "sidebarAria": "Company settings sections",
       "profileTitle": "Company Profile",
       "nameAr": "Company Name (Arabic)",
       "nameEn": "Company Name (English)",

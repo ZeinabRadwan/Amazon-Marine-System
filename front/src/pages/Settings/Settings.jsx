@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useOutletContext } from 'react-router-dom'
-import { Search, RotateCcw } from 'lucide-react'
+import { Search, RotateCcw, X, Pencil, Trash2 } from 'lucide-react'
 import { getStoredToken } from '../Login'
 import { Container } from '../../components/Container'
 import LoaderDots from '../../components/LoaderDots'
 import Alert from '../../components/Alert'
 import Tabs from '../../components/Tabs'
-import { Table } from '../../components/Table'
+import { Table, IconActionButton } from '../../components/Table'
 import {
   getSettings,
   updateCompanyProfile,
@@ -58,6 +58,7 @@ import '../../components/PageHeader/PageHeader.css'
 import '../../components/LoaderDots/LoaderDots.css'
 import '../../components/Tabs/Tabs.css'
 import '../Clients/Clients.css'
+import '../Clients/ClientDetailModal.css'
 import '../CustomerServices/styles/CustomerServices.css'
 import './Settings.css'
 import LeafletCompanyLocationPicker from '../../components/LeafletCompanyLocationPicker/LeafletCompanyLocationPicker'
@@ -93,6 +94,117 @@ function CheckboxRow({ label, checked, onChange }) {
       <span className="settings-checkbox-label">{label}</span>
       <input type="checkbox" className="settings-checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
     </label>
+  )
+}
+
+function SettingsModalField({ label, htmlFor, children, fullWidth }) {
+  return (
+    <div className={`client-detail-modal__form-field ${fullWidth ? 'client-detail-modal__form-field--full' : ''}`.trim()}>
+      {label ? <label htmlFor={htmlFor}>{label}</label> : null}
+      {children}
+    </div>
+  )
+}
+
+function SettingsFormModal({
+  title,
+  titleId,
+  onClose,
+  submitting,
+  onSubmit,
+  primaryLabel,
+  cancelLabel,
+  children,
+}) {
+  const { t } = useTranslation()
+  return (
+    <div className="client-detail-modal" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+      <div className="client-detail-modal__backdrop" onClick={() => !submitting && onClose()} />
+      <div className="client-detail-modal__box client-detail-modal__box--form">
+        <header className="client-detail-modal__header client-detail-modal__header--form">
+          <h2 id={titleId} className="client-detail-modal__title">
+            {title}
+          </h2>
+          <button
+            type="button"
+            className="client-detail-modal__close"
+            onClick={() => !submitting && onClose()}
+            aria-label={t('clients.close')}
+          >
+            <X className="client-detail-modal__close-icon" aria-hidden />
+          </button>
+        </header>
+        <form onSubmit={onSubmit} className="client-detail-modal__form">
+          <div className="client-detail-modal__body client-detail-modal__body--form">
+            <div className="client-detail-modal__body-inner">
+              <div className="clients-form-sections">
+                <section className="client-detail-modal__section">
+                  <div className="client-detail-modal__form-grid">{children}</div>
+                </section>
+              </div>
+            </div>
+          </div>
+          <footer className="client-detail-modal__footer client-detail-modal__footer--form">
+            <button
+              type="button"
+              className="client-detail-modal__btn client-detail-modal__btn--secondary"
+              onClick={onClose}
+              disabled={submitting}
+            >
+              {cancelLabel ?? t('clients.cancel')}
+            </button>
+            <button type="submit" className="client-detail-modal__btn client-detail-modal__btn--primary" disabled={submitting}>
+              {submitting ? t('clients.saving', 'Saving…') : primaryLabel}
+            </button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+function SettingsConfirmModal({ title, message, onClose, onConfirm, submitting, confirmLabel, danger }) {
+  const { t } = useTranslation()
+  return (
+    <div className="client-detail-modal" role="dialog" aria-modal="true">
+      <div className="client-detail-modal__backdrop" onClick={() => !submitting && onClose()} />
+      <div className="client-detail-modal__box client-detail-modal__box--form">
+        <header className="client-detail-modal__header client-detail-modal__header--form">
+          <h2 className="client-detail-modal__title">{title}</h2>
+          <button
+            type="button"
+            className="client-detail-modal__close"
+            onClick={() => !submitting && onClose()}
+            aria-label={t('clients.close')}
+          >
+            <X className="client-detail-modal__close-icon" aria-hidden />
+          </button>
+        </header>
+        <div className="client-detail-modal__body client-detail-modal__body--form">
+          <div className="client-detail-modal__body-inner">
+            <p className="settings-confirm-modal__message">{message}</p>
+          </div>
+        </div>
+        <footer className="client-detail-modal__footer client-detail-modal__footer--form">
+          <button
+            type="button"
+            className="client-detail-modal__btn client-detail-modal__btn--secondary"
+            onClick={onClose}
+            disabled={submitting}
+          >
+            {t('clients.cancel')}
+          </button>
+          <button
+            type="button"
+            className={`client-detail-modal__btn ${danger ? 'client-detail-modal__btn--danger' : 'client-detail-modal__btn--primary'}`}
+            onClick={onConfirm}
+            disabled={submitting}
+          >
+            {submitting ? t('clients.deleting') : confirmLabel ?? t('clients.delete')}
+          </button>
+        </footer>
+      </div>
+    </div>
   )
 }
 
@@ -236,6 +348,8 @@ export default function Settings() {
   const [deletePortSubmitting, setDeletePortSubmitting] = useState(false)
 
   const [statusesTabLoading, setStatusesTabLoading] = useState(false)
+  const [contentMgmtSection, setContentMgmtSection] = useState('ports')
+  const [companySection, setCompanySection] = useState('profile')
 
   const isAdminLike = useMemo(() => {
     const primaryRole = user?.primary_role ?? user?.roles?.[0]
@@ -274,6 +388,55 @@ export default function Settings() {
     () => permissions.includes('customer_service.manage_comms') || isAdminRole,
     [permissions, isAdminRole],
   )
+
+  const contentMgmtNavItems = useMemo(() => {
+    const items = [
+      { id: 'ports', label: t('settings.ports.cardTitle') },
+      { id: 'shipmentStatuses', label: t('settings.shipmentStatuses.cardTitle') },
+      { id: 'clientStatuses', label: t('settings.clientStatuses.cardTitle') },
+      { id: 'vendorPartnerTypes', label: t('settings.vendorPartnerTypes.cardTitle') },
+    ]
+    if (canSeeTicketStatuses) {
+      items.push({ id: 'ticketStatuses', label: t('settings.ticketStatuses.cardTitle') })
+    }
+    if (canSeeTicketTypes) {
+      items.push({ id: 'ticketTypes', label: t('settings.ticketTypes.cardTitle') })
+    }
+    if (canSeeTicketStatuses) {
+      items.push({ id: 'ticketPriorities', label: t('settings.ticketPriorities.cardTitle') })
+    }
+    if (canSeeCommLogTypes) {
+      items.push({ id: 'communicationLogTypes', label: t('settings.communicationLogTypes.cardTitle') })
+    }
+    return items
+  }, [t, canSeeTicketStatuses, canSeeTicketTypes, canSeeCommLogTypes])
+
+  useEffect(() => {
+    if (activeTab !== 'statuses' || !isAdminLike) return
+    const ids = contentMgmtNavItems.map((i) => i.id)
+    if (ids.length > 0 && !ids.includes(contentMgmtSection)) {
+      setContentMgmtSection(ids[0])
+    }
+  }, [activeTab, isAdminLike, contentMgmtNavItems, contentMgmtSection])
+
+  const companyNavItems = useMemo(() => {
+    const items = [
+      { id: 'profile', label: t('settings.company.profileTitle') },
+      { id: 'location', label: t('settings.company.locationTitle') },
+    ]
+    if (isAdminLike) {
+      items.push({ id: 'attendance', label: t('settings.attendancePolicy.title') })
+    }
+    return items
+  }, [t, isAdminLike])
+
+  useEffect(() => {
+    if (activeTab !== 'company') return
+    const ids = companyNavItems.map((i) => i.id)
+    if (ids.length > 0 && !ids.includes(companySection)) {
+      setCompanySection(ids[0])
+    }
+  }, [activeTab, companyNavItems, companySection])
 
   const csTabs = useMemo(() => {
     const tabs = SETTINGS_TABS.filter((tab) => tab.id !== 'statuses' || isAdminLike)
@@ -1131,13 +1294,18 @@ export default function Settings() {
       label: t('settings.shipmentStatuses.table.actions'),
       sortable: false,
       render: (_, row) => (
-        <div className="cs-table-actions">
-          <button type="button" className="cs-btn cs-btn-sm cs-btn-outline" onClick={() => openEditShipmentStatus(row)}>
-            {t('settings.shipmentStatuses.edit')}
-          </button>
-          <button type="button" className="cs-btn cs-btn-sm cs-btn-outline" style={{ color: 'var(--danger, #dc3545)' }} onClick={() => setDeleteShipmentStatusId(row.id)}>
-            {t('settings.shipmentStatuses.delete')}
-          </button>
+        <div className="clients-table-actions flex flex-wrap gap-2 justify-end" role="group" aria-label={t('settings.shipmentStatuses.table.actions')}>
+          <IconActionButton
+            icon={<Pencil className="h-4 w-4" />}
+            label={t('settings.shipmentStatuses.edit')}
+            onClick={() => openEditShipmentStatus(row)}
+          />
+          <IconActionButton
+            icon={<Trash2 className="h-4 w-4" />}
+            label={t('settings.shipmentStatuses.delete')}
+            variant="danger"
+            onClick={() => setDeleteShipmentStatusId(row.id)}
+          />
         </div>
       ),
     },
@@ -1163,13 +1331,18 @@ export default function Settings() {
       label: t('settings.shipmentStatuses.table.actions'),
       sortable: false,
       render: (_, row) => (
-        <div className="cs-table-actions">
-          <button type="button" className="cs-btn cs-btn-sm cs-btn-outline" onClick={() => openEditClientStatus(row)}>
-            {t('settings.shipmentStatuses.edit')}
-          </button>
-          <button type="button" className="cs-btn cs-btn-sm cs-btn-outline" style={{ color: 'var(--danger, #dc3545)' }} onClick={() => setDeleteClientStatusId(row.id)}>
-            {t('settings.shipmentStatuses.delete')}
-          </button>
+        <div className="clients-table-actions flex flex-wrap gap-2 justify-end" role="group" aria-label={t('settings.shipmentStatuses.table.actions')}>
+          <IconActionButton
+            icon={<Pencil className="h-4 w-4" />}
+            label={t('clients.edit')}
+            onClick={() => openEditClientStatus(row)}
+          />
+          <IconActionButton
+            icon={<Trash2 className="h-4 w-4" />}
+            label={t('clients.delete')}
+            variant="danger"
+            onClick={() => setDeleteClientStatusId(row.id)}
+          />
         </div>
       ),
     },
@@ -1189,13 +1362,18 @@ export default function Settings() {
       label: t('settings.shipmentStatuses.table.actions'),
       sortable: false,
       render: (_, row) => (
-        <div className="cs-table-actions">
-          <button type="button" className="cs-btn cs-btn-sm cs-btn-outline" onClick={() => openEditVendorPartnerType(row)}>
-            {t('settings.shipmentStatuses.edit')}
-          </button>
-          <button type="button" className="cs-btn cs-btn-sm cs-btn-outline" style={{ color: 'var(--danger, #dc3545)' }} onClick={() => setDeleteVendorPartnerTypeId(row.id)}>
-            {t('settings.shipmentStatuses.delete')}
-          </button>
+        <div className="clients-table-actions flex flex-wrap gap-2 justify-end" role="group" aria-label={t('settings.shipmentStatuses.table.actions')}>
+          <IconActionButton
+            icon={<Pencil className="h-4 w-4" />}
+            label={t('clients.edit')}
+            onClick={() => openEditVendorPartnerType(row)}
+          />
+          <IconActionButton
+            icon={<Trash2 className="h-4 w-4" />}
+            label={t('clients.delete')}
+            variant="danger"
+            onClick={() => setDeleteVendorPartnerTypeId(row.id)}
+          />
         </div>
       ),
     },
@@ -1217,13 +1395,18 @@ export default function Settings() {
         label: t('settings.shipmentStatuses.table.actions'),
         sortable: false,
         render: (_, row) => (
-          <div className="cs-table-actions">
-            <button type="button" className="cs-btn cs-btn-sm cs-btn-outline" onClick={() => openEditTicketStatus(row)}>
-              {t('settings.shipmentStatuses.edit')}
-            </button>
-            <button type="button" className="cs-btn cs-btn-sm cs-btn-outline" style={{ color: 'var(--danger, #dc3545)' }} onClick={() => setDeleteTicketStatusId(row.id)}>
-              {t('settings.shipmentStatuses.delete')}
-            </button>
+          <div className="clients-table-actions flex flex-wrap gap-2 justify-end" role="group" aria-label={t('settings.shipmentStatuses.table.actions')}>
+            <IconActionButton
+              icon={<Pencil className="h-4 w-4" />}
+              label={t('clients.edit')}
+              onClick={() => openEditTicketStatus(row)}
+            />
+            <IconActionButton
+              icon={<Trash2 className="h-4 w-4" />}
+              label={t('clients.delete')}
+              variant="danger"
+              onClick={() => setDeleteTicketStatusId(row.id)}
+            />
           </div>
         ),
       }]
@@ -1244,13 +1427,18 @@ export default function Settings() {
         label: t('settings.shipmentStatuses.table.actions'),
         sortable: false,
         render: (_, row) => (
-          <div className="cs-table-actions">
-            <button type="button" className="cs-btn cs-btn-sm cs-btn-outline" onClick={() => openEditTicketType(row)}>
-              {t('settings.shipmentStatuses.edit')}
-            </button>
-            <button type="button" className="cs-btn cs-btn-sm cs-btn-outline" style={{ color: 'var(--danger, #dc3545)' }} onClick={() => setDeleteTicketTypeId(row.id)}>
-              {t('settings.shipmentStatuses.delete')}
-            </button>
+          <div className="clients-table-actions flex flex-wrap gap-2 justify-end" role="group" aria-label={t('settings.shipmentStatuses.table.actions')}>
+            <IconActionButton
+              icon={<Pencil className="h-4 w-4" />}
+              label={t('clients.edit')}
+              onClick={() => openEditTicketType(row)}
+            />
+            <IconActionButton
+              icon={<Trash2 className="h-4 w-4" />}
+              label={t('clients.delete')}
+              variant="danger"
+              onClick={() => setDeleteTicketTypeId(row.id)}
+            />
           </div>
         ),
       }]
@@ -1272,13 +1460,18 @@ export default function Settings() {
         label: t('settings.shipmentStatuses.table.actions'),
         sortable: false,
         render: (_, row) => (
-          <div className="cs-table-actions">
-            <button type="button" className="cs-btn cs-btn-sm cs-btn-outline" onClick={() => openEditTicketPriority(row)}>
-              {t('settings.shipmentStatuses.edit')}
-            </button>
-            <button type="button" className="cs-btn cs-btn-sm cs-btn-outline" style={{ color: 'var(--danger, #dc3545)' }} onClick={() => setDeleteTicketPriorityId(row.id)}>
-              {t('settings.shipmentStatuses.delete')}
-            </button>
+          <div className="clients-table-actions flex flex-wrap gap-2 justify-end" role="group" aria-label={t('settings.shipmentStatuses.table.actions')}>
+            <IconActionButton
+              icon={<Pencil className="h-4 w-4" />}
+              label={t('clients.edit')}
+              onClick={() => openEditTicketPriority(row)}
+            />
+            <IconActionButton
+              icon={<Trash2 className="h-4 w-4" />}
+              label={t('clients.delete')}
+              variant="danger"
+              onClick={() => setDeleteTicketPriorityId(row.id)}
+            />
           </div>
         ),
       }]
@@ -1300,13 +1493,18 @@ export default function Settings() {
         label: t('settings.shipmentStatuses.table.actions'),
         sortable: false,
         render: (_, row) => (
-          <div className="cs-table-actions">
-            <button type="button" className="cs-btn cs-btn-sm cs-btn-outline" onClick={() => openEditCommLogType(row)}>
-              {t('settings.shipmentStatuses.edit')}
-            </button>
-            <button type="button" className="cs-btn cs-btn-sm cs-btn-outline" style={{ color: 'var(--danger, #dc3545)' }} onClick={() => setDeleteCommLogTypeId(row.id)}>
-              {t('settings.shipmentStatuses.delete')}
-            </button>
+          <div className="clients-table-actions flex flex-wrap gap-2 justify-end" role="group" aria-label={t('settings.shipmentStatuses.table.actions')}>
+            <IconActionButton
+              icon={<Pencil className="h-4 w-4" />}
+              label={t('clients.edit')}
+              onClick={() => openEditCommLogType(row)}
+            />
+            <IconActionButton
+              icon={<Trash2 className="h-4 w-4" />}
+              label={t('clients.delete')}
+              variant="danger"
+              onClick={() => setDeleteCommLogTypeId(row.id)}
+            />
           </div>
         ),
       }]
@@ -1328,18 +1526,18 @@ export default function Settings() {
       label: t('settings.ports.table.actions'),
       sortable: false,
       render: (_, row) => (
-        <div className="cs-table-actions">
-          <button type="button" className="cs-btn cs-btn-sm cs-btn-outline" onClick={() => openEditPort(row)}>
-            {t('settings.ports.edit')}
-          </button>
-          <button
-            type="button"
-            className="cs-btn cs-btn-sm cs-btn-outline"
-            style={{ color: 'var(--danger, #dc3545)' }}
+        <div className="clients-table-actions flex flex-wrap gap-2 justify-end" role="group" aria-label={t('settings.ports.table.actions')}>
+          <IconActionButton
+            icon={<Pencil className="h-4 w-4" />}
+            label={t('settings.ports.edit')}
+            onClick={() => openEditPort(row)}
+          />
+          <IconActionButton
+            icon={<Trash2 className="h-4 w-4" />}
+            label={t('settings.ports.delete')}
+            variant="danger"
             onClick={() => setDeletePortId(row.id)}
-          >
-            {t('settings.ports.delete')}
-          </button>
+          />
         </div>
       ),
     },
@@ -1379,95 +1577,118 @@ export default function Settings() {
             <div role="tabpanel" className={`cs-tab-panel settings-tab-panel ${activeTab === 'company' ? 'cs-tab-panel--active' : ''}`}>
               {activeTab === 'company' && (
                 <div className="settings-tab-content settings-tab-content--animate">
-                  <div className="settings-cards-grid settings-cards-grid--two">
-                    <SectionCard title={t('settings.company.profileTitle')} subtitle={t('settings.company.cardTitle')}>
-                      <form className="settings-form settings-form--stacked" onSubmit={handleSaveCompanyProfile}>
-                        <div className="settings-form-group">
-                          <Input label={t('settings.company.nameAr')} value={companyProfile.name_ar} onChange={(e) => setCompanyProfile((p) => ({ ...p, name_ar: e.target.value }))} />
-                          <Input label={t('settings.company.nameEn')} value={companyProfile.name_en} onChange={(e) => setCompanyProfile((p) => ({ ...p, name_en: e.target.value }))} />
-                        </div>
-                        <div className="settings-form-row">
-                          <Input label={t('settings.company.phone')} value={companyProfile.phone} onChange={(e) => setCompanyProfile((p) => ({ ...p, phone: e.target.value }))} />
-                          <Input label={t('settings.company.email')} type="email" value={companyProfile.email} onChange={(e) => setCompanyProfile((p) => ({ ...p, email: e.target.value }))} />
-                        </div>
-                        <div className="settings-form-group">
-                          <Input label={t('settings.company.address')} value={companyProfile.address} onChange={(e) => setCompanyProfile((p) => ({ ...p, address: e.target.value }))} />
-                        </div>
-                        <div className="settings-form-row">
-                          <Input label={t('settings.company.commercialRegister')} value={companyProfile.commercial_register} onChange={(e) => setCompanyProfile((p) => ({ ...p, commercial_register: e.target.value }))} />
-                          <Input label={t('settings.company.taxCard')} value={companyProfile.tax_card} onChange={(e) => setCompanyProfile((p) => ({ ...p, tax_card: e.target.value }))} />
-                        </div>
-                        <div className="settings-form-actions">
-                          <button type="submit" disabled={saving} className="page-header__btn page-header__btn--primary">
-                            {t('settings.company.saveProfile')}
+                  <div className="settings-content-mgmt settings-content-mgmt--company" dir={dir}>
+                    <aside className="settings-content-mgmt__sidebar" aria-label={t('settings.company.sidebarAria')}>
+                      <p className="settings-content-mgmt__sidebar-title">{t('settings.company.sidebarTitle')}</p>
+                      <nav className="settings-content-mgmt__nav" role="navigation">
+                        {companyNavItems.map(({ id, label }) => (
+                          <button
+                            key={id}
+                            type="button"
+                            className={`settings-content-mgmt__nav-item ${companySection === id ? 'settings-content-mgmt__nav-item--active' : ''}`.trim()}
+                            onClick={() => setCompanySection(id)}
+                          >
+                            {label}
                           </button>
-                        </div>
-                      </form>
-                    </SectionCard>
-                    <SectionCard title={t('settings.company.locationTitle')} subtitle={t('settings.company.locationHint')}>
-                      <form className="settings-form settings-form--stacked" onSubmit={handleSaveCompanyLocation}>
-                        <LeafletCompanyLocationPicker
-                          value={companyLocation}
-                          onChange={(next) => setCompanyLocation(next)}
-                          disabled={saving}
-                        />
-                        <div className="settings-form-actions">
-                          <button type="submit" disabled={saving} className="page-header__btn page-header__btn--primary">
-                            {t('settings.company.saveLocation')}
-                          </button>
-                        </div>
-                      </form>
-                    </SectionCard>
-                    {isAdminLike && (
-                      <SectionCard title={t('settings.attendancePolicy.title')} subtitle={t('settings.attendancePolicy.subtitle')} compact>
-                        <form className="settings-form settings-form--stacked" onSubmit={handleSaveAttendancePolicy}>
-                          <div className="settings-form-row">
-                            <Input
-                              label={t('settings.attendancePolicy.graceMinutes')}
-                              type="number"
-                              min="0"
-                              max="240"
-                              value={attendancePolicy.grace_minutes}
-                              onChange={(e) => setAttendancePolicy((p) => ({ ...p, grace_minutes: e.target.value }))}
+                        ))}
+                      </nav>
+                    </aside>
+                    <div className="settings-content-mgmt__main settings-tab-content--animate">
+                      {companySection === 'profile' ? (
+                        <SectionCard title={t('settings.company.profileTitle')} subtitle={t('settings.company.cardTitle')}>
+                          <form className="settings-form settings-form--stacked" onSubmit={handleSaveCompanyProfile}>
+                            <div className="settings-form-group">
+                              <Input label={t('settings.company.nameAr')} value={companyProfile.name_ar} onChange={(e) => setCompanyProfile((p) => ({ ...p, name_ar: e.target.value }))} />
+                              <Input label={t('settings.company.nameEn')} value={companyProfile.name_en} onChange={(e) => setCompanyProfile((p) => ({ ...p, name_en: e.target.value }))} />
+                            </div>
+                            <div className="settings-form-row">
+                              <Input label={t('settings.company.phone')} value={companyProfile.phone} onChange={(e) => setCompanyProfile((p) => ({ ...p, phone: e.target.value }))} />
+                              <Input label={t('settings.company.email')} type="email" value={companyProfile.email} onChange={(e) => setCompanyProfile((p) => ({ ...p, email: e.target.value }))} />
+                            </div>
+                            <div className="settings-form-group">
+                              <Input label={t('settings.company.address')} value={companyProfile.address} onChange={(e) => setCompanyProfile((p) => ({ ...p, address: e.target.value }))} />
+                            </div>
+                            <div className="settings-form-row">
+                              <Input label={t('settings.company.commercialRegister')} value={companyProfile.commercial_register} onChange={(e) => setCompanyProfile((p) => ({ ...p, commercial_register: e.target.value }))} />
+                              <Input label={t('settings.company.taxCard')} value={companyProfile.tax_card} onChange={(e) => setCompanyProfile((p) => ({ ...p, tax_card: e.target.value }))} />
+                            </div>
+                            <div className="settings-form-actions">
+                              <button type="submit" disabled={saving} className="page-header__btn page-header__btn--primary">
+                                {t('settings.company.saveProfile')}
+                              </button>
+                            </div>
+                          </form>
+                        </SectionCard>
+                      ) : null}
+
+                      {companySection === 'location' ? (
+                        <SectionCard title={t('settings.company.locationTitle')} subtitle={t('settings.company.locationHint')}>
+                          <form className="settings-form settings-form--stacked" onSubmit={handleSaveCompanyLocation}>
+                            <LeafletCompanyLocationPicker
+                              value={companyLocation}
+                              onChange={(next) => setCompanyLocation(next)}
+                              disabled={saving}
                             />
-                            <Input
-                              label={t('settings.attendancePolicy.workdayStart')}
-                              type="time"
-                              value={attendancePolicy.workday_start}
-                              onChange={(e) => setAttendancePolicy((p) => ({ ...p, workday_start: e.target.value }))}
-                            />
-                            <Input
-                              label={t('settings.attendancePolicy.workdayEnd')}
-                              type="time"
-                              value={attendancePolicy.workday_end}
-                              onChange={(e) => setAttendancePolicy((p) => ({ ...p, workday_end: e.target.value }))}
-                            />
-                          </div>
-                          <div className="settings-checkbox-group">
-                            <CheckboxRow
-                              label={t('settings.attendancePolicy.enforceGeofence')}
-                              checked={attendancePolicy.enforce_geofence}
-                              onChange={(v) => setAttendancePolicy((p) => ({ ...p, enforce_geofence: v }))}
-                            />
-                            <CheckboxRow
-                              label={t('settings.attendancePolicy.enforceSchedule')}
-                              checked={attendancePolicy.enforce_schedule}
-                              onChange={(v) => setAttendancePolicy((p) => ({ ...p, enforce_schedule: v }))}
-                            />
-                            <CheckboxRow
-                              label={t('settings.attendancePolicy.requireLocation')}
-                              checked={attendancePolicy.require_location}
-                              onChange={(v) => setAttendancePolicy((p) => ({ ...p, require_location: v }))}
-                            />
-                          </div>
-                          <div className="settings-form-actions">
-                            <button type="submit" disabled={saving} className="page-header__btn page-header__btn--primary">
-                              {t('settings.attendancePolicy.save')}
-                            </button>
-                          </div>
-                        </form>
-                      </SectionCard>
-                    )}
+                            <div className="settings-form-actions">
+                              <button type="submit" disabled={saving} className="page-header__btn page-header__btn--primary">
+                                {t('settings.company.saveLocation')}
+                              </button>
+                            </div>
+                          </form>
+                        </SectionCard>
+                      ) : null}
+
+                      {companySection === 'attendance' && isAdminLike ? (
+                        <SectionCard title={t('settings.attendancePolicy.title')} subtitle={t('settings.attendancePolicy.subtitle')} compact>
+                          <form className="settings-form settings-form--stacked" onSubmit={handleSaveAttendancePolicy}>
+                            <div className="settings-form-row">
+                              <Input
+                                label={t('settings.attendancePolicy.graceMinutes')}
+                                type="number"
+                                min="0"
+                                max="240"
+                                value={attendancePolicy.grace_minutes}
+                                onChange={(e) => setAttendancePolicy((p) => ({ ...p, grace_minutes: e.target.value }))}
+                              />
+                              <Input
+                                label={t('settings.attendancePolicy.workdayStart')}
+                                type="time"
+                                value={attendancePolicy.workday_start}
+                                onChange={(e) => setAttendancePolicy((p) => ({ ...p, workday_start: e.target.value }))}
+                              />
+                              <Input
+                                label={t('settings.attendancePolicy.workdayEnd')}
+                                type="time"
+                                value={attendancePolicy.workday_end}
+                                onChange={(e) => setAttendancePolicy((p) => ({ ...p, workday_end: e.target.value }))}
+                              />
+                            </div>
+                            <div className="settings-checkbox-group">
+                              <CheckboxRow
+                                label={t('settings.attendancePolicy.enforceGeofence')}
+                                checked={attendancePolicy.enforce_geofence}
+                                onChange={(v) => setAttendancePolicy((p) => ({ ...p, enforce_geofence: v }))}
+                              />
+                              <CheckboxRow
+                                label={t('settings.attendancePolicy.enforceSchedule')}
+                                checked={attendancePolicy.enforce_schedule}
+                                onChange={(v) => setAttendancePolicy((p) => ({ ...p, enforce_schedule: v }))}
+                              />
+                              <CheckboxRow
+                                label={t('settings.attendancePolicy.requireLocation')}
+                                checked={attendancePolicy.require_location}
+                                onChange={(v) => setAttendancePolicy((p) => ({ ...p, require_location: v }))}
+                              />
+                            </div>
+                            <div className="settings-form-actions">
+                              <button type="submit" disabled={saving} className="page-header__btn page-header__btn--primary">
+                                {t('settings.attendancePolicy.save')}
+                              </button>
+                            </div>
+                          </form>
+                        </SectionCard>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               )}
@@ -1674,140 +1895,164 @@ export default function Settings() {
               <div role="tabpanel" className={`cs-tab-panel settings-tab-panel ${activeTab === 'statuses' ? 'cs-tab-panel--active' : ''}`}>
                 {activeTab === 'statuses' && (
                   <div className="settings-tab-content settings-statuses-tab">
-                    <p className="settings-statuses-intro">{t('settings.statuses.intro')}</p>
                     {statusesTabLoading ? (
                       <div className="cs-loading-wrap">
                         <LoaderDots />
                       </div>
                     ) : (
-                      <div className="settings-statuses-cards settings-tab-content--animate">
-                        <SectionCard
-                          title={t('settings.ports.cardTitle')}
-                          subtitle={t('settings.statuses.portsHint')}
-                          actions={
-                            <button type="button" className="page-header__btn page-header__btn--primary" onClick={openNewPort}>
-                              {t('settings.ports.addTitle')}
-                            </button>
-                          }
-                        >
-                          <div className="settings-table-card">
-                            <Table columns={portColumns} data={settingsPorts} getRowKey={(r) => r.id} emptyMessage={t('settings.ports.empty')} />
-                          </div>
-                        </SectionCard>
-
-                        <SectionCard
-                          title={t('settings.shipmentStatuses.cardTitle')}
-                          subtitle={t('settings.statuses.shipmentsHint')}
-                          actions={
-                            <button type="button" className="page-header__btn page-header__btn--primary" onClick={openNewShipmentStatus}>
-                              {t('settings.shipmentStatuses.addTitle')}
-                            </button>
-                          }
-                        >
-                          <div className="settings-table-card">
-                            <Table columns={shipmentStatusColumns} data={shipmentStatuses} getRowKey={(r) => r.id} emptyMessage={t('settings.shipmentStatuses.noStatuses')} />
-                          </div>
-                        </SectionCard>
-
-                        <SectionCard
-                          title={t('settings.clientStatuses.cardTitle')}
-                          subtitle={t('settings.statuses.clientsHint')}
-                          actions={
-                            <button type="button" className="page-header__btn page-header__btn--primary" onClick={openNewClientStatus}>
-                              {t('settings.clientStatuses.addTitle')}
-                            </button>
-                          }
-                        >
-                          <div className="settings-table-card">
-                            <Table columns={clientStatusColumns} data={clientStatuses} getRowKey={(r) => r.id} emptyMessage={t('settings.clientStatuses.empty')} />
-                          </div>
-                        </SectionCard>
-
-                        <SectionCard
-                          title={t('settings.vendorPartnerTypes.cardTitle')}
-                          subtitle={t('settings.statuses.vendorPartnerTypesHint')}
-                          actions={
-                            <button type="button" className="page-header__btn page-header__btn--primary" onClick={openNewVendorPartnerType}>
-                              {t('settings.vendorPartnerTypes.addTitle')}
-                            </button>
-                          }
-                        >
-                          <div className="settings-table-card">
-                            <Table columns={vendorPartnerTypeColumns} data={vendorPartnerTypes} getRowKey={(r) => r.id} emptyMessage={t('settings.vendorPartnerTypes.empty')} />
-                          </div>
-                        </SectionCard>
-
-                        {canSeeTicketStatuses ? (
-                          <SectionCard
-                            title={t('settings.ticketStatuses.cardTitle')}
-                            subtitle={t('settings.statuses.ticketsHint')}
-                            actions={
-                              canManageTicketStatuses ? (
-                                <button type="button" className="page-header__btn page-header__btn--primary" onClick={openNewTicketStatus}>
-                                  {t('settings.ticketStatuses.addTitle')}
+                      <div className="settings-content-mgmt" dir={dir}>
+                        <aside className="settings-content-mgmt__sidebar" aria-label={t('settings.contentMgmt.sidebarAria')}>
+                          <p className="settings-content-mgmt__sidebar-title">{t('settings.contentMgmt.sidebarTitle')}</p>
+                          <nav className="settings-content-mgmt__nav" role="navigation">
+                            {contentMgmtNavItems.map(({ id, label }) => (
+                              <button
+                                key={id}
+                                type="button"
+                                className={`settings-content-mgmt__nav-item ${contentMgmtSection === id ? 'settings-content-mgmt__nav-item--active' : ''}`.trim()}
+                                onClick={() => setContentMgmtSection(id)}
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </nav>
+                        </aside>
+                        <div className="settings-content-mgmt__main settings-tab-content--animate">
+                          {contentMgmtSection === 'ports' ? (
+                            <SectionCard
+                              title={t('settings.ports.cardTitle')}
+                              subtitle={t('settings.statuses.portsHint')}
+                              actions={
+                                <button type="button" className="page-header__btn page-header__btn--primary" onClick={openNewPort}>
+                                  {t('settings.ports.addTitle')}
                                 </button>
-                              ) : null
-                            }
-                          >
-                            <div className="settings-table-card">
-                              <Table columns={ticketStatusColumns} data={ticketStatuses} getRowKey={(r) => r.id} emptyMessage={t('settings.ticketStatuses.empty')} />
-                            </div>
-                          </SectionCard>
-                        ) : null}
+                              }
+                            >
+                              <div className="settings-table-card">
+                                <Table columns={portColumns} data={settingsPorts} getRowKey={(r) => r.id} emptyMessage={t('settings.ports.empty')} />
+                              </div>
+                            </SectionCard>
+                          ) : null}
 
-                        {canSeeTicketTypes ? (
-                          <SectionCard
-                            title={t('settings.ticketTypes.cardTitle')}
-                            subtitle={t('settings.statuses.ticketTypesHint')}
-                            actions={
-                              canManageTicketTypes ? (
-                                <button type="button" className="page-header__btn page-header__btn--primary" onClick={openNewTicketType}>
-                                  {t('settings.ticketTypes.addTitle')}
+                          {contentMgmtSection === 'shipmentStatuses' ? (
+                            <SectionCard
+                              title={t('settings.shipmentStatuses.cardTitle')}
+                              subtitle={t('settings.statuses.shipmentsHint')}
+                              actions={
+                                <button type="button" className="page-header__btn page-header__btn--primary" onClick={openNewShipmentStatus}>
+                                  {t('settings.shipmentStatuses.addTitle')}
                                 </button>
-                              ) : null
-                            }
-                          >
-                            <div className="settings-table-card">
-                              <Table columns={ticketTypeColumns} data={ticketTypes} getRowKey={(r) => r.id} emptyMessage={t('settings.ticketTypes.empty')} />
-                            </div>
-                          </SectionCard>
-                        ) : null}
+                              }
+                            >
+                              <div className="settings-table-card">
+                                <Table columns={shipmentStatusColumns} data={shipmentStatuses} getRowKey={(r) => r.id} emptyMessage={t('settings.shipmentStatuses.noStatuses')} />
+                              </div>
+                            </SectionCard>
+                          ) : null}
 
-                        {canSeeTicketStatuses ? (
-                          <SectionCard
-                            title={t('settings.ticketPriorities.cardTitle')}
-                            subtitle={t('settings.statuses.ticketPrioritiesHint')}
-                            actions={
-                              canManageTicketStatuses ? (
-                                <button type="button" className="page-header__btn page-header__btn--primary" onClick={openNewTicketPriority}>
-                                  {t('settings.ticketPriorities.addTitle')}
+                          {contentMgmtSection === 'clientStatuses' ? (
+                            <SectionCard
+                              title={t('settings.clientStatuses.cardTitle')}
+                              subtitle={t('settings.statuses.clientsHint')}
+                              actions={
+                                <button type="button" className="page-header__btn page-header__btn--primary" onClick={openNewClientStatus}>
+                                  {t('settings.clientStatuses.addTitle')}
                                 </button>
-                              ) : null
-                            }
-                          >
-                            <div className="settings-table-card">
-                              <Table columns={ticketPriorityColumns} data={ticketPriorities} getRowKey={(r) => r.id} emptyMessage={t('settings.ticketPriorities.empty')} />
-                            </div>
-                          </SectionCard>
-                        ) : null}
+                              }
+                            >
+                              <div className="settings-table-card">
+                                <Table columns={clientStatusColumns} data={clientStatuses} getRowKey={(r) => r.id} emptyMessage={t('settings.clientStatuses.empty')} />
+                              </div>
+                            </SectionCard>
+                          ) : null}
 
-                        {canSeeCommLogTypes ? (
-                          <SectionCard
-                            title={t('settings.communicationLogTypes.cardTitle')}
-                            subtitle={t('settings.statuses.communicationLogTypesHint')}
-                            actions={
-                              canManageCommLogTypes ? (
-                                <button type="button" className="page-header__btn page-header__btn--primary" onClick={openNewCommLogType}>
-                                  {t('settings.communicationLogTypes.addTitle')}
+                          {contentMgmtSection === 'vendorPartnerTypes' ? (
+                            <SectionCard
+                              title={t('settings.vendorPartnerTypes.cardTitle')}
+                              subtitle={t('settings.statuses.vendorPartnerTypesHint')}
+                              actions={
+                                <button type="button" className="page-header__btn page-header__btn--primary" onClick={openNewVendorPartnerType}>
+                                  {t('settings.vendorPartnerTypes.addTitle')}
                                 </button>
-                              ) : null
-                            }
-                          >
-                            <div className="settings-table-card">
-                              <Table columns={commLogTypeColumns} data={communicationLogTypes} getRowKey={(r) => r.id} emptyMessage={t('settings.communicationLogTypes.empty')} />
-                            </div>
-                          </SectionCard>
-                        ) : null}
+                              }
+                            >
+                              <div className="settings-table-card">
+                                <Table columns={vendorPartnerTypeColumns} data={vendorPartnerTypes} getRowKey={(r) => r.id} emptyMessage={t('settings.vendorPartnerTypes.empty')} />
+                              </div>
+                            </SectionCard>
+                          ) : null}
+
+                          {contentMgmtSection === 'ticketStatuses' && canSeeTicketStatuses ? (
+                            <SectionCard
+                              title={t('settings.ticketStatuses.cardTitle')}
+                              subtitle={t('settings.statuses.ticketsHint')}
+                              actions={
+                                canManageTicketStatuses ? (
+                                  <button type="button" className="page-header__btn page-header__btn--primary" onClick={openNewTicketStatus}>
+                                    {t('settings.ticketStatuses.addTitle')}
+                                  </button>
+                                ) : null
+                              }
+                            >
+                              <div className="settings-table-card">
+                                <Table columns={ticketStatusColumns} data={ticketStatuses} getRowKey={(r) => r.id} emptyMessage={t('settings.ticketStatuses.empty')} />
+                              </div>
+                            </SectionCard>
+                          ) : null}
+
+                          {contentMgmtSection === 'ticketTypes' && canSeeTicketTypes ? (
+                            <SectionCard
+                              title={t('settings.ticketTypes.cardTitle')}
+                              subtitle={t('settings.statuses.ticketTypesHint')}
+                              actions={
+                                canManageTicketTypes ? (
+                                  <button type="button" className="page-header__btn page-header__btn--primary" onClick={openNewTicketType}>
+                                    {t('settings.ticketTypes.addTitle')}
+                                  </button>
+                                ) : null
+                              }
+                            >
+                              <div className="settings-table-card">
+                                <Table columns={ticketTypeColumns} data={ticketTypes} getRowKey={(r) => r.id} emptyMessage={t('settings.ticketTypes.empty')} />
+                              </div>
+                            </SectionCard>
+                          ) : null}
+
+                          {contentMgmtSection === 'ticketPriorities' && canSeeTicketStatuses ? (
+                            <SectionCard
+                              title={t('settings.ticketPriorities.cardTitle')}
+                              subtitle={t('settings.statuses.ticketPrioritiesHint')}
+                              actions={
+                                canManageTicketStatuses ? (
+                                  <button type="button" className="page-header__btn page-header__btn--primary" onClick={openNewTicketPriority}>
+                                    {t('settings.ticketPriorities.addTitle')}
+                                  </button>
+                                ) : null
+                              }
+                            >
+                              <div className="settings-table-card">
+                                <Table columns={ticketPriorityColumns} data={ticketPriorities} getRowKey={(r) => r.id} emptyMessage={t('settings.ticketPriorities.empty')} />
+                              </div>
+                            </SectionCard>
+                          ) : null}
+
+                          {contentMgmtSection === 'communicationLogTypes' && canSeeCommLogTypes ? (
+                            <SectionCard
+                              title={t('settings.communicationLogTypes.cardTitle')}
+                              subtitle={t('settings.statuses.communicationLogTypesHint')}
+                              actions={
+                                canManageCommLogTypes ? (
+                                  <button type="button" className="page-header__btn page-header__btn--primary" onClick={openNewCommLogType}>
+                                    {t('settings.communicationLogTypes.addTitle')}
+                                  </button>
+                                ) : null
+                              }
+                            >
+                              <div className="settings-table-card">
+                                <Table columns={commLogTypeColumns} data={communicationLogTypes} getRowKey={(r) => r.id} emptyMessage={t('settings.communicationLogTypes.empty')} />
+                              </div>
+                            </SectionCard>
+                          ) : null}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -1818,400 +2063,533 @@ export default function Settings() {
         )}
 
         {/* Modal: Create/Edit Shipment Status */}
-        {showShipmentStatusModal && (
-          <div className="clients-modal" role="dialog" aria-modal="true" aria-labelledby="settings-shipment-status-modal-title">
-            <div className="clients-modal-backdrop" onClick={() => { setShowShipmentStatusModal(false); setEditingShipmentStatus(null) }} />
-            <div className="clients-modal-content">
-              <h2 id="settings-shipment-status-modal-title">{editingShipmentStatus ? t('settings.shipmentStatuses.editTitle') : t('settings.shipmentStatuses.addTitle')}</h2>
-              <form onSubmit={handleSaveShipmentStatus} className="settings-modal-form">
-                <Input label={t('settings.shipmentStatuses.nameAr')} value={shipmentStatusForm.name_ar} onChange={(e) => setShipmentStatusForm((p) => ({ ...p, name_ar: e.target.value }))} />
-                <Input label={t('settings.shipmentStatuses.nameEn')} value={shipmentStatusForm.name_en} onChange={(e) => setShipmentStatusForm((p) => ({ ...p, name_en: e.target.value }))} />
-                <Input label={t('settings.shipmentStatuses.color')} value={shipmentStatusForm.color} onChange={(e) => setShipmentStatusForm((p) => ({ ...p, color: e.target.value }))} />
-                <Input label={t('settings.shipmentStatuses.description')} value={shipmentStatusForm.description} onChange={(e) => setShipmentStatusForm((p) => ({ ...p, description: e.target.value }))} />
-                <Input label={t('settings.shipmentStatuses.sortOrder')} type="number" value={shipmentStatusForm.sort_order} onChange={(e) => setShipmentStatusForm((p) => ({ ...p, sort_order: e.target.value }))} />
-                <label className="settings-checkbox-row">
-                  <span className="settings-checkbox-label">{t('settings.shipmentStatuses.active')}</span>
-                  <input type="checkbox" checked={shipmentStatusForm.active} onChange={(e) => setShipmentStatusForm((p) => ({ ...p, active: e.target.checked }))} className="settings-checkbox" />
-                </label>
-                <div className="clients-modal-actions">
-                  <button type="button" className="clients-btn" onClick={() => { setShowShipmentStatusModal(false); setEditingShipmentStatus(null) }}>
-                    {t('settings.shipmentStatuses.cancel')}
-                  </button>
-                  <button type="submit" disabled={saving} className="clients-btn clients-btn--primary">
-                    {saving ? t('clients.saving', 'Saving…') : editingShipmentStatus ? t('settings.shipmentStatuses.update') : t('settings.shipmentStatuses.create')}
-                  </button>
-                </div>
-              </form>
+        {showShipmentStatusModal ? (
+          <SettingsFormModal
+            title={editingShipmentStatus ? t('settings.shipmentStatuses.editTitle') : t('settings.shipmentStatuses.addTitle')}
+            titleId="settings-shipment-status-modal-title"
+            onClose={() => {
+              setShowShipmentStatusModal(false)
+              setEditingShipmentStatus(null)
+            }}
+            submitting={saving}
+            onSubmit={handleSaveShipmentStatus}
+            primaryLabel={editingShipmentStatus ? t('settings.shipmentStatuses.update') : t('settings.shipmentStatuses.create')}
+            cancelLabel={t('settings.shipmentStatuses.cancel')}
+          >
+            <SettingsModalField label={t('settings.shipmentStatuses.nameAr')} htmlFor="settings-ss-name-ar">
+              <input
+                id="settings-ss-name-ar"
+                className="clients-input"
+                value={shipmentStatusForm.name_ar}
+                onChange={(e) => setShipmentStatusForm((p) => ({ ...p, name_ar: e.target.value }))}
+              />
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.shipmentStatuses.nameEn')} htmlFor="settings-ss-name-en">
+              <input
+                id="settings-ss-name-en"
+                className="clients-input"
+                value={shipmentStatusForm.name_en}
+                onChange={(e) => setShipmentStatusForm((p) => ({ ...p, name_en: e.target.value }))}
+              />
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.shipmentStatuses.color')} htmlFor="settings-ss-color">
+              <input
+                id="settings-ss-color"
+                className="clients-input"
+                value={shipmentStatusForm.color}
+                onChange={(e) => setShipmentStatusForm((p) => ({ ...p, color: e.target.value }))}
+              />
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.shipmentStatuses.description')} htmlFor="settings-ss-desc" fullWidth>
+              <input
+                id="settings-ss-desc"
+                className="clients-input"
+                value={shipmentStatusForm.description}
+                onChange={(e) => setShipmentStatusForm((p) => ({ ...p, description: e.target.value }))}
+              />
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.shipmentStatuses.sortOrder')} htmlFor="settings-ss-sort">
+              <input
+                id="settings-ss-sort"
+                type="number"
+                className="clients-input"
+                value={shipmentStatusForm.sort_order}
+                onChange={(e) => setShipmentStatusForm((p) => ({ ...p, sort_order: e.target.value }))}
+              />
+            </SettingsModalField>
+            <div className="client-detail-modal__form-field client-detail-modal__form-field--full settings-modal-checkbox-field">
+              <label htmlFor="settings-ss-active" className="settings-modal-checkbox-field__label">
+                {t('settings.shipmentStatuses.active')}
+              </label>
+              <input
+                id="settings-ss-active"
+                type="checkbox"
+                checked={shipmentStatusForm.active}
+                onChange={(e) => setShipmentStatusForm((p) => ({ ...p, active: e.target.checked }))}
+                className="settings-checkbox"
+              />
             </div>
-          </div>
-        )}
+          </SettingsFormModal>
+        ) : null}
 
         {/* Modal: Delete Shipment Status */}
-        {deleteShipmentStatusId != null && (
-          <div className="clients-modal" role="dialog" aria-modal="true">
-            <div className="clients-modal-backdrop" onClick={() => setDeleteShipmentStatusId(null)} />
-            <div className="clients-modal-content">
-              <h2>{t('settings.shipmentStatuses.deleteConfirmTitle', 'Delete Shipment Status')}</h2>
-              <p>{t('settings.shipmentStatuses.deleteConfirm')}</p>
-              <div className="clients-modal-actions">
-                <button type="button" className="clients-btn" onClick={() => setDeleteShipmentStatusId(null)} disabled={deleteSubmitting}>
-                  {t('clients.cancel')}
-                </button>
-                <button type="button" className="clients-btn clients-btn--danger" onClick={handleDeleteShipmentStatusConfirm} disabled={deleteSubmitting}>
-                  {deleteSubmitting ? t('clients.deleting') : t('clients.delete')}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {deleteShipmentStatusId != null ? (
+          <SettingsConfirmModal
+            title={t('settings.shipmentStatuses.deleteConfirmTitle', 'Delete Shipment Status')}
+            message={t('settings.shipmentStatuses.deleteConfirm')}
+            onClose={() => setDeleteShipmentStatusId(null)}
+            onConfirm={handleDeleteShipmentStatusConfirm}
+            submitting={deleteSubmitting}
+            danger
+          />
+        ) : null}
 
-        {(clientStatusModal === 'create' || clientStatusModal?.mode === 'edit') && (
-          <div className="clients-modal" role="dialog" aria-modal="true" aria-labelledby="settings-client-status-modal-title">
-            <div className="clients-modal-backdrop" onClick={() => !clientStatusSubmitting && setClientStatusModal(null)} />
-            <div className="clients-modal-content">
-              <h2 id="settings-client-status-modal-title">
-                {clientStatusModal?.mode === 'edit' ? t('settings.clientStatuses.editTitle') : t('settings.clientStatuses.addTitle')}
-              </h2>
-              <form onSubmit={handleSaveClientStatus} className="settings-modal-form">
-                <Input label={t('settings.clientStatuses.nameAr')} value={clientStatusForm.name_ar} onChange={(e) => setClientStatusForm((p) => ({ ...p, name_ar: e.target.value }))} required />
-                <Input label={t('settings.clientStatuses.nameEn')} value={clientStatusForm.name_en} onChange={(e) => setClientStatusForm((p) => ({ ...p, name_en: e.target.value }))} required />
-                <label className="settings-checkbox-row">
-                  <span className="settings-checkbox-label">{t('settings.clientStatuses.appliesTo')}</span>
-                  <select
-                    className="clients-input"
-                    value={clientStatusForm.applies_to}
-                    onChange={(e) => setClientStatusForm((p) => ({ ...p, applies_to: e.target.value }))}
-                    required
-                  >
-                    <option value="lead">{t('settings.clientStatuses.appliesToLead')}</option>
-                    <option value="client">{t('settings.clientStatuses.appliesToClient')}</option>
-                  </select>
-                </label>
-                <Input label={t('settings.clientStatuses.sortOrder')} type="number" min={0} value={clientStatusForm.sort_order} onChange={(e) => setClientStatusForm((p) => ({ ...p, sort_order: e.target.value }))} />
-                <div className="clients-modal-actions">
-                  <button type="button" className="clients-btn" onClick={() => setClientStatusModal(null)} disabled={clientStatusSubmitting}>
-                    {t('settings.shipmentStatuses.cancel')}
-                  </button>
-                  <button type="submit" disabled={clientStatusSubmitting} className="clients-btn clients-btn--primary">
-                    {clientStatusSubmitting ? t('clients.saving', 'Saving…') : t('settings.clientStatuses.save')}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+        {clientStatusModal === 'create' || clientStatusModal?.mode === 'edit' ? (
+          <SettingsFormModal
+            title={clientStatusModal?.mode === 'edit' ? t('settings.clientStatuses.editTitle') : t('settings.clientStatuses.addTitle')}
+            titleId="settings-client-status-modal-title"
+            onClose={() => setClientStatusModal(null)}
+            submitting={clientStatusSubmitting}
+            onSubmit={handleSaveClientStatus}
+            primaryLabel={t('settings.clientStatuses.save')}
+            cancelLabel={t('settings.shipmentStatuses.cancel')}
+          >
+            <SettingsModalField label={t('settings.clientStatuses.nameAr')} htmlFor="settings-cs-name-ar">
+              <input
+                id="settings-cs-name-ar"
+                className="clients-input"
+                required
+                value={clientStatusForm.name_ar}
+                onChange={(e) => setClientStatusForm((p) => ({ ...p, name_ar: e.target.value }))}
+              />
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.clientStatuses.nameEn')} htmlFor="settings-cs-name-en">
+              <input
+                id="settings-cs-name-en"
+                className="clients-input"
+                required
+                value={clientStatusForm.name_en}
+                onChange={(e) => setClientStatusForm((p) => ({ ...p, name_en: e.target.value }))}
+              />
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.clientStatuses.appliesTo')} htmlFor="settings-cs-applies">
+              <select
+                id="settings-cs-applies"
+                className="clients-input"
+                value={clientStatusForm.applies_to}
+                onChange={(e) => setClientStatusForm((p) => ({ ...p, applies_to: e.target.value }))}
+                required
+              >
+                <option value="lead">{t('settings.clientStatuses.appliesToLead')}</option>
+                <option value="client">{t('settings.clientStatuses.appliesToClient')}</option>
+              </select>
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.clientStatuses.sortOrder')} htmlFor="settings-cs-sort">
+              <input
+                id="settings-cs-sort"
+                type="number"
+                min={0}
+                className="clients-input"
+                value={clientStatusForm.sort_order}
+                onChange={(e) => setClientStatusForm((p) => ({ ...p, sort_order: e.target.value }))}
+              />
+            </SettingsModalField>
+          </SettingsFormModal>
+        ) : null}
 
-        {deleteClientStatusId != null && (
-          <div className="clients-modal" role="dialog" aria-modal="true">
-            <div className="clients-modal-backdrop" onClick={() => !deleteClientStatusSubmitting && setDeleteClientStatusId(null)} />
-            <div className="clients-modal-content">
-              <h2>{t('settings.clientStatuses.deleteTitle')}</h2>
-              <p>{t('settings.clientStatuses.deleteConfirm')}</p>
-              <div className="clients-modal-actions">
-                <button type="button" className="clients-btn" onClick={() => setDeleteClientStatusId(null)} disabled={deleteClientStatusSubmitting}>
-                  {t('clients.cancel')}
-                </button>
-                <button type="button" className="clients-btn clients-btn--danger" onClick={handleDeleteClientStatusConfirm} disabled={deleteClientStatusSubmitting}>
-                  {deleteClientStatusSubmitting ? t('clients.deleting') : t('clients.delete')}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {deleteClientStatusId != null ? (
+          <SettingsConfirmModal
+            title={t('settings.clientStatuses.deleteTitle')}
+            message={t('settings.clientStatuses.deleteConfirm')}
+            onClose={() => setDeleteClientStatusId(null)}
+            onConfirm={handleDeleteClientStatusConfirm}
+            submitting={deleteClientStatusSubmitting}
+            danger
+          />
+        ) : null}
 
-        {(vendorPartnerTypeModal === 'create' || vendorPartnerTypeModal?.mode === 'edit') && (
-          <div className="clients-modal" role="dialog" aria-modal="true" aria-labelledby="settings-vendor-partner-type-modal-title">
-            <div className="clients-modal-backdrop" onClick={() => !vendorPartnerTypeSubmitting && setVendorPartnerTypeModal(null)} />
-            <div className="clients-modal-content">
-              <h2 id="settings-vendor-partner-type-modal-title">
-                {vendorPartnerTypeModal?.mode === 'edit' ? t('settings.vendorPartnerTypes.editTitle') : t('settings.vendorPartnerTypes.addTitle')}
-              </h2>
-              <form onSubmit={handleSaveVendorPartnerType} className="settings-modal-form">
-                <Input
-                  label={t('settings.vendorPartnerTypes.code')}
-                  value={vendorPartnerTypeForm.code}
-                  onChange={(e) => setVendorPartnerTypeForm((p) => ({ ...p, code: e.target.value }))}
-                  required
-                  disabled={vendorPartnerTypeModal?.mode === 'edit'}
-                  maxLength={40}
-                />
-                <Input label={t('settings.vendorPartnerTypes.nameAr')} value={vendorPartnerTypeForm.name_ar} onChange={(e) => setVendorPartnerTypeForm((p) => ({ ...p, name_ar: e.target.value }))} required />
-                <Input label={t('settings.vendorPartnerTypes.nameEn')} value={vendorPartnerTypeForm.name_en} onChange={(e) => setVendorPartnerTypeForm((p) => ({ ...p, name_en: e.target.value }))} required />
-                <Input label={t('settings.vendorPartnerTypes.sortOrder')} type="number" min={0} value={vendorPartnerTypeForm.sort_order} onChange={(e) => setVendorPartnerTypeForm((p) => ({ ...p, sort_order: e.target.value }))} />
-                <div className="clients-modal-actions">
-                  <button type="button" className="clients-btn" onClick={() => setVendorPartnerTypeModal(null)} disabled={vendorPartnerTypeSubmitting}>
-                    {t('settings.shipmentStatuses.cancel')}
-                  </button>
-                  <button type="submit" disabled={vendorPartnerTypeSubmitting} className="clients-btn clients-btn--primary">
-                    {vendorPartnerTypeSubmitting ? t('clients.saving', 'Saving…') : t('settings.vendorPartnerTypes.save')}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+        {vendorPartnerTypeModal === 'create' || vendorPartnerTypeModal?.mode === 'edit' ? (
+          <SettingsFormModal
+            title={vendorPartnerTypeModal?.mode === 'edit' ? t('settings.vendorPartnerTypes.editTitle') : t('settings.vendorPartnerTypes.addTitle')}
+            titleId="settings-vendor-partner-type-modal-title"
+            onClose={() => setVendorPartnerTypeModal(null)}
+            submitting={vendorPartnerTypeSubmitting}
+            onSubmit={handleSaveVendorPartnerType}
+            primaryLabel={t('settings.vendorPartnerTypes.save')}
+            cancelLabel={t('settings.shipmentStatuses.cancel')}
+          >
+            <SettingsModalField label={t('settings.vendorPartnerTypes.code')} htmlFor="settings-vpt-code">
+              <input
+                id="settings-vpt-code"
+                className="clients-input"
+                value={vendorPartnerTypeForm.code}
+                onChange={(e) => setVendorPartnerTypeForm((p) => ({ ...p, code: e.target.value }))}
+                required
+                disabled={vendorPartnerTypeModal?.mode === 'edit'}
+                maxLength={40}
+              />
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.vendorPartnerTypes.nameAr')} htmlFor="settings-vpt-ar">
+              <input
+                id="settings-vpt-ar"
+                className="clients-input"
+                required
+                value={vendorPartnerTypeForm.name_ar}
+                onChange={(e) => setVendorPartnerTypeForm((p) => ({ ...p, name_ar: e.target.value }))}
+              />
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.vendorPartnerTypes.nameEn')} htmlFor="settings-vpt-en">
+              <input
+                id="settings-vpt-en"
+                className="clients-input"
+                required
+                value={vendorPartnerTypeForm.name_en}
+                onChange={(e) => setVendorPartnerTypeForm((p) => ({ ...p, name_en: e.target.value }))}
+              />
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.vendorPartnerTypes.sortOrder')} htmlFor="settings-vpt-sort">
+              <input
+                id="settings-vpt-sort"
+                type="number"
+                min={0}
+                className="clients-input"
+                value={vendorPartnerTypeForm.sort_order}
+                onChange={(e) => setVendorPartnerTypeForm((p) => ({ ...p, sort_order: e.target.value }))}
+              />
+            </SettingsModalField>
+          </SettingsFormModal>
+        ) : null}
 
-        {deleteVendorPartnerTypeId != null && (
-          <div className="clients-modal" role="dialog" aria-modal="true">
-            <div className="clients-modal-backdrop" onClick={() => !deleteVendorPartnerTypeSubmitting && setDeleteVendorPartnerTypeId(null)} />
-            <div className="clients-modal-content">
-              <h2>{t('settings.vendorPartnerTypes.deleteTitle')}</h2>
-              <p>{t('settings.vendorPartnerTypes.deleteConfirm')}</p>
-              <div className="clients-modal-actions">
-                <button type="button" className="clients-btn" onClick={() => setDeleteVendorPartnerTypeId(null)} disabled={deleteVendorPartnerTypeSubmitting}>
-                  {t('clients.cancel')}
-                </button>
-                <button type="button" className="clients-btn clients-btn--danger" onClick={handleDeleteVendorPartnerTypeConfirm} disabled={deleteVendorPartnerTypeSubmitting}>
-                  {deleteVendorPartnerTypeSubmitting ? t('clients.deleting') : t('clients.delete')}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {deleteVendorPartnerTypeId != null ? (
+          <SettingsConfirmModal
+            title={t('settings.vendorPartnerTypes.deleteTitle')}
+            message={t('settings.vendorPartnerTypes.deleteConfirm')}
+            onClose={() => setDeleteVendorPartnerTypeId(null)}
+            onConfirm={handleDeleteVendorPartnerTypeConfirm}
+            submitting={deleteVendorPartnerTypeSubmitting}
+            danger
+          />
+        ) : null}
 
-        {showTicketStatusModal && (
-          <div className="clients-modal" role="dialog" aria-modal="true" aria-labelledby="settings-ticket-status-modal-title">
-            <div className="clients-modal-backdrop" onClick={() => { setShowTicketStatusModal(false); setEditingTicketStatus(null) }} />
-            <div className="clients-modal-content">
-              <h2 id="settings-ticket-status-modal-title">{editingTicketStatus ? t('settings.ticketStatuses.editTitle') : t('settings.ticketStatuses.addTitle')}</h2>
-              <form onSubmit={handleSaveTicketStatus} className="settings-modal-form">
-                <Input
-                  label={t('settings.ticketStatuses.key')}
-                  value={ticketStatusForm.key}
-                  onChange={(e) => setTicketStatusForm((p) => ({ ...p, key: e.target.value }))}
-                  required
-                  disabled={!!editingTicketStatus}
-                />
-                <Input label={t('settings.ticketStatuses.labelAr')} value={ticketStatusForm.label_ar} onChange={(e) => setTicketStatusForm((p) => ({ ...p, label_ar: e.target.value }))} required />
-                <Input label={t('settings.ticketStatuses.labelEn')} value={ticketStatusForm.label_en} onChange={(e) => setTicketStatusForm((p) => ({ ...p, label_en: e.target.value }))} required />
-                <Input label={t('settings.ticketStatuses.sortOrder')} type="number" min={0} value={ticketStatusForm.sort_order} onChange={(e) => setTicketStatusForm((p) => ({ ...p, sort_order: e.target.value }))} />
-                <label className="settings-checkbox-row">
-                  <span className="settings-checkbox-label">{t('settings.shipmentStatuses.active')}</span>
-                  <input type="checkbox" checked={ticketStatusForm.active} onChange={(e) => setTicketStatusForm((p) => ({ ...p, active: e.target.checked }))} className="settings-checkbox" />
-                </label>
-                <div className="clients-modal-actions">
-                  <button type="button" className="clients-btn" onClick={() => { setShowTicketStatusModal(false); setEditingTicketStatus(null) }}>
-                    {t('settings.shipmentStatuses.cancel')}
-                  </button>
-                  <button type="submit" disabled={saving} className="clients-btn clients-btn--primary">
-                    {saving ? t('clients.saving', 'Saving…') : editingTicketStatus ? t('settings.ticketStatuses.save') : t('settings.ticketStatuses.create')}
-                  </button>
-                </div>
-              </form>
+        {showTicketStatusModal ? (
+          <SettingsFormModal
+            title={editingTicketStatus ? t('settings.ticketStatuses.editTitle') : t('settings.ticketStatuses.addTitle')}
+            titleId="settings-ticket-status-modal-title"
+            onClose={() => {
+              setShowTicketStatusModal(false)
+              setEditingTicketStatus(null)
+            }}
+            submitting={saving}
+            onSubmit={handleSaveTicketStatus}
+            primaryLabel={editingTicketStatus ? t('settings.ticketStatuses.save') : t('settings.ticketStatuses.create')}
+            cancelLabel={t('settings.shipmentStatuses.cancel')}
+          >
+            <SettingsModalField label={t('settings.ticketStatuses.key')} htmlFor="settings-ts-key">
+              <input
+                id="settings-ts-key"
+                className="clients-input"
+                value={ticketStatusForm.key}
+                onChange={(e) => setTicketStatusForm((p) => ({ ...p, key: e.target.value }))}
+                required
+                disabled={!!editingTicketStatus}
+              />
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.ticketStatuses.labelAr')} htmlFor="settings-ts-ar">
+              <input
+                id="settings-ts-ar"
+                className="clients-input"
+                required
+                value={ticketStatusForm.label_ar}
+                onChange={(e) => setTicketStatusForm((p) => ({ ...p, label_ar: e.target.value }))}
+              />
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.ticketStatuses.labelEn')} htmlFor="settings-ts-en">
+              <input
+                id="settings-ts-en"
+                className="clients-input"
+                required
+                value={ticketStatusForm.label_en}
+                onChange={(e) => setTicketStatusForm((p) => ({ ...p, label_en: e.target.value }))}
+              />
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.ticketStatuses.sortOrder')} htmlFor="settings-ts-sort">
+              <input
+                id="settings-ts-sort"
+                type="number"
+                min={0}
+                className="clients-input"
+                value={ticketStatusForm.sort_order}
+                onChange={(e) => setTicketStatusForm((p) => ({ ...p, sort_order: e.target.value }))}
+              />
+            </SettingsModalField>
+            <div className="client-detail-modal__form-field client-detail-modal__form-field--full settings-modal-checkbox-field">
+              <label htmlFor="settings-ts-active" className="settings-modal-checkbox-field__label">
+                {t('settings.shipmentStatuses.active')}
+              </label>
+              <input
+                id="settings-ts-active"
+                type="checkbox"
+                checked={ticketStatusForm.active}
+                onChange={(e) => setTicketStatusForm((p) => ({ ...p, active: e.target.checked }))}
+                className="settings-checkbox"
+              />
             </div>
-          </div>
-        )}
+          </SettingsFormModal>
+        ) : null}
 
-        {deleteTicketStatusId != null && (
-          <div className="clients-modal" role="dialog" aria-modal="true">
-            <div className="clients-modal-backdrop" onClick={() => !deleteTicketStatusSubmitting && setDeleteTicketStatusId(null)} />
-            <div className="clients-modal-content">
-              <h2>{t('settings.ticketStatuses.deleteTitle')}</h2>
-              <p>{t('settings.ticketStatuses.deleteConfirm')}</p>
-              <div className="clients-modal-actions">
-                <button type="button" className="clients-btn" onClick={() => setDeleteTicketStatusId(null)} disabled={deleteTicketStatusSubmitting}>
-                  {t('clients.cancel')}
-                </button>
-                <button type="button" className="clients-btn clients-btn--danger" onClick={handleDeleteTicketStatusConfirm} disabled={deleteTicketStatusSubmitting}>
-                  {deleteTicketStatusSubmitting ? t('clients.deleting') : t('clients.delete')}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {deleteTicketStatusId != null ? (
+          <SettingsConfirmModal
+            title={t('settings.ticketStatuses.deleteTitle')}
+            message={t('settings.ticketStatuses.deleteConfirm')}
+            onClose={() => setDeleteTicketStatusId(null)}
+            onConfirm={handleDeleteTicketStatusConfirm}
+            submitting={deleteTicketStatusSubmitting}
+            danger
+          />
+        ) : null}
 
-        {showTicketTypeModal && (
-          <div className="clients-modal" role="dialog" aria-modal="true" aria-labelledby="settings-ticket-type-modal-title">
-            <div className="clients-modal-backdrop" onClick={() => { if (!ticketTypeSubmitting) { setShowTicketTypeModal(false); setEditingTicketType(null) } }} />
-            <div className="clients-modal-content">
-              <h2 id="settings-ticket-type-modal-title">{editingTicketType ? t('settings.ticketTypes.editTitle') : t('settings.ticketTypes.addTitle')}</h2>
-              <form onSubmit={handleSaveTicketType} className="settings-modal-form">
-                <Input
-                  label={t('settings.ticketTypes.name')}
-                  value={ticketTypeForm.name}
-                  onChange={(e) => setTicketTypeForm((p) => ({ ...p, name: e.target.value }))}
-                  required
-                />
-                <Input label={t('settings.ticketTypes.labelAr')} value={ticketTypeForm.label_ar} onChange={(e) => setTicketTypeForm((p) => ({ ...p, label_ar: e.target.value }))} required />
-                <Input label={t('settings.ticketTypes.labelEn')} value={ticketTypeForm.label_en} onChange={(e) => setTicketTypeForm((p) => ({ ...p, label_en: e.target.value }))} required />
-                <div className="clients-modal-actions">
-                  <button type="button" className="clients-btn" onClick={() => { setShowTicketTypeModal(false); setEditingTicketType(null) }} disabled={ticketTypeSubmitting}>
-                    {t('settings.shipmentStatuses.cancel')}
-                  </button>
-                  <button type="submit" disabled={ticketTypeSubmitting} className="clients-btn clients-btn--primary">
-                    {ticketTypeSubmitting ? t('clients.saving', 'Saving…') : editingTicketType ? t('settings.ticketTypes.save') : t('settings.ticketTypes.create')}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+        {showTicketTypeModal ? (
+          <SettingsFormModal
+            title={editingTicketType ? t('settings.ticketTypes.editTitle') : t('settings.ticketTypes.addTitle')}
+            titleId="settings-ticket-type-modal-title"
+            onClose={() => {
+              setShowTicketTypeModal(false)
+              setEditingTicketType(null)
+            }}
+            submitting={ticketTypeSubmitting}
+            onSubmit={handleSaveTicketType}
+            primaryLabel={editingTicketType ? t('settings.ticketTypes.save') : t('settings.ticketTypes.create')}
+            cancelLabel={t('settings.shipmentStatuses.cancel')}
+          >
+            <SettingsModalField label={t('settings.ticketTypes.name')} htmlFor="settings-tt-name">
+              <input
+                id="settings-tt-name"
+                className="clients-input"
+                required
+                value={ticketTypeForm.name}
+                onChange={(e) => setTicketTypeForm((p) => ({ ...p, name: e.target.value }))}
+              />
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.ticketTypes.labelAr')} htmlFor="settings-tt-ar">
+              <input
+                id="settings-tt-ar"
+                className="clients-input"
+                required
+                value={ticketTypeForm.label_ar}
+                onChange={(e) => setTicketTypeForm((p) => ({ ...p, label_ar: e.target.value }))}
+              />
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.ticketTypes.labelEn')} htmlFor="settings-tt-en">
+              <input
+                id="settings-tt-en"
+                className="clients-input"
+                required
+                value={ticketTypeForm.label_en}
+                onChange={(e) => setTicketTypeForm((p) => ({ ...p, label_en: e.target.value }))}
+              />
+            </SettingsModalField>
+          </SettingsFormModal>
+        ) : null}
 
-        {deleteTicketTypeId != null && (
-          <div className="clients-modal" role="dialog" aria-modal="true">
-            <div className="clients-modal-backdrop" onClick={() => !ticketTypeSubmitting && setDeleteTicketTypeId(null)} />
-            <div className="clients-modal-content">
-              <h2>{t('settings.ticketTypes.deleteTitle')}</h2>
-              <p>{t('settings.ticketTypes.deleteConfirm')}</p>
-              <div className="clients-modal-actions">
-                <button type="button" className="clients-btn" onClick={() => setDeleteTicketTypeId(null)} disabled={ticketTypeSubmitting}>
-                  {t('clients.cancel')}
-                </button>
-                <button type="button" className="clients-btn clients-btn--danger" onClick={handleDeleteTicketTypeConfirm} disabled={ticketTypeSubmitting}>
-                  {ticketTypeSubmitting ? t('clients.deleting') : t('clients.delete')}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {deleteTicketTypeId != null ? (
+          <SettingsConfirmModal
+            title={t('settings.ticketTypes.deleteTitle')}
+            message={t('settings.ticketTypes.deleteConfirm')}
+            onClose={() => setDeleteTicketTypeId(null)}
+            onConfirm={handleDeleteTicketTypeConfirm}
+            submitting={ticketTypeSubmitting}
+            danger
+          />
+        ) : null}
 
-        {showTicketPriorityModal && (
-          <div className="clients-modal" role="dialog" aria-modal="true" aria-labelledby="settings-ticket-priority-modal-title">
-            <div className="clients-modal-backdrop" onClick={() => { if (!ticketPrioritySubmitting) { setShowTicketPriorityModal(false); setEditingTicketPriority(null) } }} />
-            <div className="clients-modal-content">
-              <h2 id="settings-ticket-priority-modal-title">{editingTicketPriority ? t('settings.ticketPriorities.editTitle') : t('settings.ticketPriorities.addTitle')}</h2>
-              <form onSubmit={handleSaveTicketPriority} className="settings-modal-form">
-                <Input
-                  label={t('settings.ticketPriorities.name')}
-                  value={ticketPriorityForm.name}
-                  onChange={(e) => setTicketPriorityForm((p) => ({ ...p, name: e.target.value }))}
-                  required
-                />
-                <Input label={t('settings.ticketPriorities.labelAr')} value={ticketPriorityForm.label_ar} onChange={(e) => setTicketPriorityForm((p) => ({ ...p, label_ar: e.target.value }))} required />
-                <Input label={t('settings.ticketPriorities.labelEn')} value={ticketPriorityForm.label_en} onChange={(e) => setTicketPriorityForm((p) => ({ ...p, label_en: e.target.value }))} required />
-                <Input label={t('settings.ticketPriorities.sortOrder')} type="number" min={0} value={ticketPriorityForm.sort_order} onChange={(e) => setTicketPriorityForm((p) => ({ ...p, sort_order: e.target.value }))} />
-                <div className="clients-modal-actions">
-                  <button type="button" className="clients-btn" onClick={() => { setShowTicketPriorityModal(false); setEditingTicketPriority(null) }} disabled={ticketPrioritySubmitting}>
-                    {t('settings.shipmentStatuses.cancel')}
-                  </button>
-                  <button type="submit" disabled={ticketPrioritySubmitting} className="clients-btn clients-btn--primary">
-                    {ticketPrioritySubmitting ? t('clients.saving', 'Saving…') : editingTicketPriority ? t('settings.ticketPriorities.save') : t('settings.ticketPriorities.create')}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+        {showTicketPriorityModal ? (
+          <SettingsFormModal
+            title={editingTicketPriority ? t('settings.ticketPriorities.editTitle') : t('settings.ticketPriorities.addTitle')}
+            titleId="settings-ticket-priority-modal-title"
+            onClose={() => {
+              setShowTicketPriorityModal(false)
+              setEditingTicketPriority(null)
+            }}
+            submitting={ticketPrioritySubmitting}
+            onSubmit={handleSaveTicketPriority}
+            primaryLabel={editingTicketPriority ? t('settings.ticketPriorities.save') : t('settings.ticketPriorities.create')}
+            cancelLabel={t('settings.shipmentStatuses.cancel')}
+          >
+            <SettingsModalField label={t('settings.ticketPriorities.name')} htmlFor="settings-tp-name">
+              <input
+                id="settings-tp-name"
+                className="clients-input"
+                required
+                value={ticketPriorityForm.name}
+                onChange={(e) => setTicketPriorityForm((p) => ({ ...p, name: e.target.value }))}
+              />
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.ticketPriorities.labelAr')} htmlFor="settings-tp-ar">
+              <input
+                id="settings-tp-ar"
+                className="clients-input"
+                required
+                value={ticketPriorityForm.label_ar}
+                onChange={(e) => setTicketPriorityForm((p) => ({ ...p, label_ar: e.target.value }))}
+              />
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.ticketPriorities.labelEn')} htmlFor="settings-tp-en">
+              <input
+                id="settings-tp-en"
+                className="clients-input"
+                required
+                value={ticketPriorityForm.label_en}
+                onChange={(e) => setTicketPriorityForm((p) => ({ ...p, label_en: e.target.value }))}
+              />
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.ticketPriorities.sortOrder')} htmlFor="settings-tp-sort">
+              <input
+                id="settings-tp-sort"
+                type="number"
+                min={0}
+                className="clients-input"
+                value={ticketPriorityForm.sort_order}
+                onChange={(e) => setTicketPriorityForm((p) => ({ ...p, sort_order: e.target.value }))}
+              />
+            </SettingsModalField>
+          </SettingsFormModal>
+        ) : null}
 
-        {deleteTicketPriorityId != null && (
-          <div className="clients-modal" role="dialog" aria-modal="true">
-            <div className="clients-modal-backdrop" onClick={() => !ticketPrioritySubmitting && setDeleteTicketPriorityId(null)} />
-            <div className="clients-modal-content">
-              <h2>{t('settings.ticketPriorities.deleteTitle')}</h2>
-              <p>{t('settings.ticketPriorities.deleteConfirm')}</p>
-              <div className="clients-modal-actions">
-                <button type="button" className="clients-btn" onClick={() => setDeleteTicketPriorityId(null)} disabled={ticketPrioritySubmitting}>
-                  {t('clients.cancel')}
-                </button>
-                <button type="button" className="clients-btn clients-btn--danger" onClick={handleDeleteTicketPriorityConfirm} disabled={ticketPrioritySubmitting}>
-                  {ticketPrioritySubmitting ? t('clients.deleting') : t('clients.delete')}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {deleteTicketPriorityId != null ? (
+          <SettingsConfirmModal
+            title={t('settings.ticketPriorities.deleteTitle')}
+            message={t('settings.ticketPriorities.deleteConfirm')}
+            onClose={() => setDeleteTicketPriorityId(null)}
+            onConfirm={handleDeleteTicketPriorityConfirm}
+            submitting={ticketPrioritySubmitting}
+            danger
+          />
+        ) : null}
 
-        {showCommLogTypeModal && (
-          <div className="clients-modal" role="dialog" aria-modal="true" aria-labelledby="settings-comm-log-type-modal-title">
-            <div className="clients-modal-backdrop" onClick={() => { if (!commLogTypeSubmitting) { setShowCommLogTypeModal(false); setEditingCommLogType(null) } }} />
-            <div className="clients-modal-content">
-              <h2 id="settings-comm-log-type-modal-title">{editingCommLogType ? t('settings.communicationLogTypes.editTitle') : t('settings.communicationLogTypes.addTitle')}</h2>
-              <form onSubmit={handleSaveCommLogType} className="settings-modal-form">
-                <Input
-                  label={t('settings.communicationLogTypes.name')}
-                  value={commLogTypeForm.name}
-                  onChange={(e) => setCommLogTypeForm((p) => ({ ...p, name: e.target.value }))}
-                  required
-                />
-                <Input label={t('settings.communicationLogTypes.labelAr')} value={commLogTypeForm.label_ar} onChange={(e) => setCommLogTypeForm((p) => ({ ...p, label_ar: e.target.value }))} required />
-                <Input label={t('settings.communicationLogTypes.labelEn')} value={commLogTypeForm.label_en} onChange={(e) => setCommLogTypeForm((p) => ({ ...p, label_en: e.target.value }))} required />
-                <Input label={t('settings.communicationLogTypes.sortOrder')} type="number" min={0} value={commLogTypeForm.sort_order} onChange={(e) => setCommLogTypeForm((p) => ({ ...p, sort_order: e.target.value }))} />
-                <div className="clients-modal-actions">
-                  <button type="button" className="clients-btn" onClick={() => { setShowCommLogTypeModal(false); setEditingCommLogType(null) }} disabled={commLogTypeSubmitting}>
-                    {t('settings.shipmentStatuses.cancel')}
-                  </button>
-                  <button type="submit" disabled={commLogTypeSubmitting} className="clients-btn clients-btn--primary">
-                    {commLogTypeSubmitting ? t('clients.saving', 'Saving…') : editingCommLogType ? t('settings.communicationLogTypes.save') : t('settings.communicationLogTypes.create')}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+        {showCommLogTypeModal ? (
+          <SettingsFormModal
+            title={editingCommLogType ? t('settings.communicationLogTypes.editTitle') : t('settings.communicationLogTypes.addTitle')}
+            titleId="settings-comm-log-type-modal-title"
+            onClose={() => {
+              setShowCommLogTypeModal(false)
+              setEditingCommLogType(null)
+            }}
+            submitting={commLogTypeSubmitting}
+            onSubmit={handleSaveCommLogType}
+            primaryLabel={editingCommLogType ? t('settings.communicationLogTypes.save') : t('settings.communicationLogTypes.create')}
+            cancelLabel={t('settings.shipmentStatuses.cancel')}
+          >
+            <SettingsModalField label={t('settings.communicationLogTypes.name')} htmlFor="settings-clt-name">
+              <input
+                id="settings-clt-name"
+                className="clients-input"
+                required
+                value={commLogTypeForm.name}
+                onChange={(e) => setCommLogTypeForm((p) => ({ ...p, name: e.target.value }))}
+              />
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.communicationLogTypes.labelAr')} htmlFor="settings-clt-ar">
+              <input
+                id="settings-clt-ar"
+                className="clients-input"
+                required
+                value={commLogTypeForm.label_ar}
+                onChange={(e) => setCommLogTypeForm((p) => ({ ...p, label_ar: e.target.value }))}
+              />
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.communicationLogTypes.labelEn')} htmlFor="settings-clt-en">
+              <input
+                id="settings-clt-en"
+                className="clients-input"
+                required
+                value={commLogTypeForm.label_en}
+                onChange={(e) => setCommLogTypeForm((p) => ({ ...p, label_en: e.target.value }))}
+              />
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.communicationLogTypes.sortOrder')} htmlFor="settings-clt-sort">
+              <input
+                id="settings-clt-sort"
+                type="number"
+                min={0}
+                className="clients-input"
+                value={commLogTypeForm.sort_order}
+                onChange={(e) => setCommLogTypeForm((p) => ({ ...p, sort_order: e.target.value }))}
+              />
+            </SettingsModalField>
+          </SettingsFormModal>
+        ) : null}
 
-        {deleteCommLogTypeId != null && (
-          <div className="clients-modal" role="dialog" aria-modal="true">
-            <div className="clients-modal-backdrop" onClick={() => !commLogTypeSubmitting && setDeleteCommLogTypeId(null)} />
-            <div className="clients-modal-content">
-              <h2>{t('settings.communicationLogTypes.deleteTitle')}</h2>
-              <p>{t('settings.communicationLogTypes.deleteConfirm')}</p>
-              <div className="clients-modal-actions">
-                <button type="button" className="clients-btn" onClick={() => setDeleteCommLogTypeId(null)} disabled={commLogTypeSubmitting}>
-                  {t('clients.cancel')}
-                </button>
-                <button type="button" className="clients-btn clients-btn--danger" onClick={handleDeleteCommLogTypeConfirm} disabled={commLogTypeSubmitting}>
-                  {commLogTypeSubmitting ? t('clients.deleting') : t('clients.delete')}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {deleteCommLogTypeId != null ? (
+          <SettingsConfirmModal
+            title={t('settings.communicationLogTypes.deleteTitle')}
+            message={t('settings.communicationLogTypes.deleteConfirm')}
+            onClose={() => setDeleteCommLogTypeId(null)}
+            onConfirm={handleDeleteCommLogTypeConfirm}
+            submitting={commLogTypeSubmitting}
+            danger
+          />
+        ) : null}
 
-        {(portModal === 'create' || portModal?.mode === 'edit') && (
-          <div className="clients-modal" role="dialog" aria-modal="true" aria-labelledby="settings-port-modal-title">
-            <div className="clients-modal-backdrop" onClick={() => !portSubmitting && setPortModal(null)} />
-            <div className="clients-modal-content">
-              <h2 id="settings-port-modal-title">
-                {portModal?.mode === 'edit' ? t('settings.ports.editTitle') : t('settings.ports.addTitle')}
-              </h2>
-              <form onSubmit={handleSavePort} className="settings-modal-form">
-                <Input
-                  label={t('settings.ports.name')}
-                  value={portForm.name}
-                  onChange={(e) => setPortForm((p) => ({ ...p, name: e.target.value }))}
-                  required
-                />
-                <Input label={t('settings.ports.code')} value={portForm.code} onChange={(e) => setPortForm((p) => ({ ...p, code: e.target.value }))} />
-                <Input label={t('settings.ports.country')} value={portForm.country} onChange={(e) => setPortForm((p) => ({ ...p, country: e.target.value }))} />
-                <label className="settings-checkbox-row">
-                  <span className="settings-checkbox-label">{t('settings.ports.active')}</span>
-                  <input
-                    type="checkbox"
-                    className="settings-checkbox"
-                    checked={portForm.active}
-                    onChange={(e) => setPortForm((p) => ({ ...p, active: e.target.checked }))}
-                  />
-                </label>
-                <div className="clients-modal-actions">
-                  <button type="button" className="clients-btn" onClick={() => setPortModal(null)} disabled={portSubmitting}>
-                    {t('settings.ports.cancel')}
-                  </button>
-                  <button type="submit" disabled={portSubmitting} className="clients-btn clients-btn--primary">
-                    {portSubmitting ? t('clients.saving', 'Saving…') : t('settings.ports.save')}
-                  </button>
-                </div>
-              </form>
+        {portModal === 'create' || portModal?.mode === 'edit' ? (
+          <SettingsFormModal
+            title={portModal?.mode === 'edit' ? t('settings.ports.editTitle') : t('settings.ports.addTitle')}
+            titleId="settings-port-modal-title"
+            onClose={() => setPortModal(null)}
+            submitting={portSubmitting}
+            onSubmit={handleSavePort}
+            primaryLabel={t('settings.ports.save')}
+            cancelLabel={t('settings.ports.cancel')}
+          >
+            <SettingsModalField label={t('settings.ports.name')} htmlFor="settings-port-name">
+              <input
+                id="settings-port-name"
+                className="clients-input"
+                required
+                value={portForm.name}
+                onChange={(e) => setPortForm((p) => ({ ...p, name: e.target.value }))}
+              />
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.ports.code')} htmlFor="settings-port-code">
+              <input
+                id="settings-port-code"
+                className="clients-input"
+                value={portForm.code}
+                onChange={(e) => setPortForm((p) => ({ ...p, code: e.target.value }))}
+              />
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.ports.country')} htmlFor="settings-port-country">
+              <input
+                id="settings-port-country"
+                className="clients-input"
+                value={portForm.country}
+                onChange={(e) => setPortForm((p) => ({ ...p, country: e.target.value }))}
+              />
+            </SettingsModalField>
+            <div className="client-detail-modal__form-field client-detail-modal__form-field--full settings-modal-checkbox-field">
+              <label htmlFor="settings-port-active" className="settings-modal-checkbox-field__label">
+                {t('settings.ports.active')}
+              </label>
+              <input
+                id="settings-port-active"
+                type="checkbox"
+                className="settings-checkbox"
+                checked={portForm.active}
+                onChange={(e) => setPortForm((p) => ({ ...p, active: e.target.checked }))}
+              />
             </div>
-          </div>
-        )}
+          </SettingsFormModal>
+        ) : null}
 
-        {deletePortId != null && (
-          <div className="clients-modal" role="dialog" aria-modal="true">
-            <div className="clients-modal-backdrop" onClick={() => !deletePortSubmitting && setDeletePortId(null)} />
-            <div className="clients-modal-content">
-              <h2>{t('settings.ports.deleteConfirmTitle')}</h2>
-              <p>{t('settings.ports.deleteConfirm')}</p>
-              <div className="clients-modal-actions">
-                <button type="button" className="clients-btn" onClick={() => setDeletePortId(null)} disabled={deletePortSubmitting}>
-                  {t('clients.cancel')}
-                </button>
-                <button type="button" className="clients-btn clients-btn--danger" onClick={handleDeletePortConfirm} disabled={deletePortSubmitting}>
-                  {deletePortSubmitting ? t('clients.deleting') : t('clients.delete')}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {deletePortId != null ? (
+          <SettingsConfirmModal
+            title={t('settings.ports.deleteConfirmTitle')}
+            message={t('settings.ports.deleteConfirm')}
+            onClose={() => setDeletePortId(null)}
+            onConfirm={handleDeletePortConfirm}
+            submitting={deletePortSubmitting}
+            danger
+          />
+        ) : null}
       </div>
     </Container>
   )
