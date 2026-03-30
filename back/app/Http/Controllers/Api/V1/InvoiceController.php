@@ -64,7 +64,16 @@ class InvoiceController extends Controller
             });
         }
 
-        if ($month = $request->query('month')) {
+        $issueFrom = $request->query('issue_date_from');
+        $issueTo = $request->query('issue_date_to');
+        if ($issueFrom || $issueTo) {
+            if ($issueFrom) {
+                $query->whereDate('issue_date', '>=', $issueFrom);
+            }
+            if ($issueTo) {
+                $query->whereDate('issue_date', '<=', $issueTo);
+            }
+        } elseif ($month = $request->query('month')) {
             $parts = explode('-', $month);
             if (count($parts) === 2) {
                 $query->whereYear('issue_date', (int) $parts[0])
@@ -524,7 +533,16 @@ class InvoiceController extends Controller
             $query->where('currency_id', (int) $currencyId);
         }
 
-        if ($month = $request->query('month')) {
+        $issueFrom = $request->query('issue_date_from');
+        $issueTo = $request->query('issue_date_to');
+        if ($issueFrom || $issueTo) {
+            if ($issueFrom) {
+                $query->whereDate('issue_date', '>=', $issueFrom);
+            }
+            if ($issueTo) {
+                $query->whereDate('issue_date', '<=', $issueTo);
+            }
+        } elseif ($month = $request->query('month')) {
             $parts = explode('-', $month);
             if (count($parts) === 2) {
                 $query->whereYear('issue_date', (int) $parts[0])

@@ -4,6 +4,7 @@ import { Receipt, CheckCircle, Clock, AlertCircle } from 'lucide-react'
 import { getStoredToken } from '../../Login'
 import { getInvoicesSummary } from '../../../api/invoices'
 import { LineChart, DonutChart } from '../../../components/Charts'
+import { StatsCard } from '../../../components/StatsCard'
 import '../../../components/Charts/Charts.css'
 
 function formatMoney(amount, currency = 'USD') {
@@ -42,163 +43,173 @@ function statusChartLabel(key, t) {
 export default function InvoiceSummary({ refreshKey }) {
   const { t, i18n } = useTranslation()
   const locale = String(i18n?.language ?? '').toLowerCase().startsWith('ar') ? 'ar-EG' : 'en-US'
-  const [months, setMonths] = useState(6)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [data, setData] = useState(null)
+
+  const [monthsLine, setMonthsLine] = useState(6)
+  const [monthsDonut, setMonthsDonut] = useState(6)
+
+  const [loadingLine, setLoadingLine] = useState(false)
+  const [loadingDonut, setLoadingDonut] = useState(false)
+  const [errorLine, setErrorLine] = useState(null)
+  const [errorDonut, setErrorDonut] = useState(null)
+  const [dataLine, setDataLine] = useState(null)
+  const [dataDonut, setDataDonut] = useState(null)
 
   useEffect(() => {
     const token = getStoredToken()
     if (!token) return
-    setLoading(true)
-    setError(null)
-    getInvoicesSummary(token, { months })
-      .then((res) => setData(res.data ?? res))
-      .catch((e) => setError(e.message || 'Failed to load invoice summary'))
-      .finally(() => setLoading(false))
-  }, [months, refreshKey])
+    setLoadingLine(true)
+    setErrorLine(null)
+    getInvoicesSummary(token, { months: monthsLine })
+      .then((res) => setDataLine(res.data ?? res))
+      .catch((e) => setErrorLine(e.message || 'Failed to load invoice summary'))
+      .finally(() => setLoadingLine(false))
+  }, [monthsLine, refreshKey])
 
-  const cards = data?.cards
+  useEffect(() => {
+    const token = getStoredToken()
+    if (!token) return
+    setLoadingDonut(true)
+    setErrorDonut(null)
+    getInvoicesSummary(token, { months: monthsDonut })
+      .then((res) => setDataDonut(res.data ?? res))
+      .catch((e) => setErrorDonut(e.message || 'Failed to load invoice summary'))
+      .finally(() => setLoadingDonut(false))
+  }, [monthsDonut, refreshKey])
+
+  const cards = dataLine?.cards
   const paid = cards?.paid_amount ?? 0
   const partial = cards?.partial_amount ?? 0
   const unpaid = cards?.unpaid_amount ?? 0
+  const totalCount = cards?.total_count
 
   const monthlyChartData = useMemo(() => {
-    const m = data?.monthly
+    const m = dataLine?.monthly
     if (!m?.labels?.length) return []
     return m.labels.map((label, i) => ({
       label: formatMonthLabel(label, locale),
       paid: Number(m.paid?.[i]) || 0,
     }))
-  }, [data, locale])
+  }, [dataLine, locale])
 
   const donutData = useMemo(() => {
-    const bs = data?.by_status
+    const bs = dataDonut?.by_status
     if (!bs?.labels?.length) return []
     return bs.labels.map((label, i) => ({
       name: statusChartLabel(label, t),
       value: Number(bs.values?.[i]) || 0,
     }))
-  }, [data, t])
+  }, [dataDonut, t])
+
+  const totalDisplay =
+    totalCount != null && totalCount !== ''
+      ? typeof totalCount === 'number'
+        ? new Intl.NumberFormat(i18n.language).format(totalCount)
+        : String(totalCount)
+      : '—'
+
+  const periodSelect = (id, value, onChange) => (
+    <select
+      id={id}
+      value={value}
+      onChange={(e) => onChange(Number(e.target.value))}
+      className="clients-input invoices-chart-card__period min-w-[140px]"
+      aria-label={t('invoices.chartPeriod', 'Chart period')}
+    >
+      <option value={6}>{t('invoices.months6', '6 months')}</option>
+      <option value={12}>{t('invoices.months12', '12 months')}</option>
+    </select>
+  )
 
   return (
-    <section className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div className="flex items-center gap-3">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300">
-              <Receipt className="h-5 w-5" />
-            </span>
-            <div>
-              <div className="text-2xl font-extrabold text-gray-900 dark:text-white">{cards?.total_count ?? '—'}</div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">{t('invoices.stats.total', 'Total invoices')}</div>
+    <>
+      <div className="clients-stats-grid invoices-stats-grid">
+        <StatsCard
+          title={t('invoices.stats.total', 'Total invoices')}
+          value={totalDisplay}
+          icon={<Receipt className="h-6 w-6" />}
+          variant="blue"
+        />
+        <StatsCard
+          title={t('invoices.stats.paid', 'Paid')}
+          value={formatMoney(paid, 'USD')}
+          icon={<CheckCircle className="h-6 w-6" />}
+          variant="green"
+        />
+        <StatsCard
+          title={t('invoices.stats.partial', 'Partial')}
+          value={formatMoney(partial, 'USD')}
+          icon={<Clock className="h-6 w-6" />}
+          variant="amber"
+        />
+        <StatsCard
+          title={t('invoices.stats.unpaid', 'Unpaid')}
+          value={formatMoney(unpaid, 'USD')}
+          icon={<AlertCircle className="h-6 w-6" />}
+          variant="red"
+        />
+      </div>
+
+      <div className="clients-extra-panel clients-charts-panel mb-4">
+        <div className="clients-charts-grid">
+          <div className="clients-chart-wrap">
+            <div className="chart-wrap">
+              <div className="invoices-chart-card-head">
+                <h4 className="chart-title invoices-chart-card-head__title">
+                  {t('invoices.charts.monthlyPaid', 'Monthly revenue (paid)')}
+                </h4>
+                {periodSelect('invoices-chart-months-line', monthsLine, setMonthsLine)}
+              </div>
+              {errorLine && <p className="text-sm text-red-600 dark:text-red-400">{errorLine}</p>}
+              {loadingLine && !monthlyChartData.length ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t('invoices.loading')}</p>
+              ) : monthlyChartData.length ? (
+                <LineChart
+                  className="chart--nested"
+                  data={monthlyChartData}
+                  xKey="label"
+                  lines={[
+                    {
+                      dataKey: 'paid',
+                      name: t('invoices.charts.seriesPaid', 'Paid amount'),
+                      stroke: '#22c55e',
+                    },
+                  ]}
+                  height={260}
+                  allowDecimals
+                />
+              ) : (
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t('invoices.chartsNoData', 'No chart data')}</p>
+              )}
             </div>
           </div>
-        </div>
-
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div className="flex items-center gap-3">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-300">
-              <CheckCircle className="h-5 w-5" />
-            </span>
-            <div>
-              <div className="text-2xl font-extrabold text-gray-900 dark:text-white">{formatMoney(paid, 'USD')}</div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">{t('invoices.stats.paid', 'Paid')}</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div className="flex items-center gap-3">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-300">
-              <Clock className="h-5 w-5" />
-            </span>
-            <div>
-              <div className="text-2xl font-extrabold text-gray-900 dark:text-white">{formatMoney(partial, 'USD')}</div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">{t('invoices.stats.partial', 'Partial')}</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div className="flex items-center gap-3">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-300">
-              <AlertCircle className="h-5 w-5" />
-            </span>
-            <div>
-              <div className="text-2xl font-extrabold text-gray-900 dark:text-white">{formatMoney(unpaid, 'USD')}</div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">{t('invoices.stats.unpaid', 'Unpaid')}</div>
+          <div className="clients-chart-wrap">
+            <div className="chart-wrap">
+              <div className="invoices-chart-card-head">
+                <h4 className="chart-title invoices-chart-card-head__title">
+                  {t('invoices.charts.byStatus', 'Invoices by status')}
+                </h4>
+                {periodSelect('invoices-chart-months-donut', monthsDonut, setMonthsDonut)}
+              </div>
+              {errorDonut && <p className="text-sm text-red-600 dark:text-red-400">{errorDonut}</p>}
+              {loadingDonut && !donutData.length ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t('invoices.loading')}</p>
+              ) : donutData.length ? (
+                <DonutChart
+                  className="chart--nested"
+                  data={donutData}
+                  nameKey="name"
+                  valueKey="value"
+                  valueLabel={t('invoices.charts.amount', 'Amount')}
+                  title=""
+                  height={260}
+                />
+              ) : (
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t('invoices.chartsNoData', 'No chart data')}</p>
+              )}
             </div>
           </div>
         </div>
       </div>
-
-      <div className="flex items-center justify-between gap-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-        <div className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-          {t('invoices.charts.title', 'Invoice revenue & status')}
-        </div>
-        <select
-          value={months}
-          onChange={(e) => setMonths(Number(e.target.value))}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
-          aria-label={t('invoices.chartPeriod', 'Chart period')}
-        >
-          <option value={6}>{t('invoices.months6', '6 months')}</option>
-          <option value={12}>{t('invoices.months12', '12 months')}</option>
-        </select>
-      </div>
-
-      {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-300">
-          {error}
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
-            {t('invoices.charts.monthlyPaid', 'Monthly revenue (paid)')}
-          </div>
-          {loading && !monthlyChartData.length ? (
-            <div className="text-sm text-gray-500 py-8 text-center">{t('common.loading', 'Loading...')}</div>
-          ) : monthlyChartData.length ? (
-            <LineChart
-              data={monthlyChartData}
-              xKey="label"
-              lines={[
-                {
-                  dataKey: 'paid',
-                  name: t('invoices.charts.seriesPaid', 'Paid amount'),
-                  stroke: '#22c55e',
-                },
-              ]}
-              height={240}
-              allowDecimals
-            />
-          ) : (
-            <div className="text-sm text-gray-500 py-8 text-center">{t('invoices.chartsNoData', 'No chart data')}</div>
-          )}
-        </div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
-            {t('invoices.charts.byStatus', 'Invoices by status')}
-          </div>
-          {loading && !donutData.length ? (
-            <div className="text-sm text-gray-500 py-8 text-center">{t('common.loading', 'Loading...')}</div>
-          ) : donutData.length ? (
-            <DonutChart
-              data={donutData}
-              nameKey="name"
-              valueKey="value"
-              valueLabel={t('invoices.charts.amount', 'Amount')}
-              title=""
-              height={260}
-            />
-          ) : (
-            <div className="text-sm text-gray-500 py-8 text-center">{t('invoices.chartsNoData', 'No chart data')}</div>
-          )}
-        </div>
-      </div>
-    </section>
+    </>
   )
 }

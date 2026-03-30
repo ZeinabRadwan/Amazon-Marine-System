@@ -1346,6 +1346,20 @@
       "other": "Other"
     },
     "searchPlaceholder": "Search invoice # or client…",
+    "filterAll": "All",
+    "actions": "Actions",
+    "clearFilters": "Clear filters",
+    "sortBy": "Sort by",
+    "sortDate": "Issue date",
+    "sortNumber": "Invoice number",
+    "sortAmount": "Amount",
+    "noInvoices": "No invoices found.",
+    "loading": "Loading…",
+    "exportSelected": "Export selected (CSV)",
+    "exportAll": "Export all (CSV)",
+    "clearSelection": "Clear",
+    "dateFrom": "Issue date from",
+    "dateTo": "Issue date to",
     "filters": {
       "status": "Status",
       "currency": "Currency",
@@ -1366,9 +1380,12 @@
       "partial": "Partial",
       "cancelled": "Cancelled",
       "issued": "Issued",
-      "draft": "Draft"
+      "draft": "Draft",
+      "unpaid": "Unpaid",
+      "overdue": "Overdue"
     },
     "bulk": {
+      "region": "Bulk actions",
       "selected": "{{count}} selected"
     }
   },

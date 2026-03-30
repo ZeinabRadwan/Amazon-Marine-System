@@ -51,6 +51,12 @@ export async function listInvoices(token, params = {}) {
   if (params.currency_id != null && params.currency_id !== '') searchParams.set('currency_id', String(params.currency_id))
   if (params.search != null && params.search !== '') searchParams.set('search', String(params.search))
   if (params.month != null && params.month !== '') searchParams.set('month', String(params.month))
+  if (params.issue_date_from != null && params.issue_date_from !== '') {
+    searchParams.set('issue_date_from', String(params.issue_date_from))
+  }
+  if (params.issue_date_to != null && params.issue_date_to !== '') {
+    searchParams.set('issue_date_to', String(params.issue_date_to))
+  }
   if (params.sort != null && params.sort !== '') searchParams.set('sort', String(params.sort))
   if (params.per_page != null && params.per_page !== '') searchParams.set('per_page', String(params.per_page))
   if (params.page != null && params.page !== '') searchParams.set('page', String(params.page))
@@ -219,6 +225,8 @@ export async function exportInvoicesCsv(token, params = {}) {
   if (params.currency_id) searchParams.set('currency_id', String(params.currency_id))
   if (params.search) searchParams.set('search', String(params.search))
   if (params.month) searchParams.set('month', String(params.month))
+  if (params.issue_date_from) searchParams.set('issue_date_from', String(params.issue_date_from))
+  if (params.issue_date_to) searchParams.set('issue_date_to', String(params.issue_date_to))
   if (Array.isArray(params.ids) && params.ids.length) searchParams.set('ids', params.ids.join(','))
 
   const q = searchParams.toString()

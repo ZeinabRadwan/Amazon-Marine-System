@@ -1346,6 +1346,20 @@
       "other": "أخرى"
     },
     "searchPlaceholder": "ابحث برقم الفاتورة أو العميل…",
+    "filterAll": "الكل",
+    "actions": "إجراءات",
+    "clearFilters": "مسح التصفية",
+    "sortBy": "ترتيب حسب",
+    "sortDate": "تاريخ الإصدار",
+    "sortNumber": "رقم الفاتورة",
+    "sortAmount": "المبلغ",
+    "noInvoices": "لا توجد فواتير.",
+    "loading": "جاري التحميل…",
+    "exportSelected": "تصدير المحدد (CSV)",
+    "exportAll": "تصدير الكل (CSV)",
+    "clearSelection": "إلغاء التحديد",
+    "dateFrom": "تاريخ الإصدار من",
+    "dateTo": "تاريخ الإصدار إلى",
     "filters": {
       "status": "الحالة",
       "currency": "العملة",
@@ -1366,9 +1380,12 @@
       "partial": "جزئي",
       "cancelled": "ملغاة",
       "issued": "صادرة",
-      "draft": "مسودة"
+      "draft": "مسودة",
+      "unpaid": "غير مدفوع",
+      "overdue": "متأخر"
     },
     "bulk": {
+      "region": "إجراءات جماعية",
       "selected": "{{count}} محدد"
     }
   },
