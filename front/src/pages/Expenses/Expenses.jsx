@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useOutletContext } from 'react-router-dom'
 import { getStoredToken } from '../Login'
+import { useAuthAccess } from '../../hooks/useAuthAccess'
 import {
   getExpensesSummary,
   listShipmentExpenses,
@@ -96,16 +96,13 @@ const defaultMonth = () => {
 
 export default function Expenses() {
   const { t, i18n } = useTranslation()
-  const { user, permissions = [] } = useOutletContext() || {}
+  const { user, hasPageAccess } = useAuthAccess()
   const token = getStoredToken()
   const locale = String(i18n?.language ?? '').toLowerCase().startsWith('ar') ? 'ar-EG' : 'en-US'
   const isAr = locale.startsWith('ar')
 
-  const isAdminRole = (user?.primary_role ?? user?.roles?.[0] ?? '').toString().toLowerCase() === 'admin'
-  const canViewAccounting =
-    isAdminRole || (Array.isArray(permissions) && permissions.includes('accounting.view'))
-  const canManageAccounting =
-    isAdminRole || (Array.isArray(permissions) && permissions.includes('accounting.manage'))
+  const canViewAccounting = hasPageAccess('expenses')
+  const canManageAccounting = hasPageAccess('expenses')
 
   const [monthsLine, setMonthsLine] = useState(6)
   const [monthsDonut, setMonthsDonut] = useState(6)

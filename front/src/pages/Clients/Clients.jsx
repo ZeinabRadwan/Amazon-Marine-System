@@ -144,7 +144,7 @@ const defaultClientForm = () => ({
 
 export default function Clients() {
   const { t, i18n } = useTranslation()
-  const { hasPermission } = useAuthAccess()
+  const { hasPageAccess } = useAuthAccess()
   const location = useLocation()
   const navigate = useNavigate()
   const token = getStoredToken()
@@ -998,14 +998,14 @@ export default function Clients() {
               label={t('clients.view')}
               onClick={() => setDetailId(c.id)}
             />
-            {hasPermission('clients', 'update') && (
+            {hasPageAccess('clients') && (
               <IconActionButton
                 icon={<Pencil className="h-4 w-4" />}
                 label={t('clients.edit')}
                 onClick={() => openEdit(c)}
               />
             )}
-            {hasPermission('clients', 'delete') && (
+            {hasPageAccess('clients') && (
               <IconActionButton
                 icon={<Trash2 className="h-4 w-4" />}
                 label={t('clients.delete')}
@@ -1017,7 +1017,7 @@ export default function Clients() {
         ),
       },
     ]
-  }, [t, i18n, clientStatuses, filters.client_type, hasPermission])
+  }, [t, i18n, clientStatuses, filters.client_type, hasPageAccess])
 
   return (
     <Container size="xl">
@@ -1245,7 +1245,7 @@ export default function Clients() {
                 <FileSpreadsheet className="clients-filters__btn-icon-svg" aria-hidden />
               )}
             </button>
-            {hasPermission('clients', 'update') && (
+            {hasPageAccess('clients') && (
               <button
                 type="button"
                 className="page-header__btn page-header__btn--primary"

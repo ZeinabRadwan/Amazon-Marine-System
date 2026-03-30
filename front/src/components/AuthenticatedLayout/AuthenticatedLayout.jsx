@@ -7,6 +7,29 @@ import AppLayout from '../AppLayout'
 import LoaderDots from '../LoaderDots'
 import '../LoaderDots/LoaderDots.css'
 
+const PAGE_ACCESS_CACHE_KEY = 'am.pageAccess.v1'
+
+function readPageAccessCache() {
+  try {
+    const raw = localStorage.getItem(PAGE_ACCESS_CACHE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object') return null
+    if (!Array.isArray(parsed.allowedPages)) return null
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+function writePageAccessCache(payload) {
+  try {
+    localStorage.setItem(PAGE_ACCESS_CACHE_KEY, JSON.stringify(payload))
+  } catch {
+    // ignore storage failures (private mode / quota)
+  }
+}
+
 function getPageHeaderForPath(pathname, t) {
   const home = { label: t('pageHeader.home'), href: '/' }
   switch (pathname) {
@@ -71,6 +94,8 @@ export default function AuthenticatedLayout() {
   const token = getStoredToken()
   const [user, setUser] = useState(null)
   const [permissions, setPermissions] = useState([])
+  const [allowedPages, setAllowedPages] = useState(() => readPageAccessCache()?.allowedPages ?? [])
+  const [pageAccessVersion, setPageAccessVersion] = useState(() => readPageAccessCache()?.pageAccessVersion ?? '')
   const [loading, setLoading] = useState(true)
   const [loggingOut, setLoggingOut] = useState(false)
 
@@ -80,6 +105,17 @@ export default function AuthenticatedLayout() {
       const u = data.user ?? data.data ?? data
       setUser(u)
       setPermissions(Array.isArray(data.permissions) ? data.permissions : [])
+      const pages = Array.isArray(data.page_access) ? data.page_access.filter(Boolean) : []
+      const v = typeof data.page_access_version === 'string' ? data.page_access_version : ''
+      setAllowedPages(pages)
+      setPageAccessVersion(v)
+      writePageAccessCache({
+        allowedPages: pages,
+        pageAccessVersion: v,
+        userId: u?.id ?? null,
+        roleIds: Array.isArray(u?.role_ids) ? u.role_ids : undefined,
+        roleId: u?.role_id ?? null,
+      })
       return u
     })
   }, [token])
@@ -94,6 +130,17 @@ export default function AuthenticatedLayout() {
           const u = data.user ?? data.data ?? data
           setUser(u)
           if (Array.isArray(data.permissions)) setPermissions(data.permissions)
+          const pages = Array.isArray(data.page_access) ? data.page_access.filter(Boolean) : []
+          const v = typeof data.page_access_version === 'string' ? data.page_access_version : ''
+          setAllowedPages(pages)
+          setPageAccessVersion(v)
+          writePageAccessCache({
+            allowedPages: pages,
+            pageAccessVersion: v,
+            userId: u?.id ?? null,
+            roleIds: Array.isArray(u?.role_ids) ? u.role_ids : undefined,
+            roleId: u?.role_id ?? null,
+          })
         }
       })
       .catch(() => {
@@ -252,11 +299,18 @@ export default function AuthenticatedLayout() {
     )
   }
 
+  const allowedPagesSet = useMemo(() => new Set(Array.isArray(allowedPages) ? allowedPages.filter(Boolean) : []), [allowedPages])
+  const hasPageAccess = useCallback((pageKey) => {
+    if (!pageKey) return false
+    return allowedPagesSet.has(String(pageKey))
+  }, [allowedPagesSet])
+
   return (
     <AppLayout
       user={sidebarUser}
       activeMenu={activeMenu}
       onMenuChange={handleMenuChange}
+      allowedPages={allowedPages}
       crmCount={24}
       ticketsCount={7}
       alertsCount={3}
@@ -267,7 +321,7 @@ export default function AuthenticatedLayout() {
       pageTitle={pageHeaderConfig.title}
       pageBreadcrumbs={pageHeaderConfig.breadcrumbs}
     >
-      <Outlet context={{ user, permissions, refreshUser }} />
+      <Outlet context={{ user, permissions, refreshUser, allowedPages, pageAccessVersion, hasPageAccess }} />
     </AppLayout>
   )
 }

@@ -5344,6 +5344,7 @@
       "item": [
         {
           "name": "Dashboard Overview",
+          "description": "Dashboard Overview aggregates. Requires Bearer token and dashboard page permission (page_permission:dashboard,view).",
           "request": {
             "method": "GET",
             "header": [

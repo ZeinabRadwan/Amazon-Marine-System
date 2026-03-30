@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getResolvedTheme } from '../../theme'
@@ -87,6 +87,27 @@ const SIDEBAR_SECTIONS = [
   },
 ]
 
+const SIDEBAR_ID_TO_PAGE_KEY = {
+  dashboard: 'dashboard',
+  clientsCrm: 'clients',
+  shipments: 'shipments',
+  sdForms: 'sd_forms',
+  invoices: 'invoices',
+  accounts: 'accounting',
+  treasury: 'treasury',
+  expenses: 'expenses',
+  pricing: 'pricing',
+  partners: 'partners',
+  reports: 'reports',
+  officialDocuments: 'official_documents',
+  customerService: 'customer_service',
+  attendance: 'attendance',
+  visitLog: 'visits',
+  users: 'users',
+  rolesPermissions: 'roles_permissions',
+  settings: 'settings',
+}
+
 const DEFAULT_AVATAR_URL = 'https://www.svgrepo.com/show/384670/account-avatar-profile-user.svg'
 
 const DEFAULT_USER = {
@@ -106,6 +127,7 @@ export default function Sidebar({
   appName = 'Marketerz',
   activeMenu = 'dashboard',
   onMenuChange,
+  allowedPages,
   crmCount = 0,
   ticketsCount = 0,
   alertsCount = 0,
@@ -124,6 +146,10 @@ export default function Sidebar({
   const [internalExpanded, setInternalExpanded] = useState(true)
   const isControlled = controlledExpanded !== undefined
   const expanded = isControlled ? controlledExpanded : internalExpanded
+  const allowedPagesSet = useMemo(() => {
+    if (!Array.isArray(allowedPages)) return null
+    return new Set(allowedPages.filter(Boolean).map((p) => String(p)))
+  }, [allowedPages])
 
   useEffect(() => {
     const onThemeChange = (e) => setTheme(e.detail ?? getResolvedTheme())
@@ -173,14 +199,24 @@ export default function Sidebar({
         />
 
         <nav className="sidebar-nav" aria-label="Main navigation">
-          {SIDEBAR_SECTIONS.map(({ sectionKey, items }) => (
+          {SIDEBAR_SECTIONS.map(({ sectionKey, items }) => {
+            const filteredItems = allowedPagesSet
+              ? items.filter(({ id }) => {
+                  const pageKey = SIDEBAR_ID_TO_PAGE_KEY[id]
+                  if (!pageKey) return true
+                  return allowedPagesSet.has(pageKey)
+                })
+              : items
+            if (!filteredItems.length) return null
+
+            return (
             <div key={sectionKey} className="sidebar-section">
               <span className="sidebar-section-title">
                 {expanded ? t(`sidebar.sections.${sectionKey}`) : ''}
               </span>
               <ul className="sidebar-menu">
                 {/* eslint-disable-next-line no-unused-vars -- Icon used as <Icon /> in JSX */}
-                {items.map(({ id, menuKey, Icon, badge }) => (
+                {filteredItems.map(({ id, menuKey, Icon, badge }) => (
                   <li key={id}>
                     <button
                       type="button"
@@ -209,7 +245,7 @@ export default function Sidebar({
                 ))}
               </ul>
             </div>
-          ))}
+          )})}
         </nav>
 
         <div className="sidebar-footer-wrap">

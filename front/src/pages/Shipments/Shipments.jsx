@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useOutletContext } from 'react-router-dom'
 import { getStoredToken } from '../Login'
+import { useAuthAccess } from '../../hooks/useAuthAccess'
 import {
   listShipments,
   getShipment,
@@ -176,22 +176,13 @@ function userHasAdminRole(user) {
 
 export default function Shipments() {
   const { t, i18n } = useTranslation()
-  const { permissions = [], user } = useOutletContext() || {}
-  const isAdminRole = userHasAdminRole(user)
-  const canManageOps = isAdminRole || (Array.isArray(permissions) && permissions.includes('shipments.manage_ops'))
-  const canViewAccounting = isAdminRole || (Array.isArray(permissions) && permissions.includes('accounting.view'))
-  const canViewFinancial = isAdminRole || (Array.isArray(permissions) && permissions.includes('financial.view'))
-  const canViewShipmentFinancials = canViewAccounting || canViewFinancial
-  const canManageFinancial =
-    isAdminRole ||
-    (Array.isArray(permissions) &&
-      (permissions.includes('financial.manage') || permissions.includes('accounting.manage')))
-  const canViewSelling =
-    isAdminRole ||
-    (Array.isArray(permissions) &&
-      (permissions.includes('accounting.view') || permissions.includes('pricing.view_client_pricing')))
-  const canManageExpenses = isAdminRole || (Array.isArray(permissions) && permissions.includes('accounting.manage'))
-  const canNotifySalesFinancials = canManageOps || canManageExpenses || canManageFinancial
+  const { hasPageAccess } = useAuthAccess()
+  const canManageOps = hasPageAccess('shipments')
+  const canViewShipmentFinancials = hasPageAccess('shipments')
+  const canManageFinancial = hasPageAccess('shipments')
+  const canViewSelling = hasPageAccess('shipments')
+  const canManageExpenses = hasPageAccess('shipments')
+  const canNotifySalesFinancials = hasPageAccess('shipments')
 
   const token = getStoredToken()
   const numberLocale = i18n.language === 'ar' ? 'ar-EG' : 'en-US'

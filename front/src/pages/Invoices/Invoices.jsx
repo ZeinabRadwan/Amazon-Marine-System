@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useOutletContext } from 'react-router-dom'
 import { Container } from '../../components/Container'
 import '../../components/PageHeader/PageHeader.css'
 import '../../components/Tabs/Tabs.css'
@@ -11,20 +10,14 @@ import InvoicesTable from './components/InvoicesTable'
 import CreateInvoiceModal from './components/CreateInvoiceModal'
 import { getStoredToken } from '../Login'
 import { exportInvoicesCsv } from '../../api/invoices'
+import { useAuthAccess } from '../../hooks/useAuthAccess'
 import './Invoices.css'
 
 export default function Invoices() {
   const { t } = useTranslation()
-  const { user, permissions = [] } = useOutletContext() || {}
-  const isAdminRole = (user?.primary_role ?? user?.roles?.[0] ?? '').toString().toLowerCase() === 'admin'
-  const canViewInvoices =
-    isAdminRole ||
-    (Array.isArray(permissions) &&
-      (permissions.includes('financial.view') || permissions.includes('accounting.view')))
-  const canManageInvoices =
-    isAdminRole ||
-    (Array.isArray(permissions) &&
-      (permissions.includes('financial.manage') || permissions.includes('accounting.manage')))
+  const { hasPageAccess } = useAuthAccess()
+  const canViewInvoices = hasPageAccess('invoices')
+  const canManageInvoices = hasPageAccess('invoices')
 
   const [activeTab, setActiveTab] = useState('all')
   const [refreshKey, setRefreshKey] = useState(0)

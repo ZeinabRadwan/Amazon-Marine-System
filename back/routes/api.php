@@ -366,7 +366,8 @@ Route::prefix('v1')->group(function () {
         Route::delete('visits/{visit}', [VisitController::class, 'destroy']);
 
         // Dashboard & reports
-        Route::get('dashboard/overview', [DashboardController::class, 'overview']);
+        Route::get('dashboard/overview', [DashboardController::class, 'overview'])
+            ->middleware('page_permission:dashboard,view');
         Route::get('reports/shipments', [ReportController::class, 'shipments']);
         Route::get('reports/finance', [ReportController::class, 'finance']);
         Route::get('reports/sales-performance', [ReportController::class, 'salesPerformance']);

@@ -19,6 +19,7 @@ export default function AppLayout({
   onTabChange,
   activeMenu = 'dashboard',
   onMenuChange,
+  allowedPages,
   crmCount = 0,
   ticketsCount = 0,
   alertsCount = 0,
@@ -41,6 +42,7 @@ export default function AppLayout({
         onTabChange={onTabChange}
         activeMenu={activeMenu}
         onMenuChange={onMenuChange}
+        allowedPages={allowedPages}
         crmCount={crmCount}
         ticketsCount={ticketsCount}
         alertsCount={alertsCount}

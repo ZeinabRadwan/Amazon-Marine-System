@@ -14,9 +14,7 @@ class DashboardController extends Controller
 {
     public function overview(Request $request)
     {
-        if (! $request->user()?->can('reports.view')) {
-            abort(403, __('You do not have permission to view the dashboard.'));
-        }
+        abort_unless($request->user() !== null, 401);
 
         $shipmentsByStatus = Shipment::selectRaw('status, COUNT(*) as count')
             ->groupBy('status')

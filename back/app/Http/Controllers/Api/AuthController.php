@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\PagePermission;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,6 +13,69 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    /**
+     * @return array{page_access: array<int, string>, page_access_count: int, page_access_version: string}
+     */
+    private function pageAccessPayload(User $user): array
+    {
+        $allPagesInOrder = array_keys(config('permissions.pages', []));
+
+        $roleNames = $user->getRoleNames()->map(fn ($n) => strtolower((string) $n))->values();
+        if ($roleNames->contains('admin')) {
+            $version = sha1(json_encode([
+                'admin',
+                $allPagesInOrder,
+            ], JSON_THROW_ON_ERROR));
+
+            return [
+                'page_access' => $allPagesInOrder,
+                'page_access_count' => count($allPagesInOrder),
+                'page_access_version' => $version,
+            ];
+        }
+
+        $roleIds = $user->roles()->pluck('id')->map(fn ($id) => (int) $id)->values();
+
+        if ($roleIds->isEmpty()) {
+            $version = sha1(json_encode(['no_roles'], JSON_THROW_ON_ERROR));
+
+            return [
+                'page_access' => [],
+                'page_access_count' => 0,
+                'page_access_version' => $version,
+            ];
+        }
+
+        $allowedPagesSet = PagePermission::query()
+            ->whereIn('role_id', $roleIds)
+            ->where('can_view', true)
+            ->pluck('page')
+            ->map(fn ($p) => (string) $p)
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        $allowedPages = array_values(array_filter($allPagesInOrder, fn (string $p) => in_array($p, $allowedPagesSet, true)));
+
+        $maxUpdatedAt = PagePermission::query()
+            ->whereIn('role_id', $roleIds)
+            ->max('updated_at');
+
+        $roleIdsSorted = $roleIds->sort()->values()->all();
+        $version = sha1(json_encode([
+            'role_ids' => $roleIdsSorted,
+            'pages' => $allowedPages,
+            'max_updated_at' => $maxUpdatedAt?->toISOString(),
+        ], JSON_THROW_ON_ERROR));
+
+        return [
+            'page_access' => $allowedPages,
+            'page_access_count' => count($allowedPages),
+            'page_access_version' => $version,
+        ];
+    }
+
     public function login(Request $request)
     {
         $credentials = $request->validate([
@@ -43,6 +107,7 @@ class AuthController extends Controller
             'role' => $user->getRoleNames()->first(),
             'roles' => $user->getRoleNames(),
             'permissions' => $user->getAllPermissions()->pluck('name')->values()->all(),
+            ...$this->pageAccessPayload($user),
         ]);
     }
 
@@ -66,6 +131,7 @@ class AuthController extends Controller
         return response()->json([
             'user' => $this->transformUser($user),
             'permissions' => $user->getAllPermissions()->pluck('name')->values()->all(),
+            ...$this->pageAccessPayload($user),
         ]);
     }
 
@@ -77,6 +143,7 @@ class AuthController extends Controller
         return response()->json([
             'user' => $this->transformUser($user),
             'permissions' => $user->getAllPermissions()->pluck('name')->values()->all(),
+            ...$this->pageAccessPayload($user),
         ]);
     }
 

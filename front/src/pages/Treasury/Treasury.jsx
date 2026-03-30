@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useOutletContext } from 'react-router-dom'
 import { getStoredToken } from '../Login'
+import { useAuthAccess } from '../../hooks/useAuthAccess'
 import {
   getTreasurySummary,
   getTreasuryEntries,
@@ -144,16 +144,13 @@ function useDebounced(value, delayMs) {
 
 export default function Treasury() {
   const { t, i18n } = useTranslation()
-  const { user, permissions = [] } = useOutletContext() || {}
+  const { user, hasPageAccess } = useAuthAccess()
   const token = getStoredToken()
   const locale = String(i18n?.language ?? '').toLowerCase().startsWith('ar') ? 'ar-EG' : 'en-US'
   const isAr = locale.startsWith('ar')
 
-  const isAdminRole = (user?.primary_role ?? user?.roles?.[0] ?? '').toString().toLowerCase() === 'admin'
-  const canViewAccounting =
-    isAdminRole || (Array.isArray(permissions) && permissions.includes('accounting.view'))
-  const canManageAccounting =
-    isAdminRole || (Array.isArray(permissions) && permissions.includes('accounting.manage'))
+  const canViewAccounting = hasPageAccess('treasury')
+  const canManageAccounting = hasPageAccess('treasury')
 
   const [monthsBar, setMonthsBar] = useState(6)
   const [monthsLine, setMonthsLine] = useState(6)
