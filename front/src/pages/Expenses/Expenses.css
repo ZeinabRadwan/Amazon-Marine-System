@@ -7,13 +7,6 @@
   font-size: 0.9375rem;
 }
 
-.expenses-disclaimer {
-  margin: 0 0 1rem;
-  font-size: 0.8125rem;
-  color: var(--form-text, #6b7280);
-  opacity: 0.9;
-}
-
 .expenses-stats {
   grid-template-columns: 1fr;
 }

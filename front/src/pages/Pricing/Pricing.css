@@ -2,6 +2,16 @@
   animation: fadeIn 0.4s ease-out;
 }
 
+/* Tabs in filter row: don’t stretch pill to full width like text inputs */
+.pricing-page .pricing-toolbar .pricing-tabs-wrap {
+  width: fit-content;
+  max-width: 100%;
+}
+
+.pricing-page .pricing-toolbar .clients-filters__fields {
+  flex: 1 1 auto;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }

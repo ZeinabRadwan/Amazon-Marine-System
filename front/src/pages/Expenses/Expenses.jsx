@@ -465,8 +465,6 @@ export default function Expenses() {
         aria-hidden
       />
 
-      <p className="expenses-disclaimer">{t('expensesPage.disclaimer')}</p>
-
       <div className="clients-stats-grid expenses-stats">
         <StatsCard
           title={t('expensesPage.stats.totalMonth')}

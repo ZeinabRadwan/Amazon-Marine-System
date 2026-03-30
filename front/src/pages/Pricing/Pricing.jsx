@@ -41,15 +41,12 @@ export default function Pricing() {
   return (
     <Container size="xl">
       <div className="clients-page pricing-page py-6">
-        <header className="page-header mb-6">
-          <div className="page-header__inner">
-            <div className="page-header__left">
-              <h1 className="page-header__title">{t('pricing.title', 'Pricing')}</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {t('pricing.subtitle', 'Manage shipping rates and customer quotations')}
-              </p>
+        <div className="clients-filters-card pricing-toolbar">
+          <div className="clients-filters__row clients-filters__row--main">
+            <div className="clients-filters__fields min-w-0">
+              <Tabs className="pricing-tabs-wrap" tabs={PRICING_TABS} activeTab={activeTab} onChange={setActiveTab} />
             </div>
-            <div className="page-header__actions">
+            <div className="clients-filters__actions">
               <button type="button" className="page-header__btn page-header__btn--primary" onClick={handleAddClick}>
                 <Plus className="h-4 w-4" />
                 {activeTab === 'rates' ? t('pricing.addRate', 'Add Rate') : t('pricing.createQuote', 'Create Quote')}
@@ -74,10 +71,6 @@ export default function Pricing() {
               </button>
             </div>
           </div>
-        </header>
-
-        <div className="invoices-tabs-wrap mb-6">
-          <Tabs tabs={PRICING_TABS} activeTab={activeTab} onChange={setActiveTab} />
         </div>
 
         <main className="pricing-content">
