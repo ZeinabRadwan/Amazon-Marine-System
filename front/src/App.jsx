@@ -27,6 +27,7 @@ import Pricing from './pages/Pricing/Pricing'
 import Invoices from './pages/Invoices/Invoices'
 import Notifications from './pages/Notifications'
 import Settings from './pages/Settings'
+import Reports from './pages/Reports/Reports'
 import { getStoredToken } from './pages/Login'
 import { getFollowUpMySummary, getClientStats } from './api/clients'
 import { getDashboardOverview } from './api/dashboard'
@@ -679,6 +680,14 @@ function App() {
             element={
               <RequirePageAccess pageKey="settings">
                 <Settings />
+              </RequirePageAccess>
+            }
+          />
+          <Route
+            path="/reports"
+            element={
+              <RequirePageAccess pageKey="reports">
+                <Reports />
               </RequirePageAccess>
             }
           />

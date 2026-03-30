@@ -76,6 +76,8 @@ function getPageHeaderForPath(pathname, t) {
       return { title: t('customerServices.title'), breadcrumbs: [home, { label: t('customerServices.title') }] }
     case '/settings':
       return { title: t('settings.title'), breadcrumbs: [home, { label: t('settings.title') }] }
+    case '/reports':
+      return { title: t('reports.title', 'Reports'), breadcrumbs: [home, { label: t('reports.title', 'Reports') }] }
     default:
       return { title: t('pageHeader.dashboard'), breadcrumbs: [home] }
     case '/accountings':
@@ -246,6 +248,10 @@ export default function AuthenticatedLayout() {
       navigate('/expenses')
       return
     }
+    if (id === 'reports') {
+      navigate('/reports')
+      return
+    }
   }
 
   const pathToMenu = {
@@ -270,6 +276,7 @@ export default function AuthenticatedLayout() {
     '/accountings': 'accounts',
     '/treasury': 'treasury',
     '/expenses': 'expenses',
+    '/reports': 'reports',
   }
   const activeMenu = pathToMenu[location.pathname] ?? 'dashboard'
 

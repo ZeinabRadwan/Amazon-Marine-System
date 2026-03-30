@@ -42,12 +42,12 @@ use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\SDFormController;
 use App\Http\Controllers\Api\V1\SessionController;
 use App\Http\Controllers\Api\V1\SettingsController;
-use App\Http\Controllers\Api\V1\ShippingLineController;
 use App\Http\Controllers\Api\V1\ShipmentController;
 use App\Http\Controllers\Api\V1\ShipmentDirectionController;
 use App\Http\Controllers\Api\V1\ShipmentNoteController;
 use App\Http\Controllers\Api\V1\ShipmentStatusController;
 use App\Http\Controllers\Api\V1\ShipmentTrackingUpdateController;
+use App\Http\Controllers\Api\V1\ShippingLineController;
 use App\Http\Controllers\Api\V1\TicketController;
 use App\Http\Controllers\Api\V1\TicketPriorityController;
 use App\Http\Controllers\Api\V1\TicketStatusController;
@@ -373,6 +373,12 @@ Route::prefix('v1')->group(function () {
         Route::get('reports/sales-performance', [ReportController::class, 'salesPerformance']);
         Route::get('reports/team-performance', [ReportController::class, 'teamPerformance']);
         Route::get('reports/team-performance/export', [ReportController::class, 'teamPerformanceExport']);
+        Route::get('reports/clients', [ReportController::class, 'clients']);
+        Route::get('reports/clients/export', [ReportController::class, 'clientsExport']);
+        Route::get('reports/partners', [ReportController::class, 'partnerStatements']);
+        Route::get('reports/partners/export', [ReportController::class, 'partnerStatementsExport']);
+        Route::get('reports/attendance', [ReportController::class, 'attendance']);
+        Route::get('reports/attendance/export', [ReportController::class, 'attendanceExport']);
 
         // Attendance
         Route::post('attendance/clock-in', [AttendanceController::class, 'clockIn']);
