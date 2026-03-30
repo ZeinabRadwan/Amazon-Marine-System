@@ -114,6 +114,8 @@
     "quotations": "عروض الأسعار",
     "addRate": "إضافة سعر",
     "createQuote": "إنشاء عرض سعر",
+    "exportExcelSoon": "تصدير Excel سيتوفر في تحديث لاحق.",
+    "exportPdfSoon": "تصدير PDF سيتوفر في تحديث لاحق.",
     "shippingLines": "خطوط الملاحة",
     "inlandTransport": "النقل البري",
     "quickSearch": "البحث السريع (اسم الميناء)",
