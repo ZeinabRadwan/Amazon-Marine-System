@@ -22,6 +22,7 @@ class StoreSDFormRequest extends FormRequest
             'status' => ['nullable', 'string', 'in:draft,submitted,sent_to_operations,in_progress,completed,cancelled'],
             'pol_id' => ['nullable', 'integer', 'exists:ports,id'],
             'pod_id' => ['nullable', 'integer', 'exists:ports,id'],
+            'shipping_line' => ['required', 'string', 'max:255'],
             'pol_text' => ['nullable', 'string', 'max:255'],
             'pod_text' => ['nullable', 'string', 'max:255'],
             'final_destination' => ['nullable', 'string', 'max:255'],

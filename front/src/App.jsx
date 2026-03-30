@@ -21,6 +21,7 @@ import ClientLookups from './pages/ClientLookups'
 import CustomerServices from './pages/CustomerServices'
 import Attendance from './pages/Attendance'
 import SDForms from './pages/SDForms'
+import ShipmentDeclarationForm from './pages/SDForms/ShipmentDeclarationForm'
 import Shipments from './pages/Shipments/Shipments'
 import Pricing from './pages/Pricing/Pricing'
 import Invoices from './pages/Invoices/Invoices'
@@ -254,6 +255,7 @@ function App() {
           <Route path="/customer-services" element={<CustomerServices />} />
           <Route path="/attendance" element={<Attendance />} />
           <Route path="/sd-forms" element={<SDForms />} />
+          <Route path="/sd-forms/declaration" element={<ShipmentDeclarationForm />} />
           <Route path="/shipments" element={<Shipments />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/invoices" element={<Invoices />} />

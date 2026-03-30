@@ -17,6 +17,7 @@ class SdFormLookupRoutesTest extends TestCase
             '/api/v1/freight-terms',
             '/api/v1/container-types',
             '/api/v1/container-sizes',
+            '/api/v1/shipping-lines',
         ];
 
         foreach ($uris as $uri) {

@@ -1,3 +1,16 @@
+.sd-forms-add-shipping-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  align-items: center;
+}
+
+.sd-forms-add-shipping-line input {
+  flex: 1;
+  min-width: 140px;
+}
+
 /* Charts: one full-width column (avoid half-width from clients-charts-grid 2-col layout) */
 .sd-forms-charts-panel {
   width: 100%;
@@ -28,7 +41,8 @@
   padding: 2px 8px;
   border-radius: 6px;
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 600;
+  line-height: 1.25;
 }
 
 .sd-forms-badge--draft {
@@ -38,7 +52,7 @@
 
 [data-theme="dark"] .sd-forms-badge--draft,
 .dark .sd-forms-badge--draft {
-  background: rgba(75, 85, 99, 0.5);
+  background: rgba(75, 85, 99, 0.45);
   color: #d1d5db;
 }
 
@@ -60,19 +74,19 @@
 
 [data-theme="dark"] .sd-forms-badge--sent,
 .dark .sd-forms-badge--sent {
-  background: rgba(245, 158, 11, 0.25);
+  background: rgba(245, 158, 11, 0.2);
   color: #fcd34d;
 }
 
 .sd-forms-badge--progress {
-  background: var(--sd-status-progress-bg, #d1fae5);
-  color: var(--sd-status-progress-text, #047857);
+  background: var(--sd-status-progress-bg, #e0e7ff);
+  color: var(--sd-status-progress-text, #4338ca);
 }
 
 [data-theme="dark"] .sd-forms-badge--progress,
 .dark .sd-forms-badge--progress {
-  background: rgba(16, 185, 129, 0.25);
-  color: #6ee7b7;
+  background: rgba(99, 102, 241, 0.25);
+  color: #a5b4fc;
 }
 
 .sd-forms-badge--cancelled {
@@ -95,4 +109,106 @@
 .dark .sd-forms-badge--default {
   background: rgba(75, 85, 99, 0.5);
   color: #d1d5db;
+}
+
+/* Create SD form: English fields stay LTR inside Arabic UI */
+.sd-create-form {
+  direction: ltr;
+  text-align: left;
+}
+
+/* SD create modal — preview under section title (matches client modal section cards) */
+.sd-form-modal-preview__value {
+  margin: 0 0 6px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--root-text, #111827);
+}
+
+.sd-form-modal-preview__hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--form-text, #6b7280);
+}
+
+.sd-form-modal-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--form-text, #6b7280);
+  line-height: 1.35;
+}
+
+[data-theme='dark'] .sd-form-modal-preview__value,
+.dark .sd-form-modal-preview__value {
+  color: var(--root-text, #f3f4f6);
+}
+
+/* SD detail modal — toolbar + definition list (theme tokens) */
+.sd-detail-modal__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--form-divider, #e8eaef);
+}
+
+.sd-detail-modal__dl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 20px;
+  margin: 0 0 16px;
+  font-size: 14px;
+}
+
+.sd-detail-modal__dl-item {
+  min-width: 0;
+}
+
+.sd-detail-modal__dt {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--form-text, #6b7280);
+}
+
+.sd-detail-modal__dd {
+  margin: 0;
+  font-weight: 500;
+  color: var(--root-text, #1c2030);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.sd-detail-modal__block {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--form-divider, #e8eaef);
+}
+
+.sd-detail-modal__block-title {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--form-text, #6b7280);
+}
+
+.sd-detail-modal__block-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--root-text, #1c2030);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+@media (max-width: 560px) {
+  .sd-detail-modal__dl {
+    grid-template-columns: 1fr;
+  }
 }

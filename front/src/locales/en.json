@@ -748,6 +748,8 @@
     "errorEmailOps": "Failed to email operations.",
     "errorLink": "Failed to link shipment.",
     "errorAcidRequired": "ACID number is required for import shipments.",
+    "errorShippingLineRequired": "Shipping line is required.",
+    "errorAddShippingLine": "Failed to add shipping line.",
     "exportSuccess": "Export downloaded.",
     "exportError": "Failed to export.",
     "exportAll": "Export all (CSV)",
@@ -806,6 +808,61 @@
     "shipmentId": "Shipment ID",
     "link": "Link",
     "linkSuccess": "Shipment linked.",
+    "modal": {
+      "formDetails": "Form details"
+    },
+    "declaration": {
+      "pageTitle": "Shipment Declaration Form (SD Form)",
+      "pageSubtitle": "Complete all sections. Required fields are marked with *.",
+      "backToList": "Back to SD forms",
+      "selectOrAddPort": "Select or add port",
+      "selectOrAddShippingLine": "Select or add shipping line",
+      "addShippingLine": "Add shipping line",
+      "newShippingLineName": "New shipping line name",
+      "shippingLineAdded": "Shipping line added to the list.",
+      "addPort": "Add port",
+      "newPortName": "New port name",
+      "portAdded": "Port added to the list.",
+      "loadingPorts": "Loading ports…",
+      "freightHint": "Freight payment term",
+      "finalDestinationHint": "Final destination if different from POD",
+      "finalDestinationPlaceholder": "e.g. inland city or ICD",
+      "notifySameAsConsignee": "Same as consignee",
+      "exportDirection": "Export",
+      "importDirection": "Import",
+      "directionPlaceholder": "Select direction",
+      "prepaid": "Prepaid",
+      "collect": "Collect",
+      "shipperPlaceholder": "Name, address, contact…",
+      "consigneePlaceholder": "Name, address, contact…",
+      "notifyDetailsPlaceholder": "Notify party name and details",
+      "acidPlaceholder": "ACID for import",
+      "cargoPlaceholder": "Describe the cargo",
+      "hsPlaceholder": "Harmonized System code",
+      "reeferTempPlaceholder": "e.g. -18°C",
+      "reeferVentPlaceholder": "Ventilation settings",
+      "reeferHumPlaceholder": "Humidity %",
+      "grossWeightKg": "Total gross weight (KG)",
+      "netWeightKg": "Total net weight (KG)",
+      "submitDraft": "Save draft",
+      "loginToSave": "Sign in to save this form to the server. Data was logged to the console.",
+      "sections": {
+        "basic": "1. Shipment basic information",
+        "parties": "2. Parties information",
+        "freight": "3. Freight & payment",
+        "container": "4. Container details",
+        "shipment": "5. Shipment details",
+        "cargo": "6. Cargo information",
+        "reefer": "7. Reefer details",
+        "weight": "8. Weight details"
+      },
+      "validation": {
+        "shipmentDirection": "Shipment direction is required.",
+        "acidNumber": "ACID number is required for import shipments.",
+        "shippingLine": "Shipping line is required.",
+        "fixErrors": "Please fix the highlighted fields."
+      }
+    },
     "form": {
       "client": "Client",
       "salesRep": "Sales rep",
@@ -814,6 +871,7 @@
       "shipmentDirection": "Shipment direction",
       "pol": "POL (port)",
       "pod": "POD (port)",
+      "shippingLine": "Shipping line",
       "polText": "POL (free text)",
       "podText": "POD (free text)",
       "finalDestination": "Final destination",
@@ -845,6 +903,7 @@
       "sales_rep": "Sales rep",
       "pol": "POL",
       "pod": "POD",
+      "shipping_line": "Shipping line",
       "final_destination": "Final destination",
       "shipment_direction": "Direction",
       "freight_term": "Freight term",
@@ -1995,10 +2054,10 @@
       "system": "System & Notifications",
       "sessions": "Session Management",
       "activity": "Activity History",
-      "statuses": "Statuses"
+      "statuses": "Content management"
     },
     "statuses": {
-      "intro": "Manage shipment tracking labels, CRM client statuses, partner (vendor) types, and all customer-service lookups (ticket states, types, priorities, communication categories) in one place.",
+      "intro": "Manage shipping ports (POL/POD) for SD forms, shipment tracking labels, CRM client statuses, partner (vendor) types, and customer-service lookups (ticket states, types, priorities, communication categories) in one place.",
       "shipmentsHint": "Used on shipment tracking and related customer service views.",
       "clientsHint": "Used when classifying clients in CRM.",
       "vendorPartnerTypesHint": "Used when classifying partners (vendors). The code is stored on each vendor and used in accounting filters.",
@@ -2006,7 +2065,34 @@
       "displayName": "Name (current language)",
       "ticketTypesHint": "Categories when creating or filtering tickets.",
       "ticketPrioritiesHint": "Priority options on tickets (ordering and labels).",
-      "communicationLogTypesHint": "Categories for communication log entries in Customer Service."
+      "communicationLogTypesHint": "Categories for communication log entries in Customer Service.",
+      "portsHint": "Used as Port of Loading (POL) and Port of Discharge (POD) options in SD forms and related screens."
+    },
+    "ports": {
+      "cardTitle": "Ports (POL / POD)",
+      "addTitle": "Add port",
+      "editTitle": "Edit port",
+      "name": "Port name",
+      "code": "Code (optional)",
+      "country": "Country (optional)",
+      "active": "Active",
+      "save": "Save",
+      "cancel": "Cancel",
+      "edit": "Edit",
+      "delete": "Delete",
+      "empty": "No ports yet. Add ports to populate POL/POD dropdowns.",
+      "deleteConfirmTitle": "Delete port?",
+      "deleteConfirm": "This port will be removed from the list. Existing SD forms that reference it may keep historical data depending on your system.",
+      "created": "Port created.",
+      "updated": "Port updated.",
+      "deleted": "Port deleted.",
+      "table": {
+        "name": "Name",
+        "code": "Code",
+        "country": "Country",
+        "active": "Active",
+        "actions": "Actions"
+      }
     },
     "company": {
       "cardTitle": "Company",
@@ -2269,7 +2355,9 @@
       "saveTicketPriority": "Failed to save ticket priority.",
       "deleteTicketPriority": "Failed to delete ticket priority.",
       "saveCommunicationLogType": "Failed to save communication log type.",
-      "deleteCommunicationLogType": "Failed to delete communication log type."
+      "deleteCommunicationLogType": "Failed to delete communication log type.",
+      "savePort": "Failed to save port.",
+      "deletePort": "Failed to delete port."
     }
   }
 }

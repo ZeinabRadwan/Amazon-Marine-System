@@ -22,6 +22,7 @@ class UpdateSDFormRequest extends FormRequest
             'status' => ['sometimes', 'string', 'in:draft,submitted,sent_to_operations,in_progress,completed,cancelled'],
             'pol_id' => ['sometimes', 'nullable', 'integer', 'exists:ports,id'],
             'pod_id' => ['sometimes', 'nullable', 'integer', 'exists:ports,id'],
+            'shipping_line' => ['sometimes', 'required', 'string', 'max:255'],
             'pol_text' => ['sometimes', 'nullable', 'string', 'max:255'],
             'pod_text' => ['sometimes', 'nullable', 'string', 'max:255'],
             'final_destination' => ['sometimes', 'nullable', 'string', 'max:255'],
@@ -35,7 +36,7 @@ class UpdateSDFormRequest extends FormRequest
             'container_size' => ['sometimes', 'nullable', 'string', 'max:10'],
             'num_containers' => ['sometimes', 'nullable', 'integer', 'min:1'],
             'requested_vessel_date' => ['sometimes', 'nullable', 'date'],
-            'acid_number' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'acid_number' => ['sometimes', 'nullable', 'string', 'max:100', 'required_if:shipment_direction,Import'],
             'cargo_description' => ['sometimes', 'nullable', 'string'],
             'hs_code' => ['sometimes', 'nullable', 'string', 'max:32'],
             'reefer_temp' => ['sometimes', 'nullable', 'string', 'max:50'],
@@ -46,4 +47,3 @@ class UpdateSDFormRequest extends FormRequest
         ];
     }
 }
-

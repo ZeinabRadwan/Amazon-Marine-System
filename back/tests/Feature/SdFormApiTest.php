@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Client;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -23,8 +24,12 @@ class SdFormApiTest extends TestCase
 
         $token = $user->createToken('test')->plainTextToken;
 
+        $client = Client::factory()->create();
+
         $response = $this->postJson('/api/v1/sd-forms', [
+            'client_id' => $client->id,
             'shipment_direction' => 'Export',
+            'shipping_line' => 'MSC',
         ], [
             'Authorization' => 'Bearer ' . $token,
         ]);

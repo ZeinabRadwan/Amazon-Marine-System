@@ -748,6 +748,8 @@
     "errorEmailOps": "فشل إرسال البريد للعمليات.",
     "errorLink": "فشل ربط الشحنة.",
     "errorAcidRequired": "رقم ACID مطلوب لشحنات الاستيراد.",
+    "errorShippingLineRequired": "خط الملاحة مطلوب.",
+    "errorAddShippingLine": "فشل إضافة خط الملاحة.",
     "exportSuccess": "تم تنزيل التصدير.",
     "exportError": "فشل التصدير.",
     "exportAll": "تصدير الكل (CSV)",
@@ -806,6 +808,61 @@
     "shipmentId": "معرّف الشحنة",
     "link": "ربط",
     "linkSuccess": "تم ربط الشحنة.",
+    "modal": {
+      "formDetails": "تفاصيل النموذج"
+    },
+    "declaration": {
+      "pageTitle": "نموذج إقرار الشحنة (نموذج SD)",
+      "pageSubtitle": "أكمل جميع الأقسام. الحقول المطلوبة مُعلّمة بـ *.",
+      "backToList": "العودة إلى نماذج SD",
+      "selectOrAddPort": "اختر ميناء أو أضف ميناءً",
+      "selectOrAddShippingLine": "اختر خط ملاحة أو أضف خطاً",
+      "addShippingLine": "إضافة خط ملاحة",
+      "newShippingLineName": "اسم خط الملاحة الجديد",
+      "shippingLineAdded": "تمت إضافة خط الملاحة إلى القائمة.",
+      "addPort": "إضافة ميناء",
+      "newPortName": "اسم الميناء الجديد",
+      "portAdded": "تمت إضافة الميناء إلى القائمة.",
+      "loadingPorts": "جاري تحميل الموانئ…",
+      "freightHint": "شرط دفع الشحن",
+      "finalDestinationHint": "الوجهة النهائية إذا كانت تختلف عن ميناء التفريغ",
+      "finalDestinationPlaceholder": "مثال: مدينة داخلية أو مركز تخليص",
+      "notifySameAsConsignee": "نفس المرسل إليه",
+      "exportDirection": "تصدير",
+      "importDirection": "استيراد",
+      "directionPlaceholder": "اختر الاتجاه",
+      "prepaid": "مدفوع مقدماً",
+      "collect": "على المستلم",
+      "shipperPlaceholder": "الاسم، العنوان، جهة الاتصال…",
+      "consigneePlaceholder": "الاسم، العنوان، جهة الاتصال…",
+      "notifyDetailsPlaceholder": "اسم وتفاصيل الطرف المُبلَغ",
+      "acidPlaceholder": "رقم ACID للاستيراد",
+      "cargoPlaceholder": "صف البضاعة",
+      "hsPlaceholder": "رمز النظام المنسق",
+      "reeferTempPlaceholder": "مثال: -18°م",
+      "reeferVentPlaceholder": "إعدادات التهوية",
+      "reeferHumPlaceholder": "الرطوبة %",
+      "grossWeightKg": "الوزن الإجمالي (كجم)",
+      "netWeightKg": "الوزن الصافي (كجم)",
+      "submitDraft": "حفظ كمسودة",
+      "loginToSave": "سجّل الدخول لحفظ النموذج على الخادم. تم تسجيل البيانات في وحدة التحكم.",
+      "sections": {
+        "basic": "١. المعلومات الأساسية للشحنة",
+        "parties": "٢. معلومات الأطراف",
+        "freight": "٣. الشحن والدفع",
+        "container": "٤. تفاصيل الحاوية",
+        "shipment": "٥. تفاصيل الشحنة",
+        "cargo": "٦. معلومات البضاعة",
+        "reefer": "٧. تفاصيل الريفر",
+        "weight": "٨. تفاصيل الوزن"
+      },
+      "validation": {
+        "shipmentDirection": "اتجاه الشحنة مطلوب.",
+        "acidNumber": "رقم ACID مطلوب لشحنات الاستيراد.",
+        "shippingLine": "خط الملاحة مطلوب.",
+        "fixErrors": "يرجى تصحيح الحقول المُظلّلة."
+      }
+    },
     "form": {
       "client": "العميل",
       "salesRep": "مندوب المبيعات",
@@ -814,6 +871,7 @@
       "shipmentDirection": "اتجاه الشحنة",
       "pol": "ميناء التحميل",
       "pod": "ميناء التفريغ",
+      "shippingLine": "خط الملاحة",
       "polText": "ميناء التحميل (نص حر)",
       "podText": "ميناء التفريغ (نص حر)",
       "finalDestination": "الوجهة النهائية",
@@ -845,6 +903,7 @@
       "sales_rep": "مندوب المبيعات",
       "pol": "ميناء التحميل",
       "pod": "ميناء التفريغ",
+      "shipping_line": "خط الملاحة",
       "final_destination": "الوجهة النهائية",
       "shipment_direction": "الاتجاه",
       "freight_term": "شرط الشحن",
@@ -1994,10 +2053,10 @@
       "system": "النظام والإشعارات",
       "sessions": "إدارة الجلسات",
       "activity": "سجل النشاط",
-      "statuses": "الحالات"
+      "statuses": "ادارة المحتوي"
     },
     "statuses": {
-      "intro": "إدارة تسميات تتبع الشحنات وحالات العملاء في CRM وأنواع الشركاء (المورّدين) وجميع قوائم خدمة العملاء (حالات التذاكر، الأنواع، الأولويات، أنواع سجل التواصل) في مكان واحد.",
+      "intro": "إدارة موانئ الشحن (ميناء التحميل / ميناء التفريغ) لنماذج SD، وتسميات تتبع الشحنات، وحالات العملاء في CRM، وأنواع الشركاء (المورّدين)، وقوائم خدمة العملاء (حالات التذاكر، الأنواع، الأولويات، أنواع سجل التواصل) في مكان واحد.",
       "shipmentsHint": "تُستخدم في تتبع الشحنات وفي واجهات خدمة العملاء المرتبطة.",
       "clientsHint": "تُستخدم عند تصنيف العملاء في CRM.",
       "vendorPartnerTypesHint": "تُستخدم لتصنيف الشركاء (المورّدين). يُخزَّن الرمز على كل مورّد ويُستخدم في تصفية الحسابات.",
@@ -2005,7 +2064,34 @@
       "displayName": "الاسم (حسب لغة الواجهة)",
       "ticketTypesHint": "تصنيفات عند إنشاء التذاكر أو تصفيتها.",
       "ticketPrioritiesHint": "خيارات أولوية التذاكر (الترتيب والتسميات).",
-      "communicationLogTypesHint": "تصنيفات لإدخالات سجل التواصل في خدمة العملاء."
+      "communicationLogTypesHint": "تصنيفات لإدخالات سجل التواصل في خدمة العملاء.",
+      "portsHint": "تُستخدم كخيارات ميناء التحميل (POL) وميناء التفريغ (POD) في نماذج SD والشاشات المرتبطة."
+    },
+    "ports": {
+      "cardTitle": "الموانئ (التحميل / التفريغ)",
+      "addTitle": "إضافة ميناء",
+      "editTitle": "تعديل ميناء",
+      "name": "اسم الميناء",
+      "code": "الرمز (اختياري)",
+      "country": "الدولة (اختياري)",
+      "active": "نشط",
+      "save": "حفظ",
+      "cancel": "إلغاء",
+      "edit": "تعديل",
+      "delete": "حذف",
+      "empty": "لا توجد موانئ بعد. أضف موانئ لملء قوائم التحميل والتفريغ.",
+      "deleteConfirmTitle": "حذف الميناء؟",
+      "deleteConfirm": "سيتم إزالة الميناء من القائمة. قد تحتفظ نماذج SD المرتبطة سابقاً بالبيانات حسب إعدادات النظام.",
+      "created": "تم إنشاء الميناء.",
+      "updated": "تم تحديث الميناء.",
+      "deleted": "تم حذف الميناء.",
+      "table": {
+        "name": "الاسم",
+        "code": "الرمز",
+        "country": "الدولة",
+        "active": "نشط",
+        "actions": "إجراءات"
+      }
     },
     "company": {
       "cardTitle": "بيانات الشركة",
@@ -2268,7 +2354,9 @@
       "saveTicketPriority": "فشل حفظ أولوية التذكرة.",
       "deleteTicketPriority": "فشل حذف أولوية التذكرة.",
       "saveCommunicationLogType": "فشل حفظ نوع سجل التواصل.",
-      "deleteCommunicationLogType": "فشل حذف نوع سجل التواصل."
+      "deleteCommunicationLogType": "فشل حذف نوع سجل التواصل.",
+      "savePort": "فشل حفظ الميناء.",
+      "deletePort": "فشل حذف الميناء."
     }
   }
 }

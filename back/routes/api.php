@@ -42,6 +42,7 @@ use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\SDFormController;
 use App\Http\Controllers\Api\V1\SessionController;
 use App\Http\Controllers\Api\V1\SettingsController;
+use App\Http\Controllers\Api\V1\ShippingLineController;
 use App\Http\Controllers\Api\V1\ShipmentController;
 use App\Http\Controllers\Api\V1\ShipmentDirectionController;
 use App\Http\Controllers\Api\V1\ShipmentNoteController;
@@ -172,6 +173,12 @@ Route::prefix('v1')->group(function () {
         Route::get('ports/{port}', [PortController::class, 'show']);
         Route::put('ports/{port}', [PortController::class, 'update']);
         Route::delete('ports/{port}', [PortController::class, 'destroy']);
+
+        Route::get('shipping-lines', [ShippingLineController::class, 'index']);
+        Route::post('shipping-lines', [ShippingLineController::class, 'store']);
+        Route::get('shipping-lines/{shipping_line}', [ShippingLineController::class, 'show']);
+        Route::put('shipping-lines/{shipping_line}', [ShippingLineController::class, 'update']);
+        Route::delete('shipping-lines/{shipping_line}', [ShippingLineController::class, 'destroy']);
 
         // SD form lookups (Postman: SD Form Lookups)
         Route::get('shipment-directions', [ShipmentDirectionController::class, 'index']);

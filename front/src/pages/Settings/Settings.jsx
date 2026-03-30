@@ -35,6 +35,7 @@ import {
   updateVendorPartnerType,
   deleteVendorPartnerType,
 } from '../../api/clientLookups'
+import { listPorts, createPort, updatePort, deletePort } from '../../api/ports'
 import {
   listTicketStatuses,
   createTicketStatus,
@@ -227,6 +228,13 @@ export default function Settings() {
   const [deleteCommLogTypeId, setDeleteCommLogTypeId] = useState(null)
   const [commLogTypeSubmitting, setCommLogTypeSubmitting] = useState(false)
 
+  const [settingsPorts, setSettingsPorts] = useState([])
+  const [portModal, setPortModal] = useState(null)
+  const [portForm, setPortForm] = useState({ name: '', code: '', country: '', active: true })
+  const [portSubmitting, setPortSubmitting] = useState(false)
+  const [deletePortId, setDeletePortId] = useState(null)
+  const [deletePortSubmitting, setDeletePortSubmitting] = useState(false)
+
   const [statusesTabLoading, setStatusesTabLoading] = useState(false)
 
   const isAdminLike = useMemo(() => {
@@ -303,14 +311,21 @@ export default function Settings() {
             return Array.isArray(list) ? list : []
           })
           .catch(() => [])
+        const portsP = listPorts(token)
+          .then((res) => {
+            const list = res?.data ?? res
+            return Array.isArray(list) ? list : []
+          })
+          .catch(() => [])
 
-        const [clients, tickets, types, priorities, commTypes, partnerTypesList] = await Promise.all([
+        const [clients, tickets, types, priorities, commTypes, partnerTypesList, portsList] = await Promise.all([
           clientP,
           ticketStatusesP,
           ticketTypesP,
           ticketPrioritiesP,
           commLogTypesP,
           vendorPartnerTypesP,
+          portsP,
         ])
         if (!cancelled) {
           setClientStatuses(clients)
@@ -319,6 +334,7 @@ export default function Settings() {
           setTicketPriorities(priorities)
           setCommunicationLogTypes(commTypes)
           setVendorPartnerTypes(partnerTypesList)
+          setSettingsPorts(portsList)
         }
       } catch (e) {
         if (!cancelled) setError(e.message || t('settings.errors.loadStatusesTab'))
@@ -1008,6 +1024,76 @@ export default function Settings() {
     }
   }
 
+  async function refreshSettingsPorts() {
+    if (!token) return
+    try {
+      const res = await listPorts(token)
+      const list = res?.data ?? res
+      setSettingsPorts(Array.isArray(list) ? list : [])
+    } catch {
+      setSettingsPorts([])
+    }
+  }
+
+  function openNewPort() {
+    setPortForm({ name: '', code: '', country: '', active: true })
+    setPortModal('create')
+  }
+
+  function openEditPort(row) {
+    setPortForm({
+      name: row.name ?? '',
+      code: row.code ?? '',
+      country: row.country ?? '',
+      active: Boolean(row.active),
+    })
+    setPortModal({ mode: 'edit', id: row.id })
+  }
+
+  async function handleSavePort(e) {
+    e.preventDefault()
+    if (!token || !String(portForm.name).trim()) return
+    const isEdit = portModal?.mode === 'edit' && portModal.id != null
+    setPortSubmitting(true)
+    setError('')
+    try {
+      const body = {
+        name: String(portForm.name).trim(),
+        code: String(portForm.code || '').trim() || null,
+        country: String(portForm.country || '').trim() || null,
+        active: Boolean(portForm.active),
+      }
+      if (isEdit) {
+        await updatePort(token, portModal.id, body)
+      } else {
+        await createPort(token, body)
+      }
+      await refreshSettingsPorts()
+      setPortModal(null)
+      setAlert({ type: 'success', message: isEdit ? t('settings.ports.updated') : t('settings.ports.created') })
+    } catch (err) {
+      setError(err.message || t('settings.errors.savePort'))
+    } finally {
+      setPortSubmitting(false)
+    }
+  }
+
+  async function handleDeletePortConfirm() {
+    if (!token || deletePortId == null) return
+    setDeletePortSubmitting(true)
+    setError('')
+    try {
+      await deletePort(token, deletePortId)
+      await refreshSettingsPorts()
+      setDeletePortId(null)
+      setAlert({ type: 'success', message: t('settings.ports.deleted') })
+    } catch (err) {
+      setError(err.message || t('settings.errors.deletePort'))
+    } finally {
+      setDeletePortSubmitting(false)
+    }
+  }
+
   const sessionsHistoryColumns = [
     { key: 'session_date', label: t('settings.sessions.table.date'), sortable: false },
     {
@@ -1225,6 +1311,38 @@ export default function Settings() {
         ),
       }]
       : []),
+  ]
+
+  const portColumns = [
+    { key: 'name', label: t('settings.ports.table.name'), sortable: false, render: (val) => val ?? '—' },
+    { key: 'code', label: t('settings.ports.table.code'), sortable: false, render: (val) => val ?? '—' },
+    { key: 'country', label: t('settings.ports.table.country'), sortable: false, render: (val) => val ?? '—' },
+    {
+      key: 'active',
+      label: t('settings.ports.table.active'),
+      sortable: false,
+      render: (val) => (val ? t('common.yes', 'Yes') : t('common.no', 'No')),
+    },
+    {
+      key: 'actions',
+      label: t('settings.ports.table.actions'),
+      sortable: false,
+      render: (_, row) => (
+        <div className="cs-table-actions">
+          <button type="button" className="cs-btn cs-btn-sm cs-btn-outline" onClick={() => openEditPort(row)}>
+            {t('settings.ports.edit')}
+          </button>
+          <button
+            type="button"
+            className="cs-btn cs-btn-sm cs-btn-outline"
+            style={{ color: 'var(--danger, #dc3545)' }}
+            onClick={() => setDeletePortId(row.id)}
+          >
+            {t('settings.ports.delete')}
+          </button>
+        </div>
+      ),
+    },
   ]
 
   if (!token) {
@@ -1551,7 +1669,7 @@ export default function Settings() {
               )}
             </div>
 
-            {/* Tab: Statuses (shipments, clients, tickets) */}
+            {/* Tab: Content management (ports, statuses, lookups) */}
             {isAdminLike && (
               <div role="tabpanel" className={`cs-tab-panel settings-tab-panel ${activeTab === 'statuses' ? 'cs-tab-panel--active' : ''}`}>
                 {activeTab === 'statuses' && (
@@ -1563,6 +1681,20 @@ export default function Settings() {
                       </div>
                     ) : (
                       <div className="settings-statuses-cards settings-tab-content--animate">
+                        <SectionCard
+                          title={t('settings.ports.cardTitle')}
+                          subtitle={t('settings.statuses.portsHint')}
+                          actions={
+                            <button type="button" className="page-header__btn page-header__btn--primary" onClick={openNewPort}>
+                              {t('settings.ports.addTitle')}
+                            </button>
+                          }
+                        >
+                          <div className="settings-table-card">
+                            <Table columns={portColumns} data={settingsPorts} getRowKey={(r) => r.id} emptyMessage={t('settings.ports.empty')} />
+                          </div>
+                        </SectionCard>
+
                         <SectionCard
                           title={t('settings.shipmentStatuses.cardTitle')}
                           subtitle={t('settings.statuses.shipmentsHint')}
@@ -2019,6 +2151,62 @@ export default function Settings() {
                 </button>
                 <button type="button" className="clients-btn clients-btn--danger" onClick={handleDeleteCommLogTypeConfirm} disabled={commLogTypeSubmitting}>
                   {commLogTypeSubmitting ? t('clients.deleting') : t('clients.delete')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {(portModal === 'create' || portModal?.mode === 'edit') && (
+          <div className="clients-modal" role="dialog" aria-modal="true" aria-labelledby="settings-port-modal-title">
+            <div className="clients-modal-backdrop" onClick={() => !portSubmitting && setPortModal(null)} />
+            <div className="clients-modal-content">
+              <h2 id="settings-port-modal-title">
+                {portModal?.mode === 'edit' ? t('settings.ports.editTitle') : t('settings.ports.addTitle')}
+              </h2>
+              <form onSubmit={handleSavePort} className="settings-modal-form">
+                <Input
+                  label={t('settings.ports.name')}
+                  value={portForm.name}
+                  onChange={(e) => setPortForm((p) => ({ ...p, name: e.target.value }))}
+                  required
+                />
+                <Input label={t('settings.ports.code')} value={portForm.code} onChange={(e) => setPortForm((p) => ({ ...p, code: e.target.value }))} />
+                <Input label={t('settings.ports.country')} value={portForm.country} onChange={(e) => setPortForm((p) => ({ ...p, country: e.target.value }))} />
+                <label className="settings-checkbox-row">
+                  <span className="settings-checkbox-label">{t('settings.ports.active')}</span>
+                  <input
+                    type="checkbox"
+                    className="settings-checkbox"
+                    checked={portForm.active}
+                    onChange={(e) => setPortForm((p) => ({ ...p, active: e.target.checked }))}
+                  />
+                </label>
+                <div className="clients-modal-actions">
+                  <button type="button" className="clients-btn" onClick={() => setPortModal(null)} disabled={portSubmitting}>
+                    {t('settings.ports.cancel')}
+                  </button>
+                  <button type="submit" disabled={portSubmitting} className="clients-btn clients-btn--primary">
+                    {portSubmitting ? t('clients.saving', 'Saving…') : t('settings.ports.save')}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {deletePortId != null && (
+          <div className="clients-modal" role="dialog" aria-modal="true">
+            <div className="clients-modal-backdrop" onClick={() => !deletePortSubmitting && setDeletePortId(null)} />
+            <div className="clients-modal-content">
+              <h2>{t('settings.ports.deleteConfirmTitle')}</h2>
+              <p>{t('settings.ports.deleteConfirm')}</p>
+              <div className="clients-modal-actions">
+                <button type="button" className="clients-btn" onClick={() => setDeletePortId(null)} disabled={deletePortSubmitting}>
+                  {t('clients.cancel')}
+                </button>
+                <button type="button" className="clients-btn clients-btn--danger" onClick={handleDeletePortConfirm} disabled={deletePortSubmitting}>
+                  {deletePortSubmitting ? t('clients.deleting') : t('clients.delete')}
                 </button>
               </div>
             </div>

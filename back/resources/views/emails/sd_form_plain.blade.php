@@ -20,6 +20,11 @@
     </p>
 
     <p>
+        <strong>Shipping Line:</strong>
+        {{ $form->shipping_line ?? '—' }}
+    </p>
+
+    <p>
         <strong>Shipment Direction:</strong>
         {{ $form->shipment_direction ?? '—' }}
     </p>

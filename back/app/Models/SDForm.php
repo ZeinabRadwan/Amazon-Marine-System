@@ -20,6 +20,7 @@ class SDForm extends Model
         'status',
         'pol_id',
         'pod_id',
+        'shipping_line',
         'pol_text',
         'pod_text',
         'final_destination',

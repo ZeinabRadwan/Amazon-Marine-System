@@ -87,6 +87,10 @@
                 <td>{{ $form->pod?->name ?? $form->pod_text ?? '—' }}</td>
             </tr>
             <tr>
+                <th>Shipping Line</th>
+                <td colspan="3">{{ $form->shipping_line ?? '—' }}</td>
+            </tr>
+            <tr>
                 <th>Final Destination</th>
                 <td>{{ $form->final_destination ?? '—' }}</td>
                 <th>Shipment Direction</th>
