@@ -5341,10 +5341,11 @@
     },
     {
       "name": "Dashboard & Reports",
+      "description": "Role-aware analytics module (Admin, Sales, Operations, Finance). Endpoints now return richer business data, labeled dimensions, table-ready rows, trends, and fuller CSV exports.",
       "item": [
         {
           "name": "Dashboard Overview",
-          "description": "Dashboard Overview aggregates. Requires Bearer token and dashboard page permission (page_permission:dashboard,view).",
+          "description": "Role-scoped overview: shipments by status, operations status distribution, SD forms by status, and 12-month revenue/cost/profit timeline. Includes total_shipments and total_sd_forms.",
           "request": {
             "method": "GET",
             "header": [
@@ -5371,7 +5372,8 @@
           "response": []
         },
         {
-          "name": "Reports Shipments",
+          "name": "Dashboard Admin Overview",
+          "description": "System manager module. Returns users by role, clients summary, shipments summary, financial monthly series, attendance stats, top partners, system logs/errors, and chart-ready datasets.",
           "request": {
             "method": "GET",
             "header": [
@@ -5385,13 +5387,221 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/reports/shipments",
+              "raw": "{{base_url}}/dashboard/admin-overview",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "admin-overview"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Dashboard Sales Manager",
+          "description": "Sales manager module. Returns team performance, lead sources, top clients, sales pipeline, and chart data (funnel/bar/line).",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/sales-manager",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "sales-manager"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Dashboard Sales Employee",
+          "description": "Sales employee module. Returns personal KPI, follow-ups, pending SD forms, campaign performance, and chart datasets.",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/sales-employee",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "sales-employee"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Dashboard Accountant",
+          "description": "Accountant module. Returns totals, invoice payment split, revenue by client/service, cost by operations, and chart-ready monthly series.",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/accountant",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "accountant"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Dashboard Pricing Team",
+          "description": "Pricing team module. Returns request statuses, expected profit, price comparison, priority requests, and chart data.",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/pricing-team",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "pricing-team"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Dashboard Operations Employee",
+          "description": "Operations employee module. Returns assigned shipments, delayed shipments, processing time, and chart datasets.",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/operations-employee",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "operations-employee"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Dashboard Support Employee",
+          "description": "Support employee module. Returns ticket overview, average resolution, CSAT, ticket type split, and chart datasets.",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/support-employee",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "support-employee"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reports Shipments",
+          "description": "Shipment analytics with role-aware scope and labeled dimensions. Returns by_direction, by_line_vendor (vendor names), by_origin_port (port names), and total_shipments.",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/reports/shipments?from=&to=",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "reports",
                 "shipments"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "",
+                  "description": "Optional. YYYY-MM-DD. Defaults to last 6 months."
+                },
+                {
+                  "key": "to",
+                  "value": "",
+                  "description": "Optional. YYYY-MM-DD. Defaults to current month end."
+                }
               ]
             }
           },
@@ -5399,6 +5609,7 @@
         },
         {
           "name": "Reports Finance",
+          "description": "Financial KPIs by period with role-aware scope. Returns total_revenue, total_cost, total_profit plus invoices_count and vendor_bills_count.",
           "request": {
             "method": "GET",
             "header": [
@@ -5412,13 +5623,25 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/reports/finance",
+              "raw": "{{base_url}}/reports/finance?from=&to=",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "reports",
                 "finance"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "",
+                  "description": "Optional. YYYY-MM-DD. Defaults to last 6 months."
+                },
+                {
+                  "key": "to",
+                  "value": "",
+                  "description": "Optional. YYYY-MM-DD. Defaults to current month end."
+                }
               ]
             }
           },
@@ -5426,6 +5649,7 @@
         },
         {
           "name": "Reports Sales Performance",
+          "description": "Sales rep performance table (shipments_count, total_sales, net_profit, avg_deal_size) using role-aware data scope.",
           "request": {
             "method": "GET",
             "header": [
@@ -5463,6 +5687,7 @@
         },
         {
           "name": "Reports Team Performance",
+          "description": "Team productivity and conversion analytics with sorting. Includes avg_revenue_per_shipment in addition to revenue/conversion/visits.",
           "request": {
             "method": "GET",
             "header": [
@@ -5509,6 +5734,7 @@
         },
         {
           "name": "Reports Team Performance Export (CSV)",
+          "description": "CSV export for Team Performance with richer columns: clients_count, sd_forms_count, shipments_count, revenue, avg_revenue_per_shipment, conversion_rate_pct, visits_count.",
           "request": {
             "method": "GET",
             "header": [
@@ -5547,6 +5773,7 @@
         },
         {
           "name": "Reports Clients",
+          "description": "Client KPIs and table-ready rows. Returns top-level metrics plus rows[] containing client_name, shipments_count, revenue, and created_at.",
           "request": {
             "method": "GET",
             "header": [
@@ -5584,6 +5811,7 @@
         },
         {
           "name": "Reports Clients Export (CSV)",
+          "description": "CSV export for client report including shipments_count and sales_rep_count to support richer analysis.",
           "request": {
             "method": "GET",
             "header": [
@@ -5618,6 +5846,7 @@
         },
         {
           "name": "Reports Partners",
+          "description": "Partner statements with detailed rows and top_partners. Includes total_due, paid, balance, bills_count, and payments_count.",
           "request": {
             "method": "GET",
             "header": [
@@ -5651,6 +5880,7 @@
         },
         {
           "name": "Reports Partners Export (CSV)",
+          "description": "CSV export for full partner statement rows (not only top 6), including bills_count and payments_count.",
           "request": {
             "method": "GET",
             "header": [
@@ -5681,6 +5911,7 @@
         },
         {
           "name": "Reports Attendance",
+          "description": "Attendance report with totals and trend series. Returns avg_attendance/avg_attendance_pct, late_count, absent_count, and attendance_trends[] (present/late/absent by date).",
           "request": {
             "method": "GET",
             "header": [
@@ -5718,6 +5949,7 @@
         },
         {
           "name": "Reports Attendance Export (CSV)",
+          "description": "CSV export with detailed attendance records (date, employee, status, check-in/out, late flag, worked minutes).",
           "request": {
             "method": "GET",
             "header": [

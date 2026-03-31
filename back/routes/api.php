@@ -368,6 +368,20 @@ Route::prefix('v1')->group(function () {
         // Dashboard & reports
         Route::get('dashboard/overview', [DashboardController::class, 'overview'])
             ->middleware('page_permission:dashboard,view');
+        Route::get('dashboard/admin-overview', [DashboardController::class, 'adminOverview'])
+            ->middleware('page_permission:dashboard,view');
+        Route::get('dashboard/sales-manager', [DashboardController::class, 'salesManager'])
+            ->middleware('page_permission:dashboard,view');
+        Route::get('dashboard/sales-employee', [DashboardController::class, 'salesEmployee'])
+            ->middleware('page_permission:dashboard,view');
+        Route::get('dashboard/accountant', [DashboardController::class, 'accountant'])
+            ->middleware('page_permission:dashboard,view');
+        Route::get('dashboard/pricing-team', [DashboardController::class, 'pricingTeam'])
+            ->middleware('page_permission:dashboard,view');
+        Route::get('dashboard/operations-employee', [DashboardController::class, 'operationsEmployee'])
+            ->middleware('page_permission:dashboard,view');
+        Route::get('dashboard/support-employee', [DashboardController::class, 'supportEmployee'])
+            ->middleware('page_permission:dashboard,view');
         Route::get('reports/shipments', [ReportController::class, 'shipments']);
         Route::get('reports/finance', [ReportController::class, 'finance']);
         Route::get('reports/sales-performance', [ReportController::class, 'salesPerformance']);
