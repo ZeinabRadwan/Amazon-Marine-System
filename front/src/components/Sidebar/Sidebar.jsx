@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useAuthAccess } from '../../hooks/useAuthAccess'
 import { getResolvedTheme } from '../../theme'
 import HeaderActions from '../HeaderActions'
 import {
@@ -13,7 +14,6 @@ import {
   InvoiceIcon,
   WalletIcon,
   PriceTagIcon,
-  ReportsIcon,
   FileTextIcon,
   HeadsetIcon,
   ClockIcon,
@@ -59,7 +59,6 @@ const SIDEBAR_SECTIONS = [
     sectionKey: 'management',
     items: [
       { id: 'partners', menuKey: 'partners', Icon: ContactsIcon },
-      { id: 'reports', menuKey: 'reports', Icon: ReportsIcon, badge: 'alerts' },
       { id: 'officialDocuments', menuKey: 'officialDocuments', Icon: FileTextIcon },
     ],
   },
@@ -98,7 +97,6 @@ const SIDEBAR_ID_TO_PAGE_KEY = {
   expenses: 'expenses',
   pricing: 'pricing',
   partners: 'partners',
-  reports: 'reports',
   officialDocuments: 'official_documents',
   customerService: 'customer_service',
   attendance: 'attendance',
@@ -127,7 +125,7 @@ export default function Sidebar({
   appName = 'Marketerz',
   activeMenu = 'dashboard',
   onMenuChange,
-  allowedPages,
+  allowedPages: allowedPagesProp,
   crmCount = 0,
   ticketsCount = 0,
   alertsCount = 0,
@@ -141,6 +139,8 @@ export default function Sidebar({
 }) {
   const badgeCounts = { crmCount, ticketsCount, alertsCount, shipmentsCount, sdFormsCount }
   const { t, i18n } = useTranslation()
+  const { allowedPages: hookAllowedPages, isAccountant } = useAuthAccess()
+  const allowedPages = allowedPagesProp ?? hookAllowedPages
   const isRtl = i18n.language === 'ar'
   const [theme, setTheme] = useState(() => getResolvedTheme())
   const [internalExpanded, setInternalExpanded] = useState(true)
@@ -200,6 +200,9 @@ export default function Sidebar({
 
         <nav className="sidebar-nav" aria-label="Main navigation">
           {SIDEBAR_SECTIONS.map(({ sectionKey, items }) => {
+            // Rule: Accountant only sees Finance section
+            if (isAccountant && sectionKey !== 'financial') return null
+
             const filteredItems = allowedPagesSet
               ? items.filter(({ id }) => {
                   const pageKey = SIDEBAR_ID_TO_PAGE_KEY[id]

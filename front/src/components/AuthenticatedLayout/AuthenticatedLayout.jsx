@@ -3,6 +3,7 @@ import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getStoredToken, clearToken } from '../../pages/Login'
 import { getProfile, logout as logoutApi } from '../../api/auth'
+import { getPermissionsByRole } from '../../api/roles'
 import AppLayout from '../AppLayout'
 import LoaderDots from '../LoaderDots'
 import '../LoaderDots/LoaderDots.css'
@@ -102,19 +103,38 @@ export default function AuthenticatedLayout() {
 
   const refreshUser = useCallback(() => {
     if (!token) return Promise.resolve()
-    return getProfile(token).then((data) => {
+    return getProfile(token).then(async (data) => {
       const u = data.user ?? data.data ?? data
       setUser(u)
-      setPermissions(Array.isArray(data.permissions) ? data.permissions : [])
-      const pages = Array.isArray(data.page_access) ? data.page_access.filter(Boolean) : []
+      
+      const roleId = u?.role_id
+      let finalPermissions = Array.isArray(data.permissions) ? data.permissions : []
+      let finalPages = Array.isArray(data.page_access) ? data.page_access.filter(Boolean) : []
+
+      if (roleId) {
+        try {
+          const permRes = await getPermissionsByRole(token, roleId)
+          if (permRes?.data) {
+            finalPermissions = permRes.data
+            // If can_view is true, the user can see the page
+            finalPages = permRes.data
+              .filter(p => p.can_view === true || p.can_view === 1)
+              .map(p => p.page)
+          }
+        } catch (err) {
+          console.error('Failed to fetch permissions by role:', err)
+        }
+      }
+
+      setPermissions(finalPermissions)
+      setAllowedPages(finalPages)
       const v = typeof data.page_access_version === 'string' ? data.page_access_version : ''
-      setAllowedPages(pages)
       setPageAccessVersion(v)
+      
       writePageAccessCache({
-        allowedPages: pages,
+        allowedPages: finalPages,
         pageAccessVersion: v,
         userId: u?.id ?? null,
-        roleIds: Array.isArray(u?.role_ids) ? u.role_ids : undefined,
         roleId: u?.role_id ?? null,
       })
       return u
@@ -125,34 +145,56 @@ export default function AuthenticatedLayout() {
     if (!token) return
     let cancelled = false
     setLoading(true)
-    getProfile(token)
-      .then((data) => {
+
+    const init = async () => {
+      try {
+        const data = await getProfile(token)
+        if (cancelled) return
+
+        const u = data.user ?? data.data ?? data
+        setUser(u)
+        
+        const roleId = u?.role_id
+        let finalPermissions = Array.isArray(data.permissions) ? data.permissions : []
+        let finalPages = Array.isArray(data.page_access) ? data.page_access.filter(Boolean) : []
+
+        if (roleId) {
+          try {
+            const permRes = await getPermissionsByRole(token, roleId)
+            if (permRes?.data) {
+              finalPermissions = permRes.data
+              finalPages = permRes.data
+                .filter(p => p.can_view === true || p.can_view === 1)
+                .map(p => p.page)
+            }
+          } catch (err) {
+            console.error('Failed to fetch permissions by role:', err)
+          }
+        }
+
         if (!cancelled) {
-          const u = data.user ?? data.data ?? data
-          setUser(u)
-          if (Array.isArray(data.permissions)) setPermissions(data.permissions)
-          const pages = Array.isArray(data.page_access) ? data.page_access.filter(Boolean) : []
+          setPermissions(finalPermissions)
+          setAllowedPages(finalPages)
           const v = typeof data.page_access_version === 'string' ? data.page_access_version : ''
-          setAllowedPages(pages)
           setPageAccessVersion(v)
           writePageAccessCache({
-            allowedPages: pages,
+            allowedPages: finalPages,
             pageAccessVersion: v,
             userId: u?.id ?? null,
-            roleIds: Array.isArray(u?.role_ids) ? u.role_ids : undefined,
             roleId: u?.role_id ?? null,
           })
         }
-      })
-      .catch(() => {
+      } catch (err) {
         if (!cancelled) {
           clearToken()
           navigate('/login', { replace: true })
         }
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setLoading(false)
-      })
+      }
+    }
+
+    init()
     return () => { cancelled = true }
   }, [token, navigate])
 

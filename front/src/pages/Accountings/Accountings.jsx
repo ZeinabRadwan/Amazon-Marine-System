@@ -12,6 +12,7 @@ import {
 } from '../../api/accountings'
 import { getTreasuryEntries } from '../../api/treasury'
 import { listVendorPartnerTypes } from '../../api/clientLookups'
+import { useAuthAccess } from '../../hooks/useAuthAccess'
 import LoaderDots from '../../components/LoaderDots'
 import { Container } from '../../components/Container'
 import { GroupedBarChart, DonutChart } from '../../components/Charts'
@@ -109,6 +110,7 @@ function useDebounced(value, delayMs) {
 
 export default function Accountings() {
   const { t, i18n } = useTranslation()
+  const { isAccountant } = useAuthAccess()
   const token = getStoredToken()
   const locale = String(i18n?.language ?? '').toLowerCase().startsWith('ar') ? 'ar-EG' : 'en-US'
   const isAr = locale.startsWith('ar')
@@ -122,7 +124,7 @@ export default function Accountings() {
   const [chartsBarLoading, setChartsBarLoading] = useState(false)
   const [chartsDonutLoading, setChartsDonutLoading] = useState(false)
 
-  const [activeTab, setActiveTab] = useState('clients')
+  const [activeTab, setActiveTab] = useState(isAccountant ? 'partners' : 'clients')
 
   const [clientSearch, setClientSearch] = useState('')
   const debouncedClientSearch = useDebounced(clientSearch, 400)
@@ -625,6 +627,7 @@ export default function Accountings() {
                 id: 'clients',
                 label: t('accountings.tabClients', 'Client accounts'),
                 icon: <Users className="h-4 w-4" aria-hidden />,
+                hidden: isAccountant,
               },
               {
                 id: 'partners',
@@ -635,8 +638,16 @@ export default function Accountings() {
                 id: 'bank',
                 label: t('accountings.tabBank', 'Bank accounts'),
                 icon: <Landmark className="h-4 w-4" aria-hidden />,
+                hidden: isAccountant,
               },
-            ]}
+            ].filter(tab => !tab.hidden).sort((a, b) => {
+              // Accountants see Partner accounts first
+              if (isAccountant) {
+                if (a.id === 'partners') return -1
+                if (b.id === 'partners') return 1
+              }
+              return 0
+            })}
           />
         </div>
 
