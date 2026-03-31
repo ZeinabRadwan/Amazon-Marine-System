@@ -35,7 +35,6 @@ class DocumentController extends Controller
                 'uploaded_by_id' => $d->uploaded_by_id,
                 'uploaded_by_name' => $d->uploadedBy?->name,
                 'created_at' => $d->created_at?->toIso8601String(),
-                'path' => storage_path('app/'.$d->path),
                 'url' => url('api/v1/documents/'.$d->id.'/download'),
             ]),
         ]);
