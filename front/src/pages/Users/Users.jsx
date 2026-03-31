@@ -143,7 +143,7 @@ export default function Users() {
       : role.name_en || role.name_ar || role.name
   }
 
-  const getRoleIdByName = (name) => {
+  function getRoleIdByName(name) {
     const role = roles.find((r) => r.name === name)
     return role ? String(role.id) : ''
   }
