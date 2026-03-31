@@ -10,6 +10,7 @@ use App\Models\Vendor;
 use App\Models\VendorBill;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AccountingController extends Controller
 {
@@ -273,7 +274,7 @@ class AccountingController extends Controller
         ]);
     }
 
-    public function exportClients(Request $request): JsonResponse
+    public function exportClients(Request $request): StreamedResponse
     {
         abort_unless(
             $request->user()?->can('accounting.view'),
@@ -341,7 +342,7 @@ class AccountingController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
-    public function exportPartners(Request $request): JsonResponse
+    public function exportPartners(Request $request): StreamedResponse
     {
         abort_unless(
             $request->user()?->can('accounting.view'),
