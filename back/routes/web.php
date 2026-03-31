@@ -11,7 +11,7 @@ Route::get('/', function () {
 // create route for deploy:cloud
 Route::get('/deploy', function () {
     // run the command deploy:cloud
-    Artisan::call('deploy:cloud');
+    Artisan::call('git:pull');
     return response()->json([
         'message' => 'Deploy command executed successfully',
         'output' => Artisan::output(),
