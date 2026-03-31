@@ -173,8 +173,8 @@ class DashboardController extends Controller
             ->groupBy(fn ($bill) => $bill->bill_date?->format('Y-m'));
         $financial = collect($months)->values()->map(function (Carbon $m, int $i) use ($revenueRows, $costRows) {
             $k = $m->format('Y-m');
-            $revenue = (float) ($revenueRows[$k]?->sum('net_amount') ?? 0);
-            $cost = (float) ($costRows[$k]?->sum('net_amount') ?? 0);
+            $revenue = (float) (($revenueRows->get($k)?->sum('net_amount')) ?? 0);
+            $cost = (float) (($costRows->get($k)?->sum('net_amount')) ?? 0);
             $revenue = $this->valueOrFloor($revenue, 20000 + $this->metricFloor('admin', 'rev', $i) * 1200);
             $cost = $this->valueOrFloor($cost, 12000 + $this->metricFloor('admin', 'cost', $i) * 900);
             return [

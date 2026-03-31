@@ -500,7 +500,6 @@ Route::prefix('v1')->group(function () {
         // Documents (company / templates)
         Route::get('documents', [DocumentController::class, 'index']);
         Route::post('documents', [DocumentController::class, 'store']);
-        Route::get('documents/{document}/preview', [DocumentController::class, 'preview']);
         Route::get('documents/{document}/download', [DocumentController::class, 'download']);
         Route::delete('documents/{document}', [DocumentController::class, 'destroy']);
     });

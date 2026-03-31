@@ -24,7 +24,15 @@ export async function getDashboardOverview(token) {
 async function getRoleDashboard(token, path) {
   const res = await apiFetch(`${getBaseUrl()}/dashboard/${path}`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.message || data.error || `Failed to load dashboard module (${res.status})`)
+  if (!res.ok) {
+    const msg = String(data.message || data.error || '')
+    const routeMissing = res.status === 404 || /route .* could not be found/i.test(msg)
+    if (routeMissing) {
+      // Compatibility fallback for environments where role-specific routes are not deployed yet.
+      return getDashboardOverview(token)
+    }
+    throw new Error(data.message || data.error || `Failed to load dashboard module (${res.status})`)
+  }
   return data
 }
 
