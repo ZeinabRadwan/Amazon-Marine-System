@@ -42,8 +42,14 @@ class AttendanceController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        if (! $request->user()?->can('attendance.view') && ! $request->user()?->can('reports.view')) {
-            $request->merge(['user_id' => $request->user()->id]);
+        $viewer = $request->user();
+
+        if ($viewer === null) {
+            abort(401);
+        }
+
+        if (! $viewer->can('attendance.admin')) {
+            $request->merge(['user_id' => $viewer->id]);
         }
 
         $query = AttendanceRecord::query()->with('user');
@@ -90,7 +96,6 @@ class AttendanceController extends Controller
         $listLimit = $fillMissingUsers ? 5000 : 500;
 
         $records = $query->orderByDesc('date')->orderByDesc('check_in_at')->limit($listLimit)->get();
-        $viewer = $request->user();
 
         $clockInLogMap = $this->attendanceService->acceptedClockInLogsByUserAndRecordDate($records);
 
@@ -149,10 +154,17 @@ class AttendanceController extends Controller
         $date = now()->toDateString();
         $viewer = $request->user();
 
-        if ($request->user()?->can('attendance.view') || $request->user()?->can('reports.view')) {
+        if ($viewer === null) {
+            abort(401);
+        }
+
+        if ($viewer->can('attendance.admin')) {
             $records = AttendanceRecord::whereDate('date', $date)->with('user')->get();
         } else {
-            $records = AttendanceRecord::where('user_id', $request->user()->id)->whereDate('date', $date)->with('user')->get();
+            $records = AttendanceRecord::where('user_id', $viewer->id)
+                ->whereDate('date', $date)
+                ->with('user')
+                ->get();
         }
 
         $clockInLogMap = $this->attendanceService->acceptedClockInLogsByUserAndRecordDate($records);
@@ -189,7 +201,7 @@ class AttendanceController extends Controller
         if ($user === null) {
             return false;
         }
-        if (! $user->can('attendance.view') && ! $user->can('reports.view')) {
+        if (! $user->can('attendance.admin')) {
             return false;
         }
         if ($request->filled('user_id')) {
