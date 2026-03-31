@@ -110,15 +110,21 @@ class AttendanceController extends Controller
             $dateStr = $this->resolveSingleCalendarDayForAttendanceList($request);
             if ($dateStr !== null) {
                 $presentIds = $data->pluck('user_id')->unique()->filter()->all();
-                $missingUsers = User::query()
-                    ->where('status', 'active')
-                    ->whereNotIn('id', $presentIds)
-                    ->orderBy('name')
-                    ->get();
-                foreach ($missingUsers as $u) {
-                    $data->push($this->serializeNoRecordAttendanceListRow($u, $dateStr, $viewer));
+                if ($isAdminRole) {
+                    $missingUsers = User::query()
+                        ->where('status', 'active')
+                        ->whereNotIn('id', $presentIds)
+                        ->orderBy('name')
+                        ->get();
+                    foreach ($missingUsers as $u) {
+                        $data->push($this->serializeNoRecordAttendanceListRow($u, $dateStr, $viewer));
+                    }
+                    $data = $data->sortBy(fn (array $row) => mb_strtolower((string) ($row['user_name'] ?? '')))->values();
+                } else {
+                    if (! in_array($viewer->id, $presentIds, true)) {
+                        $data->push($this->serializeNoRecordAttendanceListRow($viewer, $dateStr, $viewer));
+                    }
                 }
-                $data = $data->sortBy(fn (array $row) => mb_strtolower((string) ($row['user_name'] ?? '')))->values();
             }
         }
 
@@ -178,8 +184,8 @@ class AttendanceController extends Controller
             return $this->serializeListRecord($r, $viewer, $log);
         });
 
-        if ($request->user()?->can('attendance.view') || $request->user()?->can('reports.view')) {
-            $presentIds = $recordRows->pluck('user_id')->unique()->filter()->all();
+        $presentIds = $recordRows->pluck('user_id')->unique()->filter()->all();
+        if ($isAdminRole) {
             $missingUsers = User::query()
                 ->where('status', 'active')
                 ->whereNotIn('id', $presentIds)
@@ -189,6 +195,10 @@ class AttendanceController extends Controller
                 $recordRows->push($this->serializeNoRecordAttendanceListRow($u, $date, $viewer));
             }
             $recordRows = $recordRows->sortBy(fn (array $row) => mb_strtolower((string) ($row['user_name'] ?? '')))->values();
+        } else {
+            if (! in_array($viewer->id, $presentIds, true)) {
+                $recordRows->push($this->serializeNoRecordAttendanceListRow($viewer, $date, $viewer));
+            }
         }
 
         return ApiResponse::success([
@@ -203,9 +213,22 @@ class AttendanceController extends Controller
         if ($user === null) {
             return false;
         }
-        if (! (method_exists($user, 'hasRole') && $user->hasRole('admin'))) {
-            return false;
+        $isAdminRole = method_exists($user, 'hasRole') && $user->hasRole('admin');
+
+        if (! $isAdminRole) {
+            if ($request->filled('user_id')) {
+                return false;
+            }
+            if ($request->filled('device_type')) {
+                return false;
+            }
+            if ($request->filled('is_within_radius')) {
+                return false;
+            }
+
+            return $this->resolveSingleCalendarDayForAttendanceList($request) !== null;
         }
+
         if ($request->filled('user_id')) {
             return false;
         }
