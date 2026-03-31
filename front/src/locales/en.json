@@ -5,7 +5,9 @@
     "english": "English",
     "arabic": "العربية",
     "logOut": "Log out",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "user": "User",
+    "loading": "Loading..."
   },
   "topNav": {
     "searchPlaceholder": "Search shipments, clients, invoices...",
@@ -277,6 +279,85 @@
       "sales": "Every client conversation is an opportunity to deliver value.",
       "user": "Small steps every day lead to big results.",
       "default": "Make today count."
+    }
+  },
+  "dashboardModule": {
+    "welcomeAria": "Welcome",
+    "noPermission": "No permission to view this endpoint.",
+    "noMetrics": "No metrics available.",
+    "downloadCsv": "Download CSV",
+    "labels": {
+      "totalShipments": "Total Shipments",
+      "totalSdForms": "Total SD Forms",
+      "shipmentsStatus": "Shipments: {{status}}",
+      "sdFormsStatus": "SD Forms: {{status}}",
+      "revenueMonth": "Revenue ({{month}})",
+      "costMonth": "Cost ({{month}})",
+      "profitMonth": "Profit ({{month}})",
+      "totalRevenue": "Total Revenue",
+      "totalCost": "Total Cost",
+      "totalProfit": "Total Profit",
+      "invoicesCount": "Invoices Count",
+      "vendorBillsCount": "Vendor Bills Count",
+      "totalClients": "Total Clients",
+      "newClientsPeriod": "New Clients (Period)",
+      "conversionRate": "Conversion Rate %",
+      "topLeadSourceCount": "Top Lead Source Count",
+      "totalEmployees": "Total Employees",
+      "avgAttendance": "Avg Attendance",
+      "lateCount": "Late Count",
+      "absentCount": "Absent Count",
+      "present": "Present",
+      "late": "Late",
+      "absent": "Absent"
+    },
+    "table": {
+      "client": "Client",
+      "shipments": "Shipments",
+      "revenue": "Revenue",
+      "createdAt": "Created At",
+      "salesRep": "Sales Rep",
+      "totalSales": "Total Sales",
+      "netProfit": "Net Profit",
+      "avgDealSize": "Avg Deal Size",
+      "teamMember": "Team Member",
+      "clients": "Clients",
+      "sdForms": "SD Forms",
+      "conversionRate": "Conversion %",
+      "visits": "Visits",
+      "partner": "Partner",
+      "currency": "Currency",
+      "totalDue": "Total Due",
+      "paid": "Paid",
+      "balance": "Balance",
+      "bills": "Bills",
+      "payments": "Payments"
+    },
+    "empty": {
+      "sales": "No sales performance data yet.",
+      "team": "No team performance data yet.",
+      "partners": "No partner statement data yet.",
+      "default": "No data yet."
+    },
+    "cards": {
+      "totalEndpoints": "Total endpoints",
+      "allowed": "Allowed",
+      "loaded": "Loaded",
+      "errors": "Errors"
+    },
+    "endpoints": {
+      "dashboardOverview": "Dashboard Overview",
+      "reportsShipments": "Reports Shipments",
+      "reportsFinance": "Reports Finance",
+      "reportsSalesPerformance": "Reports Sales Performance",
+      "reportsTeamPerformance": "Reports Team Performance",
+      "reportsTeamPerformanceExport": "Reports Team Performance Export (CSV)",
+      "reportsClients": "Reports Clients",
+      "reportsClientsExport": "Reports Clients Export (CSV)",
+      "reportsPartners": "Reports Partners",
+      "reportsPartnersExport": "Reports Partners Export (CSV)",
+      "reportsAttendance": "Reports Attendance",
+      "reportsAttendanceExport": "Reports Attendance Export (CSV)"
     }
   },
   "signup": {

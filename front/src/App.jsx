@@ -1,13 +1,23 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
-import { Package, Users as UsersIcon, DollarSign, ChevronDown, RefreshCw, Calendar } from 'lucide-react'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import {
+  Calendar,
+  BarChart3,
+  DollarSign,
+  Users as UsersIcon,
+  UserSquare2,
+  Truck,
+  ClipboardCheck,
+  FileText,
+  TriangleAlert,
+} from 'lucide-react'
 import Login from './pages/Login'
 import AuthenticatedLayout from './components/AuthenticatedLayout'
 import { Container } from './components/Container'
 import { StatsCard } from './components/StatsCard'
-import { DropdownMenu } from './components/DropdownMenu'
-import Tabs from './components/Tabs'
+import { LineChart, BarChart, PieChart } from './components/Charts'
+import Table from './components/Table/Table'
 import Profile from './pages/Profile'
 import Users from './pages/Users'
 import RolesPermissions from './pages/RolesPermissions'
@@ -29,15 +39,19 @@ import Notifications from './pages/Notifications'
 import Settings from './pages/Settings'
 import Reports from './pages/Reports/Reports'
 import { getStoredToken } from './pages/Login'
-import { getFollowUpMySummary, getClientStats } from './api/clients'
-import { getDashboardOverview } from './api/dashboard'
-import FollowUpWorkloadWidgets from './components/FollowUpWorkloadWidgets'
+import {
+  getDashboardAdminOverview,
+  getDashboardSalesManager,
+  getDashboardSalesEmployee,
+  getDashboardAccountant,
+  getDashboardPricingTeam,
+  getDashboardOperationsEmployee,
+  getDashboardSupportEmployee,
+} from './api/dashboard'
 import { useAuthAccess } from './hooks/useAuthAccess'
 import RequirePageAccess from './components/RequirePageAccess'
-import { LineChart, BarChart } from './components/Charts'
-import { getTicketStats } from './api/customerServices'
-import { getVisitStats, visitableTypeForStatsQuery } from './api/visits'
 import './App.css'
+import './pages/Clients/Clients.css'
 
 function SignupPlaceholder() {
   const { t } = useTranslation()
@@ -50,490 +64,563 @@ function SignupPlaceholder() {
 
 function Home() {
   const { t, i18n } = useTranslation()
-  const navigate = useNavigate()
-  const { hasPageAccess, user } = useAuthAccess()
+  const { user } = useAuthAccess()
   const token = getStoredToken()
-  const canClientsView = hasPageAccess('clients')
-  const [activeTab, setActiveTab] = useState('overview')
-  const [dashFollowUpSummary, setDashFollowUpSummary] = useState(null)
-  const [dashFollowUpLoading, setDashFollowUpLoading] = useState(false)
-  const [dashFollowUpError, setDashFollowUpError] = useState(null)
-  const [overview, setOverview] = useState(null)
-  const [overviewLoading, setOverviewLoading] = useState(false)
-  const [overviewError, setOverviewError] = useState(null)
-  const [clientStats, setClientStats] = useState(null)
-  const [ticketStats, setTicketStats] = useState(null)
-  const [visitStats, setVisitStats] = useState(null)
-  const displayName = user?.name || 'User'
+  const [dashboardState, setDashboardState] = useState({ loading: true, error: null, data: null, roleKey: 'admin' })
+  const displayName = user?.name || t('common.user', 'User')
+  const role = String(user?.primary_role ?? user?.roles?.[0]?.name ?? user?.roles?.[0] ?? t('common.user', 'user'))
+  const roleKey = resolveDashboardRole(user)
+  const roleFetcher = dashboardFetcherForRole(roleKey)
 
   useEffect(() => {
-    if (!token || !canClientsView) return
     let cancelled = false
-    Promise.resolve()
-      .then(() => {
-        if (cancelled) return
-        setDashFollowUpLoading(true)
-        setDashFollowUpError(null)
-        return getFollowUpMySummary(token)
-      })
-      .then((res) => {
-        if (!cancelled) setDashFollowUpSummary(res)
-      })
-      .catch((e) => {
-        if (!cancelled) {
-          setDashFollowUpSummary(null)
-          setDashFollowUpError(e?.message || t('clients.followUpWorkloadError'))
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setDashFollowUpLoading(false)
-      })
-    return () => {
-      cancelled = true
+    if (!token) {
+      setDashboardState({ loading: false, error: t('common.error', 'Something went wrong'), data: null, roleKey })
+      return () => {
+        cancelled = true
+      }
     }
-  }, [token, canClientsView, t])
-  const role = (user?.primary_role ?? user?.roles?.[0] ?? 'user')?.toLowerCase?.() || 'user'
-
-  useEffect(() => {
-    if (!token) return
-    let cancelled = false
-    Promise.resolve()
-      .then(() => {
-        if (cancelled) return
-        setOverviewLoading(true)
-        setOverviewError(null)
-        return getDashboardOverview(token)
-      })
+    setDashboardState({ loading: true, error: null, data: null, roleKey })
+    roleFetcher(token)
       .then((data) => {
-        if (!cancelled) setOverview(data)
+        if (!cancelled) setDashboardState({ loading: false, error: null, data, roleKey })
       })
       .catch((e) => {
-        if (!cancelled) {
-          setOverview(null)
-          setOverviewError(e?.message || t('common.error', 'Something went wrong'))
-        }
+        if (!cancelled) setDashboardState({ loading: false, error: e?.message || t('common.error', 'Something went wrong'), data: null, roleKey })
       })
-      .finally(() => {
-        if (!cancelled) setOverviewLoading(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [token, t])
-
-  useEffect(() => {
-    if (!token) return
-    let cancelled = false
-
-    const safe = (p, setter) =>
-      p
-        .then((res) => {
-          if (!cancelled) setter(res?.data ?? res)
-        })
-        .catch(() => {
-          if (!cancelled) setter(null)
-        })
-
-    if (canClientsView) safe(getClientStats(token), setClientStats)
-
-    if (role === 'support' || role === 'admin') {
-      safe(getTicketStats(token), setTicketStats)
-    }
-
-    if (role === 'sales' || role === 'sales_manager' || role === 'support' || role === 'admin') {
-      safe(getVisitStats(token, { visitable_type: visitableTypeForStatsQuery('client') }), setVisitStats)
-    }
 
     return () => {
       cancelled = true
     }
-  }, [token, canClientsView, role])
+  }, [token, roleKey, roleFetcher, t])
 
-  const overviewTabs = (() => {
-    const tabs = [{ id: 'overview', label: t('pageHeader.overview', 'Overview') }]
-    if (role === 'admin' || role === 'accounting') tabs.push({ id: 'finance', label: t('reports.finance', 'Finance') })
-    if (role === 'operations' || role === 'admin') tabs.push({ id: 'operations', label: t('sidebar.sections.operations', 'Operations') })
-    if (role === 'sales' || role === 'sales_manager' || role === 'admin') tabs.push({ id: 'crm', label: t('sidebar.sections.clients', 'Clients') })
-    if (role === 'pricing' || role === 'admin') tabs.push({ id: 'pricing', label: t('pricing.title', 'Pricing') })
-    if (role === 'support' || role === 'admin') tabs.push({ id: 'support', label: t('sidebar.sections.customerService', 'Customer Service') })
-    return tabs
-  })()
-
-  const safeActiveTab = overviewTabs.some((x) => x.id === activeTab) ? activeTab : overviewTabs[0]?.id ?? 'overview'
-
-  const shipmentsTotal = sumCounts(overview?.shipments_by_status)
-  const revenueTotal = sumNumber(overview?.revenue_cost_profit_by_month, 'revenue')
-  const profitTotal = sumNumber(overview?.revenue_cost_profit_by_month, 'profit')
-  const lastTwo = lastTwoMonths(overview?.revenue_cost_profit_by_month)
-  const revenueMoM = lastTwo ? pctChange(lastTwo.prev.revenue, lastTwo.curr.revenue) : null
-  const profitMoM = lastTwo ? pctChange(lastTwo.prev.profit, lastTwo.curr.profit) : null
-
-  const financeChartData =
-    Array.isArray(overview?.revenue_cost_profit_by_month)
-      ? overview.revenue_cost_profit_by_month.map((m) => ({
-          month: String(m.month ?? '').slice(0, 7),
-          revenue: Number(m.revenue ?? 0),
-          cost: Number(m.cost ?? 0),
-          profit: Number(m.profit ?? 0),
-        }))
-      : []
-
-  const opsStatusData =
-    Array.isArray(overview?.shipments_by_operations_status)
-      ? overview.shipments_by_operations_status.map((row) => ({
-          label: String(row.operations_status ?? 'unknown'),
-          count: Number(row.count ?? 0),
-        }))
-      : []
-
-  const shipmentsStatusData =
-    Array.isArray(overview?.shipments_by_status)
-      ? overview.shipments_by_status.map((row) => ({
-          label: String(row.status ?? 'unknown'),
-          count: Number(row.count ?? 0),
-        }))
-      : []
   const dateOnly = new Date().toLocaleDateString(i18n.language === 'ar' ? 'ar-EG' : 'en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   })
-
   return (
-    <Container size="xl" className="home-page">
-      <section className="welcome-banner" aria-label="Welcome">
-        <div className="welcome-banner__main">
-          <h2 className="welcome-banner__title">{t('home.welcomeBack', { name: displayName })}</h2>
-          <p className="welcome-banner__subtitle">{t('home.loggedInAsRole', { role })}</p>
-        </div>
-        <div className="welcome-banner__quote-wrap">
-          <Calendar className="welcome-banner__date-icon" aria-hidden />
-          <p className="welcome-banner__quote">{dateOnly}</p>
-        </div>
-      </section>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatsCard
-          title={t('statsCard.totalShipments', 'Total Shipments')}
-          value={shipmentsTotal}
-          icon={<Package className="h-6 w-6" />}
-          change={null}
-          trend={null}
-          variant="blue"
-        />
-        <StatsCard
-          title={t('statsCard.activeClients', 'Active Clients')}
-          value={clientStats?.active_clients ?? 0}
-          icon={<UsersIcon className="h-6 w-6" />}
-          change={clientStats?.active_clients_trend_pct ?? null}
-          trend={trendFromDirection(clientStats?.active_clients_trend_direction)}
-          variant="green"
-        />
-        <StatsCard
-          title={t('statsCard.revenueToDate', 'Revenue (to date)')}
-          value={formatMoney(revenueTotal, i18n.language)}
-          icon={<DollarSign className="h-6 w-6" />}
-          change={revenueMoM}
-          trend={revenueMoM == null ? null : revenueMoM >= 0 ? 'up' : 'down'}
-          variant="amber"
-        />
-        <StatsCard
-          title={t('statsCard.netProfit', 'Net Profit')}
-          value={formatMoney(profitTotal, i18n.language)}
-          icon={<DollarSign className="h-6 w-6" />}
-          change={profitMoM}
-          trend={profitMoM == null ? null : profitMoM >= 0 ? 'up' : 'down'}
-          variant="green"
-        />
-      </div>
-
-      {overviewLoading ? (
-        <div className="mt-4 text-start text-sm text-gray-600 dark:text-gray-400">
-          {t('common.loading', 'Loading...')}
-        </div>
-      ) : overviewError ? (
-        <div className="mt-4 text-start text-sm text-red-600 dark:text-red-400">
-          {overviewError}
-        </div>
-      ) : null}
-
-      {canClientsView ? (
-        <section className="mt-8 text-start" aria-labelledby="home-followup-workload-heading">
-          <h2 id="home-followup-workload-heading" className="mb-3 text-lg font-semibold text-gray-900 dark:text-gray-100">
-            {t('clients.followUpWorkloadTitle')}
-          </h2>
-          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-[#1F2937] dark:bg-[#1F2937]">
-            <FollowUpWorkloadWidgets
-              summary={dashFollowUpSummary}
-              loading={dashFollowUpLoading}
-              error={dashFollowUpError}
-              onClientClick={(cid) => navigate('/clients', { state: { focusClientId: cid } })}
-            />
+    <Container size="xl">
+      <div className="clients-page home-page">
+        <section className="welcome-banner" aria-label={t('dashboardModule.welcomeAria', 'Welcome')}>
+          <div className="welcome-banner__main">
+            <h2 className="welcome-banner__title">{t('home.welcomeBack', { name: displayName })}</h2>
+            <p className="welcome-banner__subtitle">{t('home.loggedInAsRole', { role })}</p>
+          </div>
+          <div className="welcome-banner__quote-wrap">
+            <Calendar className="welcome-banner__date-icon" aria-hidden />
+            <p className="welcome-banner__quote">{dateOnly}</p>
           </div>
         </section>
-      ) : null}
 
-      <section className="mt-8" aria-labelledby="dashboard-tabs-heading">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3 text-start">
-          <h2 id="dashboard-tabs-heading" className="text-lg font-semibold">
-            {t('pageHeader.overview')}
-          </h2>
-          <DropdownMenu
-            align="end"
-            trigger={
-              <button
-                type="button"
-                className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
-              >
-                {t('pageHeader.actions')}
-                <ChevronDown className="h-4 w-4" aria-hidden />
-              </button>
-            }
-            items={[
-              {
-                label: t('pageHeader.refresh'),
-                icon: <RefreshCw className="h-4 w-4" />,
-                onClick: () => window.location.reload(),
-              },
-            ]}
-          />
-        </div>
-        <Tabs
-          tabs={overviewTabs}
-          activeTab={safeActiveTab}
-          onChange={setActiveTab}
-          className="mb-4"
-        />
-        <div
-          role="tabpanel"
-          id="panel-overview"
-          aria-labelledby="tab-overview"
-          hidden={safeActiveTab !== 'overview'}
-          className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-[#1F2937] dark:bg-[#1F2937]"
-        >
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <div className="rounded-lg border border-gray-200/70 bg-white p-4 dark:border-gray-700/70 dark:bg-gray-800/40">
-              <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-gray-100">
-                {t('shipments.title', 'Shipments')} — {t('common.byStatus', 'By status')}
-              </h3>
-              <BarChart data={shipmentsStatusData} xKey="label" yKey="count" height={260} yLabel={t('common.count', 'Count')} />
-            </div>
-            <div className="rounded-lg border border-gray-200/70 bg-white p-4 dark:border-gray-700/70 dark:bg-gray-800/40">
-              <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-gray-100">
-                {t('pageHeader.overview', 'Overview')} — {t('common.quickStats', 'Quick stats')}
-              </h3>
-              <ul className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
-                <li>
-                  <span className="font-semibold">{t('statsCard.totalShipments', 'Total Shipments')}:</span> {shipmentsTotal}
-                </li>
-                {clientStats?.total_clients != null ? (
-                  <li>
-                    <span className="font-semibold">{t('statsCard.totalClients', 'Total Clients')}:</span> {clientStats.total_clients}
-                  </li>
-                ) : null}
-                <li>
-                  <span className="font-semibold">{t('statsCard.revenueToDate', 'Revenue (to date)')}:</span> {formatMoney(revenueTotal, i18n.language)}
-                </li>
-                <li>
-                  <span className="font-semibold">{t('statsCard.netProfit', 'Net Profit')}:</span> {formatMoney(profitTotal, i18n.language)}
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-        <div
-          role="tabpanel"
-          id="panel-finance"
-          aria-labelledby="tab-finance"
-          hidden={safeActiveTab !== 'finance'}
-          className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-[#1F2937] dark:bg-[#1F2937]"
-        >
-          <LineChart
-            data={financeChartData}
-            xKey="month"
-            lines={[
-              { dataKey: 'revenue', name: t('reports.revenue', 'Revenue') },
-              { dataKey: 'cost', name: t('reports.cost', 'Cost') },
-              { dataKey: 'profit', name: t('reports.profit', 'Profit') },
-            ]}
-            height={320}
-          />
-        </div>
-        <div
-          role="tabpanel"
-          id="panel-operations"
-          aria-labelledby="tab-operations"
-          hidden={safeActiveTab !== 'operations'}
-          className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-[#1F2937] dark:bg-[#1F2937]"
-        >
-          <BarChart data={opsStatusData} xKey="label" yKey="count" height={320} yLabel={t('common.count', 'Count')} />
-        </div>
-
-        <div
-          role="tabpanel"
-          id="panel-crm"
-          aria-labelledby="tab-crm"
-          hidden={safeActiveTab !== 'crm'}
-          className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-[#1F2937] dark:bg-[#1F2937]"
-        >
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <div className="rounded-lg border border-gray-200/70 bg-white p-4 dark:border-gray-700/70 dark:bg-gray-800/40">
-              <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-gray-100">
-                {t('clients.title', 'Clients')} — {t('common.stats', 'Stats')}
-              </h3>
-              {clientStats ? (
-                <ul className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
-                  <li>
-                    <span className="font-semibold">{t('statsCard.totalClients', 'Total Clients')}:</span> {clientStats.total_clients}
-                  </li>
-                  <li>
-                    <span className="font-semibold">{t('statsCard.activeClients', 'Active Clients')}:</span> {clientStats.active_clients}
-                  </li>
-                  <li>
-                    <span className="font-semibold">{t('clients.newClientsThisMonth', 'New clients (this month)')}:</span>{' '}
-                    {clientStats.new_clients_this_month}
-                  </li>
-                </ul>
-              ) : (
-                <p className="text-sm text-gray-600 dark:text-gray-400">{t('common.noData', 'No data')}</p>
-              )}
-            </div>
-            <div className="rounded-lg border border-gray-200/70 bg-white p-4 dark:border-gray-700/70 dark:bg-gray-800/40">
-              <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-gray-100">
-                {t('visits.title', 'Visits')} — {t('common.quickStats', 'Quick stats')}
-              </h3>
-              {visitStats ? (
-                <ul className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
-                  <li>
-                    <span className="font-semibold">{t('visits.total', 'Total visits')}:</span> {visitStats.total_visits ?? 0}
-                  </li>
-                  <li>
-                    <span className="font-semibold">{t('visits.successful', 'Successful')}:</span> {visitStats.successful_count ?? 0}
-                  </li>
-                  <li>
-                    <span className="font-semibold">{t('visits.newClientsFromVisits', 'New clients from visits')}:</span>{' '}
-                    {visitStats.new_clients_from_visits ?? 0}
-                  </li>
-                  {visitStats.top_rep?.name ? (
-                    <li>
-                      <span className="font-semibold">{t('visits.topRep', 'Top rep')}:</span> {visitStats.top_rep.name}
-                    </li>
-                  ) : null}
-                </ul>
-              ) : (
-                <p className="text-sm text-gray-600 dark:text-gray-400">{t('common.noData', 'No data')}</p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div
-          role="tabpanel"
-          id="panel-pricing"
-          aria-labelledby="tab-pricing"
-          hidden={safeActiveTab !== 'pricing'}
-          className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-[#1F2937] dark:bg-[#1F2937]"
-        >
-          <div className="text-start">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-              {t('pricing.title', 'Pricing')}
-            </h3>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-              {t('pricing.overviewHint', 'Quick links to offers and quotes.')}
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => navigate('/pricing')}
-                className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
-              >
-                {t('pricing.goToPricing', 'Go to Pricing')}
-              </button>
-              {canClientsView ? (
-                <button
-                  type="button"
-                  onClick={() => navigate('/clients')}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
-                >
-                  {t('clients.title', 'Clients')}
-                </button>
-              ) : null}
-            </div>
-          </div>
-        </div>
-
-        <div
-          role="tabpanel"
-          id="panel-support"
-          aria-labelledby="tab-support"
-          hidden={safeActiveTab !== 'support'}
-          className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-[#1F2937] dark:bg-[#1F2937]"
-        >
-          {ticketStats ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <StatsCard title={t('tickets.open', 'Open')} value={ticketStats.open ?? 0} icon={<Package className="h-6 w-6" />} variant="red" />
-              <StatsCard title={t('tickets.pending', 'Pending')} value={ticketStats.pending ?? 0} icon={<Package className="h-6 w-6" />} variant="amber" />
-              <StatsCard
-                title={t('tickets.resolvedToday', 'Resolved Today')}
-                value={ticketStats.resolved_today ?? 0}
-                icon={<Package className="h-6 w-6" />}
-                variant="green"
-              />
-              <StatsCard title={t('tickets.sla', 'SLA %')} value={ticketStats.sla_response_pct ?? 0} icon={<Package className="h-6 w-6" />} variant="blue" />
-            </div>
-          ) : (
-            <p className="text-sm text-gray-600 dark:text-gray-400">{t('common.noData', 'No data')}</p>
-          )}
-        </div>
-      </section>
+        <section className="space-y-4">
+          <RoleDashboardSection state={dashboardState} roleKey={roleKey} />
+        </section>
+      </div>
     </Container>
   )
 }
 
-function sumCounts(rows) {
-  if (!Array.isArray(rows)) return 0
-  return rows.reduce((acc, r) => acc + Number(r?.count ?? 0), 0)
+function RoleDashboardSection({ state, roleKey }) {
+  const { t } = useTranslation()
+
+  return (
+    <article className="clients-filters-card">
+      <h3 className="mb-3 text-base font-semibold text-gray-900 dark:text-gray-100">{dashboardTitle(roleKey, t)}</h3>
+      {state?.loading ? (
+        <p className="text-sm text-gray-600 dark:text-gray-400">{t('common.loading', 'Loading...')}</p>
+      ) : state?.error ? (
+        <p className="text-sm text-red-600 dark:text-red-400">{state.error}</p>
+      ) : (
+        <RoleDashboardContent roleKey={roleKey} payload={extractPayload(state?.data)} />
+      )}
+    </article>
+  )
 }
 
-function sumNumber(rows, key) {
-  if (!Array.isArray(rows)) return 0
-  return rows.reduce((acc, r) => acc + Number(r?.[key] ?? 0), 0)
+function RoleDashboardContent({ roleKey, payload }) {
+  if (roleKey === 'admin') return <AdminDashboardBlock payload={payload} />
+  if (roleKey === 'sales_manager') return <SalesManagerDashboardBlock payload={payload} />
+  if (roleKey === 'sales') return <SalesEmployeeDashboardBlock payload={payload} />
+  if (roleKey === 'accountant') return <AccountantDashboardBlock payload={payload} />
+  if (roleKey === 'pricing') return <PricingDashboardBlock payload={payload} />
+  if (roleKey === 'operations') return <OperationsDashboardBlock payload={payload} />
+  if (roleKey === 'support') return <SupportDashboardBlock payload={payload} />
+  return <div className="text-sm text-gray-600 dark:text-gray-400">—</div>
 }
 
-function lastTwoMonths(rows) {
-  if (!Array.isArray(rows) || rows.length < 2) return null
-  const curr = rows[rows.length - 1] ?? {}
-  const prev = rows[rows.length - 2] ?? {}
-  return {
-    prev: { revenue: Number(prev.revenue ?? 0), profit: Number(prev.profit ?? 0) },
-    curr: { revenue: Number(curr.revenue ?? 0), profit: Number(curr.profit ?? 0) },
+function AdminDashboardBlock({ payload }) {
+  const { t } = useTranslation()
+  const usersByRole = payload?.users_by_role || {}
+  const clients = payload?.clients || {}
+  const attendance = payload?.attendance || {}
+  const system = payload?.system || {}
+  const financial = Array.isArray(payload?.financial) ? payload.financial : []
+  const shipments = normalizeSeries(payload?.shipments?.shipments_by_status)
+  const employeePerf = Array.isArray(payload?.charts?.employee_performance_bar) ? payload.charts.employee_performance_bar : []
+
+  return (
+    <div className="space-y-4">
+      <div className="clients-stats-grid">
+        <StatsCard title={t('dashboardModule.labels.totalUsersSales', 'Sales Users')} value={asNumber(usersByRole.sales)} icon={<UsersIcon className="h-6 w-6" />} variant="blue" />
+        <StatsCard title={t('dashboardModule.labels.totalUsersOperations', 'Operations Users')} value={asNumber(usersByRole.operations)} icon={<UsersIcon className="h-6 w-6" />} variant="amber" />
+        <StatsCard title={t('dashboardModule.labels.totalUsersSupport', 'Support Users')} value={asNumber(usersByRole.support)} icon={<UsersIcon className="h-6 w-6" />} variant="green" />
+        <StatsCard title={t('dashboardModule.labels.totalUsersAccountants', 'Accountants')} value={asNumber(usersByRole.accountants)} icon={<UsersIcon className="h-6 w-6" />} variant="red" />
+      </div>
+      <div className="clients-stats-grid">
+        <StatsCard title={t('dashboardModule.labels.totalClients')} value={asNumber(clients.total_clients)} icon={<UsersIcon className="h-6 w-6" />} variant="blue" />
+        <StatsCard title={t('dashboardModule.labels.newClientsPeriod')} value={asNumber(clients.new_clients)} icon={<UsersIcon className="h-6 w-6" />} variant="green" />
+        <StatsCard title={t('dashboardModule.labels.conversionRate')} value={asNumber(clients.conversion_rate_pct)} icon={<BarChart3 className="h-6 w-6" />} variant="amber" />
+        <StatsCard title={t('dashboardModule.labels.totalShipments')} value={asNumber(payload?.shipments?.total_shipments)} icon={<Truck className="h-6 w-6" />} variant="red" />
+      </div>
+      <div className="clients-stats-grid">
+        <StatsCard title={t('dashboardModule.labels.avgAttendance')} value={asNumber(attendance.avg_attendance_pct)} icon={<ClipboardCheck className="h-6 w-6" />} variant="green" />
+        <StatsCard title={t('dashboardModule.labels.absentCount')} value={asNumber(attendance.absents)} icon={<UserSquare2 className="h-6 w-6" />} variant="amber" />
+        <StatsCard title={t('dashboardModule.labels.lateCount')} value={asNumber(attendance.late)} icon={<TriangleAlert className="h-6 w-6" />} variant="red" />
+        <StatsCard title={t('dashboardModule.labels.systemErrors', 'System Errors')} value={asNumber(system.errors_count)} icon={<TriangleAlert className="h-6 w-6" />} variant="red" />
+      </div>
+      <div className="clients-charts-grid">
+        <PieChart data={shipments} nameKey="name" valueKey="value" showLabel={false} height={260} />
+        <LineChart data={financial} xKey="month" lines={[{ dataKey: 'revenue', name: t('dashboardModule.labels.totalRevenue') }, { dataKey: 'cost', name: t('dashboardModule.labels.totalCost') }, { dataKey: 'profit', name: t('dashboardModule.labels.totalProfit') }]} height={260} />
+        <BarChart data={employeePerf.map((r) => ({ name: r.employee, value: asNumber(r.revenue) }))} xKey="name" yKey="value" height={260} />
+      </div>
+      <PartnersReportBlock payload={{ rows: payload?.top_partners || [] }} />
+    </div>
+  )
+}
+
+function SalesManagerDashboardBlock({ payload }) {
+  const team = Array.isArray(payload?.team_performance) ? payload.team_performance : []
+  const leads = Array.isArray(payload?.lead_sources) ? payload.lead_sources : []
+  const pipeline = payload?.sales_pipeline || {}
+  const monthlyRevenue = Array.isArray(payload?.charts?.monthly_revenue_line) ? payload.charts.monthly_revenue_line : []
+  return (
+    <div className="space-y-4">
+      <div className="clients-stats-grid">
+        <StatsCard title="Open Deals" value={asNumber(pipeline.open_deals)} icon={<BarChart3 className="h-6 w-6" />} variant="amber" />
+        <StatsCard title="Closed Deals" value={asNumber(pipeline.closed_deals)} icon={<BarChart3 className="h-6 w-6" />} variant="green" />
+      </div>
+      <div className="clients-charts-grid">
+        <BarChart data={leads.map((x) => ({ name: x.source, value: asNumber(x.count) }))} xKey="name" yKey="value" height={260} />
+        <BarChart data={team.map((x) => ({ name: x.employee, value: asNumber(x.revenue) }))} xKey="name" yKey="value" height={260} />
+        <LineChart data={monthlyRevenue} xKey="month" lines={[{ dataKey: 'revenue', name: 'Revenue' }]} height={260} />
+      </div>
+      <Table columns={[{ key: 'employee', label: 'Employee' }, { key: 'clients_count', label: 'Clients' }, { key: 'sd_forms_count', label: 'SD Forms' }, { key: 'shipments_count', label: 'Shipments' }, { key: 'revenue', label: 'Revenue' }, { key: 'conversion_rate_pct', label: 'Conversion %' }]} data={team} getRowKey={(r) => r.employee_id ?? r.employee} />
+    </div>
+  )
+}
+
+function SalesEmployeeDashboardBlock({ payload }) {
+  const perf = payload?.personal_performance || {}
+  const followUps = Array.isArray(payload?.customers_needing_follow_up) ? payload.customers_needing_follow_up : []
+  const pending = Array.isArray(payload?.pending_sd_forms) ? payload.pending_sd_forms : []
+  const monthly = Array.isArray(payload?.charts?.monthly_performance_line) ? payload.charts.monthly_performance_line : []
+  const statusPie = normalizeSeries(payload?.charts?.clients_by_status_pie)
+  return (
+    <div className="space-y-4">
+      <div className="clients-stats-grid">
+        <StatsCard title="Clients" value={asNumber(perf.clients)} icon={<UsersIcon className="h-6 w-6" />} variant="blue" />
+        <StatsCard title="Shipments" value={asNumber(perf.shipments)} icon={<Truck className="h-6 w-6" />} variant="green" />
+        <StatsCard title="Revenue" value={asNumber(perf.revenue)} icon={<DollarSign className="h-6 w-6" />} variant="amber" />
+        <StatsCard title="Conversion %" value={asNumber(perf.conversion_rate_pct)} icon={<BarChart3 className="h-6 w-6" />} variant="red" />
+      </div>
+      <div className="clients-charts-grid">
+        <PieChart data={statusPie} nameKey="name" valueKey="value" showLabel={false} height={260} />
+        <LineChart data={monthly} xKey="month" lines={[{ dataKey: 'qualified', name: 'Qualified' }, { dataKey: 'converted', name: 'Converted' }]} height={260} />
+      </div>
+      <Table columns={[{ key: 'client', label: 'Client' }, { key: 'next_follow_up_at', label: 'Next Follow-up' }, { key: 'summary', label: 'Summary' }]} data={followUps} getRowKey={(r) => `${r.client}-${r.next_follow_up_at}`} emptyMessage="No follow-ups." />
+      <Table columns={[{ key: 'sd_number', label: 'SD Number' }, { key: 'status', label: 'Status' }, { key: 'created_at', label: 'Created At' }]} data={pending} getRowKey={(r) => r.id ?? r.sd_number} emptyMessage="No pending SD forms." />
+    </div>
+  )
+}
+
+function AccountantDashboardBlock({ payload }) {
+  const totals = payload?.totals || {}
+  const invoices = payload?.invoices || {}
+  const line = Array.isArray(payload?.charts?.revenue_vs_cost_line) ? payload.charts.revenue_vs_cost_line : []
+  const byClient = Array.isArray(payload?.revenue_by_client) ? payload.revenue_by_client : []
+  const byOps = Array.isArray(payload?.cost_by_operations) ? payload.cost_by_operations : []
+  return (
+    <div className="space-y-4">
+      <div className="clients-stats-grid">
+        <StatsCard title="Total Revenue" value={asNumber(totals.total_revenue)} icon={<DollarSign className="h-6 w-6" />} variant="green" />
+        <StatsCard title="Total Cost" value={asNumber(totals.total_cost)} icon={<DollarSign className="h-6 w-6" />} variant="red" />
+        <StatsCard title="Total Profit" value={asNumber(totals.total_profit)} icon={<BarChart3 className="h-6 w-6" />} variant="blue" />
+        <StatsCard title="Paid Invoices" value={asNumber(invoices.paid)} icon={<FileText className="h-6 w-6" />} variant="amber" />
+      </div>
+      <div className="clients-charts-grid">
+        <LineChart data={line} xKey="month" lines={[{ dataKey: 'revenue', name: 'Revenue' }, { dataKey: 'cost', name: 'Cost' }]} height={260} />
+        <PieChart data={byClient.map((r) => ({ name: r.client, value: asNumber(r.revenue) }))} nameKey="name" valueKey="value" showLabel={false} height={260} />
+        <BarChart data={byOps.map((r) => ({ name: r.operation, value: asNumber(r.cost) }))} xKey="name" yKey="value" height={260} />
+      </div>
+    </div>
+  )
+}
+
+function PricingDashboardBlock({ payload }) {
+  const open = normalizeSeries(payload?.open_requests_by_status)
+  const profit = Array.isArray(payload?.expected_profit_per_request) ? payload.expected_profit_per_request : []
+  const price = Array.isArray(payload?.price_comparison) ? payload.price_comparison : []
+  const priority = Array.isArray(payload?.priority_requests) ? payload.priority_requests : []
+  return (
+    <div className="space-y-4">
+      <div className="clients-charts-grid">
+        <BarChart data={profit.map((r) => ({ name: r.request, value: asNumber(r.profit) }))} xKey="name" yKey="value" height={260} />
+        <LineChart data={price} xKey="month" lines={[{ dataKey: 'proposed_avg', name: 'Proposed' }, { dataKey: 'actual_avg', name: 'Actual' }, { dataKey: 'monthly_revenue', name: 'Revenue' }]} height={260} />
+        <PieChart data={open} nameKey="name" valueKey="value" showLabel={false} height={260} />
+      </div>
+      <Table columns={[{ key: 'quote_no', label: 'Request' }, { key: 'client', label: 'Client' }, { key: 'status', label: 'Status' }, { key: 'expected_profit', label: 'Expected Profit' }, { key: 'priority', label: 'Priority' }]} data={priority} getRowKey={(r) => r.quote_no} />
+    </div>
+  )
+}
+
+function OperationsDashboardBlock({ payload }) {
+  const overview = payload?.shipments_overview || {}
+  const status = normalizeSeries(payload?.charts?.shipments_by_status_pie)
+  const completed = Array.isArray(payload?.charts?.monthly_completed_shipments_line) ? payload.charts.monthly_completed_shipments_line : []
+  const assigned = Array.isArray(payload?.assigned_shipments) ? payload.assigned_shipments : []
+  return (
+    <div className="space-y-4">
+      <div className="clients-stats-grid">
+        <StatsCard title="Assigned Shipments" value={asNumber(overview.total_assigned)} icon={<Truck className="h-6 w-6" />} variant="blue" />
+        <StatsCard title="Delayed Shipments" value={asNumber(overview.delayed_shipments)} icon={<TriangleAlert className="h-6 w-6" />} variant="red" />
+        <StatsCard title="Avg Processing (h)" value={asNumber(overview.avg_processing_time_hours)} icon={<BarChart3 className="h-6 w-6" />} variant="amber" />
+      </div>
+      <div className="clients-charts-grid">
+        <PieChart data={status} nameKey="name" valueKey="value" showLabel={false} height={260} />
+        <LineChart data={completed} xKey="month" lines={[{ dataKey: 'completed', name: 'Completed' }]} height={260} />
+      </div>
+      <Table columns={[{ key: 'shipment_ref', label: 'Shipment' }, { key: 'status', label: 'Status' }, { key: 'priority', label: 'Priority' }, { key: 'deadline', label: 'Deadline' }, { key: 'task_status', label: 'Task Status' }]} data={assigned} getRowKey={(r) => `${r.shipment_id}-${r.deadline}`} />
+    </div>
+  )
+}
+
+function SupportDashboardBlock({ payload }) {
+  const overview = payload?.tickets_overview || {}
+  const types = Array.isArray(payload?.charts?.tickets_by_type_bar) ? payload.charts.tickets_by_type_bar : []
+  const resolution = Array.isArray(payload?.charts?.monthly_avg_resolution_line) ? payload.charts.monthly_avg_resolution_line : []
+  const csat = Array.isArray(payload?.charts?.csat_ratings_pie) ? payload.charts.csat_ratings_pie : []
+  return (
+    <div className="space-y-4">
+      <div className="clients-stats-grid">
+        <StatsCard title="Open Tickets" value={asNumber(overview.open)} icon={<FileText className="h-6 w-6" />} variant="amber" />
+        <StatsCard title="Closed Tickets" value={asNumber(overview.closed)} icon={<FileText className="h-6 w-6" />} variant="green" />
+        <StatsCard title="Overdue Tickets" value={asNumber(overview.overdue)} icon={<TriangleAlert className="h-6 w-6" />} variant="red" />
+        <StatsCard title="CSAT" value={asNumber(payload?.csat)} icon={<UsersIcon className="h-6 w-6" />} variant="blue" />
+      </div>
+      <div className="clients-charts-grid">
+        <BarChart data={types.map((r) => ({ name: r.type, value: asNumber(r.value) }))} xKey="name" yKey="value" height={260} />
+        <LineChart data={resolution} xKey="month" lines={[{ dataKey: 'avg_resolution_hours', name: 'Avg Resolution (h)' }]} height={260} />
+        <PieChart data={csat.map((r) => ({ name: r.rating, value: asNumber(r.value) }))} nameKey="name" valueKey="value" showLabel={false} height={260} />
+      </div>
+    </div>
+  )
+}
+
+function DashboardOverviewBlock({ payload }) {
+  const { t } = useTranslation()
+  const shipments = normalizeSeries(payload?.shipments_by_status)
+  const sdForms = normalizeSeries(payload?.sd_forms_by_status)
+  const monthly = normalizeRcpByMonth(payload?.revenue_cost_profit_by_month)
+  const latest = monthly[monthly.length - 1] || { month: '—', revenue: 0, cost: 0, profit: 0 }
+  const cards = [
+    {
+      title: t('dashboardModule.labels.totalShipments'),
+      value: asNumber(payload?.total_shipments),
+      icon: <Truck className="h-6 w-6" />,
+      variant: 'blue',
+    },
+    {
+      title: t('dashboardModule.labels.totalSdForms'),
+      value: asNumber(payload?.total_sd_forms),
+      icon: <FileText className="h-6 w-6" />,
+      variant: 'amber',
+    },
+    ...shipments.map((item) => ({
+      title: t('dashboardModule.labels.shipmentsStatus', { status: item.name }),
+      value: item.value,
+      icon: <Truck className="h-6 w-6" />,
+      variant: 'blue',
+    })),
+    ...sdForms.map((item) => ({
+      title: t('dashboardModule.labels.sdFormsStatus', { status: item.name }),
+      value: item.value,
+      icon: <FileText className="h-6 w-6" />,
+      variant: 'amber',
+    })),
+    { title: t('dashboardModule.labels.revenueMonth', { month: latest.month }), value: latest.revenue, icon: <DollarSign className="h-6 w-6" />, variant: 'green' },
+    { title: t('dashboardModule.labels.costMonth', { month: latest.month }), value: latest.cost, icon: <DollarSign className="h-6 w-6" />, variant: 'red' },
+    { title: t('dashboardModule.labels.profitMonth', { month: latest.month }), value: latest.profit, icon: <BarChart3 className="h-6 w-6" />, variant: 'green' },
+  ]
+
+  return (
+    <div className="clients-stats-grid">
+      {cards.map((item, idx) => (
+        <StatsCard key={`${item.title}-${idx}`} title={item.title} value={item.value} icon={item.icon} variant={item.variant} />
+      ))}
+    </div>
+  )
+}
+
+function ShipmentsReportBlock({ payload }) {
+  const byDirection = normalizeSeries(payload?.by_direction)
+  const byLineVendor = normalizeSeries(payload?.by_line_vendor)
+  const byOriginPort = normalizeSeries(payload?.by_origin_port)
+
+  return (
+    <div className="clients-charts-grid">
+      <BarChart data={byDirection} xKey="name" yKey="value" height={260} />
+      <PieChart data={byLineVendor} nameKey="name" valueKey="value" height={260} showLabel={false} />
+      <PieChart data={byOriginPort} nameKey="name" valueKey="value" height={260} showLabel={false} />
+    </div>
+  )
+}
+
+function FinanceReportBlock({ payload }) {
+  const { t } = useTranslation()
+  return (
+    <div className="clients-stats-grid">
+      <StatsCard title={t('dashboardModule.labels.totalRevenue')} value={asNumber(payload?.total_revenue ?? payload?.revenue)} icon={<DollarSign className="h-6 w-6" />} variant="green" />
+      <StatsCard title={t('dashboardModule.labels.totalCost')} value={asNumber(payload?.total_cost ?? payload?.cost)} icon={<DollarSign className="h-6 w-6" />} variant="red" />
+      <StatsCard title={t('dashboardModule.labels.totalProfit')} value={asNumber(payload?.total_profit ?? payload?.profit)} icon={<BarChart3 className="h-6 w-6" />} variant="blue" />
+      <StatsCard title={t('dashboardModule.labels.invoicesCount')} value={asNumber(payload?.invoices_count)} icon={<FileText className="h-6 w-6" />} variant="amber" />
+      <StatsCard title={t('dashboardModule.labels.vendorBillsCount')} value={asNumber(payload?.vendor_bills_count)} icon={<UserSquare2 className="h-6 w-6" />} variant="amber" />
+    </div>
+  )
+}
+
+function ClientsReportBlock({ payload }) {
+  const { t } = useTranslation()
+  const rows = Array.isArray(payload?.rows) ? payload.rows : []
+  const columns = [
+    { key: 'client_name', label: t('dashboardModule.table.client') },
+    { key: 'shipments_count', label: t('dashboardModule.table.shipments') },
+    { key: 'revenue', label: t('dashboardModule.table.revenue') },
+    { key: 'created_at', label: t('dashboardModule.table.createdAt') },
+  ]
+  const metricCards = [
+    { title: t('dashboardModule.labels.totalClients'), value: asNumber(payload?.total_clients), icon: <UsersIcon className="h-6 w-6" />, variant: 'blue' },
+    { title: t('dashboardModule.labels.newClientsPeriod'), value: asNumber(payload?.new_clients_in_period), icon: <UsersIcon className="h-6 w-6" />, variant: 'green' },
+    { title: t('dashboardModule.labels.conversionRate'), value: asNumber(payload?.conversion_rate_pct), icon: <BarChart3 className="h-6 w-6" />, variant: 'amber' },
+    { title: t('dashboardModule.labels.topLeadSourceCount'), value: asNumber(payload?.top_lead_source_count), icon: <FileText className="h-6 w-6" />, variant: 'red' },
+  ]
+
+  return (
+    <div className="space-y-4">
+      {metricCards.length > 0 ? (
+        <div className="clients-stats-grid">
+          {metricCards.map((item, idx) => (
+            <StatsCard key={`${item.title}-${idx}`} title={item.title} value={item.value} icon={item.icon} variant={item.variant} />
+          ))}
+        </div>
+      ) : null}
+      <Table
+        columns={columns}
+        data={rows.map((r, i) => ({ ...r, __rowKey: `row-${i}` }))}
+        getRowKey={(row) => row.id ?? row._id ?? row.__rowKey}
+      />
+    </div>
+  )
+}
+
+function AttendanceReportBlock({ payload }) {
+  const { t } = useTranslation()
+  const trendRows = normalizeAttendanceTrend(payload?.attendance_trends ?? payload?.trends ?? [])
+  return (
+    <div className="space-y-4">
+      <div className="clients-stats-grid">
+        <StatsCard title={t('dashboardModule.labels.totalEmployees')} value={asNumber(payload?.total_employees)} icon={<UsersIcon className="h-6 w-6" />} variant="blue" />
+        <StatsCard title={t('dashboardModule.labels.avgAttendance')} value={asNumber(payload?.avg_attendance ?? payload?.avg_attendance_pct)} icon={<ClipboardCheck className="h-6 w-6" />} variant="green" />
+        <StatsCard title={t('dashboardModule.labels.lateCount')} value={asNumber(payload?.late_count)} icon={<TriangleAlert className="h-6 w-6" />} variant="amber" />
+        <StatsCard title={t('dashboardModule.labels.absentCount')} value={asNumber(payload?.absent_count)} icon={<UserSquare2 className="h-6 w-6" />} variant="red" />
+      </div>
+      <LineChart
+        data={trendRows}
+        xKey="name"
+        lines={[
+          { dataKey: 'present', name: t('dashboardModule.labels.present') },
+          { dataKey: 'late', name: t('dashboardModule.labels.late') },
+          { dataKey: 'absent', name: t('dashboardModule.labels.absent') },
+        ]}
+        height={260}
+      />
+    </div>
+  )
+}
+
+function SalesPerformanceBlock({ payload }) {
+  const { t } = useTranslation()
+  const rows = Array.isArray(payload?.data) ? payload.data : []
+  const columns = [
+    { key: 'name', label: t('dashboardModule.table.salesRep') },
+    { key: 'shipments_count', label: t('dashboardModule.table.shipments') },
+    { key: 'total_sales', label: t('dashboardModule.table.totalSales') },
+    { key: 'net_profit', label: t('dashboardModule.table.netProfit') },
+    { key: 'avg_deal_size', label: t('dashboardModule.table.avgDealSize') },
+  ]
+  return (
+    <Table
+      columns={columns}
+      data={rows.map((r, i) => ({ ...r, __rowKey: `sales-${i}` }))}
+      getRowKey={(row) => row.user_id ?? row.__rowKey}
+      emptyMessage={t('dashboardModule.empty.sales')}
+    />
+  )
+}
+
+function TeamPerformanceBlock({ payload }) {
+  const { t } = useTranslation()
+  const rows = Array.isArray(payload?.data) ? payload.data : []
+  const columns = [
+    { key: 'name', label: t('dashboardModule.table.teamMember') },
+    { key: 'clients_count', label: t('dashboardModule.table.clients') },
+    { key: 'sd_forms_count', label: t('dashboardModule.table.sdForms') },
+    { key: 'shipments_count', label: t('dashboardModule.table.shipments') },
+    { key: 'revenue', label: t('dashboardModule.table.revenue') },
+    { key: 'conversion_rate_pct', label: t('dashboardModule.table.conversionRate') },
+    { key: 'visits_count', label: t('dashboardModule.table.visits') },
+  ]
+  return (
+    <Table
+      columns={columns}
+      data={rows.map((r, i) => ({ ...r, __rowKey: `team-${i}` }))}
+      getRowKey={(row) => row.user_id ?? row.__rowKey}
+      emptyMessage={t('dashboardModule.empty.team')}
+    />
+  )
+}
+
+function PartnersReportBlock({ payload }) {
+  const { t } = useTranslation()
+  const rows = Array.isArray(payload?.rows) ? payload.rows : extractTableRows(payload)
+  const columns = [
+    { key: 'partner_name', label: t('dashboardModule.table.partner') },
+    { key: 'currency', label: t('dashboardModule.table.currency') },
+    { key: 'total_due', label: t('dashboardModule.table.totalDue') },
+    { key: 'paid', label: t('dashboardModule.table.paid') },
+    { key: 'balance', label: t('dashboardModule.table.balance') },
+    { key: 'bills_count', label: t('dashboardModule.table.bills') },
+    { key: 'payments_count', label: t('dashboardModule.table.payments') },
+  ]
+  return (
+    <Table
+      columns={columns}
+      data={rows.map((r, i) => ({ ...r, __rowKey: `partner-${i}` }))}
+      getRowKey={(row) => row.partner_id ?? row.__rowKey}
+      emptyMessage={t('dashboardModule.empty.partners')}
+    />
+  )
+}
+
+function extractPayload(data) {
+  if (data == null) return null
+  return data.data ?? data
+}
+
+function asNumber(value, fallback = 0) {
+  const n = Number(value)
+  return Number.isFinite(n) ? n : fallback
+}
+
+function normalizeSeries(source) {
+  if (Array.isArray(source)) {
+    return source.map((item, i) => ({
+      name: String(item?.label ?? item?.name ?? item?.status ?? item?.direction ?? item?.vendor ?? item?.port ?? `#${i + 1}`),
+      value: asNumber(item?.value ?? item?.count ?? item?.total ?? item?.shipments ?? item?.amount),
+    }))
   }
-}
-
-function pctChange(prev, curr) {
-  const p = Number(prev ?? 0)
-  const c = Number(curr ?? 0)
-  if (p === 0) return null
-  return Math.round(((c - p) / p) * 100)
-}
-
-function trendFromDirection(direction) {
-  if (direction === 'up') return 'up'
-  if (direction === 'down') return 'down'
-  return null
-}
-
-function formatMoney(amount, locale) {
-  const n = Number(amount ?? 0)
-  try {
-    return new Intl.NumberFormat(locale || 'en', {
-      style: 'currency',
-      currency: 'USD',
-      maximumFractionDigits: 0,
-    }).format(n)
-  } catch {
-    return `$${Math.round(n).toLocaleString()}`
+  if (source && typeof source === 'object') {
+    return Object.entries(source).map(([name, value]) => ({ name, value: asNumber(value) }))
   }
+  return []
+}
+
+function normalizeRcpByMonth(source) {
+  const arr = Array.isArray(source) ? source : []
+  return arr.map((item, i) => ({
+    month: String(item?.month ?? item?.label ?? item?.name ?? `#${i + 1}`),
+    revenue: asNumber(item?.revenue),
+    cost: asNumber(item?.cost),
+    profit: asNumber(item?.profit),
+  }))
+}
+
+function normalizeAttendanceTrend(source) {
+  const arr = Array.isArray(source) ? source : []
+  return arr.map((item, i) => ({
+    name: String(item?.date ?? item?.month ?? item?.day ?? item?.label ?? `#${i + 1}`),
+    present: asNumber(item?.present ?? item?.attendance ?? item?.on_time),
+    late: asNumber(item?.late),
+    absent: asNumber(item?.absent),
+  }))
+}
+
+function extractTableRows(payload) {
+  if (Array.isArray(payload)) return payload
+  if (!payload || typeof payload !== 'object') return []
+  const direct = payload.rows ?? payload.data ?? payload.items ?? payload.list
+  if (Array.isArray(direct) && direct.length && typeof direct[0] === 'object') return direct
+  const nested = Object.values(payload).find((v) => Array.isArray(v) && v.length && typeof v[0] === 'object')
+  return Array.isArray(nested) ? nested : []
+}
+
+function buildColumns(rows, limit = 6) {
+  if (!rows.length) return []
+  return Object.keys(rows[0]).slice(0, limit).map((key) => ({ key, label: humanizeKey(key) }))
+}
+
+function humanizeKey(key) {
+  return String(key)
+    .replace(/_/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/\b\w/g, (m) => m.toUpperCase())
+}
+
+function roleNamesFromUser(user) {
+  const raw = Array.isArray(user?.roles) ? user.roles : []
+  const names = raw
+    .map((r) => (typeof r === 'string' ? r : r?.name))
+    .filter(Boolean)
+    .map((x) => String(x).toLowerCase())
+  const primary = String(user?.primary_role ?? user?.role?.name ?? '').toLowerCase()
+  return Array.from(new Set([primary, ...names].filter(Boolean)))
+}
+
+function resolveDashboardRole(user) {
+  const names = roleNamesFromUser(user)
+  if (names.some((n) => n.includes('admin'))) return 'admin'
+  if (names.some((n) => n.includes('sales_manager'))) return 'sales_manager'
+  if (names.some((n) => n.includes('account') || n.includes('finance'))) return 'accountant'
+  if (names.some((n) => n.includes('pricing'))) return 'pricing'
+  if (names.some((n) => n.includes('operation'))) return 'operations'
+  if (names.some((n) => n.includes('support'))) return 'support'
+  if (names.some((n) => n.includes('sales'))) return 'sales'
+  return 'admin'
+}
+
+function dashboardFetcherForRole(roleKey) {
+  if (roleKey === 'admin') return getDashboardAdminOverview
+  if (roleKey === 'sales_manager') return getDashboardSalesManager
+  if (roleKey === 'sales') return getDashboardSalesEmployee
+  if (roleKey === 'accountant') return getDashboardAccountant
+  if (roleKey === 'pricing') return getDashboardPricingTeam
+  if (roleKey === 'operations') return getDashboardOperationsEmployee
+  if (roleKey === 'support') return getDashboardSupportEmployee
+  return getDashboardAdminOverview
+}
+
+function dashboardTitle(roleKey, t) {
+  const map = {
+    admin: t('dashboardModule.endpoints.dashboardAdminOverview', 'Admin Overview'),
+    sales_manager: t('dashboardModule.endpoints.dashboardSalesManager', 'Sales Manager'),
+    sales: t('dashboardModule.endpoints.dashboardSalesEmployee', 'Sales Employee'),
+    accountant: t('dashboardModule.endpoints.dashboardAccountant', 'Accountant'),
+    pricing: t('dashboardModule.endpoints.dashboardPricingTeam', 'Pricing Team'),
+    operations: t('dashboardModule.endpoints.dashboardOperationsEmployee', 'Operations Employee'),
+    support: t('dashboardModule.endpoints.dashboardSupportEmployee', 'Support Employee'),
+  }
+  return map[roleKey] || t('dashboardModule.endpoints.dashboardOverview')
 }
 
 function App() {

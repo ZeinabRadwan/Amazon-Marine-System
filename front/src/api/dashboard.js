@@ -21,3 +21,18 @@ export async function getDashboardOverview(token) {
   return data
 }
 
+async function getRoleDashboard(token, path) {
+  const res = await apiFetch(`${getBaseUrl()}/dashboard/${path}`, { headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to load dashboard module (${res.status})`)
+  return data
+}
+
+export const getDashboardAdminOverview = (token) => getRoleDashboard(token, 'admin-overview')
+export const getDashboardSalesManager = (token) => getRoleDashboard(token, 'sales-manager')
+export const getDashboardSalesEmployee = (token) => getRoleDashboard(token, 'sales-employee')
+export const getDashboardAccountant = (token) => getRoleDashboard(token, 'accountant')
+export const getDashboardPricingTeam = (token) => getRoleDashboard(token, 'pricing-team')
+export const getDashboardOperationsEmployee = (token) => getRoleDashboard(token, 'operations-employee')
+export const getDashboardSupportEmployee = (token) => getRoleDashboard(token, 'support-employee')
+

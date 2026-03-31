@@ -5,7 +5,9 @@
     "english": "English",
     "arabic": "العربية",
     "logOut": "تسجيل الخروج",
-    "cancel": "إلغاء"
+    "cancel": "إلغاء",
+    "user": "مستخدم",
+    "loading": "جاري التحميل..."
   },
   "topNav": {
     "searchPlaceholder": "البحث في الشحنات، العملاء، الفواتير...",
@@ -277,6 +279,85 @@
       "sales": "كل محادثة مع عميل هي فرصة لتقديم قيمة.",
       "user": "خطوات صغيرة كل يوم تؤدي إلى نتائج كبيرة.",
       "default": "اجعل اليوم مهماً."
+    }
+  },
+  "dashboardModule": {
+    "welcomeAria": "مرحباً",
+    "noPermission": "ليس لديك صلاحية عرض هذه الواجهة.",
+    "noMetrics": "لا توجد مؤشرات متاحة.",
+    "downloadCsv": "تنزيل CSV",
+    "labels": {
+      "totalShipments": "إجمالي الشحنات",
+      "totalSdForms": "إجمالي نماذج SD",
+      "shipmentsStatus": "الشحنات: {{status}}",
+      "sdFormsStatus": "نماذج SD: {{status}}",
+      "revenueMonth": "الإيراد ({{month}})",
+      "costMonth": "التكلفة ({{month}})",
+      "profitMonth": "الربح ({{month}})",
+      "totalRevenue": "إجمالي الإيراد",
+      "totalCost": "إجمالي التكلفة",
+      "totalProfit": "إجمالي الربح",
+      "invoicesCount": "عدد الفواتير",
+      "vendorBillsCount": "عدد فواتير الموردين",
+      "totalClients": "إجمالي العملاء",
+      "newClientsPeriod": "العملاء الجدد (الفترة)",
+      "conversionRate": "نسبة التحويل %",
+      "topLeadSourceCount": "عدد أعلى مصدر عملاء",
+      "totalEmployees": "إجمالي الموظفين",
+      "avgAttendance": "متوسط الحضور",
+      "lateCount": "عدد المتأخرين",
+      "absentCount": "عدد الغياب",
+      "present": "حاضر",
+      "late": "متأخر",
+      "absent": "غائب"
+    },
+    "table": {
+      "client": "العميل",
+      "shipments": "الشحنات",
+      "revenue": "الإيراد",
+      "createdAt": "تاريخ الإنشاء",
+      "salesRep": "مندوب المبيعات",
+      "totalSales": "إجمالي المبيعات",
+      "netProfit": "صافي الربح",
+      "avgDealSize": "متوسط قيمة الصفقة",
+      "teamMember": "عضو الفريق",
+      "clients": "العملاء",
+      "sdForms": "نماذج SD",
+      "conversionRate": "نسبة التحويل %",
+      "visits": "الزيارات",
+      "partner": "الشريك",
+      "currency": "العملة",
+      "totalDue": "إجمالي المستحق",
+      "paid": "المدفوع",
+      "balance": "الرصيد",
+      "bills": "الفواتير",
+      "payments": "المدفوعات"
+    },
+    "empty": {
+      "sales": "لا توجد بيانات أداء مبيعات حتى الآن.",
+      "team": "لا توجد بيانات أداء فريق حتى الآن.",
+      "partners": "لا توجد بيانات كشف الشركاء حتى الآن.",
+      "default": "لا توجد بيانات حتى الآن."
+    },
+    "cards": {
+      "totalEndpoints": "إجمالي الواجهات",
+      "allowed": "المسموح بها",
+      "loaded": "المحمّلة",
+      "errors": "الأخطاء"
+    },
+    "endpoints": {
+      "dashboardOverview": "نظرة عامة على لوحة التحكم",
+      "reportsShipments": "تقارير الشحنات",
+      "reportsFinance": "التقارير المالية",
+      "reportsSalesPerformance": "تقارير أداء المبيعات",
+      "reportsTeamPerformance": "تقارير أداء الفريق",
+      "reportsTeamPerformanceExport": "تصدير أداء الفريق (CSV)",
+      "reportsClients": "تقارير العملاء",
+      "reportsClientsExport": "تصدير تقارير العملاء (CSV)",
+      "reportsPartners": "تقارير الشركاء",
+      "reportsPartnersExport": "تصدير تقارير الشركاء (CSV)",
+      "reportsAttendance": "تقارير الحضور",
+      "reportsAttendanceExport": "تصدير تقارير الحضور (CSV)"
     }
   },
   "signup": {
