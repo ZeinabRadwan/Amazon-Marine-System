@@ -103,20 +103,22 @@ class DashboardController extends Controller
         $billQuery = VendorBill::whereDate('bill_date', '>=', $from)
             ->when($request->user()?->hasRole('sales') || $request->user()?->hasRole('operations'), fn ($q) => $q->whereIn('shipment_id', $shipmentIds));
 
-        $revenueByMonth = $invoiceQuery->get()
-            ->groupBy(fn ($inv) => $inv->issue_date?->format('Y-m-01'))
-            ->map(fn ($group) => (object) ['revenue' => $group->sum('net_amount')]);
+        $revenueByMonth = $invoiceQuery
+            ->selectRaw("DATE_FORMAT(issue_date, '%Y-%m-01') as month_key, SUM(COALESCE(net_amount,0)) as revenue")
+            ->groupBy('month_key')
+            ->pluck('revenue', 'month_key');
 
-        $costByMonth = $billQuery->get()
-            ->groupBy(fn ($bill) => $bill->bill_date?->format('Y-m-01'))
-            ->map(fn ($group) => (object) ['cost' => $group->sum('net_amount')]);
+        $costByMonth = $billQuery
+            ->selectRaw("DATE_FORMAT(bill_date, '%Y-%m-01') as month_key, SUM(COALESCE(net_amount,0)) as cost")
+            ->groupBy('month_key')
+            ->pluck('cost', 'month_key');
 
         $months = [];
         $cursor = $from->copy();
         while ($cursor <= now()) {
             $key = $cursor->format('Y-m-01');
-            $revenue = (float) ($revenueByMonth[$key]->revenue ?? 0);
-            $cost = (float) ($costByMonth[$key]->cost ?? 0);
+            $revenue = (float) $revenueByMonth->get($key, 0);
+            $cost = (float) $costByMonth->get($key, 0);
 
             $months[] = [
                 'month' => $key,
@@ -167,14 +169,22 @@ class DashboardController extends Controller
         $totalShipments = (int) Shipment::count();
 
         $months = $this->months(12);
-        $revenueRows = Invoice::whereDate('issue_date', '>=', $months[0]->toDateString())->whereNotIn('status', ['cancelled'])->get()
-            ->groupBy(fn ($inv) => $inv->issue_date?->format('Y-m'));
-        $costRows = VendorBill::whereDate('bill_date', '>=', $months[0]->toDateString())->whereNotIn('status', ['cancelled'])->get()
-            ->groupBy(fn ($bill) => $bill->bill_date?->format('Y-m'));
+        $revenueRows = Invoice::query()
+            ->whereDate('issue_date', '>=', $months[0]->toDateString())
+            ->whereNotIn('status', ['cancelled'])
+            ->selectRaw("DATE_FORMAT(issue_date, '%Y-%m') as ym, SUM(COALESCE(net_amount,0)) as total")
+            ->groupBy('ym')
+            ->pluck('total', 'ym');
+        $costRows = VendorBill::query()
+            ->whereDate('bill_date', '>=', $months[0]->toDateString())
+            ->whereNotIn('status', ['cancelled'])
+            ->selectRaw("DATE_FORMAT(bill_date, '%Y-%m') as ym, SUM(COALESCE(net_amount,0)) as total")
+            ->groupBy('ym')
+            ->pluck('total', 'ym');
         $financial = collect($months)->values()->map(function (Carbon $m, int $i) use ($revenueRows, $costRows) {
             $k = $m->format('Y-m');
-            $revenue = (float) ($revenueRows[$k]?->sum('net_amount') ?? 0);
-            $cost = (float) ($costRows[$k]?->sum('net_amount') ?? 0);
+            $revenue = (float) $revenueRows->get($k, 0);
+            $cost = (float) $costRows->get($k, 0);
             $revenue = $this->valueOrFloor($revenue, 20000 + $this->metricFloor('admin', 'rev', $i) * 1200);
             $cost = $this->valueOrFloor($cost, 12000 + $this->metricFloor('admin', 'cost', $i) * 900);
             return [
