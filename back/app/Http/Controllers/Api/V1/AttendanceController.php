@@ -48,13 +48,13 @@ class AttendanceController extends Controller
             abort(401);
         }
 
-        if (! $viewer->can('attendance.admin')) {
-            $request->merge(['user_id' => $viewer->id]);
-        }
+        $isAdminRole = method_exists($viewer, 'hasRole') && $viewer->hasRole('admin');
 
         $query = AttendanceRecord::query()->with('user');
 
-        if ($userId = $request->query('user_id')) {
+        if (! $isAdminRole) {
+            $query->where('user_id', $viewer->id);
+        } elseif ($userId = $request->query('user_id')) {
             $query->where('user_id', $userId);
         }
 
@@ -158,7 +158,9 @@ class AttendanceController extends Controller
             abort(401);
         }
 
-        if ($viewer->can('attendance.admin')) {
+        $isAdminRole = method_exists($viewer, 'hasRole') && $viewer->hasRole('admin');
+
+        if ($isAdminRole) {
             $records = AttendanceRecord::whereDate('date', $date)->with('user')->get();
         } else {
             $records = AttendanceRecord::where('user_id', $viewer->id)
@@ -201,7 +203,7 @@ class AttendanceController extends Controller
         if ($user === null) {
             return false;
         }
-        if (! $user->can('attendance.admin')) {
+        if (! (method_exists($user, 'hasRole') && $user->hasRole('admin'))) {
             return false;
         }
         if ($request->filled('user_id')) {
