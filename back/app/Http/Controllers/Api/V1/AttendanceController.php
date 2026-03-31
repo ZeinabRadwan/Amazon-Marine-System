@@ -42,13 +42,19 @@ class AttendanceController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        if (! $request->user()?->can('attendance.view') && ! $request->user()?->can('reports.view')) {
-            $request->merge(['user_id' => $request->user()->id]);
+        $viewer = $request->user();
+
+        if ($viewer === null) {
+            abort(401);
         }
+
+        $isAdminRole = method_exists($viewer, 'hasRole') && $viewer->hasRole('admin');
 
         $query = AttendanceRecord::query()->with('user');
 
-        if ($userId = $request->query('user_id')) {
+        if (! $isAdminRole) {
+            $query->where('user_id', $viewer->id);
+        } elseif ($userId = $request->query('user_id')) {
             $query->where('user_id', $userId);
         }
 
@@ -90,7 +96,6 @@ class AttendanceController extends Controller
         $listLimit = $fillMissingUsers ? 5000 : 500;
 
         $records = $query->orderByDesc('date')->orderByDesc('check_in_at')->limit($listLimit)->get();
-        $viewer = $request->user();
 
         $clockInLogMap = $this->attendanceService->acceptedClockInLogsByUserAndRecordDate($records);
 
@@ -149,10 +154,19 @@ class AttendanceController extends Controller
         $date = now()->toDateString();
         $viewer = $request->user();
 
-        if ($request->user()?->can('attendance.view') || $request->user()?->can('reports.view')) {
+        if ($viewer === null) {
+            abort(401);
+        }
+
+        $isAdminRole = method_exists($viewer, 'hasRole') && $viewer->hasRole('admin');
+
+        if ($isAdminRole) {
             $records = AttendanceRecord::whereDate('date', $date)->with('user')->get();
         } else {
-            $records = AttendanceRecord::where('user_id', $request->user()->id)->whereDate('date', $date)->with('user')->get();
+            $records = AttendanceRecord::where('user_id', $viewer->id)
+                ->whereDate('date', $date)
+                ->with('user')
+                ->get();
         }
 
         $clockInLogMap = $this->attendanceService->acceptedClockInLogsByUserAndRecordDate($records);
@@ -189,7 +203,7 @@ class AttendanceController extends Controller
         if ($user === null) {
             return false;
         }
-        if (! $user->can('attendance.view') && ! $user->can('reports.view')) {
+        if (! (method_exists($user, 'hasRole') && $user->hasRole('admin'))) {
             return false;
         }
         if ($request->filled('user_id')) {
