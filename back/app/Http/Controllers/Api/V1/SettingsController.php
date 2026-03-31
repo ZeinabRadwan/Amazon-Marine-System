@@ -13,6 +13,7 @@ use App\Http\Requests\Settings\UpdateSystemPreferencesRequest;
 use App\Http\Responses\ApiResponse;
 use App\Models\OfficeLocation;
 use App\Services\AppSettings;
+use App\Services\ActivityLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -118,6 +119,10 @@ class SettingsController extends Controller
 
         $this->settings->setArray(AppSettings::KEY_ATTENDANCE_POLICY, $updated);
 
+        ActivityLogger::log('settings.attendance_policy_updated', null, [
+            'policy' => $updated,
+        ]);
+
         return ApiResponse::success(['policy' => $updated], 'Attendance policy saved.');
     }
 
@@ -127,6 +132,10 @@ class SettingsController extends Controller
         $updated = array_merge($existing, $request->validated());
 
         $this->settings->setArray(AppSettings::KEY_COMPANY_PROFILE, $updated);
+
+        ActivityLogger::log('settings.company_profile_updated', null, [
+            'profile' => $request->validated(),
+        ]);
 
         return $this->show($request);
     }
@@ -142,6 +151,12 @@ class SettingsController extends Controller
             $radiusM
         );
 
+        ActivityLogger::log('settings.company_location_updated', null, [
+            'lat' => (float) $validated['lat'],
+            'lng' => (float) $validated['lng'],
+            'radius_m' => $radiusM,
+        ]);
+
         return $this->show($request);
     }
 
@@ -152,6 +167,10 @@ class SettingsController extends Controller
 
         $this->settings->setArray(AppSettings::KEY_SYSTEM_PREFERENCES, $updated);
 
+        ActivityLogger::log('settings.system_preferences_updated', null, [
+            'changes' => $request->validated(),
+        ]);
+
         return $this->show($request);
     }
 
@@ -161,6 +180,10 @@ class SettingsController extends Controller
         $updated = array_merge($existing, $request->validated());
 
         $this->settings->setArray(AppSettings::KEY_NOTIFICATIONS_PREFERENCES, $updated);
+
+        ActivityLogger::log('settings.notification_preferences_updated', null, [
+            'changes' => $request->validated(),
+        ]);
 
         return $this->show($request);
     }
@@ -176,6 +199,8 @@ class SettingsController extends Controller
         if (array_key_exists('idle_logout_minutes', $validated)) {
             $this->settings->setInt(AppSettings::KEY_SESSIONS_IDLE_LOGOUT_MINUTES, (int) $validated['idle_logout_minutes']);
         }
+
+        ActivityLogger::log('settings.session_settings_updated', null, $validated);
 
         return $this->show($request);
     }

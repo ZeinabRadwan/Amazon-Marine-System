@@ -3,6 +3,7 @@ import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getStoredToken, clearToken } from '../../pages/Login'
 import { getProfile, logout as logoutApi } from '../../api/auth'
+import { getUnreadCount } from '../../api/notifications'
 import { getPermissionsByRole } from '../../api/roles'
 import AppLayout from '../AppLayout'
 import LoaderDots from '../LoaderDots'
@@ -100,6 +101,7 @@ export default function AuthenticatedLayout() {
   const [allowedPages, setAllowedPages] = useState(() => readPageAccessCache()?.allowedPages ?? [])
   const [pageAccessVersion, setPageAccessVersion] = useState(() => readPageAccessCache()?.pageAccessVersion ?? '')
   const [loading, setLoading] = useState(true)
+  const [unreadNotifications, setUnreadNotifications] = useState(0)
 
   const refreshUser = useCallback(() => {
     if (!token) return Promise.resolve()
@@ -198,6 +200,30 @@ export default function AuthenticatedLayout() {
     return () => { cancelled = true }
   }, [token, navigate])
 
+  useEffect(() => {
+    if (!token) return
+    let cancelled = false
+
+    const loadUnread = async () => {
+      try {
+        const res = await getUnreadCount(token)
+        if (cancelled) return
+        const count = res.unread_count ?? res.count ?? res.data?.unread_count ?? res.data?.count ?? 0
+        setUnreadNotifications(Number(count))
+      } catch {
+        if (!cancelled) setUnreadNotifications(0)
+      }
+    }
+
+    loadUnread()
+
+    const interval = window.setInterval(loadUnread, 60000)
+    return () => {
+      cancelled = true
+      window.clearInterval(interval)
+    }
+  }, [token])
+
   const handleLogout = async () => {
     try {
       await logoutApi(token)
@@ -294,6 +320,10 @@ export default function AuthenticatedLayout() {
       navigate('/reports')
       return
     }
+    if (id === 'adminNotifications') {
+      navigate('/admin/notifications')
+      return
+    }
   }
 
   const pathToMenu = {
@@ -315,6 +345,7 @@ export default function AuthenticatedLayout() {
     '/invoices': 'invoices',
     '/notifications': 'notifications',
     '/settings': 'settings',
+    '/admin/notifications': 'adminNotifications',
     '/accountings': 'accounts',
     '/treasury': 'treasury',
     '/expenses': 'expenses',
@@ -362,7 +393,7 @@ export default function AuthenticatedLayout() {
       allowedPages={allowedPages}
       crmCount={24}
       ticketsCount={7}
-      alertsCount={3}
+      alertsCount={unreadNotifications}
       shipmentsCount={12}
       sdFormsCount={5}
       appName="Amazon Marine"

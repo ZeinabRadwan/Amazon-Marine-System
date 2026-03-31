@@ -361,6 +361,8 @@ class InvoiceController extends Controller
             ], 422);
         }
 
+        $before = $invoice->replicate();
+
         DB::transaction(function () use ($invoice, $validated): void {
             if (array_key_exists('items', $validated)) {
                 $invoice->items()->delete();
@@ -398,8 +400,13 @@ class InvoiceController extends Controller
         });
 
         $fresh = $invoice->fresh(['client', 'shipment', 'items', 'payments']);
-        ActivityLogger::log('invoice.updated', $fresh, [
-            'line_items_replaced' => array_key_exists('items', $validated),
+
+        ActivityLogger::logModelChange('invoice.updated', $before, $fresh, [
+            'due_date',
+            'notes',
+            'net_amount',
+            'total_amount',
+            'tax_amount',
         ]);
 
         return response()->json([

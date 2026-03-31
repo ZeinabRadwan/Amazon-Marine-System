@@ -270,8 +270,10 @@ export default function Settings() {
   const [sessionsLoading, setSessionsLoading] = useState(false)
 
   const [activities, setActivities] = useState([])
-  const [activityFilters, setActivityFilters] = useState({ from: '', to: '', event: '' })
+  const [activityFilters, setActivityFilters] = useState({ from: '', to: '', event: '', query: '', global: false })
   const [activityLoading, setActivityLoading] = useState(false)
+  const [activityPage, setActivityPage] = useState(1)
+  const [activityTotalPages, setActivityTotalPages] = useState(1)
 
   const [shipmentStatuses, setShipmentStatuses] = useState([])
   const [showShipmentStatusModal, setShowShipmentStatusModal] = useState(false)
@@ -497,7 +499,7 @@ export default function Settings() {
           getSettings(token),
           getTodaySession(token).catch(() => null),
           listSessionsHistory(token, {}).catch(() => ({ data: [] })),
-          listActivities(token, {}).catch(() => ({ data: [] })),
+          listActivities(token, { page: 1 }).catch(() => ({ data: [] })),
           listShipmentStatuses(token).catch(() => ({ data: [] })),
         ])
 
@@ -541,6 +543,13 @@ export default function Settings() {
         setTodaySession(todayRes?.data ?? todayRes ?? null)
         setSessionsHistory(Array.isArray(historyRes?.data) ? historyRes.data : [])
         setActivities(Array.isArray(activitiesRes?.data) ? activitiesRes.data : [])
+        if (activitiesRes?.meta) {
+          setActivityPage(activitiesRes.meta.current_page || 1)
+          setActivityTotalPages(activitiesRes.meta.last_page || 1)
+        } else {
+          setActivityPage(1)
+          setActivityTotalPages(1)
+        }
         setShipmentStatuses(Array.isArray(statusesRes?.data) ? statusesRes.data : [])
       } catch (e) {
         if (!cancelled) setError(e.message || t('settings.errors.load'))
@@ -694,8 +703,14 @@ export default function Settings() {
     setActivityLoading(true)
     setError('')
     try {
-      const res = await listActivities(token, activityFilters)
+      const res = await listActivities(token, { ...activityFilters, page: activityPage })
       setActivities(Array.isArray(res?.data) ? res.data : [])
+      if (res?.meta) {
+        setActivityPage(res.meta.current_page || 1)
+        setActivityTotalPages(res.meta.last_page || 1)
+      } else {
+        setActivityTotalPages(1)
+      }
     } catch (e) {
       setError(e.message || t('settings.errors.refreshActivity'))
     } finally {
@@ -1843,7 +1858,30 @@ export default function Settings() {
                           onChange={(e) => setActivityFilters((f) => ({ ...f, event: e.target.value }))}
                           className="clients-input"
                         />
-                        <button type="button" className="clients-filters__clear clients-filters__btn-icon" onClick={() => setActivityFilters({ from: '', to: '', event: '' })} aria-label={t('customerServices.clearFilters')}>
+                        <input
+                          type="text"
+                          placeholder={t('settings.activity.searchPlaceholder')}
+                          value={activityFilters.query}
+                          onChange={(e) => setActivityFilters((f) => ({ ...f, query: e.target.value }))}
+                          className="clients-input"
+                        />
+                        <label className="settings-activity-global-toggle">
+                          <input
+                            type="checkbox"
+                            checked={activityFilters.global}
+                            onChange={(e) => setActivityFilters((f) => ({ ...f, global: e.target.checked }))}
+                          />
+                          <span>{t('settings.activity.global')}</span>
+                        </label>
+                        <button
+                          type="button"
+                          className="clients-filters__clear clients-filters__btn-icon"
+                          onClick={() => {
+                            setActivityFilters({ from: '', to: '', event: '', query: '', global: false })
+                            setActivityPage(1)
+                          }}
+                          aria-label={t('customerServices.clearFilters')}
+                        >
                           <RotateCcw className="clients-filters__btn-icon-svg" aria-hidden />
                         </button>
                         <div className="clients-filters__actions">
@@ -1860,6 +1898,39 @@ export default function Settings() {
                     ) : (
                       <div className="settings-table-card">
                         <Table columns={activityColumns} data={activities} getRowKey={(r) => r.id} emptyMessage={t('settings.activity.empty')} />
+                        {activityTotalPages > 1 && (
+                          <div className="settings-pagination">
+                            <button
+                              type="button"
+                              className="page-header__btn"
+                              onClick={() => {
+                                if (activityPage > 1) {
+                                  setActivityPage((p) => p - 1)
+                                  refreshActivities()
+                                }
+                              }}
+                              disabled={activityPage <= 1 || activityLoading}
+                            >
+                              {t('pagination.prev')}
+                            </button>
+                            <span className="settings-pagination__info">
+                              {t('pagination.pageOfTotal', { current: activityPage, total: activityTotalPages })}
+                            </span>
+                            <button
+                              type="button"
+                              className="page-header__btn"
+                              onClick={() => {
+                                if (activityPage < activityTotalPages) {
+                                  setActivityPage((p) => p + 1)
+                                  refreshActivities()
+                                }
+                              }}
+                              disabled={activityPage >= activityTotalPages || activityLoading}
+                            >
+                              {t('pagination.next')}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </SectionCard>

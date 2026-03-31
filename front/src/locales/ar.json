@@ -901,6 +901,44 @@
     "next": "التالي",
     "pageOf": "صفحة {{current}} من {{total}}"
   },
+  "notificationsAdmin": {
+    "from": "من",
+    "to": "إلى",
+    "eventPlaceholder": "مفتاح الحدث (مثال: sd_form.sent_to_operations)",
+    "channel": "القناة",
+    "channelAll": "كل القنوات",
+    "status": "الحالة",
+    "statusAll": "كل الحالات",
+    "statusPending": "قيد التنفيذ",
+    "statusSent": "تم الإرسال",
+    "statusFailed": "فشل",
+    "clear": "مسح",
+    "errorLoad": "فشل تحميل سجل الإشعارات.",
+    "empty": "لا توجد سجلات إشعارات بعد.",
+    "total": "الإجمالي",
+    "perPage": "لكل صفحة",
+    "view": "عرض",
+    "close": "إغلاق",
+    "detailTitle": "سجل الإشعار",
+    "fields": {
+      "created_at": "الوقت",
+      "sent_at": "وقت الإرسال",
+      "event_key": "الحدث",
+      "channel": "القناة",
+      "status": "الحالة",
+      "recipient": "المستلم",
+      "causer": "تم بواسطة",
+      "entity": "الكيان",
+      "error_message": "الخطأ",
+      "payload": "المحتوى",
+      "actions": "إجراءات"
+    },
+    "stats": {
+      "total": "إجمالي الإشعارات",
+      "sent": "تم الإرسال",
+      "failed": "فشل"
+    }
+  },
   "sdForms": {
     "title": "نماذج SD",
     "search": "بحث",

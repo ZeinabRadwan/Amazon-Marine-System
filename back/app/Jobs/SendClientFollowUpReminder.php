@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\ClientFollowUp;
 use App\Models\User;
 use App\Notifications\ClientFollowUpReminderNotification;
+use App\Services\NotificationService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
@@ -35,6 +36,11 @@ class SendClientFollowUpReminder implements ShouldQueue
             return;
         }
 
-        $user->notify(new ClientFollowUpReminderNotification($followUp));
+        app(NotificationService::class)->sendDatabaseNotification(
+            'client_follow_up.reminder',
+            $followUp,
+            [$user],
+            new ClientFollowUpReminderNotification($followUp)
+        );
     }
 }

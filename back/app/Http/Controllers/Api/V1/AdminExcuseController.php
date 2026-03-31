@@ -8,6 +8,7 @@ use App\Http\Responses\ApiResponse;
 use App\Models\AttendanceRecord;
 use App\Models\Excuse;
 use App\Notifications\ExcuseDecisionNotification;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +16,10 @@ use Illuminate\Support\Facades\Storage;
 
 class AdminExcuseController extends Controller
 {
+    public function __construct(
+        private NotificationService $notificationService,
+    ) {
+    }
     public function index(Request $request): JsonResponse
     {
         $query = Excuse::query()->with('user')->orderByDesc('date')->orderByDesc('id');
@@ -107,7 +112,16 @@ class AdminExcuseController extends Controller
         $fresh = $excuse->fresh(['user']);
 
         DB::afterCommit(function () use ($fresh) {
-            $fresh->user?->notify(new ExcuseDecisionNotification($fresh));
+            if ($fresh->user === null) {
+                return;
+            }
+
+            app(NotificationService::class)->sendDatabaseNotification(
+                'excuse.decision',
+                $fresh,
+                [$fresh->user],
+                new ExcuseDecisionNotification($fresh)
+            );
         });
 
         return ApiResponse::success([

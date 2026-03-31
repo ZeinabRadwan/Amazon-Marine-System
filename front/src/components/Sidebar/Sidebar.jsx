@@ -81,6 +81,7 @@ const SIDEBAR_SECTIONS = [
       { id: 'users', menuKey: 'users', Icon: UsersIcon },
       // { id: 'usersPermissions', menuKey: 'usersPermissions', Icon: UsersIcon },
       { id: 'rolesPermissions', menuKey: 'rolesPermissions', Icon: ShieldIcon },
+      { id: 'adminNotifications', menuKey: 'adminNotifications', Icon: BellRing, badge: 'alerts' },
       { id: 'settings', menuKey: 'settings', Icon: SettingsIcon },
     ],
   },
@@ -103,6 +104,7 @@ const SIDEBAR_ID_TO_PAGE_KEY = {
   visitLog: 'visits',
   users: 'users',
   rolesPermissions: 'roles_permissions',
+  adminNotifications: 'reports',
   settings: 'settings',
 }
 

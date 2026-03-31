@@ -36,6 +36,7 @@ import Shipments from './pages/Shipments/Shipments'
 import Pricing from './pages/Pricing/Pricing'
 import Invoices from './pages/Invoices/Invoices'
 import Notifications from './pages/Notifications'
+import AdminNotifications from './pages/AdminNotifications/AdminNotifications'
 import Settings from './pages/Settings'
 import Reports from './pages/Reports/Reports'
 import { getStoredToken } from './pages/Login'
@@ -762,6 +763,14 @@ function App() {
             }
           />
           <Route path="/notifications" element={<Notifications />} />
+          <Route
+            path="/admin/notifications"
+            element={
+              <RequirePageAccess pageKey="reports">
+                <AdminNotifications />
+              </RequirePageAccess>
+            }
+          />
           <Route
             path="/settings"
             element={

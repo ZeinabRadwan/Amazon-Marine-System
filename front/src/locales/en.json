@@ -901,6 +901,44 @@
     "next": "Next",
     "pageOf": "Page {{current}} of {{total}}"
   },
+  "notificationsAdmin": {
+    "from": "From",
+    "to": "To",
+    "eventPlaceholder": "Event key (e.g. sd_form.sent_to_operations)",
+    "channel": "Channel",
+    "channelAll": "All channels",
+    "status": "Status",
+    "statusAll": "All statuses",
+    "statusPending": "Pending",
+    "statusSent": "Sent",
+    "statusFailed": "Failed",
+    "clear": "Clear",
+    "errorLoad": "Failed to load notification logs.",
+    "empty": "No notification logs yet.",
+    "total": "Total",
+    "perPage": "Per page",
+    "view": "View",
+    "close": "Close",
+    "detailTitle": "Notification log",
+    "fields": {
+      "created_at": "Time",
+      "sent_at": "Sent at",
+      "event_key": "Event",
+      "channel": "Channel",
+      "status": "Status",
+      "recipient": "Recipient",
+      "causer": "Triggered by",
+      "entity": "Entity",
+      "error_message": "Error",
+      "payload": "Payload",
+      "actions": "Actions"
+    },
+    "stats": {
+      "total": "Total notifications",
+      "sent": "Sent",
+      "failed": "Failed"
+    }
+  },
   "sdForms": {
     "title": "SD Forms",
     "search": "Search",
@@ -2388,6 +2426,8 @@
       "to": "To",
       "apply": "Apply",
       "refresh": "Refresh",
+      "searchPlaceholder": "Search event or description…",
+      "global": "Show all users (requires reports permission)",
       "table": {
         "time": "Time",
         "event": "Event",

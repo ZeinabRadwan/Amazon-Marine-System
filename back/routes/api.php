@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\GitDeployController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\V1\AccountingController;
+use App\Http\Controllers\Api\V1\AdminNotificationController;
 use App\Http\Controllers\Api\V1\ActivityController;
 use App\Http\Controllers\Api\V1\AdminAttendanceController;
 use App\Http\Controllers\Api\V1\AdminExcuseController;
@@ -492,6 +493,11 @@ Route::prefix('v1')->group(function () {
         Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
         Route::post('notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
         Route::post('notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+
+        // Admin notifications (logs)
+        Route::get('admin/notifications', [AdminNotificationController::class, 'index']);
+        Route::get('admin/notifications/stats', [AdminNotificationController::class, 'stats']);
+        Route::get('admin/notifications/{notificationLog}', [AdminNotificationController::class, 'show']);
 
         // PDF layouts
         Route::get('pdf-layouts/{documentType}', [PdfLayoutController::class, 'show']);
