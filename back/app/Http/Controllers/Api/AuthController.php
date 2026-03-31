@@ -66,7 +66,7 @@ class AuthController extends Controller
         $version = sha1(json_encode([
             'role_ids' => $roleIdsSorted,
             'pages' => $allowedPages,
-            'max_updated_at' => $maxUpdatedAt?->toISOString(),
+            'max_updated_at' => $maxUpdatedAt,
         ], JSON_THROW_ON_ERROR));
 
         return [
