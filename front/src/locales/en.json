@@ -58,6 +58,7 @@
       "users": "Users",
       "usersPermissions": "Users & Permissions",
       "rolesPermissions": "Roles & Permissions",
+      "adminNotifications": "Notifications management",
       "settings": "Settings"
     }
   },

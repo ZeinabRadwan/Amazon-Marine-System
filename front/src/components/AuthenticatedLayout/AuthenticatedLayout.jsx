@@ -3,6 +3,7 @@ import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getStoredToken, clearToken } from '../../pages/Login'
 import { getProfile, logout as logoutApi } from '../../api/auth'
+import { getApiBaseUrl } from '../../api/apiBaseUrl'
 import { getUnreadCount } from '../../api/notifications'
 import { getPermissionsByRole } from '../../api/roles'
 import AppLayout from '../AppLayout'
@@ -354,11 +355,26 @@ export default function AuthenticatedLayout() {
   const activeMenu = pathToMenu[location.pathname] ?? 'dashboard'
 
   const sidebarUser = user
-    ? {
-        name: user.name || 'User',
-        email: user.email || '',
-        avatarUrl: user.avatar_url ?? user.avatarUrl ?? null,
-      }
+    ? (() => {
+        const rawAvatar = user.avatar_url ?? user.avatarUrl ?? null
+        let avatarUrl = null
+        if (rawAvatar) {
+          if (/^https?:\/\//i.test(rawAvatar)) {
+            avatarUrl = rawAvatar
+          } else if (rawAvatar.startsWith('/')) {
+            const apiBase = getApiBaseUrl()
+            const origin = apiBase.replace(/\/api\/v1\/?$/, '')
+            avatarUrl = `${origin}${rawAvatar}`
+          } else {
+            avatarUrl = rawAvatar
+          }
+        }
+        return {
+          name: user.name || 'User',
+          email: user.email || '',
+          avatarUrl,
+        }
+      })()
     : { name: 'User', email: '', avatarUrl: null }
 
   const pageHeaderConfig = useMemo(

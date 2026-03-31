@@ -37,7 +37,7 @@
     },
     "menu": {
       "dashboard": "لوحة التحكم",
-      "notifications": "الإشعارات",
+      "notifications": "إدارة الإشعارات",
       "profile": "الملف الشخصي",
       "clientsCrm": "العملاء",
       "clientLookups": "بيانات العملاء المرجعية",
@@ -58,6 +58,7 @@
       "users": "المستخدمون",
       "usersPermissions": "المستخدمون والصلاحيات",
       "rolesPermissions": "الأدوار والصلاحيات",
+      "adminNotifications": "إدارة الإشعارات",
       "settings": "الإعدادات"
     }
   },

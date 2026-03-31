@@ -6,6 +6,7 @@ import { getProfile, updateProfile, uploadProfileAvatar, changePassword, logout 
 import { Container } from '../../components/Container'
 import LoaderDots from '../../components/LoaderDots'
 import Alert from '../../components/Alert'
+import { getApiBaseUrl } from '../../api/apiBaseUrl'
 import '../../components/PageHeader/PageHeader.css'
 import '../../components/LoaderDots/LoaderDots.css'
 import '../Clients/ClientDetailModal.css'
@@ -14,6 +15,17 @@ import './Profile.css'
 const FALLBACK_AVATAR = 'https://www.svgrepo.com/show/384670/account-avatar-profile-user.svg'
 const ACCEPT_IMAGES = 'image/jpeg,image/png,image/jpg'
 const MAX_SIZE_MB = 2
+
+function resolveAvatarUrl(raw) {
+  if (!raw) return null
+  if (/^https?:\/\//i.test(raw)) return raw
+  if (raw.startsWith('/')) {
+    const apiBase = getApiBaseUrl()
+    const origin = apiBase.replace(/\/api\/v1\/?$/, '')
+    return `${origin}${raw}`
+  }
+  return raw
+}
 
 function IconEdit() {
   return (
@@ -83,7 +95,7 @@ export default function Profile() {
         const u = data.user ?? data.data ?? data
         setName(u?.name ?? '')
         setEmail(u?.email ?? '')
-        setAvatarUrl(u?.avatar_url ?? u?.avatarUrl ?? null)
+        setAvatarUrl(resolveAvatarUrl(u?.avatar_url ?? u?.avatarUrl ?? null))
       })
       .catch((err) => {
         if (!cancelled) setAlert({ type: 'error', message: err.message || t('profile.error') })
@@ -151,7 +163,7 @@ export default function Profile() {
     try {
       const data = await uploadProfileAvatar(token, file)
       const u = data.user ?? data.data ?? data
-      setAvatarUrl(u?.avatar_url ?? u?.avatarUrl ?? null)
+      setAvatarUrl(resolveAvatarUrl(u?.avatar_url ?? u?.avatarUrl ?? null))
       clearPreview()
       if (input) input.value = ''
       if (typeof refreshUser === 'function') refreshUser()
