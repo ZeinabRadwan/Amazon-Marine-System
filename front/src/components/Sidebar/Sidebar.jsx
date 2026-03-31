@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { BellRing } from 'lucide-react'
 import { useAuthAccess } from '../../hooks/useAuthAccess'
 import { getResolvedTheme } from '../../theme'
 import HeaderActions from '../HeaderActions'

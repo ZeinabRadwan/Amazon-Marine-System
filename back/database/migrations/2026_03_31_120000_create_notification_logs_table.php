@@ -29,7 +29,6 @@ return new class extends Migration
 
             $table->index(['event_key', 'channel']);
             $table->index(['recipient_id', 'status']);
-            $table->index(['notifiable_type', 'notifiable_id']);
             $table->index('created_at');
         });
     }
