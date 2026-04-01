@@ -1012,6 +1012,36 @@ body .flatpickr-calendar {
   gap: 8px;
 }
 
+.client-followup-edit-box--full {
+  margin-top: 12px;
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid var(--form-divider, #e5e7eb);
+  background: var(--form-bg-muted, #f9fafb);
+}
+
+[data-theme='dark'] .client-followup-edit-box--full,
+.dark .client-followup-edit-box--full {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.client-followup-edit-box__title {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--form-text, #374151);
+}
+
+.client-followup-edit-box__footer {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--form-divider, #e5e7eb);
+}
+
+.client-detail-modal__followup-form--compact {
+  gap: 10px;
+}
+
 /* Shipments tab: row with label + value + action */
 .client-detail-modal__shipment-row {
   display: grid;
