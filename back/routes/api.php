@@ -245,6 +245,12 @@ Route::prefix('v1')->group(function () {
             ->middleware('page_permission:clients,view');
         Route::post('clients/{client}/notes', [ClientNoteController::class, 'store'])
             ->middleware('page_permission:clients,edit');
+        Route::put('clients/{client}/notes/{note}', [ClientNoteController::class, 'update'])
+            ->middleware('page_permission:clients,edit');
+        Route::patch('clients/{client}/notes/{note}', [ClientNoteController::class, 'update'])
+            ->middleware('page_permission:clients,edit');
+        Route::delete('clients/{client}/notes/{note}', [ClientNoteController::class, 'destroy'])
+            ->middleware('page_permission:clients,edit');
 
         Route::get('follow-ups/my-summary', [ClientFollowUpSummaryController::class, 'show'])
             ->middleware('page_permission:clients,view');
@@ -252,6 +258,12 @@ Route::prefix('v1')->group(function () {
         Route::get('clients/{client}/follow-ups', [ClientFollowUpController::class, 'index'])
             ->middleware('page_permission:clients,view');
         Route::post('clients/{client}/follow-ups', [ClientFollowUpController::class, 'store'])
+            ->middleware('page_permission:clients,edit');
+        Route::put('clients/{client}/follow-ups/{followUp}', [ClientFollowUpController::class, 'update'])
+            ->middleware('page_permission:clients,edit');
+        Route::patch('clients/{client}/follow-ups/{followUp}', [ClientFollowUpController::class, 'update'])
+            ->middleware('page_permission:clients,edit');
+        Route::delete('clients/{client}/follow-ups/{followUp}', [ClientFollowUpController::class, 'destroy'])
             ->middleware('page_permission:clients,edit');
 
         Route::get('clients/{client}/attachments', [ClientAttachmentController::class, 'index'])

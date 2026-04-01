@@ -34,6 +34,95 @@ body .flatpickr-calendar {
   grid-column: 1 / -1;
 }
 
+.client-detail-modal__followup-reminder-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.client-detail-modal__followup-reminder-label {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--form-text, #374151);
+}
+
+.client-detail-modal__followup-reminder-sublabel {
+  margin: 0;
+  font-size: 13px;
+  color: var(--form-text-muted, #6b7280);
+}
+
+.client-detail-modal__reminder-mode-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+}
+
+.client-detail-modal__reminder-mode-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--form-text, #374151);
+}
+
+.client-detail-modal__reminder-mode-option input {
+  width: auto;
+  margin: 0;
+  accent-color: var(--primary, #2563eb);
+}
+
+.client-detail-modal__reminder-mode-panel {
+  margin-top: 4px;
+}
+
+.client-detail-modal__reminder-before-hint {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--form-text, #6b7280);
+}
+
+.client-detail-modal__reminder-before-row .client-detail-modal__reminder-before-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.client-detail-modal__reminder-before-input {
+  flex: 1 1 100px;
+  min-width: 72px;
+  max-width: 160px;
+}
+
+.client-detail-modal__reminder-before-unit {
+  flex: 1 1 140px;
+  min-width: 120px;
+  max-width: 220px;
+}
+
+.client-detail-modal__reminder-before-controls .client-detail-modal__reminder-before-input,
+.client-detail-modal__reminder-before-controls .client-detail-modal__reminder-before-unit {
+  width: auto;
+}
+
+.client-followup-timeline__reminder {
+  font-size: 13px;
+  color: var(--form-text, #4b5563);
+  margin-top: 4px;
+}
+
+.client-followup-timeline__reminder-at {
+  color: var(--form-text-muted, #6b7280);
+  font-size: 12px;
+}
+
+.client-followup-timeline__reminder-label {
+  font-weight: 600;
+}
+
 .client-detail-modal__followup-head {
   display: flex;
   flex-wrap: wrap;
@@ -823,6 +912,62 @@ body .flatpickr-calendar {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+
+/* Notes tab layout */
+.client-detail-modal__section--notes .client-detail-modal__list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: none;
+  background: transparent;
+}
+
+.client-detail-modal__note-item {
+  grid-template-columns: 1fr;
+  gap: 8px;
+  border: 1px solid var(--form-divider, #e5e7eb);
+  border-radius: 12px;
+  background: var(--form-bg, #fff);
+}
+
+.client-detail-modal__note-meta {
+  font-size: 12px;
+  color: var(--form-text, #6b7280);
+}
+
+.client-detail-modal__note-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.client-detail-modal__note-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.client-detail-modal__note-actions .client-detail-modal__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  min-height: 34px;
+  padding: 0;
+}
+
+.client-detail-modal__error-text {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--form-error-text, #b91c1c);
+}
+
+.client-followup-edit-box {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 /* Shipments tab: row with label + value + action */

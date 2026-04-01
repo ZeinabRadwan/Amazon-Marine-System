@@ -10,6 +10,24 @@ use Illuminate\Http\Request;
 
 class ClientNoteController extends Controller
 {
+    private function noteData(Note $n): array
+    {
+        return [
+            'id' => $n->id,
+            'content' => $n->content,
+            'author_id' => $n->author_id,
+            'author' => $n->author ? ['id' => $n->author->id, 'name' => $n->author->name] : null,
+            'created_at' => $n->created_at,
+        ];
+    }
+
+    private function ensureClientNote(Client $client, Note $note): void
+    {
+        if ((string) $note->noteable_type !== Client::class || (int) $note->noteable_id !== (int) $client->id) {
+            abort(404, __('Note not found for this client.'));
+        }
+    }
+
     /**
      * List quick notes (sales guidance) for a client.
      */
@@ -23,13 +41,7 @@ class ClientNoteController extends Controller
             ->get();
 
         return response()->json([
-            'data' => $notes->map(fn (Note $n) => [
-                'id' => $n->id,
-                'content' => $n->content,
-                'author_id' => $n->author_id,
-                'author' => $n->author ? ['id' => $n->author->id, 'name' => $n->author->name] : null,
-                'created_at' => $n->created_at,
-            ]),
+            'data' => $notes->map(fn (Note $n) => $this->noteData($n)),
         ]);
     }
 
@@ -70,12 +82,42 @@ class ClientNoteController extends Controller
         $note->save();
 
         return response()->json([
-            'data' => [
-                'id' => $note->id,
-                'content' => $note->content,
-                'author_id' => $note->author_id,
-                'created_at' => $note->created_at,
-            ],
+            'data' => $this->noteData($note->fresh('author:id,name')),
         ], 201);
+    }
+
+    /**
+     * Update a quick note for a client.
+     */
+    public function update(Request $request, Client $client, Note $note): JsonResponse
+    {
+        $this->authorize('manageClientContent', $client);
+        $this->ensureClientNote($client, $note);
+
+        $validated = $request->validate([
+            'content' => ['required', 'string', 'max:65535'],
+        ]);
+
+        $note->content = $validated['content'];
+        $note->save();
+
+        return response()->json([
+            'data' => $this->noteData($note->fresh('author:id,name')),
+        ]);
+    }
+
+    /**
+     * Delete a quick note for a client.
+     */
+    public function destroy(Request $request, Client $client, Note $note): JsonResponse
+    {
+        $this->authorize('manageClientContent', $client);
+        $this->ensureClientNote($client, $note);
+
+        $note->delete();
+
+        return response()->json([
+            'message' => __('Note deleted.'),
+        ]);
     }
 }

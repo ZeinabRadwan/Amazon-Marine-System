@@ -21,6 +21,7 @@ import {
   ClipboardIcon,
   UsersIcon,
   ShieldIcon,
+  ReportsIcon,
 } from './SidebarIcons'
 import logoDark from '../../assets/logo_darkmode.png'
 import './Sidebar.css'
@@ -77,6 +78,10 @@ const SIDEBAR_SECTIONS = [
     ],
   },
   {
+    sectionKey: 'reports',
+    items: [{ id: 'reports', menuKey: 'reports', Icon: ReportsIcon }],
+  },
+  {
     sectionKey: 'system',
     items: [
       { id: 'users', menuKey: 'users', Icon: UsersIcon },
@@ -105,7 +110,8 @@ const SIDEBAR_ID_TO_PAGE_KEY = {
   visitLog: 'visits',
   users: 'users',
   rolesPermissions: 'roles_permissions',
-  adminNotifications: 'reports',
+  adminNotifications: 'users',
+  reports: 'reports',
   settings: 'settings',
 }
 
@@ -126,6 +132,7 @@ const BADGE_CONFIG = {
 
 export default function Sidebar({
   appName = 'Marketerz',
+  isAdminRole = false,
   activeMenu = 'dashboard',
   onMenuChange,
   allowedPages: allowedPagesProp,
@@ -208,11 +215,12 @@ export default function Sidebar({
 
             const filteredItems = allowedPagesSet
               ? items.filter(({ id }) => {
+                  if (id === 'reports') return isAdminRole
                   const pageKey = SIDEBAR_ID_TO_PAGE_KEY[id]
                   if (!pageKey) return true
                   return allowedPagesSet.has(pageKey)
                 })
-              : items
+              : items.filter(({ id }) => id !== 'reports' || isAdminRole)
             if (!filteredItems.length) return null
 
             return (

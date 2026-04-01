@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { getStoredToken } from '../Login'
-import { useAuthAccess } from '../../hooks/useAuthAccess'
 import {
   exportTeamPerformanceCsv,
   exportAttendanceReportCsv,
@@ -25,20 +24,17 @@ import '../Clients/Clients.css'
 import './Reports.css'
 import {
   BarChart3,
-  Building2,
   Calendar,
   Clock,
   Download,
   FileText,
   RefreshCw,
   Search,
-  TrendingDown,
   TrendingUp,
   Users,
   Wallet,
   X,
   Package,
-  Percent,
 } from 'lucide-react'
 
 function ymd(d) {
@@ -91,18 +87,8 @@ function modalTitleForType(t, type, param) {
 export default function Reports() {
   const { t, i18n } = useTranslation()
   const token = getStoredToken()
-  const { user } = useAuthAccess()
 
   const locale = String(i18n?.language ?? '').toLowerCase().startsWith('ar') ? 'ar-EG' : 'en-US'
-  const role = (user?.primary_role ?? user?.roles?.[0] ?? 'user')?.toString?.().toLowerCase?.() || 'user'
-
-  const isAdmin = role === 'admin'
-  const isSales = role === 'sales'
-  const isSalesManager = role === 'sales_manager'
-  const isAccounting = role === 'accounting'
-  const isPricing = role === 'pricing'
-
-  const showAdminDashboard = isAdmin || isSalesManager
 
   const [from, setFrom] = useState(startOfMonthYmd)
   const [to, setTo] = useState(todayYmd)
@@ -161,12 +147,6 @@ export default function Reports() {
     const shipmentsTotal = salesPerf.reduce((acc, r) => acc + asNum(r?.shipments_count), 0)
     return { revenue, cost, profit, marginPct, shipmentsTotal }
   }, [finance, salesPerf])
-
-  const myTeamRow = useMemo(() => {
-    const uid = user?.id
-    if (!uid) return null
-    return teamPerf.find((r) => String(r?.user_id) === String(uid)) ?? null
-  }, [teamPerf, user?.id])
 
   const shipmentsByDirectionChart = useMemo(() => {
     const rows = Array.isArray(shipments?.by_direction) ? shipments.by_direction : []
@@ -270,126 +250,7 @@ export default function Reports() {
           </div>
         )}
 
-        {/* Sales: My performance only */}
-        {isSales && (
-          <section className="reports-section">
-            <div className="reports-card">
-              <div className="reports-card__head">
-                <h2 className="reports-card__title">{t('reports.myPerformance', 'My performance only')}</h2>
-              </div>
-              <p className="reports-muted">
-                {t(
-                  'reports.myPerformanceHint',
-                  'Visits, conversion, revenue, and shipments for your own portfolio in the selected period.',
-                )}
-              </p>
-              <div className="reports-kpis">
-                <StatsCard
-                  title={t('reports.kpi.visits', 'My visits')}
-                  value={asNum(myTeamRow?.visits_count)}
-                  icon={<Clock className="h-6 w-6" />}
-                  variant="blue"
-                />
-                <StatsCard
-                  title={t('reports.kpi.conversion', 'Conversion')}
-                  value={`${asNum(myTeamRow?.conversion_rate_pct)}%`}
-                  icon={<Percent className="h-6 w-6" />}
-                  variant="green"
-                />
-                <StatsCard
-                  title={t('reports.kpi.revenue', 'Revenue')}
-                  value={formatMoney(asNum(myTeamRow?.revenue), locale)}
-                  icon={<Wallet className="h-6 w-6" />}
-                  variant="amber"
-                />
-                <StatsCard
-                  title={t('reports.kpi.shipments', 'Shipments')}
-                  value={asNum(myTeamRow?.shipments_count)}
-                  icon={<Package className="h-6 w-6" />}
-                  variant="default"
-                />
-              </div>
-              <div className="reports-actions">
-                <Link to="/visits" className="reports-btn reports-btn--ghost">
-                  {t('reports.openVisits', 'Visit log')}
-                </Link>
-                <Link to="/shipments" className="reports-btn reports-btn--ghost">
-                  {t('reports.openShipments', 'My shipments')}
-                </Link>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* Accounting: Financial reports only */}
-        {isAccounting && (
-          <section className="reports-section">
-            <div className="reports-card">
-              <div className="reports-card__head">
-                <h2 className="reports-card__title">{t('reports.financeOnly', 'Financial reports')}</h2>
-              </div>
-              <p className="reports-muted">{t('reports.financeOnlyHint', 'Invoices, payments, balances, and cash flow.')}</p>
-              <div className="reports-kpis">
-                <StatsCard
-                  title={t('reports.kpi.totalRevenue', 'Total revenue')}
-                  value={formatMoney(kpi.revenue, locale)}
-                  icon={<TrendingUp className="h-6 w-6" />}
-                  variant="amber"
-                />
-                <StatsCard
-                  title={t('reports.kpi.totalCost', 'Total cost')}
-                  value={formatMoney(kpi.cost, locale)}
-                  icon={<TrendingDown className="h-6 w-6" />}
-                  variant="red"
-                />
-                <StatsCard
-                  title={t('reports.kpi.totalProfit', 'Total profit')}
-                  value={formatMoney(kpi.profit, locale)}
-                  icon={<Wallet className="h-6 w-6" />}
-                  variant="green"
-                />
-                <StatsCard
-                  title={t('reports.kpi.margin', 'Profit margin')}
-                  value={`${kpi.marginPct}%`}
-                  icon={<BarChart3 className="h-6 w-6" />}
-                  variant="blue"
-                />
-              </div>
-              <div className="reports-actions">
-                <Link to="/invoices" className="reports-btn reports-btn--ghost">
-                  {t('reports.openInvoices', 'Invoices')}
-                </Link>
-                <Link to="/accountings" className="reports-btn reports-btn--ghost">
-                  {t('reports.openAccounting', 'Accounts')}
-                </Link>
-                <Link to="/treasury" className="reports-btn reports-btn--ghost">
-                  {t('reports.openTreasury', 'Treasury')}
-                </Link>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* Pricing: Pricing reports only */}
-        {isPricing && (
-          <section className="reports-section">
-            <div className="reports-card">
-              <div className="reports-card__head">
-                <h2 className="reports-card__title">{t('reports.pricingOnly', 'Pricing reports')}</h2>
-              </div>
-              <p className="reports-muted">{t('reports.pricingOnlyHint', 'Price history, discount approvals, and changes.')}</p>
-              <div className="reports-actions">
-                <Link to="/pricing" className="reports-btn reports-btn--ghost">
-                  {t('reports.openPricing', 'Pricing')}
-                </Link>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* Admin / sales manager dashboard */}
-        {showAdminDashboard && (
-          <section className="reports-section">
+        <section className="reports-section">
             <div className="reports-card mb-4">
               <div className="reports-range">
                 <div className="reports-range__title">
@@ -755,7 +616,6 @@ export default function Reports() {
               </div>
             </div>
           </section>
-        )}
 
         {/* Drill-down modal */}
         {drillDown && (

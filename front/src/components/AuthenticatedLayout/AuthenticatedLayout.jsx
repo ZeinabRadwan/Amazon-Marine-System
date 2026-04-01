@@ -9,6 +9,7 @@ import { getPermissionsByRole } from '../../api/roles'
 import AppLayout from '../AppLayout'
 import LoaderDots from '../LoaderDots'
 import '../LoaderDots/LoaderDots.css'
+import { ROLE_ID } from '../../constants/roles'
 
 const PAGE_ACCESS_CACHE_KEY = 'am.pageAccess.v1'
 
@@ -386,6 +387,12 @@ export default function AuthenticatedLayout() {
     () => new Set(Array.isArray(allowedPages) ? allowedPages.filter(Boolean) : []),
     [allowedPages]
   )
+  const isAdminRole = useMemo(() => {
+    const rid = user?.role_id ?? user?.roles?.[0]?.id ?? user?.role?.id
+    if (rid === ROLE_ID.ADMIN) return true
+    const primary = (user?.primary_role ?? user?.roles?.[0]?.name ?? user?.role?.name ?? '').toString().toLowerCase()
+    return primary === 'admin'
+  }, [user])
   const hasPageAccess = useCallback((pageKey) => {
     if (!pageKey) return false
     return allowedPagesSet.has(String(pageKey))
@@ -404,6 +411,7 @@ export default function AuthenticatedLayout() {
   return (
     <AppLayout
       user={sidebarUser}
+      isAdminRole={isAdminRole}
       activeMenu={activeMenu}
       onMenuChange={handleMenuChange}
       allowedPages={allowedPages}

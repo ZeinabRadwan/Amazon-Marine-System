@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { getStoredToken } from '../Login'
-import { listUsers } from '../../api/users'
 import {
   listClients,
   getClient,
@@ -21,7 +20,11 @@ import {
   deleteClientAttachment,
   getClientNotes,
   postClientNote,
+  updateClientNote,
+  deleteClientNote,
   getClientFollowUps,
+  updateClientFollowUp,
+  deleteClientFollowUp,
   getFollowUpMySummary,
   postClientFollowUp,
   createClientShipment,
@@ -86,6 +89,8 @@ const CLIENT_STATUS_VARIANT_TKEY = {
   lead: 'clients.statusLead',
 }
 
+const LINK_FIELD_KEYS = ['website_url', 'facebook_url', 'linkedin_url']
+
 function clientStatusTableLabel(st, clientRow, i18n, t, variant) {
   const isAr = String(i18n.language ?? '').toLowerCase().startsWith('ar')
   if (isAr && CLIENT_STATUS_VARIANT_TKEY[variant]) {
@@ -144,7 +149,7 @@ const defaultClientForm = () => ({
 
 export default function Clients() {
   const { t, i18n } = useTranslation()
-  const { hasPageAccess } = useAuthAccess()
+  const { hasPageAccess, user } = useAuthAccess()
   const location = useLocation()
   const navigate = useNavigate()
   const token = getStoredToken()
@@ -191,14 +196,17 @@ export default function Clients() {
   const [notes, setNotes] = useState([])
   const [notesLoading, setNotesLoading] = useState(false)
   const [noteSubmitting, setNoteSubmitting] = useState(false)
+  const [noteUpdatingId, setNoteUpdatingId] = useState(null)
+  const [noteDeletingId, setNoteDeletingId] = useState(null)
   const [followUps, setFollowUps] = useState([])
   const [followUpsLoading, setFollowUpsLoading] = useState(false)
   const [followUpSubmitting, setFollowUpSubmitting] = useState(false)
+  const [followUpUpdatingId, setFollowUpUpdatingId] = useState(null)
+  const [followUpDeletingId, setFollowUpDeletingId] = useState(null)
   const [workloadSummary, setWorkloadSummary] = useState(null)
   const [workloadSummaryLoading, setWorkloadSummaryLoading] = useState(false)
   const [workloadSummaryError, setWorkloadSummaryError] = useState(null)
   const [workloadRefreshKey, setWorkloadRefreshKey] = useState(0)
-  const [salesUsers, setSalesUsers] = useState([])
   const [shipmentCreating, setShipmentCreating] = useState(false)
   const [charts, setCharts] = useState(null)
   const [chartsLoading, setChartsLoading] = useState(false)
@@ -396,17 +404,6 @@ export default function Clients() {
   }, [token, detailId, detailTab, t])
 
   useEffect(() => {
-    if (!token) return
-    listUsers(token, { per_page: 200 })
-      .then((data) => {
-        const arr = data.data ?? data
-        const list = Array.isArray(arr) ? arr : []
-        setSalesUsers(list.map((u) => ({ id: u.id, name: u.name ?? u.email ?? `#${u.id}` })))
-      })
-      .catch(() => setSalesUsers([]))
-  }, [token])
-
-  useEffect(() => {
     if (!token || detailTab !== 'followups') return
     let cancelled = false
     setWorkloadSummaryLoading(true)
@@ -484,10 +481,38 @@ export default function Clients() {
     })
   }
 
-  const buildClientPayload = (form) => {
+  const normalizeUrlForSubmit = (value, fieldKey) => {
+    const raw = value != null ? String(value).trim() : ''
+    if (!raw) return null
+
+    const withProtocol = /^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(raw) ? raw : `https://${raw}`
+
+    let parsed
+    try {
+      parsed = new URL(withProtocol)
+    } catch {
+      const err = new Error(t('clients.invalidUrl', { field: t(`clients.fields.${fieldKey}`) }))
+      err.isValidation = true
+      throw err
+    }
+
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      const err = new Error(t('clients.invalidUrl', { field: t(`clients.fields.${fieldKey}`) }))
+      err.isValidation = true
+      throw err
+    }
+
+    return parsed.toString()
+  }
+
+  const buildClientPayload = (form, { includeAssignedSales = false, assignedSalesId = null } = {}) => {
     const num = (v) => (v !== '' && v != null ? Number(v) : null)
     const str = (v) => (v != null && String(v).trim() !== '' ? String(v).trim() : null)
-    return {
+    const normalizedLinks = LINK_FIELD_KEYS.reduce((acc, key) => {
+      acc[key] = normalizeUrlForSubmit(form[key], key)
+      return acc
+    }, {})
+    const payload = {
       name: form.name?.trim() || '',
       company_name: str(form.company_name),
       company_type_id: num(form.company_type_id),
@@ -498,9 +523,9 @@ export default function Clients() {
       phone: str(form.phone),
       preferred_comm_method_id: num(form.preferred_comm_method_id),
       address: str(form.address),
-      website_url: str(form.website_url),
-      facebook_url: str(form.facebook_url),
-      linkedin_url: str(form.linkedin_url),
+      website_url: normalizedLinks.website_url,
+      facebook_url: normalizedLinks.facebook_url,
+      linkedin_url: normalizedLinks.linkedin_url,
       client_type: form.client_type === 'client' || form.client_type === 'lead' ? form.client_type : 'client',
       status_id: num(form.status_id),
       lead_source_id: num(form.lead_source_id),
@@ -518,8 +543,11 @@ export default function Clients() {
       pricing_tier: str(form.pricing_tier),
       pricing_discount_pct: form.pricing_discount_pct !== '' && form.pricing_discount_pct != null ? Number(form.pricing_discount_pct) : null,
       pricing_updated_at: str(form.pricing_updated_at) || null,
-      assigned_sales_id: num(form.assigned_sales_id),
     }
+    if (includeAssignedSales) {
+      payload.assigned_sales_id = assignedSalesId != null ? Number(assignedSalesId) : null
+    }
+    return payload
   }
 
   const handleCreateSubmit = async (e) => {
@@ -527,14 +555,24 @@ export default function Clients() {
     setAlert(null)
     setCreateSubmitting(true)
     try {
-      const payload = buildClientPayload(createForm)
+      const currentUserId = user?.id ?? null
+      const payload = buildClientPayload(createForm, {
+        includeAssignedSales: true,
+        assignedSalesId: currentUserId,
+      })
+      setCreateForm((prev) => ({
+        ...prev,
+        website_url: payload.website_url ?? '',
+        facebook_url: payload.facebook_url ?? '',
+        linkedin_url: payload.linkedin_url ?? '',
+      }))
       await createClient(token, payload)
       setShowCreate(false)
       setCreateForm(defaultClientForm())
       loadList()
       setAlert({ type: 'success', message: t('clients.created') })
     } catch (err) {
-      setAlert({ type: 'error', message: t('clients.errorCreate') })
+      setAlert({ type: 'error', message: err?.isValidation ? err.message : t('clients.errorCreate') })
     } finally {
       setCreateSubmitting(false)
     }
@@ -547,6 +585,12 @@ export default function Clients() {
     setEditSubmitting(true)
     try {
       const payload = buildClientPayload(editForm)
+      setEditForm((prev) => ({
+        ...prev,
+        website_url: payload.website_url ?? '',
+        facebook_url: payload.facebook_url ?? '',
+        linkedin_url: payload.linkedin_url ?? '',
+      }))
       await updateClient(token, editId, payload)
       setEditId(null)
       loadList()
@@ -554,7 +598,7 @@ export default function Clients() {
       setDetailId(null)
       setAlert({ type: 'success', message: t('clients.updated') })
     } catch (err) {
-      setAlert({ type: 'error', message: t('clients.errorUpdate') })
+      setAlert({ type: 'error', message: err?.isValidation ? err.message : t('clients.errorUpdate') })
     } finally {
       setEditSubmitting(false)
     }
@@ -689,6 +733,42 @@ export default function Clients() {
     }
   }
 
+  const handleUpdateNote = async (noteId, content) => {
+    if (!detailId || !token || !noteId) return false
+    setAlert(null)
+    setNoteUpdatingId(noteId)
+    try {
+      await updateClientNote(token, detailId, noteId, { content })
+      const data = await getClientNotes(token, detailId)
+      const arr = data.data ?? data.notes ?? data
+      setNotes(Array.isArray(arr) ? arr : [])
+      setAlert({ type: 'success', message: t('clients.noteUpdated', 'Note updated.') })
+      return true
+    } catch (err) {
+      setAlert({ type: 'error', message: err.message || t('clients.error') })
+      return false
+    } finally {
+      setNoteUpdatingId(null)
+    }
+  }
+
+  const handleDeleteNote = async (noteId) => {
+    if (!detailId || !token || !noteId) return false
+    setAlert(null)
+    setNoteDeletingId(noteId)
+    try {
+      await deleteClientNote(token, detailId, noteId)
+      setNotes((prev) => prev.filter((n) => Number(n.id) !== Number(noteId)))
+      setAlert({ type: 'success', message: t('clients.noteDeleted', 'Note deleted.') })
+      return true
+    } catch (err) {
+      setAlert({ type: 'error', message: err.message || t('clients.error') })
+      return false
+    } finally {
+      setNoteDeletingId(null)
+    }
+  }
+
   const handleAddFollowUp = async (body) => {
     if (!detailId || !token) return
     setAlert(null)
@@ -699,11 +779,54 @@ export default function Clients() {
       const arr = data.data ?? data.follow_ups ?? data
       setFollowUps(Array.isArray(arr) ? arr : [])
       setWorkloadRefreshKey((k) => k + 1)
+      window.dispatchEvent(new CustomEvent('am:followups:changed'))
       setAlert({ type: 'success', message: t('clients.followUpAdded', 'Follow-up added.') })
+      return true
     } catch (err) {
       setAlert({ type: 'error', message: err.message || t('clients.error') })
+      return false
     } finally {
       setFollowUpSubmitting(false)
+    }
+  }
+
+  const handleUpdateFollowUp = async (followUpId, body) => {
+    if (!detailId || !token || !followUpId) return false
+    setAlert(null)
+    setFollowUpUpdatingId(followUpId)
+    try {
+      await updateClientFollowUp(token, detailId, followUpId, body)
+      const data = await getClientFollowUps(token, detailId)
+      const arr = data.data ?? data.follow_ups ?? data
+      setFollowUps(Array.isArray(arr) ? arr : [])
+      setWorkloadRefreshKey((k) => k + 1)
+      window.dispatchEvent(new CustomEvent('am:followups:changed'))
+      setAlert({ type: 'success', message: t('clients.followUpUpdated', 'Follow-up updated.') })
+      return true
+    } catch (err) {
+      setAlert({ type: 'error', message: err.message || t('clients.error') })
+      return false
+    } finally {
+      setFollowUpUpdatingId(null)
+    }
+  }
+
+  const handleDeleteFollowUp = async (followUpId) => {
+    if (!detailId || !token || !followUpId) return false
+    setAlert(null)
+    setFollowUpDeletingId(followUpId)
+    try {
+      await deleteClientFollowUp(token, detailId, followUpId)
+      setFollowUps((prev) => prev.filter((f) => Number(f.id) !== Number(followUpId)))
+      setWorkloadRefreshKey((k) => k + 1)
+      window.dispatchEvent(new CustomEvent('am:followups:changed'))
+      setAlert({ type: 'success', message: t('clients.followUpDeleted', 'Follow-up deleted.') })
+      return true
+    } catch (err) {
+      setAlert({ type: 'error', message: err.message || t('clients.error') })
+      return false
+    } finally {
+      setFollowUpDeletingId(null)
     }
   }
 
@@ -740,10 +863,10 @@ export default function Clients() {
         { key: 'email', type: 'email' },
         { key: 'interest_level_id', type: 'select', options: interestLevels },
         { key: 'address', type: 'text' },
-        { key: 'website_url', type: 'text' },
+        { key: 'website_url', type: 'url' },
         { key: 'tax_id', type: 'text' },
-        { key: 'facebook_url', type: 'text' },
-        { key: 'linkedin_url', type: 'text' },
+        { key: 'facebook_url', type: 'url' },
+        { key: 'linkedin_url', type: 'url' },
       ],
     },
     {
@@ -761,7 +884,6 @@ export default function Clients() {
         { key: 'lead_source_id', type: 'select', options: leadSources },
         { key: 'lead_source_other', type: 'text' },
         { key: 'status_id', type: 'select', options: clientStatuses },
-        { key: 'assigned_sales_id', type: 'select', options: salesUsers },
       ],
     },
     {
@@ -929,9 +1051,16 @@ export default function Clients() {
                   <label htmlFor={`${formGroupId}-${key}`}>{t(labelKey)}</label>
                   <input
                     id={`${formGroupId}-${key}`}
-                    type={field.type === 'email' ? 'email' : 'text'}
+                    type={field.type === 'email' ? 'email' : field.type === 'url' ? 'url' : 'text'}
                     value={value}
                     onChange={(e) => update(e.target.value)}
+                    onBlur={(e) => {
+                      if (field.type !== 'url') return
+                      const raw = e.target.value?.trim()
+                      if (!raw) return
+                      if (/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(raw)) return
+                      update(`https://${raw}`)
+                    }}
                     disabled={disabled}
                     required={field.required}
                     aria-label={t(labelKey)}
@@ -1399,11 +1528,19 @@ export default function Clients() {
         notes={notes}
         notesLoading={notesLoading}
         noteSubmitting={noteSubmitting}
+        noteUpdatingId={noteUpdatingId}
+        noteDeletingId={noteDeletingId}
         onAddNote={handleAddNote}
+        onUpdateNote={handleUpdateNote}
+        onDeleteNote={handleDeleteNote}
         followUps={followUps}
         followUpsLoading={followUpsLoading}
         followUpSubmitting={followUpSubmitting}
+        followUpUpdatingId={followUpUpdatingId}
+        followUpDeletingId={followUpDeletingId}
         onAddFollowUp={handleAddFollowUp}
+        onUpdateFollowUp={handleUpdateFollowUp}
+        onDeleteFollowUp={handleDeleteFollowUp}
         workloadSummary={workloadSummary}
         workloadSummaryLoading={workloadSummaryLoading}
         workloadSummaryError={workloadSummaryError}

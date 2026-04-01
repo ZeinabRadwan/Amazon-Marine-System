@@ -51,8 +51,10 @@ export default function DateTimePicker({
 
     const fp = flatpickr(el, {
       enableTime: true,
-      time_24hr: true,
+      time_24hr: false,
       dateFormat: 'Y-m-d H:i',
+      altInput: true,
+      altFormat: 'j F Y - h:i K',
       allowInput: false,
       clickOpens: !disabledRef.current,
       appendTo: document.body,

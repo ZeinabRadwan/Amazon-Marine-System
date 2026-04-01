@@ -14,15 +14,23 @@ function authHeaders(token) {
   }
 }
 
-export async function getReportsShipments(token) {
-  const res = await apiFetch(`${getBaseUrl()}/reports/shipments`, { headers: authHeaders(token) })
+export async function getReportsShipments(token, params = {}) {
+  const searchParams = new URLSearchParams()
+  if (params.from) searchParams.set('from', String(params.from))
+  if (params.to) searchParams.set('to', String(params.to))
+  const q = searchParams.toString()
+  const res = await apiFetch(`${getBaseUrl()}/reports/shipments${q ? `?${q}` : ''}`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to load shipments report (${res.status})`)
   return data
 }
 
-export async function getReportsFinance(token) {
-  const res = await apiFetch(`${getBaseUrl()}/reports/finance`, { headers: authHeaders(token) })
+export async function getReportsFinance(token, params = {}) {
+  const searchParams = new URLSearchParams()
+  if (params.from) searchParams.set('from', String(params.from))
+  if (params.to) searchParams.set('to', String(params.to))
+  const q = searchParams.toString()
+  const res = await apiFetch(`${getBaseUrl()}/reports/finance${q ? `?${q}` : ''}`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to load finance report (${res.status})`)
   return data

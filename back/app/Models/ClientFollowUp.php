@@ -20,6 +20,8 @@ class ClientFollowUp extends Model
         'summary',
         'next_follow_up_at',
         'reminder_at',
+        'reminder_before_value',
+        'reminder_before_unit',
         'created_by_id',
     ];
 

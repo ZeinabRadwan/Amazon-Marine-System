@@ -40,6 +40,7 @@ import AdminNotifications from './pages/AdminNotifications/AdminNotifications'
 import Settings from './pages/Settings'
 import Reports from './pages/Reports/Reports'
 import { getStoredToken } from './pages/Login'
+import FollowUpWorkloadWidgets from './components/FollowUpWorkloadWidgets'
 import {
   getDashboardAdminOverview,
   getDashboardSalesManager,
@@ -49,8 +50,10 @@ import {
   getDashboardOperationsEmployee,
   getDashboardSupportEmployee,
 } from './api/dashboard'
+import { getFollowUpMySummary } from './api/clients'
 import { useAuthAccess } from './hooks/useAuthAccess'
 import RequirePageAccess from './components/RequirePageAccess'
+import RequireAdmin from './components/RequireAdmin'
 import './App.css'
 import './pages/Clients/Clients.css'
 
@@ -68,6 +71,8 @@ function Home() {
   const { user } = useAuthAccess()
   const token = getStoredToken()
   const [dashboardState, setDashboardState] = useState({ loading: true, error: null, data: null, roleKey: 'admin' })
+  const [salesFollowUpSummary, setSalesFollowUpSummary] = useState({ loading: false, error: null, data: null })
+  const [salesSummaryRefreshKey, setSalesSummaryRefreshKey] = useState(0)
   const displayName = user?.name || t('common.user', 'User')
   const role = String(user?.primary_role ?? user?.roles?.[0]?.name ?? user?.roles?.[0] ?? t('common.user', 'user'))
   const roleKey = resolveDashboardRole(user)
@@ -95,6 +100,31 @@ function Home() {
     }
   }, [token, roleKey, roleFetcher, t])
 
+  useEffect(() => {
+    if (roleKey !== 'sales' || !token) {
+      setSalesFollowUpSummary({ loading: false, error: null, data: null })
+      return
+    }
+    let cancelled = false
+    setSalesFollowUpSummary((prev) => ({ ...prev, loading: true, error: null }))
+    getFollowUpMySummary(token)
+      .then((data) => {
+        if (!cancelled) setSalesFollowUpSummary({ loading: false, error: null, data })
+      })
+      .catch((e) => {
+        if (!cancelled) setSalesFollowUpSummary({ loading: false, error: e?.message || t('common.error', 'Something went wrong'), data: null })
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [token, roleKey, salesSummaryRefreshKey, t])
+
+  useEffect(() => {
+    const onFollowUpsChanged = () => setSalesSummaryRefreshKey((k) => k + 1)
+    window.addEventListener('am:followups:changed', onFollowUpsChanged)
+    return () => window.removeEventListener('am:followups:changed', onFollowUpsChanged)
+  }, [])
+
   const dateOnly = new Date().toLocaleDateString(i18n.language === 'ar' ? 'ar-EG' : 'en-US', {
     weekday: 'long',
     year: 'numeric',
@@ -116,14 +146,14 @@ function Home() {
         </section>
 
         <section className="space-y-4">
-          <RoleDashboardSection state={dashboardState} roleKey={roleKey} />
+          <RoleDashboardSection state={dashboardState} roleKey={roleKey} salesFollowUpSummary={salesFollowUpSummary} />
         </section>
       </div>
     </Container>
   )
 }
 
-function RoleDashboardSection({ state, roleKey }) {
+function RoleDashboardSection({ state, roleKey, salesFollowUpSummary }) {
   const { t } = useTranslation()
 
   return (
@@ -134,16 +164,16 @@ function RoleDashboardSection({ state, roleKey }) {
       ) : state?.error ? (
         <p className="text-sm text-red-600 dark:text-red-400">{state.error}</p>
       ) : (
-        <RoleDashboardContent roleKey={roleKey} payload={extractPayload(state?.data)} />
+        <RoleDashboardContent roleKey={roleKey} payload={extractPayload(state?.data)} salesFollowUpSummary={salesFollowUpSummary} />
       )}
     </article>
   )
 }
 
-function RoleDashboardContent({ roleKey, payload }) {
+function RoleDashboardContent({ roleKey, payload, salesFollowUpSummary }) {
   if (roleKey === 'admin') return <AdminDashboardBlock payload={payload} />
   if (roleKey === 'sales_manager') return <SalesManagerDashboardBlock payload={payload} />
-  if (roleKey === 'sales') return <SalesEmployeeDashboardBlock payload={payload} />
+  if (roleKey === 'sales') return <SalesEmployeeDashboardBlock payload={payload} followUpSummaryState={salesFollowUpSummary} />
   if (roleKey === 'accountant') return <AccountantDashboardBlock payload={payload} />
   if (roleKey === 'pricing') return <PricingDashboardBlock payload={payload} />
   if (roleKey === 'operations') return <OperationsDashboardBlock payload={payload} />
@@ -212,7 +242,7 @@ function SalesManagerDashboardBlock({ payload }) {
   )
 }
 
-function SalesEmployeeDashboardBlock({ payload }) {
+function SalesEmployeeDashboardBlock({ payload, followUpSummaryState }) {
   const perf = payload?.personal_performance || {}
   const followUps = Array.isArray(payload?.customers_needing_follow_up) ? payload.customers_needing_follow_up : []
   const pending = Array.isArray(payload?.pending_sd_forms) ? payload.pending_sd_forms : []
@@ -229,6 +259,14 @@ function SalesEmployeeDashboardBlock({ payload }) {
       <div className="clients-charts-grid">
         <PieChart data={statusPie} nameKey="name" valueKey="value" showLabel={false} height={260} />
         <LineChart data={monthly} xKey="month" lines={[{ dataKey: 'qualified', name: 'Qualified' }, { dataKey: 'converted', name: 'Converted' }]} height={260} />
+      </div>
+      <div className="clients-extra-panel">
+        <p className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">My follow-up summary</p>
+        <FollowUpWorkloadWidgets
+          summary={followUpSummaryState?.data}
+          loading={!!followUpSummaryState?.loading}
+          error={followUpSummaryState?.error}
+        />
       </div>
       <Table columns={[{ key: 'client', label: 'Client' }, { key: 'next_follow_up_at', label: 'Next Follow-up' }, { key: 'summary', label: 'Summary' }]} data={followUps} getRowKey={(r) => `${r.client}-${r.next_follow_up_at}`} emptyMessage="No follow-ups." />
       <Table columns={[{ key: 'sd_number', label: 'SD Number' }, { key: 'status', label: 'Status' }, { key: 'created_at', label: 'Created At' }]} data={pending} getRowKey={(r) => r.id ?? r.sd_number} emptyMessage="No pending SD forms." />
@@ -766,7 +804,7 @@ function App() {
           <Route
             path="/admin/notifications"
             element={
-              <RequirePageAccess pageKey="reports">
+              <RequirePageAccess pageKey="users">
                 <AdminNotifications />
               </RequirePageAccess>
             }
@@ -782,9 +820,9 @@ function App() {
           <Route
             path="/reports"
             element={
-              <RequirePageAccess pageKey="reports">
+              <RequireAdmin>
                 <Reports />
-              </RequirePageAccess>
+              </RequireAdmin>
             }
           />
         </Route>
