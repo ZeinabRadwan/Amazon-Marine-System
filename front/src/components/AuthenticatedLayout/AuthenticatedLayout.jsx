@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getStoredToken, clearToken } from '../../pages/Login'
@@ -188,7 +188,7 @@ export default function AuthenticatedLayout() {
             roleId: u?.role_id ?? null,
           })
         }
-      } catch (err) {
+      } catch {
         if (!cancelled) {
           clearToken()
           navigate('/login', { replace: true })
@@ -225,6 +225,64 @@ export default function AuthenticatedLayout() {
       window.clearInterval(interval)
     }
   }, [token])
+
+  // ── Global 401 handler (backend idle-logout or expired token) ─────────────
+  useEffect(() => {
+    const onSessionExpired = () => {
+      clearToken()
+      navigate('/login', { replace: true })
+    }
+    window.addEventListener('am:session:expired', onSessionExpired)
+    return () => window.removeEventListener('am:session:expired', onSessionExpired)
+  }, [navigate])
+
+  // ── Frontend idle timer ───────────────────────────────────────────────────
+  // Proactively logs the user out when they haven't interacted for
+  // idle_logout_minutes without requiring an API call to be in-flight.
+  const idleTimerRef = useRef(null)
+  useEffect(() => {
+    if (!token) return
+
+    let idleMs = 30 * 60 * 1000 // default 30 min
+
+    // Fetch the setting from the backend once
+    const apiBase = getApiBaseUrl()
+    fetch(`${apiBase}/settings`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+      },
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        const minutes = data?.data?.sessions?.idle_logout_minutes ?? data?.sessions?.idle_logout_minutes
+        if (minutes && Number(minutes) > 0) {
+          idleMs = Number(minutes) * 60 * 1000
+        }
+      })
+      .catch(() => {})
+
+    const logout = () => {
+      clearToken()
+      navigate('/login', { replace: true })
+    }
+
+    const resetTimer = () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
+      idleTimerRef.current = setTimeout(logout, idleMs)
+    }
+
+    // Start the timer immediately
+    resetTimer()
+
+    const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click']
+    events.forEach((e) => window.addEventListener(e, resetTimer, { passive: true }))
+
+    return () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
+      events.forEach((e) => window.removeEventListener(e, resetTimer))
+    }
+  }, [token, navigate])
 
   const handleLogout = async () => {
     try {

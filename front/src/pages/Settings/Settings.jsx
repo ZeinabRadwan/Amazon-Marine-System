@@ -1262,6 +1262,170 @@ export default function Settings() {
     { key: 'total_active_minutes', label: t('settings.sessions.table.totalActivityMinutes'), sortable: false },
   ]
 
+  function _describeActivity(event, props) {
+    const p = props || {}
+    const v = (key) => {
+      const parts = key.split('.')
+      return parts.reduce((obj, k) => (obj && obj[k] !== undefined ? obj[k] : undefined), p)
+    }
+    const yn = (val) => (val ? t('common.yes', 'Yes') : t('common.no', 'No'))
+
+    switch (event) {
+      // ── Settings ─────────────────────────────────────────────
+      case 'settings.session_settings_updated':
+        return [
+          v('reset_hour') !== undefined && `Reset hour: ${v('reset_hour')}`,
+          v('idle_logout_minutes') !== undefined && `Idle logout: ${v('idle_logout_minutes')} min`,
+        ].filter(Boolean).join(' · ') || '—'
+
+      case 'settings.attendance_policy_updated': {
+        const pol = v('policy') || {}
+        return [
+          pol.workday_start && pol.workday_end && `${pol.workday_start}–${pol.workday_end}`,
+          pol.grace_minutes !== undefined && `Grace: ${pol.grace_minutes} min`,
+          pol.enforce_geofence !== undefined && `Geofence: ${yn(pol.enforce_geofence)}`,
+        ].filter(Boolean).join(' · ') || '—'
+      }
+
+      case 'settings.company_profile_updated': {
+        const prof = v('profile') || {}
+        return prof.name_en || prof.name_ar || '—'
+      }
+
+      case 'settings.company_location_updated':
+        return [
+          v('lat') !== undefined && v('lng') !== undefined && `${v('lat')}, ${v('lng')}`,
+          v('radius_m') !== undefined && `Radius: ${v('radius_m')} m`,
+        ].filter(Boolean).join(' · ') || '—'
+
+      case 'settings.system_preferences_updated': {
+        const ch = v('changes') || {}
+        return Object.entries(ch)
+          .filter(([, vv]) => vv !== null && vv !== undefined)
+          .map(([kk, vv]) => `${kk}: ${vv}`)
+          .join(', ') || '—'
+      }
+
+      case 'settings.notification_preferences_updated': {
+        const ch = v('changes') || {}
+        const on = Object.entries(ch).filter(([, vv]) => vv === true).map(([kk]) => kk)
+        const off = Object.entries(ch).filter(([, vv]) => vv === false).map(([kk]) => kk)
+        return [
+          on.length > 0 && `On: ${on.join(', ')}`,
+          off.length > 0 && `Off: ${off.join(', ')}`,
+        ].filter(Boolean).join(' · ') || '—'
+      }
+
+      // ── Shipment ──────────────────────────────────────────────
+      case 'shipment.created':
+        return [
+          v('bl_number') && `BL: ${v('bl_number')}`,
+          v('client_id') && `Client ID: ${v('client_id')}`,
+        ].filter(Boolean).join(' · ') || '—'
+
+      case 'shipment.status_changed':
+        return v('from') && v('to') ? `${v('from')} → ${v('to')}` : '—'
+
+      case 'shipment.operations_status_changed':
+        return v('from') !== undefined && v('to') !== undefined ? `Stage ${v('from')} → ${v('to')}` : '—'
+
+      case 'shipment.deleted':
+        return v('bl_number') ? `BL: ${v('bl_number')}` : '—'
+
+      case 'shipment.schedule_updated': {
+        const parts = []
+        if (v('etd')) parts.push(`ETD: ${v('etd')}`)
+        if (v('eta')) parts.push(`ETA: ${v('eta')}`)
+        return parts.join(' · ') || '—'
+      }
+
+      case 'shipment.reefer_updated':
+        return [
+          v('reefer_temp') && `Temp: ${v('reefer_temp')}`,
+          v('reefer_vent') && `Vent: ${v('reefer_vent')}`,
+          v('reefer_hum') && `Hum: ${v('reefer_hum')}`,
+        ].filter(Boolean).join(' · ') || '—'
+
+      case 'shipment.financial_expense_created':
+      case 'shipment.financial_expense_updated':
+        return [
+          v('category') && `${v('category')}`,
+          v('amount') !== undefined && `${v('currency') || ''}${v('amount')}`,
+        ].filter(Boolean).join(' · ') || '—'
+
+      case 'shipment.financial_expense_receipt_uploaded':
+        return v('category') ? `Receipt for ${v('category')}` : '—'
+
+      case 'shipment.notify_sales_financials':
+        return v('bl_number') ? `BL: ${v('bl_number')}` : '—'
+
+      // ── SD Form ───────────────────────────────────────────────
+      case 'sd_form.created':
+      case 'sd_form.updated':
+      case 'sd_form.submitted':
+      case 'sd_form.deleted':
+        return v('sd_number') ? `SD #${v('sd_number')}` : '—'
+
+      case 'sd_form.linked_shipment':
+        return [
+          v('sd_number') && `SD #${v('sd_number')}`,
+          v('shipment_id') && `Shipment #${v('shipment_id')}`,
+        ].filter(Boolean).join(' → ') || '—'
+
+      case 'sd_form.sent_to_operations':
+      case 'sd_form.email_to_operations':
+        return v('sd_number') ? `SD #${v('sd_number')}` : '—'
+
+      // ── Invoice ───────────────────────────────────────────────
+      case 'invoice.created':
+      case 'invoice.issued':
+      case 'invoice.cancelled':
+        return [
+          v('invoice_number') || v('number'),
+          v('amount') !== undefined && `${v('currency') || ''}${v('amount')}`,
+        ].filter(Boolean).join(' · ') || '—'
+
+      case 'invoice.payment_recorded':
+      case 'shipment.invoice_payment_recorded':
+        return v('amount') !== undefined ? `${v('currency') || ''}${v('amount')}` : '—'
+
+      // ── Vendor bill ───────────────────────────────────────────
+      case 'vendor_bill.created':
+      case 'vendor_bill.updated':
+      case 'vendor_bill.approved':
+      case 'vendor_bill.cancelled':
+        return v('amount') !== undefined ? `${v('currency') || ''}${v('amount')}` : '—'
+
+      case 'vendor_bill.payment_recorded':
+        return v('amount') !== undefined ? `Paid ${v('currency') || ''}${v('amount')}` : '—'
+
+      // ── Payment ───────────────────────────────────────────────
+      case 'payment.created':
+        return v('amount') !== undefined ? `${v('currency') || ''}${v('amount')}` : '—'
+
+      // ── User ──────────────────────────────────────────────────
+      case 'user.created':
+        return [v('email'), v('role') && `Role: ${v('role')}`].filter(Boolean).join(' · ') || '—'
+
+      case 'user.deleted':
+        return v('email') || '—'
+
+      case 'user.password_changed':
+        return t('settings.activity.events.user.password_changed', 'Password changed')
+
+      case 'user.role_assigned':
+        return v('role') ? `→ ${v('role')}` : '—'
+
+      case 'user.permissions_updated': {
+        const after = v('after')
+        return Array.isArray(after) ? `${after.length} permissions` : '—'
+      }
+
+      default:
+        return '—'
+    }
+  }
+
   const activityColumns = [
     { key: 'created_at', label: t('settings.activity.table.time'), sortable: false, render: (val) => (val ? new Date(val).toLocaleString() : '—') },
     {
@@ -1275,41 +1439,11 @@ export default function Settings() {
         return translated || key
       },
     },
-    {
-      key: 'properties',
-      label: t('settings.activity.table.description'),
-      sortable: false,
-      render: (props) => {
-        if (!props || typeof props !== 'object') return '—'
-        const req = props.request || {}
-        const parts = []
-        if (req.ip) parts.push(req.ip)
-        if (req.path) parts.push(req.path)
-        // domain-specific context keys (exclude request block)
-        const domainKeys = Object.keys(props).filter((k) => k !== 'request')
-        if (domainKeys.length > 0) {
-          const preview = domainKeys
-            .map((k) => {
-              const v = props[k]
-              if (v === null || v === undefined) return null
-              if (typeof v === 'object') {
-                const sub = Object.entries(v)
-                  .filter(([, val]) => val !== null && val !== undefined && typeof val !== 'object')
-                  .map(([kk, vv]) => `${kk}: ${vv}`)
-                  .slice(0, 3)
-                  .join(', ')
-                return sub || null
-              }
-              return `${k}: ${v}`
-            })
-            .filter(Boolean)
-            .join(' · ')
-          if (preview) parts.push(preview)
-        }
-        return parts.join(' — ') || '—'
-      },
-    },
+    // description column hidden for now
+    // { key: 'properties', label: t('settings.activity.table.description'), sortable: false, render: (props, row) => describeActivity(row.event || row.log_name, props) },
   ]
+
+
 
   const shipmentStatusColumns = [
     {
