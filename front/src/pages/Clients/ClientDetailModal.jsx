@@ -73,6 +73,84 @@ function normalizeDateTimeForApi(s) {
   return v
 }
 
+/** ISO / API datetime → `Y-m-d H:i` for DateTimePicker */
+function isoToLocalDateTimeInput(v) {
+  if (v == null || v === '') return ''
+  const d = new Date(v)
+  if (Number.isNaN(d.getTime())) return ''
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+/** Map API follow-up row → edit form state */
+function mapFollowUpToEditForm(f) {
+  const hasRelative =
+    f.reminder_before_value != null &&
+    f.reminder_before_unit != null &&
+    String(f.reminder_before_unit).trim() !== ''
+  return {
+    channel: f.channel ?? f.type ?? 'phone',
+    followup_type: f.followup_type ?? 'consultation',
+    outcome: f.outcome ?? '',
+    occurred_at: isoToLocalDateTimeInput(f.occurred_at) || defaultLocalDateTime(),
+    next_follow_up_at: isoToLocalDateTimeInput(f.next_follow_up_at),
+    reminder_mode: hasRelative ? 'before' : 'absolute',
+    reminder_at: hasRelative ? '' : isoToLocalDateTimeInput(f.reminder_at),
+    reminder_before_value: hasRelative ? String(f.reminder_before_value ?? '30') : '30',
+    reminder_before_unit: hasRelative ? (f.reminder_before_unit || 'minute') : 'minute',
+    notes: f.summary ?? '',
+  }
+}
+
+/**
+ * @param {object} form — same shape as followUpForm / edit form
+ * @param {(key: string, fallback?: string) => string} t
+ * @returns {{ payload?: object, error?: string }}
+ */
+function buildFollowUpPayload(form, t) {
+  const summary = String(form.notes ?? '').trim()
+  if (!summary) {
+    return { error: t('clients.followUpSummaryRequired', 'Follow-up summary is required.') }
+  }
+  const nextNorm = normalizeDateTimeForApi(form.next_follow_up_at)
+  const base = {
+    channel: form.channel,
+    followup_type: form.followup_type,
+    outcome: form.outcome || undefined,
+    occurred_at: normalizeDateTimeForApi(form.occurred_at) ?? form.occurred_at,
+    summary,
+    next_follow_up_at: nextNorm,
+  }
+  if (form.reminder_mode === 'absolute') {
+    const ra = normalizeDateTimeForApi(form.reminder_at)
+    if (!ra) {
+      return {
+        error: t(
+          'clients.followUpReminderRequired',
+          'Set a reminder time or choose “before next follow-up” with a valid duration.',
+        ),
+      }
+    }
+    return { payload: { ...base, reminder_at: ra } }
+  }
+  if (!nextNorm) {
+    return {
+      error: t(
+        'clients.followUpNextRequiredForRelative',
+        'Set the next follow-up date first, then choose how long before it to remind you.',
+      ),
+    }
+  }
+  const v = parseInt(String(form.reminder_before_value ?? '').trim(), 10)
+  const unit = form.reminder_before_unit
+  if (!Number.isFinite(v) || v < 1 || !['minute', 'hour', 'day'].includes(unit)) {
+    return {
+      error: t('clients.followUpReminderBeforeValueInvalid', 'Enter a positive number for the reminder offset.'),
+    }
+  }
+  return { payload: { ...base, reminder_before_value: v, reminder_before_unit: unit } }
+}
+
 /** API may return visit_date as ISO string (e.g. 2026-03-23T00:00:00.000000Z). */
 function formatVisitDateDisplay(value, locale) {
   if (value == null || value === '') return '—'
@@ -177,7 +255,8 @@ export default function ClientDetailModal({
   })
   const [followUpValidationError, setFollowUpValidationError] = useState('')
   const [editingFollowUpId, setEditingFollowUpId] = useState(null)
-  const [editingFollowUpSummary, setEditingFollowUpSummary] = useState('')
+  const [editFollowUpForm, setEditFollowUpForm] = useState(null)
+  const [editFollowUpError, setEditFollowUpError] = useState('')
 
   if (!open) return null
 
@@ -741,51 +820,12 @@ export default function ClientDetailModal({
                       type="button"
                       className="client-detail-modal__btn client-detail-modal__btn--primary"
                       onClick={async () => {
-                        const summary = String(followUpForm.notes ?? '').trim()
-                        if (!summary) {
-                          setFollowUpValidationError(t('clients.followUpSummaryRequired', 'Follow-up summary is required.'))
+                        const built = buildFollowUpPayload(followUpForm, t)
+                        if (built.error) {
+                          setFollowUpValidationError(built.error)
                           return
                         }
-                        const nextNorm = normalizeDateTimeForApi(followUpForm.next_follow_up_at)
-                        const base = {
-                          channel: followUpForm.channel,
-                          followup_type: followUpForm.followup_type,
-                          outcome: followUpForm.outcome || undefined,
-                          occurred_at: normalizeDateTimeForApi(followUpForm.occurred_at) ?? followUpForm.occurred_at,
-                          summary,
-                          next_follow_up_at: nextNorm,
-                        }
-                        let payload = base
-                        if (followUpForm.reminder_mode === 'absolute') {
-                          const ra = normalizeDateTimeForApi(followUpForm.reminder_at)
-                          if (!ra) {
-                            setFollowUpValidationError(
-                              t('clients.followUpReminderRequired', 'Set a reminder time or choose “before next follow-up” with a valid duration.')
-                            )
-                            return
-                          }
-                          payload = { ...base, reminder_at: ra }
-                        } else {
-                          if (!nextNorm) {
-                            setFollowUpValidationError(
-                              t(
-                                'clients.followUpNextRequiredForRelative',
-                                'Set the next follow-up date first, then choose how long before it to remind you.'
-                              )
-                            )
-                            return
-                          }
-                          const v = parseInt(String(followUpForm.reminder_before_value ?? '').trim(), 10)
-                          const unit = followUpForm.reminder_before_unit
-                          if (!Number.isFinite(v) || v < 1 || !['minute', 'hour', 'day'].includes(unit)) {
-                            setFollowUpValidationError(
-                              t('clients.followUpReminderBeforeValueInvalid', 'Enter a positive number for the reminder offset.')
-                            )
-                            return
-                          }
-                          payload = { ...base, reminder_before_value: v, reminder_before_unit: unit }
-                        }
-                        const ok = await onAddFollowUp?.(payload)
+                        const ok = await onAddFollowUp?.(built.payload)
                         if (!ok) return
                         setFollowUpValidationError('')
                         setFollowUpForm({
@@ -844,37 +884,231 @@ export default function ClientDetailModal({
                               </span>
                             )}
                           </div>
-                          <div className="client-followup-timeline__when">
-                            {t('clients.followUpOccurredUnified', 'Follow-up date & time')}: {formatDateTime(f.occurred_at)}
-                          </div>
-                          {f.next_follow_up_at ? (
-                            <div className="client-followup-timeline__next">
-                              {t('clients.followUpNextShort', 'Next')}: {formatDateTime(f.next_follow_up_at)}
-                            </div>
+                          {editingFollowUpId !== f.id ? (
+                            <>
+                              <div className="client-followup-timeline__when">
+                                {t('clients.followUpOccurredUnified', 'Follow-up date & time')}: {formatDateTime(f.occurred_at)}
+                              </div>
+                              {f.next_follow_up_at ? (
+                                <div className="client-followup-timeline__next">
+                                  {t('clients.followUpNextShort', 'Next')}: {formatDateTime(f.next_follow_up_at)}
+                                </div>
+                              ) : null}
+                              {f.reminder_at ? (
+                                <div className="client-followup-timeline__reminder">
+                                  <span className="client-followup-timeline__reminder-label">{t('clients.followUpReminderShort')}: </span>
+                                  {f.reminder_before_value != null && f.reminder_before_unit
+                                    ? t('clients.followUpReminderRelativeLine', {
+                                        count: f.reminder_before_value,
+                                        unit: t(`clients.reminderUnit.${f.reminder_before_unit}`, f.reminder_before_unit),
+                                      })
+                                    : formatDateTime(f.reminder_at)}
+                                </div>
+                              ) : null}
+                              {f.summary?.trim() ? (
+                                <div className="client-followup-timeline__notes">{f.summary}</div>
+                              ) : null}
+                            </>
                           ) : null}
-                          {f.reminder_at ? (
-                            <div className="client-followup-timeline__reminder">
-                              <span className="client-followup-timeline__reminder-label">{t('clients.followUpReminderShort')}: </span>
-                              {f.reminder_before_value != null && f.reminder_before_unit
-                                ? t('clients.followUpReminderRelativeLine', {
-                                    count: f.reminder_before_value,
-                                    unit: t(`clients.reminderUnit.${f.reminder_before_unit}`, f.reminder_before_unit),
-                                  })
-                                : formatDateTime(f.reminder_at)}
-                            </div>
-                          ) : null}
-                          {f.summary?.trim() ? (
-                            <div className="client-followup-timeline__notes">{f.summary}</div>
-                          ) : null}
-                          {editingFollowUpId === f.id ? (
-                            <div className="client-followup-edit-box">
-                              <textarea
-                                value={editingFollowUpSummary}
-                                onChange={(e) => setEditingFollowUpSummary(e.target.value)}
-                                rows={3}
-                                disabled={followUpUpdatingId === f.id}
-                              />
-                              <div className="client-detail-modal__note-actions">
+                          {editingFollowUpId === f.id && editFollowUpForm ? (
+                            <div className="client-followup-edit-box client-followup-edit-box--full">
+                              <p className="client-followup-edit-box__title">{t('clients.followUpEditTitle', 'Edit follow-up')}</p>
+                              <div className="client-detail-modal__form-grid client-detail-modal__followup-form client-detail-modal__followup-form--compact">
+                                <div className="client-detail-modal__form-field">
+                                  <label htmlFor={`edit-followup-channel-${f.id}`}>{t('clients.followUpChannelLabel')}</label>
+                                  <select
+                                    id={`edit-followup-channel-${f.id}`}
+                                    value={editFollowUpForm.channel}
+                                    onChange={(e) =>
+                                      setEditFollowUpForm((prev) => (prev ? { ...prev, channel: e.target.value } : prev))
+                                    }
+                                    disabled={followUpUpdatingId === f.id}
+                                  >
+                                    {FOLLOWUP_CHANNELS.map((c) => (
+                                      <option key={c} value={c}>
+                                        {t(`clients.followUpChannel.${c}`, c)}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div className="client-detail-modal__form-field">
+                                  <label htmlFor={`edit-followup-kind-${f.id}`}>{t('clients.followUpKindLabel')}</label>
+                                  <select
+                                    id={`edit-followup-kind-${f.id}`}
+                                    value={editFollowUpForm.followup_type}
+                                    onChange={(e) =>
+                                      setEditFollowUpForm((prev) => (prev ? { ...prev, followup_type: e.target.value } : prev))
+                                    }
+                                    disabled={followUpUpdatingId === f.id}
+                                  >
+                                    {FOLLOWUP_KINDS.map((k) => (
+                                      <option key={k} value={k}>
+                                        {t(`clients.followUpKind.${k}`, k)}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div className="client-detail-modal__form-field">
+                                  <label htmlFor={`edit-followup-outcome-${f.id}`}>{t('clients.followUpOutcomeLabel')}</label>
+                                  <select
+                                    id={`edit-followup-outcome-${f.id}`}
+                                    value={editFollowUpForm.outcome}
+                                    onChange={(e) =>
+                                      setEditFollowUpForm((prev) => (prev ? { ...prev, outcome: e.target.value } : prev))
+                                    }
+                                    disabled={followUpUpdatingId === f.id}
+                                  >
+                                    <option value="">{t('clients.followUpOutcomeUnset', '— Later / not set —')}</option>
+                                    {FOLLOWUP_OUTCOMES.map((o) => (
+                                      <option key={o} value={o}>
+                                        {t(`clients.followUpOutcome.${o}`, o)}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+                                  <label htmlFor={`edit-followup-occurred-${f.id}`}>{t('clients.followUpOccurredUnified')}</label>
+                                  <DateTimePicker
+                                    id={`edit-followup-occurred-${f.id}`}
+                                    value={editFollowUpForm.occurred_at}
+                                    onChange={(v) =>
+                                      setEditFollowUpForm((prev) =>
+                                        prev ? { ...prev, occurred_at: v || defaultLocalDateTime() } : prev,
+                                      )
+                                    }
+                                    disabled={followUpUpdatingId === f.id}
+                                    locale={i18n.language}
+                                    className="client-detail-modal__datetime-input"
+                                    placeholder={t('clients.followUpPickDateTime')}
+                                  />
+                                </div>
+                                <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+                                  <label htmlFor={`edit-followup-next-${f.id}`}>{t('clients.followUpNext')}</label>
+                                  <DateTimePicker
+                                    id={`edit-followup-next-${f.id}`}
+                                    value={editFollowUpForm.next_follow_up_at}
+                                    onChange={(v) =>
+                                      setEditFollowUpForm((prev) => (prev ? { ...prev, next_follow_up_at: v } : prev))
+                                    }
+                                    disabled={followUpUpdatingId === f.id}
+                                    locale={i18n.language}
+                                    className="client-detail-modal__datetime-input"
+                                    placeholder={t('clients.followUpNextPlaceholder')}
+                                  />
+                                </div>
+                                <div className="client-detail-modal__form-field client-detail-modal__form-field--full client-detail-modal__followup-reminder-block">
+                                  <span className="client-detail-modal__followup-reminder-label" id={`edit-followup-rem-h-${f.id}`}>
+                                    {t('clients.followUpReminder')}
+                                  </span>
+                                  <div className="client-detail-modal__reminder-mode-group" role="radiogroup" aria-labelledby={`edit-followup-rem-h-${f.id}`}>
+                                    <label className="client-detail-modal__reminder-mode-option">
+                                      <input
+                                        type="radio"
+                                        name={`edit-followup-reminder-mode-${f.id}`}
+                                        checked={editFollowUpForm.reminder_mode === 'absolute'}
+                                        onChange={() => {
+                                          setEditFollowUpError('')
+                                          setEditFollowUpForm((prev) => (prev ? { ...prev, reminder_mode: 'absolute' } : prev))
+                                        }}
+                                        disabled={followUpUpdatingId === f.id}
+                                      />
+                                      <span>{t('clients.followUpReminderModeAbsolute')}</span>
+                                    </label>
+                                    <label className="client-detail-modal__reminder-mode-option">
+                                      <input
+                                        type="radio"
+                                        name={`edit-followup-reminder-mode-${f.id}`}
+                                        checked={editFollowUpForm.reminder_mode === 'before'}
+                                        onChange={() => {
+                                          setEditFollowUpError('')
+                                          setEditFollowUpForm((prev) => (prev ? { ...prev, reminder_mode: 'before' } : prev))
+                                        }}
+                                        disabled={followUpUpdatingId === f.id}
+                                      />
+                                      <span>{t('clients.followUpReminderModeBefore')}</span>
+                                    </label>
+                                  </div>
+                                  {editFollowUpForm.reminder_mode === 'absolute' ? (
+                                    <div className="client-detail-modal__reminder-mode-panel">
+                                      <label htmlFor={`edit-followup-reminder-dt-${f.id}`} className="client-field-hint__sr-only">
+                                        {t('clients.followUpReminderModeAbsolute')}
+                                      </label>
+                                      <DateTimePicker
+                                        id={`edit-followup-reminder-dt-${f.id}`}
+                                        value={editFollowUpForm.reminder_at}
+                                        onChange={(v) =>
+                                          setEditFollowUpForm((prev) => (prev ? { ...prev, reminder_at: v } : prev))
+                                        }
+                                        disabled={followUpUpdatingId === f.id}
+                                        locale={i18n.language}
+                                        className="client-detail-modal__datetime-input"
+                                        placeholder={t('clients.followUpPickDateTime')}
+                                      />
+                                    </div>
+                                  ) : (
+                                    <div className="client-detail-modal__reminder-mode-panel client-detail-modal__reminder-before-row">
+                                      <p className="client-detail-modal__reminder-before-hint">{t('clients.followUpReminderRelativeHint')}</p>
+                                      <div className="client-detail-modal__reminder-before-controls">
+                                        <input
+                                          id={`edit-followup-rem-bv-${f.id}`}
+                                          type="number"
+                                          min={1}
+                                          step={1}
+                                          inputMode="numeric"
+                                          className="client-detail-modal__reminder-before-input"
+                                          value={editFollowUpForm.reminder_before_value}
+                                          onChange={(e) =>
+                                            setEditFollowUpForm((prev) =>
+                                              prev ? { ...prev, reminder_before_value: e.target.value } : prev,
+                                            )
+                                          }
+                                          disabled={followUpUpdatingId === f.id}
+                                          aria-label={t('clients.followUpReminderRelativeHint')}
+                                        />
+                                        <select
+                                          id={`edit-followup-rem-bu-${f.id}`}
+                                          className="client-detail-modal__reminder-before-unit"
+                                          value={editFollowUpForm.reminder_before_unit}
+                                          onChange={(e) =>
+                                            setEditFollowUpForm((prev) =>
+                                              prev ? { ...prev, reminder_before_unit: e.target.value } : prev,
+                                            )
+                                          }
+                                          disabled={followUpUpdatingId === f.id}
+                                        >
+                                          <option value="minute">{t('clients.reminderUnit.minute')}</option>
+                                          <option value="hour">{t('clients.reminderUnit.hour')}</option>
+                                          <option value="day">{t('clients.reminderUnit.day')}</option>
+                                        </select>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+                                  <label htmlFor={`edit-followup-notes-${f.id}`}>
+                                    {t('clients.followUpSummary')}
+                                    <span className="client-detail-modal__required-mark" aria-hidden>
+                                      *
+                                    </span>
+                                  </label>
+                                  <textarea
+                                    id={`edit-followup-notes-${f.id}`}
+                                    value={editFollowUpForm.notes}
+                                    onChange={(e) => {
+                                      setEditFollowUpError('')
+                                      setEditFollowUpForm((prev) => (prev ? { ...prev, notes: e.target.value } : prev))
+                                    }}
+                                    rows={3}
+                                    disabled={followUpUpdatingId === f.id}
+                                    required
+                                    aria-required="true"
+                                  />
+                                  {editFollowUpError ? (
+                                    <p className="client-detail-modal__error-text">{editFollowUpError}</p>
+                                  ) : null}
+                                </div>
+                              </div>
+                              <div className="client-detail-modal__note-actions client-followup-edit-box__footer">
                                 <button
                                   type="button"
                                   className="client-detail-modal__btn client-detail-modal__btn--primary"
@@ -882,16 +1116,21 @@ export default function ClientDetailModal({
                                   title={t('clients.save', 'Save')}
                                   disabled={followUpUpdatingId === f.id}
                                   onClick={async () => {
-                                    const summary = String(editingFollowUpSummary ?? '').trim()
-                                    if (!summary) return
-                                    const ok = await onUpdateFollowUp?.(f.id, { summary })
+                                    if (!editFollowUpForm) return
+                                    const built = buildFollowUpPayload(editFollowUpForm, t)
+                                    if (built.error) {
+                                      setEditFollowUpError(built.error)
+                                      return
+                                    }
+                                    const ok = await onUpdateFollowUp?.(f.id, built.payload)
                                     if (ok) {
                                       setEditingFollowUpId(null)
-                                      setEditingFollowUpSummary('')
+                                      setEditFollowUpForm(null)
+                                      setEditFollowUpError('')
                                     }
                                   }}
                                 >
-                                  <Check size={14} aria-hidden />
+                                  {followUpUpdatingId === f.id ? t('clients.saving', 'Saving…') : t('clients.save', 'Save')}
                                 </button>
                                 <button
                                   type="button"
@@ -901,7 +1140,8 @@ export default function ClientDetailModal({
                                   disabled={followUpUpdatingId === f.id}
                                   onClick={() => {
                                     setEditingFollowUpId(null)
-                                    setEditingFollowUpSummary('')
+                                    setEditFollowUpForm(null)
+                                    setEditFollowUpError('')
                                   }}
                                 >
                                   <X size={14} aria-hidden />
@@ -921,7 +1161,8 @@ export default function ClientDetailModal({
                                 title={t('clients.edit', 'Edit')}
                                 onClick={() => {
                                   setEditingFollowUpId(f.id)
-                                  setEditingFollowUpSummary(f.summary || '')
+                                  setEditFollowUpForm(mapFollowUpToEditForm(f))
+                                  setEditFollowUpError('')
                                 }}
                               >
                                 <Pencil size={14} aria-hidden />
