@@ -58,7 +58,9 @@ class SessionController extends Controller
             abort(403, __('You do not have permission to view other users sessions.'));
         }
 
-        $query = UserDailySession::query()->where('user_id', $targetUserId);
+        $query = UserDailySession::query()
+            ->with('user')
+            ->where('user_id', $targetUserId);
 
         if ($from = $request->query('from')) {
             $query->whereDate('session_date', '>=', $from);
@@ -72,14 +74,21 @@ class SessionController extends Controller
 
         return response()->json([
             'data' => $rows->map(fn (UserDailySession $r) => [
-                'id' => $r->id,
-                'user_id' => $r->user_id,
-                'session_date' => $r->session_date?->toDateString(),
-                'first_seen_at' => $r->first_seen_at?->toIso8601String(),
-                'last_seen_at' => $r->last_seen_at?->toIso8601String(),
+                'id'                   => $r->id,
+                'user_id'              => $r->user_id,
+                'user'                 => $r->user ? [
+                    'id'       => $r->user->id,
+                    'name'     => $r->user->name,
+                    'email'    => $r->user->email,
+                    'initials' => $r->user->initials,
+                    'avatar'   => $r->user->avatar,
+                ] : null,
+                'session_date'         => $r->session_date?->toDateString(),
+                'first_seen_at'        => $r->first_seen_at?->toIso8601String(),
+                'last_seen_at'         => $r->last_seen_at?->toIso8601String(),
                 'total_active_seconds' => (int) $r->total_active_seconds,
                 'total_active_minutes' => (int) floor($r->total_active_seconds / 60),
-                'device_type' => $r->device_type,
+                'device_type'          => $r->device_type,
             ]),
         ]);
     }

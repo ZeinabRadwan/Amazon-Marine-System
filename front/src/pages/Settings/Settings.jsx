@@ -1264,8 +1264,51 @@ export default function Settings() {
 
   const activityColumns = [
     { key: 'created_at', label: t('settings.activity.table.time'), sortable: false, render: (val) => (val ? new Date(val).toLocaleString() : '—') },
-    { key: 'event', label: t('settings.activity.table.event'), sortable: false, render: (val, row) => val || row.log_name || '—' },
-    { key: 'description', label: t('settings.activity.table.description'), sortable: false, render: (val) => val || '—' },
+    {
+      key: 'event',
+      label: t('settings.activity.table.event'),
+      sortable: false,
+      render: (val, row) => {
+        const key = val || row.log_name
+        if (!key) return '—'
+        const translated = t(`settings.activity.events.${key}`, { defaultValue: '' })
+        return translated || key
+      },
+    },
+    {
+      key: 'properties',
+      label: t('settings.activity.table.description'),
+      sortable: false,
+      render: (props) => {
+        if (!props || typeof props !== 'object') return '—'
+        const req = props.request || {}
+        const parts = []
+        if (req.ip) parts.push(req.ip)
+        if (req.path) parts.push(req.path)
+        // domain-specific context keys (exclude request block)
+        const domainKeys = Object.keys(props).filter((k) => k !== 'request')
+        if (domainKeys.length > 0) {
+          const preview = domainKeys
+            .map((k) => {
+              const v = props[k]
+              if (v === null || v === undefined) return null
+              if (typeof v === 'object') {
+                const sub = Object.entries(v)
+                  .filter(([, val]) => val !== null && val !== undefined && typeof val !== 'object')
+                  .map(([kk, vv]) => `${kk}: ${vv}`)
+                  .slice(0, 3)
+                  .join(', ')
+                return sub || null
+              }
+              return `${k}: ${v}`
+            })
+            .filter(Boolean)
+            .join(' · ')
+          if (preview) parts.push(preview)
+        }
+        return parts.join(' — ') || '—'
+      },
+    },
   ]
 
   const shipmentStatusColumns = [
