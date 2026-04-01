@@ -52,18 +52,17 @@ class ActivityController extends Controller
             $query->where('subject_type', $subjectClass)
                 ->where('subject_id', (int) $subjectIdRaw);
         } else {
-            $globalScope = (bool) $request->boolean('global');
+            $isAdmin = $viewer?->can('reports.view') ?? false;
+            $globalScope = $request->has('global') ? (bool) $request->boolean('global') : $isAdmin;
 
             if ($globalScope) {
-                abort_unless(
-                    $viewer?->can('reports.view'),
-                    403,
-                    __('You do not have permission to view all activities.')
-                );
+                if (! $isAdmin) {
+                    abort(403, __('You do not have permission to view all activities.'));
+                }
             } else {
                 $targetUserId = (int) ($request->query('user_id') ?: $viewer->id);
 
-                if ($targetUserId !== (int) $viewer->id && ! $viewer?->can('reports.view')) {
+                if ($targetUserId !== (int) $viewer->id && ! $isAdmin) {
                     abort(403, __('You do not have permission to view other users activities.'));
                 }
 

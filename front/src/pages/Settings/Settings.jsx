@@ -270,7 +270,7 @@ export default function Settings() {
   const [sessionsLoading, setSessionsLoading] = useState(false)
 
   const [activities, setActivities] = useState([])
-  const [activityFilters, setActivityFilters] = useState({ from: '', to: '', event: '', query: '', global: false })
+  const [activityFilters, setActivityFilters] = useState({ from: '', to: '', event: '', query: '' })
   const [activityLoading, setActivityLoading] = useState(false)
   const [activityPage, setActivityPage] = useState(1)
   const [activityTotalPages, setActivityTotalPages] = useState(1)
@@ -1865,19 +1865,12 @@ export default function Settings() {
                           onChange={(e) => setActivityFilters((f) => ({ ...f, query: e.target.value }))}
                           className="clients-input"
                         />
-                        <label className="settings-activity-global-toggle">
-                          <input
-                            type="checkbox"
-                            checked={activityFilters.global}
-                            onChange={(e) => setActivityFilters((f) => ({ ...f, global: e.target.checked }))}
-                          />
-                          <span>{t('settings.activity.global')}</span>
-                        </label>
+
                         <button
                           type="button"
                           className="clients-filters__clear clients-filters__btn-icon"
                           onClick={() => {
-                            setActivityFilters({ from: '', to: '', event: '', query: '', global: false })
+                            setActivityFilters({ from: '', to: '', event: '', query: '' })
                             setActivityPage(1)
                           }}
                           aria-label={t('customerServices.clearFilters')}
