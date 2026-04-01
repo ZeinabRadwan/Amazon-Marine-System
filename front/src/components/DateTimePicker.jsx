@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import flatpickr from 'flatpickr'
 import { Arabic } from 'flatpickr/dist/l10n/ar'
 import 'flatpickr/dist/flatpickr.min.css'
@@ -45,6 +45,14 @@ export default function DateTimePicker({
 
   const isAr = locale === 'ar' || String(locale).startsWith('ar')
 
+  /** Flatpickr sets the primary input to type=hidden when altInput is used; React re-renders reset type=text and show raw Y-m-d H:i twice. */
+  const hidePrimaryForAlt = () => {
+    const el = inputRef.current
+    const fp = fpRef.current
+    if (!el || !fp?.altInput) return
+    el.setAttribute('type', 'hidden')
+  }
+
   useEffect(() => {
     const el = inputRef.current
     if (!el) return
@@ -59,6 +67,7 @@ export default function DateTimePicker({
       clickOpens: !disabledRef.current,
       appendTo: document.body,
       locale: isAr ? Arabic : undefined,
+      onReady: hidePrimaryForAlt,
       onChange: (selectedDates) => {
         if (!selectedDates.length) {
           onChangeRef.current('')
@@ -68,17 +77,23 @@ export default function DateTimePicker({
       },
     })
     fpRef.current = fp
+    hidePrimaryForAlt()
 
     const initial = parseToDate(valueRef.current)
     if (initial) {
       fp.setDate(initial, false)
     }
+    hidePrimaryForAlt()
 
     return () => {
       fp.destroy()
       fpRef.current = null
     }
   }, [isAr])
+
+  useLayoutEffect(() => {
+    hidePrimaryForAlt()
+  })
 
   useEffect(() => {
     const fp = fpRef.current
@@ -102,7 +117,6 @@ export default function DateTimePicker({
     <input
       ref={inputRef}
       id={id}
-      type="text"
       className={className}
       placeholder={placeholder}
       readOnly

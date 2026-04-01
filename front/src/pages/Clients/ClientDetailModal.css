@@ -34,6 +34,48 @@ body .flatpickr-calendar {
   grid-column: 1 / -1;
 }
 
+/* Flatpickr primary stays type=hidden; React can reset it — DateTimePicker fixes; this is a fallback */
+.client-detail-modal__followup-form input[type='hidden'].flatpickr-input {
+  display: none !important;
+}
+
+.client-detail-modal__followup-add-fieldset {
+  margin: 0;
+  padding: 0;
+  border: none;
+  min-width: 0;
+}
+
+.client-detail-modal__followup-add-legend {
+  padding: 0;
+  margin: 0 0 14px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--form-text, #1c2030);
+  float: none;
+}
+
+.client-detail-modal__required-mark {
+  color: var(--form-danger, #b91c1c);
+  font-weight: 700;
+  margin-inline-start: 2px;
+}
+
+.client-followup-timeline__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--form-divider, #e5e7eb);
+}
+
+.client-detail-modal__followup-submit-row .client-detail-modal__btn--primary {
+  width: 100%;
+  justify-content: center;
+}
+
 .client-detail-modal__followup-reminder-block {
   display: flex;
   flex-direction: column;

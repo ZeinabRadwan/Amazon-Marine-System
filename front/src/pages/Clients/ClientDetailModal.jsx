@@ -556,7 +556,11 @@ export default function ClientDetailModal({
                 />
               </div>
               {onAddFollowUp && (
-                <div className="client-detail-modal__form-grid client-detail-modal__grid--card client-detail-modal__followup-form" style={{ marginBottom: 16 }}>
+                <fieldset className="client-detail-modal__followup-add-fieldset">
+                  <legend className="client-detail-modal__followup-add-legend">
+                    {t('clients.followUpAddSectionTitle', 'New follow-up')}
+                  </legend>
+                  <div className="client-detail-modal__form-grid client-detail-modal__grid--card client-detail-modal__followup-form" style={{ marginBottom: 16 }}>
                   <div className="client-detail-modal__form-field">
                     <label htmlFor="followup-channel">{t('clients.followUpChannelLabel', 'Follow-up channel')}</label>
                     <select
@@ -606,7 +610,7 @@ export default function ClientDetailModal({
                     </select>
                   </div>
                   <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
-                    <label htmlFor="followup-occurred">{t('clients.followUpOccurred', 'Occurred at')}</label>
+                    <label htmlFor="followup-occurred">{t('clients.followUpOccurredUnified', 'Follow-up date & time')}</label>
                     <DateTimePicker
                       id="followup-occurred"
                       value={followUpForm.occurred_at}
@@ -633,7 +637,6 @@ export default function ClientDetailModal({
                     <span className="client-detail-modal__followup-reminder-label" id="followup-reminder-heading">
                       {t('clients.followUpReminder', 'Reminder time')}
                     </span>
-                    <p className="client-detail-modal__followup-reminder-sublabel">{t('clients.followUpReminderModeLabel', 'How should we remind you?')}</p>
                     <div className="client-detail-modal__reminder-mode-group" role="radiogroup" aria-labelledby="followup-reminder-heading">
                       <label className="client-detail-modal__reminder-mode-option">
                         <input
@@ -711,7 +714,12 @@ export default function ClientDetailModal({
                     )}
                   </div>
                   <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
-                    <label htmlFor="followup-notes">{t('clients.followUpSummary', 'Follow-up summary')}</label>
+                    <label htmlFor="followup-notes">
+                      {t('clients.followUpSummary', 'Follow-up summary')}
+                      <span className="client-detail-modal__required-mark" aria-hidden>
+                        *
+                      </span>
+                    </label>
                     <textarea
                       id="followup-notes"
                       value={followUpForm.notes}
@@ -722,12 +730,13 @@ export default function ClientDetailModal({
                       disabled={followUpSubmitting}
                       rows={3}
                       required
+                      aria-required="true"
                     />
                     {followUpValidationError ? (
                       <p className="client-detail-modal__error-text">{followUpValidationError}</p>
                     ) : null}
                   </div>
-                  <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+                  <div className="client-detail-modal__form-field client-detail-modal__form-field--full client-detail-modal__followup-submit-row">
                     <button
                       type="button"
                       className="client-detail-modal__btn client-detail-modal__btn--primary"
@@ -798,6 +807,7 @@ export default function ClientDetailModal({
                     </button>
                   </div>
                 </div>
+                </fieldset>
               )}
               {followUpsLoading ? (
                 <p className="client-detail-modal__empty">{t('clients.loading', 'Loading…')}</p>
@@ -835,7 +845,7 @@ export default function ClientDetailModal({
                             )}
                           </div>
                           <div className="client-followup-timeline__when">
-                            {t('clients.followUpOccurred')}: {formatDateTime(f.occurred_at)}
+                            {t('clients.followUpOccurredUnified', 'Follow-up date & time')}: {formatDateTime(f.occurred_at)}
                           </div>
                           {f.next_follow_up_at ? (
                             <div className="client-followup-timeline__next">
@@ -844,21 +854,13 @@ export default function ClientDetailModal({
                           ) : null}
                           {f.reminder_at ? (
                             <div className="client-followup-timeline__reminder">
-                              {f.reminder_before_value != null && f.reminder_before_unit ? (
-                                <>
-                                  <span className="client-followup-timeline__reminder-label">{t('clients.followUpReminderShort')}: </span>
-                                  {t('clients.followUpReminderRelativeLine', {
+                              <span className="client-followup-timeline__reminder-label">{t('clients.followUpReminderShort')}: </span>
+                              {f.reminder_before_value != null && f.reminder_before_unit
+                                ? t('clients.followUpReminderRelativeLine', {
                                     count: f.reminder_before_value,
                                     unit: t(`clients.reminderUnit.${f.reminder_before_unit}`, f.reminder_before_unit),
-                                  })}
-                                  <span className="client-followup-timeline__reminder-at"> — {formatDateTime(f.reminder_at)}</span>
-                                </>
-                              ) : (
-                                <>
-                                  <span className="client-followup-timeline__reminder-label">{t('clients.followUpReminderShort')}: </span>
-                                  {formatDateTime(f.reminder_at)}
-                                </>
-                              )}
+                                  })
+                                : formatDateTime(f.reminder_at)}
                             </div>
                           ) : null}
                           {f.summary?.trim() ? (
@@ -881,7 +883,7 @@ export default function ClientDetailModal({
                                   disabled={followUpUpdatingId === f.id}
                                   onClick={async () => {
                                     const summary = String(editingFollowUpSummary ?? '').trim()
-                                if (!summary) return
+                                    if (!summary) return
                                     const ok = await onUpdateFollowUp?.(f.id, { summary })
                                     if (ok) {
                                       setEditingFollowUpId(null)
@@ -907,7 +909,11 @@ export default function ClientDetailModal({
                               </div>
                             </div>
                           ) : (
-                            <div className="client-detail-modal__note-actions">
+                            <div
+                              className="client-followup-timeline__actions client-detail-modal__note-actions"
+                              role="group"
+                              aria-label={t('clients.followUpActions', 'Follow-up actions')}
+                            >
                               <button
                                 type="button"
                                 className="client-detail-modal__btn client-detail-modal__btn--secondary"

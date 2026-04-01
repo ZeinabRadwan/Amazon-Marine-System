@@ -302,10 +302,17 @@ export async function deleteClientAttachment(token, clientId, attachmentId) {
 
 /**
  * GET {{base_url}}/clients/:id/notes – List Client Notes (Quick Notes)
+ * Fallback: /clients/:id/note (singular) if primary returns 404
  */
 export async function getClientNotes(token, clientId) {
-  const res = await apiFetch(`${getBaseUrl()}/clients/${clientId}/notes`, { headers: authHeaders(token) })
-  const data = await res.json().catch(() => ({}))
+  const primaryUrl = `${getBaseUrl()}/clients/${clientId}/notes`
+  let res = await apiFetch(primaryUrl, { headers: authHeaders(token) })
+  let data = await res.json().catch(() => ({}))
+  if (!res.ok && res.status === 404) {
+    const fallbackUrl = `${getBaseUrl()}/clients/${clientId}/note`
+    res = await apiFetch(fallbackUrl, { headers: authHeaders(token) })
+    data = await res.json().catch(() => ({}))
+  }
   if (!res.ok) throw new Error(data.message || data.error || `Failed to get client notes (${res.status})`)
   return data
 }
@@ -315,12 +322,22 @@ export async function getClientNotes(token, clientId) {
  * Body: { content?: string } or sales-guidance fields (current_need, pain_points, opportunity, special_requirements)
  */
 export async function postClientNote(token, clientId, body = {}) {
-  const res = await apiFetch(`${getBaseUrl()}/clients/${clientId}/notes`, {
+  const primaryUrl = `${getBaseUrl()}/clients/${clientId}/notes`
+  let res = await apiFetch(primaryUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: JSON.stringify(body),
   })
-  const data = await res.json().catch(() => ({}))
+  let data = await res.json().catch(() => ({}))
+  if (!res.ok && res.status === 404) {
+    const fallbackUrl = `${getBaseUrl()}/clients/${clientId}/note`
+    res = await apiFetch(fallbackUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+      body: JSON.stringify(body),
+    })
+    data = await res.json().catch(() => ({}))
+  }
   if (!res.ok) throw new Error(data.message || data.error || `Failed to create note (${res.status})`)
   return data
 }
@@ -330,12 +347,22 @@ export async function postClientNote(token, clientId, body = {}) {
  * Body: { content: string }
  */
 export async function updateClientNote(token, clientId, noteId, body = {}) {
-  const res = await apiFetch(`${getBaseUrl()}/clients/${clientId}/notes/${noteId}`, {
+  const primaryUrl = `${getBaseUrl()}/clients/${clientId}/notes/${noteId}`
+  let res = await apiFetch(primaryUrl, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: JSON.stringify(body),
   })
-  const data = await res.json().catch(() => ({}))
+  let data = await res.json().catch(() => ({}))
+  if (!res.ok && res.status === 404) {
+    const fallbackUrl = `${getBaseUrl()}/clients/${clientId}/note/${noteId}`
+    res = await apiFetch(fallbackUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+      body: JSON.stringify(body),
+    })
+    data = await res.json().catch(() => ({}))
+  }
   if (!res.ok) throw new Error(data.message || data.error || `Failed to update note (${res.status})`)
   return data
 }
@@ -344,10 +371,18 @@ export async function updateClientNote(token, clientId, noteId, body = {}) {
  * DELETE {{base_url}}/clients/:id/notes/:noteId – Delete Client Note
  */
 export async function deleteClientNote(token, clientId, noteId) {
-  const res = await apiFetch(`${getBaseUrl()}/clients/${clientId}/notes/${noteId}`, {
+  const primaryUrl = `${getBaseUrl()}/clients/${clientId}/notes/${noteId}`
+  let res = await apiFetch(primaryUrl, {
     method: 'DELETE',
     headers: authHeaders(token),
   })
+  if (!res.ok && res.status === 404) {
+    const fallbackUrl = `${getBaseUrl()}/clients/${clientId}/note/${noteId}`
+    res = await apiFetch(fallbackUrl, {
+      method: 'DELETE',
+      headers: authHeaders(token),
+    })
+  }
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))
     throw new Error(data.message || data.error || `Failed to delete note (${res.status})`)

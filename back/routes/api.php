@@ -252,6 +252,18 @@ Route::prefix('v1')->group(function () {
         Route::delete('clients/{client}/notes/{note}', [ClientNoteController::class, 'destroy'])
             ->middleware('page_permission:clients,edit');
 
+        // Aliases (singular segment) — some deployments / cached route lists expect `note` instead of `notes`
+        Route::get('clients/{client}/note', [ClientNoteController::class, 'index'])
+            ->middleware('page_permission:clients,view');
+        Route::post('clients/{client}/note', [ClientNoteController::class, 'store'])
+            ->middleware('page_permission:clients,edit');
+        Route::put('clients/{client}/note/{note}', [ClientNoteController::class, 'update'])
+            ->middleware('page_permission:clients,edit');
+        Route::patch('clients/{client}/note/{note}', [ClientNoteController::class, 'update'])
+            ->middleware('page_permission:clients,edit');
+        Route::delete('clients/{client}/note/{note}', [ClientNoteController::class, 'destroy'])
+            ->middleware('page_permission:clients,edit');
+
         Route::get('follow-ups/my-summary', [ClientFollowUpSummaryController::class, 'show'])
             ->middleware('page_permission:clients,view');
 
