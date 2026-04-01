@@ -80,14 +80,18 @@ Route::prefix('v1')->group(function () {
 
         // Settings APIs (company/system/notifications/sessions)
         Route::get('settings', [SettingsController::class, 'show']);
-        Route::put('settings/company/profile', [SettingsController::class, 'updateCompanyProfile']);
-        Route::put('settings/company/location', [SettingsController::class, 'updateCompanyLocation']);
         Route::get('settings/office-location', [SettingsController::class, 'officeLocationShow']);
-        Route::put('settings/office-location', [SettingsController::class, 'officeLocationUpdate']);
-        Route::put('settings/attendance/policy', [SettingsController::class, 'updateAttendancePolicy']);
-        Route::put('settings/system/preferences', [SettingsController::class, 'updateSystemPreferences']);
-        Route::put('settings/notifications/preferences', [SettingsController::class, 'updateNotificationPreferences']);
-        Route::put('settings/sessions', [SettingsController::class, 'updateSessionSettings']);
+
+        // Settings write — admin only
+        Route::middleware('role:admin')->group(function () {
+            Route::put('settings/company/profile', [SettingsController::class, 'updateCompanyProfile']);
+            Route::put('settings/company/location', [SettingsController::class, 'updateCompanyLocation']);
+            Route::put('settings/office-location', [SettingsController::class, 'officeLocationUpdate']);
+            Route::put('settings/attendance/policy', [SettingsController::class, 'updateAttendancePolicy']);
+            Route::put('settings/system/preferences', [SettingsController::class, 'updateSystemPreferences']);
+            Route::put('settings/notifications/preferences', [SettingsController::class, 'updateNotificationPreferences']);
+            Route::put('settings/sessions', [SettingsController::class, 'updateSessionSettings']);
+        });
 
         // Sessions (daily combined)
         Route::get('sessions/today', [SessionController::class, 'today']);
