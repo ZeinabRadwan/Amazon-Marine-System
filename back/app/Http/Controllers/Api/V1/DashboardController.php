@@ -8,33 +8,56 @@ use App\Models\Client;
 use App\Models\ClientFollowUp;
 use App\Models\Invoice;
 use App\Models\LeadSource;
-use App\Models\Payment;
 use App\Models\PricingQuote;
 use App\Models\SDForm;
 use App\Models\Shipment;
 use App\Models\ShipmentOperationTask;
 use App\Models\Ticket;
-use App\Models\TicketType;
 use App\Models\User;
 use App\Models\Vendor;
 use App\Models\VendorBill;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class DashboardController extends Controller
 {
+    private function monthExpression(string $column, string $format): string
+    {
+        $driver = DB::connection()->getDriverName();
+        if ($driver === 'sqlite') {
+            return "strftime('{$format}', {$column})";
+        }
+
+        return "DATE_FORMAT({$column}, '{$format}')";
+    }
+
     private function roleName(Request $request): string
     {
         $user = $request->user();
-        if ($user?->hasRole('admin')) return 'admin';
-        if ($user?->hasRole('finance')) return 'finance';
-        if ($user?->hasRole('operations')) return 'operations';
-        if ($user?->hasRole('support')) return 'support';
-        if ($user?->hasRole('pricing')) return 'pricing';
-        if ($user?->hasRole('sales_manager')) return 'sales_manager';
-        if ($user?->hasRole('sales')) return 'sales';
+        if ($user?->hasRole('admin')) {
+            return 'admin';
+        }
+        if ($user?->hasRole('finance')) {
+            return 'finance';
+        }
+        if ($user?->hasRole('operations')) {
+            return 'operations';
+        }
+        if ($user?->hasRole('support')) {
+            return 'support';
+        }
+        if ($user?->hasRole('pricing')) {
+            return 'pricing';
+        }
+        if ($user?->hasRole('sales_manager')) {
+            return 'sales_manager';
+        }
+        if ($user?->hasRole('sales')) {
+            return 'sales';
+        }
+
         return 'sales';
     }
 
@@ -43,8 +66,13 @@ class DashboardController extends Controller
         $query = Shipment::query();
         $role = $this->roleName($request);
         $userId = $request->user()?->id;
-        if ($role === 'sales' && $userId) $query->where('sales_rep_id', $userId);
-        if ($role === 'operations') $query->whereNotNull('operations_status');
+        if ($role === 'sales' && $userId) {
+            $query->where('sales_rep_id', $userId);
+        }
+        if ($role === 'operations') {
+            $query->whereNotNull('operations_status');
+        }
+
         return $query;
     }
 
@@ -55,6 +83,7 @@ class DashboardController extends Controller
         for ($i = 0; $i < $count; $i++) {
             $months[] = $start->copy()->addMonths($i);
         }
+
         return $months;
     }
 
@@ -66,6 +95,7 @@ class DashboardController extends Controller
     private function metricFloor(string $role, string $metric, int $monthIndex = 0): int
     {
         $seed = (crc32($role.'-'.$metric.'-'.$monthIndex) % 11) + 3;
+
         return $seed;
     }
 
@@ -102,14 +132,16 @@ class DashboardController extends Controller
             ->when($request->user()?->hasRole('sales') || $request->user()?->hasRole('operations'), fn ($q) => $q->whereIn('shipment_id', $shipmentIds));
         $billQuery = VendorBill::whereDate('bill_date', '>=', $from)
             ->when($request->user()?->hasRole('sales') || $request->user()?->hasRole('operations'), fn ($q) => $q->whereIn('shipment_id', $shipmentIds));
+        $invoiceMonthKeyExpression = $this->monthExpression('issue_date', '%Y-%m-01');
+        $billMonthKeyExpression = $this->monthExpression('bill_date', '%Y-%m-01');
 
         $revenueByMonth = $invoiceQuery
-            ->selectRaw("DATE_FORMAT(issue_date, '%Y-%m-01') as month_key, SUM(COALESCE(net_amount,0)) as revenue")
+            ->selectRaw("{$invoiceMonthKeyExpression} as month_key, SUM(COALESCE(net_amount,0)) as revenue")
             ->groupBy('month_key')
             ->pluck('revenue', 'month_key');
 
         $costByMonth = $billQuery
-            ->selectRaw("DATE_FORMAT(bill_date, '%Y-%m-01') as month_key, SUM(COALESCE(net_amount,0)) as cost")
+            ->selectRaw("{$billMonthKeyExpression} as month_key, SUM(COALESCE(net_amount,0)) as cost")
             ->groupBy('month_key')
             ->pluck('cost', 'month_key');
 
@@ -152,10 +184,15 @@ class DashboardController extends Controller
             ->get();
         foreach ($rawRoles as $r) {
             $n = (string) $r->role_name;
-            if (str_contains($n, 'sales')) $roleCounts['sales'] += (int) $r->total;
-            elseif (str_contains($n, 'operation')) $roleCounts['operations'] += (int) $r->total;
-            elseif (str_contains($n, 'support')) $roleCounts['support'] += (int) $r->total;
-            elseif (str_contains($n, 'finance') || str_contains($n, 'account')) $roleCounts['accountants'] += (int) $r->total;
+            if (str_contains($n, 'sales')) {
+                $roleCounts['sales'] += (int) $r->total;
+            } elseif (str_contains($n, 'operation')) {
+                $roleCounts['operations'] += (int) $r->total;
+            } elseif (str_contains($n, 'support')) {
+                $roleCounts['support'] += (int) $r->total;
+            } elseif (str_contains($n, 'finance') || str_contains($n, 'account')) {
+                $roleCounts['accountants'] += (int) $r->total;
+            }
         }
 
         $totalClients = (int) Client::count();
@@ -169,16 +206,18 @@ class DashboardController extends Controller
         $totalShipments = (int) Shipment::count();
 
         $months = $this->months(12);
+        $invoiceMonthExpression = $this->monthExpression('issue_date', '%Y-%m');
+        $billMonthExpression = $this->monthExpression('bill_date', '%Y-%m');
         $revenueRows = Invoice::query()
             ->whereDate('issue_date', '>=', $months[0]->toDateString())
             ->whereNotIn('status', ['cancelled'])
-            ->selectRaw("DATE_FORMAT(issue_date, '%Y-%m') as ym, SUM(COALESCE(net_amount,0)) as total")
+            ->selectRaw("{$invoiceMonthExpression} as ym, SUM(COALESCE(net_amount,0)) as total")
             ->groupBy('ym')
             ->pluck('total', 'ym');
         $costRows = VendorBill::query()
             ->whereDate('bill_date', '>=', $months[0]->toDateString())
             ->whereNotIn('status', ['cancelled'])
-            ->selectRaw("DATE_FORMAT(bill_date, '%Y-%m') as ym, SUM(COALESCE(net_amount,0)) as total")
+            ->selectRaw("{$billMonthExpression} as ym, SUM(COALESCE(net_amount,0)) as total")
             ->groupBy('ym')
             ->pluck('total', 'ym');
         $financial = collect($months)->values()->map(function (Carbon $m, int $i) use ($revenueRows, $costRows) {
@@ -187,6 +226,7 @@ class DashboardController extends Controller
             $cost = (float) $costRows->get($k, 0);
             $revenue = $this->valueOrFloor($revenue, 20000 + $this->metricFloor('admin', 'rev', $i) * 1200);
             $cost = $this->valueOrFloor($cost, 12000 + $this->metricFloor('admin', 'cost', $i) * 900);
+
             return [
                 'month' => $m->format('Y-m'),
                 'revenue' => $revenue,
@@ -276,6 +316,7 @@ class DashboardController extends Controller
             $forms = (int) SDForm::where('sales_rep_id', $sid)->count();
             $linked = (int) SDForm::where('sales_rep_id', $sid)->whereNotNull('linked_shipment_id')->count();
             $clients = (int) Shipment::where('sales_rep_id', $sid)->distinct('client_id')->count('client_id');
+
             return [
                 'employee_id' => $sid,
                 'employee' => $users[$sid] ?? ('#'.$sid),
@@ -292,6 +333,7 @@ class DashboardController extends Controller
             ->map(fn ($c) => ['client' => $c->company_name ?: $c->name, 'shipments' => max((int) $c->shipments_count, 2)]);
         $leadSources = LeadSource::all()->map(function ($ls) {
             $count = (int) Client::where('lead_source_id', $ls->id)->count();
+
             return ['source' => $ls->name, 'count' => max($count, 3)];
         })->sortByDesc('count')->values();
 
@@ -299,6 +341,7 @@ class DashboardController extends Controller
         $closedDeals = (int) SDForm::whereNotNull('linked_shipment_id')->count();
         $monthlyRevenue = collect($months)->values()->map(function (Carbon $m, int $i) {
             $v = (float) Shipment::whereBetween('created_at', [$m->copy()->startOfMonth(), $m->copy()->endOfMonth()])->sum('selling_price_total');
+
             return ['month' => $m->format('Y-m'), 'revenue' => $this->valueOrFloor($v, 18000 + $this->metricFloor('sales_manager', 'rev', $i) * 900)];
         });
 
@@ -406,6 +449,7 @@ class DashboardController extends Controller
             $cst = (float) VendorBill::whereBetween('bill_date', [$m->copy()->startOfMonth(), $m->copy()->endOfMonth()])->sum('net_amount');
             $rev = $this->valueOrFloor($rev, 22000 + $this->metricFloor('accountant', 'rev', $i) * 1000);
             $cst = $this->valueOrFloor($cst, 14000 + $this->metricFloor('accountant', 'cost', $i) * 900);
+
             return ['month' => $m->format('Y-m'), 'revenue' => $rev, 'cost' => $cst];
         });
 
@@ -444,6 +488,7 @@ class DashboardController extends Controller
         $statusCounts = $quotes->groupBy(fn ($q) => $q->status ?: 'pending')->map(fn ($g, $s) => ['status' => $s, 'count' => $g->count()])->values();
         $priorityRequests = $quotes->sortByDesc('created_at')->take(10)->values()->map(function ($q, $idx) {
             $expected = 1200 + (($idx + 3) * 140);
+
             return [
                 'quote_no' => $q->quote_no,
                 'client' => $q->client?->company_name ?: $q->client?->name,
@@ -504,6 +549,7 @@ class DashboardController extends Controller
             $count = (int) ShipmentOperationTask::where('assigned_to_id', $userId)
                 ->whereBetween('completed_at', [$m->copy()->startOfMonth(), $m->copy()->endOfMonth()])
                 ->count();
+
             return ['month' => $m->format('Y-m'), 'completed' => max($count, 6 + $this->metricFloor('ops', 'done', $i))];
         });
 
@@ -559,6 +605,7 @@ class DashboardController extends Controller
                 ->whereIn('status', ['closed', 'resolved'])
                 ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, created_at, updated_at)) as avg_h')
                 ->value('avg_h');
+
             return ['month' => $m->format('Y-m'), 'avg_resolution_hours' => max(round($avg, 1), 8 + $this->metricFloor('support', 'res', $i))];
         });
 
@@ -585,4 +632,3 @@ class DashboardController extends Controller
         ]);
     }
 }
-
