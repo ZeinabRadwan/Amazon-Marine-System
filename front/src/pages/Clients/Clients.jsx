@@ -655,7 +655,7 @@ export default function Clients() {
       setAttachments(Array.isArray(arr) ? arr : [])
       setAlert({ type: 'success', message: t('clients.attachmentUploaded') })
     } catch (err) {
-      setAlert({ type: 'error', message: t('clients.errorAttachmentUpload') })
+      setAlert({ type: 'error', message: err?.message || t('clients.errorAttachmentUpload') })
     } finally {
       setAttachmentUploading(false)
       e.target.value = ''

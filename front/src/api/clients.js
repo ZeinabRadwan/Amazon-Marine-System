@@ -256,13 +256,26 @@ export async function getClientAttachments(token, clientId) {
 export async function postClientAttachment(token, clientId, file) {
   const form = new FormData()
   form.append('file', file)
-  const res = await apiFetch(`${getBaseUrl()}/clients/${clientId}/attachments`, {
+  const primaryUrl = `${getBaseUrl()}/clients/${clientId}/attachments`
+  let res = await apiFetch(primaryUrl, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
     body: form,
   })
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.message || data.error || `Failed to upload attachment (${res.status})`)
+  let data = await res.json().catch(() => ({}))
+  if (!res.ok && res.status === 404) {
+    const fallbackUrl = `${getBaseUrl()}/clients/${clientId}/attachment`
+    res = await apiFetch(fallbackUrl, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+    })
+    data = await res.json().catch(() => ({}))
+  }
+  if (!res.ok) {
+    const v = firstValidationMessage(data)
+    throw new Error(v || data.message || data.error || `Failed to upload attachment (${res.status})`)
+  }
   return data
 }
 

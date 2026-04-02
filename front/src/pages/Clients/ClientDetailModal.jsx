@@ -1204,7 +1204,7 @@ export default function ClientDetailModal({
                   <input
                     type="file"
                     className="client-detail-modal__file-input"
-                    accept="*"
+                    accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx,.csv,.txt,.zip,.rar,.ppt,.pptx"
                     onChange={onAttachmentUpload}
                     disabled={attachmentUploading}
                   />
