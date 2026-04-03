@@ -2,7 +2,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X, Plus, Trash2 } from 'lucide-react'
 import { getStoredToken } from '../../Login'
-import { createInvoice } from '../../../api/invoices'
+import { createInvoice, listCurrencies, listItems } from '../../../api/invoices'
+import { listClients } from '../../../api/clients'
+import { listShipments } from '../../../api/shipments'
+import AsyncSelect from '../../../components/AsyncSelect'
 
 function money(amount, currency) {
   const n = Number(amount) || 0
@@ -16,14 +19,15 @@ function money(amount, currency) {
 export default function CreateInvoiceModal({ isOpen, onClose, onSuccess }) {
   const { t } = useTranslation()
   const [invoiceType, setInvoiceType] = useState('client') // client | partner
-  const [clientId, setClientId] = useState('')
-  const [shipmentId, setShipmentId] = useState('')
-  const [currencyCode, setCurrencyCode] = useState('USD')
+  const [clientId, setClientId] = useState(null) // {value, label}
+  const [shipmentId, setShipmentId] = useState(null) // {value, label}
+  const [currencyId, setCurrencyId] = useState('')
+  const [currencies, setCurrencies] = useState([])
   const [isVatInvoice, setIsVatInvoice] = useState(false)
   const [issueDate, setIssueDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [dueDate, setDueDate] = useState('')
   const [notes, setNotes] = useState('')
-  const [items, setItems] = useState([{ description: '', quantity: 1, unit_price: 0 }])
+  const [items, setItems] = useState([{ description: '', quantity: 1, unit_price: 0, item_id: null }])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
@@ -31,7 +35,19 @@ export default function CreateInvoiceModal({ isOpen, onClose, onSuccess }) {
     if (!isOpen) return
     setError(null)
     setLoading(false)
+
+    const token = getStoredToken()
+    if (token) {
+      listCurrencies(token)
+        .then(setCurrencies)
+        .catch(() => setCurrencies([]))
+    }
   }, [isOpen])
+
+  const selectedCurrencyCode = useMemo(() => {
+    const c = currencies.find(curr => String(curr.id) === String(currencyId))
+    return c?.code || 'USD'
+  }, [currencies, currencyId])
 
   const totals = useMemo(() => {
     const subtotal = items.reduce((s, it) => s + (Number(it.quantity) || 0) * (Number(it.unit_price) || 0), 0)
@@ -41,10 +57,46 @@ export default function CreateInvoiceModal({ isOpen, onClose, onSuccess }) {
 
   if (!isOpen) return null
 
-  const addItem = () => setItems((prev) => [...prev, { description: '', quantity: 1, unit_price: 0 }])
+  const addItem = () => setItems((prev) => [...prev, { description: '', quantity: 1, unit_price: 0, item_id: null }])
   const removeItem = (idx) => setItems((prev) => prev.filter((_, i) => i !== idx))
   const updateItem = (idx, patch) =>
     setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)))
+
+  const loadClientOptions = async (q) => {
+    const token = getStoredToken()
+    if (!token) return []
+    const res = await listClients(token, { search: q, per_page: 20 })
+    const data = res.data ?? res.clients ?? []
+    return data.map(c => ({
+      value: c.id,
+      label: c.company_name || c.name,
+      sublabel: c.tax_id ? `${t('clients.fields.tax_id')}: ${c.tax_id}` : null
+    }))
+  }
+
+  const loadShipmentOptions = async (q) => {
+    const token = getStoredToken()
+    if (!token) return []
+    const res = await listShipments(token, { search: q, per_page: 20 })
+    const data = res.data ?? res.shipments ?? []
+    return data.map(s => ({
+      value: s.id,
+      label: s.bl_number || s.booking_number || `ID: ${s.id}`,
+      sublabel: s.client?.company_name || s.client?.name
+    }))
+  }
+
+  const loadItemCatalogOptions = async (q) => {
+    const token = getStoredToken()
+    if (!token) return []
+    const data = await listItems(token, q)
+    return data.map(it => ({
+      value: it.id,
+      label: it.name,
+      price: it.default_price,
+      description: it.description
+    }))
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -56,10 +108,9 @@ export default function CreateInvoiceModal({ isOpen, onClose, onSuccess }) {
       const invoiceTypeId = invoiceType === 'partner' ? 1 : 0
       const payload = {
         invoice_type_id: invoiceTypeId,
-        client_id: clientId ? Number(clientId) : undefined,
-        shipment_id: shipmentId ? Number(shipmentId) : undefined,
-        currency_id: undefined,
-        currency_code: currencyCode,
+        client_id: clientId?.value,
+        shipment_id: shipmentId?.value,
+        currency_id: Number(currencyId),
         issue_date: issueDate,
         due_date: dueDate || undefined,
         is_vat_invoice: !!isVatInvoice,
@@ -67,6 +118,7 @@ export default function CreateInvoiceModal({ isOpen, onClose, onSuccess }) {
         items: items
           .filter((it) => String(it.description || '').trim().length > 0)
           .map((it) => ({
+            item_id: it.item_id,
             description: it.description,
             quantity: Number(it.quantity) || 0,
             unit_price: Number(it.unit_price) || 0,
@@ -107,23 +159,38 @@ export default function CreateInvoiceModal({ isOpen, onClose, onSuccess }) {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-2">{t('invoices.party', 'Client/Partner (ID)')}</label>
-              <input value={clientId} onChange={(e) => setClientId(e.target.value)} placeholder="client_id" className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm outline-none" />
-              <div className="mt-1 text-xs text-gray-400">{t('invoices.partyHint', 'Backend lookup UI can be added later')}</div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-2">{t('invoices.party', 'Client/Partner')}</label>
+              <AsyncSelect
+                value={clientId}
+                onChange={setClientId}
+                loadOptions={loadClientOptions}
+                placeholder={t('invoices.placeholders.client')}
+              />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-2">{t('invoices.shipment', 'Shipment (ID)')}</label>
-              <input value={shipmentId} onChange={(e) => setShipmentId(e.target.value)} placeholder="shipment_id" className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm outline-none" />
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-2">{t('invoices.shipment', 'Shipment')}</label>
+              <AsyncSelect
+                value={shipmentId}
+                onChange={setShipmentId}
+                loadOptions={loadShipmentOptions}
+                placeholder={t('invoices.placeholders.shipment')}
+              />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase mb-2">{t('invoices.currency', 'Currency')}</label>
-              <select value={currencyCode} onChange={(e) => setCurrencyCode(e.target.value)} className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm outline-none">
-                <option value="USD">USD</option>
-                <option value="EGP">EGP</option>
-                <option value="EUR">EUR</option>
+              <select 
+                value={currencyId} 
+                onChange={(e) => setCurrencyId(e.target.value)} 
+                className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm outline-none"
+                required
+              >
+                <option value="">{t('common.select')}</option>
+                {currencies.map(c => (
+                  <option key={c.id} value={c.id}>{c.code} - {c.name}</option>
+                ))}
               </select>
             </div>
             <div>
@@ -154,7 +221,17 @@ export default function CreateInvoiceModal({ isOpen, onClose, onSuccess }) {
                 <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
                   <div className="md:col-span-6">
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-2">{t('invoices.item.description', 'Description')}</label>
-                    <input value={it.description} onChange={(e) => updateItem(idx, { description: e.target.value })} className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm outline-none" />
+                    <AsyncSelect
+                      value={it.item_id ? { value: it.item_id, label: it.description } : null}
+                      onChange={(opt) => updateItem(idx, { 
+                        item_id: opt?.value || null, 
+                        description: opt?.label || '',
+                        unit_price: opt?.price || it.unit_price
+                      })}
+                      loadOptions={loadItemCatalogOptions}
+                      placeholder={t('invoices.item.placeholder')}
+                      className="w-full"
+                    />
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-2">{t('invoices.item.qty', 'Qty')}</label>
@@ -166,7 +243,7 @@ export default function CreateInvoiceModal({ isOpen, onClose, onSuccess }) {
                   </div>
                   <div className="md:col-span-1">
                     <div className="text-xs font-bold text-gray-500 uppercase mb-2">{t('invoices.item.total', 'Total')}</div>
-                    <div className="text-sm font-extrabold">{money((Number(it.quantity) || 0) * (Number(it.unit_price) || 0), currencyCode)}</div>
+                    <div className="text-sm font-extrabold">{money((Number(it.quantity) || 0) * (Number(it.unit_price) || 0), selectedCurrencyCode)}</div>
                   </div>
                   <div className="md:col-span-1 flex justify-end">
                     <button type="button" onClick={() => removeItem(idx)} className="p-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
@@ -186,15 +263,15 @@ export default function CreateInvoiceModal({ isOpen, onClose, onSuccess }) {
           <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/20 p-4">
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-500">{t('invoices.subtotal', 'Subtotal')}</span>
-              <span className="font-semibold">{money(totals.subtotal, currencyCode)}</span>
+              <span className="font-semibold">{money(totals.subtotal, selectedCurrencyCode)}</span>
             </div>
             <div className="mt-1 flex items-center justify-between text-sm">
               <span className="text-gray-500">{t('invoices.tax', 'Tax')}</span>
-              <span className="font-semibold">{money(totals.tax, currencyCode)}</span>
+              <span className="font-semibold">{money(totals.tax, selectedCurrencyCode)}</span>
             </div>
             <div className="mt-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-3">
               <span className="font-bold">{t('invoices.total', 'Total')}</span>
-              <span className="text-lg font-extrabold">{money(totals.total, currencyCode)}</span>
+              <span className="text-lg font-extrabold">{money(totals.total, selectedCurrencyCode)}</span>
             </div>
           </div>
 

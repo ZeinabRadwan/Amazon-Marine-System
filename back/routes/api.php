@@ -59,6 +59,8 @@ use App\Http\Controllers\Api\V1\VendorBillController;
 use App\Http\Controllers\Api\V1\VendorController;
 use App\Http\Controllers\Api\V1\VendorPartnerTypeController;
 use App\Http\Controllers\Api\V1\VisitController;
+use App\Http\Controllers\Api\V1\CurrencyController;
+use App\Http\Controllers\Api\V1\ItemController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -501,6 +503,20 @@ Route::prefix('v1')->group(function () {
         Route::post('treasury/transfers', [TreasuryController::class, 'storeTransfer']);
         Route::get('treasury/expenses', [TreasuryController::class, 'expenses']);
         Route::post('treasury/expenses', [TreasuryController::class, 'storeExpense']);
+
+        // Currencies CRUD (for settings & forms)
+        Route::get('currencies', [CurrencyController::class, 'index']);
+        Route::post('currencies', [CurrencyController::class, 'store']);
+        Route::get('currencies/{currency}', [CurrencyController::class, 'show']);
+        Route::put('currencies/{currency}', [CurrencyController::class, 'update']);
+        Route::delete('currencies/{currency}', [CurrencyController::class, 'destroy']);
+
+        // Items (products/pricing items) search & CRUD
+        Route::get('items', [ItemController::class, 'index']);
+        Route::post('items', [ItemController::class, 'store']);
+        Route::get('items/{item}', [ItemController::class, 'show']);
+        Route::put('items/{item}', [ItemController::class, 'update']);
+        Route::delete('items/{item}', [ItemController::class, 'destroy']);
 
         // Expense categories (for expense forms & shipment financials)
         Route::get('expense-categories', [ExpenseCategoryController::class, 'index']);

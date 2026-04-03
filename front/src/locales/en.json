@@ -1461,8 +1461,6 @@
     "followUpNext": "Next follow-up",
     "uploadAttachment": "Upload",
     "uploading": "Uploading…",
-    "charts": "Charts",
-    "financialSummary": "Financial summary",
     "pricingList": "Pricing list",
     "noPricing": "No pricing",
     "noFinancialData": "No financial data",
@@ -1645,6 +1643,32 @@
       "unpaid": "Unpaid",
       "overdue": "Overdue"
     },
+    "invoiceType": "Invoice type",
+    "party": "Client/Partner",
+    "partyHint": "Search for a client or partner",
+    "shipment": "Shipment",
+    "currency": "Currency",
+    "issueDate": "Issue date",
+    "dueDate": "Due date",
+    "vatInvoice": "VAT invoice",
+    "items": "Items",
+    "item": {
+      "description": "Description",
+      "qty": "Qty",
+      "unitPrice": "Unit price",
+      "total": "Total",
+      "placeholder": "Select or type item description..."
+    },
+    "subtotal": "Subtotal",
+    "tax": "Tax",
+    "total": "Total",
+    "placeholders": {
+      "client": "Search clients...",
+      "shipment": "Search shipments...",
+      "item": "Search items..."
+    },
+    "notifiedSales": "Sales representative notified of finalized financials.",
+    "notifySales": "Finalize & Notify Sales",
     "bulk": {
       "region": "Bulk actions",
       "selected": "{{count}} selected"
@@ -2070,19 +2094,22 @@
     "stageUpdate": "Update status",
     "print": "Print",
     "financials": "Financials",
-    "notesQuick": "Notes",
-    "stageModalTitle": "Update shipment status",
-    "stageNewStatus": "New status",
-    "stageSelectStatus": "Choose status",
-    "stageEventDate": "Event date",
-    "stageMessage": "Tracking message (optional)",
-    "stageMessagePlaceholder": "Shown on customer tracking timeline",
-    "stageUpdated": "Status updated.",
-    "errorStage": "Failed to update status.",
+    "financialsTab": {
+      "selling": "Selling Price (Sales)",
+      "expenses": "Expenses buckets",
+      "invoices": "Client Invoices",
+      "summary": "Financial Summary"
+    },
     "financialsModalTitle": "Financials & expenses",
-    "expensesForShipment": "Shipment expenses",
     "financialsNoBl": "Assign a BL number to load linked expenses.",
     "financialsNoExpenses": "No expenses found for this BL.",
+    "expensesForShipment": "Shipment expenses",
+    "financialsActions": {
+      "notifyAccountant": "Notify Accountant",
+      "accountantNotified": "Accountant has been notified",
+      "savePricing": "Save Pricing",
+      "createInvoice": "Generate Invoice"
+    },
     "expColDate": "Date",
     "expColCategory": "Category",
     "expColVendor": "Vendor",
@@ -2238,7 +2265,19 @@
       "errorSaveLine": "Could not save this line.",
       "confirmDeleteLine": "Delete this expense line?",
       "errorDeleteLine": "Could not delete this expense.",
-      "errorReceipt": "Receipt upload failed."
+      "errorReceipt": "Receipt upload failed.",
+      "summary": {
+        "totalCost": "Total shipment cost",
+        "totalSelling": "Total selling price",
+        "netProfit": "Net profit / loss",
+        "margin": "Profit margin"
+      },
+      "salesNotifyTitle": "Shipment ready for handover",
+      "salesNotifyBody": "Vendor costs and documents are complete. Notify the accountant to finalize the financials.",
+      "notifyAccountantBtn": "Notify Accountant",
+      "notifyAccountantOk": "Accountant has been notified.",
+      "accountantFinalizeTitle": "Finalize Financials",
+      "accountantFinalizeBody": "Review all costs and selling prices. Once finalized, notify the sales representative."
     }
   },
   "vendors": {

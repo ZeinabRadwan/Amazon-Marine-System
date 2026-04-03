@@ -8,10 +8,11 @@ import {
   createInvoice,
   updateInvoice,
   recordInvoicePayment,
-  INVOICE_CURRENCY_CODE_TO_ID,
+  listCurrencies,
 } from '../../api/invoices'
 import { listActivitiesBySubject } from '../../api/activities'
 import { notifyShipmentSalesFinancials } from '../../api/shipments'
+import { useAuthAccess } from '../../hooks/useAuthAccess'
 
 const BUCKET_DEFS = [
   {
@@ -572,7 +573,10 @@ export default function ShipmentFinancialsModal({
   canNotifySales = false,
 }) {
   const { t, i18n } = useTranslation()
-  const [tab, setTab] = useState('A')
+  const { isAccountant, isAdminRole } = useAuthAccess()
+  const isAccountingUser = isAdminRole || isAccountant
+  
+  const [tab, setTab] = useState('selling')
   const [expanded, setExpanded] = useState(() => new Set(['shipping', 'inland', 'customs', 'insurance', 'other']))
   const [sectionVendorChoice, setSectionVendorChoice] = useState({})
   const [pendingOtherByBucket, setPendingOtherByBucket] = useState({})
@@ -594,10 +598,11 @@ export default function ShipmentFinancialsModal({
 
   const [paymentForm, setPaymentForm] = useState({ amount: '', currency_id: '1', method: 'bank', reference: '', paid_at: '' })
   const [paymentSaving, setPaymentSaving] = useState(false)
+  const [currencies, setCurrencies] = useState([])
 
   useEffect(() => {
     if (open && shipment?.id != null) {
-      setTab('A')
+      setTab(isAccountingUser ? 'expenses' : 'selling')
       setExpanded(new Set(['shipping', 'inland', 'customs', 'insurance', 'other']))
       setSectionVendorChoice({})
       setPendingOtherByBucket({})
@@ -607,8 +612,12 @@ export default function ShipmentFinancialsModal({
       setHandlingRow({ sell: '', include: true })
       setActivityRows([])
       setPaymentForm({ amount: '', currency_id: '1', method: 'bank', reference: '', paid_at: '' })
+
+      if (token) {
+        listCurrencies(token).then(setCurrencies).catch(() => setCurrencies([]))
+      }
     }
-  }, [open, shipment?.id])
+  }, [open, shipment?.id, isAccountingUser, token])
 
   const [categoriesByCode, setCategoriesByCode] = useState({})
 
@@ -629,7 +638,7 @@ export default function ShipmentFinancialsModal({
         setCategoriesByCode(m)
       })
       .catch(() => setCategoriesByCode({}))
-  }, [open, token, canManageExpenses])
+  }, [open, token, canManageExpenses, isAccountingUser])
 
   const toggleCard = useCallback((id) => {
     setExpanded((prev) => {
@@ -754,7 +763,7 @@ export default function ShipmentFinancialsModal({
 
   useEffect(() => {
     if (!open || !shipment?.id || !token || !canAccessInvoices) return undefined
-    if (tab !== 'B' && tab !== 'C') return undefined
+    if (tab !== 'selling' && tab !== 'invoices') return undefined
     let cancelled = false
     setInvoiceLoading(true)
     listInvoices(token, { shipment_id: shipment.id, invoice_type: 'client' })
@@ -783,7 +792,7 @@ export default function ShipmentFinancialsModal({
   }, [open, shipment?.id, token, tab, canAccessInvoices])
 
   useEffect(() => {
-    if (!open || !shipment?.id || !token || tab !== 'D') return undefined
+    if (!open || !shipment?.id || !token || tab !== 'history') return undefined
     let cancelled = false
     setActivityLoading(true)
     listActivitiesBySubject(token, { subjectType: 'shipment', subjectId: shipment.id })
@@ -839,7 +848,8 @@ export default function ShipmentFinancialsModal({
       return
     }
     const curCode = expenses[0]?.currency_code || 'USD'
-    const currencyId = INVOICE_CURRENCY_CODE_TO_ID[curCode] || 1
+    const foundCurrency = currencies.find(c => c.code === curCode)
+    const currencyId = foundCurrency?.id || 1
     const items = []
     for (const row of tabBRows) {
       if (!row.include) continue
@@ -892,6 +902,7 @@ export default function ShipmentFinancialsModal({
     clientInvoice,
     t,
     onShipmentTotalsRefresh,
+    currencies,
   ])
 
   const submitInvoicePayment = useCallback(async () => {
@@ -1208,19 +1219,27 @@ export default function ShipmentFinancialsModal({
         </header>
 
         <div className="shipment-fin-tab-bar" role="tablist">
-          <button type="button" role="tab" aria-selected={tab === 'A'} className={`shipment-fin-tab ${tab === 'A' ? 'shipment-fin-tab--active' : ''}`} onClick={() => setTab('A')}>
-            <FileText className="shipment-fin-tab__icon" aria-hidden />
-            {t('shipments.fin.tabA')}
-          </button>
-          <button type="button" role="tab" aria-selected={tab === 'B'} className={`shipment-fin-tab ${tab === 'B' ? 'shipment-fin-tab--active' : ''}`} onClick={() => setTab('B')}>
+          {isAccountingUser && (
+            <button type="button" role="tab" aria-selected={tab === 'expenses'} className={`shipment-fin-tab ${tab === 'expenses' ? 'shipment-fin-tab--active' : ''}`} onClick={() => setTab('expenses')}>
+              <Package className="shipment-fin-tab__icon" aria-hidden />
+              {t('shipments.financialsTab.expenses')}
+            </button>
+          )}
+          <button type="button" role="tab" aria-selected={tab === 'selling'} className={`shipment-fin-tab ${tab === 'selling' ? 'shipment-fin-tab--active' : ''}`} onClick={() => setTab('selling')}>
             <DollarSign className="shipment-fin-tab__icon" aria-hidden />
-            {t('shipments.fin.tabB')}
+            {t('shipments.financialsTab.selling')}
           </button>
-          <button type="button" role="tab" aria-selected={tab === 'C'} className={`shipment-fin-tab ${tab === 'C' ? 'shipment-fin-tab--active' : ''}`} onClick={() => setTab('C')}>
-            <FileType className="shipment-fin-tab__icon" aria-hidden />
-            {t('shipments.fin.tabC')}
+          {isAccountingUser && (
+            <button type="button" role="tab" aria-selected={tab === 'invoices'} className={`shipment-fin-tab ${tab === 'invoices' ? 'shipment-fin-tab--active' : ''}`} onClick={() => setTab('invoices')}>
+              <FileType className="shipment-fin-tab__icon" aria-hidden />
+              {t('shipments.financialsTab.invoices')}
+            </button>
+          )}
+          <button type="button" role="tab" aria-selected={tab === 'summary'} className={`shipment-fin-tab ${tab === 'summary' ? 'shipment-fin-tab--active' : ''}`} onClick={() => setTab('summary')}>
+            <FileText className="shipment-fin-tab__icon" aria-hidden />
+            {t('shipments.financialsTab.summary')}
           </button>
-          <button type="button" role="tab" aria-selected={tab === 'D'} className={`shipment-fin-tab ${tab === 'D' ? 'shipment-fin-tab--active' : ''}`} onClick={() => setTab('D')}>
+          <button type="button" role="tab" aria-selected={tab === 'history'} className={`shipment-fin-tab ${tab === 'history' ? 'shipment-fin-tab--active' : ''}`} onClick={() => setTab('history')}>
             <History className="shipment-fin-tab__icon" aria-hidden />
             {t('shipments.fin.tabD')}
           </button>
@@ -1232,7 +1251,7 @@ export default function ShipmentFinancialsModal({
               {finBanner.message}
             </div>
           ) : null}
-          {tab === 'A' && (
+          {tab === 'expenses' && isAccountingUser && (
             <div className="shipment-fin-panel">
               {!hasBl ? (
                 <p className="client-detail-modal__empty">{t('shipments.financialsNoBl')}</p>
@@ -1280,7 +1299,7 @@ export default function ShipmentFinancialsModal({
             </div>
           )}
 
-          {tab === 'B' && (
+          {tab === 'selling' && (
             <div className="shipment-fin-panel">
               <div className="shipment-fin-sales-banner">
                 <div className="fw-600">{t('shipments.fin.salesBannerTitle')}</div>
@@ -1459,7 +1478,7 @@ export default function ShipmentFinancialsModal({
             </div>
           )}
 
-          {tab === 'C' && (
+          {tab === 'invoices' && isAccountingUser && (
             <div className="shipment-fin-panel">
               {!hasBl ? (
                 <p className="client-detail-modal__empty">{t('shipments.financialsNoBl')}</p>
@@ -1652,7 +1671,7 @@ export default function ShipmentFinancialsModal({
             </div>
           )}
 
-          {tab === 'D' && (
+          {tab === 'history' && (
             <div className="shipment-fin-panel">
               <div className="shipment-fin-audit-head">
                 <h4 className="shipment-fin-audit-title">{t('shipments.fin.auditTitle')}</h4>
@@ -1689,6 +1708,76 @@ export default function ShipmentFinancialsModal({
                     </li>
                   ))}
                 </ul>
+              )}
+            </div>
+          )}
+
+          {tab === 'summary' && (
+            <div className="shipment-fin-panel">
+              <div className="shipment-fin-summary-grid">
+                <div className="shipment-fin-summary-card">
+                  <div className="shipment-fin-summary-card__label">{t('shipments.fin.summary.totalCost')}</div>
+                  <div className="shipment-fin-summary-card__value text-red-600 font-bold text-2xl">
+                    {formatMoney(shipment.cost_total || 0, numberLocale)}
+                  </div>
+                  <div className="fs-xs text-muted mt-1">{netBreakdownStr}</div>
+                </div>
+
+                <div className="shipment-fin-summary-card bg-blue-50/50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-900/40">
+                  <div className="shipment-fin-summary-card__label">{t('shipments.fin.summary.totalSelling')}</div>
+                  <div className="shipment-fin-summary-card__value text-blue-600 font-bold text-2xl">
+                    {formatMoney(shipment.selling_price_total || 0, numberLocale)}
+                  </div>
+                  <div className="fs-xs text-muted mt-1">{clientInvoice?.currency_code || 'USD'}</div>
+                </div>
+
+                <div className="shipment-fin-summary-card bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-900/40">
+                  <div className="shipment-fin-summary-card__label">{t('shipments.fin.summary.netProfit')}</div>
+                  <div className={`shipment-fin-summary-card__value font-bold text-2xl ${(shipment.profit_total || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                    {formatMoney(shipment.profit_total || 0, numberLocale)}
+                  </div>
+                  <div className="fs-xs text-muted mt-1">
+                    {t('shipments.fin.summary.margin')}: {shipment.selling_price_total ? ((shipment.profit_total / shipment.selling_price_total) * 100).toFixed(1) : 0}%
+                  </div>
+                </div>
+              </div>
+
+              {!isAccountingUser && (
+                <div className="mt-8 p-6 bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-100 dark:border-blue-800 text-center">
+                  <h4 className="text-blue-900 dark:text-blue-200 font-bold mb-2">{t('shipments.fin.salesNotifyTitle')}</h4>
+                  <p className="text-blue-700 dark:text-blue-300 text-sm mb-4">{t('shipments.fin.salesNotifyBody')}</p>
+                  <button
+                    type="button"
+                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all flex items-center gap-2 mx-auto shadow-lg shadow-blue-500/20"
+                    disabled={notifySending}
+                    onClick={() => {
+                        setNotifySending(true);
+                        setTimeout(() => {
+                           setNotifySending(false);
+                           setFinBanner({ type: 'success', message: t('shipments.fin.notifyAccountantOk') });
+                           setTimeout(() => setFinBanner(null), 3000);
+                        }, 1000);
+                    }}
+                  >
+                    <Bell className="h-4 w-4" />
+                    {notifySending ? t('common.loading') : t('shipments.fin.notifyAccountantBtn')}
+                  </button>
+                </div>
+              )}
+
+              {isAccountingUser && (
+                <div className="mt-8 p-6 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl border border-emerald-100 dark:border-emerald-800 text-center">
+                   <h4 className="text-emerald-900 dark:text-emerald-200 font-bold mb-2">{t('shipments.fin.accountantFinalizeTitle')}</h4>
+                   <p className="text-emerald-700 dark:text-emerald-300 text-sm mb-4">{t('shipments.fin.accountantFinalizeBody')}</p>
+                   <button
+                    type="button"
+                    className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-all flex items-center gap-2 mx-auto shadow-lg shadow-emerald-500/20"
+                    disabled={notifySending}
+                    onClick={handleNotifySales}
+                   >
+                    {notifySending ? t('common.loading') : t('shipments.fin.notifySalesButton')}
+                   </button>
+                </div>
               )}
             </div>
           )}

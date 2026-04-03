@@ -1461,8 +1461,6 @@
     "followUpNext": "المتابعة القادمة",
     "uploadAttachment": "رفع",
     "uploading": "جاري الرفع…",
-    "charts": "الرسوم البيانية",
-    "financialSummary": "الملخص المالي",
     "pricingList": "قائمة الأسعار",
     "noPricing": "لا يوجد تسعير",
     "noFinancialData": "لا توجد بيانات مالية",
@@ -1645,6 +1643,32 @@
       "unpaid": "غير مدفوع",
       "overdue": "متأخر"
     },
+    "invoiceType": "نوع الفاتورة",
+    "party": "العميل/الشريك",
+    "partyHint": "ابحث عن عميل أو شريك",
+    "shipment": "الشحنة",
+    "currency": "العملة",
+    "issueDate": "تاريخ الإصدار",
+    "dueDate": "تاريخ الاستحقاق",
+    "vatInvoice": "فاتورة ضريبية",
+    "items": "البنود",
+    "item": {
+      "description": "الوصف",
+      "qty": "الكمية",
+      "unitPrice": "سعر الوحدة",
+      "total": "الإجمالي",
+      "placeholder": "اختر أو اكتب وصف البند..."
+    },
+    "subtotal": "الإجمالي الفرعي",
+    "tax": "الضريبة",
+    "total": "الإجمالي الكلي",
+    "placeholders": {
+      "client": "ابحث عن عميل...",
+      "shipment": "ابحث عن شحنة...",
+      "item": "ابحث عن بند..."
+    },
+    "notifiedSales": "تم إخطار ممثل المبيعات باعتماد البيانات المالية.",
+    "notifySales": "اعتماد وإخطار المبيعات",
     "bulk": {
       "region": "إجراءات جماعية",
       "selected": "{{count}} محدد"
@@ -2238,7 +2262,19 @@
       "errorSaveLine": "تعذّر حفظ هذا البند.",
       "confirmDeleteLine": "حذف بند المصروف هذا؟",
       "errorDeleteLine": "تعذّر حذف المصروف.",
-      "errorReceipt": "فشل رفع الإيصال."
+      "errorReceipt": "فشل رفع الإيصال.",
+      "summary": {
+        "totalCost": "إجمالي تكلفة الشحنة",
+        "totalSelling": "إجمالي سعر البيع",
+        "netProfit": "صافي الربح / الخسارة",
+        "margin": "هامش الربح"
+      },
+      "salesNotifyTitle": "الشحنة جاهزة للتسليم",
+      "salesNotifyBody": "تكاليف المورّدين والمستندات كاملة. يرجى إخطار المحاسب لإنهاء الماليات.",
+      "notifyAccountantBtn": "إخطار المحاسب",
+      "notifyAccountantOk": "تم إخطار المحاسب بنجاح.",
+      "accountantFinalizeTitle": "إنهاء الماليات",
+      "accountantFinalizeBody": "راجع جميع التكاليف وأسعار البيع. بمجرد الانتهاء، قم بإخطار مندوب المبيعات."
     }
   },
   "vendors": {
