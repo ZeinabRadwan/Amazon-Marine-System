@@ -13,13 +13,23 @@ class GitDeployController extends Controller
      */
     public function __invoke(): JsonResponse
     {
-        $result = Process::path(base_path())
-            ->timeout(120)
-            ->run('cd .. && git pull');
+        $repoRoot = dirname(base_path());
+        $publicHtml = dirname($repoRoot) . '/public_html';
+
+        $command = "cd $repoRoot && git pull && " .
+                   "rm -f $publicHtml/index.html && " .
+                   "rm -rf $publicHtml/assets/* && " .
+                   "cp $repoRoot/front/dist/index.html $publicHtml/index.html && " .
+                   "cp -r $repoRoot/front/dist/assets/* $publicHtml/assets/";
+
+        $result = Process::path($repoRoot)
+            ->timeout(300)
+            ->run($command);
 
         $payload = [
             'ok' => $result->successful(),
             'exit_code' => $result->exitCode(),
+            'command' => $command,
             'output' => $result->output(),
             'error_output' => $result->errorOutput(),
         ];

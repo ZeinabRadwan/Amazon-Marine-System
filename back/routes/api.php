@@ -63,6 +63,7 @@ use App\Http\Controllers\Api\V1\CurrencyController;
 use App\Http\Controllers\Api\V1\ItemController;
 use Illuminate\Support\Facades\Route;
 
+
 Route::prefix('v1')->group(function () {
     Route::match(['get', 'post'], 'deploy/git-pull', GitDeployController::class);
 
@@ -550,6 +551,7 @@ Route::prefix('v1')->group(function () {
         // Documents (company / templates)
         Route::get('documents', [DocumentController::class, 'index']);
         Route::post('documents', [DocumentController::class, 'store']);
+        Route::get('documents/{document}/preview', [DocumentController::class, 'preview']);
         Route::get('documents/{document}/download', [DocumentController::class, 'download']);
         Route::delete('documents/{document}', [DocumentController::class, 'destroy']);
     });
