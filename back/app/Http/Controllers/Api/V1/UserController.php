@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
@@ -63,6 +64,11 @@ class UserController extends Controller
 
         $user->load('roles');
 
+        ActivityLogger::log('user.created', $user, [
+            'email' => $user->email,
+            'role' => $role->name,
+        ]);
+
         return response()->json([
             'data' => $this->transformUser($user),
         ], 201);
@@ -84,6 +90,7 @@ class UserController extends Controller
         $this->authorize('update', $user);
 
         $validated = $request->validated();
+        $before = $user->replicate();
 
         if (array_key_exists('name', $validated)) {
             $user->name = $validated['name'];
@@ -114,6 +121,13 @@ class UserController extends Controller
 
         $user->load('roles');
 
+        ActivityLogger::logModelChange('user.updated', $before, $user, [
+            'name',
+            'email',
+            'status',
+            'initials',
+        ]);
+
         return response()->json([
             'data' => $this->transformUser($user),
         ]);
@@ -122,6 +136,10 @@ class UserController extends Controller
     public function destroy(Request $request, User $user)
     {
         $this->authorize('delete', $user);
+
+        ActivityLogger::log('user.deleted', $user, [
+            'email' => $user->email,
+        ]);
 
         $user->delete();
 
@@ -134,8 +152,11 @@ class UserController extends Controller
     {
         $this->authorize('update', $user);
 
+        $before = $user->replicate();
         $user->status = 'active';
         $user->save();
+
+        ActivityLogger::logModelChange('user.activated', $before, $user, ['status']);
 
         return response()->json([
             'data' => $this->transformUser($user->load('roles')),
@@ -154,10 +175,13 @@ class UserController extends Controller
             ], 422);
         }
 
+        $before = $user->replicate();
         $user->status = 'inactive';
         $user->save();
 
         $user->tokens()->delete();
+
+        ActivityLogger::logModelChange('user.deactivated', $before, $user, ['status']);
 
         return response()->json([
             'data' => $this->transformUser($user->load('roles')),
@@ -176,6 +200,10 @@ class UserController extends Controller
         $user->password = Hash::make($validated['password']);
         $user->save();
 
+        ActivityLogger::log('user.password_changed', $user, [
+            'user_id' => $user->id,
+        ]);
+
         return response()->json([
             'data' => $this->transformUser($user),
         ]);
@@ -193,6 +221,10 @@ class UserController extends Controller
         $user->syncRoles([$role->name]);
         $user->load('roles');
 
+        ActivityLogger::log('user.role_assigned', $user, [
+            'role' => $role->name,
+        ]);
+
         return response()->json([
             'data' => $this->transformUser($user),
         ]);
@@ -207,9 +239,16 @@ class UserController extends Controller
             'permissions.*' => ['string', 'exists:permissions,name'],
         ]);
 
+        $beforePermissions = $user->getAllPermissions()->pluck('name')->values()->all();
+
         $user->syncPermissions($validated['permissions']);
 
         $user->load('roles');
+
+        ActivityLogger::log('user.permissions_updated', $user, [
+            'before' => $beforePermissions,
+            'after' => $validated['permissions'],
+        ]);
 
         return response()->json([
             'data' => $this->transformUser($user),

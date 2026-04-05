@@ -5,6 +5,7 @@ use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -59,6 +60,14 @@ return Application::configure(basePath: dirname(__DIR__))
                 return response()->json([
                     'message' => $e->getMessage() ?: __('You do not have permission to access this resource.'),
                 ], 403);
+            }
+        });
+
+        $exceptions->renderable(function (NotFoundHttpException $e, $request) {
+            if ($request->expectsJson() || $request->is('api/*') || $request->is('api')) {
+                return response()->json([
+                    'message' => __('The requested API route could not be found.'),
+                ], 404);
             }
         });
     })->create();

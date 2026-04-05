@@ -164,6 +164,10 @@ export async function listActivities(token, params = {}) {
   if (params.subject_type) searchParams.set('subject_type', params.subject_type)
   if (params.subject_id != null && params.subject_id !== '') searchParams.set('subject_id', String(params.subject_id))
   if (params.user_id != null && params.user_id !== '') searchParams.set('user_id', String(params.user_id))
+  if (params.global) searchParams.set('global', '1')
+  if (params.query) searchParams.set('query', params.query)
+  if (params.page != null) searchParams.set('page', String(params.page))
+  if (params.per_page != null) searchParams.set('per_page', String(params.per_page))
   const q = searchParams.toString()
   const url = `${getBaseUrl()}/activities${q ? `?${q}` : ''}`
   const res = await apiFetch(url, {

@@ -16,7 +16,7 @@ return [
     */
 
     'stateful' => array_values(array_filter(array_map('trim', explode(',', env('SANCTUM_STATEFUL_DOMAINS', sprintf(
-        '%s%s,crm-amazonltd.online,www.crm-amazonltd.online',
+        '%s%s,crm-amazonltd.online,www.crm-amazonltd.online,crm-amazonltd.live,www.crm-amazonltd.live',
         'localhost,localhost:3000,localhost:5173,127.0.0.1,127.0.0.1:8000,127.0.0.1:5173,::1',
         Sanctum::currentApplicationUrlWithPort(),
     )))))),

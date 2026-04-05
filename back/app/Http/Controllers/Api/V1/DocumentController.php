@@ -7,6 +7,7 @@ use App\Models\Document;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DocumentController extends Controller
@@ -35,6 +36,8 @@ class DocumentController extends Controller
                 'uploaded_by_id' => $d->uploaded_by_id,
                 'uploaded_by_name' => $d->uploadedBy?->name,
                 'created_at' => $d->created_at?->toIso8601String(),
+                'preview_url' => url('api/v1/documents/'.$d->id.'/preview'),
+                'download_url' => url('api/v1/documents/'.$d->id.'/download'),
             ]),
         ]);
     }
@@ -90,6 +93,23 @@ class DocumentController extends Controller
                 'Content-Type' => $document->mime_type ?? 'application/octet-stream',
             ]
         );
+    }
+
+    public function preview(Request $request, Document $document): BinaryFileResponse|JsonResponse
+    {
+        if (! $request->user()?->can('documents.view') && ! $request->user()?->can('reports.view')) {
+            abort(403, __('You do not have permission to view documents.'));
+        }
+
+        if (! Storage::disk('local')->exists($document->path)) {
+            return response()->json(['message' => __('File not found.')], 404);
+        }
+
+        $fullPath = Storage::disk('local')->path($document->path);
+
+        return response()->file($fullPath, [
+            'Content-Type' => $document->mime_type ?? 'application/octet-stream',
+        ]);
     }
 
     public function destroy(Request $request, Document $document): JsonResponse

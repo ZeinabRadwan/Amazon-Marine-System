@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { BellRing } from 'lucide-react'
 import { useAuthAccess } from '../../hooks/useAuthAccess'
 import { getResolvedTheme } from '../../theme'
 import HeaderActions from '../HeaderActions'
@@ -20,6 +21,7 @@ import {
   ClipboardIcon,
   UsersIcon,
   ShieldIcon,
+  ReportsIcon,
 } from './SidebarIcons'
 import logoDark from '../../assets/logo_darkmode.png'
 import './Sidebar.css'
@@ -76,11 +78,16 @@ const SIDEBAR_SECTIONS = [
     ],
   },
   {
+    sectionKey: 'reports',
+    items: [{ id: 'reports', menuKey: 'reports', Icon: ReportsIcon }],
+  },
+  {
     sectionKey: 'system',
     items: [
       { id: 'users', menuKey: 'users', Icon: UsersIcon },
       // { id: 'usersPermissions', menuKey: 'usersPermissions', Icon: UsersIcon },
       { id: 'rolesPermissions', menuKey: 'rolesPermissions', Icon: ShieldIcon },
+      { id: 'adminNotifications', menuKey: 'adminNotifications', Icon: BellRing, badge: 'alerts' },
       { id: 'settings', menuKey: 'settings', Icon: SettingsIcon },
     ],
   },
@@ -103,6 +110,8 @@ const SIDEBAR_ID_TO_PAGE_KEY = {
   visitLog: 'visits',
   users: 'users',
   rolesPermissions: 'roles_permissions',
+  adminNotifications: 'users',
+  reports: 'reports',
   settings: 'settings',
 }
 
@@ -123,6 +132,7 @@ const BADGE_CONFIG = {
 
 export default function Sidebar({
   appName = 'Marketerz',
+  isAdminRole = false,
   activeMenu = 'dashboard',
   onMenuChange,
   allowedPages: allowedPagesProp,
@@ -139,7 +149,7 @@ export default function Sidebar({
 }) {
   const badgeCounts = { crmCount, ticketsCount, alertsCount, shipmentsCount, sdFormsCount }
   const { t, i18n } = useTranslation()
-  const { allowedPages: hookAllowedPages, isAccountant, isAdminRole } = useAuthAccess()
+  const { allowedPages: hookAllowedPages, isAccountant } = useAuthAccess()
   const allowedPages = allowedPagesProp ?? hookAllowedPages
   const isRtl = i18n.language === 'ar'
   const [theme, setTheme] = useState(() => getResolvedTheme())
@@ -206,11 +216,12 @@ export default function Sidebar({
             const filteredItems = allowedPagesSet
               ? items.filter(({ id }) => {
                   if (id === 'settings' && !isAdminRole) return false
+                  if (id === 'reports') return isAdminRole
                   const pageKey = SIDEBAR_ID_TO_PAGE_KEY[id]
                   if (!pageKey) return true
                   return allowedPagesSet.has(pageKey)
                 })
-              : items
+              : items.filter(({ id }) => id !== 'reports' || isAdminRole)
             if (!filteredItems.length) return null
 
             return (

@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\GitDeployController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\V1\AccountingController;
+use App\Http\Controllers\Api\V1\AdminNotificationController;
 use App\Http\Controllers\Api\V1\ActivityController;
 use App\Http\Controllers\Api\V1\AdminAttendanceController;
 use App\Http\Controllers\Api\V1\AdminExcuseController;
@@ -58,6 +59,8 @@ use App\Http\Controllers\Api\V1\VendorBillController;
 use App\Http\Controllers\Api\V1\VendorController;
 use App\Http\Controllers\Api\V1\VendorPartnerTypeController;
 use App\Http\Controllers\Api\V1\VisitController;
+use App\Http\Controllers\Api\V1\CurrencyController;
+use App\Http\Controllers\Api\V1\ItemController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -79,14 +82,18 @@ Route::prefix('v1')->group(function () {
 
         // Settings APIs (company/system/notifications/sessions)
         Route::get('settings', [SettingsController::class, 'show']);
-        Route::put('settings/company/profile', [SettingsController::class, 'updateCompanyProfile']);
-        Route::put('settings/company/location', [SettingsController::class, 'updateCompanyLocation']);
         Route::get('settings/office-location', [SettingsController::class, 'officeLocationShow']);
-        Route::put('settings/office-location', [SettingsController::class, 'officeLocationUpdate']);
-        Route::put('settings/attendance/policy', [SettingsController::class, 'updateAttendancePolicy']);
-        Route::put('settings/system/preferences', [SettingsController::class, 'updateSystemPreferences']);
-        Route::put('settings/notifications/preferences', [SettingsController::class, 'updateNotificationPreferences']);
-        Route::put('settings/sessions', [SettingsController::class, 'updateSessionSettings']);
+
+        // Settings write — admin only
+        Route::middleware('role:admin')->group(function () {
+            Route::put('settings/company/profile', [SettingsController::class, 'updateCompanyProfile']);
+            Route::put('settings/company/location', [SettingsController::class, 'updateCompanyLocation']);
+            Route::put('settings/office-location', [SettingsController::class, 'officeLocationUpdate']);
+            Route::put('settings/attendance/policy', [SettingsController::class, 'updateAttendancePolicy']);
+            Route::put('settings/system/preferences', [SettingsController::class, 'updateSystemPreferences']);
+            Route::put('settings/notifications/preferences', [SettingsController::class, 'updateNotificationPreferences']);
+            Route::put('settings/sessions', [SettingsController::class, 'updateSessionSettings']);
+        });
 
         // Sessions (daily combined)
         Route::get('sessions/today', [SessionController::class, 'today']);
@@ -244,6 +251,24 @@ Route::prefix('v1')->group(function () {
             ->middleware('page_permission:clients,view');
         Route::post('clients/{client}/notes', [ClientNoteController::class, 'store'])
             ->middleware('page_permission:clients,edit');
+        Route::put('clients/{client}/notes/{note}', [ClientNoteController::class, 'update'])
+            ->middleware('page_permission:clients,edit');
+        Route::patch('clients/{client}/notes/{note}', [ClientNoteController::class, 'update'])
+            ->middleware('page_permission:clients,edit');
+        Route::delete('clients/{client}/notes/{note}', [ClientNoteController::class, 'destroy'])
+            ->middleware('page_permission:clients,edit');
+
+        // Aliases (singular segment) — some deployments / cached route lists expect `note` instead of `notes`
+        Route::get('clients/{client}/note', [ClientNoteController::class, 'index'])
+            ->middleware('page_permission:clients,view');
+        Route::post('clients/{client}/note', [ClientNoteController::class, 'store'])
+            ->middleware('page_permission:clients,edit');
+        Route::put('clients/{client}/note/{note}', [ClientNoteController::class, 'update'])
+            ->middleware('page_permission:clients,edit');
+        Route::patch('clients/{client}/note/{note}', [ClientNoteController::class, 'update'])
+            ->middleware('page_permission:clients,edit');
+        Route::delete('clients/{client}/note/{note}', [ClientNoteController::class, 'destroy'])
+            ->middleware('page_permission:clients,edit');
 
         Route::get('follow-ups/my-summary', [ClientFollowUpSummaryController::class, 'show'])
             ->middleware('page_permission:clients,view');
@@ -251,6 +276,12 @@ Route::prefix('v1')->group(function () {
         Route::get('clients/{client}/follow-ups', [ClientFollowUpController::class, 'index'])
             ->middleware('page_permission:clients,view');
         Route::post('clients/{client}/follow-ups', [ClientFollowUpController::class, 'store'])
+            ->middleware('page_permission:clients,edit');
+        Route::put('clients/{client}/follow-ups/{followUp}', [ClientFollowUpController::class, 'update'])
+            ->middleware('page_permission:clients,edit');
+        Route::patch('clients/{client}/follow-ups/{followUp}', [ClientFollowUpController::class, 'update'])
+            ->middleware('page_permission:clients,edit');
+        Route::delete('clients/{client}/follow-ups/{followUp}', [ClientFollowUpController::class, 'destroy'])
             ->middleware('page_permission:clients,edit');
 
         Route::get('clients/{client}/attachments', [ClientAttachmentController::class, 'index'])
@@ -368,6 +399,20 @@ Route::prefix('v1')->group(function () {
         // Dashboard & reports
         Route::get('dashboard/overview', [DashboardController::class, 'overview'])
             ->middleware('page_permission:dashboard,view');
+        Route::get('dashboard/admin-overview', [DashboardController::class, 'adminOverview'])
+            ->middleware('page_permission:dashboard,view');
+        Route::get('dashboard/sales-manager', [DashboardController::class, 'salesManager'])
+            ->middleware('page_permission:dashboard,view');
+        Route::get('dashboard/sales-employee', [DashboardController::class, 'salesEmployee'])
+            ->middleware('page_permission:dashboard,view');
+        Route::get('dashboard/accountant', [DashboardController::class, 'accountant'])
+            ->middleware('page_permission:dashboard,view');
+        Route::get('dashboard/pricing-team', [DashboardController::class, 'pricingTeam'])
+            ->middleware('page_permission:dashboard,view');
+        Route::get('dashboard/operations-employee', [DashboardController::class, 'operationsEmployee'])
+            ->middleware('page_permission:dashboard,view');
+        Route::get('dashboard/support-employee', [DashboardController::class, 'supportEmployee'])
+            ->middleware('page_permission:dashboard,view');
         Route::get('reports/shipments', [ReportController::class, 'shipments']);
         Route::get('reports/finance', [ReportController::class, 'finance']);
         Route::get('reports/sales-performance', [ReportController::class, 'salesPerformance']);
@@ -459,6 +504,20 @@ Route::prefix('v1')->group(function () {
         Route::get('treasury/expenses', [TreasuryController::class, 'expenses']);
         Route::post('treasury/expenses', [TreasuryController::class, 'storeExpense']);
 
+        // Currencies CRUD (for settings & forms)
+        Route::get('currencies', [CurrencyController::class, 'index']);
+        Route::post('currencies', [CurrencyController::class, 'store']);
+        Route::get('currencies/{currency}', [CurrencyController::class, 'show']);
+        Route::put('currencies/{currency}', [CurrencyController::class, 'update']);
+        Route::delete('currencies/{currency}', [CurrencyController::class, 'destroy']);
+
+        // Items (products/pricing items) search & CRUD
+        Route::get('items', [ItemController::class, 'index']);
+        Route::post('items', [ItemController::class, 'store']);
+        Route::get('items/{item}', [ItemController::class, 'show']);
+        Route::put('items/{item}', [ItemController::class, 'update']);
+        Route::delete('items/{item}', [ItemController::class, 'destroy']);
+
         // Expense categories (for expense forms & shipment financials)
         Route::get('expense-categories', [ExpenseCategoryController::class, 'index']);
 
@@ -478,6 +537,11 @@ Route::prefix('v1')->group(function () {
         Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
         Route::post('notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
         Route::post('notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+
+        // Admin notifications (logs)
+        Route::get('admin/notifications', [AdminNotificationController::class, 'index']);
+        Route::get('admin/notifications/stats', [AdminNotificationController::class, 'stats']);
+        Route::get('admin/notifications/{notificationLog}', [AdminNotificationController::class, 'show']);
 
         // PDF layouts
         Route::get('pdf-layouts/{documentType}', [PdfLayoutController::class, 'show']);

@@ -16,17 +16,26 @@ function authHeaders(token, json = true) {
   return h
 }
 
-/** Matches InvoiceController currency_id (1 USD, 2 EGP, 3 EUR). */
-export const INVOICE_CURRENCY_CODE_TO_ID = {
-  USD: 1,
-  EGP: 2,
-  EUR: 3,
+/**
+ * @param {string} token
+ */
+export async function listCurrencies(token) {
+  const res = await apiFetch(`${getBaseUrl()}/currencies`, { headers: authHeaders(token, false) })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(json.message || `Failed to list currencies`)
+  return json.data ?? []
 }
 
-export const INVOICE_CURRENCY_ID_TO_CODE = {
-  1: 'USD',
-  2: 'EGP',
-  3: 'EUR',
+/**
+ * @param {string} token
+ * @param {string} search
+ */
+export async function listItems(token, search = '') {
+  const q = search ? `?search=${encodeURIComponent(search)}` : ''
+  const res = await apiFetch(`${getBaseUrl()}/items${q}`, { headers: authHeaders(token, false) })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(json.message || `Failed to list items`)
+  return json.data ?? []
 }
 
 /**
@@ -97,9 +106,6 @@ export async function getInvoice(token, invoiceId) {
  * }} body
  */
 export async function createInvoice(token, body) {
-  const currencyId =
-    body.currency_id ??
-    (body.currency_code ? INVOICE_CURRENCY_CODE_TO_ID[String(body.currency_code).toUpperCase()] : undefined)
   const invoiceTypeId =
     body.invoice_type_id ??
     (String(body.invoice_type || '').toLowerCase() === 'vendor' ? 1 : 0)
@@ -110,7 +116,7 @@ export async function createInvoice(token, body) {
     client_id: body.client_id,
     issue_date: body.issue_date,
     due_date: body.due_date ?? null,
-    currency_id: currencyId,
+    currency_id: body.currency_id,
     notes: body.notes ?? null,
     is_vat_invoice: body.is_vat_invoice ?? false,
     items: body.items ?? [],
@@ -162,13 +168,9 @@ export async function updateInvoice(token, invoiceId, body) {
  * }} body
  */
 export async function recordInvoicePayment(token, invoiceId, body) {
-  const currencyId =
-    body.currency_id ??
-    (body.currency_code ? INVOICE_CURRENCY_CODE_TO_ID[String(body.currency_code).toUpperCase()] : undefined)
-
   const payload = {
     amount: body.amount,
-    currency_id: currencyId,
+    currency_id: body.currency_id,
     method: body.method,
     reference: body.reference ?? null,
     paid_at: body.paid_at ?? null,

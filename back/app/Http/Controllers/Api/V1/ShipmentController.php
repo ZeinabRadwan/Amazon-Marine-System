@@ -5,7 +5,10 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\SDForm;
 use App\Models\Shipment;
+use App\Models\User;
+use App\Notifications\ShipmentSalesFinancialsNotification;
 use App\Services\ActivityLogger;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -13,6 +16,10 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ShipmentController extends Controller
 {
+    public function __construct(
+        private NotificationService $notificationService,
+    ) {
+    }
     public function index(Request $request)
     {
         $this->authorize('viewAny', Shipment::class);
@@ -185,6 +192,7 @@ class ShipmentController extends Controller
     {
         $this->authorize('delete', $shipment);
 
+        ActivityLogger::log('shipment.deleted', $shipment);
         $shipment->delete();
 
         return response()->json(['message' => __('Shipment deleted.')]);
@@ -425,6 +433,30 @@ class ShipmentController extends Controller
         ActivityLogger::log('shipment.notify_sales_financials', $shipment, [
             'bl_number' => $shipment->bl_number,
         ]);
+
+        $recipients = collect();
+
+        if ($shipment->sales_rep_id) {
+            $sales = User::query()->find($shipment->sales_rep_id);
+            if ($sales) {
+                $recipients->push($sales);
+            }
+        }
+
+        $financeUsers = User::role('accountant')
+            ->where('status', 'active')
+            ->get();
+
+        $recipients = $recipients->merge($financeUsers)->unique('id');
+
+        if ($recipients->isNotEmpty()) {
+            $this->notificationService->sendDatabaseNotification(
+                'shipment.notify_sales_financials',
+                $shipment,
+                $recipients,
+                new ShipmentSalesFinancialsNotification($shipment)
+            );
+        }
 
         return response()->json([
             'message' => __('Notification recorded.'),

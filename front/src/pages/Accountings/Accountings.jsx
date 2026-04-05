@@ -725,19 +725,6 @@ export default function Accountings() {
                       <FileSpreadsheet className="clients-filters__btn-icon-svg" aria-hidden />
                     )}
                   </button>
-                  <button
-                    type="button"
-                    className="clients-filters__btn-icon"
-                    disabled={exportBusy}
-                    onClick={() => handleExportMenu('summary_pdf')}
-                    aria-label={t('accountings.exportSummaryPdf', 'Export financial summary (PDF)')}
-                    title={t('accountings.exportSummaryPdf', 'Export financial summary (PDF)')}
-                  >
-                    <FileText
-                      className="clients-filters__btn-icon-svg text-red-600 dark:text-red-400"
-                      aria-hidden
-                    />
-                  </button>
                 </div>
               </div>
             </div>
@@ -915,19 +902,6 @@ export default function Accountings() {
                       <FileSpreadsheet className="clients-filters__btn-icon-svg" aria-hidden />
                     )}
                   </button>
-                  <button
-                    type="button"
-                    className="clients-filters__btn-icon"
-                    disabled={exportBusy}
-                    onClick={() => handleExportMenu('summary_pdf')}
-                    aria-label={t('accountings.exportSummaryPdf', 'Export financial summary (PDF)')}
-                    title={t('accountings.exportSummaryPdf', 'Export financial summary (PDF)')}
-                  >
-                    <FileText
-                      className="clients-filters__btn-icon-svg text-red-600 dark:text-red-400"
-                      aria-hidden
-                    />
-                  </button>
                 </div>
               </div>
             </div>
@@ -1019,21 +993,7 @@ export default function Accountings() {
             <div className="clients-filters-card mb-4">
               <div className="clients-filters__row clients-filters__row--main">
                 <div className="clients-filters__fields flex-1" />
-                <div className="clients-filters__actions">
-                  <button
-                    type="button"
-                    className="clients-filters__btn-icon"
-                    disabled={exportBusy}
-                    onClick={() => handleExportMenu('summary_pdf')}
-                    aria-label={t('accountings.exportSummaryPdf', 'Export financial summary (PDF)')}
-                    title={t('accountings.exportSummaryPdf', 'Export financial summary (PDF)')}
-                  >
-                    <FileText
-                      className="clients-filters__btn-icon-svg text-red-600 dark:text-red-400"
-                      aria-hidden
-                    />
-                  </button>
-                </div>
+                <div className="clients-filters__actions" />
               </div>
             </div>
             <div className="accountings-bank-grid">

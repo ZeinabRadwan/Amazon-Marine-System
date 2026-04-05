@@ -256,13 +256,26 @@ export async function getClientAttachments(token, clientId) {
 export async function postClientAttachment(token, clientId, file) {
   const form = new FormData()
   form.append('file', file)
-  const res = await apiFetch(`${getBaseUrl()}/clients/${clientId}/attachments`, {
+  const primaryUrl = `${getBaseUrl()}/clients/${clientId}/attachments`
+  let res = await apiFetch(primaryUrl, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
     body: form,
   })
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.message || data.error || `Failed to upload attachment (${res.status})`)
+  let data = await res.json().catch(() => ({}))
+  if (!res.ok && res.status === 404) {
+    const fallbackUrl = `${getBaseUrl()}/clients/${clientId}/attachment`
+    res = await apiFetch(fallbackUrl, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+    })
+    data = await res.json().catch(() => ({}))
+  }
+  if (!res.ok) {
+    const v = firstValidationMessage(data)
+    throw new Error(v || data.message || data.error || `Failed to upload attachment (${res.status})`)
+  }
   return data
 }
 
@@ -302,10 +315,17 @@ export async function deleteClientAttachment(token, clientId, attachmentId) {
 
 /**
  * GET {{base_url}}/clients/:id/notes – List Client Notes (Quick Notes)
+ * Fallback: /clients/:id/note (singular) if primary returns 404
  */
 export async function getClientNotes(token, clientId) {
-  const res = await apiFetch(`${getBaseUrl()}/clients/${clientId}/notes`, { headers: authHeaders(token) })
-  const data = await res.json().catch(() => ({}))
+  const primaryUrl = `${getBaseUrl()}/clients/${clientId}/notes`
+  let res = await apiFetch(primaryUrl, { headers: authHeaders(token) })
+  let data = await res.json().catch(() => ({}))
+  if (!res.ok && res.status === 404) {
+    const fallbackUrl = `${getBaseUrl()}/clients/${clientId}/note`
+    res = await apiFetch(fallbackUrl, { headers: authHeaders(token) })
+    data = await res.json().catch(() => ({}))
+  }
   if (!res.ok) throw new Error(data.message || data.error || `Failed to get client notes (${res.status})`)
   return data
 }
@@ -315,22 +335,86 @@ export async function getClientNotes(token, clientId) {
  * Body: { content?: string } or sales-guidance fields (current_need, pain_points, opportunity, special_requirements)
  */
 export async function postClientNote(token, clientId, body = {}) {
-  const res = await apiFetch(`${getBaseUrl()}/clients/${clientId}/notes`, {
+  const primaryUrl = `${getBaseUrl()}/clients/${clientId}/notes`
+  let res = await apiFetch(primaryUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: JSON.stringify(body),
   })
-  const data = await res.json().catch(() => ({}))
+  let data = await res.json().catch(() => ({}))
+  if (!res.ok && res.status === 404) {
+    const fallbackUrl = `${getBaseUrl()}/clients/${clientId}/note`
+    res = await apiFetch(fallbackUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+      body: JSON.stringify(body),
+    })
+    data = await res.json().catch(() => ({}))
+  }
   if (!res.ok) throw new Error(data.message || data.error || `Failed to create note (${res.status})`)
   return data
+}
+
+/**
+ * PUT {{base_url}}/clients/:id/notes/:noteId – Update Client Note
+ * Body: { content: string }
+ */
+export async function updateClientNote(token, clientId, noteId, body = {}) {
+  const primaryUrl = `${getBaseUrl()}/clients/${clientId}/notes/${noteId}`
+  let res = await apiFetch(primaryUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+    body: JSON.stringify(body),
+  })
+  let data = await res.json().catch(() => ({}))
+  if (!res.ok && res.status === 404) {
+    const fallbackUrl = `${getBaseUrl()}/clients/${clientId}/note/${noteId}`
+    res = await apiFetch(fallbackUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+      body: JSON.stringify(body),
+    })
+    data = await res.json().catch(() => ({}))
+  }
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to update note (${res.status})`)
+  return data
+}
+
+/**
+ * DELETE {{base_url}}/clients/:id/notes/:noteId – Delete Client Note
+ */
+export async function deleteClientNote(token, clientId, noteId) {
+  const primaryUrl = `${getBaseUrl()}/clients/${clientId}/notes/${noteId}`
+  let res = await apiFetch(primaryUrl, {
+    method: 'DELETE',
+    headers: authHeaders(token),
+  })
+  if (!res.ok && res.status === 404) {
+    const fallbackUrl = `${getBaseUrl()}/clients/${clientId}/note/${noteId}`
+    res = await apiFetch(fallbackUrl, {
+      method: 'DELETE',
+      headers: authHeaders(token),
+    })
+  }
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.message || data.error || `Failed to delete note (${res.status})`)
+  }
+  return res.json().catch(() => ({}))
 }
 
 /**
  * GET {{base_url}}/clients/:id/follow-ups – List Client Follow-ups
  */
 export async function getClientFollowUps(token, clientId) {
-  const res = await apiFetch(`${getBaseUrl()}/clients/${clientId}/follow-ups`, { headers: authHeaders(token) })
-  const data = await res.json().catch(() => ({}))
+  const primaryUrl = `${getBaseUrl()}/clients/${clientId}/follow-ups`
+  let res = await apiFetch(primaryUrl, { headers: authHeaders(token) })
+  let data = await res.json().catch(() => ({}))
+  if (!res.ok && res.status === 404) {
+    const fallbackUrl = `${getBaseUrl()}/clients/${clientId}/followups`
+    res = await apiFetch(fallbackUrl, { headers: authHeaders(token) })
+    data = await res.json().catch(() => ({}))
+  }
   if (!res.ok) throw new Error(data.message || data.error || `Failed to get follow-ups (${res.status})`)
   return data
 }
@@ -348,12 +432,22 @@ function firstValidationMessage(data) {
 }
 
 export async function postClientFollowUp(token, clientId, body) {
-  const res = await apiFetch(`${getBaseUrl()}/clients/${clientId}/follow-ups`, {
+  const primaryUrl = `${getBaseUrl()}/clients/${clientId}/follow-ups`
+  let res = await apiFetch(primaryUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: JSON.stringify(body),
   })
-  const data = await res.json().catch(() => ({}))
+  let data = await res.json().catch(() => ({}))
+  if (!res.ok && res.status === 404) {
+    const fallbackUrl = `${getBaseUrl()}/clients/${clientId}/followups`
+    res = await apiFetch(fallbackUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+      body: JSON.stringify(body),
+    })
+    data = await res.json().catch(() => ({}))
+  }
   if (!res.ok) {
     const v = firstValidationMessage(data)
     throw new Error(
@@ -361,6 +455,56 @@ export async function postClientFollowUp(token, clientId, body) {
     )
   }
   return data
+}
+
+/**
+ * PUT {{base_url}}/clients/:id/follow-ups/:followUpId – Update Client Follow-up
+ */
+export async function updateClientFollowUp(token, clientId, followUpId, body) {
+  const primaryUrl = `${getBaseUrl()}/clients/${clientId}/follow-ups/${followUpId}`
+  let res = await apiFetch(primaryUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+    body: JSON.stringify(body),
+  })
+  let data = await res.json().catch(() => ({}))
+  if (!res.ok && res.status === 404) {
+    const fallbackUrl = `${getBaseUrl()}/clients/${clientId}/followups/${followUpId}`
+    res = await apiFetch(fallbackUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+      body: JSON.stringify(body),
+    })
+    data = await res.json().catch(() => ({}))
+  }
+  if (!res.ok) {
+    const v = firstValidationMessage(data)
+    throw new Error(v || data.message || data.error || `Failed to update follow-up (${res.status})`)
+  }
+  return data
+}
+
+/**
+ * DELETE {{base_url}}/clients/:id/follow-ups/:followUpId – Delete Client Follow-up
+ */
+export async function deleteClientFollowUp(token, clientId, followUpId) {
+  const primaryUrl = `${getBaseUrl()}/clients/${clientId}/follow-ups/${followUpId}`
+  let res = await apiFetch(primaryUrl, {
+    method: 'DELETE',
+    headers: authHeaders(token),
+  })
+  if (!res.ok && res.status === 404) {
+    const fallbackUrl = `${getBaseUrl()}/clients/${clientId}/followups/${followUpId}`
+    res = await apiFetch(fallbackUrl, {
+      method: 'DELETE',
+      headers: authHeaders(token),
+    })
+  }
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.message || data.error || `Failed to delete follow-up (${res.status})`)
+  }
+  return res.json().catch(() => ({}))
 }
 
 /**

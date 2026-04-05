@@ -26,7 +26,7 @@ class ClientAttachmentController extends Controller
         $this->authorize('manageClientContent', $client);
 
         $validated = $request->validate([
-            'file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx,csv,txt', 'max:10240'],
+            'file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp,doc,docx,xls,xlsx,csv,txt,zip,rar,ppt,pptx', 'max:10240'],
         ]);
 
         $file = $request->file('file');

@@ -270,8 +270,10 @@ export default function Settings() {
   const [sessionsLoading, setSessionsLoading] = useState(false)
 
   const [activities, setActivities] = useState([])
-  const [activityFilters, setActivityFilters] = useState({ from: '', to: '', event: '' })
+  const [activityFilters, setActivityFilters] = useState({ from: '', to: '', event: '', query: '' })
   const [activityLoading, setActivityLoading] = useState(false)
+  const [activityPage, setActivityPage] = useState(1)
+  const [activityTotalPages, setActivityTotalPages] = useState(1)
 
   const [shipmentStatuses, setShipmentStatuses] = useState([])
   const [showShipmentStatusModal, setShowShipmentStatusModal] = useState(false)
@@ -497,7 +499,7 @@ export default function Settings() {
           getSettings(token),
           getTodaySession(token).catch(() => null),
           listSessionsHistory(token, {}).catch(() => ({ data: [] })),
-          listActivities(token, {}).catch(() => ({ data: [] })),
+          listActivities(token, { page: 1 }).catch(() => ({ data: [] })),
           listShipmentStatuses(token).catch(() => ({ data: [] })),
         ])
 
@@ -541,6 +543,13 @@ export default function Settings() {
         setTodaySession(todayRes?.data ?? todayRes ?? null)
         setSessionsHistory(Array.isArray(historyRes?.data) ? historyRes.data : [])
         setActivities(Array.isArray(activitiesRes?.data) ? activitiesRes.data : [])
+        if (activitiesRes?.meta) {
+          setActivityPage(activitiesRes.meta.current_page || 1)
+          setActivityTotalPages(activitiesRes.meta.last_page || 1)
+        } else {
+          setActivityPage(1)
+          setActivityTotalPages(1)
+        }
         setShipmentStatuses(Array.isArray(statusesRes?.data) ? statusesRes.data : [])
       } catch (e) {
         if (!cancelled) setError(e.message || t('settings.errors.load'))
@@ -694,8 +703,14 @@ export default function Settings() {
     setActivityLoading(true)
     setError('')
     try {
-      const res = await listActivities(token, activityFilters)
+      const res = await listActivities(token, { ...activityFilters, page: activityPage })
       setActivities(Array.isArray(res?.data) ? res.data : [])
+      if (res?.meta) {
+        setActivityPage(res.meta.current_page || 1)
+        setActivityTotalPages(res.meta.last_page || 1)
+      } else {
+        setActivityTotalPages(1)
+      }
     } catch (e) {
       setError(e.message || t('settings.errors.refreshActivity'))
     } finally {
@@ -1247,11 +1262,188 @@ export default function Settings() {
     { key: 'total_active_minutes', label: t('settings.sessions.table.totalActivityMinutes'), sortable: false },
   ]
 
+  function _describeActivity(event, props) {
+    const p = props || {}
+    const v = (key) => {
+      const parts = key.split('.')
+      return parts.reduce((obj, k) => (obj && obj[k] !== undefined ? obj[k] : undefined), p)
+    }
+    const yn = (val) => (val ? t('common.yes', 'Yes') : t('common.no', 'No'))
+
+    switch (event) {
+      // ── Settings ─────────────────────────────────────────────
+      case 'settings.session_settings_updated':
+        return [
+          v('reset_hour') !== undefined && `Reset hour: ${v('reset_hour')}`,
+          v('idle_logout_minutes') !== undefined && `Idle logout: ${v('idle_logout_minutes')} min`,
+        ].filter(Boolean).join(' · ') || '—'
+
+      case 'settings.attendance_policy_updated': {
+        const pol = v('policy') || {}
+        return [
+          pol.workday_start && pol.workday_end && `${pol.workday_start}–${pol.workday_end}`,
+          pol.grace_minutes !== undefined && `Grace: ${pol.grace_minutes} min`,
+          pol.enforce_geofence !== undefined && `Geofence: ${yn(pol.enforce_geofence)}`,
+        ].filter(Boolean).join(' · ') || '—'
+      }
+
+      case 'settings.company_profile_updated': {
+        const prof = v('profile') || {}
+        return prof.name_en || prof.name_ar || '—'
+      }
+
+      case 'settings.company_location_updated':
+        return [
+          v('lat') !== undefined && v('lng') !== undefined && `${v('lat')}, ${v('lng')}`,
+          v('radius_m') !== undefined && `Radius: ${v('radius_m')} m`,
+        ].filter(Boolean).join(' · ') || '—'
+
+      case 'settings.system_preferences_updated': {
+        const ch = v('changes') || {}
+        return Object.entries(ch)
+          .filter(([, vv]) => vv !== null && vv !== undefined)
+          .map(([kk, vv]) => `${kk}: ${vv}`)
+          .join(', ') || '—'
+      }
+
+      case 'settings.notification_preferences_updated': {
+        const ch = v('changes') || {}
+        const on = Object.entries(ch).filter(([, vv]) => vv === true).map(([kk]) => kk)
+        const off = Object.entries(ch).filter(([, vv]) => vv === false).map(([kk]) => kk)
+        return [
+          on.length > 0 && `On: ${on.join(', ')}`,
+          off.length > 0 && `Off: ${off.join(', ')}`,
+        ].filter(Boolean).join(' · ') || '—'
+      }
+
+      // ── Shipment ──────────────────────────────────────────────
+      case 'shipment.created':
+        return [
+          v('bl_number') && `BL: ${v('bl_number')}`,
+          v('client_id') && `Client ID: ${v('client_id')}`,
+        ].filter(Boolean).join(' · ') || '—'
+
+      case 'shipment.status_changed':
+        return v('from') && v('to') ? `${v('from')} → ${v('to')}` : '—'
+
+      case 'shipment.operations_status_changed':
+        return v('from') !== undefined && v('to') !== undefined ? `Stage ${v('from')} → ${v('to')}` : '—'
+
+      case 'shipment.deleted':
+        return v('bl_number') ? `BL: ${v('bl_number')}` : '—'
+
+      case 'shipment.schedule_updated': {
+        const parts = []
+        if (v('etd')) parts.push(`ETD: ${v('etd')}`)
+        if (v('eta')) parts.push(`ETA: ${v('eta')}`)
+        return parts.join(' · ') || '—'
+      }
+
+      case 'shipment.reefer_updated':
+        return [
+          v('reefer_temp') && `Temp: ${v('reefer_temp')}`,
+          v('reefer_vent') && `Vent: ${v('reefer_vent')}`,
+          v('reefer_hum') && `Hum: ${v('reefer_hum')}`,
+        ].filter(Boolean).join(' · ') || '—'
+
+      case 'shipment.financial_expense_created':
+      case 'shipment.financial_expense_updated':
+        return [
+          v('category') && `${v('category')}`,
+          v('amount') !== undefined && `${v('currency') || ''}${v('amount')}`,
+        ].filter(Boolean).join(' · ') || '—'
+
+      case 'shipment.financial_expense_receipt_uploaded':
+        return v('category') ? `Receipt for ${v('category')}` : '—'
+
+      case 'shipment.notify_sales_financials':
+        return v('bl_number') ? `BL: ${v('bl_number')}` : '—'
+
+      // ── SD Form ───────────────────────────────────────────────
+      case 'sd_form.created':
+      case 'sd_form.updated':
+      case 'sd_form.submitted':
+      case 'sd_form.deleted':
+        return v('sd_number') ? `SD #${v('sd_number')}` : '—'
+
+      case 'sd_form.linked_shipment':
+        return [
+          v('sd_number') && `SD #${v('sd_number')}`,
+          v('shipment_id') && `Shipment #${v('shipment_id')}`,
+        ].filter(Boolean).join(' → ') || '—'
+
+      case 'sd_form.sent_to_operations':
+      case 'sd_form.email_to_operations':
+        return v('sd_number') ? `SD #${v('sd_number')}` : '—'
+
+      // ── Invoice ───────────────────────────────────────────────
+      case 'invoice.created':
+      case 'invoice.issued':
+      case 'invoice.cancelled':
+        return [
+          v('invoice_number') || v('number'),
+          v('amount') !== undefined && `${v('currency') || ''}${v('amount')}`,
+        ].filter(Boolean).join(' · ') || '—'
+
+      case 'invoice.payment_recorded':
+      case 'shipment.invoice_payment_recorded':
+        return v('amount') !== undefined ? `${v('currency') || ''}${v('amount')}` : '—'
+
+      // ── Vendor bill ───────────────────────────────────────────
+      case 'vendor_bill.created':
+      case 'vendor_bill.updated':
+      case 'vendor_bill.approved':
+      case 'vendor_bill.cancelled':
+        return v('amount') !== undefined ? `${v('currency') || ''}${v('amount')}` : '—'
+
+      case 'vendor_bill.payment_recorded':
+        return v('amount') !== undefined ? `Paid ${v('currency') || ''}${v('amount')}` : '—'
+
+      // ── Payment ───────────────────────────────────────────────
+      case 'payment.created':
+        return v('amount') !== undefined ? `${v('currency') || ''}${v('amount')}` : '—'
+
+      // ── User ──────────────────────────────────────────────────
+      case 'user.created':
+        return [v('email'), v('role') && `Role: ${v('role')}`].filter(Boolean).join(' · ') || '—'
+
+      case 'user.deleted':
+        return v('email') || '—'
+
+      case 'user.password_changed':
+        return t('settings.activity.events.user.password_changed', 'Password changed')
+
+      case 'user.role_assigned':
+        return v('role') ? `→ ${v('role')}` : '—'
+
+      case 'user.permissions_updated': {
+        const after = v('after')
+        return Array.isArray(after) ? `${after.length} permissions` : '—'
+      }
+
+      default:
+        return '—'
+    }
+  }
+
   const activityColumns = [
     { key: 'created_at', label: t('settings.activity.table.time'), sortable: false, render: (val) => (val ? new Date(val).toLocaleString() : '—') },
-    { key: 'event', label: t('settings.activity.table.event'), sortable: false, render: (val, row) => val || row.log_name || '—' },
-    { key: 'description', label: t('settings.activity.table.description'), sortable: false, render: (val) => val || '—' },
+    {
+      key: 'event',
+      label: t('settings.activity.table.event'),
+      sortable: false,
+      render: (val, row) => {
+        const key = val || row.log_name
+        if (!key) return '—'
+        const translated = t(`settings.activity.events.${key}`, { defaultValue: '' })
+        return translated || key
+      },
+    },
+    // description column hidden for now
+    // { key: 'properties', label: t('settings.activity.table.description'), sortable: false, render: (props, row) => describeActivity(row.event || row.log_name, props) },
   ]
+
+
 
   const shipmentStatusColumns = [
     {
@@ -1843,7 +2035,23 @@ export default function Settings() {
                           onChange={(e) => setActivityFilters((f) => ({ ...f, event: e.target.value }))}
                           className="clients-input"
                         />
-                        <button type="button" className="clients-filters__clear clients-filters__btn-icon" onClick={() => setActivityFilters({ from: '', to: '', event: '' })} aria-label={t('customerServices.clearFilters')}>
+                        <input
+                          type="text"
+                          placeholder={t('settings.activity.searchPlaceholder')}
+                          value={activityFilters.query}
+                          onChange={(e) => setActivityFilters((f) => ({ ...f, query: e.target.value }))}
+                          className="clients-input"
+                        />
+
+                        <button
+                          type="button"
+                          className="clients-filters__clear clients-filters__btn-icon"
+                          onClick={() => {
+                            setActivityFilters({ from: '', to: '', event: '', query: '' })
+                            setActivityPage(1)
+                          }}
+                          aria-label={t('customerServices.clearFilters')}
+                        >
                           <RotateCcw className="clients-filters__btn-icon-svg" aria-hidden />
                         </button>
                         <div className="clients-filters__actions">
@@ -1860,6 +2068,39 @@ export default function Settings() {
                     ) : (
                       <div className="settings-table-card">
                         <Table columns={activityColumns} data={activities} getRowKey={(r) => r.id} emptyMessage={t('settings.activity.empty')} />
+                        {activityTotalPages > 1 && (
+                          <div className="settings-pagination">
+                            <button
+                              type="button"
+                              className="page-header__btn"
+                              onClick={() => {
+                                if (activityPage > 1) {
+                                  setActivityPage((p) => p - 1)
+                                  refreshActivities()
+                                }
+                              }}
+                              disabled={activityPage <= 1 || activityLoading}
+                            >
+                              {t('pagination.prev')}
+                            </button>
+                            <span className="settings-pagination__info">
+                              {t('pagination.pageOfTotal', { current: activityPage, total: activityTotalPages })}
+                            </span>
+                            <button
+                              type="button"
+                              className="page-header__btn"
+                              onClick={() => {
+                                if (activityPage < activityTotalPages) {
+                                  setActivityPage((p) => p + 1)
+                                  refreshActivities()
+                                }
+                              }}
+                              disabled={activityPage >= activityTotalPages || activityLoading}
+                            >
+                              {t('pagination.next')}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </SectionCard>

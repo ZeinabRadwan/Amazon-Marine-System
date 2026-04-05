@@ -13,6 +13,7 @@ use App\Models\Shipment;
 use App\Models\User;
 use App\Notifications\OperationSDFormNotification;
 use App\Services\ActivityLogger;
+use App\Services\NotificationService;
 use App\Services\SDFormService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -20,6 +21,10 @@ use Mpdf\Mpdf;
 
 class SDFormController extends Controller
 {
+    public function __construct(
+        private NotificationService $notificationService,
+    ) {
+    }
     public function index(Request $request)
     {
         $this->authorize('viewAny', SDForm::class);
@@ -250,9 +255,12 @@ class SDFormController extends Controller
             ->where('status', 'active')
             ->get();
 
-        foreach ($operationsUsers as $user) {
-            $user->notify(new OperationSDFormNotification($sdForm));
-        }
+        $this->notificationService->sendDatabaseNotification(
+            'sd_form.sent_to_operations',
+            $sdForm,
+            $operationsUsers,
+            new OperationSDFormNotification($sdForm)
+        );
 
         return response()->json([
             'data' => $sdForm->fresh(['client', 'salesRep', 'pol', 'pod']),
@@ -421,19 +429,24 @@ class SDFormController extends Controller
             ], 200);
         }
 
-        $to = $operationsUsers->pluck('email')->all();
+        $this->notificationService->sendEmail(
+            'sd_form.email_to_operations',
+            $sdForm,
+            $operationsUsers,
+            function (User $user) use ($sdForm): void {
+                $subject = sprintf('SD %s sent to operations', $sdForm->sd_number ?? ('#'.$sdForm->id));
 
-        Mail::send([], [], function ($message) use ($to, $sdForm) {
-            $subject = sprintf('SD %s sent to operations', $sdForm->sd_number ?? ('#'.$sdForm->id));
+                $body = view('emails.sd_form_plain', [
+                    'form' => $sdForm,
+                ])->render();
 
-            $body = view('emails.sd_form_plain', [
-                'form' => $sdForm,
-            ])->render();
-
-            $message->to($to)
-                ->subject($subject)
-                ->setBody($body, 'text/html');
-        });
+                Mail::send([], [], function ($message) use ($user, $subject, $body): void {
+                    $message->to($user->email)
+                        ->subject($subject)
+                        ->setBody($body, 'text/html');
+                });
+            }
+        );
 
         ActivityLogger::log('sd_form.email_to_operations', $sdForm, [
             'recipient_count' => $operationsUsers->count(),

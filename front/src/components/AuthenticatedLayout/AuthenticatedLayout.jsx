@@ -1,12 +1,15 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getStoredToken, clearToken } from '../../pages/Login'
 import { getProfile, logout as logoutApi } from '../../api/auth'
+import { getApiBaseUrl } from '../../api/apiBaseUrl'
+import { getUnreadCount } from '../../api/notifications'
 import { getPermissionsByRole } from '../../api/roles'
 import AppLayout from '../AppLayout'
 import LoaderDots from '../LoaderDots'
 import '../LoaderDots/LoaderDots.css'
+import { ROLE_ID } from '../../constants/roles'
 
 const PAGE_ACCESS_CACHE_KEY = 'am.pageAccess.v1'
 
@@ -102,6 +105,7 @@ export default function AuthenticatedLayout() {
   const [allowedPages, setAllowedPages] = useState(() => readPageAccessCache()?.allowedPages ?? [])
   const [pageAccessVersion, setPageAccessVersion] = useState(() => readPageAccessCache()?.pageAccessVersion ?? '')
   const [loading, setLoading] = useState(true)
+  const [unreadNotifications, setUnreadNotifications] = useState(0)
 
   const refreshUser = useCallback(() => {
     if (!token) return Promise.resolve()
@@ -186,7 +190,7 @@ export default function AuthenticatedLayout() {
             roleId: u?.role_id ?? null,
           })
         }
-      } catch (err) {
+      } catch {
         if (!cancelled) {
           clearToken()
           navigate('/login', { replace: true })
@@ -198,6 +202,88 @@ export default function AuthenticatedLayout() {
 
     init()
     return () => { cancelled = true }
+  }, [token, navigate])
+
+  useEffect(() => {
+    if (!token) return
+    let cancelled = false
+
+    const loadUnread = async () => {
+      try {
+        const res = await getUnreadCount(token)
+        if (cancelled) return
+        const count = res.unread_count ?? res.count ?? res.data?.unread_count ?? res.data?.count ?? 0
+        setUnreadNotifications(Number(count))
+      } catch {
+        if (!cancelled) setUnreadNotifications(0)
+      }
+    }
+
+    loadUnread()
+
+    const interval = window.setInterval(loadUnread, 60000)
+    return () => {
+      cancelled = true
+      window.clearInterval(interval)
+    }
+  }, [token])
+
+  // ── Global 401 handler (backend idle-logout or expired token) ─────────────
+  useEffect(() => {
+    const onSessionExpired = () => {
+      clearToken()
+      navigate('/login', { replace: true })
+    }
+    window.addEventListener('am:session:expired', onSessionExpired)
+    return () => window.removeEventListener('am:session:expired', onSessionExpired)
+  }, [navigate])
+
+  // ── Frontend idle timer ───────────────────────────────────────────────────
+  // Proactively logs the user out when they haven't interacted for
+  // idle_logout_minutes without requiring an API call to be in-flight.
+  const idleTimerRef = useRef(null)
+  useEffect(() => {
+    if (!token) return
+
+    let idleMs = 30 * 60 * 1000 // default 30 min
+
+    // Fetch the setting from the backend once
+    const apiBase = getApiBaseUrl()
+    fetch(`${apiBase}/settings`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+      },
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        const minutes = data?.data?.sessions?.idle_logout_minutes ?? data?.sessions?.idle_logout_minutes
+        if (minutes && Number(minutes) > 0) {
+          idleMs = Number(minutes) * 60 * 1000
+        }
+      })
+      .catch(() => {})
+
+    const logout = () => {
+      clearToken()
+      navigate('/login', { replace: true })
+    }
+
+    const resetTimer = () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
+      idleTimerRef.current = setTimeout(logout, idleMs)
+    }
+
+    // Start the timer immediately
+    resetTimer()
+
+    const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click']
+    events.forEach((e) => window.addEventListener(e, resetTimer, { passive: true }))
+
+    return () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
+      events.forEach((e) => window.removeEventListener(e, resetTimer))
+    }
   }, [token, navigate])
 
   const handleLogout = async () => {
@@ -300,6 +386,10 @@ export default function AuthenticatedLayout() {
       navigate('/official-documents')
       return
     }
+    if (id === 'adminNotifications') {
+      navigate('/admin/notifications')
+      return
+    }
   }
 
   const pathToMenu = {
@@ -321,6 +411,7 @@ export default function AuthenticatedLayout() {
     '/invoices': 'invoices',
     '/notifications': 'notifications',
     '/settings': 'settings',
+    '/admin/notifications': 'adminNotifications',
     '/accountings': 'accounts',
     '/treasury': 'treasury',
     '/expenses': 'expenses',
@@ -330,11 +421,26 @@ export default function AuthenticatedLayout() {
   const activeMenu = pathToMenu[location.pathname] ?? 'dashboard'
 
   const sidebarUser = user
-    ? {
-        name: user.name || 'User',
-        email: user.email || '',
-        avatarUrl: user.avatar_url ?? user.avatarUrl ?? null,
-      }
+    ? (() => {
+        const rawAvatar = user.avatar_url ?? user.avatarUrl ?? null
+        let avatarUrl = null
+        if (rawAvatar) {
+          if (/^https?:\/\//i.test(rawAvatar)) {
+            avatarUrl = rawAvatar
+          } else if (rawAvatar.startsWith('/')) {
+            const apiBase = getApiBaseUrl()
+            const origin = apiBase.replace(/\/api\/v1\/?$/, '')
+            avatarUrl = `${origin}${rawAvatar}`
+          } else {
+            avatarUrl = rawAvatar
+          }
+        }
+        return {
+          name: user.name || 'User',
+          email: user.email || '',
+          avatarUrl,
+        }
+      })()
     : { name: 'User', email: '', avatarUrl: null }
 
   const pageHeaderConfig = useMemo(
@@ -346,6 +452,12 @@ export default function AuthenticatedLayout() {
     () => new Set(Array.isArray(allowedPages) ? allowedPages.filter(Boolean) : []),
     [allowedPages]
   )
+  const isAdminRole = useMemo(() => {
+    const rid = user?.role_id ?? user?.roles?.[0]?.id ?? user?.role?.id
+    if (rid === ROLE_ID.ADMIN) return true
+    const primary = (user?.primary_role ?? user?.roles?.[0]?.name ?? user?.role?.name ?? '').toString().toLowerCase()
+    return primary === 'admin'
+  }, [user])
   const hasPageAccess = useCallback((pageKey) => {
     if (!pageKey) return false
     return allowedPagesSet.has(String(pageKey))
@@ -364,12 +476,13 @@ export default function AuthenticatedLayout() {
   return (
     <AppLayout
       user={sidebarUser}
+      isAdminRole={isAdminRole}
       activeMenu={activeMenu}
       onMenuChange={handleMenuChange}
       allowedPages={allowedPages}
       crmCount={24}
       ticketsCount={7}
-      alertsCount={3}
+      alertsCount={unreadNotifications}
       shipmentsCount={12}
       sdFormsCount={5}
       appName="Amazon Marine"

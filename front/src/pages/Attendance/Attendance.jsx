@@ -211,8 +211,16 @@ function downloadCsv(filename, rows) {
 
 export default function Attendance() {
   const { t, i18n } = useTranslation()
-  const { isAdminRole } = useAuthAccess()
+  const { isAdminRole, user: outletUser } = useAuthAccess()
   const token = getStoredToken()
+  const today = useMemo(() => {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+    return formatYmdInTimeZone(new Date(), tz)
+  }, [])
+  const canShowAdminTab = isAdminRole
+  const canAdminAttendance = isAdminRole
+  const canManageAttendanceExcuses = isAdminRole
+  const canFilterAll = isAdminRole
 
   const sectionTabs = useMemo(() => {
     // Admin (role 1): Only sees Admin/Reports tab, loses personal recording/excuses

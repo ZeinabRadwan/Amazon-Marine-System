@@ -23,7 +23,7 @@ return [
         'key' => env('DEPLOY_SSH_KEY', '~/.ssh/namecheap_key'),
         'port' => (int) env('DEPLOY_SSH_PORT', 21098),
         'user' => env('DEPLOY_SSH_USER', 'amazphwz'),
-        'host' => env('DEPLOY_SSH_HOST', 'crm-amazonltd.online'),
+        'host' => env('DEPLOY_SSH_HOST', 'crm-amazonltd.live'),
     ],
 
     /*

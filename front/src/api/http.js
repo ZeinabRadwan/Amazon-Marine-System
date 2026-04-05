@@ -28,10 +28,15 @@ export function withLocaleHeaders(headers) {
 
 /**
  * Same as fetch() but merges Accept-Language and X-App-Locale when missing.
+ * Also fires 'am:session:expired' on 401 so AuthenticatedLayout can redirect.
  * @param {RequestInfo | URL} input
  * @param {RequestInit} [init]
  */
 export async function apiFetch(input, init = {}) {
   const next = { ...init, headers: withLocaleHeaders(init.headers) }
-  return fetch(input, next)
+  const response = await fetch(input, next)
+  if (response.status === 401) {
+    window.dispatchEvent(new CustomEvent('am:session:expired'))
+  }
+  return response
 }

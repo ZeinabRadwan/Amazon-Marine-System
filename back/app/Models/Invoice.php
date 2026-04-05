@@ -37,6 +37,7 @@ class Invoice extends Model
     protected $casts = [
         'issue_date' => 'date',
         'due_date' => 'date',
+        'currency_id' => 'integer',
         'total_amount' => 'decimal:2',
         'tax_amount' => 'decimal:2',
         'is_vat_invoice' => 'bool',

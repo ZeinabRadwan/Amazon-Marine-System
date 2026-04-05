@@ -1668,7 +1668,7 @@ export default function Shipments() {
             setDetailShipment(null)
           }}
           canManageOps={canManageOps}
-          canViewFinancialTotals={canViewAccounting}
+          canViewFinancialTotals={canViewShipmentFinancials}
           canViewSelling={canViewSelling}
         />
 

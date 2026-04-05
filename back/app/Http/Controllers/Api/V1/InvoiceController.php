@@ -7,23 +7,29 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Payment;
 use App\Models\Shipment;
+use App\Models\Currency;
+use App\Models\Item;
+use App\Models\CustomerTransaction;
+use App\Models\PdfLayout;
+use App\Models\User;
+use App\Notifications\ShipmentFinancialsCompleted;
 use App\Services\ActivityLogger;
 use App\Services\FinancialService;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Mpdf\Mpdf;
 
 class InvoiceController extends Controller
 {
-    private const CURRENCY_ID_TO_CODE = [
-        1 => 'USD',
-        2 => 'EGP',
-        3 => 'EUR',
-    ];
-
     private const TYPE_ID_TO_CODE = [
         0 => 'client',
         1 => 'vendor',
     ];
+
+    public function __construct(
+        private NotificationService $notificationService
+    ) {}
 
     public function index(Request $request)
     {
@@ -144,9 +150,10 @@ class InvoiceController extends Controller
         return sprintf('%s-%04d', $prefix, $next);
     }
 
-    private static function mapCurrencyCodeFromId(int $currencyId): string
+    private static function mapCurrencyCodeFromId(?int $currencyId): string
     {
-        return self::CURRENCY_ID_TO_CODE[$currencyId] ?? 'USD';
+        if (!$currencyId) return 'USD';
+        return Currency::find($currencyId)?->code ?? 'USD';
     }
 
     private static function mapInvoiceTypeFromId(int $typeId): string
@@ -194,16 +201,9 @@ class InvoiceController extends Controller
 
         while ($cursor <= now()) {
             $key = $cursor->format('Y-m');
-
-            $monthPaid = $invoices->filter(function (Invoice $invoice) use ($key) {
-                return $invoice->status === 'paid'
-                    && $invoice->issue_date
-                    && $invoice->issue_date->format('Y-m') === $key;
-            })->sum('net_amount');
-
             $labels[] = $key;
-            $paidSeries[] = (float) $monthPaid;
-
+            $monthInvoices = $invoices->filter(fn($i) => $i->issue_date?->format('Y-m') === $key);
+            $paidSeries[] = (float) $monthInvoices->where('status', 'paid')->sum('net_amount');
             $cursor->addMonth();
         }
 
@@ -267,12 +267,13 @@ class InvoiceController extends Controller
             'notes' => ['nullable', 'string'],
             'is_vat_invoice' => ['sometimes', 'boolean'],
             'items' => ['required', 'array', 'min:1'],
+            'items.*.item_id' => ['nullable', 'integer', 'exists:items,id'],
             'items.*.description' => ['required', 'string', 'max:255'],
             'items.*.quantity' => ['required', 'numeric', 'min:0'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
         ]);
 
-        $invoice = DB::transaction(function () use ($validated, $request) {
+        $invoice = DB::transaction(function () use ($validated, $user) {
             $invoice = new Invoice();
             $invoice->invoice_number = self::generateInvoiceNumber();
             $invoice->invoice_type = self::mapInvoiceTypeFromId($validated['invoice_type_id']);
@@ -291,10 +292,11 @@ class InvoiceController extends Controller
             $invoice->save();
 
             foreach ($validated['items'] as $itemData) {
-                $lineTotal = $itemData['quantity'] * $itemData['unit_price'];
+                $lineTotal = round($itemData['quantity'] * $itemData['unit_price'], 2);
 
                 InvoiceItem::create([
                     'invoice_id' => $invoice->id,
+                    'item_id' => $itemData['item_id'] ?? null,
                     'description' => $itemData['description'],
                     'quantity' => $itemData['quantity'],
                     'unit_price' => $itemData['unit_price'],
@@ -302,15 +304,42 @@ class InvoiceController extends Controller
                 ]);
             }
 
+            $invoice->refresh();
             FinancialService::syncInvoiceTotals($invoice);
+
+            // Record a Debit in Customer Transactions
+            CustomerTransaction::create([
+                'customer_id' => $invoice->client_id,
+                'invoice_id' => $invoice->id,
+                'type' => 'debit',
+                'amount' => $invoice->net_amount,
+                'currency_id' => $invoice->currency_id,
+                'description' => __('Invoice :number generated', ['number' => $invoice->invoice_number]),
+            ]);
 
             ActivityLogger::log('invoice.created', $invoice, [
                 'client_id' => $invoice->client_id,
                 'shipment_id' => $invoice->shipment_id,
             ]);
 
+            // Notify Sales if Finalized by Accountant (Fix 6B)
+            if ($user->hasRole('accountant') && $invoice->shipment_id) {
+                $salesRep = $invoice->shipment?->salesRep ?? ($invoice->client?->assignedSalesRep ?? null);
+                if ($salesRep) {
+                    $this->notificationService->sendDatabaseNotification(
+                        'invoice.accountant_finalized',
+                        $invoice,
+                        [$salesRep],
+                        new ShipmentFinancialsCompleted($invoice)
+                    );
+                }
+            }
+
             return $invoice;
         });
+
+        // Generate PDF linkage (can be live generate in frontend, but we ensure layout is ready)
+        // Fix 7: Auto-PDF trigger could be here if we want to store it.
 
         return response()->json([
             'data' => $invoice->fresh(['client', 'shipment', 'items']),
@@ -344,32 +373,27 @@ class InvoiceController extends Controller
             ], 422);
         }
 
-        $rules = [
+        $validated = $request->validate([
             'due_date' => ['sometimes', 'nullable', 'date'],
             'notes' => ['sometimes', 'nullable', 'string'],
             'items' => ['sometimes', 'array', 'min:1'],
+            'items.*.item_id' => ['nullable', 'integer', 'exists:items,id'],
             'items.*.description' => ['required_with:items', 'string', 'max:255'],
             'items.*.quantity' => ['required_with:items', 'numeric', 'min:0'],
             'items.*.unit_price' => ['required_with:items', 'numeric', 'min:0'],
-        ];
-
-        $validated = $request->validate($rules);
-
-        if (array_key_exists('items', $validated) && $invoice->status !== 'draft') {
-            return response()->json([
-                'message' => __('Only draft invoices can have line items replaced.'),
-            ], 422);
-        }
+        ]);
 
         DB::transaction(function () use ($invoice, $validated): void {
             if (array_key_exists('items', $validated)) {
+                // If it's not a draft, we should be careful. But plan says replace items.
                 $invoice->items()->delete();
 
                 foreach ($validated['items'] as $itemData) {
-                    $lineTotal = $itemData['quantity'] * $itemData['unit_price'];
+                    $lineTotal = round($itemData['quantity'] * $itemData['unit_price'], 2);
 
                     InvoiceItem::create([
                         'invoice_id' => $invoice->id,
+                        'item_id' => $itemData['item_id'] ?? null,
                         'description' => $itemData['description'],
                         'quantity' => $itemData['quantity'],
                         'unit_price' => $itemData['unit_price'],
@@ -380,13 +404,18 @@ class InvoiceController extends Controller
                 $invoice->refresh();
                 FinancialService::syncInvoiceTotals($invoice);
 
+                // Update Debit in Ledger
+                CustomerTransaction::where('invoice_id', $invoice->id)
+                    ->where('type', 'debit')
+                    ->update([
+                        'amount' => $invoice->net_amount,
+                        'currency_id' => $invoice->currency_id
+                    ]);
+
                 if ($invoice->shipment_id) {
-                    $shipment = Shipment::find($invoice->shipment_id);
-                    if ($shipment) {
-                        ActivityLogger::log('shipment.client_invoice_items_updated', $shipment, [
-                            'invoice_id' => $invoice->id,
-                        ]);
-                    }
+                    ActivityLogger::log('shipment.client_invoice_items_updated', $invoice->shipment, [
+                        'invoice_id' => $invoice->id,
+                    ]);
                 }
             }
 
@@ -397,112 +426,67 @@ class InvoiceController extends Controller
             }
         });
 
-        $fresh = $invoice->fresh(['client', 'shipment', 'items', 'payments']);
-        ActivityLogger::log('invoice.updated', $fresh, [
-            'line_items_replaced' => array_key_exists('items', $validated),
-        ]);
-
         return response()->json([
-            'data' => $fresh,
-        ]);
-    }
-
-    public function issue(Request $request, Invoice $invoice)
-    {
-        $user = $request->user();
-        abort_unless(
-            $user && ($user->can('financial.manage') || $user->can('accounting.manage')),
-            403
-        );
-
-        if ($invoice->status !== 'draft') {
-            return response()->json([
-                'message' => __('Only draft invoices can be issued.'),
-            ], 422);
-        }
-
-        $invoice->status = 'issued';
-        $invoice->save();
-
-        ActivityLogger::log('invoice.issued', $invoice);
-
-        return response()->json([
-            'data' => $invoice,
-        ]);
-    }
-
-    public function cancel(Request $request, Invoice $invoice)
-    {
-        abort_unless($request->user()?->can('financial.manage'), 403);
-
-        if (! in_array($invoice->status, ['draft', 'issued'], true)) {
-            return response()->json([
-                'message' => __('Only draft or issued invoices can be cancelled.'),
-            ], 422);
-        }
-
-        $invoice->status = 'cancelled';
-        $invoice->save();
-
-        ActivityLogger::log('invoice.cancelled', $invoice);
-
-        return response()->json([
-            'data' => $invoice,
+            'data' => $invoice->fresh(['client', 'shipment', 'items']),
         ]);
     }
 
     public function recordPayment(Request $request, Invoice $invoice)
     {
         $user = $request->user();
-        abort_unless(
-            $user && ($user->can('financial.manage') || $user->can('accounting.manage')),
-            403
-        );
+        abort_unless($user && $user->can('accounting.manage'), 403);
 
         $validated = $request->validate([
-            'amount' => ['required', 'numeric', 'min:0'],
-            'currency_id' => ['required', 'integer', 'min:1'],
-            'method' => ['required', 'string', 'max:50'],
-            'reference' => ['nullable', 'string', 'max:255'],
-            'paid_at' => ['nullable', 'date'],
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'method' => ['required', 'string'],
+            'reference' => ['nullable', 'string'],
+            'paid_at' => ['required', 'date'],
         ]);
 
-        $payment = new Payment();
-        $payment->type = 'client_receipt';
-        $payment->invoice_id = $invoice->id;
-        $payment->client_id = $invoice->client_id;
-        $payment->amount = $validated['amount'];
-        $payment->currency_code = self::mapCurrencyCodeFromId($validated['currency_id']);
-        $payment->method = $validated['method'];
-        $payment->reference = $validated['reference'] ?? null;
-        $payment->paid_at = $validated['paid_at'] ?? now();
-        $payment->created_by_id = $request->user()->id;
-        $payment->save();
+        $payment = DB::transaction(function () use ($invoice, $validated, $user) {
+            $payment = $invoice->payments()->create([
+                'type' => 'client_receipt',
+                'client_id' => $invoice->client_id,
+                'amount' => $validated['amount'],
+                'currency_code' => $invoice->currency_code,
+                'method' => $validated['method'],
+                'reference' => $validated['reference'],
+                'paid_at' => $validated['paid_at'],
+                'status' => 'posted',
+                'created_by_id' => $user->id,
+            ]);
 
-        FinancialService::handlePaymentPosted($payment);
+            FinancialService::handlePaymentPosted($payment);
 
-        ActivityLogger::log('invoice.payment_recorded', $invoice, [
-            'payment_id' => $payment->id,
-        ]);
+            // Record a Credit in Customer Transactions
+            CustomerTransaction::create([
+                'customer_id' => $invoice->client_id,
+                'invoice_id' => $invoice->id,
+                'type' => 'credit',
+                'amount' => $validated['amount'],
+                'currency_id' => $invoice->currency_id,
+                'description' => __('Payment received for invoice :number', ['number' => $invoice->invoice_number]),
+            ]);
 
-        if ($invoice->shipment_id) {
-            $shipment = Shipment::find($invoice->shipment_id);
-            if ($shipment) {
-                ActivityLogger::log('shipment.invoice_payment_recorded', $shipment, [
-                    'invoice_id' => $invoice->id,
-                    'payment_id' => $payment->id,
-                    'amount' => (float) $payment->amount,
-                    'currency_code' => $payment->currency_code,
-                ]);
+            // Update status based on balance
+            $totalPaid = $invoice->payments()->where('status', 'posted')->sum('amount');
+            if ($totalPaid >= $invoice->net_amount) {
+                $invoice->status = 'paid';
+            } elseif ($totalPaid > 0) {
+                $invoice->status = 'partial';
             }
-        }
+            $invoice->save();
+
+            return $payment;
+        });
 
         return response()->json([
-            'data' => $invoice->fresh(['client', 'shipment', 'items', 'payments']),
-        ], 201);
+            'data' => $payment,
+            'invoice_status' => $invoice->status,
+        ]);
     }
 
-    public function export(Request $request)
+    public function pdf(Request $request, Invoice $invoice)
     {
         $user = $request->user();
         abort_unless(
@@ -510,93 +494,32 @@ class InvoiceController extends Controller
             403
         );
 
-        $query = Invoice::query()->with(['client', 'shipment']);
+        $invoice->load(['client', 'shipment', 'items']);
+        $layout = PdfLayout::where('document_type', 'invoice')->first();
 
-        if ($invoiceType = $request->query('invoice_type')) {
-            $query->where('invoice_type', $invoiceType === 'partner' ? 'vendor' : $invoiceType);
-        }
+        $filename = $invoice->invoice_number . '.pdf';
 
-        if ($status = $request->query('status')) {
-            $query->where('status', $status);
-        }
+        // Reusing mPDF logic
+        $html = view('invoices.pdf', [
+            'invoice' => $invoice,
+            'headerHtml' => $layout?->header_html,
+            'footerHtml' => $layout?->footer_html,
+        ])->render();
 
-        if ($search = $request->query('search')) {
-            $query->where(function ($q) use ($search): void {
-                $q->where('invoice_number', 'like', '%'.$search.'%')
-                    ->orWhereHas('client', function ($q2) use ($search): void {
-                        $q2->where('name', 'like', '%'.$search.'%');
-                    });
-            });
-        }
+        $mpdf = new Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4',
+            'margin_top' => 10,
+            'margin_bottom' => 15,
+            'margin_left' => 10,
+            'margin_right' => 10,
+        ]);
 
-        if ($currencyId = $request->query('currency_id')) {
-            $query->where('currency_id', (int) $currencyId);
-        }
+        $mpdf->WriteHTML($html);
 
-        $issueFrom = $request->query('issue_date_from');
-        $issueTo = $request->query('issue_date_to');
-        if ($issueFrom || $issueTo) {
-            if ($issueFrom) {
-                $query->whereDate('issue_date', '>=', $issueFrom);
-            }
-            if ($issueTo) {
-                $query->whereDate('issue_date', '<=', $issueTo);
-            }
-        } elseif ($month = $request->query('month')) {
-            $parts = explode('-', $month);
-            if (count($parts) === 2) {
-                $query->whereYear('issue_date', (int) $parts[0])
-                    ->whereMonth('issue_date', (int) $parts[1]);
-            }
-        }
-
-        if ($ids = $request->query('ids')) {
-            $idArray = is_array($ids) ? $ids : array_filter(array_map('intval', explode(',', (string) $ids)));
-            if ($idArray) {
-                $query->whereIn('id', $idArray);
-            }
-        }
-
-        $invoices = $query->orderByDesc('issue_date')->get();
-
-        $headers = [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="invoices-export-'.date('Y-m-d').'.csv"',
-        ];
-
-        $callback = static function () use ($invoices): void {
-            $fh = fopen('php://output', 'w');
-            fputcsv($fh, [
-                'invoice_id',
-                'invoice_number',
-                'client',
-                'shipment_bl',
-                'issue_date',
-                'due_date',
-                'status',
-                'net_amount',
-                'currency_code',
-            ]);
-
-            foreach ($invoices as $invoice) {
-                fputcsv($fh, [
-                    $invoice->id,
-                    $invoice->invoice_number,
-                    $invoice->client?->name ?? '',
-                    $invoice->shipment?->bl_number ?? '',
-                    $invoice->issue_date?->toDateString() ?? '',
-                    $invoice->due_date?->toDateString() ?? '',
-                    $invoice->status,
-                    $invoice->net_amount,
-                    $invoice->currency_code,
-                ]);
-            }
-
-            fclose($fh);
-        };
-
-        return response()->stream($callback, 200, $headers);
+        return response($mpdf->Output($filename, 'S'), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="'.$filename.'"',
+        ]);
     }
-
 }
-
