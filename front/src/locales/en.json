@@ -7,7 +7,8 @@
     "logOut": "Log out",
     "cancel": "Cancel",
     "user": "User",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "close": "Close"
   },
   "topNav": {
     "searchPlaceholder": "Search shipments, clients, invoices...",
@@ -253,6 +254,41 @@
     "status": "Status",
     "sales": "Sales",
     "date": "Date"
+  },
+  "documents": {
+    "title": "Official Documents",
+    "subtitle": "Manage and access all official company records and templates.",
+    "uploadTitle": "Upload Document",
+    "uploadAction": "Upload Document",
+    "uploadActionConfirm": "Upload & Save",
+    "uploading": "Uploading...",
+    "name": "Document Name",
+    "namePlaceholder": "Example: Commercial Register",
+    "type": "Document Type",
+    "file": "File",
+    "companyDocs": "Company Documents",
+    "templates": "Templates",
+    "searchPlaceholder": "Search documents...",
+    "noFilesTitle": "No documents found",
+    "noFilesSubtitle": "Start by uploading your first official document.",
+    "noSearchMatch": "No documents match your search criteria.",
+    "dragAndDrop": "Click to upload or drag and drop",
+    "status": {
+      "active": "Active",
+      "expired": "Expired",
+      "expiringSoon": "Expiring Soon"
+    },
+    "error": {
+      "noFile": "Please select a file",
+      "uploadFailed": "Failed to upload document",
+      "fetchFailed": "Failed to fetch documents",
+      "deleteFailed": "Failed to delete document"
+    },
+    "previewTitle": "Preview",
+    "previewLoading": "Loading preview…",
+    "previewError": "Could not load preview",
+    "previewUnsupported": "Inline preview is not available for this file type. Use download instead.",
+    "previewTooLarge": "This file is too large to preview here. Download it instead."
   },
   "login": {
     "title": "Sign in to your account",

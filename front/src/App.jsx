@@ -39,6 +39,7 @@ import Notifications from './pages/Notifications'
 import AdminNotifications from './pages/AdminNotifications/AdminNotifications'
 import Settings from './pages/Settings'
 import Reports from './pages/Reports/Reports'
+import Documents from './pages/Documents/Documents'
 import { getStoredToken } from './pages/Login'
 import FollowUpWorkloadWidgets from './components/FollowUpWorkloadWidgets'
 import {
@@ -64,6 +65,12 @@ function SignupPlaceholder() {
       <div className="home-page">{t('signup.comingSoon')}</div>
     </Container>
   )
+}
+
+function RequireAdminOnly({ children }) {
+  const { isAdminRole } = useAuthAccess()
+  if (!isAdminRole) return <Navigate to="/" replace />
+  return children
 }
 
 function Home() {
@@ -812,9 +819,9 @@ function App() {
           <Route
             path="/settings"
             element={
-              <RequirePageAccess pageKey="settings">
+              <RequireAdminOnly>
                 <Settings />
-              </RequirePageAccess>
+              </RequireAdminOnly>
             }
           />
           <Route
@@ -823,6 +830,14 @@ function App() {
               <RequireAdmin>
                 <Reports />
               </RequireAdmin>
+            }
+          />
+          <Route
+            path="/official-documents"
+            element={
+              <RequirePageAccess pageKey="official_documents">
+                <Documents />
+              </RequirePageAccess>
             }
           />
         </Route>

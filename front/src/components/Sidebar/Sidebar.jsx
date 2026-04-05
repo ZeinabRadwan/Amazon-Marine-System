@@ -215,6 +215,7 @@ export default function Sidebar({
 
             const filteredItems = allowedPagesSet
               ? items.filter(({ id }) => {
+                  if (id === 'settings' && !isAdminRole) return false
                   if (id === 'reports') return isAdminRole
                   const pageKey = SIDEBAR_ID_TO_PAGE_KEY[id]
                   if (!pageKey) return true
