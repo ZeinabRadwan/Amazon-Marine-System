@@ -7,7 +7,8 @@
     "logOut": "Log out",
     "cancel": "Cancel",
     "user": "User",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "close": "Close"
   },
   "topNav": {
     "searchPlaceholder": "Search shipments, clients, invoices...",
@@ -282,7 +283,12 @@
       "uploadFailed": "Failed to upload document",
       "fetchFailed": "Failed to fetch documents",
       "deleteFailed": "Failed to delete document"
-    }
+    },
+    "previewTitle": "Preview",
+    "previewLoading": "Loading preview…",
+    "previewError": "Could not load preview",
+    "previewUnsupported": "Inline preview is not available for this file type. Use download instead.",
+    "previewTooLarge": "This file is too large to preview here. Download it instead."
   },
   "login": {
     "title": "Sign in to your account",

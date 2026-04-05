@@ -8,7 +8,7 @@ vi.mock('../api/documents', () => ({
   getDocuments: vi.fn(),
   uploadDocument: vi.fn(),
   deleteDocument: vi.fn(),
-  downloadDocument: vi.fn(),
+  downloadDocumentFromUrl: vi.fn(),
 }))
 
 describe('useDocuments hook', () => {
@@ -52,10 +52,19 @@ describe('useDocuments hook', () => {
     expect(result.current.documents).toEqual([])
   })
 
-  it('uploads a new document and adds it to the list', async () => {
+  it('uploads a new document and refetches the list', async () => {
+    const newDoc = {
+      id: 3,
+      name: 'New Doc',
+      type: 'company',
+      created_at: '2026-01-03',
+      preview_url: 'https://api.example/preview/3',
+      download_url: 'https://api.example/dl/3',
+    }
+    const listAfterUpload = [newDoc, ...mockDocs]
     api.getDocuments.mockResolvedValueOnce({ data: mockDocs })
-    const newDoc = { id: 3, name: 'New Doc', type: 'company', created_at: '2026-01-03' }
-    api.uploadDocument.mockResolvedValueOnce({ data: newDoc })
+    api.getDocuments.mockResolvedValueOnce({ data: listAfterUpload })
+    api.uploadDocument.mockResolvedValueOnce({ data: { id: 3, name: 'New Doc', type: 'company' } })
 
     const { result } = renderHook(() => useDocuments(token, type))
 
@@ -66,9 +75,9 @@ describe('useDocuments hook', () => {
       uploaded = await result.current.upload('New Doc', 'company', new File([], 'test.pdf'))
     })
 
-    expect(uploaded).toEqual(newDoc)
-    expect(result.current.documents).toContainEqual(newDoc)
-    expect(result.current.documents[0]).toEqual(newDoc) // Should be at the beginning
+    expect(uploaded).toEqual({ id: 3, name: 'New Doc', type: 'company' })
+    expect(result.current.documents).toEqual(listAfterUpload)
+    expect(api.getDocuments).toHaveBeenCalledTimes(2)
   })
 
   it('deletes a document and removes it from the list', async () => {
@@ -79,12 +88,13 @@ describe('useDocuments hook', () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false))
 
-    await waitFor(async () => {
-      await result.current.remove(1)
+    await result.current.remove(1)
+
+    await waitFor(() => {
+      expect(result.current.documents).toHaveLength(1)
     })
 
     expect(api.deleteDocument).toHaveBeenCalledWith(token, 1)
-    expect(result.current.documents).toHaveLength(1)
     expect(result.current.documents.find(d => d.id === 1)).toBeUndefined()
   })
 })

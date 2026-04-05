@@ -1,24 +1,34 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Plus, Search, UploadCloud, FileText, LayoutGrid, List } from 'lucide-react'
+import { Plus, Search, UploadCloud, FileText } from 'lucide-react'
 import { getStoredToken } from '../Login'
 import { useDocuments } from './hooks/useDocuments'
 import DocumentCard from './components/DocumentCard'
 import DocumentModal from './DocumentModal'
+import DocumentPreviewDialog from './DocumentPreviewDialog'
 import Tabs from '../../components/Tabs'
 import { Container } from '../../components/Container'
 import './Documents.css'
 
 export default function Documents() {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const token = getStoredToken()
-  const isRtl = i18n.language === 'ar'
-  
+
   const [activeTab, setActiveTab] = useState('company')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [previewDoc, setPreviewDoc] = useState(null)
 
-  const { documents, loading, error, upload, remove, download } = useDocuments(token, activeTab)
+  const listType = activeTab === 'templates' ? 'template' : 'company'
+  const { documents, loading, error, upload, remove, download } = useDocuments(token, listType)
+
+  const handleUpload = useCallback(
+    async (name, uploadType, file) => {
+      await upload(name, uploadType, file)
+      setActiveTab(uploadType === 'template' ? 'templates' : 'company')
+    },
+    [upload]
+  )
 
   const tabs = useMemo(() => [
     { id: 'company', label: t('documents.companyDocs', 'Company Documents') },
@@ -62,11 +72,11 @@ export default function Documents() {
           />
           
           <div className="relative flex-grow max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <Search className="documents-search__icon" size={18} aria-hidden />
             <input 
               type="text" 
               placeholder={t('documents.searchPlaceholder', 'Search documents...')}
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-[#111827] border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:border-blue-500 transition-all text-sm"
+              className="documents-search__input w-full py-2.5 bg-gray-50 dark:bg-[#111827] border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:border-blue-500 transition-all text-sm"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
             />
@@ -106,20 +116,24 @@ export default function Documents() {
       ) : (
         <div className="documents-grid">
           {filteredDocuments.map(doc => (
-            <DocumentCard 
-              key={doc.id} 
-              document={doc} 
+            <DocumentCard
+              key={doc.id}
+              document={doc}
               onDelete={remove}
               onDownload={download}
+              onView={setPreviewDoc}
             />
           ))}
         </div>
       )}
 
-      <DocumentModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        onUpload={upload}
+      <DocumentModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onUpload={handleUpload} />
+
+      <DocumentPreviewDialog
+        open={!!previewDoc}
+        token={token}
+        document={previewDoc}
+        onClose={() => setPreviewDoc(null)}
       />
     </Container>
   )
