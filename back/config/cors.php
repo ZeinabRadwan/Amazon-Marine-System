@@ -9,6 +9,8 @@
 $defaultOrigins = [
     'https://crm-amazonltd.online',
     'https://www.crm-amazonltd.online',
+    'https://crm-amazonltd.live',
+    'https://www.crm-amazonltd.live',
     'http://localhost:5173',
     'http://127.0.0.1:5173',
 ];
@@ -30,7 +32,7 @@ if ($raw === '*') {
 | Covers any subdomain (e.g. future staging) without editing .env.
 */
 $allowedOriginPatterns = [
-    '#^https://([a-z0-9-]+\.)*crm-amazonltd\.online$#i',
+    '#^https://([a-z0-9-]+\.)*crm-amazonltd\.(online|live)$#i',
     '#^http://localhost(:\d+)?$#',
     '#^http://127\.0\.0\.1(:\d+)?$#',
 ];
