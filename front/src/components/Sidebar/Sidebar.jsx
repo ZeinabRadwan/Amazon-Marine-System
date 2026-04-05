@@ -139,7 +139,7 @@ export default function Sidebar({
 }) {
   const badgeCounts = { crmCount, ticketsCount, alertsCount, shipmentsCount, sdFormsCount }
   const { t, i18n } = useTranslation()
-  const { allowedPages: hookAllowedPages, isAccountant } = useAuthAccess()
+  const { allowedPages: hookAllowedPages, isAccountant, isAdminRole } = useAuthAccess()
   const allowedPages = allowedPagesProp ?? hookAllowedPages
   const isRtl = i18n.language === 'ar'
   const [theme, setTheme] = useState(() => getResolvedTheme())
@@ -205,6 +205,7 @@ export default function Sidebar({
 
             const filteredItems = allowedPagesSet
               ? items.filter(({ id }) => {
+                  if (id === 'settings' && !isAdminRole) return false
                   const pageKey = SIDEBAR_ID_TO_PAGE_KEY[id]
                   if (!pageKey) return true
                   return allowedPagesSet.has(pageKey)

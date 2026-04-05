@@ -250,6 +250,36 @@
     "sales": "المبيعات",
     "date": "التاريخ"
   },
+  "documents": {
+    "title": "المستندات الرسمية",
+    "subtitle": "إدارة والوصول إلى جميع سجلات الشركة الرسمية والقوالب.",
+    "uploadTitle": "رفع مستند",
+    "uploadAction": "رفع مستند",
+    "uploadActionConfirm": "رفع وحفظ",
+    "uploading": "جاري الرفع...",
+    "name": "اسم المستند",
+    "namePlaceholder": "مثال: السجل التجاري",
+    "type": "نوع المستند",
+    "file": "الملف",
+    "companyDocs": "مستندات الشركة",
+    "templates": "قوالب المستندات",
+    "searchPlaceholder": "البحث في المستندات...",
+    "noFilesTitle": "لم يتم العثور على مستندات",
+    "noFilesSubtitle": "ابدأ برفع أول مستند رسمي لك.",
+    "noSearchMatch": "لا توجد مستندات تطابق بحثك.",
+    "dragAndDrop": "اضغط للرفع أو اسحب الملف هنا",
+    "status": {
+      "active": "ساري",
+      "expired": "منتهي",
+      "expiringSoon": "ينتهي قريباً"
+    },
+    "error": {
+      "noFile": "يرجى اختيار ملف",
+      "uploadFailed": "فشل رفع المستند",
+      "fetchFailed": "فشل تحميل المستندات",
+      "deleteFailed": "فشل حذف المستند"
+    }
+  },
   "login": {
     "title": "تسجيل الدخول إلى حسابك",
     "email": "البريد الإلكتروني",
