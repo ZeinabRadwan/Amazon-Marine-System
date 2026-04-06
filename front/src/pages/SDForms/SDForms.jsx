@@ -688,8 +688,44 @@ export default function SDForms() {
           <h3 className="client-detail-modal__section-title">1. Shipment Basic Information</h3>
           <div className="client-detail-modal__form-grid">
             <div className="client-detail-modal__form-field">
+              <label htmlFor="sd-c-client">
+                1. Client
+              </label>
+              <select
+                id="sd-c-client"
+                value={form.client_id}
+                onChange={(e) => setForm((f) => ({ ...f, client_id: e.target.value }))}
+                disabled={disabled}
+              >
+                <option value="">{t('sdForms.form.optional')}</option>
+                {clientsList.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name ?? c.client_name ?? `#${c.id}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="client-detail-modal__form-field">
+              <label htmlFor="sd-c-rep">
+                2. Sales Representative
+              </label>
+              <select
+                id="sd-c-rep"
+                value={form.sales_rep_id}
+                onChange={(e) => setForm((f) => ({ ...f, sales_rep_id: e.target.value }))}
+                disabled={disabled}
+              >
+                <option value="">{t('sdForms.form.defaultCurrentUser')}</option>
+                {usersList.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name ?? u.email ?? `#${u.id}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-pol">
-                1. Port of Loading (POL)
+                3. Port of Loading (POL)
               </label>
               <select
                 id="sd-c-pol"
@@ -707,7 +743,7 @@ export default function SDForms() {
             </div>
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-pod">
-                2. Port of Discharge (POD)
+                4. Port of Discharge (POD)
               </label>
               <select
                 id="sd-c-pod"
@@ -725,7 +761,7 @@ export default function SDForms() {
             </div>
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-fdest">
-                3. Final Destination
+                5. Final Destination
               </label>
               <input
                 id="sd-c-fdest"
@@ -738,7 +774,7 @@ export default function SDForms() {
             </div>
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-dir">
-                4. Shipment Direction *
+                6. Shipment Direction *
               </label>
               <select
                 id="sd-c-dir"
@@ -758,9 +794,9 @@ export default function SDForms() {
                 <option value="Import">Import</option>
               </select>
             </div>
-             <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+            <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
               <label htmlFor="sd-c-shipping-line">
-                5. Shipping Line *
+                7. Shipping Line *
               </label>
               <select
                 id="sd-c-shipping-line"
@@ -821,7 +857,7 @@ export default function SDForms() {
           <div className="client-detail-modal__form-grid">
             <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
               <label htmlFor="sd-c-shipper">
-                5. Shipper Information
+                8. Shipper Information
               </label>
               <textarea
                 id="sd-c-shipper"
@@ -833,7 +869,7 @@ export default function SDForms() {
             </div>
             <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
               <label htmlFor="sd-c-consignee">
-                6. Consignee Information
+                9. Consignee Information
               </label>
               <textarea
                 id="sd-c-consignee"
@@ -845,7 +881,7 @@ export default function SDForms() {
             </div>
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-npm">
-                7. Notify Party
+                10. Notify Party
               </label>
               <select
                 id="sd-c-npm"
@@ -880,7 +916,7 @@ export default function SDForms() {
           <div className="client-detail-modal__form-grid">
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-ft">
-                9. Freight Term
+                11. Freight Term
               </label>
               <select
                 id="sd-c-ft"
@@ -901,7 +937,7 @@ export default function SDForms() {
           <div className="client-detail-modal__form-grid">
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-ctype">
-                10. Container Type
+                12. Container Type
               </label>
               <select
                 id="sd-c-ctype"
@@ -919,7 +955,7 @@ export default function SDForms() {
             </div>
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-csize">
-                11. Container Size
+                13. Container Size
               </label>
               <select
                 id="sd-c-csize"
@@ -937,7 +973,7 @@ export default function SDForms() {
             </div>
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-numc">
-                12. Number of Containers
+                14. Number of Containers
               </label>
               <input
                 id="sd-c-numc"
@@ -1001,7 +1037,7 @@ export default function SDForms() {
           <div className="client-detail-modal__form-grid">
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-rvd">
-                13. Requested Vessel Date
+                15. Requested Vessel Date
               </label>
               <input
                 id="sd-c-rvd"
@@ -1015,7 +1051,7 @@ export default function SDForms() {
             {showAcid ? (
               <div className="client-detail-modal__form-field">
                 <label htmlFor="sd-c-acid">
-                  14. ACID Number *
+                  16. ACID Number *
                 </label>
                 <input
                   id="sd-c-acid"
@@ -1034,7 +1070,7 @@ export default function SDForms() {
           <div className="client-detail-modal__form-grid">
             <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
               <label htmlFor="sd-c-cargo">
-                15. Cargo Description
+                17. Cargo Description
               </label>
               <textarea
                 id="sd-c-cargo"
@@ -1046,7 +1082,7 @@ export default function SDForms() {
             </div>
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-hs">
-                16. HS Code
+                18. HS Code
               </label>
               <input
                 id="sd-c-hs"
@@ -1065,7 +1101,7 @@ export default function SDForms() {
           <div className="client-detail-modal__form-grid">
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-gw">
-                20. Total Gross Weight (KG)
+                19. Total Gross Weight (KG)
               </label>
               <input
                 id="sd-c-gw"
@@ -1080,7 +1116,7 @@ export default function SDForms() {
             </div>
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-nw">
-                21. Total Net Weight (KG)
+                20. Total Net Weight (KG)
               </label>
               <input
                 id="sd-c-nw"
