@@ -53,9 +53,11 @@ class SDFormController extends Controller
         }
 
         if ($search = $request->query('search')) {
-            $query->where(function ($q) use ($search) {
-                $q->where('sd_number', 'like', '%'.$search.'%')
-                    ->orWhere('cargo_description', 'like', '%'.$search.'%');
+            $term = '%'.$search.'%';
+            $query->where(function ($q) use ($term) {
+                $q->where('sd_number', 'like', $term)
+                    ->orWhere('cargo_description', 'like', $term)
+                    ->orWhere('shipping_line', 'like', $term);
             });
         }
 
@@ -73,6 +75,7 @@ class SDFormController extends Controller
         } else {
             $sortColumn = match ($sort) {
                 'sd' => 'sd_number',
+                'shipping_line' => 'shipping_line',
                 'date' => 'created_at',
                 default => 'created_at',
             };

@@ -134,8 +134,8 @@ function modelToForm(m) {
     client_id: m.client_id ?? '',
     sales_rep_id: m.sales_rep_id ?? '',
     status: m.status ?? 'draft',
-    pol_id: m.pol_id ?? '',
-    pod_id: m.pod_id ?? '',
+    pol_id: String(m.pol_id || ''),
+    pod_id: String(m.pod_id || ''),
     shipping_line: m.shipping_line ?? '',
     pol_text: m.pol_text ?? '',
     pod_text: m.pod_text ?? '',
@@ -723,9 +723,44 @@ export default function SDForms() {
                 ))}
               </select>
             </div>
-            <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+            <div className="client-detail-modal__form-field">
+              <label htmlFor="sd-c-fdest">
+                3. Final Destination
+              </label>
+              <input
+                id="sd-c-fdest"
+                type="text"
+                placeholder="Final destination if different from POD"
+                value={form.final_destination}
+                onChange={(e) => setForm((f) => ({ ...f, final_destination: e.target.value }))}
+                disabled={disabled}
+              />
+            </div>
+            <div className="client-detail-modal__form-field">
+              <label htmlFor="sd-c-dir">
+                4. Shipment Direction *
+              </label>
+              <select
+                id="sd-c-dir"
+                required
+                value={form.shipment_direction}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    shipment_direction: e.target.value,
+                    ...(e.target.value !== 'Import' ? { acid_number: '' } : {}),
+                  }))
+                }
+                disabled={disabled}
+              >
+                <option value="">Select</option>
+                <option value="Export">Export</option>
+                <option value="Import">Import</option>
+              </select>
+            </div>
+             <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
               <label htmlFor="sd-c-shipping-line">
-                3. Shipping line *
+                5. Shipping Line *
               </label>
               <select
                 id="sd-c-shipping-line"
@@ -754,8 +789,8 @@ export default function SDForms() {
                     </option>
                   ))}
                 {form.shipping_line &&
-                !shippingLinesList.some((l) => String(l.name || '').trim() === String(form.shipping_line).trim()) &&
-                !['Maersk', 'MSC', 'CMA CGM'].includes(String(form.shipping_line).trim()) ? (
+                  !shippingLinesList.some((l) => String(l.name || '').trim() === String(form.shipping_line).trim()) &&
+                  !['Maersk', 'MSC', 'CMA CGM'].includes(String(form.shipping_line).trim()) ? (
                   <option value={form.shipping_line}>{form.shipping_line}</option>
                 ) : null}
               </select>
@@ -777,41 +812,6 @@ export default function SDForms() {
                   {shippingLineAddBusy ? '…' : 'Add line'}
                 </button>
               </div>
-            </div>
-            <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
-              <label htmlFor="sd-c-fdest">
-                4. Final Destination
-              </label>
-              <input
-                id="sd-c-fdest"
-                type="text"
-                placeholder="Final destination if different from POD"
-                value={form.final_destination}
-                onChange={(e) => setForm((f) => ({ ...f, final_destination: e.target.value }))}
-                disabled={disabled}
-              />
-            </div>
-            <div className="client-detail-modal__form-field">
-              <label htmlFor="sd-c-dir">
-                5. Shipment Direction *
-              </label>
-              <select
-                id="sd-c-dir"
-                required
-                value={form.shipment_direction}
-                onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    shipment_direction: e.target.value,
-                    ...(e.target.value !== 'Import' ? { acid_number: '' } : {}),
-                  }))
-                }
-                disabled={disabled}
-              >
-                <option value="">Select</option>
-                <option value="Export">Export</option>
-                <option value="Import">Import</option>
-              </select>
             </div>
           </div>
         </section>
@@ -1104,415 +1104,415 @@ export default function SDForms() {
       <section className="client-detail-modal__section">
         <h3 className="client-detail-modal__section-title">{t('sdForms.modal.formDetails')}</h3>
         <div className="client-detail-modal__form-grid">
-      <div className="client-detail-modal__form-field">
-        <label htmlFor="sd-f-client">
-          {t('sdForms.form.client')}
-        </label>
-        <select
-          id="sd-f-client"
-          value={form.client_id}
-          onChange={(e) => setForm((f) => ({ ...f, client_id: e.target.value }))}
-          disabled={disabled}
-        >
-          <option value="">{t('sdForms.form.optional')}</option>
-          {clientsList.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name ?? c.client_name ?? `#${c.id}`}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="client-detail-modal__form-field">
-        <label htmlFor="sd-f-rep">
-          {t('sdForms.form.salesRep')}
-        </label>
-        <select
-          id="sd-f-rep"
-          value={form.sales_rep_id}
-          onChange={(e) => setForm((f) => ({ ...f, sales_rep_id: e.target.value }))}
-          disabled={disabled}
-        >
-          <option value="">{t('sdForms.form.defaultCurrentUser')}</option>
-          {usersList.map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.name ?? u.email ?? `#${u.id}`}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="client-detail-modal__form-field">
-        <label htmlFor="sd-f-dir">
-          {t('sdForms.form.shipmentDirection')} *
-        </label>
-        <select
-          id="sd-f-dir"
-          required
-          value={form.shipment_direction}
-          onChange={(e) => setForm((f) => ({ ...f, shipment_direction: e.target.value }))}
-          disabled={disabled}
-        >
-          {shipmentDirOptions.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="client-detail-modal__form-field">
-        <label htmlFor="sd-f-pol">
-          {t('sdForms.form.pol')}
-        </label>
-        <select
-          id="sd-f-pol"
-          value={form.pol_id}
-          onChange={(e) => setForm((f) => ({ ...f, pol_id: e.target.value }))}
-          disabled={disabled}
-        >
-          <option value="">{t('sdForms.form.optional')}</option>
-          {portsList.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name ?? p.code ?? `#${p.id}`}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="client-detail-modal__form-field">
-        <label htmlFor="sd-f-pod">
-          {t('sdForms.form.pod')}
-        </label>
-        <select
-          id="sd-f-pod"
-          value={form.pod_id}
-          onChange={(e) => setForm((f) => ({ ...f, pod_id: e.target.value }))}
-          disabled={disabled}
-        >
-          <option value="">{t('sdForms.form.optional')}</option>
-          {portsList.map((p) => (
-            <option key={`pod-${p.id}`} value={p.id}>
-              {p.name ?? p.code ?? `#${p.id}`}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
-        <label htmlFor="sd-f-shipping-line">
-          {t('sdForms.form.shippingLine')} *
-        </label>
-        <select
-          id="sd-f-shipping-line"
-          required
-          value={form.shipping_line}
-          onChange={(e) => setForm((f) => ({ ...f, shipping_line: e.target.value }))}
-          disabled={disabled}
-        >
-          <option value="">{t('sdForms.declaration.selectOrAddShippingLine')}</option>
-          {shippingLinesList.map((l) => {
-            const n = String(l.name || '').trim()
-            if (!n) return null
-            return (
-              <option key={l.id} value={n}>
-                {n}
-              </option>
-            )
-          })}
-          {['Maersk', 'MSC', 'CMA CGM']
-            .filter(
-              (ex) =>
-                !shippingLinesList.some((l) => String(l.name || '').trim().toLowerCase() === ex.toLowerCase()),
-            )
-            .map((ex) => (
-              <option key={`f-sl-ex-${ex}`} value={ex}>
-                {ex}
-              </option>
-            ))}
-          {form.shipping_line &&
-          !shippingLinesList.some((l) => String(l.name || '').trim() === String(form.shipping_line).trim()) &&
-          !['Maersk', 'MSC', 'CMA CGM'].includes(String(form.shipping_line).trim()) ? (
-            <option value={form.shipping_line}>{form.shipping_line}</option>
-          ) : null}
-        </select>
-        <div className="sd-forms-add-shipping-line">
-          <input
-            type="text"
-            placeholder={t('sdForms.declaration.newShippingLineName')}
-            value={shippingLineAddName}
-            onChange={(e) => setShippingLineAddName(e.target.value)}
-            disabled={disabled || shippingLineAddBusy}
-            aria-label={t('sdForms.declaration.newShippingLineName')}
-          />
-          <button
-            type="button"
-            className="clients-btn clients-btn--secondary"
-            disabled={disabled || shippingLineAddBusy || !String(shippingLineAddName).trim() || !token}
-            onClick={() => handleAddShippingLine(setForm)}
-          >
-            {shippingLineAddBusy ? '…' : t('sdForms.declaration.addShippingLine')}
-          </button>
-        </div>
-      </div>
-      <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
-        <label htmlFor="sd-f-poltxt">
-          {t('sdForms.form.polText')}
-        </label>
-        <input
-          id="sd-f-poltxt"
-          type="text"
-          value={form.pol_text}
-          onChange={(e) => setForm((f) => ({ ...f, pol_text: e.target.value }))}
-          disabled={disabled}
-        />
-      </div>
-      <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
-        <label htmlFor="sd-f-podtxt">
-          {t('sdForms.form.podText')}
-        </label>
-        <input
-          id="sd-f-podtxt"
-          type="text"
-          value={form.pod_text}
-          onChange={(e) => setForm((f) => ({ ...f, pod_text: e.target.value }))}
-          disabled={disabled}
-        />
-      </div>
-      <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
-        <label htmlFor="sd-f-fdest">
-          {t('sdForms.form.finalDestination')}
-        </label>
-        <input
-          id="sd-f-fdest"
-          type="text"
-          value={form.final_destination}
-          onChange={(e) => setForm((f) => ({ ...f, final_destination: e.target.value }))}
-          disabled={disabled}
-        />
-      </div>
-      <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
-        <label htmlFor="sd-f-shipper">
-          {t('sdForms.form.shipper')}
-        </label>
-        <textarea
-          id="sd-f-shipper"
-          value={form.shipper_info}
-          onChange={(e) => setForm((f) => ({ ...f, shipper_info: e.target.value }))}
-          disabled={disabled}
-        />
-      </div>
-      <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
-        <label htmlFor="sd-f-consignee">
-          {t('sdForms.form.consignee')}
-        </label>
-        <textarea
-          id="sd-f-consignee"
-          value={form.consignee_info}
-          onChange={(e) => setForm((f) => ({ ...f, consignee_info: e.target.value }))}
-          disabled={disabled}
-        />
-      </div>
-      <div className="client-detail-modal__form-field">
-        <label htmlFor="sd-f-npm">
-          {t('sdForms.form.notifyPartyMode')}
-        </label>
-        <select
-          id="sd-f-npm"
-          value={form.notify_party_mode}
-          onChange={(e) => setForm((f) => ({ ...f, notify_party_mode: e.target.value }))}
-          disabled={disabled}
-        >
-          {notifyPartyOptions.map((o) => (
-            <option key={o.value || 'unset'} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
-        <label htmlFor="sd-f-npd">
-          {t('sdForms.form.notifyPartyDetails')}
-        </label>
-        <textarea
-          id="sd-f-npd"
-          value={form.notify_party_details}
-          onChange={(e) => setForm((f) => ({ ...f, notify_party_details: e.target.value }))}
-          disabled={disabled}
-        />
-      </div>
-      <div className="client-detail-modal__form-field">
-        <label htmlFor="sd-f-ft">
-          {t('sdForms.form.freightTerm')}
-        </label>
-        <select
-          id="sd-f-ft"
-          value={form.freight_term}
-          onChange={(e) => setForm((f) => ({ ...f, freight_term: e.target.value }))}
-          disabled={disabled}
-        >
-          {freightOptions.map((o) => (
-            <option key={o.value || 'unset'} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="client-detail-modal__form-field">
-        <label htmlFor="sd-f-ctype">
-          {t('sdForms.form.containerType')}
-        </label>
-        <select
-          id="sd-f-ctype"
-          value={form.container_type}
-          onChange={(e) => setForm((f) => ({ ...f, container_type: e.target.value }))}
-          disabled={disabled}
-        >
-          <option value="">{t('sdForms.form.optional')}</option>
-          {containerTypesList.map((ct) => (
-            <option key={ct.id} value={ct.name}>
-              {ct.name}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="client-detail-modal__form-field">
-        <label htmlFor="sd-f-csize">
-          {t('sdForms.form.containerSize')}
-        </label>
-        <select
-          id="sd-f-csize"
-          value={form.container_size}
-          onChange={(e) => setForm((f) => ({ ...f, container_size: e.target.value }))}
-          disabled={disabled}
-        >
-          <option value="">{t('sdForms.form.optional')}</option>
-          {containerSizesList.map((cs) => (
-            <option key={cs.id} value={cs.name}>
-              {cs.name}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="client-detail-modal__form-field">
-        <label htmlFor="sd-f-numc">
-          {t('sdForms.form.numContainers')}
-        </label>
-        <input
-          id="sd-f-numc"
-          type="number"
-          min={1}
-          value={form.num_containers}
-          onChange={(e) => setForm((f) => ({ ...f, num_containers: e.target.value }))}
-          disabled={disabled}
-        />
-      </div>
-      <div className="client-detail-modal__form-field">
-        <label htmlFor="sd-f-rvd">
-          {t('sdForms.form.requestedVesselDate')}
-        </label>
-        <input
-          id="sd-f-rvd"
-          type="date"
-          value={form.requested_vessel_date}
-          onChange={(e) => setForm((f) => ({ ...f, requested_vessel_date: e.target.value }))}
-          disabled={disabled}
-        />
-      </div>
-      <div className="client-detail-modal__form-field">
-        <label htmlFor="sd-f-acid">
-          {t('sdForms.form.acidNumber')}
-        </label>
-        <input
-          id="sd-f-acid"
-          type="text"
-          value={form.acid_number}
-          onChange={(e) => setForm((f) => ({ ...f, acid_number: e.target.value }))}
-          disabled={disabled}
-        />
-      </div>
-      <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
-        <label htmlFor="sd-f-cargo">
-          {t('sdForms.form.cargo')}
-        </label>
-        <textarea
-          id="sd-f-cargo"
-          value={form.cargo_description}
-          onChange={(e) => setForm((f) => ({ ...f, cargo_description: e.target.value }))}
-          disabled={disabled}
-        />
-      </div>
-      <div className="client-detail-modal__form-field">
-        <label htmlFor="sd-f-hs">
-          {t('sdForms.form.hsCode')}
-        </label>
-        <input
-          id="sd-f-hs"
-          type="text"
-          value={form.hs_code}
-          onChange={(e) => setForm((f) => ({ ...f, hs_code: e.target.value }))}
-          disabled={disabled}
-        />
-      </div>
-      <div className="client-detail-modal__form-field">
-        <label htmlFor="sd-f-rt">
-          {t('sdForms.form.reeferTemp')}
-        </label>
-        <input
-          id="sd-f-rt"
-          type="text"
-          value={form.reefer_temp}
-          onChange={(e) => setForm((f) => ({ ...f, reefer_temp: e.target.value }))}
-          disabled={disabled}
-        />
-      </div>
-      <div className="client-detail-modal__form-field">
-        <label htmlFor="sd-f-rv">
-          {t('sdForms.form.reeferVent')}
-        </label>
-        <input
-          id="sd-f-rv"
-          type="text"
-          value={form.reefer_vent}
-          onChange={(e) => setForm((f) => ({ ...f, reefer_vent: e.target.value }))}
-          disabled={disabled}
-        />
-      </div>
-      <div className="client-detail-modal__form-field">
-        <label htmlFor="sd-f-rh">
-          {t('sdForms.form.reeferHum')}
-        </label>
-        <input
-          id="sd-f-rh"
-          type="text"
-          value={form.reefer_hum}
-          onChange={(e) => setForm((f) => ({ ...f, reefer_hum: e.target.value }))}
-          disabled={disabled}
-        />
-      </div>
-      <div className="client-detail-modal__form-field">
-        <label htmlFor="sd-f-gw">
-          {t('sdForms.form.grossWeight')}
-        </label>
-        <input
-          id="sd-f-gw"
-          type="number"
-          min={0}
-          step="0.01"
-          value={form.total_gross_weight}
-          onChange={(e) => setForm((f) => ({ ...f, total_gross_weight: e.target.value }))}
-          disabled={disabled}
-        />
-      </div>
-      <div className="client-detail-modal__form-field">
-        <label htmlFor="sd-f-nw">
-          {t('sdForms.form.netWeight')}
-        </label>
-        <input
-          id="sd-f-nw"
-          type="number"
-          min={0}
-          step="0.01"
-          value={form.total_net_weight}
-          onChange={(e) => setForm((f) => ({ ...f, total_net_weight: e.target.value }))}
-          disabled={disabled}
-        />
-      </div>
+          <div className="client-detail-modal__form-field">
+            <label htmlFor="sd-f-client">
+              {t('sdForms.form.client')}
+            </label>
+            <select
+              id="sd-f-client"
+              value={form.client_id}
+              onChange={(e) => setForm((f) => ({ ...f, client_id: e.target.value }))}
+              disabled={disabled}
+            >
+              <option value="">{t('sdForms.form.optional')}</option>
+              {clientsList.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name ?? c.client_name ?? `#${c.id}`}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="client-detail-modal__form-field">
+            <label htmlFor="sd-f-rep">
+              {t('sdForms.form.salesRep')}
+            </label>
+            <select
+              id="sd-f-rep"
+              value={form.sales_rep_id}
+              onChange={(e) => setForm((f) => ({ ...f, sales_rep_id: e.target.value }))}
+              disabled={disabled}
+            >
+              <option value="">{t('sdForms.form.defaultCurrentUser')}</option>
+              {usersList.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name ?? u.email ?? `#${u.id}`}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="client-detail-modal__form-field">
+            <label htmlFor="sd-f-dir">
+              {t('sdForms.form.shipmentDirection')} *
+            </label>
+            <select
+              id="sd-f-dir"
+              required
+              value={form.shipment_direction}
+              onChange={(e) => setForm((f) => ({ ...f, shipment_direction: e.target.value }))}
+              disabled={disabled}
+            >
+              {shipmentDirOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="client-detail-modal__form-field">
+            <label htmlFor="sd-f-pol">
+              {t('sdForms.form.pol')}
+            </label>
+            <select
+              id="sd-f-pol"
+              value={form.pol_id}
+              onChange={(e) => setForm((f) => ({ ...f, pol_id: e.target.value }))}
+              disabled={disabled}
+            >
+              <option value="">{t('sdForms.form.optional')}</option>
+              {portsList.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name ?? p.code ?? `#${p.id}`}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="client-detail-modal__form-field">
+            <label htmlFor="sd-f-pod">
+              {t('sdForms.form.pod')}
+            </label>
+            <select
+              id="sd-f-pod"
+              value={form.pod_id}
+              onChange={(e) => setForm((f) => ({ ...f, pod_id: e.target.value }))}
+              disabled={disabled}
+            >
+              <option value="">{t('sdForms.form.optional')}</option>
+              {portsList.map((p) => (
+                <option key={`pod-${p.id}`} value={p.id}>
+                  {p.name ?? p.code ?? `#${p.id}`}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+            <label htmlFor="sd-f-shipping-line">
+              {t('sdForms.form.shippingLine')} *
+            </label>
+            <select
+              id="sd-f-shipping-line"
+              required
+              value={form.shipping_line}
+              onChange={(e) => setForm((f) => ({ ...f, shipping_line: e.target.value }))}
+              disabled={disabled}
+            >
+              <option value="">{t('sdForms.declaration.selectOrAddShippingLine')}</option>
+              {shippingLinesList.map((l) => {
+                const n = String(l.name || '').trim()
+                if (!n) return null
+                return (
+                  <option key={l.id} value={n}>
+                    {n}
+                  </option>
+                )
+              })}
+              {['Maersk', 'MSC', 'CMA CGM']
+                .filter(
+                  (ex) =>
+                    !shippingLinesList.some((l) => String(l.name || '').trim().toLowerCase() === ex.toLowerCase()),
+                )
+                .map((ex) => (
+                  <option key={`f-sl-ex-${ex}`} value={ex}>
+                    {ex}
+                  </option>
+                ))}
+              {form.shipping_line &&
+                !shippingLinesList.some((l) => String(l.name || '').trim() === String(form.shipping_line).trim()) &&
+                !['Maersk', 'MSC', 'CMA CGM'].includes(String(form.shipping_line).trim()) ? (
+                <option value={form.shipping_line}>{form.shipping_line}</option>
+              ) : null}
+            </select>
+            <div className="sd-forms-add-shipping-line">
+              <input
+                type="text"
+                placeholder={t('sdForms.declaration.newShippingLineName')}
+                value={shippingLineAddName}
+                onChange={(e) => setShippingLineAddName(e.target.value)}
+                disabled={disabled || shippingLineAddBusy}
+                aria-label={t('sdForms.declaration.newShippingLineName')}
+              />
+              <button
+                type="button"
+                className="clients-btn clients-btn--secondary"
+                disabled={disabled || shippingLineAddBusy || !String(shippingLineAddName).trim() || !token}
+                onClick={() => handleAddShippingLine(setForm)}
+              >
+                {shippingLineAddBusy ? '…' : t('sdForms.declaration.addShippingLine')}
+              </button>
+            </div>
+          </div>
+          <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+            <label htmlFor="sd-f-poltxt">
+              {t('sdForms.form.polText')}
+            </label>
+            <input
+              id="sd-f-poltxt"
+              type="text"
+              value={form.pol_text}
+              onChange={(e) => setForm((f) => ({ ...f, pol_text: e.target.value }))}
+              disabled={disabled}
+            />
+          </div>
+          <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+            <label htmlFor="sd-f-podtxt">
+              {t('sdForms.form.podText')}
+            </label>
+            <input
+              id="sd-f-podtxt"
+              type="text"
+              value={form.pod_text}
+              onChange={(e) => setForm((f) => ({ ...f, pod_text: e.target.value }))}
+              disabled={disabled}
+            />
+          </div>
+          <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+            <label htmlFor="sd-f-fdest">
+              {t('sdForms.form.finalDestination')}
+            </label>
+            <input
+              id="sd-f-fdest"
+              type="text"
+              value={form.final_destination}
+              onChange={(e) => setForm((f) => ({ ...f, final_destination: e.target.value }))}
+              disabled={disabled}
+            />
+          </div>
+          <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+            <label htmlFor="sd-f-shipper">
+              {t('sdForms.form.shipper')}
+            </label>
+            <textarea
+              id="sd-f-shipper"
+              value={form.shipper_info}
+              onChange={(e) => setForm((f) => ({ ...f, shipper_info: e.target.value }))}
+              disabled={disabled}
+            />
+          </div>
+          <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+            <label htmlFor="sd-f-consignee">
+              {t('sdForms.form.consignee')}
+            </label>
+            <textarea
+              id="sd-f-consignee"
+              value={form.consignee_info}
+              onChange={(e) => setForm((f) => ({ ...f, consignee_info: e.target.value }))}
+              disabled={disabled}
+            />
+          </div>
+          <div className="client-detail-modal__form-field">
+            <label htmlFor="sd-f-npm">
+              {t('sdForms.form.notifyPartyMode')}
+            </label>
+            <select
+              id="sd-f-npm"
+              value={form.notify_party_mode}
+              onChange={(e) => setForm((f) => ({ ...f, notify_party_mode: e.target.value }))}
+              disabled={disabled}
+            >
+              {notifyPartyOptions.map((o) => (
+                <option key={o.value || 'unset'} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+            <label htmlFor="sd-f-npd">
+              {t('sdForms.form.notifyPartyDetails')}
+            </label>
+            <textarea
+              id="sd-f-npd"
+              value={form.notify_party_details}
+              onChange={(e) => setForm((f) => ({ ...f, notify_party_details: e.target.value }))}
+              disabled={disabled}
+            />
+          </div>
+          <div className="client-detail-modal__form-field">
+            <label htmlFor="sd-f-ft">
+              {t('sdForms.form.freightTerm')}
+            </label>
+            <select
+              id="sd-f-ft"
+              value={form.freight_term}
+              onChange={(e) => setForm((f) => ({ ...f, freight_term: e.target.value }))}
+              disabled={disabled}
+            >
+              {freightOptions.map((o) => (
+                <option key={o.value || 'unset'} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="client-detail-modal__form-field">
+            <label htmlFor="sd-f-ctype">
+              {t('sdForms.form.containerType')}
+            </label>
+            <select
+              id="sd-f-ctype"
+              value={form.container_type}
+              onChange={(e) => setForm((f) => ({ ...f, container_type: e.target.value }))}
+              disabled={disabled}
+            >
+              <option value="">{t('sdForms.form.optional')}</option>
+              {containerTypesList.map((ct) => (
+                <option key={ct.id} value={ct.name}>
+                  {ct.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="client-detail-modal__form-field">
+            <label htmlFor="sd-f-csize">
+              {t('sdForms.form.containerSize')}
+            </label>
+            <select
+              id="sd-f-csize"
+              value={form.container_size}
+              onChange={(e) => setForm((f) => ({ ...f, container_size: e.target.value }))}
+              disabled={disabled}
+            >
+              <option value="">{t('sdForms.form.optional')}</option>
+              {containerSizesList.map((cs) => (
+                <option key={cs.id} value={cs.name}>
+                  {cs.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="client-detail-modal__form-field">
+            <label htmlFor="sd-f-numc">
+              {t('sdForms.form.numContainers')}
+            </label>
+            <input
+              id="sd-f-numc"
+              type="number"
+              min={1}
+              value={form.num_containers}
+              onChange={(e) => setForm((f) => ({ ...f, num_containers: e.target.value }))}
+              disabled={disabled}
+            />
+          </div>
+          <div className="client-detail-modal__form-field">
+            <label htmlFor="sd-f-rvd">
+              {t('sdForms.form.requestedVesselDate')}
+            </label>
+            <input
+              id="sd-f-rvd"
+              type="date"
+              value={form.requested_vessel_date}
+              onChange={(e) => setForm((f) => ({ ...f, requested_vessel_date: e.target.value }))}
+              disabled={disabled}
+            />
+          </div>
+          <div className="client-detail-modal__form-field">
+            <label htmlFor="sd-f-acid">
+              {t('sdForms.form.acidNumber')}
+            </label>
+            <input
+              id="sd-f-acid"
+              type="text"
+              value={form.acid_number}
+              onChange={(e) => setForm((f) => ({ ...f, acid_number: e.target.value }))}
+              disabled={disabled}
+            />
+          </div>
+          <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+            <label htmlFor="sd-f-cargo">
+              {t('sdForms.form.cargo')}
+            </label>
+            <textarea
+              id="sd-f-cargo"
+              value={form.cargo_description}
+              onChange={(e) => setForm((f) => ({ ...f, cargo_description: e.target.value }))}
+              disabled={disabled}
+            />
+          </div>
+          <div className="client-detail-modal__form-field">
+            <label htmlFor="sd-f-hs">
+              {t('sdForms.form.hsCode')}
+            </label>
+            <input
+              id="sd-f-hs"
+              type="text"
+              value={form.hs_code}
+              onChange={(e) => setForm((f) => ({ ...f, hs_code: e.target.value }))}
+              disabled={disabled}
+            />
+          </div>
+          <div className="client-detail-modal__form-field">
+            <label htmlFor="sd-f-rt">
+              {t('sdForms.form.reeferTemp')}
+            </label>
+            <input
+              id="sd-f-rt"
+              type="text"
+              value={form.reefer_temp}
+              onChange={(e) => setForm((f) => ({ ...f, reefer_temp: e.target.value }))}
+              disabled={disabled}
+            />
+          </div>
+          <div className="client-detail-modal__form-field">
+            <label htmlFor="sd-f-rv">
+              {t('sdForms.form.reeferVent')}
+            </label>
+            <input
+              id="sd-f-rv"
+              type="text"
+              value={form.reefer_vent}
+              onChange={(e) => setForm((f) => ({ ...f, reefer_vent: e.target.value }))}
+              disabled={disabled}
+            />
+          </div>
+          <div className="client-detail-modal__form-field">
+            <label htmlFor="sd-f-rh">
+              {t('sdForms.form.reeferHum')}
+            </label>
+            <input
+              id="sd-f-rh"
+              type="text"
+              value={form.reefer_hum}
+              onChange={(e) => setForm((f) => ({ ...f, reefer_hum: e.target.value }))}
+              disabled={disabled}
+            />
+          </div>
+          <div className="client-detail-modal__form-field">
+            <label htmlFor="sd-f-gw">
+              {t('sdForms.form.grossWeight')}
+            </label>
+            <input
+              id="sd-f-gw"
+              type="number"
+              min={0}
+              step="0.01"
+              value={form.total_gross_weight}
+              onChange={(e) => setForm((f) => ({ ...f, total_gross_weight: e.target.value }))}
+              disabled={disabled}
+            />
+          </div>
+          <div className="client-detail-modal__form-field">
+            <label htmlFor="sd-f-nw">
+              {t('sdForms.form.netWeight')}
+            </label>
+            <input
+              id="sd-f-nw"
+              type="number"
+              min={0}
+              step="0.01"
+              value={form.total_net_weight}
+              onChange={(e) => setForm((f) => ({ ...f, total_net_weight: e.target.value }))}
+              disabled={disabled}
+            />
+          </div>
         </div>
       </section>
     </div>
@@ -1553,21 +1553,22 @@ export default function SDForms() {
           />
         ),
       },
-    { key: 'sd_number', label: t('sdForms.sdNumber'), sortKey: 'sd', render: (_, r) => r.sd_number ?? '—' },
-    { key: 'client_name', label: t('sdForms.client'), sortKey: 'client', render: (_, r) => r.client_name ?? '—' },
-    { key: 'pol', label: t('sdForms.pol'), render: (_, r) => r.pol ?? '—' },
-    { key: 'pod', label: t('sdForms.pod'), render: (_, r) => r.pod ?? '—' },
-    {
-      key: 'status',
-      label: t('sdForms.statusLabel'),
-      render: (_, r) => (
-        <span className={`sd-forms-badge ${getStatusBadgeClass(r.status)}`}>
-          {t(`sdForms.status.${r.status}`, r.status)}
-        </span>
-      ),
-    },
-    { key: 'sales_rep_name', label: t('sdForms.salesRep'), render: (_, r) => r.sales_rep_name ?? '—' },
-    { key: 'created_at', label: t('sdForms.createdAt'), sortKey: 'date', render: (_, r) => formatDate(r.created_at) },
+      { key: 'sd_number', label: t('sdForms.sdNumber'), sortKey: 'sd', render: (_, r) => r.sd_number ?? '—' },
+      { key: 'client_name', label: t('sdForms.client'), sortKey: 'client', render: (_, r) => r.client_name ?? '—' },
+      { key: 'pol', label: t('sdForms.pol'), render: (_, r) => r.pol ?? '—' },
+      { key: 'pod', label: t('sdForms.pod'), render: (_, r) => r.pod ?? '—' },
+      { key: 'shipping_line', label: t('sdForms.form.shippingLine'), sortKey: 'shipping_line', render: (_, r) => r.shipping_line ?? '—' },
+      {
+        key: 'status',
+        label: t('sdForms.statusLabel'),
+        render: (_, r) => (
+          <span className={`sd-forms-badge ${getStatusBadgeClass(r.status)}`}>
+            {t(`sdForms.status.${r.status}`, r.status)}
+          </span>
+        ),
+      },
+      { key: 'sales_rep_name', label: t('sdForms.salesRep'), render: (_, r) => r.sales_rep_name ?? '—' },
+      { key: 'created_at', label: t('sdForms.createdAt'), sortKey: 'date', render: (_, r) => formatDate(r.created_at) },
       {
         key: 'actions',
         label: t('sdForms.actions'),
@@ -1893,81 +1894,81 @@ export default function SDForms() {
                   <div className="client-detail-modal__body-inner">
                     <div className="clients-form-sections">
                       <section className="client-detail-modal__section">
-                    <div className="sd-detail-modal__toolbar">
-                      <button type="button" className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs" onClick={() => downloadPdf(detail.id)}>
-                        <FileDown className="h-4 w-4" aria-hidden />
-                        {t('sdForms.pdf')}
-                      </button>
-                      {detail.status === 'draft' && (
-                        <button
-                          type="button"
-                          className="clients-btn clients-btn--primary inline-flex items-center gap-1 text-xs"
-                          onClick={() => openSubmitModal(detail.id, detail)}
-                        >
-                          <Send className="h-4 w-4" aria-hidden />
-                          {t('sdForms.submit')}
-                        </button>
-                      )}
-                      {detail.status === 'submitted' && !isOperations && (
-                        <button type="button" className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs" onClick={() => runSendOps(detail.id)}>
-                          <Send className="h-4 w-4" aria-hidden />
-                          {t('sdForms.sendOps')}
-                        </button>
-                      )}
-                      {!isOperations && (
-                        <button type="button" className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs" onClick={() => runEmailOps(detail.id)}>
-                          <Mail className="h-4 w-4" aria-hidden />
-                          {t('sdForms.emailOps')}
-                        </button>
-                      )}
-                      <button type="button" className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs" onClick={() => openLinkModal(detail.id)}>
-                        <Link2 className="h-4 w-4" aria-hidden />
-                        {t('sdForms.linkShipment')}
-                      </button>
-                      <button type="button" className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs" onClick={() => openEdit(detail.id)}>
-                        <Pencil className="h-4 w-4" aria-hidden />
-                        {t('sdForms.edit')}
-                      </button>
-                    </div>
-                    <dl className="sd-detail-modal__dl">
-                      {[
-                        ['sd_number', detail.sd_number],
-                        ['status', t(`sdForms.status.${detail.status}`, detail.status)],
-                        ['client', detail.client?.name ?? detail.client_name],
-                        ['sales_rep', detail.sales_rep?.name ?? detail.sales_rep_name],
-                        ['pol', detail.pol?.name ?? detail.pol_text],
-                        ['pod', detail.pod?.name ?? detail.pod_text],
-                        ['shipping_line', detail.shipping_line],
-                        ['final_destination', detail.final_destination],
-                        ['shipment_direction', detail.shipment_direction],
-                        ['freight_term', detail.freight_term],
-                        ['container_type', detail.container_type],
-                        ['container_size', detail.container_size],
-                        ['num_containers', detail.num_containers],
-                        ['requested_vessel_date', detail.requested_vessel_date],
-                        ['acid_number', detail.acid_number],
-                        ['cargo_description', detail.cargo_description],
-                        ['hs_code', detail.hs_code],
-                        ['linked_shipment_id', detail.linked_shipment_id ?? detail.linked_shipment?.id],
-                      ].map(([k, v]) => (
-                        <div key={k} className="sd-detail-modal__dl-item">
-                          <dt className="sd-detail-modal__dt">{t(`sdForms.detailFields.${k}`, { defaultValue: String(k) })}</dt>
-                          <dd className="sd-detail-modal__dd">{v != null && v !== '' ? String(v) : '—'}</dd>
+                        <div className="sd-detail-modal__toolbar">
+                          <button type="button" className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs" onClick={() => downloadPdf(detail.id)}>
+                            <FileDown className="h-4 w-4" aria-hidden />
+                            {t('sdForms.pdf')}
+                          </button>
+                          {detail.status === 'draft' && (
+                            <button
+                              type="button"
+                              className="clients-btn clients-btn--primary inline-flex items-center gap-1 text-xs"
+                              onClick={() => openSubmitModal(detail.id, detail)}
+                            >
+                              <Send className="h-4 w-4" aria-hidden />
+                              {t('sdForms.submit')}
+                            </button>
+                          )}
+                          {detail.status === 'submitted' && !isOperations && (
+                            <button type="button" className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs" onClick={() => runSendOps(detail.id)}>
+                              <Send className="h-4 w-4" aria-hidden />
+                              {t('sdForms.sendOps')}
+                            </button>
+                          )}
+                          {!isOperations && (
+                            <button type="button" className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs" onClick={() => runEmailOps(detail.id)}>
+                              <Mail className="h-4 w-4" aria-hidden />
+                              {t('sdForms.emailOps')}
+                            </button>
+                          )}
+                          <button type="button" className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs" onClick={() => openLinkModal(detail.id)}>
+                            <Link2 className="h-4 w-4" aria-hidden />
+                            {t('sdForms.linkShipment')}
+                          </button>
+                          <button type="button" className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs" onClick={() => openEdit(detail.id)}>
+                            <Pencil className="h-4 w-4" aria-hidden />
+                            {t('sdForms.edit')}
+                          </button>
                         </div>
-                      ))}
-                    </dl>
-                    {detail.shipper_info ? (
-                      <div className="sd-detail-modal__block">
-                        <h4 className="sd-detail-modal__block-title">{t('sdForms.form.shipper')}</h4>
-                        <p className="sd-detail-modal__block-text">{detail.shipper_info}</p>
-                      </div>
-                    ) : null}
-                    {detail.consignee_info ? (
-                      <div className="sd-detail-modal__block">
-                        <h4 className="sd-detail-modal__block-title">{t('sdForms.form.consignee')}</h4>
-                        <p className="sd-detail-modal__block-text">{detail.consignee_info}</p>
-                      </div>
-                    ) : null}
+                        <dl className="sd-detail-modal__dl">
+                          {[
+                            ['sd_number', detail.sd_number],
+                            ['status', t(`sdForms.status.${detail.status}`, detail.status)],
+                            ['client', detail.client?.name ?? detail.client_name],
+                            ['sales_rep', detail.sales_rep?.name ?? detail.sales_rep_name],
+                            ['pol', detail.pol?.name ?? detail.pol_text],
+                            ['pod', detail.pod?.name ?? detail.pod_text],
+                            ['shipping_line', detail.shipping_line],
+                            ['final_destination', detail.final_destination],
+                            ['shipment_direction', detail.shipment_direction],
+                            ['freight_term', detail.freight_term],
+                            ['container_type', detail.container_type],
+                            ['container_size', detail.container_size],
+                            ['num_containers', detail.num_containers],
+                            ['requested_vessel_date', detail.requested_vessel_date],
+                            ['acid_number', detail.acid_number],
+                            ['cargo_description', detail.cargo_description],
+                            ['hs_code', detail.hs_code],
+                            ['linked_shipment_id', detail.linked_shipment_id ?? detail.linked_shipment?.id],
+                          ].map(([k, v]) => (
+                            <div key={k} className="sd-detail-modal__dl-item">
+                              <dt className="sd-detail-modal__dt">{t(`sdForms.detailFields.${k}`, { defaultValue: String(k) })}</dt>
+                              <dd className="sd-detail-modal__dd">{v != null && v !== '' ? String(v) : '—'}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                        {detail.shipper_info ? (
+                          <div className="sd-detail-modal__block">
+                            <h4 className="sd-detail-modal__block-title">{t('sdForms.form.shipper')}</h4>
+                            <p className="sd-detail-modal__block-text">{detail.shipper_info}</p>
+                          </div>
+                        ) : null}
+                        {detail.consignee_info ? (
+                          <div className="sd-detail-modal__block">
+                            <h4 className="sd-detail-modal__block-title">{t('sdForms.form.consignee')}</h4>
+                            <p className="sd-detail-modal__block-text">{detail.consignee_info}</p>
+                          </div>
+                        ) : null}
                       </section>
                     </div>
                   </div>
