@@ -69,11 +69,11 @@ class ClientFollowUpController extends Controller
             return [Carbon::parse($validated['reminder_at']), null, null];
         }
 
-        if (empty($validated['next_follow_up_at'])) {
-            throw ValidationException::withMessages([
-                'next_follow_up_at' => [__('Next follow-up is required when using a reminder before that time.')],
-            ]);
-        }
+        // if (empty($validated['next_follow_up_at'])) {
+        //     throw ValidationException::withMessages([
+        //         'next_follow_up_at' => [__('Next follow-up is required when using a reminder before that time.')],
+        //     ]);
+        // }
 
         $next = Carbon::parse($validated['next_follow_up_at']);
         $value = (int) $validated['reminder_before_value'];
