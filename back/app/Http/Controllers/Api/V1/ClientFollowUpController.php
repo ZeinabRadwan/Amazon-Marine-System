@@ -74,26 +74,29 @@ class ClientFollowUpController extends Controller
         //         'next_follow_up_at' => [__('Next follow-up is required when using a reminder before that time.')],
         //     ]);
         // }
+        // next_follow_up_at is optional
+        if ($hasRelative) {
+            $next = Carbon::parse($validated['next_follow_up_at']);
+            $value = (int) $validated['reminder_before_value'];
+            if ($value < 1) {
+                throw ValidationException::withMessages([
+                    'reminder_before_value' => [__('Enter a positive number.')],
+                ]);
+            }
 
-        $next = Carbon::parse($validated['next_follow_up_at']);
-        $value = (int) $validated['reminder_before_value'];
-        if ($value < 1) {
-            throw ValidationException::withMessages([
-                'reminder_before_value' => [__('Enter a positive number.')],
-            ]);
+            $unit = (string) $validated['reminder_before_unit'];
+            $reminderAt = match ($unit) {
+                'minute' => $next->copy()->subMinutes($value),
+                'hour' => $next->copy()->subHours($value),
+                'day' => $next->copy()->subDays($value),
+                default => throw ValidationException::withMessages([
+                    'reminder_before_unit' => [__('Invalid reminder unit.')],
+                ]),
+            };
+
+            return [$reminderAt, $value, $unit];
         }
-
-        $unit = (string) $validated['reminder_before_unit'];
-        $reminderAt = match ($unit) {
-            'minute' => $next->copy()->subMinutes($value),
-            'hour' => $next->copy()->subHours($value),
-            'day' => $next->copy()->subDays($value),
-            default => throw ValidationException::withMessages([
-                'reminder_before_unit' => [__('Invalid reminder unit.')],
-            ]),
-        };
-
-        return [$reminderAt, $value, $unit];
+        return [null, null, null];
     }
 
     private function ensureClientFollowUp(Client $client, ClientFollowUp $followUp): void
@@ -116,7 +119,7 @@ class ClientFollowUpController extends Controller
             ->get();
 
         return response()->json([
-            'data' => $followUps->map(fn (ClientFollowUp $f) => $this->serializeFollowUp($f)),
+            'data' => $followUps->map(fn(ClientFollowUp $f) => $this->serializeFollowUp($f)),
         ]);
     }
 
