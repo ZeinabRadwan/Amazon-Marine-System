@@ -212,3 +212,57 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Custom Tooltip */
+.help-icon-wrapper {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+.help-icon-tooltip {
+  visibility: hidden;
+  position: absolute;
+  bottom: 130%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 280px;
+  background-color: #1f2937; /* Gray 800 */
+  color: #ffffff;
+  text-align: center;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+  z-index: 10000;
+  opacity: 0;
+  transition: opacity 0.2s, visibility 0.2s;
+  pointer-events: none;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  white-space: normal;
+}
+
+/* Tooltip arrow */
+.help-icon-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -6px;
+  border-width: 6px;
+  border-style: solid;
+  border-color: #1f2937 transparent transparent transparent;
+}
+
+.help-icon-wrapper:hover .help-icon-tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Adjust for RTL if needed, but since we forced ltr on form, it's usually fine */
+[dir="rtl"] .help-icon-tooltip {
+  direction: rtl;
+  text-align: right;
+}
+

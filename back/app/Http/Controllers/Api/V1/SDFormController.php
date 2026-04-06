@@ -184,6 +184,7 @@ class SDFormController extends Controller
             'container_type' => $form->container_type,
             'container_size' => $form->container_size,
             'requested_vessel_date' => $form->requested_vessel_date?->toDateString(),
+            'notes' => $form->notes,
             'created_at' => $form->created_at?->toIso8601String(),
         ];
     }
@@ -294,7 +295,7 @@ class SDFormController extends Controller
             'Content-Disposition' => 'attachment; filename="sd-forms-export-'.date('Y-m-d').'.csv"',
         ];
 
-        $callback = function () use ($rows) {
+        $callback = function () use ($forms) {
             $fh = fopen('php://output', 'w');
             fputcsv($fh, [
                 'id',
@@ -312,27 +313,29 @@ class SDFormController extends Controller
                 'container_type',
                 'container_size',
                 'requested_vessel_date',
+                'notes',
                 'created_at',
             ]);
 
-            foreach ($rows as $r) {
+            foreach ($forms as $form) {
                 fputcsv($fh, [
-                    $r['id'] ?? '',
-                    $r['sd_number'] ?? '',
-                    $r['client_name'] ?? '',
-                    $r['pol'] ?? '',
-                    $r['pod'] ?? '',
-                    $r['shipping_line'] ?? '',
-                    $r['final_destination'] ?? '',
-                    $r['cargo_description'] ?? '',
-                    $r['sales_rep_name'] ?? '',
-                    $r['status'] ?? '',
-                    $r['shipment_direction'] ?? '',
-                    $r['num_containers'] ?? '',
-                    $r['container_type'] ?? '',
-                    $r['container_size'] ?? '',
-                    $r['requested_vessel_date'] ?? '',
-                    $r['created_at'] ?? '',
+                    $form->id,
+                    $form->sd_number,
+                    $form->client?->name ?? '',
+                    $form->pol?->name ?? $form->pol_text,
+                    $form->pod?->name ?? $form->pod_text,
+                    $form->shipping_line,
+                    $form->final_destination,
+                    $form->cargo_description,
+                    $form->salesRep?->name ?? '',
+                    $form->status,
+                    $form->shipment_direction,
+                    $form->num_containers,
+                    $form->container_type,
+                    $form->container_size,
+                    $form->requested_vessel_date ? $form->requested_vessel_date->format('d/m/Y') : '',
+                    $form->notes,
+                    $form->created_at ? $form->created_at->format('d/m/Y') : '',
                 ]);
             }
 

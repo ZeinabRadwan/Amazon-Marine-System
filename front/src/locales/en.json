@@ -8,7 +8,11 @@
     "cancel": "Cancel",
     "user": "User",
     "loading": "Loading...",
-    "close": "Close"
+    "close": "Close",
+    "create": "Create",
+    "searchPlaceholder": "Search...",
+    "noResults": "No results found",
+    "select": "Select"
   },
   "topNav": {
     "searchPlaceholder": "Search shipments, clients, invoices...",
@@ -1117,14 +1121,16 @@
       "submitDraft": "Save draft",
       "loginToSave": "Sign in to save this form to the server. Data was logged to the console.",
       "sections": {
-        "basic": "1. Shipment basic information",
-        "parties": "2. Parties information",
-        "freight": "3. Freight & payment",
-        "container": "4. Container details",
-        "shipment": "5. Shipment details",
-        "cargo": "6. Cargo information",
-        "reefer": "7. Reefer details",
-        "weight": "8. Weight details"
+        "clientInfo": "1. Client & sales representative",
+        "basic": "2. Shipment basic information",
+        "parties": "3. Parties information",
+        "freight": "4. Freight & payment",
+        "container": "5. Container details",
+        "shipment": "6. Shipment details",
+        "cargo": "7. Cargo information",
+        "reefer": "8. Reefer details",
+        "weight": "9. Total weight details",
+        "notes": "10. Additional notes"
       },
       "validation": {
         "shipmentDirection": "Shipment direction is required.",
@@ -1164,7 +1170,9 @@
       "reeferVent": "Reefer ventilation",
       "reeferHum": "Reefer humidity",
       "grossWeight": "Total gross weight",
-      "netWeight": "Total net weight"
+      "netWeight": "Total net weight",
+      "notes": "Notes",
+      "notesHint": "Use this field to write any booking-specific notes that the booking team should be aware of, such as transit shipments or any special exceptions or instructions."
     },
     "detailFields": {
       "sd_number": "SD #",
@@ -1184,6 +1192,7 @@
       "acid_number": "ACID",
       "cargo_description": "Cargo",
       "hs_code": "HS code",
+      "notes": "Notes",
       "linked_shipment_id": "Linked shipment ID"
     },
     "lookups": {

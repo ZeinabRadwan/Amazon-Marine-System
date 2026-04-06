@@ -48,7 +48,7 @@ export function NumberInput({ id, label, description, error, required, className
 export function DateInput({ id, label, description, error, required, className = '', ...props }) {
   return (
     <FormField label={label} htmlFor={id} description={description} error={error} required={required} className={className}>
-      <input id={id} type="date" className={inputClass} {...props} />
+      <input id={id} type="date" lang="en-GB" className={inputClass} {...props} />
     </FormField>
   )
 }

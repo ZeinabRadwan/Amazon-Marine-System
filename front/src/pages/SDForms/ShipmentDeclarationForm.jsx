@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, HelpCircle } from 'lucide-react'
 import { getStoredToken } from '../Login'
 import { listPorts } from '../../api/ports'
 import { listShippingLines } from '../../api/shippingLines'
 import { createSDForm } from '../../api/sdForms'
 import { Container } from '../../components/Container'
 import Alert from '../../components/Alert'
+import './SDForms.css'
 import {
   TextInput,
   TextareaInput,
@@ -50,6 +51,7 @@ function emptyForm() {
     reefer_hum: '',
     total_gross_weight: '',
     total_net_weight: '',
+    notes: '',
   }
 }
 
@@ -83,6 +85,7 @@ function buildPayload(form) {
   if (form.total_net_weight !== '' && form.total_net_weight != null) {
     out.total_net_weight = Number(form.total_net_weight)
   }
+  if (form.notes) out.notes = form.notes
   return out
 }
 
@@ -225,22 +228,22 @@ export default function ShipmentDeclarationForm() {
             className="mb-2 inline-flex items-center gap-1 text-sm font-medium text-sky-600 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden />
-            {t('sdForms.declaration.backToList')}
+            {t('sdForms.declaration.backToList', { lng: 'en' })}
           </Link>
           <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
-            {t('sdForms.declaration.pageTitle')}
+            {t('sdForms.declaration.pageTitle', { lng: 'en' })}
           </h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('sdForms.declaration.pageSubtitle')}</p>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('sdForms.declaration.pageSubtitle', { lng: 'en' })}</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6" noValidate>
-        <Section title={t('sdForms.declaration.sections.basic')}>
+        <Section title={t('sdForms.declaration.sections.basic', { lng: 'en' })}>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <PortField
               id="sd-decl-pol"
-              label={t('sdForms.form.pol')}
-              placeholder={t('sdForms.declaration.selectOrAddPort')}
+              label={t('sdForms.form.pol', { lng: 'en' })}
+              placeholder={t('sdForms.declaration.selectOrAddPort', { lng: 'en' })}
               examplePorts={EXAMPLE_PORTS}
               ports={ports}
               portId={form.pol_id}
@@ -251,14 +254,14 @@ export default function ShipmentDeclarationForm() {
               error={errors.pol_id}
               token={token}
               onRefreshPorts={loadPorts}
-              addPortLabel={t('sdForms.declaration.addPort')}
-              newPortPlaceholder={t('sdForms.declaration.newPortName')}
-              portAddedMessage={t('sdForms.declaration.portAdded')}
+              addPortLabel={t('sdForms.declaration.addPort', { lng: 'en' })}
+              newPortPlaceholder={t('sdForms.declaration.newPortName', { lng: 'en' })}
+              portAddedMessage={t('sdForms.declaration.portAdded', { lng: 'en' })}
             />
             <PortField
               id="sd-decl-pod"
-              label={t('sdForms.form.pod')}
-              placeholder={t('sdForms.declaration.selectOrAddPort')}
+              label={t('sdForms.form.pod', { lng: 'en' })}
+              placeholder={t('sdForms.declaration.selectOrAddPort', { lng: 'en' })}
               examplePorts={EXAMPLE_PORTS}
               ports={ports}
               portId={form.pod_id}
@@ -269,15 +272,15 @@ export default function ShipmentDeclarationForm() {
               error={errors.pod_id}
               token={token}
               onRefreshPorts={loadPorts}
-              addPortLabel={t('sdForms.declaration.addPort')}
-              newPortPlaceholder={t('sdForms.declaration.newPortName')}
-              portAddedMessage={t('sdForms.declaration.portAdded')}
+              addPortLabel={t('sdForms.declaration.addPort', { lng: 'en' })}
+              newPortPlaceholder={t('sdForms.declaration.newPortName', { lng: 'en' })}
+              portAddedMessage={t('sdForms.declaration.portAdded', { lng: 'en' })}
             />
             <div className="md:col-span-2">
               <ShippingLineField
                 id="sd-decl-shipping-line"
-                label={t('sdForms.form.shippingLine')}
-                placeholder={t('sdForms.declaration.selectOrAddShippingLine')}
+                label={t('sdForms.form.shippingLine', { lng: 'en' })}
+                placeholder={t('sdForms.declaration.selectOrAddShippingLine', { lng: 'en' })}
                 exampleLines={EXAMPLE_SHIPPING_LINES}
                 lines={shippingLines}
                 value={form.shipping_line}
@@ -285,23 +288,23 @@ export default function ShipmentDeclarationForm() {
                 error={errors.shipping_line}
                 token={token}
                 onRefreshLines={loadShippingLines}
-                addLineLabel={t('sdForms.declaration.addShippingLine')}
-                newLinePlaceholder={t('sdForms.declaration.newShippingLineName')}
-                lineAddedMessage={t('sdForms.declaration.shippingLineAdded')}
+                addLineLabel={t('sdForms.declaration.addShippingLine', { lng: 'en' })}
+                newLinePlaceholder={t('sdForms.declaration.newShippingLineName', { lng: 'en' })}
+                lineAddedMessage={t('sdForms.declaration.shippingLineAdded', { lng: 'en' })}
               />
             </div>
             <TextInput
               id="sd-decl-final-dest"
-              label={t('sdForms.form.finalDestination')}
-              description={t('sdForms.declaration.finalDestinationHint')}
-              placeholder={t('sdForms.declaration.finalDestinationPlaceholder')}
+              label={t('sdForms.form.finalDestination', { lng: 'en' })}
+              description={t('sdForms.declaration.finalDestinationHint', { lng: 'en' })}
+              placeholder={t('sdForms.declaration.finalDestinationPlaceholder', { lng: 'en' })}
               value={form.final_destination}
               onChange={(e) => setField('final_destination', e.target.value)}
               className="md:col-span-2"
             />
             <SelectInput
               id="sd-decl-direction"
-              label={t('sdForms.form.shipmentDirection')}
+              label={t('sdForms.form.shipmentDirection', { lng: 'en' })}
               required
               value={form.shipment_direction}
               onChange={(e) => {
@@ -320,50 +323,50 @@ export default function ShipmentDeclarationForm() {
               }}
               error={errors.shipment_direction}
             >
-              <option value="">{t('sdForms.declaration.directionPlaceholder')}</option>
-              <option value="Export">{t('sdForms.declaration.exportDirection')}</option>
-              <option value="Import">{t('sdForms.declaration.importDirection')}</option>
+              <option value="">{t('sdForms.declaration.directionPlaceholder', { lng: 'en' })}</option>
+              <option value="Export">{t('sdForms.declaration.exportDirection', { lng: 'en' })}</option>
+              <option value="Import">{t('sdForms.declaration.importDirection', { lng: 'en' })}</option>
             </SelectInput>
           </div>
           {portsLoading ? (
-            <p className="mt-2 text-xs text-gray-500">{t('sdForms.declaration.loadingPorts')}</p>
+            <p className="mt-2 text-xs text-gray-500">{t('sdForms.declaration.loadingPorts', { lng: 'en' })}</p>
           ) : null}
         </Section>
 
-        <Section title={t('sdForms.declaration.sections.parties')}>
+        <Section title={t('sdForms.declaration.sections.parties', { lng: 'en' })}>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <TextareaInput
               id="sd-decl-shipper"
-              label={t('sdForms.form.shipper')}
-              placeholder={t('sdForms.declaration.shipperPlaceholder')}
+              label={t('sdForms.form.shipper', { lng: 'en' })}
+              placeholder={t('sdForms.declaration.shipperPlaceholder', { lng: 'en' })}
               value={form.shipper_info}
               onChange={(e) => setField('shipper_info', e.target.value)}
             />
             <TextareaInput
               id="sd-decl-consignee"
-              label={t('sdForms.form.consignee')}
-              placeholder={t('sdForms.declaration.consigneePlaceholder')}
+              label={t('sdForms.form.consignee', { lng: 'en' })}
+              placeholder={t('sdForms.declaration.consigneePlaceholder', { lng: 'en' })}
               value={form.consignee_info}
               onChange={(e) => setField('consignee_info', e.target.value)}
             />
             <div className="md:col-span-2">
               <SelectInput
                 id="sd-decl-notify-mode"
-                label={t('sdForms.form.notifyPartyMode')}
+                label={t('sdForms.form.notifyPartyMode', { lng: 'en' })}
                 value={form.notify_party_mode}
                 onChange={(e) => setField('notify_party_mode', e.target.value)}
               >
-                <option value="">{t('sdForms.form.optional')}</option>
-                <option value="same">{t('sdForms.declaration.notifySameAsConsignee')}</option>
-                <option value="different">{t('sdForms.form.notifyDifferent')}</option>
+                <option value="">{t('sdForms.form.optional', { lng: 'en' })}</option>
+                <option value="same">{t('sdForms.declaration.notifySameAsConsignee', { lng: 'en' })}</option>
+                <option value="different">{t('sdForms.form.notifyDifferent', { lng: 'en' })}</option>
               </SelectInput>
             </div>
             {showNotifyDetails ? (
               <TextareaInput
                 id="sd-decl-notify-details"
                 className="md:col-span-2"
-                label={t('sdForms.form.notifyPartyDetails')}
-                placeholder={t('sdForms.declaration.notifyDetailsPlaceholder')}
+                label={t('sdForms.form.notifyPartyDetails', { lng: 'en' })}
+                placeholder={t('sdForms.declaration.notifyDetailsPlaceholder', { lng: 'en' })}
                 value={form.notify_party_details}
                 onChange={(e) => setField('notify_party_details', e.target.value)}
               />
@@ -371,31 +374,31 @@ export default function ShipmentDeclarationForm() {
           </div>
         </Section>
 
-        <Section title={t('sdForms.declaration.sections.freight')}>
+        <Section title={t('sdForms.declaration.sections.freight', { lng: 'en' })}>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <SelectInput
               id="sd-decl-freight"
-              label={t('sdForms.form.freightTerm')}
-              description={t('sdForms.declaration.freightHint')}
+              label={t('sdForms.form.freightTerm', { lng: 'en' })}
+              description={t('sdForms.declaration.freightHint', { lng: 'en' })}
               value={form.freight_term}
               onChange={(e) => setField('freight_term', e.target.value)}
             >
-              <option value="">{t('sdForms.form.optional')}</option>
-              <option value="Prepaid">{t('sdForms.declaration.prepaid')}</option>
-              <option value="Collect">{t('sdForms.declaration.collect')}</option>
+              <option value="">{t('sdForms.form.optional', { lng: 'en' })}</option>
+              <option value="Prepaid">{t('sdForms.declaration.prepaid', { lng: 'en' })}</option>
+              <option value="Collect">{t('sdForms.declaration.collect', { lng: 'en' })}</option>
             </SelectInput>
           </div>
         </Section>
 
-        <Section title={t('sdForms.declaration.sections.container')}>
+        <Section title={t('sdForms.declaration.sections.container', { lng: 'en' })}>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <SelectInput
               id="sd-decl-ctype"
-              label={t('sdForms.form.containerType')}
+              label={t('sdForms.form.containerType', { lng: 'en' })}
               value={form.container_type}
               onChange={(e) => setField('container_type', e.target.value)}
             >
-              <option value="">{t('sdForms.form.optional')}</option>
+              <option value="">{t('sdForms.form.optional', { lng: 'en' })}</option>
               {CONTAINER_TYPES.map((c) => (
                 <option key={c} value={c}>
                   {c}
@@ -404,20 +407,42 @@ export default function ShipmentDeclarationForm() {
             </SelectInput>
             <SelectInput
               id="sd-decl-csize"
-              label={t('sdForms.form.containerSize')}
+              label={t('sdForms.form.containerSize', { lng: 'en' })}
               value={form.container_size}
               onChange={(e) => setField('container_size', e.target.value)}
             >
-              <option value="">{t('sdForms.form.optional')}</option>
+              <option value="">{t('sdForms.form.optional', { lng: 'en' })}</option>
               {CONTAINER_SIZES.map((c) => (
                 <option key={c} value={c}>
                   {c}
                 </option>
               ))}
             </SelectInput>
+          </div>
+        </Section>
+
+        <Section title={t('sdForms.declaration.sections.shipment', { lng: 'en' })}>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {showAcid ? (
+              <TextInput
+                id="sd-decl-acid"
+                label="14. ACID Number *"
+                placeholder={t('sdForms.declaration.acidPlaceholder', { lng: 'en' })}
+                value={form.acid_number}
+                onChange={(e) => setField('acid_number', e.target.value)}
+                error={errors.acid_number}
+                required
+              />
+            ) : null}
+            <DateInput
+              id="sd-decl-vessel-date"
+              label="15. Requested Vessel Date"
+              value={form.requested_vessel_date}
+              onChange={(e) => setField('requested_vessel_date', e.target.value)}
+            />
             <NumberInput
               id="sd-decl-num-containers"
-              label={t('sdForms.form.numContainers')}
+              label="16. Number of Containers"
               placeholder="0"
               min={1}
               value={form.num_containers}
@@ -426,42 +451,20 @@ export default function ShipmentDeclarationForm() {
           </div>
         </Section>
 
-        <Section title={t('sdForms.declaration.sections.shipment')}>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <DateInput
-              id="sd-decl-vessel-date"
-              label={t('sdForms.form.requestedVesselDate')}
-              value={form.requested_vessel_date}
-              onChange={(e) => setField('requested_vessel_date', e.target.value)}
-            />
-            {showAcid ? (
-              <TextInput
-                id="sd-decl-acid"
-                label={t('sdForms.form.acidNumber')}
-                placeholder={t('sdForms.declaration.acidPlaceholder')}
-                value={form.acid_number}
-                onChange={(e) => setField('acid_number', e.target.value)}
-                error={errors.acid_number}
-                required
-              />
-            ) : null}
-          </div>
-        </Section>
-
-        <Section title={t('sdForms.declaration.sections.cargo')}>
+        <Section title={t('sdForms.declaration.sections.cargo', { lng: 'en' })}>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <TextareaInput
               id="sd-decl-cargo"
               className="md:col-span-2"
-              label={t('sdForms.form.cargo')}
-              placeholder={t('sdForms.declaration.cargoPlaceholder')}
+              label={t('sdForms.form.cargo', { lng: 'en' })}
+              placeholder={t('sdForms.declaration.cargoPlaceholder', { lng: 'en' })}
               value={form.cargo_description}
               onChange={(e) => setField('cargo_description', e.target.value)}
             />
             <TextInput
               id="sd-decl-hs"
-              label={t('sdForms.form.hsCode')}
-              placeholder={t('sdForms.declaration.hsPlaceholder')}
+              label={t('sdForms.form.hsCode', { lng: 'en' })}
+              placeholder={t('sdForms.declaration.hsPlaceholder', { lng: 'en' })}
               value={form.hs_code}
               onChange={(e) => setField('hs_code', e.target.value)}
             />
@@ -469,26 +472,26 @@ export default function ShipmentDeclarationForm() {
         </Section>
 
         {showReefer ? (
-          <Section title={t('sdForms.declaration.sections.reefer')}>
+          <Section title={t('sdForms.declaration.sections.reefer', { lng: 'en' })}>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <TextInput
                 id="sd-decl-reefer-temp"
-                label={t('sdForms.form.reeferTemp')}
-                placeholder={t('sdForms.declaration.reeferTempPlaceholder')}
+                label={t('sdForms.form.reeferTemp', { lng: 'en' })}
+                placeholder={t('sdForms.declaration.reeferTempPlaceholder', { lng: 'en' })}
                 value={form.reefer_temp}
                 onChange={(e) => setField('reefer_temp', e.target.value)}
               />
               <TextInput
                 id="sd-decl-reefer-vent"
-                label={t('sdForms.form.reeferVent')}
-                placeholder={t('sdForms.declaration.reeferVentPlaceholder')}
+                label={t('sdForms.form.reeferVent', { lng: 'en' })}
+                placeholder={t('sdForms.declaration.reeferVentPlaceholder', { lng: 'en' })}
                 value={form.reefer_vent}
                 onChange={(e) => setField('reefer_vent', e.target.value)}
               />
               <TextInput
                 id="sd-decl-reefer-hum"
-                label={t('sdForms.form.reeferHum')}
-                placeholder={t('sdForms.declaration.reeferHumPlaceholder')}
+                label={t('sdForms.form.reeferHum', { lng: 'en' })}
+                placeholder={t('sdForms.declaration.reeferHumPlaceholder', { lng: 'en' })}
                 value={form.reefer_hum}
                 onChange={(e) => setField('reefer_hum', e.target.value)}
               />
@@ -496,11 +499,11 @@ export default function ShipmentDeclarationForm() {
           </Section>
         ) : null}
 
-        <Section title={t('sdForms.declaration.sections.weight')}>
+        <Section title={t('sdForms.declaration.sections.weight', { lng: 'en' })}>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <NumberInput
               id="sd-decl-gross"
-              label={t('sdForms.declaration.grossWeightKg')}
+              label={t('sdForms.declaration.grossWeightKg', { lng: 'en' })}
               placeholder="0"
               min={0}
               step="0.01"
@@ -509,7 +512,7 @@ export default function ShipmentDeclarationForm() {
             />
             <NumberInput
               id="sd-decl-net"
-              label={t('sdForms.declaration.netWeightKg')}
+              label={t('sdForms.declaration.netWeightKg', { lng: 'en' })}
               placeholder="0"
               min={0}
               step="0.01"
@@ -519,13 +522,35 @@ export default function ShipmentDeclarationForm() {
           </div>
         </Section>
 
+        <Section 
+          title={
+            <div className="flex items-center gap-2">
+              {t('sdForms.declaration.sections.notes', { lng: 'en' })}
+              <span className="help-icon-wrapper">
+                <HelpCircle className="h-4 w-4 text-gray-400" />
+                <div className="help-icon-tooltip">
+                  {t('sdForms.form.notesHint')}
+                </div>
+              </span>
+            </div>
+          }
+        >
+          <TextareaInput
+            id="sd-decl-notes"
+            placeholder={t('sdForms.form.notesHint', { lng: 'en' })}
+            value={form.notes}
+            onChange={(e) => setField('notes', e.target.value)}
+            rows={4}
+          />
+        </Section>
+
         <div className="flex flex-col gap-3 border-t border-gray-200 pt-6 dark:border-gray-700 sm:flex-row sm:justify-end">
           <button
             type="submit"
             disabled={submitting}
             className="inline-flex w-full items-center justify-center rounded-lg bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 disabled:opacity-60 dark:focus:ring-offset-gray-900 sm:w-auto"
           >
-            {submitting ? t('sdForms.saving') : t('sdForms.declaration.submitDraft')}
+            {submitting ? t('sdForms.saving', { lng: 'en' }) : t('sdForms.declaration.submitDraft', { lng: 'en' })}
           </button>
         </div>
       </form>

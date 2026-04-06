@@ -43,6 +43,7 @@ class SDForm extends Model
         'total_gross_weight',
         'total_net_weight',
         'linked_shipment_id',
+        'notes',
     ];
 
     /**

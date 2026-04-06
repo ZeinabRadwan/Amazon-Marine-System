@@ -104,7 +104,7 @@
                     ({{ $form->container_type ?? '—' }})
                 </td>
                 <th>Requested Vessel Date</th>
-                <td>{{ optional($form->requested_vessel_date)->toDateString() ?? '—' }}</td>
+                <td>{{ optional($form->requested_vessel_date)->format('d/m/Y') ?? '—' }}</td>
             </tr>
             <tr>
                 <th>Freight Term</th>

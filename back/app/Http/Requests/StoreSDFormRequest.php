@@ -44,6 +44,7 @@ class StoreSDFormRequest extends FormRequest
             'reefer_hum' => ['nullable', 'string', 'max:50'],
             'total_gross_weight' => ['nullable', 'numeric', 'min:0'],
             'total_net_weight' => ['nullable', 'numeric', 'min:0'],
+            'notes' => ['nullable', 'string'],
         ];
     }
 }

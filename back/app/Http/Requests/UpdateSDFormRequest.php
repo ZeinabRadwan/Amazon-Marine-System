@@ -44,6 +44,7 @@ class UpdateSDFormRequest extends FormRequest
             'reefer_hum' => ['sometimes', 'nullable', 'string', 'max:50'],
             'total_gross_weight' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'total_net_weight' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'notes' => ['sometimes', 'nullable', 'string'],
         ];
     }
 }
