@@ -59,11 +59,11 @@ class ClientFollowUpController extends Controller
             ]);
         }
 
-        if (! $hasAbsolute && ! $hasRelative) {
-            throw ValidationException::withMessages([
-                'reminder_at' => [__('Choose how to set the reminder.')],
-            ]);
-        }
+        // if (! $hasAbsolute && ! $hasRelative) {
+        //     throw ValidationException::withMessages([
+        //         'reminder_at' => [__('Choose how to set the reminder.')],
+        //     ]);
+        // }
 
         if ($hasAbsolute) {
             return [Carbon::parse($validated['reminder_at']), null, null];

@@ -123,14 +123,14 @@ function buildFollowUpPayload(form, t) {
   }
   if (form.reminder_mode === 'absolute') {
     const ra = normalizeDateTimeForApi(form.reminder_at)
-    if (!ra) {
-      return {
-        error: t(
-          'clients.followUpReminderRequired',
-          'Set a reminder time or choose “before next follow-up” with a valid duration.',
-        ),
-      }
-    }
+    // if (!ra) {
+    //   return {
+    //     error: t(
+    //       'clients.followUpReminderRequired',
+    //       'Set a reminder time or choose “before next follow-up” with a valid duration.',
+    //     ),
+    //   }
+    // }
     return { payload: { ...base, reminder_at: ra } }
   }
   if (!nextNorm) {
