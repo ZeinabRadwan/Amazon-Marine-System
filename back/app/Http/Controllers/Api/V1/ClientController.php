@@ -60,10 +60,13 @@ class ClientController extends Controller
         }
 
         $user = $request->user();
-        if ($user && $user->roles()->where('name', 'sales')->exists()) {
-            $query->where('assigned_sales_id', $user->id);
-        } elseif ($request->filled('assigned_sales_id')) {
-            $query->where('assigned_sales_id', (int) $request->query('assigned_sales_id'));
+        if ($user) {
+            $roleNames = $user->roles->pluck('name')->all();
+            if (in_array('sales', $roleNames, true) || in_array('sales_manager', $roleNames, true)) {
+                $query->where('assigned_sales_id', $user->id);
+            } elseif ($request->filled('assigned_sales_id')) {
+                $query->where('assigned_sales_id', (int) $request->query('assigned_sales_id'));
+            }
         }
 
         $clientType = $request->query('client_type');
