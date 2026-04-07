@@ -78,6 +78,8 @@ class ShipmentController extends Controller
             'origin_port_id' => ['nullable', 'integer', 'exists:ports,id'],
             'destination_port_id' => ['nullable', 'integer', 'exists:ports,id'],
             'booking_number' => ['nullable', 'string', 'max:255'],
+            'booking_date' => ['nullable', 'date'],
+            'acid_number' => ['nullable', 'string', 'max:255'],
             'shipment_direction' => ['nullable', 'string', 'in:Export,Import'],
             'mode' => ['nullable', 'string', 'in:Sea,Air,Land'],
             'shipment_type' => ['nullable', 'string', 'in:FCL,LCL'],
@@ -112,7 +114,15 @@ class ShipmentController extends Controller
             }
         }
 
-        $shipment->status = $shipment->status ?? 'booked';
+        // Auto-assign Sales Rep if the user is a sales rep and no user was explicitly set, 
+        // or always force to current user based on RBAC since Sales reps can only create their own shipments.
+        // Actually, the requirement says "the backend must automatically assign the currently logged-in user as the Sales Rep"
+        // Let's just always set it, or set it if not present. If the user is admin, they might be picking a sales rep.
+        if (! $shipment->sales_rep_id && $request->user()) {
+            $shipment->sales_rep_id = $request->user()->id;
+        }
+
+        $shipment->status = $shipment->status ?? 'جديد';
         $shipment->mode = $shipment->mode ?? 'Sea';
         $shipment->shipment_type = $shipment->shipment_type ?? 'FCL';
 
@@ -153,6 +163,21 @@ class ShipmentController extends Controller
         $validated = $request->validate([
             'bl_number' => ['sometimes', 'nullable', 'string', 'max:255'],
             'booking_number' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'booking_date' => ['sometimes', 'nullable', 'date'],
+            'acid_number' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'client_id' => ['sometimes', 'nullable', 'integer', 'exists:clients,id'],
+            'sd_form_id' => ['sometimes', 'nullable', 'integer', 'exists:s_d_forms,id'],
+            'sales_rep_id' => ['sometimes', 'nullable', 'integer', 'exists:users,id'],
+            'line_vendor_id' => ['sometimes', 'nullable', 'integer', 'exists:vendors,id'],
+            'origin_port_id' => ['sometimes', 'nullable', 'integer', 'exists:ports,id'],
+            'destination_port_id' => ['sometimes', 'nullable', 'integer', 'exists:ports,id'],
+            'shipment_direction' => ['sometimes', 'nullable', 'string', 'in:Export,Import'],
+            'mode' => ['sometimes', 'nullable', 'string', 'in:Sea,Air,Land'],
+            'shipment_type' => ['sometimes', 'nullable', 'string', 'in:FCL,LCL'],
+            'container_count' => ['sometimes', 'nullable', 'integer', 'min:1'],
+            'container_size' => ['sometimes', 'nullable', 'string', 'max:10'],
+            'container_type' => ['sometimes', 'nullable', 'string', 'max:40'],
+            'cargo_description' => ['sometimes', 'nullable', 'string'],
             'status' => ['sometimes', 'string', 'max:40'],
             'operations_status' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:8'],
             'loading_place' => ['sometimes', 'nullable', 'string', 'max:255'],

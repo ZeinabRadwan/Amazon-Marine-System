@@ -105,15 +105,15 @@ const AsyncSelect = ({
     <div className={`relative w-full ${className}`} ref={dropdownRef}>
       <div
         className={`flex items-center justify-between px-3 py-2 border rounded-lg cursor-pointer ${
-          disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white hover:border-blue-400'
-        } ${isOpen ? 'border-blue-500 ring-2 ring-blue-100' : 'border-gray-300'}`}
+          disabled ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed' : 'bg-white dark:bg-gray-900 hover:border-blue-400'
+        } ${isOpen ? 'border-blue-500 ring-2 ring-blue-100 dark:ring-blue-900/20' : 'border-gray-300 dark:border-gray-700'}`}
         onClick={() => !disabled && setIsOpen(!isOpen)}
       >
         <div className="flex-1 truncate text-start">
           {value ? (
-            <span className="text-gray-900">{value.label}</span>
+            <span className="text-gray-900 dark:text-gray-100">{value.label}</span>
           ) : (
-            <span className="text-gray-400">{placeholder || t('common.select') || 'Select...'}</span>
+            <span className="text-gray-400 dark:text-gray-500">{placeholder || t('common.select') || 'Select...'}</span>
           )}
         </div>
         <div className="flex items-center space-x-1 rtl:space-x-reverse ms-2">
@@ -134,17 +134,17 @@ const AsyncSelect = ({
       </div>
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl animate-in fade-in zoom-in duration-150">
-          <div className="p-2 border-b border-gray-100">
+        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl animate-in fade-in zoom-in duration-150">
+          <div className="p-2 border-b border-gray-100 dark:border-gray-800">
             <div className="relative">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400 dark:text-gray-500" />
               <input
                 ref={inputRef}
                 autoFocus
                 type="text"
                 dir="rtl"
                 style={{ direction: 'rtl', textAlign: 'right' }}
-                className="w-full pl-10 pr-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:border-blue-500 text-right"
+                className="w-full pl-10 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-750 bg-white dark:bg-gray-900 rounded-md focus:outline-none focus:border-blue-500 text-right text-gray-900 dark:text-gray-100"
                 placeholder="Search..."
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
@@ -163,21 +163,21 @@ const AsyncSelect = ({
                 {options.map((option) => (
                   <div
                     key={option.value}
-                    className={`px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 text-start ${
-                      String(value?.value) === String(option.value) ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'
+                    className={`px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/30 text-start ${
+                      String(value?.value) === String(option.value) ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-medium' : 'text-gray-700 dark:text-gray-300'
                     }`}
                     onClick={() => handleSelect(option)}
                   >
                     {option.label}
                     {option.sublabel && (
-                      <div className="text-xs text-gray-400">{option.sublabel}</div>
+                      <div className="text-xs text-gray-400 dark:text-gray-500">{option.sublabel}</div>
                     )}
                   </div>
                 ))}
                 
                 {showCreateOption && (
                   <div
-                    className="px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 text-blue-600 font-medium border-t border-gray-100"
+                    className="px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium border-t border-gray-100 dark:border-gray-800"
                     onClick={handleCreate}
                   >
                     <div className="flex items-center">

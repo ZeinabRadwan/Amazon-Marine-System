@@ -2201,7 +2201,9 @@
       "statusDraft": "No receipt",
       "sectionVendorPlaceholder": "مورّد القسم (اختياري)",
       "applyVendor": "تطبيق على القسم",
-      "addOtherCharge": "إضافة بند آخر",
+      "addRow": "إضافة بند",
+      "bulkUploadDesc": "تحميل مجمع",
+      "uploadSectionReceipt": "رفع إيصال لهذا القسم",
       "saveSection": "حفظ القسم",
       "otherChargeLine": "بند إضافي",
       "vendorApplied": "تم تطبيق المورّد على جميع البنود في هذا القسم.",
@@ -2414,7 +2416,7 @@
       "system": "النظام والإشعارات",
       "sessions": "إدارة الجلسات",
       "activity": "سجل النشاط",
-      "statuses": "ادارة المحتوي"
+      "statuses": "المحتوى (الموانئ والحالات)"
     },
     "contentMgmt": {
       "sidebarTitle": "الوحدات",

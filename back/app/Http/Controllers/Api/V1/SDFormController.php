@@ -42,6 +42,8 @@ class SDFormController extends Controller
 
         if ($salesRepId = $request->query('sales_rep_id')) {
             $query->where('sales_rep_id', $salesRepId);
+        } elseif ($request->user() && $request->user()->hasRole('sales')) {
+            $query->where('sales_rep_id', $request->user()->id);
         }
 
         if ($from = $request->query('from')) {

@@ -115,8 +115,6 @@ export default function ShipmentDetailModal({
 
   const clientLabel =
     shipment?.client?.company_name ?? shipment?.client?.name ?? shipment?.client_name ?? '—'
-  const origin = shipment?.origin_port?.name ?? '—'
-  const dest = shipment?.destination_port?.name ?? '—'
   const lineVendor = shipment?.line_vendor?.name ?? shipment?.lineVendor?.name ?? '—'
 
   const activePipelineIdx = shipment ? getPipelineStepIndex(shipment.status) : 0
@@ -161,7 +159,7 @@ export default function ShipmentDetailModal({
           <div className="client-detail-modal__header-inner">
             <span className="client-detail-modal__header-label">{t('shipments.detail')}</span>
             <h2 id="shipment-detail-title" className="client-detail-modal__title client-detail-modal__title--client">
-              {shipmentLoading ? '…' : (shipment?.bl_number ?? shipment?.booking_number ?? `#${shipment?.id}` ?? '—')}
+              {shipmentLoading ? '…' : (shipment?.bl_number ?? shipment?.booking_number ?? `#${shipment?.id}`)}
             </h2>
             {!shipmentLoading && shipment && clientLabel !== '—' && (
               <p className="client-detail-modal__subtitle">{clientLabel}</p>
@@ -215,6 +213,20 @@ export default function ShipmentDetailModal({
                         <div className="shipment-detail-card__row">
                           <span className="shipment-detail-card__label">{t('shipments.fields.booking_number')}</span>
                           <span className="shipment-detail-card__value font-semibold">{shipment.booking_number || '—'}</span>
+                        </div>
+                        <div className="shipment-detail-card__row">
+                          <span className="shipment-detail-card__label">{t('shipments.fields.booking_date')}</span>
+                          <span className="shipment-detail-card__value">{formatDate(shipment.booking_date, i18n.language) || '—'}</span>
+                        </div>
+                        {((shipment.shipment_direction === 'Import' || shipment.acid_number) && (
+                          <div className="shipment-detail-card__row">
+                            <span className="shipment-detail-card__label">{t('shipments.fields.acid_number')}</span>
+                            <span className="shipment-detail-card__value">{shipment.acid_number || '—'}</span>
+                          </div>
+                        ))}
+                        <div className="shipment-detail-card__row">
+                          <span className="shipment-detail-card__label">Shipping Line</span>
+                          <span className="shipment-detail-card__value">{lineVendor}</span>
                         </div>
                         <div className="shipment-detail-card__row">
                           <span className="shipment-detail-card__label">{t('shipments.fields.shipment_direction')}</span>

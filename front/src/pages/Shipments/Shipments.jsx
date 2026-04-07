@@ -16,6 +16,7 @@ import {
 import { listShipmentExpenses } from '../../api/expenses'
 import { listClients } from '../../api/clients'
 import { listUsers } from '../../api/users'
+import { listSDForms } from '../../api/sdForms'
 import { listVendors } from '../../api/vendors'
 import { listPorts } from '../../api/ports'
 import { listShipmentStatuses } from '../../api/settings'
@@ -75,6 +76,9 @@ const defaultCreateForm = () => ({
   origin_port_id: '',
   destination_port_id: '',
   booking_number: '',
+  booking_date: '',
+  acid_number: '',
+  bl_number: '',
   shipment_direction: 'Export',
   mode: 'Sea',
   shipment_type: 'FCL',
@@ -121,6 +125,9 @@ function buildCreatePayload(form) {
   const dp = numOrUndef(form.destination_port_id)
   if (dp != null) body.destination_port_id = dp
   if (form.booking_number?.trim()) body.booking_number = form.booking_number.trim()
+  if (form.booking_date?.trim()) body.booking_date = form.booking_date.trim()
+  if (form.acid_number?.trim() && form.shipment_direction === 'Import') body.acid_number = form.acid_number.trim()
+  if (form.bl_number?.trim()) body.bl_number = form.bl_number.trim()
   if (form.shipment_direction) body.shipment_direction = form.shipment_direction
   if (form.mode) body.mode = form.mode
   if (form.shipment_type) body.shipment_type = form.shipment_type
@@ -151,32 +158,43 @@ function clientInitials(row) {
 }
 
 function buildUpdatePayload(form) {
-  return {
+  const body = {
+    client_id: numOrUndef(form.client_id),
+    sd_form_id: numOrUndef(form.sd_form_id),
+    sales_rep_id: numOrUndef(form.sales_rep_id),
+    line_vendor_id: numOrUndef(form.line_vendor_id),
+    origin_port_id: numOrUndef(form.origin_port_id),
+    destination_port_id: numOrUndef(form.destination_port_id),
+    shipment_direction: form.shipment_direction || undefined,
+    mode: form.mode || undefined,
+    shipment_type: form.shipment_type || undefined,
+    container_count: numOrUndef(form.container_count),
+    container_size: form.container_size?.trim() || null,
+    container_type: form.container_type?.trim() || null,
+    cargo_description: form.cargo_description?.trim() || null,
+
     bl_number: form.bl_number?.trim() || null,
     booking_number: form.booking_number?.trim() || null,
-    status: form.status?.trim() || undefined,
-    operations_status: numOrUndef(form.operations_status),
-    loading_place: form.loading_place?.trim() || null,
-    loading_date: form.loading_date?.trim() || null,
-    is_reefer: !!form.is_reefer,
-    reefer_temp: form.reefer_temp?.trim() || null,
-    reefer_vent: form.reefer_vent?.trim() || null,
-    reefer_hum: form.reefer_hum?.trim() || null,
+    booking_date: form.booking_date?.trim() || null,
   }
-}
-
-function userHasAdminRole(user) {
-  const roles = user?.roles
-  if (!Array.isArray(roles)) return false
-  return roles.some((r) => {
-    const name = typeof r === 'string' ? r : r?.name
-    return String(name || '').toLowerCase() === 'admin'
-  })
+  if (form.shipment_direction === 'Import') {
+    body.acid_number = form.acid_number?.trim() || null;
+  }
+  body.status = form.status?.trim() || undefined;
+  body.operations_status = numOrUndef(form.operations_status);
+  body.loading_place = form.loading_place?.trim() || null;
+  body.loading_date = form.loading_date?.trim() || null;
+  body.is_reefer = !!form.is_reefer;
+  body.reefer_temp = form.reefer_temp?.trim() || null;
+  body.reefer_vent = form.reefer_vent?.trim() || null;
+  body.reefer_hum = form.reefer_hum?.trim() || null;
+  return body;
 }
 
 export default function Shipments() {
   const { t, i18n } = useTranslation()
-  const { hasPageAccess } = useAuthAccess()
+  const { hasPageAccess, user, isAdminRole, isOperations, roleId } = useAuthAccess()
+  const isSalesRepresentative = roleId === 3 || roleId === 2
   const canManageOps = hasPageAccess('shipments')
   const canViewShipmentFinancials = hasPageAccess('shipments')
   const canManageFinancial = hasPageAccess('shipments')
@@ -223,6 +241,24 @@ export default function Shipments() {
   const [vendorOptions, setVendorOptions] = useState([])
   const [portOptions, setPortOptions] = useState([])
   const [statusOptions, setStatusOptions] = useState([])
+  const [sdFormOptions, setSdFormOptions] = useState([])
+
+  useEffect(() => {
+    if (!token) return
+    const cid = showCreate ? createForm.client_id : (editId ? editForm.client_id : null)
+    if (cid) {
+       const params = { client_id: cid, per_page: 500 }
+       if (isSalesRepresentative && !isAdminRole && !isOperations) {
+         params.sales_rep_id = user?.id
+       }
+       listSDForms(token, params).then(res => {
+         const data = res.data ?? []
+         setSdFormOptions(Array.isArray(data) ? data : [])
+       }).catch(() => setSdFormOptions([]))
+    } else {
+       setSdFormOptions([])
+    }
+  }, [createForm.client_id, editForm.client_id, editId, showCreate, token, isSalesRepresentative, isAdminRole, isOperations, user?.id])
 
   const [showCreate, setShowCreate] = useState(false)
   const [createForm, setCreateForm] = useState(defaultCreateForm())
@@ -234,18 +270,7 @@ export default function Shipments() {
   const [detailTab, setDetailTab] = useState('info')
 
   const [editId, setEditId] = useState(null)
-  const [editForm, setEditForm] = useState({
-    bl_number: '',
-    booking_number: '',
-    status: '',
-    operations_status: '',
-    loading_place: '',
-    loading_date: '',
-    is_reefer: false,
-    reefer_temp: '',
-    reefer_vent: '',
-    reefer_hum: '',
-  })
+  const [editForm, setEditForm] = useState(defaultCreateForm())
   const [editSubmitting, setEditSubmitting] = useState(false)
 
   const [deleteId, setDeleteId] = useState(null)
@@ -371,8 +396,13 @@ export default function Shipments() {
 
   useEffect(() => {
     if (!token) return
+    const clientParams = { per_page: 500 }
+    if (isSalesRepresentative && !isAdminRole && !isOperations) {
+      clientParams.sales_rep_id = user?.id
+    }
+
     Promise.all([
-      listClients(token, { per_page: 500 }).catch(() => ({})),
+      listClients(token, clientParams).catch(() => ({})),
       listUsers(token, { per_page: 300 }).catch(() => ({})),
       listVendors(token).catch(() => ({})),
       listPorts(token, { per_page: 500 }).catch(() => ({})),
@@ -389,7 +419,7 @@ export default function Shipments() {
       const statuses = st.data ?? []
       setStatusOptions(Array.isArray(statuses) ? statuses : [])
     })
-  }, [token])
+  }, [token, isSalesRepresentative, isAdminRole, isOperations, user?.id])
 
   useEffect(() => {
     setFilters((f) => ({ ...f, page: 1 }))
@@ -439,12 +469,27 @@ export default function Shipments() {
   const openEdit = (row) => {
     setEditId(row.id)
     setEditForm({
-      bl_number: row.bl_number ?? '',
+      client_id: row.client_id != null ? String(row.client_id) : '',
+      sd_form_id: row.sd_form_id != null ? String(row.sd_form_id) : '',
+      sales_rep_id: row.sales_rep_id != null ? String(row.sales_rep_id) : '',
+      line_vendor_id: row.line_vendor_id != null ? String(row.line_vendor_id) : '',
+      origin_port_id: row.origin_port_id != null ? String(row.origin_port_id) : '',
+      destination_port_id: row.destination_port_id != null ? String(row.destination_port_id) : '',
       booking_number: row.booking_number ?? '',
+      booking_date: row.booking_date ? String(row.booking_date).slice(0, 10) : '',
+      acid_number: row.acid_number ?? '',
+      bl_number: row.bl_number ?? '',
+      shipment_direction: row.shipment_direction ?? 'Export',
+      mode: row.mode ?? 'Sea',
+      shipment_type: row.shipment_type ?? 'FCL',
       status: row.status ?? '',
       operations_status: row.operations_status != null ? String(row.operations_status) : '',
+      container_count: row.container_count != null ? String(row.container_count) : '',
+      container_size: row.container_size ?? '',
+      container_type: row.container_type ?? '',
       loading_place: row.loading_place ?? '',
       loading_date: row.loading_date ? String(row.loading_date).slice(0, 10) : '',
+      cargo_description: row.cargo_description ?? '',
       is_reefer: !!row.is_reefer,
       reefer_temp: row.reefer_temp ?? '',
       reefer_vent: row.reefer_vent ?? '',
@@ -827,7 +872,7 @@ export default function Shipments() {
     statusOptions,
   ])
 
-  const renderCreateForm = (form, setForm, disabled) => (
+  const renderShipmentForm = (form, setForm, disabled, isEdit = false) => (
     <div className="clients-form-sections">
       <section className="client-detail-modal__section">
         <h3 className="client-detail-modal__section-title">{t('shipments.sections.main')}</h3>
@@ -850,34 +895,45 @@ export default function Shipments() {
             </select>
           </div>
           <div className="client-detail-modal__form-field">
-            <label htmlFor="sh-sd">{t('shipments.fields.sd_form_id')}</label>
-            <input
+            <label htmlFor="sh-sd">{t('shipments.fields.sd_form_id')} (SD Form)</label>
+            <select
               id="sh-sd"
-              type="number"
-              min={1}
               value={form.sd_form_id}
               onChange={(e) => setForm((f) => ({ ...f, sd_form_id: e.target.value }))}
-              disabled={disabled}
-            />
-          </div>
-          <div className="client-detail-modal__form-field">
-            <label htmlFor="sh-sales">{t('shipments.fields.sales_rep_id')}</label>
-            <select
-              id="sh-sales"
-              value={form.sales_rep_id}
-              onChange={(e) => setForm((f) => ({ ...f, sales_rep_id: e.target.value }))}
-              disabled={disabled}
+              disabled={disabled || !form.client_id}
             >
               <option value="">{t('shipments.optional')}</option>
-              {userOptions.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name || u.email || u.id}
+              {sdFormOptions.map((sd) => (
+                <option key={sd.id} value={sd.id}>
+                  {sd.sd_number || sd.id} - {sd.cargo_description || ''}
                 </option>
               ))}
             </select>
           </div>
           <div className="client-detail-modal__form-field">
-            <label htmlFor="sh-line">{t('shipments.fields.line_vendor')}</label>
+            <label htmlFor="sh-bdate">{t('shipments.fields.booking_date') || 'Booking Date'}</label>
+            <input
+              id="sh-bdate"
+              type="date"
+              value={form.booking_date}
+              onChange={(e) => setForm((f) => ({ ...f, booking_date: e.target.value }))}
+              disabled={disabled}
+            />
+          </div>
+          {form.shipment_direction === 'Import' && (
+            <div className="client-detail-modal__form-field">
+              <label htmlFor="sh-acid">{t('shipments.fields.acid_number') || 'ACID Number'}</label>
+              <input
+                id="sh-acid"
+                type="text"
+                value={form.acid_number}
+                onChange={(e) => setForm((f) => ({ ...f, acid_number: e.target.value }))}
+                disabled={disabled}
+              />
+            </div>
+          )}
+          <div className="client-detail-modal__form-field">
+            <label htmlFor="sh-line">{t('shipments.fields.line_vendor_id') || 'Shipping Line'}</label>
             <select
               id="sh-line"
               value={form.line_vendor_id}
@@ -885,13 +941,23 @@ export default function Shipments() {
               disabled={disabled}
             >
               <option value="">{t('shipments.optional')}</option>
-              {vendorOptions.map((v) => (
+              {vendorOptions
+                .filter(v => 
+                  v.type === 'shipping_line' || 
+                  v.type === 'agent' || 
+                  v.type === 'LINE' || 
+                  v.type === 'AGENT' || 
+                  !v.type || 
+                  v.type === ''
+                )
+                .map((v) => (
                 <option key={v.id} value={v.id}>
                   {v.name || v.id}
                 </option>
               ))}
             </select>
           </div>
+          
           <div className="client-detail-modal__form-field">
             <label htmlFor="sh-pol">{t('shipments.fields.origin_port_id')}</label>
             <select
@@ -935,6 +1001,16 @@ export default function Shipments() {
             />
           </div>
           <div className="client-detail-modal__form-field">
+            <label htmlFor="sh-bl">{t('shipments.fields.bl_number') || 'BL Number'}</label>
+            <input
+              id="sh-bl"
+              type="text"
+              value={form.bl_number}
+              onChange={(e) => setForm((f) => ({ ...f, bl_number: e.target.value }))}
+              disabled={disabled}
+            />
+          </div>
+          <div className="client-detail-modal__form-field">
             <label htmlFor="sh-dir">{t('shipments.fields.shipment_direction')}</label>
             <select
               id="sh-dir"
@@ -971,35 +1047,62 @@ export default function Shipments() {
               <option value="LCL">LCL</option>
             </select>
           </div>
-          <div className="client-detail-modal__form-field">
-            <label htmlFor="sh-status">{t('shipments.fields.status')}</label>
-            <input
-              id="sh-status"
-              type="text"
-              value={form.status}
-              onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
-              disabled={disabled}
-              placeholder={t('shipments.statusPlaceholder')}
-            />
-          </div>
-          <div className="client-detail-modal__form-field">
-            <label htmlFor="sh-ops">{t('shipments.fields.operations_status')}</label>
-            <select
-              id="sh-ops"
-              value={form.operations_status}
-              onChange={(e) => setForm((f) => ({ ...f, operations_status: e.target.value }))}
-              disabled={disabled}
-            >
-              <option value="">{t('shipments.optional')}</option>
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
-          </div>
+
+          {isEdit && (
+            <>
+              <div className="client-detail-modal__form-field">
+                <label htmlFor="sh-status">{t('shipments.fields.status')}</label>
+                <select
+                  id="sh-status"
+                  value={form.status}
+                  onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
+                  disabled={disabled}
+                >
+                  <option value="">{t('shipments.selectStatus')}</option>
+                  {statusOptions.map((s) => (
+                    <option key={s.id} value={shipmentStatusFilterValue(s)}>
+                      {shipmentStatusLocalizedLabel(s, i18n.language)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="client-detail-modal__form-field">
+                <label htmlFor="sh-ops">{t('shipments.fields.operations_status')}</label>
+                <select
+                  id="sh-ops"
+                  value={form.operations_status}
+                  onChange={(e) => setForm((f) => ({ ...f, operations_status: e.target.value }))}
+                  disabled={disabled}
+                >
+                  <option value="">{t('shipments.optional')}</option>
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="client-detail-modal__form-field">
+                <label htmlFor="sh-rep">{t('shipments.fields.sales_rep_id')}</label>
+                <select
+                  id="sh-rep"
+                  value={form.sales_rep_id}
+                  onChange={(e) => setForm((f) => ({ ...f, sales_rep_id: e.target.value }))}
+                  disabled={disabled}
+                >
+                  <option value="">{t('shipments.optional')}</option>
+                  {userOptions.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
         </div>
       </section>
+
       <section className="client-detail-modal__section">
         <h3 className="client-detail-modal__section-title">{t('shipments.sections.cargoLoading')}</h3>
         <div className="client-detail-modal__form-grid">
@@ -1016,33 +1119,49 @@ export default function Shipments() {
           </div>
           <div className="client-detail-modal__form-field">
             <label htmlFor="sh-cs">{t('shipments.fields.container_size')}</label>
-            <input
+            <select
               id="sh-cs"
-              type="text"
               value={form.container_size}
               onChange={(e) => setForm((f) => ({ ...f, container_size: e.target.value }))}
               disabled={disabled}
-            />
+            >
+              <option value="">{t('shipments.optional')}</option>
+              <option value="20">20'</option>
+              <option value="40">40'</option>
+              <option value="40HC">40' HC</option>
+            </select>
           </div>
           <div className="client-detail-modal__form-field">
             <label htmlFor="sh-ct">{t('shipments.fields.container_type')}</label>
-            <input
+            <select
               id="sh-ct"
-              type="text"
               value={form.container_type}
               onChange={(e) => setForm((f) => ({ ...f, container_type: e.target.value }))}
               disabled={disabled}
-            />
+            >
+              <option value="">{t('shipments.optional')}</option>
+              <option value="Dry">Dry</option>
+              <option value="Reefer">Reefer</option>
+              <option value="Open Top">Open Top</option>
+              <option value="Flat Rack">Flat Rack</option>
+              <option value="Tank">Tank</option>
+            </select>
           </div>
           <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
             <label htmlFor="sh-lp">{t('shipments.fields.loading_place')}</label>
             <input
               id="sh-lp"
               type="text"
+              list="loading-places"
               value={form.loading_place}
               onChange={(e) => setForm((f) => ({ ...f, loading_place: e.target.value }))}
               disabled={disabled}
             />
+            <datalist id="loading-places">
+              <option value="Factory" />
+              <option value="Warehouse" />
+              <option value="Port Terminal" />
+            </datalist>
           </div>
           <div className="client-detail-modal__form-field">
             <label htmlFor="sh-ld">{t('shipments.fields.loading_date')}</label>
@@ -1056,13 +1175,23 @@ export default function Shipments() {
           </div>
           <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
             <label htmlFor="sh-cargo">{t('shipments.fields.cargo_description')}</label>
-            <textarea
+            <input
               id="sh-cargo"
-              rows={2}
+              type="text"
+              list="cargo-descriptions"
               value={form.cargo_description}
               onChange={(e) => setForm((f) => ({ ...f, cargo_description: e.target.value }))}
               disabled={disabled}
             />
+            <datalist id="cargo-descriptions">
+              <option value="General Cargo" />
+              <option value="Electronics" />
+              <option value="Furniture" />
+              <option value="Machinery" />
+              <option value="Textiles" />
+              <option value="Chemicals" />
+              <option value="Foodstuffs" />
+            </datalist>
           </div>
           <div className="client-detail-modal__form-field">
             <label className="client-detail-modal__checkbox-label">
@@ -1101,132 +1230,6 @@ export default function Shipments() {
                 <label htmlFor="sh-rh">{t('shipments.fields.reefer_hum')}</label>
                 <input
                   id="sh-rh"
-                  type="text"
-                  value={form.reefer_hum}
-                  onChange={(e) => setForm((f) => ({ ...f, reefer_hum: e.target.value }))}
-                  disabled={disabled}
-                />
-              </div>
-            </>
-          )}
-        </div>
-      </section>
-    </div>
-  )
-
-  const renderEditForm = (form, setForm, disabled) => (
-    <div className="clients-form-sections">
-      <section className="client-detail-modal__section">
-        <h3 className="client-detail-modal__section-title">{t('shipments.sections.main')}</h3>
-        <div className="client-detail-modal__form-grid">
-          <div className="client-detail-modal__form-field">
-            <label htmlFor="ed-bl">{t('shipments.fields.bl_number')}</label>
-            <input
-              id="ed-bl"
-              type="text"
-              value={form.bl_number}
-              onChange={(e) => setForm((f) => ({ ...f, bl_number: e.target.value }))}
-              disabled={disabled}
-            />
-          </div>
-          <div className="client-detail-modal__form-field">
-            <label htmlFor="ed-bk">{t('shipments.fields.booking_number')}</label>
-            <input
-              id="ed-bk"
-              type="text"
-              value={form.booking_number}
-              onChange={(e) => setForm((f) => ({ ...f, booking_number: e.target.value }))}
-              disabled={disabled}
-            />
-          </div>
-          <div className="client-detail-modal__form-field">
-            <label htmlFor="ed-st">{t('shipments.fields.status')}</label>
-            <input
-              id="ed-st"
-              type="text"
-              value={form.status}
-              onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
-              disabled={disabled}
-            />
-          </div>
-          <div className="client-detail-modal__form-field">
-            <label htmlFor="ed-ops">{t('shipments.fields.operations_status')}</label>
-            <select
-              id="ed-ops"
-              value={form.operations_status}
-              onChange={(e) => setForm((f) => ({ ...f, operations_status: e.target.value }))}
-              disabled={disabled}
-            >
-              <option value="">{t('shipments.optional')}</option>
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </section>
-      <section className="client-detail-modal__section">
-        <h3 className="client-detail-modal__section-title">{t('shipments.sections.loadingReefer')}</h3>
-        <div className="client-detail-modal__form-grid">
-          <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
-            <label htmlFor="ed-lp">{t('shipments.fields.loading_place')}</label>
-            <input
-              id="ed-lp"
-              type="text"
-              value={form.loading_place}
-              onChange={(e) => setForm((f) => ({ ...f, loading_place: e.target.value }))}
-              disabled={disabled}
-            />
-          </div>
-          <div className="client-detail-modal__form-field">
-            <label htmlFor="ed-ld">{t('shipments.fields.loading_date')}</label>
-            <input
-              id="ed-ld"
-              type="date"
-              value={form.loading_date}
-              onChange={(e) => setForm((f) => ({ ...f, loading_date: e.target.value }))}
-              disabled={disabled}
-            />
-          </div>
-          <div className="client-detail-modal__form-field">
-            <label className="client-detail-modal__checkbox-label">
-              <input
-                type="checkbox"
-                checked={form.is_reefer}
-                onChange={(e) => setForm((f) => ({ ...f, is_reefer: e.target.checked }))}
-                disabled={disabled}
-              />
-              {t('shipments.fields.is_reefer')}
-            </label>
-          </div>
-          {form.is_reefer && (
-            <>
-              <div className="client-detail-modal__form-field">
-                <label htmlFor="ed-rt">{t('shipments.fields.reefer_temp')}</label>
-                <input
-                  id="ed-rt"
-                  type="text"
-                  value={form.reefer_temp}
-                  onChange={(e) => setForm((f) => ({ ...f, reefer_temp: e.target.value }))}
-                  disabled={disabled}
-                />
-              </div>
-              <div className="client-detail-modal__form-field">
-                <label htmlFor="ed-rv">{t('shipments.fields.reefer_vent')}</label>
-                <input
-                  id="ed-rv"
-                  type="text"
-                  value={form.reefer_vent}
-                  onChange={(e) => setForm((f) => ({ ...f, reefer_vent: e.target.value }))}
-                  disabled={disabled}
-                />
-              </div>
-              <div className="client-detail-modal__form-field">
-                <label htmlFor="ed-rh">{t('shipments.fields.reefer_hum')}</label>
-                <input
-                  id="ed-rh"
                   type="text"
                   value={form.reefer_hum}
                   onChange={(e) => setForm((f) => ({ ...f, reefer_hum: e.target.value }))}
@@ -1629,7 +1632,7 @@ export default function Shipments() {
               <form onSubmit={handleCreateSubmit} className="client-detail-modal__form">
                 <div className="client-detail-modal__body client-detail-modal__body--form">
                   <div className="client-detail-modal__body-inner">
-                    {renderCreateForm(createForm, setCreateForm, createSubmitting)}
+                    {renderShipmentForm(createForm, setCreateForm, createSubmitting, false)}
                   </div>
                 </div>
                 <footer className="client-detail-modal__footer client-detail-modal__footer--form">
@@ -1778,7 +1781,7 @@ export default function Shipments() {
               </header>
               <form onSubmit={handleEditSubmit} className="client-detail-modal__form">
                 <div className="client-detail-modal__body client-detail-modal__body--form">
-                  <div className="client-detail-modal__body-inner">{renderEditForm(editForm, setEditForm, editSubmitting)}</div>
+                  <div className="client-detail-modal__body-inner">{renderShipmentForm(editForm, setEditForm, editSubmitting, true)}</div>
                 </div>
                 <footer className="client-detail-modal__footer client-detail-modal__footer--form">
                   <button

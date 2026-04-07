@@ -19,6 +19,8 @@ class Shipment extends Model
     protected $fillable = [
         'bl_number',
         'booking_number',
+        'booking_date',
+        'acid_number',
         'sd_form_id',
         'client_id',
         'sales_rep_id',
@@ -51,6 +53,7 @@ class Shipment extends Model
      */
     protected $casts = [
         'loading_date' => 'date',
+        'booking_date' => 'date',
         'is_reefer' => 'bool',
         'container_count' => 'int',
         'operations_status' => 'int',

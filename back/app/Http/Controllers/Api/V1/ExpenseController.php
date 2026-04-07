@@ -44,11 +44,12 @@ class ExpenseController extends Controller
         $validated = $request->validate([
             'expense_category_id' => ['required', 'integer', 'exists:expense_categories,id'],
             'description' => ['required', 'string', 'max:255'],
-            'amount' => ['required', 'numeric', 'min:0.01'],
+            'amount' => ['required', 'numeric', 'min:0'],
             'currency_code' => ['required', 'string', 'size:3'],
             'expense_date' => ['required', 'date'],
             'paid_by_id' => ['nullable', 'integer', 'exists:users,id'],
             'shipment_id' => ['nullable', 'integer', 'exists:shipments,id'],
+            'vendor_id' => ['nullable', 'integer', 'exists:vendors,id'],
         ]);
 
         $expense = new Expense($validated);
@@ -76,11 +77,12 @@ class ExpenseController extends Controller
         $validated = $request->validate([
             'expense_category_id' => ['sometimes', 'integer', 'exists:expense_categories,id'],
             'description' => ['sometimes', 'string', 'max:255'],
-            'amount' => ['sometimes', 'numeric', 'min:0.01'],
+            'amount' => ['sometimes', 'numeric', 'min:0'],
             'currency_code' => ['sometimes', 'string', 'size:3'],
             'expense_date' => ['sometimes', 'date'],
             'paid_by_id' => ['sometimes', 'nullable', 'integer', 'exists:users,id'],
             'shipment_id' => ['sometimes', 'nullable', 'integer', 'exists:shipments,id'],
+            'vendor_id' => ['sometimes', 'nullable', 'integer', 'exists:vendors,id'],
         ]);
 
         $expense->fill($validated);

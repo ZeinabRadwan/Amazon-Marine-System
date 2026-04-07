@@ -230,6 +230,7 @@ function FinSingleExpenseRow({
   onSaved,
   saveRegisterKey,
   onRegisterSave,
+  sectionVendorId,
 }) {
   const descPrefix = LINE_DESC_PREFIX[tpl.id] || tpl.id
   const categoryCode = categoryCodeForTemplate(bucketId, tpl.id)
@@ -284,7 +285,7 @@ function FinSingleExpenseRow({
           amount: amt,
           currency_code: currency,
           expense_date: dateStr,
-          vendor_id: expense.vendor_id ?? undefined,
+          vendor_id: sectionVendorId ?? expense.vendor_id ?? undefined,
         })
       }
       onSaved?.()
@@ -363,9 +364,7 @@ function FinSingleExpenseRow({
         <tr key={`${tpl.id}-empty`}>
           <td>{showLineLabel ? renderLineLabelCell(tpl) : null}</td>
           <td>—</td>
-          <td>—</td>
           <td className="shipment-fin-num">—</td>
-          <td>—</td>
           <td>—</td>
         </tr>
       )
@@ -374,10 +373,8 @@ function FinSingleExpenseRow({
       <tr key={expense.id}>
         <td>{showLineLabel ? renderLineLabelCell(tpl) : null}</td>
         <td>{expense.description?.trim() || '—'}</td>
-        <td>{expense.category_name || '—'}</td>
         <td className="shipment-fin-num">{formatMoney(Number(expense.amount) || 0, numberLocale)}</td>
         <td>{expense.currency_code || '—'}</td>
-        <td>{expense.has_receipt ? t('shipments.fin.receiptYes') : t('shipments.fin.receiptNo')}</td>
       </tr>
     )
   }
@@ -394,10 +391,6 @@ function FinSingleExpenseRow({
           placeholder={t('shipments.fin.descPlaceholder')}
           disabled={saving}
         />
-      </td>
-      <td className="shipment-fin-cat-cell" title={categoryCode}>
-        {categoryMeta?.name || categoryCode}
-        {!categoryMeta ? <span className="shipment-fin-warn"> ({t('shipments.fin.missingCategory')})</span> : null}
       </td>
       <td>
         <input
@@ -419,10 +412,6 @@ function FinSingleExpenseRow({
           ))}
         </select>
       </td>
-      <td className="shipment-fin-receipt-cell">
-        {expense?.has_receipt ? t('shipments.fin.receiptYes') : t('shipments.fin.receiptNo')}
-        {uploading ? <span className="shipment-fin-muted"> {t('shipments.loading')}</span> : null}
-      </td>
       {actionsCell}
     </tr>
   )
@@ -438,6 +427,7 @@ function FinPendingOtherChargeRow({
   editMode,
   onSaved,
   onRemove,
+  sectionVendorId,
 }) {
   const prefix = OTHER_DESC_PREFIX[bucketId] || 'Other'
   const categoryCode = otherLineCategoryCode(bucketId)
@@ -471,6 +461,7 @@ function FinPendingOtherChargeRow({
         amount: amt,
         currency_code: currency,
         expense_date: dateStr,
+        vendor_id: sectionVendorId ?? undefined,
       })
       onSaved?.()
       onRemove?.()
@@ -498,10 +489,6 @@ function FinPendingOtherChargeRow({
           disabled={saving}
         />
       </td>
-      <td className="shipment-fin-cat-cell" title={categoryCode}>
-        {categoryMeta?.name || categoryCode}
-        {!categoryMeta ? <span className="shipment-fin-warn"> ({t('shipments.fin.missingCategory')})</span> : null}
-      </td>
       <td>
         <input
           type="number"
@@ -522,7 +509,6 @@ function FinPendingOtherChargeRow({
           ))}
         </select>
       </td>
-      <td className="shipment-fin-receipt-cell">—</td>
       <td className="shipment-fin-actions">
         <div className="shipment-fin-actions__inner">
           <button type="button" className="shipment-fin-btn shipment-fin-btn--primary" disabled={saving || !categoryMeta?.id} onClick={handleSave}>
@@ -745,6 +731,44 @@ export default function ShipmentFinancialsModal({
       [bucketId]: (prev[bucketId] || []).filter((l) => l.tempId !== tempId),
     }))
   }, [])
+
+  const handleSectionUpload = useCallback(async (bucketId, e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file || !token || !shipment?.id) return
+    
+    setBatchSavingBucket(bucketId)
+    try {
+      const categoryCode = otherLineCategoryCode(bucketId)
+      const categoryMeta = categoriesByCode[categoryCode]
+      if (!categoryMeta?.id) throw new Error(t('shipments.fin.errorNoCategory'))
+
+      const prefix = OTHER_DESC_PREFIX[bucketId] || 'Other'
+      const dateStr = new Date().toISOString().slice(0, 10)
+      
+      const res = await createExpense(token, {
+        type: 'shipment',
+        shipment_id: shipment.id,
+        expense_category_id: categoryMeta.id,
+        description: `${prefix}: ${t('shipments.fin.bulkUploadDesc')}`,
+        amount: 0,
+        currency_code: 'USD',
+        expense_date: dateStr,
+        vendor_id: sectionVendorChoice[bucketId] || undefined,
+      })
+      
+      const newEx = res?.data ?? res
+      if (newEx?.id) {
+        await uploadExpenseReceipt(token, newEx.id, file)
+      }
+      onExpensesChanged?.()
+      setFinBanner({ type: 'success', message: t('shipments.fin.receiptUploaded') })
+    } catch (err) {
+      setFinBanner({ type: 'error', message: err.message || t('shipments.fin.errorReceipt') })
+    } finally {
+      setBatchSavingBucket(null)
+    }
+  }, [token, shipment, categoriesByCode, sectionVendorChoice, t, onExpensesChanged])
 
   const handleNotifySales = useCallback(async () => {
     if (!token || !shipment?.id) return
@@ -1012,10 +1036,8 @@ export default function ShipmentFinancialsModal({
         <tr>
           <th>{t('shipments.fin.colItem')}</th>
           <th>{t('shipments.fin.colDescription')}</th>
-          <th>{t('shipments.expColCategory')}</th>
           <th>{t('shipments.expColAmount')}</th>
           <th>{t('shipments.fin.colCurrency')}</th>
-          <th>{t('shipments.fin.colReceipt')}</th>
         </tr>
       </thead>
     )
@@ -1023,21 +1045,18 @@ export default function ShipmentFinancialsModal({
     const renderExpenseCells = (ex) => (
       <>
         <td>{ex.description?.trim() || ex.invoice_number || '—'}</td>
-        <td>{ex.category_name || '—'}</td>
         <td className="shipment-fin-num">{formatMoney(Number(ex.amount) || 0, numberLocale)}</td>
         <td>{ex.currency_code || '—'}</td>
-        <td>{ex.has_receipt ? t('shipments.fin.receiptYes') : t('shipments.fin.receiptNo')}</td>
       </>
     )
 
     const otherTableHead = (
       <thead>
         <tr>
-          <th>{t('shipments.expColCategory')}</th>
+          <th>{t('shipments.fin.colItem')}</th>
           <th>{t('shipments.fin.colDescription')}</th>
           <th>{t('shipments.expColAmount')}</th>
           <th>{t('shipments.fin.colCurrency')}</th>
-          <th>{t('shipments.fin.colReceipt')}</th>
         </tr>
       </thead>
     )
@@ -1054,11 +1073,10 @@ export default function ShipmentFinancialsModal({
               <tbody>
                 {rows.map((ex) => (
                   <tr key={ex.id}>
-                    <td>{ex.category_name || '—'}</td>
+                    <td>—</td>
                     <td>{ex.description?.trim() || ex.invoice_number || '—'}</td>
                     <td className="shipment-fin-num">{formatMoney(Number(ex.amount) || 0, numberLocale)}</td>
                     <td>{ex.currency_code || '—'}</td>
-                    <td>{ex.has_receipt ? t('shipments.fin.receiptYes') : t('shipments.fin.receiptNo')}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1091,6 +1109,7 @@ export default function ShipmentFinancialsModal({
               onSaved={onExpensesChanged}
               saveRegisterKey={editMode ? rowKey : null}
               onRegisterSave={editMode ? registerRowSave : null}
+              sectionVendorId={sectionVendorChoice[bucketId]}
             />
           )
         })
@@ -1109,6 +1128,7 @@ export default function ShipmentFinancialsModal({
             editMode={editMode}
             onSaved={onExpensesChanged}
             onRemove={() => removePendingOtherLine(bucketId, line.tempId)}
+            sectionVendorId={sectionVendorChoice[bucketId]}
           />
         )
       }
@@ -1148,8 +1168,18 @@ export default function ShipmentFinancialsModal({
               {t('shipments.fin.applyVendor')}
             </button>
             <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary" onClick={() => addPendingOtherLine(bucketId)}>
-              {t('shipments.fin.addOtherCharge')}
+              {t('shipments.fin.addRow')}
             </button>
+            <label className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-section-upload" title={t('shipments.fin.uploadSectionReceipt')}>
+              <Upload size={14} className="mr-1" />
+              {t('shipments.fin.uploadReceipt')}
+              <input 
+                type="file" 
+                className="hidden" 
+                onChange={(e) => handleSectionUpload(bucketId, e)}
+                disabled={batchSavingBucket === bucketId}
+              />
+            </label>
             <button
               type="button"
               className="shipment-fin-btn shipment-fin-btn--primary"
@@ -1750,13 +1780,19 @@ export default function ShipmentFinancialsModal({
                     type="button"
                     className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all flex items-center gap-2 mx-auto shadow-lg shadow-blue-500/20"
                     disabled={notifySending}
-                    onClick={() => {
+                    onClick={async () => {
+                        if (!token || !shipment?.id) return;
                         setNotifySending(true);
-                        setTimeout(() => {
-                           setNotifySending(false);
-                           setFinBanner({ type: 'success', message: t('shipments.fin.notifyAccountantOk') });
-                           setTimeout(() => setFinBanner(null), 3000);
-                        }, 1000);
+                        try {
+                            await notifyShipmentSalesFinancials(token, shipment.id);
+                            setFinBanner({ type: 'success', message: t('shipments.fin.notifyAccountantOk') });
+                            setTimeout(() => setFinBanner(null), 4000);
+                        } catch (err) {
+                            setFinBanner({ type: 'error', message: err.message || 'Failed to notify' });
+                            setTimeout(() => setFinBanner(null), 4000);
+                        } finally {
+                            setNotifySending(false);
+                        }
                     }}
                   >
                     <Bell className="h-4 w-4" />

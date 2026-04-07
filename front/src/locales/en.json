@@ -2204,7 +2204,9 @@
       "statusDraft": "No receipt",
       "sectionVendorPlaceholder": "Section vendor (optional)",
       "applyVendor": "Apply to section",
-      "addOtherCharge": "Add other charge",
+      "addRow": "Add Row",
+      "bulkUploadDesc": "Bulk upload",
+      "uploadSectionReceipt": "Upload receipt for this section",
       "saveSection": "Save section",
       "otherChargeLine": "Other charge",
       "vendorApplied": "Vendor applied to all lines in this section.",
@@ -2418,7 +2420,7 @@
       "system": "System & Notifications",
       "sessions": "Session Management",
       "activity": "Activity History",
-      "statuses": "Content management"
+      "statuses": "Content (Ports & Statuses)"
     },
     "contentMgmt": {
       "sidebarTitle": "Modules",

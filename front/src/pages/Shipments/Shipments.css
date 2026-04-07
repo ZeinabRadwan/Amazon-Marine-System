@@ -591,13 +591,14 @@
   border: 1px solid var(--border-color, #e5e7eb);
   border-radius: 0.35rem;
   background: var(--card-bg, #fff);
-  color: inherit;
+  color: #111827;
 }
 
 .dark .shipment-fin-input,
 .dark .shipment-fin-select {
   border-color: #4b5563;
   background: #111827;
+  color: #f9fafb;
 }
 
 .shipment-fin-input--num {

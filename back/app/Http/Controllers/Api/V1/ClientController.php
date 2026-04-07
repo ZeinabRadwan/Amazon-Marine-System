@@ -59,13 +59,17 @@ class ClientController extends Controller
             }
         }
 
+        $user = $request->user();
+        if ($request->filled('assigned_sales_id')) {
+            $query->where('assigned_sales_id', (int) $request->query('assigned_sales_id'));
+        } elseif ($user && $user->hasRole('sales')) {
+            // Auto-filter for sales representatives.
+            $query->where('assigned_sales_id', $user->id);
+        }
+
         $clientType = $request->query('client_type');
         if (in_array($clientType, ['lead', 'client'], true)) {
             $query->where('client_type', $clientType);
-        }
-
-        if ($request->filled('assigned_sales_id')) {
-            $query->where('assigned_sales_id', (int) $request->query('assigned_sales_id'));
         }
 
         $sort = $request->query('sort', 'client');
