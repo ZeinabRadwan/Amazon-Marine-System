@@ -60,7 +60,7 @@ class ClientController extends Controller
         }
 
         $user = $request->user();
-        if ($user && $user->hasRole('sales')) {
+        if ($user && $user->roles()->where('name', 'sales')->exists()) {
             $query->where('assigned_sales_id', $user->id);
         } elseif ($request->filled('assigned_sales_id')) {
             $query->where('assigned_sales_id', (int) $request->query('assigned_sales_id'));

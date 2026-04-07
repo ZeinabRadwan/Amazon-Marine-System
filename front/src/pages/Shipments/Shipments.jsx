@@ -18,8 +18,9 @@ import { listClients } from '../../api/clients'
 import { listUsers } from '../../api/users'
 import { listSDForms } from '../../api/sdForms'
 import { listVendors } from '../../api/vendors'
-import { listPorts } from '../../api/ports'
+import { listPorts, createPort } from '../../api/ports'
 import { listShipmentStatuses } from '../../api/settings'
+import AsyncSelect from '../../components/AsyncSelect'
 import { Container } from '../../components/Container'
 import '../../components/PageHeader/PageHeader.css'
 import { Table } from '../../components/Table'
@@ -578,7 +579,53 @@ export default function Shipments() {
 
   const pageRowIds = useMemo(() => rows.map((r) => String(r.id)), [rows])
   const allPageSelected = pageRowIds.length > 0 && pageRowIds.every((id) => selectedIds[id])
-  const selectedCount = useMemo(() => Object.keys(selectedIds).filter((k) => selectedIds[k]).length, [selectedIds])
+  const getPortOption = (id) => {
+    if (!id) return null
+    const p = portOptions.find((x) => String(x.id) === String(id))
+    if (!p) return { value: id, label: `#${id}` }
+    return { value: p.id, label: p.name || p.code || `#${p.id}` }
+  }
+
+  const loadPortOptions = async (q) => {
+    if (!token) return []
+    try {
+      const res = await listPorts(token, { q, active: true })
+      const data = res.data ?? res
+      const arr = Array.isArray(data) ? data : []
+      return arr.map((p) => ({
+        value: p.id,
+        label: p.name || p.code || `#${p.id}`,
+      }))
+    } catch (error) {
+      console.error('loadPortOptions error:', error)
+      return []
+    }
+  }
+
+  const handleCreatePort = async (name) => {
+    if (!token) return null
+    try {
+      const res = await createPort(token, { name, active: true })
+      const newPort = res.data ?? res
+      // Optionally refresh the local portOptions list
+      const updatedPortsRes = await listPorts(token)
+      const updatedPorts = updatedPortsRes.data ?? updatedPortsRes
+      setPortOptions(Array.isArray(updatedPorts) ? updatedPorts : [])
+      
+      return {
+        value: newPort.id,
+        label: newPort.name || newPort.code || `#${newPort.id}`,
+      }
+    } catch (err) {
+      setAlert({ type: 'error', message: err.message || 'Failed to create port' })
+      return null
+    }
+  }
+
+  const selectedCount = useMemo(
+    () => Object.keys(selectedIds).filter((k) => selectedIds[k]).length,
+    [selectedIds]
+  )
 
   const toggleSelectAllPage = () => {
     setSelectedIds((prev) => {
@@ -956,35 +1003,27 @@ export default function Shipments() {
           
           <div className="client-detail-modal__form-field">
             <label htmlFor="sh-pol">{t('shipments.fields.origin_port_id')}</label>
-            <select
+            <AsyncSelect
               id="sh-pol"
-              value={form.origin_port_id}
-              onChange={(e) => setForm((f) => ({ ...f, origin_port_id: e.target.value }))}
+              value={getPortOption(form.origin_port_id)}
+              onChange={(opt) => setForm((f) => ({ ...f, origin_port_id: opt?.value || '' }))}
+              loadOptions={loadPortOptions}
+              onCreate={handleCreatePort}
+              placeholder={t('shipments.fields.origin_port_id')}
               disabled={disabled}
-            >
-              <option value="">{t('shipments.optional')}</option>
-              {portOptions.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name || p.code || p.id}
-                </option>
-              ))}
-            </select>
+            />
           </div>
           <div className="client-detail-modal__form-field">
             <label htmlFor="sh-pod">{t('shipments.fields.destination_port_id')}</label>
-            <select
+            <AsyncSelect
               id="sh-pod"
-              value={form.destination_port_id}
-              onChange={(e) => setForm((f) => ({ ...f, destination_port_id: e.target.value }))}
+              value={getPortOption(form.destination_port_id)}
+              onChange={(opt) => setForm((f) => ({ ...f, destination_port_id: opt?.value || '' }))}
+              loadOptions={loadPortOptions}
+              onCreate={handleCreatePort}
+              placeholder={t('shipments.fields.destination_port_id')}
               disabled={disabled}
-            >
-              <option value="">{t('shipments.optional')}</option>
-              {portOptions.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name || p.code || p.id}
-                </option>
-              ))}
-            </select>
+            />
           </div>
           <div className="client-detail-modal__form-field">
             <label htmlFor="sh-booking">{t('shipments.fields.booking_number')}</label>
