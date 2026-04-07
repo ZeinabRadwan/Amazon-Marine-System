@@ -211,7 +211,10 @@ function normalizeListResponse(data) {
 export default function SDForms() {
   const { t, i18n } = useTranslation()
   const token = getStoredToken()
-  const { isOperations } = useAuthAccess()
+  const { isOperations, roleId } = useAuthAccess()
+  const isSales = roleId === 3 // SALES
+  const isSalesManager = roleId === 2 // SALES_MANAGER
+  const isAnySales = isSales || isSalesManager
 
   const [list, setList] = useState([])
   const [loading, setLoading] = useState(true)
@@ -265,7 +268,6 @@ export default function SDForms() {
   const [deleteId, setDeleteId] = useState(null)
   const [deleteSubmitting, setDeleteSubmitting] = useState(false)
 
-  const [actionBusy, setActionBusy] = useState(false)
 
   const [linkOpen, setLinkOpen] = useState(false)
   const [linkFormId, setLinkFormId] = useState(null)
@@ -478,7 +480,7 @@ export default function SDForms() {
     [selectedIds],
   )
 
-  const openDetail = (id) => {
+  const openDetail = useCallback((id) => {
     setDetailId(id)
     setDetailRecord(null)
     setDetailLoading(true)
@@ -487,9 +489,9 @@ export default function SDForms() {
       .then((d) => setDetailRecord(d.data ?? d))
       .catch((err) => setAlert({ type: 'error', message: err.message || t('sdForms.errorDetail') }))
       .finally(() => setDetailLoading(false))
-  }
+  }, [token, t])
 
-  const openEdit = (id) => {
+  const openEdit = useCallback((id) => {
     setEditId(id)
     setShippingLineAddName('')
     setEditLoading(true)
@@ -501,7 +503,7 @@ export default function SDForms() {
       })
       .catch((err) => setAlert({ type: 'error', message: err.message || t('sdForms.errorDetail') }))
       .finally(() => setEditLoading(false))
-  }
+  }, [token, t])
 
   const handleCreateSubmit = async (e) => {
     e.preventDefault()
@@ -582,7 +584,6 @@ export default function SDForms() {
 
   const downloadPdf = async (id) => {
     if (!token) return
-    setActionBusy(true)
     setAlert(null)
     try {
       const blob = await getSDFormPdf(token, id)
@@ -595,8 +596,6 @@ export default function SDForms() {
       setAlert({ type: 'success', message: t('sdForms.pdfSuccess') })
     } catch (err) {
       setAlert({ type: 'error', message: err.message || t('sdForms.pdfError') })
-    } finally {
-      setActionBusy(false)
     }
   }
 
@@ -634,7 +633,6 @@ export default function SDForms() {
 
   const runSendOps = async (id) => {
     if (!token) return
-    setActionBusy(true)
     setAlert(null)
     try {
       await sendSDFormToOperations(token, id)
@@ -643,22 +641,17 @@ export default function SDForms() {
       setAlert({ type: 'success', message: t('sdForms.sendOpsSuccess') })
     } catch (err) {
       setAlert({ type: 'error', message: err.message || t('sdForms.errorSendOps') })
-    } finally {
-      setActionBusy(false)
     }
   }
 
   const runEmailOps = async (id) => {
     if (!token) return
-    setActionBusy(true)
     setAlert(null)
     try {
       await emailSDFormToOperations(token, id)
       setAlert({ type: 'success', message: t('sdForms.emailOpsSuccess') })
     } catch (err) {
       setAlert({ type: 'error', message: err.message || t('sdForms.errorEmailOps') })
-    } finally {
-      setActionBusy(false)
     }
   }
 
@@ -756,24 +749,26 @@ export default function SDForms() {
                 ))}
               </select>
             </div>
-            <div className="client-detail-modal__form-field">
-              <label htmlFor="sd-c-rep">
-                {t('sdForms.form.salesRep', { lng: 'en' })}
-              </label>
-              <select
-                id="sd-c-rep"
-                value={form.sales_rep_id}
-                onChange={(e) => setForm((f) => ({ ...f, sales_rep_id: e.target.value }))}
-                disabled={disabled}
-              >
-                <option value="">{t('sdForms.form.defaultCurrentUser', { lng: 'en' })}</option>
-                {usersList.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name ?? u.email ?? `#${u.id}`}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {!isAnySales && (
+              <div className="client-detail-modal__form-field">
+                <label htmlFor="sd-c-rep">
+                  {t('sdForms.form.salesRep', { lng: 'en' })}
+                </label>
+                <select
+                  id="sd-c-rep"
+                  value={form.sales_rep_id}
+                  onChange={(e) => setForm((f) => ({ ...f, sales_rep_id: e.target.value }))}
+                  disabled={disabled}
+                >
+                  <option value="">{t('sdForms.form.defaultCurrentUser', { lng: 'en' })}</option>
+                  {usersList.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name ?? u.email ?? `#${u.id}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         </section>
 
@@ -1670,7 +1665,7 @@ export default function SDForms() {
         ),
       },
     ],
-    [t, selectedIds, allPageSelected, toggleSelectAllPage, toggleSelectRow]
+    [t, selectedIds, allPageSelected, toggleSelectAllPage, toggleSelectRow, openDetail, openEdit]
   )
 
   const detail = detailRecord

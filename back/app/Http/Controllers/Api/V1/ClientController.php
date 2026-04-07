@@ -60,11 +60,10 @@ class ClientController extends Controller
         }
 
         $user = $request->user();
-        if ($request->filled('assigned_sales_id')) {
-            $query->where('assigned_sales_id', (int) $request->query('assigned_sales_id'));
-        } elseif ($user && $user->hasRole('sales')) {
-            // Auto-filter for sales representatives.
+        if ($user && $user->hasRole('sales')) {
             $query->where('assigned_sales_id', $user->id);
+        } elseif ($request->filled('assigned_sales_id')) {
+            $query->where('assigned_sales_id', (int) $request->query('assigned_sales_id'));
         }
 
         $clientType = $request->query('client_type');

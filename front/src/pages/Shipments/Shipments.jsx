@@ -243,35 +243,31 @@ export default function Shipments() {
   const [statusOptions, setStatusOptions] = useState([])
   const [sdFormOptions, setSdFormOptions] = useState([])
 
-  useEffect(() => {
-    if (!token) return
-    const cid = showCreate ? createForm.client_id : (editId ? editForm.client_id : null)
-    if (cid) {
-       const params = { client_id: cid, per_page: 500 }
-       if (isSalesRepresentative && !isAdminRole && !isOperations) {
-         params.sales_rep_id = user?.id
-       }
-       listSDForms(token, params).then(res => {
-         const data = res.data ?? []
-         setSdFormOptions(Array.isArray(data) ? data : [])
-       }).catch(() => setSdFormOptions([]))
-    } else {
-       setSdFormOptions([])
-    }
-  }, [createForm.client_id, editForm.client_id, editId, showCreate, token, isSalesRepresentative, isAdminRole, isOperations, user?.id])
-
   const [showCreate, setShowCreate] = useState(false)
   const [createForm, setCreateForm] = useState(defaultCreateForm())
   const [createSubmitting, setCreateSubmitting] = useState(false)
+
+  const [editId, setEditId] = useState(null)
+  const [editForm, setEditForm] = useState(defaultCreateForm())
+  const [editSubmitting, setEditSubmitting] = useState(false)
+
+  useEffect(() => {
+    if (!token) return
+    const params = { per_page: 500 }
+    if (isSalesRepresentative && !isAdminRole && !isOperations) {
+      params.sales_rep_id = user?.id
+    }
+    listSDForms(token, params).then(res => {
+      const data = res.data ?? []
+      setSdFormOptions(Array.isArray(data) ? data : [])
+    }).catch(() => setSdFormOptions([]))
+  }, [token, isSalesRepresentative, isAdminRole, isOperations, user?.id])
 
   const [detailId, setDetailId] = useState(null)
   const [detailShipment, setDetailShipment] = useState(null)
   const [detailLoading, setDetailLoading] = useState(false)
   const [detailTab, setDetailTab] = useState('info')
 
-  const [editId, setEditId] = useState(null)
-  const [editForm, setEditForm] = useState(defaultCreateForm())
-  const [editSubmitting, setEditSubmitting] = useState(false)
 
   const [deleteId, setDeleteId] = useState(null)
   const [deleteSubmitting, setDeleteSubmitting] = useState(false)
@@ -398,7 +394,7 @@ export default function Shipments() {
     if (!token) return
     const clientParams = { per_page: 500 }
     if (isSalesRepresentative && !isAdminRole && !isOperations) {
-      clientParams.sales_rep_id = user?.id
+      clientParams.assigned_sales_id = user?.id
     }
 
     Promise.all([
