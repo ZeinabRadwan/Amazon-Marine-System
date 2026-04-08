@@ -492,7 +492,6 @@ class ClientController extends Controller
             'mode' => ['nullable', 'string', 'in:Sea,Air,Land'],
             'shipment_type' => ['nullable', 'string', 'in:FCL,LCL'],
             'status' => ['nullable', 'string', 'max:40'],
-            'operations_status' => ['nullable', 'integer', 'min:1', 'max:8'],
             'container_count' => ['nullable', 'integer', 'min:1'],
             'container_size' => ['nullable', 'string', 'max:10'],
             'container_type' => ['nullable', 'string', 'max:40'],

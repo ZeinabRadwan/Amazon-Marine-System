@@ -109,12 +109,6 @@ class DashboardController extends Controller
             ->map(fn ($group, $status) => ['status' => $status, 'count' => $group->count()])
             ->values();
 
-        $shipmentsByOpsStatus = $shipments
-            ->whereNotNull('operations_status')
-            ->groupBy('operations_status')
-            ->map(fn ($group, $ops) => ['operations_status' => (int) $ops, 'count' => $group->count()])
-            ->values();
-
         $sdFormsQuery = SDForm::query();
         if ($request->user()?->hasRole('sales')) {
             $sdFormsQuery->where('sales_rep_id', $request->user()->id);
@@ -164,7 +158,7 @@ class DashboardController extends Controller
 
         return response()->json([
             'shipments_by_status' => $shipmentsByStatus,
-            'shipments_by_operations_status' => $shipmentsByOpsStatus,
+            'shipments_by_operations_status' => [],
             'sd_forms_by_status' => $sdFormsByStatus,
             'revenue_cost_profit_by_month' => $months,
             'total_shipments' => $shipments->count(),

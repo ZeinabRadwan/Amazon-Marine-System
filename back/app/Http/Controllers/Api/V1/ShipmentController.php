@@ -84,7 +84,6 @@ class ShipmentController extends Controller
             'mode' => ['nullable', 'string', 'in:Sea,Air,Land'],
             'shipment_type' => ['nullable', 'string', 'in:FCL,LCL'],
             'status' => ['nullable', 'string', 'max:40'],
-            'operations_status' => ['nullable', 'integer', 'min:1', 'max:8'],
             'container_count' => ['nullable', 'integer', 'min:1'],
             'container_size' => ['nullable', 'string', 'max:10'],
             'container_type' => ['nullable', 'string', 'max:40'],
@@ -179,7 +178,6 @@ class ShipmentController extends Controller
             'container_type' => ['sometimes', 'nullable', 'string', 'max:40'],
             'cargo_description' => ['sometimes', 'nullable', 'string'],
             'status' => ['sometimes', 'string', 'max:40'],
-            'operations_status' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:8'],
             'loading_place' => ['sometimes', 'nullable', 'string', 'max:255'],
             'loading_date' => ['sometimes', 'nullable', 'date'],
             'is_reefer' => ['sometimes', 'boolean'],
@@ -189,7 +187,6 @@ class ShipmentController extends Controller
         ]);
 
         $originalStatus = $shipment->status;
-        $originalOpsStatus = $shipment->operations_status;
 
         $shipment->fill($validated);
         $shipment->save();
@@ -201,12 +198,7 @@ class ShipmentController extends Controller
             ]);
         }
 
-        if ($shipment->operations_status !== $originalOpsStatus) {
-            ActivityLogger::log('shipment.operations_status_changed', $shipment, [
-                'from' => $originalOpsStatus,
-                'to' => $shipment->operations_status,
-            ]);
-        }
+
 
         return response()->json([
             'data' => $shipment->fresh(),
@@ -387,9 +379,7 @@ class ShipmentController extends Controller
         if ($status = $request->query('status')) {
             $query->where('shipments.status', $status);
         }
-        if ($opsStatus = $request->query('operations_status')) {
-            $query->where('shipments.operations_status', $opsStatus);
-        }
+
         if ($clientId = $request->query('client_id')) {
             $query->where('shipments.client_id', $clientId);
         }

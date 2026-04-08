@@ -84,7 +84,6 @@ const defaultCreateForm = () => ({
   mode: 'Sea',
   shipment_type: 'FCL',
   status: '',
-  operations_status: '',
   container_count: '',
   container_size: '',
   container_type: '',
@@ -133,8 +132,6 @@ function buildCreatePayload(form) {
   if (form.mode) body.mode = form.mode
   if (form.shipment_type) body.shipment_type = form.shipment_type
   if (form.status?.trim()) body.status = form.status.trim()
-  const os = numOrUndef(form.operations_status)
-  if (os != null) body.operations_status = os
   const cc = numOrUndef(form.container_count)
   if (cc != null) body.container_count = cc
   if (form.container_size?.trim()) body.container_size = form.container_size.trim()
@@ -182,7 +179,6 @@ function buildUpdatePayload(form) {
     body.acid_number = form.acid_number?.trim() || null;
   }
   body.status = form.status?.trim() || undefined;
-  body.operations_status = numOrUndef(form.operations_status);
   body.loading_place = form.loading_place?.trim() || null;
   body.loading_date = form.loading_date?.trim() || null;
   body.is_reefer = !!form.is_reefer;
@@ -215,7 +211,6 @@ export default function Shipments() {
   const [filters, setFilters] = useState({
     search: '',
     status: '',
-    operations_status: '',
     client_id: '',
     sales_rep_id: '',
     line_vendor_id: '',
@@ -285,7 +280,6 @@ export default function Shipments() {
     () => ({
       search: filters.search?.trim() || undefined,
       status: filters.status || undefined,
-      operations_status: filters.operations_status || undefined,
       client_id: filters.client_id || undefined,
       sales_rep_id: filters.sales_rep_id || undefined,
       line_vendor_id: filters.line_vendor_id || undefined,
@@ -423,7 +417,6 @@ export default function Shipments() {
   }, [
     filters.search,
     filters.status,
-    filters.operations_status,
     filters.client_id,
     filters.sales_rep_id,
     filters.line_vendor_id,
@@ -480,7 +473,6 @@ export default function Shipments() {
       mode: row.mode ?? 'Sea',
       shipment_type: row.shipment_type ?? 'FCL',
       status: row.status ?? '',
-      operations_status: row.operations_status != null ? String(row.operations_status) : '',
       container_count: row.container_count != null ? String(row.container_count) : '',
       container_size: row.container_size ?? '',
       container_type: row.container_type ?? '',
@@ -785,12 +777,6 @@ export default function Shipments() {
         render: (v) => (
           <ShipmentStatusBadge statusOptions={statusOptions} rawStatus={v} lang={i18n.language} t={t} />
         ),
-      },
-      {
-        key: 'operations_status',
-        label: t('shipments.fields.operations_status'),
-        sortable: false,
-        render: (v) => (v != null ? String(v) : '—'),
       },
     ]
 
@@ -1101,22 +1087,7 @@ export default function Shipments() {
                   ))}
                 </select>
               </div>
-              <div className="client-detail-modal__form-field">
-                <label htmlFor="sh-ops">{t('shipments.fields.operations_status')}</label>
-                <select
-                  id="sh-ops"
-                  value={form.operations_status}
-                  onChange={(e) => setForm((f) => ({ ...f, operations_status: e.target.value }))}
-                  disabled={disabled}
-                >
-                  <option value="">{t('shipments.optional')}</option>
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-                    <option key={n} value={n}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
-              </div>
+
               <div className="client-detail-modal__form-field">
                 <label htmlFor="sh-rep">{t('shipments.fields.sales_rep_id')}</label>
                 <select
@@ -1391,7 +1362,6 @@ export default function Shipments() {
                     ...f,
                     search: '',
                     status: '',
-                    operations_status: '',
                     client_id: '',
                     sales_rep_id: '',
                     line_vendor_id: '',
@@ -1482,19 +1452,6 @@ export default function Shipments() {
                 {statusOptions.map((s) => (
                   <option key={s.id} value={shipmentStatusFilterValue(s)}>
                     {shipmentStatusLocalizedLabel(s, i18n.language)}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={filters.operations_status}
-                onChange={(e) => setFilters((f) => ({ ...f, operations_status: e.target.value, page: 1 }))}
-                className="clients-input"
-                aria-label={t('shipments.filterOpsStatus')}
-              >
-                <option value="">{t('shipments.opsStatusAll')}</option>
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-                  <option key={n} value={n}>
-                    {n}
                   </option>
                 ))}
               </select>

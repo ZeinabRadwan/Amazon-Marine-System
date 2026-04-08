@@ -2,9 +2,8 @@
  * Reusable controlled inputs for Shipment Declaration Form (Tailwind).
  */
 
-import { useState } from 'react'
-import { createPort } from '../../../api/ports'
-import { createShippingLine } from '../../../api/shippingLines'
+import { listPorts, createPort } from '../../../api/ports'
+import { listShippingLines, createShippingLine } from '../../../api/shippingLines'
 
 const inputClass =
   'mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition-colors placeholder:text-gray-400 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500'
@@ -71,8 +70,9 @@ export function SelectInput({ id, label, description, error, required, children,
   )
 }
 
-const btnSecondary =
-  'inline-flex shrink-0 items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700'
+
+
+import AsyncSelect from '../../../components/AsyncSelect'
 
 /**
  * Port dropdown: API ports + example names not in list; supports portId / portText; add-new via API.
@@ -82,7 +82,6 @@ export function PortField({
   id,
   label,
   placeholder,
-  examplePorts = [],
   ports,
   portId,
   portText,
@@ -90,98 +89,58 @@ export function PortField({
   error,
   token,
   onRefreshPorts,
-  addPortLabel,
-  newPortPlaceholder,
-  portAddedMessage,
 }) {
-  const portNames = new Set(ports.map((p) => String(p.name || '').trim().toLowerCase()).filter(Boolean))
-  const extras = examplePorts.filter((name) => name && !portNames.has(String(name).trim().toLowerCase()))
-  const selectValue = portId !== '' && portId != null ? `id:${portId}` : portText ? `text:${portText}` : ''
-
-  const [newName, setNewName] = useState('')
-  const [adding, setAdding] = useState(false)
-  const [addError, setAddError] = useState(null)
-  const [addOk, setAddOk] = useState(false)
-
-  async function handleAddPort() {
-    const name = String(newName).trim()
-    if (!name || !token) return
-    setAdding(true)
-    setAddError(null)
-    setAddOk(false)
+  const loadPortOptions = async (q) => {
+    if (!token) return []
     try {
-      const res = await createPort(token, { name, active: true })
-      const created = res?.data
-      await onRefreshPorts?.()
-      if (created?.id) {
-        onChange({ portId: String(created.id), portText: '' })
-      }
-      setNewName('')
-      setAddOk(true)
-      setTimeout(() => setAddOk(false), 3000)
-    } catch (e) {
-      setAddError(e?.message || 'Failed to add port')
-    } finally {
-      setAdding(false)
+      const res = await listPorts(token, { q, active: true })
+      const data = res.data ?? res
+      const arr = Array.isArray(data) ? data : []
+      return arr.map((p) => ({
+        value: `id:${p.id}`,
+        label: p.name || p.code || `#${p.id}`,
+      }))
+    } catch (error) {
+      console.error('loadPortOptions error:', error)
+      return []
     }
   }
 
+  const handleCreatePort = async (name) => {
+    if (!token) return null
+    try {
+      const res = await createPort(token, { name, active: true })
+      const newPort = res.data ?? res
+      await onRefreshPorts?.()
+      return {
+        value: `id:${newPort.id}`,
+        label: newPort.name,
+      }
+    } catch (err) {
+      console.error('handleCreatePort error:', err)
+      return null
+    }
+  }
+
+  const selectedValue = portId ? { value: `id:${portId}`, label: ports.find(p => String(p.id) === String(portId))?.name || `#${portId}` } : (portText ? { value: `text:${portText}`, label: portText } : null)
+
   return (
     <FormField label={label} htmlFor={id} error={error}>
-      <select
-        id={id}
-        className={`${inputClass} mt-1`}
-        value={selectValue}
-        onChange={(e) => {
-          const v = e.target.value
-          if (!v) {
+      <AsyncSelect
+        loadOptions={loadPortOptions}
+        onCreate={handleCreatePort}
+        value={selectedValue}
+        onChange={(val) => {
+          if (!val) {
             onChange({ portId: '', portText: '' })
-            return
-          }
-          if (v.startsWith('id:')) {
-            onChange({ portId: v.slice(3), portText: '' })
-            return
-          }
-          if (v.startsWith('text:')) {
-            onChange({ portId: '', portText: v.slice(5) })
+          } else if (String(val.value).startsWith('id:')) {
+            onChange({ portId: String(val.value).slice(3), portText: '' })
+          } else {
+            onChange({ portId: '', portText: val.label })
           }
         }}
-      >
-        <option value="">{placeholder}</option>
-        {ports.map((p) => (
-          <option key={p.id} value={`id:${p.id}`}>
-            {p.name}
-            {p.code ? ` (${p.code})` : ''}
-          </option>
-        ))}
-        {extras.map((name) => (
-          <option key={`ex-${name}`} value={`text:${name}`}>
-            {name}
-          </option>
-        ))}
-      </select>
-      <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
-        <input
-          type="text"
-          className={inputClass}
-          value={newName}
-          onChange={(e) => setNewName(e.target.value)}
-          placeholder={newPortPlaceholder}
-          aria-label={newPortPlaceholder}
-        />
-        <button
-          type="button"
-          className={btnSecondary}
-          disabled={adding || !String(newName).trim() || !token}
-          onClick={handleAddPort}
-        >
-          {adding ? '…' : addPortLabel}
-        </button>
-      </div>
-      {addError ? <p className="mt-1 text-xs text-red-600 dark:text-red-400">{addError}</p> : null}
-      {addOk && portAddedMessage ? (
-        <p className="mt-1 text-xs text-green-600 dark:text-green-400">{portAddedMessage}</p>
-      ) : null}
+        placeholder={placeholder}
+      />
     </FormField>
   )
 }
@@ -193,91 +152,57 @@ export function ShippingLineField({
   id,
   label,
   placeholder,
-  exampleLines = [],
   lines,
   value,
   onChange,
   error,
   token,
   onRefreshLines,
-  addLineLabel,
-  newLinePlaceholder,
-  lineAddedMessage,
 }) {
-  const lineNames = new Set(lines.map((l) => String(l.name || '').trim().toLowerCase()).filter(Boolean))
-  const extras = exampleLines.filter((name) => name && !lineNames.has(String(name).trim().toLowerCase()))
-
-  const [newName, setNewName] = useState('')
-  const [adding, setAdding] = useState(false)
-  const [addError, setAddError] = useState(null)
-  const [addOk, setAddOk] = useState(false)
-
-  async function handleAddLine() {
-    const name = String(newName).trim()
-    if (!name || !token) return
-    setAdding(true)
-    setAddError(null)
-    setAddOk(false)
+  const loadLineOptions = async (q) => {
+    if (!token) return []
     try {
-      await createShippingLine(token, { name, active: true })
-      await onRefreshLines?.()
-      onChange(name)
-      setNewName('')
-      setAddOk(true)
-      setTimeout(() => setAddOk(false), 3000)
-    } catch (e) {
-      setAddError(e?.message || 'Failed to add shipping line')
-    } finally {
-      setAdding(false)
+      const res = await listShippingLines(token, { q, active: true })
+      const data = res.data ?? res
+      const arr = Array.isArray(data) ? data : []
+      return arr.map((l) => ({
+        value: l.name,
+        label: l.name,
+      }))
+    } catch (error) {
+      console.error('loadLineOptions error:', error)
+      return []
     }
   }
 
+  const handleCreateLine = async (name) => {
+    if (!token) return null
+    try {
+      const res = await createShippingLine(token, { name, active: true })
+      const newLine = res.data ?? res
+      await onRefreshLines?.()
+      return {
+        value: newLine.name,
+        label: newLine.name,
+      }
+    } catch (err) {
+      console.error('handleCreateLine error:', err)
+      return null
+    }
+  }
+
+  const selectedValue = value ? { value, label: value } : null
+
   return (
     <FormField label={label} htmlFor={id} error={error} required>
-      <select
-        id={id}
-        className={`${inputClass} mt-1`}
-        value={value || ''}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        <option value="">{placeholder}</option>
-        {lines.map((l) => {
-          const n = String(l.name || '').trim()
-          if (!n) return null
-          return (
-            <option key={l.id} value={n}>
-              {n}
-            </option>
-          )
-        })}
-        {extras.map((name) => (
-          <option key={`ex-sl-${name}`} value={name}>
-            {name}
-          </option>
-        ))}
-      </select>
-      <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
-        <input
-          type="text"
-          className={inputClass}
-          value={newName}
-          onChange={(e) => setNewName(e.target.value)}
-          placeholder={newLinePlaceholder}
-          aria-label={newLinePlaceholder}
-        />
-        <button
-          type="button"
-          className={btnSecondary}
-          disabled={adding || !String(newName).trim() || !token}
-          onClick={handleAddLine}
-        >
-          {adding ? '…' : addLineLabel}
-        </button>
-      </div>
-      {addError ? <p className="mt-1 text-xs text-red-600 dark:text-red-400">{addError}</p> : null}
-      {addOk && lineAddedMessage ? (
-        <p className="mt-1 text-xs text-green-600 dark:text-green-400">{lineAddedMessage}</p>
-      ) : null}
+      <AsyncSelect
+        loadOptions={loadLineOptions}
+        onCreate={handleCreateLine}
+        value={selectedValue}
+        onChange={(val) => onChange(val?.value || '')}
+        placeholder={placeholder}
+      />
     </FormField>
   )
 }
+

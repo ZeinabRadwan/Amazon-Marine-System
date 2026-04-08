@@ -258,12 +258,6 @@ export default function ShipmentDetailModal({
                     <div className="shipment-detail-card shipment-detail-card--status">
                       <h3 className="shipment-detail-card__title">{t('shipments.sections.latestTracking')}</h3>
                       <div className="shipment-detail-card__content">
-                        {shipment.operations_status != null && (
-                          <div className="mb-3">
-                            <span className="shipment-detail-card__label block mb-1">{t('shipments.fields.operations_status')}</span>
-                            <span className="shipment-status-badge-ops">{shipment.operations_status}</span>
-                          </div>
-                        )}
                         {shipment.latest_tracking_update ? (
                           <div className="shipment-latest-tracking">
                             <div className="shipment-latest-tracking__text">

@@ -1,10 +1,8 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, HelpCircle } from 'lucide-react'
 import { getStoredToken } from '../Login'
-import { listPorts } from '../../api/ports'
-import { listShippingLines } from '../../api/shippingLines'
 import { createSDForm } from '../../api/sdForms'
 import { Container } from '../../components/Container'
 import Alert from '../../components/Alert'
@@ -18,9 +16,6 @@ import {
   PortField,
   ShippingLineField,
 } from './components/SDDeclarationFormInputs'
-
-const EXAMPLE_PORTS = ['Alexandria', 'Port Said East']
-const EXAMPLE_SHIPPING_LINES = ['Maersk', 'MSC', 'CMA CGM']
 
 const CONTAINER_TYPES = ['Dry', 'Reefer', 'Open Top', 'Flat Rack', 'High Cube (HQ)']
 const CONTAINER_SIZES = ["20'", "40'"]
@@ -107,51 +102,10 @@ export default function ShipmentDeclarationForm() {
 
   const [form, setForm] = useState(emptyForm)
   const [errors, setErrors] = useState({})
-  const [ports, setPorts] = useState([])
-  const [portsLoading, setPortsLoading] = useState(true)
-  const [shippingLines, setShippingLines] = useState([])
   const [submitting, setSubmitting] = useState(false)
   const [alert, setAlert] = useState(null)
 
-  const loadPorts = useCallback(async () => {
-    if (!token) {
-      setPorts([])
-      setPortsLoading(false)
-      return
-    }
-    setPortsLoading(true)
-    try {
-      const res = await listPorts(token, { active: true })
-      const raw = res?.data ?? res
-      setPorts(Array.isArray(raw) ? raw : [])
-    } catch {
-      setPorts([])
-    } finally {
-      setPortsLoading(false)
-    }
-  }, [token])
 
-  const loadShippingLines = useCallback(async () => {
-    if (!token) {
-      setShippingLines([])
-      return
-    }
-    try {
-      const res = await listShippingLines(token, { active: true })
-      const raw = res?.data ?? res
-      setShippingLines(Array.isArray(raw) ? raw : [])
-    } catch {
-      setShippingLines([])
-    }
-  }, [token])
-
-  useEffect(() => {
-    loadPorts()
-  }, [loadPorts])
-
-  useEffect(() => {
-    loadShippingLines()
-  }, [loadShippingLines])
 
   const showAcid = form.shipment_direction === 'Import'
   const showNotifyDetails = form.notify_party_mode === 'different'
@@ -244,8 +198,6 @@ export default function ShipmentDeclarationForm() {
               id="sd-decl-pol"
               label={t('sdForms.form.pol', { lng: 'en' })}
               placeholder={t('sdForms.declaration.selectOrAddPort', { lng: 'en' })}
-              examplePorts={EXAMPLE_PORTS}
-              ports={ports}
               portId={form.pol_id}
               portText={form.pol_text}
               onChange={({ portId, portText }) =>
@@ -253,44 +205,28 @@ export default function ShipmentDeclarationForm() {
               }
               error={errors.pol_id}
               token={token}
-              onRefreshPorts={loadPorts}
-              addPortLabel={t('sdForms.declaration.addPort', { lng: 'en' })}
-              newPortPlaceholder={t('sdForms.declaration.newPortName', { lng: 'en' })}
-              portAddedMessage={t('sdForms.declaration.portAdded', { lng: 'en' })}
             />
             <PortField
               id="sd-decl-pod"
               label={t('sdForms.form.pod', { lng: 'en' })}
               placeholder={t('sdForms.declaration.selectOrAddPort', { lng: 'en' })}
-              examplePorts={EXAMPLE_PORTS}
-              ports={ports}
               portId={form.pod_id}
               portText={form.pod_text}
               onChange={({ portId, portText }) =>
-                setForm((f) => ({ ...f, pod_id: portId, pod_text: portText }))
+                setForm((f) => ({ ...f, pod_id: portId, portText: portText }))
               }
               error={errors.pod_id}
               token={token}
-              onRefreshPorts={loadPorts}
-              addPortLabel={t('sdForms.declaration.addPort', { lng: 'en' })}
-              newPortPlaceholder={t('sdForms.declaration.newPortName', { lng: 'en' })}
-              portAddedMessage={t('sdForms.declaration.portAdded', { lng: 'en' })}
             />
             <div className="md:col-span-2">
               <ShippingLineField
                 id="sd-decl-shipping-line"
                 label={t('sdForms.form.shippingLine', { lng: 'en' })}
                 placeholder={t('sdForms.declaration.selectOrAddShippingLine', { lng: 'en' })}
-                exampleLines={EXAMPLE_SHIPPING_LINES}
-                lines={shippingLines}
                 value={form.shipping_line}
                 onChange={(name) => setField('shipping_line', name)}
                 error={errors.shipping_line}
                 token={token}
-                onRefreshLines={loadShippingLines}
-                addLineLabel={t('sdForms.declaration.addShippingLine', { lng: 'en' })}
-                newLinePlaceholder={t('sdForms.declaration.newShippingLineName', { lng: 'en' })}
-                lineAddedMessage={t('sdForms.declaration.shippingLineAdded', { lng: 'en' })}
               />
             </div>
             <TextInput
@@ -328,9 +264,7 @@ export default function ShipmentDeclarationForm() {
               <option value="Import">{t('sdForms.declaration.importDirection', { lng: 'en' })}</option>
             </SelectInput>
           </div>
-          {portsLoading ? (
-            <p className="mt-2 text-xs text-gray-500">{t('sdForms.declaration.loadingPorts', { lng: 'en' })}</p>
-          ) : null}
+
         </Section>
 
         <Section title={t('sdForms.declaration.sections.parties', { lng: 'en' })}>
