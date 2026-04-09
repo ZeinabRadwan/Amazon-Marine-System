@@ -8,80 +8,95 @@
         body {
             font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif;
             font-size: 10.5px;
-            color: #111827;
+            color: #0f172a;
             direction: ltr;
             text-align: left;
             margin: 0;
             padding: 0;
             line-height: 1.45;
+            background: #ffffff;
         }
         .wrap {
-            padding: 18px 20px 22px;
+            padding: 0;
         }
-        table.head {
+        /* Navy header band */
+        table.header-band {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 16px;
-            border-bottom: 1px solid #d1d5db;
+            background: #1f2a60;
+            margin: 0 0 14px;
         }
-        table.head td {
-            vertical-align: top;
-            padding-bottom: 14px;
+        table.header-band td {
             border: none;
+            vertical-align: middle;
+            padding: 12px 16px;
         }
-        .logo-cell {
-            width: 88px;
-            padding-right: 14px;
+        .logo-badge-wrap {
+            width: 44px;
+            height: 44px;
+            background: #ffffff;
+            text-align: center;
+            vertical-align: middle;
+            border: 2px solid #f97316;
+            border-radius: 50%;
+            overflow: hidden;
         }
-        .logo-cell img {
-            width: 76px;
+        .logo-badge-wrap img {
+            width: 30px;
             height: auto;
-            max-height: 72px;
+            max-height: 32px;
             display: block;
+            margin: 6px auto 0;
         }
-        .brand-text .name {
-            font-size: 17px;
+        .brand-block .name {
+            font-size: 15px;
             font-weight: 700;
-            letter-spacing: 0.06em;
-            color: #0f172a;
-            margin: 0 0 3px;
+            letter-spacing: 0.12em;
+            color: #ffffff;
+            margin: 0 0 2px;
         }
-        .brand-text .tag {
-            font-size: 10px;
-            color: #64748b;
+        .brand-block .tag {
+            font-size: 9px;
+            color: #e2e8f0;
             margin: 0;
-            letter-spacing: 0.02em;
+            letter-spacing: 0.04em;
         }
         .head-meta {
             text-align: right;
         }
         .doc-title {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 700;
-            color: #0f172a;
-            margin: 0 0 8px;
+            color: #ffffff;
+            margin: 0 0 6px;
+            letter-spacing: 0.03em;
         }
         .meta-line {
-            margin: 0 0 3px;
-            font-size: 10.5px;
-            color: #374151;
+            margin: 0 0 2px;
+            font-size: 9.5px;
+            color: #f1f5f9;
         }
         .meta-line strong {
-            color: #1e293b;
+            color: #ffffff;
             font-weight: 600;
         }
+        .body-pad {
+            padding: 0 14px 16px;
+        }
+        /* Orange section bars */
         .sec {
-            margin: 0 0 12px;
+            margin: 0 0 10px;
         }
         .sec-h {
-            font-size: 10px;
+            font-size: 9.5px;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: #475569;
-            margin: 0 0 6px;
-            padding-bottom: 4px;
-            border-bottom: 2px solid #e2e8f0;
+            letter-spacing: 0.1em;
+            color: #ffffff;
+            background: #f97316;
+            margin: 0 0 0;
+            padding: 6px 10px;
+            border-left: 4px solid #1f2a60;
         }
         table.grid {
             width: 100%;
@@ -90,50 +105,61 @@
         }
         table.grid th,
         table.grid td {
-            border: 1px solid #e2e8f0;
-            padding: 7px 9px;
+            border: 1px solid #1f2a60;
+            padding: 6px 8px;
             vertical-align: top;
         }
         table.grid th {
-            background: #f8fafc;
-            font-size: 9.5px;
+            background: #ffffff;
+            font-size: 9px;
             font-weight: 700;
-            color: #334155;
+            color: #1f2a60;
             text-align: left;
         }
         table.grid td {
-            font-size: 10.5px;
-            color: #111827;
+            font-size: 10px;
+            color: #0f172a;
+            background: #eef1f6;
+        }
+        .lbl {
+            color: #1f2a60;
+            font-weight: 600;
         }
         .cell-muted {
-            color: #9ca3af;
+            color: #94a3b8;
         }
         .block-text {
             white-space: pre-wrap;
             word-wrap: break-word;
         }
         .notes {
-            border: 1px solid #e2e8f0;
-            background: #fafafa;
-            padding: 10px 12px;
-            margin-top: 8px;
-            font-size: 10.5px;
-            line-height: 1.55;
+            border: 1px solid #1f2a60;
+            border-top: none;
+            background: #eef1f6;
+            padding: 8px 10px;
+            margin-top: 0;
+            font-size: 10px;
+            line-height: 1.5;
+            color: #0f172a;
         }
         .footer {
-            margin-top: 18px;
-            padding-top: 12px;
-            border-top: 1px solid #e2e8f0;
-            font-size: 9.5px;
-            color: #64748b;
+            margin-top: 12px;
+            padding: 10px 14px;
+            background: #f1f5f9;
+            border-top: 3px solid #f97316;
+            font-size: 9px;
+            color: #475569;
         }
         .footer-h {
             font-weight: 700;
-            color: #334155;
-            margin: 0 0 6px;
-            font-size: 10px;
+            color: #1f2a60;
+            margin: 0 0 5px;
+            font-size: 9.5px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
         }
         .footer p { margin: 2px 0; }
+        .footer strong { color: #0f172a; }
     </style>
 </head>
 <body>
@@ -150,7 +176,7 @@
         if ($notifyDetailsRaw !== '') {
             $notifyDisplayHtml = nl2br(e($notifyDetailsRaw));
         } elseif ($notifyMode === 'same') {
-            $notifyDisplayHtml = '<span style="color:#475569;font-style:italic;">Same as consignee</span>';
+            $notifyDisplayHtml = '<span style="color:#1f2a60;font-style:italic;">Same as consignee</span>';
         } else {
             $notifyDisplayHtml = '—';
         }
@@ -188,26 +214,28 @@
         @if(!empty($headerHtml))
             {!! $headerHtml !!}
         @else
-            <table class="head">
+            <table class="header-band">
                 <tr>
-                    <td style="width:58%;">
-                        <table style="width:100%;border-collapse:collapse;">
+                    <td style="width:62%;">
+                        <table style="width:auto;border-collapse:collapse;">
                             <tr>
-                                <td class="logo-cell" style="border:none;">
-                                    @if($logoSrc)
-                                        <img src="{{ $logoSrc }}" alt="Amazon Marine">
-                                    @else
-                                        <div style="width:76px;height:56px;border:1px solid #e5e7eb;text-align:center;line-height:56px;font-size:9px;color:#64748b;">LOGO</div>
-                                    @endif
+                                <td style="border:none;padding:0 12px 0 0;vertical-align:middle;">
+                                    <div class="logo-badge-wrap">
+                                        @if($logoSrc)
+                                            <img src="{{ $logoSrc }}" alt="">
+                                        @else
+                                            <span style="font-size:8px;color:#64748b;line-height:42px;">AM</span>
+                                        @endif
+                                    </div>
                                 </td>
-                                <td class="brand-text" style="border:none;">
+                                <td class="brand-block" style="border:none;padding:0;vertical-align:middle;">
                                     <p class="name">AMAZON MARINE</p>
                                     <p class="tag">Shipping and Logistics Solutions</p>
                                 </td>
                             </tr>
                         </table>
                     </td>
-                    <td class="head-meta" style="width:42%;">
+                    <td class="head-meta" style="width:38%;">
                         <div class="doc-title">SD - Shipping Details Form</div>
                         <p class="meta-line"><strong>SD No:</strong> {{ $form->sd_number ?? ('SD-'.$form->id) }}</p>
                         <p class="meta-line"><strong>SD Date:</strong> {{ optional($form->created_at)->format('d/m/Y') ?? '—' }}</p>
@@ -218,6 +246,7 @@
             </table>
         @endif
 
+        <div class="body-pad">
         <div class="sec">
             <p class="sec-h">Shipment Info</p>
             <table class="grid">
@@ -241,10 +270,10 @@
                     <td class="block-text">{!! $notifyDisplayHtml !!}</td>
                     <td>
                         @if($form->client?->email)
-                            <div><strong style="color:#334155;">Email:</strong> {{ $form->client->email }}</div>
+                            <div><span class="lbl">Email:</span> {{ $form->client->email }}</div>
                         @endif
                         @if($form->client?->phone)
-                            <div style="margin-top:4px;"><strong style="color:#334155;">Phone:</strong> {{ $form->client->phone }}</div>
+                            <div style="margin-top:3px;"><span class="lbl">Phone:</span> {{ $form->client->phone }}</div>
                         @endif
                         @if(!$form->client?->email && !$form->client?->phone)
                             <span class="cell-muted">—</span>
@@ -302,7 +331,7 @@
             </table>
             <div class="notes">
                 <strong>Total Gross Weight:</strong> {{ $form->total_gross_weight ?? '—' }} KG
-                &nbsp;&nbsp;·&nbsp;&nbsp;
+                &nbsp;&nbsp;|&nbsp;&nbsp;
                 <strong>Total Net Weight:</strong> {{ $form->total_net_weight ?? '—' }} KG
                 @if($form->shipment_direction === 'Import' && !empty($form->acid_number))
                     <br><br><strong>ACID Number:</strong> {{ $form->acid_number }}
@@ -323,6 +352,7 @@
                 <p><strong>Address:</strong> Villa 129, 2nd District New Cairo, Egypt</p>
                 <p><strong>Website:</strong> www.amazonmarine.ltd</p>
             @endif
+        </div>
         </div>
     </div>
 </body>
