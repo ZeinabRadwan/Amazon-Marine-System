@@ -817,6 +817,12 @@ export default function Visits() {
               />
             </div>
             <div className="clients-filters__fields flex flex-wrap gap-2">
+              <select
+                value={apiFilters.visitable_kind}
+                onChange={(e) => setApiFilters((f) => ({ ...f, visitable_kind: e.target.value }))}
+                className="clients-input"
+                aria-label={t('visits.filterType')}
+              >
                 <option value="">{t('visits.typeAll')}</option>
                 <option value="client">{t('visits.typeClient')}</option>
                 <option value="vendor">{t('visits.typeVendor')}</option>

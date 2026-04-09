@@ -2076,7 +2076,56 @@
     "tabs": {
       "info": "Details",
       "tracking": "Tracking",
-      "notes": "Notes"
+      "notes": "Notes",
+      "operations": "Operations"
+    },
+    "ops": {
+      "title": "Operations Panel",
+      "opsStatus": "Operational Shipment Status",
+      "opsStatusOptions": {
+        "1": "Container allocation in progress",
+        "2": "Loading in progress",
+        "3": "Customs clearance in progress",
+        "4": "Awaiting shipping invoices",
+        "5": "Billing in progress",
+        "6": "Awaiting client payment",
+        "7": "Releasing shipment",
+        "8": "Shipment complete"
+      },
+      "vendorsPartners": "Vendors & Partners",
+      "transportContractor": "Transport Contractor",
+      "customsBroker": "Customs Broker",
+      "insuranceCompany": "Insurance Company",
+      "overseasAgent": "Overseas Agent",
+      "operationalDates": "Operational Dates",
+      "cutOffDate": "Cut-Off Date",
+      "etd": "ETD (Estimated Departure)",
+      "eta": "ETA (Estimated Arrival)",
+      "taskManagement": "Task Management",
+      "taskProgress": "{{done}} / {{total}}",
+      "tasks": {
+        "review_client_docs": "Review Client Documents",
+        "review_packing_invoice": "Review Packing List & Invoice",
+        "review_sticker": "Review Sticker",
+        "open_customs_declaration": "Open Customs Declaration",
+        "assign_shipping_order": "Assign Shipping Order",
+        "pull_containers": "Pull Containers",
+        "enter_si_vgm": "Enter SI & VGM",
+        "review_draft_bl": "Review Draft B/L",
+        "prepare_origin_cert": "Prepare Certificate of Origin / Agricultural (if applicable)",
+        "stamp_customs_docs": "Stamp Customs Documents"
+      },
+      "taskAssignee": "Assigned To",
+      "taskDue": "Due Date",
+      "taskStatus": "Status",
+      "taskPending": "Pending",
+      "taskInProgress": "In Progress",
+      "taskDone": "Done",
+      "saveOps": "Save Operations",
+      "savingOps": "Saving…",
+      "opsSaved": "Operations data saved.",
+      "opsError": "Failed to save operations data.",
+      "viewOnly": "View only (Operations role can edit)"
     },
     "sections": {
       "main": "Shipment",

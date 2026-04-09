@@ -202,3 +202,51 @@ export async function notifyShipmentSalesFinancials(token, shipmentId) {
   }
   return json
 }
+
+export async function getShipmentOperations(token, shipmentId) {
+  const res = await apiFetch(`${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}/operations`, {
+    headers: authHeaders(token),
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(json.message || json.error || `Failed to load operations (${res.status})`)
+  }
+  return json
+}
+
+export async function updateShipmentOperations(token, shipmentId, body) {
+  const res = await apiFetch(`${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}/operations`, {
+    method: 'PUT',
+    headers: authHeaders(token),
+    body: JSON.stringify(body),
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(json.message || json.error || `Failed to update operations (${res.status})`)
+  }
+  return json
+}
+
+export async function getShipmentTasks(token, shipmentId) {
+  const res = await apiFetch(`${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}/tasks`, {
+    headers: authHeaders(token),
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(json.message || json.error || `Failed to load tasks (${res.status})`)
+  }
+  return json
+}
+
+export async function bulkUpdateShipmentTasks(token, shipmentId, tasks) {
+  const res = await apiFetch(`${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}/tasks`, {
+    method: 'PUT',
+    headers: authHeaders(token),
+    body: JSON.stringify({ tasks }),
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(json.message || json.error || `Failed to update tasks (${res.status})`)
+  }
+  return json
+}

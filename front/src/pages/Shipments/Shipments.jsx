@@ -431,6 +431,15 @@ export default function Shipments() {
     setFilters((f) => ({ ...f, sort: 'created_at' }))
   }, [filters.sort])
 
+  const refreshShipmentDetail = useCallback(() => {
+    if (!detailId || !token) return
+    setDetailLoading(true)
+    getShipment(token, detailId)
+      .then((data) => setDetailShipment(normalizeShipmentResponse(data)))
+      .catch(() => {})
+      .finally(() => setDetailLoading(false))
+  }, [token, detailId])
+
   useEffect(() => {
     if (!detailId || !token) {
       setDetailShipment(null)
@@ -1665,6 +1674,11 @@ export default function Shipments() {
           canManageOps={canManageOps}
           canViewFinancialTotals={canViewShipmentFinancials}
           canViewSelling={canViewSelling}
+          isOperations={isOperations}
+          isAdminRole={isAdminRole}
+          vendorOptions={vendorOptions}
+          userOptions={userOptions}
+          onOperationsSaved={refreshShipmentDetail}
         />
 
         {stageRow && canManageOps && (

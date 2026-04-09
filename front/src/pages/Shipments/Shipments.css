@@ -1208,3 +1208,43 @@
   font-style: italic;
 }
 
+/* ── Operations Dashboard ── */
+.shipment-ops-tab {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.shipment-detail-card--ops-status {
+  border-left: 4px solid #3b82f6;
+}
+
+.shipment-detail-card--dates {
+  border-left: 4px solid #a855f7;
+}
+
+.shipment-ops-tab table th {
+  letter-spacing: 0.05em;
+}
+
+.shipment-ops-tab .clients-input {
+  transition: all 0.2s ease;
+}
+
+.shipment-ops-tab .clients-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.shipment-ops-tab tr:last-child {
+  border-bottom: none;
+}
+
+.shipment-detail-modal-box {
+  max-width: 1100px;
+  width: calc(100vw - 2rem);
+}
+

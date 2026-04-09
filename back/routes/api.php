@@ -46,7 +46,9 @@ use App\Http\Controllers\Api\V1\SettingsController;
 use App\Http\Controllers\Api\V1\ShipmentController;
 use App\Http\Controllers\Api\V1\ShipmentDirectionController;
 use App\Http\Controllers\Api\V1\ShipmentNoteController;
+use App\Http\Controllers\Api\V1\ShipmentOperationsController;
 use App\Http\Controllers\Api\V1\ShipmentStatusController;
+use App\Http\Controllers\Api\V1\ShipmentTaskController;
 use App\Http\Controllers\Api\V1\ShipmentTrackingUpdateController;
 use App\Http\Controllers\Api\V1\ShippingLineController;
 use App\Http\Controllers\Api\V1\TicketController;
@@ -332,6 +334,11 @@ Route::prefix('v1')->group(function () {
         Route::post('shipments/{shipment}/tracking-updates', [ShipmentTrackingUpdateController::class, 'store']);
         Route::get('shipments/{shipment}/notes', [ShipmentNoteController::class, 'index']);
         Route::post('shipments/{shipment}/notes', [ShipmentNoteController::class, 'store']);
+
+        Route::get('shipments/{shipment}/operations', [ShipmentOperationsController::class, 'show']);
+        Route::put('shipments/{shipment}/operations', [ShipmentOperationsController::class, 'update']);
+        Route::get('shipments/{shipment}/tasks', [ShipmentTaskController::class, 'index']);
+        Route::put('shipments/{shipment}/tasks', [ShipmentTaskController::class, 'bulkUpdate']);
 
         // Ticket types (lookup – CRUD)
         Route::get('ticket-types', [TicketTypeController::class, 'index']);

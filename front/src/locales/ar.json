@@ -2076,7 +2076,56 @@
     "tabs": {
       "info": "التفاصيل",
       "tracking": "التتبع",
-      "notes": "ملاحظات"
+      "notes": "ملاحظات",
+      "operations": "العمليات"
+    },
+    "ops": {
+      "title": "لوحة العمليات",
+      "opsStatus": "حالة الشحنة التشغيلية",
+      "opsStatusOptions": {
+        "1": "جاري تخصيص الحاويات",
+        "2": "جاري التحميل",
+        "3": "جاري التخليص الجمركي",
+        "4": "بانتظار فواتير الشحن",
+        "5": "جاري الفوترة",
+        "6": "بانتظار دفع العميل",
+        "7": "جاري الإفراج عن الشحنة",
+        "8": "مكتملة"
+      },
+      "vendorsPartners": "الموردين والشركاء",
+      "transportContractor": "مقاول النقل",
+      "customsBroker": "مخلص جمركي",
+      "insuranceCompany": "شركة التأمين",
+      "overseasAgent": "وكيل خارجي",
+      "operationalDates": "التواريخ التشغيلية",
+      "cutOffDate": "تاريخ Cut-Off",
+      "etd": "تاريخ القيام المتوقع (ETD)",
+      "eta": "تاريخ الوصول المتوقع (ETA)",
+      "taskManagement": "إدارة المهام",
+      "taskProgress": "{{done}} / {{total}}",
+      "tasks": {
+        "review_client_docs": "مراجعة مستندات العميل",
+        "review_packing_invoice": "مراجعة Packing List & Invoice",
+        "review_sticker": "مراجعة Sticker",
+        "open_customs_declaration": "فتح البيان الجمركي",
+        "assign_shipping_order": "تخصيص Shipping Order",
+        "pull_containers": "سحب الحاويات",
+        "enter_si_vgm": "إدخال SI & VGM",
+        "review_draft_bl": "مراجعة Draft B/L",
+        "prepare_origin_cert": "تجهيز شهادة المنشأ / الزراعية (إن وُجد)",
+        "stamp_customs_docs": "ختم المستندات الجمركية"
+      },
+      "taskAssignee": "المسؤول",
+      "taskDue": "تاريخ الاستحقاق",
+      "taskStatus": "الحالة",
+      "taskPending": "قيد الانتظار",
+      "taskInProgress": "قيد التنفيذ",
+      "taskDone": "تم الإنجاز",
+      "saveOps": "حفظ بيانات العمليات",
+      "savingOps": "جاري الحفظ…",
+      "opsSaved": "تم حفظ بيانات العمليات.",
+      "opsError": "فشل حفظ بيانات العمليات.",
+      "viewOnly": "عرض فقط (يمكن لموظف العمليات التعديل)"
     },
     "sections": {
       "main": "الشحنة",
