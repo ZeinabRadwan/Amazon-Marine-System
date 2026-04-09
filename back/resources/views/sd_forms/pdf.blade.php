@@ -29,56 +29,84 @@
         table.header-band td {
             border: none;
             vertical-align: middle;
-            padding: 12px 16px;
+            padding: 12px 14px;
         }
-        .logo-badge-wrap {
-            width: 44px;
-            height: 44px;
-            background: #ffffff;
-            text-align: center;
-            vertical-align: middle;
-            border: 2px solid #f97316;
-            border-radius: 50%;
-            overflow: hidden;
-        }
-        .logo-badge-wrap img {
-            width: 30px;
+        .header-logo img {
+            width: 200px;
+            max-width: 100%;
             height: auto;
-            max-height: 32px;
             display: block;
-            margin: 6px auto 0;
         }
-        .brand-block .name {
+        /* Brand: one horizontal row, all white */
+        .brand-row-table {
+            border-collapse: collapse;
+            width: auto;
+        }
+        .brand-row-table td {
+            border: none;
+            vertical-align: middle;
+            padding: 0 0 0 12px;
+        }
+        .brand-inline {
+            color: #ffffff;
+            line-height: 1.4;
+            white-space: normal;
+        }
+        .brand-inline .line-main {
             font-size: 15px;
             font-weight: 700;
             letter-spacing: 0.12em;
             color: #ffffff;
-            margin: 0 0 2px;
         }
-        .brand-block .tag {
-            font-size: 9px;
-            color: #e2e8f0;
-            margin: 0;
-            letter-spacing: 0.04em;
+        .brand-inline .line-sub {
+            font-size: 10px;
+            font-weight: 400;
+            color: #ffffff;
+            margin-left: 0.4em;
         }
         .head-meta {
-            text-align: right;
+            text-align: left;
+            vertical-align: top;
         }
         .doc-title {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 700;
             color: #ffffff;
-            margin: 0 0 6px;
-            letter-spacing: 0.03em;
+            margin: 0 0 8px;
+            letter-spacing: 0.04em;
+            text-align: left;
         }
-        .meta-line {
-            margin: 0 0 2px;
-            font-size: 9.5px;
-            color: #f1f5f9;
+        table.meta-grid {
+            width: 100%;
+            border-collapse: collapse;
+            color: #ffffff;
+            font-size: 9px;
         }
-        .meta-line strong {
+        table.meta-grid td {
+            border: none;
+            padding: 4px 8px 4px 0;
+            vertical-align: top;
+            width: 50%;
+        }
+        .meta-icon {
+            display: inline-block;
+            width: 13px;
+            height: 13px;
+            line-height: 13px;
+            text-align: center;
+            background: #f97316;
+            color: #ffffff;
+            font-size: 7px;
+            font-weight: 700;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+        .meta-item strong {
             color: #ffffff;
             font-weight: 600;
+        }
+        .meta-val {
+            color: #f8fafc;
         }
         .body-pad {
             padding: 0 14px 16px;
@@ -216,31 +244,48 @@
         @else
             <table class="header-band">
                 <tr>
-                    <td style="width:62%;">
-                        <table style="width:auto;border-collapse:collapse;">
+                    <td style="width:55%;">
+                        <table class="brand-row-table">
                             <tr>
-                                <td style="border:none;padding:0 12px 0 0;vertical-align:middle;">
-                                    <div class="logo-badge-wrap">
-                                        @if($logoSrc)
-                                            <img src="{{ $logoSrc }}" alt="">
-                                        @else
-                                            <span style="font-size:8px;color:#64748b;line-height:42px;">AM</span>
-                                        @endif
-                                    </div>
+                                <td style="padding-left:0;vertical-align:middle;width:200px;" class="header-logo">
+                                    @if($logoSrc)
+                                        <img src="{{ $logoSrc }}" alt="">
+                                    @else
+                                        <div style="width:200px;height:48px;background:#fff;border:1px solid #f97316;text-align:center;line-height:48px;font-size:9px;color:#1f2a60;">LOGO</div>
+                                    @endif
                                 </td>
-                                <td class="brand-block" style="border:none;padding:0;vertical-align:middle;">
-                                    <p class="name">AMAZON MARINE</p>
-                                    <p class="tag">Shipping and Logistics Solutions</p>
+                                <td style="vertical-align:middle;">
+                                    <div class="brand-inline">
+                                        <span class="line-main">AMAZON MARINE</span><span class="line-sub">Shipping and Logistics Solutions</span>
+                                    </div>
                                 </td>
                             </tr>
                         </table>
                     </td>
-                    <td class="head-meta" style="width:38%;">
+                    <td class="head-meta" style="width:45%;">
                         <div class="doc-title">SD - Shipping Details Form</div>
-                        <p class="meta-line"><strong>SD No:</strong> {{ $form->sd_number ?? ('SD-'.$form->id) }}</p>
-                        <p class="meta-line"><strong>SD Date:</strong> {{ optional($form->created_at)->format('d/m/Y') ?? '—' }}</p>
-                        <p class="meta-line"><strong>Vessel Date:</strong> {{ optional($form->requested_vessel_date)->format('d/m/Y') ?? '—' }}</p>
-                        <p class="meta-line"><strong>Client:</strong> {{ $form->client?->name ?? '—' }}</p>
+                        <table class="meta-grid">
+                            <tr>
+                                <td>
+                                    <span class="meta-icon">#</span>
+                                    <span class="meta-item"><strong>SD No:</strong> <span class="meta-val">{{ $form->sd_number ?? ('SD-'.$form->id) }}</span></span>
+                                </td>
+                                <td>
+                                    <span class="meta-icon">D</span>
+                                    <span class="meta-item"><strong>SD Date:</strong> <span class="meta-val">{{ optional($form->created_at)->format('d/m/Y') ?? '—' }}</span></span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <span class="meta-icon">V</span>
+                                    <span class="meta-item"><strong>Vessel Date:</strong> <span class="meta-val">{{ optional($form->requested_vessel_date)->format('d/m/Y') ?? '—' }}</span></span>
+                                </td>
+                                <td dir="auto" style="text-align:left;">
+                                    <span class="meta-icon">C</span>
+                                    <span class="meta-item"><strong>Client:</strong> <span class="meta-val">{{ $form->client?->name ?? '—' }}</span></span>
+                                </td>
+                            </tr>
+                        </table>
                     </td>
                 </tr>
             </table>
