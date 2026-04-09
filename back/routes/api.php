@@ -409,6 +409,7 @@ Route::prefix('v1')->group(function () {
         // Dashboard & reports
         Route::get('dashboard/overview', [DashboardController::class, 'overview'])
             ->middleware('page_permission:dashboard,view');
+        Route::get('dashboard/sidebar-counts', [DashboardController::class, 'sidebarCounts']);
         Route::get('dashboard/admin-overview', [DashboardController::class, 'adminOverview'])
             ->middleware('page_permission:dashboard,view');
         Route::get('dashboard/sales-manager', [DashboardController::class, 'salesManager'])

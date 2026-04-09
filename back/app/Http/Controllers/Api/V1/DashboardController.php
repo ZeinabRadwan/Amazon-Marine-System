@@ -625,4 +625,40 @@ class DashboardController extends Controller
             ],
         ]);
     }
+    public function sidebarCounts(Request $request)
+    {
+        abort_unless($request->user() !== null, 401);
+        $user = $request->user();
+        $role = $this->roleName($request);
+
+        // CRM Count (Clients)
+        $crmQuery = \App\Models\Client::query();
+        if ($role === 'sales') {
+            $crmQuery->where('assigned_sales_id', $user->id);
+        }
+        $crmCount = $crmQuery->count();
+
+        // Shipments Count
+        $shipmentsQuery = $this->scopedShipmentQuery($request);
+        $shipmentsCount = $shipmentsQuery->count();
+
+        // SD Forms Count
+        $sdFormsQuery = \App\Models\SDForm::query();
+        if ($role === 'sales') {
+            $sdFormsQuery->where('sales_rep_id', $user->id);
+        }
+        $sdFormsCount = $sdFormsQuery->count();
+
+        // Tickets Count (Open ones)
+        $ticketsCount = \App\Models\Ticket::where('status', 'open')->count();
+
+        return response()->json([
+            'data' => [
+                'crmCount' => $crmCount,
+                'shipmentsCount' => $shipmentsCount,
+                'sdFormsCount' => $sdFormsCount,
+                'ticketsCount' => $ticketsCount,
+            ],
+        ]);
+    }
 }

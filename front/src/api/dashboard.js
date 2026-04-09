@@ -44,3 +44,10 @@ export const getDashboardPricingTeam = (token) => getRoleDashboard(token, 'prici
 export const getDashboardOperationsEmployee = (token) => getRoleDashboard(token, 'operations-employee')
 export const getDashboardSupportEmployee = (token) => getRoleDashboard(token, 'support-employee')
 
+export async function getSidebarCounts(token) {
+  const res = await apiFetch(`${getBaseUrl()}/dashboard/sidebar-counts`, { headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to load sidebar counts (${res.status})`)
+  return data.data ?? data
+}
+

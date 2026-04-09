@@ -6,6 +6,7 @@ import { getProfile, logout as logoutApi } from '../../api/auth'
 import { getApiBaseUrl } from '../../api/apiBaseUrl'
 import { getUnreadCount } from '../../api/notifications'
 import { getPermissionsByRole } from '../../api/roles'
+import { getSidebarCounts } from '../../api/dashboard'
 import AppLayout from '../AppLayout'
 import LoaderDots from '../LoaderDots'
 import '../LoaderDots/LoaderDots.css'
@@ -108,6 +109,12 @@ export default function AuthenticatedLayout() {
   const [pageAccessVersion, setPageAccessVersion] = useState(() => readPageAccessCache()?.pageAccessVersion ?? '')
   const [loading, setLoading] = useState(true)
   const [unreadNotifications, setUnreadNotifications] = useState(0)
+  const [sidebarCounts, setSidebarCounts] = useState({
+    crmCount: 0,
+    shipmentsCount: 0,
+    sdFormsCount: 0,
+    ticketsCount: 0,
+  })
 
   const refreshUser = useCallback(() => {
     if (!token) return Promise.resolve()
@@ -229,7 +236,27 @@ export default function AuthenticatedLayout() {
 
     loadUnread()
 
-    const interval = window.setInterval(loadUnread, 60000)
+    const loadCounts = async () => {
+      try {
+        const data = await getSidebarCounts(token)
+        if (cancelled) return
+        setSidebarCounts({
+          crmCount: data.crmCount ?? 0,
+          shipmentsCount: data.shipmentsCount ?? 0,
+          sdFormsCount: data.sdFormsCount ?? 0,
+          ticketsCount: data.ticketsCount ?? 0,
+        })
+      } catch {
+        // ignore
+      }
+    }
+
+    loadCounts()
+
+    const interval = window.setInterval(() => {
+      loadUnread()
+      loadCounts()
+    }, 60000)
     return () => {
       cancelled = true
       window.clearInterval(interval)
@@ -488,11 +515,11 @@ export default function AuthenticatedLayout() {
       activeMenu={activeMenu}
       onMenuChange={handleMenuChange}
       allowedPages={allowedPages}
-      crmCount={24}
-      ticketsCount={7}
+      crmCount={sidebarCounts.crmCount}
+      ticketsCount={sidebarCounts.ticketsCount}
       alertsCount={unreadNotifications}
-      shipmentsCount={12}
-      sdFormsCount={5}
+      shipmentsCount={sidebarCounts.shipmentsCount}
+      sdFormsCount={sidebarCounts.sdFormsCount}
       appName="Amazon Marine"
       onLogout={handleLogout}
       pageTitle={pageHeaderConfig.title}
