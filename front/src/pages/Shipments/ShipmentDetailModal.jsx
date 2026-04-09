@@ -541,49 +541,100 @@ export default function ShipmentDetailModal({
                           <span className="shipment-detail-card__label">{t('shipments.fields.shipment_direction')}</span>
                           <span className="shipment-detail-card__value">{shipmentDisplayDirection(shipment.shipment_direction, t)}</span>
                         </div>
-                        {(shipment.shipment_direction === 'Import' || shipment.acid_number) && (
+                        {shipment.shipment_direction === 'Import' || shipment.acid_number ? (
                           <div className="shipment-detail-card__row">
                             <span className="shipment-detail-card__label">{t('shipments.fields.acid_number')}</span>
                             <span className="shipment-detail-card__value">{shipment.acid_number || '—'}</span>
                           </div>
+                        ) : (
+                          <div className="shipment-detail-card__row">
+                            <span className="shipment-detail-card__label">{t('shipments.fields.container_type')}</span>
+                            <span className="shipment-detail-card__value">{shipmentDisplayContainerType(shipment.container_type, t)}</span>
+                          </div>
                         )}
-                        <div className="shipment-detail-card__row">
-                          <span className="shipment-detail-card__label">{t('shipments.fields.container_type')}</span>
-                          <span className="shipment-detail-card__value">{shipmentDisplayContainerType(shipment.container_type, t)}</span>
-                        </div>
-                        <div className="shipment-detail-card__row">
-                          <span className="shipment-detail-card__label">{t('shipments.fields.container_size')}</span>
-                          <span className="shipment-detail-card__value">{shipmentDisplayContainerSize(shipment.container_size, t)}</span>
-                        </div>
-                        <div className="shipment-detail-card__row">
-                          <span className="shipment-detail-card__label">{t('shipments.fields.container_count')}</span>
-                          <span className="shipment-detail-card__value">{shipment.container_count ?? '—'}</span>
-                        </div>
-                        <div className="shipment-detail-card__row col-span-2">
-                          <span className="shipment-detail-card__label">{t('shipments.fields.loading_place')}</span>
-                          <span className="shipment-detail-card__value">{shipment.loading_place || '—'}</span>
-                        </div>
-                        <div className="shipment-detail-card__row">
-                          <span className="shipment-detail-card__label">{t('shipments.fields.origin_port_id')}</span>
-                          <span className="shipment-detail-card__value">{shipment.origin_port?.name ?? shipment.originPort?.name ?? '—'}</span>
-                        </div>
-                        <div className="shipment-detail-card__row">
-                          <span className="shipment-detail-card__label">{t('shipments.fields.destination_port_id')}</span>
-                          <span className="shipment-detail-card__value">
-                            {shipment.destination_port?.name ?? shipment.destinationPort?.name ?? '—'}
-                          </span>
-                        </div>
-                        <div className="shipment-detail-card__row col-span-2">
+                        {shipment.shipment_direction === 'Import' && (
+                          <>
+                            <div className="shipment-detail-card__row">
+                              <span className="shipment-detail-card__label">{t('shipments.fields.container_type')}</span>
+                              <span className="shipment-detail-card__value">{shipmentDisplayContainerType(shipment.container_type, t)}</span>
+                            </div>
+                            <div className="shipment-detail-card__row">
+                              <span className="shipment-detail-card__label">{t('shipments.fields.container_size')}</span>
+                              <span className="shipment-detail-card__value">{shipmentDisplayContainerSize(shipment.container_size, t)}</span>
+                            </div>
+                          </>
+                        )}
+                        {shipment.shipment_direction !== 'Import' && (
+                          <>
+                            <div className="shipment-detail-card__row">
+                              <span className="shipment-detail-card__label">{t('shipments.fields.container_size')}</span>
+                              <span className="shipment-detail-card__value">{shipmentDisplayContainerSize(shipment.container_size, t)}</span>
+                            </div>
+                            <div className="shipment-detail-card__row">
+                              <span className="shipment-detail-card__label">{t('shipments.fields.container_count')}</span>
+                              <span className="shipment-detail-card__value">{shipment.container_count ?? '—'}</span>
+                            </div>
+                          </>
+                        )}
+                        {shipment.shipment_direction === 'Import' && (
+                          <>
+                            <div className="shipment-detail-card__row">
+                              <span className="shipment-detail-card__label">{t('shipments.fields.container_count')}</span>
+                              <span className="shipment-detail-card__value">{shipment.container_count ?? '—'}</span>
+                            </div>
+                            <div className="shipment-detail-card__row">
+                              <span className="shipment-detail-card__label">{t('shipments.fields.loading_place')}</span>
+                              <span className="shipment-detail-card__value">{shipment.loading_place || '—'}</span>
+                            </div>
+                          </>
+                        )}
+                        {shipment.shipment_direction !== 'Import' && (
+                          <>
+                            <div className="shipment-detail-card__row">
+                              <span className="shipment-detail-card__label">{t('shipments.fields.loading_place')}</span>
+                              <span className="shipment-detail-card__value">{shipment.loading_place || '—'}</span>
+                            </div>
+                            <div className="shipment-detail-card__row">
+                              <span className="shipment-detail-card__label">{t('shipments.fields.origin_port_id')}</span>
+                              <span className="shipment-detail-card__value">{shipment.origin_port?.name ?? shipment.originPort?.name ?? '—'}</span>
+                            </div>
+                          </>
+                        )}
+                        {shipment.shipment_direction === 'Import' && (
+                          <>
+                            <div className="shipment-detail-card__row">
+                              <span className="shipment-detail-card__label">{t('shipments.fields.origin_port_id')}</span>
+                              <span className="shipment-detail-card__value">{shipment.origin_port?.name ?? shipment.originPort?.name ?? '—'}</span>
+                            </div>
+                            <div className="shipment-detail-card__row">
+                              <span className="shipment-detail-card__label">{t('shipments.fields.destination_port_id')}</span>
+                              <span className="shipment-detail-card__value">
+                                {shipment.destination_port?.name ?? shipment.destinationPort?.name ?? '—'}
+                              </span>
+                            </div>
+                          </>
+                        )}
+                        {shipment.shipment_direction !== 'Import' && (
+                          <div className="shipment-detail-card__row col-span-2 shipment-detail-card__row--stack-value">
+                            <span className="shipment-detail-card__label">{t('shipments.fields.destination_port_id')}</span>
+                            <span className="shipment-detail-card__value">
+                              {shipment.destination_port?.name ?? shipment.destinationPort?.name ?? '—'}
+                            </span>
+                          </div>
+                        )}
+                        <div className="shipment-detail-card__row shipment-detail-card__row--stack-value">
                           <span className="shipment-detail-card__label">{t('shipments.fields.cargo_description')}</span>
-                          <span className="shipment-detail-card__value block mt-1 whitespace-pre-wrap">{shipment.cargo_description || '—'}</span>
+                          <span className="shipment-detail-card__value shipment-detail-card__value--multiline">
+                            {shipment.cargo_description || '—'}
+                          </span>
                         </div>
                         <div className="shipment-detail-card__row">
                           <span className="shipment-detail-card__label">{t('shipments.fields.loading_date')}</span>
                           <span className="shipment-detail-card__value">{formatDate(shipment.loading_date, i18n.language) || '—'}</span>
                         </div>
-                        <div className="shipment-detail-card__row col-span-2">
+                        <div className="shipment-detail-card__row col-span-2 shipment-detail-card__row--stack-value">
                           <span className="shipment-detail-card__label">{t('shipments.fields.notes')}</span>
-                          <span className="shipment-detail-card__value block mt-1 whitespace-pre-wrap">
+                          <span className="shipment-detail-card__value shipment-detail-card__value--multiline">
                             {(() => {
                               const s = shipmentFreeTextNotes(shipment)
                               return s.trim() ? s : '—'
@@ -591,9 +642,9 @@ export default function ShipmentDetailModal({
                           </span>
                         </div>
                         {shipment.route_text && (
-                          <div className="shipment-detail-card__row col-span-2">
+                          <div className="shipment-detail-card__row col-span-2 shipment-detail-card__row--stack-value">
                             <span className="shipment-detail-card__label">{t('shipments.fields.route')}</span>
-                            <span className="shipment-detail-card__value block mt-1">{shipment.route_text}</span>
+                            <span className="shipment-detail-card__value shipment-detail-card__value--multiline">{shipment.route_text}</span>
                           </div>
                         )}
                         <div className="shipment-detail-card__row">
@@ -626,7 +677,7 @@ export default function ShipmentDetailModal({
                             <span className="shipment-detail-card__label">{t('shipments.fields.reefer_vent')}</span>
                             <span className="shipment-detail-card__value">{shipment.reefer_vent || '—'}</span>
                           </div>
-                          <div className="shipment-detail-card__row">
+                          <div className="shipment-detail-card__row col-span-2 shipment-detail-card__row--stack-value">
                             <span className="shipment-detail-card__label">{t('shipments.fields.reefer_hum')}</span>
                             <span className="shipment-detail-card__value">{shipment.reefer_hum || '—'}</span>
                           </div>
