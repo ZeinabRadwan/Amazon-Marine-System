@@ -139,6 +139,17 @@
   line-height: 1.35;
 }
 
+/* Make Shipper/Consignee text inputs larger in Create SD modal */
+.sd-create-form #sd-c-shipper,
+.sd-create-form #sd-c-consignee,
+.sd-create-form #sd-f-shipper,
+.sd-create-form #sd-f-consignee {
+  min-height: 140px;
+  padding: 14px;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
 [data-theme='dark'] .sd-form-modal-preview__value,
 .dark .sd-form-modal-preview__value {
   color: var(--root-text, #f3f4f6);
