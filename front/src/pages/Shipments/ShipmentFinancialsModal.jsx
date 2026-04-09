@@ -525,6 +525,124 @@ function FinPendingOtherChargeRow({
   )
 }
 
+/** @param {{ variant: 'expenses' | 'selling' | 'invoice' | 'history' }} props */
+function ShipmentFinLoadingSkeleton({ variant }) {
+  const { t } = useTranslation()
+  const label = t('shipments.loading')
+
+  if (variant === 'expenses') {
+    return (
+      <div className="shipment-fin-skel" role="status" aria-live="polite" aria-busy="true" aria-label={label}>
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="shipment-fin-skel-card">
+            <div className="shipment-fin-skel-card__row">
+              <div className="shipment-fin-skel-circ shipment-fin-shimmer" />
+              <div className="shipment-fin-skel-lines">
+                <div className="shipment-fin-skel-line shipment-fin-skel-line--lg shipment-fin-shimmer" />
+                <div className="shipment-fin-skel-line shipment-fin-skel-line--sm shipment-fin-shimmer" />
+              </div>
+              <div className="shipment-fin-skel-lines shipment-fin-skel-lines--end">
+                <div className="shipment-fin-skel-line shipment-fin-skel-line--md shipment-fin-shimmer" />
+              </div>
+            </div>
+          </div>
+        ))}
+        <div className="shipment-fin-skel-total-bar">
+          <div className="shipment-fin-skel-line shipment-fin-skel-line--stretch shipment-fin-shimmer" />
+        </div>
+      </div>
+    )
+  }
+
+  if (variant === 'selling') {
+    const cols = 7
+    return (
+      <div className="shipment-fin-skel" role="status" aria-live="polite" aria-busy="true" aria-label={label}>
+        <div className="shipment-fin-skel-table-wrap">
+          <table className="shipment-fin-skel-table">
+            <tbody>
+              {[1, 2, 3, 4, 5, 6].map((row) => (
+                <tr key={row}>
+                  {Array.from({ length: cols }, (_, c) => (
+                    <td key={c}>
+                      <span
+                        className="shipment-fin-skel-cell shipment-fin-shimmer"
+                        style={{ width: c === 0 ? '72%' : c === 1 ? '88%' : '56%' }}
+                      />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    )
+  }
+
+  if (variant === 'invoice') {
+    return (
+      <div className="shipment-fin-skel" role="status" aria-live="polite" aria-busy="true" aria-label={label}>
+        <div className="shipment-fin-skel-invoice-head">
+          <div className="shipment-fin-skel-invoice-block shipment-fin-skel-invoice-block--wide">
+            <div className="shipment-fin-skel-line shipment-fin-skel-line--lg shipment-fin-shimmer" style={{ maxWidth: '10rem' }} />
+            <div className="shipment-fin-skel-line shipment-fin-skel-line--sm shipment-fin-shimmer" style={{ maxWidth: '7rem' }} />
+          </div>
+          <div className="shipment-fin-skel-invoice-block shipment-fin-skel-invoice-block--end">
+            <div className="shipment-fin-skel-line shipment-fin-skel-line--lg shipment-fin-shimmer" style={{ width: '5.5rem' }} />
+            <div className="shipment-fin-skel-line shipment-fin-skel-line--md shipment-fin-shimmer" />
+            <div className="shipment-fin-skel-line shipment-fin-skel-line--sm shipment-fin-shimmer" style={{ width: '6rem' }} />
+          </div>
+        </div>
+        <div
+          className="shipment-fin-shimmer"
+          style={{ height: '1px', marginBottom: '1rem', borderRadius: '1px', opacity: 0.85 }}
+        />
+        <div className="shipment-fin-skel-table-wrap">
+          <table className="shipment-fin-skel-table">
+            <tbody>
+              {[1, 2, 3, 4, 5].map((row) => (
+                <tr key={row}>
+                  <td style={{ width: '50%' }}>
+                    <span className="shipment-fin-skel-cell shipment-fin-shimmer" style={{ width: '80%' }} />
+                  </td>
+                  <td>
+                    <span
+                      className="shipment-fin-skel-cell shipment-fin-shimmer"
+                      style={{ width: '4rem', display: 'block', marginInlineStart: 'auto' }}
+                    />
+                  </td>
+                  <td>
+                    <span className="shipment-fin-skel-cell shipment-fin-shimmer" style={{ width: '2.5rem' }} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    )
+  }
+
+  if (variant === 'history') {
+    return (
+      <div className="shipment-fin-skel shipment-fin-skel-audit" role="status" aria-live="polite" aria-busy="true" aria-label={label}>
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div key={i} className="shipment-fin-skel-audit-item">
+            <div className="shipment-fin-skel-dot shipment-fin-shimmer" />
+            <div className="shipment-fin-skel-audit-lines">
+              <div className="shipment-fin-skel-line shipment-fin-skel-line--sm shipment-fin-shimmer" style={{ maxWidth: '11rem' }} />
+              <div className="shipment-fin-skel-line shipment-fin-skel-line--lg shipment-fin-shimmer" style={{ maxWidth: '100%' }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  return null
+}
+
 /**
  * @param {{
  *   open: boolean,
@@ -1172,7 +1290,7 @@ export default function ShipmentFinancialsModal({
               {t('shipments.fin.addRow')}
             </button>
             <label className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-section-upload" title={t('shipments.fin.uploadSectionReceipt')}>
-              <Upload size={14} className="mr-1" />
+              <Upload size={14} className="shipment-fin-icon-leading" />
               {t('shipments.fin.uploadReceipt')}
               <input 
                 type="file" 
@@ -1284,11 +1402,11 @@ export default function ShipmentFinancialsModal({
           ) : null}
           <div className="client-detail-modal__body-inner clients-form-sections">
           {tab === 'expenses' && isAccountingUser && (
-            <div className="shipment-fin-panel">
+            <div key="expenses" className="shipment-fin-panel shipment-fin-panel--enter">
               {!hasBl ? (
                 <p className="client-detail-modal__empty">{t('shipments.financialsNoBl')}</p>
               ) : loading ? (
-                <p className="client-detail-modal__empty">{t('shipments.loading')}</p>
+                <ShipmentFinLoadingSkeleton variant="expenses" />
               ) : (
                 <>
                   {editMode ? <p className="shipment-fin-tab-a-hint">{t('shipments.fin.tabAEditHint')}</p> : null}
@@ -1332,7 +1450,7 @@ export default function ShipmentFinancialsModal({
           )}
 
           {tab === 'selling' && (
-            <div className="shipment-fin-panel">
+            <div key="selling" className="shipment-fin-panel shipment-fin-panel--enter">
               <div className="shipment-fin-sales-banner">
                 <div className="fw-600">{t('shipments.fin.salesBannerTitle')}</div>
                 <div className="fs-xs text-muted">{t('shipments.fin.salesBannerSub')}</div>
@@ -1340,7 +1458,7 @@ export default function ShipmentFinancialsModal({
               {!hasBl ? (
                 <p className="client-detail-modal__empty">{t('shipments.financialsNoBl')}</p>
               ) : loading || invoiceLoading ? (
-                <p className="client-detail-modal__empty">{t('shipments.loading')}</p>
+                <ShipmentFinLoadingSkeleton variant="selling" />
               ) : expenses.length === 0 ? (
                 <p className="client-detail-modal__empty">{t('shipments.fin.tabBEmpty')}</p>
               ) : (
@@ -1511,11 +1629,11 @@ export default function ShipmentFinancialsModal({
           )}
 
           {tab === 'invoices' && isAccountingUser && (
-            <div className="shipment-fin-panel">
+            <div key="invoices" className="shipment-fin-panel shipment-fin-panel--enter">
               {!hasBl ? (
                 <p className="client-detail-modal__empty">{t('shipments.financialsNoBl')}</p>
               ) : invoiceLoading ? (
-                <p className="client-detail-modal__empty">{t('shipments.loading')}</p>
+                <ShipmentFinLoadingSkeleton variant="invoice" />
               ) : (
                 <>
                   <div className="shipment-fin-client-invoice shipment-fin-print-target">
@@ -1704,7 +1822,7 @@ export default function ShipmentFinancialsModal({
           )}
 
           {tab === 'history' && (
-            <div className="shipment-fin-panel">
+            <div key="history" className="shipment-fin-panel shipment-fin-panel--enter">
               <div className="shipment-fin-audit-head">
                 <h4 className="shipment-fin-audit-title">{t('shipments.fin.auditTitle')}</h4>
                 <span className="fs-xs text-muted">{t('shipments.fin.auditSub')}</span>
@@ -1712,7 +1830,7 @@ export default function ShipmentFinancialsModal({
               {!hasBl ? (
                 <p className="client-detail-modal__empty">{t('shipments.financialsNoBl')}</p>
               ) : activityLoading ? (
-                <p className="client-detail-modal__empty">{t('shipments.loading')}</p>
+                <ShipmentFinLoadingSkeleton variant="history" />
               ) : activityRows.length === 0 ? (
                 <div className="shipment-fin-audit-empty">
                   <History className="shipment-fin-audit-empty__icon" />
@@ -1745,7 +1863,7 @@ export default function ShipmentFinancialsModal({
           )}
 
           {tab === 'summary' && (
-            <div className="shipment-fin-panel">
+            <div key="summary" className="shipment-fin-panel shipment-fin-panel--enter">
               <div className="shipment-fin-summary-grid">
                 <div className="shipment-fin-summary-card">
                   <div className="shipment-fin-summary-card__label">{t('shipments.fin.summary.totalCost')}</div>
@@ -1780,7 +1898,7 @@ export default function ShipmentFinancialsModal({
                   <p className="text-blue-700 dark:text-blue-300 text-sm mb-4">{t('shipments.fin.salesNotifyBody')}</p>
                   <button
                     type="button"
-                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all flex items-center gap-2 mx-auto shadow-lg shadow-blue-500/20"
+                    className="shipment-fin-cta-btn px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all mx-auto shadow-lg shadow-blue-500/20"
                     disabled={notifySending}
                     onClick={async () => {
                         if (!token || !shipment?.id) return;
@@ -1797,7 +1915,7 @@ export default function ShipmentFinancialsModal({
                         }
                     }}
                   >
-                    <Bell className="h-4 w-4" />
+                    <Bell className="h-4 w-4" aria-hidden />
                     {notifySending ? t('common.loading') : t('shipments.fin.notifyAccountantBtn')}
                   </button>
                 </div>
@@ -1809,7 +1927,7 @@ export default function ShipmentFinancialsModal({
                    <p className="text-emerald-700 dark:text-emerald-300 text-sm mb-4">{t('shipments.fin.accountantFinalizeBody')}</p>
                    <button
                     type="button"
-                    className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-all flex items-center gap-2 mx-auto shadow-lg shadow-emerald-500/20"
+                    className="shipment-fin-cta-btn px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-all mx-auto shadow-lg shadow-emerald-500/20"
                     disabled={notifySending}
                     onClick={handleNotifySales}
                    >
