@@ -717,6 +717,10 @@ export default function SDForms() {
     const showAcid = form.shipment_direction === 'Import'
     const showNotifyDetails = form.notify_party_mode === 'different'
     const showReefer = String(form.container_type || '').trim().toLowerCase() === 'reefer'
+    const selectedClient = clientsList.find((c) => String(c.id) === String(form.client_id))
+    const clientNamePreview = selectedClient ? (selectedClient.name ?? selectedClient.client_name ?? `#${selectedClient.id}`) : '—'
+    const notesHelpText =
+      'استخدم هذا الحقل لكتابة أي ملاحظات خاصة بالحجز يجب أن يكون فريق الحجز على علم بها، مثل الشحنات الترانزيت أو أي استثناءات أو تعليمات خاصة بالشحنة'
 
     return (
       <div className="clients-form-sections sd-create-form" lang="en">
@@ -724,6 +728,9 @@ export default function SDForms() {
           <h3 className="client-detail-modal__section-title">SD Number</h3>
           <p className="sd-form-modal-preview__value">SD-000001</p>
           <p className="sd-form-modal-preview__hint">Auto-generated</p>
+          <p className="sd-form-modal-preview__hint" style={{ marginTop: 8 }}>
+            Client Name: {clientNamePreview}
+          </p>
         </section>
 
         <section className="client-detail-modal__section">
@@ -813,9 +820,7 @@ export default function SDForms() {
               />
             </div>
             <div className="client-detail-modal__form-field">
-              <label htmlFor="sd-c-sline">
-                Shipping Line (Required)
-              </label>
+              <label htmlFor="sd-c-sline">5. Shipping Line (Required)</label>
               <input
                 id="sd-c-sline"
                 type="text"
@@ -1023,7 +1028,7 @@ export default function SDForms() {
             {showAcid ? (
               <div className="client-detail-modal__form-field">
                 <label htmlFor="sd-c-acid">
-                  14. ACID Number *
+                  14. ACID Number
                 </label>
                 <input
                   id="sd-c-acid"
@@ -1154,7 +1159,7 @@ export default function SDForms() {
             <span className="help-icon-wrapper">
               <HelpCircle className="h-4 w-4 text-gray-400" />
               <div className="help-icon-tooltip">
-                {t('sdForms.form.notesHint')}
+                {notesHelpText}
               </div>
             </span>
           </h3>
@@ -1178,11 +1183,18 @@ export default function SDForms() {
     const showAcid = form.shipment_direction === 'Import'
     const showNotifyDetails = form.notify_party_mode === 'different'
     const showReefer = String(form.container_type || '').trim().toLowerCase() === 'reefer'
+    const selectedClient = clientsList.find((c) => String(c.id) === String(form.client_id))
+    const clientNamePreview = selectedClient ? (selectedClient.name ?? selectedClient.client_name ?? `#${selectedClient.id}`) : '—'
+    const notesHelpText =
+      'استخدم هذا الحقل لكتابة أي ملاحظات خاصة بالحجز يجب أن يكون فريق الحجز على علم بها، مثل الشحنات الترانزيت أو أي استثناءات أو تعليمات خاصة بالشحنة'
 
     return (
       <div className="clients-form-sections sd-create-form" lang="en">
         <section className="client-detail-modal__section">
           <h3 className="client-detail-modal__section-title">{t('sdForms.modal.formDetails', { lng: 'en' })}</h3>
+          <p className="sd-form-modal-preview__hint" style={{ marginBottom: 12 }}>
+            Client Name: {clientNamePreview}
+          </p>
           <div className="client-detail-modal__form-grid mb-4">
           <div className="client-detail-modal__form-field">
             <label htmlFor="sd-f-client">
@@ -1287,9 +1299,7 @@ export default function SDForms() {
             </select>
           </div>
           <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
-            <label htmlFor="sd-f-shipping-line">
-              Shipping Line (Required)
-            </label>
+            <label htmlFor="sd-f-shipping-line">5. Shipping Line (Required)</label>
             <select
               id="sd-f-shipping-line"
               required
@@ -1524,7 +1534,7 @@ export default function SDForms() {
           {showAcid ? (
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-f-acid">
-                14. ACID Number *
+                14. ACID Number
               </label>
               <input
                 id="sd-f-acid"
@@ -1646,7 +1656,15 @@ export default function SDForms() {
         </section>
 
         <section className="client-detail-modal__section">
-          <h3 className="client-detail-modal__section-title">{t('sdForms.declaration.sections.notes', { lng: 'en' })}</h3>
+          <h3 className="client-detail-modal__section-title flex items-center gap-2">
+            {t('sdForms.declaration.sections.notes', { lng: 'en' })}
+            <span className="help-icon-wrapper">
+              <HelpCircle className="h-4 w-4 text-gray-400" />
+              <div className="help-icon-tooltip">
+                {notesHelpText}
+              </div>
+            </span>
+          </h3>
           <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
             <textarea
               id="sd-f-notes"
