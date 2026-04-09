@@ -133,7 +133,14 @@
             $pod = $form->pod?->name ?? $form->pod_text ?? '—';
             $finalDestination = $form->final_destination ?? '—';
             $consignee = $form->consignee_info ?? '—';
-            $notifyParty = $form->notify_party_details ?: ($form->notify_party_mode ? ucfirst((string) $form->notify_party_mode) : '—');
+            $notifyMode = strtolower((string) ($form->notify_party_mode ?? ''));
+            if (!empty($form->notify_party_details)) {
+                $notifyParty = $form->notify_party_details;
+            } elseif ($notifyMode === 'same') {
+                $notifyParty = $consignee;
+            } else {
+                $notifyParty = '—';
+            }
             $contactDetails = trim((string) ($form->client?->email ?? ''));
             if ($contactDetails === '') {
                 $contactDetails = trim((string) ($form->client?->phone ?? ''));
@@ -144,6 +151,9 @@
             }
             $containerLabel .= trim((string) ($form->container_size ?? '—'));
             $weightLabel = 'T.G.W: '.($form->total_gross_weight ?? '—');
+            $vesselRef = $form->linkedShipment?->bl_number ?? '—';
+            $logoPath = base_path('../front/src/assets/logo_darkmode.png');
+            $logoSrc = file_exists($logoPath) ? 'file://'.str_replace('\\', '/', $logoPath) : null;
         @endphp
 
         <div class="header">
@@ -153,7 +163,11 @@
                 <table class="header-table">
                     <tr>
                         <td style="width: 64px;">
-                            <div class="logo-box">LOGO</div>
+                            @if($logoSrc)
+                                <img src="{{ $logoSrc }}" alt="Amazon Marine" style="width:58px;height:58px;object-fit:contain;">
+                            @else
+                                <div class="logo-box">LOGO</div>
+                            @endif
                         </td>
                         <td style="padding-left: 10px;">
                             <p class="company-name">AMAZON MARINE</p>
@@ -162,7 +176,8 @@
                         <td class="doc-meta">
                             <div class="doc-title">SD - Shipping Details Form</div>
                             <div><strong>SD No:</strong> {{ $form->sd_number ?? ('SD-'.$form->id) }}</div>
-                            <div><strong>Date:</strong> {{ optional($form->created_at)->format('d/m/Y') ?? '—' }}</div>
+                            <div><strong>SD Date:</strong> {{ optional($form->created_at)->format('d/m/Y') ?? '—' }}</div>
+                            <div><strong>Vessel Date:</strong> {{ optional($form->requested_vessel_date)->format('d/m/Y') ?? '—' }}</div>
                             <div><strong>Client:</strong> {{ $form->client?->name ?? '—' }}</div>
                         </td>
                     </tr>
@@ -216,10 +231,14 @@
                 <th>Weight (KGS)</th>
             </tr>
             <tr>
-                <td>{{ $form->shipping_line ?? '—' }}</td>
-                <td>{{ $containerLabel }}</td>
+                <td>{{ $vesselRef }}</td>
+                <td>{{ $form->container_type ?? '—' }} ({{ $containerLabel }})</td>
                 <td>{{ $form->hs_code ?? '—' }}</td>
                 <td>{{ $weightLabel }}</td>
+            </tr>
+            <tr>
+                <th>Shipping Line</th>
+                <td colspan="3">{{ $form->shipping_line ?? '—' }}</td>
             </tr>
         </table>
 

@@ -424,7 +424,7 @@ class SDFormController extends Controller
     {
         $this->authorize('view', $sdForm);
 
-        $sdForm->loadMissing(['client', 'salesRep', 'pol', 'pod']);
+        $sdForm->loadMissing(['client', 'salesRep', 'pol', 'pod', 'linkedShipment']);
 
         $operationsUsers = User::role('operation')
             ->where('status', 'active')
