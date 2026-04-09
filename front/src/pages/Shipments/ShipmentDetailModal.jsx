@@ -57,6 +57,7 @@ export default function ShipmentDetailModal({
   vendorOptions = [],
   userOptions = [],
   onOperationsSaved = null,
+  opsStatusOptions = [],
 }) {
   const { t, i18n } = useTranslation()
   const token = getStoredToken()
@@ -583,9 +584,9 @@ export default function ShipmentDetailModal({
                           disabled={!isOperations && !isAdminRole}
                         >
                           <option value="">{t('common.select')}</option>
-                          {[1, 2, 3, 4, 5, 6, 7, 8].map(num => (
-                            <option key={num} value={num}>
-                              {num}. {t(`shipments.ops.opsStatusOptions.${num}`)}
+                          {opsStatusOptions.map(opt => (
+                            <option key={opt.id} value={opt.id}>
+                              {localizedStatusLabel(opt, i18n.language)}
                             </option>
                           ))}
                         </select>

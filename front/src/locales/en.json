@@ -2082,16 +2082,6 @@
     "ops": {
       "title": "Operations Panel",
       "opsStatus": "Operational Shipment Status",
-      "opsStatusOptions": {
-        "1": "Container allocation in progress",
-        "2": "Loading in progress",
-        "3": "Customs clearance in progress",
-        "4": "Awaiting shipping invoices",
-        "5": "Billing in progress",
-        "6": "Awaiting client payment",
-        "7": "Releasing shipment",
-        "8": "Shipment complete"
-      },
       "vendorsPartners": "Vendors & Partners",
       "transportContractor": "Transport Contractor",
       "customsBroker": "Customs Broker",
@@ -2653,6 +2643,9 @@
       "editTitle": "Edit status",
       "nameAr": "Name (Arabic)",
       "nameEn": "Name (English)",
+      "type": "Type",
+      "typeCommercial": "Commercial Status",
+      "typeOperational": "Operational Status",
       "color": "Color (hex)",
       "description": "Description",
       "active": "Active",
@@ -2665,6 +2658,7 @@
         "nameEn": "Name (En)",
         "color": "Color",
         "active": "Active",
+        "type": "Type",
         "actions": "Actions"
       },
       "noStatuses": "No statuses defined yet.",

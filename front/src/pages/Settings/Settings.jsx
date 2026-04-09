@@ -283,6 +283,7 @@ export default function Settings() {
   const [shipmentStatusForm, setShipmentStatusForm] = useState({
     name_ar: '',
     name_en: '',
+    type: 'commercial',
     color: '#3B82F6',
     description: '',
     active: true,
@@ -735,6 +736,7 @@ export default function Settings() {
     setShipmentStatusForm({
       name_ar: '',
       name_en: '',
+      type: 'commercial',
       color: '#3B82F6',
       description: '',
       active: true,
@@ -748,6 +750,7 @@ export default function Settings() {
     setShipmentStatusForm({
       name_ar: status.name_ar || '',
       name_en: status.name_en || '',
+      type: status.type || 'commercial',
       color: status.color || '#3B82F6',
       description: status.description || '',
       active: !!status.active,
@@ -1458,6 +1461,12 @@ export default function Settings() {
       </span>
     ) },
     { key: 'active', label: t('settings.shipmentStatuses.table.active'), sortable: false, render: (val) => (val ? t('common.yes', 'Yes') : t('common.no', 'No')) },
+    {
+      key: 'type',
+      label: t('settings.shipmentStatuses.table.type'),
+      sortable: false,
+      render: (val) => (val === 'operational' ? t('settings.shipmentStatuses.typeOperational') : t('settings.shipmentStatuses.typeCommercial')),
+    },
     {
       key: 'actions',
       label: t('settings.shipmentStatuses.table.actions'),
@@ -2309,6 +2318,17 @@ export default function Settings() {
                 value={shipmentStatusForm.name_en}
                 onChange={(e) => setShipmentStatusForm((p) => ({ ...p, name_en: e.target.value }))}
               />
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.shipmentStatuses.type')} htmlFor="settings-ss-type">
+              <select
+                id="settings-ss-type"
+                className="clients-input"
+                value={shipmentStatusForm.type}
+                onChange={(e) => setShipmentStatusForm((p) => ({ ...p, type: e.target.value }))}
+              >
+                <option value="commercial">{t('settings.shipmentStatuses.typeCommercial')}</option>
+                <option value="operational">{t('settings.shipmentStatuses.typeOperational')}</option>
+              </select>
             </SettingsModalField>
             <SettingsModalField label={t('settings.shipmentStatuses.color')} htmlFor="settings-ss-color">
               <input

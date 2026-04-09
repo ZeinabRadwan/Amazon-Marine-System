@@ -39,7 +39,7 @@ class ShipmentOperationsController extends Controller
             'etd' => ['nullable', 'date'],
             'eta' => ['nullable', 'date'],
             'notes' => ['nullable', 'string'],
-            'operations_status' => ['nullable', 'integer', 'min:1', 'max:8'],
+            'operations_status' => ['nullable', 'integer', 'exists:shipment_statuses,id'],
             'is_reefer' => ['nullable', 'boolean'],
             'reefer_temp' => ['nullable', 'string', 'max:50'],
             'reefer_vent' => ['nullable', 'string', 'max:50'],

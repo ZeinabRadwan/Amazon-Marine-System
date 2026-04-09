@@ -237,6 +237,7 @@ export default function Shipments() {
   const [vendorOptions, setVendorOptions] = useState([])
   const [portOptions, setPortOptions] = useState([])
   const [statusOptions, setStatusOptions] = useState([])
+  const [opsStatusOptions, setOpsStatusOptions] = useState([])
   const [sdFormOptions, setSdFormOptions] = useState([])
 
   const [showCreate, setShowCreate] = useState(false)
@@ -408,7 +409,10 @@ export default function Shipments() {
       const ports = p.data ?? p
       setPortOptions(Array.isArray(ports) ? ports : [])
       const statuses = st.data ?? []
-      setStatusOptions(Array.isArray(statuses) ? statuses : [])
+      if (Array.isArray(statuses)) {
+        setStatusOptions(statuses.filter((s) => s.type === 'commercial' || !s.type))
+        setOpsStatusOptions(statuses.filter((s) => s.type === 'operational'))
+      }
     })
   }, [token, isSalesRepresentative, isAdminRole, isOperations, user?.id])
 
@@ -1679,6 +1683,7 @@ export default function Shipments() {
           vendorOptions={vendorOptions}
           userOptions={userOptions}
           onOperationsSaved={refreshShipmentDetail}
+          opsStatusOptions={opsStatusOptions}
         />
 
         {stageRow && canManageOps && (
