@@ -16,6 +16,8 @@ import { CheckCircle2, Circle, Clock, User, Calendar, Save, ShieldAlert } from '
 import Tabs from '../../components/Tabs'
 import ShipmentStatusBadge from '../../components/ShipmentStatusBadge'
 import { getPipelineStepIndex, PIPELINE_STEP_KEYS } from './shipmentPipeline'
+import LoaderDots from '../../components/LoaderDots'
+import '../../components/LoaderDots/LoaderDots.css'
 import { localizedStatusLabel } from '../../utils/localizedStatusLabel'
 import './Shipments.css'
 import '../Clients/Clients.css'
@@ -232,8 +234,32 @@ export default function ShipmentDetailModal({
     }
   }
 
-  const updateTask = (taskId, field, value) => {
-    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, [field]: value } : t))
+  const updateTask = async (taskId, field, value) => {
+    // Optimistic update
+    let updatedTaskObj = null
+    setTasks(prev => {
+      const next = prev.map(t => {
+        if (t.id === taskId) {
+          updatedTaskObj = { ...t, [field]: value }
+          return updatedTaskObj
+        }
+        return t
+      })
+      return next
+    })
+
+    // Immediate API call for better UX
+    if (!token || !shipment?.id) return
+    try {
+      // We wait a tick to ensure we have the updatedTaskObj if it was just created/found
+      if (updatedTaskObj) {
+        await bulkUpdateShipmentTasks(token, shipment.id, [updatedTaskObj])
+      }
+    } catch (err) {
+      console.error('Failed to update task:', err)
+      // On error, we might want to refresh from server
+      loadTasks()
+    }
   }
 
   return (

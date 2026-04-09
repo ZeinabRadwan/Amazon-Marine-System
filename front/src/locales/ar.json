@@ -2103,7 +2103,16 @@
         "enter_si_vgm": "إدخال SI & VGM",
         "review_draft_bl": "مراجعة Draft B/L",
         "prepare_origin_cert": "تجهيز شهادة المنشأ / الزراعية (إن وُجد)",
-        "stamp_customs_docs": "ختم المستندات الجمركية"
+        "Review Client Documents": "مراجعة مستندات العميل",
+        "Review Packing List & Invoice": "مراجعة قائمة التعبئة والفاتورة",
+        "Review Sticker": "مراجعة الملصق (Sticker)",
+        "Open Customs Certificate": "فتح شهادة جمركية",
+        "Allocate Shipping Order (D.O.)": "تخصيص إذن التسليم (D.O.)",
+        "Container Withdrawal/Pulling": "سحب الحاويات",
+        "Submit SI & VGM": "تقديم SI & VGM",
+        "Review Draft B/L": "مراجعة مسودة بوليصة الشحن (Draft B/L)",
+        "Prepare Certificate of Origin / Agricultural (if applicable)": "تجهيز شهادة المنشأ / الزراعية (إن وجد)",
+        "Stamp Customs Documents": "ختم المستندات الجمركية"
       },
       "taskAssignee": "المسؤول",
       "taskDue": "تاريخ الاستحقاق",
