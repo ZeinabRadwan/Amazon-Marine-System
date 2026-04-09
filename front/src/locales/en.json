@@ -1404,7 +1404,8 @@
       "shipments": "Shipments",
       "attachments": "Attachments",
       "notes": "Notes",
-      "followups": "Follow-ups"
+      "followups": "Follow-ups",
+      "financial": "Financial summary"
     },
     "noVisits": "No visits",
     "noShipments": "No shipments",
@@ -1446,6 +1447,8 @@
     "followUpChannelLabel": "Follow-up channel",
     "followUpKindLabel": "Follow-up type",
     "followUpOutcomeLabel": "Outcome",
+    "followUpHasNextToggle": "Has a next follow-up",
+    "followUpHasNextHelp": "Enable this to show next follow-up and reminder options.",
     "followUpOutcomeUnset": "— Later / not set —",
     "followUpNotes": "Notes",
     "followUpSummaryRequired": "Follow-up summary is required.",

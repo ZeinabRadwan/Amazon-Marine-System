@@ -1404,7 +1404,8 @@
       "shipments": "الشحنات",
       "attachments": "المرفقات",
       "notes": "الملاحظات",
-      "followups": "المتابعات"
+      "followups": "المتابعات",
+      "financial": "الملخص المالي"
     },
     "noVisits": "لا توجد زيارات",
     "noShipments": "لا توجد شحنات",
@@ -1446,6 +1447,8 @@
     "followUpChannelLabel": "وسيلة المتابعة",
     "followUpKindLabel": "نوع المتابعة",
     "followUpOutcomeLabel": "نتيجة المتابعة",
+    "followUpHasNextToggle": "يوجد متابعة قادمة",
+    "followUpHasNextHelp": "فعّل هذا الخيار لإظهار المتابعة القادمة وخيارات التذكير.",
     "followUpOutcomeUnset": "— لاحقاً / غير محدد —",
     "followUpNotes": "ملاحظات",
     "followUpSummaryRequired": "ملخص المتابعة مطلوب.",
