@@ -36,6 +36,23 @@
   max-width: 100%;
 }
 
+/* SD stats cards: keep 5 cards inline on desktop */
+.sd-forms-page .clients-stats-grid {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .sd-forms-page .clients-stats-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .sd-forms-page .clients-stats-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
 .sd-forms-badge {
   display: inline-block;
   padding: 2px 8px;
