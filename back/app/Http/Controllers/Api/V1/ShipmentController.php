@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\PdfLayout;
 use App\Models\SDForm;
 use App\Models\Shipment;
 use App\Models\User;
@@ -565,20 +566,24 @@ class ShipmentController extends Controller
         }
         $filename .= '.pdf';
 
+        $layout = PdfLayout::where('document_type', 'shipment')->first();
+
         $html = view('shipments.pdf', [
             'shipment' => $shipment,
             'labels' => $labels,
             'notesColumn' => is_string($notesColumn) ? $notesColumn : null,
+            'headerHtml' => $layout?->header_html,
+            'footerHtml' => $layout?->footer_html,
         ])->render();
 
         $mpdf = new Mpdf([
             'mode' => 'utf-8',
             'default_font' => 'dejavusans',
             'format' => 'A4',
-            'margin_top' => 12,
-            'margin_bottom' => 16,
-            'margin_left' => 12,
-            'margin_right' => 12,
+            'margin_top' => 10,
+            'margin_bottom' => 15,
+            'margin_left' => 10,
+            'margin_right' => 10,
         ]);
 
         $mpdf->WriteHTML($html);
@@ -621,6 +626,12 @@ class ShipmentController extends Controller
                 'notes' => 'ملاحظات الشحنة',
                 'route' => 'المسار',
                 'sales_rep' => 'مندوب المبيعات',
+                'doc_subtitle' => 'ملخص الشحنة',
+                'sec_shipment' => 'بيانات الشحنة',
+                'sec_booking' => 'الحجز والمستندات',
+                'sec_shipping' => 'النقل والحاوية',
+                'sec_ports' => 'الموانئ والتحميل',
+                'sec_goods' => 'تفاصيل البضاعة',
             ];
         }
 
@@ -650,6 +661,12 @@ class ShipmentController extends Controller
             'notes' => 'Shipment notes',
             'route' => 'Route',
             'sales_rep' => 'Sales representative',
+            'doc_subtitle' => 'Shipment summary',
+            'sec_shipment' => 'Shipment information',
+            'sec_booking' => 'Booking & documents',
+            'sec_shipping' => 'Shipping & container',
+            'sec_ports' => 'Ports & loading',
+            'sec_goods' => 'Goods details',
         ];
     }
 }
