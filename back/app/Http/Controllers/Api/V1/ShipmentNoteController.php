@@ -7,6 +7,7 @@ use App\Models\Note;
 use App\Models\Shipment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class ShipmentNoteController extends Controller
 {
@@ -17,19 +18,13 @@ class ShipmentNoteController extends Controller
     {
         $this->authorize('view', $shipment);
 
-        $notes = $shipment->notes()
+        $notes = $shipment->timelineNotes()
             ->with('author:id,name')
             ->orderByDesc('created_at')
             ->get();
 
         return response()->json([
-            'data' => $notes->map(fn (Note $n) => [
-                'id' => $n->id,
-                'content' => $n->content,
-                'author_id' => $n->author_id,
-                'author' => $n->author ? ['id' => $n->author->id, 'name' => $n->author->name] : null,
-                'created_at' => $n->created_at,
-            ]),
+            'data' => $notes->map(fn (Note $n) => $this->notePayload($n)),
         ]);
     }
 
@@ -50,14 +45,70 @@ class ShipmentNoteController extends Controller
         $note->author_id = $request->user()->id;
         $note->content = $validated['content'];
         $note->save();
+        $note->load('author:id,name');
 
         return response()->json([
-            'data' => [
-                'id' => $note->id,
-                'content' => $note->content,
-                'author_id' => $note->author_id,
-                'created_at' => $note->created_at,
-            ],
+            'data' => $this->notePayload($note),
         ], 201);
+    }
+
+    /**
+     * Update a note on this shipment (author or notes.manage).
+     */
+    public function update(Request $request, Shipment $shipment, Note $note): JsonResponse
+    {
+        $note = $this->noteBelongsToShipment($shipment, $note);
+
+        $this->authorize('update', $note);
+
+        $validated = $request->validate([
+            'content' => ['required', 'string', 'max:65535'],
+        ]);
+
+        $note->content = $validated['content'];
+        $note->save();
+        $note->load('author:id,name');
+
+        return response()->json([
+            'data' => $this->notePayload($note),
+        ]);
+    }
+
+    /**
+     * Delete a note (notes.manage only).
+     */
+    public function destroy(Shipment $shipment, Note $note): JsonResponse
+    {
+        $note = $this->noteBelongsToShipment($shipment, $note);
+
+        $this->authorize('delete', $note);
+
+        $note->delete();
+
+        return response()->json(['message' => __('Note deleted.')]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function notePayload(Note $note): array
+    {
+        return [
+            'id' => $note->id,
+            'content' => $note->content,
+            'author_id' => $note->author_id,
+            'author' => $note->author ? ['id' => $note->author->id, 'name' => $note->author->name] : null,
+            'created_at' => $note->created_at,
+            'updated_at' => $note->updated_at,
+        ];
+    }
+
+    private function noteBelongsToShipment(Shipment $shipment, Note $note): Note
+    {
+        if ($note->noteable_type !== Shipment::class || (int) $note->noteable_id !== (int) $shipment->id) {
+            throw new NotFoundHttpException;
+        }
+
+        return $note;
     }
 }

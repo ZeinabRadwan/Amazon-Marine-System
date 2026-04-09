@@ -43,8 +43,8 @@ const SIDEBAR_SECTIONS = [
   {
     sectionKey: 'operations',
     items: [
-      { id: 'shipments', menuKey: 'shipments', Icon: ShipmentsIcon, badge: 'shipments' },
       { id: 'sdForms', menuKey: 'sdForms', Icon: DocumentIcon, badge: 'sdForms' },
+      { id: 'shipments', menuKey: 'shipments', Icon: ShipmentsIcon, badge: 'shipments' },
     ],
   },
   {

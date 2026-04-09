@@ -241,30 +241,13 @@
   width: calc(100vw - 2rem);
 }
 
+/* Financials modal header: base look from .client-detail-modal__header--form (SD / Clients form modals) */
 .shipment-fin-modal__header {
-  background: linear-gradient(135deg, var(--navy-700, #1e3a5f), #0f172a);
-  color: #fff;
-  border-radius: 0.5rem 0.5rem 0 0;
-  padding: 1rem 1.25rem;
   align-items: flex-start;
 }
 
-.shipment-fin-modal__header .client-detail-modal__close {
-  color: #fff;
-}
-
-.shipment-fin-modal__header .client-detail-modal__header-label {
-  color: rgba(255, 255, 255, 0.75);
-}
-
 .shipment-fin-modal__title-bl {
-  color: #fbbf24;
-}
-
-.shipment-fin-modal__client {
-  font-size: 0.75rem;
-  opacity: 0.65;
-  margin-top: 0.25rem;
+  color: inherit;
 }
 
 .shipment-fin-tab-bar {
@@ -321,9 +304,7 @@
 }
 
 .shipment-fin-modal__body {
-  padding: 0;
   max-height: min(70vh, 720px);
-  overflow-y: auto;
 }
 
 .shipment-fin-panel {
@@ -1246,5 +1227,128 @@
 .shipment-detail-modal-box {
   max-width: 1100px;
   width: calc(100vw - 2rem);
+}
+
+/* Shipment detail — Notes tab */
+.shipment-notes-tab {
+  min-height: 12rem;
+}
+
+.shipment-notes-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  margin-top: 0.5rem;
+  border-radius: 1rem;
+  border: 2px dashed var(--border-color, #e5e7eb);
+  background: linear-gradient(
+    160deg,
+    rgba(59, 130, 246, 0.06) 0%,
+    rgba(251, 191, 36, 0.05) 45%,
+    rgba(16, 185, 129, 0.05) 100%
+  );
+}
+
+.dark .shipment-notes-empty {
+  border-color: #374151;
+  background: linear-gradient(
+    160deg,
+    rgba(59, 130, 246, 0.12) 0%,
+    rgba(251, 191, 36, 0.06) 45%,
+    rgba(16, 185, 129, 0.08) 100%
+  );
+}
+
+.shipment-notes-empty--loading {
+  border-style: solid;
+  background: var(--card-bg, #f9fafb);
+}
+
+.dark .shipment-notes-empty--loading {
+  background: rgba(31, 41, 55, 0.5);
+}
+
+.shipment-notes-empty__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 4rem;
+  height: 4rem;
+  margin-bottom: 1rem;
+  border-radius: 9999px;
+  background: rgba(59, 130, 246, 0.12);
+  color: var(--navy-700, #1e3a5f);
+}
+
+.dark .shipment-notes-empty__icon {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+}
+
+.shipment-notes-empty__title {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--navy-700, #1e3a5f);
+}
+
+.dark .shipment-notes-empty__title {
+  color: #f3f4f6;
+}
+
+.shipment-notes-empty__text {
+  margin: 0;
+  max-width: 26rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--text-muted, #6b7280);
+}
+
+.dark .shipment-notes-empty__text {
+  color: #9ca3af;
+}
+
+/* Reefer block: same primary-accent toggle chip as client follow-up “has next follow-up” */
+.client-detail-modal__followup-form .client-detail-modal__reminder-mode-option[for^='sh-reefer-'] {
+  width: fit-content;
+  max-width: 100%;
+  font-weight: 600;
+  border-color: color-mix(in oklab, var(--form-primary, #0039c5) 26%, var(--form-divider, #e5e7eb));
+  background: color-mix(in oklab, var(--form-primary, #0039c5) 6%, transparent);
+}
+
+.client-detail-modal__followup-toggle-wrap .client-detail-modal__reminder-mode-option[for^='sh-reefer-'] {
+  margin-inline: auto;
+}
+
+/* “What’s new” summary on Shipments list */
+.shipments-page-updates__title {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--navy-700, #1e3a5f);
+}
+
+.dark .shipments-page-updates__title {
+  color: #f3f4f6;
+}
+
+.shipments-page-updates__list {
+  margin: 0;
+  padding-inline-start: 1.25rem;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--text-muted, #6b7280);
+}
+
+.dark .shipments-page-updates__list {
+  color: #9ca3af;
+}
+
+.shipments-page-updates__list li + li {
+  margin-top: 0.35rem;
 }
 

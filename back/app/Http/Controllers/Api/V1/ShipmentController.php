@@ -12,6 +12,7 @@ use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Mpdf\Mpdf;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ShipmentController extends Controller
@@ -73,13 +74,14 @@ class ShipmentController extends Controller
         $validated = $request->validate([
             'sd_form_id' => ['nullable', 'integer', 'exists:s_d_forms,id'],
             'client_id' => ['nullable', 'integer', 'exists:clients,id'],
-            'sales_rep_id' => ['nullable', 'integer', 'exists:users,id'],
             'line_vendor_id' => ['nullable', 'integer', 'exists:vendors,id'],
             'origin_port_id' => ['nullable', 'integer', 'exists:ports,id'],
             'destination_port_id' => ['nullable', 'integer', 'exists:ports,id'],
             'booking_number' => ['nullable', 'string', 'max:255'],
             'booking_date' => ['nullable', 'date'],
+            'bl_number' => ['nullable', 'string', 'max:255'],
             'acid_number' => ['nullable', 'string', 'max:255'],
+            'notes' => ['nullable', 'string'],
             'shipment_direction' => ['nullable', 'string', 'in:Export,Import'],
             'mode' => ['nullable', 'string', 'in:Sea,Air,Land'],
             'shipment_type' => ['nullable', 'string', 'in:FCL,LCL'],
@@ -102,7 +104,6 @@ class ShipmentController extends Controller
             $sd = SDForm::find($shipment->sd_form_id);
             if ($sd) {
                 $shipment->client_id = $sd->client_id;
-                $shipment->sales_rep_id = $sd->sales_rep_id;
                 $shipment->shipment_direction = $sd->shipment_direction;
                 $shipment->origin_port_id = $sd->pol_id;
                 $shipment->destination_port_id = $sd->pod_id;
@@ -113,11 +114,8 @@ class ShipmentController extends Controller
             }
         }
 
-        // Auto-assign Sales Rep if the user is a sales rep and no user was explicitly set, 
-        // or always force to current user based on RBAC since Sales reps can only create their own shipments.
-        // Actually, the requirement says "the backend must automatically assign the currently logged-in user as the Sales Rep"
-        // Let's just always set it, or set it if not present. If the user is admin, they might be picking a sales rep.
-        if (! $shipment->sales_rep_id && $request->user()) {
+        // Sales rep is always the authenticated user who creates the shipment (no client override).
+        if ($request->user()) {
             $shipment->sales_rep_id = $request->user()->id;
         }
 
@@ -126,6 +124,14 @@ class ShipmentController extends Controller
         $shipment->shipment_type = $shipment->shipment_type ?? 'FCL';
 
         $shipment->save();
+
+        if ($shipment->sd_form_id) {
+            $sd = SDForm::query()->whereKey($shipment->sd_form_id)->first();
+            if ($sd && $sd->linked_shipment_id === null) {
+                $sd->linked_shipment_id = $shipment->id;
+                $sd->save();
+            }
+        }
 
         ActivityLogger::log('shipment.created', $shipment, [
             'client_id' => $shipment->client_id,
@@ -177,6 +183,7 @@ class ShipmentController extends Controller
             'container_size' => ['sometimes', 'nullable', 'string', 'max:10'],
             'container_type' => ['sometimes', 'nullable', 'string', 'max:40'],
             'cargo_description' => ['sometimes', 'nullable', 'string'],
+            'notes' => ['sometimes', 'nullable', 'string'],
             'status' => ['sometimes', 'string', 'max:40'],
             'loading_place' => ['sometimes', 'nullable', 'string', 'max:255'],
             'loading_date' => ['sometimes', 'nullable', 'date'],
@@ -476,5 +483,121 @@ class ShipmentController extends Controller
         return response()->json([
             'message' => __('Notification recorded.'),
         ]);
+    }
+
+    /**
+     * Download a single-shipment summary as PDF (for row action / archive).
+     */
+    public function pdf(Request $request, Shipment $shipment)
+    {
+        $this->authorize('view', $shipment);
+
+        $shipment->loadMissing([
+            'client',
+            'salesRep',
+            'lineVendor',
+            'originPort',
+            'destinationPort',
+            'sdForm',
+        ]);
+
+        $locale = strtolower((string) $request->header('X-App-Locale', 'en')) === 'ar' ? 'ar' : 'en';
+        $labels = $this->shipmentPdfLabels($locale);
+
+        $notesAttr = $shipment->getAttributes()['notes'] ?? null;
+        $notesColumn = is_string($notesAttr) ? $notesAttr : null;
+
+        $filename = 'shipment-'.$shipment->id;
+        if ($shipment->bl_number) {
+            $filename .= '-'.preg_replace('/[^a-zA-Z0-9_-]+/', '-', $shipment->bl_number);
+        }
+        $filename .= '.pdf';
+
+        $html = view('shipments.pdf', [
+            'shipment' => $shipment,
+            'labels' => $labels,
+            'notesColumn' => is_string($notesColumn) ? $notesColumn : null,
+        ])->render();
+
+        $mpdf = new Mpdf([
+            'mode' => 'utf-8',
+            'default_font' => 'dejavusans',
+            'format' => 'A4',
+            'margin_top' => 12,
+            'margin_bottom' => 16,
+            'margin_left' => 12,
+            'margin_right' => 12,
+        ]);
+
+        $mpdf->WriteHTML($html);
+
+        return response($mpdf->Output($filename, 'S'), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+        ]);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function shipmentPdfLabels(string $locale): array
+    {
+        if ($locale === 'ar') {
+            return [
+                'title' => 'تفاصيل الشحنة',
+                'generated' => 'أُنشئ في',
+                'id' => 'المعرّف',
+                'status' => 'الحالة',
+                'booking_date' => 'تاريخ الحجز',
+                'booking_number' => 'رقم الحجز',
+                'bl_number' => 'رقم البوليصة (B/L)',
+                'client' => 'العميل',
+                'sd_form' => 'نموذج SD',
+                'line_vendor' => 'الخط الملاحي',
+                'mode' => 'نمط الشحنة',
+                'shipment_type' => 'نوع الشحنة',
+                'direction' => 'الاتجاه',
+                'acid' => 'رقم ACID',
+                'container_type' => 'نوع الحاوية',
+                'container_size' => 'مقاس الحاوية',
+                'container_count' => 'عدد الحاويات',
+                'loading_place' => 'مكان التحميل',
+                'pol' => 'ميناء التحميل (POL)',
+                'pod' => 'ميناء التفريغ (POD)',
+                'loading_date' => 'تاريخ التحميل',
+                'cargo' => 'وصف البضاعة',
+                'notes' => 'ملاحظات الشحنة',
+                'route' => 'المسار',
+                'sales_rep' => 'مندوب المبيعات',
+            ];
+        }
+
+        return [
+            'title' => 'Shipment details',
+            'generated' => 'Generated',
+            'id' => 'ID',
+            'status' => 'Status',
+            'booking_date' => 'Booking date',
+            'booking_number' => 'Booking number',
+            'bl_number' => 'Bill of lading (B/L)',
+            'client' => 'Client',
+            'sd_form' => 'SD form',
+            'line_vendor' => 'Shipping line',
+            'mode' => 'Shipment mode',
+            'shipment_type' => 'Shipment type',
+            'direction' => 'Direction',
+            'acid' => 'ACID number',
+            'container_type' => 'Container type',
+            'container_size' => 'Container size',
+            'container_count' => 'Container count',
+            'loading_place' => 'Place of loading',
+            'pol' => 'Port of loading (POL)',
+            'pod' => 'Port of discharge (POD)',
+            'loading_date' => 'Loading date',
+            'cargo' => 'Cargo description',
+            'notes' => 'Shipment notes',
+            'route' => 'Route',
+            'sales_rep' => 'Sales representative',
+        ];
     }
 }

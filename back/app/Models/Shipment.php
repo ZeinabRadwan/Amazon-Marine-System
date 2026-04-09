@@ -39,6 +39,7 @@ class Shipment extends Model
         'loading_place',
         'loading_date',
         'cargo_description',
+        'notes',
         'is_reefer',
         'reefer_temp',
         'reefer_vent',
@@ -151,9 +152,12 @@ class Shipment extends Model
     }
 
     /**
+     * Timeline / threaded notes (Note model). Named separately from the `notes` column so JSON serialization
+     * does not overwrite shipment free-text notes with this relation (array_merge in Model::toArray).
+     *
      * @return MorphMany<Note>
      */
-    public function notes(): MorphMany
+    public function timelineNotes(): MorphMany
     {
         return $this->morphMany(Note::class, 'noteable');
     }

@@ -1,18 +1,35 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X } from 'lucide-react'
+import {
+  X,
+  Pencil,
+  Trash2,
+  StickyNote,
+  FileDown,
+  CheckCircle2,
+  Circle,
+  Clock,
+  User,
+  Calendar,
+  Save,
+  ShieldAlert,
+} from 'lucide-react'
 import { getStoredToken } from '../Login'
+import LoaderDots from '../../components/LoaderDots'
+import '../../components/LoaderDots/LoaderDots.css'
 import {
   listShipmentNotes,
   postShipmentNote,
+  patchShipmentNote,
+  deleteShipmentNote,
   getShipmentTrackingUpdates,
   postShipmentTrackingUpdate,
   getShipmentOperations,
   updateShipmentOperations,
   getShipmentTasks,
-  bulkUpdateShipmentTasks
+  bulkUpdateShipmentTasks,
+  downloadShipmentPdf,
 } from '../../api/shipments'
-import { CheckCircle2, Circle, Clock, User, Calendar, Save, ShieldAlert } from 'lucide-react'
 import Tabs from '../../components/Tabs'
 import ShipmentStatusBadge from '../../components/ShipmentStatusBadge'
 import { getPipelineStepIndex, PIPELINE_STEP_KEYS } from './shipmentPipeline'
@@ -20,6 +37,7 @@ import LoaderDots from '../../components/LoaderDots'
 import '../../components/LoaderDots/LoaderDots.css'
 import { localizedStatusLabel } from '../../utils/localizedStatusLabel'
 import './Shipments.css'
+import '../SDForms/SDForms.css'
 import '../Clients/Clients.css'
 import '../Clients/ClientDetailModal.css'
 
@@ -43,6 +61,46 @@ function formatMoney(v, locale) {
   return new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en-US', { maximumFractionDigits: 2 }).format(Number(v))
 }
 
+function shipmentDisplayMode(mode, t) {
+  if (!mode) return '—'
+  return t(`shipments.modeOptions.${mode}`, { defaultValue: mode })
+}
+
+function shipmentDisplayShipmentType(type, t) {
+  if (!type) return '—'
+  return t(`shipments.shipmentTypeOptions.${type}`, { defaultValue: type })
+}
+
+function shipmentDisplayDirection(dir, t) {
+  if (!dir) return '—'
+  return t(`shipments.directionOption.${dir}`, { defaultValue: dir })
+}
+
+function shipmentDisplayContainerType(ct, t) {
+  if (!ct) return '—'
+  const keyMap = {
+    Dry: 'dry',
+    Reefer: 'reefer',
+    'Open Top': 'openTop',
+    'Flat Rack': 'flatRack',
+    'High Cube': 'highCube',
+  }
+  const k = keyMap[ct]
+  return k ? t(`shipments.containerTypes.${k}`) : ct
+}
+
+function shipmentDisplayContainerSize(sz, t) {
+  if (sz == null || sz === '') return '—'
+  return t(`shipments.containerSizes.${sz}`, { defaultValue: String(sz) })
+}
+
+/** Free-text `notes` column on shipments. Must stay a string: a morph relation used to be named `notes` and overwrote this in API JSON with an array. */
+function shipmentFreeTextNotes(shipment) {
+  if (!shipment) return ''
+  const raw = shipment.notes
+  return typeof raw === 'string' ? raw : ''
+}
+
 export default function ShipmentDetailModal({
   open,
   shipment,
@@ -61,6 +119,9 @@ export default function ShipmentDetailModal({
   userOptions = [],
   onOperationsSaved = null,
   opsStatusOptions = [],
+  currentUserId = null,
+  canAddShipmentNote = false,
+  canManageAllShipmentNotes = false,
 }) {
   const { t, i18n } = useTranslation()
   const token = getStoredToken()
@@ -71,6 +132,12 @@ export default function ShipmentDetailModal({
   const [noteText, setNoteText] = useState('')
   const [noteSubmitting, setNoteSubmitting] = useState(false)
   const [noteError, setNoteError] = useState(null)
+  const [editingNoteId, setEditingNoteId] = useState(null)
+  const [editNoteDraft, setEditNoteDraft] = useState('')
+  const [notePatchingId, setNotePatchingId] = useState(null)
+  const [noteDeletingId, setNoteDeletingId] = useState(null)
+  const [pdfExporting, setPdfExporting] = useState(false)
+  const [exportPdfError, setExportPdfError] = useState(null)
 
   const [trackingUpdates, setTrackingUpdates] = useState([])
   const [trackingLoading, setTrackingLoading] = useState(false)
@@ -129,6 +196,7 @@ export default function ShipmentDetailModal({
       setNotes([])
       return
     }
+    setNoteError(null)
     loadNotes()
   }, [open, detailTab, shipment?.id, loadNotes])
 
@@ -144,6 +212,12 @@ export default function ShipmentDetailModal({
     if (!open) {
       setNoteText('')
       setNoteError(null)
+      setEditingNoteId(null)
+      setEditNoteDraft('')
+      setNotePatchingId(null)
+      setNoteDeletingId(null)
+      setPdfExporting(false)
+      setExportPdfError(null)
       setTrackingText('')
       setTrackingError(null)
       setOpsError(null)
@@ -185,6 +259,68 @@ export default function ShipmentDetailModal({
       setNoteError(err.message || t('shipments.errorNote'))
     } finally {
       setNoteSubmitting(false)
+    }
+  }
+
+  const canEditThisNote = (note) =>
+    canManageAllShipmentNotes ||
+    (currentUserId != null && Number(note.author_id) === Number(currentUserId))
+
+  const cancelEditNote = () => {
+    setEditingNoteId(null)
+    setEditNoteDraft('')
+  }
+
+  const handleSaveEditNote = async (e) => {
+    e?.preventDefault?.()
+    if (!token || !shipment?.id || !editingNoteId || !editNoteDraft.trim()) return
+    setNotePatchingId(editingNoteId)
+    setNoteError(null)
+    try {
+      await patchShipmentNote(token, shipment.id, editingNoteId, { content: editNoteDraft.trim() })
+      cancelEditNote()
+      loadNotes()
+    } catch (err) {
+      setNoteError(err.message || t('shipments.errorNoteUpdate'))
+    } finally {
+      setNotePatchingId(null)
+    }
+  }
+
+  const handleDeleteNote = async (noteId) => {
+    if (!token || !shipment?.id) return
+    if (!window.confirm(t('shipments.noteDeleteConfirm'))) return
+    setNoteDeletingId(noteId)
+    setNoteError(null)
+    try {
+      await deleteShipmentNote(token, shipment.id, noteId)
+      if (editingNoteId === noteId) cancelEditNote()
+      loadNotes()
+    } catch (err) {
+      setNoteError(err.message || t('shipments.errorNoteDelete'))
+    } finally {
+      setNoteDeletingId(null)
+    }
+  }
+
+  const handleExportPdf = async () => {
+    if (!token || !shipment?.id) return
+    setExportPdfError(null)
+    setPdfExporting(true)
+    try {
+      const { blob, filename } = await downloadShipmentPdf(token, shipment.id)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      setExportPdfError(err?.message || t('shipments.exportPdfError'))
+    } finally {
+      setPdfExporting(false)
     }
   }
 
@@ -278,17 +414,16 @@ export default function ShipmentDetailModal({
   }
 
   return (
-    <div className="client-detail-modal" role="dialog" aria-modal="true" aria-labelledby="shipment-detail-title">
+    <div className="client-detail-modal shipment-detail-modal--sd" role="dialog" aria-modal="true" aria-labelledby="shipment-detail-title">
       <div className="client-detail-modal__backdrop" onClick={onClose} />
-      <div className="client-detail-modal__box shipment-detail-modal-box">
-        <header className="client-detail-modal__header client-detail-modal__header--detail">
+      <div className="client-detail-modal__box client-detail-modal__box--form shipment-detail-modal-box">
+        <header className="client-detail-modal__header client-detail-modal__header--form">
           <div className="client-detail-modal__header-inner">
-            <span className="client-detail-modal__header-label">{t('shipments.detail')}</span>
-            <h2 id="shipment-detail-title" className="client-detail-modal__title client-detail-modal__title--client">
+            <h2 id="shipment-detail-title" className="client-detail-modal__title">
               {shipmentLoading ? '…' : (shipment?.bl_number ?? shipment?.booking_number ?? `#${shipment?.id}`)}
             </h2>
             {!shipmentLoading && shipment && clientLabel !== '—' && (
-              <p className="client-detail-modal__subtitle">{clientLabel}</p>
+              <p className="client-detail-modal__subtitle sd-form-modal-preview__hint">{clientLabel}</p>
             )}
           </div>
           <button type="button" className="client-detail-modal__close" onClick={onClose} aria-label={t('shipments.close')}>
@@ -296,76 +431,173 @@ export default function ShipmentDetailModal({
           </button>
         </header>
 
-        <Tabs tabs={tabs} activeTab={detailTab} onChange={onTabChange} className="client-detail-modal__tabs" />
+        <Tabs tabs={tabs} activeTab={detailTab} onChange={onTabChange} className="client-detail-modal__tabs shipment-detail-modal__tabs" />
 
-        <div className="client-detail-modal__body" role="tabpanel" id={`panel-${detailTab}`} aria-labelledby={`tab-${detailTab}`}>
+        <div
+          className="client-detail-modal__body client-detail-modal__body--form"
+          role="tabpanel"
+          id={`panel-${detailTab}`}
+          aria-labelledby={`tab-${detailTab}`}
+        >
+          <div className="client-detail-modal__body-inner clients-form-sections">
           {detailTab === 'info' && (
             <section className="client-detail-modal__section client-detail-modal__section--info">
               {shipmentLoading || !shipment ? (
                 <p className="client-detail-modal__empty">{t('shipments.loading')}</p>
               ) : (
                 <div className="client-detail-modal__info-tab">
-                  <div className="shipment-pipeline" aria-label={t('shipments.pipelineLabel')}>
-                    {PIPELINE_STEP_KEYS.map((key, idx) => {
-                      const done = idx < activePipelineIdx
-                      const active = idx === activePipelineIdx
-                      return (
-                        <div key={key} className="shipment-pipeline__segment">
-                          {idx > 0 && <div className={`shipment-pipeline__connector ${done || active ? 'shipment-pipeline__connector--on' : ''}`} />}
-                          <div
-                            className={`shipment-pipeline__step ${done ? 'shipment-pipeline__step--done' : ''} ${active ? 'shipment-pipeline__step--active' : ''}`}
-                          >
-                            <span className="shipment-pipeline__num">{idx + 1}</span>
-                            <span className="shipment-pipeline__name">{t(`shipments.pipeline.${key}`)}</span>
-                          </div>
-                        </div>
-                      )
-                    })}
+                  <div className="sd-detail-modal__toolbar">
+                    <button
+                      type="button"
+                      className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs"
+                      onClick={handleExportPdf}
+                      disabled={pdfExporting}
+                    >
+                      {pdfExporting ? (
+                        <LoaderDots size={8} className="inline-flex" />
+                      ) : (
+                        <FileDown className="h-4 w-4" aria-hidden />
+                      )}
+                      {pdfExporting ? t('shipments.exportPdfLoading') : t('shipments.exportPdf')}
+                    </button>
+                    {canManageOps && (
+                      <button
+                        type="button"
+                        className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs"
+                        onClick={() => {
+                          onEdit?.(shipment)
+                          onClose()
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" aria-hidden />
+                        {t('shipments.edit')}
+                      </button>
+                    )}
                   </div>
-
+                  {exportPdfError && (
+                    <p className="text-sm text-red-600 dark:text-red-400 mb-3" role="alert">
+                      {exportPdfError}
+                    </p>
+                  )}
                   <div className="shipment-details-grid">
-                    {/* 1. Basic Info */}
-                    <div className="shipment-detail-card">
-                      <h3 className="shipment-detail-card__title">{t('shipments.sections.basicInfo')}</h3>
+                    <div className="col-span-2">
+                      <div className="shipment-pipeline" aria-label={t('shipments.pipelineLabel')}>
+                        {PIPELINE_STEP_KEYS.map((key, idx) => {
+                          const done = idx < activePipelineIdx
+                          const active = idx === activePipelineIdx
+                          return (
+                            <div key={key} className="shipment-pipeline__segment">
+                              {idx > 0 && <div className={`shipment-pipeline__connector ${done || active ? 'shipment-pipeline__connector--on' : ''}`} />}
+                              <div
+                                className={`shipment-pipeline__step ${done ? 'shipment-pipeline__step--done' : ''} ${active ? 'shipment-pipeline__step--active' : ''}`}
+                              >
+                                <span className="shipment-pipeline__num">{idx + 1}</span>
+                                <span className="shipment-pipeline__name">{t(`shipments.pipeline.${key}`)}</span>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="shipment-detail-card col-span-2">
+                      <h3 className="shipment-detail-card__title">{t('shipments.createModal.formHeading')}</h3>
                       <div className="shipment-detail-card__grid">
                         <div className="shipment-detail-card__row">
-                          <span className="shipment-detail-card__label">ID</span>
-                          <span className="shipment-detail-card__value">#{shipment.id}</span>
+                          <span className="shipment-detail-card__label">{t('shipments.selectSdForm')}</span>
+                          <span className="shipment-detail-card__value font-mono">
+                            {shipment.sd_form?.sd_number || shipment.sd_form_id || '—'}
+                          </span>
                         </div>
                         <div className="shipment-detail-card__row">
-                          <span className="shipment-detail-card__label">{t('shipments.fields.bl_number')}</span>
-                          <span className="shipment-detail-card__value font-semibold">{shipment.bl_number || '—'}</span>
+                          <span className="shipment-detail-card__label">{t('shipments.createModal.clientName')}</span>
+                          <span className="shipment-detail-card__value font-semibold">
+                            {shipment.client?.company_name || shipment.client?.name || '—'}
+                          </span>
+                        </div>
+                        <div className="shipment-detail-card__row">
+                          <span className="shipment-detail-card__label">{t('shipments.fields.booking_date')}</span>
+                          <span className="shipment-detail-card__value">{formatDate(shipment.booking_date, i18n.language) || '—'}</span>
                         </div>
                         <div className="shipment-detail-card__row">
                           <span className="shipment-detail-card__label">{t('shipments.fields.booking_number')}</span>
                           <span className="shipment-detail-card__value font-semibold">{shipment.booking_number || '—'}</span>
                         </div>
                         <div className="shipment-detail-card__row">
-                          <span className="shipment-detail-card__label">{t('shipments.fields.booking_date')}</span>
-                          <span className="shipment-detail-card__value">{formatDate(shipment.booking_date, i18n.language) || '—'}</span>
+                          <span className="shipment-detail-card__label">{t('shipments.fields.bl_number')}</span>
+                          <span className="shipment-detail-card__value font-semibold">{shipment.bl_number || '—'}</span>
                         </div>
-                        {((shipment.shipment_direction === 'Import' || shipment.acid_number) && (
+                        <div className="shipment-detail-card__row">
+                          <span className="shipment-detail-card__label">{t('shipments.fields.line_vendor_id')}</span>
+                          <span className="shipment-detail-card__value">{lineVendor}</span>
+                        </div>
+                        <div className="shipment-detail-card__row">
+                          <span className="shipment-detail-card__label">{t('shipments.fields.mode')}</span>
+                          <span className="shipment-detail-card__value">{shipmentDisplayMode(shipment.mode, t)}</span>
+                        </div>
+                        <div className="shipment-detail-card__row">
+                          <span className="shipment-detail-card__label">{t('shipments.fields.shipment_type')}</span>
+                          <span className="shipment-detail-card__value">{shipmentDisplayShipmentType(shipment.shipment_type, t)}</span>
+                        </div>
+                        <div className="shipment-detail-card__row">
+                          <span className="shipment-detail-card__label">{t('shipments.fields.shipment_direction')}</span>
+                          <span className="shipment-detail-card__value">{shipmentDisplayDirection(shipment.shipment_direction, t)}</span>
+                        </div>
+                        {(shipment.shipment_direction === 'Import' || shipment.acid_number) && (
                           <div className="shipment-detail-card__row">
                             <span className="shipment-detail-card__label">{t('shipments.fields.acid_number')}</span>
                             <span className="shipment-detail-card__value">{shipment.acid_number || '—'}</span>
                           </div>
-                        ))}
+                        )}
                         <div className="shipment-detail-card__row">
-                          <span className="shipment-detail-card__label">Shipping Line</span>
-                          <span className="shipment-detail-card__value">{lineVendor}</span>
+                          <span className="shipment-detail-card__label">{t('shipments.fields.container_type')}</span>
+                          <span className="shipment-detail-card__value">{shipmentDisplayContainerType(shipment.container_type, t)}</span>
                         </div>
                         <div className="shipment-detail-card__row">
-                          <span className="shipment-detail-card__label">{t('shipments.fields.shipment_direction')}</span>
-                          <span className="shipment-detail-card__value">{shipment.shipment_direction || '—'}</span>
+                          <span className="shipment-detail-card__label">{t('shipments.fields.container_size')}</span>
+                          <span className="shipment-detail-card__value">{shipmentDisplayContainerSize(shipment.container_size, t)}</span>
                         </div>
                         <div className="shipment-detail-card__row">
-                          <span className="shipment-detail-card__label">{t('shipments.fields.mode')}</span>
-                          <span className="shipment-detail-card__value">{shipment.mode || '—'}</span>
+                          <span className="shipment-detail-card__label">{t('shipments.fields.container_count')}</span>
+                          <span className="shipment-detail-card__value">{shipment.container_count ?? '—'}</span>
+                        </div>
+                        <div className="shipment-detail-card__row col-span-2">
+                          <span className="shipment-detail-card__label">{t('shipments.fields.loading_place')}</span>
+                          <span className="shipment-detail-card__value">{shipment.loading_place || '—'}</span>
                         </div>
                         <div className="shipment-detail-card__row">
-                          <span className="shipment-detail-card__label">{t('shipments.fields.shipment_type')}</span>
-                          <span className="shipment-detail-card__value">{shipment.shipment_type || '—'}</span>
+                          <span className="shipment-detail-card__label">{t('shipments.fields.origin_port_id')}</span>
+                          <span className="shipment-detail-card__value">{shipment.origin_port?.name ?? shipment.originPort?.name ?? '—'}</span>
                         </div>
+                        <div className="shipment-detail-card__row">
+                          <span className="shipment-detail-card__label">{t('shipments.fields.destination_port_id')}</span>
+                          <span className="shipment-detail-card__value">
+                            {shipment.destination_port?.name ?? shipment.destinationPort?.name ?? '—'}
+                          </span>
+                        </div>
+                        <div className="shipment-detail-card__row col-span-2">
+                          <span className="shipment-detail-card__label">{t('shipments.fields.cargo_description')}</span>
+                          <span className="shipment-detail-card__value block mt-1 whitespace-pre-wrap">{shipment.cargo_description || '—'}</span>
+                        </div>
+                        <div className="shipment-detail-card__row">
+                          <span className="shipment-detail-card__label">{t('shipments.fields.loading_date')}</span>
+                          <span className="shipment-detail-card__value">{formatDate(shipment.loading_date, i18n.language) || '—'}</span>
+                        </div>
+                        <div className="shipment-detail-card__row col-span-2">
+                          <span className="shipment-detail-card__label">{t('shipments.fields.notes')}</span>
+                          <span className="shipment-detail-card__value block mt-1 whitespace-pre-wrap">
+                            {(() => {
+                              const s = shipmentFreeTextNotes(shipment)
+                              return s.trim() ? s : '—'
+                            })()}
+                          </span>
+                        </div>
+                        {shipment.route_text && (
+                          <div className="shipment-detail-card__row col-span-2">
+                            <span className="shipment-detail-card__label">{t('shipments.fields.route')}</span>
+                            <span className="shipment-detail-card__value block mt-1">{shipment.route_text}</span>
+                          </div>
+                        )}
                         <div className="shipment-detail-card__row">
                           <span className="shipment-detail-card__label">{t('shipments.fields.status')}</span>
                           <span className="shipment-detail-card__value">
@@ -377,10 +609,33 @@ export default function ShipmentDetailModal({
                             />
                           </span>
                         </div>
+                        <div className="shipment-detail-card__row">
+                          <span className="shipment-detail-card__label">ID</span>
+                          <span className="shipment-detail-card__value">#{shipment.id}</span>
+                        </div>
                       </div>
                     </div>
 
-                    {/* 2. Status & Latest Tracking */}
+                    {shipment.is_reefer && (
+                      <div className="shipment-detail-card col-span-2">
+                        <h3 className="shipment-detail-card__title">{t('shipments.sections.loadingReefer')}</h3>
+                        <div className="shipment-detail-card__grid">
+                          <div className="shipment-detail-card__row">
+                            <span className="shipment-detail-card__label">{t('shipments.fields.reefer_temp')}</span>
+                            <span className="shipment-detail-card__value">{shipment.reefer_temp || '—'}</span>
+                          </div>
+                          <div className="shipment-detail-card__row">
+                            <span className="shipment-detail-card__label">{t('shipments.fields.reefer_vent')}</span>
+                            <span className="shipment-detail-card__value">{shipment.reefer_vent || '—'}</span>
+                          </div>
+                          <div className="shipment-detail-card__row">
+                            <span className="shipment-detail-card__label">{t('shipments.fields.reefer_hum')}</span>
+                            <span className="shipment-detail-card__value">{shipment.reefer_hum || '—'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="shipment-detail-card shipment-detail-card--status">
                       <h3 className="shipment-detail-card__title">{t('shipments.sections.latestTracking')}</h3>
                       <div className="shipment-detail-card__content">
@@ -399,64 +654,6 @@ export default function ShipmentDetailModal({
                       </div>
                     </div>
 
-                    {/* 3. Route / Movement */}
-                    <div className="shipment-detail-card">
-                      <h3 className="shipment-detail-card__title">{t('shipments.sections.route')}</h3>
-                      <div className="shipment-detail-card__content">
-                        <div className="shipment-route-visual">
-                          <div className="shipment-route-point">
-                            <div className="shipment-route-icon">○</div>
-                            <div className="shipment-route-info">
-                              <span className="shipment-detail-card__label">{t('shipments.fields.loading_place')}</span>
-                              <span className="shipment-detail-card__value">{shipment.loading_place || '—'}</span>
-                            </div>
-                          </div>
-                          <div className="shipment-route-line" />
-                          <div className="shipment-route-point">
-                            <div className="shipment-route-icon shipment-route-icon--end">●</div>
-                            <div className="shipment-route-info">
-                              <span className="shipment-detail-card__label">{t('shipments.fields.destination_port')}</span>
-                              <span className="shipment-detail-card__value">{shipment.destination_port?.name || '—'}</span>
-                            </div>
-                          </div>
-                        </div>
-                        {shipment.route_text && (
-                          <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-                            <span className="shipment-detail-card__label block mb-1">{t('shipments.fields.route')}</span>
-                            <span className="shipment-detail-card__value">{shipment.route_text}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* 4. Shipment Details (Cargo) */}
-                    <div className="shipment-detail-card">
-                      <h3 className="shipment-detail-card__title">{t('shipments.sections.cargoDetails')}</h3>
-                      <div className="shipment-detail-card__grid">
-                        <div className="shipment-detail-card__row">
-                          <span className="shipment-detail-card__label">{t('shipments.fields.container_count')}</span>
-                          <span className="shipment-detail-card__value">{shipment.container_count || '—'}</span>
-                        </div>
-                        <div className="shipment-detail-card__row">
-                          <span className="shipment-detail-card__label">{t('shipments.fields.container_size')}</span>
-                          <span className="shipment-detail-card__value">{shipment.container_size || '—'}</span>
-                        </div>
-                        <div className="shipment-detail-card__row">
-                          <span className="shipment-detail-card__label">{t('shipments.fields.container_type')}</span>
-                          <span className="shipment-detail-card__value">{shipment.container_type || '—'}</span>
-                        </div>
-                        <div className="shipment-detail-card__row">
-                          <span className="shipment-detail-card__label">{t('shipments.fields.loading_date')}</span>
-                          <span className="shipment-detail-card__value">{formatDate(shipment.loading_date, i18n.language)}</span>
-                        </div>
-                        <div className="shipment-detail-card__row col-span-2">
-                          <span className="shipment-detail-card__label">{t('shipments.fields.cargo_description')}</span>
-                          <span className="shipment-detail-card__value block mt-1">{shipment.cargo_description || '—'}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 5. Client Information */}
                     <div className="shipment-detail-card">
                       <h3 className="shipment-detail-card__title">{t('shipments.sections.clientInfo')}</h3>
                       <div className="shipment-detail-card__content">
@@ -468,9 +665,7 @@ export default function ShipmentDetailModal({
                             <div className="font-bold text-gray-900 dark:text-white">
                               {shipment.client?.name || '—'}
                             </div>
-                            <div className="text-sm text-gray-500">
-                              {shipment.client?.company_name}
-                            </div>
+                            <div className="text-sm text-gray-500">{shipment.client?.company_name}</div>
                           </div>
                         </div>
                         {shipment.client?.phone && (
@@ -488,7 +683,6 @@ export default function ShipmentDetailModal({
                       </div>
                     </div>
 
-                    {/* 6. Financials (Optional) */}
                     {canViewFinancialTotals && (
                       <div className="shipment-detail-card shipment-detail-card--financial">
                         <h3 className="shipment-detail-card__title">{t('shipments.sections.financials') || t('shipments.financialSummary')}</h3>
@@ -513,37 +707,15 @@ export default function ShipmentDetailModal({
                       </div>
                     )}
 
-                    {/* 7. Vendor / Sales */}
                     <div className="shipment-detail-card">
                       <h3 className="shipment-detail-card__title">{t('shipments.sections.vendorSales')}</h3>
                       <div className="shipment-detail-card__grid">
-                        <div className="shipment-detail-card__row">
-                          <span className="shipment-detail-card__label">{t('shipments.fields.line_vendor')}</span>
-                          <span className="shipment-detail-card__value font-semibold">
-                            {shipment.line_vendor?.name || shipment.lineVendor?.name || '—'}
-                          </span>
-                        </div>
-                        <div className="shipment-detail-card__row">
+                        <div className="shipment-detail-card__row col-span-2">
                           <span className="shipment-detail-card__label">{t('shipments.fields.sales_rep_id')}</span>
-                          <span className="shipment-detail-card__value font-semibold">
-                            {shipment.sales_rep?.name || '—'}
-                          </span>
+                          <span className="shipment-detail-card__value font-semibold">{shipment.sales_rep?.name || '—'}</span>
                         </div>
                       </div>
                     </div>
-
-                    {/* Optional: SD Form Link */}
-                    {shipment.sd_form && (
-                      <div className="shipment-detail-card">
-                        <h3 className="shipment-detail-card__title">{t('shipments.sections.sdForm')}</h3>
-                        <div className="shipment-detail-card__row">
-                          <span className="shipment-detail-card__label">{t('shipments.fields.sd_number')}</span>
-                          <span className="shipment-detail-card__value font-mono">
-                            {shipment.sd_form?.sd_number || shipment.sd_form_id || '—'}
-                          </span>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
               )}
@@ -593,6 +765,155 @@ export default function ShipmentDetailModal({
                       </div>
                     </li>
                   ))}
+                </ul>
+              )}
+            </section>
+          )}
+
+          {detailTab === 'notes' && (
+            <section className="client-detail-modal__section shipment-notes-tab">
+              <p className="shipment-notes-tab__intro text-sm text-gray-600 dark:text-gray-400 mb-4">
+                {t('shipments.notesTabIntro')}
+              </p>
+              {noteError && (
+                <p className="text-sm text-red-600 dark:text-red-400 mb-4 rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50/80 dark:bg-red-950/30 px-3 py-2">
+                  {noteError}
+                </p>
+              )}
+              {canAddShipmentNote && (
+                <form onSubmit={handleAddNote} className="mb-6 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/40 p-4">
+                  <label htmlFor="shipment-note-new" className="client-detail-modal__label block mb-1">
+                    {t('shipments.addNote')}
+                  </label>
+                  <textarea
+                    id="shipment-note-new"
+                    rows={3}
+                    className="clients-input w-full mb-2"
+                    value={noteText}
+                    onChange={(e) => setNoteText(e.target.value)}
+                    disabled={noteSubmitting || !shipment?.id}
+                    placeholder={t('shipments.notePlaceholder')}
+                  />
+                  <button
+                    type="submit"
+                    className="client-detail-modal__btn client-detail-modal__btn--primary"
+                    disabled={noteSubmitting || !noteText.trim() || !shipment?.id}
+                  >
+                    {noteSubmitting ? t('shipments.saving') : t('shipments.saveNote')}
+                  </button>
+                </form>
+              )}
+              {notesLoading ? (
+                <div className="shipment-notes-empty shipment-notes-empty--loading flex items-center justify-center gap-2 py-12" aria-busy="true">
+                  <LoaderDots />
+                  <span className="text-sm text-gray-600 dark:text-gray-400">{t('shipments.loading')}</span>
+                </div>
+              ) : notes.length === 0 ? (
+                <div className="shipment-notes-empty" role="status">
+                  <div className="shipment-notes-empty__icon" aria-hidden>
+                    <StickyNote className="h-10 w-10" strokeWidth={1.25} />
+                  </div>
+                  <h3 className="shipment-notes-empty__title">{t('shipments.notesEmptyTitle')}</h3>
+                  <p className="shipment-notes-empty__text">
+                    {t(canAddShipmentNote ? 'shipments.notesEmptyHint' : 'shipments.notesEmptyHintViewOnly')}
+                  </p>
+                </div>
+              ) : (
+                <ul className="shipment-notes-list space-y-3">
+                  {notes.map((n) => {
+                    const isEditing = editingNoteId === n.id
+                    const showEdit = canEditThisNote(n)
+                    const showDelete = canManageAllShipmentNotes
+                    const edited =
+                      n.updated_at &&
+                      n.created_at &&
+                      String(n.updated_at).slice(0, 19) !== String(n.created_at).slice(0, 19)
+                    return (
+                      <li
+                        key={n.id}
+                        className="shipment-note-card rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/60 p-4 shadow-sm"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            <span className="font-semibold text-gray-700 dark:text-gray-300">
+                              {n.author?.name ?? t('shipments.noteUnknownAuthor')}
+                            </span>
+                            <span className="mx-1">·</span>
+                            <span>{formatDate(n.created_at, i18n.language)}</span>
+                            {edited && (
+                              <span className="ms-2 text-amber-700 dark:text-amber-400">
+                                ({t('shipments.noteEdited')})
+                              </span>
+                            )}
+                          </div>
+                          {(showEdit || showDelete) && !isEditing && (
+                            <div className="flex items-center gap-1 shrink-0">
+                              {showEdit && (
+                                <button
+                                  type="button"
+                                  className="client-detail-modal__btn client-detail-modal__btn--secondary !py-1 !px-2 text-xs inline-flex items-center gap-1"
+                                  onClick={() => {
+                                    setEditingNoteId(n.id)
+                                    setEditNoteDraft(n.content ?? '')
+                                    setNoteError(null)
+                                  }}
+                                  disabled={notePatchingId != null || noteDeletingId != null}
+                                >
+                                  <Pencil className="h-3.5 w-3.5" aria-hidden />
+                                  {t('shipments.noteEdit')}
+                                </button>
+                              )}
+                              {showDelete && (
+                                <button
+                                  type="button"
+                                  className="client-detail-modal__btn client-detail-modal__btn--secondary !py-1 !px-2 text-xs inline-flex items-center gap-1 text-red-700 dark:text-red-400 border-red-200 dark:border-red-900"
+                                  onClick={() => handleDeleteNote(n.id)}
+                                  disabled={noteDeletingId === n.id || notePatchingId != null}
+                                >
+                                  {noteDeletingId === n.id ? (
+                                    <LoaderDots size={6} className="inline-flex" />
+                                  ) : (
+                                    <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                                  )}
+                                  {t('shipments.noteDelete')}
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        {isEditing ? (
+                          <form onSubmit={handleSaveEditNote} className="space-y-2">
+                            <textarea
+                              rows={4}
+                              className="clients-input w-full"
+                              value={editNoteDraft}
+                              onChange={(e) => setEditNoteDraft(e.target.value)}
+                              disabled={notePatchingId === n.id}
+                            />
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                type="submit"
+                                className="client-detail-modal__btn client-detail-modal__btn--primary !py-1.5"
+                                disabled={notePatchingId === n.id || !editNoteDraft.trim()}
+                              >
+                                {notePatchingId === n.id ? t('shipments.saving') : t('shipments.noteSave')}
+                              </button>
+                              <button
+                                type="button"
+                                className="client-detail-modal__btn client-detail-modal__btn--secondary !py-1.5"
+                                onClick={cancelEditNote}
+                                disabled={notePatchingId === n.id}
+                              >
+                                {t('common.cancel')}
+                              </button>
+                            </div>
+                          </form>
+                        ) : (
+                          <div className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{n.content ?? '—'}</div>
+                        )}
+                      </li>
+                    )
+                  })}
                 </ul>
               )}
             </section>
@@ -839,9 +1160,10 @@ export default function ShipmentDetailModal({
               )}
             </section>
           )}
+          </div>
         </div>
 
-        <footer className="client-detail-modal__footer">
+        <footer className="client-detail-modal__footer client-detail-modal__footer--form">
           <button type="button" className="client-detail-modal__btn client-detail-modal__btn--secondary" onClick={onClose}>
             {t('shipments.close')}
           </button>

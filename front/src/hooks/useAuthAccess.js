@@ -6,10 +6,17 @@ import { ROLE_ID } from '../constants/roles'
 /**
  * Page-level and specific action gates aligned with backend `permissions` from AuthenticatedLayout.
  *
- * @returns {{ hasPageAccess: (pageKey: string) => boolean, hasPermission: (page: string, key: string) => boolean, permissions: any[], allowedPages: string[], user: object|undefined, isAdminRole: boolean, isAccountant: boolean, isOperations: boolean, roleId: number|undefined }}
+ * @returns {{ hasPageAccess: (pageKey: string) => boolean, hasPermission: (page: string, key: string) => boolean, hasAbility: (name: string) => boolean, permissions: any[], abilityNames: string[], allowedPages: string[], user: object|undefined, isAdminRole: boolean, isAccountant: boolean, isOperations: boolean, roleId: number|undefined }}
  */
 export function useAuthAccess() {
-  const { user, allowedPages = [], permissions = [], hasPageAccess: hasPageAccessFromContext } = useOutletContext() || {}
+  const {
+    user,
+    allowedPages = [],
+    permissions = [],
+    abilityNames: abilityNamesFromContext = [],
+    hasPageAccess: hasPageAccessFromContext,
+  } = useOutletContext() || {}
+  const abilityNames = Array.isArray(abilityNamesFromContext) ? abilityNamesFromContext : []
   const pages = useMemo(() => (Array.isArray(allowedPages) ? allowedPages.filter(Boolean) : []), [allowedPages])
   const pagesSet = useMemo(() => new Set(pages), [pages])
 
@@ -48,5 +55,26 @@ export function useAuthAccess() {
     [isAdminRole, permissions]
   )
 
-  return { hasPageAccess, hasPermission, permissions, allowedPages: pages, user, isAdminRole, isAccountant, isOperations, roleId }
+  const hasAbility = useCallback(
+    (name) => {
+      if (!name) return false
+      if (isAdminRole) return true
+      return abilityNames.includes(String(name))
+    },
+    [isAdminRole, abilityNames]
+  )
+
+  return {
+    hasPageAccess,
+    hasPermission,
+    hasAbility,
+    permissions,
+    abilityNames,
+    allowedPages: pages,
+    user,
+    isAdminRole,
+    isAccountant,
+    isOperations,
+    roleId,
+  }
 }
