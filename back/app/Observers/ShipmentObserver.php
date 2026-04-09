@@ -28,7 +28,7 @@ class ShipmentObserver
         foreach ($defaultTasks as $index => $taskName) {
             ShipmentOperationTask::create([
                 'shipment_id' => $shipment->id,
-                'name' => $taskName,
+                'name' => __($taskName),
                 'sort_order' => ($index + 1),
                 'status' => 'pending',
                 'assigned_to_id' => null,

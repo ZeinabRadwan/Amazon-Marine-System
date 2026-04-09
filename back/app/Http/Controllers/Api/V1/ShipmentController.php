@@ -228,48 +228,47 @@ class ShipmentController extends Controller
     public function stats(Request $request)
     {
         $this->authorize('viewAny', Shipment::class);
+        $user = $request->user();
 
-        $byStatus = Shipment::query()
-            ->selectRaw('status, COUNT(*) as count')
+        $query = Shipment::query();
+
+        // Apply role-based filtering
+        if (!$user->hasRole('admin') && !$user->can('shipments.view') && $user->can('shipments.view_own')) {
+            $query->where('sales_rep_id', $user->id);
+        }
+
+        $byStatus = $query->selectRaw('status, COUNT(*) as count')
             ->groupBy('status')
-            ->get()
-            ->keyBy('status');
+            ->get();
 
-        $normalize = function ($value) {
-            if ($value === null || $value === '') {
-                return 'unknown';
-            }
-            $v = strtolower(trim((string) $value));
-            if (in_array($v, ['booked', 'تم الحجز'], true) || str_contains($v, 'booked') || str_contains($v, 'حجز')) {
-                return 'booked';
-            }
-            if (in_array($v, ['in_transit', 'في الطريق', 'in transit'], true) || str_contains($v, 'transit') || str_contains($v, 'طريق')) {
-                return 'in_transit';
-            }
-            if (in_array($v, ['customs_clearance', 'تخليص جمركي'], true) || str_contains($v, 'customs') || str_contains($v, 'جمرك')) {
-                return 'customs_clearance';
-            }
-            if (in_array($v, ['delivered', 'تم التسليم'], true) || str_contains($v, 'delivered') || str_contains($v, 'تسليم')) {
-                return 'delivered';
-            }
-            return $value;
-        };
+        // Fetch status name map for ID resolution
+        $statusMap = \App\Models\ShipmentStatus::pluck('name_en', 'id')->toArray();
 
         $booked = 0;
         $inTransit = 0;
         $customsClearance = 0;
         $delivered = 0;
-        foreach ($byStatus as $status => $row) {
-            $n = (int) $row->count;
-            $key = $normalize($status);
+
+        foreach ($byStatus as $row) {
+            $count = (int) $row->count;
+            $sValue = (string) $row->status;
+
+            // Resolve name if status is an ID
+            $label = $sValue;
+            if (is_numeric($sValue) && isset($statusMap[$sValue])) {
+                $label = $statusMap[$sValue];
+            }
+
+            $key = $this->normalizeStatusForStats($label);
+
             if ($key === 'booked') {
-                $booked += $n;
+                $booked += $count;
             } elseif ($key === 'in_transit') {
-                $inTransit += $n;
+                $inTransit += $count;
             } elseif ($key === 'customs_clearance') {
-                $customsClearance += $n;
+                $customsClearance += $count;
             } elseif ($key === 'delivered') {
-                $delivered += $n;
+                $delivered += $count;
             }
         }
 
@@ -279,9 +278,37 @@ class ShipmentController extends Controller
                 'in_transit' => $inTransit,
                 'customs_clearance' => $customsClearance,
                 'delivered' => $delivered,
-                'by_status' => $byStatus->map(fn ($row) => ['status' => $row->status, 'count' => (int) $row->count])->values()->all(),
-            ],
+            ]
         ]);
+    }
+
+    /**
+     * Normalize status labels into pipeline categories.
+     */
+    protected function normalizeStatusForStats($v)
+    {
+        if ($v === null || $v === '') return 'unknown';
+        $v = strtolower(trim((string) $v));
+
+        // Keywords for each category
+        if (in_array($v, ['booked', 'booking confirmed', 'تم الحجز', 'تم تأكيد الحجز']) || str_contains($v, 'booked')) {
+            return 'booked';
+        }
+        
+        if (in_array($v, ['in_transit', 'in transit', 'vessel departed', 'loading in progress', 'container allocation', 'في الطريق', 'السفينة غادرت']) 
+            || str_contains($v, 'transit') || str_contains($v, 'depart') || str_contains($v, 'allocation') || str_contains($v, 'loading') || str_contains($v, 'طريق')) {
+            return 'in_transit';
+        }
+
+        if (in_array($v, ['customs_clearance', 'تخليص جمركي']) || str_contains($v, 'customs') || str_contains($v, 'clearance') || str_contains($v, 'جمرك')) {
+            return 'customs_clearance';
+        }
+
+        if (in_array($v, ['delivered', 'ready for delivery', 'تم التسليم', 'جاهز للتسليم']) || str_contains($v, 'delivered') || str_contains($v, 'تسليم')) {
+            return 'delivered';
+        }
+
+        return 'unknown';
     }
 
     /**
@@ -290,20 +317,38 @@ class ShipmentController extends Controller
     public function charts(Request $request)
     {
         $this->authorize('viewAny', Shipment::class);
+        $user = $request->user();
 
         $months = (int) $request->query('months', 6);
         $from = now()->subMonths($months)->startOfMonth();
 
-        $statusDistribution = Shipment::query()
+        $query = Shipment::query()->where('created_at', '>=', $from);
+        
+        // Apply role-based filtering
+        if (!$user->hasRole('admin') && !$user->can('shipments.view') && $user->can('shipments.view_own')) {
+            $query->where('sales_rep_id', $user->id);
+        }
+
+        // Fetch status name map for ID resolution
+        $statusMap = \App\Models\ShipmentStatus::pluck('name_en', 'id')->toArray();
+
+        $statusDistribution = (clone $query)
             ->selectRaw('status, COUNT(*) as count')
-            ->where('created_at', '>=', $from)
             ->groupBy('status')
             ->get()
-            ->map(fn ($row) => ['status' => $row->status ?? 'unknown', 'count' => (int) $row->count]);
+            ->map(function ($row) use ($statusMap) {
+                $sValue = (string) $row->status;
+                $label = $sValue;
+                if (is_numeric($sValue) && isset($statusMap[$sValue])) {
+                    $label = $statusMap[$sValue];
+                }
+                return [
+                    'status' => $label ?: 'unknown',
+                    'count' => (int) $row->count
+                ];
+            });
 
-        $monthlyRevenueProfit = Shipment::query()
-            ->where('created_at', '>=', $from)
-            ->get()
+        $monthlyRevenueProfit = $query->get()
             ->groupBy(fn (Shipment $s) => $s->created_at?->format('Y-m-01'))
             ->map(function ($group, $month) {
                 $revenue = (float) $group->sum('selling_price_total');

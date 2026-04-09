@@ -33,8 +33,6 @@ import {
 import Tabs from '../../components/Tabs'
 import ShipmentStatusBadge from '../../components/ShipmentStatusBadge'
 import { getPipelineStepIndex, PIPELINE_STEP_KEYS } from './shipmentPipeline'
-import LoaderDots from '../../components/LoaderDots'
-import '../../components/LoaderDots/LoaderDots.css'
 import { localizedStatusLabel } from '../../utils/localizedStatusLabel'
 import './Shipments.css'
 import '../SDForms/SDForms.css'

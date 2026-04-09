@@ -131,5 +131,15 @@
     "You do not have permission to view treasury summary.": "ليس لديك صلاحية لعرض ملخص الخزينة.",
     "Your account has been deactivated. Please contact an administrator.": "تم تعطيل حسابك. يرجى التواصل مع المسؤول.",
     "Reminder time must be before the next follow-up time.": "يجب أن يكون وقت التذكير قبل وقت المتابعة القادمة.",
-    "Follow-up reminder: :client — next at :when (:kind).": "تذكير متابعة: :client — المتابعة القادمة :when (:kind)."
+    "Follow-up reminder: :client — next at :when (:kind).": "تذكير متابعة: :client — المتابعة القادمة :when (:kind).",
+    "Review Client Documents": "مراجعة أوراق العميل",
+    "Review Packing List & Invoice": "مراجعة Packing List & Invoice",
+    "Review Sticker": "مراجعة الاستيكر",
+    "Open Customs Certificate": "فتح الشهادة الجمركية",
+    "Allocate Shipping Order (D.O.)": "تخصيص إذن الشحن",
+    "Container Withdrawal/Pulling": "سحب الحاويات",
+    "Submit SI & VGM": "إدخال SI & VGM",
+    "Review Draft B/L": "مراجعة Draft B/L",
+    "Prepare Certificate of Origin / Agricultural (if applicable)": "إعداد شهادة المنشأ / الزراعي (إن وجد)",
+    "Stamp Customs Documents": "ختم المستندات الجمركية"
 }
