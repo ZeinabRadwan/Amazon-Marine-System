@@ -773,7 +773,7 @@ export default function SDForms() {
         </section>
 
         <section className="client-detail-modal__section">
-          <h3 className="client-detail-modal__section-title">{t('sdForms.declaration.sections.basic', { lng: 'en' })}</h3>
+          <h3 className="client-detail-modal__section-title">1. Shipment Basic Information</h3>
           <div className="client-detail-modal__form-grid">
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-pol">1. Port of Loading (POL)</label>
@@ -814,7 +814,7 @@ export default function SDForms() {
             </div>
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-sline">
-                4. Shipping Line
+                Shipping Line (Required)
               </label>
               <input
                 id="sd-c-sline"
@@ -846,7 +846,7 @@ export default function SDForms() {
             </div>
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-dir">
-                5. Shipment Direction
+                4. Shipment Direction
               </label>
               <select
                 id="sd-c-dir"
@@ -869,11 +869,11 @@ export default function SDForms() {
         </section>
 
         <section className="client-detail-modal__section">
-          <h3 className="client-detail-modal__section-title">{t('sdForms.declaration.sections.parties', { lng: 'en' })}</h3>
+          <h3 className="client-detail-modal__section-title">2. Parties Information</h3>
           <div className="client-detail-modal__form-grid">
             <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
               <label htmlFor="sd-c-shipper">
-                8. Shipper Information
+                5. Shipper Information
               </label>
               <textarea
                 id="sd-c-shipper"
@@ -885,7 +885,7 @@ export default function SDForms() {
             </div>
             <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
               <label htmlFor="sd-c-consignee">
-                9. Consignee Information
+                6. Consignee Information
               </label>
               <textarea
                 id="sd-c-consignee"
@@ -897,7 +897,7 @@ export default function SDForms() {
             </div>
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-npm">
-                10. Notify Party
+                7. Notify Party
               </label>
               <select
                 id="sd-c-npm"
@@ -928,11 +928,11 @@ export default function SDForms() {
         </section>
 
         <section className="client-detail-modal__section">
-          <h3 className="client-detail-modal__section-title">{t('sdForms.declaration.sections.freight', { lng: 'en' })}</h3>
+          <h3 className="client-detail-modal__section-title">3. Freight & Payment</h3>
           <div className="client-detail-modal__form-grid">
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-ft">
-                11. Freight Term
+                9. Freight Term
               </label>
               <select
                 id="sd-c-ft"
@@ -949,11 +949,11 @@ export default function SDForms() {
         </section>
 
         <section className="client-detail-modal__section">
-          <h3 className="client-detail-modal__section-title">{t('sdForms.declaration.sections.container', { lng: 'en' })}</h3>
+          <h3 className="client-detail-modal__section-title">4. Container Details</h3>
           <div className="client-detail-modal__form-grid">
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-ctype">
-                12. Container Type
+                10. Container Type
               </label>
               <select
                 id="sd-c-ctype"
@@ -971,7 +971,7 @@ export default function SDForms() {
             </div>
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-csize">
-                13. Container Size
+                11. Container Size
               </label>
               <select
                 id="sd-c-csize"
@@ -987,86 +987,9 @@ export default function SDForms() {
                 ))}
               </select>
             </div>
-          </div>
-        </section>
-
-        {showReefer ? (
-          <section className="client-detail-modal__section">
-            <h3 className="client-detail-modal__section-title">{t('sdForms.declaration.sections.reefer', { lng: 'en' })}</h3>
-            <div className="client-detail-modal__form-grid">
-              <div className="client-detail-modal__form-field">
-                <label htmlFor="sd-c-rt">
-                  Temperature (Temp)
-                </label>
-                <input
-                  id="sd-c-rt"
-                  type="text"
-                  value={form.reefer_temp}
-                  onChange={(e) => setForm((f) => ({ ...f, reefer_temp: e.target.value }))}
-                  disabled={disabled}
-                />
-              </div>
-              <div className="client-detail-modal__form-field">
-                <label htmlFor="sd-c-rv">
-                  Ventilation (Vent)
-                </label>
-                <input
-                  id="sd-c-rv"
-                  type="text"
-                  value={form.reefer_vent}
-                  onChange={(e) => setForm((f) => ({ ...f, reefer_vent: e.target.value }))}
-                  disabled={disabled}
-                />
-              </div>
-              <div className="client-detail-modal__form-field">
-                <label htmlFor="sd-c-rh">
-                  Humidity (Hum)
-                </label>
-                <input
-                  id="sd-c-rh"
-                  type="text"
-                  value={form.reefer_hum}
-                  onChange={(e) => setForm((f) => ({ ...f, reefer_hum: e.target.value }))}
-                  disabled={disabled}
-                />
-              </div>
-            </div>
-          </section>
-        ) : null}
-
-        <section className="client-detail-modal__section">
-          <h3 className="client-detail-modal__section-title">{t('sdForms.declaration.sections.shipment', { lng: 'en' })}</h3>
-          <div className="client-detail-modal__form-grid">
-            {showAcid ? (
-              <div className="client-detail-modal__form-field">
-                <label htmlFor="sd-c-acid">
-                  14. ACID Number *
-                </label>
-                <input
-                  id="sd-c-acid"
-                  type="text"
-                  value={form.acid_number}
-                  onChange={(e) => setForm((f) => ({ ...f, acid_number: e.target.value }))}
-                  disabled={disabled}
-                />
-              </div>
-            ) : null}
-            <div className="client-detail-modal__form-field">
-              <label htmlFor="sd-c-rvd">
-                15. Requested Vessel Date
-              </label>
-              <input
-                id="sd-c-rvd"
-                type="date"
-                lang="en-GB"
-                value={form.requested_vessel_date}
-                onChange={(e) => setForm((f) => ({ ...f, requested_vessel_date: e.target.value }))}
-                disabled={disabled}
-              />
-            </div>
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-numc">
-                16. Number of Containers
+                12. Number of Containers
               </label>
               <input
                 id="sd-c-numc"
@@ -1082,11 +1005,44 @@ export default function SDForms() {
         </section>
 
         <section className="client-detail-modal__section">
-          <h3 className="client-detail-modal__section-title">{t('sdForms.declaration.sections.cargo', { lng: 'en' })}</h3>
+          <h3 className="client-detail-modal__section-title">5. Shipment Details</h3>
+          <div className="client-detail-modal__form-grid">
+            <div className="client-detail-modal__form-field">
+              <label htmlFor="sd-c-rvd">
+                13. Requested Vessel Date
+              </label>
+              <input
+                id="sd-c-rvd"
+                type="date"
+                lang="en-GB"
+                value={form.requested_vessel_date}
+                onChange={(e) => setForm((f) => ({ ...f, requested_vessel_date: e.target.value }))}
+                disabled={disabled}
+              />
+            </div>
+            {showAcid ? (
+              <div className="client-detail-modal__form-field">
+                <label htmlFor="sd-c-acid">
+                  14. ACID Number *
+                </label>
+                <input
+                  id="sd-c-acid"
+                  type="text"
+                  value={form.acid_number}
+                  onChange={(e) => setForm((f) => ({ ...f, acid_number: e.target.value }))}
+                  disabled={disabled}
+                />
+              </div>
+            ) : null}
+          </div>
+        </section>
+
+        <section className="client-detail-modal__section">
+          <h3 className="client-detail-modal__section-title">6. Cargo Information</h3>
           <div className="client-detail-modal__form-grid">
             <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
               <label htmlFor="sd-c-cargo">
-                17. Cargo Description
+                15. Cargo Description
               </label>
               <textarea
                 id="sd-c-cargo"
@@ -1098,7 +1054,7 @@ export default function SDForms() {
             </div>
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-hs">
-                18. HS Code
+                16. HS Code
               </label>
               <input
                 id="sd-c-hs"
@@ -1112,12 +1068,56 @@ export default function SDForms() {
           </div>
         </section>
 
+        {showReefer ? (
+          <section className="client-detail-modal__section">
+            <h3 className="client-detail-modal__section-title">7. Reefer Details</h3>
+            <div className="client-detail-modal__form-grid">
+              <div className="client-detail-modal__form-field">
+                <label htmlFor="sd-c-rt">
+                  17. Temperature (Temp)
+                </label>
+                <input
+                  id="sd-c-rt"
+                  type="text"
+                  value={form.reefer_temp}
+                  onChange={(e) => setForm((f) => ({ ...f, reefer_temp: e.target.value }))}
+                  disabled={disabled}
+                />
+              </div>
+              <div className="client-detail-modal__form-field">
+                <label htmlFor="sd-c-rv">
+                  18. Ventilation (Vent)
+                </label>
+                <input
+                  id="sd-c-rv"
+                  type="text"
+                  value={form.reefer_vent}
+                  onChange={(e) => setForm((f) => ({ ...f, reefer_vent: e.target.value }))}
+                  disabled={disabled}
+                />
+              </div>
+              <div className="client-detail-modal__form-field">
+                <label htmlFor="sd-c-rh">
+                  19. Humidity (Hum)
+                </label>
+                <input
+                  id="sd-c-rh"
+                  type="text"
+                  value={form.reefer_hum}
+                  onChange={(e) => setForm((f) => ({ ...f, reefer_hum: e.target.value }))}
+                  disabled={disabled}
+                />
+              </div>
+            </div>
+          </section>
+        ) : null}
+
         <section className="client-detail-modal__section">
-          <h3 className="client-detail-modal__section-title">{t('sdForms.declaration.sections.weight', { lng: 'en' })}</h3>
+          <h3 className="client-detail-modal__section-title">8. Weight Details</h3>
           <div className="client-detail-modal__form-grid">
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-gw">
-                19. Total Gross Weight (KG)
+                20. Total Gross Weight (KG)
               </label>
               <input
                 id="sd-c-gw"
@@ -1132,7 +1132,7 @@ export default function SDForms() {
             </div>
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-nw">
-                20. Total Net Weight (KG)
+                21. Total Net Weight (KG)
               </label>
               <input
                 id="sd-c-nw"
@@ -1174,11 +1174,16 @@ export default function SDForms() {
     )
   }
 
-  const renderFormFields = (form, setForm, disabled) => (
-    <div className="clients-form-sections">
-      <section className="client-detail-modal__section">
-        <h3 className="client-detail-modal__section-title">{t('sdForms.modal.formDetails', { lng: 'en' })}</h3>
-        <div className="client-detail-modal__form-grid mb-4">
+  const renderFormFields = (form, setForm, disabled) => {
+    const showAcid = form.shipment_direction === 'Import'
+    const showNotifyDetails = form.notify_party_mode === 'different'
+    const showReefer = String(form.container_type || '').trim().toLowerCase() === 'reefer'
+
+    return (
+      <div className="clients-form-sections sd-create-form" lang="en">
+        <section className="client-detail-modal__section">
+          <h3 className="client-detail-modal__section-title">{t('sdForms.modal.formDetails', { lng: 'en' })}</h3>
+          <div className="client-detail-modal__form-grid mb-4">
           <div className="client-detail-modal__form-field">
             <label htmlFor="sd-f-client">
               {t('sdForms.form.client')}
@@ -1215,29 +1220,14 @@ export default function SDForms() {
               ))}
             </select>
           </div>
-        </div>
-        <div className="client-detail-modal__form-grid">
-
-          <div className="client-detail-modal__form-field">
-            <label htmlFor="sd-f-dir">
-              {t('sdForms.form.shipmentDirection', { lng: 'en' })} *
-            </label>
-            <select
-              id="sd-f-dir"
-              required
-              value={form.shipment_direction}
-              onChange={(e) => setForm((f) => ({ ...f, shipment_direction: e.target.value }))}
-              disabled={disabled}
-            >
-              {shipmentDirOptions.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
           </div>
+        </section>
+
+        <section className="client-detail-modal__section">
+          <h3 className="client-detail-modal__section-title">1. Shipment Basic Information</h3>
+          <div className="client-detail-modal__form-grid">
           <div className="client-detail-modal__form-field">
-            <label htmlFor="sd-f-pol">{t('sdForms.form.pol', { lng: 'en' })}</label>
+            <label htmlFor="sd-f-pol">1. Port of Loading (POL)</label>
             <AsyncSelect
               id="sd-f-pol"
               value={getPortOption(form.pol_id)}
@@ -1249,7 +1239,7 @@ export default function SDForms() {
             />
           </div>
           <div className="client-detail-modal__form-field">
-            <label htmlFor="sd-f-pod">{t('sdForms.form.pod', { lng: 'en' })}</label>
+            <label htmlFor="sd-f-pod">2. Port of Discharge (POD)</label>
             <AsyncSelect
               id="sd-f-pod"
               value={getPortOption(form.pod_id)}
@@ -1260,9 +1250,45 @@ export default function SDForms() {
               disabled={disabled}
             />
           </div>
+          <div className="client-detail-modal__form-field">
+            <label htmlFor="sd-f-fdest">
+              3. Final Destination
+            </label>
+            <input
+              id="sd-f-fdest"
+              type="text"
+              value={form.final_destination}
+              onChange={(e) => setForm((f) => ({ ...f, final_destination: e.target.value }))}
+              disabled={disabled}
+            />
+          </div>
+          <div className="client-detail-modal__form-field">
+            <label htmlFor="sd-f-dir">
+              4. Shipment Direction
+            </label>
+            <select
+              id="sd-f-dir"
+              required
+              value={form.shipment_direction}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  shipment_direction: e.target.value,
+                  ...(e.target.value !== 'Import' ? { acid_number: '' } : {}),
+                }))
+              }
+              disabled={disabled}
+            >
+              {shipmentDirOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
             <label htmlFor="sd-f-shipping-line">
-              {t('sdForms.form.shippingLine', { lng: 'en' })} *
+              Shipping Line (Required)
             </label>
             <select
               id="sd-f-shipping-line"
@@ -1340,21 +1366,15 @@ export default function SDForms() {
               disabled={disabled}
             />
           </div>
-          <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
-            <label htmlFor="sd-f-fdest">
-              {t('sdForms.form.finalDestination', { lng: 'en' })}
-            </label>
-            <input
-              id="sd-f-fdest"
-              type="text"
-              value={form.final_destination}
-              onChange={(e) => setForm((f) => ({ ...f, final_destination: e.target.value }))}
-              disabled={disabled}
-            />
           </div>
+        </section>
+
+        <section className="client-detail-modal__section">
+          <h3 className="client-detail-modal__section-title">2. Parties Information</h3>
+          <div className="client-detail-modal__form-grid">
           <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
             <label htmlFor="sd-f-shipper">
-              {t('sdForms.form.shipper', { lng: 'en' })}
+              5. Shipper Information
             </label>
             <textarea
               id="sd-f-shipper"
@@ -1365,7 +1385,7 @@ export default function SDForms() {
           </div>
           <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
             <label htmlFor="sd-f-consignee">
-              {t('sdForms.form.consignee', { lng: 'en' })}
+              6. Consignee Information
             </label>
             <textarea
               id="sd-f-consignee"
@@ -1376,7 +1396,7 @@ export default function SDForms() {
           </div>
           <div className="client-detail-modal__form-field">
             <label htmlFor="sd-f-npm">
-              {t('sdForms.form.notifyPartyMode', { lng: 'en' })}
+              7. Notify Party
             </label>
             <select
               id="sd-f-npm"
@@ -1391,20 +1411,28 @@ export default function SDForms() {
               ))}
             </select>
           </div>
-          <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
-            <label htmlFor="sd-f-npd">
-              {t('sdForms.form.notifyPartyDetails', { lng: 'en' })}
-            </label>
-            <textarea
-              id="sd-f-npd"
-              value={form.notify_party_details}
-              onChange={(e) => setForm((f) => ({ ...f, notify_party_details: e.target.value }))}
-              disabled={disabled}
-            />
+          {showNotifyDetails ? (
+            <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+              <label htmlFor="sd-f-npd">
+                Notify party details
+              </label>
+              <textarea
+                id="sd-f-npd"
+                value={form.notify_party_details}
+                onChange={(e) => setForm((f) => ({ ...f, notify_party_details: e.target.value }))}
+                disabled={disabled}
+              />
+            </div>
+          ) : null}
           </div>
+        </section>
+
+        <section className="client-detail-modal__section">
+          <h3 className="client-detail-modal__section-title">3. Freight & Payment</h3>
+          <div className="client-detail-modal__form-grid">
           <div className="client-detail-modal__form-field">
             <label htmlFor="sd-f-ft">
-              {t('sdForms.form.freightTerm', { lng: 'en' })}
+              9. Freight Term
             </label>
             <select
               id="sd-f-ft"
@@ -1419,9 +1447,15 @@ export default function SDForms() {
               ))}
             </select>
           </div>
+          </div>
+        </section>
+
+        <section className="client-detail-modal__section">
+          <h3 className="client-detail-modal__section-title">4. Container Details</h3>
+          <div className="client-detail-modal__form-grid">
           <div className="client-detail-modal__form-field">
             <label htmlFor="sd-f-ctype">
-              {t('sdForms.form.containerType', { lng: 'en' })}
+              10. Container Type
             </label>
             <select
               id="sd-f-ctype"
@@ -1439,7 +1473,7 @@ export default function SDForms() {
           </div>
           <div className="client-detail-modal__form-field">
             <label htmlFor="sd-f-csize">
-              {t('sdForms.form.containerSize', { lng: 'en' })}
+              11. Container Size
             </label>
             <select
               id="sd-f-csize"
@@ -1457,7 +1491,7 @@ export default function SDForms() {
           </div>
           <div className="client-detail-modal__form-field">
             <label htmlFor="sd-f-numc">
-              {t('sdForms.form.numContainers', { lng: 'en' })}
+              12. Number of Containers
             </label>
             <input
               id="sd-f-numc"
@@ -1468,9 +1502,15 @@ export default function SDForms() {
               disabled={disabled}
             />
           </div>
+          </div>
+        </section>
+
+        <section className="client-detail-modal__section">
+          <h3 className="client-detail-modal__section-title">5. Shipment Details</h3>
+          <div className="client-detail-modal__form-grid">
           <div className="client-detail-modal__form-field">
             <label htmlFor="sd-f-rvd">
-              {t('sdForms.form.requestedVesselDate', { lng: 'en' })}
+              13. Requested Vessel Date
             </label>
             <input
               id="sd-f-rvd"
@@ -1481,21 +1521,29 @@ export default function SDForms() {
               disabled={disabled}
             />
           </div>
-          <div className="client-detail-modal__form-field">
-            <label htmlFor="sd-f-acid">
-              {t('sdForms.form.acidNumber', { lng: 'en' })}
-            </label>
-            <input
-              id="sd-f-acid"
-              type="text"
-              value={form.acid_number}
-              onChange={(e) => setForm((f) => ({ ...f, acid_number: e.target.value }))}
-              disabled={disabled}
-            />
+          {showAcid ? (
+            <div className="client-detail-modal__form-field">
+              <label htmlFor="sd-f-acid">
+                14. ACID Number *
+              </label>
+              <input
+                id="sd-f-acid"
+                type="text"
+                value={form.acid_number}
+                onChange={(e) => setForm((f) => ({ ...f, acid_number: e.target.value }))}
+                disabled={disabled}
+              />
+            </div>
+          ) : null}
           </div>
+        </section>
+
+        <section className="client-detail-modal__section">
+          <h3 className="client-detail-modal__section-title">6. Cargo Information</h3>
+          <div className="client-detail-modal__form-grid">
           <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
             <label htmlFor="sd-f-cargo">
-              {t('sdForms.form.cargo', { lng: 'en' })}
+              15. Cargo Description
             </label>
             <textarea
               id="sd-f-cargo"
@@ -1506,7 +1554,7 @@ export default function SDForms() {
           </div>
           <div className="client-detail-modal__form-field">
             <label htmlFor="sd-f-hs">
-              {t('sdForms.form.hsCode', { lng: 'en' })}
+              16. HS Code
             </label>
             <input
               id="sd-f-hs"
@@ -1516,20 +1564,16 @@ export default function SDForms() {
               disabled={disabled}
             />
           </div>
-          <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
-            <label htmlFor="sd-f-notes">
-              {t('sdForms.form.notes', { lng: 'en' })}
-            </label>
-            <textarea
-              id="sd-f-notes"
-              value={form.notes || ''}
-              onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-              disabled={disabled}
-            />
           </div>
-          <div className="client-detail-modal__form-field">
+        </section>
+
+        {showReefer ? (
+          <section className="client-detail-modal__section">
+            <h3 className="client-detail-modal__section-title">7. Reefer Details</h3>
+            <div className="client-detail-modal__form-grid">
+              <div className="client-detail-modal__form-field">
             <label htmlFor="sd-f-rt">
-              {t('sdForms.form.reeferTemp')}
+                  17. Temperature (Temp)
             </label>
             <input
               id="sd-f-rt"
@@ -1541,7 +1585,7 @@ export default function SDForms() {
           </div>
           <div className="client-detail-modal__form-field">
             <label htmlFor="sd-f-rv">
-              {t('sdForms.form.reeferVent')}
+                  18. Ventilation (Vent)
             </label>
             <input
               id="sd-f-rv"
@@ -1553,7 +1597,7 @@ export default function SDForms() {
           </div>
           <div className="client-detail-modal__form-field">
             <label htmlFor="sd-f-rh">
-              {t('sdForms.form.reeferHum')}
+                  19. Humidity (Hum)
             </label>
             <input
               id="sd-f-rh"
@@ -1563,9 +1607,16 @@ export default function SDForms() {
               disabled={disabled}
             />
           </div>
+            </div>
+          </section>
+        ) : null}
+
+        <section className="client-detail-modal__section">
+          <h3 className="client-detail-modal__section-title">8. Weight Details</h3>
+          <div className="client-detail-modal__form-grid">
           <div className="client-detail-modal__form-field">
             <label htmlFor="sd-f-gw">
-              {t('sdForms.form.grossWeight')}
+              20. Total Gross Weight (KG)
             </label>
             <input
               id="sd-f-gw"
@@ -1579,7 +1630,7 @@ export default function SDForms() {
           </div>
           <div className="client-detail-modal__form-field">
             <label htmlFor="sd-f-nw">
-              {t('sdForms.form.netWeight')}
+              21. Total Net Weight (KG)
             </label>
             <input
               id="sd-f-nw"
@@ -1591,10 +1642,23 @@ export default function SDForms() {
               disabled={disabled}
             />
           </div>
-        </div>
-      </section>
-    </div>
-  )
+          </div>
+        </section>
+
+        <section className="client-detail-modal__section">
+          <h3 className="client-detail-modal__section-title">{t('sdForms.declaration.sections.notes', { lng: 'en' })}</h3>
+          <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+            <textarea
+              id="sd-f-notes"
+              value={form.notes || ''}
+              onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+              disabled={disabled}
+            />
+          </div>
+        </section>
+      </div>
+    )
+  }
 
   const pageLoading =
     loading ||
