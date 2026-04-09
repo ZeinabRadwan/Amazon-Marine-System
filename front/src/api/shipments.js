@@ -1,5 +1,5 @@
 /**
- * Shipments API – list, CRUD, stats, charts, export, notes, tracking updates.
+ * Shipments API – list, CRUD, stats, charts, export, notes (list/create/patch/delete), tracking updates.
  */
 
 import { getApiBaseUrl } from './apiBaseUrl'
@@ -100,6 +100,41 @@ export async function deleteShipment(token, shipmentId) {
   return json
 }
 
+function filenameFromContentDisposition(cd) {
+  if (!cd || typeof cd !== 'string') return null
+  const star = /filename\*=UTF-8''([^;]+)/i.exec(cd)
+  if (star) {
+    try {
+      return decodeURIComponent(star[1].trim())
+    } catch {
+      return star[1].trim()
+    }
+  }
+  const quoted = /filename="([^"]+)"/i.exec(cd)
+  if (quoted) return quoted[1]
+  const plain = /filename=([^;]+)/i.exec(cd)
+  if (plain) return plain[1].trim().replace(/^["']|["']$/g, '')
+  return null
+}
+
+/** GET shipment PDF (binary). Uses same auth as other shipment routes. */
+export async function downloadShipmentPdf(token, shipmentId) {
+  const res = await apiFetch(`${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}/pdf`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/pdf',
+    },
+  })
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}))
+    throw new Error(json.message || json.error || `Failed to export PDF (${res.status})`)
+  }
+  const blob = await res.blob()
+  const filename =
+    filenameFromContentDisposition(res.headers.get('Content-Disposition')) || `shipment-${shipmentId}.pdf`
+  return { blob, filename }
+}
+
 export async function getShipmentStats(token) {
   const res = await apiFetch(`${getBaseUrl()}/shipments/stats`, { headers: authHeaders(token) })
   const json = await res.json().catch(() => ({}))
@@ -152,6 +187,33 @@ export async function postShipmentNote(token, shipmentId, body) {
   })
   const json = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(json.message || json.error || `Failed to add note (${res.status})`)
+  return json
+}
+
+export async function patchShipmentNote(token, shipmentId, noteId, body) {
+  const res = await apiFetch(
+    `${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}/notes/${encodeURIComponent(noteId)}`,
+    {
+      method: 'PATCH',
+      headers: authHeaders(token),
+      body: JSON.stringify(body),
+    }
+  )
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(json.message || json.error || `Failed to update note (${res.status})`)
+  return json
+}
+
+export async function deleteShipmentNote(token, shipmentId, noteId) {
+  const res = await apiFetch(
+    `${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}/notes/${encodeURIComponent(noteId)}`,
+    {
+      method: 'DELETE',
+      headers: authHeaders(token),
+    }
+  )
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(json.message || json.error || `Failed to delete note (${res.status})`)
   return json
 }
 

@@ -320,25 +320,27 @@ Route::prefix('v1')->group(function () {
         Route::post('sd-forms/{sdForm}/email-operations', [SDFormController::class, 'emailToOperations']);
         Route::get('sd-forms/{sdForm}/pdf', [SDFormController::class, 'pdf']);
 
-        // Shipments
+        // Shipments (register shipments/{shipment}/… before shipments/{shipment} so /pdf and other suffixes always match)
         Route::get('shipments/stats', [ShipmentController::class, 'stats']);
         Route::get('shipments/charts', [ShipmentController::class, 'charts']);
         Route::get('shipments/export', [ShipmentController::class, 'export']);
         Route::get('shipments', [ShipmentController::class, 'index']);
         Route::post('shipments', [ShipmentController::class, 'store']);
-        Route::get('shipments/{shipment}', [ShipmentController::class, 'show']);
-        Route::put('shipments/{shipment}', [ShipmentController::class, 'update']);
-        Route::delete('shipments/{shipment}', [ShipmentController::class, 'destroy']);
+        Route::get('shipments/{shipment}/pdf', [ShipmentController::class, 'pdf']);
         Route::post('shipments/{shipment}/notify-sales-financials', [ShipmentController::class, 'notifySalesFinancials']);
         Route::get('shipments/{shipment}/tracking-updates', [ShipmentTrackingUpdateController::class, 'index']);
         Route::post('shipments/{shipment}/tracking-updates', [ShipmentTrackingUpdateController::class, 'store']);
         Route::get('shipments/{shipment}/notes', [ShipmentNoteController::class, 'index']);
         Route::post('shipments/{shipment}/notes', [ShipmentNoteController::class, 'store']);
-
+        Route::patch('shipments/{shipment}/notes/{note}', [ShipmentNoteController::class, 'update']);
+        Route::delete('shipments/{shipment}/notes/{note}', [ShipmentNoteController::class, 'destroy']);
         Route::get('shipments/{shipment}/operations', [ShipmentOperationsController::class, 'show']);
         Route::put('shipments/{shipment}/operations', [ShipmentOperationsController::class, 'update']);
         Route::get('shipments/{shipment}/tasks', [ShipmentTaskController::class, 'index']);
         Route::put('shipments/{shipment}/tasks', [ShipmentTaskController::class, 'bulkUpdate']);
+        Route::get('shipments/{shipment}', [ShipmentController::class, 'show']);
+        Route::put('shipments/{shipment}', [ShipmentController::class, 'update']);
+        Route::delete('shipments/{shipment}', [ShipmentController::class, 'destroy']);
 
         // Ticket types (lookup – CRUD)
         Route::get('ticket-types', [TicketTypeController::class, 'index']);

@@ -13,6 +13,7 @@ import {
 import { listActivitiesBySubject } from '../../api/activities'
 import { notifyShipmentSalesFinancials } from '../../api/shipments'
 import { useAuthAccess } from '../../hooks/useAuthAccess'
+import '../SDForms/SDForms.css'
 
 const BUCKET_DEFS = [
   {
@@ -1234,14 +1235,14 @@ export default function ShipmentFinancialsModal({
   return (
     <div className="client-detail-modal shipments-no-print shipment-fin-modal-root" role="dialog" aria-modal="true" aria-labelledby="shipment-fin-modal-title">
       <div className="client-detail-modal__backdrop" onClick={onClose} />
-      <div className="client-detail-modal__box shipment-fin-modal__box">
-        <header className="client-detail-modal__header shipment-fin-modal__header">
+      <div className="client-detail-modal__box client-detail-modal__box--form shipment-fin-modal__box">
+        <header className="client-detail-modal__header client-detail-modal__header--form shipment-fin-modal__header">
           <div className="client-detail-modal__header-inner">
             <span className="client-detail-modal__header-label">{t('shipments.financialsModalTitle')}</span>
-            <h2 id="shipment-fin-modal-title" className="client-detail-modal__title client-detail-modal__title--client shipment-fin-modal__title-bl">
+            <h2 id="shipment-fin-modal-title" className="client-detail-modal__title shipment-fin-modal__title-bl">
               {bl}
             </h2>
-            <div className="shipment-fin-modal__client">{clientLabel(shipment)}</div>
+            <div className="sd-form-modal-preview__hint">{clientLabel(shipment)}</div>
           </div>
           <button type="button" className="client-detail-modal__close" onClick={onClose} aria-label={t('shipments.close')}>
             <X className="client-detail-modal__close-icon" aria-hidden />
@@ -1275,12 +1276,13 @@ export default function ShipmentFinancialsModal({
           </button>
         </div>
 
-        <div className="client-detail-modal__body shipment-fin-modal__body">
+        <div className="client-detail-modal__body client-detail-modal__body--form shipment-fin-modal__body">
           {finBanner ? (
             <div className={`shipment-fin-flash shipment-fin-flash--${finBanner.type}`} role="status">
               {finBanner.message}
             </div>
           ) : null}
+          <div className="client-detail-modal__body-inner clients-form-sections">
           {tab === 'expenses' && isAccountingUser && (
             <div className="shipment-fin-panel">
               {!hasBl ? (
@@ -1817,6 +1819,7 @@ export default function ShipmentFinancialsModal({
               )}
             </div>
           )}
+          </div>
         </div>
       </div>
     </div>

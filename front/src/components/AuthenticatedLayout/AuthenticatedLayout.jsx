@@ -102,6 +102,8 @@ export default function AuthenticatedLayout() {
   const token = getStoredToken()
   const [user, setUser] = useState(null)
   const [permissions, setPermissions] = useState([])
+  /** Spatie ability names from profile (`notes.manage`, `shipments.manage_ops`, …). Kept separate from page-permission rows. */
+  const [abilityNames, setAbilityNames] = useState([])
   const [allowedPages, setAllowedPages] = useState(() => readPageAccessCache()?.allowedPages ?? [])
   const [pageAccessVersion, setPageAccessVersion] = useState(() => readPageAccessCache()?.pageAccessVersion ?? '')
   const [loading, setLoading] = useState(true)
@@ -112,9 +114,12 @@ export default function AuthenticatedLayout() {
     return getProfile(token).then(async (data) => {
       const u = data.user ?? data.data ?? data
       setUser(u)
-      
+
+      const spatieAbilities = Array.isArray(data.permissions) ? data.permissions : []
+      setAbilityNames(spatieAbilities)
+
       const roleId = u?.role_id
-      let finalPermissions = Array.isArray(data.permissions) ? data.permissions : []
+      let finalPermissions = spatieAbilities
       let finalPages = Array.isArray(data.page_access) ? data.page_access.filter(Boolean) : []
 
       if (roleId) {
@@ -159,9 +164,12 @@ export default function AuthenticatedLayout() {
 
         const u = data.user ?? data.data ?? data
         setUser(u)
-        
+
+        const spatieAbilities = Array.isArray(data.permissions) ? data.permissions : []
+        if (!cancelled) setAbilityNames(spatieAbilities)
+
         const roleId = u?.role_id
-        let finalPermissions = Array.isArray(data.permissions) ? data.permissions : []
+        let finalPermissions = spatieAbilities
         let finalPages = Array.isArray(data.page_access) ? data.page_access.filter(Boolean) : []
 
         if (roleId) {
@@ -490,7 +498,17 @@ export default function AuthenticatedLayout() {
       pageTitle={pageHeaderConfig.title}
       pageBreadcrumbs={pageHeaderConfig.breadcrumbs}
     >
-      <Outlet context={{ user, permissions, refreshUser, allowedPages, pageAccessVersion, hasPageAccess }} />
+      <Outlet
+        context={{
+          user,
+          permissions,
+          abilityNames,
+          refreshUser,
+          allowedPages,
+          pageAccessVersion,
+          hasPageAccess,
+        }}
+      />
     </AppLayout>
   )
 }
