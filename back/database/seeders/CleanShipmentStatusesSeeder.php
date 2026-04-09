@@ -17,8 +17,10 @@ class CleanShipmentStatusesSeeder extends Seeder
 
         // 2. Map of common string variations to the correct Name or ID
         $variations = [
-            'تم الحجز' => 'Booking Confirmed',
-            'Backfill' => 'Booking Confirmed',
+            'تم الحجز' => 'Booked',
+            'Booking Confirmed' => 'Booked',
+            'تم تأكيد الحجز' => 'Booked',
+            'Backfill' => 'Booked',
             'New' => 'New',
         ];
 

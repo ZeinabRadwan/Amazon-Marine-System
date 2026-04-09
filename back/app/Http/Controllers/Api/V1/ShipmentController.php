@@ -261,7 +261,18 @@ class ShipmentController extends Controller
         $dynamicStats = [];
 
         foreach ($allStatuses as $s) {
-            $count = (int) ($counts[$s->id] ?? $counts[$s->name_en] ?? $counts[$s->name_ar] ?? 0);
+            // Priority 1: ID match
+            $count = (int) ($counts[$s->id] ?? 0);
+            
+            // Priority 2: Name match (if not already counted via ID)
+            foreach ($counts as $statusStr => $c) {
+                if (is_numeric($statusStr)) continue; // Skip IDs here
+                
+                $lowerStatus = strtolower(trim($statusStr));
+                if ($lowerStatus === strtolower($s->name_en) || $statusStr === $s->name_ar) {
+                    $count += $c;
+                }
+            }
             
             $dynamicStats[] = [
                 'id' => $s->id,
@@ -286,6 +297,7 @@ class ShipmentController extends Controller
                 'customs_clearance' => $customsClearance,
                 'delivered' => $delivered,
                 'all_statuses' => $dynamicStats,
+                '_debug_counts' => $counts,
             ]
         ]);
     }
