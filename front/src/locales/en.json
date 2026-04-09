@@ -1922,6 +1922,7 @@
     "typeAll": "All types",
     "typeClient": "Client",
     "typeVendor": "Vendor",
+    "typeOther": "Other",
     "allClients": "All clients",
     "allUsers": "All users",
     "dateFrom": "From date",
@@ -1950,6 +1951,7 @@
     "sectionDetails": "Visit details",
     "relationClient": "Client",
     "relationVendor": "Vendor (vendor ID)",
+    "relationOther": "Other",
     "vendorPlaceholder": "Select vendor",
     "vendorHint": "Choose a partner from the list.",
     "statusNotSet": "Not set",
@@ -1991,7 +1993,8 @@
       "related": "Related to",
       "relationKind": "Link visit to",
       "client_id": "Client",
-      "vendor_id": "Vendor"
+      "vendor_id": "Vendor",
+      "other_name": "Name"
     },
     "allVendors": "All vendors",
     "filterVendor": "Vendor"

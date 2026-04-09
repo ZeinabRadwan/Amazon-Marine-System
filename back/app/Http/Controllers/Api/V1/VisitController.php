@@ -27,7 +27,11 @@ class VisitController extends Controller
         }
 
         if ($visitableType = $request->query('visitable_type')) {
-            $query->where('visitable_type', $visitableType);
+            if ($visitableType === 'other') {
+                $query->whereNull('visitable_type');
+            } else {
+                $query->where('visitable_type', $visitableType);
+            }
         }
 
         if ($userId = $request->query('user_id')) {
@@ -57,9 +61,12 @@ class VisitController extends Controller
         if ($request->filled('client_id')) {
             $data['visitable_type'] = Client::class;
             $data['visitable_id'] = $data['client_id'];
-        } else {
+        } elseif ($request->filled('vendor_id')) {
             $data['visitable_type'] = Vendor::class;
             $data['visitable_id'] = $data['vendor_id'];
+        } else {
+            $data['visitable_type'] = null;
+            $data['visitable_id'] = null;
         }
         unset($data['client_id'], $data['vendor_id']);
 
@@ -84,9 +91,14 @@ class VisitController extends Controller
         if ($request->filled('client_id')) {
             $visit->visitable_type = Client::class;
             $visit->visitable_id = $data['client_id'];
+            $visit->other_name = null;
         } elseif ($request->filled('vendor_id')) {
             $visit->visitable_type = Vendor::class;
             $visit->visitable_id = $data['vendor_id'];
+            $visit->other_name = null;
+        } elseif ($request->filled('other_name')) {
+            $visit->visitable_type = null;
+            $visit->visitable_id = null;
         }
         unset($data['client_id'], $data['vendor_id']);
 
@@ -147,8 +159,12 @@ class VisitController extends Controller
         }
 
         if ($visitableType = $request->query('visitable_type')) {
-            $type = $visitableType === 'client' ? Client::class : Vendor::class;
-            $query->where('visitable_type', $type);
+            if ($visitableType === 'other') {
+                $query->whereNull('visitable_type');
+            } else {
+                $type = $visitableType === 'client' ? Client::class : Vendor::class;
+                $query->where('visitable_type', $type);
+            }
         }
 
         $visits = $query->with(['user', 'visitable'])->get();
@@ -187,8 +203,12 @@ class VisitController extends Controller
         }
 
         if ($visitableType = $request->query('visitable_type')) {
-            $type = $visitableType === 'client' ? Client::class : Vendor::class;
-            $query->where('visitable_type', $type);
+            if ($visitableType === 'other') {
+                $query->whereNull('visitable_type');
+            } else {
+                $type = $visitableType === 'client' ? Client::class : Vendor::class;
+                $query->where('visitable_type', $type);
+            }
         }
 
         $visits = $query->with('user')->get();

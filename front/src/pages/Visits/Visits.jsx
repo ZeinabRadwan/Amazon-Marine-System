@@ -37,6 +37,7 @@ import {
 } from './visitStatus'
 import VisitStatusBadge from './VisitStatusBadge'
 import { normalizeClientOption } from '../../utils/entitySelectOptions'
+import DateTimePicker from '../../components/DateTimePicker'
 
 /** Pending client follow-ups block; flip to re-enable. */
 const SHOW_VISITS_FOLLOW_UPS_SECTION = false
@@ -51,7 +52,7 @@ function normalizeVendorOption(v) {
 
 function visitVisitableName(v) {
   const vis = v.visitable
-  if (!vis) return '—'
+  if (!vis) return v.other_name || '—'
   return vis.company_name || vis.name || `#${v.visitable_id ?? ''}`
 }
 
@@ -63,13 +64,14 @@ function isVendorVisit(v) {
 function formatVisitDetailDate(value, locale) {
   if (value == null || value === '') return ''
   const s = String(value).trim()
-  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10)
   const d = new Date(s)
-  if (Number.isNaN(d.getTime())) return s.slice(0, 10) || '—'
+  if (Number.isNaN(d.getTime())) return s.slice(0, 16).replace('T', ' ') || '—'
   return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-GB', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   }).format(d)
 }
 
@@ -78,6 +80,7 @@ function defaultVisitForm() {
     relationKind: 'client',
     client_id: '',
     vendor_id: '',
+    other_name: '',
     subject: '',
     purpose: '',
     notes: '',
@@ -88,14 +91,16 @@ function defaultVisitForm() {
 
 function visitToForm(v) {
   const vendor = isVendorVisit(v)
+  const other = !v.visitable_type && v.other_name
   return {
-    relationKind: vendor ? 'vendor' : 'client',
-    client_id: vendor ? '' : String(v.visitable_id ?? ''),
+    relationKind: other ? 'other' : vendor ? 'vendor' : 'client',
+    client_id: vendor || other ? '' : String(v.visitable_id ?? ''),
     vendor_id: vendor ? String(v.visitable_id ?? '') : '',
+    other_name: v.other_name ?? '',
     subject: v.subject ?? '',
     purpose: v.purpose ?? '',
     notes: v.notes ?? '',
-    visit_date: v.visit_date ? String(v.visit_date).slice(0, 10) : '',
+    visit_date: v.visit_date ? String(v.visit_date).slice(0, 16).replace('T', ' ') : '',
     status: v.status ?? '',
   }
 }
@@ -110,8 +115,10 @@ function buildStorePayload(form) {
   if (form.status?.trim()) body.status = form.status.trim()
   if (form.relationKind === 'client') {
     body.client_id = Number(form.client_id)
-  } else {
+  } else if (form.relationKind === 'vendor') {
     body.vendor_id = Number(form.vendor_id)
+  } else {
+    body.other_name = form.other_name.trim()
   }
   return body
 }
@@ -126,9 +133,16 @@ function buildUpdatePayload(form) {
   }
   if (form.relationKind === 'client' && form.client_id) {
     body.client_id = Number(form.client_id)
+    body.other_name = null
   }
   if (form.relationKind === 'vendor' && form.vendor_id) {
     body.vendor_id = Number(form.vendor_id)
+    body.other_name = null
+  }
+  if (form.relationKind === 'other' && form.other_name) {
+    body.other_name = form.other_name.trim()
+    body.client_id = null
+    body.vendor_id = null
   }
   return body
 }
@@ -384,6 +398,10 @@ export default function Visits() {
       setAlert({ type: 'error', message: t('visits.errorVendorRequired') })
       return
     }
+    if (createForm.relationKind === 'other' && !createForm.other_name) {
+      setAlert({ type: 'error', message: t('visits.errorOtherNameRequired', 'Please enter a name.') })
+      return
+    }
     setCreateSubmitting(true)
     try {
       const payload = buildStorePayload(createForm)
@@ -409,6 +427,10 @@ export default function Visits() {
     }
     if (editForm.relationKind === 'vendor' && !editForm.vendor_id) {
       setAlert({ type: 'error', message: t('visits.errorVendorRequired') })
+      return
+    }
+    if (editForm.relationKind === 'other' && !editForm.other_name) {
+      setAlert({ type: 'error', message: t('visits.errorOtherNameRequired', 'Please enter a name.') })
       return
     }
     setEditSubmitting(true)
@@ -448,7 +470,7 @@ export default function Visits() {
       key: 'visit_date',
       sortKey: 'visit_date',
       label: t('visits.fields.visit_date'),
-      render: (val) => (val ? String(val).slice(0, 10) : '—'),
+      render: (val) => (val ? String(val).slice(0, 16).replace('T', ' ') : '—'),
     },
     {
       key: 'subject',
@@ -459,13 +481,22 @@ export default function Visits() {
       key: 'visitable',
       sortKey: 'visitable',
       label: t('visits.fields.related'),
-      render: (_, v) => (
-        <span>
-          {isVendorVisit(v) ? t('visits.typeVendor') : t('visits.typeClient')}
-          {': '}
-          {visitVisitableName(v)}
-        </span>
-      ),
+      render: (_, v) => {
+        if (!v.visitable_type && v.other_name) {
+          return (
+            <span>
+              {t('visits.typeOther')}: {v.other_name}
+            </span>
+          )
+        }
+        return (
+          <span>
+            {isVendorVisit(v) ? t('visits.typeVendor') : t('visits.typeClient')}
+            {': '}
+            {visitVisitableName(v)}
+          </span>
+        )
+      },
     },
     { key: 'purpose', label: t('visits.fields.purpose'), render: (p) => p || '—' },
     {
@@ -519,9 +550,10 @@ export default function Visits() {
             >
               <option value="client">{t('visits.relationClient')}</option>
               <option value="vendor">{t('visits.relationVendor')}</option>
+              <option value="other">{t('visits.relationOther')}</option>
             </select>
           </div>
-          {form.relationKind === 'client' ? (
+          {form.relationKind === 'client' && (
             <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
               <label htmlFor="visit-client">{t('visits.fields.client_id')}</label>
               <select
@@ -539,7 +571,8 @@ export default function Visits() {
                 ))}
               </select>
             </div>
-          ) : (
+          )}
+          {form.relationKind === 'vendor' && (
             <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
               <label htmlFor="visit-vendor">{t('visits.fields.vendor_id')}</label>
               <select
@@ -557,6 +590,19 @@ export default function Visits() {
                 ))}
               </select>
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t('visits.vendorHint')}</p>
+            </div>
+          )}
+          {form.relationKind === 'other' && (
+            <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+              <label htmlFor="visit-other-name">{t('visits.fields.other_name')}</label>
+              <input
+                id="visit-other-name"
+                type="text"
+                value={form.other_name}
+                onChange={(e) => setForm((f) => ({ ...f, other_name: e.target.value }))}
+                disabled={disabled}
+                required={isCreate}
+              />
             </div>
           )}
         </div>
@@ -577,13 +623,12 @@ export default function Visits() {
           </div>
           <div className="client-detail-modal__form-field">
             <label htmlFor="visit-date">{t('visits.fields.visit_date')}</label>
-            <input
+            <DateTimePicker
               id="visit-date"
-              type="date"
               value={form.visit_date}
-              onChange={(e) => setForm((f) => ({ ...f, visit_date: e.target.value }))}
+              onChange={(val) => setForm((f) => ({ ...f, visit_date: val }))}
               disabled={disabled}
-              required
+              locale={i18n.language}
             />
           </div>
           <div className="client-detail-modal__form-field">
@@ -772,15 +817,10 @@ export default function Visits() {
               />
             </div>
             <div className="clients-filters__fields flex flex-wrap gap-2">
-              <select
-                value={apiFilters.visitable_kind}
-                onChange={(e) => setApiFilters((f) => ({ ...f, visitable_kind: e.target.value }))}
-                className="clients-input"
-                aria-label={t('visits.filterType')}
-              >
                 <option value="">{t('visits.typeAll')}</option>
                 <option value="client">{t('visits.typeClient')}</option>
                 <option value="vendor">{t('visits.typeVendor')}</option>
+                <option value="other">{t('visits.typeOther')}</option>
               </select>
               <select
                 value={apiFilters.client_id}

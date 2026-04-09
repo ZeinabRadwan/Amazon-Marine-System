@@ -28,12 +28,13 @@ function authHeaders(token) {
 export function visitableTypeForListQuery(kind) {
   if (kind === 'client') return VISITABLE_TYPE_CLIENT
   if (kind === 'vendor') return VISITABLE_TYPE_VENDOR
+  if (kind === 'other') return 'other'
   return ''
 }
 
 /** GET /visits/stats and /visits/charts expect client | vendor (not full class names). */
 export function visitableTypeForStatsQuery(kind) {
-  if (kind === 'client' || kind === 'vendor') return kind
+  if (kind === 'client' || kind === 'vendor' || kind === 'other') return kind
   return ''
 }
 

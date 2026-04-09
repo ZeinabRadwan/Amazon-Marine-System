@@ -23,13 +23,14 @@ class Visit extends Model
         'notes',
         'visit_date',
         'status',
+        'other_name',
     ];
 
     /**
      * @var array<string, string>
      */
     protected $casts = [
-        'visit_date' => 'date',
+        'visit_date' => 'datetime',
     ];
 
     /**
