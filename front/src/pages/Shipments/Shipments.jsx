@@ -1406,30 +1406,45 @@ export default function Shipments() {
 
         {stats && typeof stats === 'object' && (
           <div className="clients-stats-grid shipments-no-print">
-            <StatsCard
-              title={t('shipments.stats.booked')}
-              value={new Intl.NumberFormat(numberLocale).format(stats.booked ?? 0)}
-              icon={<Package className="h-6 w-6" />}
-              variant="blue"
-            />
-            <StatsCard
-              title={t('shipments.stats.in_transit')}
-              value={new Intl.NumberFormat(numberLocale).format(stats.in_transit ?? 0)}
-              icon={<Package className="h-6 w-6" />}
-              variant="amber"
-            />
-            <StatsCard
-              title={t('shipments.stats.customs_clearance')}
-              value={new Intl.NumberFormat(numberLocale).format(stats.customs_clearance ?? 0)}
-              icon={<Package className="h-6 w-6" />}
-              variant="green"
-            />
-            <StatsCard
-              title={t('shipments.stats.delivered')}
-              value={new Intl.NumberFormat(numberLocale).format(stats.delivered ?? 0)}
-              icon={<Package className="h-6 w-6" />}
-              variant="green"
-            />
+            {stats.all_statuses && Array.isArray(stats.all_statuses) && stats.all_statuses.length > 0 ? (
+              stats.all_statuses.map(s => (
+                <StatsCard
+                  key={s.id}
+                  title={i18n.language === 'ar' ? s.name_ar : s.name_en}
+                  value={new Intl.NumberFormat(numberLocale).format(s.count ?? 0)}
+                  icon={<Package className="h-6 w-6" />}
+                  variant="custom"
+                  color={s.color}
+                />
+              ))
+            ) : (
+              <>
+                <StatsCard
+                  title={t('shipments.stats.booked')}
+                  value={new Intl.NumberFormat(numberLocale).format(stats.booked ?? 0)}
+                  icon={<Package className="h-6 w-6" />}
+                  variant="blue"
+                />
+                <StatsCard
+                  title={t('shipments.stats.in_transit')}
+                  value={new Intl.NumberFormat(numberLocale).format(stats.in_transit ?? 0)}
+                  icon={<Package className="h-6 w-6" />}
+                  variant="amber"
+                />
+                <StatsCard
+                  title={t('shipments.stats.customs_clearance')}
+                  value={new Intl.NumberFormat(numberLocale).format(stats.customs_clearance ?? 0)}
+                  icon={<Package className="h-6 w-6" />}
+                  variant="green"
+                />
+                <StatsCard
+                  title={t('shipments.stats.delivered')}
+                  value={new Intl.NumberFormat(numberLocale).format(stats.delivered ?? 0)}
+                  icon={<Package className="h-6 w-6" />}
+                  variant="green"
+                />
+              </>
+            )}
           </div>
         )}
 

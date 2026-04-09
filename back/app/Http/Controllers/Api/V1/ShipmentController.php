@@ -237,39 +237,43 @@ class ShipmentController extends Controller
             $query->where('sales_rep_id', $user->id);
         }
 
-        $byStatus = $query->selectRaw('status, COUNT(*) as count')
+        // Fetch counts for ALL statuses currently in the DB
+        $counts = $query->clone()->selectRaw('status, COUNT(*) as count')
             ->groupBy('status')
-            ->get();
+            ->get()
+            ->pluck('count', 'status')
+            ->toArray();
 
-        // Fetch status name map for ID resolution
-        $statusMap = \App\Models\ShipmentStatus::pluck('name_en', 'id')->toArray();
+        // Fetch all shipment statuses mapping (ID -> name_en)
+        $allStatuses = \App\Models\ShipmentStatus::where('type', 'commercial')
+            ->orWhereNull('type')
+            ->orderBy('sort_order')
+            ->get();
 
         $booked = 0;
         $inTransit = 0;
         $customsClearance = 0;
         $delivered = 0;
+        
+        $dynamicStats = [];
 
-        foreach ($byStatus as $row) {
-            $count = (int) $row->count;
-            $sValue = (string) $row->status;
+        foreach ($allStatuses as $s) {
+            $count = (int) ($counts[$s->id] ?? $counts[$s->name_en] ?? $counts[$s->name_ar] ?? 0);
+            
+            $dynamicStats[] = [
+                'id' => $s->id,
+                'name_ar' => $s->name_ar,
+                'name_en' => $s->name_en,
+                'color' => $s->color,
+                'count' => $count,
+            ];
 
-            // Resolve name if status is an ID
-            $label = $sValue;
-            if (is_numeric($sValue) && isset($statusMap[$sValue])) {
-                $label = $statusMap[$sValue];
-            }
-
-            $key = $this->normalizeStatusForStats($label);
-
-            if ($key === 'booked') {
-                $booked += $count;
-            } elseif ($key === 'in_transit') {
-                $inTransit += $count;
-            } elseif ($key === 'customs_clearance') {
-                $customsClearance += $count;
-            } elseif ($key === 'delivered') {
-                $delivered += $count;
-            }
+            // Aggregation for the 4 core pipeline cards
+            $key = $this->normalizeStatusForStats($s->name_en);
+            if ($key === 'booked') $booked += $count;
+            elseif ($key === 'in_transit') $inTransit += $count;
+            elseif ($key === 'customs_clearance') $customsClearance += $count;
+            elseif ($key === 'delivered') $delivered += $count;
         }
 
         return response()->json([
@@ -278,6 +282,7 @@ class ShipmentController extends Controller
                 'in_transit' => $inTransit,
                 'customs_clearance' => $customsClearance,
                 'delivered' => $delivered,
+                'all_statuses' => $dynamicStats,
             ]
         ]);
     }

@@ -31,6 +31,7 @@ export default function StatsCard({
   change,
   trend,
   variant = 'default',
+  color: customColor, // New prop for DB-driven colors
   className = '',
 }) {
   const id = useId()
@@ -39,6 +40,11 @@ export default function StatsCard({
   const hasTrend = trend === 'up' || trend === 'down'
   const isPositive = trend === 'up'
   const iconStyles = ICON_VARIANTS[variant] ?? ICON_VARIANTS.default
+
+  const customIconStyles = variant === 'custom' && customColor ? {
+    backgroundColor: `${customColor}22`, // 22 is approx 13% opacity in hex
+    color: customColor
+  } : {}
 
   const changeDisplay =
     change != null && change !== ''
@@ -60,7 +66,8 @@ export default function StatsCard({
       {/* Row 1: Icon (top-left) + Trend pill (top-right) */}
       <div className="flex w-full items-start justify-between gap-2">
         <div
-          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg p-1.5 [&>svg]:h-4 [&>svg]:w-4 ${iconStyles}`}
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg p-1.5 [&>svg]:h-4 [&>svg]:w-4 ${variant === 'custom' ? '' : iconStyles}`}
+          style={customIconStyles}
           aria-hidden
         >
           {icon}
