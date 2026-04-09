@@ -30,6 +30,8 @@ class DatabaseSeeder extends Seeder
             CustomerServiceSeeder::class,
             PricingSeeder::class,
             ClientStatusesSeeder::class,
+            ShipmentStatusesSeeder::class,
+            ShipmentOperationalStatusesSeeder::class,
         ]);
     }
 }
