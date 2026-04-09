@@ -19,86 +19,91 @@
         .wrap {
             padding: 0;
         }
-        /* Navy header band */
+        /* Navy header: row1 = logo + brand + doc title; row2 = full-width meta panel */
         table.header-band {
             width: 100%;
             border-collapse: collapse;
             background: #1f2a60;
             margin: 0 0 14px;
         }
-        table.header-band td {
+        table.header-band > tbody > tr > td {
+            border: none;
+            vertical-align: top;
+            padding: 0;
+        }
+        .header-row1 td {
             border: none;
             vertical-align: middle;
-            padding: 12px 14px;
+            padding: 14px 16px 10px;
         }
         .header-logo img {
-            width: 200px;
-            max-width: 100%;
-            height: auto;
+            height: 48px;
+            width: auto;
+            max-width: 88px;
             display: block;
         }
-        /* Brand: one horizontal row, all white */
-        .brand-row-table {
-            border-collapse: collapse;
-            width: auto;
-        }
-        .brand-row-table td {
-            border: none;
-            vertical-align: middle;
-            padding: 0 0 0 12px;
-        }
-        .brand-inline {
-            color: #ffffff;
-            line-height: 1.4;
-            white-space: normal;
-        }
-        .brand-inline .line-main {
-            font-size: 15px;
+        .brand-line {
+            font-size: 13px;
             font-weight: 700;
-            letter-spacing: 0.12em;
+            letter-spacing: 0.1em;
             color: #ffffff;
+            line-height: 1.35;
         }
-        .brand-inline .line-sub {
+        .brand-sep {
+            color: #f97316;
+            font-weight: 400;
+            padding: 0 0.35em;
+        }
+        .brand-tag {
             font-size: 10px;
             font-weight: 400;
+            letter-spacing: 0.02em;
             color: #ffffff;
-            margin-left: 0.4em;
-        }
-        .head-meta {
-            text-align: left;
-            vertical-align: top;
         }
         .doc-title {
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 700;
             color: #ffffff;
-            margin: 0 0 8px;
-            letter-spacing: 0.04em;
-            text-align: left;
+            letter-spacing: 0.03em;
+            text-align: right;
+            line-height: 1.3;
         }
-        table.meta-grid {
+        td.header-row2 {
+            border: none;
+            padding: 0 16px 14px !important;
+            vertical-align: top;
+        }
+        table.meta-panel {
             width: 100%;
             border-collapse: collapse;
-            color: #ffffff;
-            font-size: 9px;
+            background: #243056;
+            border: 1px solid #f97316;
         }
-        table.meta-grid td {
+        table.meta-panel td {
             border: none;
-            padding: 4px 8px 4px 0;
+            padding: 8px 12px;
             vertical-align: top;
             width: 50%;
+            font-size: 10px;
+            color: #ffffff;
+        }
+        table.meta-panel tr + tr td {
+            border-top: 1px solid #364785;
+        }
+        table.meta-panel td + td {
+            border-left: 1px solid #364785;
         }
         .meta-icon {
             display: inline-block;
-            width: 13px;
-            height: 13px;
-            line-height: 13px;
+            min-width: 16px;
+            height: 16px;
+            line-height: 16px;
             text-align: center;
             background: #f97316;
             color: #ffffff;
-            font-size: 7px;
+            font-size: 8px;
             font-weight: 700;
-            margin-right: 6px;
+            margin-right: 8px;
             vertical-align: middle;
         }
         .meta-item strong {
@@ -106,7 +111,7 @@
             font-weight: 600;
         }
         .meta-val {
-            color: #f8fafc;
+            color: #f1f5f9;
         }
         .body-pad {
             padding: 0 14px 16px;
@@ -244,27 +249,29 @@
         @else
             <table class="header-band">
                 <tr>
-                    <td style="width:55%;">
-                        <table class="brand-row-table">
+                    <td>
+                        <table class="header-row1" style="width:100%;border-collapse:collapse;">
                             <tr>
-                                <td style="padding-left:0;vertical-align:middle;width:200px;" class="header-logo">
+                                <td class="header-logo" style="width:90px;border:none;vertical-align:middle;">
                                     @if($logoSrc)
-                                        <img src="{{ $logoSrc }}" alt="">
+                                        <img src="{{ $logoSrc }}" alt="" style="height:48px;width:auto;max-width:88px;display:block;">
                                     @else
-                                        <div style="width:200px;height:48px;background:#fff;border:1px solid #f97316;text-align:center;line-height:48px;font-size:9px;color:#1f2a60;">LOGO</div>
+                                        <div style="width:72px;height:40px;background:#fff;border:1px solid #f97316;text-align:center;line-height:40px;font-size:8px;color:#1f2a60;">LOGO</div>
                                     @endif
                                 </td>
-                                <td style="vertical-align:middle;">
-                                    <div class="brand-inline">
-                                        <span class="line-main">AMAZON MARINE</span><span class="line-sub">Shipping and Logistics Solutions</span>
-                                    </div>
+                                <td style="border:none;vertical-align:middle;padding-left:10px;padding-right:12px;">
+                                    <span class="brand-line">AMAZON MARINE</span><span class="brand-sep">|</span><span class="brand-tag"> Shipping and Logistics Solutions</span>
+                                </td>
+                                <td style="width:32%;border:none;vertical-align:middle;text-align:right;">
+                                    <div class="doc-title">SD - Shipping Details Form</div>
                                 </td>
                             </tr>
                         </table>
                     </td>
-                    <td class="head-meta" style="width:45%;">
-                        <div class="doc-title">SD - Shipping Details Form</div>
-                        <table class="meta-grid">
+                </tr>
+                <tr>
+                    <td class="header-row2">
+                        <table class="meta-panel">
                             <tr>
                                 <td>
                                     <span class="meta-icon">#</span>

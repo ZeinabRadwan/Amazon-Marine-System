@@ -505,6 +505,23 @@ export default function SDForms() {
       .finally(() => setEditLoading(false))
   }, [token, t])
 
+  const downloadPdf = useCallback(async (id) => {
+    if (!token) return
+    setAlert(null)
+    try {
+      const blob = await getSDFormPdf(token, id)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `sd-form-${id}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+      setAlert({ type: 'success', message: t('sdForms.pdfSuccess') })
+    } catch (err) {
+      setAlert({ type: 'error', message: err.message || t('sdForms.pdfError') })
+    }
+  }, [token, t])
+
   const handleCreateSubmit = async (e) => {
     e.preventDefault()
     await createDraftAndMaybeDownload(false)
@@ -589,23 +606,6 @@ export default function SDForms() {
       setAlert({ type: 'error', message: err.message || t('sdForms.errorDelete') })
     } finally {
       setDeleteSubmitting(false)
-    }
-  }
-
-  const downloadPdf = async (id) => {
-    if (!token) return
-    setAlert(null)
-    try {
-      const blob = await getSDFormPdf(token, id)
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `sd-form-${id}.pdf`
-      a.click()
-      URL.revokeObjectURL(url)
-      setAlert({ type: 'success', message: t('sdForms.pdfSuccess') })
-    } catch (err) {
-      setAlert({ type: 'error', message: err.message || t('sdForms.pdfError') })
     }
   }
 
@@ -1746,6 +1746,11 @@ export default function SDForms() {
         render: (_, r) => (
           <div className="clients-table-actions flex flex-wrap gap-2 justify-end" role="group" aria-label={t('sdForms.actions')}>
             <IconActionButton icon={<Eye className="h-4 w-4" />} label={t('sdForms.view')} onClick={() => openDetail(r.id)} />
+            <IconActionButton
+              icon={<FileDown className="h-4 w-4" />}
+              label={t('sdForms.pdf', 'Download PDF')}
+              onClick={() => downloadPdf(r.id)}
+            />
             <IconActionButton icon={<Pencil className="h-4 w-4" />} label={t('sdForms.edit')} onClick={() => openEdit(r.id)} />
             <IconActionButton
               icon={<Trash2 className="h-4 w-4" />}
@@ -1757,7 +1762,7 @@ export default function SDForms() {
         ),
       },
     ],
-    [t, selectedIds, allPageSelected, toggleSelectAllPage, toggleSelectRow, openDetail, openEdit]
+    [t, selectedIds, allPageSelected, toggleSelectAllPage, toggleSelectRow, openDetail, openEdit, downloadPdf]
   )
 
   const detail = detailRecord
