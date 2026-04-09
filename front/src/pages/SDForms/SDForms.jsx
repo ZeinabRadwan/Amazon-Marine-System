@@ -507,30 +507,40 @@ export default function SDForms() {
 
   const handleCreateSubmit = async (e) => {
     e.preventDefault()
-    if (!token) return
+    await createDraftAndMaybeDownload(false)
+  }
+
+  const createDraftAndMaybeDownload = async (downloadAfterCreate = false) => {
+    if (!token) return null
     if (!String(createForm.shipment_direction || '').trim()) {
       setAlert({ type: 'error', message: 'Shipment direction is required.' })
-      return
+      return null
     }
     if (!String(createForm.shipping_line || '').trim()) {
       setAlert({ type: 'error', message: t('sdForms.errorShippingLineRequired') })
-      return
+      return null
     }
     const payload = buildPayload(createForm)
     if (payload.shipment_direction === 'Import' && !payload.acid_number) {
       setAlert({ type: 'error', message: 'ACID number is required for import shipments.' })
-      return
+      return null
     }
     setCreateSubmitting(true)
     setAlert(null)
     try {
-      await createSDForm(token, payload)
+      const created = await createSDForm(token, payload)
+      const createdId = created?.id ?? created?.data?.id ?? null
+      if (downloadAfterCreate && createdId) {
+        await downloadPdf(createdId)
+      }
       setShowCreate(false)
       setCreateForm(initialCreateForm())
       loadList()
       setAlert({ type: 'success', message: t('sdForms.createSuccess') })
+      return createdId
     } catch (err) {
       setAlert({ type: 'error', message: err.message || t('sdForms.errorCreate') })
+      return null
     } finally {
       setCreateSubmitting(false)
     }
@@ -1983,6 +1993,14 @@ export default function SDForms() {
                   <button type="button" className="client-detail-modal__btn client-detail-modal__btn--secondary" onClick={() => setShowCreate(false)} disabled={createSubmitting}>
                     Cancel
                   </button>
+                  <button
+                    type="button"
+                    className="client-detail-modal__btn client-detail-modal__btn--secondary"
+                    onClick={() => createDraftAndMaybeDownload(true)}
+                    disabled={createSubmitting}
+                  >
+                    {createSubmitting ? 'Saving…' : 'Save & Download PDF'}
+                  </button>
                   <button type="submit" className="client-detail-modal__btn client-detail-modal__btn--primary" disabled={createSubmitting}>
                     {createSubmitting ? 'Saving…' : 'Save'}
                   </button>
@@ -2022,6 +2040,14 @@ export default function SDForms() {
                   <footer className="client-detail-modal__footer client-detail-modal__footer--form">
                     <button type="button" className="client-detail-modal__btn client-detail-modal__btn--secondary" onClick={() => setEditId(null)} disabled={editSubmitting}>
                       {t('sdForms.cancel')}
+                    </button>
+                    <button
+                      type="button"
+                      className="client-detail-modal__btn client-detail-modal__btn--secondary"
+                      onClick={() => editId && downloadPdf(editId)}
+                      disabled={editSubmitting || !editId}
+                    >
+                      {t('sdForms.pdf', 'Download PDF')}
                     </button>
                     <button type="submit" className="client-detail-modal__btn client-detail-modal__btn--primary" disabled={editSubmitting}>
                       {editSubmitting ? t('sdForms.saving') : t('sdForms.save')}
