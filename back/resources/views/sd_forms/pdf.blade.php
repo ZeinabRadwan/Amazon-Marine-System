@@ -239,7 +239,7 @@
             $vesselRef = '—';
         }
 
-        $logoPath = base_path('../front/src/assets/logo_lightmode.png');
+        $logoPath = base_path('../front/src/assets/logo_darkmode.png');
         $logoSrc = file_exists($logoPath) ? 'file://'.str_replace('\\', '/', $logoPath) : null;
     @endphp
 
