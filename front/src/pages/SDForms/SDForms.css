@@ -142,8 +142,10 @@
 /* Make Shipper/Consignee text inputs larger in Create SD modal */
 .sd-create-form #sd-c-shipper,
 .sd-create-form #sd-c-consignee,
+.sd-create-form #sd-c-npd,
 .sd-create-form #sd-f-shipper,
-.sd-create-form #sd-f-consignee {
+.sd-create-form #sd-f-consignee,
+.sd-create-form #sd-f-npd {
   min-height: 140px;
   padding: 14px;
   font-size: 15px;
