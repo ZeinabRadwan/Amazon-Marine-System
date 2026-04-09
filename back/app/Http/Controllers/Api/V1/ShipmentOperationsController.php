@@ -21,8 +21,11 @@ class ShipmentOperationsController extends Controller
             'overseasAgent',
         ])->first();
 
+        $data = $operation ? $operation->toArray() : [];
+        $data['operations_status'] = $shipment->operations_status;
+
         return response()->json([
-            'data' => $operation,
+            'data' => $data,
         ]);
     }
 
@@ -86,14 +89,16 @@ class ShipmentOperationsController extends Controller
             ]);
         }
 
+        $data = $operation->load([
+            'transportContractor',
+            'customsBroker',
+            'insuranceCompany',
+            'overseasAgent',
+        ])->toArray();
+        $data['operations_status'] = $shipment->operations_status;
+
         return response()->json([
-            'data' => $operation->fresh([
-                'transportContractor',
-                'customsBroker',
-                'insuranceCompany',
-                'overseasAgent',
-            ]),
+            'data' => $data,
         ]);
     }
 }
-

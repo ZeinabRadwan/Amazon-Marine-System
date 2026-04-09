@@ -2092,7 +2092,11 @@
       "etd": "ETD (Estimated Departure)",
       "eta": "ETA (Estimated Arrival)",
       "taskManagement": "Task Management",
-      "taskProgress": "{{done}} / {{total}}",
+      "taskStatus": "Status",
+      "taskProgress": "{{done}} of {{total}} completed",
+      "addTask": "Add Task",
+      "newTask": "New Task",
+      "taskNamePlaceholder": "Task name...",
       "tasks": {
         "review_client_docs": "Review Client Documents",
         "review_packing_invoice": "Review Packing List & Invoice",

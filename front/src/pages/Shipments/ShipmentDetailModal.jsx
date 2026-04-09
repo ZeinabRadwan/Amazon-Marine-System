@@ -234,6 +234,21 @@ export default function ShipmentDetailModal({
     }
   }
 
+  const handleAddTask = async () => {
+    if (!token || !shipment?.id) return
+    try {
+      const newTask = {
+        name: t('shipments.ops.newTask') || 'New Task',
+        status: 'pending',
+        sort_order: tasks.length + 1
+      }
+      const res = await bulkUpdateShipmentTasks(token, shipment.id, [newTask])
+      setTasks(Array.isArray(res.data) ? res.data : [])
+    } catch (err) {
+      console.error('Failed to add task:', err)
+    }
+  }
+
   const updateTask = async (taskId, field, value) => {
     // Optimistic update
     let updatedTaskObj = null
@@ -699,11 +714,22 @@ export default function ShipmentDetailModal({
                         <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                         {t('shipments.ops.taskManagement')}
                       </div>
-                      <div className="text-sm font-medium bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-3 py-1 rounded-full">
-                        {t('shipments.ops.taskProgress', { 
-                          done: tasks.filter(t => t.status === 'done').length, 
-                          total: tasks.length 
-                        })}
+                      <div className="flex items-center gap-4">
+                        <div className="text-sm font-medium bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-3 py-1 rounded-full">
+                          {t('shipments.ops.taskProgress', { 
+                            done: tasks.filter(t => t.status === 'done').length, 
+                            total: tasks.length 
+                          })}
+                        </div>
+                        {(isOperations || isAdminRole) && (
+                          <button
+                            type="button"
+                            onClick={handleAddTask}
+                            className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 underline flex items-center gap-1"
+                          >
+                            + {t('shipments.ops.addTask')}
+                          </button>
+                        )}
                       </div>
                     </div>
                     <div className="overflow-x-auto">
@@ -731,7 +757,15 @@ export default function ShipmentDetailModal({
                                 </button>
                               </td>
                               <td className="px-4 py-3 font-medium text-gray-700 dark:text-gray-200">
-                                {t(`shipments.ops.tasks.${task.name}`) || task.name}
+                                <input
+                                  type="text"
+                                  className="clients-input py-1 w-full bg-transparent border-none focus:bg-white dark:focus:bg-gray-900"
+                                  value={task.name}
+                                  onChange={e => setTasks(prev => prev.map(t => t.id === task.id ? { ...t, name: e.target.value } : t))}
+                                  onBlur={e => updateTask(task.id, 'name', e.target.value)}
+                                  placeholder={t('shipments.ops.taskNamePlaceholder')}
+                                  disabled={!isOperations && !isAdminRole}
+                                />
                               </td>
                               <td className="px-4 py-3">
                                 <select

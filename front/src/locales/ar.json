@@ -2091,8 +2091,11 @@
       "cutOffDate": "تاريخ Cut-Off",
       "etd": "تاريخ القيام المتوقع (ETD)",
       "eta": "تاريخ الوصول المتوقع (ETA)",
-      "taskManagement": "إدارة المهام",
-      "taskProgress": "{{done}} / {{total}}",
+      "taskStatus": "الحالة",
+      "taskProgress": "تم إنجاز {{done}} من {{total}}",
+      "addTask": "إضافة مهمة",
+      "newTask": "مهمة جديدة",
+      "taskNamePlaceholder": "اسم المهمة...",
       "tasks": {
         "review_client_docs": "مراجعة مستندات العميل",
         "review_packing_invoice": "مراجعة Packing List & Invoice",
