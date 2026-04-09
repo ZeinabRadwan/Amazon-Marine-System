@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
             InvoicesSeeder::class,
             CustomerServiceSeeder::class,
             PricingSeeder::class,
+            VendorsSeeder::class,
             ClientStatusesSeeder::class,
             ShipmentStatusesSeeder::class,
             ShipmentOperationalStatusesSeeder::class,
