@@ -261,7 +261,7 @@ class SDFormController extends Controller
             'status' => $sdForm->status,
         ]);
 
-        $operationsUsers = User::role('operation')
+        $operationsUsers = User::role('operations')
             ->where('status', 'active')
             ->get();
 
@@ -430,7 +430,7 @@ class SDFormController extends Controller
 
         $sdForm->loadMissing(['client', 'salesRep', 'pol', 'pod', 'linkedShipment']);
 
-        $operationsUsers = User::role('operation')
+        $operationsUsers = User::role('operations')
             ->where('status', 'active')
             ->whereNotNull('email')
             ->get();

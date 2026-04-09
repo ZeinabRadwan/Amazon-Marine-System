@@ -323,7 +323,7 @@ class InvoiceController extends Controller
             ]);
 
             // Notify Sales if Finalized by Accountant (Fix 6B)
-            if ($user->hasRole('accountant') && $invoice->shipment_id) {
+            if ($user->hasRole('accounting') && $invoice->shipment_id) {
                 $salesRep = $invoice->shipment?->salesRep ?? ($invoice->client?->assignedSalesRep ?? null);
                 if ($salesRep) {
                     $this->notificationService->sendDatabaseNotification(

@@ -530,7 +530,7 @@ class ShipmentController extends Controller
             }
         }
 
-        $financeUsers = User::role('accountant')
+        $financeUsers = User::role('accounting')
             ->where('status', 'active')
             ->get();
 

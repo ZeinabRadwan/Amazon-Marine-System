@@ -39,8 +39,8 @@ class DashboardController extends Controller
         if ($user?->hasRole('admin')) {
             return 'admin';
         }
-        if ($user?->hasRole('finance')) {
-            return 'finance';
+        if ($user?->hasRole('accounting')) {
+            return 'accounting';
         }
         if ($user?->hasRole('operations')) {
             return 'operations';
@@ -123,9 +123,9 @@ class DashboardController extends Controller
         $shipmentIds = $this->scopedShipmentQuery($request)->pluck('id');
         $invoiceQuery = Invoice::whereDate('issue_date', '>=', $from)
             ->whereNotIn('status', ['cancelled'])
-            ->when($request->user()?->hasRole('sales') || $request->user()?->hasRole('operations'), fn ($q) => $q->whereIn('shipment_id', $shipmentIds));
+            ->when($request->user()?->hasRole('sales') || $request->user()?->hasRole('operations') || $request->user()?->hasRole('accounting'), fn ($q) => $q->whereIn('shipment_id', $shipmentIds));
         $billQuery = VendorBill::whereDate('bill_date', '>=', $from)
-            ->when($request->user()?->hasRole('sales') || $request->user()?->hasRole('operations'), fn ($q) => $q->whereIn('shipment_id', $shipmentIds));
+            ->when($request->user()?->hasRole('sales') || $request->user()?->hasRole('operations') || $request->user()?->hasRole('accounting'), fn ($q) => $q->whereIn('shipment_id', $shipmentIds));
         $invoiceMonthKeyExpression = $this->monthExpression('issue_date', '%Y-%m-01');
         $billMonthKeyExpression = $this->monthExpression('bill_date', '%Y-%m-01');
 
@@ -441,8 +441,8 @@ class DashboardController extends Controller
         $monthly = collect($months)->values()->map(function (Carbon $m, int $i) {
             $rev = (float) Invoice::whereBetween('issue_date', [$m->copy()->startOfMonth(), $m->copy()->endOfMonth()])->sum('net_amount');
             $cst = (float) VendorBill::whereBetween('bill_date', [$m->copy()->startOfMonth(), $m->copy()->endOfMonth()])->sum('net_amount');
-            $rev = $this->valueOrFloor($rev, 22000 + $this->metricFloor('accountant', 'rev', $i) * 1000);
-            $cst = $this->valueOrFloor($cst, 14000 + $this->metricFloor('accountant', 'cost', $i) * 900);
+            $rev = $this->valueOrFloor($rev, 22000 + $this->metricFloor('accounting', 'rev', $i) * 1000);
+            $cst = $this->valueOrFloor($cst, 14000 + $this->metricFloor('accounting', 'cost', $i) * 900);
 
             return ['month' => $m->format('Y-m'), 'revenue' => $rev, 'cost' => $cst];
         });

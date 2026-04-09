@@ -24,7 +24,7 @@ class ReportController extends Controller
     private const ROLE_ADMIN = 'admin';
     private const ROLE_SALES = 'sales';
     private const ROLE_OPERATIONS = 'operations';
-    private const ROLE_FINANCE = 'finance';
+    private const ROLE_FINANCE = 'accounting';
 
     private function authorizeReports(Request $request): void
     {
@@ -42,7 +42,7 @@ class ReportController extends Controller
         if ($user->hasRole('admin')) {
             return self::ROLE_ADMIN;
         }
-        if ($user->hasRole('finance')) {
+        if ($user->hasRole('accounting')) {
             return self::ROLE_FINANCE;
         }
         if ($user->hasRole('operations')) {
