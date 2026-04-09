@@ -4,166 +4,257 @@
     <meta charset="UTF-8">
     <title>SD Form {{ $form->sd_number ?? ('#' . $form->id) }}</title>
     <style>
-        @font-face {
-            font-family: 'Amiri';
-            src: url('{{ resource_path('fonts/Amiri-Regular.ttf') }}') format('truetype');
-            font-weight: normal;
-            font-style: normal;
-        }
-
         body {
-            font-family: 'Amiri', 'dejavusans', sans-serif;
+            font-family: Arial, Helvetica, sans-serif;
             font-size: 11px;
-            color: #111;
+            color: #1f2937;
             direction: ltr;
             text-align: left;
+            margin: 0;
+            padding: 0;
         }
-        h1, h2, h3 { margin: 0 0 6px; }
-        .label { font-weight: bold; }
-        .wrapper { border: 2px solid #0c4a6e; padding: 12px 16px; }
-        .header-box {
-            background: #0c4a6e;
-            color: #ffffff;
-            padding: 8px 12px;
-            margin-bottom: 8px;
+        .page {
+            border: 1px solid #dbe3ef;
+            padding: 16px 18px;
         }
-        .header-title { font-size: 14px; font-weight: bold; }
-        .header-sub { font-size: 11px; }
-        .info-table { width: 100%; border-collapse: collapse; margin-top: 6px; }
-        .info-table th,
-        .info-table td {
-            border: 1px solid #dddddd;
-            padding: 4px 6px;
-            font-size: 10px;
+        .header {
+            border-bottom: 2px solid #0c4a6e;
+            padding-bottom: 10px;
+            margin-bottom: 12px;
         }
-        .info-table th {
-            background: #f1f5f9;
-            font-weight: bold;
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .header-table td {
+            vertical-align: top;
+        }
+        .logo-box {
+            width: 58px;
+            height: 58px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            text-align: center;
+            line-height: 58px;
+            font-weight: 700;
+            color: #0c4a6e;
+            font-size: 11px;
+            background: #f8fafc;
+        }
+        .company-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0c4a6e;
+            margin: 0 0 4px;
+        }
+        .company-slogan {
+            font-size: 11px;
+            color: #6b7280;
+            margin: 0;
+        }
+        .doc-meta {
+            text-align: right;
+            font-size: 11px;
+            color: #374151;
+            line-height: 1.5;
+        }
+        .doc-meta .doc-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0c4a6e;
+            margin-bottom: 4px;
         }
         .section-title {
-            margin-top: 10px;
-            font-size: 11px;
-            font-weight: bold;
+            margin: 14px 0 6px;
+            padding: 4px 8px;
+            border-left: 4px solid #0c4a6e;
+            background: #f8fafc;
+            font-size: 12px;
+            font-weight: 700;
             color: #0c4a6e;
         }
-        .footer-box {
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 8px;
+        }
+        .data-table th,
+        .data-table td {
+            border: 1px solid #d6deeb;
+            padding: 6px 8px;
+            vertical-align: top;
+        }
+        .data-table th {
+            background: #edf3fb;
+            color: #0f3a61;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+        .data-table td {
+            font-size: 11px;
+            color: #111827;
+            line-height: 1.45;
+        }
+        .muted {
+            color: #6b7280;
+            font-size: 10px;
+        }
+        .notes-box {
+            border: 1px solid #d6deeb;
+            background: #fcfdff;
+            padding: 8px 10px;
+            min-height: 40px;
+            line-height: 1.5;
+        }
+        .footer {
             margin-top: 14px;
-            border-top: 1px solid #e5e7eb;
-            padding-top: 6px;
-            font-size: 9px;
+            border-top: 1px solid #d6deeb;
+            padding-top: 10px;
+            font-size: 10px;
             color: #4b5563;
+        }
+        .footer-title {
+            font-weight: 700;
+            color: #0c4a6e;
+            margin: 0 0 4px;
+            font-size: 11px;
+        }
+        .footer-line {
+            margin: 2px 0;
         }
     </style>
 </head>
 <body>
-    <div class="wrapper">
-        {{-- Header (customizable) --}}
-        <div class="header-box">
+    <div class="page">
+        @php
+            $pol = $form->pol?->name ?? $form->pol_text ?? '—';
+            $pod = $form->pod?->name ?? $form->pod_text ?? '—';
+            $finalDestination = $form->final_destination ?? '—';
+            $consignee = $form->consignee_info ?? '—';
+            $notifyParty = $form->notify_party_details ?: ($form->notify_party_mode ? ucfirst((string) $form->notify_party_mode) : '—');
+            $contactDetails = trim((string) ($form->client?->email ?? ''));
+            if ($contactDetails === '') {
+                $contactDetails = trim((string) ($form->client?->phone ?? ''));
+            }
+            $containerLabel = trim((string) ($form->num_containers ?? ''));
+            if ($containerLabel !== '') {
+                $containerLabel .= 'x';
+            }
+            $containerLabel .= trim((string) ($form->container_size ?? '—'));
+            $weightLabel = 'T.G.W: '.($form->total_gross_weight ?? '—');
+        @endphp
+
+        <div class="header">
             @if(!empty($headerHtml))
                 {!! $headerHtml !!}
             @else
-                <div class="header-title">Shipping Details Offer</div>
-                <div class="header-sub">
-                    SD: {{ $form->sd_number ?? ('#' . $form->id) }}
-                    &nbsp;|&nbsp;
-                    Client: {{ $form->client?->name ?? '—' }}
-                </div>
+                <table class="header-table">
+                    <tr>
+                        <td style="width: 64px;">
+                            <div class="logo-box">LOGO</div>
+                        </td>
+                        <td style="padding-left: 10px;">
+                            <p class="company-name">AMAZON MARINE</p>
+                            <p class="company-slogan">Shipping and Logistics Solutions</p>
+                        </td>
+                        <td class="doc-meta">
+                            <div class="doc-title">SD - Shipping Details Form</div>
+                            <div><strong>SD No:</strong> {{ $form->sd_number ?? ('SD-'.$form->id) }}</div>
+                            <div><strong>Date:</strong> {{ optional($form->created_at)->format('d/m/Y') ?? '—' }}</div>
+                            <div><strong>Client:</strong> {{ $form->client?->name ?? '—' }}</div>
+                        </td>
+                    </tr>
+                </table>
             @endif
         </div>
 
-        {{-- Main info table similar to sample offer --}}
-        <table class="info-table">
-            <tbody>
+        <div class="section-title">Shipment Info</div>
+        <table class="data-table">
             <tr>
-                <th>Subject</th>
-                <td colspan="3">
-                    {{ $form->cargo_description ?? '—' }}
-                </td>
-            </tr>
-            <tr>
-                <th>POL</th>
-                <td>{{ $form->pol?->name ?? $form->pol_text ?? '—' }}</td>
-                <th>POD</th>
-                <td>{{ $form->pod?->name ?? $form->pod_text ?? '—' }}</td>
-            </tr>
-            <tr>
-                <th>Shipping Line</th>
-                <td colspan="3">{{ $form->shipping_line ?? '—' }}</td>
-            </tr>
-            <tr>
+                <th>Port of Loading</th>
+                <th>Port of Discharge</th>
                 <th>Final Destination</th>
-                <td>{{ $form->final_destination ?? '—' }}</td>
-                <th>Shipment Direction</th>
-                <td>{{ $form->shipment_direction ?? '—' }}</td>
             </tr>
             <tr>
-                <th>Container</th>
-                <td>
-                    {{ $form->num_containers ?? '—' }}
-                    × {{ $form->container_size ?? '—' }}
-                    ({{ $form->container_type ?? '—' }})
-                </td>
-                <th>Requested Vessel Date</th>
-                <td>{{ optional($form->requested_vessel_date)->format('d/m/Y') ?? '—' }}</td>
-            </tr>
-            <tr>
-                <th>Freight Term</th>
-                <td>{{ $form->freight_term ?? '—' }}</td>
-                <th>ACID</th>
-                <td>{{ $form->acid_number ?? '—' }}</td>
-            </tr>
-            <tr>
-                <th>Weights</th>
-                <td colspan="3">
-                    Gross: {{ $form->total_gross_weight ?? '—' }} KG
-                    &nbsp;|&nbsp;
-                    Net: {{ $form->total_net_weight ?? '—' }} KG
-                </td>
-            </tr>
-            <tr>
-                <th>HS Code</th>
-                <td>{{ $form->hs_code ?? '—' }}</td>
-                <th>Reefer (Temp / Vent / Hum)</th>
-                <td>
-                    {{ $form->reefer_temp ?? '—' }}
-                    /
-                    {{ $form->reefer_vent ?? '—' }}
-                    /
-                    {{ $form->reefer_hum ?? '—' }}
-                </td>
-            </tr>
-            </tbody>
-        </table>
-
-        <div class="section-title">Parties</div>
-        <table class="info-table">
-            <tbody>
-            <tr>
-                <th>Shipper</th>
-                <td>{{ $form->shipper_info ?? '—' }}</td>
+                <td>{{ $pol }}</td>
+                <td>{{ $pod }}</td>
+                <td>{{ $finalDestination }}</td>
             </tr>
             <tr>
                 <th>Consignee</th>
-                <td>{{ $form->consignee_info ?? '—' }}</td>
+                <th>Notify Party</th>
+                <th>Contact Details</th>
             </tr>
             <tr>
-                <th>Notify Party</th>
+                <td>{{ $consignee }}</td>
+                <td>{{ $notifyParty }}</td>
                 <td>
-                    Mode: {{ $form->notify_party_mode ?? '—' }}<br>
-                    @if($form->notify_party_details)
-                        {{ $form->notify_party_details }}
-                    @endif
+                    Email: {{ $form->client?->email ?? '—' }}<br>
+                    Phone: {{ $form->client?->phone ?? '—' }}
                 </td>
             </tr>
-            </tbody>
         </table>
 
-        {{-- Footer (customizable) --}}
-        <div class="footer-box">
+        <div class="section-title">Shipping Info</div>
+        <table class="data-table">
+            <tr>
+                <th>SWB Type</th>
+                <th>Freight</th>
+                <th>On Board Status</th>
+            </tr>
+            <tr>
+                <td>SWB TELEX</td>
+                <td>{{ $form->freight_term ?? '—' }}</td>
+                <td>Clean on Board</td>
+            </tr>
+            <tr>
+                <th>Vessel / Container</th>
+                <th>Container Type</th>
+                <th>HS Code</th>
+                <th>Weight (KGS)</th>
+            </tr>
+            <tr>
+                <td>{{ $form->shipping_line ?? '—' }}</td>
+                <td>{{ $containerLabel }}</td>
+                <td>{{ $form->hs_code ?? '—' }}</td>
+                <td>{{ $weightLabel }}</td>
+            </tr>
+        </table>
+
+        <div class="section-title">Goods Details</div>
+        <table class="data-table">
+            <tr>
+                <th style="width: 35%;">Marks / Numbers</th>
+                <th>Description of Goods</th>
+            </tr>
+            <tr>
+                <td>{{ $form->sd_number ?? '—' }}</td>
+                <td>{{ $form->cargo_description ?? '—' }}</td>
+            </tr>
+        </table>
+        <div class="notes-box">
+            <strong>Total Gross Weight:</strong> {{ $form->total_gross_weight ?? '—' }} KG
+            &nbsp;&nbsp;|&nbsp;&nbsp;
+            <strong>Total Net Weight:</strong> {{ $form->total_net_weight ?? '—' }} KG
+            @if($form->shipment_direction === 'Import' && !empty($form->acid_number))
+                <br><strong>ACID Number:</strong> {{ $form->acid_number }}
+            @endif
+            @if(!empty($form->notes))
+                <br><br><strong>Notes:</strong> {{ $form->notes }}
+            @endif
+        </div>
+
+        <div class="footer">
             @if(!empty($footerHtml))
                 {!! $footerHtml !!}
             @else
-                <div>Above details are based on current SD form data in Amazon Marine system.</div>
+                <p class="footer-title">Contact Information</p>
+                <p class="footer-line"><strong>Phone:</strong> 01200744888</p>
+                <p class="footer-line"><strong>Email:</strong> mabdrabboh@amazonmarine.ltd</p>
+                <p class="footer-line"><strong>Address:</strong> Villa 129, 2nd District New Cairo, Egypt</p>
+                <p class="footer-line"><strong>Website:</strong> www.amazonmarine.ltd</p>
             @endif
         </div>
     </div>
