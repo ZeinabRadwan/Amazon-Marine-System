@@ -2038,19 +2038,6 @@
     "perPage": "Per page",
     "create": "New shipment",
     "createSubmit": "Create shipment",
-    "pageUpdates": {
-      "title": "What’s new on Shipments",
-      "p1": "Create, edit, and detail modals use the same form shell and styling as SD Forms (including the detail toolbar).",
-      "p2": "New shipment: pick the client first; the SD form dropdown lists only that client’s SD forms.",
-      "p3": "Free-text notes and B/L values save and show correctly on the Info tab; timeline notes stay on the Notes tab.",
-      "p4": "Edit shipment uses the same field layout as create.",
-      "p5": "Bill of lading and shipping line sit on one row in the form.",
-      "p6": "Loading & reefer uses the same card layout as client follow-ups (toggle + reefer fields).",
-      "p7": "Export PDF is available from the shipment detail view.",
-      "p8": "Arabic field labels for container type, mode, shipment type, direction, and size are shortened.",
-      "p9": "Shipments created from a client can include booking, B/L, ACID, and notes.",
-      "p10": "Sidebar order: SD Forms appears above Shipments."
-    },
     "createModal": {
       "sectionTitle": "Shipment details",
       "formHeading": "Shipment details",

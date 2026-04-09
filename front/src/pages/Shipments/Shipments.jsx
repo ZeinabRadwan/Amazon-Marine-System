@@ -85,8 +85,6 @@ const SHIPMENT_CONTAINER_TYPE_OPTIONS = [
   { value: 'High Cube', labelKey: 'shipments.containerTypes.highCube' },
 ]
 
-const SHIPMENTS_PAGE_UPDATE_COUNT = 10
-
 const defaultCreateForm = () => ({
   client_id: '',
   sd_form_id: '',
@@ -1034,7 +1032,7 @@ export default function Shipments() {
       <section className="client-detail-modal__section">
         <h3 className="client-detail-modal__section-title">{t('shipments.createModal.formHeading')}</h3>
         <div className="client-detail-modal__form-grid">
-          <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+          <div className="client-detail-modal__form-field">
             <label htmlFor={isEdit ? 'sh-client-edit' : 'sh-client-create'}>{t('shipments.createModal.clientName')} *</label>
             <select
               id={isEdit ? 'sh-client-edit' : 'sh-client-create'}
@@ -1058,7 +1056,7 @@ export default function Shipments() {
             </select>
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t('shipments.createModal.clientLinkHint')}</p>
           </div>
-          <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+          <div className="client-detail-modal__form-field">
             <label htmlFor={isEdit ? 'sh-sd-edit' : 'sh-sd-create'}>{t('shipments.selectSdForm')}</label>
             <select
               id={isEdit ? 'sh-sd-edit' : 'sh-sd-create'}
@@ -1194,7 +1192,7 @@ export default function Shipments() {
               <option value="Import">{t('shipments.directionOption.Import')}</option>
             </select>
           </div>
-          {form.shipment_direction === 'Import' && (
+          {form.shipment_direction === 'Import' ? (
             <div className="client-detail-modal__form-field">
               <label htmlFor="sh-acid">{t('shipments.fields.acid_number')}</label>
               <input
@@ -1205,24 +1203,44 @@ export default function Shipments() {
                 disabled={disabled}
               />
             </div>
+          ) : (
+            <div className="client-detail-modal__form-field">
+              <label htmlFor="sh-ct">{t('shipments.fields.container_type')}</label>
+              <select
+                id="sh-ct"
+                value={form.container_type}
+                onChange={(e) => setForm((f) => ({ ...f, container_type: e.target.value }))}
+                disabled={disabled}
+              >
+                <option value="">{t('shipments.optional')}</option>
+                {SHIPMENT_CONTAINER_TYPE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {t(opt.labelKey)}
+                  </option>
+                ))}
+              </select>
+              <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">{t('shipments.fieldHints.containerType')}</span>
+            </div>
           )}
-          <div className="client-detail-modal__form-field">
-            <label htmlFor="sh-ct">{t('shipments.fields.container_type')}</label>
-            <select
-              id="sh-ct"
-              value={form.container_type}
-              onChange={(e) => setForm((f) => ({ ...f, container_type: e.target.value }))}
-              disabled={disabled}
-            >
-              <option value="">{t('shipments.optional')}</option>
-              {SHIPMENT_CONTAINER_TYPE_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {t(opt.labelKey)}
-                </option>
-              ))}
-            </select>
-            <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">{t('shipments.fieldHints.containerType')}</span>
-          </div>
+          {form.shipment_direction === 'Import' && (
+            <div className="client-detail-modal__form-field">
+              <label htmlFor="sh-ct">{t('shipments.fields.container_type')}</label>
+              <select
+                id="sh-ct"
+                value={form.container_type}
+                onChange={(e) => setForm((f) => ({ ...f, container_type: e.target.value }))}
+                disabled={disabled}
+              >
+                <option value="">{t('shipments.optional')}</option>
+                {SHIPMENT_CONTAINER_TYPE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {t(opt.labelKey)}
+                  </option>
+                ))}
+              </select>
+              <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">{t('shipments.fieldHints.containerType')}</span>
+            </div>
+          )}
           <div className="client-detail-modal__form-field">
             <label htmlFor="sh-cs">{t('shipments.fields.container_size')}</label>
             <select
@@ -1251,7 +1269,7 @@ export default function Shipments() {
               disabled={disabled}
             />
           </div>
-          <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+          <div className="client-detail-modal__form-field">
             <label htmlFor="sh-lp">{t('shipments.fields.loading_place')}</label>
             <input
               id="sh-lp"
@@ -1280,7 +1298,13 @@ export default function Shipments() {
               disabled={disabled}
             />
           </div>
-          <div className="client-detail-modal__form-field">
+          <div
+            className={
+              form.shipment_direction === 'Export'
+                ? 'client-detail-modal__form-field client-detail-modal__form-field--full'
+                : 'client-detail-modal__form-field'
+            }
+          >
             <label htmlFor="sh-pod">{t('shipments.fields.destination_port_id')}</label>
             <AsyncSelect
               id="sh-pod"
@@ -1292,7 +1316,7 @@ export default function Shipments() {
               disabled={disabled}
             />
           </div>
-          <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+          <div className="client-detail-modal__form-field">
             <label htmlFor="sh-cargo">{t('shipments.fields.cargo_description')}</label>
             <textarea
               id="sh-cargo"
@@ -1447,20 +1471,6 @@ export default function Shipments() {
             )}
           </div>
         )}
-
-        <section
-          className="clients-extra-panel clients-charts-panel shipments-page-updates mb-4 shipments-no-print"
-          aria-labelledby="shipments-page-updates-title"
-        >
-          <h2 id="shipments-page-updates-title" className="shipments-page-updates__title">
-            {t('shipments.pageUpdates.title')}
-          </h2>
-          <ul className="shipments-page-updates__list">
-            {Array.from({ length: SHIPMENTS_PAGE_UPDATE_COUNT }, (_, i) => (
-              <li key={`shipments-update-${i}`}>{t(`shipments.pageUpdates.p${i + 1}`)}</li>
-            ))}
-          </ul>
-        </section>
 
         <div className="clients-extra-panel clients-charts-panel mb-4 shipments-no-print">
           {charts && (statusDistributionData.length > 0 || monthlyChartData.length > 0) ? (
@@ -1796,7 +1806,7 @@ export default function Shipments() {
                   <X className="client-detail-modal__close-icon" aria-hidden />
                 </button>
               </header>
-              <form onSubmit={handleCreateSubmit} className="client-detail-modal__form">
+              <form onSubmit={handleCreateSubmit} className="client-detail-modal__form shipments-modal__form">
                 <div className="client-detail-modal__body client-detail-modal__body--form">
                   <div className="client-detail-modal__body-inner clients-form-sections">
                     {renderShipmentForm(createForm, setCreateForm, createSubmitting, false)}
@@ -1957,7 +1967,7 @@ export default function Shipments() {
                   <X className="client-detail-modal__close-icon" aria-hidden />
                 </button>
               </header>
-              <form onSubmit={handleEditSubmit} className="client-detail-modal__form">
+              <form onSubmit={handleEditSubmit} className="client-detail-modal__form shipments-modal__form">
                 <div className="client-detail-modal__body client-detail-modal__body--form">
                   <div className="client-detail-modal__body-inner clients-form-sections">
                     {renderShipmentForm(editForm, setEditForm, editSubmitting, true)}
