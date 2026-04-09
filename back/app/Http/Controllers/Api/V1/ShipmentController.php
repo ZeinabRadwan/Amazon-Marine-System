@@ -241,7 +241,9 @@ class ShipmentController extends Controller
         $counts = $query->clone()->selectRaw('status, COUNT(*) as count')
             ->groupBy('status')
             ->get()
-            ->pluck('count', 'status')
+            ->mapWithKeys(function ($row) {
+                return [trim((string)$row->status) => (int)$row->count];
+            })
             ->toArray();
 
         // Fetch all shipment statuses mapping (ID -> name_en)

@@ -13,8 +13,16 @@ class ShipmentStatusesSeeder extends Seeder
         // These are used by GET /shipment-statuses for dropdowns/settings and by manual testing.
         $statuses = [
             [
-                'name_ar' => 'تم تأكيد الحجز',
-                'name_en' => 'Booking Confirmed',
+                'name_ar' => 'جديد',
+                'name_en' => 'New',
+                'color' => '#6B7280',
+                'description' => null,
+                'active' => true,
+                'sort_order' => 0,
+            ],
+            [
+                'name_ar' => 'تم الحجز',
+                'name_en' => 'Booked',
                 'color' => '#3B82F6',
                 'description' => null,
                 'active' => true,
