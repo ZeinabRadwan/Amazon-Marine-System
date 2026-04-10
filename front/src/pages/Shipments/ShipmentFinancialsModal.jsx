@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X, ChevronDown, ChevronUp, FileText, DollarSign, FileType, History, Ship, Car, ShieldCheck, Shield, Package, Upload, Bell } from 'lucide-react'
+import { X, ChevronDown, ChevronUp, FileText, DollarSign, FileType, History, Ship, Car, ShieldCheck, Shield, Package, Upload, Bell, Trash2, Paperclip } from 'lucide-react'
 import { createExpense, updateExpense, deleteExpense, uploadExpenseReceipt, downloadExpenseReceipt, listExpenseCategories } from '../../api/expenses'
 import {
   listInvoices,
@@ -55,15 +55,18 @@ const LINE_TEMPLATES = {
     },
     { id: 'thc', labelKey: 'shipments.fin.lines.thc', matchers: [/\bthc\b/i] },
     {
+      id: 'bl',
+      labelKey: 'shipments.fin.lines.blFee',
+      matchers: [/b\/?l\s*fee|^bl\s|bill of lading|رسوم.*\bb\/l\b|بي.?إل/i],
+    },
+    { id: 'cmc', labelKey: 'shipments.fin.lines.cmc' || 'CMC', matchers: [/\bcmc\b/i] },
+    { id: 'edi', labelKey: 'shipments.fin.lines.edi' || 'EDI', matchers: [/\bedi\b/i] },
+    { id: 'carrier', labelKey: 'shipments.fin.lines.carrierCharges' || 'Carrier Charges', matchers: [/carrier\s*charge|free\s*in/i] },
+    {
       id: 'power',
       labelKey: 'shipments.fin.lines.powerCharge',
       reeferOnly: true,
       matchers: [/power\s*charg|reefer.*power|كهر|ريفير.*كهرب/i],
-    },
-    {
-      id: 'bl',
-      labelKey: 'shipments.fin.lines.blFee',
-      matchers: [/b\/?l\s*fee|^bl\s|bill of lading|رسوم.*\bb\/l\b|بي.?إل/i],
     },
     { id: 'telex', labelKey: 'shipments.fin.lines.telex', matchers: [/telex|تيلكس/i] },
     { id: 'dhl', labelKey: 'shipments.fin.lines.dhl', optional: true, matchers: [/\bdhl\b|courier|سريع|بريد/i] },
@@ -74,12 +77,12 @@ const LINE_TEMPLATES = {
       labelKey: 'shipments.fin.lines.inlandFreight',
       matchers: [/inland|internal\s*transport|truck|haul|نقل\s*داخلي|برّي|سيارات/i],
     },
-    { id: 'genset', labelKey: 'shipments.fin.lines.genset', reeferOnly: true, matchers: [/genset|مولد|جينسيت/i] },
     {
       id: 'receipts',
       labelKey: 'shipments.fin.lines.officialReceipts',
-      matchers: [/official\s*receipt|receipts?\s*cost|إيصال\s*رسمي|إيصالات/i],
+      matchers: [/official\s*receipt|receipts?\s*cost|إيصال\s*رسمي|إيصالات|فواتير/i],
     },
+    { id: 'genset', labelKey: 'shipments.fin.lines.genset', reeferOnly: true, matchers: [/genset|مولد|جينسيت/i] },
     {
       id: 'overnight',
       labelKey: 'shipments.fin.lines.overnight',
@@ -232,13 +235,14 @@ function FinSingleExpenseRow({
   onRegisterSave,
   sectionVendorId,
 }) {
-  const descPrefix = LINE_DESC_PREFIX[tpl.id] || tpl.id
-  const categoryCode = categoryCodeForTemplate(bucketId, tpl.id)
+  const safeExp = expense || {}
+  const descPrefix = tpl ? (LINE_DESC_PREFIX[tpl.id] || tpl.id) : ''
+  const categoryCode = tpl ? categoryCodeForTemplate(bucketId, tpl.id) : otherLineCategoryCode(bucketId)
   const categoryMeta = categoriesByCode[categoryCode]
 
-  const [desc, setDesc] = useState(() => extractUserDescription(expense?.description, descPrefix))
-  const [amount, setAmount] = useState(expense?.amount != null ? String(expense.amount) : '')
-  const [currency, setCurrency] = useState(expense?.currency_code || 'USD')
+  const [desc, setDesc] = useState(() => extractUserDescription(safeExp.description, descPrefix))
+  const [amount, setAmount] = useState(safeExp.amount != null ? String(safeExp.amount) : '')
+  const [currency, setCurrency] = useState(safeExp.currency_code || 'USD')
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [rowError, setRowError] = useState(null)
@@ -246,13 +250,13 @@ function FinSingleExpenseRow({
   const handleSaveRef = useRef(async () => {})
 
   useEffect(() => {
-    setDesc(extractUserDescription(expense?.description, descPrefix))
-    setAmount(expense?.amount != null ? String(expense.amount) : '')
-    setCurrency(expense?.currency_code || 'USD')
+    setDesc(extractUserDescription(safeExp.description, descPrefix))
+    setAmount(safeExp.amount != null ? String(safeExp.amount) : '')
+    setCurrency(safeExp.currency_code || 'USD')
     setRowError(null)
-  }, [expense?.id, expense?.description, expense?.amount, expense?.currency_code, descPrefix])
+  }, [safeExp.id, safeExp.description, safeExp.amount, safeExp.currency_code, descPrefix])
 
-  const buildFullDescription = () => `${descPrefix}: ${(desc || '').trim() || '—'}`
+  const buildFullDescription = () => (tpl ? `${descPrefix}: ${(desc || '').trim() || tpl.id}` : (desc || '').trim())
 
   const handleSave = async () => {
     setRowError(null)
@@ -268,13 +272,13 @@ function FinSingleExpenseRow({
     const dateStr = new Date().toISOString().slice(0, 10)
     setSaving(true)
     try {
-      if (expense?.id) {
-        await updateExpense(token, expense.id, {
+      if (safeExp.id) {
+        await updateExpense(token, safeExp.id, {
           description: buildFullDescription(),
           amount: amt,
           currency_code: currency,
-          expense_date: expense.expense_date || dateStr,
-          vendor_id: expense?.vendor_id ?? null,
+          expense_date: safeExp.expense_date || dateStr,
+          vendor_id: sectionVendorId || safeExp.vendor_id || undefined,
         })
       } else {
         await createExpense(token, {
@@ -285,7 +289,7 @@ function FinSingleExpenseRow({
           amount: amt,
           currency_code: currency,
           expense_date: dateStr,
-          vendor_id: sectionVendorId ?? expense.vendor_id ?? undefined,
+          vendor_id: sectionVendorId || safeExp.vendor_id || undefined,
         })
       }
       onSaved?.()
@@ -349,7 +353,7 @@ function FinSingleExpenseRow({
         ) : null}
         {expense?.id ? (
           <label className="shipment-fin-upload" title={t('shipments.fin.uploadReceipt')}>
-            <Upload className="shipment-fin-upload__icon" aria-hidden />
+            <Paperclip className="shipment-fin-upload__icon" aria-hidden />
             <input type="file" accept=".pdf,.png,.jpg,.jpeg" className="shipment-fin-upload__input" onChange={handleReceipt} disabled={uploading || saving} />
           </label>
         ) : null}
@@ -361,7 +365,7 @@ function FinSingleExpenseRow({
   if (!editMode) {
     if (!expense) {
       return (
-        <tr key={`${tpl.id}-empty`}>
+        <tr key={`${tpl?.id || 'null'}-empty`}>
           <td>{showLineLabel ? renderLineLabelCell(tpl) : null}</td>
           <td>—</td>
           <td className="shipment-fin-num">—</td>
@@ -370,17 +374,17 @@ function FinSingleExpenseRow({
       )
     }
     return (
-      <tr key={expense.id}>
+      <tr key={expense?.id}>
         <td>{showLineLabel ? renderLineLabelCell(tpl) : null}</td>
-        <td>{expense.description?.trim() || '—'}</td>
-        <td className="shipment-fin-num">{formatMoney(Number(expense.amount) || 0, numberLocale)}</td>
-        <td>{expense.currency_code || '—'}</td>
+        <td>{expense?.description?.trim() || '—'}</td>
+        <td className="shipment-fin-num">{formatMoney(Number(expense?.amount) || 0, numberLocale)}</td>
+        <td>{expense?.currency_code || '—'}</td>
       </tr>
     )
   }
 
   return (
-    <tr key={expense?.id ?? `${tpl.id}-new`}>
+    <tr key={expense?.id ?? `${tpl?.id || 'null'}-new`}>
       <td>{showLineLabel ? renderLineLabelCell(tpl) : null}</td>
       <td>
         <input
@@ -1179,9 +1183,9 @@ export default function ShipmentFinancialsModal({
 
     const renderExpenseCells = (ex) => (
       <>
-        <td>{ex.description?.trim() || ex.invoice_number || '—'}</td>
-        <td className="shipment-fin-num">{formatMoney(Number(ex.amount) || 0, numberLocale)}</td>
-        <td>{ex.currency_code || '—'}</td>
+        <td>{ex?.description?.trim() || ex?.invoice_number || '—'}</td>
+        <td className="shipment-fin-num">{formatMoney(Number(ex?.amount) || 0, numberLocale)}</td>
+        <td>{ex?.currency_code || '—'}</td>
       </>
     )
 
@@ -1202,12 +1206,27 @@ export default function ShipmentFinancialsModal({
       const pendingOthers = pendingOtherByBucket['other'] || []
       const otherToolbar = editMode ? (
         <div className="shipment-fin-section-toolbar">
+          <select
+            className="shipment-fin-select shipment-fin-select--vendor"
+            value={sectionVendorChoice['other'] ?? ''}
+            onChange={(e) => setSectionVendorChoice((s) => ({ ...s, other: e.target.value }))}
+          >
+            <option value="">{t('shipments.fin.sectionVendorPlaceholder')}</option>
+            {vendors.map((v) => (
+              <option key={v.id} value={String(v.id)}>
+                {v.name || `#${v.id}`}
+              </option>
+            ))}
+          </select>
+          <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary" onClick={() => applyVendorToSection('other')}>
+            {t('shipments.fin.applyVendor')}
+          </button>
           <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary" onClick={() => addPendingOtherLine('other')}>
             {t('shipments.fin.addRow')}
           </button>
           <label className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-section-upload" title={t('shipments.fin.uploadSectionReceipt')}>
-            <Upload size={14} className="shipment-fin-icon-leading" />
-            {t('shipments.fin.uploadReceipt')}
+            <Paperclip size={14} className="shipment-fin-icon-leading" />
+            {t('shipments.fin.uploadReceipt') || 'Upload'}
             <input type="file" className="hidden" accept=".pdf,.png,.jpg,.jpeg" onChange={(e) => handleSectionUpload('other', e)} disabled={batchSavingBucket === 'other'} />
           </label>
         </div>
@@ -1248,13 +1267,16 @@ export default function ShipmentFinancialsModal({
                             >
                               <Trash2 size={14} />
                             </button>
-                            {ex.has_receipt ? (
-                              <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary" onClick={() => handleDownloadReceipt(ex.id)} title={t('shipments.fin.downloadReceipt')}>
-                                📎
-                              </button>
-                            ) : null}
+                            <button
+                              type="button"
+                              className="shipment-fin-btn shipment-fin-btn--secondary"
+                              onClick={() => handleDownloadReceipt(ex.id)}
+                              title={t('shipments.fin.downloadReceipt')}
+                            >
+                              <Paperclip size={14} />
+                            </button>
                             <label className="shipment-fin-upload" title={t('shipments.fin.uploadReceipt')}>
-                              <Upload className="shipment-fin-upload__icon" aria-hidden />
+                              <Paperclip className="shipment-fin-upload__icon" aria-hidden />
                               <input type="file" accept=".pdf,.png,.jpg,.jpeg" className="shipment-fin-upload__input"
                                 onChange={async (e) => {
                                   const file = e.target.files?.[0]; e.target.value = ''
@@ -1367,7 +1389,8 @@ export default function ShipmentFinancialsModal({
               <td colSpan={2}>{ex.description?.trim() || '—'}</td>
               <td colSpan={2}>
                 <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary" onClick={() => handleDownloadReceipt(ex.id)}>
-                  📎 {t('shipments.fin.downloadReceipt')}
+                  <Paperclip size={14} className="shipment-fin-icon-leading" />
+                  {t('shipments.fin.downloadReceipt')}
                 </button>
               </td>
               {editMode ? <td /> : null}
@@ -1400,7 +1423,7 @@ export default function ShipmentFinancialsModal({
               {t('shipments.fin.addRow')}
             </button>
             <label className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-section-upload" title={t('shipments.fin.uploadSectionReceipt')}>
-              <Upload size={14} className="shipment-fin-icon-leading" />
+              <Paperclip size={14} className="shipment-fin-icon-leading" />
               {t('shipments.fin.uploadReceipt')}
               <input 
                 type="file" 
@@ -1497,7 +1520,7 @@ export default function ShipmentFinancialsModal({
           )}
           {isAccountingUser && (
             <button type="button" role="tab" aria-selected={tab === 'attachments'} className={`shipment-fin-tab ${tab === 'attachments' ? 'shipment-fin-tab--active' : ''}`} onClick={() => setTab('attachments')}>
-              <Upload className="shipment-fin-tab__icon" aria-hidden />
+              <Paperclip className="shipment-fin-tab__icon" aria-hidden />
               {t('shipments.financialsTab.attachments', { defaultValue: 'Attachments' })}
               {expenses.filter((e) => e.has_receipt).length > 0 && (
                 <span className="shipment-fin-tab-badge">{expenses.filter((e) => e.has_receipt).length}</span>
@@ -1943,19 +1966,20 @@ export default function ShipmentFinancialsModal({
 
           {tab === 'attachments' && isAccountingUser && (
             <div key="attachments" className="shipment-fin-panel shipment-fin-panel--enter">
-              <div className="shipment-fin-audit-head">
-                <h4 className="shipment-fin-audit-title">{t('shipments.financialsTab.attachments', { defaultValue: 'Attachments' })}</h4>
-                <span className="fs-xs text-muted">{t('shipments.fin.attachmentsSub', { defaultValue: 'All expense receipts attached to this shipment' })}</span>
+              <div className="shipment-fin-attachments-header mb-4">
+                <div className="fw-600 fs-lg">📎 {t('shipments.tabs.attachments') || 'Shipment Attachments'}</div>
+                <div className="fs-xs text-muted">{t('shipments.tabs.attachmentsHint') || 'All uploaded receipts and documents grouped by financial category.'}</div>
               </div>
+              
               {!hasBl ? (
                 <p className="client-detail-modal__empty">{t('shipments.financialsNoBl')}</p>
               ) : expenses.filter((e) => e.has_receipt).length === 0 ? (
-                <div className="shipment-fin-audit-empty">
-                  <Upload className="shipment-fin-audit-empty__icon" />
-                  <div>{t('shipments.fin.noAttachments', { defaultValue: 'No attachments found.' })}</div>
+                <div className="shipment-fin-empty-inline py-12">
+                  <Paperclip size={48} className="text-muted mb-3 opacity-20" />
+                  <p>{t('shipments.tabs.noAttachments') || 'No attachments found for this shipment.'}</p>
                 </div>
               ) : (
-                <div className="shipment-fin-attachments-grouped">
+                <div className="shipment-fin-attachments-grouped-list">
                   {Object.entries(byBucket)
                     .filter(([_, bucketRows]) => bucketRows.some(e => e.has_receipt))
                     .map(([bucketId, bucketRows]) => {
@@ -1966,26 +1990,45 @@ export default function ShipmentFinancialsModal({
                       else if (bucketId === 'insurance') titleKey = 'shipments.fin.bucketInsuranceTitle'
                       
                       return (
-                        <div key={bucketId} className="shipment-fin-attachments-group mb-4">
-                          <h5 className="fw-600 mb-2">{t(titleKey)}</h5>
-                          <ul className="shipment-fin-audit-list">
-                            {bucketRows.filter(e => e.has_receipt).map(ex => (
-                              <li key={ex.id} className="shipment-fin-audit-item flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <FileText size={16} className="text-muted" />
-                                  <div>
-                                    <div className="fw-500">{ex.description?.trim() || t('shipments.fin.unnamedReceipt', { defaultValue: 'Unnamed Receipt' })}</div>
-                                    <div className="fs-xs text-muted">
-                                      {formatMoney(Number(ex.amount) || 0, numberLocale)} {ex.currency_code} · {ex.expense_date || '—'}
-                                    </div>
-                                  </div>
-                                </div>
-                                <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary" onClick={() => handleDownloadReceipt(ex.id)}>
-                                  {t('shipments.fin.downloadReceipt')}
-                                </button>
-                              </li>
-                            ))}
-                          </ul>
+                        <div key={bucketId} className="shipment-fin-attachment-bucket-group mb-6">
+                          <h3 className="shipment-fin-bucket-title fs-sm fw-700 mb-2 border-b pb-1 text-primary">
+                            {t(titleKey)}
+                          </h3>
+                          <div className="shipment-fin-table-wrap">
+                            <table className="shipment-fin-line-table">
+                              <thead>
+                                <tr>
+                                  <th style={{ width: '100px' }}>{t('shipments.expColDate')}</th>
+                                  <th>{t('shipments.fin.colDescription')}</th>
+                                  <th>{t('shipments.fin.colVendor')}</th>
+                                  <th className="text-right">{t('shipments.expColAmount')}</th>
+                                  <th className="text-center" style={{ width: '120px' }}>{t('shipments.fin.colReceipt')}</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {bucketRows.filter(e => e.has_receipt).map(ex => (
+                                  <tr key={ex.id}>
+                                    <td className="fs-xs text-muted">{ex.expense_date || '—'}</td>
+                                    <td className="fw-500">{ex.description?.trim() || t('shipments.fin.unnamedReceipt')}</td>
+                                    <td className="fs-xs">{ex.vendor?.name || '—'}</td>
+                                    <td className="shipment-fin-num no-wrap">
+                                      {formatMoney(Number(ex.amount) || 0, numberLocale)} <span className="text-muted fs-xxs">{ex.currency_code}</span>
+                                    </td>
+                                    <td className="text-center">
+                                      <button 
+                                        type="button" 
+                                        className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm" 
+                                        onClick={() => handleDownloadReceipt(ex.id)}
+                                      >
+                                        <Paperclip size={12} className="mr-1" />
+                                        {t('shipments.fin.downloadReceipt')}
+                                      </button>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
                         </div>
                       )
                     })}

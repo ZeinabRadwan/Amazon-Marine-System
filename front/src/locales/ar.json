@@ -2207,6 +2207,7 @@
       "shipment_type": "نوع الشحنة",
       "route": "المسار",
       "line_vendor": "الخط / المورّد",
+      "shipping_line": "خط الملاحة",
       "line_vendor_id": "الخط الملاحي (Shipping Line)",
       "cost_total": "التكلفة",
       "selling_price_total": "سعر البيع",

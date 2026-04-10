@@ -2206,6 +2206,7 @@
       "shipment_type": "Shipment Type (FCL – LCL)",
       "route": "Route",
       "line_vendor": "Line / vendor",
+      "shipping_line": "Shipping Line",
       "line_vendor_id": "Shipping Line",
       "cost_total": "Cost",
       "selling_price_total": "Selling price",

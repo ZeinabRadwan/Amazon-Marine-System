@@ -53,6 +53,7 @@ import {
   ClipboardList,
   Menu,
   ListFilter,
+  Paperclip,
 } from 'lucide-react'
 import { BarChart, DonutChart } from '../../components/Charts'
 import '../../components/Charts/Charts.css'
@@ -1022,11 +1023,19 @@ export default function Shipments() {
         }
         menuItems.push({
           id: 'notes',
-          label: t('shipments.notesQuick'),
+          label: t('shipments.tabs.notes') || 'Notes',
           icon: <StickyNote className="h-4 w-4" />,
           onClick: () => {
             setDetailTab('notes')
             setDetailId(row.id)
+          },
+        })
+        menuItems.push({
+          id: 'attachments',
+          label: t('shipments.tabs.attachments') || 'Attachments',
+          icon: <Paperclip className="h-4 w-4" />,
+          onClick: () => {
+            setFinancialRow(row)
           },
         })
         if (canManageOps) {
