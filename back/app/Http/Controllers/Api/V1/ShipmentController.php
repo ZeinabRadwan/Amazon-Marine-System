@@ -464,6 +464,9 @@ class ShipmentController extends Controller
         if ($lineVendorId = $request->query('line_vendor_id')) {
             $query->where('shipments.line_vendor_id', $lineVendorId);
         }
+        if ($shippingLineId = $request->query('shipping_line_id')) {
+            $query->where('shipments.shipping_line_id', $shippingLineId);
+        }
         if ($month = $request->query('month')) {
             try {
                 $date = Carbon::createFromFormat('Y-m', $month);

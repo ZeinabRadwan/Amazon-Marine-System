@@ -227,6 +227,7 @@ export default function SDForms() {
     status: '',
     client_id: '',
     sales_rep_id: '',
+    shipping_line_id: '',
     sort: 'date',
     direction: 'desc',
     page: 1,
@@ -290,6 +291,7 @@ export default function SDForms() {
       status: filters.status || undefined,
       client_id: filters.client_id || undefined,
       sales_rep_id: filters.sales_rep_id || undefined,
+      shipping_line_id: filters.shipping_line_id || undefined,
       sort: filters.sort,
       direction: filters.direction,
       page: filters.page,
@@ -518,7 +520,6 @@ export default function SDForms() {
 
   const openEdit = useCallback((id) => {
     setEditId(id)
-    setShippingLineAddName('')
     setEditLoading(true)
     setAlert(null)
     getSDForm(token, id)
@@ -1805,6 +1806,16 @@ export default function SDForms() {
                   </option>
                 ))}
               </select>
+              <div className="min-w-[180px]">
+                <AsyncSelect
+                  id="flt-shipping-line"
+                  value={getShippingLineOption(filters.shipping_line_id)}
+                  onChange={(opt) => setFilters((f) => ({ ...f, shipping_line_id: opt?.value || '', page: 1 }))}
+                  loadOptions={loadShippingLineOptions}
+                  onCreate={handleCreateShippingLine}
+                  placeholder={t('sdForms.filterShippingLine') || "Line..."}
+                />
+              </div>
             </div>
             <div className="clients-filters__actions">
               <button
@@ -1818,6 +1829,7 @@ export default function SDForms() {
                     status: '',
                     client_id: '',
                     sales_rep_id: '',
+                    shipping_line_id: '',
                     sort: 'date',
                     direction: 'desc',
                     page: 1,
@@ -1855,7 +1867,6 @@ export default function SDForms() {
                 className="page-header__btn page-header__btn--primary"
                 onClick={() => {
                   setCreateForm(initialCreateForm())
-                  setShippingLineAddName('')
                   setShowCreate(true)
                 }}
               >

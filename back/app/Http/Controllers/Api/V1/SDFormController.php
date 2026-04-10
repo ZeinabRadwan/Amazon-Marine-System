@@ -45,6 +45,10 @@ class SDFormController extends Controller
         } elseif ($salesRepId = $request->query('sales_rep_id')) {
             $query->where('sales_rep_id', $salesRepId);
         }
+        
+        if ($shippingLineId = $request->query('shipping_line_id')) {
+            $query->where('shipping_line_id', $shippingLineId);
+        }
 
         if ($from = $request->query('from')) {
             $query->whereDate('created_at', '>=', $from);

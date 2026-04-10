@@ -235,7 +235,10 @@ export default function ShipmentDetailModal({
     { id: 'info', label: t('shipments.tabs.info') },
     { id: 'tracking', label: t('shipments.tabs.tracking') },
     { id: 'notes', label: t('shipments.tabs.notes') },
-    { id: 'operations', label: t('shipments.tabs.operations') },
+    // Only Operations users and Admin can see the Operations tab
+    ...(isOperations || isAdminRole
+      ? [{ id: 'operations', label: t('shipments.tabs.operations') }]
+      : []),
   ]
 
   const clientLabel =

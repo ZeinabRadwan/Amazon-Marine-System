@@ -20,6 +20,7 @@ import { listUsers } from '../../api/users'
 import { listSDForms } from '../../api/sdForms'
 import { listVendors } from '../../api/vendors'
 import { listPorts, createPort } from '../../api/ports'
+import { listShippingLines, createShippingLine } from '../../api/shippingLines'
 import { listShipmentStatuses } from '../../api/settings'
 import AsyncSelect from '../../components/AsyncSelect'
 import { Container } from '../../components/Container'
@@ -88,7 +89,6 @@ const SHIPMENT_CONTAINER_TYPE_OPTIONS = [
 const defaultCreateForm = () => ({
   client_id: '',
   sd_form_id: '',
-  line_vendor_id: '',
   shipping_line_id: '',
   origin_port_id: '',
   destination_port_id: '',
@@ -132,8 +132,6 @@ function buildCreatePayload(form) {
   if (cid != null) body.client_id = cid
   const sd = numOrUndef(form.sd_form_id)
   if (sd != null) body.sd_form_id = sd
-  const lv = numOrUndef(form.line_vendor_id)
-  if (lv != null) body.line_vendor_id = lv
   const sl = numOrUndef(form.shipping_line_id)
   if (sl != null) body.shipping_line_id = sl
   const op = numOrUndef(form.origin_port_id)
@@ -202,7 +200,6 @@ function buildUpdatePayload(form) {
   const body = {
     client_id: numOrUndef(form.client_id),
     sd_form_id: numOrUndef(form.sd_form_id),
-    line_vendor_id: numOrUndef(form.line_vendor_id),
     shipping_line_id: numOrUndef(form.shipping_line_id),
     origin_port_id: numOrUndef(form.origin_port_id),
     destination_port_id: numOrUndef(form.destination_port_id),
@@ -235,12 +232,14 @@ export default function Shipments() {
   const { t, i18n } = useTranslation()
   const { hasPageAccess, user, isAdminRole, isOperations, roleId, hasAbility } = useAuthAccess()
   const isSalesRepresentative = roleId === 3 || roleId === 2
-  const canManageOps = hasPageAccess('shipments')
-  const canViewShipmentFinancials = hasPageAccess('shipments')
-  const canManageFinancial = hasPageAccess('shipments')
-  const canViewSelling = hasPageAccess('shipments')
-  const canManageExpenses = hasPageAccess('shipments')
-  const canNotifySalesFinancials = hasPageAccess('shipments')
+  // Operations: can manage operational actions (stage update, edit, delete, operations tab)
+  const canManageOps = isAdminRole || isOperations
+  // Accountant: can see financials (Receipt button → ShipmentFinancialsModal, financial totals card)
+  const canViewShipmentFinancials = isAdminRole || isAccountant
+  const canManageFinancial = isAdminRole || isAccountant
+  const canViewSelling = isAdminRole || isAccountant
+  const canManageExpenses = isAdminRole || isAccountant
+  const canNotifySalesFinancials = isAdminRole || isAccountant
 
   const token = getStoredToken()
   const numberLocale = i18n.language === 'ar' ? 'ar-EG' : 'en-US'
@@ -256,7 +255,7 @@ export default function Shipments() {
     status: '',
     client_id: '',
     sales_rep_id: '',
-    line_vendor_id: '',
+    shipping_line_id: '',
     from: '',
     to: '',
     sd_number: '',
@@ -374,7 +373,7 @@ export default function Shipments() {
       status: filters.status || undefined,
       client_id: filters.client_id || undefined,
       sales_rep_id: filters.sales_rep_id || undefined,
-      line_vendor_id: filters.line_vendor_id || undefined,
+      shipping_line_id: filters.shipping_line_id || undefined,
       from: filters.from || undefined,
       to: filters.to || undefined,
       sd_number: filters.sd_number?.trim() || undefined,
@@ -517,7 +516,7 @@ export default function Shipments() {
     filters.status,
     filters.client_id,
     filters.sales_rep_id,
-    filters.line_vendor_id,
+    filters.shipping_line_id,
     filters.from,
     filters.to,
     filters.sd_number,
@@ -568,8 +567,8 @@ export default function Shipments() {
     setEditForm({
       client_id: row.client_id != null ? String(row.client_id) : '',
       sd_form_id: row.sd_form_id != null ? String(row.sd_form_id) : '',
-      line_vendor_id: row.line_vendor_id != null ? String(row.line_vendor_id) : '',
       shipping_line_id: row.shipping_line_id != null ? String(row.shipping_line_id) : '',
+      shipping_line: row.shipping_line,
       origin_port_id: row.origin_port_id != null ? String(row.origin_port_id) : '',
       destination_port_id: row.destination_port_id != null ? String(row.destination_port_id) : '',
       booking_number: row.booking_number ?? '',
@@ -715,10 +714,16 @@ export default function Shipments() {
     }
   }
 
-  const getShippingLineOption = (id) => {
-    if (!id) return null
+  const getShippingLineOption = (id, nameFallback) => {
+    if (!id) {
+      if (nameFallback) return { value: '', label: nameFallback }
+      return null
+    }
     const l = shippingLinesList.find((x) => String(x.id) === String(id))
-    if (!l) return { value: id, label: `#${id}` }
+    if (!l) {
+      if (nameFallback) return { value: id, label: nameFallback }
+      return { value: id, label: `#${id}` }
+    }
     return { value: l.id, label: l.name || `#${l.id}` }
   }
 
@@ -916,10 +921,10 @@ export default function Shipments() {
         render: (_, row) => routeLabel(row),
       },
       {
-        key: 'line_vendor',
-        label: t('shipments.fields.line_vendor'),
+        key: 'shipping_line',
+        label: t('shipments.fields.shipping_line') || 'Shipping Line',
         sortable: false,
-        render: (_, row) => row.line_vendor?.name ?? '—',
+        render: (_, row) => row.shipping_line?.name ?? '—',
       },
       {
         key: 'status',
@@ -1180,26 +1185,10 @@ export default function Shipments() {
             />
           </div>
           <div className="client-detail-modal__form-field">
-            <label htmlFor="sh-line-vendor">{t('shipments.fields.line_vendor_id')}</label>
-            <select
-              id="sh-line-vendor"
-              value={form.line_vendor_id}
-              onChange={(e) => setForm((f) => ({ ...f, line_vendor_id: e.target.value }))}
-              disabled={disabled}
-            >
-              <option value="">{t('shipments.selectLineVendor')}</option>
-              {vendorOptions.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.name || v.id}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="client-detail-modal__form-field">
             <label htmlFor="sh-shipping-line">Shipping Line</label>
             <AsyncSelect
               id="sh-shipping-line"
-              value={getShippingLineOption(form.shipping_line_id)}
+              value={getShippingLineOption(form.shipping_line_id, form.shipping_line?.name)}
               onChange={(opt) => setForm((f) => ({ ...f, shipping_line_id: opt?.value || '' }))}
               loadOptions={loadShippingLineOptions}
               onCreate={handleCreateShippingLine}
@@ -1601,7 +1590,7 @@ export default function Shipments() {
                     status: '',
                     client_id: '',
                     sales_rep_id: '',
-                    line_vendor_id: '',
+                    shipping_line_id: '',
                     from: '',
                     to: '',
                     sd_number: '',
@@ -1718,19 +1707,16 @@ export default function Shipments() {
                   </option>
                 ))}
               </select>
-              <select
-                value={filters.line_vendor_id}
-                onChange={(e) => setFilters((f) => ({ ...f, line_vendor_id: e.target.value, page: 1 }))}
-                className="clients-input"
-                aria-label={t('shipments.filterLineVendor')}
-              >
-                <option value="">{t('shipments.lineVendorAll')}</option>
-                {vendorOptions.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.name}
-                  </option>
-                ))}
-              </select>
+              <div className="min-w-[180px]">
+                <AsyncSelect
+                  id="flt-shipping-line"
+                  value={getShippingLineOption(filters.shipping_line_id)}
+                  onChange={(opt) => setFilters((f) => ({ ...f, shipping_line_id: opt?.value || '', page: 1 }))}
+                  loadOptions={loadShippingLineOptions}
+                  onCreate={handleCreateShippingLine}
+                  placeholder={t('shipments.filterShippingLine') || "Line..."}
+                />
+              </div>
               <input
                 type="date"
                 className="clients-input"
