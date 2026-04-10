@@ -32,6 +32,7 @@ import { StatsCard } from '../../components/StatsCard'
 import ShipmentStatusBadge from '../../components/ShipmentStatusBadge'
 import ShipmentDetailModal from './ShipmentDetailModal'
 import ShipmentFinancialsModal from './ShipmentFinancialsModal'
+import ShipmentAttachmentsModal from './ShipmentAttachmentsModal'
 import LoaderDots from '../../components/LoaderDots'
 import Alert from '../../components/Alert'
 import {
@@ -231,7 +232,7 @@ function buildUpdatePayload(form) {
 
 export default function Shipments() {
   const { t, i18n } = useTranslation()
-  const { hasPageAccess, user, isAdminRole, isOperations, roleId, hasAbility } = useAuthAccess()
+  const { hasPageAccess, user, isAdminRole, isAccountant, isOperations, roleId, hasAbility } = useAuthAccess()
   const isSalesRepresentative = roleId === 3 || roleId === 2
   // Operations: can manage operational actions (stage update, edit, delete, operations tab)
   const canManageOps = isAdminRole || isOperations
@@ -365,6 +366,8 @@ export default function Shipments() {
   const [stageSubmitting, setStageSubmitting] = useState(false)
 
   const [financialRow, setFinancialRow] = useState(null)
+  const [attachmentsShipment, setAttachmentsShipment] = useState(null)
+  const [financialExpenses, setFinancialExpenses] = useState([])
   const [financialRows, setFinancialRows] = useState([])
   const [financialLoading, setFinancialLoading] = useState(false)
 
@@ -449,6 +452,16 @@ export default function Shipments() {
       .catch(() => {})
       .finally(() => setFinancialLoading(false))
   }, [financialRow?.bl_number, financialRow?.id, token, canViewShipmentFinancials])
+
+  useEffect(() => {
+    if (attachmentsShipment?.id) {
+      setFinancialLoading(true)
+      listShipmentExpenses(token, { shipment_id: attachmentsShipment.id })
+        .then((res) => setFinancialExpenses(res.data ?? []))
+        .catch(() => setFinancialExpenses([]))
+        .finally(() => setFinancialLoading(false))
+    }
+  }, [attachmentsShipment?.id, token])
 
   const refreshFinancialShipment = useCallback(() => {
     if (!financialRow?.id || !token) return
@@ -1035,7 +1048,7 @@ export default function Shipments() {
           label: t('shipments.tabs.attachments') || 'Attachments',
           icon: <Paperclip className="h-4 w-4" />,
           onClick: () => {
-            setFinancialRow(row)
+            setAttachmentsShipment(row)
           },
         })
         if (canManageOps) {
@@ -1995,6 +2008,15 @@ export default function Shipments() {
             canNotifySales={canNotifySalesFinancials}
           />
         )}
+
+        <ShipmentAttachmentsModal
+          open={!!attachmentsShipment}
+          shipment={attachmentsShipment}
+          expenses={financialExpenses}
+          loading={financialLoading}
+          onClose={() => setAttachmentsShipment(null)}
+          token={token}
+        />
 
         {editId && canManageOps && (
           <div className="client-detail-modal" role="dialog" aria-modal="true" aria-labelledby="shipment-edit-title">

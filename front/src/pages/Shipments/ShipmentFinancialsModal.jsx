@@ -13,133 +13,18 @@ import {
 import { listActivitiesBySubject } from '../../api/activities'
 import { notifyShipmentSalesFinancials } from '../../api/shipments'
 import { useAuthAccess } from '../../hooks/useAuthAccess'
+import { BUCKET_DEFS, expenseBucket, LINE_TEMPLATES, expenseHaystack, partitionBucketRows } from './shipmentFinUtils'
 import '../SDForms/SDForms.css'
 
-const BUCKET_DEFS = [
-  {
-    id: 'shipping',
-    icon: Ship,
-    titleKey: 'shipments.fin.bucketShippingTitle',
-    subKey: 'shipments.fin.bucketShippingSub',
-    matchers: [/ship|line|ocean|freight|thc|b\/?l|telex|courier|dhl|container|of\b|بحري|ملاحي|شحن/i],
-  },
-  {
-    id: 'inland',
-    icon: Car,
-    titleKey: 'shipments.fin.bucketInlandTitle',
-    subKey: 'shipments.fin.bucketInlandSub',
-    matchers: [/inland|transport|truck|haul|genset|overnight|receipt|داخلي|نقل|برّي/i],
-  },
-  {
-    id: 'customs',
-    icon: ShieldCheck,
-    titleKey: 'shipments.fin.bucketCustomsTitle',
-    subKey: 'shipments.fin.bucketCustomsSub',
-    matchers: [/custom|clearance|declar|duty|جمرك|تخليص/i],
-  },
-  {
-    id: 'insurance',
-    icon: Shield,
-    titleKey: 'shipments.fin.bucketInsuranceTitle',
-    subKey: 'shipments.fin.bucketInsuranceSub',
-    matchers: [/insur|premium|تأمين/i],
-  },
-]
+// BUCKET_DEFS moved to shipmentFinUtils.js
 
-const LINE_TEMPLATES = {
-  shipping: [
-    {
-      id: 'of',
-      labelKey: 'shipments.fin.lines.oceanFreight',
-      matchers: [/ocean\s*freight|^\s*of\s|شحن\s*بحري|^freight\b|sea\s*freight|خط\s*ملاحي|فريت/i],
-    },
-    { id: 'thc', labelKey: 'shipments.fin.lines.thc', matchers: [/\bthc\b/i] },
-    {
-      id: 'bl',
-      labelKey: 'shipments.fin.lines.blFee',
-      matchers: [/b\/?l\s*fee|^bl\s|bill of lading|رسوم.*\bb\/l\b|بي.?إل/i],
-    },
-    { id: 'cmc', labelKey: 'shipments.fin.lines.cmc' || 'CMC', matchers: [/\bcmc\b/i] },
-    { id: 'edi', labelKey: 'shipments.fin.lines.edi' || 'EDI', matchers: [/\bedi\b/i] },
-    { id: 'carrier', labelKey: 'shipments.fin.lines.carrierCharges' || 'Carrier Charges', matchers: [/carrier\s*charge|free\s*in/i] },
-    {
-      id: 'power',
-      labelKey: 'shipments.fin.lines.powerCharge',
-      reeferOnly: true,
-      matchers: [/power\s*charg|reefer.*power|كهر|ريفير.*كهرب/i],
-    },
-    { id: 'telex', labelKey: 'shipments.fin.lines.telex', matchers: [/telex|تيلكس/i] },
-    { id: 'dhl', labelKey: 'shipments.fin.lines.dhl', optional: true, matchers: [/\bdhl\b|courier|سريع|بريد/i] },
-  ],
-  inland: [
-    {
-      id: 'inlandFreight',
-      labelKey: 'shipments.fin.lines.inlandFreight',
-      matchers: [/inland|internal\s*transport|truck|haul|نقل\s*داخلي|برّي|سيارات/i],
-    },
-    {
-      id: 'receipts',
-      labelKey: 'shipments.fin.lines.officialReceipts',
-      matchers: [/official\s*receipt|receipts?\s*cost|إيصال\s*رسمي|إيصالات|فواتير/i],
-    },
-    { id: 'genset', labelKey: 'shipments.fin.lines.genset', reeferOnly: true, matchers: [/genset|مولد|جينسيت/i] },
-    {
-      id: 'overnight',
-      labelKey: 'shipments.fin.lines.overnight',
-      optional: true,
-      matchers: [/overnight|مبيت|إقامة\s*ليل/i],
-    },
-  ],
-  customs: [
-    {
-      id: 'decl',
-      labelKey: 'shipments.fin.lines.customsDeclaration',
-      matchers: [/declaration\s*opening|فتح\s*ملف|أجور\s*فتح|تصريح\s*جمركي/i],
-    },
-    {
-      id: 'custReceipts',
-      labelKey: 'shipments.fin.lines.customsReceipts',
-      matchers: [/customs.*receipt|clearance.*receipt|جمرك.*إيصال|تخليص.*إيصال/i],
-    },
-  ],
-  insurance: [{ id: 'premium', labelKey: 'shipments.fin.lines.insurancePremium', matchers: [/premium|تأمين|insurance|قسط/i] }],
-}
-
-function expenseHaystack(ex) {
-  return `${ex.category_name || ''} ${ex.description || ''} ${ex.invoice_number || ''}`.toLowerCase()
-}
-
-function partitionBucketRows(bucketId, bucketRows, isReefer) {
-  const templates = LINE_TEMPLATES[bucketId]
-  if (!templates) {
-    return { sections: [], orphans: bucketRows }
-  }
-  const used = new Set()
-  const sections = []
-  for (const tpl of templates) {
-    if (tpl.reeferOnly && !isReefer) {
-      sections.push({ tpl, matched: [] })
-      continue
-    }
-    const matched = []
-    for (const ex of bucketRows) {
-      if (used.has(ex.id)) continue
-      if (tpl.matchers.some((re) => re.test(expenseHaystack(ex)))) {
-        matched.push(ex)
-        used.add(ex.id)
-      }
-    }
-    sections.push({ tpl, matched })
-  }
-  const orphans = bucketRows.filter((ex) => !used.has(ex.id))
-  return { sections, orphans }
-}
+// LINE_TEMPLATES, expenseHaystack, and partitionBucketRows moved to shipmentFinUtils.js
 
 const OTHER_DESC_PREFIX = {
-  shipping: 'Other (Shipping)',
-  inland: 'Other (Inland)',
-  customs: 'Other (Customs)',
-  insurance: 'Other (Insurance)',
+  shipping: 'Other Charges',
+  inland: 'Other Expenses',
+  customs: 'Other Customs Expenses',
+  insurance: 'Other Insurance Expenses',
 }
 
 /** Matches draft client invoice line used for handling / service fee. */
@@ -152,18 +37,7 @@ function otherLineCategoryCode(bucketId) {
   return 'FRT'
 }
 
-function expenseBucket(expense) {
-  const rawDesc = (expense.description || '').trim()
-  if (/^other\s*\(shipping\)/i.test(rawDesc)) return 'shipping'
-  if (/^other\s*\(inland\)/i.test(rawDesc)) return 'inland'
-  if (/^other\s*\(customs\)/i.test(rawDesc)) return 'customs'
-  if (/^other\s*\(insurance\)/i.test(rawDesc)) return 'insurance'
-  const hay = `${expense.category_name || ''} ${expense.description || ''}`.toLowerCase()
-  for (const b of BUCKET_DEFS) {
-    if (b.matchers.some((re) => re.test(hay))) return b.id
-  }
-  return 'other'
-}
+// expenseBucket moved to shipmentFinUtils.js
 
 function sumByCurrency(rows) {
   const map = {}
@@ -187,18 +61,18 @@ const CURRENCIES = ['USD', 'EGP', 'EUR']
 
 /** English prefixes stored in `description` so template matchers keep working. */
 const LINE_DESC_PREFIX = {
-  thc: 'THC',
-  telex: 'Telex Release',
-  dhl: 'DHL Courier',
-  bl: 'B/L Fee',
-  power: 'Power Charge',
-  of: 'Ocean Freight',
-  genset: 'Genset',
-  overnight: 'Overnight Stay',
-  receipts: 'Official Receipts',
-  inlandFreight: 'Inland Freight',
-  decl: 'Customs Declaration',
-  custReceipts: 'Customs Receipts',
+  thc: 'THC – Terminal Handling Charges - عوائد الشحن / رسوم تداول الحاويات بالميناء',
+  telex: 'Telex Release Fee - رسوم التليكس',
+  dhl: 'DHL / Courier Fees - مصاريف DHL أو الشحن السريع للمستندات',
+  bl: 'Bill of Lading Fee (B/L Fee) - رسوم البوليصة',
+  power: 'Power Charge - رسوم الباور (خاصة بحاويات الريفير)',
+  of: 'Ocean Freight (OF) - نولون الشحن البحري',
+  genset: 'Genset Cost - تكلفة المولد الكهربائي (للريفير)',
+  overnight: 'Overnight Stay Cost (Truck Layover) - تكلفة المبيت (انتظار الشاحنة)',
+  receipts: 'Official Receipts Cost - تكلفة الإيصالات الرسمية',
+  inlandFreight: 'Inland Transportation Freight Cost - تكلفة نولون النقل البري',
+  decl: 'Customs Declaration Opening Fee - رسوم فتح الشهادة الجمركية',
+  custReceipts: 'Official Receipts Fees - رسوم الإيصالات الرسمية',
   premium: 'Insurance Premium',
 }
 

@@ -112,6 +112,10 @@ class ExpenseController extends Controller
             });
         }
 
+        if ($shipmentId = $request->query('shipment_id')) {
+            $query->where('shipment_id', $shipmentId);
+        }
+
         if ($category = $request->query('category')) {
             if (is_numeric($category)) {
                 $query->where('expense_category_id', $category);
@@ -163,6 +167,7 @@ class ExpenseController extends Controller
                 'expense_date' => $expense->expense_date?->toDateString(),
                 'invoice_number' => $expense->invoice_number,
                 'has_receipt' => (bool) $expense->has_receipt,
+                'receipt_path' => $expense->receipt_path,
             ];
         })->values();
 

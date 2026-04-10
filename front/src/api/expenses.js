@@ -21,6 +21,7 @@ function authHeaders(token) {
 export async function listShipmentExpenses(token, params = {}) {
   const searchParams = new URLSearchParams()
   if (params.bl != null && params.bl !== '') searchParams.set('bl', String(params.bl))
+  if (params.shipment_id != null && params.shipment_id !== '') searchParams.set('shipment_id', String(params.shipment_id))
   if (params.search != null && params.search !== '') searchParams.set('search', params.search)
   if (params.month != null && params.month !== '') searchParams.set('month', params.month)
   if (params.category != null && params.category !== '') searchParams.set('category', String(params.category))
