@@ -214,10 +214,17 @@ function normalizeListResponse(data) {
 export default function SDForms() {
   const { t, i18n } = useTranslation()
   const token = getStoredToken()
-  const { isOperations, roleId } = useAuthAccess()
+  const { isOperations, isAdminRole, isAccountant, roleId } = useAuthAccess()
   const isSales = roleId === 3 // SALES
   const isSalesManager = roleId === 2 // SALES_MANAGER
   const isAnySales = isSales || isSalesManager
+
+  const canManageSdForms = isAdminRole || isAnySales   // create / edit / delete SD forms
+  const canSubmit        = isAdminRole || isAnySales   // "Submit" draft button
+  const canSendOps       = isAdminRole || isAnySales   // "Send to Ops" + "Email Ops"
+  const canLinkShipment  = isAdminRole || isOperations || isAnySales
+  const canEdit          = isAdminRole || isAnySales
+  const canDelete        = isAdminRole || isAnySales
 
   const [list, setList] = useState([])
   const [loading, setLoading] = useState(true)
@@ -1725,13 +1732,15 @@ export default function SDForms() {
               label={t('sdForms.pdf', 'Download PDF')}
               onClick={() => downloadPdf(r.id)}
             />
-            <IconActionButton icon={<Pencil className="h-4 w-4" />} label={t('sdForms.edit')} onClick={() => openEdit(r.id)} />
-            <IconActionButton
-              icon={<Trash2 className="h-4 w-4" />}
-              label={t('sdForms.delete')}
-              variant="danger"
-              onClick={() => setDeleteId(r.id)}
-            />
+            {canEdit && <IconActionButton icon={<Pencil className="h-4 w-4" />} label={t('sdForms.edit')} onClick={() => openEdit(r.id)} />}
+            {canDelete && (
+              <IconActionButton
+                icon={<Trash2 className="h-4 w-4" />}
+                label={t('sdForms.delete')}
+                variant="danger"
+                onClick={() => setDeleteId(r.id)}
+              />
+            )}
           </div>
         ),
       },
@@ -2074,7 +2083,7 @@ export default function SDForms() {
                             <FileDown className="h-4 w-4" aria-hidden />
                             {t('sdForms.pdf')}
                           </button>
-                          {detail.status === 'draft' && (
+                          {detail.status === 'draft' && canSubmit && (
                             <button
                               type="button"
                               className="clients-btn clients-btn--primary inline-flex items-center gap-1 text-xs"
@@ -2084,26 +2093,30 @@ export default function SDForms() {
                               {t('sdForms.submit')}
                             </button>
                           )}
-                          {detail.status === 'submitted' && !isOperations && (
+                          {detail.status === 'submitted' && canSendOps && (
                             <button type="button" className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs" onClick={() => runSendOps(detail.id)}>
                               <Send className="h-4 w-4" aria-hidden />
                               {t('sdForms.sendOps')}
                             </button>
                           )}
-                          {!isOperations && (
+                          {canSendOps && (
                             <button type="button" className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs" onClick={() => runEmailOps(detail.id)}>
                               <Mail className="h-4 w-4" aria-hidden />
                               {t('sdForms.emailOps')}
                             </button>
                           )}
-                          <button type="button" className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs" onClick={() => openLinkModal(detail.id)}>
-                            <Link2 className="h-4 w-4" aria-hidden />
-                            {t('sdForms.linkShipment')}
-                          </button>
-                          <button type="button" className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs" onClick={() => openEdit(detail.id)}>
-                            <Pencil className="h-4 w-4" aria-hidden />
-                            {t('sdForms.edit')}
-                          </button>
+                          {canLinkShipment && (
+                            <button type="button" className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs" onClick={() => openLinkModal(detail.id)}>
+                              <Link2 className="h-4 w-4" aria-hidden />
+                              {t('sdForms.linkShipment')}
+                            </button>
+                          )}
+                          {canEdit && (
+                            <button type="button" className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs" onClick={() => openEdit(detail.id)}>
+                              <Pencil className="h-4 w-4" aria-hidden />
+                              {t('sdForms.edit')}
+                            </button>
+                          )}
                         </div>
                         <dl className="sd-detail-modal__dl">
                           {[

@@ -1,7 +1,3 @@
-<?php
-
-namespace App\Http\Controllers\Api\V1;
-
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreExpenseRequest;
 use App\Models\Expense;
@@ -11,6 +7,7 @@ use App\Models\Shipment;
 use App\Services\ActivityLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ExpensesController extends Controller
@@ -270,6 +267,8 @@ class ExpensesController extends Controller
                     'amount' => (float) $expense->amount,
                     'currency_code' => $expense->currency_code,
                 ]);
+
+                Shipment::recomputeTotals((int) $expense->shipment_id);
             }
         }
 
@@ -354,6 +353,8 @@ class ExpensesController extends Controller
                     'expense_id' => $expense->id,
                     'changes' => $expense->getChanges(),
                 ]);
+
+                Shipment::recomputeTotals((int) $expense->shipment_id);
             }
         }
 
@@ -371,7 +372,13 @@ class ExpensesController extends Controller
             __('You do not have permission to delete expenses.')
         );
 
+        $shipmentId = $expense->shipment_id;
+
         $expense->delete();
+
+        if ($shipmentId) {
+            Shipment::recomputeTotals((int) $shipmentId);
+        }
 
         return response()->json([
             'message' => __('Expense deleted.'),
@@ -413,6 +420,34 @@ class ExpensesController extends Controller
                 'has_receipt' => true,
                 'receipt_path' => $expense->receipt_path,
             ],
+        ]);
+    }
+
+    /**
+     * Stream / download the stored receipt file for an expense.
+     */
+    public function downloadReceipt(Request $request, Expense $expense)
+    {
+        $user = $request->user();
+        abort_unless(
+            $user && ($user->can('accounting.view') || $user->hasRole('admin')),
+            403,
+            __('You do not have permission to download expense receipts.')
+        );
+
+        $path = $expense->receipt_path;
+
+        if (! $path || ! Storage::disk('local')->exists($path)) {
+            abort(404, __('Receipt file not found.'));
+        }
+
+        $mimeType = Storage::disk('local')->mimeType($path) ?: 'application/octet-stream';
+        $basename = basename($path);
+
+        return response()->streamDownload(function () use ($path) {
+            echo Storage::disk('local')->get($path);
+        }, $basename, [
+            'Content-Type' => $mimeType,
         ]);
     }
 

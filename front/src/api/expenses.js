@@ -207,3 +207,33 @@ export async function uploadExpenseReceipt(token, expenseId, file) {
   }
   return json.data ?? json
 }
+
+/**
+ * Streams/downloads the stored receipt file for an expense.
+ * @param {string} token
+ * @param {number} expenseId
+ * @returns {Promise<{ blob: Blob, filename: string }>}
+ */
+export async function downloadExpenseReceipt(token, expenseId) {
+  const res = await apiFetch(`${getBaseUrl()}/expenses/${expenseId}/receipt`, {
+    headers: { Authorization: `Bearer ${token}`, Accept: '*/*' },
+  })
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}))
+    throw new Error(json.message || json.error || `Failed to download receipt (${res.status})`)
+  }
+  const blob = await res.blob()
+  const cd = res.headers.get('Content-Disposition') || ''
+  const match = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(cd)
+  const filename = match ? match[1].replace(/['"]/g, '') : `receipt-${expenseId}`
+  return { blob, filename }
+}
+
+/**
+ * Returns the receipt download URL for direct use in an anchor tag (with token).
+ * @param {string} token
+ * @param {number} expenseId
+ */
+export function getExpenseReceiptUrl(expenseId) {
+  return `${getBaseUrl()}/expenses/${expenseId}/receipt`
+}

@@ -1,7 +1,7 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X, ChevronDown, ChevronUp, FileText, DollarSign, FileType, History, Ship, Car, ShieldCheck, Shield, Package, Upload, Bell } from 'lucide-react'
-import { createExpense, updateExpense, deleteExpense, uploadExpenseReceipt, listExpenseCategories } from '../../api/expenses'
+import { createExpense, updateExpense, deleteExpense, uploadExpenseReceipt, downloadExpenseReceipt, listExpenseCategories } from '../../api/expenses'
 import {
   listInvoices,
   getInvoice,
@@ -46,17 +46,14 @@ const BUCKET_DEFS = [
   },
 ]
 
-/** Standard cost lines per `UI/shipments.html` — matchers map posted expenses into rows. Order: specific → broad. */
 const LINE_TEMPLATES = {
   shipping: [
-    { id: 'thc', labelKey: 'shipments.fin.lines.thc', matchers: [/\bthc\b/i] },
-    { id: 'telex', labelKey: 'shipments.fin.lines.telex', matchers: [/telex|تيلكس/i] },
-    { id: 'dhl', labelKey: 'shipments.fin.lines.dhl', optional: true, matchers: [/\bdhl\b|courier|سريع|بريد/i] },
     {
-      id: 'bl',
-      labelKey: 'shipments.fin.lines.blFee',
-      matchers: [/b\/?l\s*fee|^bl\s|bill of lading|رسوم.*\bb\/l\b|بي.?إل/i],
+      id: 'of',
+      labelKey: 'shipments.fin.lines.oceanFreight',
+      matchers: [/ocean\s*freight|^\s*of\s|شحن\s*بحري|^freight\b|sea\s*freight|خط\s*ملاحي|فريت/i],
     },
+    { id: 'thc', labelKey: 'shipments.fin.lines.thc', matchers: [/\bthc\b/i] },
     {
       id: 'power',
       labelKey: 'shipments.fin.lines.powerCharge',
@@ -64,28 +61,30 @@ const LINE_TEMPLATES = {
       matchers: [/power\s*charg|reefer.*power|كهر|ريفير.*كهرب/i],
     },
     {
-      id: 'of',
-      labelKey: 'shipments.fin.lines.oceanFreight',
-      matchers: [/ocean\s*freight|^\s*of\s|شحن\s*بحري|^freight\b|sea\s*freight|خط\s*ملاحي|فريت/i],
+      id: 'bl',
+      labelKey: 'shipments.fin.lines.blFee',
+      matchers: [/b\/?l\s*fee|^bl\s|bill of lading|رسوم.*\bb\/l\b|بي.?إل/i],
     },
+    { id: 'telex', labelKey: 'shipments.fin.lines.telex', matchers: [/telex|تيلكس/i] },
+    { id: 'dhl', labelKey: 'shipments.fin.lines.dhl', optional: true, matchers: [/\bdhl\b|courier|سريع|بريد/i] },
   ],
   inland: [
-    { id: 'genset', labelKey: 'shipments.fin.lines.genset', reeferOnly: true, matchers: [/genset|مولد|جينسيت/i] },
     {
-      id: 'overnight',
-      labelKey: 'shipments.fin.lines.overnight',
-      optional: true,
-      matchers: [/overnight|مبيت|إقامة\s*ليل/i],
+      id: 'inlandFreight',
+      labelKey: 'shipments.fin.lines.inlandFreight',
+      matchers: [/inland|internal\s*transport|truck|haul|نقل\s*داخلي|برّي|سيارات/i],
     },
+    { id: 'genset', labelKey: 'shipments.fin.lines.genset', reeferOnly: true, matchers: [/genset|مولد|جينسيت/i] },
     {
       id: 'receipts',
       labelKey: 'shipments.fin.lines.officialReceipts',
       matchers: [/official\s*receipt|receipts?\s*cost|إيصال\s*رسمي|إيصالات/i],
     },
     {
-      id: 'inlandFreight',
-      labelKey: 'shipments.fin.lines.inlandFreight',
-      matchers: [/inland|internal\s*transport|truck|haul|نقل\s*داخلي|برّي|سيارات/i],
+      id: 'overnight',
+      labelKey: 'shipments.fin.lines.overnight',
+      optional: true,
+      matchers: [/overnight|مبيت|إقامة\s*ليل/i],
     },
   ],
   customs: [
@@ -275,7 +274,7 @@ function FinSingleExpenseRow({
           amount: amt,
           currency_code: currency,
           expense_date: expense.expense_date || dateStr,
-          vendor_id: expense.vendor_id ?? null,
+          vendor_id: expense?.vendor_id ?? null,
         })
       } else {
         await createExpense(token, {
@@ -851,6 +850,23 @@ export default function ShipmentFinancialsModal({
     }))
   }, [])
 
+  const handleDownloadReceipt = useCallback(async (expenseId) => {
+    if (!token) return
+    try {
+      const { blob, filename } = await downloadExpenseReceipt(token, expenseId)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
+    } catch (err) {
+      setFinBanner({ type: 'error', message: err.message || t('shipments.fin.errorReceipt') })
+    }
+  }, [token, t])
+
   const handleSectionUpload = useCallback(async (bucketId, e) => {
     const file = e.target.files?.[0]
     e.target.value = ''
@@ -1182,26 +1198,98 @@ export default function ShipmentFinancialsModal({
 
     let bodyContent
     if (bucketId === 'other') {
-      bodyContent =
-        rows.length === 0 ? (
-          <p className="shipment-fin-empty-inline">{t('shipments.fin.bucketOtherEmpty')}</p>
-        ) : (
-          <div className="shipment-fin-table-wrap">
-            <table className="shipment-fin-line-table">
-              {otherTableHead}
-              <tbody>
-                {rows.map((ex) => (
-                  <tr key={ex.id}>
-                    <td>—</td>
-                    <td>{ex.description?.trim() || ex.invoice_number || '—'}</td>
-                    <td className="shipment-fin-num">{formatMoney(Number(ex.amount) || 0, numberLocale)}</td>
-                    <td>{ex.currency_code || '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )
+      // "Other" bucket — fully editable in editMode, static in view mode
+      const pendingOthers = pendingOtherByBucket['other'] || []
+      const otherToolbar = editMode ? (
+        <div className="shipment-fin-section-toolbar">
+          <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary" onClick={() => addPendingOtherLine('other')}>
+            {t('shipments.fin.addRow')}
+          </button>
+          <label className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-section-upload" title={t('shipments.fin.uploadSectionReceipt')}>
+            <Upload size={14} className="shipment-fin-icon-leading" />
+            {t('shipments.fin.uploadReceipt')}
+            <input type="file" className="hidden" accept=".pdf,.png,.jpg,.jpeg" onChange={(e) => handleSectionUpload('other', e)} disabled={batchSavingBucket === 'other'} />
+          </label>
+        </div>
+      ) : null
+
+      bodyContent = (
+        <>
+          {otherToolbar}
+          {rows.length === 0 && pendingOthers.length === 0 ? (
+            <p className="shipment-fin-empty-inline">{t('shipments.fin.bucketOtherEmpty')}</p>
+          ) : (
+            <div className="shipment-fin-table-wrap">
+              <table className="shipment-fin-line-table">
+                {otherTableHead}
+                <tbody>
+                  {rows.map((ex) => (
+                    <tr key={ex.id}>
+                      <td>—</td>
+                      <td>{ex.description?.trim() || ex.invoice_number || '—'}</td>
+                      <td className="shipment-fin-num">{formatMoney(Number(ex.amount) || 0, numberLocale)}</td>
+                      <td>{ex.currency_code || '—'}</td>
+                      {editMode ? (
+                        <td className="shipment-fin-actions">
+                          <div className="shipment-fin-actions__inner">
+                            <button
+                              type="button"
+                              className="shipment-fin-btn shipment-fin-btn--danger shipment-fin-btn--sm"
+                              onClick={async () => {
+                                if (!window.confirm(t('shipments.fin.confirmDeleteLine'))) return;
+                                try {
+                                  await deleteExpense(token, ex.id);
+                                  onExpensesChanged?.();
+                                } catch (err) {
+                                  setFinBanner({ type: 'error', message: err.message || t('shipments.fin.errorDeleteLine') });
+                                }
+                              }}
+                              title={t('shipments.delete')}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                            {ex.has_receipt ? (
+                              <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary" onClick={() => handleDownloadReceipt(ex.id)} title={t('shipments.fin.downloadReceipt')}>
+                                📎
+                              </button>
+                            ) : null}
+                            <label className="shipment-fin-upload" title={t('shipments.fin.uploadReceipt')}>
+                              <Upload className="shipment-fin-upload__icon" aria-hidden />
+                              <input type="file" accept=".pdf,.png,.jpg,.jpeg" className="shipment-fin-upload__input"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0]; e.target.value = ''
+                                  if (!file) return
+                                  try { await uploadExpenseReceipt(token, ex.id, file); onExpensesChanged?.() }
+                                  catch (err) { setFinBanner({ type: 'error', message: err.message }) }
+                                }}
+                              />
+                            </label>
+                          </div>
+                        </td>
+                      ) : null}
+                    </tr>
+                  ))}
+                  {pendingOthers.map((line) => (
+                    <FinPendingOtherChargeRow
+                      key={line.tempId}
+                      bucketId="other"
+                      line={line}
+                      token={token}
+                      shipment={shipment}
+                      categoriesByCode={categoriesByCode}
+                      t={t}
+                      editMode={editMode}
+                      onSaved={onExpensesChanged}
+                      onRemove={() => removePendingOtherLine('other', line.tempId)}
+                      sectionVendorId={undefined}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )
     } else {
       const { sections, orphans } = partitionBucketRows(bucketId, rows, isReefer)
       const sectionRows = []
@@ -1266,10 +1354,32 @@ export default function ShipmentFinancialsModal({
           )
         })
       }
+      // Always show receipt download indicators per row (for non-'other' buckets)
+      if (rows.filter((r) => r.has_receipt).length > 0) {
+        sectionRows.push(
+          <tr key="__receipts-header" className="shipment-fin-template-sep">
+            <td colSpan={editMode ? 7 : 6}>📎 {t('shipments.fin.attachmentsLabel')}</td>
+          </tr>
+        )
+        rows.filter((r) => r.has_receipt).forEach((ex) => {
+          sectionRows.push(
+            <tr key={`receipt-${ex.id}`} className="shipment-fin-receipt-row">
+              <td colSpan={2}>{ex.description?.trim() || '—'}</td>
+              <td colSpan={2}>
+                <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary" onClick={() => handleDownloadReceipt(ex.id)}>
+                  📎 {t('shipments.fin.downloadReceipt')}
+                </button>
+              </td>
+              {editMode ? <td /> : null}
+            </tr>
+          )
+        })
+      }
+
       bucketBatchKeysRef.current[bucketId] = batchKeys
 
       const sectionToolbar =
-        editMode && bucketId !== 'other' ? (
+        editMode ? (
           <div className="shipment-fin-section-toolbar">
             <select
               className="shipment-fin-select shipment-fin-select--vendor"
@@ -1294,6 +1404,7 @@ export default function ShipmentFinancialsModal({
               {t('shipments.fin.uploadReceipt')}
               <input 
                 type="file" 
+                accept=".pdf,.png,.jpg,.jpeg"
                 className="hidden" 
                 onChange={(e) => handleSectionUpload(bucketId, e)}
                 disabled={batchSavingBucket === bucketId}
@@ -1382,6 +1493,15 @@ export default function ShipmentFinancialsModal({
             <button type="button" role="tab" aria-selected={tab === 'invoices'} className={`shipment-fin-tab ${tab === 'invoices' ? 'shipment-fin-tab--active' : ''}`} onClick={() => setTab('invoices')}>
               <FileType className="shipment-fin-tab__icon" aria-hidden />
               {t('shipments.financialsTab.invoices')}
+            </button>
+          )}
+          {isAccountingUser && (
+            <button type="button" role="tab" aria-selected={tab === 'attachments'} className={`shipment-fin-tab ${tab === 'attachments' ? 'shipment-fin-tab--active' : ''}`} onClick={() => setTab('attachments')}>
+              <Upload className="shipment-fin-tab__icon" aria-hidden />
+              {t('shipments.financialsTab.attachments', { defaultValue: 'Attachments' })}
+              {expenses.filter((e) => e.has_receipt).length > 0 && (
+                <span className="shipment-fin-tab-badge">{expenses.filter((e) => e.has_receipt).length}</span>
+              )}
             </button>
           )}
           <button type="button" role="tab" aria-selected={tab === 'summary'} className={`shipment-fin-tab ${tab === 'summary' ? 'shipment-fin-tab--active' : ''}`} onClick={() => setTab('summary')}>
@@ -1817,6 +1937,59 @@ export default function ShipmentFinancialsModal({
                     )}
                   </div>
                 </>
+              )}
+            </div>
+          )}
+
+          {tab === 'attachments' && isAccountingUser && (
+            <div key="attachments" className="shipment-fin-panel shipment-fin-panel--enter">
+              <div className="shipment-fin-audit-head">
+                <h4 className="shipment-fin-audit-title">{t('shipments.financialsTab.attachments', { defaultValue: 'Attachments' })}</h4>
+                <span className="fs-xs text-muted">{t('shipments.fin.attachmentsSub', { defaultValue: 'All expense receipts attached to this shipment' })}</span>
+              </div>
+              {!hasBl ? (
+                <p className="client-detail-modal__empty">{t('shipments.financialsNoBl')}</p>
+              ) : expenses.filter((e) => e.has_receipt).length === 0 ? (
+                <div className="shipment-fin-audit-empty">
+                  <Upload className="shipment-fin-audit-empty__icon" />
+                  <div>{t('shipments.fin.noAttachments', { defaultValue: 'No attachments found.' })}</div>
+                </div>
+              ) : (
+                <div className="shipment-fin-attachments-grouped">
+                  {Object.entries(byBucket)
+                    .filter(([_, bucketRows]) => bucketRows.some(e => e.has_receipt))
+                    .map(([bucketId, bucketRows]) => {
+                      let titleKey = 'shipments.fin.bucketOtherTitle'
+                      if (bucketId === 'shipping') titleKey = 'shipments.fin.bucketShippingTitle'
+                      else if (bucketId === 'inland') titleKey = 'shipments.fin.bucketInlandTitle'
+                      else if (bucketId === 'customs') titleKey = 'shipments.fin.bucketCustomsTitle'
+                      else if (bucketId === 'insurance') titleKey = 'shipments.fin.bucketInsuranceTitle'
+                      
+                      return (
+                        <div key={bucketId} className="shipment-fin-attachments-group mb-4">
+                          <h5 className="fw-600 mb-2">{t(titleKey)}</h5>
+                          <ul className="shipment-fin-audit-list">
+                            {bucketRows.filter(e => e.has_receipt).map(ex => (
+                              <li key={ex.id} className="shipment-fin-audit-item flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <FileText size={16} className="text-muted" />
+                                  <div>
+                                    <div className="fw-500">{ex.description?.trim() || t('shipments.fin.unnamedReceipt', { defaultValue: 'Unnamed Receipt' })}</div>
+                                    <div className="fs-xs text-muted">
+                                      {formatMoney(Number(ex.amount) || 0, numberLocale)} {ex.currency_code} · {ex.expense_date || '—'}
+                                    </div>
+                                  </div>
+                                </div>
+                                <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary" onClick={() => handleDownloadReceipt(ex.id)}>
+                                  {t('shipments.fin.downloadReceipt')}
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )
+                    })}
+                </div>
               )}
             </div>
           )}

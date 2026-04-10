@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Facades\DB;
 
 class Shipment extends Model
 {
@@ -185,5 +186,30 @@ class Shipment extends Model
     public function latestTrackingUpdate(): HasOne
     {
         return $this->hasOne(ShipmentTrackingUpdate::class)->latestOfMany();
+    }
+
+    /**
+     * Recompute cost_total from all linked expenses and persist it.
+     * Call this after any expense create / update / delete on a shipment.
+     */
+    public static function recomputeTotals(int $shipmentId): void
+    {
+        $shipment = static::find($shipmentId);
+        if (! $shipment) {
+            return;
+        }
+
+        $costTotal = (float) DB::table('expenses')
+            ->where('shipment_id', $shipmentId)
+            ->sum('amount');
+
+        $shipment->cost_total = $costTotal;
+
+        // Update profit if selling price is available
+        if ($shipment->selling_price_total !== null) {
+            $shipment->profit_total = (float) $shipment->selling_price_total - $costTotal;
+        }
+
+        $shipment->saveQuietly();
     }
 }
