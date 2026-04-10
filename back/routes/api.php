@@ -27,7 +27,7 @@ use App\Http\Controllers\Api\V1\DecisionMakerTitleController;
 use App\Http\Controllers\Api\V1\DocumentController;
 use App\Http\Controllers\Api\V1\ExcuseController;
 use App\Http\Controllers\Api\V1\ExpenseCategoryController;
-use App\Http\Controllers\Api\V1\ExpensesController;
+use App\Http\Controllers\Api\V1\ExpenseController;
 use App\Http\Controllers\Api\V1\FreightTermController;
 use App\Http\Controllers\Api\V1\InterestLevelController;
 use App\Http\Controllers\Api\V1\InvoiceController;
@@ -533,16 +533,16 @@ Route::prefix('v1')->group(function () {
         Route::get('expense-categories', [ExpenseCategoryController::class, 'index']);
 
         // Expenses (shipment & general)
-        Route::get('expenses/summary', [ExpensesController::class, 'summary']);
-        Route::get('expenses/shipment', [ExpensesController::class, 'shipmentIndex']);
-        Route::get('expenses/general', [ExpensesController::class, 'generalIndex']);
-        Route::get('expenses/export', [ExpensesController::class, 'export']);
-        Route::get('expenses/{expense}', [ExpensesController::class, 'show']);
-        Route::put('expenses/{expense}', [ExpensesController::class, 'update']);
-        Route::delete('expenses/{expense}', [ExpensesController::class, 'destroy']);
-        Route::post('expenses', [ExpensesController::class, 'store']);
-        Route::post('expenses/{expense}/receipt', [ExpensesController::class, 'uploadReceipt']);
-        Route::get('expenses/{expense}/receipt', [ExpensesController::class, 'downloadReceipt']);
+        Route::get('expenses/summary', [ExpenseController::class, 'summary']);
+        Route::get('expenses/shipment', [ExpenseController::class, 'shipmentIndex']);
+        Route::get('expenses/general', [ExpenseController::class, 'generalIndex']);
+        Route::get('expenses/export', [ExpenseController::class, 'export']);
+        Route::get('expenses/{expense}', [ExpenseController::class, 'show']);
+        Route::put('expenses/{expense}', [ExpenseController::class, 'update']);
+        Route::delete('expenses/{expense}', [ExpenseController::class, 'destroy']);
+        Route::post('expenses', [ExpenseController::class, 'store']);
+        Route::post('expenses/{expense}/receipt', [ExpenseController::class, 'uploadReceipt']);
+        Route::get('expenses/{expense}/receipt', [ExpenseController::class, 'downloadReceipt']);
 
         // Notifications
         Route::get('notifications', [NotificationController::class, 'index']);
