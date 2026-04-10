@@ -30,7 +30,7 @@ class SDFormController extends Controller
         $this->authorize('viewAny', SDForm::class);
 
         $query = SDForm::query()
-            ->with(['client', 'salesRep', 'pol', 'pod']);
+            ->with(['client', 'salesRep', 'pol', 'pod', 'shippingLine']);
 
         if ($status = $request->query('status')) {
             $query->where('status', $status);
@@ -116,7 +116,7 @@ class SDFormController extends Controller
         ]);
 
         return response()->json([
-            'data' => $form->fresh(['client', 'salesRep', 'pol', 'pod']),
+            'data' => $form->fresh(['client', 'salesRep', 'pol', 'pod', 'shippingLine']),
         ], 201);
     }
 
@@ -125,7 +125,7 @@ class SDFormController extends Controller
         $this->authorize('view', $sdForm);
 
         return response()->json([
-            'data' => $sdForm->load(['client', 'salesRep', 'pol', 'pod', 'linkedShipment']),
+            'data' => $sdForm->load(['client', 'salesRep', 'pol', 'pod', 'linkedShipment', 'shippingLine']),
         ]);
     }
 
@@ -144,7 +144,7 @@ class SDFormController extends Controller
         ]);
 
         return response()->json([
-            'data' => $sdForm->fresh(['client', 'salesRep', 'pol', 'pod']),
+            'data' => $sdForm->fresh(['client', 'salesRep', 'pol', 'pod', 'shippingLine']),
         ]);
     }
 
@@ -179,7 +179,8 @@ class SDFormController extends Controller
             'pod' => $form->pod?->name ?? $form->pod_text,
             'linked_shipment_id' => $form->linked_shipment_id,
             'acid_number' => $form->acid_number,
-            'shipping_line' => $form->shipping_line,
+            'shipping_line' => $form->shippingLine?->name ?? $form->shipping_line,
+            'shipping_line_id' => $form->shipping_line_id,
             'final_destination' => $form->final_destination,
             'cargo_description' => $form->cargo_description,
             'sales_rep_id' => $form->sales_rep_id,
@@ -218,7 +219,7 @@ class SDFormController extends Controller
         ]);
 
         return response()->json([
-            'data' => $sdForm->fresh(['client', 'salesRep', 'pol', 'pod']),
+            'data' => $sdForm->fresh(['client', 'salesRep', 'pol', 'pod', 'shippingLine']),
         ]);
     }
 
@@ -273,7 +274,7 @@ class SDFormController extends Controller
         );
 
         return response()->json([
-            'data' => $sdForm->fresh(['client', 'salesRep', 'pol', 'pod']),
+            'data' => $sdForm->fresh(['client', 'salesRep', 'pol', 'pod', 'shippingLine']),
         ]);
     }
 
@@ -330,7 +331,7 @@ class SDFormController extends Controller
                     $form->client?->name ?? '',
                     $form->pol?->name ?? $form->pol_text,
                     $form->pod?->name ?? $form->pod_text,
-                    $form->shipping_line,
+                    $form->shippingLine?->name ?? $form->shipping_line,
                     $form->final_destination,
                     $form->cargo_description,
                     $form->salesRep?->name ?? '',

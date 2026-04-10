@@ -89,6 +89,7 @@ const defaultCreateForm = () => ({
   client_id: '',
   sd_form_id: '',
   line_vendor_id: '',
+  shipping_line_id: '',
   origin_port_id: '',
   destination_port_id: '',
   booking_number: '',
@@ -133,6 +134,8 @@ function buildCreatePayload(form) {
   if (sd != null) body.sd_form_id = sd
   const lv = numOrUndef(form.line_vendor_id)
   if (lv != null) body.line_vendor_id = lv
+  const sl = numOrUndef(form.shipping_line_id)
+  if (sl != null) body.shipping_line_id = sl
   const op = numOrUndef(form.origin_port_id)
   if (op != null) body.origin_port_id = op
   const dp = numOrUndef(form.destination_port_id)
@@ -173,6 +176,7 @@ function mergeShipmentFormFromSd(sd, prev) {
   if (!sd) return { ...prev, sd_form_id: '' }
   const next = { ...prev, sd_form_id: String(sd.id) }
   if (sd.client_id != null) next.client_id = String(sd.client_id)
+  if (sd.shipping_line_id != null) next.shipping_line_id = String(sd.shipping_line_id)
   if (sd.shipment_direction) next.shipment_direction = sd.shipment_direction
   if (sd.pol_id != null) next.origin_port_id = String(sd.pol_id)
   if (sd.pod_id != null) next.destination_port_id = String(sd.pod_id)
@@ -199,6 +203,7 @@ function buildUpdatePayload(form) {
     client_id: numOrUndef(form.client_id),
     sd_form_id: numOrUndef(form.sd_form_id),
     line_vendor_id: numOrUndef(form.line_vendor_id),
+    shipping_line_id: numOrUndef(form.shipping_line_id),
     origin_port_id: numOrUndef(form.origin_port_id),
     destination_port_id: numOrUndef(form.destination_port_id),
     shipment_direction: form.shipment_direction || undefined,
@@ -274,6 +279,7 @@ export default function Shipments() {
   const [clientOptions, setClientOptions] = useState([])
   const [userOptions, setUserOptions] = useState([])
   const [vendorOptions, setVendorOptions] = useState([])
+  const [shippingLinesList, setShippingLinesList] = useState([])
   const [portOptions, setPortOptions] = useState([])
   const [statusOptions, setStatusOptions] = useState([])
   const [opsStatusOptions, setOpsStatusOptions] = useState([])
@@ -483,8 +489,9 @@ export default function Shipments() {
       listUsers(token, { per_page: 300 }).catch(() => ({})),
       listVendors(token).catch(() => ({})),
       listPorts(token, { per_page: 500 }).catch(() => ({})),
+      listShippingLines(token).catch(() => ({})),
       listShipmentStatuses(token).catch(() => ({})),
-    ]).then(([c, u, v, p, st]) => {
+    ]).then(([c, u, v, p, sl, st]) => {
       const clients = c.data ?? c.clients ?? []
       setClientOptions(Array.isArray(clients) ? clients : [])
       const users = u.data ?? u.users ?? u
@@ -493,6 +500,8 @@ export default function Shipments() {
       setVendorOptions(Array.isArray(vendors) ? vendors : [])
       const ports = p.data ?? p
       setPortOptions(Array.isArray(ports) ? ports : [])
+      const shippingLines = sl.data ?? sl
+      setShippingLinesList(Array.isArray(shippingLines) ? shippingLines : [])
       const statuses = st.data ?? []
       if (Array.isArray(statuses)) {
         setStatusOptions(statuses.filter((s) => s.type === 'commercial' || !s.type))
@@ -560,6 +569,7 @@ export default function Shipments() {
       client_id: row.client_id != null ? String(row.client_id) : '',
       sd_form_id: row.sd_form_id != null ? String(row.sd_form_id) : '',
       line_vendor_id: row.line_vendor_id != null ? String(row.line_vendor_id) : '',
+      shipping_line_id: row.shipping_line_id != null ? String(row.shipping_line_id) : '',
       origin_port_id: row.origin_port_id != null ? String(row.origin_port_id) : '',
       destination_port_id: row.destination_port_id != null ? String(row.destination_port_id) : '',
       booking_number: row.booking_number ?? '',
@@ -672,6 +682,46 @@ export default function Shipments() {
 
   const pageRowIds = useMemo(() => rows.map((r) => String(r.id)), [rows])
   const allPageSelected = pageRowIds.length > 0 && pageRowIds.every((id) => selectedIds[id])
+  const loadShippingLineOptions = async (q) => {
+    if (!token) return []
+    try {
+      const res = await listShippingLines(token, { q, active: true })
+      const data = res.data ?? res
+      return (Array.isArray(data) ? data : []).map((l) => ({
+        value: l.id,
+        label: l.name || `#${l.id}`,
+      }))
+    } catch (error) {
+      console.error('loadShippingLineOptions error:', error)
+      return []
+    }
+  }
+
+  const handleCreateShippingLine = async (name) => {
+    if (!token) return null
+    try {
+      const res = await createShippingLine(token, { name, active: true })
+      const newLine = res.data ?? res
+      const updatedLines = await listShippingLines(token)
+      const arr = updatedLines.data ?? updatedLines
+      setShippingLinesList(Array.isArray(arr) ? arr : [])
+      return {
+        value: newLine.id,
+        label: newLine.name || `#${newLine.id}`,
+      }
+    } catch (err) {
+      setAlert({ type: 'error', message: err.message || 'Failed to create shipping line' })
+      return null
+    }
+  }
+
+  const getShippingLineOption = (id) => {
+    if (!id) return null
+    const l = shippingLinesList.find((x) => String(x.id) === String(id))
+    if (!l) return { value: id, label: `#${id}` }
+    return { value: l.id, label: l.name || `#${l.id}` }
+  }
+
   const getPortOption = (id) => {
     if (!id) return null
     const p = portOptions.find((x) => String(x.id) === String(id))
@@ -1130,30 +1180,32 @@ export default function Shipments() {
             />
           </div>
           <div className="client-detail-modal__form-field">
-            <label htmlFor="sh-line">{t('shipments.fields.line_vendor_id')}</label>
+            <label htmlFor="sh-line-vendor">{t('shipments.fields.line_vendor_id')}</label>
             <select
-              id="sh-line"
+              id="sh-line-vendor"
               value={form.line_vendor_id}
               onChange={(e) => setForm((f) => ({ ...f, line_vendor_id: e.target.value }))}
               disabled={disabled}
             >
-              <option value="">{t('shipments.selectShippingLine')}</option>
-              {vendorOptions
-                .filter(
-                  (v) =>
-                    v.type === 'shipping_line' ||
-                    v.type === 'agent' ||
-                    v.type === 'LINE' ||
-                    v.type === 'AGENT' ||
-                    !v.type ||
-                    v.type === ''
-                )
-                .map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.name || v.id}
-                  </option>
-                ))}
+              <option value="">{t('shipments.selectLineVendor')}</option>
+              {vendorOptions.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.name || v.id}
+                </option>
+              ))}
             </select>
+          </div>
+          <div className="client-detail-modal__form-field">
+            <label htmlFor="sh-shipping-line">Shipping Line</label>
+            <AsyncSelect
+              id="sh-shipping-line"
+              value={getShippingLineOption(form.shipping_line_id)}
+              onChange={(opt) => setForm((f) => ({ ...f, shipping_line_id: opt?.value || '' }))}
+              loadOptions={loadShippingLineOptions}
+              onCreate={handleCreateShippingLine}
+              placeholder="Select or create line"
+              disabled={disabled}
+            />
           </div>
           <div className="client-detail-modal__form-field">
             <label htmlFor="sh-mode">{t('shipments.fields.mode')}</label>

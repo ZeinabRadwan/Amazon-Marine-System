@@ -103,6 +103,7 @@ function emptySdForm() {
     pol_id: '',
     pod_id: '',
     shipping_line: '',
+    shipping_line_id: '',
     pol_text: '',
     pod_text: '',
     final_destination: '',
@@ -145,6 +146,7 @@ function modelToForm(m) {
     pol_id: String(m.pol_id || ''),
     pod_id: String(m.pod_id || ''),
     shipping_line: m.shipping_line ?? '',
+    shipping_line_id: String(m.shipping_line_id || ''),
     pol_text: m.pol_text ?? '',
     pod_text: m.pod_text ?? '',
     final_destination: m.final_destination ?? '',
@@ -178,6 +180,7 @@ function buildPayload(form) {
   if (form.pol_id !== '' && form.pol_id != null) out.pol_id = Number(form.pol_id)
   if (form.pod_id !== '' && form.pod_id != null) out.pod_id = Number(form.pod_id)
   out.shipping_line = String(form.shipping_line || '').trim()
+  if (form.shipping_line_id !== '' && form.shipping_line_id != null) out.shipping_line_id = Number(form.shipping_line_id)
   if (form.pol_text) out.pol_text = form.pol_text
   if (form.pod_text) out.pod_text = form.pod_text
   if (form.final_destination) out.final_destination = form.final_destination
@@ -245,8 +248,6 @@ export default function SDForms() {
   const [containerSizesList, setContainerSizesList] = useState([])
   const [portsList, setPortsList] = useState([])
   const [shippingLinesList, setShippingLinesList] = useState([])
-  const [shippingLineAddName, setShippingLineAddName] = useState('')
-  const [shippingLineAddBusy, setShippingLineAddBusy] = useState(false)
   const [clientsList, setClientsList] = useState([])
   const [usersList, setUsersList] = useState([])
 
@@ -415,26 +416,50 @@ export default function SDForms() {
     })
   }, [])
 
-  const handleAddShippingLine = useCallback(
-    async (setForm) => {
-      const name = String(shippingLineAddName).trim()
-      if (!name || !token) return
-      setShippingLineAddBusy(true)
-      setAlert(null)
-      try {
-        await createShippingLine(token, { name, active: true })
-        const res = await listShippingLines(token)
-        setShippingLinesList(normalizeListResponse(res))
-        setForm((f) => ({ ...f, shipping_line: name }))
-        setShippingLineAddName('')
-      } catch (err) {
-        setAlert({ type: 'error', message: err.message || t('sdForms.errorAddShippingLine') })
-      } finally {
-        setShippingLineAddBusy(false)
+  const loadShippingLineOptions = async (q) => {
+    if (!token) return []
+    try {
+      const res = await listShippingLines(token, { q, active: true })
+      const data = normalizeListResponse(res)
+      return data.map((l) => ({
+        value: l.id,
+        label: l.name || `#${l.id}`,
+      }))
+    } catch (error) {
+      console.error('loadShippingLineOptions error:', error)
+      return []
+    }
+  }
+
+  const handleCreateShippingLine = async (name) => {
+    if (!token) return null
+    try {
+      const res = await createShippingLine(token, { name, active: true })
+      const newLine = res.data ?? res
+      const updatedLines = await listShippingLines(token)
+      setShippingLinesList(normalizeListResponse(updatedLines))
+      return {
+        value: newLine.id,
+        label: newLine.name || `#${newLine.id}`,
       }
-    },
-    [shippingLineAddName, token, t],
-  )
+    } catch (err) {
+      setAlert({ type: 'error', message: err.message || 'Failed to create shipping line' })
+      return null
+    }
+  }
+
+  const getShippingLineOption = (id, nameFallback) => {
+    if (!id) {
+      if (nameFallback) return { value: '', label: nameFallback }
+      return null
+    }
+    const l = shippingLinesList.find((x) => String(x.id) === String(id))
+    if (!l) {
+      if (nameFallback) return { value: id, label: nameFallback }
+      return { value: id, label: `#${id}` }
+    }
+    return { value: l.id, label: l.name || `#${l.id}` }
+  }
 
   const loadPortOptions = async (q) => {
     if (!token) return []
@@ -533,7 +558,7 @@ export default function SDForms() {
       setAlert({ type: 'error', message: 'Shipment direction is required.' })
       return null
     }
-    if (!String(createForm.shipping_line || '').trim()) {
+    if (!String(createForm.shipping_line_id || '').trim() && !String(createForm.shipping_line || '').trim()) {
       setAlert({ type: 'error', message: t('sdForms.errorShippingLineRequired') })
       return null
     }
@@ -566,7 +591,7 @@ export default function SDForms() {
   const handleEditSubmit = async (e) => {
     e.preventDefault()
     if (!token || !editId) return
-    if (!String(editForm.shipping_line || '').trim()) {
+    if (!String(editForm.shipping_line_id || '').trim() && !String(editForm.shipping_line || '').trim()) {
       setAlert({ type: 'error', message: t('sdForms.errorShippingLineRequired') })
       return
     }
@@ -831,33 +856,19 @@ export default function SDForms() {
             </div>
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-sline">5. Shipping Line (Required)</label>
-              <input
+              <AsyncSelect
                 id="sd-c-sline"
-                type="text"
-                value={form.shipping_line}
-                onChange={(e) => setForm((f) => ({ ...f, shipping_line: e.target.value }))}
+                value={getShippingLineOption(form.shipping_line_id, form.shipping_line)}
+                onChange={(opt) => setForm((f) => ({ 
+                  ...f, 
+                  shipping_line_id: opt?.value || '',
+                  shipping_line: opt?.label || ''
+                }))}
+                loadOptions={loadShippingLineOptions}
+                onCreate={handleCreateShippingLine}
+                placeholder="Select or create shipping line"
                 disabled={disabled}
-                placeholder="e.g. Maersk, MSC..."
               />
-              {!disabled && (
-                <div className="sd-forms-add-shipping-line">
-                  <input
-                    type="text"
-                    value={shippingLineAddName}
-                    onChange={(e) => setShippingLineAddName(e.target.value)}
-                    placeholder="New line name"
-                    className="clients-input"
-                  />
-                  <button
-                    type="button"
-                    className="clients-btn clients-btn--outline"
-                    onClick={() => handleAddShippingLine(setForm)}
-                    disabled={shippingLineAddBusy || !shippingLineAddName.trim()}
-                  >
-                    {shippingLineAddBusy ? '…' : '+ Line'}
-                  </button>
-                </div>
-              )}
             </div>
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-dir">
@@ -1310,57 +1321,19 @@ export default function SDForms() {
           </div>
           <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
             <label htmlFor="sd-f-shipping-line">5. Shipping Line (Required)</label>
-            <select
+            <AsyncSelect
               id="sd-f-shipping-line"
-              required
-              value={form.shipping_line}
-              onChange={(e) => setForm((f) => ({ ...f, shipping_line: e.target.value }))}
+              value={getShippingLineOption(form.shipping_line_id, form.shipping_line)}
+              onChange={(opt) => setForm((f) => ({ 
+                ...f, 
+                shipping_line_id: opt?.value || '',
+                shipping_line: opt?.label || ''
+              }))}
+              loadOptions={loadShippingLineOptions}
+              onCreate={handleCreateShippingLine}
+              placeholder="Select or create shipping line"
               disabled={disabled}
-            >
-              <option value="">{t('sdForms.declaration.selectOrAddShippingLine', { lng: 'en' })}</option>
-              {shippingLinesList.map((l) => {
-                const n = String(l.name || '').trim()
-                if (!n) return null
-                return (
-                  <option key={l.id} value={n}>
-                    {n}
-                  </option>
-                )
-              })}
-              {['Maersk', 'MSC', 'CMA CGM']
-                .filter(
-                  (ex) =>
-                    !shippingLinesList.some((l) => String(l.name || '').trim().toLowerCase() === ex.toLowerCase()),
-                )
-                .map((ex) => (
-                  <option key={`f-sl-ex-${ex}`} value={ex}>
-                    {ex}
-                  </option>
-                ))}
-              {form.shipping_line &&
-                !shippingLinesList.some((l) => String(l.name || '').trim() === String(form.shipping_line).trim()) &&
-                !['Maersk', 'MSC', 'CMA CGM'].includes(String(form.shipping_line).trim()) ? (
-                <option value={form.shipping_line}>{form.shipping_line}</option>
-              ) : null}
-            </select>
-            <div className="sd-forms-add-shipping-line">
-              <input
-                type="text"
-                placeholder={t('sdForms.declaration.newShippingLineName', { lng: 'en' })}
-                value={shippingLineAddName}
-                onChange={(e) => setShippingLineAddName(e.target.value)}
-                disabled={disabled || shippingLineAddBusy}
-                aria-label={t('sdForms.declaration.newShippingLineName', { lng: 'en' })}
-              />
-              <button
-                type="button"
-                className="clients-btn clients-btn--secondary"
-                disabled={disabled || shippingLineAddBusy || !String(shippingLineAddName).trim() || !token}
-                onClick={() => handleAddShippingLine(setForm)}
-              >
-                {shippingLineAddBusy ? '…' : t('sdForms.declaration.addShippingLine', { lng: 'en' })}
-              </button>
-            </div>
+            />
           </div>
           <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
             <label htmlFor="sd-f-poltxt">

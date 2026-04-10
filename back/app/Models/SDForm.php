@@ -21,6 +21,7 @@ class SDForm extends Model
         'pol_id',
         'pod_id',
         'shipping_line',
+        'shipping_line_id',
         'pol_text',
         'pod_text',
         'final_destination',
@@ -86,6 +87,14 @@ class SDForm extends Model
     public function pod(): BelongsTo
     {
         return $this->belongsTo(Port::class, 'pod_id');
+    }
+
+    /**
+     * @return BelongsTo<ShippingLine, SDForm>
+     */
+    public function shippingLine(): BelongsTo
+    {
+        return $this->belongsTo(ShippingLine::class, 'shipping_line_id');
     }
 
     /**

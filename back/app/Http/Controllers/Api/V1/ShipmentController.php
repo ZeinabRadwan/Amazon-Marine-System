@@ -27,7 +27,7 @@ class ShipmentController extends Controller
         $this->authorize('viewAny', Shipment::class);
 
         $query = $this->buildShipmentListQuery($request)
-            ->with(['client', 'salesRep', 'lineVendor', 'originPort', 'destinationPort', 'sdForm']);
+            ->with(['client', 'salesRep', 'lineVendor', 'shippingLine', 'originPort', 'destinationPort', 'sdForm']);
 
         if (str_contains((string) $request->query('include'), 'latest_tracking_update')) {
             $query->with(['latestTrackingUpdate' => fn ($q) => $q->with('createdBy')]);
@@ -76,6 +76,7 @@ class ShipmentController extends Controller
             'sd_form_id' => ['nullable', 'integer', 'exists:s_d_forms,id'],
             'client_id' => ['nullable', 'integer', 'exists:clients,id'],
             'line_vendor_id' => ['nullable', 'integer', 'exists:vendors,id'],
+            'shipping_line_id' => ['nullable', 'integer', 'exists:shipping_lines,id'],
             'origin_port_id' => ['nullable', 'integer', 'exists:ports,id'],
             'destination_port_id' => ['nullable', 'integer', 'exists:ports,id'],
             'booking_number' => ['nullable', 'string', 'max:255'],
@@ -140,7 +141,7 @@ class ShipmentController extends Controller
         ]);
 
         return response()->json([
-            'data' => $shipment->fresh(['client', 'salesRep', 'lineVendor', 'originPort', 'destinationPort', 'sdForm']),
+            'data' => $shipment->fresh(['client', 'salesRep', 'lineVendor', 'shippingLine', 'originPort', 'destinationPort', 'sdForm']),
         ], 201);
     }
 
@@ -153,6 +154,7 @@ class ShipmentController extends Controller
                 'client',
                 'salesRep',
                 'lineVendor',
+                'shippingLine',
                 'originPort',
                 'destinationPort',
                 'sdForm',
@@ -175,6 +177,7 @@ class ShipmentController extends Controller
             'sd_form_id' => ['sometimes', 'nullable', 'integer', 'exists:s_d_forms,id'],
             'sales_rep_id' => ['sometimes', 'nullable', 'integer', 'exists:users,id'],
             'line_vendor_id' => ['sometimes', 'nullable', 'integer', 'exists:vendors,id'],
+            'shipping_line_id' => ['sometimes', 'nullable', 'integer', 'exists:shipping_lines,id'],
             'origin_port_id' => ['sometimes', 'nullable', 'integer', 'exists:ports,id'],
             'destination_port_id' => ['sometimes', 'nullable', 'integer', 'exists:ports,id'],
             'shipment_direction' => ['sometimes', 'nullable', 'string', 'in:Export,Import'],
@@ -209,7 +212,7 @@ class ShipmentController extends Controller
 
 
         return response()->json([
-            'data' => $shipment->fresh(),
+            'data' => $shipment->fresh(['client', 'salesRep', 'lineVendor', 'shippingLine', 'originPort', 'destinationPort', 'sdForm']),
         ]);
     }
 
@@ -445,7 +448,7 @@ class ShipmentController extends Controller
     private function buildShipmentListQuery(Request $request)
     {
         $query = Shipment::query()
-            ->with(['client', 'lineVendor'])
+            ->with(['client', 'lineVendor', 'shippingLine'])
             ->select('shipments.*');
 
         if ($status = $request->query('status')) {
@@ -561,6 +564,7 @@ class ShipmentController extends Controller
             'client',
             'salesRep',
             'lineVendor',
+            'shippingLine',
             'originPort',
             'destinationPort',
             'sdForm',

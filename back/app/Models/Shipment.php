@@ -25,6 +25,7 @@ class Shipment extends Model
         'client_id',
         'sales_rep_id',
         'line_vendor_id',
+        'shipping_line_id',
         'origin_port_id',
         'destination_port_id',
         'route_text',
@@ -93,6 +94,14 @@ class Shipment extends Model
     public function originPort(): BelongsTo
     {
         return $this->belongsTo(Port::class, 'origin_port_id');
+    }
+
+    /**
+     * @return BelongsTo<ShippingLine, Shipment>
+     */
+    public function shippingLine(): BelongsTo
+    {
+        return $this->belongsTo(ShippingLine::class, 'shipping_line_id');
     }
 
     /**
