@@ -14,10 +14,10 @@
 </head>
 <body class="pdf-root">
     <div class="pdf-container pdf-decor">
-        <main class="pdf-main">
+        <div class="pdf-main">
             @yield('pdf_content')
-        </main>
-        <footer class="pdf-footer">
+        </div>
+        <div class="pdf-footer" role="contentinfo">
             @hasSection('pdf_footer')
                 @yield('pdf_footer')
             @elseif(!empty($footerHtml))
@@ -25,7 +25,7 @@
             @else
                 @include('pdf.partials.standard_footer', ['lang' => $lang])
             @endif
-        </footer>
+        </div>
     </div>
 </body>
 </html>
