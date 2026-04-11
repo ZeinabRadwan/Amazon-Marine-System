@@ -63,7 +63,7 @@
             background: #ffffff;
         }
         .header-logo img {
-            height: 48px;
+            height: 60px;
             width: auto;
             max-width: 88px;
             display: block;
@@ -76,7 +76,7 @@
         }
         .brand-line {
             display: block;
-            font-size: 15px;
+            font-size: 17px;
             font-family: 'DejaVu Sans', sans-serif;
             font-weight: bold;
             letter-spacing: 0.16em;
@@ -242,20 +242,22 @@
             color: #11354d;
         }
         .footer {
-            margin-top: 12px;
-            padding: 10px 12px 12px;
-            background: #f1f5f9;
-            border-top: 3px solid #ec7f00;
+            margin-top: 14px;
+            padding: 0;
+            background: transparent;
+            border: none;
             font-size: 9px;
             color: #11354d;
         }
         .footer-h {
             font-weight: 700;
             color: #11354d;
-            margin: 0 0 8px;
+            margin: 0 0 6px;
             font-size: 9.5px;
             text-transform: uppercase;
             letter-spacing: 0.06em;
+            border-bottom: 2px solid #ec7f00;
+            padding-bottom: 4px;
         }
         .footer p { margin: 2px 0; }
         .footer strong { color: #11354d; }
@@ -264,14 +266,14 @@
             table-layout: fixed;
             border-collapse: collapse;
             margin: 0;
-            border: 1px solid #cbd5e1;
-            background: #ffffff;
+            border: none;
+            background: transparent;
         }
         table.footer-contact-grid > tbody > tr > td.footer-contact-grid__cell {
             width: 25%;
             vertical-align: top;
             text-align: center;
-            padding: 8px 5px 10px;
+            padding: 4px 3px 0;
             border: none;
             border-left: 1px solid #e2e8f0;
         }
@@ -309,21 +311,18 @@
             border-radius: 26px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
         }
-        .footer-cc-lbl {
-            font-size: 7.5px;
-            font-weight: 700;
-            color: #11354d;
-            line-height: 1.4;
-            padding: 2px 0 1px;
-            text-transform: none;
-        }
-        .footer-cc-val {
+        .footer-cc-line {
             font-size: 8px;
             font-weight: 600;
             color: #11354d;
-            line-height: 1.35;
+            line-height: 1.4;
             word-wrap: break-word;
-            padding-top: 1px;
+            text-align: center;
+            padding-top: 2px;
+        }
+        .footer-cc-line strong {
+            font-weight: 700;
+            color: #11354d;
         }
         .shipment-pdf-footer-banner {
             width: 100%;
@@ -579,7 +578,13 @@
                 {!! $footerHtml !!}
             @else
                 <p class="footer-h">Contact Information</p>
-                <table class="footer-contact-grid" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
+                <table class="footer-contact-grid" width="100%" cellspacing="0" cellpadding="0" border="0" dir="ltr" role="presentation">
+                    <colgroup>
+                        <col width="25%" />
+                        <col width="25%" />
+                        <col width="25%" />
+                        <col width="25%" />
+                    </colgroup>
                     <tr>
                         <td class="footer-contact-grid__cell footer-contact-grid__cell--first" width="25%" style="width:25%;">
                             <table class="footer-cc-col" width="100%" cellspacing="0" cellpadding="0" border="0">
@@ -594,8 +599,9 @@
                                         </table>
                                     </td>
                                 </tr>
-                                <tr><td class="footer-cc-lbl">Phone:</td></tr>
-                                <tr><td class="footer-cc-val">01200744888</td></tr>
+                                <tr>
+                                    <td class="footer-cc-line"><strong>Phone:</strong> 01200744888</td>
+                                </tr>
                             </table>
                         </td>
                         <td class="footer-contact-grid__cell" width="25%" style="width:25%;">
@@ -611,8 +617,9 @@
                                         </table>
                                     </td>
                                 </tr>
-                                <tr><td class="footer-cc-lbl">Email:</td></tr>
-                                <tr><td class="footer-cc-val">mabdrabboh@amazonmarine.ltd</td></tr>
+                                <tr>
+                                    <td class="footer-cc-line"><strong>Email:</strong> mabdrabboh@amazonmarine.ltd</td>
+                                </tr>
                             </table>
                         </td>
                         <td class="footer-contact-grid__cell" width="25%" style="width:25%;">
@@ -628,8 +635,9 @@
                                         </table>
                                     </td>
                                 </tr>
-                                <tr><td class="footer-cc-lbl">Address:</td></tr>
-                                <tr><td class="footer-cc-val">Villa 129, 2nd District New Cairo, Egypt</td></tr>
+                                <tr>
+                                    <td class="footer-cc-line"><strong>Address:</strong> Villa 129, 2nd District New Cairo, Egypt</td>
+                                </tr>
                             </table>
                         </td>
                         <td class="footer-contact-grid__cell" width="25%" style="width:25%;">
@@ -645,8 +653,9 @@
                                         </table>
                                     </td>
                                 </tr>
-                                <tr><td class="footer-cc-lbl">Website:</td></tr>
-                                <tr><td class="footer-cc-val">www.amazonmarine.ltd</td></tr>
+                                <tr>
+                                    <td class="footer-cc-line"><strong>Website:</strong> www.amazonmarine.ltd</td>
+                                </tr>
                             </table>
                         </td>
                     </tr>
