@@ -78,25 +78,25 @@
             </tr>
             <tr>
                 <td colspan="3">
-                    <table class="pdf-meta-panel" cellpadding="0" cellspacing="0">
+                    <table class="pdf-meta-panel" cellpadding="0" cellspacing="8" border="0">
                         <tr>
                             <td>
-                                <span class="pdf-meta-icon">#</span>
-                                <span><span class="pdf-meta-strong">{{ $L['sd_no'] }}:</span> <span class="pdf-meta-val">{{ $form->sd_number ?? ('SD-'.$form->id) }}</span></span>
+                                <span class="pdf-meta-label">{{ $L['sd_no'] }}</span>
+                                <span class="pdf-capsule pdf-capsule--accent">{{ $form->sd_number ?? ('SD-'.$form->id) }}</span>
                             </td>
                             <td>
-                                <span class="pdf-meta-icon">D</span>
-                                <span><span class="pdf-meta-strong">{{ $L['sd_date'] }}:</span> <span class="pdf-meta-val">{{ optional($form->created_at)->format('d/m/Y') ?? '—' }}</span></span>
+                                <span class="pdf-meta-label">{{ $L['sd_date'] }}</span>
+                                <span class="pdf-meta-val">{{ optional($form->created_at)->format('d/m/Y') ?? '—' }}</span>
                             </td>
                         </tr>
                         <tr>
                             <td>
-                                <span class="pdf-meta-icon">V</span>
-                                <span><span class="pdf-meta-strong">{{ $L['vessel_date'] }}:</span> <span class="pdf-meta-val">{{ optional($form->requested_vessel_date)->format('d/m/Y') ?? '—' }}</span></span>
+                                <span class="pdf-meta-label">{{ $L['vessel_date'] }}</span>
+                                <span class="pdf-meta-val">{{ optional($form->requested_vessel_date)->format('d/m/Y') ?? '—' }}</span>
                             </td>
                             <td dir="auto">
-                                <span class="pdf-meta-icon">C</span>
-                                <span><span class="pdf-meta-strong">{{ $L['client'] }}:</span> <span class="pdf-meta-val">{{ $form->client?->name ?? '—' }}</span></span>
+                                <span class="pdf-meta-label">{{ $L['client'] }}</span>
+                                <span class="pdf-meta-val">{{ $form->client?->name ?? '—' }}</span>
                             </td>
                         </tr>
                     </table>

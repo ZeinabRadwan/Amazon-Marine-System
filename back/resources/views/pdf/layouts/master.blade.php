@@ -14,10 +14,11 @@
 </head>
 <body class="pdf-root">
     <div class="pdf-container pdf-decor">
-        <div class="pdf-main">
+        @include('pdf.partials.wave_decor')
+        <div class="pdf-main pdf-main--layer">
             @yield('pdf_content')
         </div>
-        <div class="pdf-footer" role="contentinfo">
+        <div class="pdf-footer pdf-footer--layer" role="contentinfo">
             @hasSection('pdf_footer')
                 @yield('pdf_footer')
             @elseif(!empty($footerHtml))

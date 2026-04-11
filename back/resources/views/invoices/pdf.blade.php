@@ -18,13 +18,13 @@
                 </td>
                 <td class="pdf-invoice-meta">
                     <div class="pdf-invoice-doc-title">{{ $L['document_title'] }}</div>
-                    <div><span class="pdf-label-strong">{{ $L['no'] }}:</span> {{ $invoice->invoice_number }}</div>
-                    <div><span class="pdf-label-strong">{{ $L['date'] }}:</span> {{ $invoice->issue_date?->toDateString() }}</div>
+                    <div><span class="pdf-meta-label">{{ $L['no'] }}</span><br><span class="pdf-capsule pdf-capsule--accent">{{ $invoice->invoice_number }}</span></div>
+                    <div><span class="pdf-meta-label">{{ $L['date'] }}</span><br><span class="pdf-meta-val">{{ $invoice->issue_date?->toDateString() }}</span></div>
                     @if($invoice->due_date)
-                        <div><span class="pdf-label-strong">{{ $L['due_date'] }}:</span> {{ $invoice->due_date?->toDateString() }}</div>
+                        <div><span class="pdf-meta-label">{{ $L['due_date'] }}</span><br><span class="pdf-meta-val">{{ $invoice->due_date?->toDateString() }}</span></div>
                     @endif
                     @if($invoice->shipment)
-                        <div><span class="pdf-label-strong">{{ $L['shipment_bl'] }}:</span> {{ $invoice->shipment->bl_number }}</div>
+                        <div><span class="pdf-meta-label">{{ $L['shipment_bl'] }}</span><br><span class="pdf-meta-val">{{ $invoice->shipment->bl_number }}</span></div>
                     @endif
                 </td>
             </tr>

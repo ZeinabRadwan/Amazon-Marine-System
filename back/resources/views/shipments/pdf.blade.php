@@ -41,25 +41,25 @@
             </tr>
             <tr>
                 <td colspan="3">
-                    <table class="pdf-meta-panel" cellpadding="0" cellspacing="0">
+                    <table class="pdf-meta-panel" cellpadding="0" cellspacing="8" border="0">
                         <tr>
                             <td>
-                                <span class="pdf-meta-icon">#</span>
-                                <span><span class="pdf-meta-strong">{{ $L['id'] }}:</span> <span class="pdf-meta-val">#{{ $shipment->id }}</span></span>
+                                <span class="pdf-meta-label">{{ $L['id'] }}</span>
+                                <span class="pdf-capsule pdf-capsule--accent">#{{ $shipment->id }}</span>
                             </td>
                             <td>
-                                <span class="pdf-meta-icon">D</span>
-                                <span><span class="pdf-meta-strong">{{ $L['generated'] }}:</span> <span class="pdf-meta-val">{{ $genAt }}</span></span>
+                                <span class="pdf-meta-label">{{ $L['generated'] }}</span>
+                                <span class="pdf-meta-val">{{ $genAt }}</span>
                             </td>
                         </tr>
                         <tr>
                             <td dir="auto">
-                                <span class="pdf-meta-icon">C</span>
-                                <span><span class="pdf-meta-strong">{{ $L['client'] }}:</span> <span class="pdf-meta-val">{{ $shipment->client?->company_name ?? $shipment->client?->name ?? '—' }}</span></span>
+                                <span class="pdf-meta-label">{{ $L['client'] }}</span>
+                                <span class="pdf-meta-val">{{ $shipment->client?->company_name ?? $shipment->client?->name ?? '—' }}</span>
                             </td>
                             <td>
-                                <span class="pdf-meta-icon">S</span>
-                                <span><span class="pdf-meta-strong">{{ $L['status'] }}:</span> <span class="pdf-meta-val">{{ $shipment->status ?? '—' }}</span></span>
+                                <span class="pdf-meta-label">{{ $L['status'] }}</span>
+                                <span class="pdf-capsule pdf-capsule--accent">{{ $shipment->status ?? '—' }}</span>
                             </td>
                         </tr>
                     </table>
@@ -164,7 +164,7 @@
                 <th class="pdf-col-68">{{ $L['cargo'] }}</th>
             </tr>
             <tr>
-                <td class="pdf-label-strong">#{{ $shipment->id }}</td>
+                <td><span class="pdf-capsule pdf-capsule--accent">#{{ $shipment->id }}</span></td>
                 <td class="pdf-block-text">{!! $shipment->cargo_description ? nl2br(e($shipment->cargo_description)) : '—' !!}</td>
             </tr>
         </table>
