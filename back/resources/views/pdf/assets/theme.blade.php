@@ -134,13 +134,20 @@
     .pdf-header__brand-line {
         display: block;
         font-size: 14px;
-        font-weight: 800;
+        font-family: 'DejaVu Sans', sans-serif;
+        font-weight: bold;
         letter-spacing: 0.14em;
         color: #ec7f00;
         text-transform: uppercase;
         margin: 0 0 4px;
         padding: 0;
         max-width: 100%;
+    }
+
+    .pdf-header__brand-line strong {
+        font-weight: bold;
+        color: inherit;
+        letter-spacing: inherit;
     }
 
     .pdf-header__brand-tag {

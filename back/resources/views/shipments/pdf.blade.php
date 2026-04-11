@@ -77,7 +77,8 @@
         .brand-line {
             display: block;
             font-size: 15px;
-            font-weight: 800;
+            font-family: 'DejaVu Sans', sans-serif;
+            font-weight: bold;
             letter-spacing: 0.16em;
             color: #ec7f00;
             text-transform: uppercase;
@@ -85,6 +86,11 @@
             padding: 0;
             width: auto;
             max-width: 100%;
+        }
+        .brand-line strong {
+            font-weight: bold;
+            color: inherit;
+            letter-spacing: inherit;
         }
         .brand-tag {
             display: block;
@@ -237,6 +243,8 @@
         }
         .footer {
             margin-top: 12px;
+            padding: 10px 12px 12px;
+            background: #f1f5f9;
             border-top: 3px solid #ec7f00;
             font-size: 9px;
             color: #11354d;
@@ -253,41 +261,69 @@
         .footer strong { color: #11354d; }
         table.footer-contact-grid {
             width: 100%;
-            border-collapse: separate;
-            border-spacing: 4px 0;
             table-layout: fixed;
+            border-collapse: collapse;
             margin: 0;
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
         }
-        table.footer-contact-grid > tbody > tr > td {
+        table.footer-contact-grid > tbody > tr > td.footer-contact-grid__cell {
             width: 25%;
             vertical-align: top;
             text-align: center;
-            padding: 4px 2px 0;
+            padding: 8px 5px 10px;
             border: none;
+            border-left: 1px solid #e2e8f0;
+        }
+        table.footer-contact-grid > tbody > tr > td.footer-contact-grid__cell--first {
+            border-left: none;
+        }
+        table.footer-cc-col {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0 auto;
+        }
+        table.footer-cc-col td {
+            border: none;
+            padding: 0;
+            text-align: center;
+            vertical-align: top;
+        }
+        td.footer-cc-ico-wrap {
+            padding-bottom: 6px !important;
         }
         table.footer-cc-icon {
-            width: 56px;
-            height: 56px;
-            margin: 0 auto 6px;
+            width: 52px;
+            height: 52px;
+            margin: 0 auto;
             border-collapse: collapse;
         }
         table.footer-cc-icon > tbody > tr > td {
-            width: 56px;
-            height: 56px;
+            width: 52px;
+            height: 52px;
             padding: 0;
             text-align: center;
             vertical-align: middle;
             background: #ffffff;
             border: 1px solid #e2e8f0;
-            border-radius: 28px;
+            border-radius: 26px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
         }
-        .footer-cc-text {
-            font-size: 8.5px;
+        .footer-cc-lbl {
+            font-size: 7.5px;
+            font-weight: 700;
+            color: #11354d;
+            line-height: 1.4;
+            padding: 2px 0 1px;
+            text-transform: none;
+        }
+        .footer-cc-val {
+            font-size: 8px;
             font-weight: 600;
             color: #11354d;
             line-height: 1.35;
             word-wrap: break-word;
+            padding-top: 1px;
         }
         .shipment-pdf-footer-banner {
             width: 100%;
@@ -379,7 +415,7 @@
                                             </td>
                                             <td style="border:none;vertical-align:middle;padding-left:10px;padding-right:12px;">
                                                 <div class="brand-stack">
-                                                    <span class="brand-line">AMAZON MARINE</span>
+                                                    <span class="brand-line"><strong>AMAZON MARINE</strong></span>
                                                     <span class="brand-tag">Shipping and Logistics Solutions</span>
                                                 </div>
                                             </td>
@@ -545,45 +581,73 @@
                 <p class="footer-h">Contact Information</p>
                 <table class="footer-contact-grid" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
                     <tr>
-                        <td>
-                            <table class="footer-cc-icon" cellspacing="0" cellpadding="0" border="0" align="center">
+                        <td class="footer-contact-grid__cell footer-contact-grid__cell--first" width="25%" style="width:25%;">
+                            <table class="footer-cc-col" width="100%" cellspacing="0" cellpadding="0" border="0">
                                 <tr>
-                                    <td>
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="#f58220" d="M20 15.5c-1.25 0-2.45-.2-3.57-.57-.35-.11-.74 0-1.02.24l-2.2 2.2c-2.83-1.44-5.15-3.75-6.59-6.59l2.2-2.2c.27-.27.35-.66.24-1.02A17.32 17.32 0 0 1 4.5 3 2 2 0 0 0 2.5 5v3a19.79 19.79 0 0 0 3.07 8.63 19.51 19.51 0 0 0 6 6 19.79 19.79 0 0 0 8.63 3.07 2 2 0 0 0 2-2v-1.5c0-1.1-.9-2-2-2z"/></svg>
+                                    <td class="footer-cc-ico-wrap">
+                                        <table class="footer-cc-icon" cellspacing="0" cellpadding="0" border="0" align="center">
+                                            <tr>
+                                                <td>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#f58220" d="M20 15.5c-1.25 0-2.45-.2-3.57-.57-.35-.11-.74 0-1.02.24l-2.2 2.2c-2.83-1.44-5.15-3.75-6.59-6.59l2.2-2.2c.27-.27.35-.66.24-1.02A17.32 17.32 0 0 1 4.5 3 2 2 0 0 0 2.5 5v3a19.79 19.79 0 0 0 3.07 8.63 19.51 19.51 0 0 0 6 6 19.79 19.79 0 0 0 8.63 3.07 2 2 0 0 0 2-2v-1.5c0-1.1-.9-2-2-2z"/></svg>
+                                                </td>
+                                            </tr>
+                                        </table>
                                     </td>
                                 </tr>
+                                <tr><td class="footer-cc-lbl">Phone:</td></tr>
+                                <tr><td class="footer-cc-val">01200744888</td></tr>
                             </table>
-                            <div class="footer-cc-text">01200744888</div>
                         </td>
-                        <td>
-                            <table class="footer-cc-icon" cellspacing="0" cellpadding="0" border="0" align="center">
+                        <td class="footer-contact-grid__cell" width="25%" style="width:25%;">
+                            <table class="footer-cc-col" width="100%" cellspacing="0" cellpadding="0" border="0">
                                 <tr>
-                                    <td>
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="#f58220" d="M4 4h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2zm8 7.55L4.06 6h15.88L12 11.55zM20 18V8.44l-8 5.06-8-5.06V18h16z"/></svg>
+                                    <td class="footer-cc-ico-wrap">
+                                        <table class="footer-cc-icon" cellspacing="0" cellpadding="0" border="0" align="center">
+                                            <tr>
+                                                <td>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#f58220" d="M4 4h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2zm8 7.55L4.06 6h15.88L12 11.55zM20 18V8.44l-8 5.06-8-5.06V18h16z"/></svg>
+                                                </td>
+                                            </tr>
+                                        </table>
                                     </td>
                                 </tr>
+                                <tr><td class="footer-cc-lbl">Email:</td></tr>
+                                <tr><td class="footer-cc-val">mabdrabboh@amazonmarine.ltd</td></tr>
                             </table>
-                            <div class="footer-cc-text">mabdrabboh@amazonmarine.ltd</div>
                         </td>
-                        <td>
-                            <table class="footer-cc-icon" cellspacing="0" cellpadding="0" border="0" align="center">
+                        <td class="footer-contact-grid__cell" width="25%" style="width:25%;">
+                            <table class="footer-cc-col" width="100%" cellspacing="0" cellpadding="0" border="0">
                                 <tr>
-                                    <td>
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="#f58220" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                                    <td class="footer-cc-ico-wrap">
+                                        <table class="footer-cc-icon" cellspacing="0" cellpadding="0" border="0" align="center">
+                                            <tr>
+                                                <td>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#f58220" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                                                </td>
+                                            </tr>
+                                        </table>
                                     </td>
                                 </tr>
+                                <tr><td class="footer-cc-lbl">Address:</td></tr>
+                                <tr><td class="footer-cc-val">Villa 129, 2nd District New Cairo, Egypt</td></tr>
                             </table>
-                            <div class="footer-cc-text">Villa 129, 2nd District New Cairo, Egypt</div>
                         </td>
-                        <td>
-                            <table class="footer-cc-icon" cellspacing="0" cellpadding="0" border="0" align="center">
+                        <td class="footer-contact-grid__cell" width="25%" style="width:25%;">
+                            <table class="footer-cc-col" width="100%" cellspacing="0" cellpadding="0" border="0">
                                 <tr>
-                                    <td>
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="#f58220" d="M3.9 12A3.1 3.1 0 017 8.9h3V7H7a5 5 0 100 10h3v-1.9H7A3.1 3.1 0 013.9 12zM8 11h8v2H8v-2zm9-5h-3v1.9h3a3.1 3.1 0 010 6.2h-3V17h3a5 5 0 000-10z"/></svg>
+                                    <td class="footer-cc-ico-wrap">
+                                        <table class="footer-cc-icon" cellspacing="0" cellpadding="0" border="0" align="center">
+                                            <tr>
+                                                <td>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#f58220" d="M3.9 12A3.1 3.1 0 017 8.9h3V7H7a5 5 0 100 10h3v-1.9H7A3.1 3.1 0 013.9 12zM8 11h8v2H8v-2zm9-5h-3v1.9h3a3.1 3.1 0 010 6.2h-3V17h3a5 5 0 000-10z"/></svg>
+                                                </td>
+                                            </tr>
+                                        </table>
                                     </td>
                                 </tr>
+                                <tr><td class="footer-cc-lbl">Website:</td></tr>
+                                <tr><td class="footer-cc-val">www.amazonmarine.ltd</td></tr>
                             </table>
-                            <div class="footer-cc-text">www.amazonmarine.ltd</div>
                         </td>
                     </tr>
                 </table>

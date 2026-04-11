@@ -191,7 +191,8 @@
     .pdf-root--preview .pdf-header-brand-name {
         display: block;
         font-size: 15px;
-        font-weight: 800;
+        font-family: 'DejaVu Sans', sans-serif;
+        font-weight: bold;
         color: #ec7f00;
         letter-spacing: 0.16em;
         text-transform: uppercase;
@@ -199,6 +200,12 @@
         margin: 0 0 4px;
         padding: 0;
         max-width: 100%;
+    }
+
+    .pdf-root--preview .pdf-header-brand-name strong {
+        font-weight: bold;
+        color: inherit;
+        letter-spacing: inherit;
     }
 
     .pdf-root--preview .pdf-header-tagline {
@@ -921,7 +928,7 @@
                             </td>
                             <td class="pdf-header-brand-text-cell" valign="middle">
                                 @if(!empty($brand))
-                                    <div class="pdf-header-brand-name">{{ $brand }}</div>
+                                    <div class="pdf-header-brand-name"><strong>{{ $brand }}</strong></div>
                                 @endif
                                 <div class="pdf-header-tagline">{{ $tagline }}</div>
                             </td>
@@ -1103,7 +1110,7 @@
                             </td>
                             <td class="pdf-header-brand-text-cell" valign="middle">
                                 @if(!empty($brand))
-                                    <div class="pdf-header-brand-name">{{ $brand }}</div>
+                                    <div class="pdf-header-brand-name"><strong>{{ $brand }}</strong></div>
                                 @endif
                                 <div class="pdf-header-tagline">{{ $tagline }}</div>
                             </td>
@@ -1303,7 +1310,7 @@
                             </td>
                             <td class="pdf-header-brand-text-cell" valign="middle">
                                 @if(!empty($brand))
-                                    <div class="pdf-header-brand-name">{{ $brand }}</div>
+                                    <div class="pdf-header-brand-name"><strong>{{ $brand }}</strong></div>
                                 @endif
                                 <div class="pdf-header-tagline">{{ $tagline }}</div>
                             </td>

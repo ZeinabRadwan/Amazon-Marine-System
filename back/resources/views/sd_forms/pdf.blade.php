@@ -66,7 +66,7 @@
                     </td>
                     <td class="pdf-header__brand-cell">
                         <div class="pdf-header__brand-stack">
-                            <div class="pdf-header__brand-line">{{ $labels['brand'] }}</div>
+                            <div class="pdf-header__brand-line"><strong>{{ $labels['brand'] }}</strong></div>
                             <div class="pdf-header__brand-tag">{{ $labels['brand_tag'] }}</div>
                         </div>
                     </td>
