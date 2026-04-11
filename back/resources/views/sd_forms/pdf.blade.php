@@ -191,15 +191,93 @@
         </div>
     </div>
 
-    <footer class="pdf-footer">
+    <footer class="pdf-footer @if(empty($footerHtml)) pdf-footer--contact @endif">
         @if(!empty($footerHtml))
             {!! $footerHtml !!}
         @else
             <p class="pdf-footer__title">{{ $labels['footer_contact'] }}</p>
-            <p><strong>{{ $labels['phone'] }}:</strong> 01200744888</p>
-            <p><strong>{{ $labels['email'] }}:</strong> mabdrabboh@amazonmarine.ltd</p>
-            <p><strong>{{ $labels['address'] }}:</strong> Villa 129, 2nd District New Cairo, Egypt</p>
-            <p><strong>{{ $labels['website'] }}:</strong> www.amazonmarine.ltd</p>
+            <table class="footer-contact-grid" width="100%" cellspacing="0" cellpadding="0" border="0" dir="ltr" role="presentation">
+                <colgroup>
+                    <col width="25%" />
+                    <col width="25%" />
+                    <col width="25%" />
+                    <col width="25%" />
+                </colgroup>
+                <tr>
+                    <td class="footer-contact-grid__cell footer-contact-grid__cell--first" width="25%" style="width:25%;">
+                        <table class="footer-cc-col" width="100%" cellspacing="0" cellpadding="0" border="0">
+                            <tr>
+                                <td class="footer-cc-ico-wrap">
+                                    <table class="footer-cc-icon" cellspacing="0" cellpadding="0" border="0" align="center">
+                                        <tr>
+                                            <td>
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#f58220" d="M20 15.5c-1.25 0-2.45-.2-3.57-.57-.35-.11-.74 0-1.02.24l-2.2 2.2c-2.83-1.44-5.15-3.75-6.59-6.59l2.2-2.2c.27-.27.35-.66.24-1.02A17.32 17.32 0 0 1 4.5 3 2 2 0 0 0 2.5 5v3a19.79 19.79 0 0 0 3.07 8.63 19.51 19.51 0 0 0 6 6 19.79 19.79 0 0 0 8.63 3.07 2 2 0 0 0 2-2v-1.5c0-1.1-.9-2-2-2z"/></svg>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="footer-cc-line"><strong>{{ $labels['phone'] }}:</strong> 01200744888</td>
+                            </tr>
+                        </table>
+                    </td>
+                    <td class="footer-contact-grid__cell" width="25%" style="width:25%;">
+                        <table class="footer-cc-col" width="100%" cellspacing="0" cellpadding="0" border="0">
+                            <tr>
+                                <td class="footer-cc-ico-wrap">
+                                    <table class="footer-cc-icon" cellspacing="0" cellpadding="0" border="0" align="center">
+                                        <tr>
+                                            <td>
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#f58220" d="M4 4h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2zm8 7.55L4.06 6h15.88L12 11.55zM20 18V8.44l-8 5.06-8-5.06V18h16z"/></svg>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="footer-cc-line"><strong>{{ $labels['email'] }}:</strong> mabdrabboh@amazonmarine.ltd</td>
+                            </tr>
+                        </table>
+                    </td>
+                    <td class="footer-contact-grid__cell" width="25%" style="width:25%;">
+                        <table class="footer-cc-col" width="100%" cellspacing="0" cellpadding="0" border="0">
+                            <tr>
+                                <td class="footer-cc-ico-wrap">
+                                    <table class="footer-cc-icon" cellspacing="0" cellpadding="0" border="0" align="center">
+                                        <tr>
+                                            <td>
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#f58220" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="footer-cc-line"><strong>{{ $labels['address'] }}:</strong> Villa 129, 2nd District New Cairo, Egypt</td>
+                            </tr>
+                        </table>
+                    </td>
+                    <td class="footer-contact-grid__cell" width="25%" style="width:25%;">
+                        <table class="footer-cc-col" width="100%" cellspacing="0" cellpadding="0" border="0">
+                            <tr>
+                                <td class="footer-cc-ico-wrap">
+                                    <table class="footer-cc-icon" cellspacing="0" cellpadding="0" border="0" align="center">
+                                        <tr>
+                                            <td>
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#f58220" d="M3.9 12A3.1 3.1 0 017 8.9h3V7H7a5 5 0 100 10h3v-1.9H7A3.1 3.1 0 013.9 12zM8 11h8v2H8v-2zm9-5h-3v1.9h3a3.1 3.1 0 010 6.2h-3V17h3a5 5 0 000-10z"/></svg>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="footer-cc-line"><strong>{{ $labels['website'] }}:</strong> www.amazonmarine.ltd</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
         @endif
     </footer>
 @endsection

@@ -432,6 +432,105 @@
         color: #333333;
     }
 
+    /* SD (and similar) contact footer: matches shipment PDF — no panel bg, 4-col icon grid */
+    .pdf-footer--contact {
+        margin-top: 14px;
+        padding: 0;
+        background: transparent;
+        border: none;
+        border-radius: 0;
+        font-size: 9px;
+        color: #11354d;
+    }
+
+    .pdf-footer--contact .pdf-footer__title {
+        font-weight: 700;
+        color: #11354d;
+        margin: 0 0 6px;
+        font-size: 9.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        border-bottom: 2px solid #ec7f00;
+        padding-bottom: 4px;
+    }
+
+    .pdf-footer--contact strong {
+        color: #11354d;
+    }
+
+    table.footer-contact-grid {
+        width: 100%;
+        table-layout: fixed;
+        border-collapse: collapse;
+        margin: 0;
+        border: none;
+        background: transparent;
+    }
+
+    table.footer-contact-grid > tbody > tr > td.footer-contact-grid__cell {
+        width: 25%;
+        vertical-align: top;
+        text-align: center;
+        padding: 4px 3px 0;
+        border: none;
+        border-left: 1px solid #e2e8f0;
+    }
+
+    table.footer-contact-grid > tbody > tr > td.footer-contact-grid__cell--first {
+        border-left: none;
+    }
+
+    table.footer-cc-col {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0 auto;
+    }
+
+    table.footer-cc-col td {
+        border: none;
+        padding: 0;
+        text-align: center;
+        vertical-align: top;
+    }
+
+    td.footer-cc-ico-wrap {
+        padding-bottom: 6px !important;
+    }
+
+    table.footer-cc-icon {
+        width: 52px;
+        height: 52px;
+        margin: 0 auto;
+        border-collapse: collapse;
+    }
+
+    table.footer-cc-icon > tbody > tr > td {
+        width: 52px;
+        height: 52px;
+        padding: 0;
+        text-align: center;
+        vertical-align: middle;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 26px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    .footer-cc-line {
+        font-size: 8px;
+        font-weight: 600;
+        color: #11354d;
+        line-height: 1.4;
+        word-wrap: break-word;
+        text-align: center;
+        padding-top: 2px;
+    }
+
+    .footer-cc-line strong {
+        font-weight: 700;
+        color: #11354d;
+    }
+
     /* Renders after .pdf-container (stack): true page-width footer graphic for mPDF */
     .pdf-footer-fullbleed {
         width: 100%;
