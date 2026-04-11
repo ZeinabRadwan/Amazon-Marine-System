@@ -619,8 +619,8 @@ class ShipmentController extends Controller
             'shipment' => $shipment,
             'labels' => $labels,
             'notesColumn' => is_string($notesColumn) ? $notesColumn : null,
-            'headerHtml' => $layout?->header_html,
-            'footerHtml' => $layout?->footer_html,
+            'headerHtml' => PdfDocumentTheme::sanitizeHtmlForMpdf($layout?->header_html),
+            'footerHtml' => PdfDocumentTheme::sanitizeHtmlForMpdf($layout?->footer_html),
         ]))->render();
 
         $mpdf = new Mpdf(PdfDocumentTheme::mpdfConfig());

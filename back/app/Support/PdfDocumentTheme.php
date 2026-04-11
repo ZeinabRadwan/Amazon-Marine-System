@@ -53,6 +53,29 @@ final class PdfDocumentTheme
     }
 
     /**
+     * Strip CSS var() from admin-provided HTML fragments. mPDF fails on var() in borders (e.g. _setBorderLine).
+     * Uses fallback color inside var(--name, #hex) when present; otherwise #999999.
+     */
+    public static function sanitizeHtmlForMpdf(?string $html): string
+    {
+        if ($html === null || $html === '') {
+            return '';
+        }
+
+        $out = (string) preg_replace_callback(
+            '/var\s*\(\s*--[\w-]+(?:\s*,\s*([^)]+))?\)/i',
+            static function (array $m): string {
+                $fallback = isset($m[1]) ? trim((string) $m[1]) : '';
+
+                return $fallback !== '' ? $fallback : '#999999';
+            },
+            $html
+        );
+
+        return $out;
+    }
+
+    /**
      * @return array<string, string>
      */
     public static function sdFormPdfLabels(string $locale): array

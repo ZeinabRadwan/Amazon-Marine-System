@@ -33,7 +33,7 @@
                                     @if($logoSrc)
                                         <img src="{{ $logoSrc }}" alt="" style="height:48px;width:auto;max-width:88px;display:block;">
                                     @else
-                                        <div style="width:72px;height:40px;background:#fff;border:1px solid var(--pdf-accent);text-align:center;line-height:40px;font-size:8px;color:var(--pdf-brand);">LOGO</div>
+                                        <div style="width:72px;height:40px;background:#fff;border:1px solid #f97316;text-align:center;line-height:40px;font-size:8px;color:#1f2a60;">LOGO</div>
                                     @endif
                                 </td>
                                 <td class="header-brand-cell">
@@ -78,7 +78,7 @@
 
         <div class="body-pad">
             <div class="sec">
-                <p class="sec-h">{{ $labels['sec_shipment'] }}</p>
+                <div class="sec-h">{{ $labels['sec_shipment'] }}</div>
                 <table class="grid">
                     <tr>
                         <th style="width:33.33%;">{{ $labels['sales_rep'] }}</th>
@@ -94,7 +94,7 @@
             </div>
 
             <div class="sec">
-                <p class="sec-h">{{ $labels['sec_booking'] }}</p>
+                <div class="sec-h">{{ $labels['sec_booking'] }}</div>
                 <table class="grid">
                     <tr>
                         <th style="width:33.33%;">{{ $labels['booking_date'] }}</th>
@@ -110,7 +110,7 @@
             </div>
 
             <div class="sec">
-                <p class="sec-h">{{ $labels['sec_shipping'] }}</p>
+                <div class="sec-h">{{ $labels['sec_shipping'] }}</div>
                 <table class="grid">
                     <tr>
                         <th style="width:20%;">{{ $labels['mode'] }}</th>
@@ -133,7 +133,7 @@
                     </tr>
                     @endif
                 </table>
-                <table class="grid" style="margin-top:-1px;">
+                <table class="grid">
                     <tr>
                         <th style="width:25%;">{{ $labels['container_type'] }}</th>
                         <th style="width:25%;">{{ $labels['container_size'] }}</th>
@@ -150,7 +150,7 @@
             </div>
 
             <div class="sec">
-                <p class="sec-h">{{ $labels['sec_ports'] }}</p>
+                <div class="sec-h">{{ $labels['sec_ports'] }}</div>
                 <table class="grid">
                     <tr>
                         <th style="width:33.33%;">{{ $labels['pol'] }}</th>
@@ -166,7 +166,7 @@
             </div>
 
             <div class="sec">
-                <p class="sec-h">{{ $labels['sec_goods'] }}</p>
+                <div class="sec-h">{{ $labels['sec_goods'] }}</div>
                 <table class="grid">
                     <tr>
                         <th style="width:22%;">{{ $labels['id'] }}</th>

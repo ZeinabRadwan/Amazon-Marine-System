@@ -10,7 +10,7 @@
     body.pdf-invoice {
         font-family: 'DejaVu Sans', 'Amiri', Helvetica, Arial, sans-serif;
         font-size: 10.5px;
-        color: var(--pdf-invoice-charcoal, #333333);
+        color: #333333;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }
@@ -19,7 +19,7 @@
         position: relative;
         max-width: 100%;
         padding: 8px 4px 28px;
-        background: var(--pdf-white);
+        background: #ffffff;
     }
 
     .pdf-invoice .inv-deco-table {
@@ -57,8 +57,8 @@
         line-height: 46px;
         text-align: center;
         border-radius: 50%;
-        background: var(--pdf-invoice-orange, #ff8c00);
-        color: var(--pdf-white);
+        background: #ff8c00;
+        color: #ffffff;
         font-size: 15px;
         font-weight: 700;
         letter-spacing: -0.02em;
@@ -69,7 +69,7 @@
     .pdf-invoice .inv-co-name {
         font-size: 16px;
         font-weight: 700;
-        color: var(--pdf-invoice-charcoal, #333);
+        color: #333333;
         letter-spacing: 0.04em;
     }
     .pdf-invoice .inv-co-tag {
@@ -87,7 +87,7 @@
         display: block;
     }
     .pdf-invoice .inv-contact-strip .inv-ci-dot {
-        color: var(--pdf-invoice-orange, #ff8c00);
+        color: #ff8c00;
         font-weight: 700;
         margin-right: 4px;
     }
@@ -99,7 +99,7 @@
     .pdf-invoice .inv-title-main {
         font-size: 28px;
         font-weight: 800;
-        color: var(--pdf-invoice-charcoal, #222);
+        color: #222222;
         letter-spacing: 0.12em;
         line-height: 1.1;
         margin: 0 0 10px;
@@ -110,7 +110,7 @@
         margin: 3px 0;
     }
     .pdf-invoice .inv-meta-line strong {
-        color: var(--pdf-invoice-charcoal, #333);
+        color: #333333;
         font-weight: 700;
     }
 
@@ -118,14 +118,14 @@
         width: 100%;
         border-collapse: collapse;
         margin: 0 0 20px;
-        background: var(--pdf-invoice-orange, #ff8c00);
+        background: #ff8c00;
         border-radius: 10px;
         overflow: hidden;
     }
     .pdf-invoice .inv-bill-panel td {
         padding: 16px 18px;
         border: none;
-        color: var(--pdf-white);
+        color: #ffffff;
         vertical-align: top;
     }
     .pdf-invoice .inv-bill-label {
@@ -154,8 +154,8 @@
         margin: 0 0 22px;
     }
     .pdf-invoice .inv-items thead th {
-        background: var(--pdf-invoice-orange, #ff8c00);
-        color: var(--pdf-white);
+        background: #ff8c00;
+        color: #ffffff;
         text-align: left;
         padding: 11px 10px;
         font-size: 9px;
@@ -169,10 +169,10 @@
         border-bottom: 1px solid #e8e8e8;
         vertical-align: top;
         font-size: 10px;
-        color: var(--pdf-invoice-charcoal, #333);
+        color: #333333;
     }
     .pdf-invoice .inv-items tbody tr.inv-row-alt td {
-        background: var(--pdf-invoice-stripe, #f2f2f2);
+        background: #f2f2f2;
     }
     .pdf-invoice .inv-items .inv-num { text-align: right; white-space: nowrap; }
     .pdf-invoice .inv-item-sub {
@@ -218,7 +218,7 @@
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 0.08em;
-        color: var(--pdf-invoice-orange, #ff8c00);
+        color: #ff8c00;
     }
     .pdf-invoice .inv-side-card p {
         margin: 0 0 12px;
@@ -229,7 +229,7 @@
     .pdf-invoice .inv-side-card p:last-child { margin-bottom: 0; }
 
     .pdf-invoice .inv-totals-wrap {
-        background: var(--pdf-white);
+        background: #ffffff;
         border: 1px solid #eee;
         border-radius: 10px;
         padding: 12px 14px 14px;
@@ -248,12 +248,12 @@
     .pdf-invoice .inv-totals-mini .inv-num {
         text-align: right;
         font-weight: 600;
-        color: var(--pdf-invoice-charcoal, #333);
+        color: #333333;
     }
 
     .pdf-invoice .inv-grand-box {
-        background: var(--pdf-invoice-orange, #ff8c00);
-        color: var(--pdf-white);
+        background: #ff8c00;
+        color: #ffffff;
         border-radius: 12px;
         padding: 14px 16px;
         text-align: center;

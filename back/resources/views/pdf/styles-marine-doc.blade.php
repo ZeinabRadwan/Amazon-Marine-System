@@ -1,10 +1,10 @@
-{{-- Amazon Marine shipment / SD form layout; pair with pdf/theme-styles.blade.php --}}
+{{-- Shipment / SD form layout. Use hex literals only: mPDF does not resolve CSS var() in borders (crashes in _setBorderLine). --}}
 <style>
     .wrap { padding: 0; }
     table.header-band {
         width: 100%;
         border-collapse: collapse;
-        background: var(--pdf-brand);
+        background: #1f2a60;
         margin: 0 0 14px;
     }
     table.header-band > tbody > tr > td {
@@ -27,11 +27,11 @@
         font-size: 13px;
         font-weight: 700;
         letter-spacing: 0.1em;
-        color: var(--pdf-white);
+        color: #ffffff;
         line-height: 1.35;
     }
     .brand-sep {
-        color: var(--pdf-accent);
+        color: #f97316;
         font-weight: 400;
         padding: 0 0.35em;
     }
@@ -39,12 +39,12 @@
         font-size: 10px;
         font-weight: 400;
         letter-spacing: 0.02em;
-        color: var(--pdf-white);
+        color: #ffffff;
     }
     .doc-title {
         font-size: 12px;
         font-weight: 700;
-        color: var(--pdf-white);
+        color: #ffffff;
         letter-spacing: 0.03em;
         text-align: right;
         line-height: 1.3;
@@ -57,8 +57,8 @@
     table.meta-panel {
         width: 100%;
         border-collapse: collapse;
-        background: var(--pdf-brand-soft);
-        border: 1px solid var(--pdf-accent);
+        background: #243056;
+        border: 1px solid #f97316;
     }
     table.meta-panel td {
         border: none;
@@ -66,13 +66,13 @@
         vertical-align: top;
         width: 50%;
         font-size: 10px;
-        color: var(--pdf-white);
+        color: #ffffff;
     }
     table.meta-panel tr + tr td {
-        border-top: 1px solid var(--pdf-meta-divider);
+        border-top: 1px solid #364785;
     }
     table.meta-panel td + td {
-        border-left: 1px solid var(--pdf-meta-divider);
+        border-left: 1px solid #364785;
     }
     .meta-icon {
         display: inline-block;
@@ -80,15 +80,15 @@
         height: 16px;
         line-height: 16px;
         text-align: center;
-        background: var(--pdf-accent);
-        color: var(--pdf-white);
+        background: #f97316;
+        color: #ffffff;
         font-size: 8px;
         font-weight: 700;
         margin-right: 8px;
         vertical-align: middle;
     }
     .meta-item strong {
-        color: var(--pdf-white);
+        color: #ffffff;
         font-weight: 600;
     }
     .meta-val {
@@ -105,11 +105,11 @@
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.1em;
-        color: var(--pdf-white);
-        background: var(--pdf-accent);
-        margin: 0 0 0;
+        color: #ffffff;
+        background: #f97316;
+        margin: 0;
         padding: 6px 10px;
-        border-left: 4px solid var(--pdf-brand);
+        border-left: 4px solid #1f2a60;
     }
     table.grid {
         width: 100%;
@@ -118,63 +118,64 @@
     }
     table.grid th,
     table.grid td {
-        border: 1px solid var(--pdf-grid-border);
+        border: 1px solid #1f2a60;
         padding: 6px 8px;
         vertical-align: top;
     }
     table.grid th {
-        background: var(--pdf-white);
+        background: #ffffff;
         font-size: 9px;
         font-weight: 700;
-        color: var(--pdf-brand);
+        color: #1f2a60;
         text-align: left;
     }
     table.grid td {
         font-size: 10px;
-        color: var(--pdf-text);
-        background: var(--pdf-surface);
+        color: #0f172a;
+        background: #eef1f6;
     }
     .lbl {
-        color: var(--pdf-brand);
+        color: #1f2a60;
         font-weight: 600;
     }
     .cell-muted {
-        color: var(--pdf-muted);
+        color: #94a3b8;
     }
     .block-text {
         white-space: pre-wrap;
         word-wrap: break-word;
     }
     .notes {
-        border: 1px solid var(--pdf-grid-border);
-        border-top: none;
-        background: var(--pdf-surface);
+        border-left: 1px solid #1f2a60;
+        border-right: 1px solid #1f2a60;
+        border-bottom: 1px solid #1f2a60;
+        background: #eef1f6;
         padding: 8px 10px;
         margin-top: 0;
         font-size: 10px;
         line-height: 1.5;
-        color: var(--pdf-text);
+        color: #0f172a;
     }
     .footer {
         margin-top: 12px;
         padding: 10px 14px;
-        background: var(--pdf-surface-alt);
-        border-top: 3px solid var(--pdf-accent);
+        background: #f1f5f9;
+        border-top: 3px solid #f97316;
         font-size: 9px;
         color: #475569;
     }
     .footer-h {
         font-weight: 700;
-        color: var(--pdf-brand);
+        color: #1f2a60;
         margin: 0 0 5px;
         font-size: 9.5px;
         text-transform: uppercase;
         letter-spacing: 0.06em;
     }
     .footer p { margin: 2px 0; }
-    .footer strong { color: var(--pdf-text); }
+    .footer strong { color: #0f172a; }
     .sd-notify-same {
-        color: var(--pdf-brand);
+        color: #1f2a60;
         font-style: italic;
     }
 
@@ -206,11 +207,11 @@
     }
     html[dir="rtl"] table.meta-panel td + td {
         border-left: none;
-        border-right: 1px solid var(--pdf-meta-divider);
+        border-right: 1px solid #364785;
     }
     html[dir="rtl"] .sec-h {
         border-left: none;
-        border-right: 4px solid var(--pdf-brand);
+        border-right: 4px solid #1f2a60;
     }
     html[dir="rtl"] table.grid th,
     html[dir="rtl"] table.grid td {

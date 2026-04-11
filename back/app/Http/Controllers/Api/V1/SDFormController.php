@@ -490,8 +490,8 @@ class SDFormController extends Controller
         $html = view('sd_forms.pdf', array_merge(PdfDocumentTheme::bladeVars($request), [
             'form' => $sdForm,
             'labels' => PdfDocumentTheme::sdFormPdfLabels($locale),
-            'headerHtml' => $layout?->header_html,
-            'footerHtml' => $layout?->footer_html,
+            'headerHtml' => PdfDocumentTheme::sanitizeHtmlForMpdf($layout?->header_html),
+            'footerHtml' => PdfDocumentTheme::sanitizeHtmlForMpdf($layout?->footer_html),
         ]))->render();
 
         $mpdf = new Mpdf(PdfDocumentTheme::mpdfConfig());

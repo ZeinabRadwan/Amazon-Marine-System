@@ -71,7 +71,7 @@
                                     @if($logoSrc)
                                         <img src="{{ $logoSrc }}" alt="" style="height:48px;width:auto;max-width:88px;display:block;">
                                     @else
-                                        <div style="width:72px;height:40px;background:#fff;border:1px solid var(--pdf-accent);text-align:center;line-height:40px;font-size:8px;color:var(--pdf-brand);">LOGO</div>
+                                        <div style="width:72px;height:40px;background:#fff;border:1px solid #f97316;text-align:center;line-height:40px;font-size:8px;color:#1f2a60;">LOGO</div>
                                     @endif
                                 </td>
                                 <td class="header-brand-cell">
@@ -115,7 +115,7 @@
 
         <div class="body-pad">
         <div class="sec">
-            <p class="sec-h">{{ $labels['sec_shipment_info'] }}</p>
+            <div class="sec-h">{{ $labels['sec_shipment_info'] }}</div>
             <table class="grid">
                 <tr>
                     <th style="width:33.33%;">{{ $labels['pol'] }}</th>
@@ -151,7 +151,7 @@
         </div>
 
         <div class="sec">
-            <p class="sec-h">{{ $labels['sec_shipping'] }}</p>
+            <div class="sec-h">{{ $labels['sec_shipping'] }}</div>
             <table class="grid">
                 <tr>
                     <th style="width:25%;">{{ $labels['swb_type'] }}</th>
@@ -164,7 +164,7 @@
                     <td>{{ $labels['clean_on_board'] }}</td>
                 </tr>
             </table>
-            <table class="grid" style="margin-top:-1px;">
+            <table class="grid">
                 <tr>
                     <th style="width:25%;">{{ $labels['vessel_container'] }}</th>
                     <th style="width:25%;">{{ $labels['container_type'] }}</th>
@@ -185,7 +185,7 @@
         </div>
 
         <div class="sec">
-            <p class="sec-h">{{ $labels['sec_goods'] }}</p>
+            <div class="sec-h">{{ $labels['sec_goods'] }}</div>
             <table class="grid">
                 <tr>
                     <th style="width:32%;">{{ $labels['marks_numbers'] }}</th>

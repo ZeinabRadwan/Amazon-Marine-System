@@ -504,8 +504,8 @@ class InvoiceController extends Controller
         $html = view('invoices.pdf', array_merge(PdfDocumentTheme::bladeVars($request), [
             'invoice' => $invoice,
             'labels' => PdfDocumentTheme::invoicePdfLabels($locale),
-            'headerHtml' => $layout?->header_html,
-            'footerHtml' => $layout?->footer_html,
+            'headerHtml' => PdfDocumentTheme::sanitizeHtmlForMpdf($layout?->header_html),
+            'footerHtml' => PdfDocumentTheme::sanitizeHtmlForMpdf($layout?->footer_html),
         ]))->render();
 
         $mpdf = new Mpdf(PdfDocumentTheme::mpdfConfig());
