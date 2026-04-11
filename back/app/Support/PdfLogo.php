@@ -25,7 +25,7 @@ final class PdfLogo
 
     public static function headerPath(): string
     {
-        return public_path('images/header.jpg');
+        return public_path('images/header.png');
     }
 
     /**

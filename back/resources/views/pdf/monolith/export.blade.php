@@ -795,7 +795,6 @@
         position: relative;
         z-index: 1;
         width: 100%;
-        margin: 0 0 16px;
         padding: 0;
         line-height: 0;
         overflow: hidden;
