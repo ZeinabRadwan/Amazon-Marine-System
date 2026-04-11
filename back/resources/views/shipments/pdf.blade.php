@@ -17,168 +17,123 @@
             background: #ffffff;
         }
         .wrap { padding: 0; }
-        table.header-shell {
+        /* Same header layout as SD form PDF (pdf/assets/theme + sd_forms/pdf) */
+        .pdf-header {
             width: 100%;
-            border-collapse: collapse;
-            margin: 0 0 16px;
-            border: 1px solid #e2e8f0;
+            margin-bottom: 14px;
+            border-bottom: 3px solid #ec7f00;
+            padding-bottom: 10px;
             background: #ffffff;
         }
-        table.header-strip {
+        .pdf-header__table {
             width: 100%;
             border-collapse: collapse;
         }
-        table.header-strip td {
-            height: 5px;
-            line-height: 5px;
-            font-size: 1px;
-            padding: 0;
-            border: none;
-        }
-        .header-strip-navy { width: 68%; background: #11354d; }
-        .header-strip-accent { width: 32%; background: #ec7f00; }
-        table.header-band {
-            width: 100%;
-            border-collapse: collapse;
-            background: transparent;
-            margin: 0;
-        }
-        table.header-band > tbody > tr > td {
-            border: none;
-            vertical-align: top;
-            padding: 0;
-        }
-        .header-row1 td {
-            border: none;
+        .pdf-header__table td {
             vertical-align: middle;
-            padding: 14px 16px 12px;
+            border: none;
+            padding: 8px 4px;
         }
-        td.header-brand-cell {
-            width: 52%;
-            background: #f8fafc;
-            border-right: 1px solid #e2e8f0;
+        .pdf-header__logo {
+            width: 96px;
         }
-        td.header-doc-cell {
-            width: 48%;
-            background: #ffffff;
-        }
-        .header-logo img {
-            height: 60px;
+        .pdf-header__logo-img {
+            height: 48px;
             width: auto;
             max-width: 88px;
             display: block;
-            padding: 6px 8px;
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
         }
-        .brand-stack {
+        .pdf-header__logo-fallback {
+            width: 72px;
+            height: 40px;
+            background: #f2f2f2;
+            border: 2px solid #ec7f00;
+            text-align: center;
+            line-height: 36px;
+            font-size: 8px;
+            font-weight: 700;
+            color: #333333;
+        }
+        .pdf-header__brand-cell {
+            vertical-align: middle;
+        }
+        .pdf-header__brand-stack {
             line-height: 1.25;
         }
-        .brand-line {
+        .pdf-header__brand-line {
             display: block;
-            font-size: 17px;
+            font-size: 14px;
             font-family: 'DejaVu Sans', sans-serif;
             font-weight: bold;
-            letter-spacing: 0.16em;
+            letter-spacing: 0.14em;
             color: #ec7f00;
             text-transform: uppercase;
             margin: 0 0 4px;
             padding: 0;
-            width: auto;
             max-width: 100%;
         }
-        .brand-line strong {
+        .pdf-header__brand-line strong {
             font-weight: bold;
             color: inherit;
             letter-spacing: inherit;
         }
-        .brand-tag {
+        .pdf-header__brand-tag {
             display: block;
             margin: 6px 0 0;
             font-size: 8.5px;
             font-weight: 600;
-            letter-spacing: 0.14em;
+            letter-spacing: 0.12em;
             color: #11354d;
             text-transform: uppercase;
             opacity: 0.78;
             line-height: 1.45;
         }
-        .doc-title {
-            font-size: 15px;
-            font-weight: 800;
-            color: #11354d;
-            letter-spacing: 0.04em;
-            text-align: right;
-            text-transform: uppercase;
-            line-height: 1.2;
-            border-bottom: 3px solid #ec7f00;
-            padding-bottom: 8px;
-            display: block;
-            width: 100%;
-            box-sizing: border-box;
+        .pdf-header__doc {
+            width: 34%;
+            text-align: end;
         }
-        .doc-title-sub {
-            font-size: 9px;
+        .pdf-header__title {
+            font-size: 16px;
             font-weight: 700;
-            color: #64748b;
-            text-align: right;
-            letter-spacing: 0.06em;
+            color: #ec7f00;
+            letter-spacing: 0.04em;
             text-transform: uppercase;
-            margin-top: 6px;
+            margin: 0;
+            line-height: 1.2;
         }
-        td.header-row2 {
-            border: none;
-            padding: 0 16px 14px !important;
-            vertical-align: top;
-        }
-        table.meta-panel {
+        .pdf-header__meta-list {
+            margin: 10px 0 0;
+            padding: 0;
+            text-align: inherit;
             width: 100%;
-            border-collapse: collapse;
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
         }
-        table.meta-panel td {
-            border: none;
-            padding: 8px 12px;
-            vertical-align: top;
-            width: 50%;
+        .pdf-header__meta-row {
+            display: block;
             font-size: 10px;
-            color: #11354d;
+            line-height: 1.55;
+            margin: 0 0 5px;
+            padding: 0 0 5px;
             border-bottom: 1px solid #e2e8f0;
+            text-align: inherit;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
-        table.meta-panel tr:last-child td {
+        .pdf-header__meta-row:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
             border-bottom: none;
         }
-        table.meta-panel tr:nth-child(odd) td {
-            background: #f8fafc;
-        }
-        table.meta-panel td + td {
-            border-left: 1px solid #e2e8f0;
-        }
-        .meta-icon {
-            display: inline-block;
-            min-width: 16px;
-            height: 16px;
-            line-height: 16px;
-            text-align: center;
-            background: #fff7ed;
-            border: 1px solid #fdba74;
-            color: #c2410c;
-            font-size: 8px;
-            font-weight: 800;
-            margin-right: 8px;
-            vertical-align: middle;
-        }
-        .meta-item strong {
-            color: #475569;
+        .pdf-header__meta-label {
             font-weight: 700;
-            font-size: 7.5px;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-        }
-        .meta-val {
             color: #11354d;
-            font-weight: 700;
+        }
+        .pdf-header__meta-val {
+            font-weight: 600;
+            color: #11354d;
+            margin-inline-start: 0.35em;
+        }
+        .pdf-cell-dir-auto {
+            unicode-bidi: plaintext;
         }
         .body-pad {
             padding: 0 14px 16px;
@@ -387,75 +342,46 @@
         @if(!empty($headerHtml))
             {!! $headerHtml !!}
         @else
-            <table class="header-shell" cellspacing="0" cellpadding="0" border="0">
-                <tr>
-                    <td style="padding:0;border:none;">
-                        <table class="header-strip" width="100%" cellspacing="0" cellpadding="0" border="0">
-                            <tr>
-                                <td class="header-strip-navy">&nbsp;</td>
-                                <td class="header-strip-accent">&nbsp;</td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="padding:0;border:none;">
-                        <table class="header-band" width="100%" cellspacing="0" cellpadding="0" border="0">
-                            <tr class="header-row1">
-                                <td class="header-brand-cell">
-                                    <table width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;">
-                                        <tr>
-                                            <td class="header-logo" style="width:90px;border:none;vertical-align:middle;">
-                                                @if($logoSrc)
-                                                    <img src="{{ $logoSrc }}" alt="">
-                                                @else
-                                                    <div style="width:72px;height:44px;background:#fff7ed;border:1px solid #fdba74;text-align:center;line-height:42px;font-size:8px;font-weight:700;color:#c2410c;">LOGO</div>
-                                                @endif
-                                            </td>
-                                            <td style="border:none;vertical-align:middle;padding-left:10px;padding-right:12px;">
-                                                <div class="brand-stack">
-                                                    <span class="brand-line"><strong>AMAZON MARINE</strong></span>
-                                                    <span class="brand-tag">Shipping and Logistics Solutions</span>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                                <td class="header-doc-cell" style="text-align:right;vertical-align:top;padding-top:14px;padding-right:16px;">
-                                    <div class="doc-title">{{ $labels['title'] }}</div>
-                                    <div class="doc-title-sub">{{ $labels['doc_subtitle'] }}</div>
-                                </td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="header-row2">
-                        <table class="meta-panel">
-                            <tr>
-                                <td>
-                                    <span class="meta-icon">#</span>
-                                    <span class="meta-item"><strong>{{ $labels['id'] }}:</strong> <span class="meta-val">#{{ $shipment->id }}</span></span>
-                                </td>
-                                <td>
-                                    <span class="meta-icon">D</span>
-                                    <span class="meta-item"><strong>{{ $labels['generated'] }}:</strong> <span class="meta-val">{{ $genAt }}</span></span>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td dir="auto" style="text-align:left;">
-                                    <span class="meta-icon">C</span>
-                                    <span class="meta-item"><strong>{{ $labels['client'] }}:</strong> <span class="meta-val">{{ $shipment->client?->company_name ?? $shipment->client?->name ?? '—' }}</span></span>
-                                </td>
-                                <td>
-                                    <span class="meta-icon">S</span>
-                                    <span class="meta-item"><strong>{{ $labels['status'] }}:</strong> <span class="meta-val">{{ $shipment->status ?? '—' }}</span></span>
-                                </td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-            </table>
+            <header class="pdf-header pdf-header--branded">
+                <table class="pdf-header__table" cellspacing="0" cellpadding="0" border="0" width="100%">
+                    <tr>
+                        <td class="pdf-header__logo">
+                            @if($logoSrc)
+                                <img class="pdf-header__logo-img" src="{{ $logoSrc }}" alt="">
+                            @else
+                                <div class="pdf-header__logo-fallback">MH</div>
+                            @endif
+                        </td>
+                        <td class="pdf-header__brand-cell">
+                            <div class="pdf-header__brand-stack">
+                                <div class="pdf-header__brand-line"><strong>{{ $labels['brand'] }}</strong></div>
+                                <div class="pdf-header__brand-tag">{{ $labels['brand_tag'] }}</div>
+                            </div>
+                        </td>
+                        <td class="pdf-header__doc">
+                            <p class="pdf-header__title">{{ $labels['title'] }}</p>
+                            <div class="pdf-header__meta-list">
+                                <div class="pdf-header__meta-row">
+                                    <span class="pdf-header__meta-label">{{ $labels['id'] }}:</span>
+                                    <span class="pdf-header__meta-val">#{{ $shipment->id }}</span>
+                                </div>
+                                <div class="pdf-header__meta-row">
+                                    <span class="pdf-header__meta-label">{{ $labels['generated'] }}:</span>
+                                    <span class="pdf-header__meta-val">{{ $genAt }}</span>
+                                </div>
+                                <div class="pdf-header__meta-row">
+                                    <span class="pdf-header__meta-label">{{ $labels['client'] }}:</span>
+                                    <span class="pdf-header__meta-val pdf-cell-dir-auto">{{ $shipment->client?->company_name ?? $shipment->client?->name ?? '—' }}</span>
+                                </div>
+                                <div class="pdf-header__meta-row">
+                                    <span class="pdf-header__meta-label">{{ $labels['status'] }}:</span>
+                                    <span class="pdf-header__meta-val">{{ $shipment->status ?? '—' }}</span>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </header>
         @endif
 
         <div class="body-pad">

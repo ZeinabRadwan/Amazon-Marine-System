@@ -648,6 +648,8 @@ class ShipmentController extends Controller
     {
         if ($locale === 'ar') {
             return [
+                'brand' => 'أمازون مارين',
+                'brand_tag' => 'شحن وحلول لوجستية',
                 'title' => 'تفاصيل الشحنة',
                 'generated' => 'أُنشئ في',
                 'id' => 'المعرّف',
@@ -684,6 +686,8 @@ class ShipmentController extends Controller
         }
 
         return [
+            'brand' => 'AMAZON MARINE',
+            'brand_tag' => 'Shipping and logistics solutions',
             'title' => 'Shipment details',
             'generated' => 'Generated',
             'id' => 'ID',
