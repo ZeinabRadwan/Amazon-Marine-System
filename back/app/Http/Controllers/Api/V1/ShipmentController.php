@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PdfLayout;
 use App\Models\SDForm;
 use App\Models\Shipment;
+use App\Models\ShipmentStatus;
 use App\Models\User;
 use App\Notifications\ShipmentSalesFinancialsNotification;
 use App\Services\ActivityLogger;
@@ -255,7 +256,7 @@ class ShipmentController extends Controller
             ->toArray();
 
         // Fetch all shipment statuses mapping (ID -> name_en)
-        $allStatuses = \App\Models\ShipmentStatus::where('type', 'commercial')
+        $allStatuses = ShipmentStatus::where('type', 'commercial')
             ->orWhereNull('type')
             ->orderBy('sort_order')
             ->get();
@@ -372,7 +373,7 @@ class ShipmentController extends Controller
         }
 
         // Fetch status name map for ID resolution
-        $statusMap = \App\Models\ShipmentStatus::pluck('name_en', 'id')->toArray();
+        $statusMap = ShipmentStatus::pluck('name_en', 'id')->toArray();
 
         $statusDistribution = (clone $query)
             ->selectRaw('status, COUNT(*) as count')
@@ -600,8 +601,8 @@ class ShipmentController extends Controller
             'sdForm',
         ]);
 
-        $lang = strtolower((string) $request->header('X-App-Locale', 'en')) === 'ar' ? 'ar' : 'en';
-        $labels = trans('pdf.shipment', [], $lang);
+        $locale = strtolower((string) $request->header('X-App-Locale', 'en')) === 'ar' ? 'ar' : 'en';
+        $labels = $this->shipmentPdfLabels($locale);
 
         $notesAttr = $shipment->getAttributes()['notes'] ?? null;
         $notesColumn = is_string($notesAttr) ? $notesAttr : null;
@@ -615,8 +616,6 @@ class ShipmentController extends Controller
         $layout = PdfLayout::where('document_type', 'shipment')->first();
 
         $html = view('shipments.pdf', [
-            'lang' => $lang,
-            'pdfPageTitle' => ($labels['title'] ?? 'Shipment').' #'.$shipment->id,
             'shipment' => $shipment,
             'labels' => $labels,
             'notesColumn' => is_string($notesColumn) ? $notesColumn : null,
@@ -632,7 +631,6 @@ class ShipmentController extends Controller
             'margin_bottom' => 15,
             'margin_left' => 10,
             'margin_right' => 10,
-            'directionality' => $lang === 'ar' ? 'rtl' : 'ltr',
         ]);
 
         $mpdf->WriteHTML($html);
@@ -641,5 +639,83 @@ class ShipmentController extends Controller
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function shipmentPdfLabels(string $locale): array
+    {
+        if ($locale === 'ar') {
+            return [
+                'title' => 'تفاصيل الشحنة',
+                'generated' => 'أُنشئ في',
+                'id' => 'المعرّف',
+                'status' => 'الحالة',
+                'booking_date' => 'تاريخ الحجز',
+                'booking_number' => 'رقم الحجز',
+                'bl_number' => 'رقم البوليصة (B/L)',
+                'client' => 'العميل',
+                'sd_form' => 'نموذج SD',
+                'shipping_line' => 'خط الملاحة',
+                'line_vendor' => 'مورد الخط',
+                'mode' => 'نمط الشحنة',
+                'shipment_type' => 'نوع الشحنة',
+                'direction' => 'الاتجاه',
+                'acid' => 'رقم ACID',
+                'container_type' => 'نوع الحاوية',
+                'container_size' => 'مقاس الحاوية',
+                'container_count' => 'عدد الحاويات',
+                'loading_place' => 'مكان التحميل',
+                'pol' => 'ميناء التحميل (POL)',
+                'pod' => 'ميناء التفريغ (POD)',
+                'loading_date' => 'تاريخ التحميل',
+                'cargo' => 'وصف البضاعة',
+                'notes' => 'ملاحظات الشحنة',
+                'route' => 'المسار',
+                'sales_rep' => 'مندوب المبيعات',
+                'doc_subtitle' => 'ملخص الشحنة',
+                'sec_shipment' => 'بيانات الشحنة',
+                'sec_booking' => 'الحجز والمستندات',
+                'sec_shipping' => 'النقل والحاوية',
+                'sec_ports' => 'الموانئ والتحميل',
+                'sec_goods' => 'تفاصيل البضاعة',
+            ];
+        }
+
+        return [
+            'title' => 'Shipment details',
+            'generated' => 'Generated',
+            'id' => 'ID',
+            'status' => 'Status',
+            'booking_date' => 'Booking date',
+            'booking_number' => 'Booking number',
+            'bl_number' => 'Bill of lading (B/L)',
+            'client' => 'Client',
+            'sd_form' => 'SD form',
+            'shipping_line' => 'Shipping line',
+            'line_vendor' => 'Line vendor',
+            'mode' => 'Shipment mode',
+            'shipment_type' => 'Shipment type',
+            'direction' => 'Direction',
+            'acid' => 'ACID number',
+            'container_type' => 'Container type',
+            'container_size' => 'Container size',
+            'container_count' => 'Container count',
+            'loading_place' => 'Place of loading',
+            'pol' => 'Port of loading (POL)',
+            'pod' => 'Port of discharge (POD)',
+            'loading_date' => 'Loading date',
+            'cargo' => 'Cargo description',
+            'notes' => 'Shipment notes',
+            'route' => 'Route',
+            'sales_rep' => 'Sales representative',
+            'doc_subtitle' => 'Shipment summary',
+            'sec_shipment' => 'Shipment information',
+            'sec_booking' => 'Booking & documents',
+            'sec_shipping' => 'Shipping & container',
+            'sec_ports' => 'Ports & loading',
+            'sec_goods' => 'Goods details',
+        ];
     }
 }

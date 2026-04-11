@@ -478,22 +478,21 @@ class SDFormController extends Controller
     {
         $this->authorize('view', $sdForm);
 
-        $sdForm->loadMissing(['client', 'salesRep', 'pol', 'pod', 'linkedShipment', 'shippingLine']);
+        $sdForm->loadMissing(['client', 'salesRep', 'pol', 'pod', 'shippingLine', 'linkedShipment']);
 
         $layout = PdfLayout::where('document_type', 'sd_form')->first();
 
         $filename = ($sdForm->sd_number ?: 'SD-'.$sdForm->id).'.pdf';
 
-        $lang = strtolower((string) $request->header('X-App-Locale', 'en')) === 'ar' ? 'ar' : 'en';
-        $labels = trans('pdf.sd_form', [], $lang);
+        $locale = strtolower((string) $request->header('X-App-Locale', 'en')) === 'ar' ? 'ar' : 'en';
+        $labels = $this->sdFormPdfLabels($locale);
 
         $html = view('sd_forms.pdf', [
-            'lang' => $lang,
-            'pdfPageTitle' => ($labels['page_title_prefix'] ?? 'SD').' '.($sdForm->sd_number ?: 'SD-'.$sdForm->id),
-            'labels' => $labels,
             'form' => $sdForm,
             'headerHtml' => $layout?->header_html,
             'footerHtml' => $layout?->footer_html,
+            'lang' => $locale,
+            'labels' => $labels,
         ])->render();
 
         $mpdf = new Mpdf([
@@ -504,7 +503,6 @@ class SDFormController extends Controller
             'margin_bottom' => 15,
             'margin_left' => 10,
             'margin_right' => 10,
-            'directionality' => $lang === 'ar' ? 'rtl' : 'ltr',
         ]);
 
         $mpdf->WriteHTML($html);
@@ -513,5 +511,97 @@ class SDFormController extends Controller
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function sdFormPdfLabels(string $locale): array
+    {
+        if ($locale === 'ar') {
+            return [
+                'doc_title' => 'نموذج تفاصيل الشحن (SD)',
+                'brand' => 'أمازون مارين',
+                'brand_tag' => 'شحن وحلول لوجستية',
+                'sd_no' => 'رقم SD:',
+                'sd_date' => 'تاريخ SD:',
+                'vessel_date' => 'تاريخ السفينة:',
+                'client' => 'العميل:',
+                'sec_shipment_info' => 'معلومات الشحنة',
+                'pol' => 'ميناء التحميل',
+                'pod' => 'ميناء التفريغ',
+                'final_destination' => 'الوجهة النهائية',
+                'consignee' => 'المرسل إليه',
+                'notify_party' => 'الإخطار',
+                'contact_details' => 'بيانات الاتصال',
+                'email' => 'البريد',
+                'phone' => 'الهاتف',
+                'same_as_consignee' => 'نفس المرسل إليه',
+                'sec_shipping_info' => 'معلومات الشحن',
+                'swb_type' => 'نوع SWB',
+                'swb_telex' => 'SWB TELEX',
+                'freight_on_board' => 'شروط الشحن',
+                'status' => 'الحالة',
+                'clean_on_board' => 'نظيف على ظهر السفينة',
+                'vessel_container' => 'السفينة / الحاوية',
+                'container_type' => 'نوع الحاوية',
+                'hs_code' => 'رمز HS',
+                'weight_kgs' => 'الوزن (كجم)',
+                'weight_prefix' => 'إجمالي الوزن الإجمالي: ',
+                'shipping_line' => 'خط الملاحة',
+                'sec_goods' => 'تفاصيل البضائع',
+                'marks_numbers' => 'العلامات / الأرقام',
+                'goods_description' => 'وصف البضائع',
+                'total_gross' => 'إجمالي الوزن الإجمالي',
+                'total_net' => 'إجمالي الوزن الصافي',
+                'acid' => 'رقم ACID',
+                'notes' => 'ملاحظات',
+                'footer_contact' => 'معلومات الاتصال',
+                'address' => 'العنوان',
+                'website' => 'الموقع',
+            ];
+        }
+
+        return [
+            'doc_title' => 'SD — Shipping details form',
+            'brand' => 'AMAZON MARINE',
+            'brand_tag' => 'Shipping and logistics solutions',
+            'sd_no' => 'SD no:',
+            'sd_date' => 'SD date:',
+            'vessel_date' => 'Vessel date:',
+            'client' => 'Client:',
+            'sec_shipment_info' => 'Shipment information',
+            'pol' => 'Port of loading',
+            'pod' => 'Port of discharge',
+            'final_destination' => 'Final destination',
+            'consignee' => 'Consignee',
+            'notify_party' => 'Notify party',
+            'contact_details' => 'Contact details',
+            'email' => 'Email',
+            'phone' => 'Phone',
+            'same_as_consignee' => 'Same as consignee',
+            'sec_shipping_info' => 'Shipping information',
+            'swb_type' => 'SWB type',
+            'swb_telex' => 'SWB TELEX',
+            'freight_on_board' => 'Freight terms',
+            'status' => 'Status',
+            'clean_on_board' => 'Clean on board',
+            'vessel_container' => 'Vessel / container',
+            'container_type' => 'Container type',
+            'hs_code' => 'HS code',
+            'weight_kgs' => 'Weight (KGS)',
+            'weight_prefix' => 'T.G.W: ',
+            'shipping_line' => 'Shipping line',
+            'sec_goods' => 'Goods details',
+            'marks_numbers' => 'Marks / numbers',
+            'goods_description' => 'Description of goods',
+            'total_gross' => 'Total gross weight',
+            'total_net' => 'Total net weight',
+            'acid' => 'ACID number',
+            'notes' => 'Notes',
+            'footer_contact' => 'Contact information',
+            'address' => 'Address',
+            'website' => 'Website',
+        ];
     }
 }

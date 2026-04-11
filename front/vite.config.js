@@ -17,7 +17,7 @@ function viteBaseFromEnv(raw) {
 export default defineConfig(({ mode }) => {
   const fileEnv = loadEnv(mode, process.cwd(), '')
   const devProxyTarget =
-    fileEnv.DEV_API_PROXY_TARGET || 'https://back.crm-amazonltd.live'
+    fileEnv.DEV_API_PROXY_TARGET || 'http://127.0.0.1:8000'
   const base = viteBaseFromEnv(fileEnv.VITE_BASE_PATH)
 
   return {

@@ -498,16 +498,15 @@ class InvoiceController extends Controller
 
         $filename = $invoice->invoice_number.'.pdf';
 
-        $lang = strtolower((string) $request->header('X-App-Locale', 'en')) === 'ar' ? 'ar' : 'en';
-        $labels = trans('pdf.invoice', [], $lang);
+        $locale = strtolower((string) $request->header('X-App-Locale', 'en')) === 'ar' ? 'ar' : 'en';
+        $labels = $this->invoicePdfLabels($locale);
 
         $html = view('invoices.pdf', [
-            'lang' => $lang,
-            'pdfPageTitle' => ($labels['page_title_prefix'] ?? 'Invoice').' '.$invoice->invoice_number,
-            'labels' => $labels,
             'invoice' => $invoice,
             'headerHtml' => $layout?->header_html,
             'footerHtml' => $layout?->footer_html,
+            'lang' => $locale,
+            'labels' => $labels,
         ])->render();
 
         $mpdf = new Mpdf([
@@ -518,7 +517,6 @@ class InvoiceController extends Controller
             'margin_bottom' => 15,
             'margin_left' => 10,
             'margin_right' => 10,
-            'directionality' => $lang === 'ar' ? 'rtl' : 'ltr',
         ]);
 
         $mpdf->WriteHTML($html);
@@ -527,5 +525,57 @@ class InvoiceController extends Controller
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'inline; filename="'.$filename.'"',
         ]);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function invoicePdfLabels(string $locale): array
+    {
+        if ($locale === 'ar') {
+            return [
+                'doc_title' => 'فاتورة',
+                'company_name' => 'أمازون مارين',
+                'company_tagline' => 'شحن وحلول لوجستية',
+                'invoice_title' => 'فاتورة',
+                'invoice_no' => 'رقم:',
+                'date' => 'التاريخ:',
+                'due_date' => 'تاريخ الاستحقاق:',
+                'shipment_bl' => 'بوليصة الشحنة:',
+                'billed_to' => 'الفاتورة إلى',
+                'description' => 'الوصف',
+                'qty' => 'الكمية',
+                'unit_price' => 'سعر الوحدة',
+                'line_total' => 'الإجمالي',
+                'subtotal' => 'المجموع الفرعي',
+                'vat' => 'ضريبة القيمة المضافة (14%)',
+                'grand_total' => 'الإجمالي',
+                'notes' => 'ملاحظات',
+                'generated' => 'أُنشئت في',
+                'system_credit' => 'نظام أمازون مارين',
+            ];
+        }
+
+        return [
+            'doc_title' => 'Invoice',
+            'company_name' => 'AMAZON MARINE',
+            'company_tagline' => 'Shipping & logistics services',
+            'invoice_title' => 'Invoice',
+            'invoice_no' => 'No:',
+            'date' => 'Date:',
+            'due_date' => 'Due date:',
+            'shipment_bl' => 'Shipment B/L:',
+            'billed_to' => 'Billed to',
+            'description' => 'Description',
+            'qty' => 'Qty',
+            'unit_price' => 'Unit price',
+            'line_total' => 'Total',
+            'subtotal' => 'Subtotal',
+            'vat' => 'VAT (14%)',
+            'grand_total' => 'Grand total',
+            'notes' => 'Notes',
+            'generated' => 'Generated on',
+            'system_credit' => 'Amazon Marine system',
+        ];
     }
 }

@@ -1,31 +1,25 @@
 @php
-    $lang = $lang ?? 'en';
-    $dir = $lang === 'ar' ? 'rtl' : 'ltr';
-    $htmlLang = $lang === 'ar' ? 'ar' : 'en';
-    $pdfPageTitle = $pdfPageTitle ?? '';
+    $pdfLang = isset($lang) && in_array($lang, ['ar', 'en'], true) ? $lang : (str_starts_with((string) app()->getLocale(), 'ar') ? 'ar' : 'en');
+    $pdfDir = $pdfLang === 'ar' ? 'rtl' : 'ltr';
 @endphp
 <!DOCTYPE html>
-<html lang="{{ $htmlLang }}" dir="{{ $dir }}">
+<html lang="{{ $pdfLang }}" dir="{{ $pdfDir }}">
 <head>
     <meta charset="UTF-8">
-    <title>{{ $pdfPageTitle }}</title>
+    <title>@yield('pdf_title', 'Document')</title>
     @include('pdf.assets.theme')
     @stack('pdf_head')
 </head>
-<body class="pdf-root">
+<body class="pdf-body">
+    {{-- Corner gradients removed: mPDF paints fixed radial fades as a pale wash over the top header image. --}}
+    @if($pdfHeaderBanner = \App\Support\PdfLogo::headerImgSrc())
+        <div class="pdf-page-header">
+            <img class="pdf-page-header__img" src="{{ $pdfHeaderBanner }}" alt="">
+        </div>
+    @endif
     <div class="pdf-container">
-        <div class="pdf-main">
-            @yield('pdf_content')
-        </div>
-        <div class="pdf-footer" role="contentinfo">
-            @hasSection('pdf_footer')
-                @yield('pdf_footer')
-            @elseif(!empty($footerHtml))
-                {!! $footerHtml !!}
-            @else
-                @include('pdf.partials.standard_footer', ['lang' => $lang])
-            @endif
-        </div>
+        @yield('content')
     </div>
+    @stack('pdf_footer_fullbleed')
 </body>
 </html>
