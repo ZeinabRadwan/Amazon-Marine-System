@@ -15,7 +15,6 @@ use App\Notifications\OperationSDFormNotification;
 use App\Services\ActivityLogger;
 use App\Services\NotificationService;
 use App\Services\SDFormService;
-use App\Support\PdfDocumentTheme;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Mpdf\Mpdf;
@@ -479,22 +478,34 @@ class SDFormController extends Controller
     {
         $this->authorize('view', $sdForm);
 
-        $sdForm->loadMissing(['client', 'salesRep', 'pol', 'pod', 'linkedShipment']);
+        $sdForm->loadMissing(['client', 'salesRep', 'pol', 'pod', 'linkedShipment', 'shippingLine']);
 
         $layout = PdfLayout::where('document_type', 'sd_form')->first();
 
         $filename = ($sdForm->sd_number ?: 'SD-'.$sdForm->id).'.pdf';
 
-        $locale = PdfDocumentTheme::localeFromRequest($request);
+        $lang = strtolower((string) $request->header('X-App-Locale', 'en')) === 'ar' ? 'ar' : 'en';
+        $labels = trans('pdf.sd_form', [], $lang);
 
-        $html = view('sd_forms.pdf', array_merge(PdfDocumentTheme::bladeVars($request), [
+        $html = view('sd_forms.pdf', [
+            'lang' => $lang,
+            'pdfPageTitle' => ($labels['page_title_prefix'] ?? 'SD').' '.($sdForm->sd_number ?: 'SD-'.$sdForm->id),
+            'labels' => $labels,
             'form' => $sdForm,
-            'labels' => PdfDocumentTheme::sdFormPdfLabels($locale),
-            'headerHtml' => PdfDocumentTheme::sanitizeHtmlForMpdf($layout?->header_html),
-            'footerHtml' => PdfDocumentTheme::sanitizeHtmlForMpdf($layout?->footer_html),
-        ]))->render();
+            'headerHtml' => $layout?->header_html,
+            'footerHtml' => $layout?->footer_html,
+        ])->render();
 
-        $mpdf = new Mpdf(PdfDocumentTheme::mpdfConfig());
+        $mpdf = new Mpdf([
+            'mode' => 'utf-8',
+            'default_font' => 'dejavusans',
+            'format' => 'A4',
+            'margin_top' => 10,
+            'margin_bottom' => 15,
+            'margin_left' => 10,
+            'margin_right' => 10,
+            'directionality' => $lang === 'ar' ? 'rtl' : 'ltr',
+        ]);
 
         $mpdf->WriteHTML($html);
 

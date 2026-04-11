@@ -12,7 +12,6 @@ use App\Notifications\ShipmentFinancialsCompleted;
 use App\Services\ActivityLogger;
 use App\Services\FinancialService;
 use App\Services\NotificationService;
-use App\Support\PdfDocumentTheme;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Mpdf\Mpdf;
@@ -499,16 +498,28 @@ class InvoiceController extends Controller
 
         $filename = $invoice->invoice_number.'.pdf';
 
-        $locale = PdfDocumentTheme::localeFromRequest($request);
+        $lang = strtolower((string) $request->header('X-App-Locale', 'en')) === 'ar' ? 'ar' : 'en';
+        $labels = trans('pdf.invoice', [], $lang);
 
-        $html = view('invoices.pdf', array_merge(PdfDocumentTheme::bladeVars($request), [
+        $html = view('invoices.pdf', [
+            'lang' => $lang,
+            'pdfPageTitle' => ($labels['page_title_prefix'] ?? 'Invoice').' '.$invoice->invoice_number,
+            'labels' => $labels,
             'invoice' => $invoice,
-            'labels' => PdfDocumentTheme::invoicePdfLabels($locale),
-            'headerHtml' => PdfDocumentTheme::sanitizeHtmlForMpdf($layout?->header_html),
-            'footerHtml' => PdfDocumentTheme::sanitizeHtmlForMpdf($layout?->footer_html),
-        ]))->render();
+            'headerHtml' => $layout?->header_html,
+            'footerHtml' => $layout?->footer_html,
+        ])->render();
 
-        $mpdf = new Mpdf(PdfDocumentTheme::mpdfConfig());
+        $mpdf = new Mpdf([
+            'mode' => 'utf-8',
+            'default_font' => 'dejavusans',
+            'format' => 'A4',
+            'margin_top' => 10,
+            'margin_bottom' => 15,
+            'margin_left' => 10,
+            'margin_right' => 10,
+            'directionality' => $lang === 'ar' ? 'rtl' : 'ltr',
+        ]);
 
         $mpdf->WriteHTML($html);
 

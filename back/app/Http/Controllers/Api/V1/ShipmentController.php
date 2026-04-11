@@ -10,7 +10,6 @@ use App\Models\User;
 use App\Notifications\ShipmentSalesFinancialsNotification;
 use App\Services\ActivityLogger;
 use App\Services\NotificationService;
-use App\Support\PdfDocumentTheme;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -601,8 +600,8 @@ class ShipmentController extends Controller
             'sdForm',
         ]);
 
-        $locale = PdfDocumentTheme::localeFromRequest($request);
-        $labels = $this->shipmentPdfLabels($locale);
+        $lang = strtolower((string) $request->header('X-App-Locale', 'en')) === 'ar' ? 'ar' : 'en';
+        $labels = trans('pdf.shipment', [], $lang);
 
         $notesAttr = $shipment->getAttributes()['notes'] ?? null;
         $notesColumn = is_string($notesAttr) ? $notesAttr : null;
@@ -615,15 +614,26 @@ class ShipmentController extends Controller
 
         $layout = PdfLayout::where('document_type', 'shipment')->first();
 
-        $html = view('shipments.pdf', array_merge(PdfDocumentTheme::bladeVars($request), [
+        $html = view('shipments.pdf', [
+            'lang' => $lang,
+            'pdfPageTitle' => ($labels['title'] ?? 'Shipment').' #'.$shipment->id,
             'shipment' => $shipment,
             'labels' => $labels,
             'notesColumn' => is_string($notesColumn) ? $notesColumn : null,
-            'headerHtml' => PdfDocumentTheme::sanitizeHtmlForMpdf($layout?->header_html),
-            'footerHtml' => PdfDocumentTheme::sanitizeHtmlForMpdf($layout?->footer_html),
-        ]))->render();
+            'headerHtml' => $layout?->header_html,
+            'footerHtml' => $layout?->footer_html,
+        ])->render();
 
-        $mpdf = new Mpdf(PdfDocumentTheme::mpdfConfig());
+        $mpdf = new Mpdf([
+            'mode' => 'utf-8',
+            'default_font' => 'dejavusans',
+            'format' => 'A4',
+            'margin_top' => 10,
+            'margin_bottom' => 15,
+            'margin_left' => 10,
+            'margin_right' => 10,
+            'directionality' => $lang === 'ar' ? 'rtl' : 'ltr',
+        ]);
 
         $mpdf->WriteHTML($html);
 
@@ -631,95 +641,5 @@ class ShipmentController extends Controller
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    private function shipmentPdfLabels(string $locale): array
-    {
-        if ($locale === 'ar') {
-            return [
-                'title' => 'تفاصيل الشحنة',
-                'generated' => 'أُنشئ في',
-                'id' => 'المعرّف',
-                'status' => 'الحالة',
-                'booking_date' => 'تاريخ الحجز',
-                'booking_number' => 'رقم الحجز',
-                'bl_number' => 'رقم البوليصة (B/L)',
-                'client' => 'العميل',
-                'sd_form' => 'نموذج SD',
-                'shipping_line' => 'خط الملاحة',
-                'line_vendor' => 'مورد الخط',
-                'mode' => 'نمط الشحنة',
-                'shipment_type' => 'نوع الشحنة',
-                'direction' => 'الاتجاه',
-                'acid' => 'رقم ACID',
-                'container_type' => 'نوع الحاوية',
-                'container_size' => 'مقاس الحاوية',
-                'container_count' => 'عدد الحاويات',
-                'loading_place' => 'مكان التحميل',
-                'pol' => 'ميناء التحميل (POL)',
-                'pod' => 'ميناء التفريغ (POD)',
-                'loading_date' => 'تاريخ التحميل',
-                'cargo' => 'وصف البضاعة',
-                'notes' => 'ملاحظات الشحنة',
-                'route' => 'المسار',
-                'sales_rep' => 'مندوب المبيعات',
-                'doc_subtitle' => 'ملخص الشحنة',
-                'sec_shipment' => 'بيانات الشحنة',
-                'sec_booking' => 'الحجز والمستندات',
-                'sec_shipping' => 'النقل والحاوية',
-                'sec_ports' => 'الموانئ والتحميل',
-                'sec_goods' => 'تفاصيل البضاعة',
-                'brand_tag' => 'الشحن والخدمات اللوجستية',
-                'footer_contact' => 'معلومات الاتصال',
-                'footer_phone' => 'الهاتف',
-                'footer_email' => 'البريد الإلكتروني',
-                'footer_address' => 'العنوان',
-                'footer_website' => 'الموقع',
-            ];
-        }
-
-        return [
-            'title' => 'Shipment details',
-            'generated' => 'Generated',
-            'id' => 'ID',
-            'status' => 'Status',
-            'booking_date' => 'Booking date',
-            'booking_number' => 'Booking number',
-            'bl_number' => 'Bill of lading (B/L)',
-            'client' => 'Client',
-            'sd_form' => 'SD form',
-            'shipping_line' => 'Shipping line',
-            'line_vendor' => 'Line vendor',
-            'mode' => 'Shipment mode',
-            'shipment_type' => 'Shipment type',
-            'direction' => 'Direction',
-            'acid' => 'ACID number',
-            'container_type' => 'Container type',
-            'container_size' => 'Container size',
-            'container_count' => 'Container count',
-            'loading_place' => 'Place of loading',
-            'pol' => 'Port of loading (POL)',
-            'pod' => 'Port of discharge (POD)',
-            'loading_date' => 'Loading date',
-            'cargo' => 'Cargo description',
-            'notes' => 'Shipment notes',
-            'route' => 'Route',
-            'sales_rep' => 'Sales representative',
-            'doc_subtitle' => 'Shipment summary',
-            'sec_shipment' => 'Shipment information',
-            'sec_booking' => 'Booking & documents',
-            'sec_shipping' => 'Shipping & container',
-            'sec_ports' => 'Ports & loading',
-            'sec_goods' => 'Goods details',
-            'brand_tag' => 'Shipping and Logistics Solutions',
-            'footer_contact' => 'Contact Information',
-            'footer_phone' => 'Phone',
-            'footer_email' => 'Email',
-            'footer_address' => 'Address',
-            'footer_website' => 'Website',
-        ];
     }
 }
