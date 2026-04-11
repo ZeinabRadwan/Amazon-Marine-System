@@ -3,19 +3,16 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\Currency;
+use App\Models\CustomerTransaction;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
-use App\Models\Payment;
-use App\Models\Shipment;
-use App\Models\Currency;
-use App\Models\Item;
-use App\Models\CustomerTransaction;
 use App\Models\PdfLayout;
-use App\Models\User;
 use App\Notifications\ShipmentFinancialsCompleted;
 use App\Services\ActivityLogger;
 use App\Services\FinancialService;
 use App\Services\NotificationService;
+use App\Support\PdfDocumentTheme;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Mpdf\Mpdf;
@@ -152,7 +149,10 @@ class InvoiceController extends Controller
 
     private static function mapCurrencyCodeFromId(?int $currencyId): string
     {
-        if (!$currencyId) return 'USD';
+        if (! $currencyId) {
+            return 'USD';
+        }
+
         return Currency::find($currencyId)?->code ?? 'USD';
     }
 
@@ -202,7 +202,7 @@ class InvoiceController extends Controller
         while ($cursor <= now()) {
             $key = $cursor->format('Y-m');
             $labels[] = $key;
-            $monthInvoices = $invoices->filter(fn($i) => $i->issue_date?->format('Y-m') === $key);
+            $monthInvoices = $invoices->filter(fn ($i) => $i->issue_date?->format('Y-m') === $key);
             $paidSeries[] = (float) $monthInvoices->where('status', 'paid')->sum('net_amount');
             $cursor->addMonth();
         }
@@ -274,7 +274,7 @@ class InvoiceController extends Controller
         ]);
 
         $invoice = DB::transaction(function () use ($validated, $user) {
-            $invoice = new Invoice();
+            $invoice = new Invoice;
             $invoice->invoice_number = self::generateInvoiceNumber();
             $invoice->invoice_type = self::mapInvoiceTypeFromId($validated['invoice_type_id']);
             $invoice->shipment_id = $validated['shipment_id'] ?? null;
@@ -409,7 +409,7 @@ class InvoiceController extends Controller
                     ->where('type', 'debit')
                     ->update([
                         'amount' => $invoice->net_amount,
-                        'currency_id' => $invoice->currency_id
+                        'currency_id' => $invoice->currency_id,
                     ]);
 
                 if ($invoice->shipment_id) {
@@ -497,23 +497,18 @@ class InvoiceController extends Controller
         $invoice->load(['client', 'shipment', 'items']);
         $layout = PdfLayout::where('document_type', 'invoice')->first();
 
-        $filename = $invoice->invoice_number . '.pdf';
+        $filename = $invoice->invoice_number.'.pdf';
 
-        // Reusing mPDF logic
-        $html = view('invoices.pdf', [
+        $locale = PdfDocumentTheme::localeFromRequest($request);
+
+        $html = view('invoices.pdf', array_merge(PdfDocumentTheme::bladeVars($request), [
             'invoice' => $invoice,
+            'labels' => PdfDocumentTheme::invoicePdfLabels($locale),
             'headerHtml' => $layout?->header_html,
             'footerHtml' => $layout?->footer_html,
-        ])->render();
+        ]))->render();
 
-        $mpdf = new Mpdf([
-            'mode' => 'utf-8',
-            'format' => 'A4',
-            'margin_top' => 10,
-            'margin_bottom' => 15,
-            'margin_left' => 10,
-            'margin_right' => 10,
-        ]);
+        $mpdf = new Mpdf(PdfDocumentTheme::mpdfConfig());
 
         $mpdf->WriteHTML($html);
 

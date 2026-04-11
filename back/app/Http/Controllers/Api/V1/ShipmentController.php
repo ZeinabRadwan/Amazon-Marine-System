@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Notifications\ShipmentSalesFinancialsNotification;
 use App\Services\ActivityLogger;
 use App\Services\NotificationService;
+use App\Support\PdfDocumentTheme;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -600,7 +601,7 @@ class ShipmentController extends Controller
             'sdForm',
         ]);
 
-        $locale = strtolower((string) $request->header('X-App-Locale', 'en')) === 'ar' ? 'ar' : 'en';
+        $locale = PdfDocumentTheme::localeFromRequest($request);
         $labels = $this->shipmentPdfLabels($locale);
 
         $notesAttr = $shipment->getAttributes()['notes'] ?? null;
@@ -614,23 +615,15 @@ class ShipmentController extends Controller
 
         $layout = PdfLayout::where('document_type', 'shipment')->first();
 
-        $html = view('shipments.pdf', [
+        $html = view('shipments.pdf', array_merge(PdfDocumentTheme::bladeVars($request), [
             'shipment' => $shipment,
             'labels' => $labels,
             'notesColumn' => is_string($notesColumn) ? $notesColumn : null,
             'headerHtml' => $layout?->header_html,
             'footerHtml' => $layout?->footer_html,
-        ])->render();
+        ]))->render();
 
-        $mpdf = new Mpdf([
-            'mode' => 'utf-8',
-            'default_font' => 'dejavusans',
-            'format' => 'A4',
-            'margin_top' => 10,
-            'margin_bottom' => 15,
-            'margin_left' => 10,
-            'margin_right' => 10,
-        ]);
+        $mpdf = new Mpdf(PdfDocumentTheme::mpdfConfig());
 
         $mpdf->WriteHTML($html);
 
@@ -679,6 +672,12 @@ class ShipmentController extends Controller
                 'sec_shipping' => 'النقل والحاوية',
                 'sec_ports' => 'الموانئ والتحميل',
                 'sec_goods' => 'تفاصيل البضاعة',
+                'brand_tag' => 'الشحن والخدمات اللوجستية',
+                'footer_contact' => 'معلومات الاتصال',
+                'footer_phone' => 'الهاتف',
+                'footer_email' => 'البريد الإلكتروني',
+                'footer_address' => 'العنوان',
+                'footer_website' => 'الموقع',
             ];
         }
 
@@ -715,6 +714,12 @@ class ShipmentController extends Controller
             'sec_shipping' => 'Shipping & container',
             'sec_ports' => 'Ports & loading',
             'sec_goods' => 'Goods details',
+            'brand_tag' => 'Shipping and Logistics Solutions',
+            'footer_contact' => 'Contact Information',
+            'footer_phone' => 'Phone',
+            'footer_email' => 'Email',
+            'footer_address' => 'Address',
+            'footer_website' => 'Website',
         ];
     }
 }

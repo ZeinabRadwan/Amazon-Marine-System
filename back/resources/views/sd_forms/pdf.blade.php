@@ -1,199 +1,14 @@
+@php
+    $pdfLang = $pdfLang ?? 'en';
+    $pdfDir = $pdfDir ?? 'ltr';
+@endphp
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="{{ $pdfLang }}" dir="{{ $pdfDir }}">
 <head>
     <meta charset="UTF-8">
-    <title>SD Form {{ $form->sd_number ?? ('#' . $form->id) }}</title>
-    <style>
-        * { box-sizing: border-box; }
-        body {
-            font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif;
-            font-size: 10.5px;
-            color: #0f172a;
-            direction: ltr;
-            text-align: left;
-            margin: 0;
-            padding: 0;
-            line-height: 1.45;
-            background: #ffffff;
-        }
-        .wrap {
-            padding: 0;
-        }
-        /* Navy header: row1 = logo + brand + doc title; row2 = full-width meta panel */
-        table.header-band {
-            width: 100%;
-            border-collapse: collapse;
-            background: #1f2a60;
-            margin: 0 0 14px;
-        }
-        table.header-band > tbody > tr > td {
-            border: none;
-            vertical-align: top;
-            padding: 0;
-        }
-        .header-row1 td {
-            border: none;
-            vertical-align: middle;
-            padding: 14px 16px 10px;
-        }
-        .header-logo img {
-            height: 48px;
-            width: auto;
-            max-width: 88px;
-            display: block;
-        }
-        .brand-line {
-            font-size: 13px;
-            font-weight: 700;
-            letter-spacing: 0.1em;
-            color: #ffffff;
-            line-height: 1.35;
-        }
-        .brand-sep {
-            color: #f97316;
-            font-weight: 400;
-            padding: 0 0.35em;
-        }
-        .brand-tag {
-            font-size: 10px;
-            font-weight: 400;
-            letter-spacing: 0.02em;
-            color: #ffffff;
-        }
-        .doc-title {
-            font-size: 12px;
-            font-weight: 700;
-            color: #ffffff;
-            letter-spacing: 0.03em;
-            text-align: right;
-            line-height: 1.3;
-        }
-        td.header-row2 {
-            border: none;
-            padding: 0 16px 14px !important;
-            vertical-align: top;
-        }
-        table.meta-panel {
-            width: 100%;
-            border-collapse: collapse;
-            background: #243056;
-            border: 1px solid #f97316;
-        }
-        table.meta-panel td {
-            border: none;
-            padding: 8px 12px;
-            vertical-align: top;
-            width: 50%;
-            font-size: 10px;
-            color: #ffffff;
-        }
-        table.meta-panel tr + tr td {
-            border-top: 1px solid #364785;
-        }
-        table.meta-panel td + td {
-            border-left: 1px solid #364785;
-        }
-        .meta-icon {
-            display: inline-block;
-            min-width: 16px;
-            height: 16px;
-            line-height: 16px;
-            text-align: center;
-            background: #f97316;
-            color: #ffffff;
-            font-size: 8px;
-            font-weight: 700;
-            margin-right: 8px;
-            vertical-align: middle;
-        }
-        .meta-item strong {
-            color: #ffffff;
-            font-weight: 600;
-        }
-        .meta-val {
-            color: #f1f5f9;
-        }
-        .body-pad {
-            padding: 0 14px 16px;
-        }
-        /* Orange section bars */
-        .sec {
-            margin: 0 0 10px;
-        }
-        .sec-h {
-            font-size: 9.5px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: #ffffff;
-            background: #f97316;
-            margin: 0 0 0;
-            padding: 6px 10px;
-            border-left: 4px solid #1f2a60;
-        }
-        table.grid {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 0;
-        }
-        table.grid th,
-        table.grid td {
-            border: 1px solid #1f2a60;
-            padding: 6px 8px;
-            vertical-align: top;
-        }
-        table.grid th {
-            background: #ffffff;
-            font-size: 9px;
-            font-weight: 700;
-            color: #1f2a60;
-            text-align: left;
-        }
-        table.grid td {
-            font-size: 10px;
-            color: #0f172a;
-            background: #eef1f6;
-        }
-        .lbl {
-            color: #1f2a60;
-            font-weight: 600;
-        }
-        .cell-muted {
-            color: #94a3b8;
-        }
-        .block-text {
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-        .notes {
-            border: 1px solid #1f2a60;
-            border-top: none;
-            background: #eef1f6;
-            padding: 8px 10px;
-            margin-top: 0;
-            font-size: 10px;
-            line-height: 1.5;
-            color: #0f172a;
-        }
-        .footer {
-            margin-top: 12px;
-            padding: 10px 14px;
-            background: #f1f5f9;
-            border-top: 3px solid #f97316;
-            font-size: 9px;
-            color: #475569;
-        }
-        .footer-h {
-            font-weight: 700;
-            color: #1f2a60;
-            margin: 0 0 5px;
-            font-size: 9.5px;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-        }
-        .footer p { margin: 2px 0; }
-        .footer strong { color: #0f172a; }
-    </style>
+    <title>{{ $form->sd_number ?? ('SD #' . $form->id) }}</title>
+    @include('pdf.theme-styles')
+    @include('pdf.styles-marine-doc')
 </head>
 <body>
     @php
@@ -209,7 +24,7 @@
         if ($notifyDetailsRaw !== '') {
             $notifyDisplayHtml = nl2br(e($notifyDetailsRaw));
         } elseif ($notifyMode === 'same') {
-            $notifyDisplayHtml = '<span style="color:#1f2a60;font-style:italic;">Same as consignee</span>';
+            $notifyDisplayHtml = '<span class="sd-notify-same">'.e($labels['same_as_consignee']).'</span>';
         } else {
             $notifyDisplayHtml = '—';
         }
@@ -227,7 +42,7 @@
         $ct = trim((string) ($form->container_type ?? ''));
         $containerTypeCell = $ct !== '' ? $ct.' ('.$containerLabel.')' : $containerLabel;
 
-        $weightLabel = 'T.G.W: '.($form->total_gross_weight ?? '—');
+        $weightLabel = $labels['tgw'].' '.($form->total_gross_weight ?? '—');
 
         $bl = trim((string) ($form->linkedShipment?->bl_number ?? ''));
         $bk = trim((string) ($form->linkedShipment?->booking_number ?? ''));
@@ -256,14 +71,14 @@
                                     @if($logoSrc)
                                         <img src="{{ $logoSrc }}" alt="" style="height:48px;width:auto;max-width:88px;display:block;">
                                     @else
-                                        <div style="width:72px;height:40px;background:#fff;border:1px solid #f97316;text-align:center;line-height:40px;font-size:8px;color:#1f2a60;">LOGO</div>
+                                        <div style="width:72px;height:40px;background:#fff;border:1px solid var(--pdf-accent);text-align:center;line-height:40px;font-size:8px;color:var(--pdf-brand);">LOGO</div>
                                     @endif
                                 </td>
-                                <td style="border:none;vertical-align:middle;padding-left:10px;padding-right:12px;">
-                                    <span class="brand-line">AMAZON MARINE</span><span class="brand-sep">|</span><span class="brand-tag"> Shipping and Logistics Solutions</span>
+                                <td class="header-brand-cell">
+                                    <span class="brand-line">AMAZON MARINE</span><span class="brand-sep">|</span><span class="brand-tag"> {{ $labels['brand_tag'] }}</span>
                                 </td>
-                                <td style="width:32%;border:none;vertical-align:middle;text-align:right;">
-                                    <div class="doc-title">SD - Shipping Details Form</div>
+                                <td class="header-doc-title-cell">
+                                    <div class="doc-title">{{ $labels['doc_title'] }}</div>
                                 </td>
                             </tr>
                         </table>
@@ -275,21 +90,21 @@
                             <tr>
                                 <td>
                                     <span class="meta-icon">#</span>
-                                    <span class="meta-item"><strong>SD No:</strong> <span class="meta-val">{{ $form->sd_number ?? ('SD-'.$form->id) }}</span></span>
+                                    <span class="meta-item"><strong>{{ $labels['sd_no'] }}:</strong> <span class="meta-val">{{ $form->sd_number ?? ('SD-'.$form->id) }}</span></span>
                                 </td>
                                 <td>
                                     <span class="meta-icon">D</span>
-                                    <span class="meta-item"><strong>SD Date:</strong> <span class="meta-val">{{ optional($form->created_at)->format('d/m/Y') ?? '—' }}</span></span>
+                                    <span class="meta-item"><strong>{{ $labels['sd_date'] }}:</strong> <span class="meta-val">{{ optional($form->created_at)->format('d/m/Y') ?? '—' }}</span></span>
                                 </td>
                             </tr>
                             <tr>
                                 <td>
                                     <span class="meta-icon">V</span>
-                                    <span class="meta-item"><strong>Vessel Date:</strong> <span class="meta-val">{{ optional($form->requested_vessel_date)->format('d/m/Y') ?? '—' }}</span></span>
+                                    <span class="meta-item"><strong>{{ $labels['vessel_date'] }}:</strong> <span class="meta-val">{{ optional($form->requested_vessel_date)->format('d/m/Y') ?? '—' }}</span></span>
                                 </td>
-                                <td dir="auto" style="text-align:left;">
+                                <td dir="auto">
                                     <span class="meta-icon">C</span>
-                                    <span class="meta-item"><strong>Client:</strong> <span class="meta-val">{{ $form->client?->name ?? '—' }}</span></span>
+                                    <span class="meta-item"><strong>{{ $labels['client'] }}:</strong> <span class="meta-val">{{ $form->client?->name ?? '—' }}</span></span>
                                 </td>
                             </tr>
                         </table>
@@ -300,12 +115,12 @@
 
         <div class="body-pad">
         <div class="sec">
-            <p class="sec-h">Shipment Info</p>
+            <p class="sec-h">{{ $labels['sec_shipment_info'] }}</p>
             <table class="grid">
                 <tr>
-                    <th style="width:33.33%;">Port of Loading</th>
-                    <th style="width:33.33%;">Port of Discharge</th>
-                    <th style="width:33.33%;">Final Destination</th>
+                    <th style="width:33.33%;">{{ $labels['pol'] }}</th>
+                    <th style="width:33.33%;">{{ $labels['pod'] }}</th>
+                    <th style="width:33.33%;">{{ $labels['final_destination'] }}</th>
                 </tr>
                 <tr>
                     <td>{{ $pol }}</td>
@@ -313,19 +128,19 @@
                     <td>{{ $finalDestination }}</td>
                 </tr>
                 <tr>
-                    <th>Consignee</th>
-                    <th>Notify Party</th>
-                    <th>Contact Details</th>
+                    <th>{{ $labels['consignee'] }}</th>
+                    <th>{{ $labels['notify_party'] }}</th>
+                    <th>{{ $labels['contact_details'] }}</th>
                 </tr>
                 <tr>
                     <td class="block-text">{!! $consigneeHtml !!}</td>
                     <td class="block-text">{!! $notifyDisplayHtml !!}</td>
                     <td>
                         @if($form->client?->email)
-                            <div><span class="lbl">Email:</span> {{ $form->client->email }}</div>
+                            <div><span class="lbl">{{ $labels['email'] }}:</span> {{ $form->client->email }}</div>
                         @endif
                         @if($form->client?->phone)
-                            <div style="margin-top:3px;"><span class="lbl">Phone:</span> {{ $form->client->phone }}</div>
+                            <div style="margin-top:3px;"><span class="lbl">{{ $labels['phone'] }}:</span> {{ $form->client->phone }}</div>
                         @endif
                         @if(!$form->client?->email && !$form->client?->phone)
                             <span class="cell-muted">—</span>
@@ -336,25 +151,25 @@
         </div>
 
         <div class="sec">
-            <p class="sec-h">Shipping Info</p>
+            <p class="sec-h">{{ $labels['sec_shipping'] }}</p>
             <table class="grid">
                 <tr>
-                    <th style="width:25%;">SWB Type</th>
-                    <th style="width:37.5%;">Freight on Board</th>
-                    <th style="width:37.5%;">Status</th>
+                    <th style="width:25%;">{{ $labels['swb_type'] }}</th>
+                    <th style="width:37.5%;">{{ $labels['freight_board'] }}</th>
+                    <th style="width:37.5%;">{{ $labels['status_clean'] }}</th>
                 </tr>
                 <tr>
-                    <td>SWB TELEX</td>
+                    <td>{{ $labels['swb_value'] }}</td>
                     <td>{{ $form->freight_term ?? '—' }}</td>
-                    <td>Clean on Board</td>
+                    <td>{{ $labels['clean_on_board'] }}</td>
                 </tr>
             </table>
             <table class="grid" style="margin-top:-1px;">
                 <tr>
-                    <th style="width:25%;">Vessel / Container</th>
-                    <th style="width:25%;">Container Type</th>
-                    <th style="width:25%;">HS Code</th>
-                    <th style="width:25%;">Weight (KGS)</th>
+                    <th style="width:25%;">{{ $labels['vessel_container'] }}</th>
+                    <th style="width:25%;">{{ $labels['container_type'] }}</th>
+                    <th style="width:25%;">{{ $labels['hs_code'] }}</th>
+                    <th style="width:25%;">{{ $labels['weight_kgs'] }}</th>
                 </tr>
                 <tr>
                     <td>{{ $vesselRef }}</td>
@@ -363,18 +178,18 @@
                     <td>{{ $weightLabel }}</td>
                 </tr>
                 <tr>
-                    <th>Shipping Line</th>
+                    <th>{{ $labels['shipping_line'] }}</th>
                     <td colspan="3">{{ $form->shipping_line ?? '—' }}</td>
                 </tr>
             </table>
         </div>
 
         <div class="sec">
-            <p class="sec-h">Goods Details</p>
+            <p class="sec-h">{{ $labels['sec_goods'] }}</p>
             <table class="grid">
                 <tr>
-                    <th style="width:32%;">Marks / Numbers</th>
-                    <th>Description of Goods</th>
+                    <th style="width:32%;">{{ $labels['marks_numbers'] }}</th>
+                    <th>{{ $labels['desc_goods'] }}</th>
                 </tr>
                 <tr>
                     <td>{{ $form->sd_number ?? '—' }}</td>
@@ -382,14 +197,14 @@
                 </tr>
             </table>
             <div class="notes">
-                <strong>Total Gross Weight:</strong> {{ $form->total_gross_weight ?? '—' }} KG
+                <strong>{{ $labels['total_gross'] }}:</strong> {{ $form->total_gross_weight ?? '—' }} {{ $labels['unit_kg'] }}
                 &nbsp;&nbsp;|&nbsp;&nbsp;
-                <strong>Total Net Weight:</strong> {{ $form->total_net_weight ?? '—' }} KG
+                <strong>{{ $labels['total_net'] }}:</strong> {{ $form->total_net_weight ?? '—' }} {{ $labels['unit_kg'] }}
                 @if($form->shipment_direction === 'Import' && !empty($form->acid_number))
-                    <br><br><strong>ACID Number:</strong> {{ $form->acid_number }}
+                    <br><br><strong>{{ $labels['acid'] }}:</strong> {{ $form->acid_number }}
                 @endif
                 @if(!empty($form->notes))
-                    <br><br><strong>Notes:</strong> {{ $form->notes }}
+                    <br><br><strong>{{ $labels['notes'] }}:</strong> {{ $form->notes }}
                 @endif
             </div>
         </div>
@@ -398,11 +213,11 @@
             @if(!empty($footerHtml))
                 {!! $footerHtml !!}
             @else
-                <p class="footer-h">Contact Information</p>
-                <p><strong>Phone:</strong> 01200744888</p>
-                <p><strong>Email:</strong> mabdrabboh@amazonmarine.ltd</p>
-                <p><strong>Address:</strong> Villa 129, 2nd District New Cairo, Egypt</p>
-                <p><strong>Website:</strong> www.amazonmarine.ltd</p>
+                <p class="footer-h">{{ $labels['footer_contact'] }}</p>
+                <p><strong>{{ $labels['footer_phone'] }}:</strong> 01200744888</p>
+                <p><strong>{{ $labels['footer_email'] }}:</strong> mabdrabboh@amazonmarine.ltd</p>
+                <p><strong>{{ $labels['footer_address'] }}:</strong> Villa 129, 2nd District New Cairo, Egypt</p>
+                <p><strong>{{ $labels['footer_website'] }}:</strong> www.amazonmarine.ltd</p>
             @endif
         </div>
         </div>

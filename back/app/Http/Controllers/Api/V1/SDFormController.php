@@ -15,6 +15,7 @@ use App\Notifications\OperationSDFormNotification;
 use App\Services\ActivityLogger;
 use App\Services\NotificationService;
 use App\Services\SDFormService;
+use App\Support\PdfDocumentTheme;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Mpdf\Mpdf;
@@ -23,8 +24,8 @@ class SDFormController extends Controller
 {
     public function __construct(
         private NotificationService $notificationService,
-    ) {
-    }
+    ) {}
+
     public function index(Request $request)
     {
         $this->authorize('viewAny', SDForm::class);
@@ -45,7 +46,7 @@ class SDFormController extends Controller
         } elseif ($salesRepId = $request->query('sales_rep_id')) {
             $query->where('sales_rep_id', $salesRepId);
         }
-        
+
         if ($shippingLineId = $request->query('shipping_line_id')) {
             $query->where('shipping_line_id', $shippingLineId);
         }
@@ -478,27 +479,22 @@ class SDFormController extends Controller
     {
         $this->authorize('view', $sdForm);
 
-        $sdForm->loadMissing(['client', 'salesRep', 'pol', 'pod']);
+        $sdForm->loadMissing(['client', 'salesRep', 'pol', 'pod', 'linkedShipment']);
 
         $layout = PdfLayout::where('document_type', 'sd_form')->first();
 
         $filename = ($sdForm->sd_number ?: 'SD-'.$sdForm->id).'.pdf';
 
-        $html = view('sd_forms.pdf', [
+        $locale = PdfDocumentTheme::localeFromRequest($request);
+
+        $html = view('sd_forms.pdf', array_merge(PdfDocumentTheme::bladeVars($request), [
             'form' => $sdForm,
+            'labels' => PdfDocumentTheme::sdFormPdfLabels($locale),
             'headerHtml' => $layout?->header_html,
             'footerHtml' => $layout?->footer_html,
-        ])->render();
+        ]))->render();
 
-        $mpdf = new Mpdf([
-            'mode' => 'utf-8',
-            'default_font' => 'dejavusans',
-            'format' => 'A4',
-            'margin_top' => 10,
-            'margin_bottom' => 15,
-            'margin_left' => 10,
-            'margin_right' => 10,
-        ]);
+        $mpdf = new Mpdf(PdfDocumentTheme::mpdfConfig());
 
         $mpdf->WriteHTML($html);
 
