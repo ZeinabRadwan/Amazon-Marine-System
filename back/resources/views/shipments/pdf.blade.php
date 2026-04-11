@@ -79,17 +79,16 @@
             font-size: 15px;
             font-weight: 800;
             letter-spacing: 0.16em;
-            color: #11354d;
+            color: #ec7f00;
             text-transform: uppercase;
-            padding-bottom: 5px;
-            margin: 0 0 2px;
-            border-bottom: 3px solid #ec7f00;
+            margin: 0 0 4px;
+            padding: 0;
             width: auto;
             max-width: 100%;
         }
         .brand-tag {
             display: block;
-            margin: 8px 0 0;
+            margin: 6px 0 0;
             font-size: 8.5px;
             font-weight: 600;
             letter-spacing: 0.14em;
@@ -238,8 +237,6 @@
         }
         .footer {
             margin-top: 12px;
-            padding: 10px 14px 12px;
-            background: #f1f5f9;
             border-top: 3px solid #ec7f00;
             font-size: 9px;
             color: #11354d;

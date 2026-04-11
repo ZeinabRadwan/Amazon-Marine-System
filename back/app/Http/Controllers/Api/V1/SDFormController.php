@@ -520,7 +520,7 @@ class SDFormController extends Controller
     {
         if ($locale === 'ar') {
             return [
-                'doc_title' => 'نموذج تفاصيل الشحن (SD)',
+                'doc_title' => 'نموذج تفاصيل الشحن',
                 'brand' => 'أمازون مارين',
                 'brand_tag' => 'شحن وحلول لوجستية',
                 'sd_no' => 'رقم SD:',
@@ -563,7 +563,7 @@ class SDFormController extends Controller
         }
 
         return [
-            'doc_title' => 'SD — Shipping details form',
+            'doc_title' => 'SHIPPING DETAILS FORM',
             'brand' => 'AMAZON MARINE',
             'brand_tag' => 'Shipping and logistics solutions',
             'sd_no' => 'SD no:',

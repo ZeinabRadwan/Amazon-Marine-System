@@ -192,19 +192,18 @@
         display: block;
         font-size: 15px;
         font-weight: 800;
-        color: #11354d;
+        color: #ec7f00;
         letter-spacing: 0.16em;
         text-transform: uppercase;
         line-height: 1.25;
-        padding-bottom: 5px;
-        margin: 0 0 2px;
-        border-bottom: 3px solid #ec7f00;
+        margin: 0 0 4px;
+        padding: 0;
         max-width: 100%;
     }
 
     .pdf-root--preview .pdf-header-tagline {
         display: block;
-        margin-top: 8px;
+        margin-top: 6px;
         font-size: 8.5px;
         font-weight: 600;
         letter-spacing: 0.14em;

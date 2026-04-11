@@ -136,17 +136,16 @@
         font-size: 14px;
         font-weight: 800;
         letter-spacing: 0.14em;
-        color: #11354d;
+        color: #ec7f00;
         text-transform: uppercase;
-        padding-bottom: 5px;
-        margin: 0 0 2px;
-        border-bottom: 3px solid #ec7f00;
+        margin: 0 0 4px;
+        padding: 0;
         max-width: 100%;
     }
 
     .pdf-header__brand-tag {
         display: block;
-        margin: 8px 0 0;
+        margin: 6px 0 0;
         font-size: 8.5px;
         font-weight: 600;
         letter-spacing: 0.12em;
@@ -173,6 +172,42 @@
         text-transform: uppercase;
         margin: 0;
         line-height: 1.2;
+    }
+
+    .pdf-header__meta-list {
+        margin: 10px 0 0;
+        padding: 0;
+        text-align: inherit;
+        width: 100%;
+    }
+
+    .pdf-header__meta-row {
+        display: block;
+        font-size: 10px;
+        line-height: 1.55;
+        margin: 0 0 5px;
+        padding: 0 0 5px;
+        border-bottom: 1px solid #e2e8f0;
+        text-align: inherit;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+
+    .pdf-header__meta-row:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+
+    .pdf-header__meta-label {
+        font-weight: 700;
+        color: #11354d;
+    }
+
+    .pdf-header__meta-val {
+        font-weight: 600;
+        color: #11354d;
+        margin-inline-start: 0.35em;
     }
 
     .pdf-header__subtitle {

@@ -1,7 +1,7 @@
 @extends('pdf.layouts.master')
 
 @section('pdf_title')
-{{ $form->sd_number ?? ('SD-'.$form->id) }} — {{ $labels['doc_title'] }}
+{{ $labels['doc_title'] }} · {{ $form->sd_number ?? ('SD-'.$form->id) }}
 @endsection
 
 @section('content')
@@ -72,32 +72,24 @@
                     </td>
                     <td class="pdf-header__doc">
                         <p class="pdf-header__title">{{ $labels['doc_title'] }}</p>
-                    </td>
-                </tr>
-            </table>
-            <table class="pdf-meta-panel">
-                <tr>
-                    <td>
-                        <span class="pdf-meta-badge">#</span>
-                        <span class="pdf-meta-strong">{{ $labels['sd_no'] }}</span>
-                        <span class="pdf-meta-val">{{ $form->sd_number ?? ('SD-'.$form->id) }}</span>
-                    </td>
-                    <td>
-                        <span class="pdf-meta-badge">D</span>
-                        <span class="pdf-meta-strong">{{ $labels['sd_date'] }}</span>
-                        <span class="pdf-meta-val">{{ optional($form->created_at)->format('d/m/Y') ?? '—' }}</span>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <span class="pdf-meta-badge">V</span>
-                        <span class="pdf-meta-strong">{{ $labels['vessel_date'] }}</span>
-                        <span class="pdf-meta-val">{{ optional($form->requested_vessel_date)->format('d/m/Y') ?? '—' }}</span>
-                    </td>
-                    <td class="pdf-cell-dir-auto">
-                        <span class="pdf-meta-badge">C</span>
-                        <span class="pdf-meta-strong">{{ $labels['client'] }}</span>
-                        <span class="pdf-meta-val">{{ $form->client?->name ?? '—' }}</span>
+                        <div class="pdf-header__meta-list">
+                            <div class="pdf-header__meta-row">
+                                <span class="pdf-header__meta-label">{{ $labels['sd_no'] }}</span>
+                                <span class="pdf-header__meta-val">{{ $form->sd_number ?? ('SD-'.$form->id) }}</span>
+                            </div>
+                            <div class="pdf-header__meta-row">
+                                <span class="pdf-header__meta-label">{{ $labels['sd_date'] }}</span>
+                                <span class="pdf-header__meta-val">{{ optional($form->created_at)->format('d/m/Y') ?? '—' }}</span>
+                            </div>
+                            <div class="pdf-header__meta-row">
+                                <span class="pdf-header__meta-label">{{ $labels['vessel_date'] }}</span>
+                                <span class="pdf-header__meta-val">{{ optional($form->requested_vessel_date)->format('d/m/Y') ?? '—' }}</span>
+                            </div>
+                            <div class="pdf-header__meta-row">
+                                <span class="pdf-header__meta-label">{{ $labels['client'] }}</span>
+                                <span class="pdf-header__meta-val pdf-cell-dir-auto">{{ $form->client?->name ?? '—' }}</span>
+                            </div>
+                        </div>
                     </td>
                 </tr>
             </table>
