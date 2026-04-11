@@ -49,65 +49,31 @@
 
         $logoPath = base_path('../front/src/assets/logo_darkmode.png');
         $logoSrc = file_exists($logoPath) ? 'file://'.str_replace('\\', '/', $logoPath) : null;
+
+        $metaCells = [
+            ['label' => $L['sd_no'], 'value' => $form->sd_number ?? ('SD-'.$form->id), 'highlight' => true],
+            ['label' => $L['sd_date'], 'value' => optional($form->created_at)->format('d/m/Y') ?? '—', 'highlight' => false],
+            ['label' => $L['vessel_date'], 'value' => optional($form->requested_vessel_date)->format('d/m/Y') ?? '—', 'highlight' => false],
+            ['label' => $L['client'], 'value' => $form->client?->name ?? '—', 'highlight' => false],
+        ];
     @endphp
 
     @if(!empty($headerHtml))
         <div class="pdf-header pdf-header--custom">{!! $headerHtml !!}</div>
     @else
-        <table class="pdf-header" cellpadding="0" cellspacing="0">
-            <tr>
-                <td colspan="3">
-                    <table class="pdf-header-inner" cellpadding="0" cellspacing="0">
-                        <tr>
-                            <td class="pdf-header__logo-cell">
-                                @if($logoSrc)
-                                    <img class="pdf-header__logo-img" src="{{ $logoSrc }}" alt="">
-                                @else
-                                    <div class="pdf-header__logo-fallback">{{ $c['mh_placeholder'] }}</div>
-                                @endif
-                            </td>
-                            <td>
-                                <span class="pdf-header__brand-line">{{ $c['brand'] }}</span><span class="pdf-header__brand-sep">|</span><span class="pdf-header__brand-tag"> {{ $c['tagline'] }}</span>
-                            </td>
-                            <td class="pdf-header__title-wrap">
-                                <div class="pdf-header__title">{{ $L['document_title'] }}</div>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="3">
-                    <table class="pdf-meta-panel" cellpadding="0" cellspacing="8" border="0">
-                        <tr>
-                            <td>
-                                <span class="pdf-meta-label">{{ $L['sd_no'] }}</span>
-                                <span class="pdf-capsule pdf-capsule--accent">{{ $form->sd_number ?? ('SD-'.$form->id) }}</span>
-                            </td>
-                            <td>
-                                <span class="pdf-meta-label">{{ $L['sd_date'] }}</span>
-                                <span class="pdf-meta-val">{{ optional($form->created_at)->format('d/m/Y') ?? '—' }}</span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <span class="pdf-meta-label">{{ $L['vessel_date'] }}</span>
-                                <span class="pdf-meta-val">{{ optional($form->requested_vessel_date)->format('d/m/Y') ?? '—' }}</span>
-                            </td>
-                            <td dir="auto">
-                                <span class="pdf-meta-label">{{ $L['client'] }}</span>
-                                <span class="pdf-meta-val">{{ $form->client?->name ?? '—' }}</span>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
+        @include('pdf.partials.document-header-marine', [
+            'logoSrc' => $logoSrc,
+            'mhPlaceholder' => $c['mh_placeholder'] ?? 'MH',
+            'brand' => $c['brand'],
+            'tagline' => $c['tagline'],
+            'documentTitle' => $L['document_title'],
+            'documentSubtitle' => null,
+            'metaCells' => $metaCells,
+        ])
     @endif
 
-    <div class="pdf-section">
-        <p class="pdf-section__title">{{ $L['sec_shipment_info'] }}</p>
-        <table class="pdf-grid">
+    @include('pdf.components.section-open', ['title' => $L['sec_shipment_info']])
+        <table class="pdf-grid" cellpadding="0" cellspacing="0" border="0">
             <tr>
                 <th class="pdf-col-33">{{ $L['pol'] }}</th>
                 <th class="pdf-col-33">{{ $L['pod'] }}</th>
@@ -128,10 +94,16 @@
                 <td class="pdf-block-text">{!! $notifyDisplayHtml !!}</td>
                 <td>
                     @if($form->client?->email)
-                        <div><span class="pdf-label-strong">{{ $L['email'] }}:</span> {{ $form->client->email }}</div>
+                        <div class="pdf-field">
+                            <div class="pdf-label">{{ $L['email'] }}</div>
+                            <div class="pdf-value">{{ $form->client->email }}</div>
+                        </div>
                     @endif
                     @if($form->client?->phone)
-                        <div><span class="pdf-label-strong">{{ $L['phone'] }}:</span> {{ $form->client->phone }}</div>
+                        <div class="pdf-field">
+                            <div class="pdf-label">{{ $L['phone'] }}</div>
+                            <div class="pdf-value">{{ $form->client->phone }}</div>
+                        </div>
                     @endif
                     @if(!$form->client?->email && !$form->client?->phone)
                         <span class="pdf-muted">—</span>
@@ -139,11 +111,10 @@
                 </td>
             </tr>
         </table>
-    </div>
+    @include('pdf.components.section-close')
 
-    <div class="pdf-section">
-        <p class="pdf-section__title">{{ $L['sec_shipping_info'] }}</p>
-        <table class="pdf-grid">
+    @include('pdf.components.section-open', ['title' => $L['sec_shipping_info']])
+        <table class="pdf-grid" cellpadding="0" cellspacing="0" border="0">
             <tr>
                 <th class="pdf-col-25">{{ $L['swb_type'] }}</th>
                 <th class="pdf-col-37">{{ $L['fob'] }}</th>
@@ -155,7 +126,7 @@
                 <td>{{ $L['clean_on_board'] }}</td>
             </tr>
         </table>
-        <table class="pdf-grid pdf-grid--flush-top">
+        <table class="pdf-grid pdf-grid--flush-top" cellpadding="0" cellspacing="0" border="0">
             <tr>
                 <th class="pdf-col-25">{{ $L['vessel_container'] }}</th>
                 <th class="pdf-col-25">{{ $L['container_type'] }}</th>
@@ -173,32 +144,31 @@
                 <td colspan="3">{{ $form->shipping_line ?? '—' }}</td>
             </tr>
         </table>
-    </div>
+    @include('pdf.components.section-close')
 
-    <div class="pdf-section">
-        <p class="pdf-section__title">{{ $L['sec_goods'] }}</p>
-        <table class="pdf-grid">
+    @include('pdf.components.section-open', ['title' => $L['sec_goods']])
+        <table class="pdf-grid" cellpadding="0" cellspacing="0" border="0">
             <tr>
                 <th class="pdf-col-32">{{ $L['marks_numbers'] }}</th>
                 <th class="pdf-col-68">{{ $L['description_goods'] }}</th>
             </tr>
             <tr>
-                <td>{{ $form->sd_number ?? '—' }}</td>
+                <td><span class="pdf-highlight-box">{{ $form->sd_number ?? '—' }}</span></td>
                 <td class="pdf-block-text">{!! $form->cargo_description ? nl2br(e($form->cargo_description)) : '—' !!}</td>
             </tr>
         </table>
         <div class="pdf-notes-block">
-            <span class="pdf-label-strong">{{ $L['total_gross'] }}:</span> {{ $form->total_gross_weight ?? '—' }} {{ $L['kg'] }}
+            <span class="pdf-label-inline">{{ $L['total_gross'] }}</span> {{ $form->total_gross_weight ?? '—' }} {{ $L['kg'] }}
             &nbsp;|&nbsp;
-            <span class="pdf-label-strong">{{ $L['total_net'] }}:</span> {{ $form->total_net_weight ?? '—' }} {{ $L['kg'] }}
+            <span class="pdf-label-inline">{{ $L['total_net'] }}</span> {{ $form->total_net_weight ?? '—' }} {{ $L['kg'] }}
             @if($form->shipment_direction === 'Import' && !empty($form->acid_number))
-                <br><br><span class="pdf-label-strong">{{ $L['acid'] }}:</span> {{ $form->acid_number }}
+                <br><br><span class="pdf-label-inline">{{ $L['acid'] }}</span> {{ $form->acid_number }}
             @endif
             @if(!empty($form->notes))
-                <br><br><span class="pdf-label-strong">{{ $L['notes'] }}:</span> {{ $form->notes }}
+                <br><br><span class="pdf-label-inline">{{ $L['notes'] }}</span> {{ $form->notes }}
             @endif
         </div>
-    </div>
+    @include('pdf.components.section-close')
 @endsection
 
 @section('pdf_footer')

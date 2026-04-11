@@ -13,12 +13,11 @@
     @stack('pdf_head')
 </head>
 <body class="pdf-root">
-    <div class="pdf-container pdf-decor">
-        @include('pdf.partials.wave_decor')
-        <div class="pdf-main pdf-main--layer">
+    <div class="pdf-container">
+        <div class="pdf-main">
             @yield('pdf_content')
         </div>
-        <div class="pdf-footer pdf-footer--layer" role="contentinfo">
+        <div class="pdf-footer" role="contentinfo">
             @hasSection('pdf_footer')
                 @yield('pdf_footer')
             @elseif(!empty($footerHtml))

@@ -35,6 +35,8 @@ return [
         'vat' => 'VAT (14%)',
         'total' => 'TOTAL',
         'notes' => 'Notes',
+        'lines_section' => 'Line items',
+        'totals_section' => 'Totals',
     ],
 
     'sd_form' => [
