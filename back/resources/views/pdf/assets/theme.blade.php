@@ -1,4 +1,4 @@
-{{-- Unified PDF design system (mPDF): #FF8A00 primary, #1C1C1C header, #F5F5F5 fills, #DDDDDD borders, #333333 text. No var(). --}}
+{{-- Corporate PDF design (mPDF): #1C1C1C header, #FF8A00 accent, #2A2A2A meta, zebra #F7F7F7. Utilities: .pdf-card .pdf-dark-header .pdf-section-header .pdf-summary-box. No var(). --}}
 @php
     $amiriPath = resource_path('fonts/Amiri-Regular.ttf');
     $amiriUrl = is_file($amiriPath) ? 'file://'.str_replace('\\', '/', $amiriPath) : '';
@@ -37,15 +37,16 @@
     }
 
     .pdf-main {
-        padding: 0 12px 10px;
+        padding: 0 14px 14px;
     }
 
-    .pdf-header {
+    .pdf-header,
+    .pdf-dark-header {
         width: 100%;
         border-collapse: collapse;
-        margin: 0 0 14px;
+        margin: 0 0 16px;
         background-color: #1C1C1C;
-        border-bottom: 3px solid #FF8A00;
+        border-bottom: 4px solid #FF8A00;
     }
 
     .pdf-header.pdf-header--custom {
@@ -72,8 +73,13 @@
     }
 
     .pdf-header__logo-cell {
-        width: 90px;
-        padding-right: 12px;
+        width: 92px;
+        padding-right: 14px;
+    }
+
+    [dir="rtl"] .pdf-header__logo-cell {
+        padding-right: 0;
+        padding-left: 14px;
     }
 
     .pdf-header__logo-img {
@@ -96,7 +102,9 @@
     }
 
     .pdf-header__brand-cell {
+        width: 58%;
         color: #ffffff;
+        vertical-align: middle;
     }
 
     .pdf-header__brand-line {
@@ -119,8 +127,9 @@
     }
 
     .pdf-header__title-wrap {
-        width: 34%;
+        width: 32%;
         text-align: right;
+        vertical-align: middle;
     }
 
     [dir="rtl"] .pdf-header__title-wrap {
@@ -128,19 +137,20 @@
     }
 
     .pdf-header__title {
-        font-size: 12px;
+        font-size: 13px;
         font-weight: 700;
         color: #ffffff;
-        letter-spacing: 0.08em;
+        letter-spacing: 0.1em;
         text-transform: uppercase;
     }
 
     .pdf-header__subtitle {
-        font-size: 9.5px;
+        font-size: 9px;
         font-weight: 600;
-        color: #e0e0e0;
-        margin-top: 3px;
-        letter-spacing: 0.04em;
+        color: #cccccc;
+        margin-top: 4px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
     }
 
     .pdf-header__row--meta td {
@@ -151,29 +161,30 @@
     .pdf-header-meta {
         width: 100%;
         border-collapse: collapse;
-        background-color: #2a2a2a;
-        border: 1px solid #444444;
-        border-left: 4px solid #FF8A00;
+        background-color: #2A2A2A;
+        border: 1px solid #3D3D3D;
+        border-left: 5px solid #FF8A00;
+        border-radius: 3px;
     }
 
     .pdf-header-meta__cell {
-        padding: 10px 12px;
+        padding: 12px 14px;
         border: none;
         vertical-align: top;
         width: 50%;
     }
 
     .pdf-header-meta tr + tr .pdf-header-meta__cell {
-        border-top: 1px solid #444444;
+        border-top: 1px solid #404040;
     }
 
     .pdf-header-meta .pdf-header-meta__cell + .pdf-header-meta__cell {
-        border-left: 1px solid #444444;
+        border-left: 1px solid #404040;
     }
 
     [dir="rtl"] .pdf-header-meta .pdf-header-meta__cell + .pdf-header-meta__cell {
         border-left: none;
-        border-right: 1px solid #444444;
+        border-right: 1px solid #404040;
     }
 
     .pdf-field {
@@ -181,22 +192,35 @@
     }
 
     .pdf-label {
-        font-size: 8px;
+        font-size: 7.5px;
         font-weight: 700;
-        color: #aaaaaa;
+        color: #AAAAAA;
         text-transform: uppercase;
-        letter-spacing: 0.1em;
-        margin-bottom: 4px;
+        letter-spacing: 0.12em;
+        margin-bottom: 5px;
     }
 
     .pdf-value {
         font-size: 10.5px;
         font-weight: 700;
+    }
+
+    .pdf-field--light .pdf-label,
+    .pdf-section-body .pdf-field:not(.pdf-field--dark) .pdf-label {
+        color: #AAAAAA;
+    }
+
+    .pdf-field--light .pdf-value,
+    .pdf-section-body .pdf-field:not(.pdf-field--dark) .pdf-value {
         color: #333333;
     }
 
-    .pdf-header-meta .pdf-value {
-        color: #f5f5f5;
+    .pdf-field--dark .pdf-label {
+        color: #AAAAAA;
+    }
+
+    .pdf-field--dark .pdf-value {
+        color: #FFFFFF;
     }
 
     .pdf-highlight-box {
@@ -214,26 +238,30 @@
     }
 
     .pdf-section {
-        margin: 0 0 12px;
+        margin: 0 0 18px;
     }
 
-    .pdf-section-title {
+    .pdf-section-title,
+    .pdf-section-header {
         font-size: 9.5px;
         font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.12em;
+        letter-spacing: 0.14em;
         color: #ffffff;
         background-color: #FF8A00;
         margin: 0;
-        padding: 8px 12px;
-        line-height: 1.3;
+        padding: 10px 14px;
+        line-height: 1.35;
+        border-radius: 3px 3px 0 0;
     }
 
-    .pdf-section-body {
+    .pdf-section-body,
+    .pdf-card {
         background-color: #ffffff;
-        border: 1px solid #DDDDDD;
+        border: 1px solid #E0E0E0;
         border-top: none;
-        padding: 0;
+        padding: 14px 16px;
+        border-radius: 0 0 3px 3px;
     }
 
     .pdf-grid {
@@ -244,18 +272,18 @@
 
     .pdf-grid th,
     .pdf-grid td {
-        border: 1px solid #DDDDDD;
-        padding: 8px 10px;
+        border: 1px solid #D8D8D8;
+        padding: 9px 11px;
         vertical-align: top;
     }
 
     .pdf-grid th {
-        background-color: #F5F5F5;
-        font-size: 8.5px;
+        background-color: #FF8A00;
+        font-size: 8px;
         font-weight: 700;
-        color: #666666;
+        color: #ffffff;
         text-transform: uppercase;
-        letter-spacing: 0.06em;
+        letter-spacing: 0.1em;
         text-align: left;
     }
 
@@ -271,7 +299,7 @@
     }
 
     .pdf-grid tbody tr:nth-child(even) td {
-        background-color: #F9F9F9;
+        background-color: #F7F7F7;
     }
 
     .pdf-grid--flush-top {
@@ -285,10 +313,10 @@
     }
 
     .pdf-notes-block {
-        border: 1px solid #DDDDDD;
+        border: 1px solid #E0E0E0;
         border-top: none;
-        background-color: #F5F5F5;
-        padding: 10px 12px;
+        background-color: #F7F7F7;
+        padding: 12px 14px;
         font-size: 10px;
         line-height: 1.5;
         color: #333333;
@@ -307,8 +335,8 @@
     }
 
     .pdf-invoice-shell {
-        border: 1px solid #DDDDDD;
-        padding: 0 8px 12px;
+        border: 1px solid #E0E0E0;
+        padding: 0 10px 14px;
         background-color: #ffffff;
     }
 
@@ -317,7 +345,7 @@
         border-collapse: collapse;
         margin-bottom: 0;
         background-color: #1C1C1C;
-        border-bottom: 3px solid #FF8A00;
+        border-bottom: 4px solid #FF8A00;
     }
 
     .pdf-invoice-header-table td {
@@ -355,11 +383,13 @@
         letter-spacing: 0.04em;
     }
 
-    .pdf-invoice-meta .pdf-field .pdf-label {
-        color: #aaaaaa;
+    .pdf-invoice-meta .pdf-field .pdf-label,
+    .pdf-invoice-meta .pdf-field--light .pdf-label {
+        color: #AAAAAA;
     }
 
-    .pdf-invoice-meta .pdf-field .pdf-value {
+    .pdf-invoice-meta .pdf-field .pdf-value,
+    .pdf-invoice-meta .pdf-field--light .pdf-value {
         color: #ffffff;
     }
 
@@ -373,8 +403,9 @@
     }
 
     .pdf-party-inner {
-        padding: 14px 16px;
-        background-color: #F5F5F5;
+        padding: 0;
+        margin: 0;
+        background-color: transparent;
     }
 
     .pdf-party-inner > .pdf-field:first-child .pdf-value {
@@ -382,14 +413,14 @@
     }
 
     .pdf-party-box {
-        border: 1px solid #DDDDDD;
+        border: 1px solid #E0E0E0;
         border-top: none;
         padding: 14px 16px;
-        background-color: #F5F5F5;
+        background-color: #ffffff;
     }
 
     .pdf-party-box .pdf-label {
-        color: #666666;
+        color: #AAAAAA;
     }
 
     .pdf-party-box .pdf-value {
@@ -405,18 +436,18 @@
 
     .pdf-table th,
     .pdf-table td {
-        border: 1px solid #DDDDDD;
-        padding: 9px 10px;
+        border: 1px solid #D8D8D8;
+        padding: 9px 11px;
         vertical-align: top;
     }
 
     .pdf-table th {
-        background-color: #F5F5F5;
-        font-size: 8.5px;
+        background-color: #FF8A00;
+        font-size: 8px;
         font-weight: 700;
-        color: #666666;
+        color: #ffffff;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.1em;
         text-align: left;
     }
 
@@ -425,13 +456,17 @@
     }
 
     .pdf-table--zebra tbody tr:nth-child(even) td {
-        background-color: #F9F9F9;
+        background-color: #F7F7F7;
     }
 
     .pdf-table tbody td {
         font-size: 10px;
         font-weight: 600;
         color: #333333;
+        background-color: #ffffff;
+    }
+
+    .pdf-table--zebra tbody tr:nth-child(odd) td {
         background-color: #ffffff;
     }
 
@@ -463,22 +498,42 @@
         color: #555555;
     }
 
-    .pdf-total-box {
-        margin-top: 8px;
-        padding: 10px 16px;
+    .pdf-total-box,
+    .pdf-summary-box {
+        margin-top: 12px;
+        padding: 14px 18px;
         background-color: #FF8A00;
         color: #ffffff;
-        font-size: 13px;
+        font-size: 16px;
         font-weight: 700;
+        letter-spacing: 0.04em;
+        border: 1px solid #E67300;
+        border-left: 5px solid #E67300;
     }
 
-    .pdf-total-box td {
+    .pdf-total-box td,
+    .pdf-summary-box td {
         color: #ffffff;
         border: none;
         padding: 0;
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
     }
 
-    table.pdf-total-box {
+    .pdf-total-box td:first-child,
+    .pdf-summary-box td:first-child {
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    .pdf-total-box td.pdf-text-end,
+    .pdf-summary-box td.pdf-text-end {
+        text-transform: none;
+    }
+
+    table.pdf-total-box,
+    table.pdf-summary-box {
         width: 100%;
         border-collapse: collapse;
     }
@@ -498,9 +553,9 @@
     }
 
     .pdf-footer {
-        margin-top: 12px;
-        padding: 12px 14px;
-        background-color: #F5F5F5;
+        margin-top: 16px;
+        padding: 14px 16px;
+        background-color: #F0F0F0;
         border-top: 2px solid #FF8A00;
         font-size: 9px;
         color: #555555;

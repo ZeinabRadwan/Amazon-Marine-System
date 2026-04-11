@@ -3,7 +3,7 @@
     $documentSubtitle = $documentSubtitle ?? null;
     $metaCells = $metaCells ?? [];
 @endphp
-<table class="pdf-header" cellpadding="0" cellspacing="0" border="0">
+<table class="pdf-header pdf-dark-header" cellpadding="0" cellspacing="0" border="0">
     <tr>
         <td colspan="3" class="pdf-header__row pdf-header__row--brand">
             <table class="pdf-header-inner" cellpadding="0" cellspacing="0" border="0" width="100%">
@@ -38,6 +38,7 @@
                                 'label' => $cell['label'] ?? '',
                                 'value' => $cell['value'] ?? '—',
                                 'highlight' => !empty($cell['highlight']),
+                                'dark' => true,
                             ])
                         </td>
                     @endforeach
@@ -49,6 +50,7 @@
                                 'label' => $cell['label'] ?? '',
                                 'value' => $cell['value'] ?? '—',
                                 'highlight' => !empty($cell['highlight']),
+                                'dark' => true,
                             ])
                         </td>
                     @endforeach

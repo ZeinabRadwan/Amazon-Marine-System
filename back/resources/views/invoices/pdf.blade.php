@@ -39,13 +39,13 @@
                     'highlight' => false,
                 ])
                 @if($invoice->client?->address)
-                    <div class="pdf-field">
+                    <div class="pdf-field pdf-field--light">
                         <div class="pdf-label">{{ $c['address'] ?? 'Address' }}</div>
                         <div class="pdf-value">{{ $invoice->client->address }}</div>
                     </div>
                 @endif
                 @if($invoice->client?->phone)
-                    <div class="pdf-field">
+                    <div class="pdf-field pdf-field--light">
                         <div class="pdf-label">{{ $c['phone'] }}</div>
                         <div class="pdf-value">{{ $invoice->client->phone }}</div>
                     </div>
@@ -97,7 +97,7 @@
                                 </tr>
                             @endif
                         </table>
-                        <table class="pdf-total-box" cellpadding="0" cellspacing="0" border="0" width="100%">
+                        <table class="pdf-total-box pdf-summary-box" cellpadding="0" cellspacing="0" border="0" width="100%">
                             <tr>
                                 <td>{{ $L['total'] }}</td>
                                 <td class="pdf-text-end">{{ number_format($invoice->net_amount, 2) }} {{ $invoice->currency_code }}</td>

@@ -94,13 +94,13 @@
                 <td class="pdf-block-text">{!! $notifyDisplayHtml !!}</td>
                 <td>
                     @if($form->client?->email)
-                        <div class="pdf-field">
+                        <div class="pdf-field pdf-field--light">
                             <div class="pdf-label">{{ $L['email'] }}</div>
                             <div class="pdf-value">{{ $form->client->email }}</div>
                         </div>
                     @endif
                     @if($form->client?->phone)
-                        <div class="pdf-field">
+                        <div class="pdf-field pdf-field--light">
                             <div class="pdf-label">{{ $L['phone'] }}</div>
                             <div class="pdf-value">{{ $form->client->phone }}</div>
                         </div>
