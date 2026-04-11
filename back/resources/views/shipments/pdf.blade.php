@@ -7,151 +7,160 @@
         * { box-sizing: border-box; }
         body {
             font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif;
-            font-size: 10.5px;
-            color: #0f172a;
+            font-size: 10px;
+            color: #1e293b;
             direction: ltr;
             text-align: left;
             margin: 0;
             padding: 0;
-            line-height: 1.45;
+            line-height: 1.5;
             background: #ffffff;
         }
-        .wrap { padding: 0; }
-        table.header-band {
+        .wrap { padding: 0 12px; }
+        /* —— Letterhead (default header) —— */
+        table.doc-shell {
             width: 100%;
             border-collapse: collapse;
-            background: #1f2a60;
-            margin: 0 0 14px;
+            margin: 0 0 16px;
         }
-        table.header-band > tbody > tr > td {
-            border: none;
-            vertical-align: top;
+        table.doc-shell > tbody > tr > td.doc-accent {
+            width: 5px;
+            background: #0c4a6e;
             padding: 0;
         }
-        .header-row1 td {
-            border: none;
-            vertical-align: middle;
-            padding: 14px 16px 10px;
-        }
-        .header-logo img {
-            height: 48px;
-            width: auto;
-            max-width: 88px;
-            display: block;
-        }
-        .brand-line {
-            font-size: 13px;
-            font-weight: 700;
-            letter-spacing: 0.1em;
-            color: #ffffff;
-            line-height: 1.35;
-        }
-        .brand-sep {
-            color: #f97316;
-            font-weight: 400;
-            padding: 0 0.35em;
-        }
-        .brand-tag {
-            font-size: 10px;
-            font-weight: 400;
-            letter-spacing: 0.02em;
-            color: #ffffff;
-        }
-        .doc-title {
-            font-size: 12px;
-            font-weight: 700;
-            color: #ffffff;
-            letter-spacing: 0.03em;
-            text-align: right;
-            line-height: 1.3;
-        }
-        td.header-row2 {
-            border: none;
-            padding: 0 16px 14px !important;
+        table.doc-shell > tbody > tr > td.doc-body {
+            padding: 0 0 0 14px;
             vertical-align: top;
         }
-        table.meta-panel {
+        table.letterhead {
             width: 100%;
             border-collapse: collapse;
-            background: #243056;
-            border: 1px solid #f97316;
+            border-bottom: 2px solid #0c4a6e;
+            padding-bottom: 0;
+            margin-bottom: 12px;
         }
-        table.meta-panel td {
-            border: none;
-            padding: 8px 12px;
+        table.letterhead td {
             vertical-align: top;
-            width: 50%;
-            font-size: 10px;
-            color: #ffffff;
+            padding: 0 0 12px;
+            border: none;
         }
-        table.meta-panel tr + tr td {
-            border-top: 1px solid #364785;
+        .lh-logo img {
+            height: 44px;
+            width: auto;
+            max-width: 100px;
+            display: block;
         }
-        table.meta-panel td + td {
-            border-left: 1px solid #364785;
-        }
-        .meta-icon {
-            display: inline-block;
-            min-width: 16px;
-            height: 16px;
-            line-height: 16px;
-            text-align: center;
-            background: #f97316;
-            color: #ffffff;
-            font-size: 8px;
+        .lh-brand-name {
+            font-size: 15px;
             font-weight: 700;
-            margin-right: 8px;
-            vertical-align: middle;
+            color: #0c4a6e;
+            letter-spacing: 0.04em;
+            line-height: 1.2;
         }
-        .meta-item strong {
-            color: #ffffff;
+        .lh-brand-sub {
+            font-size: 8.5px;
+            color: #64748b;
+            margin-top: 3px;
+            letter-spacing: 0.02em;
+        }
+        .lh-doc-label {
+            font-size: 9px;
             font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            text-align: right;
         }
-        .meta-val {
-            color: #f1f5f9;
+        .lh-doc-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+            text-align: right;
+            margin-top: 2px;
+        }
+        .lh-doc-sub {
+            font-size: 9px;
+            color: #475569;
+            text-align: right;
+            margin-top: 2px;
+        }
+        /* Reference strip */
+        table.ref-strip {
+            width: 100%;
+            border-collapse: collapse;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+        }
+        table.ref-strip td {
+            width: 25%;
+            padding: 8px 10px;
+            vertical-align: top;
+            border-right: 1px solid #e2e8f0;
+            font-size: 9px;
+        }
+        table.ref-strip td:last-child { border-right: none; }
+        .ref-k {
+            display: block;
+            font-size: 7.5px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 2px;
+        }
+        .ref-v {
+            font-size: 10px;
+            font-weight: 600;
+            color: #0f172a;
         }
         .body-pad {
-            padding: 0 14px 16px;
+            padding: 0 0 14px 0;
         }
+        /* Sections */
         .sec {
-            margin: 0 0 10px;
+            margin: 0 0 14px;
         }
         .sec-h {
-            font-size: 9.5px;
+            font-size: 8.5px;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: #ffffff;
-            background: #f97316;
-            margin: 0 0 0;
-            padding: 6px 10px;
-            border-left: 4px solid #1f2a60;
+            letter-spacing: 0.11em;
+            color: #0c4a6e;
+            margin: 0 0 6px;
+            padding: 0 0 4px;
+            border-bottom: 1px solid #cbd5e1;
         }
-        table.grid {
+        table.data {
             width: 100%;
             border-collapse: collapse;
             margin: 0;
+            border: 1px solid #e2e8f0;
         }
-        table.grid th,
-        table.grid td {
-            border: 1px solid #1f2a60;
-            padding: 6px 8px;
+        table.data th,
+        table.data td {
+            border: 1px solid #e2e8f0;
+            padding: 7px 9px;
             vertical-align: top;
         }
-        table.grid th {
-            background: #ffffff;
-            font-size: 9px;
+        table.data th {
+            background: #f1f5f9;
+            font-size: 8px;
             font-weight: 700;
-            color: #1f2a60;
+            color: #475569;
             text-align: left;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
         }
-        table.grid td {
+        table.data td {
             font-size: 10px;
             color: #0f172a;
-            background: #eef1f6;
+            background: #ffffff;
+        }
+        table.data + table.data {
+            margin-top: -1px;
         }
         .lbl {
-            color: #1f2a60;
+            color: #334155;
             font-weight: 600;
         }
         .cell-muted {
@@ -161,34 +170,42 @@
             white-space: pre-wrap;
             word-wrap: break-word;
         }
-        .notes {
-            border: 1px solid #1f2a60;
+        .notes-box {
+            border: 1px solid #e2e8f0;
             border-top: none;
-            background: #eef1f6;
-            padding: 8px 10px;
-            margin-top: 0;
+            background: #fafafa;
+            padding: 10px 12px;
             font-size: 10px;
-            line-height: 1.5;
-            color: #0f172a;
+            line-height: 1.55;
+            color: #334155;
+        }
+        .notes-box strong {
+            color: #0c4a6e;
+            font-weight: 700;
         }
         .footer {
-            margin-top: 12px;
-            padding: 10px 14px;
-            background: #f1f5f9;
-            border-top: 3px solid #f97316;
-            font-size: 9px;
-            color: #475569;
+            margin-top: 18px;
+            padding-top: 10px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 8.5px;
+            color: #64748b;
         }
         .footer-h {
             font-weight: 700;
-            color: #1f2a60;
-            margin: 0 0 5px;
-            font-size: 9.5px;
+            color: #0c4a6e;
+            margin: 0 0 6px;
+            font-size: 8.5px;
             text-transform: uppercase;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.08em;
         }
-        .footer p { margin: 2px 0; }
-        .footer strong { color: #0f172a; }
+        .footer table { width: 100%; border-collapse: collapse; }
+        .footer table td {
+            padding: 2px 8px 2px 0;
+            vertical-align: top;
+            border: none;
+            font-size: 8.5px;
+        }
+        .footer strong { color: #334155; font-weight: 600; }
     </style>
 </head>
 <body>
@@ -205,50 +222,47 @@
         @if(!empty($headerHtml))
             {!! $headerHtml !!}
         @else
-            <table class="header-band">
+            <table class="doc-shell" cellpadding="0" cellspacing="0">
                 <tr>
-                    <td>
-                        <table class="header-row1" style="width:100%;border-collapse:collapse;">
+                    <td class="doc-accent"></td>
+                    <td class="doc-body">
+                        <table class="letterhead" cellpadding="0" cellspacing="0">
                             <tr>
-                                <td class="header-logo" style="width:90px;border:none;vertical-align:middle;">
+                                <td style="width:88px;">
                                     @if($logoSrc)
-                                        <img src="{{ $logoSrc }}" alt="" style="height:48px;width:auto;max-width:88px;display:block;">
+                                        <img src="{{ $logoSrc }}" alt="" class="lh-logo" style="height:44px;width:auto;max-width:100px;display:block;">
                                     @else
-                                        <div style="width:72px;height:40px;background:#fff;border:1px solid #f97316;text-align:center;line-height:40px;font-size:8px;color:#1f2a60;">LOGO</div>
+                                        <div style="width:72px;height:38px;border:1px solid #e2e8f0;text-align:center;line-height:38px;font-size:7px;color:#64748b;">LOGO</div>
                                     @endif
                                 </td>
-                                <td style="border:none;vertical-align:middle;padding-left:10px;padding-right:12px;">
-                                    <span class="brand-line">AMAZON MARINE</span><span class="brand-sep">|</span><span class="brand-tag"> Shipping and Logistics Solutions</span>
+                                <td style="padding-left:12px;">
+                                    <div class="lh-brand-name">AMAZON MARINE</div>
+                                    <div class="lh-brand-sub">Shipping and Logistics Solutions</div>
                                 </td>
-                                <td style="width:32%;border:none;vertical-align:middle;text-align:right;">
-                                    <div class="doc-title">{{ $labels['title'] }}</div>
-                                    <div class="doc-title" style="font-size:10px;font-weight:600;opacity:0.95;margin-top:2px;">{{ $labels['doc_subtitle'] }}</div>
+                                <td style="width:38%;">
+                                    <div class="lh-doc-label">{{ $labels['doc_subtitle'] }}</div>
+                                    <div class="lh-doc-title">{{ $labels['title'] }}</div>
+                                    <div class="lh-doc-sub">#{{ $shipment->id }} · {{ $genAt }}</div>
                                 </td>
                             </tr>
                         </table>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="header-row2">
-                        <table class="meta-panel">
+                        <table class="ref-strip" cellpadding="0" cellspacing="0">
                             <tr>
                                 <td>
-                                    <span class="meta-icon">#</span>
-                                    <span class="meta-item"><strong>{{ $labels['id'] }}:</strong> <span class="meta-val">#{{ $shipment->id }}</span></span>
+                                    <span class="ref-k">{{ $labels['client'] }}</span>
+                                    <span class="ref-v">{{ $shipment->client?->company_name ?? $shipment->client?->name ?? '—' }}</span>
                                 </td>
                                 <td>
-                                    <span class="meta-icon">D</span>
-                                    <span class="meta-item"><strong>{{ $labels['generated'] }}:</strong> <span class="meta-val">{{ $genAt }}</span></span>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td dir="auto" style="text-align:left;">
-                                    <span class="meta-icon">C</span>
-                                    <span class="meta-item"><strong>{{ $labels['client'] }}:</strong> <span class="meta-val">{{ $shipment->client?->company_name ?? $shipment->client?->name ?? '—' }}</span></span>
+                                    <span class="ref-k">{{ $labels['status'] }}</span>
+                                    <span class="ref-v">{{ $shipment->status ?? '—' }}</span>
                                 </td>
                                 <td>
-                                    <span class="meta-icon">S</span>
-                                    <span class="meta-item"><strong>{{ $labels['status'] }}:</strong> <span class="meta-val">{{ $shipment->status ?? '—' }}</span></span>
+                                    <span class="ref-k">{{ $labels['id'] }}</span>
+                                    <span class="ref-v">#{{ $shipment->id }}</span>
+                                </td>
+                                <td>
+                                    <span class="ref-k">{{ $labels['generated'] }}</span>
+                                    <span class="ref-v">{{ $genAt }}</span>
                                 </td>
                             </tr>
                         </table>
@@ -260,7 +274,7 @@
         <div class="body-pad">
             <div class="sec">
                 <p class="sec-h">{{ $labels['sec_shipment'] }}</p>
-                <table class="grid">
+                <table class="data" cellpadding="0" cellspacing="0">
                     <tr>
                         <th style="width:33.33%;">{{ $labels['sales_rep'] }}</th>
                         <th style="width:33.33%;">{{ $labels['sd_form'] }}</th>
@@ -276,7 +290,7 @@
 
             <div class="sec">
                 <p class="sec-h">{{ $labels['sec_booking'] }}</p>
-                <table class="grid">
+                <table class="data" cellpadding="0" cellspacing="0">
                     <tr>
                         <th style="width:33.33%;">{{ $labels['booking_date'] }}</th>
                         <th style="width:33.33%;">{{ $labels['booking_number'] }}</th>
@@ -292,7 +306,7 @@
 
             <div class="sec">
                 <p class="sec-h">{{ $labels['sec_shipping'] }}</p>
-                <table class="grid">
+                <table class="data" cellpadding="0" cellspacing="0">
                     <tr>
                         <th style="width:20%;">{{ $labels['mode'] }}</th>
                         <th style="width:20%;">{{ $labels['shipment_type'] }}</th>
@@ -314,7 +328,7 @@
                     </tr>
                     @endif
                 </table>
-                <table class="grid" style="margin-top:-1px;">
+                <table class="data" cellpadding="0" cellspacing="0">
                     <tr>
                         <th style="width:25%;">{{ $labels['container_type'] }}</th>
                         <th style="width:25%;">{{ $labels['container_size'] }}</th>
@@ -332,7 +346,7 @@
 
             <div class="sec">
                 <p class="sec-h">{{ $labels['sec_ports'] }}</p>
-                <table class="grid">
+                <table class="data" cellpadding="0" cellspacing="0">
                     <tr>
                         <th style="width:33.33%;">{{ $labels['pol'] }}</th>
                         <th style="width:33.33%;">{{ $labels['pod'] }}</th>
@@ -348,9 +362,9 @@
 
             <div class="sec">
                 <p class="sec-h">{{ $labels['sec_goods'] }}</p>
-                <table class="grid">
+                <table class="data" cellpadding="0" cellspacing="0">
                     <tr>
-                        <th style="width:22%;">{{ $labels['id'] }}</th>
+                        <th style="width:18%;">{{ $labels['id'] }}</th>
                         <th>{{ $labels['cargo'] }}</th>
                     </tr>
                     <tr>
@@ -358,7 +372,7 @@
                         <td class="block-text">{!! $shipment->cargo_description ? nl2br(e($shipment->cargo_description)) : '—' !!}</td>
                     </tr>
                 </table>
-                <div class="notes">
+                <div class="notes-box">
                     @if(filled($notesColumn))
                         <strong>{{ $labels['notes'] }}:</strong><br>
                         <span class="block-text">{!! nl2br(e($notesColumn)) !!}</span>
@@ -375,11 +389,19 @@
                 @if(!empty($footerHtml))
                     {!! $footerHtml !!}
                 @else
-                    <p class="footer-h">Contact Information</p>
-                    <p><strong>Phone:</strong> 01200744888</p>
-                    <p><strong>Email:</strong> mabdrabboh@amazonmarine.ltd</p>
-                    <p><strong>Address:</strong> Villa 129, 2nd District New Cairo, Egypt</p>
-                    <p><strong>Website:</strong> www.amazonmarine.ltd</p>
+                    <p class="footer-h">Contact</p>
+                    <table cellpadding="0" cellspacing="0">
+                        <tr>
+                            <td><strong>Phone</strong> 01200744888</td>
+                            <td><strong>Email</strong> mabdrabboh@amazonmarine.ltd</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"><strong>Address</strong> Villa 129, 2nd District New Cairo, Egypt</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"><strong>Web</strong> www.amazonmarine.ltd</td>
+                        </tr>
+                    </table>
                 @endif
             </div>
         </div>
