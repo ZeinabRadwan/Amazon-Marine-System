@@ -20,8 +20,8 @@ class ShipmentController extends Controller
 {
     public function __construct(
         private NotificationService $notificationService,
-    ) {
-    }
+    ) {}
+
     public function index(Request $request)
     {
         $this->authorize('viewAny', Shipment::class);
@@ -209,8 +209,6 @@ class ShipmentController extends Controller
             ]);
         }
 
-
-
         return response()->json([
             'data' => $shipment->fresh(['client', 'salesRep', 'lineVendor', 'shippingLine', 'originPort', 'destinationPort', 'sdForm']),
         ]);
@@ -237,11 +235,11 @@ class ShipmentController extends Controller
         $query = Shipment::query();
 
         // Apply role-based filtering
-        if (!$user->hasRole('admin') && !$user->can('shipments.view') && $user->can('shipments.view_own')) {
+        if (! $user->hasRole('admin') && ! $user->can('shipments.view') && $user->can('shipments.view_own')) {
             $query->where('sales_rep_id', $user->id);
         }
 
-        if ($user->hasRole('operations') && !$user->hasRole('admin')) {
+        if ($user->hasRole('operations') && ! $user->hasRole('admin')) {
             $query->whereHas('sdForm', function ($q) {
                 $q->where('status', 'sent_to_operations');
             });
@@ -252,7 +250,7 @@ class ShipmentController extends Controller
             ->groupBy('status')
             ->get()
             ->mapWithKeys(function ($row) {
-                return [trim((string)$row->status) => (int)$row->count];
+                return [trim((string) $row->status) => (int) $row->count];
             })
             ->toArray();
 
@@ -266,23 +264,25 @@ class ShipmentController extends Controller
         $inTransit = 0;
         $customsClearance = 0;
         $delivered = 0;
-        
+
         $dynamicStats = [];
 
         foreach ($allStatuses as $s) {
             // Priority 1: ID match
             $count = (int) ($counts[$s->id] ?? 0);
-            
+
             // Priority 2: Name match (if not already counted via ID)
             foreach ($counts as $statusStr => $c) {
-                if (is_numeric($statusStr)) continue; // Skip IDs here
-                
+                if (is_numeric($statusStr)) {
+                    continue;
+                } // Skip IDs here
+
                 $lowerStatus = strtolower(trim($statusStr));
                 if ($lowerStatus === strtolower($s->name_en) || $statusStr === $s->name_ar) {
                     $count += $c;
                 }
             }
-            
+
             $dynamicStats[] = [
                 'id' => $s->id,
                 'name_ar' => $s->name_ar,
@@ -293,10 +293,15 @@ class ShipmentController extends Controller
 
             // Aggregation for the 4 core pipeline cards
             $key = $this->normalizeStatusForStats($s->name_en);
-            if ($key === 'booked') $booked += $count;
-            elseif ($key === 'in_transit') $inTransit += $count;
-            elseif ($key === 'customs_clearance') $customsClearance += $count;
-            elseif ($key === 'delivered') $delivered += $count;
+            if ($key === 'booked') {
+                $booked += $count;
+            } elseif ($key === 'in_transit') {
+                $inTransit += $count;
+            } elseif ($key === 'customs_clearance') {
+                $customsClearance += $count;
+            } elseif ($key === 'delivered') {
+                $delivered += $count;
+            }
         }
 
         return response()->json([
@@ -307,7 +312,7 @@ class ShipmentController extends Controller
                 'delivered' => $delivered,
                 'all_statuses' => $dynamicStats,
                 '_debug_counts' => $counts,
-            ]
+            ],
         ]);
     }
 
@@ -316,15 +321,17 @@ class ShipmentController extends Controller
      */
     protected function normalizeStatusForStats($v)
     {
-        if ($v === null || $v === '') return 'unknown';
+        if ($v === null || $v === '') {
+            return 'unknown';
+        }
         $v = strtolower(trim((string) $v));
 
         // Keywords for each category
         if (in_array($v, ['booked', 'booking confirmed', 'تم الحجز', 'تم تأكيد الحجز']) || str_contains($v, 'booked')) {
             return 'booked';
         }
-        
-        if (in_array($v, ['in_transit', 'in transit', 'vessel departed', 'loading in progress', 'container allocation', 'في الطريق', 'السفينة غادرت']) 
+
+        if (in_array($v, ['in_transit', 'in transit', 'vessel departed', 'loading in progress', 'container allocation', 'في الطريق', 'السفينة غادرت'])
             || str_contains($v, 'transit') || str_contains($v, 'depart') || str_contains($v, 'allocation') || str_contains($v, 'loading') || str_contains($v, 'طريق')) {
             return 'in_transit';
         }
@@ -352,13 +359,13 @@ class ShipmentController extends Controller
         $from = now()->subMonths($months)->startOfMonth();
 
         $query = Shipment::query()->where('created_at', '>=', $from);
-        
+
         // Apply role-based filtering
-        if (!$user->hasRole('admin') && !$user->can('shipments.view') && $user->can('shipments.view_own')) {
+        if (! $user->hasRole('admin') && ! $user->can('shipments.view') && $user->can('shipments.view_own')) {
             $query->where('sales_rep_id', $user->id);
         }
 
-        if ($user->hasRole('operations') && !$user->hasRole('admin')) {
+        if ($user->hasRole('operations') && ! $user->hasRole('admin')) {
             $query->whereHas('sdForm', function ($q) {
                 $q->where('status', 'sent_to_operations');
             });
@@ -377,9 +384,10 @@ class ShipmentController extends Controller
                 if (is_numeric($sValue) && isset($statusMap[$sValue])) {
                     $label = $statusMap[$sValue];
                 }
+
                 return [
                     'status' => $label ?: 'unknown',
-                    'count' => (int) $row->count
+                    'count' => (int) $row->count,
                 ];
             });
 
@@ -464,7 +472,7 @@ class ShipmentController extends Controller
             ->select('shipments.*');
 
         $user = $request->user();
-        if ($user && $user->hasRole('operations') && !$user->hasRole('admin')) {
+        if ($user && $user->hasRole('operations') && ! $user->hasRole('admin')) {
             $query->whereHas('sdForm', function ($q) {
                 $q->where('status', 'sent_to_operations');
             });
@@ -648,7 +656,8 @@ class ShipmentController extends Controller
                 'bl_number' => 'رقم البوليصة (B/L)',
                 'client' => 'العميل',
                 'sd_form' => 'نموذج SD',
-                'line_vendor' => 'الخط الملاحي',
+                'shipping_line' => 'خط الملاحة',
+                'line_vendor' => 'مورد الخط',
                 'mode' => 'نمط الشحنة',
                 'shipment_type' => 'نوع الشحنة',
                 'direction' => 'الاتجاه',
@@ -683,7 +692,8 @@ class ShipmentController extends Controller
             'bl_number' => 'Bill of lading (B/L)',
             'client' => 'Client',
             'sd_form' => 'SD form',
-            'line_vendor' => 'Shipping line',
+            'shipping_line' => 'Shipping line',
+            'line_vendor' => 'Line vendor',
             'mode' => 'Shipment mode',
             'shipment_type' => 'Shipment type',
             'direction' => 'Direction',

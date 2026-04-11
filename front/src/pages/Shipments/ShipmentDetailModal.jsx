@@ -244,6 +244,8 @@ export default function ShipmentDetailModal({
   const clientLabel =
     shipment?.client?.company_name ?? shipment?.client?.name ?? shipment?.client_name ?? '—'
   const lineVendor = shipment?.line_vendor?.name ?? shipment?.lineVendor?.name ?? '—'
+  const shippingLineName =
+    shipment?.shipping_line?.name ?? shipment?.shippingLine?.name ?? '—'
 
   const activePipelineIdx = shipment ? getPipelineStepIndex(shipment.status) : 0
 
@@ -529,7 +531,11 @@ export default function ShipmentDetailModal({
                           <span className="shipment-detail-card__value font-semibold">{shipment.bl_number || '—'}</span>
                         </div>
                         <div className="shipment-detail-card__row">
-                          <span className="shipment-detail-card__label">{t('shipments.fields.line_vendor_id')}</span>
+                          <span className="shipment-detail-card__label">{t('shipments.fields.shipping_line')}</span>
+                          <span className="shipment-detail-card__value">{shippingLineName}</span>
+                        </div>
+                        <div className="shipment-detail-card__row">
+                          <span className="shipment-detail-card__label">{t('shipments.fields.line_vendor')}</span>
                           <span className="shipment-detail-card__value">{lineVendor}</span>
                         </div>
                         <div className="shipment-detail-card__row">

@@ -294,21 +294,23 @@
                 <p class="sec-h">{{ $labels['sec_shipping'] }}</p>
                 <table class="grid">
                     <tr>
-                        <th style="width:25%;">{{ $labels['mode'] }}</th>
-                        <th style="width:25%;">{{ $labels['shipment_type'] }}</th>
-                        <th style="width:25%;">{{ $labels['direction'] }}</th>
-                        <th style="width:25%;">{{ $labels['line_vendor'] }}</th>
+                        <th style="width:20%;">{{ $labels['mode'] }}</th>
+                        <th style="width:20%;">{{ $labels['shipment_type'] }}</th>
+                        <th style="width:20%;">{{ $labels['direction'] }}</th>
+                        <th style="width:20%;">{{ $labels['shipping_line'] }}</th>
+                        <th style="width:20%;">{{ $labels['line_vendor'] }}</th>
                     </tr>
                     <tr>
                         <td>{{ $shipment->mode ?? '—' }}</td>
                         <td>{{ $shipment->shipment_type ?? '—' }}</td>
                         <td>{{ $shipment->shipment_direction ?? '—' }}</td>
+                        <td>{{ $shipment->shippingLine?->name ?? '—' }}</td>
                         <td>{{ $shipment->lineVendor?->name ?? '—' }}</td>
                     </tr>
                     @if($shipment->shipment_direction === 'Import' || filled($shipment->acid_number))
                     <tr>
                         <th>{{ $labels['acid'] }}</th>
-                        <td colspan="3">{{ $shipment->acid_number ?? '—' }}</td>
+                        <td colspan="4">{{ $shipment->acid_number ?? '—' }}</td>
                     </tr>
                     @endif
                 </table>
