@@ -52,7 +52,7 @@
         text-align: right;
     }
 
-    /* Full-bleed strip above padded content (file: public/images/header.png) */
+    /* Full-bleed strip above padded content (file: public/images/header.jpg) */
     .pdf-page-header {
         position: relative;
         z-index: 1;
