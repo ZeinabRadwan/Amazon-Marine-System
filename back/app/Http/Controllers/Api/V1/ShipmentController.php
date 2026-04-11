@@ -682,6 +682,7 @@ class ShipmentController extends Controller
                 'sec_shipping' => 'النقل والحاوية',
                 'sec_ports' => 'الموانئ والتحميل',
                 'sec_goods' => 'تفاصيل البضاعة',
+                'footer_contact' => 'معلومات الاتصال',
             ];
         }
 
@@ -720,6 +721,7 @@ class ShipmentController extends Controller
             'sec_shipping' => 'Shipping & container',
             'sec_ports' => 'Ports & loading',
             'sec_goods' => 'Goods details',
+            'footer_contact' => 'Contact information',
         ];
     }
 }

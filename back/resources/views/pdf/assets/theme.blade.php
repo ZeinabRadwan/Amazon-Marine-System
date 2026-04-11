@@ -105,7 +105,7 @@
     }
 
     .pdf-header__logo-img {
-        height: 48px;
+        height: 60px;
         width: auto;
         max-width: 88px;
         display: block;
@@ -524,11 +524,6 @@
         word-wrap: break-word;
         text-align: center;
         padding-top: 2px;
-    }
-
-    .footer-cc-line strong {
-        font-weight: 700;
-        color: #11354d;
     }
 
     /* Renders after .pdf-container (stack): true page-width footer graphic for mPDF */

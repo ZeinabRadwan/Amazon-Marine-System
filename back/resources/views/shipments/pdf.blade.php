@@ -38,7 +38,7 @@
             width: 96px;
         }
         .pdf-header__logo-img {
-            height: 48px;
+            height: 60px;
             width: auto;
             max-width: 88px;
             display: block;
@@ -275,10 +275,6 @@
             text-align: center;
             padding-top: 2px;
         }
-        .footer-cc-line strong {
-            font-weight: 700;
-            color: #11354d;
-        }
         .shipment-pdf-footer-banner {
             width: 100%;
             border-collapse: collapse;
@@ -503,7 +499,7 @@
             @if(!empty($footerHtml))
                 {!! $footerHtml !!}
             @else
-                <p class="footer-h">Contact Information</p>
+                <p class="footer-h">{{ $labels['footer_contact'] }}</p>
                 <table class="footer-contact-grid" width="100%" cellspacing="0" cellpadding="0" border="0" dir="ltr" role="presentation">
                     <colgroup>
                         <col width="25%" />
@@ -526,7 +522,7 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td class="footer-cc-line"><strong>Phone:</strong> 01200744888</td>
+                                    <td class="footer-cc-line">01200744888</td>
                                 </tr>
                             </table>
                         </td>
@@ -544,7 +540,7 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td class="footer-cc-line"><strong>Email:</strong> mabdrabboh@amazonmarine.ltd</td>
+                                    <td class="footer-cc-line">mabdrabboh@amazonmarine.ltd</td>
                                 </tr>
                             </table>
                         </td>
@@ -562,7 +558,7 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td class="footer-cc-line"><strong>Address:</strong> Villa 129, 2nd District New Cairo, Egypt</td>
+                                    <td class="footer-cc-line">Villa 129, 2nd District New Cairo, Egypt</td>
                                 </tr>
                             </table>
                         </td>
@@ -573,14 +569,14 @@
                                         <table class="footer-cc-icon" cellspacing="0" cellpadding="0" border="0" align="center">
                                             <tr>
                                                 <td>
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#f58220" d="M3.9 12A3.1 3.1 0 017 8.9h3V7H7a5 5 0 100 10h3v-1.9H7A3.1 3.1 0 013.9 12zM8 11h8v2H8v-2zm9-5h-3v1.9h3a3.1 3.1 0 010 6.2h-3V17h3a5 5 0 000-10z"/></svg>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#f58220" d="M5 4h14v11H5V4zm1 2h12v7H6V6zm3 12h6v2H9v-2z"/></svg>
                                                 </td>
                                             </tr>
                                         </table>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td class="footer-cc-line"><strong>Website:</strong> www.amazonmarine.ltd</td>
+                                    <td class="footer-cc-line">www.amazonmarine.ltd</td>
                                 </tr>
                             </table>
                         </td>
