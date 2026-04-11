@@ -1,6 +1,6 @@
 /**
  * Auth API – matches back/postman_collection.json Auth module.
- * Base URL: http://localhost:8000/api/v1 (or VITE_API_BASE_URL).
+ * Base URL: {VITE_API_URL}/api/v1 or VITE_API_BASE_URL (see apiBaseUrl.js).
  */
 
 import { getApiBaseUrl } from './apiBaseUrl'
