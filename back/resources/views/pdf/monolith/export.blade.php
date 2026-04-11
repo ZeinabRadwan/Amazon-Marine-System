@@ -167,7 +167,7 @@
     }
 
     .pdf-root--preview .pdf-header-logo-img {
-        height: 56px;
+        height: 70px;
         width: auto;
         max-width: 108px;
         display: block;
@@ -189,22 +189,29 @@
     }
 
     .pdf-root--preview .pdf-header-brand-name {
+        display: block;
         font-size: 15px;
         font-weight: 800;
         color: #11354d;
-        letter-spacing: 0.12em;
+        letter-spacing: 0.16em;
         text-transform: uppercase;
         line-height: 1.25;
-        margin-bottom: 3px;
+        padding-bottom: 5px;
+        margin: 0 0 2px;
+        border-bottom: 3px solid #ec7f00;
+        max-width: 100%;
     }
 
     .pdf-root--preview .pdf-header-tagline {
-        font-size: 8px;
+        display: block;
+        margin-top: 8px;
+        font-size: 8.5px;
         font-weight: 600;
-        letter-spacing: 0.12em;
-        color: #64748b;
+        letter-spacing: 0.14em;
+        color: #11354d;
         text-transform: uppercase;
-        line-height: 1.4;
+        line-height: 1.45;
+        opacity: 0.78;
     }
 
     .pdf-root--preview .pdf-header-doc-title {

@@ -64,8 +64,11 @@
                             <div class="pdf-header__logo-fallback">MH</div>
                         @endif
                     </td>
-                    <td>
-                        <span class="pdf-header__brand-line">{{ $labels['brand'] }}</span><span class="pdf-header__brand-sep">|</span><span class="pdf-header__brand-tag">{{ $labels['brand_tag'] }}</span>
+                    <td class="pdf-header__brand-cell">
+                        <div class="pdf-header__brand-stack">
+                            <div class="pdf-header__brand-line">{{ $labels['brand'] }}</div>
+                            <div class="pdf-header__brand-tag">{{ $labels['brand_tag'] }}</div>
+                        </div>
                     </td>
                     <td class="pdf-header__doc">
                         <p class="pdf-header__title">{{ $labels['doc_title'] }}</p>

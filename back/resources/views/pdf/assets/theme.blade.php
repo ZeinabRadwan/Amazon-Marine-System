@@ -123,22 +123,37 @@
         color: #333333;
     }
 
-    .pdf-header__brand-line {
-        font-size: 12px;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        color: #333333;
+    .pdf-header__brand-cell {
+        vertical-align: middle;
     }
 
-    .pdf-header__brand-sep {
-        color: #ec7f00;
-        font-weight: 400;
-        padding: 0 0.35em;
+    .pdf-header__brand-stack {
+        line-height: 1.25;
+    }
+
+    .pdf-header__brand-line {
+        display: block;
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        color: #11354d;
+        text-transform: uppercase;
+        padding-bottom: 5px;
+        margin: 0 0 2px;
+        border-bottom: 3px solid #ec7f00;
+        max-width: 100%;
     }
 
     .pdf-header__brand-tag {
-        font-size: 9px;
-        color: #666666;
+        display: block;
+        margin: 8px 0 0;
+        font-size: 8.5px;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        color: #11354d;
+        text-transform: uppercase;
+        opacity: 0.78;
+        line-height: 1.45;
     }
 
     .pdf-header__doc {
