@@ -1,6 +1,11 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+
+// Directory that contains this config and front/.env* (not process.cwd(), which may be the monorepo root).
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // https://vite.dev/config/
 // Vite normally lets existing process.env override .env files. If VITE_API_URL is set in the OS
@@ -15,12 +20,14 @@ function viteBaseFromEnv(raw) {
 }
 
 export default defineConfig(({ mode }) => {
-  const fileEnv = loadEnv(mode, process.cwd(), '')
+  const fileEnv = loadEnv(mode, __dirname, '')
   const devProxyTarget =
     fileEnv.DEV_API_PROXY_TARGET || 'https://back.crm-amazonltd.live/'
   const base = viteBaseFromEnv(fileEnv.VITE_BASE_PATH)
 
   return {
+    root: __dirname,
+    envDir: __dirname,
     base,
     plugins: [react(), tailwindcss()],
     define: {

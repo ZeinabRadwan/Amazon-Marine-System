@@ -10,6 +10,8 @@
  * 8. GET  /clients/financial-summary    – Financial Summary
  * 9. GET  /clients/pricing              – Pricing List
  * 10. GET /clients/export               – Export Clients
+ * 10b. GET /clients/import-template    – Download import Excel template
+ * 10c. POST /clients/import            – Bulk import clients (.xlsx / .csv)
  * 11. GET /clients/:id/visits           – Get Client Visits
  * 12. GET /clients/:id/shipments        – Get Client Shipments
  * 13. GET /clients/:id/attachments      – Get Client Attachments
@@ -197,6 +199,36 @@ export async function exportClients(token, params = {}) {
     throw new Error(data.message || data.error || `Failed to export clients (${res.status})`)
   }
   return res.blob()
+}
+
+/**
+ * GET {{base_url}}/clients/import-template – Excel template with headers, sample row, status dropdown.
+ */
+export async function downloadClientImportTemplate(token) {
+  const res = await apiFetch(`${getBaseUrl()}/clients/import-template`, { headers: authHeaders(token) })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.message || data.error || `Failed to download import template (${res.status})`)
+  }
+  return res.blob()
+}
+
+/**
+ * POST {{base_url}}/clients/import – Multipart file upload. Returns JSON (200 or 422 with row errors).
+ */
+export async function importClients(token, file) {
+  const form = new FormData()
+  form.append('file', file)
+  const res = await apiFetch(`${getBaseUrl()}/clients/import`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: form,
+  })
+  const data = await res.json().catch(() => ({}))
+  return { ok: res.ok, status: res.status, data }
 }
 
 /**

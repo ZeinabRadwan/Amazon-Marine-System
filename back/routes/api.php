@@ -5,10 +5,10 @@ use App\Http\Controllers\Api\GitDeployController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\V1\AccountingController;
-use App\Http\Controllers\Api\V1\AdminNotificationController;
 use App\Http\Controllers\Api\V1\ActivityController;
 use App\Http\Controllers\Api\V1\AdminAttendanceController;
 use App\Http\Controllers\Api\V1\AdminExcuseController;
+use App\Http\Controllers\Api\V1\AdminNotificationController;
 use App\Http\Controllers\Api\V1\AttendanceController;
 use App\Http\Controllers\Api\V1\ClientAttachmentController;
 use App\Http\Controllers\Api\V1\ClientContactController;
@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\V1\CommunicationLogTypeController;
 use App\Http\Controllers\Api\V1\CompanyTypeController;
 use App\Http\Controllers\Api\V1\ContainerSizeController;
 use App\Http\Controllers\Api\V1\ContainerTypeController;
+use App\Http\Controllers\Api\V1\CurrencyController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\DecisionMakerTitleController;
 use App\Http\Controllers\Api\V1\DocumentController;
@@ -31,6 +32,7 @@ use App\Http\Controllers\Api\V1\ExpenseController;
 use App\Http\Controllers\Api\V1\FreightTermController;
 use App\Http\Controllers\Api\V1\InterestLevelController;
 use App\Http\Controllers\Api\V1\InvoiceController;
+use App\Http\Controllers\Api\V1\ItemController;
 use App\Http\Controllers\Api\V1\LeadSourceController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\NotifyPartyModeController;
@@ -61,10 +63,7 @@ use App\Http\Controllers\Api\V1\VendorBillController;
 use App\Http\Controllers\Api\V1\VendorController;
 use App\Http\Controllers\Api\V1\VendorPartnerTypeController;
 use App\Http\Controllers\Api\V1\VisitController;
-use App\Http\Controllers\Api\V1\CurrencyController;
-use App\Http\Controllers\Api\V1\ItemController;
 use Illuminate\Support\Facades\Route;
-
 
 Route::prefix('v1')->group(function () {
     Route::match(['get', 'post'], 'deploy/git-pull', GitDeployController::class);
@@ -236,6 +235,10 @@ Route::prefix('v1')->group(function () {
             ->middleware('page_permission:clients,view');
         Route::get('clients/export', [ClientController::class, 'export'])
             ->middleware('page_permission:clients,view');
+        Route::get('clients/import-template', [ClientController::class, 'importTemplate'])
+            ->middleware('page_permission:clients,edit');
+        Route::post('clients/import', [ClientController::class, 'import'])
+            ->middleware('page_permission:clients,edit');
         Route::get('clients/{client}', [ClientController::class, 'show'])
             ->middleware('page_permission:clients,view');
         Route::put('clients/{client}', [ClientController::class, 'update'])
