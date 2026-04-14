@@ -121,7 +121,7 @@ function emptySdForm() {
 function initialCreateForm() {
   return {
     ...emptySdForm(),
-    shipment_direction: '',
+    shipment_direction: 'Export',
     num_containers: '1',
   }
 }
