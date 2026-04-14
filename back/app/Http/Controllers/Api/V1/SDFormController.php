@@ -446,7 +446,7 @@ class SDFormController extends Controller
             ], 200);
         }
 
-        $this->notificationService->sendEmail(
+        $sentCount = $this->notificationService->sendEmail(
             'sd_form.email_to_operations',
             $sdForm,
             $operationsUsers,
@@ -465,8 +465,15 @@ class SDFormController extends Controller
             }
         );
 
+        if ($sentCount === 0) {
+            return response()->json([
+                'message' => __('Failed to send email to operations. Please check mail settings.'),
+            ], 500);
+        }
+
         ActivityLogger::log('sd_form.email_to_operations', $sdForm, [
             'recipient_count' => $operationsUsers->count(),
+            'sent_count' => $sentCount,
         ]);
 
         return response()->json([
