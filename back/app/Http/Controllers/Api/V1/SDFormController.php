@@ -505,6 +505,8 @@ class SDFormController extends Controller
             'margin_right' => 10,
         ]);
 
+        $mpdf->AliasNbPages();
+
         $mpdf->WriteHTML($html);
 
         return response($mpdf->Output($filename, 'S'), 200, [
@@ -520,12 +522,14 @@ class SDFormController extends Controller
     {
         if ($locale === 'ar') {
             return [
-                'doc_title' => 'نموذج تفاصيل الشحن',
-                'brand' => 'أمازون مارين',
-                'brand_tag' => 'شحن وحلول لوجستية',
+                'doc_title' => 'إقرار شحن',
+                'brand' => 'Amazon Marine System',
+                'brand_tag' => 'International Freight Forwarding',
+                'brand_contact' => 'Tel: +201200744888  |  info@amazonmarine.com',
                 'sd_no' => 'رقم SD:',
                 'sd_date' => 'تاريخ SD:',
                 'vessel_date' => 'تاريخ السفينة:',
+                'lbl_document_date' => 'التاريخ:',
                 'client' => 'العميل:',
                 'sec_shipment_info' => 'معلومات الشحنة',
                 'pol' => 'ميناء التحميل',
@@ -556,9 +560,6 @@ class SDFormController extends Controller
                 'total_net' => 'إجمالي الوزن الصافي',
                 'acid' => 'رقم ACID',
                 'notes' => 'ملاحظات',
-                'footer_contact' => 'معلومات الاتصال',
-                'address' => 'العنوان',
-                'website' => 'الموقع',
                 'sec_1_client_sales' => '١. العميل ومندوب المبيعات',
                 'sec_2_shipment_basic' => '٢. المعلومات الأساسية للشحنة',
                 'sec_3_parties' => '٣. معلومات الأطراف',
@@ -590,12 +591,14 @@ class SDFormController extends Controller
         }
 
         return [
-            'doc_title' => 'SHIPPING DETAILS FORM',
-            'brand' => 'AMAZON MARINE',
-            'brand_tag' => 'Shipping and logistics solutions',
+            'doc_title' => 'Shipping Declaration',
+            'brand' => 'Amazon Marine System',
+            'brand_tag' => 'International Freight Forwarding',
+            'brand_contact' => 'Tel: +201200744888  |  info@amazonmarine.com',
             'sd_no' => 'SD no:',
             'sd_date' => 'SD date:',
             'vessel_date' => 'Vessel date:',
+            'lbl_document_date' => 'Date:',
             'client' => 'Client:',
             'sec_shipment_info' => 'Shipment information',
             'pol' => 'Port of loading',
@@ -626,9 +629,6 @@ class SDFormController extends Controller
             'total_net' => 'Total net weight',
             'acid' => 'ACID number',
             'notes' => 'Notes',
-            'footer_contact' => 'Contact information',
-            'address' => 'Address',
-            'website' => 'Website',
             'sec_1_client_sales' => '1. Client & Sales Representative',
             'sec_2_shipment_basic' => '2. Shipment Basic Information',
             'sec_3_parties' => '3. Parties Information',

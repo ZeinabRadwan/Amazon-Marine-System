@@ -37,6 +37,158 @@
         .pdf-w-75 {
             width: 75%;
         }
+
+        .pdf-header--sd .pdf-header__brand-line,
+        .pdf-header--sd .pdf-header__brand-tag {
+            text-transform: none;
+            letter-spacing: 0.06em;
+        }
+
+        .pdf-sd-doc .pdf-header__title {
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-size: 14px;
+        }
+
+        .pdf-sd-doc .pdf-section__heading,
+        .pdf-sd-doc .pdf-table th,
+        .pdf-sd-doc .pdf-header__meta-label,
+        .pdf-sd-doc .pdf-footer__title,
+        .pdf-sd-doc .pdf-label-strong {
+            text-transform: uppercase;
+        }
+
+        .pdf-header__brand-contact {
+            display: block;
+            margin-top: 6px;
+            font-size: 8.5px;
+            font-weight: 600;
+            color: #11354d;
+            line-height: 1.4;
+            opacity: 0.9;
+        }
+
+        .pdf-header__sd-big {
+            font-size: 18px;
+            font-weight: 700;
+            color: #11354d;
+            margin: 6px 0 8px;
+            line-height: 1.2;
+        }
+
+        .pdf-header__date-page-row {
+            display: block;
+            font-size: 10px;
+            line-height: 1.55;
+            margin: 0 0 5px;
+            padding: 0 0 5px;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: inherit;
+        }
+
+        .pdf-header__page-of {
+            margin-inline-start: 1.25em;
+            font-weight: 600;
+            color: #11354d;
+            text-transform: uppercase;
+        }
+
+        /*
+         | SD form only: white surfaces, navy (#0f2d4a) as primary, orange (#ec7f00) only as
+         | thin accents (section stripe). Scoped to .pdf-sd-doc — does not alter shared theme
+         | or the full-bleed header/footer images outside this wrapper.
+         */
+        .pdf-sd-doc .pdf-header {
+            background: #ffffff;
+            border-bottom: 3px solid #0f2d4a;
+        }
+
+        .pdf-sd-doc .pdf-header__brand-line,
+        .pdf-sd-doc .pdf-header__brand-line strong {
+            color: #0f2d4a;
+        }
+
+        .pdf-sd-doc .pdf-header__brand-tag {
+            color: #11354d;
+            opacity: 0.9;
+        }
+
+        .pdf-sd-doc .pdf-header__title {
+            color: #0f2d4a;
+        }
+
+        .pdf-sd-doc .pdf-header__sd-big,
+        .pdf-sd-doc .pdf-header__meta-label,
+        .pdf-sd-doc .pdf-header__meta-val,
+        .pdf-sd-doc .pdf-header__page-of {
+            color: #0f2d4a;
+        }
+
+        .pdf-sd-doc .pdf-header__logo-fallback {
+            background: #ffffff;
+            border-color: #0f2d4a;
+            color: #0f2d4a;
+        }
+
+        .pdf-sd-doc .pdf-header__brand-contact {
+            color: #11354d;
+        }
+
+        .pdf-sd-doc .pdf-section__heading {
+            background: #0f2d4a;
+            color: #ffffff;
+            border-left: 4px solid #ec7f00;
+        }
+
+        html[dir="rtl"] .pdf-sd-doc .pdf-section__heading {
+            border-left: none;
+            border-right: 4px solid #ec7f00;
+        }
+
+        .pdf-sd-doc .pdf-table th {
+            background: #0f2d4a;
+            color: #ffffff;
+        }
+
+        .pdf-sd-doc .pdf-table td {
+            background: #ffffff;
+            color: #333333;
+        }
+
+        .pdf-sd-doc .pdf-table tbody tr:nth-child(even) td {
+            background: #f8f9fb;
+        }
+
+        .pdf-sd-doc .pdf-table {
+            border-color: #e2e8f0;
+        }
+
+        .pdf-sd-doc .pdf-table th,
+        .pdf-sd-doc .pdf-table td {
+            border-color: #e2e8f0;
+        }
+
+        .pdf-sd-doc .pdf-label-strong {
+            color: #0f2d4a;
+        }
+
+        .pdf-sd-doc .pdf-footer {
+            background: #ffffff;
+            border-top: 3px solid #0f2d4a;
+            color: #333333;
+        }
+
+        .pdf-sd-doc .pdf-footer__title {
+            color: #0f2d4a;
+        }
+
+        .pdf-sd-doc .pdf-footer--contact .pdf-footer__title {
+            border-bottom-color: #ec7f00;
+        }
+
+        .pdf-sd-doc .pdf-footer strong {
+            color: #0f2d4a;
+        }
     </style>
 @endpush
 
@@ -131,14 +283,20 @@
         $freightTerm = trim((string) ($form->freight_term ?? ''));
         $freightTerm = $freightTerm !== '' ? $freightTerm : '—';
         $vesselDateStr = optional($form->requested_vessel_date)->format('d/m/Y') ?? '—';
+        $documentDateStr = optional($form->created_at)->format('d/m/Y') ?? '—';
+        $pageOfTpl = ($lang ?? 'en') === 'ar'
+            ? 'صفحة {PAGENO} من {nb}'
+            : 'Page {PAGENO} of {nb}';
 
         $logoSrc = \App\Support\PdfLogo::imgSrc();
     @endphp
 
+    <div class="pdf-sd-doc">
+
     @if(!empty($headerHtml))
         {!! $headerHtml !!}
     @else
-        <header class="pdf-header pdf-header--branded">
+        <header class="pdf-header pdf-header--branded pdf-header--sd">
             <table class="pdf-header__table">
                 <tr>
                     <td class="pdf-header__logo">
@@ -152,22 +310,17 @@
                         <div class="pdf-header__brand-stack">
                             <div class="pdf-header__brand-line"><strong>{{ $labels['brand'] }}</strong></div>
                             <div class="pdf-header__brand-tag">{{ $labels['brand_tag'] }}</div>
+                            <span class="pdf-header__brand-contact">{{ $labels['brand_contact'] }}</span>
                         </div>
                     </td>
                     <td class="pdf-header__doc">
                         <p class="pdf-header__title">{{ $labels['doc_title'] }}</p>
+                        <div class="pdf-header__sd-big">{{ $sdNum }}</div>
                         <div class="pdf-header__meta-list">
-                            <div class="pdf-header__meta-row">
-                                <span class="pdf-header__meta-label">{{ $labels['sd_no'] }}</span>
-                                <span class="pdf-header__meta-val">{{ $sdNum }}</span>
-                            </div>
-                            <div class="pdf-header__meta-row">
-                                <span class="pdf-header__meta-label">{{ $labels['sd_date'] }}</span>
-                                <span class="pdf-header__meta-val">{{ optional($form->created_at)->format('d/m/Y') ?? '—' }}</span>
-                            </div>
-                            <div class="pdf-header__meta-row">
-                                <span class="pdf-header__meta-label">{{ $labels['vessel_date'] }}</span>
-                                <span class="pdf-header__meta-val">{{ $vesselDateStr }}</span>
+                            <div class="pdf-header__date-page-row">
+                                <span class="pdf-header__meta-label">{{ $labels['lbl_document_date'] }}</span>
+                                <span class="pdf-header__meta-val">{{ $documentDateStr }}</span>
+                                <span class="pdf-header__page-of">{!! $pageOfTpl !!}</span>
                             </div>
                             <div class="pdf-header__meta-row">
                                 <span class="pdf-header__meta-label">{{ $labels['client'] }}</span>
@@ -320,95 +473,13 @@
         </table>
     </div>
 
-    <footer class="pdf-footer @if(empty($footerHtml)) pdf-footer--contact @endif">
-        @if(!empty($footerHtml))
+    @if(!empty($footerHtml))
+        <footer class="pdf-footer">
             {!! $footerHtml !!}
-        @else
-            <p class="pdf-footer__title">{{ $labels['footer_contact'] }}</p>
-            <table class="footer-contact-grid" width="100%" cellspacing="0" cellpadding="0" border="0" dir="ltr" role="presentation">
-                <colgroup>
-                    <col width="25%" />
-                    <col width="25%" />
-                    <col width="25%" />
-                    <col width="25%" />
-                </colgroup>
-                <tr>
-                    <td class="footer-contact-grid__cell footer-contact-grid__cell--first" width="25%" style="width:25%;">
-                        <table class="footer-cc-col" width="100%" cellspacing="0" cellpadding="0" border="0">
-                            <tr>
-                                <td class="footer-cc-ico-wrap">
-                                    <table class="footer-cc-icon" cellspacing="0" cellpadding="0" border="0" align="center">
-                                        <tr>
-                                            <td>
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#f58220" d="M20 15.5c-1.25 0-2.45-.2-3.57-.57-.35-.11-.74 0-1.02.24l-2.2 2.2c-2.83-1.44-5.15-3.75-6.59-6.59l2.2-2.2c.27-.27.35-.66.24-1.02A17.32 17.32 0 0 1 4.5 3 2 2 0 0 0 2.5 5v3a19.79 19.79 0 0 0 3.07 8.63 19.51 19.51 0 0 0 6 6 19.79 19.79 0 0 0 8.63 3.07 2 2 0 0 0 2-2v-1.5c0-1.1-.9-2-2-2z"/></svg>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="footer-cc-line">01200744888</td>
-                            </tr>
-                        </table>
-                    </td>
-                    <td class="footer-contact-grid__cell" width="25%" style="width:25%;">
-                        <table class="footer-cc-col" width="100%" cellspacing="0" cellpadding="0" border="0">
-                            <tr>
-                                <td class="footer-cc-ico-wrap">
-                                    <table class="footer-cc-icon" cellspacing="0" cellpadding="0" border="0" align="center">
-                                        <tr>
-                                            <td>
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#f58220" d="M4 4h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2zm8 7.55L4.06 6h15.88L12 11.55zM20 18V8.44l-8 5.06-8-5.06V18h16z"/></svg>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="footer-cc-line">mabdrabboh@amazonmarine.ltd</td>
-                            </tr>
-                        </table>
-                    </td>
-                    <td class="footer-contact-grid__cell" width="25%" style="width:25%;">
-                        <table class="footer-cc-col" width="100%" cellspacing="0" cellpadding="0" border="0">
-                            <tr>
-                                <td class="footer-cc-ico-wrap">
-                                    <table class="footer-cc-icon" cellspacing="0" cellpadding="0" border="0" align="center">
-                                        <tr>
-                                            <td>
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#f58220" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="footer-cc-line">Villa 129, 2nd District New Cairo, Egypt</td>
-                            </tr>
-                        </table>
-                    </td>
-                    <td class="footer-contact-grid__cell" width="25%" style="width:25%;">
-                        <table class="footer-cc-col" width="100%" cellspacing="0" cellpadding="0" border="0">
-                            <tr>
-                                <td class="footer-cc-ico-wrap">
-                                    <table class="footer-cc-icon" cellspacing="0" cellpadding="0" border="0" align="center">
-                                        <tr>
-                                            <td>
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#f58220" d="M5 4h14v11H5V4zm1 2h12v7H6V6zm3 12h6v2H9v-2z"/></svg>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="footer-cc-line">www.amazonmarine.ltd</td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-            </table>
-        @endif
-    </footer>
+        </footer>
+    @endif
+
+    </div>
 @endsection
 
 @push('pdf_footer_fullbleed')
