@@ -16,7 +16,7 @@ import {
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { getDocumentKind } from '../utils/documentFileKind'
-import { formatDate as globalFormatDate } from '../../utils/dateUtils'
+import { formatDate as globalFormatDate } from '../../../utils/dateUtils'
 
 const KIND_ICONS = {
   pdf: FileType,
