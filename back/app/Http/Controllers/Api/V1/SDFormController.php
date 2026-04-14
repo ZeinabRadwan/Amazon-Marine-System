@@ -505,8 +505,6 @@ class SDFormController extends Controller
             'margin_right' => 10,
         ]);
 
-        $mpdf->AliasNbPages();
-
         $mpdf->WriteHTML($html);
 
         return response($mpdf->Output($filename, 'S'), 200, [

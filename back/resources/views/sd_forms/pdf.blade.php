@@ -69,7 +69,7 @@
         }
 
         .pdf-header__sd-big {
-            font-size: 18px;
+            font-size: 15px;
             font-weight: 700;
             color: #11354d;
             margin: 6px 0 8px;
@@ -84,13 +84,6 @@
             padding: 0 0 5px;
             border-bottom: 1px solid #e2e8f0;
             text-align: inherit;
-        }
-
-        .pdf-header__page-of {
-            margin-inline-start: 1.25em;
-            font-weight: 600;
-            color: #11354d;
-            text-transform: uppercase;
         }
 
         /*
@@ -119,8 +112,7 @@
 
         .pdf-sd-doc .pdf-header__sd-big,
         .pdf-sd-doc .pdf-header__meta-label,
-        .pdf-sd-doc .pdf-header__meta-val,
-        .pdf-sd-doc .pdf-header__page-of {
+        .pdf-sd-doc .pdf-header__meta-val {
             color: #0f2d4a;
         }
 
@@ -188,6 +180,37 @@
 
         .pdf-sd-doc .pdf-footer strong {
             color: #0f2d4a;
+        }
+
+        /*
+         | Full-bleed header/footer graphics (outside .pdf-sd-doc): shorter strips for SD PDF only.
+         | Pushed styles apply to this document’s <head> when rendering sd_forms.pdf.
+         */
+        .pdf-page-header {
+            max-height: 48px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .pdf-page-header__img {
+            width: 100%;
+            max-height: 48px;
+            height: auto;
+            object-fit: cover;
+            object-position: center top;
+        }
+
+        .pdf-footer-fullbleed__cell {
+            max-height: 40px;
+            overflow: hidden;
+        }
+
+        .pdf-footer-fullbleed__img {
+            width: 100%;
+            max-height: 40px;
+            height: auto;
+            object-fit: cover;
+            object-position: center bottom;
         }
     </style>
 @endpush
@@ -284,9 +307,6 @@
         $freightTerm = $freightTerm !== '' ? $freightTerm : '—';
         $vesselDateStr = optional($form->requested_vessel_date)->format('d/m/Y') ?? '—';
         $documentDateStr = optional($form->created_at)->format('d/m/Y') ?? '—';
-        $pageOfTpl = ($lang ?? 'en') === 'ar'
-            ? 'صفحة {PAGENO} من {nb}'
-            : 'Page {PAGENO} of {nb}';
 
         $logoSrc = \App\Support\PdfLogo::imgSrc();
     @endphp
@@ -320,11 +340,6 @@
                             <div class="pdf-header__date-page-row">
                                 <span class="pdf-header__meta-label">{{ $labels['lbl_document_date'] }}</span>
                                 <span class="pdf-header__meta-val">{{ $documentDateStr }}</span>
-                                <span class="pdf-header__page-of">{!! $pageOfTpl !!}</span>
-                            </div>
-                            <div class="pdf-header__meta-row">
-                                <span class="pdf-header__meta-label">{{ $labels['client'] }}</span>
-                                <span class="pdf-header__meta-val pdf-cell-dir-auto">{{ $clientName }}</span>
                             </div>
                         </div>
                     </td>
