@@ -9,29 +9,29 @@
         }
 
         .pdf-sd-party-cell {
-            min-height: 88px;
+            min-height: 90px;
         }
 
         .pdf-sd-cargo-cell {
-            min-height: 72px;
+            min-height: 74px;
         }
 
         .pdf-sd-notes-cell {
-            min-height: 56px;
+            min-height: 58px;
         }
 
         .pdf-sd-client-meta {
             font-size: 8.5px;
-            color: #666666;
-            margin-top: 5px;
-            line-height: 1.4;
+            color: #64748b;
+            margin-top: 6px;
+            line-height: 1.45;
         }
 
         .pdf-sd-ship-ref {
             font-size: 8.5px;
-            color: #666666;
-            margin-top: 5px;
-            line-height: 1.35;
+            color: #64748b;
+            margin-top: 6px;
+            line-height: 1.4;
         }
 
         .pdf-w-75 {
@@ -41,13 +41,23 @@
         .pdf-header--sd .pdf-header__brand-line,
         .pdf-header--sd .pdf-header__brand-tag {
             text-transform: none;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.04em;
+        }
+
+        .pdf-sd-doc {
+            background: #f4f6f9;
+            padding: 6px 4px 12px;
+        }
+
+        .pdf-sd-doc .pdf-section {
+            margin-bottom: 18px;
         }
 
         .pdf-sd-doc .pdf-header__title {
             text-transform: uppercase;
-            letter-spacing: 0.06em;
-            font-size: 14px;
+            letter-spacing: 0.11em;
+            font-size: 13px;
+            color: #0f2d4a;
         }
 
         .pdf-sd-doc .pdf-section__heading,
@@ -60,54 +70,58 @@
 
         .pdf-header__brand-contact {
             display: block;
-            margin-top: 6px;
+            margin-top: 7px;
             font-size: 8.5px;
             font-weight: 600;
-            color: #11354d;
-            line-height: 1.4;
-            opacity: 0.9;
+            color: #475569;
+            line-height: 1.45;
         }
 
         .pdf-header__sd-big {
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 700;
-            color: #11354d;
-            margin: 6px 0 8px;
-            line-height: 1.2;
+            color: #0f2d4a;
+            margin: 8px 0 10px;
+            line-height: 1.15;
+            letter-spacing: 0.06em;
         }
 
         .pdf-header__date-page-row {
             display: block;
             font-size: 10px;
-            line-height: 1.55;
-            margin: 0 0 5px;
-            padding: 0 0 5px;
-            border-bottom: 1px solid #e2e8f0;
+            line-height: 1.5;
+            margin: 0;
+            padding: 7px 10px;
+            background: #ffffff;
+            border: 1px solid #dce3eb;
+            border-radius: 6px;
             text-align: inherit;
         }
 
-        /*
-         | SD form only: white surfaces, navy (#0f2d4a) as primary, orange (#ec7f00) only as
-         | thin accents (section stripe). Scoped to .pdf-sd-doc — does not alter shared theme
-         | or the full-bleed header/footer images outside this wrapper.
-         */
+        /* SD form: cool neutral canvas, navy structure, orange accents (stripe + first header row). */
         .pdf-sd-doc .pdf-header {
             background: #ffffff;
-            border-bottom: 3px solid #0f2d4a;
+            border: 1px solid #dce3eb;
+            border-bottom: 2px solid #0f2d4a;
+            padding: 8px 6px 14px;
+            margin-bottom: 18px;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .pdf-sd-doc .pdf-header__table td {
+            padding: 6px 6px;
         }
 
         .pdf-sd-doc .pdf-header__brand-line,
         .pdf-sd-doc .pdf-header__brand-line strong {
             color: #0f2d4a;
+            font-size: 15px;
         }
 
         .pdf-sd-doc .pdf-header__brand-tag {
-            color: #11354d;
-            opacity: 0.9;
-        }
-
-        .pdf-sd-doc .pdf-header__title {
-            color: #0f2d4a;
+            color: #334e68;
+            opacity: 1;
+            font-size: 9px;
         }
 
         .pdf-sd-doc .pdf-header__sd-big,
@@ -118,62 +132,82 @@
 
         .pdf-sd-doc .pdf-header__logo-fallback {
             background: #ffffff;
-            border-color: #0f2d4a;
+            border: 2px solid #0f2d4a;
             color: #0f2d4a;
         }
 
-        .pdf-sd-doc .pdf-header__brand-contact {
-            color: #11354d;
-        }
-
-        .pdf-sd-doc {
-            background: #0f2d4a;
-            color: #ffffff;
+        .pdf-sd-doc .pdf-section__heading {
+            background: #ffffff;
+            color: #0f2d4a;
+            border-top: 1px solid #dce3eb;
+            border-right: 1px solid #dce3eb;
             border-left: 4px solid #ec7f00;
-        }
-
-        .pdf-section__heading {
-            background:rgb(108, 111, 114);
-            color: #ffffff;
-            border-left: 4px solid #ec7f00;
+            border-bottom: 1px solid #e8eef5;
+            padding: 10px 14px 9px;
+            font-size: 10px;
+            letter-spacing: 0.11em;
+            border-radius: 10px 10px 0 0;
+            margin: 0;
         }
 
         html[dir="rtl"] .pdf-sd-doc .pdf-section__heading {
-            border-left: none;
+            border-left: 1px solid #dce3eb;
             border-right: 4px solid #ec7f00;
+            border-top: 1px solid #dce3eb;
+        }
+
+        .pdf-sd-doc .pdf-table {
+            border: 1px solid #dce3eb;
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+            overflow: hidden;
         }
 
         .pdf-sd-doc .pdf-table th {
             background: #0f2d4a;
             color: #ffffff;
+            padding: 10px 12px;
+            font-size: 8.75px;
+            letter-spacing: 0.07em;
+            font-weight: 700;
+        }
+
+        .pdf-sd-doc .pdf-table tr:first-child th {
+            border-bottom: 2px solid #ec7f00;
         }
 
         .pdf-sd-doc .pdf-table td {
             background: #ffffff;
-            color: #333333;
+            color: #1e293b;
+            padding: 10px 12px;
+            line-height: 1.52;
+            font-size: 10.25px;
         }
 
         .pdf-sd-doc .pdf-table tbody tr:nth-child(even) td {
-            background: #f8f9fb;
-        }
-
-        .pdf-sd-doc .pdf-table {
-            border-color: #e2e8f0;
+            background: #f8fafc;
         }
 
         .pdf-sd-doc .pdf-table th,
         .pdf-sd-doc .pdf-table td {
-            border-color: #e2e8f0;
+            border-color: #dce3eb;
         }
 
         .pdf-sd-doc .pdf-label-strong {
-            color: #0f2d4a;
+            color: #123a57;
+        }
+
+        .pdf-sd-doc .pdf-text-muted-italic {
+            color: #64748b;
         }
 
         .pdf-sd-doc .pdf-footer {
             background: #ffffff;
-            border-top: 3px solid #0f2d4a;
-            color: #333333;
+            border: 1px solid #dce3eb;
+            border-top: 2px solid #0f2d4a;
+            color: #334155;
+            border-radius: 10px;
+            margin-top: 10px;
         }
 
         .pdf-sd-doc .pdf-footer__title {
@@ -186,37 +220,6 @@
 
         .pdf-sd-doc .pdf-footer strong {
             color: #0f2d4a;
-        }
-
-        /*
-         | Full-bleed header/footer graphics (outside .pdf-sd-doc): shorter strips for SD PDF only.
-         | Pushed styles apply to this document’s <head> when rendering sd_forms.pdf.
-         */
-        .pdf-page-header {
-            max-height: 48px;
-            overflow: hidden;
-            margin-bottom: 10px;
-        }
-
-        .pdf-page-header__img {
-            width: 100%;
-            max-height: 48px;
-            height: auto;
-            object-fit: cover;
-            object-position: center top;
-        }
-
-        .pdf-footer-fullbleed__cell {
-            max-height: 40px;
-            overflow: hidden;
-        }
-
-        .pdf-footer-fullbleed__img {
-            width: 100%;
-            max-height: 40px;
-            height: auto;
-            object-fit: cover;
-            object-position: center bottom;
         }
     </style>
 @endpush
