@@ -254,10 +254,16 @@ class SDFormController extends Controller
     {
         $this->authorize('update', $sdForm);
 
-        if ($sdForm->status !== 'submitted') {
-            abort(422, $sdForm->status === 'draft'
-                ? __('Submit the SD form first before sending it to operations.')
-                : __('Only SD forms in Submitted status can be sent to operations.'));
+        if (!in_array($sdForm->status, ['draft', 'submitted'])) {
+            abort(422, __('Only SD forms in Draft or Submitted status can be sent to operations.'));
+        }
+
+        if (!$sdForm->shipment_direction) {
+            abort(422, __('Please select shipment direction before sending to operations.'));
+        }
+
+        if ($sdForm->shipment_direction === 'Import' && !$sdForm->acid_number) {
+            abort(422, __('ACID number is required for Import shipments.'));
         }
 
         SDFormService::transitionStatus($sdForm, 'sent_to_operations');

@@ -2072,18 +2072,8 @@ export default function SDForms() {
                             <FileDown className="h-4 w-4" aria-hidden />
                             {t('sdForms.pdf')}
                           </button>
-                          {detail.status === 'draft' && canSubmit && (
-                            <button
-                              type="button"
-                              className="clients-btn clients-btn--primary inline-flex items-center gap-1 text-xs"
-                              onClick={() => openSubmitModal(detail.id, detail)}
-                            >
-                              <Send className="h-4 w-4" aria-hidden />
-                              {t('sdForms.submit')}
-                            </button>
-                          )}
-                          {detail.status === 'submitted' && canSendOps && (
-                            <button type="button" className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs" onClick={() => runSendOps(detail.id)}>
+                          {['draft', 'submitted'].includes(detail.status) && canSendOps && (
+                            <button type="button" className="clients-btn clients-btn--primary inline-flex items-center gap-1 text-xs" onClick={() => runSendOps(detail.id)}>
                               <Send className="h-4 w-4" aria-hidden />
                               {t('sdForms.sendOps')}
                             </button>
