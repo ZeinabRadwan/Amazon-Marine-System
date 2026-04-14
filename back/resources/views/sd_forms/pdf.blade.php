@@ -126,8 +126,14 @@
             color: #11354d;
         }
 
-        .pdf-sd-doc .pdf-section__heading {
+        .pdf-sd-doc {
             background: #0f2d4a;
+            color: #ffffff;
+            border-left: 4px solid #ec7f00;
+        }
+
+        .pdf-section__heading {
+            background:rgb(108, 111, 114);
             color: #ffffff;
             border-left: 4px solid #ec7f00;
         }
