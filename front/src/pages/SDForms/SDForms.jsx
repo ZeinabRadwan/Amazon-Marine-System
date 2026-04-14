@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { formatDate } from '../../utils/dateUtils'
 import { getStoredToken } from '../Login'
 import {
   listSDForms,
@@ -69,19 +70,7 @@ const SD_FORM_STATUSES = [
   { value: 'cancelled', labelKey: 'sdForms.statusCancelled' },
 ]
 
-function formatDate(iso) {
-  if (!iso) return '—'
-  try {
-    const d = new Date(iso)
-    if (isNaN(d.getTime())) return iso
-    const day = String(d.getDate()).padStart(2, '0')
-    const month = String(d.getMonth() + 1).padStart(2, '0')
-    const year = d.getFullYear()
-    return `${day}/${month}/${year}`
-  } catch {
-    return iso
-  }
-}
+
 
 function getStatusBadgeClass(status) {
   if (!status) return 'sd-forms-badge--default'

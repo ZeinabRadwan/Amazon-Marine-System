@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getStoredToken } from '../Login'
 import { useAuthAccess } from '../../hooks/useAuthAccess'
+import { formatDate } from '../../utils/dateUtils'
 import {
   getExpensesSummary,
   listShipmentExpenses,
@@ -710,7 +711,7 @@ export default function Expenses() {
                 {!shipLoading &&
                   shipRows.map((row) => (
                     <tr key={row.id}>
-                      <td>{row.expense_date}</td>
+                      <td>{formatDate(row.expense_date)}</td>
                       <td>{row.bl_number || '—'}</td>
                       <td>{row.category_name}</td>
                       <td>{row.description}</td>
@@ -885,7 +886,7 @@ export default function Expenses() {
                 {!genLoading &&
                   genRows.map((row) => (
                     <tr key={row.id}>
-                      <td>{row.expense_date}</td>
+                      <td>{formatDate(row.expense_date)}</td>
                       <td>{row.category_name}</td>
                       <td>{row.description}</td>
                       <td>{formatAmount(row.amount, row.currency_code, locale)}</td>

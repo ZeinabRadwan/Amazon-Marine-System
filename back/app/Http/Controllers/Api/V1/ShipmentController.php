@@ -456,7 +456,7 @@ class ShipmentController extends Controller
                     $s->cost_total ?? '',
                     $s->selling_price_total ?? '',
                     $s->profit_total ?? '',
-                    $s->created_at?->format('Y-m-d H:i:s') ?? '',
+                    $s->created_at?->format('d/m/Y H:i:s') ?? '',
                 ]);
             }
             fclose($fh);

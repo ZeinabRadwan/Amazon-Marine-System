@@ -44,7 +44,7 @@
 
     <p>
         <strong>Requested Vessel Date:</strong>
-        {{ optional($form->requested_vessel_date)->toDateString() ?? '—' }}
+        {{ optional($form->requested_vessel_date)->format('d/m/Y') ?? '—' }}
     </p>
 
     <p>

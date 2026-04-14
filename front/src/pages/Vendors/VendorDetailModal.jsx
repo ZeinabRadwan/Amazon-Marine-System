@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { formatDate } from '../../utils/dateUtils'
 import { X } from 'lucide-react'
 import Tabs from '../../components/Tabs'
 import VisitStatusBadge from '../Visits/VisitStatusBadge'
@@ -6,18 +7,7 @@ import '../Clients/Clients.css'
 import '../Clients/ClientDetailModal.css'
 import { getVendorTypeBadgeVariant } from './vendorTypeHelpers'
 
-function formatVisitDate(value, locale) {
-  if (value == null || value === '') return '—'
-  const s = String(value).trim()
-  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10)
-  const d = new Date(s)
-  if (Number.isNaN(d.getTime())) return '—'
-  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-GB', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  }).format(d)
-}
+
 
 export default function VendorDetailModal({
   open,
@@ -149,7 +139,7 @@ export default function VendorDetailModal({
                     <li key={v.id ?? v.visit_date} className="client-detail-modal__list-item client-detail-modal__list-item--visit">
                       <div className="client-detail-modal__list-label client-detail-modal__visit-date">
                         <span className="client-detail-modal__visit-date-main">
-                          {formatVisitDate(v.visit_date ?? v.date, i18n.language)}
+                          {formatDate(v.visit_date ?? v.date)}
                         </span>
                         {(v.user_name || v.user?.name) && (
                           <span className="client-detail-modal__visit-user">{v.user_name ?? v.user?.name}</span>

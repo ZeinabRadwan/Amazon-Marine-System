@@ -15,6 +15,7 @@ import {
   ShieldAlert,
 } from 'lucide-react'
 import { getStoredToken } from '../Login'
+import { formatDate } from '../../utils/dateUtils'
 import LoaderDots from '../../components/LoaderDots'
 import '../../components/LoaderDots/LoaderDots.css'
 import {
@@ -39,20 +40,7 @@ import '../SDForms/SDForms.css'
 import '../Clients/Clients.css'
 import '../Clients/ClientDetailModal.css'
 
-function formatDate(value, locale) {
-  if (value == null || value === '') return '—'
-  const s = String(value).trim()
-  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10)
-  const d = new Date(s)
-  if (Number.isNaN(d.getTime())) return '—'
-  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-GB', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(d)
-}
+
 
 function formatMoney(v, locale) {
   if (v == null || v === '') return '—'

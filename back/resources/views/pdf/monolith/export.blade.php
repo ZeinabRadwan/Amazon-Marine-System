@@ -1278,8 +1278,8 @@
 
         $metaCells = [
             ['label' => $L['no'], 'value' => $invoice->invoice_number, 'highlight' => true],
-            ['label' => $L['date'], 'value' => $invoice->issue_date?->toDateString() ?? '—', 'highlight' => false],
-            ['label' => $L['due_date'], 'value' => $invoice->due_date?->toDateString() ?? '—', 'highlight' => false],
+            ['label' => $L['date'], 'value' => $invoice->issue_date?->format('d/m/Y') ?? '—', 'highlight' => false],
+            ['label' => $L['due_date'], 'value' => $invoice->due_date?->format('d/m/Y') ?? '—', 'highlight' => false],
             ['label' => $L['shipment_bl'], 'value' => $invoice->shipment?->bl_number ?? '—', 'highlight' => false],
         ];
     @endphp
@@ -1528,7 +1528,7 @@
     </tr>
     <tr class="pdf-footer-row-generated">
         <td class="pdf-footer-generated-cell" colspan="2" valign="top">
-            {{ __('pdf.common.generated_footer', ['datetime' => now()->format('Y-m-d H:i:s')], $loc) }}
+            {{ __('pdf.common.generated_footer', ['datetime' => now()->format('d/m/Y H:i:s')], $loc) }}
         </td>
     </tr>
 </table>

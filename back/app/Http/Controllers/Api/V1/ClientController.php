@@ -189,7 +189,7 @@ class ClientController extends Controller
                     $r['status'] ?? '',
                     $r['shipments'] ?? '',
                     $r['profit'] ?? '',
-                    isset($r['last_contact_at']) ? ($r['last_contact_at'] instanceof \DateTimeInterface ? $r['last_contact_at']->format('Y-m-d') : $r['last_contact_at']) : '',
+                    isset($r['last_contact_at']) ? ($r['last_contact_at'] instanceof \DateTimeInterface ? $r['last_contact_at']->format('d/m/Y') : $r['last_contact_at']) : '',
                 ]);
             }
             fclose($fh);

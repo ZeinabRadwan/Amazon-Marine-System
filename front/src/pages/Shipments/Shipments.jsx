@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getStoredToken } from '../Login'
 import { useAuthAccess } from '../../hooks/useAuthAccess'
+import { formatDate } from '../../utils/dateUtils'
 import {
   listShipments,
   getShipment,
@@ -955,7 +956,7 @@ export default function Shipments() {
       sortKey: 'created_at',
       label: t('shipments.fields.created_at'),
       sortable: true,
-      render: (v) => (v ? String(v).slice(0, 10) : '—'),
+      render: (v) => formatDate(v),
     })
 
     base.push({

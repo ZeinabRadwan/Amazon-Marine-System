@@ -6,6 +6,7 @@ import { DropdownMenu } from '../../../components/DropdownMenu'
 import { useQuotes, useMutateQuote } from '../../../hooks/usePricing'
 import CreateQuoteModal from './CreateQuoteModal'
 import QuoteDetailModal from './QuoteDetailModal'
+import { formatDate } from '../../../utils/dateUtils'
 
 export default function QuotationTable({ refreshKey, openCreateSignal, onCreateClosed }) {
   const { t } = useTranslation()
@@ -80,7 +81,7 @@ export default function QuotationTable({ refreshKey, openCreateSignal, onCreateC
     { key: 'price', label: t('pricing.price', 'Price'), render: (_, row) => <span className="font-bold text-gray-900 dark:text-white">$ {(row.total_amount ?? 0).toLocaleString('en-US')}</span> },
     { key: 'status', label: t('pricing.status', 'Status'), render: (val) => getStatusBadge(val) },
     { key: 'sales', label: t('pricing.sales', 'Sales'), hideOnMobile: true, render: (_, row) => row.sales_user?.name || '—' },
-    { key: 'date', label: t('pricing.date', 'Date'), hideOnMobile: true, render: (_, row) => (row.created_at ? new Date(row.created_at).toLocaleDateString() : '—') },
+    { key: 'date', label: t('pricing.date', 'Date'), hideOnMobile: true, render: (_, row) => formatDate(row.created_at) },
     {
       key: 'actions',
       label: '',

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { getDocumentKind } from '../utils/documentFileKind'
+import { formatDate as globalFormatDate } from '../../utils/dateUtils'
 
 const KIND_ICONS = {
   pdf: FileType,
@@ -47,8 +48,7 @@ export default function DocumentCard({ document, onDownload, onDelete, onView })
   }
 
   const formatDate = (iso) => {
-    const d = new Date(iso)
-    return d.toLocaleDateString(undefined, { dateStyle: 'medium' })
+    return globalFormatDate(iso)
   }
 
   const typeLabel = (mime_type || '').split('/')[1]?.toUpperCase() || kind.toUpperCase()
