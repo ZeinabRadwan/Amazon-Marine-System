@@ -38,6 +38,7 @@ import {
 import VisitStatusBadge from './VisitStatusBadge'
 import { normalizeClientOption } from '../../utils/entitySelectOptions'
 import DateTimePicker from '../../components/DateTimePicker'
+import { formatDate, formatDateTime } from '../../utils/dateUtils'
 
 /** Pending client follow-ups block; flip to re-enable. */
 const SHOW_VISITS_FOLLOW_UPS_SECTION = false
@@ -61,18 +62,8 @@ function isVendorVisit(v) {
   return t.includes('Vendor')
 }
 
-function formatVisitDetailDate(value, locale) {
-  if (value == null || value === '') return ''
-  const s = String(value).trim()
-  const d = new Date(s)
-  if (Number.isNaN(d.getTime())) return s.slice(0, 16).replace('T', ' ') || '—'
-  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-GB', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(d)
+function formatVisitDetailDate(value) {
+  return formatDateTime(value)
 }
 
 function defaultVisitForm() {
@@ -100,7 +91,7 @@ function visitToForm(v) {
     subject: v.subject ?? '',
     purpose: v.purpose ?? '',
     notes: v.notes ?? '',
-    visit_date: v.visit_date ? String(v.visit_date).slice(0, 16).replace('T', ' ') : '',
+    visit_date: v.visit_date ? String(v.visit_date).slice(0, 19).replace(' ', 'T') : '',
     status: v.status ?? '',
   }
 }
@@ -470,7 +461,7 @@ export default function Visits() {
       key: 'visit_date',
       sortKey: 'visit_date',
       label: t('visits.fields.visit_date'),
-      render: (val) => (val ? String(val).slice(0, 16).replace('T', ' ') : '—'),
+      render: (val) => formatDateTime(val),
     },
     {
       key: 'subject',
