@@ -12,7 +12,11 @@
     "create": "Create",
     "searchPlaceholder": "Search...",
     "noResults": "No results found",
-    "select": "Select"
+    "select": "Select",
+    "add": "Add",
+    "edit": "Edit",
+    "save": "Save",
+    "delete":"Delete"
   },
   "topNav": {
     "searchPlaceholder": "Search shipments, clients, invoices...",
@@ -2017,6 +2021,12 @@
     "filterVendor": "Vendor"
   },
   "shipments": {
+    "attachments": {
+      "directTitle": "Shipment Attachments",
+      "directSub": "Documents uploaded directly to this shipment",
+      "noDirect": "No direct attachments yet.",
+      "expenseDocuments": "Documents from Expenses"
+    },
     "title": "Shipments",
     "loading": "Loading…",
     "errorLoad": "Failed to load shipments.",

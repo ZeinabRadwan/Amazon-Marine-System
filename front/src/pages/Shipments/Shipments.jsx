@@ -239,7 +239,7 @@ export default function Shipments() {
   const canManageOps = isAdminRole || hasPageAccess
   // Accountant: can see financials (Receipt button → ShipmentFinancialsModal, financial totals card)
   const canViewShipmentFinancials = isAdminRole || hasPageAccess
-  const canManageFinancial = isAdminRole || isAccountant
+  const canManageFinancial = isAdminRole || hasPageAccess
   const canViewSelling = isAdminRole || hasPageAccess
   const canManageExpenses = isAdminRole || hasPageAccess
   const canNotifySalesFinancials = isAdminRole || isAccountant
@@ -999,34 +999,34 @@ export default function Shipments() {
             },
           })
         }
-        menuItems.push({
-          id: 'exportPdf',
-          label: pdfExportingId === row.id ? t('shipments.exportPdfLoading') : t('shipments.exportPdf'),
-          icon: <FileDown className="h-4 w-4" />,
-          disabled: pdfExportingId === row.id,
-          onClick: async () => {
-            if (!token) return
-            setPdfExportingId(row.id)
-            try {
-              const { blob, filename } = await downloadShipmentPdf(token, row.id)
-              const url = URL.createObjectURL(blob)
-              const a = document.createElement('a')
-              a.href = url
-              a.download = filename
-              document.body.appendChild(a)
-              a.click()
-              a.remove()
-              URL.revokeObjectURL(url)
-            } catch (e) {
-              setAlert({
-                type: 'error',
-                message: e?.message || t('shipments.exportPdfError'),
-              })
-            } finally {
-              setPdfExportingId(null)
-            }
-          },
-        })
+        // menuItems.push({
+        //   id: 'exportPdf',
+        //   label: pdfExportingId === row.id ? t('shipments.exportPdfLoading') : t('shipments.exportPdf'),
+        //   icon: <FileDown className="h-4 w-4" />,
+        //   disabled: pdfExportingId === row.id,
+        //   onClick: async () => {
+        //     if (!token) return
+        //     setPdfExportingId(row.id)
+        //     try {
+        //       const { blob, filename } = await downloadShipmentPdf(token, row.id)
+        //       const url = URL.createObjectURL(blob)
+        //       const a = document.createElement('a')
+        //       a.href = url
+        //       a.download = filename
+        //       document.body.appendChild(a)
+        //       a.click()
+        //       a.remove()
+        //       URL.revokeObjectURL(url)
+        //     } catch (e) {
+        //       setAlert({
+        //         type: 'error',
+        //         message: e?.message || t('shipments.exportPdfError'),
+        //       })
+        //     } finally {
+        //       setPdfExportingId(null)
+        //     }
+        //   },
+        // })
         if (canViewShipmentFinancials) {
           menuItems.push({
             id: 'financials',

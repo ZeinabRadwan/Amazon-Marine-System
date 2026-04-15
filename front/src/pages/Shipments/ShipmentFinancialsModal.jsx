@@ -1928,25 +1928,43 @@ export default function ShipmentFinancialsModal({
                 </div>
               ) : (
                 <ul className="shipment-fin-audit-list">
-                  {activityRows.map((a) => (
-                    <li key={a.id} className="shipment-fin-audit-item">
-                      <div className="shipment-fin-audit-item__dot" />
-                      <div>
-                        <div className="shipment-fin-audit-item__meta">
-                          {a.created_at ? String(a.created_at).replace('T', ' ').slice(0, 19) : '—'}
-                          {a.causer_id ? ` · ${t('shipments.fin.auditUser')} #${a.causer_id}` : ''}
-                        </div>
-                        <div className="shipment-fin-audit-item__body">
-                          <span className="fw-600">{a.event || a.description || '—'}</span>
-                        </div>
-                        {a.properties && Object.keys(a.properties).length > 0 ? (
-                          <div className="fs-xs text-muted mt-1 shipment-fin-audit-props">
-                            {JSON.stringify(a.properties)}
+                  {activityRows.map((a) => {
+                    const rawEvent = a.event || a.description || ''
+                    const eventKey = rawEvent.replace(/\./g, '_')
+                    const translatedEvent = t(`shipments.fin.events.${eventKey}`, { defaultValue: rawEvent })
+                    
+                    const props = a.properties || {}
+                    const filteredProps = Object.entries(props).filter(([k]) => k !== 'request' && k !== 'ip')
+
+                    return (
+                      <li key={a.id} className="shipment-fin-audit-item">
+                        <div className="shipment-fin-audit-item__dot" />
+                        <div>
+                          <div className="shipment-fin-audit-item__meta">
+                            {a.created_at ? String(a.created_at).replace('T', ' ').slice(0, 19) : '—'}
+                            {a.causer_id ? ` · ${t('shipments.fin.auditUser')} #${a.causer_id}` : ''}
                           </div>
-                        ) : null}
-                      </div>
-                    </li>
-                  ))}
+                          <div className="shipment-fin-audit-item__body">
+                            <span className="fw-600">{translatedEvent}</span>
+                          </div>
+                          {filteredProps.length > 0 && (
+                            <div className="shipment-fin-audit-props">
+                              {filteredProps.map(([k, v]) => (
+                                <span key={k} className="shipment-fin-audit-prop">
+                                  <span className="shipment-fin-audit-prop-key">
+                                    {t(`shipments.fields.${k}`, { defaultValue: k })}:
+                                  </span>
+                                  <span className="shipment-fin-audit-prop-val">
+                                    {typeof v === 'object' ? JSON.stringify(v) : String(v)}
+                                  </span>
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </li>
+                    )
+                  })}
                 </ul>
               )}
             </div>

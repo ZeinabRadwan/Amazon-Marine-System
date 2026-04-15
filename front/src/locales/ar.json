@@ -13,7 +13,11 @@
     "searchPlaceholder": "بحث...",
     "noResults": "لا توجد نتائج",
     "download" :  "تحميل",
-    "select": "اختر"
+    "select": "اختر",
+    "add": "إضافة",
+    "edit": "تعديل",
+    "save": "حفظ",
+    "delete":"حذف"
   },
   "topNav": {
     "searchPlaceholder": "البحث في الشحنات، العملاء، الفواتير...",
@@ -2018,6 +2022,12 @@
     "filterVendor": "المورّد"
   },
   "shipments": {
+    "attachments": {
+      "directTitle": "مرفقات الشحنة",
+      "directSub": "المستندات المرفوعة مباشرة لهذه الشحنة",
+      "noDirect": "لا توجد مرفقات مباشرة بعد.",
+      "expenseDocuments": "مستندات من المصروفات"
+    },
     "title": "الشحنات",
     "loading": "جاري التحميل…",
     "errorLoad": "تعذّر تحميل الشحنات.",
@@ -2251,7 +2261,10 @@
       "reefer_vent": "تهوية المبرد",
       "reefer_hum": "رطوبة المبرد",
       "created_at": "تاريخ الإنشاء",
-      "sd_number": "رقم SD"
+      "sd_number": "رقم SD",
+      "expense_id": "رقم المصروف",
+      "amount": "المبلغ",
+      "currency_code": "العملة"
     },
     "containerSizes": {
       "20": "20'",
@@ -2409,6 +2422,16 @@
       "paymentInvalidAmount": "أدخل مبلغ دفع صالحاً.",
       "paymentRecorded": "تم تسجيل الدفعة.",
       "paymentFailed": "تعذّر تسجيل الدفعة.",
+      "events": {
+        "shipment_created": "تم إنشاء الشحنة",
+        "shipment_financial_expense_created": "إنشاء مصروف مالي",
+        "shipment_financial_expense_updated": "تحديث مصروف مالي",
+        "shipment_financial_expense_deleted": "حذف مصروف مالي",
+        "shipment_notify_sales_financials": "إخطار المبيعات بالماليات",
+        "shipment_invoice_created": "إنشاء فاتورة عميل",
+        "shipment_invoice_payment_recorded": "تسجيل دفعة على فاتورة",
+        "shipment_updated": "تحديث بيانات الشحنة"
+      },
       "auditUser": "المستخدم",
       "colDescription": "الوصف",
       "colDate": "التاريخ",
@@ -2497,7 +2520,8 @@
       "notifyAccountantBtn": "إخطار المحاسب",
       "notifyAccountantOk": "تم إخطار المحاسب بنجاح.",
       "accountantFinalizeTitle": "إنهاء الماليات",
-      "accountantFinalizeBody": "راجع جميع التكاليف وأسعار البيع. بمجرد الانتهاء، قم بإخطار مندوب المبيعات."
+      "accountantFinalizeBody": "راجع جميع التكاليف وأسعار البيع. بمجرد الانتهاء، قم بإخطار مندوب المبيعات.",
+      "noAttachments": "لا يوجد مرفقات"
     }
   },
   "vendors": {

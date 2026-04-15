@@ -438,7 +438,7 @@ export default function ShipmentDetailModal({
               ) : (
                 <div className="client-detail-modal__info-tab">
                   <div className="sd-detail-modal__toolbar">
-                    <button
+                    {/* <button
                       type="button"
                       className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs"
                       onClick={handleExportPdf}
@@ -450,7 +450,7 @@ export default function ShipmentDetailModal({
                         <FileDown className="h-4 w-4" aria-hidden />
                       )}
                       {pdfExporting ? t('shipments.exportPdfLoading') : t('shipments.exportPdf')}
-                    </button>
+                    </button> */}
                     {canManageOps && (
                       <button
                         type="button"
