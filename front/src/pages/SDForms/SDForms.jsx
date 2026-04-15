@@ -515,6 +515,7 @@ export default function SDForms() {
   }, [token, t])
 
   const openEdit = useCallback((id) => {
+    setDetailId(null)
     setEditId(id)
     setEditLoading(true)
     setAlert(null)

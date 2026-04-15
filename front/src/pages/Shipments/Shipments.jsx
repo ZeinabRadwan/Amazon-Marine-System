@@ -236,12 +236,12 @@ export default function Shipments() {
   const { hasPageAccess, user, isAdminRole, isAccountant, isOperations, roleId, hasAbility } = useAuthAccess()
   const isSalesRepresentative = roleId === 3 || roleId === 2
   // Operations: can manage operational actions (stage update, edit, delete, operations tab)
-  const canManageOps = isAdminRole || isOperations
+  const canManageOps = isAdminRole || hasPageAccess
   // Accountant: can see financials (Receipt button → ShipmentFinancialsModal, financial totals card)
-  const canViewShipmentFinancials = isAdminRole || isAccountant
+  const canViewShipmentFinancials = isAdminRole || hasPageAccess
   const canManageFinancial = isAdminRole || isAccountant
-  const canViewSelling = isAdminRole || isAccountant
-  const canManageExpenses = isAdminRole || isAccountant
+  const canViewSelling = isAdminRole || hasPageAccess
+  const canManageExpenses = isAdminRole || hasPageAccess
   const canNotifySalesFinancials = isAdminRole || isAccountant
 
   const token = getStoredToken()
