@@ -86,8 +86,9 @@ function categoryCodeForTemplate(bucketId, tplId) {
 
 function extractUserDescription(stored, prefix) {
   if (!stored || typeof stored !== 'string') return ''
-  const p = `${prefix}:`
   const s = stored.trim()
+  if (s === prefix.trim()) return ''
+  const p = `${prefix}:`
   if (s.startsWith(p)) return s.slice(p.length).trim()
   return s
 }
@@ -130,10 +131,19 @@ function FinSingleExpenseRow({
     setRowError(null)
   }, [safeExp.id, safeExp.description, safeExp.amount, safeExp.currency_code, descPrefix])
 
-  const buildFullDescription = () => (tpl ? `${descPrefix}: ${(desc || '').trim() || tpl.id}` : (desc || '').trim())
+  const buildFullDescription = () => {
+    if (!tpl) return (desc || '').trim()
+    const d = (desc || '').trim()
+    return d ? `${descPrefix}: ${d}` : descPrefix
+  }
 
   const handleSave = async () => {
     setRowError(null)
+    
+    if (!safeExp.id && amount === '' && !desc.trim()) {
+      return // skip saving empty template rows
+    }
+
     if (!categoryMeta?.id) {
       setRowError(t('shipments.fin.errorNoCategory'))
       return
@@ -318,6 +328,11 @@ function FinPendingOtherChargeRow({
 
   const handleSave = async () => {
     setRowError(null)
+
+    if (amount === '' && !desc.trim()) {
+      return // skip saving if row is completely empty
+    }
+
     if (!categoryMeta?.id) {
       setRowError(t('shipments.fin.errorNoCategory'))
       return
