@@ -3,8 +3,11 @@ import { useTranslation } from 'react-i18next'
 import { X, Save, Plus, Trash2 } from 'lucide-react'
 import { useMutateQuote } from '../../../hooks/usePricing'
 import { getStoredToken } from '../../Login'
-import { listClients } from '../../../api/clients'
+import { listClients, createClient } from '../../../api/clients'
 import { listUsers } from '../../../api/users'
+import { listPorts, createPort } from '../../../api/ports'
+import { listShippingLines, createShippingLine } from '../../../api/shippingLines'
+import AsyncSelect from '../../../components/AsyncSelect'
 
 const CONTAINER_TYPES = ['20 Dry', '40 Dry', '40HQ Dry', '20 Reefer', '40 Reefer']
 
@@ -50,6 +53,87 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, sourceOff
     listClients(token).then(res => setClients(res.data || []))
     listUsers(token).then(res => setUsers(res.data || []))
   }, [isOpen])
+
+  const loadPortOptions = async (q) => {
+    const token = getStoredToken()
+    if (!token) return []
+    try {
+      const res = await listPorts(token, { q, active: true })
+      return (res.data || []).map(p => ({ value: p.name, label: p.name }))
+    } catch {
+      return []
+    }
+  }
+
+  const handleCreatePort = async (name) => {
+    const token = getStoredToken()
+    if (!token) return null
+    try {
+      const res = await createPort(token, { name, active: true })
+      const newPort = res.data ?? res
+      return { value: newPort.name, label: newPort.name }
+    } catch {
+      return null
+    }
+  }
+
+  const loadShippingLineOptions = async (q) => {
+    const token = getStoredToken()
+    if (!token) return []
+    try {
+      const res = await listShippingLines(token, { q, active: true })
+      return (res.data || []).map(l => ({ value: l.name, label: l.name }))
+    } catch {
+      return []
+    }
+  }
+
+  const handleCreateShippingLine = async (name) => {
+    const token = getStoredToken()
+    if (!token) return null
+    try {
+      const res = await createShippingLine(token, { name, active: true })
+      const newLine = res.data ?? res
+      return { value: newLine.name, label: newLine.name }
+    } catch {
+      return null
+    }
+  }
+
+  const loadClientOptions = async (q) => {
+    const token = getStoredToken()
+    if (!token) return []
+    try {
+      const res = await listClients(token, { q, active: true })
+      return (res.data || []).map(c => ({ value: c.id, label: c.name || c.id }))
+    } catch {
+      return []
+    }
+  }
+
+  const handleCreateClient = async (name) => {
+    const token = getStoredToken()
+    if (!token) return null
+    try {
+      const res = await createClient(token, { name, client_type: 'client' })
+      const newClient = res.data ?? res
+      return { value: newClient.id, label: newClient.name || newClient.id }
+    } catch {
+      return null
+    }
+  }
+
+  const loadUserOptions = async (q) => {
+    const token = getStoredToken()
+    if (!token) return []
+    try {
+      const res = await listUsers(token, { q })
+      const data = res.data ?? res
+      return (Array.isArray(data) ? data : []).map(u => ({ value: u.id, label: u.name || u.id }))
+    } catch {
+      return []
+    }
+  }
 
   useEffect(() => {
     if (!isOpen) return
@@ -247,18 +331,29 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, sourceOff
             {/* SECTION 1: METRICS & HEADER */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-gray-50/50 dark:bg-gray-900/20 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('pricing.client', 'Client')}</label>
-                <select value={form.client_id} onChange={(e) => setField('client_id', e.target.value)} className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500/20 outline-none">
-                  <option value="">{t('common.select', 'Select')}</option>
-                  {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('pricing.client', 'Client / العميل')}</label>
+                <AsyncSelect
+                  value={(() => {
+                    const c = clients.find(x => String(x.id) === String(form.client_id))
+                    return c ? { value: c.id, label: c.name } : null
+                  })()}
+                  onChange={(opt) => setField('client_id', opt?.value || '')}
+                  loadOptions={loadClientOptions}
+                  onCreate={handleCreateClient}
+                  placeholder={t('pricing.client', 'Client / العميل')}
+                />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('pricing.salesUser', 'Sales Person')}</label>
-                <select value={form.sales_user_id} onChange={(e) => setField('sales_user_id', e.target.value)} className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500/20 outline-none">
-                  <option value="">{t('common.select', 'Select')}</option>
-                  {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-                </select>
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('pricing.salesUser', 'Sales Person / المسؤول')}</label>
+                <AsyncSelect
+                  value={(() => {
+                    const u = users.find(x => String(x.id) === String(form.sales_user_id))
+                    return u ? { value: u.id, label: u.name } : null
+                  })()}
+                  onChange={(opt) => setField('sales_user_id', opt?.value || '')}
+                  loadOptions={loadUserOptions}
+                  placeholder={t('pricing.salesUser', 'Sales Person / المسؤول')}
+                />
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('pricing.quoteNo', 'Quote No')}</label>
@@ -300,17 +395,35 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, sourceOff
                   <div className="flex-1 flex items-center gap-3 w-full">
                     <div className="flex-1 space-y-1">
                       <label className="text-[10px] font-bold text-gray-400 uppercase">{t('pricing.pol', 'POL / التحميل')}</label>
-                      <input value={form.pol} onChange={(e) => setField('pol', e.target.value)} className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500/20" />
+                      <AsyncSelect
+                        value={form.pol ? { value: form.pol, label: form.pol } : null}
+                        onChange={(opt) => setField('pol', opt?.value || '')}
+                        loadOptions={loadPortOptions}
+                        onCreate={handleCreatePort}
+                        placeholder={t('pricing.pol', 'POL / التحميل')}
+                      />
                     </div>
                     <div className="text-gray-300 mt-5">→</div>
                     <div className="flex-1 space-y-1">
                       <label className="text-[10px] font-bold text-gray-400 uppercase">{t('pricing.pod', 'POD / الوصول')}</label>
-                      <input value={form.pod} onChange={(e) => setField('pod', e.target.value)} className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500/20" />
+                      <AsyncSelect
+                        value={form.pod ? { value: form.pod, label: form.pod } : null}
+                        onChange={(opt) => setField('pod', opt?.value || '')}
+                        loadOptions={loadPortOptions}
+                        onCreate={handleCreatePort}
+                        placeholder={t('pricing.pod', 'POD / الوصول')}
+                      />
                     </div>
                   </div>
                   <div className="flex-1 space-y-1 w-full">
                     <label className="text-[10px] font-bold text-gray-400 uppercase">{t('pricing.shippingLine', 'Shipping Line / الخط الملاحي')}</label>
-                    <input value={form.shipping_line} onChange={(e) => setField('shipping_line', e.target.value)} className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500/20" />
+                    <AsyncSelect
+                      value={form.shipping_line ? { value: form.shipping_line, label: form.shipping_line } : null}
+                      onChange={(opt) => setField('shipping_line', opt?.value || '')}
+                      loadOptions={loadShippingLineOptions}
+                      onCreate={handleCreateShippingLine}
+                      placeholder={t('pricing.shippingLine', 'Shipping Line / الخط الملاحي')}
+                    />
                   </div>
                 </div>
               </div>

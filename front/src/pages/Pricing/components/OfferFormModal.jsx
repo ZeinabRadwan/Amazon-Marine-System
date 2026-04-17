@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X, Save, Plus, Trash2, Ship, Truck } from 'lucide-react'
 import { useMutateOffer } from '../../../hooks/usePricing'
-import { getStoredToken } from '../../Login'
-import { listPorts } from '../../../api/ports'
-import { listShippingLines } from '../../../api/shippingLines'
+import { listClients, createClient } from '../../../api/clients'
+import { listUsers } from '../../../api/users'
+import { listPorts, createPort } from '../../../api/ports'
+import { listShippingLines, createShippingLine } from '../../../api/shippingLines'
+import AsyncSelect from '../../../components/AsyncSelect'
 
 // A single reusable modal for both Create and Edit, switching between Sea/Inland form fields.
 export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit }) {
@@ -12,16 +14,23 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
   const { create, update, loading, error } = useMutateOffer()
 
   const SEA_PRICE_KEYS = [
-    { key: 'ocean', label: "Ocean Freight", defaultCurrency: 'USD' },
-    { key: 'thc', label: "THC", defaultCurrency: 'USD' },
-    { key: 'power', label: 'Power', defaultCurrency: 'USD' },
-    { key: 'bl', label: 'B/L Fee', defaultCurrency: 'USD' },
-    { key: 'telex', label: 'Telex Release', defaultCurrency: 'USD' },
+    { key: 'of20', label: "OF 20'DC", defaultCurrency: 'USD', icon: 'bx-dollar-circle' },
+    { key: 'of40', label: "OF 40'HQ", defaultCurrency: 'USD', icon: 'bx-dollar-circle' },
+    { key: 'thc20', label: "THC 20'DC", defaultCurrency: 'USD' },
+    { key: 'thc40', label: "THC 40'HQ", defaultCurrency: 'USD' },
+    { key: 'of40rf', label: "OF 40'RF (Reefer)", defaultCurrency: 'USD', isReefer: true },
+    { key: 'thcRf', label: "THC 40'RF", defaultCurrency: 'USD', isReefer: true },
+    { key: 'powerDay', label: "Power/day (Reefer)", defaultCurrency: 'USD', isReefer: true },
+    { key: 'pti', label: "PTI (Reefer)", defaultCurrency: 'USD', isReefer: true },
   ]
 
   const INLAND_PRICE_KEYS = [
-    { key: 'inland', label: "Inland Rate", defaultCurrency: 'EGP' },
-    { key: 'generator', label: 'Generator', defaultCurrency: 'EGP' },
+    { key: 't20d', label: "Truck - 1 x 20' Dry", defaultCurrency: 'EGP' },
+    { key: 't20dx2', label: "Truck - 2 x 20' Dry", defaultCurrency: 'EGP' },
+    { key: 't40d', label: "Truck - 1 x 40' Dry", defaultCurrency: 'EGP' },
+    { key: 't40hq', label: "Truck - 1 x 40' High Cube", defaultCurrency: 'EGP' },
+    { key: 't20r', label: "Truck - 1 x 20' Reefer", defaultCurrency: 'EGP', isReefer: true },
+    { key: 't40r', label: "Truck - 1 x 40' Reefer", defaultCurrency: 'EGP', isReefer: true },
   ]
 
   const GOVERNORATES = [
@@ -45,7 +54,6 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
     valid_from: '',
     valid_to: '',
     other_charges: '',
-    other_chars_list: [], // [{ name, description, amount, currency }]
     notes: '',
     sailing_dates: [],
     available_sailing_days: [],
@@ -57,33 +65,117 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
     pricing: {}
   })
 
-  // Prefill when editing
-  const [ports, setPorts] = useState([])
-  const [shippingLines, setShippingLines] = useState([])
-
-  useEffect(() => {
+  const loadPortOptions = async (q) => {
     const token = getStoredToken()
-    if (!token) return
-    listPorts(token).then(res => setPorts(res.data || []))
-    listShippingLines(token).then(res => setShippingLines(res.data || []))
-  }, [])
+    if (!token) return []
+    try {
+      const res = await listPorts(token, { q, active: true })
+      return (res.data || []).map(p => ({ value: p.name, label: p.name }))
+    } catch {
+      return []
+    }
+  }
+
+  const handleCreatePort = async (name) => {
+    const token = getStoredToken()
+    if (!token) return null
+    try {
+      const res = await createPort(token, { name, active: true })
+      const newPort = res.data ?? res
+      return { value: newPort.name, label: newPort.name }
+    } catch {
+      return null
+    }
+  }
+
+  const loadShippingLineOptions = async (q) => {
+    const token = getStoredToken()
+    if (!token) return []
+    try {
+      const res = await listShippingLines(token, { q, active: true })
+      return (res.data || []).map(l => ({ value: l.name, label: l.name }))
+    } catch {
+      return []
+    }
+  }
+
+  const handleCreateShippingLine = async (name) => {
+    const token = getStoredToken()
+    if (!token) return null
+    try {
+      const res = await createShippingLine(token, { name, active: true })
+      const newLine = res.data ?? res
+      return { value: newLine.name, label: newLine.name }
+    } catch {
+      return null
+    }
+  }
+
+  const loadRegionOptions = async (q) => {
+    const defaultRegions = ["البحر الأحمر", "البحر المتوسط", "الخليج", "أوروبا", "أمريكا الشمالية"]
+    const filtered = defaultRegions.filter(r => r.includes(q || ''))
+    return filtered.map(r => ({ value: r, label: r }))
+  }
+
+  const handleCreateRegion = async (name) => {
+    return { value: name, label: name }
+  }
+
+  const loadGovOptions = async (q) => {
+    const filtered = GOVERNORATES.filter(g => g.toLowerCase().includes((q || '').toLowerCase()))
+    return filtered.map(g => ({ value: g, label: g }))
+  }
+
+  const handleCreateGov = async (name) => {
+    return { value: name, label: name }
+  }
+
+  const loadDestinationOptions = async (q) => {
+    // We don't have a destination API yet, but we allow creating new ones
+    return []
+  }
+
+  const handleCreateDestination = async (name) => {
+    return { value: name, label: name }
+  }
+
+  const loadClientOptions = async (q) => {
+    const token = getStoredToken()
+    if (!token) return []
+    try {
+      const res = await listClients(token, { q, active: true })
+      return (res.data || []).map(c => ({ value: c.id, label: c.name || c.id }))
+    } catch {
+      return []
+    }
+  }
+
+  const handleCreateClient = async (name) => {
+    const token = getStoredToken()
+    if (!token) return null
+    try {
+      const res = await createClient(token, { name, client_type: 'client' })
+      const newClient = res.data ?? res
+      return { value: newClient.id, label: newClient.name || newClient.id }
+    } catch {
+      return null
+    }
+  }
+
+  const loadUserOptions = async (q) => {
+    const token = getStoredToken()
+    if (!token) return []
+    try {
+      const res = await listUsers(token, { q })
+      const data = res.data ?? res
+      return (Array.isArray(data) ? data : []).map(u => ({ value: u.id, label: u.name || u.id }))
+    } catch {
+      return []
+    }
+  }
 
   useEffect(() => {
     if (offerToEdit && isOpen) {
-      // Extract other charges from pricing object
-      const otherList = []
-      const pricing = offerToEdit.pricing || {}
-      Object.keys(pricing).forEach(k => {
-        if (k.startsWith('other_')) {
-          otherList.push({
-            name: pricing[k].name,
-            description: pricing[k].description,
-            price: pricing[k].price,
-            currency: pricing[k].currency
-          })
-        }
-      })
-
       setFormData({
         pricing_type: offerToEdit.pricing_type || 'sea',
         container_type: offerToEdit.container_type || 'Dry',
@@ -99,7 +191,6 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
         valid_from: offerToEdit.valid_from || '',
         valid_to: offerToEdit.valid_to || '',
         other_charges: offerToEdit.other_charges || '',
-        other_chars_list: otherList,
         notes: offerToEdit.notes || '',
         sailing_dates: offerToEdit.sailing_dates || [],
         available_sailing_days: offerToEdit.available_sailing_days || [],
@@ -108,16 +199,20 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
         destination: offerToEdit.destination || '',
         inland_gov: offerToEdit.inland_gov || '',
         inland_city: offerToEdit.inland_city || '',
+        client_id: offerToEdit.client_id || '',
+        sales_person_id: offerToEdit.sales_person_id || '',
+        client_id: offerToEdit.client_id || '',
+        sales_person_id: offerToEdit.sales_person_id || '',
         pricing: offerToEdit.pricing || {}
       })
     } else if (isOpen && !offerToEdit) {
       setFormData({
         pricing_type: 'sea',
-        container_type: 'Dry', container_size: '20', container_height: 'Standard',
         region: '', pod: '', shipping_line: '', pol: '', dnd: '', transit_time: '', free_time: '', 
-        valid_from: '', valid_to: '', other_charges: '', other_chars_list: [], notes: '', 
+        valid_from: '', valid_to: '', other_charges: '', notes: '', 
         sailing_dates: [], available_sailing_days: [], weekly_sailings: '',
-        inland_port: '', destination: '', inland_gov: '', inland_city: '', pricing: {}
+        inland_port: '', destination: '', inland_gov: '', inland_city: '', 
+        pricing: {}
       })
     }
   }, [offerToEdit, isOpen])
@@ -146,63 +241,10 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
     })
   }
 
-  const addOtherCharge = () => {
-    setFormData(p => ({
-      ...p,
-      other_chars_list: [...(p.other_chars_list || []), { name: '', description: '', price: '', currency: 'USD' }]
-    }))
-  }
-
-  const updateOtherCharge = (idx, field, val) => {
-    setFormData(p => {
-      const list = [...(p.other_chars_list || [])]
-      list[idx] = { ...list[idx], [field]: val }
-      return { ...p, other_chars_list: list }
-    })
-  }
-
-  const removeOtherCharge = (idx) => {
-    setFormData(p => {
-      const list = [...(p.other_chars_list || [])]
-      list.splice(idx, 1)
-      return { ...p, other_chars_list: list }
-    })
-  }
-
-  const addSailingDate = () => {
-    setFormData(p => ({ ...p, sailing_dates: [...(p.sailing_dates || []), ''] }))
-  }
-
-  const updateSailingDate = (idx, value) => {
-    setFormData(p => {
-      const next = [...(p.sailing_dates || [])]
-      next[idx] = value
-      return { ...p, sailing_dates: next }
-    })
-  }
-
-  const removeSailingDate = (idx) => {
-    setFormData(p => {
-      const next = [...(p.sailing_dates || [])]
-      next.splice(idx, 1)
-      return { ...p, sailing_dates: next }
-    })
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
       const pricingPayload = { ...formData.pricing }
-      // Add other charges to pricing
-      formData.other_chars_list.forEach((item, idx) => {
-        if (!item.name || !item.price) return
-        pricingPayload[`other_${idx}`] = {
-          name: item.name,
-          description: item.description,
-          price: Number(item.price),
-          currency: item.currency || 'USD'
-        }
-      })
 
       const cleaned = {
         ...formData,
@@ -247,7 +289,6 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
           )}
 
           <form id="offerForm" onSubmit={handleSubmit} className="space-y-6">
-            
             {!offerToEdit && (
               <div className="flex p-1 bg-gray-100 dark:bg-gray-900 rounded-xl gap-1">
                 <button
@@ -279,41 +320,86 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-gray-500">{t('pricing.pol', 'POL (Port of Loading)')}</label>
-                      <input required type="text" list="portList" name="pol" value={formData.pol} onChange={handleChange} className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20" />
+                      <AsyncSelect
+                        value={formData.pol ? { value: formData.pol, label: formData.pol } : null}
+                        onChange={(opt) => setFormData(p => ({ ...p, pol: opt?.value || '' }))}
+                        loadOptions={loadPortOptions}
+                        onCreate={handleCreatePort}
+                        placeholder={t('pricing.pol', 'POL (Port of Loading)')}
+                      />
                     </div>
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-gray-500">{t('pricing.pod', 'POD (Port of Discharge)')}</label>
-                      <input required type="text" list="portList" name="pod" value={formData.pod} onChange={handleChange} className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20" />
+                      <AsyncSelect
+                        value={formData.pod ? { value: formData.pod, label: formData.pod } : null}
+                        onChange={(opt) => setFormData(p => ({ ...p, pod: opt?.value || '' }))}
+                        loadOptions={loadPortOptions}
+                        onCreate={handleCreatePort}
+                        placeholder={t('pricing.pod', 'POD (Port of Discharge)')}
+                      />
                     </div>
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-gray-500">{t('pricing.shippingLine', 'Shipping Line')}</label>
-                      <input required type="text" list="lineList" name="shipping_line" value={formData.shipping_line} onChange={handleChange} className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20" />
+                      <AsyncSelect
+                        value={formData.shipping_line ? { value: formData.shipping_line, label: formData.shipping_line } : null}
+                        onChange={(opt) => setFormData(p => ({ ...p, shipping_line: opt?.value || '' }))}
+                        loadOptions={loadShippingLineOptions}
+                        onCreate={handleCreateShippingLine}
+                        placeholder={t('pricing.shippingLine', 'Shipping Line')}
+                      />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-gray-500">{t('pricing.region', 'Region')}</label>
-                      <input required type="text" name="region" value={formData.region} onChange={handleChange} className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20" />
+                      <label className="text-xs font-bold text-gray-500">{t('pricing.region', 'Region / المنطقة')}</label>
+                      <AsyncSelect
+                        value={formData.region ? { value: formData.region, label: formData.region } : null}
+                        onChange={(opt) => setFormData(p => ({ ...p, region: opt?.value || '' }))}
+                        loadOptions={loadRegionOptions}
+                        onCreate={handleCreateRegion}
+                        placeholder={t('pricing.region', 'Region / المنطقة')}
+                      />
                     </div>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-gray-500">{t('pricing.inlandGov', 'Inland Governorate')}</label>
-                      <select required name="inland_gov" value={formData.inland_gov} onChange={handleChange} className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-amber-500/20">
-                        <option value="">{t('pricing.selectGov', 'Select Governorate')}</option>
-                        {GOVERNORATES.map(g => <option key={g} value={g}>{g}</option>)}
-                      </select>
+                      <label className="text-xs font-bold text-gray-500">{t('pricing.inlandGov', 'Inland Governorate / المحافظة')}</label>
+                      <AsyncSelect
+                        value={formData.inland_gov ? { value: formData.inland_gov, label: formData.inland_gov } : null}
+                        onChange={(opt) => setFormData(p => ({ ...p, inland_gov: opt?.value || '' }))}
+                        loadOptions={loadGovOptions}
+                        onCreate={handleCreateGov}
+                        placeholder={t('pricing.inlandGov', 'Inland Governorate / المحافظة')}
+                      />
                     </div>
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-gray-500">{t('pricing.port', 'Inland Port')}</label>
-                      <input required type="text" list="portList" name="inland_port" value={formData.inland_port} onChange={handleChange} className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-amber-500/20" />
+                      <AsyncSelect
+                        value={formData.inland_port ? { value: formData.inland_port, label: formData.inland_port } : null}
+                        onChange={(opt) => setFormData(p => ({ ...p, inland_port: opt?.value || '' }))}
+                        loadOptions={loadPortOptions}
+                        onCreate={handleCreatePort}
+                        placeholder={t('pricing.port', 'Inland Port')}
+                      />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-gray-500">{t('pricing.destination', 'Destination')}</label>
-                      <input required type="text" name="destination" value={formData.destination} onChange={handleChange} className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-amber-500/20" />
+                      <label className="text-xs font-bold text-gray-500">{t('pricing.destination', 'Destination / الوجهة')}</label>
+                      <AsyncSelect
+                        value={formData.destination ? { value: formData.destination, label: formData.destination } : null}
+                        onChange={(opt) => setFormData(p => ({ ...p, destination: opt?.value || '' }))}
+                        loadOptions={loadDestinationOptions}
+                        onCreate={handleCreateDestination}
+                        placeholder={t('pricing.destination', 'Destination / الوجهة')}
+                      />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-gray-500">{t('pricing.inlandCity', 'Inland City')}</label>
-                      <input type="text" name="inland_city" value={formData.inland_city} onChange={handleChange} className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-amber-500/20" />
+                      <label className="text-xs font-bold text-gray-500">{t('pricing.inlandCity', 'Inland City / المدينة')}</label>
+                      <AsyncSelect
+                        value={formData.inland_city ? { value: formData.inland_city, label: formData.inland_city } : null}
+                        onChange={(opt) => setFormData(p => ({ ...p, inland_city: opt?.value || '' }))}
+                        loadOptions={loadDestinationOptions}
+                        onCreate={handleCreateDestination}
+                        placeholder={t('pricing.inlandCity', 'Inland City / المدينة')}
+                      />
                     </div>
                   </div>
                 )}
@@ -321,40 +407,6 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
 
               {/* SECTION: SPEC & SCHEDULE */}
               <div className="space-y-4">
-                {/* CONTAINER SPEC */}
-                <div className="bg-white dark:bg-gray-800/40 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-5 space-y-4">
-                  <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-2">
-                    <span className="w-8 h-[1px] bg-gray-200 dark:bg-gray-700"></span> 
-                    {t('pricing.containerSpec', 'Container Spec')}
-                  </h4>
-                  <div className="grid grid-cols-1 gap-3">
-                    <div className="grid grid-cols-3 gap-2">
-                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase">{t('pricing.type', 'Type')}</label>
-                        <select name="container_type" value={formData.container_type} onChange={handleChange} className="w-full px-2 py-1.5 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg text-xs outline-none">
-                          <option value="Dry">Dry</option>
-                          <option value="Reefer">Reefer</option>
-                        </select>
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase">{t('pricing.size', 'Size')}</label>
-                        <select name="container_size" value={formData.container_size} onChange={handleChange} className="w-full px-2 py-1.5 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg text-xs outline-none">
-                          <option value="20">20'</option>
-                          <option value="40">40'</option>
-                        </select>
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase">{t('pricing.height', 'Height')}</label>
-                        <select name="container_height" value={formData.container_height} onChange={handleChange} className="w-full px-2 py-1.5 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg text-xs outline-none">
-                          <option value="Standard">Std</option>
-                          <option value="HQ">HQ</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* SCHEDULE */}
                 <div className="bg-white dark:bg-gray-800/40 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-5 space-y-4">
                   <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-2">
                     <span className="w-8 h-[1px] bg-gray-200 dark:bg-gray-700"></span> 
@@ -429,18 +481,21 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {priceKeys.map((row) => {
-                    if (formData.container_type === 'Dry' && (row.key === 'power' || row.key === 'pti')) return null;
                     return (
-                      <div key={row.key} className="flex items-center gap-2 p-2 rounded-xl bg-gray-50/50 dark:bg-gray-900/30 border border-transparent hover:border-gray-100 dark:hover:border-gray-800 transition-colors">
+                      <div key={row.key} className={`flex items-center gap-2 p-2 rounded-xl border border-transparent hover:border-gray-100 dark:hover:border-gray-800 transition-colors ${row.isReefer ? 'bg-cyan-50/50 dark:bg-cyan-900/20' : 'bg-gray-50/50 dark:bg-gray-900/30'}`}>
                         <div className="flex-1 min-w-0">
-                          <label className="text-[10px] font-bold text-gray-400 uppercase block truncate mb-1">{row.label}</label>
+                          <label className={`text-[10px] font-bold uppercase block truncate mb-1 ${row.isReefer ? 'text-cyan-600 dark:text-cyan-400' : 'text-gray-500'}`}>
+                            {row.label}
+                          </label>
                           <div className="flex items-center gap-1">
                             <input
                               type="number"
                               value={formData.pricing?.[row.key]?.price ?? ''}
                               onChange={(e) => handlePriceChange(row.key, 'price', e.target.value)}
                               className="w-full bg-transparent font-bold text-sm outline-none"
-                              placeholder="0.00"
+                              placeholder="0"
+                              step="0.01"
+                              min="0"
                             />
                             <select
                               value={formData.pricing?.[row.key]?.currency || row.defaultCurrency}
@@ -459,40 +514,6 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                 </div>
               </div>
 
-              {/* SECTION: OTHER CHARGES */}
-              <div className="bg-white dark:bg-gray-800/40 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-5 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                    <span className="w-8 h-[1px] bg-gray-200 dark:bg-gray-700"></span> 
-                    {t('pricing.otherCharges', 'Other Charges')}
-                  </h4>
-                  <button type="button" onClick={addOtherCharge} className="text-[10px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/20">
-                    <Plus className="h-3 w-3" /> {t('common.add', 'Add Charge')}
-                  </button>
-                </div>
-                
-                <div className="space-y-2">
-                  {formData.other_chars_list?.map((item, idx) => (
-                    <div key={idx} className="p-3 border border-gray-100 dark:border-gray-700/50 rounded-xl bg-gray-50/30 space-y-2 relative group">
-                      <button type="button" onClick={() => removeOtherCharge(idx)} className="absolute top-2 right-2 p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                      <div className="grid grid-cols-2 gap-3">
-                        <input placeholder={t('common.name', 'Name')} value={item.name} onChange={e => updateOtherCharge(idx, 'name', e.target.value)} className="px-3 py-1.5 bg-white dark:bg-gray-900 border rounded-lg text-xs" />
-                        <div className="flex items-center gap-2 border rounded-lg bg-white dark:bg-gray-900 px-3 py-1.5">
-                          <input placeholder={t('pricing.price', 'Price')} type="number" value={item.price} onChange={e => updateOtherCharge(idx, 'price', e.target.value)} className="w-full bg-transparent text-xs font-bold outline-none" />
-                          <select value={item.currency} onChange={e => updateOtherCharge(idx, 'currency', e.target.value)} className="bg-transparent text-[10px] font-bold text-blue-500 outline-none">
-                            <option value="USD">USD</option>
-                            <option value="EUR">EUR</option>
-                            <option value="EGP">EGP</option>
-                          </select>
-                        </div>
-                      </div>
-                      <input placeholder={t('common.description', 'Description')} value={item.description} onChange={e => updateOtherCharge(idx, 'description', e.target.value)} className="w-full px-3 py-1.5 bg-white dark:bg-gray-900 border rounded-lg text-xs" />
-                    </div>
-                  ))}
-                </div>
-              </div>
 
               {/* SECTION: VALIDITY & NOTES */}
               <div className="bg-white dark:bg-gray-800/40 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-5 space-y-4">
@@ -508,6 +529,10 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold text-gray-400 uppercase">{t('pricing.validTo', 'Valid To')}</label>
                     <input required type="date" name="valid_to" value={formData.valid_to} onChange={handleChange} className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm" />
+                  </div>
+                  <div className="col-span-1 md:col-span-2 space-y-1">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase">{t('pricing.otherCharges', 'Other Charges')}</label>
+                    <input name="other_charges" value={formData.other_charges} onChange={handleChange} className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20" placeholder={t('pricing.otherChargesPlaceholder', 'e.g., specific destination fees')} />
                   </div>
                   <div className="col-span-1 md:col-span-2 space-y-1">
                     <label className="text-[10px] font-bold text-gray-400 uppercase">{t('pricing.notes', 'General Notes')}</label>
@@ -531,13 +556,6 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
           </button>
         </div>
       </div>
-
-      <datalist id="portList">
-        {ports.map(p => <option key={p.id} value={p.name} />)}
-      </datalist>
-      <datalist id="lineList">
-        {shippingLines.map(sl => <option key={sl.id} value={sl.name} />)}
-      </datalist>
     </div>
   )
 }
