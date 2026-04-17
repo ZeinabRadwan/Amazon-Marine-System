@@ -3013,5 +3013,27 @@
       "savePort": "Failed to save port.",
       "deletePort": "Failed to delete port."
     }
+  },
+  "chatbot": {
+    "title": "AI Assistant",
+    "welcome": "Hello! I am your AI assistant. How can I help you today?",
+    "placeholder": "Ask about reports or stats...",
+    "refusal": "I'm sorry, I couldn't find a system action for that. I am only trained to assist with specific system reports.",
+    "error": "An error occurred while fetching data. Please try again.",
+    "charCount": "chars",
+    "aiProcessed": "Analyzed by AI",
+    "aiFailed": "AI connection failed - used traditional matching",
+    "steps": {
+      "local_matcher": "Checking system keywords...",
+      "llm_consultation": "Analyzing intent with AI (Gemini)...",
+      "system_action": "Fetching live data from system...",
+      "final_routing": "Finalizing request routing...",
+      "status": {
+        "success": "Completed",
+        "fail": "Failed",
+        "processing": "Processing...",
+        "refused": "Was Refused (Out of Scope)"
+      }
+    }
   }
 }

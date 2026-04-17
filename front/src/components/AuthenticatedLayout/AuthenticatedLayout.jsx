@@ -10,6 +10,7 @@ import { getSidebarCounts } from '../../api/dashboard'
 import AppLayout from '../AppLayout'
 import LoaderDots from '../LoaderDots'
 import '../LoaderDots/LoaderDots.css'
+import Chatbot from '../Chatbot/Chatbot'
 import { ROLE_ID } from '../../constants/roles'
 
 const PAGE_ACCESS_CACHE_KEY = 'am.pageAccess.v1'
@@ -536,6 +537,7 @@ export default function AuthenticatedLayout() {
           hasPageAccess,
         }}
       />
+      <Chatbot />
     </AppLayout>
   )
 }

@@ -12,13 +12,13 @@
     "create": "Create / إنشاء",
     "searchPlaceholder": "Search... / بحث...",
     "noResults": "No results found / لا توجد نتائج",
-    "download" : "Download / تحميل",
+    "download": "Download / تحميل",
     "select": "Select / اختر",
     "add": "Add / إضافة",
     "edit": "Edit / تعديل",
     "save": "Save / حفظ",
     "downloadPdf": "Download PDF / تحميل PDF",
-    "delete":"Delete / حذف",
+    "delete": "Delete / حذف",
     "saving": "Saving... / جاري الحفظ...",
     "days": {
       "Saturday": "Sat / سبت",
@@ -2416,11 +2416,8 @@
     "trackingSubmit": "نشر التحديث",
     "trackingHistory": "سجل التتبع",
     "trackingEmpty": "لا توجد تحديثات تتبع بعد.",
-    "errorTracking": "تعذّر حفظ تحديث التتبع.",
+    "errorTracking": "تعذّر حفظ تحديث تتبع.",
     "fin": {
-      "tabA": "A) فواتير التكلفة",
-      "tabB": "B) تسعير البيع",
-      "tabC": "C) فواتير العميل",
       "tabD": "D) سجل التدقيق",
       "tabBEmpty": "لا توجد بنود تكلفة بعد. سجّل مصروفات الشحنة من شاشة المصروفات لتظهر هنا.",
       "bucketShippingTitle": "Shipping Line Invoices - فواتير الخطوط الملاحية",
@@ -3033,6 +3030,28 @@
       "deleteCommunicationLogType": "فشل حذف نوع سجل التواصل.",
       "savePort": "فشل حفظ الميناء.",
       "deletePort": "فشل حذف الميناء."
+    }
+  },
+  "chatbot": {
+    "title": "المساعد الذكي",
+    "welcome": "مرحباً! أنا مساعدك الذكي. كيف يمكنني مساعدتك اليوم؟",
+    "placeholder": "اسأل عن التقارير أو الإحصائيات...",
+    "refusal": "معذرة، لم أتمكن من العثور على إجراء نظامي مطابق لطلبك. أنا مدرب فقط للمساعدة في تقارير وأدوات النظام.",
+    "error": "حدث خطأ أثناء جلب البيانات. يرجى المحاولة مرة أخرى.",
+    "charCount": "حرف",
+    "aiProcessed": "تم التحليل بواسطة الذكاء الاصطناعي",
+    "aiFailed": "فشل الاتصال بالذكاء الاصطناعي - تم استخدام البحث التقليدي",
+    "steps": {
+      "local_matcher": "البحث في الكلمات المفتاحية للنظام...",
+      "llm_consultation": "تحليل القصد بواسطة الذكاء الاصطناعي (Gemini)...",
+      "system_action": "جلب البيانات الحية من النظام...",
+      "final_routing": "توجيه الطلب النهائي...",
+      "status": {
+        "success": "اكتمل",
+        "fail": "فشل",
+        "processing": "جاري المعالجة...",
+        "refused": "تم الرفض (خارج النطاق)"
+      }
     }
   }
 }

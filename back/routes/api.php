@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\AdminAttendanceController;
 use App\Http\Controllers\Api\V1\AdminExcuseController;
 use App\Http\Controllers\Api\V1\AdminNotificationController;
 use App\Http\Controllers\Api\V1\AttendanceController;
+use App\Http\Controllers\Api\V1\ChatbotController;
 use App\Http\Controllers\Api\V1\ClientAttachmentController;
 use App\Http\Controllers\Api\V1\ClientContactController;
 use App\Http\Controllers\Api\V1\ClientController;
@@ -105,6 +106,10 @@ Route::prefix('v1')->group(function () {
 
         // Activity history
         Route::get('activities', [ActivityController::class, 'index']);
+
+        // Chatbot
+        Route::get('chatbot/prompts', [ChatbotController::class, 'prompts']);
+        Route::post('chatbot/ask', [ChatbotController::class, 'ask']);
 
         // Shipment statuses
         Route::get('shipment-statuses', [ShipmentStatusController::class, 'index']);
