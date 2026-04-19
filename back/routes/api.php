@@ -63,7 +63,6 @@ use App\Http\Controllers\Api\V1\VendorPartnerTypeController;
 use App\Http\Controllers\Api\V1\VisitController;
 use App\Http\Controllers\Api\V1\CurrencyController;
 use App\Http\Controllers\Api\V1\ItemController;
-use App\Http\Controllers\Api\FileController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -83,13 +82,6 @@ Route::prefix('v1')->group(function () {
         Route::put('profile', [AuthController::class, 'updateProfile']);
         Route::post('profile/avatar', [AuthController::class, 'uploadProfileAvatar']);
         Route::put('profile/password', [AuthController::class, 'updatePassword']);
-
-        // File operations
-        Route::post('files/upload',         [FileController::class, 'upload']);
-        Route::get('files/{file}/url',      [FileController::class, 'getUrl']);
-        Route::delete('files/{file}',       [FileController::class, 'destroy']);
-        Route::post('files/{file}/migrate', [FileController::class, 'migrate']);
-        Route::get('storage/disks',         [FileController::class, 'availableDisks']);
 
         // Settings APIs (company/system/notifications/sessions)
         Route::get('settings', [SettingsController::class, 'show']);
