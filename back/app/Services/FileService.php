@@ -27,6 +27,33 @@ class FileService
         ?Model $owner = null,
         array $extra = []
     ): FileRecord {
+        return $this->uploadRaw(
+            file: $file,
+            collection: $collection,
+            diskName: $diskName,
+            owner: $owner,
+            originalName: $file->getClientOriginalName(),
+            mimeType: $file->getMimeType(),
+            size: $file->getSize(),
+            extension: $file->getClientOriginalExtension(),
+            extra: $extra
+        );
+    }
+
+    /**
+     * Lower level upload that works with raw File objects (for Queued Jobs).
+     */
+    public function uploadRaw(
+        \Illuminate\Http\File|\Illuminate\Http\UploadedFile $file,
+        string $collection = 'general',
+        ?string $diskName = null,
+        ?Model $owner = null,
+        ?string $originalName = null,
+        ?string $mimeType = null,
+        ?int $size = null,
+        ?string $extension = null,
+        array $extra = []
+    ): FileRecord {
         if (!$diskName) {
             $dbDisk = StorageDisk::getDefaultDisk();
             $diskName = $dbDisk ? $dbDisk->name : config('filesystems.default_upload_disk', 'local');
@@ -35,9 +62,14 @@ class FileService
         $driver    = StorageManager::driver($diskName);
         $directory = $this->resolveDirectory($collection);
 
+        // Resolve metadata
+        $finalExtension = $extension ?? ($file instanceof UploadedFile ? $file->getClientOriginalExtension() : $file->getExtension());
+        $finalMime      = $mimeType ?? ($file instanceof UploadedFile ? $file->getMimeType() : $file->getMimeType());
+        $finalSize      = $size ?? $file->getSize();
+        $finalOriginal  = $originalName ?? ($file instanceof UploadedFile ? $file->getClientOriginalName() : $file->getFilename());
+
         // Generate a safe stored name
-        $extension  = $file->getClientOriginalExtension();
-        $storedName = Str::uuid() . ($extension ? ".{$extension}" : '');
+        $storedName = Str::uuid() . ($finalExtension ? ".{$finalExtension}" : '');
         $fullPath   = $directory . '/' . $storedName;
 
         // Store the file on the chosen disk
@@ -51,12 +83,12 @@ class FileService
             'disk'          => $diskName,
             'path'          => $fullPath,
             'visibility'    => 'private',
-            'original_name' => $file->getClientOriginalName(),
+            'original_name' => $finalOriginal,
             'stored_name'   => $storedName,
-            'mime_type'     => $file->getMimeType(),
-            'size'          => $file->getSize(),
-            'extension'     => $extension ?: null,
-            'category'      => $this->resolveCategory($file->getMimeType()),
+            'mime_type'     => $finalMime,
+            'size'          => $finalSize,
+            'extension'     => $finalExtension ?: null,
+            'category'      => $this->resolveCategory($finalMime),
             'collection'    => $collection,
             'driver_metadata' => $driverMeta,
             'status'        => 'active',

@@ -107,6 +107,7 @@ Route::prefix('v1')->group(function () {
 
             // Storage Disks management
             Route::get('storage/disks/admin', [StorageDiskController::class, 'index']);
+            Route::get('storage/disks/health', [StorageDiskController::class, 'healthCheck']);
             Route::post('storage/disks/admin', [StorageDiskController::class, 'store']);
             Route::put('storage/disks/admin/{storageDisk}', [StorageDiskController::class, 'update']);
             Route::delete('storage/disks/admin/{storageDisk}', [StorageDiskController::class, 'destroy']);

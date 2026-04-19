@@ -7,6 +7,7 @@ use App\Models\PagePermission;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -206,31 +207,54 @@ class AuthController extends Controller
 
         $file = $request->file('avatar');
 
-        // Delete previous avatars
-        $oldAvatars = $user->files()->where('collection', 'avatars')->get();
-        foreach ($oldAvatars as $oldAvatar) {
-            $fileService->delete($oldAvatar);
+        try {
+            DB::beginTransaction();
+
+            // 1. Upload the new avatar
+            $newFile = $fileService->upload(
+                file: $file,
+                collection: 'avatars',
+                owner: $user
+            );
+
+            // 2. Clear legacy column
+            $oldLegacyPath = $user->avatar;
+            $user->avatar = null;
+            $user->save();
+
+            DB::commit();
+
+            // 3. Clean up old records and files AFTER successful DB commit
+            // This is "best effort" cleanup
+            try {
+                $oldAvatars = $user->files()
+                    ->where('collection', 'avatars')
+                    ->where('id', '!=', $newFile->id)
+                    ->get();
+                
+                foreach ($oldAvatars as $oldAvatar) {
+                    $fileService->delete($oldAvatar);
+                }
+
+                if ($oldLegacyPath && Storage::disk('public')->exists($oldLegacyPath)) {
+                    Storage::disk('public')->delete($oldLegacyPath);
+                }
+            } catch (\Exception $cleanupEx) {
+                // Log cleanup failure but don't fail the upload
+                \Illuminate\Support\Facades\Log::warning("Avatar cleanup failed for user {$user->id}: " . $cleanupEx->getMessage());
+            }
+
+            return response()->json([
+                'user' => $this->transformUser($user->fresh()),
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => __('Failed to upload avatar. Please try again.'),
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        // Optional: Keep cleaning legacy path
-        $oldPath = $user->avatar;
-        if ($oldPath && Storage::disk('public')->exists($oldPath)) {
-            Storage::disk('public')->delete($oldPath);
-        }
-
-        // Upload using the new multi-storage file service
-        $fileService->upload(
-            file: $file,
-            collection: 'avatars',
-            owner: $user
-        );
-
-        $user->avatar = null; // Clear legacy
-        $user->save();
-
-        return response()->json([
-            'user' => $this->transformUser($user->fresh()),
-        ]);
     }
 
     public function updatePassword(Request $request)

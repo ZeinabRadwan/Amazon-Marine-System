@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\StorageDisk;
+use App\Storage\StorageManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -72,6 +73,34 @@ class StorageDiskController extends Controller
         $storageDisk->delete();
 
         return response()->json(['message' => 'Storage disk deleted.']);
+    }
+
+    public function healthCheck(Request $request): JsonResponse
+    {
+        $this->authorizeAdmin($request);
+
+        $disks = StorageDisk::all();
+        $results = $disks->map(function ($disk) {
+            try {
+                $driver = StorageManager::driver($disk->name);
+                $canConnect = $driver->exists('/'); // Simple check
+                return [
+                    'id' => $disk->id,
+                    'name' => $disk->name,
+                    'status' => $canConnect ? 'healthy' : 'unhealthy',
+                    'error' => null
+                ];
+            } catch (\Exception $e) {
+                return [
+                    'id' => $disk->id,
+                    'name' => $disk->name,
+                    'status' => 'error',
+                    'error' => $e->getMessage()
+                ];
+            }
+        });
+
+        return response()->json(['data' => $results]);
     }
 
     private function authorizeAdmin(Request $request)
