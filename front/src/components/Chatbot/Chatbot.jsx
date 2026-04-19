@@ -59,7 +59,7 @@ const Chatbot = () => {
 
       const botMessage = {
         id: Date.now() + 1,
-        type: responseData.type === 'metric' ? 'metric' : 'bot',
+        type: ['metric', 'table'].includes(responseData.type) ? responseData.type : 'bot',
         text: responseData.response || (responseData.type === 'refused' ? t('chatbot.refusal') : ''),
         data: responseData
       };
@@ -141,6 +141,32 @@ const Chatbot = () => {
                       <span className="chatbot-metric-title">{msg.data.title}</span>
                       <span className="chatbot-metric-value">{msg.data.value}</span>
                       {msg.data.subtitle && <span className="chatbot-metric-subtitle">{msg.data.subtitle}</span>}
+                    </div>
+                  )}
+                  {msg.type === 'table' && msg.data && (
+                    <div className="chatbot-table-card">
+                      <div className="chatbot-table-title">{msg.data.title}</div>
+                      <table className="chatbot-table">
+                        {msg.data.headers?.length > 0 && (
+                          <thead>
+                            <tr>
+                              {msg.data.headers.map((h, i) => <th key={i}>{h}</th>)}
+                            </tr>
+                          </thead>
+                        )}
+                        <tbody>
+                          {msg.data.rows?.map((row, ri) => (
+                            <tr key={ri}>
+                              {row.map((cell, ci) => <td key={ci}>{cell}</td>)}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {msg.data.generated_at && (
+                        <div className="chatbot-table-footer">
+                          {new Date(msg.data.generated_at).toLocaleTimeString()}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
