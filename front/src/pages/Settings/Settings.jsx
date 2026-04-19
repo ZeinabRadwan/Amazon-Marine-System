@@ -63,6 +63,7 @@ import '../CustomerServices/styles/CustomerServices.css'
 import './Settings.css'
 import LeafletCompanyLocationPicker from '../../components/LeafletCompanyLocationPicker/LeafletCompanyLocationPicker'
 import { localizedStatusLabel } from '../../utils/localizedStatusLabel'
+import StorageSettings from './StorageSettings'
 
 function SectionCard({ title, subtitle, children, actions, compact }) {
   return (
@@ -214,6 +215,7 @@ const SETTINGS_TABS = [
   { id: 'sessions', labelKey: 'settings.tabs.sessions' },
   { id: 'activity', labelKey: 'settings.tabs.activity' },
   { id: 'statuses', labelKey: 'settings.tabs.statuses' },
+  { id: 'storage', labelKey: 'settings.tabs.storage' },
 ]
 
 export default function Settings() {
@@ -424,7 +426,7 @@ export default function Settings() {
   }, [isAdminLike, t])
 
   useEffect(() => {
-    if (!token || activeTab !== 'statuses' || !isAdminLike) return
+    if (!token || (activeTab !== 'statuses' && activeTab !== 'storage') || !isAdminLike) return
     let cancelled = false
     async function loadStatusesTab() {
       setStatusesTabLoading(true)
@@ -2282,6 +2284,17 @@ export default function Settings() {
                         </div>
                       </div>
                     )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Tab: Storage settings */}
+            {isAdminLike && (
+              <div role="tabpanel" className={`cs-tab-panel settings-tab-panel ${activeTab === 'storage' ? 'cs-tab-panel--active' : ''}`}>
+                {activeTab === 'storage' && (
+                  <div className="settings-tab-content">
+                    <StorageSettings />
                   </div>
                 )}
               </div>

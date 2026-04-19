@@ -15,6 +15,7 @@ import { notifyShipmentSalesFinancials } from '../../api/shipments'
 import { useAuthAccess } from '../../hooks/useAuthAccess'
 import { BUCKET_DEFS, expenseBucket, LINE_TEMPLATES, expenseHaystack, partitionBucketRows } from './shipmentFinUtils'
 import '../SDForms/SDForms.css'
+import FileUploadButton from '../../components/shared/FileUploadButton'
 
 // BUCKET_DEFS moved to shipmentFinUtils.js
 
@@ -198,20 +199,12 @@ function FinSingleExpenseRow({
     }
   }
 
-  const handleReceipt = async (e) => {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (!file || !expense?.id) return
-    setRowError(null)
-    setUploading(true)
-    try {
-      await uploadExpenseReceipt(token, expense.id, file)
-      onSaved?.()
-    } catch (err) {
-      setRowError(err.message || t('shipments.fin.errorReceipt'))
-    } finally {
-      setUploading(false)
-    }
+  const onReceiptSuccess = () => {
+    onSaved?.()
+  }
+
+  const onReceiptError = (err) => {
+    setRowError(err.message || t('shipments.fin.errorReceipt'))
   }
 
   const actionsCell = editMode ? (
@@ -226,10 +219,21 @@ function FinSingleExpenseRow({
           </button>
         ) : null}
         {expense?.id ? (
-          <label className="shipment-fin-upload" title={t('shipments.fin.uploadReceipt')}>
-            <Paperclip className="shipment-fin-upload__icon" aria-hidden />
-            <input type="file" accept=".pdf,.png,.jpg,.jpeg" className="shipment-fin-upload__input" onChange={handleReceipt} disabled={uploading || saving} />
-          </label>
+          <FileUploadButton
+            collection="receipts"
+            fileableType="App\\Models\\Expense"
+            fileableId={expense.id}
+            accept=".pdf,.png,.jpg,.jpeg"
+            onSuccess={onReceiptSuccess}
+            onError={onReceiptError}
+            className="shipment-fin-upload"
+          >
+            {() => (
+              <div title={t('shipments.fin.uploadReceipt')}>
+                <Paperclip className="shipment-fin-upload__icon" aria-hidden />
+              </div>
+            )}
+          </FileUploadButton>
         ) : null}
       </div>
       {rowError ? <div className="shipment-fin-row-error">{rowError}</div> : null}
@@ -1098,11 +1102,18 @@ export default function ShipmentFinancialsModal({
           <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary" onClick={() => addPendingOtherLine('other')}>
             {t('shipments.fin.addRow')}
           </button>
-          <label className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-section-upload" title={t('shipments.fin.uploadSectionReceipt')}>
-            <Paperclip size={14} className="shipment-fin-icon-leading" />
-            {t('shipments.fin.uploadReceipt') || 'Upload'}
-            <input type="file" className="hidden" accept=".pdf,.png,.jpg,.jpeg" onChange={(e) => handleSectionUpload('other', e)} disabled={batchSavingBucket === 'other'} />
-          </label>
+          <FileUploadButton
+            onFileSelect={(file) => handleSectionUpload('other', { target: { files: [file] } })}
+            accept=".pdf,.png,.jpg,.jpeg"
+            className="inline-block"
+          >
+            {() => (
+              <div className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-section-upload" title={t('shipments.fin.uploadSectionReceipt')}>
+                <Paperclip size={14} className="shipment-fin-icon-leading" />
+                {t('shipments.fin.uploadReceipt') || 'Upload'}
+              </div>
+            )}
+          </FileUploadButton>
         </div>
       ) : null
 
@@ -1149,17 +1160,21 @@ export default function ShipmentFinancialsModal({
                             >
                               <Paperclip size={14} />
                             </button>
-                            <label className="shipment-fin-upload" title={t('shipments.fin.uploadReceipt')}>
-                              <Paperclip className="shipment-fin-upload__icon" aria-hidden />
-                              <input type="file" accept=".pdf,.png,.jpg,.jpeg" className="shipment-fin-upload__input"
-                                onChange={async (e) => {
-                                  const file = e.target.files?.[0]; e.target.value = ''
-                                  if (!file) return
-                                  try { await uploadExpenseReceipt(token, ex.id, file); onExpensesChanged?.() }
-                                  catch (err) { setFinBanner({ type: 'error', message: err.message }) }
-                                }}
-                              />
-                            </label>
+                            <FileUploadButton
+                              collection="receipts"
+                              fileableType="App\\Models\\Expense"
+                              fileableId={ex.id}
+                              accept=".pdf,.png,.jpg,.jpeg"
+                              onSuccess={() => onExpensesChanged?.()}
+                              onError={(err) => setFinBanner({ type: 'error', message: err })}
+                              className="inline-block"
+                            >
+                              {() => (
+                                <div className="shipment-fin-upload" title={t('shipments.fin.uploadReceipt')}>
+                                  <Paperclip className="shipment-fin-upload__icon" aria-hidden />
+                                </div>
+                              )}
+                            </FileUploadButton>
                           </div>
                         </td>
                       ) : null}
@@ -1296,17 +1311,18 @@ export default function ShipmentFinancialsModal({
             <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary" onClick={() => addPendingOtherLine(bucketId)}>
               {t('shipments.fin.addRow')}
             </button>
-            <label className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-section-upload" title={t('shipments.fin.uploadSectionReceipt')}>
-              <Paperclip size={14} className="shipment-fin-icon-leading" />
-              {t('shipments.fin.uploadReceipt')}
-              <input 
-                type="file" 
-                accept=".pdf,.png,.jpg,.jpeg"
-                className="hidden" 
-                onChange={(e) => handleSectionUpload(bucketId, e)}
-                disabled={batchSavingBucket === bucketId}
-              />
-            </label>
+            <FileUploadButton
+              onFileSelect={(file) => handleSectionUpload(bucketId, { target: { files: [file] } })}
+              accept=".pdf,.png,.jpg,.jpeg"
+              className="inline-block"
+            >
+              {() => (
+                <div className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-section-upload" title={t('shipments.fin.uploadSectionReceipt')}>
+                  <Paperclip size={14} className="shipment-fin-icon-leading" />
+                  {t('shipments.fin.uploadReceipt')}
+                </div>
+              )}
+            </FileUploadButton>
             <button
               type="button"
               className="shipment-fin-btn shipment-fin-btn--primary"

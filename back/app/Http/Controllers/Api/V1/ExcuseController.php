@@ -9,6 +9,7 @@ use App\Models\Excuse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Services\FileService;
 
 class ExcuseController extends Controller
 {
@@ -26,21 +27,24 @@ class ExcuseController extends Controller
         return ApiResponse::success($excuses->map(fn (Excuse $e) => $this->serializeExcuse($e)));
     }
 
-    public function store(StoreExcuseRequest $request): JsonResponse
+    public function store(StoreExcuseRequest $request, FileService $fileService): JsonResponse
     {
         $validated = $request->validated();
-        $path = null;
-        if ($request->hasFile('attachment')) {
-            $path = $request->file('attachment')->store(date('Y/m'), 'excuses');
-        }
-
+        
         $excuse = Excuse::query()->create([
             'user_id' => $request->user()->id,
             'date' => $validated['date'],
             'reason' => $validated['reason'],
-            'attachment_path' => $path,
             'status' => Excuse::STATUS_PENDING,
         ]);
+
+        if ($request->hasFile('attachment')) {
+            $fileService->upload(
+                file: $request->file('attachment'),
+                collection: 'excuses',
+                owner: $excuse
+            );
+        }
 
         return ApiResponse::success($this->serializeExcuse($excuse->fresh()), 'Excuse submitted.', 201);
     }
@@ -61,21 +65,17 @@ class ExcuseController extends Controller
             abort(403, __('You do not have permission to view this attachment.'));
         }
 
-        if ($excuse->attachment_path === null || $excuse->attachment_path === '') {
+        $fileRecord = $excuse->files()->where('collection', 'excuses')->latest()->first();
+
+        if (! $fileRecord) {
+            // Fallback to legacy path
+            if ($excuse->attachment_path && Storage::disk('excuses')->exists($excuse->attachment_path)) {
+                return response()->file(Storage::disk('excuses')->path($excuse->attachment_path));
+            }
             return ApiResponse::failure('No attachment for this excuse.', null, 404);
         }
 
-        $disk = Storage::disk('excuses');
-        if (! $disk->exists($excuse->attachment_path)) {
-            return ApiResponse::failure('Attachment file is missing.', null, 404);
-        }
-
-        $absolute = $disk->path($excuse->attachment_path);
-        $filename = basename($excuse->attachment_path);
-
-        return response()->file($absolute, [
-            'Content-Disposition' => 'inline; filename="'.$filename.'"',
-        ]);
+        return redirect($fileRecord->getUrl());
     }
 
     /**

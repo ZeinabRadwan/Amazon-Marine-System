@@ -5,19 +5,41 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\ClientAttachment;
+use App\Models\FileRecord;
+use App\Services\FileService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class ClientAttachmentController extends Controller
 {
+    protected $fileService;
+
+    public function __construct(FileService $fileService)
+    {
+        $this->fileService = $fileService;
+    }
     public function index(Request $request, Client $client)
     {
         $this->authorize('view', $client);
 
-        $attachments = $client->attachments()->orderByDesc('created_at')->get();
+        // Get legacy attachments
+        $legacy = $client->attachments()->orderByDesc('created_at')->get();
+        $legacyPayloads = $legacy->map(fn (ClientAttachment $a) => $this->attachmentPayload($request, $client, $a));
+
+        // Get new file records (polymorphic)
+        $newFiles = $client->files()->where('collection', 'client_attachments')->orderByDesc('created_at')->get();
+        $newPayloads = $newFiles->map(fn (FileRecord $f) => [
+            'id' => $f->id,
+            'is_new' => true,
+            'name' => $f->original_name,
+            'url' => $f->getUrl(),
+            'mime_type' => $f->mime_type,
+            'size' => $f->size,
+            'created_at' => $f->created_at,
+        ]);
 
         return response()->json([
-            'data' => $attachments->map(fn (ClientAttachment $a) => $this->attachmentPayload($request, $client, $a)),
+            'data' => $newPayloads->concat($legacyPayloads),
         ]);
     }
 
@@ -29,27 +51,39 @@ class ClientAttachmentController extends Controller
             'file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp,doc,docx,xls,xlsx,csv,txt,zip,rar,ppt,pptx', 'max:10240'],
         ]);
 
-        $file = $request->file('file');
-        $path = $file->store('client-attachments/'.$client->id, 'local');
-
-        $attachment = $client->attachments()->create([
-            'name' => $file->getClientOriginalName(),
-            'path' => $path,
-            'mime_type' => $file->getMimeType(),
-            'size' => $file->getSize(),
-        ]);
+        $record = $this->fileService->upload(
+            file: $request->file('file'),
+            collection: 'client_attachments',
+            owner: $client
+        );
 
         return response()->json([
-            'data' => $this->attachmentPayload($request, $client, $attachment),
+            'data' => [
+                'id' => $record->id,
+                'is_new' => true,
+                'name' => $record->original_name,
+                'url' => $record->getUrl(),
+                'mime_type' => $record->mime_type,
+                'size' => $record->size,
+                'created_at' => $record->created_at,
+            ],
         ], 201);
     }
 
-    public function download(Client $client, int|string $attachment)
+    public function download(Client $client, int|string $attachmentId)
     {
         $this->authorize('view', $client);
 
-        $client_attachment = $this->resolveClientAttachment($client, $attachment);
+        // Try to find in FileRecord (new system) first
+        $fileRecord = FileRecord::find($attachmentId);
+        if ($fileRecord && $fileRecord->fileable_id == $client->id && $fileRecord->fileable_type == Client::class) {
+            return response()->streamDownload(function () use ($fileRecord) {
+                 echo $fileRecord->getContent();
+            }, $fileRecord->original_name);
+        }
 
+        // Fallback to legacy ClientAttachment
+        $client_attachment = $this->resolveClientAttachment($client, $attachmentId);
         $fullPath = $this->resolveAttachmentFilesystemPath($client_attachment);
 
         if ($fullPath === null) {
@@ -61,16 +95,26 @@ class ClientAttachmentController extends Controller
         ]);
     }
 
-    public function destroy(Client $client, int|string $attachment)
+    public function destroy(Client $client, int|string $attachmentId)
     {
         $this->authorize('manageClientContent', $client);
 
-        $client_attachment = $this->resolveClientAttachment($client, $attachment);
+        // Try new system first
+        $fileRecord = FileRecord::find($attachmentId);
+        if ($fileRecord && $fileRecord->fileable_id == $client->id && $fileRecord->fileable_type == Client::class) {
+            $this->fileService->delete($fileRecord);
+            return response()->json(['message' => __('Attachment deleted.')]);
+        }
 
-        $this->deleteAttachmentFiles($client_attachment);
-        $client_attachment->delete();
-
-        return response()->json(['message' => __('Attachment deleted.')]);
+        // Fallback to legacy
+        try {
+            $client_attachment = $this->resolveClientAttachment($client, $attachmentId);
+            $this->deleteAttachmentFiles($client_attachment);
+            $client_attachment->delete();
+            return response()->json(['message' => __('Attachment deleted.')]);
+        } catch (\Exception $e) {
+            abort(404, __('Attachment not found.'));
+        }
     }
 
     /**

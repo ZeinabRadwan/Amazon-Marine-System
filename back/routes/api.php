@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\V1\AccountingController;
 use App\Http\Controllers\Api\V1\AdminNotificationController;
 use App\Http\Controllers\Api\V1\ActivityController;
+use App\Http\Controllers\Api\FileController;
 use App\Http\Controllers\Api\V1\AdminAttendanceController;
 use App\Http\Controllers\Api\V1\AdminExcuseController;
 use App\Http\Controllers\Api\V1\AttendanceController;
@@ -83,6 +84,13 @@ Route::prefix('v1')->group(function () {
         Route::post('profile/avatar', [AuthController::class, 'uploadProfileAvatar']);
         Route::put('profile/password', [AuthController::class, 'updatePassword']);
 
+        // File operations
+        Route::post('/files/upload',         [FileController::class, 'upload']);
+        Route::get('/files/{file}/url',      [FileController::class, 'getUrl']);
+        Route::delete('/files/{file}',       [FileController::class, 'destroy']);
+        Route::post('/files/{file}/migrate', [FileController::class, 'migrate']);
+        Route::get('/storage/disks',         [FileController::class, 'availableDisks']);
+
         // Settings APIs (company/system/notifications/sessions)
         Route::get('settings', [SettingsController::class, 'show']);
         Route::get('settings/office-location', [SettingsController::class, 'officeLocationShow']);
@@ -96,6 +104,12 @@ Route::prefix('v1')->group(function () {
             Route::put('settings/system/preferences', [SettingsController::class, 'updateSystemPreferences']);
             Route::put('settings/notifications/preferences', [SettingsController::class, 'updateNotificationPreferences']);
             Route::put('settings/sessions', [SettingsController::class, 'updateSessionSettings']);
+
+            // Storage Disks management
+            Route::get('storage/disks/admin', [StorageDiskController::class, 'index']);
+            Route::post('storage/disks/admin', [StorageDiskController::class, 'store']);
+            Route::put('storage/disks/admin/{storageDisk}', [StorageDiskController::class, 'update']);
+            Route::delete('storage/disks/admin/{storageDisk}', [StorageDiskController::class, 'destroy']);
         });
 
         // Sessions (daily combined)

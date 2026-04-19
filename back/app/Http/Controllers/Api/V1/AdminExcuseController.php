@@ -75,6 +75,12 @@ class AdminExcuseController extends Controller
      */
     public function attachment(Excuse $excuse)
     {
+        $fileRecord = $excuse->files()->where('collection', 'excuses')->latest()->first();
+
+        if ($fileRecord) {
+            return redirect($fileRecord->getUrl());
+        }
+
         if ($excuse->attachment_path === null || $excuse->attachment_path === '') {
             return ApiResponse::failure('No attachment for this excuse.', null, 404);
         }

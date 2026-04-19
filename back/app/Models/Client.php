@@ -8,9 +8,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
+use App\Traits\HasFiles;
+
 class Client extends Model
 {
-    use HasFactory;
+    use HasFactory, HasFiles;
 
     /**
      * @var list<string>

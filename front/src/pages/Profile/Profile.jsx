@@ -11,6 +11,7 @@ import '../../components/PageHeader/PageHeader.css'
 import '../../components/LoaderDots/LoaderDots.css'
 import '../Clients/ClientDetailModal.css'
 import './Profile.css'
+import FileUploadButton from '../../components/shared/FileUploadButton'
 
 const FALLBACK_AVATAR = 'https://www.svgrepo.com/show/384670/account-avatar-profile-user.svg'
 const ACCEPT_IMAGES = 'image/jpeg,image/png,image/jpg'
@@ -68,13 +69,11 @@ export default function Profile() {
   const token = getStoredToken()
   const navigate = useNavigate()
   const { refreshUser } = useOutletContext() || {}
-  const fileInputRef = useRef(null)
   const [loading, setLoading] = useState(true)
   const [alert, setAlert] = useState(null)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [avatarUrl, setAvatarUrl] = useState(null)
-  const [avatarUploading, setAvatarUploading] = useState(false)
   const [previewUrl, setPreviewUrl] = useState(null)
   const [profileSaving, setProfileSaving] = useState(false)
   const [showEditForm, setShowEditForm] = useState(false)
@@ -125,53 +124,6 @@ export default function Profile() {
       setAlert({ type: 'error', message: err.message || t('profile.error') })
     } finally {
       setProfileSaving(false)
-    }
-  }
-
-  const clearPreview = () => {
-    if (previewUrl) URL.revokeObjectURL(previewUrl)
-    setPreviewUrl(null)
-  }
-
-  const handleAvatarChange = (e) => {
-    clearPreview()
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-      setAlert({ type: 'error', message: t('profile.avatarTooBig', { max: MAX_SIZE_MB }) })
-      e.target.value = ''
-      return
-    }
-    const allowed = ['image/jpeg', 'image/jpg', 'image/png']
-    if (!allowed.includes(file.type)) {
-      setAlert({ type: 'error', message: t('profile.avatarInvalidType') })
-      e.target.value = ''
-      return
-    }
-    setPreviewUrl(URL.createObjectURL(file))
-  }
-
-  const handleAvatarUpload = async () => {
-    const input = fileInputRef.current
-    const file = input?.files?.[0]
-    if (!file) {
-      setAlert({ type: 'error', message: t('profile.selectImage') })
-      return
-    }
-    setAlert(null)
-    setAvatarUploading(true)
-    try {
-      const data = await uploadProfileAvatar(token, file)
-      const u = data.user ?? data.data ?? data
-      setAvatarUrl(resolveAvatarUrl(u?.avatar_url ?? u?.avatarUrl ?? null))
-      clearPreview()
-      if (input) input.value = ''
-      if (typeof refreshUser === 'function') refreshUser()
-      setAlert({ type: 'success', message: t('profile.avatarUpdated') })
-    } catch (err) {
-      setAlert({ type: 'error', message: err.message || t('profile.avatarError') })
-    } finally {
-      setAvatarUploading(false)
     }
   }
 
@@ -250,37 +202,39 @@ export default function Profile() {
                 className="profile-hero__avatar"
                 onError={(e) => { e.target.src = FALLBACK_AVATAR }}
               />
-              {avatarUploading && (
-                <div className="profile-hero__avatar-loading" aria-hidden="true">
-                  <LoaderDots />
-                </div>
-              )}
-              <label className="profile-hero__avatar-edit">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept={ACCEPT_IMAGES}
-                  onChange={handleAvatarChange}
-                  className="profile-hero__avatar-input"
-                  aria-label={t('profile.chooseImage')}
-                  disabled={avatarUploading}
-                />
-                <span className="profile-hero__avatar-edit-label">{t('profile.changeAvatar')}</span>
-              </label>
+              <FileUploadButton
+                collection="avatars"
+                accept={ACCEPT_IMAGES}
+                className="profile-hero__avatar-edit-container"
+                onFileSelect={async (file) => {
+                   try {
+                     setAlert(null);
+                     const res = await uploadProfileAvatar(token, file);
+                     setAvatarUrl(res.user?.avatar_url);
+                     if (typeof refreshUser === 'function') refreshUser();
+                     setAlert({ type: 'success', message: t('profile.avatarUpdated') });
+                   } catch (err) {
+                     setAlert({ type: 'error', message: err.message || t('profile.avatarError') });
+                   }
+                }}
+              >
+                {({ uploading }) => (
+                  <label className="profile-hero__avatar-edit" style={{ cursor: uploading ? 'not-allowed' : 'pointer' }}>
+                    {uploading && (
+                      <div className="profile-hero__avatar-loading" aria-hidden="true">
+                        <LoaderDots />
+                      </div>
+                    )}
+                    <span className="profile-hero__avatar-edit-label">
+                      {uploading ? t('profile.uploading') : t('profile.changeAvatar')}
+                    </span>
+                  </label>
+                )}
+              </FileUploadButton>
             </div>
             <div className="profile-hero__info">
               <h1 className="profile-hero__name">{name || t('profile.name')}</h1>
               <p className="profile-hero__email">{email}</p>
-              {previewUrl && (
-                <button
-                  type="button"
-                  className="profile-hero__upload-btn client-detail-modal__btn client-detail-modal__btn--primary"
-                  onClick={handleAvatarUpload}
-                  disabled={avatarUploading}
-                >
-                  {avatarUploading ? t('profile.uploading') : t('profile.uploadAvatar')}
-                </button>
-              )}
             </div>
           </div>
 

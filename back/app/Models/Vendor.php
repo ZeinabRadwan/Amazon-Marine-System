@@ -7,9 +7,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
+use App\Traits\HasFiles;
+
 class Vendor extends Model
 {
-    use HasFactory;
+    use HasFactory, HasFiles;
 
     /**
      * @var list<string>

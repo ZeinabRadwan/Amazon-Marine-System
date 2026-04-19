@@ -38,6 +38,7 @@ import '../../components/PageHeader/PageHeader.css'
 import '../Clients/Clients.css'
 import '../Accountings/Accountings.css'
 import './Expenses.css'
+import FileUploadButton from '../../components/shared/FileUploadButton'
 
 
 function formatMonthLabel(ym, locale) {
@@ -144,8 +145,6 @@ export default function Expenses() {
   const [modal, setModal] = useState(null)
   const [saving, setSaving] = useState(false)
   const [exportBusy, setExportBusy] = useState(false)
-  const receiptInputRef = useRef(null)
-  const [receiptExpenseId, setReceiptExpenseId] = useState(null)
 
   const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), [])
 
@@ -418,27 +417,7 @@ export default function Expenses() {
     }
   }
 
-  const triggerReceipt = (id) => {
-    setReceiptExpenseId(id)
-    requestAnimationFrame(() => receiptInputRef.current?.click())
-  }
 
-  const onReceiptFile = async (e) => {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (!file || !token || !receiptExpenseId) return
-    try {
-      await uploadExpenseReceipt(token, receiptExpenseId, file)
-      loadShip()
-      loadGen()
-      loadSummaryLine()
-      loadSummaryDonut()
-    } catch (err) {
-      window.alert(err?.message || t('expensesPage.receiptError'))
-    } finally {
-      setReceiptExpenseId(null)
-    }
-  }
 
   if (!canViewAccounting) {
     return (
@@ -453,14 +432,7 @@ export default function Expenses() {
   return (
     <Container size="xl">
       <div className="clients-page expenses-page">
-      <input
-        ref={receiptInputRef}
-        type="file"
-        className="expenses-hidden-input"
-        accept="image/jpeg,image/png,application/pdf"
-        onChange={onReceiptFile}
-        aria-hidden
-      />
+
 
       <div className="clients-stats-grid expenses-stats">
         <StatsCard
@@ -725,14 +697,25 @@ export default function Expenses() {
                       </td>
                       {canManageAccounting && (
                         <td>
-                          <button
-                            type="button"
-                            className="accountings-btn accountings-btn--small mr-1"
-                            onClick={() => triggerReceipt(row.id)}
-                            title={t('expensesPage.uploadReceipt')}
+                          <FileUploadButton
+                            collection="receipts"
+                            fileableType="App\\Models\\Expense"
+                            fileableId={row.id}
+                            accept="image/jpeg,image/png,application/pdf"
+                            onSuccess={() => {
+                              loadShip()
+                              loadGen()
+                              loadSummaryLine()
+                              loadSummaryDonut()
+                            }}
+                            className="accountings-btn accountings-btn--small mr-1 inline-block"
                           >
-                            <Paperclip className="h-3.5 w-3.5" />
-                          </button>
+                            {({ uploading }) => (
+                              <div title={t('expensesPage.uploadReceipt')}>
+                                {uploading ? <LoaderDots size="sm" /> : <Paperclip className="h-3.5 w-3.5" />}
+                              </div>
+                            )}
+                          </FileUploadButton>
                           <button
                             type="button"
                             className="accountings-btn accountings-btn--small mr-1"

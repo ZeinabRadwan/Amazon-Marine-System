@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use App\Services\FileService;
 
 class AuthController extends Controller
 {
@@ -189,7 +190,7 @@ class AuthController extends Controller
         ]);
     }
 
-    public function uploadProfileAvatar(Request $request)
+    public function uploadProfileAvatar(Request $request, FileService $fileService)
     {
         /** @var \App\Models\User $user */
         $user = $request->user();
@@ -204,16 +205,28 @@ class AuthController extends Controller
         ]);
 
         $file = $request->file('avatar');
+
+        // Delete previous avatars
+        $oldAvatars = $user->files()->where('collection', 'avatars')->get();
+        foreach ($oldAvatars as $oldAvatar) {
+            $fileService->delete($oldAvatar);
+        }
+
+        // Optional: Keep cleaning legacy path
         $oldPath = $user->avatar;
-
-        $path = $file->store('avatars', 'public');
-
-        $user->avatar = $path;
-        $user->save();
-
         if ($oldPath && Storage::disk('public')->exists($oldPath)) {
             Storage::disk('public')->delete($oldPath);
         }
+
+        // Upload using the new multi-storage file service
+        $fileService->upload(
+            file: $file,
+            collection: 'avatars',
+            owner: $user
+        );
+
+        $user->avatar = null; // Clear legacy
+        $user->save();
 
         return response()->json([
             'user' => $this->transformUser($user->fresh()),
@@ -249,6 +262,9 @@ class AuthController extends Controller
      */
     protected function transformUser(User $user): array
     {
+        $avatarRecord = $user->files()->where('collection', 'avatars')->latest()->first();
+        $avatarUrl = $avatarRecord ? $avatarRecord->getUrl() : ($user->avatar ? (request()->getSchemeAndHttpHost().'/storage/'.ltrim($user->avatar, '/')) : null);
+
         return [
             'id' => $user->id,
             'name' => $user->name,
@@ -257,7 +273,7 @@ class AuthController extends Controller
             'status' => $user->status,
             'timezone' => $user->timezone,
             'avatar' => $user->avatar,
-            'avatar_url' => $user->avatar ? (request()->getSchemeAndHttpHost().'/storage/'.ltrim($user->avatar, '/')) : null,
+            'avatar_url' => $avatarUrl,
             'roles' => $user->getRoleNames(),
             'role_id' => $user->roles->first()?->id,
         ];

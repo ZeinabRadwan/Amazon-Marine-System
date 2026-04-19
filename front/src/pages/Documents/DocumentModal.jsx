@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X, Upload, Check } from 'lucide-react'
 import './Documents.css'
+import FileUploadButton from '../../components/shared/FileUploadButton'
 
 export default function DocumentModal({ isOpen, onClose, onUpload }) {
   const { t } = useTranslation()
@@ -104,25 +105,36 @@ export default function DocumentModal({ isOpen, onClose, onUpload }) {
 
           <div className="document-modal__field">
             <span className="document-modal__label">{t('documents.file', 'File')}</span>
-            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="document-modal__file-input" />
-            <button
-              type="button"
-              className={`document-modal__upload-zone ${file ? 'document-modal__upload-zone--has-file' : ''}`}
-              onClick={triggerFileInput}
+            <FileUploadButton
+              onSuccess={(fileRecord) => {
+                setFile({ name: fileRecord.file_name })
+                setFormData((prev) => {
+                  if (prev.name.trim()) return prev
+                  const base = fileRecord.file_name.replace(/\.[^.]+$/, '')
+                  return { ...prev, name: base || fileRecord.file_name }
+                })
+              }}
+              className="w-full"
             >
-              {file ? (
-                <div className="document-modal__file-picked">
-                  <Check size={28} className="document-modal__file-picked-icon" aria-hidden />
-                  <span className="document-modal__file-name">{file.name}</span>
+              {({ uploading }) => (
+                <div 
+                  className={`document-modal__upload-zone ${file ? 'document-modal__upload-zone--has-file' : ''} ${uploading ? 'opacity-50 pointer-events-none' : ''}`}
+                >
+                  {file ? (
+                    <div className="document-modal__file-picked">
+                      <Check size={28} className="document-modal__file-picked-icon" aria-hidden />
+                      <span className="document-modal__file-name">{file.name}</span>
+                    </div>
+                  ) : (
+                    <>
+                      <Upload size={32} className="document-modal__upload-icon" aria-hidden />
+                      <span className="document-modal__upload-hint">{t('documents.dragAndDrop', 'Click to upload or drag and drop')}</span>
+                      <span className="document-modal__upload-formats">PDF, DOCX, JPG, PNG, …</span>
+                    </>
+                  )}
                 </div>
-              ) : (
-                <>
-                  <Upload size={32} className="document-modal__upload-icon" aria-hidden />
-                  <span className="document-modal__upload-hint">{t('documents.dragAndDrop', 'Click to upload or drag and drop')}</span>
-                  <span className="document-modal__upload-formats">PDF, DOCX, JPG, PNG, …</span>
-                </>
               )}
-            </button>
+            </FileUploadButton>
           </div>
 
           {error ? (

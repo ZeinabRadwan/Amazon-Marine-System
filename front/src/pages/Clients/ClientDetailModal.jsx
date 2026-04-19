@@ -10,6 +10,7 @@ import VisitStatusBadge from '../Visits/VisitStatusBadge'
 import { localizedStatusLabel } from '../../utils/localizedStatusLabel'
 import './Clients.css'
 import './ClientDetailModal.css'
+import FileUploadButton from '../../components/shared/FileUploadButton'
 
 function defaultLocalDateTime() {
   const d = new Date()
@@ -1241,16 +1242,27 @@ export default function ClientDetailModal({
             <section className="client-detail-modal__section">
               <div className="client-detail-modal__section-head">
                 <h3 className="client-detail-modal__section-title">{t('clients.tabs.attachments')}</h3>
-                <label className="client-detail-modal__upload-btn">
-                  {attachmentUploading ? t('clients.uploading') : t('clients.uploadAttachment', 'Upload')}
-                  <input
-                    type="file"
-                    className="client-detail-modal__file-input"
-                    accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx,.csv,.txt,.zip,.rar,.ppt,.pptx"
-                    onChange={onAttachmentUpload}
-                    disabled={attachmentUploading}
-                  />
-                </label>
+                <FileUploadButton
+                  collection="attachments"
+                  fileableType="App\\Models\\Client"
+                  fileableId={detailId}
+                  accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx,.csv,.txt,.zip,.rar,.ppt,.pptx"
+                  onSuccess={() => {
+                    // Refetch or update parent state if needed.
+                    // The parent probably handles refresh via a state update.
+                    // For now, call onAttachmentUpload if it's just a refresh trigger, 
+                    // but usually FileUploadButton handles the actual upload.
+                    // If onAttachmentUpload is an actual file handler, we replace it.
+                    onAttachmentUpload?.({ target: { files: [] } }); // Trigger refresh logic in parent if any
+                  }}
+                  className="client-detail-modal__upload-btn p-0"
+                >
+                  {({ uploading }) => (
+                    <div className="px-4 py-2">
+                       {uploading ? t('clients.uploading') : t('clients.uploadAttachment', 'Upload')}
+                    </div>
+                  )}
+                </FileUploadButton>
               </div>
               {attachments.length === 0 ? (
                 <p className="client-detail-modal__empty">{t('clients.noAttachments')}</p>

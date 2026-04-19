@@ -10,9 +10,11 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Facades\DB;
 
+use App\Traits\HasFiles;
+
 class Shipment extends Model
 {
-    use HasFactory;
+    use HasFactory, HasFiles;
 
     /**
      * @var list<string>

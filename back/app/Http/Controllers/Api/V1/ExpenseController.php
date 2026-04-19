@@ -12,6 +12,7 @@ use App\Services\ActivityLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Services\FileService;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ExpenseController extends Controller
@@ -394,7 +395,7 @@ class ExpenseController extends Controller
         ]);
     }
 
-    public function uploadReceipt(Request $request, Expense $expense): JsonResponse
+    public function uploadReceipt(Request $request, Expense $expense, FileService $fileService): JsonResponse
     {
         $user = $request->user();
         abort_unless(
@@ -405,12 +406,16 @@ class ExpenseController extends Controller
 
         $request->validate([
             'file' => ['required', 'file', 'mimes:jpeg,jpg,png,pdf', 'max:10240'],
+            'disk' => ['sometimes', 'string', 'in:local,google_drive'],
         ]);
 
-        $file = $request->file('file');
-        $path = $file->store('expense-receipts/'.$expense->id, 'local');
+        $fileRecord = $fileService->upload(
+            file: $request->file('file'),
+            collection: 'receipts',
+            diskName: $request->input('disk'),
+            owner: $expense
+        );
 
-        $expense->receipt_path = $path;
         $expense->has_receipt = true;
         $expense->save();
 
@@ -419,6 +424,7 @@ class ExpenseController extends Controller
             if ($shipment) {
                 ActivityLogger::log('shipment.financial_expense_receipt_uploaded', $shipment, [
                     'expense_id' => $expense->id,
+                    'file_id' => $fileRecord->id,
                 ]);
             }
         }
@@ -427,7 +433,7 @@ class ExpenseController extends Controller
             'data' => [
                 'id' => $expense->id,
                 'has_receipt' => true,
-                'receipt_path' => $expense->receipt_path,
+                'file_record' => $fileRecord,
             ],
         ]);
     }
@@ -444,20 +450,18 @@ class ExpenseController extends Controller
             __('You do not have permission to download expense receipts.')
         );
 
-        $path = $expense->receipt_path;
+        $fileRecord = $expense->files()->where('collection', 'receipts')->latest()->first();
 
-        if (! $path || ! Storage::disk('local')->exists($path)) {
+        if (! $fileRecord) {
+            // Fallback to legacy path if exists
+            $path = $expense->receipt_path;
+            if ($path && Storage::disk('local')->exists($path)) {
+                return response()->download(Storage::disk('local')->path($path));
+            }
             abort(404, __('Receipt file not found.'));
         }
 
-        $mimeType = Storage::disk('local')->mimeType($path) ?: 'application/octet-stream';
-        $basename = basename($path);
-
-        return response()->streamDownload(function () use ($path) {
-            echo Storage::disk('local')->get($path);
-        }, $basename, [
-            'Content-Type' => $mimeType,
-        ]);
+        return redirect($fileRecord->url);
     }
 
     /**

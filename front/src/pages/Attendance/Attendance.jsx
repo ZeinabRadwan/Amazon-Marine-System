@@ -49,6 +49,7 @@ import {
 import '../../components/LoaderDots/LoaderDots.css'
 import '../Clients/Clients.css'
 import './Attendance.css'
+import FileUploadButton from '../../components/shared/FileUploadButton'
 
 function formatTime(iso) {
   if (!iso) return ''
@@ -1637,16 +1638,18 @@ export default function Attendance() {
                   <label className="settings-input-wrap">
                     <span className="settings-input-label">{t('attendance.excuses.attachment')}</span>
                     <div className="attendance-file-upload">
-                      <label className="page-header__btn attendance-file-upload__choose">
-                        <Paperclip size={16} aria-hidden />
-                        <span>{t('attendance.excuses.chooseFile')}</span>
-                        <input
-                          type="file"
-                          className="attendance-file-upload__input"
-                          accept=".pdf,.jpg,.jpeg,.png,.webp"
-                          onChange={(e) => setExcuseForm((f) => ({ ...f, file: e.target.files?.[0] || null }))}
-                        />
-                      </label>
+                      <FileUploadButton
+                        onFileSelect={(file) => setExcuseForm((f) => ({ ...f, file }))}
+                        accept=".pdf,.jpg,.jpeg,.png,.webp"
+                        className="attendance-file-upload__button-wrap"
+                      >
+                        {() => (
+                          <div className="page-header__btn attendance-file-upload__choose">
+                            <Paperclip size={16} aria-hidden />
+                            <span>{t('attendance.excuses.chooseFile')}</span>
+                          </div>
+                        )}
+                      </FileUploadButton>
                       {excuseForm.file ? (
                         <div className="attendance-file-upload__selected">
                           <span className="attendance-file-upload__name">{excuseForm.file.name}</span>
