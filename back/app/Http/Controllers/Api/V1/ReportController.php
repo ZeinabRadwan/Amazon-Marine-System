@@ -411,7 +411,7 @@ class ReportController extends Controller
                     $c->id,
                     $c->name,
                     $c->company_name,
-                    $c->created_at?->toDateString(),
+                    $c->created_at?->format('d/m/Y'),
                     $c->leadSource?->name,
                     $shipmentsCount,
                     $salesRepCount,
@@ -570,11 +570,11 @@ class ReportController extends Controller
             fputcsv($out, ['date', 'employee', 'status', 'check_in_at', 'check_out_at', 'is_late', 'worked_minutes']);
             foreach ($records as $r) {
                 fputcsv($out, [
-                    $r->date?->toDateString(),
+                    $r->date?->format('d/m/Y'),
                     $r->user?->name,
                     $r->status,
-                    $r->check_in_at?->toDateTimeString(),
-                    $r->check_out_at?->toDateTimeString(),
+                    $r->check_in_at?->format('d/m/Y H:i:s'),
+                    $r->check_out_at?->format('d/m/Y H:i:s'),
                     $r->is_late ? 1 : 0,
                     $r->worked_minutes,
                 ]);

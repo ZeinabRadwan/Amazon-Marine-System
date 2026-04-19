@@ -112,6 +112,9 @@ class PricingQuoteController extends Controller
             'valid_to' => ['nullable', 'date'],
             'notes' => ['nullable', 'string'],
             'status' => ['sometimes', 'string', 'in:pending,accepted,rejected'],
+            'available_sailing_days' => ['sometimes', 'nullable', 'array'],
+            'available_sailing_days.*' => ['string'],
+            'weekly_sailings' => ['sometimes', 'nullable', 'integer'],
             'sailing_dates' => ['sometimes', 'array'],
             'sailing_dates.*' => ['date'],
             'items' => ['required', 'array', 'min:1'],
@@ -139,6 +142,8 @@ class PricingQuoteController extends Controller
             $quote->valid_to = $validated['valid_to'] ?? null;
             $quote->notes = $validated['notes'] ?? null;
             $quote->status = $validated['status'] ?? 'pending';
+            $quote->available_sailing_days = $validated['available_sailing_days'] ?? null;
+            $quote->weekly_sailings = $validated['weekly_sailings'] ?? null;
             $quote->save();
 
             $this->syncQuoteItems($quote, $validated['items'] ?? []);
@@ -152,6 +157,100 @@ class PricingQuoteController extends Controller
         return response()->json([
             'data' => $this->transformQuote($quote),
         ], 201);
+    }
+
+    public function createFromOffer(Request $request, \App\Models\PricingOffer $offer)
+    {
+        $this->authorize('create', PricingQuote::class);
+
+        $request->validate([
+            'client_id' => ['required', 'integer', 'exists:clients,id'],
+            'sales_user_id' => ['required', 'integer', 'exists:users,id'],
+        ]);
+
+        $quote = DB::transaction(function () use ($offer, $request) {
+            $quote = new PricingQuote();
+            $quote->quote_no = $this->generateQuoteNo();
+            $quote->client_id = $request->input('client_id');
+            $quote->sales_user_id = $request->input('sales_user_id');
+            $quote->pricing_offer_id = $offer->id;
+            
+            $quote->pol = $offer->pol;
+            $quote->pod = $offer->pod;
+            $quote->shipping_line = $offer->shipping_line;
+            
+            $containerSpec = trim(($offer->container_size ?? '') . ' ' . ($offer->container_height ?? '') . ' ' . ($offer->container_type ?? ''));
+            $quote->container_type = $containerSpec ?: null;
+            
+            $quote->transit_time = $offer->transit_time;
+            $quote->free_time = $offer->free_time;
+            $quote->valid_from = $offer->valid_from ?? now();
+            $quote->valid_to = $offer->valid_to;
+            $quote->notes = $offer->notes;
+            $quote->status = 'pending';
+            $quote->available_sailing_days = $offer->available_sailing_days;
+            $quote->weekly_sailings = $offer->weekly_sailings;
+            $quote->save();
+
+            $offer->load('items');
+            $items = $offer->items->map(function ($item) {
+                return [
+                    'code' => $item->code,
+                    'name' => $item->name ?: $this->getDefaultItemName($item->code),
+                    'description' => $item->description,
+                    'amount' => 0, // Sales user will fill this
+                    'currency' => $item->currency_code,
+                ];
+            })->toArray();
+
+            $this->syncQuoteItems($quote, $items);
+            
+            // Transfer sailing dates
+            $offer->load('sailingDates');
+            foreach ($offer->sailingDates as $sd) {
+                PricingQuoteSailingDate::create([
+                    'pricing_quote_id' => $quote->id,
+                    'sailing_date' => $sd->sailing_date,
+                ]);
+            }
+
+            return $quote;
+        });
+
+        $quote->load(['items', 'sailingDates', 'client', 'salesUser', 'offer']);
+
+        return response()->json([
+            'data' => $this->transformQuote($quote),
+        ], 201);
+    }
+
+    public function downloadPdf(PricingQuote $quote)
+    {
+        $this->authorize('view', $quote);
+        
+        // Mock PDF response for now - typically involves a view and a library like DomPDF
+        return response()->json([
+            'message' => 'PDF generation will be implemented with a library like DomPDF/Snappy',
+            'quote_id' => $quote->id
+        ]);
+    }
+
+    protected function getDefaultItemName($code)
+    {
+        $map = [
+            'ocean' => 'Ocean Freight',
+            'of20' => "Ocean Freight 20'",
+            'of40' => "Ocean Freight 40'",
+            'thc' => 'THC',
+            'thc20' => "THC 20'",
+            'thc40' => "THC 40'",
+            'power' => 'Power',
+            'powerday' => 'Power per day',
+            'pti' => 'PTI',
+            'bl' => 'B/L Fee',
+            'telex' => 'Telex Release',
+        ];
+        return $map[strtolower($code)] ?? ucfirst($code);
     }
 
     public function update(Request $request, PricingQuote $quote)
@@ -173,6 +272,9 @@ class PricingQuoteController extends Controller
             'valid_to' => ['sometimes', 'nullable', 'date'],
             'notes' => ['sometimes', 'nullable', 'string'],
             'status' => ['sometimes', 'string', 'in:pending,accepted,rejected'],
+            'available_sailing_days' => ['sometimes', 'nullable', 'array'],
+            'available_sailing_days.*' => ['string'],
+            'weekly_sailings' => ['sometimes', 'nullable', 'integer'],
             'sailing_dates' => ['sometimes', 'array'],
             'sailing_dates.*' => ['date'],
             'items' => ['sometimes', 'array', 'min:1'],
@@ -316,6 +418,8 @@ class PricingQuoteController extends Controller
             'valid_from' => $quote->valid_from?->toDateString(),
             'valid_to' => $quote->valid_to?->toDateString(),
             'notes' => $quote->notes,
+            'available_sailing_days' => $quote->available_sailing_days ?? [],
+            'weekly_sailings' => $quote->weekly_sailings,
             'sailing_dates' => $quote->sailingDates->pluck('sailing_date')->map(
                 static fn ($d) => $d?->toDateString()
             )->filter()->values(),

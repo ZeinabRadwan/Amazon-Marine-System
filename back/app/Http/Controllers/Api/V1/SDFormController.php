@@ -254,10 +254,16 @@ class SDFormController extends Controller
     {
         $this->authorize('update', $sdForm);
 
-        if ($sdForm->status !== 'submitted') {
-            abort(422, $sdForm->status === 'draft'
-                ? __('Submit the SD form first before sending it to operations.')
-                : __('Only SD forms in Submitted status can be sent to operations.'));
+        if (!in_array($sdForm->status, ['draft', 'submitted'])) {
+            abort(422, __('Only SD forms in Draft or Submitted status can be sent to operations.'));
+        }
+
+        if (!$sdForm->shipment_direction) {
+            abort(422, __('Please select shipment direction before sending to operations.'));
+        }
+
+        if ($sdForm->shipment_direction === 'Import' && !$sdForm->acid_number) {
+            abort(422, __('ACID number is required for Import shipments.'));
         }
 
         SDFormService::transitionStatus($sdForm, 'sent_to_operations');
@@ -446,7 +452,7 @@ class SDFormController extends Controller
             ], 200);
         }
 
-        $this->notificationService->sendEmail(
+        $sentCount = $this->notificationService->sendEmail(
             'sd_form.email_to_operations',
             $sdForm,
             $operationsUsers,
@@ -465,8 +471,15 @@ class SDFormController extends Controller
             }
         );
 
+        if ($sentCount === 0) {
+            return response()->json([
+                'message' => __('Failed to send email to operations. Please check mail settings.'),
+            ], 500);
+        }
+
         ActivityLogger::log('sd_form.email_to_operations', $sdForm, [
             'recipient_count' => $operationsUsers->count(),
+            'sent_count' => $sentCount,
         ]);
 
         return response()->json([
@@ -520,12 +533,14 @@ class SDFormController extends Controller
     {
         if ($locale === 'ar') {
             return [
-                'doc_title' => 'نموذج تفاصيل الشحن',
-                'brand' => 'أمازون مارين',
-                'brand_tag' => 'شحن وحلول لوجستية',
+                'doc_title' => 'إقرار شحن',
+                'brand' => 'Amazon Marine System',
+                'brand_tag' => 'International Freight Forwarding',
+                'brand_contact' => 'Tel: +201200744888  |  info@amazonmarine.com',
                 'sd_no' => 'رقم SD:',
                 'sd_date' => 'تاريخ SD:',
                 'vessel_date' => 'تاريخ السفينة:',
+                'lbl_document_date' => 'التاريخ:',
                 'client' => 'العميل:',
                 'sec_shipment_info' => 'معلومات الشحنة',
                 'pol' => 'ميناء التحميل',
@@ -556,19 +571,54 @@ class SDFormController extends Controller
                 'total_net' => 'إجمالي الوزن الصافي',
                 'acid' => 'رقم ACID',
                 'notes' => 'ملاحظات',
-                'footer_contact' => 'معلومات الاتصال',
-                'address' => 'العنوان',
-                'website' => 'الموقع',
+                'sec_1_client_sales' => '١. العميل ومندوب المبيعات',
+                'sec_2_shipment_basic' => '٢. المعلومات الأساسية للشحنة',
+                'sec_3_parties' => '٣. معلومات الأطراف',
+                'sec_4_container' => '٤. تفاصيل الحاوية',
+                'sec_5_cargo' => '٥. معلومات البضاعة',
+                'sec_6_weight' => '٦. تفاصيل الوزن',
+                'sec_7_notes' => '٧. ملاحظات إضافية',
+                'sec_import_customs' => 'الجمارك (استيراد)',
+                'sec_reefer_details' => 'تفاصيل الحاوية المبردة',
+                'sec_additional_notes' => 'ملاحظات إضافية',
+                'lbl_acid_number' => 'رقم ACID',
+                'lbl_temp_long' => 'درجة الحرارة (Temp)',
+                'lbl_vent_long' => 'التهوية (Vent)',
+                'lbl_humidity_long' => 'الرطوبة (Hum)',
+                'badge_import' => 'استيراد',
+                'badge_reefer' => 'مبرد',
+                'lbl_client_name' => 'اسم العميل',
+                'lbl_sales_rep' => 'مندوب المبيعات',
+                'lbl_sd_number' => 'رقم SD',
+                'lbl_pol_full' => 'ميناء التحميل (POL)',
+                'lbl_pod_full' => 'ميناء التفريغ (POD)',
+                'lbl_shipment_direction' => 'اتجاه الشحنة',
+                'lbl_requested_vessel_date' => 'تاريخ السفينة المطلوب',
+                'lbl_shipper_info' => 'معلومات الشاحن',
+                'lbl_consignee_info' => 'معلومات المرسل إليه',
+                'lbl_container_size' => 'حجم الحاوية',
+                'lbl_num_containers' => 'عدد الحاويات',
+                'lbl_cargo_description' => 'وصف البضاعة',
+                'lbl_notes_instructions' => 'ملاحظات / تعليمات خاصة',
+                'lbl_total_gross_kg' => 'إجمالي الوزن الإجمالي (كجم)',
+                'lbl_total_net_kg' => 'إجمالي الوزن الصافي (كجم)',
+                'lbl_shipping_ref' => 'مرجع الشحنة',
+                'lbl_reefer' => 'الحاوية المبردة',
+                'lbl_temp' => 'الحرارة',
+                'lbl_vent' => 'التهوية',
+                'lbl_humidity' => 'الرطوبة',
             ];
         }
 
         return [
-            'doc_title' => 'SHIPPING DETAILS FORM',
-            'brand' => 'AMAZON MARINE',
-            'brand_tag' => 'Shipping and logistics solutions',
+            'doc_title' => 'Shipping Declaration',
+            'brand' => 'Amazon Marine System',
+            'brand_tag' => 'International Freight Forwarding',
+            'brand_contact' => 'Tel: +201200744888  |  info@amazonmarine.com',
             'sd_no' => 'SD no:',
             'sd_date' => 'SD date:',
             'vessel_date' => 'Vessel date:',
+            'lbl_document_date' => 'Date:',
             'client' => 'Client:',
             'sec_shipment_info' => 'Shipment information',
             'pol' => 'Port of loading',
@@ -599,9 +649,42 @@ class SDFormController extends Controller
             'total_net' => 'Total net weight',
             'acid' => 'ACID number',
             'notes' => 'Notes',
-            'footer_contact' => 'Contact information',
-            'address' => 'Address',
-            'website' => 'Website',
+            'sec_1_client_sales' => '1. Client & Sales Representative',
+            'sec_2_shipment_basic' => '2. Shipment Basic Information',
+            'sec_3_parties' => '3. Parties Information',
+            'sec_4_container' => '4. Container Details',
+            'sec_5_cargo' => '5. Cargo Information',
+            'sec_6_weight' => '6. Weight Details',
+            'sec_7_notes' => '7. Additional Notes',
+            'sec_import_customs' => 'Import Customs',
+            'sec_reefer_details' => 'Reefer Details',
+            'sec_additional_notes' => 'Additional Notes',
+            'lbl_acid_number' => 'ACID Number',
+            'lbl_temp_long' => 'Temperature (Temp)',
+            'lbl_vent_long' => 'Ventilation (Vent)',
+            'lbl_humidity_long' => 'Humidity (Hum)',
+            'badge_import' => 'IMPORT',
+            'badge_reefer' => 'REEFER',
+            'lbl_client_name' => 'Client Name',
+            'lbl_sales_rep' => 'Sales Representative',
+            'lbl_sd_number' => 'SD number',
+            'lbl_pol_full' => 'Port of loading (POL)',
+            'lbl_pod_full' => 'Port of discharge (POD)',
+            'lbl_shipment_direction' => 'Shipment direction',
+            'lbl_requested_vessel_date' => 'Requested vessel date',
+            'lbl_shipper_info' => 'Shipper information',
+            'lbl_consignee_info' => 'Consignee information',
+            'lbl_container_size' => 'Container size',
+            'lbl_num_containers' => 'Number of containers',
+            'lbl_cargo_description' => 'Cargo description',
+            'lbl_notes_instructions' => 'Notes / special instructions',
+            'lbl_total_gross_kg' => 'Total gross weight (KG)',
+            'lbl_total_net_kg' => 'Total net weight (KG)',
+            'lbl_shipping_ref' => 'Shipment reference',
+            'lbl_reefer' => 'Reefer',
+            'lbl_temp' => 'Temp',
+            'lbl_vent' => 'Vent',
+            'lbl_humidity' => 'Humidity',
         ];
     }
 }

@@ -527,7 +527,7 @@ class ExpenseController extends Controller
                     $expense->currency_code,
                     $expense->vendor?->name ?? '',
                     $expense->payment_method ?? '',
-                    $expense->expense_date?->toDateString() ?? '',
+                    $expense->expense_date?->format('d/m/Y') ?? '',
                     $expense->invoice_number ?? '',
                     $expense->has_receipt ? 'yes' : 'no',
                 ]);

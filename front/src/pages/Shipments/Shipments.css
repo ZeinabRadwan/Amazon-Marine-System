@@ -1126,11 +1126,6 @@
   color: var(--form-primary, #0039c5);
 }
 
-.shipment-fin-hint,
-.shipment-fin-notify-hint {
-  margin-top: 0.5rem;
-}
-
 .shipment-fin-sales-banner {
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
@@ -1818,3 +1813,141 @@
   }
 }
 
+/* Audit History Tab Styles */
+.shipment-fin-audit-head {
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--form-divider, #e5e7eb);
+  padding-bottom: 1rem;
+}
+
+.shipment-fin-audit-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: var(--form-text, #1c2030);
+}
+
+.shipment-fin-audit-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  position: relative;
+}
+
+.shipment-fin-audit-list::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3.5px;
+  width: 2px;
+  background: var(--form-divider, #e5e7eb);
+  opacity: 0.6;
+}
+
+[dir='rtl'] .shipment-fin-audit-list::before {
+  left: auto;
+  right: 3.5px;
+}
+
+.shipment-fin-audit-item {
+  position: relative;
+  padding-bottom: 2rem;
+  padding-inline-start: 1.5rem;
+}
+
+.shipment-fin-audit-item:last-child {
+  padding-bottom: 0;
+}
+
+.shipment-fin-audit-item__dot {
+  position: absolute;
+  left: 0;
+  top: 4px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--form-primary, #0039c5);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--form-primary, #0039c5) 15%, transparent);
+  z-index: 1;
+}
+
+[dir='rtl'] .shipment-fin-audit-item__dot {
+  left: auto;
+  right: 0;
+}
+
+.shipment-fin-audit-item__meta {
+  font-size: 0.7rem;
+  color: color-mix(in srgb, var(--form-text, #1c2030) 50%, transparent);
+  margin-bottom: 0.35rem;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.shipment-fin-audit-item__body {
+  font-size: 0.875rem;
+  color: var(--form-text, #1c2030);
+}
+
+.shipment-fin-audit-props {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  padding: 0.65rem 0.85rem;
+  background: color-mix(in srgb, var(--form-primary, #0039c5) 4%, transparent);
+  border-radius: 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--form-primary, #0039c5) 8%, transparent);
+}
+
+[data-theme='dark'] .shipment-fin-audit-props,
+.dark .shipment-fin-audit-props {
+  background: color-mix(in srgb, var(--form-primary, #60a5fa) 5%, transparent);
+  border-color: color-mix(in srgb, var(--form-primary, #60a5fa) 10%, transparent);
+}
+
+.shipment-fin-audit-prop {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+}
+
+.shipment-fin-audit-prop-key {
+  font-weight: 600;
+  color: color-mix(in srgb, var(--form-text, #1c2030) 65%, transparent);
+}
+
+.shipment-fin-audit-prop-val {
+  color: var(--form-text, #1c2030);
+  background: color-mix(in srgb, var(--form-bg, #fff) 80%, black 10%);
+  padding: 0.125rem 0.45rem;
+  border-radius: 0.3rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.7rem;
+}
+
+[data-theme='dark'] .shipment-fin-audit-prop-val,
+.dark .shipment-fin-audit-prop-val {
+  background: color-mix(in srgb, var(--form-bg, #1f2937) 80%, white 10%);
+}
+
+.shipment-fin-audit-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4.5rem 2rem;
+  text-align: center;
+  color: color-mix(in srgb, var(--form-text, #1c2030) 40%, transparent);
+  gap: 1.25rem;
+}
+
+.shipment-fin-audit-empty__icon {
+  width: 3.5rem;
+  height: 3.5rem;
+  opacity: 0.15;
+}

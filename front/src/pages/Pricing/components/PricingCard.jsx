@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next'
-import { Calendar, Clock, Ship, Truck, Eye, Edit2, CheckCircle, Archive, Loader2 } from 'lucide-react'
+import { Calendar, Clock, Ship, Truck, Eye, Edit2, CheckCircle, Archive, Loader2, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useMutateOffer } from '../../../hooks/usePricing'
 
-export default function PricingCard({ offer, onMutate, onEdit, onView }) {
+export default function PricingCard({ offer, onMutate, onEdit, onView, onCreateQuote }) {
   const { t } = useTranslation()
   const isSea = offer.pricing_type === 'sea'
   const { activate, archive, loading } = useMutateOffer()
@@ -84,23 +84,23 @@ export default function PricingCard({ offer, onMutate, onEdit, onView }) {
         {isSea ? (
           <>
             <div className="p-4 border-r border-gray-100 dark:border-gray-700 text-center">
-              <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">OF 20'</p>
-              <p className="text-sm font-bold text-gray-900 dark:text-white">{formatPrice(offer.pricing?.of20?.price, offer.pricing?.of20?.currency)}</p>
+              <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">{t('pricing.oceanFreight', 'Ocean')}</p>
+              <p className="text-sm font-bold text-gray-900 dark:text-white">{formatPrice(offer.pricing?.ocean?.price ?? offer.pricing?.of20?.price, offer.pricing?.ocean?.currency ?? offer.pricing?.of20?.currency)}</p>
             </div>
             <div className="p-4 text-center">
-              <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">OF 40'</p>
-              <p className="text-sm font-bold text-gray-900 dark:text-white">{formatPrice(offer.pricing?.of40?.price, offer.pricing?.of40?.currency)}</p>
+              <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">{t('pricing.thc', 'THC')}</p>
+              <p className="text-sm font-bold text-gray-900 dark:text-white">{formatPrice(offer.pricing?.thc?.price ?? offer.pricing?.thc20?.price, offer.pricing?.thc?.currency ?? offer.pricing?.thc20?.currency)}</p>
             </div>
           </>
         ) : (
           <>
             <div className="p-4 border-r border-gray-100 dark:border-gray-700 text-center">
-              <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">20' Dry</p>
-              <p className="text-sm font-bold text-gray-900 dark:text-white">{formatPrice(offer.pricing?.t20d?.price, offer.pricing?.t20d?.currency)}</p>
+              <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">{t('pricing.inland', 'Inland')}</p>
+              <p className="text-sm font-bold text-gray-900 dark:text-white">{formatPrice(offer.pricing?.inland?.price ?? offer.pricing?.t20d?.price, offer.pricing?.inland?.currency ?? offer.pricing?.t20d?.currency)}</p>
             </div>
             <div className="p-4 text-center">
-              <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">40' Dry / HQ</p>
-              <p className="text-sm font-bold text-gray-900 dark:text-white">{formatPrice(offer.pricing?.t40hq?.price ?? offer.pricing?.t40d?.price, offer.pricing?.t40hq?.currency ?? offer.pricing?.t40d?.currency)}</p>
+              <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">{t('pricing.generator', 'Gen')}</p>
+              <p className="text-sm font-bold text-gray-900 dark:text-white">{formatPrice(offer.pricing?.generator?.price, offer.pricing?.generator?.currency)}</p>
             </div>
           </>
         )}
@@ -140,6 +140,12 @@ export default function PricingCard({ offer, onMutate, onEdit, onView }) {
             )}
           </div>
           <div className="flex gap-1.5">
+             <button
+               onClick={() => onCreateQuote?.(offer)}
+               className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
+             >
+               <Plus className="h-3 w-3" /> {t('pricing.createQuoteFromOffer', 'Create Quote')}
+             </button>
              <button
                onClick={() => onView?.(offer)}
                className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { formatDate } from '../../utils/dateUtils'
 import { getStoredToken } from '../Login'
 import {
   listSDForms,
@@ -69,19 +70,7 @@ const SD_FORM_STATUSES = [
   { value: 'cancelled', labelKey: 'sdForms.statusCancelled' },
 ]
 
-function formatDate(iso) {
-  if (!iso) return '—'
-  try {
-    const d = new Date(iso)
-    if (isNaN(d.getTime())) return iso
-    const day = String(d.getDate()).padStart(2, '0')
-    const month = String(d.getMonth() + 1).padStart(2, '0')
-    const year = d.getFullYear()
-    return `${day}/${month}/${year}`
-  } catch {
-    return iso
-  }
-}
+
 
 function getStatusBadgeClass(status) {
   if (!status) return 'sd-forms-badge--default'
@@ -132,7 +121,7 @@ function emptySdForm() {
 function initialCreateForm() {
   return {
     ...emptySdForm(),
-    shipment_direction: '',
+    shipment_direction: 'Export',
     num_containers: '1',
   }
 }
@@ -526,6 +515,7 @@ export default function SDForms() {
   }, [token, t])
 
   const openEdit = useCallback((id) => {
+    setDetailId(null)
     setEditId(id)
     setEditLoading(true)
     setAlert(null)
@@ -2083,18 +2073,8 @@ export default function SDForms() {
                             <FileDown className="h-4 w-4" aria-hidden />
                             {t('sdForms.pdf')}
                           </button>
-                          {detail.status === 'draft' && canSubmit && (
-                            <button
-                              type="button"
-                              className="clients-btn clients-btn--primary inline-flex items-center gap-1 text-xs"
-                              onClick={() => openSubmitModal(detail.id, detail)}
-                            >
-                              <Send className="h-4 w-4" aria-hidden />
-                              {t('sdForms.submit')}
-                            </button>
-                          )}
-                          {detail.status === 'submitted' && canSendOps && (
-                            <button type="button" className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs" onClick={() => runSendOps(detail.id)}>
+                          {['draft', 'submitted'].includes(detail.status) && canSendOps && (
+                            <button type="button" className="clients-btn clients-btn--primary inline-flex items-center gap-1 text-xs" onClick={() => runSendOps(detail.id)}>
                               <Send className="h-4 w-4" aria-hidden />
                               {t('sdForms.sendOps')}
                             </button>

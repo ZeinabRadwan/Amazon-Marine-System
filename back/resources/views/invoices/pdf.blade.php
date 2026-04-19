@@ -19,9 +19,9 @@
                 <td class="pdf-invoice-meta">
                     <div class="pdf-invoice-title">{{ $labels['invoice_title'] }}</div>
                     <div><span class="pdf-label-strong">{{ $labels['invoice_no'] }}</span> {{ $invoice->invoice_number }}</div>
-                    <div><span class="pdf-label-strong">{{ $labels['date'] }}</span> {{ $invoice->issue_date?->toDateString() }}</div>
+                    <div><span class="pdf-label-strong">{{ $labels['date'] }}</span> {{ $invoice->issue_date?->format('d/m/Y') }}</div>
                     @if($invoice->due_date)
-                        <div><span class="pdf-label-strong">{{ $labels['due_date'] }}</span> {{ $invoice->due_date?->toDateString() }}</div>
+                        <div><span class="pdf-label-strong">{{ $labels['due_date'] }}</span> {{ $invoice->due_date?->format('d/m/Y') }}</div>
                     @endif
                     @if($invoice->shipment)
                         <div class="pdf-mt-sm"><span class="pdf-label-strong">{{ $labels['shipment_bl'] }}</span> {{ $invoice->shipment->bl_number }}</div>
@@ -108,7 +108,7 @@
             @if(!empty($footerHtml))
                 {!! $footerHtml !!}
             @else
-                {{ $labels['generated'] }} {{ now()->toDateTimeString() }} | {{ $labels['system_credit'] }}
+                {{ $labels['generated'] }} {{ now()->format('d/m/Y H:i:s') }} | {{ $labels['system_credit'] }}
             @endif
         </div>
     </div>

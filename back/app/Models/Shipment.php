@@ -183,6 +183,14 @@ class Shipment extends Model
     }
 
     /**
+     * @return HasMany<ShipmentAttachment>
+     */
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(ShipmentAttachment::class)->orderByDesc('created_at');
+    }
+
+    /**
      * @return HasOne<ShipmentTrackingUpdate>
      */
     public function latestTrackingUpdate(): HasOne

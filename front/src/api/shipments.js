@@ -312,3 +312,76 @@ export async function bulkUpdateShipmentTasks(token, shipmentId, tasks) {
   }
   return json
 }
+
+export async function listShipmentAttachments(token, shipmentId) {
+  const res = await apiFetch(`${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}/attachments`, {
+    headers: authHeaders(token),
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(json.message || json.error || `Failed to load attachments (${res.status})`)
+  return json
+}
+
+export async function uploadShipmentAttachment(token, shipmentId, file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  const res = await apiFetch(`${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}/attachments`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
+    },
+    body: formData,
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(json.message || json.error || `Failed to upload attachment (${res.status})`)
+  return json
+}
+
+export async function updateShipmentAttachment(token, shipmentId, attachmentId, body) {
+  const res = await apiFetch(
+    `${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}/attachments/${encodeURIComponent(attachmentId)}`,
+    {
+      method: 'PATCH',
+      headers: authHeaders(token),
+      body: JSON.stringify(body),
+    }
+  )
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(json.message || json.error || `Failed to update attachment (${res.status})`)
+  return json
+}
+
+export async function deleteShipmentAttachment(token, shipmentId, attachmentId) {
+  const res = await apiFetch(
+    `${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}/attachments/${encodeURIComponent(attachmentId)}`,
+    {
+      method: 'DELETE',
+      headers: authHeaders(token),
+    }
+  )
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(json.message || json.error || `Failed to delete attachment (${res.status})`)
+  return json
+}
+
+export async function downloadShipmentAttachment(token, shipmentId, attachmentId) {
+  const res = await apiFetch(
+    `${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}/attachments/${encodeURIComponent(attachmentId)}/download`,
+    {
+      headers: authHeaders(token),
+    }
+  )
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}))
+    throw new Error(json.message || json.error || `Download failed (${res.status})`)
+  }
+  const blob = await res.blob()
+  const contentDisposition = res.headers.get('Content-Disposition')
+  let filename = ''
+  if (contentDisposition) {
+    const match = contentDisposition.match(/filename="?([^"]+)"?/)
+    if (match) filename = match[1]
+  }
+  return { blob, filename }
+}

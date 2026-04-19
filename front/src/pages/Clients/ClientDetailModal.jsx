@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X, Package, Phone, Mail, MapPin, MessageCircle, Users, Pencil, Trash2, Check } from 'lucide-react'
+import { formatDate, formatDateTime } from '../../utils/dateUtils'
 import DateTimePicker from '../../components/DateTimePicker'
 import FollowUpWorkloadWidgets from '../../components/FollowUpWorkloadWidgets'
 import Tabs from '../../components/Tabs'
@@ -157,18 +158,7 @@ function buildFollowUpPayload(form, t) {
 }
 
 /** API may return visit_date as ISO string (e.g. 2026-03-23T00:00:00.000000Z). */
-function formatVisitDateDisplay(value, locale) {
-  if (value == null || value === '') return '—'
-  const s = String(value).trim()
-  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10)
-  const d = new Date(s)
-  if (Number.isNaN(d.getTime())) return '—'
-  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-GB', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  }).format(d)
-}
+
 
 /** Info tab: grouped sections with title keys for better layout */
 const infoSectionGroups = [
@@ -276,28 +266,9 @@ export default function ClientDetailModal({
         }).format(v)
       : (v ?? '—')
 
-  const formatDate = (v) =>
-    v
-      ? new Intl.DateTimeFormat(i18n.language === 'ar' ? 'ar-EG' : 'en-US', { dateStyle: 'medium' }).format(new Date(v))
-      : '—'
 
-  const formatDateTime = (v) => {
-    if (v == null || v === '') return '—'
-    const d = new Date(v)
-    if (Number.isNaN(d.getTime())) return '—'
-    const locale = i18n.language === 'ar' ? 'ar-EG' : 'en-US'
-    const datePart = new Intl.DateTimeFormat(locale, {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    }).format(d)
-    const timePart = new Intl.DateTimeFormat(locale, {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    }).format(d)
-    return `${datePart} - ${timePart}`
-  }
+
+
 
   const clientFinancial = financialSummaryList.find((item) => Number(item.id) === Number(detailId))
 
@@ -410,7 +381,7 @@ export default function ClientDetailModal({
                     <li key={v.id ?? v.visit_date} className="client-detail-modal__list-item client-detail-modal__list-item--visit">
                       <div className="client-detail-modal__list-label client-detail-modal__visit-date">
                         <span className="client-detail-modal__visit-date-main">
-                          {formatVisitDateDisplay(v.visit_date ?? v.date, i18n.language)}
+                          {formatDate(v.visit_date ?? v.date)}
                         </span>
                         {(v.user_name || v.user?.name) && (
                           <span className="client-detail-modal__visit-user">{v.user_name ?? v.user?.name}</span>

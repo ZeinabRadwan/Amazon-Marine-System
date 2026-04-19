@@ -37,7 +37,7 @@ class SDFormService
         $from = $form->status;
 
         $allowedTransitions = [
-            'draft' => ['submitted', 'cancelled'],
+            'draft' => ['submitted', 'sent_to_operations', 'cancelled'],
             'submitted' => ['sent_to_operations', 'cancelled'],
             'sent_to_operations' => ['in_progress', 'cancelled'],
             'in_progress' => ['completed', 'cancelled'],

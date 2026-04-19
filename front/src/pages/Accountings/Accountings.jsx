@@ -35,6 +35,7 @@ import {
   Search,
   RotateCcw,
 } from 'lucide-react'
+import { formatDate } from '../../utils/dateUtils'
 import Tabs from '../../components/Tabs'
 import '../../components/PageHeader/PageHeader.css'
 import '../Clients/Clients.css'
@@ -787,9 +788,7 @@ export default function Accountings() {
                         </td>
                         <td>{row.currency || '—'}</td>
                         <td className="text-sm text-gray-500">
-                          {row.last_payment_date
-                            ? new Date(row.last_payment_date).toLocaleDateString(locale)
-                            : '—'}
+                          {formatDate(row.last_payment_date)}
                         </td>
                         <td>
                           <button

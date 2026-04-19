@@ -56,10 +56,11 @@ class NotificationService
      * @param  iterable<User>  $recipients
      * @param  callable(User):void  $callback
      */
-    public function sendEmail(string $eventKey, ?Model $entity, iterable $recipients, callable $callback): void
+    public function sendEmail(string $eventKey, ?Model $entity, iterable $recipients, callable $callback): int
     {
+        $sentCount = 0;
         if (! $this->isEventEnabledForChannel($eventKey, 'email')) {
-            return;
+            return 0;
         }
 
         foreach ($recipients as $recipient) {
@@ -78,6 +79,7 @@ class NotificationService
             try {
                 $callback($recipient);
 
+                $sentCount++;
                 $log->status = 'sent';
                 $log->sent_at = now();
                 $log->save();
@@ -93,6 +95,8 @@ class NotificationService
                 ]);
             }
         }
+
+        return $sentCount;
     }
 
     private function createLog(string $eventKey, ?Model $entity, ?User $recipient, string $channel, array $extraPayload = []): NotificationLog

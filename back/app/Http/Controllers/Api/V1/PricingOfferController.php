@@ -104,8 +104,12 @@ class PricingOfferController extends Controller
 
         $validated = $request->validate([
             'pricing_type' => ['required', 'string', 'in:sea,inland'],
+            'container_type' => ['nullable', 'string', 'in:Dry,Reefer'],
+            'container_size' => ['nullable', 'string', 'in:20,40'],
+            'container_height' => ['nullable', 'string', 'in:Standard,HQ'],
             'region' => ['required', 'string', 'max:255'],
             'pod' => ['required', 'string', 'max:255'],
+            'valid_from' => ['nullable', 'date'],
             'valid_to' => ['nullable', 'date'],
             'status' => ['sometimes', 'string', 'in:draft,active,archived'],
             'notes' => ['nullable', 'string'],
@@ -114,13 +118,19 @@ class PricingOfferController extends Controller
             'pol' => ['required_if:pricing_type,sea', 'nullable', 'string', 'max:255'],
             'dnd' => ['nullable', 'string', 'max:255'],
             'transit_time' => ['nullable', 'string', 'max:255'],
+            'free_time' => ['nullable', 'string', 'max:255'],
             'inland_port' => ['required_if:pricing_type,inland', 'nullable', 'string', 'max:255'],
             'destination' => ['nullable', 'string', 'max:255'],
             'inland_gov' => ['nullable', 'string', 'max:255'],
             'inland_city' => ['nullable', 'string', 'max:255'],
+            'available_sailing_days' => ['sometimes', 'array'],
+            'available_sailing_days.*' => ['string'],
+            'weekly_sailings' => ['nullable', 'integer'],
             'sailing_dates' => ['sometimes', 'array'],
             'sailing_dates.*' => ['date'],
             'pricing' => ['required', 'array'],
+            'pricing.*.name' => ['nullable', 'string', 'max:120'],
+            'pricing.*.description' => ['nullable', 'string'],
             'pricing.*.price' => ['nullable', 'numeric', 'min:0'],
             'pricing.*.currency' => ['nullable', 'string', 'max:10'],
         ]);
@@ -128,19 +138,26 @@ class PricingOfferController extends Controller
         $offer = DB::transaction(function () use ($validated) {
             $offer = new PricingOffer();
             $offer->pricing_type = $validated['pricing_type'];
+            $offer->container_type = $validated['container_type'] ?? null;
+            $offer->container_size = $validated['container_size'] ?? null;
+            $offer->container_height = $validated['container_height'] ?? null;
             $offer->region = $validated['region'];
             $offer->pod = $validated['pod'];
             $offer->shipping_line = $validated['shipping_line'] ?? null;
             $offer->pol = $validated['pol'] ?? null;
             $offer->dnd = $validated['dnd'] ?? null;
             $offer->transit_time = $validated['transit_time'] ?? null;
+            $offer->free_time = $validated['free_time'] ?? null;
             $offer->inland_port = $validated['inland_port'] ?? null;
             $offer->destination = $validated['destination'] ?? null;
             $offer->inland_gov = $validated['inland_gov'] ?? null;
             $offer->inland_city = $validated['inland_city'] ?? null;
+            $offer->valid_from = $validated['valid_from'] ?? null;
             $offer->valid_to = $validated['valid_to'] ?? null;
             $offer->status = $validated['status'] ?? 'draft';
             $offer->other_charges = $validated['other_charges'] ?? null;
+            $offer->available_sailing_days = $validated['available_sailing_days'] ?? null;
+            $offer->weekly_sailings = $validated['weekly_sailings'] ?? null;
             $offer->notes = $validated['notes'] ?? null;
             $offer->save();
 
@@ -162,8 +179,12 @@ class PricingOfferController extends Controller
         $this->authorize('update', $offer);
 
         $validated = $request->validate([
+            'container_type' => ['sometimes', 'nullable', 'string', 'in:Dry,Reefer'],
+            'container_size' => ['sometimes', 'nullable', 'string', 'in:20,40'],
+            'container_height' => ['sometimes', 'nullable', 'string', 'in:Standard,HQ'],
             'region' => ['sometimes', 'string', 'max:255'],
             'pod' => ['sometimes', 'string', 'max:255'],
+            'valid_from' => ['sometimes', 'nullable', 'date'],
             'valid_to' => ['sometimes', 'nullable', 'date'],
             'status' => ['sometimes', 'string', 'in:draft,active,archived'],
             'notes' => ['sometimes', 'nullable', 'string'],
@@ -172,13 +193,18 @@ class PricingOfferController extends Controller
             'pol' => ['sometimes', 'nullable', 'string', 'max:255'],
             'dnd' => ['sometimes', 'nullable', 'string', 'max:255'],
             'transit_time' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'free_time' => ['sometimes', 'nullable', 'string', 'max:255'],
             'inland_port' => ['sometimes', 'nullable', 'string', 'max:255'],
             'destination' => ['sometimes', 'nullable', 'string', 'max:255'],
             'inland_gov' => ['sometimes', 'nullable', 'string', 'max:255'],
             'inland_city' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'available_sailing_days' => ['sometimes', 'nullable', 'array'],
+            'weekly_sailings' => ['sometimes', 'nullable', 'integer'],
             'sailing_dates' => ['sometimes', 'array'],
             'sailing_dates.*' => ['date'],
             'pricing' => ['sometimes', 'array'],
+            'pricing.*.name' => ['nullable', 'string', 'max:120'],
+            'pricing.*.description' => ['nullable', 'string'],
             'pricing.*.price' => ['nullable', 'numeric', 'min:0'],
             'pricing.*.currency' => ['nullable', 'string', 'max:10'],
         ]);
@@ -254,6 +280,11 @@ class PricingOfferController extends Controller
                 continue;
             }
 
+            // Global Rule: If Container Type = Dry, skip Power items
+            if ($offer->container_type === 'Dry' && (strtolower($code) === 'power' || strtolower($code) === 'powerday')) {
+                continue;
+            }
+
             $price = $item['price'];
             if ($price === null || $price === '' || ! is_numeric($price)) {
                 continue;
@@ -262,6 +293,8 @@ class PricingOfferController extends Controller
             PricingOfferItem::create([
                 'pricing_offer_id' => $offer->id,
                 'code' => (string) $code,
+                'name' => (string) ($item['name'] ?? ''),
+                'description' => (string) ($item['description'] ?? ''),
                 'price' => (float) $price,
                 'currency_code' => (string) ($item['currency'] ?? 'USD'),
             ]);
@@ -276,6 +309,8 @@ class PricingOfferController extends Controller
         $pricing = [];
         foreach ($offer->items as $item) {
             $pricing[$item->code] = [
+                'name' => $item->name,
+                'description' => $item->description,
                 'price' => (float) $item->price,
                 'currency' => $item->currency_code,
             ];
@@ -284,19 +319,26 @@ class PricingOfferController extends Controller
         return [
             'id' => $offer->id,
             'pricing_type' => $offer->pricing_type,
+            'container_type' => $offer->container_type,
+            'container_size' => $offer->container_size,
+            'container_height' => $offer->container_height,
             'region' => $offer->region,
             'pod' => $offer->pod,
             'shipping_line' => $offer->shipping_line,
             'pol' => $offer->pol,
             'dnd' => $offer->dnd,
             'transit_time' => $offer->transit_time,
+            'free_time' => $offer->free_time,
             'inland_port' => $offer->inland_port,
             'destination' => $offer->destination,
             'inland_gov' => $offer->inland_gov,
             'inland_city' => $offer->inland_city,
+            'valid_from' => $offer->valid_from?->toDateString(),
             'valid_to' => $offer->valid_to?->toDateString(),
             'status' => $offer->status,
             'other_charges' => $offer->other_charges,
+            'available_sailing_days' => $offer->available_sailing_days,
+            'weekly_sailings' => $offer->weekly_sailings,
             'notes' => $offer->notes,
             'sailing_dates' => $offer->sailingDates->pluck('sailing_date')->map(
                 static fn ($d) => $d?->toDateString()

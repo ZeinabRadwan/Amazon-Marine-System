@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             RolesAndPermissionsSeeder::class,
             AdminUserSeeder::class,
             RoleUsersSeeder::class,
+            SalesTeamUsersSeeder::class,
             BilingualStatusesSeeder::class,
             ClientLookupsSeeder::class,
             VendorPartnerTypesSeeder::class,

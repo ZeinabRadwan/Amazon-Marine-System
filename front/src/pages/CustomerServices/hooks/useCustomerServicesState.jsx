@@ -31,6 +31,7 @@ import { Eye, Pencil, Send, Trash2, MessageSquare } from 'lucide-react'
 import { Bx } from '../components/BxIcon'
 import { IconActionButton } from '../../../components/Table'
 import { localizedStatusLabel } from '../../../utils/localizedStatusLabel'
+import { formatDate as globalFormatDate, formatDateTime as globalFormatDateTime } from '../../../utils/dateUtils'
 
 /** Normalize Laravel-style pagination meta from API response */
 function normalizeMeta(meta, fallback = {}) {
@@ -221,25 +222,13 @@ export function useCustomerServicesState() {
   const [viewCommsLogLoading, setViewCommsLogLoading] = useState(false)
   const [viewCommsLogError, setViewCommsLogError] = useState(null)
 
-  const locale = i18n.language === 'ar' ? 'ar-EG' : 'en-US'
-  const isArabicLang = i18n.language === 'ar'
   const formatDate = useCallback((d) => {
-    if (!d) return '—'
-    try {
-      return new Date(d).toLocaleDateString(locale, { dateStyle: 'short' })
-    } catch {
-      return d
-    }
-  }, [locale])
+    return globalFormatDate(d)
+  }, [])
 
   const formatDateTime = useCallback((d) => {
-    if (!d) return '—'
-    try {
-      return new Date(d).toLocaleString(locale, { dateStyle: 'short', timeStyle: 'short' })
-    } catch {
-      return d
-    }
-  }, [locale])
+    return globalFormatDateTime(d)
+  }, [])
 
   const trackingStatusByKey = useMemo(() => {
     const map = {}

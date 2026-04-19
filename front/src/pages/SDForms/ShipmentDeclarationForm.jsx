@@ -28,7 +28,7 @@ function emptyForm() {
     pod_text: '',
     shipping_line: '',
     final_destination: '',
-    shipment_direction: '',
+    shipment_direction: 'Export',
     shipper_info: '',
     consignee_info: '',
     notify_party_mode: '',

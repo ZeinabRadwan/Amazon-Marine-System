@@ -55,6 +55,7 @@ import { getFollowUpMySummary } from './api/clients'
 import { useAuthAccess } from './hooks/useAuthAccess'
 import RequirePageAccess from './components/RequirePageAccess'
 import RequireAdmin from './components/RequireAdmin'
+import { formatDate } from './utils/dateUtils'
 import './App.css'
 import './pages/Clients/Clients.css'
 
@@ -132,12 +133,7 @@ function Home() {
     return () => window.removeEventListener('am:followups:changed', onFollowUpsChanged)
   }, [])
 
-  const dateOnly = new Date().toLocaleDateString(i18n.language === 'ar' ? 'ar-EG' : 'en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
+  const dateOnly = formatDate(new Date())
   return (
     <Container size="xl">
       <div className="clients-page home-page">

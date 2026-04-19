@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ImportClientsRequest;
 use App\Http\Requests\StoreClientRequest;
 use App\Http\Requests\UpdateClientRequest;
 use App\Models\Client;
@@ -12,6 +13,8 @@ use App\Models\Payment;
 use App\Models\Shipment;
 use App\Models\Visit;
 use App\Services\ActivityLogger;
+use App\Services\ClientImport\ClientImportService;
+use App\Services\ClientImport\ClientImportTemplateExporter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
@@ -186,13 +189,41 @@ class ClientController extends Controller
                     $r['status'] ?? '',
                     $r['shipments'] ?? '',
                     $r['profit'] ?? '',
-                    isset($r['last_contact_at']) ? ($r['last_contact_at'] instanceof \DateTimeInterface ? $r['last_contact_at']->format('Y-m-d') : $r['last_contact_at']) : '',
+                    isset($r['last_contact_at']) ? ($r['last_contact_at'] instanceof \DateTimeInterface ? $r['last_contact_at']->format('d/m/Y') : $r['last_contact_at']) : '',
                 ]);
             }
             fclose($fh);
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    public function importTemplate(ClientImportTemplateExporter $exporter)
+    {
+        $this->authorize('create', Client::class);
+
+        return $exporter->downloadResponse();
+    }
+
+    public function import(ImportClientsRequest $request, ClientImportService $importService)
+    {
+        $this->authorize('create', Client::class);
+
+        $result = $importService->import($request->file('file'));
+
+        if (! $result['success']) {
+            return response()->json([
+                'success' => false,
+                'message' => $result['message'] ?? __('Import failed.'),
+                'errors' => $result['errors'] ?? [],
+            ], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'imported_count' => $result['imported_count'] ?? 0,
+            'failed_rows' => $result['failed_rows'] ?? [],
+        ]);
     }
 
     public function stats(Request $request)
@@ -426,7 +457,7 @@ class ClientController extends Controller
         return response()->json([
             'data' => $visits->map(fn (Visit $v) => [
                 'id' => $v->id,
-                'client_id' => $v->visitable_type === \App\Models\Client::class ? $v->visitable_id : null,
+                'client_id' => $v->visitable_type === Client::class ? $v->visitable_id : null,
                 'visitable_type' => $v->visitable_type,
                 'visitable_id' => $v->visitable_id,
                 'user_id' => $v->user_id,

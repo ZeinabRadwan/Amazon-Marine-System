@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { getStoredToken } from '../Login'
@@ -12,6 +12,8 @@ import {
   getClientCharts,
   getFinancialSummary,
   exportClients,
+  downloadClientImportTemplate,
+  importClients,
   getClientVisits,
   getClientShipments,
   getClientAttachments,
@@ -47,7 +49,7 @@ import { StatsCard } from '../../components/StatsCard'
 import ClientDetailModal from './ClientDetailModal'
 import LoaderDots from '../../components/LoaderDots'
 import Alert from '../../components/Alert'
-import { Eye, Pencil, Trash2, FileSpreadsheet, Users, Search, X, ArrowUpDown, ChevronDown, ChevronUp, RotateCcw, Info } from 'lucide-react'
+import { Eye, Pencil, Trash2, FileSpreadsheet, Users, Search, X, ArrowUpDown, ChevronDown, ChevronUp, RotateCcw, Info, Upload, Download } from 'lucide-react'
 import { BarChart, DonutChart } from '../../components/Charts'
 import '../../components/Charts/Charts.css'
 import '../../components/LoaderDots/LoaderDots.css'
@@ -172,6 +174,12 @@ export default function Clients() {
   const [stats, setStats] = useState(null)
   const [statsLoading, setStatsLoading] = useState(false)
   const [exportLoading, setExportLoading] = useState(false)
+  const [importModalOpen, setImportModalOpen] = useState(false)
+  const [importFile, setImportFile] = useState(null)
+  const [importSubmitting, setImportSubmitting] = useState(false)
+  const [importErrors, setImportErrors] = useState([])
+  const [importDragOver, setImportDragOver] = useState(false)
+  const importFileInputRef = useRef(null)
   const [showCreate, setShowCreate] = useState(false)
   const [createForm, setCreateForm] = useState(defaultClientForm())
   const [createSubmitting, setCreateSubmitting] = useState(false)
@@ -230,6 +238,7 @@ export default function Clients() {
     attachmentsLoading ||
     financialLoading ||
     exportLoading ||
+    importSubmitting ||
     createSubmitting ||
     editSubmitting ||
     deleteSubmitting ||
@@ -640,6 +649,76 @@ export default function Clients() {
       setAlert({ type: 'error', message: t('clients.errorExport') })
     } finally {
       setExportLoading(false)
+    }
+  }
+
+  const closeImportModal = () => {
+    setImportModalOpen(false)
+    setImportFile(null)
+    setImportErrors([])
+    setImportDragOver(false)
+    if (importFileInputRef.current) importFileInputRef.current.value = ''
+  }
+
+  const validateClientImportFile = (file) => {
+    if (!file) return 'clients.importNoFile'
+    const n = file.name.toLowerCase()
+    if (!n.endsWith('.xlsx') && !n.endsWith('.csv')) return 'clients.importInvalidType'
+    if (file.size > 10 * 1024 * 1024) return 'clients.importTooLarge'
+    return null
+  }
+
+  const pickImportFile = (file) => {
+    const key = validateClientImportFile(file)
+    if (key) {
+      setAlert({ type: 'error', message: t(key) })
+      return
+    }
+    setImportFile(file)
+    setImportErrors([])
+  }
+
+  const handleImportTemplateDownload = async () => {
+    if (!token) return
+    setAlert(null)
+    try {
+      const blob = await downloadClientImportTemplate(token)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'clients-import-template.xlsx'
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      setAlert({ type: 'error', message: t('clients.importTemplateError') })
+    }
+  }
+
+  const handleImportSubmit = async () => {
+    if (!token || !importFile) {
+      setAlert({ type: 'error', message: t('clients.importNoFile') })
+      return
+    }
+    setImportSubmitting(true)
+    setImportErrors([])
+    try {
+      const { ok, data } = await importClients(token, importFile)
+      if (ok && data?.success) {
+        const count = data.imported_count ?? 0
+        closeImportModal()
+        loadList()
+        setAlert({ type: 'success', message: t('clients.importSuccess', { count }) })
+        return
+      }
+      const errs = Array.isArray(data?.errors) ? data.errors : []
+      setImportErrors(errs)
+      if (errs.length === 0) {
+        setAlert({ type: 'error', message: data?.message || t('clients.importFailed') })
+      }
+    } catch (err) {
+      setAlert({ type: 'error', message: err?.message || t('clients.importFailed') })
+    } finally {
+      setImportSubmitting(false)
     }
   }
 
@@ -1375,13 +1454,28 @@ export default function Clients() {
               )}
             </button>
             {hasPageAccess('clients') && (
-              <button
-                type="button"
-                className="page-header__btn page-header__btn--primary"
-                onClick={() => setShowCreate(true)}
-              >
-                {t('clients.createClient')}
-              </button>
+              <>
+                <button
+                  type="button"
+                  className="page-header__btn clients-import-open-btn"
+                  onClick={() => {
+                    setAlert(null)
+                    setImportFile(null)
+                    setImportErrors([])
+                    setImportModalOpen(true)
+                  }}
+                >
+                  <Upload className="clients-import-open-btn__icon" size={18} aria-hidden />
+                  {t('clients.importClients')}
+                </button>
+                <button
+                  type="button"
+                  className="page-header__btn page-header__btn--primary"
+                  onClick={() => setShowCreate(true)}
+                >
+                  {t('clients.createClient')}
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -1468,6 +1562,111 @@ export default function Clients() {
             totalPages={Math.max(1, pagination.last_page)}
             onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
           />
+        </div>
+      )}
+
+      {/* Import modal */}
+      {importModalOpen && (
+        <div className="client-detail-modal" role="dialog" aria-modal="true" aria-labelledby="clients-import-modal-title">
+          <div className="client-detail-modal__backdrop" onClick={() => !importSubmitting && closeImportModal()} />
+          <div className="client-detail-modal__box client-detail-modal__box--form clients-import-modal__box">
+            <header className="client-detail-modal__header client-detail-modal__header--form">
+              <h2 id="clients-import-modal-title" className="client-detail-modal__title">
+                {t('clients.importModalTitle')}
+              </h2>
+              <button
+                type="button"
+                className="client-detail-modal__close"
+                onClick={closeImportModal}
+                disabled={importSubmitting}
+                aria-label={t('clients.close', 'Close')}
+              >
+                <X className="client-detail-modal__close-icon" aria-hidden />
+              </button>
+            </header>
+            <div className="client-detail-modal__body client-detail-modal__body--form">
+              <div className="client-detail-modal__body-inner clients-import-modal__body">
+                <button
+                  type="button"
+                  className="client-detail-modal__btn client-detail-modal__btn--secondary clients-import-template-btn"
+                  onClick={handleImportTemplateDownload}
+                  disabled={importSubmitting}
+                >
+                  <Download size={16} aria-hidden />
+                  {t('clients.importDownloadTemplate')}
+                </button>
+                <input
+                  ref={importFileInputRef}
+                  type="file"
+                  accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
+                  className="clients-import-file-input"
+                  aria-label={t('clients.importClients')}
+                  onChange={(e) => {
+                    const f = e.target?.files?.[0]
+                    if (f) pickImportFile(f)
+                  }}
+                />
+                <button
+                  type="button"
+                  className={`clients-import-dropzone${importDragOver ? ' clients-import-dropzone--active' : ''}`}
+                  onClick={() => importFileInputRef.current?.click()}
+                  onDragOver={(e) => {
+                    e.preventDefault()
+                    setImportDragOver(true)
+                  }}
+                  onDragLeave={() => setImportDragOver(false)}
+                  onDrop={(e) => {
+                    e.preventDefault()
+                    setImportDragOver(false)
+                    const f = e.dataTransfer?.files?.[0]
+                    if (f) pickImportFile(f)
+                  }}
+                  disabled={importSubmitting}
+                >
+                  <FileSpreadsheet className="clients-import-dropzone__icon" aria-hidden />
+                  <span>{t('clients.importDropHint')}</span>
+                </button>
+                {importFile && (
+                  <p className="clients-import-file-name">
+                    <strong>{t('clients.importSelectedFile')}:</strong> {importFile.name}
+                  </p>
+                )}
+                {importErrors.length > 0 && (
+                  <div className="clients-import-errors">
+                    <h3 className="clients-import-errors__title">{t('clients.importErrorsTitle')}</h3>
+                    <div className="clients-import-errors__scroll">
+                      <table className="clients-import-errors__table">
+                        <thead>
+                          <tr>
+                            <th>{t('clients.importErrorRow')}</th>
+                            <th>{t('clients.importErrorField')}</th>
+                            <th>{t('clients.importErrorMessage')}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {importErrors.map((err, idx) => (
+                            <tr key={`${err.row}-${err.field}-${idx}`}>
+                              <td>{err.row}</td>
+                              <td>{err.field}</td>
+                              <td>{err.message}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            <footer className="client-detail-modal__footer client-detail-modal__footer--form">
+              <button type="button" className="client-detail-modal__btn client-detail-modal__btn--secondary" onClick={closeImportModal} disabled={importSubmitting}>
+                {t('clients.cancel')}
+              </button>
+              <button type="button" className="client-detail-modal__btn client-detail-modal__btn--primary" onClick={handleImportSubmit} disabled={importSubmitting || !importFile}>
+                {importSubmitting ? t('clients.importing') : t('clients.importRun')}
+              </button>
+            </footer>
+          </div>
         </div>
       )}
 

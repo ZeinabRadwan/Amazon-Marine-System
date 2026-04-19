@@ -17,19 +17,26 @@ class PricingOffer extends Model
      */
     protected $fillable = [
         'pricing_type',
+        'container_type',
+        'container_size',
+        'container_height',
         'region',
         'pod',
         'shipping_line',
         'pol',
         'dnd',
         'transit_time',
+        'free_time',
         'inland_port',
         'destination',
         'inland_gov',
         'inland_city',
+        'valid_from',
         'valid_to',
         'status',
         'other_charges',
+        'available_sailing_days',
+        'weekly_sailings',
         'notes',
     ];
 
@@ -37,7 +44,9 @@ class PricingOffer extends Model
      * @var array<string, string>
      */
     protected $casts = [
+        'valid_from' => 'date',
         'valid_to' => 'date',
+        'available_sailing_days' => 'array',
     ];
 
     /**

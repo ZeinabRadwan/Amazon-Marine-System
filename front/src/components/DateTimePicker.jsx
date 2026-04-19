@@ -62,7 +62,7 @@ export default function DateTimePicker({
       time_24hr: false,
       dateFormat: 'Y-m-d H:i',
       altInput: true,
-      altFormat: 'j F Y - h:i K',
+      altFormat: 'd/m/Y - h:i K',
       allowInput: false,
       clickOpens: !disabledRef.current,
       appendTo: document.body,

@@ -7,6 +7,7 @@ import { getStoredToken } from '../../pages/Login'
 import { listNotifications, getUnreadCount, markNotificationRead } from '../../api/notifications'
 import ThemeToggle from '../ThemeToggle'
 import { DropdownMenu } from '../DropdownMenu'
+import { formatDate } from '../../utils/dateUtils'
 import './HeaderActions.css'
 
 const RECENT_NOTIF_LIMIT = 5
@@ -24,7 +25,7 @@ function formatNotificationTime(iso) {
     if (diffMins < 60) return `${diffMins}m ago`
     if (diffHours < 24) return `${diffHours}h ago`
     if (diffDays < 7) return `${diffDays}d ago`
-    return d.toLocaleDateString(undefined, { dateStyle: 'short' })
+    return formatDate(d)
   } catch {
     return iso
   }

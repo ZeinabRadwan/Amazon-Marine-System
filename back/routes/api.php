@@ -5,11 +5,11 @@ use App\Http\Controllers\Api\GitDeployController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\V1\AccountingController;
-use App\Http\Controllers\Api\V1\AdminNotificationController;
 use App\Http\Controllers\Api\V1\ActivityController;
 use App\Http\Controllers\Api\FileController;
 use App\Http\Controllers\Api\V1\AdminAttendanceController;
 use App\Http\Controllers\Api\V1\AdminExcuseController;
+use App\Http\Controllers\Api\V1\AdminNotificationController;
 use App\Http\Controllers\Api\V1\AttendanceController;
 use App\Http\Controllers\Api\V1\ClientAttachmentController;
 use App\Http\Controllers\Api\V1\ClientContactController;
@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\V1\CommunicationLogTypeController;
 use App\Http\Controllers\Api\V1\CompanyTypeController;
 use App\Http\Controllers\Api\V1\ContainerSizeController;
 use App\Http\Controllers\Api\V1\ContainerTypeController;
+use App\Http\Controllers\Api\V1\CurrencyController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\DecisionMakerTitleController;
 use App\Http\Controllers\Api\V1\DocumentController;
@@ -32,6 +33,7 @@ use App\Http\Controllers\Api\V1\ExpenseController;
 use App\Http\Controllers\Api\V1\FreightTermController;
 use App\Http\Controllers\Api\V1\InterestLevelController;
 use App\Http\Controllers\Api\V1\InvoiceController;
+use App\Http\Controllers\Api\V1\ItemController;
 use App\Http\Controllers\Api\V1\LeadSourceController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\NotifyPartyModeController;
@@ -44,6 +46,7 @@ use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\SDFormController;
 use App\Http\Controllers\Api\V1\SessionController;
 use App\Http\Controllers\Api\V1\SettingsController;
+use App\Http\Controllers\Api\V1\ShipmentAttachmentController;
 use App\Http\Controllers\Api\V1\ShipmentController;
 use App\Http\Controllers\Api\V1\ShipmentDirectionController;
 use App\Http\Controllers\Api\V1\ShipmentNoteController;
@@ -62,10 +65,7 @@ use App\Http\Controllers\Api\V1\VendorBillController;
 use App\Http\Controllers\Api\V1\VendorController;
 use App\Http\Controllers\Api\V1\VendorPartnerTypeController;
 use App\Http\Controllers\Api\V1\VisitController;
-use App\Http\Controllers\Api\V1\CurrencyController;
-use App\Http\Controllers\Api\V1\ItemController;
 use Illuminate\Support\Facades\Route;
-
 
 Route::prefix('v1')->group(function () {
     Route::match(['get', 'post'], 'deploy/git-pull', GitDeployController::class);
@@ -250,6 +250,10 @@ Route::prefix('v1')->group(function () {
             ->middleware('page_permission:clients,view');
         Route::get('clients/export', [ClientController::class, 'export'])
             ->middleware('page_permission:clients,view');
+        Route::get('clients/import-template', [ClientController::class, 'importTemplate'])
+            ->middleware('page_permission:clients,edit');
+        Route::post('clients/import', [ClientController::class, 'import'])
+            ->middleware('page_permission:clients,edit');
         Route::get('clients/{client}', [ClientController::class, 'show'])
             ->middleware('page_permission:clients,view');
         Route::put('clients/{client}', [ClientController::class, 'update'])
@@ -340,6 +344,11 @@ Route::prefix('v1')->group(function () {
         Route::get('shipments/export', [ShipmentController::class, 'export']);
         Route::get('shipments', [ShipmentController::class, 'index']);
         Route::post('shipments', [ShipmentController::class, 'store']);
+        Route::get('shipments/{shipment}/attachments', [ShipmentAttachmentController::class, 'index']);
+        Route::post('shipments/{shipment}/attachments', [ShipmentAttachmentController::class, 'store']);
+        Route::patch('shipments/{shipment}/attachments/{attachment}', [ShipmentAttachmentController::class, 'update']);
+        Route::get('shipments/{shipment}/attachments/{attachment}/download', [ShipmentAttachmentController::class, 'download']);
+        Route::delete('shipments/{shipment}/attachments/{attachment}', [ShipmentAttachmentController::class, 'destroy']);
         Route::get('shipments/{shipment}/pdf', [ShipmentController::class, 'pdf']);
         Route::post('shipments/{shipment}/notify-sales-financials', [ShipmentController::class, 'notifySalesFinancials']);
         Route::get('shipments/{shipment}/tracking-updates', [ShipmentTrackingUpdateController::class, 'index']);
@@ -510,6 +519,7 @@ Route::prefix('v1')->group(function () {
         Route::put('pricing/offers/{offer}', [PricingOfferController::class, 'update']);
         Route::post('pricing/offers/{offer}/activate', [PricingOfferController::class, 'activate']);
         Route::post('pricing/offers/{offer}/archive', [PricingOfferController::class, 'archive']);
+        Route::post('pricing/quotes/from-offer/{offer}', [PricingQuoteController::class, 'createFromOffer']);
 
         // Pricing quotes (customer quotations)
         Route::get('pricing/quotes', [PricingQuoteController::class, 'index']);
@@ -518,6 +528,7 @@ Route::prefix('v1')->group(function () {
         Route::put('pricing/quotes/{quote}', [PricingQuoteController::class, 'update']);
         Route::post('pricing/quotes/{quote}/accept', [PricingQuoteController::class, 'accept']);
         Route::post('pricing/quotes/{quote}/reject', [PricingQuoteController::class, 'reject']);
+        Route::get('pricing/quotes/{quote}/pdf', [PricingQuoteController::class, 'downloadPdf']);
 
         // Treasury
         Route::get('treasury/summary', [TreasuryController::class, 'summary']);

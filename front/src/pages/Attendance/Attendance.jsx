@@ -23,6 +23,7 @@ import { listUsers } from '../../api/users'
 import { getSettings } from '../../api/settings'
 import { haversineMeters, wallClockToUtc, formatYmdInTimeZone, durationPartsFromMs } from '../../utils/geoTime'
 import { normalizeEmployeeOption } from '../../utils/entitySelectOptions'
+import { formatDate } from '../../utils/dateUtils'
 import { Container } from '../../components/Container'
 import '../../components/PageHeader/PageHeader.css'
 import { Table } from '../../components/Table'
@@ -68,14 +69,8 @@ function dateLocaleForLang(lang) {
   return undefined
 }
 
-function formatDateOnly(dateStr, lang) {
-  if (!dateStr) return '—'
-  try {
-    const loc = dateLocaleForLang(lang)
-    return new Date(`${dateStr}T12:00:00`).toLocaleDateString(loc, { dateStyle: 'medium' })
-  } catch {
-    return dateStr
-  }
+function formatDateOnly(dateStr) {
+  return formatDate(dateStr)
 }
 
 function excuseStatusLabel(t, status) {

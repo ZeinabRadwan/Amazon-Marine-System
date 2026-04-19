@@ -16,6 +16,8 @@ class PricingOfferItem extends Model
     protected $fillable = [
         'pricing_offer_id',
         'code',
+        'name',
+        'description',
         'price',
         'currency_code',
     ];
