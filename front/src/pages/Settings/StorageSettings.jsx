@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Database, Plus, Trash2, Check, X, Shield, HardDrive, Cloud } from 'lucide-react';
-import api from '../../services/api';
+import api from '../../api/axiosClient';
 
 const StorageSettings = () => {
   const { t } = useTranslation();
@@ -23,8 +23,8 @@ const StorageSettings = () => {
     try {
       setLoading(true);
       const [disksRes, driversRes] = await Promise.all([
-        api.get('/v1/storage/disks/admin'),
-        api.get('/v1/storage/disks')
+        api.get('/storage/disks/admin'),
+        api.get('/storage/disks')
       ]);
       setDisks(disksRes.data.data);
       setAvailableDrivers(driversRes.data.disks);
@@ -43,9 +43,9 @@ const StorageSettings = () => {
     e.preventDefault();
     try {
       if (editingDisk) {
-        await api.put(`/v1/storage/disks/admin/${editingDisk.id}`, formData);
+        await api.put(`/storage/disks/admin/${editingDisk.id}`, formData);
       } else {
-        await api.post('/v1/storage/disks/admin', formData);
+        await api.post('/storage/disks/admin', formData);
       }
       setEditingDisk(null);
       setIsAdding(false);
@@ -58,7 +58,7 @@ const StorageSettings = () => {
   const handleDelete = async (id) => {
     if (!window.confirm(t('confirmDelete'))) return;
     try {
-      await api.delete(`/v1/storage/disks/admin/${id}`);
+      await api.delete(`/storage/disks/admin/${id}`);
       fetchSettings();
     } catch (err) {
       alert(err.response?.data?.message || 'Error deleting disk');
