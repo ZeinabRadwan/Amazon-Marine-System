@@ -1129,6 +1129,7 @@
     "selectedCount": "{{count}} محدد",
     "filterClient": "تصفية حسب العميل",
     "filterSalesRep": "تصفية حسب مندوب المبيعات",
+    "filterShippingLine": "تصفية حسب خط الملاحة",
     "allClients": "كل العملاء",
     "allSalesReps": "كل المندوبين",
     "pdf": "تنزيل PDF",

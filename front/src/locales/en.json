@@ -1129,6 +1129,7 @@
     "selectedCount": "{{count}} selected",
     "filterClient": "Filter by client",
     "filterSalesRep": "Filter by sales rep",
+    "filterShippingLine": "Filter by shipping line",
     "allClients": "All clients",
     "allSalesReps": "All sales reps",
     "pdf": "Download PDF",

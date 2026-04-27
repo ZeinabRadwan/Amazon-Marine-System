@@ -473,20 +473,40 @@ class SDFormController extends Controller
             ->where('status', 'active')
             ->whereNotNull('email')
             ->get();
+        $recipientEmails = $operationsUsers
+            ->pluck('email')
+            ->filter(fn ($email) => is_string($email) && trim($email) !== '')
+            ->values()
+            ->all();
 
         if ($operationsUsers->isEmpty()) {
             return response()->json([
                 'message' => __('No operation users with email found to notify.'),
+                'summary' => [
+                    'recipient_emails' => [],
+                    'successful_recipients' => [],
+                    'failed_recipients' => [],
+                    'successful_sends' => 0,
+                    'failed_sends' => 0,
+                    'total_recipients' => 0,
+                ],
             ], 200);
         }
 
         $sentCount = 0;
+        $successfulRecipients = [];
+        $failedRecipients = [];
         $sendErrors = [];
         foreach ($operationsUsers as $user) {
             try {
                 Mail::to($user->email)->send(new SdFormMail($sdForm, $pdfBinary, $filename));
                 $sentCount++;
+                $successfulRecipients[] = (string) $user->email;
             } catch (\Throwable $e) {
+                $failedRecipients[] = [
+                    'email' => (string) $user->email,
+                    'error' => $e->getMessage(),
+                ];
                 $sendErrors[] = sprintf('%s: %s', (string) $user->email, $e->getMessage());
                 Log::error('Failed sending SD form email to operations recipient', [
                     'sd_form_id' => $sdForm->id,
@@ -516,12 +536,23 @@ class SDFormController extends Controller
             'recipient_count' => $operationsUsers->count(),
             'sent_count' => $sentCount,
             'errors' => $sendErrors,
+            'recipient_emails' => $recipientEmails,
+            'successful_recipients' => $successfulRecipients,
+            'failed_recipients' => $failedRecipients,
         ]);
 
         return response()->json([
             'message' => __('SD form emailed to operations.'),
             'sent_count' => $sentCount,
             'failed_count' => max(0, $operationsUsers->count() - $sentCount),
+            'summary' => [
+                'recipient_emails' => $recipientEmails,
+                'successful_recipients' => $successfulRecipients,
+                'failed_recipients' => $failedRecipients,
+                'successful_sends' => $sentCount,
+                'failed_sends' => max(0, $operationsUsers->count() - $sentCount),
+                'total_recipients' => $operationsUsers->count(),
+            ],
         ]);
     }
 
