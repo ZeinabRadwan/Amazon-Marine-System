@@ -20,7 +20,7 @@ export default function QuoteDetailModal({ isOpen, quote, onClose }) {
   const { t } = useTranslation()
 
   const total = useMemo(() => {
-    return (quote?.items || []).reduce((s, it) => s + (Number(it.amount) || 0), 0)
+    return (quote?.items || []).reduce((s, it) => s + (Number(it.selling_amount ?? it.amount) || 0), 0)
   }, [quote])
 
   if (!isOpen || !quote) return null
@@ -66,7 +66,12 @@ export default function QuoteDetailModal({ isOpen, quote, onClose }) {
                     <div className="font-bold text-gray-900 dark:text-white truncate">{it.name}</div>
                     {it.description && <div className="text-xs text-gray-500 truncate">{it.description}</div>}
                   </div>
-                  <div className="font-extrabold">{money(it.amount, it.currency)}</div>
+                  <div className="text-right">
+                    <div className="font-extrabold">{money(it.selling_amount ?? it.amount, it.currency)}</div>
+                    <div className="text-[11px] text-gray-500">
+                      {t('pricing.costBase', 'Cost Base')}: {money(it.cost_amount, it.currency)}
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>

@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next'
-import { Calendar, Clock, Ship, Truck, Eye, Edit2, CheckCircle, Archive, Loader2 } from 'lucide-react'
+import { Calendar, Clock, Ship, Truck, Eye, Edit2, CheckCircle, Archive, Loader2, FilePlus2 } from 'lucide-react'
 import { useState } from 'react'
 import { useMutateOffer } from '../../../hooks/usePricing'
 
-export default function PricingCard({ offer, onMutate, onEdit, onView }) {
+export default function PricingCard({ offer, onMutate, onEdit, onView, onCreateQuotation }) {
   const { t } = useTranslation()
   const isSea = offer.pricing_type === 'sea'
   const { activate, archive, loading } = useMutateOffer()
@@ -140,6 +140,12 @@ export default function PricingCard({ offer, onMutate, onEdit, onView }) {
             )}
           </div>
           <div className="flex gap-1.5">
+             <button
+               onClick={() => onCreateQuotation?.(offer)}
+               className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-lg border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+             >
+               <FilePlus2 className="h-3 w-3" /> {t('pricing.createQuoteFromRate', 'Create Quote')}
+             </button>
              <button
                onClick={() => onView?.(offer)}
                className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"

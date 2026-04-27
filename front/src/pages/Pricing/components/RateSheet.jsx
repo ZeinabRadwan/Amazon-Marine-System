@@ -5,6 +5,7 @@ import PricingCard from './PricingCard'
 import OfferSkeleton from './OfferSkeleton'
 import { useOffers } from '../../../hooks/usePricing'
 import OfferDetailModal from './OfferDetailModal'
+import CreateQuoteModal from './CreateQuoteModal'
 
 const REGIONS_PODS = {
   'Red Sea': ['Jeddah', 'Port Sudan', 'Aqaba', 'Hodeidah'],
@@ -29,6 +30,8 @@ export default function RateSheet({ refreshKey, onEdit }) {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [detailOffer, setDetailOffer] = useState(null)
+  const [quoteSourceOffer, setQuoteSourceOffer] = useState(null)
+  const [createQuoteOpen, setCreateQuoteOpen] = useState(false)
 
   // Reset page when filters change
   useEffect(() => {
@@ -147,7 +150,17 @@ export default function RateSheet({ refreshKey, onEdit }) {
               Array.from({ length: 6 }).map((_, i) => <OfferSkeleton key={i} />)
             ) : offers?.length > 0 ? (
               offers.map(offer => (
-                <PricingCard key={offer.id} offer={offer} onMutate={refetch} onEdit={onEdit} onView={setDetailOffer} />
+                <PricingCard
+                  key={offer.id}
+                  offer={offer}
+                  onMutate={refetch}
+                  onEdit={onEdit}
+                  onView={setDetailOffer}
+                  onCreateQuotation={(selectedOffer) => {
+                    setQuoteSourceOffer(selectedOffer)
+                    setCreateQuoteOpen(true)
+                  }}
+                />
               ))
             ) : (
               <div className="col-span-full py-16 text-center text-gray-500 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-700">
@@ -184,6 +197,19 @@ export default function RateSheet({ refreshKey, onEdit }) {
         isOpen={!!detailOffer}
         offer={detailOffer}
         onClose={() => setDetailOffer(null)}
+      />
+
+      <CreateQuoteModal
+        isOpen={createQuoteOpen}
+        initialOffer={quoteSourceOffer}
+        onClose={() => {
+          setCreateQuoteOpen(false)
+          setQuoteSourceOffer(null)
+        }}
+        onSuccess={() => {
+          setCreateQuoteOpen(false)
+          setQuoteSourceOffer(null)
+        }}
       />
     </div>
   )

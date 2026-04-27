@@ -53,5 +53,13 @@ class PricingOffer extends Model
     {
         return $this->hasMany(PricingOfferSailingDate::class);
     }
+
+    /**
+     * @return HasMany<PricingOfferSnapshot>
+     */
+    public function snapshots(): HasMany
+    {
+        return $this->hasMany(PricingOfferSnapshot::class, 'pricing_offer_id');
+    }
 }
 

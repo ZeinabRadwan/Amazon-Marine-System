@@ -19,13 +19,20 @@ class PricingQuote extends Model
         'client_id',
         'sales_user_id',
         'pricing_offer_id',
+        'origin_rate_snapshot_id',
+        'quick_mode',
+        'quick_mode_reason',
         'pol',
         'pod',
         'shipping_line',
         'container_type',
+        'container_spec',
         'qty',
         'transit_time',
         'free_time',
+        'free_time_data',
+        'schedule_type',
+        'sailing_weekdays',
         'valid_from',
         'valid_to',
         'notes',
@@ -38,6 +45,10 @@ class PricingQuote extends Model
     protected $casts = [
         'valid_from' => 'date',
         'valid_to' => 'date',
+        'quick_mode' => 'boolean',
+        'container_spec' => 'array',
+        'free_time_data' => 'array',
+        'sailing_weekdays' => 'array',
     ];
 
     /**
@@ -62,6 +73,14 @@ class PricingQuote extends Model
     public function offer(): BelongsTo
     {
         return $this->belongsTo(PricingOffer::class, 'pricing_offer_id');
+    }
+
+    /**
+     * @return BelongsTo<PricingOfferSnapshot, PricingQuote>
+     */
+    public function originRateSnapshot(): BelongsTo
+    {
+        return $this->belongsTo(PricingOfferSnapshot::class, 'origin_rate_snapshot_id');
     }
 
     /**

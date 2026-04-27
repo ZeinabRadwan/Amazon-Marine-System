@@ -274,8 +274,15 @@ class PricingOfferController extends Controller
     protected function transformOffer(PricingOffer $offer): array
     {
         $pricing = [];
+        $pricingItems = [];
         foreach ($offer->items as $item) {
             $pricing[$item->code] = [
+                'price' => (float) $item->price,
+                'currency' => $item->currency_code,
+            ];
+            $pricingItems[] = [
+                'id' => $item->id,
+                'code' => $item->code,
                 'price' => (float) $item->price,
                 'currency' => $item->currency_code,
             ];
@@ -302,6 +309,7 @@ class PricingOfferController extends Controller
                 static fn ($d) => $d?->toDateString()
             )->filter()->values(),
             'pricing' => $pricing,
+            'pricing_items' => $pricingItems,
         ];
     }
 }

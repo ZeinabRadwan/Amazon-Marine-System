@@ -2,8 +2,24 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X, Save, Plus, Trash2, Eye } from 'lucide-react'
 import { useMutateQuote } from '../../../hooks/usePricing'
+import { getStoredToken } from '../../Login'
+import { listClients } from '../../../api/clients'
+import { listUsers } from '../../../api/users'
+import { listOffers } from '../../../api/pricing'
+import '../Pricing.css'
 
 const CONTAINER_TYPES = ['20 Dry', '40 Dry', '40HQ Dry', '20 Reefer', '40 Reefer']
+const PRICE_CODE_OPTIONS = [
+  { code: 'OF', label: 'Ocean Freight' },
+  { code: 'THC', label: 'THC' },
+  { code: 'BL', label: 'B/L Fee' },
+  { code: 'TELEX', label: 'Telex Release' },
+  { code: 'ISPS', label: 'ISPS' },
+  { code: 'PTI', label: 'PTI' },
+  { code: 'POWER', label: 'Power' },
+  { code: 'INLAND', label: 'Inland Transport' },
+  { code: 'OTHER', label: 'Other Charges' },
+]
 
 function moneySymbol(currency) {
   if (currency === 'EUR') return '€'
@@ -15,7 +31,42 @@ function calcTotal(items) {
   return (items || []).reduce((sum, it) => sum + (Number(it.amount) || 0), 0)
 }
 
-export default function CreateQuoteModal({ isOpen, onClose, onSuccess }) {
+function mapOfferPricingToQuoteRows(offer) {
+  const pricing = offer?.pricing || {}
+  const rows = []
+  Object.entries(pricing).forEach(([sourceCode, item]) => {
+    const lower = String(sourceCode || '').toLowerCase()
+    let normalizedCode = 'OTHER'
+    if (lower.includes('of')) normalizedCode = 'OF'
+    else if (lower.includes('thc')) normalizedCode = 'THC'
+    else if (lower.includes('power')) normalizedCode = 'POWER'
+    else if (lower.includes('pti')) normalizedCode = 'PTI'
+    else if (lower.includes('bl')) normalizedCode = 'BL'
+    else if (lower.includes('telex')) normalizedCode = 'TELEX'
+    else if (lower.includes('isps')) normalizedCode = 'ISPS'
+    else if (lower.includes('inland')) normalizedCode = 'INLAND'
+    const label = PRICE_CODE_OPTIONS.find((x) => x.code === normalizedCode)?.label || 'Other Charges'
+    rows.push({
+      code: normalizedCode,
+      name: label,
+      description: '',
+      amount: item?.price ?? '',
+      currency: item?.currency || 'USD',
+      cost_amount: item?.price ?? 0,
+    })
+  })
+  return rows
+}
+
+function inferContainerFromOffer(offer) {
+  const notes = String(offer?.notes || '')
+  const specMatch = notes.match(/Container Specification:\s*([^\n]+)/i)
+  if (specMatch?.[1]) return specMatch[1].trim()
+  if (offer?.pricing?.of40rf || offer?.pricing?.thcRf || offer?.pricing?.powerDay) return '40 Reefer'
+  return '40 Dry'
+}
+
+export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOffer = null }) {
   const { t } = useTranslation()
   const { create, loading, error } = useMutateQuote()
 
@@ -39,22 +90,99 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess }) {
       { code: 'thc', name: 'THC', description: '', amount: '', currency: 'USD' },
     ],
   })
+  const [inlandEnabled, setInlandEnabled] = useState(false)
+  const [inlandCost, setInlandCost] = useState('')
+  const [inlandSelling, setInlandSelling] = useState('')
+  const [inlandCurrency, setInlandCurrency] = useState('EGP')
+  const [clients, setClients] = useState([])
+  const [clientQuery, setClientQuery] = useState('')
+  const [salesUsers, setSalesUsers] = useState([])
+  const [offers, setOffers] = useState([])
+  const [quickMode, setQuickMode] = useState(false)
+  const [quickModeReason, setQuickModeReason] = useState('')
 
   useEffect(() => {
     if (!isOpen) return
-    setForm((p) => ({ ...p }))
+    if (!initialOffer) {
+      setForm((p) => ({ ...p }))
+      return
+    }
+
+    const prefilledItems = mapOfferPricingToQuoteRows(initialOffer)
+    setForm((prev) => ({
+      ...prev,
+      pricing_offer_id: String(initialOffer.id || ''),
+      pol: initialOffer.pol || '',
+      pod: initialOffer.pod || '',
+      shipping_line: initialOffer.shipping_line || '',
+      container_type: inferContainerFromOffer(initialOffer),
+      transit_time: initialOffer.transit_time || '',
+      free_time: initialOffer.dnd || '',
+      valid_to: initialOffer.valid_to || '',
+      sailing_dates: initialOffer.sailing_dates || [],
+      notes: initialOffer.notes || '',
+      items: prefilledItems.length ? prefilledItems : prev.items,
+    }))
+  }, [isOpen, initialOffer])
+
+  useEffect(() => {
+    if (!isOpen) return
+    const token = getStoredToken()
+    if (!token) return
+
+    listUsers(token, { role: 'sales', per_page: 500 })
+      .then((res) => {
+        const rows = Array.isArray(res?.data) ? res.data : []
+        setSalesUsers(rows.filter((u) => (u?.primary_role || '').toLowerCase() === 'sales' || (u?.roles || []).includes('sales')))
+      })
+      .catch(() => setSalesUsers([]))
   }, [isOpen])
+
+  useEffect(() => {
+    if (!isOpen) return
+    const token = getStoredToken()
+    if (!token) return
+    listClients(token, { q: clientQuery, per_page: 50, page: 1 })
+      .then((res) => setClients(Array.isArray(res?.data) ? res.data : []))
+      .catch(() => setClients([]))
+  }, [isOpen, clientQuery])
+
+  useEffect(() => {
+    if (!isOpen) return
+    const token = getStoredToken()
+    if (!token) return
+    listOffers(token, {
+      pricing_type: 'sea',
+      pod: form.pod || undefined,
+      q: form.pol || undefined,
+      per_page: 200,
+      page: 1,
+    })
+      .then((res) => {
+        const rows = Array.isArray(res?.data) ? res.data : []
+        const wantedContainer = (form.container_type || '').toLowerCase()
+        const filtered = rows.filter((offer) => {
+          if (form.pol && String(offer?.pol || '').toLowerCase() !== String(form.pol || '').toLowerCase()) return false
+          if (!wantedContainer) return true
+          return inferContainerFromOffer(offer).toLowerCase() === wantedContainer
+        })
+        setOffers(filtered)
+      })
+      .catch(() => setOffers([]))
+  }, [isOpen, form.pol, form.pod, form.container_type])
 
   const isReefer = useMemo(() => (form.container_type || '').toLowerCase().includes('reefer'), [form.container_type])
 
   const total = useMemo(() => calcTotal(form.items), [form.items])
+  const inlandProfit = useMemo(() => (Number(inlandSelling) || 0) - (Number(inlandCost) || 0), [inlandSelling, inlandCost])
 
   const setField = (k, v) => setForm((p) => ({ ...p, [k]: v }))
+  const selectedClient = useMemo(() => clients.find((c) => String(c.id) === String(form.client_id)) || null, [clients, form.client_id])
 
   const addItem = () => {
     setForm((p) => ({
       ...p,
-      items: [...(p.items || []), { code: '', name: '', description: '', amount: '', currency: 'USD' }],
+      items: [...(p.items || []), { code: 'OTHER', name: 'Other Charges', description: '', amount: '', currency: 'USD' }],
     }))
   }
 
@@ -77,22 +205,44 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault()
 
+    if (!quickMode && !form.pricing_offer_id) return
+    if (quickMode && !quickModeReason.trim()) return
+
     const payload = {
       ...form,
       client_id: form.client_id ? Number(form.client_id) : null,
       sales_user_id: form.sales_user_id ? Number(form.sales_user_id) : null,
       pricing_offer_id: form.pricing_offer_id ? Number(form.pricing_offer_id) : null,
+      quick_mode: quickMode,
+      quick_mode_reason: quickMode ? quickModeReason.trim() : null,
       qty: form.qty ? Number(form.qty) : null,
       sailing_dates: (form.sailing_dates || []).filter(Boolean),
+      schedule_type: 'fixed',
+      container_spec: {
+        type: String(form.container_type || '').toLowerCase().includes('reefer') ? 'reefer' : 'dry',
+        size: String(form.container_type || '').includes('20') ? '20' : '40',
+        height: String(form.container_type || '').toLowerCase().includes('hq') ? 'hq' : 'standard',
+      },
+      free_time_data: null,
       items: (form.items || [])
-        .filter((it) => it.name && String(it.name).trim().length > 0)
+        .filter((it) => it.code && PRICE_CODE_OPTIONS.some((x) => x.code === it.code))
         .map((it) => ({
-          code: it.code || null,
-          name: it.name,
+          code: it.code,
+          name: PRICE_CODE_OPTIONS.find((x) => x.code === it.code)?.label || it.name,
           description: it.description || null,
           amount: Number(it.amount) || 0,
           currency: it.currency || 'USD',
         })),
+    }
+
+    if (inlandEnabled && (Number(inlandSelling) || 0) > 0) {
+      payload.items.push({
+        code: 'inland_transport',
+        name: 'Inland Transport',
+        description: inlandCost ? `Cost base: ${inlandCost} ${inlandCurrency}` : null,
+        amount: Number(inlandSelling) || 0,
+        currency: inlandCurrency || 'EGP',
+      })
     }
 
     try {
@@ -116,7 +266,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess }) {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="pricing-quote-modal__body flex-1 overflow-y-auto p-6 space-y-6">
           {error && (
             <div className="p-4 text-sm text-red-700 bg-red-50 rounded-lg dark:bg-red-900/40 dark:text-red-300">
               {error}
@@ -124,28 +274,107 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess }) {
           )}
 
           <form id="quoteForm" onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="pricing-quote-modal__card grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-1">
-                <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.clientId', 'Client ID')}</label>
-                <input value={form.client_id} onChange={(e) => setField('client_id', e.target.value)} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none" placeholder="e.g. 1" />
+                <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.client', 'Client')}</label>
+                <input
+                  value={clientQuery}
+                  onChange={(e) => setClientQuery(e.target.value)}
+                  className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none"
+                  placeholder={t('pricing.searchClient', 'Search client...')}
+                />
+                <select
+                  value={form.client_id}
+                  onChange={(e) => setField('client_id', e.target.value)}
+                  className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none"
+                >
+                  <option value="">{t('common.select', 'Select')}</option>
+                  {clients.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {(c.name || c.company_name) + (c.company_name && c.name ? ` - ${c.company_name}` : '')}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.salesUserId', 'Sales User ID')}</label>
-                <input value={form.sales_user_id} onChange={(e) => setField('sales_user_id', e.target.value)} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none" placeholder="e.g. 1" />
+                <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.salesUser', 'Sales User')}</label>
+                <select
+                  value={form.sales_user_id}
+                  onChange={(e) => setField('sales_user_id', e.target.value)}
+                  className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none"
+                >
+                  <option value="">{t('common.select', 'Select')}</option>
+                  {salesUsers.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.offerId', 'Offer ID (optional)')}</label>
-                <input value={form.pricing_offer_id} onChange={(e) => setField('pricing_offer_id', e.target.value)} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none" placeholder="e.g. 12" />
+                <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.offer', 'Pricing Offer')}</label>
+                <select
+                  value={form.pricing_offer_id}
+                  disabled={quickMode}
+                  onChange={(e) => {
+                    const selectedId = e.target.value
+                    setField('pricing_offer_id', selectedId)
+                    const offer = offers.find((o) => String(o.id) === String(selectedId))
+                    if (!offer) return
+                    const prefilledItems = mapOfferPricingToQuoteRows(offer)
+                    setForm((prev) => ({
+                      ...prev,
+                      pricing_offer_id: selectedId,
+                      pol: offer.pol || prev.pol,
+                      pod: offer.pod || prev.pod,
+                      shipping_line: offer.shipping_line || prev.shipping_line,
+                      container_type: inferContainerFromOffer(offer),
+                      transit_time: offer.transit_time || prev.transit_time,
+                      free_time: offer.dnd || prev.free_time,
+                      valid_to: offer.valid_to || prev.valid_to,
+                      sailing_dates: offer.sailing_dates || prev.sailing_dates,
+                      notes: offer.notes || prev.notes,
+                      items: prefilledItems.length ? prefilledItems : prev.items,
+                    }))
+                  }}
+                  className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none"
+                >
+                  <option value="">{t('common.select', 'Select')}</option>
+                  {offers.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.pol} → {o.pod} ({inferContainerFromOffer(o)})
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
+            <div className="pricing-quote-modal__card grid grid-cols-1 md:grid-cols-2 gap-4">
+              <label className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                <input type="checkbox" checked={quickMode} onChange={(e) => setQuickMode(e.target.checked)} />
+                {t('pricing.quickModeFallback', 'Quick mode (fallback only when no valid rate exists)')}
+              </label>
+              {quickMode ? (
+                <input
+                  value={quickModeReason}
+                  onChange={(e) => setQuickModeReason(e.target.value)}
+                  className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-amber-300 dark:border-amber-700 rounded-xl outline-none"
+                  placeholder={t('pricing.quickModeReason', 'Reason for quick mode')}
+                />
+              ) : <div />}
+            </div>
+            {selectedClient ? (
+              <div className="pricing-quote-modal__hint text-xs text-gray-500 dark:text-gray-400">
+                {t('pricing.selectedClient', 'Selected client')}: {selectedClient.name || selectedClient.company_name}
+              </div>
+            ) : null}
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="pricing-quote-modal__card grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-1">
-                <label className="text-sm font-bold text-gray-700 dark:text-gray-300">POL</label>
+                <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.pol', 'POL')}</label>
                 <input value={form.pol} onChange={(e) => setField('pol', e.target.value)} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none" />
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-bold text-gray-700 dark:text-gray-300">POD</label>
+                <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.podShort', 'POD')}</label>
                 <input value={form.pod} onChange={(e) => setField('pod', e.target.value)} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none" />
               </div>
               <div className="space-y-1">
@@ -157,25 +386,25 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess }) {
                 <select value={form.container_type} onChange={(e) => setField('container_type', e.target.value)} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none">
                   {CONTAINER_TYPES.map((c) => (
                     <option key={c} value={c}>
-                      {c}
+                      {t(`pricing.containerSpec.${c}`, c)}
                     </option>
                   ))}
                 </select>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="pricing-quote-modal__card grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-1">
                 <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.qty', 'Qty')}</label>
                 <input type="number" value={form.qty} onChange={(e) => setField('qty', e.target.value)} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none" min={1} />
               </div>
               <div className="space-y-1">
                 <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.transitTime', 'Transit time')}</label>
-                <input value={form.transit_time} onChange={(e) => setField('transit_time', e.target.value)} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none" placeholder="e.g. 5 days" />
+                <input value={form.transit_time} onChange={(e) => setField('transit_time', e.target.value)} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none" placeholder={t('pricing.transitTimePlaceholder', 'e.g. 5 days')} />
               </div>
               <div className="space-y-1">
                 <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.freeTime', 'Free time')}</label>
-                <input value={form.free_time} onChange={(e) => setField('free_time', e.target.value)} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none" placeholder="e.g. 7 days" />
+                <input value={form.free_time} onChange={(e) => setField('free_time', e.target.value)} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none" placeholder={t('pricing.freeTimePlaceholder', 'e.g. 7 days')} />
               </div>
               <div className="space-y-1">
                 <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.validTo', 'Valid to')}</label>
@@ -183,7 +412,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess }) {
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="pricing-quote-modal__card space-y-2">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold uppercase tracking-widest text-gray-700 dark:text-gray-200">
                   {t('pricing.items', 'Items')}
@@ -198,11 +427,23 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess }) {
                   const hiddenForReefer = !isReefer && (it.code === 'power' || it.code === 'pti')
                   if (hiddenForReefer) return null
                   return (
-                    <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-2 items-center">
-                      <input className="md:col-span-2 px-3 py-2 border rounded-lg text-sm bg-white dark:bg-gray-900" placeholder="code" value={it.code} onChange={(e) => updateItem(idx, { code: e.target.value })} />
-                      <input className="md:col-span-3 px-3 py-2 border rounded-lg text-sm bg-white dark:bg-gray-900" placeholder="name" value={it.name} onChange={(e) => updateItem(idx, { name: e.target.value })} />
-                      <input className="md:col-span-4 px-3 py-2 border rounded-lg text-sm bg-white dark:bg-gray-900" placeholder="description" value={it.description} onChange={(e) => updateItem(idx, { description: e.target.value })} />
-                      <input type="number" className="md:col-span-2 px-3 py-2 border rounded-lg text-sm bg-white dark:bg-gray-900" placeholder="amount" value={it.amount} onChange={(e) => updateItem(idx, { amount: e.target.value })} />
+                    <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-center rounded-xl border border-gray-100 dark:border-gray-800/90 bg-gray-50/55 dark:bg-gray-900/22 p-2.5">
+                      <select
+                        className="md:col-span-2 px-3 py-2 border rounded-lg text-sm bg-white dark:bg-gray-900"
+                        value={it.code}
+                        onChange={(e) => {
+                          const code = e.target.value
+                          const label = PRICE_CODE_OPTIONS.find((x) => x.code === code)?.label || ''
+                          updateItem(idx, { code, name: label })
+                        }}
+                      >
+                        {PRICE_CODE_OPTIONS.map((opt) => (
+                          <option key={opt.code} value={opt.code}>{opt.code}</option>
+                        ))}
+                      </select>
+                      <input className="md:col-span-3 px-3 py-2 border rounded-lg text-sm bg-white dark:bg-gray-900" placeholder={t('pricing.itemName', 'Item name')} value={it.name} readOnly />
+                      <input className="md:col-span-4 px-3 py-2 border rounded-lg text-sm bg-white dark:bg-gray-900" placeholder={t('pricing.description', 'Description')} value={it.description} onChange={(e) => updateItem(idx, { description: e.target.value })} />
+                      <input type="number" className="md:col-span-2 px-3 py-2 border rounded-lg text-sm bg-white dark:bg-gray-900" placeholder={t('pricing.amount', 'Amount')} value={it.amount} onChange={(e) => updateItem(idx, { amount: e.target.value })} />
                       <select className="md:col-span-1 px-2 py-2 border rounded-lg text-sm bg-white dark:bg-gray-900" value={it.currency} onChange={(e) => updateItem(idx, { currency: e.target.value })}>
                         <option value="USD">USD</option>
                         <option value="EUR">EUR</option>
@@ -211,13 +452,66 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess }) {
                       <button type="button" onClick={() => removeItem(idx)} className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 md:col-span-12 md:justify-self-end w-fit">
                         <Trash2 className="h-4 w-4 text-gray-500" />
                       </button>
+                      {typeof it.cost_amount !== 'undefined' ? (
+                        <div className="md:col-span-12 text-xs text-gray-500 dark:text-gray-400">
+                          {t('pricing.costBase', 'Cost Base')}: {moneySymbol(it.currency)} {Number(it.cost_amount || 0).toLocaleString('en-US')}
+                          {' • '}
+                          {t('pricing.profit', 'Profit')}: {moneySymbol(it.currency)} {(Number(it.amount || 0) - Number(it.cost_amount || 0)).toLocaleString('en-US')}
+                        </div>
+                      ) : null}
                     </div>
                   )
                 })}
               </div>
             </div>
 
-            <div className="flex items-center justify-between rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30 px-5 py-3">
+            <div className="pricing-quote-modal__card rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-bold uppercase tracking-widest text-gray-700 dark:text-gray-200">
+                  {t('pricing.inlandTransport', 'Inland Transport')}
+                </h3>
+                <label className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  <input type="checkbox" checked={inlandEnabled} onChange={(e) => setInlandEnabled(e.target.checked)} />
+                  {t('pricing.includeInland', 'Include inland section')}
+                </label>
+              </div>
+              {inlandEnabled ? (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                  <input
+                    type="number"
+                    className="px-3 py-2 border rounded-lg text-sm bg-white dark:bg-gray-900"
+                    placeholder={t('pricing.inlandCost', 'Cost')}
+                    value={inlandCost}
+                    onChange={(e) => setInlandCost(e.target.value)}
+                  />
+                  <input
+                    type="number"
+                    className="px-3 py-2 border rounded-lg text-sm bg-white dark:bg-gray-900"
+                    placeholder={t('pricing.inlandSelling', 'Selling')}
+                    value={inlandSelling}
+                    onChange={(e) => setInlandSelling(e.target.value)}
+                  />
+                  <select
+                    className="px-3 py-2 border rounded-lg text-sm bg-white dark:bg-gray-900"
+                    value={inlandCurrency}
+                    onChange={(e) => setInlandCurrency(e.target.value)}
+                  >
+                    <option value="EGP">EGP</option>
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                  </select>
+                  <div className="px-3 py-2 rounded-lg bg-blue-50/70 dark:bg-blue-900/20 text-sm font-semibold text-blue-700 dark:text-blue-300">
+                    {t('pricing.profit', 'Profit')}: {moneySymbol(inlandCurrency)} {inlandProfit.toLocaleString('en-US')}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  {t('pricing.inlandOptionalHint', 'Optional: enable to add inland transport as part of this quotation workflow.')}
+                </div>
+              )}
+            </div>
+
+            <div className="pricing-quote-modal__total flex items-center justify-between rounded-xl border border-blue-100 dark:border-blue-900/40 bg-gradient-to-r from-blue-50/65 to-indigo-50/45 dark:from-blue-950/35 dark:to-indigo-950/25 px-5 py-3">
               <div className="text-sm font-bold text-gray-600 dark:text-gray-300">{t('pricing.total', 'Total')}</div>
               <div className="text-lg font-extrabold text-gray-900 dark:text-white">
                 {moneySymbol('USD')} {total.toLocaleString('en-US')}
@@ -231,7 +525,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess }) {
           </form>
         </div>
 
-        <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3">
+        <div className="pricing-quote-modal__actions px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3">
           <button type="button" onClick={onClose} className="px-5 py-2.5 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-colors">
             {t('common.cancel', 'Cancel')}
           </button>
