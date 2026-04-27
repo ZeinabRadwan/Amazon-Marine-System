@@ -2,43 +2,65 @@
   animation: fadeIn 0.4s ease-out;
 }
 
-/* Main section tabs: full width, equal flex segments (see Tabs.css flex: 1 on each tab) */
-.pricing-main-tabs {
-  width: 100%;
-  margin-bottom: 1.25rem;
+/* Ocean / Inland under Price Sheets: compact sub-tabs sit above filters (Tabs handles layout) */
+.rate-sheet-subtabs {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
 }
 
-/* Section tabs (Ocean / Inland): nested under page tabs — accent rail + inset */
-.pricing-section-tabs-wrap {
-  margin-top: 0.25rem;
-  padding-inline-start: 1rem;
-  border-inline-start: 3px solid rgba(59, 130, 246, 0.28);
-  margin-inline-start: 0.125rem;
+/* Price sheet list: grid vs table view toggle */
+.pricing-view-toggle {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--form-divider, #e5e7eb);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--form-bg, #fff);
 }
 
-[data-theme='dark'] .pricing-section-tabs-wrap {
-  border-inline-start-color: rgba(96, 165, 250, 0.35);
+[data-theme='dark'] .pricing-view-toggle {
+  border-color: var(--form-divider);
+  background: var(--form-bg);
 }
 
-.pricing-main-tabs .pricing-tabs-wrap {
-  width: 100%;
+.pricing-view-toggle__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 8px 10px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--form-text, #374151);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
-.pricing-main-tabs .tabs-pill {
-  width: 100%;
+.pricing-view-toggle__btn + .pricing-view-toggle__btn {
+  border-inline-start: 1px solid var(--form-divider, #e5e7eb);
 }
 
-/* Nested tabs under Price Sheets: same full-width / equal split behavior */
-.rate-sheet-nested-tabs {
-  width: 100%;
+.pricing-view-toggle__btn[aria-pressed='true'] {
+  background: rgba(24, 94, 224, 0.1);
+  color: var(--form-primary, #0039c5);
 }
 
-.rate-sheet-nested-tabs .pricing-tabs-wrap {
-  width: 100%;
+[data-theme='dark'] .pricing-view-toggle__btn[aria-pressed='true'] {
+  background: rgba(96, 165, 250, 0.14);
+  color: #93c5fd;
 }
 
-.rate-sheet-nested-tabs .tabs-pill {
-  width: 100%;
+.pricing-view-toggle__btn:hover:not([aria-pressed='true']) {
+  background: var(--sidebar-hover, rgba(0, 0, 0, 0.05));
+}
+
+[data-theme='dark'] .pricing-view-toggle__btn:hover:not([aria-pressed='true']) {
+  background: rgba(255, 255, 255, 0.06);
 }
 
 @keyframes fadeIn {
@@ -160,4 +182,84 @@
 [data-theme='dark'] .pricing-quote-modal__actions {
   border-top-color: rgba(148, 163, 184, 0.22);
   background: linear-gradient(180deg, rgba(17, 24, 39, 0.82) 0%, rgba(15, 23, 42, 0.76) 100%);
+}
+
+/* Money totals: slightly larger than surrounding table/summary text; use with formatLocaleMoney (en-US / Latin digits) */
+.pricing-money-total {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Segmented icon actions (table / card footers) */
+.icon-action-btn-group {
+  isolation: isolate;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px 0 rgb(15 23 42 / 0.06);
+}
+
+[data-theme='dark'] .icon-action-btn-group {
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.35);
+}
+
+.pricing-rates-table tbody tr.pricing-rates-table__row {
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pricing-rates-table tbody tr.pricing-rates-table__row:hover {
+  background-color: rgba(59, 130, 246, 0.07);
+  box-shadow: inset 0 1px 0 0 rgba(59, 130, 246, 0.12);
+}
+
+[data-theme='dark'] .pricing-rates-table tbody tr.pricing-rates-table__row:hover {
+  background-color: rgba(96, 165, 250, 0.1);
+  box-shadow: inset 0 1px 0 0 rgba(96, 165, 250, 0.15);
+}
+
+.pricing-table-badge {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 0.15rem 0.55rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.3;
+  vertical-align: middle;
+}
+
+.pricing-table-badge--carrier {
+  background: rgba(14, 165, 233, 0.14);
+  color: #0369a1;
+  border: 1px solid rgba(14, 165, 233, 0.35);
+}
+
+[data-theme='dark'] .pricing-table-badge--carrier {
+  background: rgba(34, 211, 238, 0.12);
+  color: #a5f3fc;
+  border-color: rgba(34, 211, 238, 0.35);
+}
+
+.pricing-table-badge--muted {
+  background: rgba(100, 116, 139, 0.12);
+  color: #475569;
+  border: 1px solid rgba(100, 116, 139, 0.22);
+}
+
+[data-theme='dark'] .pricing-table-badge--muted {
+  background: rgba(148, 163, 184, 0.12);
+  color: #e2e8f0;
+  border-color: rgba(148, 163, 184, 0.25);
+}
+
+.pricing-table-badge--validity {
+  background: rgba(34, 197, 94, 0.12);
+  color: #15803d;
+  border: 1px solid rgba(34, 197, 94, 0.35);
+}
+
+[data-theme='dark'] .pricing-table-badge--validity {
+  background: rgba(34, 197, 94, 0.14);
+  color: #86efac;
+  border-color: rgba(34, 197, 94, 0.35);
 }

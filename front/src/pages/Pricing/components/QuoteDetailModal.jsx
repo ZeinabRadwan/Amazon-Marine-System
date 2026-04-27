@@ -110,10 +110,10 @@ export default function QuoteDetailModal({ isOpen, quote, onClose }) {
                     {it.description && <div className="text-xs text-gray-500 truncate">{it.description}</div>}
                   </div>
                   <div className="text-right">
-                    <div className="font-extrabold">
+                    <div className="text-sm font-bold tabular-nums text-gray-900 dark:text-white">
                       {formatLocaleMoney(it.selling_amount ?? it.amount, it.currency, i18n.language)}
                     </div>
-                    <div className="text-[11px] text-gray-500">
+                    <div className="text-[11px] text-gray-500 tabular-nums">
                       {t('pricing.costBase')}: {formatLocaleMoney(it.cost_amount, it.currency, i18n.language)}
                     </div>
                   </div>

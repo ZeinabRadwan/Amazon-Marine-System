@@ -17,7 +17,7 @@ import { createPortal } from 'react-dom'
  *   - items: Array<{ id?, label, onClick, icon?, disabled?, selected? }>
  *   - align?: 'start' | 'end' – panel alignment (default 'end')
  *   - className?: string – wrapper class
- *   - portaled?: boolean – render menu in document.body with fixed position (use inside overflow:hidden / scroll containers)
+ *   - portaled?: boolean – render menu in document.body with fixed position (default true: avoids clipping in overflow-x-auto tables/cards)
  *
  * Design: rounded-lg, subtle shadow, hover transitions, light/dark, accessible.
  */
@@ -26,7 +26,7 @@ export default function DropdownMenu({
   items = [],
   align = 'end',
   className = '',
-  portaled = false,
+  portaled = true,
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const [focusedIndex, setFocusedIndex] = useState(-1)
@@ -61,9 +61,13 @@ export default function DropdownMenu({
       position: 'fixed',
       top,
       left,
-      zIndex: 10050,
+      /* Above app modals (e.g. z-[11000]) and headers; below native tooltips */
+      zIndex: 20000,
       transform: align === 'end' ? 'translateX(-100%)' : 'none',
       minWidth: 'min(100vw - 16px, 220px)',
+      maxHeight: 'min(60vh, 320px)',
+      overflowY: 'auto',
+      boxShadow: '0 10px 40px rgba(0,0,0,0.12)',
     })
   }, [portaled, align, items.length])
 
@@ -175,7 +179,7 @@ export default function DropdownMenu({
       ref={menuRef}
       role="menu"
       aria-orientation="vertical"
-      style={portaled ? fixedStyle ?? { position: 'fixed', left: -9999, top: 0, zIndex: 10050 } : undefined}
+      style={portaled ? fixedStyle ?? { position: 'fixed', left: -9999, top: 0, zIndex: 20000 } : undefined}
       className={menuClassName}
     >
       {items.map((item, index) => {
@@ -213,10 +217,17 @@ export default function DropdownMenu({
     </div>
   )
 
+  const portalTarget = typeof document !== 'undefined' ? document.body : null
+
   return (
     <div ref={wrapperRef} className={`relative inline-block ${className}`.trim()}>
       <div className="inline-flex">{triggerNode}</div>
-      {isOpen && (portaled ? createPortal(menuBody, document.body) : menuBody)}
+      {isOpen &&
+        (portaled && portalTarget
+          ? createPortal(menuBody, portalTarget)
+          : !portaled
+            ? menuBody
+            : null)}
     </div>
   )
 }

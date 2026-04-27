@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { useDebouncedValue } from '../../../hooks/useDebouncedValue'
 import { useTranslation } from 'react-i18next'
 import {
-  Search,
   Eye,
   MoreHorizontal,
   Download,
@@ -14,7 +13,6 @@ import {
   FileSpreadsheet,
   Zap,
 } from 'lucide-react'
-import '../../../components/PageHeader/PageHeader.css'
 import Table from '../../../components/Table/Table'
 import { DropdownMenu } from '../../../components/DropdownMenu'
 import { useQuotes, useMutateQuote } from '../../../hooks/usePricing'
@@ -24,8 +22,9 @@ import QuoteDetailModal from './QuoteDetailModal'
 import { formatDate, formatLocaleMoney, sortCurrencyCodes, sumAmountsByCurrencyFromItems } from '../../../utils/dateUtils'
 import { getStoredToken } from '../../Login'
 import { downloadQuotePdf } from '../../../api/pricing'
-import ListPageToolbar from '../../../components/ListPageToolbar'
+import ClientsFilterToolbar from '../../../components/ClientsFilterToolbar'
 import ListingPaginationFooter from '../../../components/ListingPaginationFooter'
+import '../Pricing.css'
 
 export default function QuotationTable({ refreshKey }) {
   const { t, i18n } = useTranslation()
@@ -160,7 +159,12 @@ export default function QuotationTable({ refreshKey }) {
     {
       key: 'container_type',
       label: t('pricing.containerType'),
-      render: (val) => val || t('common.dash'),
+      render: (val) =>
+        val ? (
+          <span className="pricing-table-badge pricing-table-badge--muted">{val}</span>
+        ) : (
+          t('common.dash')
+        ),
     },
     {
       key: 'price',
@@ -175,12 +179,14 @@ export default function QuotationTable({ refreshKey }) {
               : sumAmountsByCurrencyFromItems(row.items)
         const keys = sortCurrencyCodes(Object.keys(map).filter((c) => Math.abs(Number(map[c]) || 0) > 1e-9))
         if (!keys.length) {
-          return <span className="font-bold text-gray-900 dark:text-white">{formatLocaleMoney(0, 'USD', i18n.language)}</span>
+          return (
+            <span className="pricing-money-total text-gray-900 dark:text-white">{formatLocaleMoney(0, 'USD', i18n.language)}</span>
+          )
         }
         return (
           <div className="flex flex-col gap-0.5 items-end">
             {keys.map((cur) => (
-              <span key={cur} className="font-bold text-gray-900 dark:text-white tabular-nums">
+              <span key={cur} className="pricing-money-total text-gray-900 dark:text-white">
                 {formatLocaleMoney(map[cur], cur, i18n.language)}
               </span>
             ))}
@@ -207,10 +213,16 @@ export default function QuotationTable({ refreshKey }) {
       render: (_, row) => (
         <div className="flex justify-end">
           <DropdownMenu
+            portaled
             align="end"
             trigger={
-              <button className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                <MoreHorizontal className="h-4 w-4 text-gray-400" />
+              <button
+                type="button"
+                className="clients-filters__btn-icon h-8 w-8 min-w-0 min-h-0 border-gray-200 dark:border-gray-600"
+                aria-label={t('pricing.rowActions', 'Row actions')}
+                title={t('pricing.rowActions', 'Row actions')}
+              >
+                <MoreHorizontal className="clients-filters__btn-icon-svg" aria-hidden />
               </button>
             }
             items={rowMenuItems(row)}
@@ -242,60 +254,62 @@ export default function QuotationTable({ refreshKey }) {
 
   return (
     <div className="quotation-table space-y-4">
-      <ListPageToolbar
+      <ClientsFilterToolbar
         className="mb-6"
-        heading={t('pricing.quotationsSearchLabel', 'Search')}
-        left={
-          <div className="w-full min-w-0 max-w-xl">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" aria-hidden />
-              <input
-                type="search"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                aria-label={t('pricing.searchQuotes', 'Search by client or ID...')}
-                placeholder={t('pricing.searchQuotes', 'Search by client or ID...')}
-                className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                autoComplete="off"
-              />
-            </div>
-          </div>
-        }
-        right={
+        language={i18n.language}
+        search={{
+          value: search,
+          onChange: setSearch,
+          placeholder: t('pricing.searchQuotes', 'Search by client or ID...'),
+          ariaLabel: t('pricing.searchQuotes', 'Search by client or ID...'),
+        }}
+        filters={null}
+        onClear={() => setSearch('')}
+        endActions={
           <>
-            <button
-              type="button"
-              className="clients-filters__btn-icon"
-              onClick={onExportPdf}
-              aria-label={t('common.exportPdf', 'Export to PDF')}
-              title={t('common.exportPdf', 'Export to PDF')}
-            >
-              <Printer className="clients-filters__btn-icon-svg" aria-hidden />
-            </button>
-            <button
-              type="button"
-              className="clients-filters__btn-icon clients-filters__btn-icon--export"
-              onClick={onExportExcel}
-              aria-label={t('common.exportExcel', 'Export to Excel')}
-              title={t('common.exportExcel', 'Export to Excel')}
-            >
-              <FileSpreadsheet className="clients-filters__btn-icon-svg" aria-hidden />
-            </button>
+            <div className="clients-filters-toolbar__icon-cluster">
+              <button
+                type="button"
+                className="clients-filters__btn-icon"
+                onClick={onExportPdf}
+                aria-label={t('common.exportPdf', 'Export to PDF')}
+                title={t('common.exportPdf', 'Export to PDF')}
+              >
+                <Printer className="clients-filters__btn-icon-svg" aria-hidden />
+              </button>
+              <button
+                type="button"
+                className="clients-filters__btn-icon clients-filters__btn-icon--export"
+                onClick={onExportExcel}
+                aria-label={t('common.exportExcel', 'Export to Excel')}
+                title={t('common.exportExcel', 'Export to Excel')}
+              >
+                <FileSpreadsheet className="clients-filters__btn-icon-svg" aria-hidden />
+              </button>
+            </div>
             {!isPricingSalesViewOnly ? (
-              <>
-                <button type="button" className="page-header__btn page-header__btn--primary" onClick={openCreateQuotation}>
-                  <Plus className="h-4 w-4" />
-                  {t('pricing.createQuotation', 'Create Quotation')}
-                </button>
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-bold rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                  onClick={openQuickQuotation}
-                >
-                  <Zap className="h-4 w-4" />
-                  {t('pricing.quickQuotationMode', 'Quick Quotation Mode')}
-                </button>
-              </>
+              <div className="clients-filters__actions">
+                <div className="clients-filters-toolbar__icon-cluster">
+                  <button
+                    type="button"
+                    className="clients-filters__btn-icon clients-filters__btn-icon--primary"
+                    onClick={openCreateQuotation}
+                    aria-label={t('pricing.createQuotation', 'Create Quotation')}
+                    title={t('pricing.createQuotation', 'Create Quotation')}
+                  >
+                    <Plus className="clients-filters__btn-icon-svg" aria-hidden />
+                  </button>
+                  <button
+                    type="button"
+                    className="clients-filters__btn-icon"
+                    onClick={openQuickQuotation}
+                    aria-label={t('pricing.quickQuotationMode', 'Quick Quotation Mode')}
+                    title={t('pricing.quickQuotationMode', 'Quick Quotation Mode')}
+                  >
+                    <Zap className="clients-filters__btn-icon-svg" aria-hidden />
+                  </button>
+                </div>
+              </div>
             ) : null}
           </>
         }

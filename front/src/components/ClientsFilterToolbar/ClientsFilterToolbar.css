@@ -1,0 +1,94 @@
+/* Toolbar split: search + filters (grow) | clear + tools (inline end); stacks on narrow viewports */
+
+.clients-filters-toolbar__row {
+  align-items: center;
+}
+
+.clients-filters-toolbar__cluster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  flex: 1 1 min(100%, 240px);
+  min-width: 0;
+}
+
+.clients-filters-toolbar__cluster .clients-filters__search-wrap {
+  flex: 1 1 200px;
+  min-width: min(100%, 160px);
+  max-width: 320px;
+}
+
+.clients-filters-toolbar__fields {
+  flex: 2 1 280px;
+  min-width: 0;
+}
+
+.clients-filters-toolbar__fields.clients-filters__fields > * {
+  flex: 1 1 120px;
+  min-width: min(100%, 120px);
+  max-width: 220px;
+}
+
+.clients-filters-toolbar__end {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-inline-start: auto;
+  flex-shrink: 0;
+}
+
+.clients-filters-toolbar__end-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  row-gap: 8px;
+  min-width: 0;
+}
+
+/* Keeps PDF/Excel (or similar) aligned like a single control; matches spacing to CTAs */
+.clients-filters-toolbar__icon-cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.clients-filters-toolbar__end-inner .clients-filters__actions {
+  margin-inline-start: 0;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .clients-filters-toolbar__row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .clients-filters-toolbar__cluster .clients-filters__search-wrap {
+    max-width: none;
+  }
+
+  .clients-filters-toolbar__end {
+    margin-inline-start: 0;
+    width: 100%;
+    justify-content: flex-start;
+    padding-top: 4px;
+    border-top: 1px solid var(--form-divider, #e5e7eb);
+    margin-top: 4px;
+  }
+
+  .clients-filters-toolbar__end-inner {
+    width: 100%;
+  }
+
+  [data-theme='dark'] .clients-filters-toolbar__end {
+    border-top-color: var(--form-divider);
+  }
+}

@@ -51,19 +51,41 @@ export function formatLocaleNumber(value, language, options = {}) {
   }).format(Number(value))
 }
 
-export function formatLocaleMoney(value, currency, language) {
+/**
+ * Currency for UI: always Latin digits (0–9) and en-US-style grouping/decimals,
+ * regardless of interface language (matches finance PDFs / invoices in this app).
+ * @param {unknown} value
+ * @param {string|undefined} currency ISO 4217
+ * @param {string} [_language] unused; kept for call-site compatibility
+ */
+export function formatLocaleMoney(value, currency, _language) {
   if (value == null || Number.isNaN(Number(value))) return '—'
-  const loc = getDateLocale(language)
   try {
-    return new Intl.NumberFormat(loc, {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency || 'USD',
       minimumFractionDigits: 0,
       maximumFractionDigits: 2,
+      numberingSystem: 'latn',
     }).format(Number(value))
   } catch {
     return `${value} ${currency || ''}`.trim()
   }
+}
+
+/**
+ * Non-currency amounts in pricing (e.g. profit figures): Latin digits, en-US separators.
+ * @param {unknown} value
+ * @param {{ minimumFractionDigits?: number, maximumFractionDigits?: number }} [options]
+ */
+export function formatPricingDecimal(value, options = {}) {
+  if (value == null || Number.isNaN(Number(value))) return '—'
+  const { minimumFractionDigits = 0, maximumFractionDigits = 2 } = options
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits,
+    maximumFractionDigits,
+    numberingSystem: 'latn',
+  }).format(Number(value))
 }
 
 /** Stable order for displaying multiple currency buckets (extend as needed). */

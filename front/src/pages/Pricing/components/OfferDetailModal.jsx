@@ -2,7 +2,9 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X, Ship, Truck, FilePlus2 } from 'lucide-react'
 import { formatDate, formatLocaleMoney, sortCurrencyCodes, sumAmountsByCurrencyFromItems, sumPricingObjectByCurrency } from '../../../utils/dateUtils'
+import { inlandContainerSummary, seaContainerSummary } from '../utils/pricingDisplay'
 import '../../../components/PageHeader/PageHeader.css'
+import '../Pricing.css'
 
 const SEA_ITEMS = [
   { key: 'of20', optional: false },
@@ -29,28 +31,6 @@ const INLAND_ITEMS = [
 
 function breakdownLineLabel(code, t) {
   return t(`pricing.breakdown.${code}`, { defaultValue: code })
-}
-
-function seaContainerSummary(pricing, t) {
-  const dash = t('common.dash')
-  if (!pricing) return dash
-  const parts = []
-  if (pricing.of20?.price != null) parts.push(t('pricing.cardContainerOf20'))
-  if (pricing.of40?.price != null) parts.push(t('pricing.cardContainerOf40'))
-  if (pricing.of40rf?.price != null) parts.push(t('pricing.cardContainerOf40Rf'))
-  return parts.length ? parts.join(t('pricing.cardContainerSep')) : dash
-}
-
-function inlandContainerSummary(pricing, t) {
-  const dash = t('common.dash')
-  if (!pricing) return dash
-  const parts = []
-  if (pricing.p20x1?.price != null || pricing.t20d?.price != null) parts.push(t('pricing.detailContainer20'))
-  if (pricing.p40hq?.price != null || pricing.t40hq?.price != null || pricing.t40d?.price != null) {
-    parts.push(t('pricing.detailContainer40'))
-  }
-  if (pricing.p40rf?.price != null) parts.push(t('pricing.detailContainerRf'))
-  return parts.length ? parts.join(t('pricing.cardContainerSep')) : dash
 }
 
 /** Split combined D&D string into POL / POD columns when possible. */
@@ -266,7 +246,7 @@ export default function OfferDetailModal({ isOpen, offer, onClose, onCreateQuota
                   </span>
                   <div className="flex flex-col items-end gap-1">
                     {approxTotalCurrencyKeys.map((cur) => (
-                      <span key={cur} className="text-base font-bold text-cyan-600 dark:text-cyan-400 tabular-nums">
+                      <span key={cur} className="pricing-money-total text-cyan-600 dark:text-cyan-400">
                         {formatLocaleMoney(approxTotalsByCurrency[cur], cur, i18n.language)}
                       </span>
                     ))}

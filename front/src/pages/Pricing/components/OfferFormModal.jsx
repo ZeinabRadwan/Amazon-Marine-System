@@ -606,7 +606,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                     id="offer-pol"
                     value={form.pol}
                     onChange={(v) => updateForm({ pol: v })}
-                    placeholder={t('common.select', 'Select')}
+                    placeholder={t('pricing.filterAllPol', 'All POL')}
                   />
                 </div>
                 <div>
@@ -617,7 +617,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                     id="offer-pod"
                     value={form.pod}
                     onChange={(v) => updateForm({ pod: v })}
-                    placeholder={t('common.select', 'Select')}
+                    placeholder={t('pricing.filterAllPod', 'All POD')}
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -629,7 +629,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                     serviceScope="ocean"
                     value={form.shipping_line}
                     onChange={(v) => updateForm({ shipping_line: v })}
-                    placeholder={t('pricing.searchOrAddCarrier', 'Search or add carrier…')}
+                    placeholder={t('pricing.filterAllShippingLines', 'All shipping lines')}
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     {t('pricing.shippingLineOceanHint', 'Ocean carriers only. Add new names to save them for next time.')}
@@ -1007,7 +1007,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                     id="offer-inland-port"
                     value={inlandForm.inland_port}
                     onChange={(v) => updateInlandForm({ inland_port: v })}
-                    placeholder={t('common.select', 'Select')}
+                    placeholder={t('pricing.filterAllPorts', 'All ports')}
                   />
                 </div>
                 <div>
@@ -1033,7 +1033,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                     serviceScope="inland"
                     value={inlandForm.shipping_line}
                     onChange={(v) => updateInlandForm({ shipping_line: v })}
-                    placeholder={t('pricing.searchOrAddInlandProvider', 'Search or add inland provider…')}
+                    placeholder={t('pricing.filterAllInlandProviders', 'All inland providers')}
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     {t('pricing.inlandProviderHint', 'Inland / trucking providers only.')}
@@ -1061,7 +1061,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                     id="offer-inland-truck-type"
                     value={inlandForm.truck_type}
                     onChange={(v) => updateInlandForm({ truck_type: v })}
-                    placeholder={t('pricing.selectTruckType', 'Select truck type')}
+                    placeholder={t('pricing.filterAllTruckTypes', 'All truck types')}
                   />
                 </div>
                 <div>

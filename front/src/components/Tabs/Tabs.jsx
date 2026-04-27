@@ -16,8 +16,9 @@ function getDir() {
  * @param {(id: string) => void} onChange - Called when selection changes
  * @param {string} [className] - Optional class for the container
  * @param {'default'|'main'|'sub'} [variant] - Visual tier: `main` = page-level (bold, prominent); `sub` = section-level (lighter, nested); `default` = legacy pill
+ * @param {boolean} [inline] - With `variant="sub"`, tabs shrink to content instead of stretching full width
  */
-export default function Tabs({ tabs = [], activeTab, onChange, className = '', variant = 'default' }) {
+export default function Tabs({ tabs = [], activeTab, onChange, className = '', variant = 'default', inline = false }) {
   const listRef = useRef(null)
   const activeIndex = tabs.findIndex((t) => t.id === activeTab)
   const safeIndex = activeIndex >= 0 ? activeIndex : 0
@@ -53,13 +54,20 @@ export default function Tabs({ tabs = [], activeTab, onChange, className = '', v
 
   if (!tabs.length) return null
 
+  const pillClass = [
+    variant === 'default' ? 'tabs-pill' : `tabs-pill tabs-pill--${variant}`,
+    inline && variant === 'sub' ? 'tabs-pill--inline' : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+
   return (
     <div className={className.trim()} dir={rtl ? 'rtl' : undefined}>
       <div
         ref={listRef}
         role="tablist"
         aria-label="Tabs"
-        className={variant === 'default' ? 'tabs-pill' : `tabs-pill tabs-pill--${variant}`}
+        className={pillClass}
       >
         {tabs.map((tab, index) => {
           const isActive = activeTab === tab.id

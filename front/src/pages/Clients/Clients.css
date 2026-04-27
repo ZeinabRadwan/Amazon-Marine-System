@@ -280,6 +280,29 @@
   cursor: not-allowed;
 }
 
+.clients-filters__btn-icon--primary {
+  background: var(--form-primary, #0039c5);
+  border-color: var(--form-primary, #0039c5);
+  color: #fff;
+}
+
+.clients-filters__btn-icon--primary:hover:not(:disabled) {
+  background: #002d9e;
+  border-color: #002d9e;
+  color: #fff;
+}
+
+[data-theme='dark'] .clients-filters__btn-icon--primary {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+}
+
+[data-theme='dark'] .clients-filters__btn-icon--primary:hover:not(:disabled) {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
 .clients-filters__btn-icon-svg {
   width: 20px;
   height: 20px;

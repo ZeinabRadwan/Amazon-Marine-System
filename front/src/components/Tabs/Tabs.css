@@ -62,10 +62,6 @@
   color: var(--tabs-pill-text-hover);
 }
 
-.tabs-pill__tab--active {
-  color: var(--tabs-pill-text-active);
-}
-
 .tabs-pill__tab:focus {
   outline: none;
 }
@@ -227,4 +223,15 @@
   font-size: 0.625rem;
   min-width: 1.1rem;
   height: 1.1rem;
+}
+
+/* Compact section tabs (sub): pill width follows labels — pair with variant="sub" inline */
+.tabs-pill--sub.tabs-pill--inline {
+  width: fit-content;
+  max-width: 100%;
+}
+
+.tabs-pill--sub.tabs-pill--inline .tabs-pill__tab {
+  flex: 0 1 auto;
+  padding-inline: 0.75rem;
 }

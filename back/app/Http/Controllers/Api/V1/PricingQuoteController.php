@@ -381,7 +381,6 @@ class PricingQuoteController extends Controller
         $quote->load(['items', 'sailingDates', 'client', 'salesUser']);
 
         $locale = strtolower((string) $request->header('X-App-Locale', 'en')) === 'ar' ? 'ar' : 'en';
-        $labels = $this->quotePdfLabels($locale);
 
         $settings = app(AppSettings::class);
         $companyProfile = $settings->getArray(AppSettings::KEY_COMPANY_PROFILE) ?? [];
@@ -393,6 +392,11 @@ class PricingQuoteController extends Controller
         $grandTotalsByCurrency = $this->sumQuoteItemsByCurrency($quote->items);
 
         $filename = ($quote->quote_no ?: 'Quote-'.$quote->id).'.pdf';
+
+        $labels = $this->quotePdfLabels($locale);
+        $labels['brand'] = $companyDisplayName !== '' ? $companyDisplayName : 'Amazon Marine System';
+        $labels['brand_tag'] = $locale === 'ar' ? 'الشحن الدولي والملاحة' : 'International Freight Forwarding';
+        $labels['brand_contact'] = $this->quotePdfBrandContactLine($companyProfile, $locale);
 
         $html = view('pricing.quote_pdf', [
             'quote' => $quote,
@@ -432,6 +436,26 @@ class PricingQuoteController extends Controller
     }
 
     /**
+     * Single-line contact strip for quotation PDF header (matches SD form style).
+     *
+     * @param  array<string, mixed>  $companyProfile
+     */
+    private function quotePdfBrandContactLine(array $companyProfile, string $locale): string
+    {
+        $phone = trim((string) ($companyProfile['phone'] ?? ''));
+        $email = trim((string) ($companyProfile['email'] ?? ''));
+        $parts = [];
+        if ($phone !== '') {
+            $parts[] = ($locale === 'ar' ? 'هاتف: ' : 'Tel: ').$phone;
+        }
+        if ($email !== '') {
+            $parts[] = $email;
+        }
+
+        return $parts !== [] ? implode('  |  ', $parts) : ($locale === 'ar' ? 'هاتف: +201200744888  |  info@amazonmarine.com' : 'Tel: +201200744888  |  info@amazonmarine.com');
+    }
+
+    /**
      * @return array<string, string>
      */
     private function quotePdfLabels(string $locale): array
@@ -443,7 +467,7 @@ class PricingQuoteController extends Controller
                 'date' => 'التاريخ',
                 'issued_date' => 'تاريخ الإصدار',
                 'client' => 'العميل',
-                'section_client_company' => 'العميل / الشركة',
+                'section_client_company' => '١. العميل / الشركة',
                 'company_label' => 'شركتنا',
                 'route' => 'المسار',
                 'carrier' => 'خط الشحن',
@@ -453,15 +477,15 @@ class PricingQuoteController extends Controller
                 'free_time' => 'وقت الفراغ',
                 'schedule' => 'الجدول',
                 'validity' => 'صلاحية العرض',
-                'section_route' => 'تفاصيل المسار',
-                'section_ocean_freight' => 'الشحن البحري',
-                'section_inland_transport' => 'النقل الداخلي',
-                'section_customs' => 'الجمارك والرسوم الأخرى',
-                'section_handling_fees' => 'رسوم المناولة',
-                'section_totals' => 'الإجماليات',
-                'section_notes' => 'ملاحظات',
-                'section_terms' => 'الشروط والأحكام',
-                'section_prepared_by' => 'أعد بواسطة',
+                'section_route' => '٢. تفاصيل المسار والجدول',
+                'section_ocean_freight' => '٣. الشحن البحري',
+                'section_inland_transport' => '٤. النقل الداخلي',
+                'section_customs' => '٥. الجمارك والرسوم الأخرى',
+                'section_handling_fees' => '٦. رسوم المناولة',
+                'section_totals' => '٧. الإجماليات',
+                'section_notes' => '٨. ملاحظات',
+                'section_terms' => '٩. الشروط والأحكام',
+                'section_prepared_by' => '١٠. أعد بواسطة',
                 'items' => 'البنود',
                 'description' => 'البيان',
                 'amount' => 'المبلغ',
@@ -490,7 +514,7 @@ class PricingQuoteController extends Controller
             'date' => 'Date',
             'issued_date' => 'Issued date',
             'client' => 'Client',
-            'section_client_company' => 'Client / Company',
+            'section_client_company' => '1. Client / Company',
             'company_label' => 'Our company',
             'route' => 'Route',
             'carrier' => 'Shipping line',
@@ -500,15 +524,15 @@ class PricingQuoteController extends Controller
             'free_time' => 'Free time',
             'schedule' => 'Schedule / sailing',
             'validity' => 'Offer validity',
-            'section_route' => 'Route details',
-            'section_ocean_freight' => 'Ocean Freight',
-            'section_inland_transport' => 'Inland Transport',
-            'section_customs' => 'Customs & other charges',
-            'section_handling_fees' => 'Handling fees',
-            'section_totals' => 'Totals',
-            'section_notes' => 'Notes',
-            'section_terms' => 'Terms & Conditions',
-            'section_prepared_by' => 'Prepared by',
+            'section_route' => '2. Route & schedule details',
+            'section_ocean_freight' => '3. Ocean freight',
+            'section_inland_transport' => '4. Inland transport',
+            'section_customs' => '5. Customs & other charges',
+            'section_handling_fees' => '6. Handling fees',
+            'section_totals' => '7. Totals',
+            'section_notes' => '8. Notes',
+            'section_terms' => '9. Terms & conditions',
+            'section_prepared_by' => '10. Prepared by',
             'items' => 'Line items',
             'description' => 'Description',
             'amount' => 'Amount',

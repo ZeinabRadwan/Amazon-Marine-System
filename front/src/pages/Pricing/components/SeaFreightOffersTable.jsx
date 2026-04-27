@@ -5,11 +5,11 @@ import { useMutateOffer } from '../../../hooks/usePricing'
 import { IconActionButton, IconActionButtonGroup } from '../../../components/Table'
 import { formatDate, formatLocaleMoney, sortCurrencyCodes, sumPricingObjectByCurrency } from '../../../utils/dateUtils'
 import {
-  INLAND_PRICE_KEYS,
   PRICING_RATES_TABLE_CLASS,
   PRICING_RATES_TABLE_WRAP_CLASS,
+  SEA_PRICE_KEYS,
   formatSailingDates,
-  inlandContainerSummary,
+  seaContainerSummary,
 } from '../utils/pricingDisplay'
 import '../Pricing.css'
 import './OfferCard.css'
@@ -18,16 +18,7 @@ function fmt(price, currency, language) {
   return formatLocaleMoney(price, currency, language)
 }
 
-function formatGovArea(offer, dash) {
-  const gov = (offer.inland_gov || offer.region || '').trim()
-  const area = (offer.destination || offer.inland_city || '').trim()
-  if (gov && area) return `${gov} / ${area}`
-  if (gov) return gov
-  if (area) return area
-  return dash
-}
-
-export default function InlandTransportTable({
+export default function SeaFreightOffersTable({
   offers = [],
   loading = false,
   onView,
@@ -69,7 +60,7 @@ export default function InlandTransportTable({
                 {t('pricing.route', 'Route')}
               </th>
               <th scope="col" className="px-4 py-3 font-bold text-xs uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                {t('pricing.inlandColGovArea', 'Governorate / Area')}
+                {t('pricing.shippingLine', 'Carrier')}
               </th>
               <th scope="col" className="px-4 py-3 font-bold text-xs uppercase tracking-wider text-gray-600 dark:text-gray-300">
                 {t('pricing.containerType', 'Container')}
@@ -107,69 +98,53 @@ export default function InlandTransportTable({
                   const archived = offer.status === 'archived'
                   const sailingStr = formatSailingDates(offer.sailing_dates, i18n.language)
                   const validStr = offer.valid_to ? formatDate(offer.valid_to, { locale: i18n.language }) : ''
-                  const approx = sumPricingObjectByCurrency(p, INLAND_PRICE_KEYS)
+                  const approx = sumPricingObjectByCurrency(p, SEA_PRICE_KEYS)
                   const totalKeys = sortCurrencyCodes(Object.keys(approx).filter((c) => Math.abs(approx[c] || 0) > 1e-9))
+                  const of20s = p.of20?.price != null ? fmt(p.of20.price, p.of20.currency, i18n.language) : null
+                  const of40s = p.of40?.price != null ? fmt(p.of40.price, p.of40.currency, i18n.language) : null
+                  const of40rfs = p.of40rf?.price != null ? fmt(p.of40rf.price, p.of40rf.currency, i18n.language) : null
 
-                  const p20s =
-                    p.p20x1?.price != null
-                      ? fmt(p.p20x1.price, p.p20x1.currency, i18n.language)
-                      : p.t20d?.price != null
-                        ? fmt(p.t20d.price, p.t20d.currency, i18n.language)
-                        : null
-                  const p40s =
-                    p.p40hq?.price != null
-                      ? fmt(p.p40hq.price, p.p40hq.currency, i18n.language)
-                      : p.t40hq?.price != null
-                        ? fmt(p.t40hq.price, p.t40hq.currency, i18n.language)
-                        : p.t40d?.price != null
-                          ? fmt(p.t40d.price, p.t40d.currency, i18n.language)
-                          : null
-                  const p40rfs = p.p40rf?.price != null ? fmt(p.p40rf.price, p.p40rf.currency, i18n.language) : null
-
-                  const inlandContainerLabel = inlandContainerSummary(p, t)
-                  const govAreaLabel = formatGovArea(offer, dash)
+                  const containerSummary = seaContainerSummary(p, t)
                   return (
                     <tr
                       key={offer.id}
                       className={`pricing-rates-table__row ${archived ? 'opacity-70' : ''}`}
                     >
                       <td className="px-4 py-3 align-top font-semibold text-gray-900 dark:text-white whitespace-nowrap">
-                        {(offer.inland_port || dash)} → {(offer.destination || offer.region || dash)}
+                        {(offer.pol || dash)} → {(offer.pod || offer.region || dash)}
                       </td>
-                      <td className="px-4 py-3 align-top text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
-                        {govAreaLabel !== dash ? (
-                          <span className="pricing-table-badge pricing-table-badge--muted whitespace-normal">
-                            {govAreaLabel}
-                          </span>
+                      <td className="px-4 py-3 align-top text-gray-800 dark:text-gray-200">
+                        {offer.shipping_line ? (
+                          <span className="pricing-table-badge pricing-table-badge--carrier">{offer.shipping_line}</span>
                         ) : (
                           dash
                         )}
                       </td>
                       <td className="px-4 py-3 align-top text-gray-700 dark:text-gray-300 text-xs">
-                        {inlandContainerLabel !== dash ? (
-                          <span className="pricing-table-badge pricing-table-badge--muted">{inlandContainerLabel}</span>
+                        {containerSummary !== dash ? (
+                          <span className="pricing-table-badge pricing-table-badge--muted">{containerSummary}</span>
                         ) : (
                           dash
                         )}
                       </td>
                       <td className="px-4 py-3 align-top text-gray-800 dark:text-gray-200">
                         <ul className="space-y-1 list-none m-0 p-0 text-xs">
-                          {p20s ? (
+                          {of20s ? (
                             <li>
-                              <span className="font-semibold text-gray-500 dark:text-gray-400">{t('pricing.inlandChip20dc')}:</span> {p20s}
+                              <span className="font-semibold text-gray-500 dark:text-gray-400">{t('pricing.priceChipOf20Dc')}:</span> {of20s}
                             </li>
                           ) : null}
-                          {p40s ? (
+                          {of40s ? (
                             <li>
-                              <span className="font-semibold text-gray-500 dark:text-gray-400">{t('pricing.inlandChip40hq')}:</span> {p40s}
+                              <span className="font-semibold text-gray-500 dark:text-gray-400">{t('pricing.priceChipOf40Hq')}:</span> {of40s}
                             </li>
                           ) : null}
-                          {p40rfs ? (
+                          {of40rfs ? (
                             <li>
-                              <span className="font-semibold text-gray-500 dark:text-gray-400">{t('pricing.inlandChip40rf')}:</span> {p40rfs}
+                              <span className="font-semibold text-gray-500 dark:text-gray-400">{t('pricing.priceChipOf40Rf')}:</span> {of40rfs}
                             </li>
                           ) : null}
-                          {!p20s && !p40s && !p40rfs ? <li className="text-gray-400">{dash}</li> : null}
+                          {!of20s && !of40s && !of40rfs ? <li className="text-gray-400">{dash}</li> : null}
                         </ul>
                       </td>
                       <td className="px-4 py-3 align-top text-gray-700 dark:text-gray-300 text-xs whitespace-pre-wrap">

@@ -3,7 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { Table, FileText } from 'lucide-react'
 import { Container } from '../../components/Container'
 import Tabs from '../../components/Tabs'
+import '../../components/Tabs/Tabs.css'
 import '../Clients/Clients.css'
+import '../Invoices/Invoices.css'
 import RateSheet from './components/RateSheet'
 import QuotationTable from './components/QuotationTable'
 import OfferFormModal from './components/OfferFormModal'
@@ -23,14 +25,10 @@ export default function Pricing() {
   return (
     <Container size="xl">
       <div className="clients-page pricing-page py-6">
-        <div className="pricing-main-tabs">
-          <Tabs
-            className="pricing-tabs-wrap"
-            variant="main"
-            tabs={PRICING_TABS}
-            activeTab={activeTab}
-            onChange={setActiveTab}
-          />
+        <div className="invoices-tabs-section">
+          <div className="invoices-tabs-wrap">
+            <Tabs tabs={PRICING_TABS} activeTab={activeTab} onChange={setActiveTab} />
+          </div>
         </div>
 
         <main className="pricing-content">

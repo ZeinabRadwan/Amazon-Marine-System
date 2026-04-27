@@ -10,7 +10,7 @@ import PortNameAsyncSelect from './PortNameAsyncSelect'
 import ShippingLineNameAsyncSelect from './ShippingLineNameAsyncSelect'
 import StructuredDatePicker from '../../../components/StructuredDatePicker'
 import '../Pricing.css'
-import { formatLocaleMoney, mergeCurrencyAmountMaps, sortCurrencyCodes } from '../../../utils/dateUtils'
+import { formatLocaleMoney, formatPricingDecimal, mergeCurrencyAmountMaps, sortCurrencyCodes } from '../../../utils/dateUtils'
 
 const QUICK_SELECT_CODES = ['OF', 'THC', 'BL', 'TELEX', 'ISPS', 'PTI', 'POWER']
 
@@ -167,7 +167,6 @@ export default function CreateQuoteModal({
   initialQuickMode = false,
 }) {
   const { t, i18n } = useTranslation()
-  const numberLocale = i18n.language?.startsWith('ar') ? 'ar-EG' : 'en-US'
 
   const quoteCodeLabel = useCallback(
     (code) => {
@@ -691,7 +690,7 @@ export default function CreateQuoteModal({
                     id="quick-quote-pol"
                     value={form.pol}
                     onChange={(v) => setField('pol', v)}
-                    placeholder={t('common.select', 'Select')}
+                    placeholder={t('pricing.filterAllPol', 'All POL')}
                   />
                 </div>
                 <div className="space-y-1">
@@ -702,7 +701,7 @@ export default function CreateQuoteModal({
                     id="quick-quote-pod"
                     value={form.pod}
                     onChange={(v) => setField('pod', v)}
-                    placeholder={t('common.select', 'Select')}
+                    placeholder={t('pricing.filterAllPod', 'All POD')}
                   />
                 </div>
                 <div className="space-y-1 md:col-span-2">
@@ -714,7 +713,7 @@ export default function CreateQuoteModal({
                     serviceScope="ocean"
                     value={form.shipping_line}
                     onChange={(v) => setField('shipping_line', v)}
-                    placeholder={t('pricing.searchOrAddCarrier', 'Search or add carrier…')}
+                    placeholder={t('pricing.filterAllShippingLines', 'All shipping lines')}
                   />
                 </div>
                 <div className="space-y-1">
@@ -869,7 +868,7 @@ export default function CreateQuoteModal({
                             }`}
                           >
                             {moneySymbol(line.currency)}{' '}
-                            {profit.toLocaleString(numberLocale, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                            {formatPricingDecimal(profit)}
                           </div>
                           <span className="md:col-span-1 text-sm text-gray-600 dark:text-gray-400">{line.currency}</span>
                         </div>
@@ -897,7 +896,7 @@ export default function CreateQuoteModal({
                                   }`}
                                 >
                                   {moneySymbol(cur)}{' '}
-                                  {amt.toLocaleString(numberLocale, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}{' '}
+                                  {formatPricingDecimal(amt)}{' '}
                                   <span className="text-xs font-normal opacity-80">{cur}</span>
                                 </span>
                               )
@@ -967,7 +966,7 @@ export default function CreateQuoteModal({
                           }`}
                         >
                           {moneySymbol(line.currency)}{' '}
-                          {profit.toLocaleString(numberLocale, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                          {formatPricingDecimal(profit)}
                         </div>
                         <select
                           className="md:col-span-1 px-2 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm"
@@ -1015,7 +1014,7 @@ export default function CreateQuoteModal({
                                 }`}
                               >
                                 {moneySymbol(cur)}{' '}
-                                {amt.toLocaleString(numberLocale, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}{' '}
+                                {formatPricingDecimal(amt)}{' '}
                                 <span className="text-xs font-normal opacity-80">{cur}</span>
                               </span>
                             )
@@ -1093,7 +1092,7 @@ export default function CreateQuoteModal({
                       }`}
                     >
                       {t('pricing.profit', 'Profit')}: {moneySymbol(inlandCurrency)}{' '}
-                      {inlandProfit.toLocaleString(numberLocale, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                      {formatPricingDecimal(inlandProfit)}
                     </div>
                   </div>
                 ) : null}
@@ -1130,7 +1129,7 @@ export default function CreateQuoteModal({
                       }`}
                     >
                       {t('pricing.profit', 'Profit')}: {moneySymbol(inlandCurrency)}{' '}
-                      {inlandProfit.toLocaleString(numberLocale, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                      {formatPricingDecimal(inlandProfit)}
                     </div>
                   </div>
                 ) : null}
@@ -1331,7 +1330,7 @@ export default function CreateQuoteModal({
                                 }`}
                               >
                                 {moneySymbol(cur)}{' '}
-                                {amt.toLocaleString(numberLocale, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}{' '}
+                                {formatPricingDecimal(amt)}{' '}
                                 <span className="text-sm font-semibold opacity-85">{cur}</span>
                               </span>
                             )
@@ -1350,7 +1349,9 @@ export default function CreateQuoteModal({
                           return <span className="text-gray-500 dark:text-gray-400 font-bold">{t('common.dash')}</span>
                         }
                         return keys.map((cur) => (
-                          <span key={cur}>{formatLocaleMoney(grandSellingByCurrency[cur], cur, i18n.language)}</span>
+                          <span key={cur} className="text-xl tabular-nums">
+                            {formatLocaleMoney(grandSellingByCurrency[cur], cur, i18n.language)}
+                          </span>
                         ))
                       })()}
                     </div>

@@ -1,42 +1,21 @@
 import { useTranslation } from 'react-i18next'
 import { useState } from 'react'
-import { CheckCircle, Archive, Loader2, FilePlus2 } from 'lucide-react'
+import { CheckCircle, Archive, Loader2, FilePlus2, Eye, Pencil } from 'lucide-react'
 import { useMutateOffer } from '../../../hooks/usePricing'
+import { IconActionButton, IconActionButtonGroup } from '../../../components/Table'
 import { formatDate, formatLocaleMoney, sortCurrencyCodes, sumPricingObjectByCurrency } from '../../../utils/dateUtils'
+import {
+  INLAND_PRICE_KEYS,
+  SEA_PRICE_KEYS,
+  formatSailingDates,
+  inlandContainerSummary,
+  seaContainerSummary,
+} from '../utils/pricingDisplay'
 import 'boxicons/css/boxicons.min.css'
 import './OfferCard.css'
 
-const SEA_PRICE_KEYS = ['of20', 'of40', 'thc20', 'thc40', 'of40rf', 'thcRf', 'powerDay', 'pti']
-const INLAND_PRICE_KEYS = ['p20x1', 'p20x2', 'p40hq', 'p40rf', 'generator', 't20d', 't40hq', 't40d', 't40r', 't20r']
-
 function fmt(price, currency, language) {
   return formatLocaleMoney(price, currency, language)
-}
-
-function seaContainerSummary(pricing, t) {
-  const dash = t('common.dash')
-  if (!pricing) return dash
-  const parts = []
-  if (pricing.of20?.price != null) parts.push(t('pricing.cardContainerOf20'))
-  if (pricing.of40?.price != null) parts.push(t('pricing.cardContainerOf40'))
-  if (pricing.of40rf?.price != null) parts.push(t('pricing.cardContainerOf40Rf'))
-  return parts.length ? parts.join(t('pricing.cardContainerSep')) : dash
-}
-
-function formatSailingDates(dates, locale) {
-  if (!dates?.length) return '—'
-  const loc = locale === 'ar' ? 'ar-EG' : 'en-US'
-  const sep = locale === 'ar' ? ' ، ' : ', '
-  return dates
-    .map((d) => {
-      try {
-        const dt = typeof d === 'string' ? new Date(d) : d
-        return dt.toLocaleDateString(loc, { day: '2-digit', month: 'short' })
-      } catch {
-        return String(d)
-      }
-    })
-    .join(sep)
 }
 
 export default function PricingCard({
@@ -138,35 +117,46 @@ export default function PricingCard({
               {(offer.pol || '—')} → {(offer.pod || offer.region || '—')}
             </span>
           </div>
-          <div className="offer-card-meta">
-            <span>
-              <i className="bx bx-package" aria-hidden />
-              {seaContainerSummary(p, t)}
-            </span>
-            <span>
+        </div>
+
+        <div className="offer-card__section offer-card__section--container">
+          <div className="offer-card__section-label">{t('pricing.containerType')}</div>
+          <div className="offer-card__section-value">{seaContainerSummary(p, t)}</div>
+        </div>
+
+        <div className="offer-card__section offer-card__section--schedule">
+          <div className="offer-card__meta-row">
+            <span className="offer-card__meta-item">
               <i className="bx bx-time" aria-hidden />
-              {transitStr}
+              <span className="offer-card__meta-text">{transitStr}</span>
             </span>
-            <span>
+            <span className="offer-card__meta-sep" aria-hidden />
+            <span className="offer-card__meta-item">
               <i className="bx bx-calendar-week" aria-hidden />
-              {freeStr}
-            </span>
-          </div>
-          <div className="offer-card-meta">
-            {validStr ? (
-              <span className="badge-validity">
-                <i className="bx bx-calendar-check" aria-hidden />
-                {t('pricing.validUntil')} {validStr}
-              </span>
-            ) : null}
-            <span>
-              <i className="bx bx-calendar" aria-hidden />
-              {sailingStr}
+              <span className="offer-card__meta-text">{freeStr}</span>
             </span>
           </div>
         </div>
 
-        <div className="offer-card-prices">
+        <div className="offer-card__section offer-card__section--validity">
+          <div className="offer-card__meta-row">
+            {validStr ? (
+              <span className="offer-card__meta-item badge-validity">
+                <i className="bx bx-calendar-check" aria-hidden />
+                <span className="offer-card__meta-text">
+                  {t('pricing.validUntil')} {validStr}
+                </span>
+              </span>
+            ) : null}
+            {validStr ? <span className="offer-card__meta-sep" aria-hidden /> : null}
+            <span className="offer-card__meta-item">
+              <i className="bx bx-calendar" aria-hidden />
+              <span className="offer-card__meta-text">{sailingStr}</span>
+            </span>
+          </div>
+        </div>
+
+        <div className="offer-card-prices offer-card-prices--panel">
           <div className="price-chip">
             <span className="price-chip-label">{t('pricing.priceChipOf20Dc')}</span>
             <span className="price-chip-value">{of20s}</span>
@@ -184,68 +174,65 @@ export default function PricingCard({
         </div>
 
         <div className="offer-card-footer">
-          <span className="offer-total-label">{t('pricing.cardApproxTotal')}</span>
-          {totalBlock}
-          <div className="offer-card-actions">
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={(e) => {
-                e.stopPropagation()
-                onView?.(offer)
-              }}
-            >
-              <i className="bx bx-show" aria-hidden />
-              {t('common.view', 'View')}
-            </button>
-            {showCreateQuotation ? (
-              <button
-                type="button"
-                className="btn btn-primary"
+          <div className="offer-card-footer__totals">
+            <span className="offer-total-label">{t('pricing.cardApproxTotal')}</span>
+            {totalBlock}
+          </div>
+          <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
+            <IconActionButtonGroup aria-label={t('pricing.inlandColActions', 'Actions')}>
+              <IconActionButton
+                icon={<Eye className="h-4 w-4" />}
+                label={t('common.view', 'View')}
                 onClick={(e) => {
                   e.stopPropagation()
-                  onCreateQuotation?.(offer)
+                  onView?.(offer)
                 }}
-              >
-                <FilePlus2 className="h-3.5 w-3.5" aria-hidden />
-                {t('pricing.createQuoteFromRate', 'Create Quote')}
-              </button>
-            ) : null}
-            {canManageOffers ? (
-              <button
-                type="button"
-                className="btn btn-outline"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onEdit?.(offer)
-                }}
-                title={t('common.edit', 'Edit')}
-              >
-                <i className="bx bx-edit" aria-hidden />
-              </button>
-            ) : null}
-            {canManageOffers && offer.status !== 'active' ? (
-              <button
-                type="button"
-                className="btn btn-outline"
-                onClick={handleActivate}
-                disabled={loading}
-                title={t('common.activate', 'Activate')}
-              >
-                {actionLoading === 'activate' ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
-              </button>
-            ) : null}
-            {canManageOffers && offer.status !== 'archived' ? (
-              <button
-                type="button"
-                className="btn btn-outline"
-                onClick={handleArchive}
-                disabled={loading}
-                title={t('common.archive', 'Archive')}
-              >
-                {actionLoading === 'archive' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Archive className="h-4 w-4" />}
-              </button>
-            ) : null}
+              />
+              {showCreateQuotation ? (
+                <IconActionButton
+                  icon={<FilePlus2 className="h-4 w-4" />}
+                  label={t('pricing.createQuoteFromRate', 'Create Quote')}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onCreateQuotation?.(offer)
+                  }}
+                />
+              ) : null}
+              {canManageOffers ? (
+                <IconActionButton
+                  icon={<Pencil className="h-4 w-4" />}
+                  label={t('common.edit', 'Edit')}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onEdit?.(offer)
+                  }}
+                />
+              ) : null}
+              {canManageOffers && offer.status !== 'active' ? (
+                <IconActionButton
+                  icon={
+                    actionLoading === 'activate' ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />
+                  }
+                  label={t('common.activate', 'Activate')}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleActivate(e)
+                  }}
+                  disabled={loading}
+                />
+              ) : null}
+              {canManageOffers && offer.status !== 'archived' ? (
+                <IconActionButton
+                  icon={actionLoading === 'archive' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Archive className="h-4 w-4" />}
+                  label={t('common.archive', 'Archive')}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleArchive(e)
+                  }}
+                  disabled={loading}
+                />
+              ) : null}
+            </IconActionButtonGroup>
           </div>
         </div>
       </div>
@@ -291,35 +278,46 @@ export default function PricingCard({
             {routeFrom} → {routeTo}
           </span>
         </div>
-        <div className="offer-card-meta">
-          <span>
-            <i className="bx bx-package" aria-hidden />
-            {t('pricing.containerType', 'Container')}
-          </span>
-          <span>
+      </div>
+
+      <div className="offer-card__section offer-card__section--container">
+        <div className="offer-card__section-label">{t('pricing.containerType')}</div>
+        <div className="offer-card__section-value">{inlandContainerSummary(p, t)}</div>
+      </div>
+
+      <div className="offer-card__section offer-card__section--schedule">
+        <div className="offer-card__meta-row">
+          <span className="offer-card__meta-item">
             <i className="bx bx-time" aria-hidden />
-            {transitStr}
+            <span className="offer-card__meta-text">{transitStr}</span>
           </span>
-          <span>
+          <span className="offer-card__meta-sep" aria-hidden />
+          <span className="offer-card__meta-item">
             <i className="bx bx-calendar-week" aria-hidden />
-            {freeStr}
-          </span>
-        </div>
-        <div className="offer-card-meta">
-          {validStr ? (
-            <span className="badge-validity">
-              <i className="bx bx-calendar-check" aria-hidden />
-              {t('pricing.validUntil')} {validStr}
-            </span>
-          ) : null}
-          <span>
-            <i className="bx bx-calendar" aria-hidden />
-            {sailingStr}
+            <span className="offer-card__meta-text">{freeStr}</span>
           </span>
         </div>
       </div>
 
-      <div className="offer-card-prices">
+      <div className="offer-card__section offer-card__section--validity">
+        <div className="offer-card__meta-row">
+          {validStr ? (
+            <span className="offer-card__meta-item badge-validity">
+              <i className="bx bx-calendar-check" aria-hidden />
+              <span className="offer-card__meta-text">
+                {t('pricing.validUntil')} {validStr}
+              </span>
+            </span>
+          ) : null}
+          {validStr ? <span className="offer-card__meta-sep" aria-hidden /> : null}
+          <span className="offer-card__meta-item">
+            <i className="bx bx-calendar" aria-hidden />
+            <span className="offer-card__meta-text">{sailingStr}</span>
+          </span>
+        </div>
+      </div>
+
+      <div className="offer-card-prices offer-card-prices--panel">
         <div className="price-chip">
           <span className="price-chip-label">{t('pricing.inlandChip20dc')}</span>
           <span className="price-chip-value">{p20}</span>
@@ -335,56 +333,65 @@ export default function PricingCard({
       </div>
 
       <div className="offer-card-footer">
-        <span className="offer-total-label">{t('pricing.cardApproxTotal', 'Approx. total:')}</span>
-        {totalBlock}
-        <div className="offer-card-actions">
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={(e) => {
-              e.stopPropagation()
-              onView?.(offer)
-            }}
-          >
-            <i className="bx bx-show" aria-hidden />
-            {t('common.view', 'View')}
-          </button>
-          {showCreateQuotation ? (
-            <button
-              type="button"
-              className="btn btn-primary"
+        <div className="offer-card-footer__totals">
+          <span className="offer-total-label">{t('pricing.cardApproxTotal')}</span>
+          {totalBlock}
+        </div>
+        <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
+          <IconActionButtonGroup aria-label={t('pricing.inlandColActions', 'Actions')}>
+            <IconActionButton
+              icon={<Eye className="h-4 w-4" />}
+              label={t('common.view', 'View')}
               onClick={(e) => {
                 e.stopPropagation()
-                onCreateQuotation?.(offer)
+                onView?.(offer)
               }}
-            >
-              <FilePlus2 className="h-3.5 w-3.5" aria-hidden />
-              {t('pricing.createQuoteFromRate', 'Create Quote')}
-            </button>
-          ) : null}
-          {canManageOffers ? (
-            <button
-              type="button"
-              className="btn btn-outline"
-              onClick={(e) => {
-                e.stopPropagation()
-                onEdit?.(offer)
-              }}
-              title={t('common.edit', 'Edit')}
-            >
-              <i className="bx bx-edit" aria-hidden />
-            </button>
-          ) : null}
-          {canManageOffers && offer.status !== 'active' ? (
-            <button type="button" className="btn btn-outline" onClick={handleActivate} disabled={loading} title={t('common.activate', 'Activate')}>
-              {actionLoading === 'activate' ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
-            </button>
-          ) : null}
-          {canManageOffers && offer.status !== 'archived' ? (
-            <button type="button" className="btn btn-outline" onClick={handleArchive} disabled={loading} title={t('common.archive', 'Archive')}>
-              {actionLoading === 'archive' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Archive className="h-4 w-4" />}
-            </button>
-          ) : null}
+            />
+            {showCreateQuotation ? (
+              <IconActionButton
+                icon={<FilePlus2 className="h-4 w-4" />}
+                label={t('pricing.createQuoteFromRate', 'Create Quote')}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onCreateQuotation?.(offer)
+                }}
+              />
+            ) : null}
+            {canManageOffers ? (
+              <IconActionButton
+                icon={<Pencil className="h-4 w-4" />}
+                label={t('common.edit', 'Edit')}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onEdit?.(offer)
+                }}
+              />
+            ) : null}
+            {canManageOffers && offer.status !== 'active' ? (
+              <IconActionButton
+                icon={
+                  actionLoading === 'activate' ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />
+                }
+                label={t('common.activate', 'Activate')}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleActivate(e)
+                }}
+                disabled={loading}
+              />
+            ) : null}
+            {canManageOffers && offer.status !== 'archived' ? (
+              <IconActionButton
+                icon={actionLoading === 'archive' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Archive className="h-4 w-4" />}
+                label={t('common.archive', 'Archive')}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleArchive(e)
+                }}
+                disabled={loading}
+              />
+            ) : null}
+          </IconActionButtonGroup>
         </div>
       </div>
     </div>
