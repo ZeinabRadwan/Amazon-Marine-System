@@ -579,9 +579,10 @@ export default function ShipmentFinancialsModal({
   const [batchSavingBucket, setBatchSavingBucket] = useState(null)
   const [finBanner, setFinBanner] = useState(null)
   const [notifySending, setNotifySending] = useState(false)
-
-  const saveHandlersRef = useRef(new Map())
-  const bucketBatchKeysRef = useRef({})
+  const [editingBuckets, setEditingBuckets] = useState({})
+  const [groupDraftByKey, setGroupDraftByKey] = useState({})
+  const [deletedIdsByBucket, setDeletedIdsByBucket] = useState({})
+  const bucketSaveModelsRef = useRef({})
 
   const [clientInvoice, setClientInvoice] = useState(null)
   const [invoiceLoading, setInvoiceLoading] = useState(false)
@@ -603,6 +604,9 @@ export default function ShipmentFinancialsModal({
       setExpanded(new Set(['shipping', 'inland', 'customs', 'insurance', 'other']))
       setSectionVendorChoice({})
       setPendingOtherByBucket({})
+      setEditingBuckets({})
+      setGroupDraftByKey({})
+      setDeletedIdsByBucket({})
       setFinBanner(null)
       setClientInvoice(null)
       setTabBRows([])
@@ -679,9 +683,21 @@ export default function ShipmentFinancialsModal({
     setTimeout(() => document.body.classList.remove('shipment-fin-print-invoice'), 400)
   }, [])
 
-  const registerRowSave = useCallback((key, fn) => {
-    saveHandlersRef.current.set(key, fn)
-    return () => saveHandlersRef.current.delete(key)
+  const patchGroupDraft = useCallback((rowKey, patch) => {
+    setGroupDraftByKey((prev) => ({ ...prev, [rowKey]: { ...(prev[rowKey] || {}), ...patch } }))
+  }, [])
+
+  const startBucketEdit = useCallback((bucketId) => {
+    setEditingBuckets((prev) => ({ ...prev, [bucketId]: true }))
+  }, [])
+
+  const cancelBucketEdit = useCallback((bucketId) => {
+    setEditingBuckets((prev) => ({ ...prev, [bucketId]: false }))
+    setGroupDraftByKey((prev) =>
+      Object.fromEntries(Object.entries(prev).filter(([key]) => !key.startsWith(`${bucketId}::`)))
+    )
+    setPendingOtherByBucket((prev) => ({ ...prev, [bucketId]: [] }))
+    setDeletedIdsByBucket((prev) => ({ ...prev, [bucketId]: new Set() }))
   }, [])
 
   const applyVendorToSection = useCallback(
@@ -711,15 +727,56 @@ export default function ShipmentFinancialsModal({
 
   const saveBucketBatch = useCallback(
     async (bucketId) => {
-      const keys = Array.from(new Set(bucketBatchKeysRef.current[bucketId] || []))
+      const models = bucketSaveModelsRef.current[bucketId] || []
+      const deletedIds = Array.from(deletedIdsByBucket[bucketId] || [])
       setBatchSavingBucket(bucketId)
       try {
-        for (const k of keys) {
-          const saveFn = saveHandlersRef.current.get(k)
-          if (typeof saveFn === 'function') {
-            await saveFn()
+        for (const id of deletedIds) {
+          await deleteExpense(token, id)
+        }
+
+        for (const model of models) {
+          if (!model.categoryId) {
+            throw new Error(t('shipments.fin.errorNoCategory'))
+          }
+          const draft = {
+            desc: model.initialDesc,
+            amount: model.initialAmount,
+            currency: model.initialCurrency,
+            ...(groupDraftByKey[model.rowKey] || {}),
+          }
+          const descTrimmed = String(draft.desc || '').trim()
+          const amountRaw = String(draft.amount ?? '').trim()
+          if (!model.expenseId && descTrimmed === '' && amountRaw === '') continue
+          const amt = Number(draft.amount)
+          if (Number.isNaN(amt) || amt < 0) {
+            throw new Error(t('shipments.fin.errorInvalidAmount'))
+          }
+          const builtDescription = model.descPrefix ? `${model.descPrefix}: ${descTrimmed || model.tplId}` : descTrimmed
+          if (model.expenseId) {
+            await updateExpense(token, model.expenseId, {
+              description: builtDescription,
+              amount: amt,
+              currency_code: draft.currency || 'USD',
+              expense_date: model.expenseDate || new Date().toISOString().slice(0, 10),
+              vendor_id: sectionVendorChoice[bucketId] || model.vendorId || undefined,
+            })
+          } else {
+            await createExpense(token, {
+              type: 'shipment',
+              shipment_id: shipment.id,
+              expense_category_id: model.categoryId,
+              description: builtDescription,
+              amount: amt,
+              currency_code: draft.currency || 'USD',
+              expense_date: new Date().toISOString().slice(0, 10),
+              vendor_id: sectionVendorChoice[bucketId] || undefined,
+            })
           }
         }
+
+        setDeletedIdsByBucket((prev) => ({ ...prev, [bucketId]: new Set() }))
+        setEditingBuckets((prev) => ({ ...prev, [bucketId]: false }))
         onExpensesChanged?.()
         setFinBanner({ type: 'success', message: t('shipments.fin.batchSaved') })
       } catch (e) {
@@ -728,7 +785,7 @@ export default function ShipmentFinancialsModal({
         setBatchSavingBucket(null)
       }
     },
-    [onExpensesChanged, t]
+    [deletedIdsByBucket, groupDraftByKey, onExpensesChanged, sectionVendorChoice, shipment?.id, t, token]
   )
 
   const addPendingOtherLine = useCallback((bucketId) => {
@@ -1046,6 +1103,7 @@ export default function ShipmentFinancialsModal({
   )
 
   const renderBucketCard = (bucketId, def) => {
+    const bucketEditing = Boolean(editMode && editingBuckets[bucketId])
     const rows = byBucket[bucketId]
     const Icon = def?.icon ?? Package
     const sums = sumByCurrency(rows)
@@ -1104,29 +1162,53 @@ export default function ShipmentFinancialsModal({
       const pendingOthers = pendingOtherByBucket['other'] || []
       const otherToolbar = editMode ? (
         <div className="shipment-fin-section-toolbar">
-          <select
-            className="shipment-fin-select shipment-fin-select--vendor"
-            value={sectionVendorChoice['other'] ?? ''}
-            onChange={(e) => setSectionVendorChoice((s) => ({ ...s, other: e.target.value }))}
-          >
-            <option value="">{t('shipments.fin.sectionVendorPlaceholder')}</option>
-            {vendors.map((v) => (
-              <option key={v.id} value={String(v.id)}>
-                {v.name || `#${v.id}`}
-              </option>
-            ))}
-          </select>
-          <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary" onClick={() => applyVendorToSection('other')}>
-            {t('shipments.fin.applyVendor')}
-          </button>
-          <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary" onClick={() => addPendingOtherLine('other')}>
-            {t('shipments.fin.addRow')}
-          </button>
-          <label className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-section-upload" title={t('shipments.fin.uploadSectionReceipt')}>
-            <Paperclip size={14} className="shipment-fin-icon-leading" />
-            {t('shipments.fin.uploadReceipt') || 'Upload'}
-            <input type="file" className="hidden" accept=".pdf,.png,.jpg,.jpeg" onChange={(e) => handleSectionUpload('other', e)} disabled={batchSavingBucket === 'other'} />
-          </label>
+          {!bucketEditing ? (
+            <button type="button" className="shipment-fin-btn shipment-fin-btn--primary" onClick={() => startBucketEdit('other')}>
+              {t('shipments.edit') || 'Edit'}
+            </button>
+          ) : (
+            <>
+              <select
+                className="shipment-fin-select shipment-fin-select--vendor"
+                value={sectionVendorChoice['other'] ?? ''}
+                onChange={(e) => setSectionVendorChoice((s) => ({ ...s, other: e.target.value }))}
+              >
+                <option value="">{t('shipments.fin.sectionVendorPlaceholder')}</option>
+                {vendors.map((v) => (
+                  <option key={v.id} value={String(v.id)}>
+                    {v.name || `#${v.id}`}
+                  </option>
+                ))}
+              </select>
+              <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary" onClick={() => applyVendorToSection('other')}>
+                {t('shipments.fin.applyVendor')}
+              </button>
+              <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary" onClick={() => addPendingOtherLine('other')}>
+                {t('shipments.fin.addRow')}
+              </button>
+              <label className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-section-upload" title={t('shipments.fin.uploadSectionReceipt')}>
+                <Paperclip size={14} className="shipment-fin-icon-leading" />
+                {t('shipments.fin.uploadReceipt') || 'Upload'}
+                <input type="file" className="hidden" accept=".pdf,.png,.jpg,.jpeg" onChange={(e) => handleSectionUpload('other', e)} disabled={batchSavingBucket === 'other'} />
+              </label>
+              <button
+                type="button"
+                className="shipment-fin-btn shipment-fin-btn--secondary"
+                disabled={batchSavingBucket === 'other'}
+                onClick={() => cancelBucketEdit('other')}
+              >
+                {t('shipments.cancel') || 'Cancel'}
+              </button>
+              <button
+                type="button"
+                className="shipment-fin-btn shipment-fin-btn--primary"
+                disabled={batchSavingBucket === 'other'}
+                onClick={() => saveBucketBatch('other')}
+              >
+                {batchSavingBucket === 'other' ? t('shipments.saving') : t('shipments.fin.saveSection')}
+              </button>
+            </>
+          )}
         </div>
       ) : null
 
@@ -1146,7 +1228,7 @@ export default function ShipmentFinancialsModal({
                       <td>{ex.description?.trim() || ex.invoice_number || '—'}</td>
                       <td className="shipment-fin-num">{formatMoney(Number(ex.amount) || 0, numberLocale)}</td>
                       <td>{ex.currency_code || '—'}</td>
-                      {editMode ? (
+                      {bucketEditing ? (
                         <td className="shipment-fin-actions">
                           <div className="shipment-fin-actions__inner">
                             <button
@@ -1189,7 +1271,7 @@ export default function ShipmentFinancialsModal({
                       ) : null}
                     </tr>
                   ))}
-                  {pendingOthers.map((line) => (
+                      {pendingOthers.map((line) => (
                     <FinPendingOtherChargeRow
                       key={line.tempId}
                       bucketId="other"
@@ -1198,7 +1280,7 @@ export default function ShipmentFinancialsModal({
                       shipment={shipment}
                       categoriesByCode={categoriesByCode}
                       t={t}
-                      editMode={editMode}
+                          editMode={bucketEditing}
                       onSaved={onExpensesChanged}
                       onRemove={() => removePendingOtherLine('other', line.tempId)}
                       sectionVendorId={undefined}
@@ -1213,31 +1295,117 @@ export default function ShipmentFinancialsModal({
     } else {
       const { sections, orphans } = partitionBucketRows(bucketId, rows, isReefer)
       const sectionRows = []
-      const batchKeys = []
+      const saveModels = []
+      const deletedSet = deletedIdsByBucket[bucketId] || new Set()
       for (const { tpl, matched } of sections) {
         const rowsForTpl = matched.length > 0 ? matched : [null]
         rowsForTpl.forEach((ex, idx) => {
           const rowKey = expenseRowIdentity(bucketId, tpl.id, ex, idx)
-          batchKeys.push(rowKey)
+          const descPrefix = LINE_DESC_PREFIX[tpl.id] || tpl.id
+          const categoryCode = categoryCodeForTemplate(bucketId, tpl.id)
+          const categoryMeta = categoriesByCode[categoryCode]
+          const initialDesc = extractUserDescription(ex?.description, descPrefix)
+          const initialAmount = ex?.amount != null ? String(ex.amount) : ''
+          const initialCurrency = ex?.currency_code || 'USD'
+          const draft = { desc: initialDesc, amount: initialAmount, currency: initialCurrency, ...(groupDraftByKey[rowKey] || {}) }
+
+          if (ex?.id && deletedSet.has(ex.id)) return
+
+          saveModels.push({
+            rowKey,
+            tplId: tpl.id,
+            expenseId: ex?.id || null,
+            categoryId: categoryMeta?.id,
+            descPrefix,
+            initialDesc,
+            initialAmount,
+            initialCurrency,
+            expenseDate: ex?.expense_date,
+            vendorId: ex?.vendor_id,
+          })
+
+          if (!bucketEditing) {
+            if (!ex) {
+              sectionRows.push(
+                <tr key={rowKey}>
+                  <td>{idx === 0 ? renderLineLabelCell(tpl) : null}</td>
+                  <td>—</td>
+                  <td className="shipment-fin-num">—</td>
+                  <td>—</td>
+                </tr>
+              )
+            } else {
+              sectionRows.push(
+                <tr key={rowKey}>
+                  <td>{idx === 0 ? renderLineLabelCell(tpl) : null}</td>
+                  <td>{ex?.description?.trim() || '—'}</td>
+                  <td className="shipment-fin-num">{formatMoney(Number(ex?.amount) || 0, numberLocale)}</td>
+                  <td>{ex?.currency_code || '—'}</td>
+                </tr>
+              )
+            }
+            return
+          }
+
           sectionRows.push(
-            <FinSingleExpenseRow
-              key={rowKey}
-              tpl={tpl}
-              bucketId={bucketId}
-              expense={ex}
-              showLineLabel={idx === 0}
-              shipment={shipment}
-              token={token}
-              editMode={editMode}
-              categoriesByCode={categoriesByCode}
-              t={t}
-              numberLocale={numberLocale}
-              renderLineLabelCell={renderLineLabelCell}
-              onSaved={onExpensesChanged}
-              saveRegisterKey={editMode ? rowKey : null}
-              onRegisterSave={editMode ? registerRowSave : null}
-              sectionVendorId={sectionVendorChoice[bucketId]}
-            />
+            <tr key={rowKey}>
+              <td>{idx === 0 ? renderLineLabelCell(tpl) : null}</td>
+              <td>
+                <input
+                  type="text"
+                  className="shipment-fin-input"
+                  value={draft.desc}
+                  onChange={(e) => patchGroupDraft(rowKey, { desc: e.target.value })}
+                  placeholder={t('shipments.fin.descPlaceholder')}
+                  disabled={!bucketEditing || batchSavingBucket === bucketId}
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  className="shipment-fin-input shipment-fin-input--num"
+                  value={draft.amount}
+                  onChange={(e) => patchGroupDraft(rowKey, { amount: e.target.value })}
+                  disabled={!bucketEditing || batchSavingBucket === bucketId}
+                />
+              </td>
+              <td>
+                <select
+                  className="shipment-fin-select"
+                  value={draft.currency}
+                  onChange={(e) => patchGroupDraft(rowKey, { currency: e.target.value })}
+                  disabled={!bucketEditing || batchSavingBucket === bucketId}
+                >
+                  {CURRENCIES.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </td>
+              <td className="shipment-fin-actions">
+                <div className="shipment-fin-actions__inner">
+                  {ex?.id ? (
+                    <button
+                      type="button"
+                      className="shipment-fin-btn shipment-fin-btn--danger shipment-fin-btn--sm"
+                      disabled={!bucketEditing || batchSavingBucket === bucketId}
+                      onClick={() =>
+                        setDeletedIdsByBucket((prev) => {
+                          const next = new Set(prev[bucketId] || [])
+                          next.add(ex.id)
+                          return { ...prev, [bucketId]: next }
+                        })
+                      }
+                    >
+                      {t('shipments.delete')}
+                    </button>
+                  ) : null}
+                </div>
+              </td>
+            </tr>
           )
         })
       }
@@ -1297,48 +1465,64 @@ export default function ShipmentFinancialsModal({
         })
       }
 
-      bucketBatchKeysRef.current[bucketId] = batchKeys
+      bucketSaveModelsRef.current[bucketId] = saveModels
 
       const sectionToolbar =
         editMode ? (
           <div className="shipment-fin-section-toolbar">
-            <select
-              className="shipment-fin-select shipment-fin-select--vendor"
-              value={sectionVendorChoice[bucketId] ?? ''}
-              onChange={(e) => setSectionVendorChoice((s) => ({ ...s, [bucketId]: e.target.value }))}
-            >
-              <option value="">{t('shipments.fin.sectionVendorPlaceholder')}</option>
-              {vendors.map((v) => (
-                <option key={v.id} value={String(v.id)}>
-                  {v.name || `#${v.id}`}
-                </option>
-              ))}
-            </select>
-            <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary" onClick={() => applyVendorToSection(bucketId)}>
-              {t('shipments.fin.applyVendor')}
-            </button>
-            <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary" onClick={() => addPendingOtherLine(bucketId)}>
-              {t('shipments.fin.addRow')}
-            </button>
-            <label className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-section-upload" title={t('shipments.fin.uploadSectionReceipt')}>
-              <Paperclip size={14} className="shipment-fin-icon-leading" />
-              {t('shipments.fin.uploadReceipt')}
-              <input 
-                type="file" 
-                accept=".pdf,.png,.jpg,.jpeg"
-                className="hidden" 
-                onChange={(e) => handleSectionUpload(bucketId, e)}
-                disabled={batchSavingBucket === bucketId}
-              />
-            </label>
-            <button
-              type="button"
-              className="shipment-fin-btn shipment-fin-btn--primary"
-              disabled={batchSavingBucket === bucketId}
-              onClick={() => saveBucketBatch(bucketId)}
-            >
-              {batchSavingBucket === bucketId ? t('shipments.saving') : t('shipments.fin.saveSection')}
-            </button>
+            {!bucketEditing ? (
+              <button type="button" className="shipment-fin-btn shipment-fin-btn--primary" onClick={() => startBucketEdit(bucketId)}>
+                {t('shipments.edit') || 'Edit'}
+              </button>
+            ) : (
+              <>
+                <select
+                  className="shipment-fin-select shipment-fin-select--vendor"
+                  value={sectionVendorChoice[bucketId] ?? ''}
+                  onChange={(e) => setSectionVendorChoice((s) => ({ ...s, [bucketId]: e.target.value }))}
+                >
+                  <option value="">{t('shipments.fin.sectionVendorPlaceholder')}</option>
+                  {vendors.map((v) => (
+                    <option key={v.id} value={String(v.id)}>
+                      {v.name || `#${v.id}`}
+                    </option>
+                  ))}
+                </select>
+                <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary" onClick={() => applyVendorToSection(bucketId)}>
+                  {t('shipments.fin.applyVendor')}
+                </button>
+                <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary" onClick={() => addPendingOtherLine(bucketId)}>
+                  {t('shipments.fin.addRow')}
+                </button>
+                <label className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-section-upload" title={t('shipments.fin.uploadSectionReceipt')}>
+                  <Paperclip size={14} className="shipment-fin-icon-leading" />
+                  {t('shipments.fin.uploadReceipt')}
+                  <input 
+                    type="file" 
+                    accept=".pdf,.png,.jpg,.jpeg"
+                    className="hidden" 
+                    onChange={(e) => handleSectionUpload(bucketId, e)}
+                    disabled={batchSavingBucket === bucketId}
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="shipment-fin-btn shipment-fin-btn--secondary"
+                  disabled={batchSavingBucket === bucketId}
+                  onClick={() => cancelBucketEdit(bucketId)}
+                >
+                  {t('shipments.cancel') || 'Cancel'}
+                </button>
+                <button
+                  type="button"
+                  className="shipment-fin-btn shipment-fin-btn--primary"
+                  disabled={batchSavingBucket === bucketId}
+                  onClick={() => saveBucketBatch(bucketId)}
+                >
+                  {batchSavingBucket === bucketId ? t('shipments.saving') : t('shipments.fin.saveSection')}
+                </button>
+              </>
+            )}
           </div>
         ) : null
 
@@ -1452,14 +1636,13 @@ export default function ShipmentFinancialsModal({
           ) : null}
           <div className="client-detail-modal__body-inner clients-form-sections">
           {tab === 'expenses' && isAccountingUser && (
-            <div key="expenses" className="shipment-fin-panel shipment-fin-panel--enter">
+            <div key="expenses" className="shipment-fin-panel shipment-fin-panel--enter shipment-fin-panel--expenses">
               {!hasBl ? (
                 <p className="client-detail-modal__empty">{t('shipments.financialsNoBl')}</p>
               ) : loading ? (
                 <ShipmentFinLoadingSkeleton variant="expenses" />
               ) : (
                 <>
-                  {editMode ? <p className="shipment-fin-tab-a-hint">{t('shipments.fin.tabAEditHint')}</p> : null}
                   {BUCKET_DEFS.map((d) => renderBucketCard(d.id, d))}
                   {renderBucketCard('other', otherDef)}
                   <div className="shipment-fin-total-bar">
@@ -1477,10 +1660,6 @@ export default function ShipmentFinancialsModal({
                       </span>
                     </div>
                   </div>
-                  {shipment.cost_total != null && (
-                    <p className="shipment-fin-hint text-muted fs-xs">{t('shipments.fin.netCostHint')}</p>
-                  )}
-                  <p className="shipment-fin-notify-hint text-center text-muted fs-sm">{t('shipments.fin.notifySalesHint')}</p>
                   {canNotifySales ? (
                     <div className="shipment-fin-notify-actions">
                       <button
@@ -1513,7 +1692,6 @@ export default function ShipmentFinancialsModal({
                 <p className="client-detail-modal__empty">{t('shipments.fin.tabBEmpty')}</p>
               ) : (
                 <>
-                  <p className="shipment-fin-hint text-muted fs-xs mb-2">{t('shipments.fin.tabBInvoiceHint')}</p>
                   <div className="shipment-fin-table-wrap">
                     <table className="shipment-fin-sell-table shipment-fin-sell-table--wide">
                       <thead>
@@ -1672,7 +1850,6 @@ export default function ShipmentFinancialsModal({
                       </button>
                     </div>
                   ) : null}
-                  <p className="shipment-fin-hint text-muted fs-xs mt-3">{t('shipments.fin.savePricingHint')}</p>
                 </>
               )}
             </div>
