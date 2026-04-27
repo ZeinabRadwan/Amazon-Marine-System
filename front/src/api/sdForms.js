@@ -162,8 +162,17 @@ export async function emailSDFormToOperations(token, id) {
     method: 'POST',
     headers: authHeaders(token),
   })
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.message || data.error || `Failed to email operations (${res.status})`)
+  const raw = await res.text()
+  let data = {}
+  try {
+    data = raw ? JSON.parse(raw) : {}
+  } catch {
+    data = {}
+  }
+  if (!res.ok) {
+    const fallback = raw ? raw.slice(0, 300) : ''
+    throw new Error(data.message || data.error || fallback || `Failed to email operations (${res.status})`)
+  }
   return data
 }
 

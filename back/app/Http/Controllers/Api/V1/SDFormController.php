@@ -16,6 +16,7 @@ use App\Services\ActivityLogger;
 use App\Services\NotificationService;
 use App\Services\SDFormService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Mpdf\Mpdf;
 
@@ -439,7 +440,33 @@ class SDFormController extends Controller
     {
         $this->authorize('view', $sdForm);
 
-        $sdForm->loadMissing(['client', 'salesRep', 'pol', 'pod', 'linkedShipment']);
+        $sdForm->loadMissing(['client', 'salesRep', 'pol', 'pod', 'shippingLine', 'linkedShipment']);
+
+        try {
+            [$filename, $pdfBinary] = $this->buildSdFormPdfBinary($request, $sdForm);
+        } catch (\Throwable $e) {
+            Log::error('Failed to generate SD form PDF before emailing operations', [
+                'sd_form_id' => $sdForm->id,
+                'sd_number' => $sdForm->sd_number,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'message' => __('Failed to generate SD form PDF: :error', ['error' => $e->getMessage()]),
+            ], 500);
+        }
+
+        if (empty($pdfBinary)) {
+            Log::error('Generated SD form PDF is empty', [
+                'sd_form_id' => $sdForm->id,
+                'sd_number' => $sdForm->sd_number,
+            ]);
+
+            return response()->json([
+                'message' => __('Generated PDF is empty and cannot be emailed.'),
+            ], 500);
+        }
 
         $operationsUsers = User::role('operations')
             ->where('status', 'active')
@@ -452,38 +479,56 @@ class SDFormController extends Controller
             ], 200);
         }
 
-        $sentCount = $this->notificationService->sendEmail(
-            'sd_form.email_to_operations',
-            $sdForm,
-            $operationsUsers,
-            function (User $user) use ($sdForm): void {
-                $subject = sprintf('SD %s sent to operations', $sdForm->sd_number ?? ('#'.$sdForm->id));
+        $subject = sprintf('SD %s sent to operations', $sdForm->sd_number ?? ('#'.$sdForm->id));
+        $body = view('emails.sd_form_plain', ['form' => $sdForm])->render();
+        if (trim($subject) === '' || trim($body) === '') {
+            return response()->json([
+                'message' => __('Missing required email fields (subject/body).'),
+            ], 500);
+        }
 
-                $body = view('emails.sd_form_plain', [
-                    'form' => $sdForm,
-                ])->render();
-
-                Mail::send([], [], function ($message) use ($user, $subject, $body): void {
+        $sentCount = 0;
+        $sendErrors = [];
+        foreach ($operationsUsers as $user) {
+            try {
+                Mail::send([], [], function ($message) use ($user, $subject, $body, $pdfBinary, $filename): void {
                     $message->to($user->email)
                         ->subject($subject)
-                        ->setBody($body, 'text/html');
+                        ->setBody($body, 'text/html')
+                        ->attachData($pdfBinary, $filename, [
+                            'mime' => 'application/pdf',
+                        ]);
                 });
+                $sentCount++;
+            } catch (\Throwable $e) {
+                $sendErrors[] = sprintf('%s: %s', (string) $user->email, $e->getMessage());
             }
-        );
+        }
 
         if ($sentCount === 0) {
+            Log::error('Failed to email SD form to all operations recipients', [
+                'sd_form_id' => $sdForm->id,
+                'sd_number' => $sdForm->sd_number,
+                'errors' => $sendErrors,
+            ]);
+
             return response()->json([
-                'message' => __('Failed to send email to operations. Please check mail settings.'),
+                'message' => __('Failed to send email to operations. Please check SMTP/mail settings. :error', [
+                    'error' => $sendErrors[0] ?? __('Unknown mail error.'),
+                ]),
             ], 500);
         }
 
         ActivityLogger::log('sd_form.email_to_operations', $sdForm, [
             'recipient_count' => $operationsUsers->count(),
             'sent_count' => $sentCount,
+            'errors' => $sendErrors,
         ]);
 
         return response()->json([
             'message' => __('SD form emailed to operations.'),
+            'sent_count' => $sentCount,
+            'failed_count' => max(0, $operationsUsers->count() - $sentCount),
         ]);
     }
 
@@ -491,6 +536,20 @@ class SDFormController extends Controller
     {
         $this->authorize('view', $sdForm);
 
+        $sdForm->loadMissing(['client', 'salesRep', 'pol', 'pod', 'shippingLine', 'linkedShipment']);
+        [$filename, $pdfBinary] = $this->buildSdFormPdfBinary($request, $sdForm);
+
+        return response($pdfBinary, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+        ]);
+    }
+
+    /**
+     * @return array{0: string, 1: string}
+     */
+    private function buildSdFormPdfBinary(Request $request, SDForm $sdForm): array
+    {
         $sdForm->loadMissing(['client', 'salesRep', 'pol', 'pod', 'shippingLine', 'linkedShipment']);
 
         $layout = PdfLayout::where('document_type', 'sd_form')->first();
@@ -520,10 +579,12 @@ class SDFormController extends Controller
 
         $mpdf->WriteHTML($html);
 
-        return response($mpdf->Output($filename, 'S'), 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
-        ]);
+        $pdfBinary = $mpdf->Output($filename, 'S');
+        if (!is_string($pdfBinary) || $pdfBinary === '') {
+            throw new \RuntimeException('PDF output is empty');
+        }
+
+        return [$filename, $pdfBinary];
     }
 
     /**

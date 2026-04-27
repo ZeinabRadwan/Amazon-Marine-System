@@ -277,6 +277,7 @@ export default function SDForms() {
   const [submitAcid, setSubmitAcid] = useState('')
   const [submitDirection, setSubmitDirection] = useState('Export')
   const [submitSubmitting, setSubmitSubmitting] = useState(false)
+  const [emailOpsSendingId, setEmailOpsSendingId] = useState(null)
 
   const loadList = useCallback(() => {
     if (!token) return
@@ -680,11 +681,16 @@ export default function SDForms() {
   const runEmailOps = async (id) => {
     if (!token) return
     setAlert(null)
+    setEmailOpsSendingId(id)
     try {
       await emailSDFormToOperations(token, id)
+      loadList()
+      if (detailId === id) openDetail(id)
       setAlert({ type: 'success', message: t('sdForms.emailOpsSuccess') })
     } catch (err) {
       setAlert({ type: 'error', message: err.message || t('sdForms.errorEmailOps') })
+    } finally {
+      setEmailOpsSendingId(null)
     }
   }
 
@@ -2084,9 +2090,14 @@ export default function SDForms() {
                             </button>
                           )}
                           {canSendOps && (
-                            <button type="button" className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs" onClick={() => runEmailOps(detail.id)}>
+                            <button
+                              type="button"
+                              className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs"
+                              onClick={() => runEmailOps(detail.id)}
+                              disabled={emailOpsSendingId === detail.id}
+                            >
                               <Mail className="h-4 w-4" aria-hidden />
-                              {t('sdForms.emailOps')}
+                              {emailOpsSendingId === detail.id ? t('sdForms.saving') : t('sdForms.emailOps')}
                             </button>
                           )}
                           {canLinkShipment && (
