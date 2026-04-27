@@ -300,7 +300,7 @@ export default function ShipmentAttachmentsModal({ open, shipment, expenses, loa
                 <Building2 className="w-3.5 h-3.5" />
                 {shipment?.client?.company_name || shipment?.client?.name}
               </span>
-              <span className="text-xs text-muted">{shipment?.bl_number || '—'}</span>
+              <span className="text-xs text-muted">{shipment?.bl_number}</span>
             </div>
             <div className="sd-form-modal-preview__hint">{t('shipments.attachments.headerHint') || 'Manage shipment and expense attachments in one place.'}</div>
           </div>
