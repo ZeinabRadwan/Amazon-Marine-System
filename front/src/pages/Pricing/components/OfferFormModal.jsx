@@ -7,10 +7,10 @@ import {
   Trash2,
   MapPin,
   Clock,
-  CalendarDays,
   DollarSign,
+  FileText,
+  Ship,
   Truck,
-  Package,
 } from 'lucide-react'
 import '../../Shipments/Shipments.css'
 import { useMutateOffer } from '../../../hooks/usePricing'
@@ -46,10 +46,6 @@ const CURRENCIES = ['USD', 'EUR', 'EGP']
 /** Default editable charge rows for ocean freight */
 const DEFAULT_SEA_LINE_NAMES = ['Ocean Freight', 'THC', 'B/L Fee', 'Telex Release']
 
-const EXTRA_LINE_NAMES = ['Power', 'Other Charges']
-
-const BASE_LINE_ITEMS = [...DEFAULT_SEA_LINE_NAMES, ...EXTRA_LINE_NAMES]
-
 /** Chip label for stored API dates (YYYY-MM-DD) without UTC shift */
 function formatIsoDateDisplay(iso, locale) {
   if (!iso || typeof iso !== 'string') return ''
@@ -72,7 +68,6 @@ const defaultInlandForm = () => ({
   inland_port: '',
   inland_gov: '',
   inland_area: '',
-  shipping_line: '',
   truck_type: 't40d',
   price: '',
   currency: 'EGP',
@@ -123,10 +118,10 @@ const defaultSeaForm = () => ({
   shipping_line: '',
   container_preset: '',
   transit_time_days: '',
-  pol_detention: '',
-  pol_demurrage: '',
-  pod_detention: '',
-  pod_demurrage: '',
+  pol_detention: '0',
+  pol_demurrage: '0',
+  pod_detention: '0',
+  pod_demurrage: '0',
   sailing_tab: 'weekly',
   weekly_days: [],
   fixed_dates: [],
@@ -135,11 +130,14 @@ const defaultSeaForm = () => ({
   notes: '',
 })
 
-const makeLineItem = (name = 'Ocean Freight') => ({
+const makeSeaCoreRow = (name) => ({ name, amount: '0', currency: 'USD' })
+
+const initialSeaCoreLines = () => DEFAULT_SEA_LINE_NAMES.map((name) => makeSeaCoreRow(name))
+
+const makeCustomChargeItem = () => ({
   id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-  name,
-  description: '',
-  amount: '',
+  name: '',
+  amount: '0',
   currency: 'USD',
 })
 
@@ -152,9 +150,26 @@ const CANONICAL_SEA_LINE_KEYS = {
   'Other Charges': 'defaultLineOther',
 }
 
-function seaLineOptionLabel(name, t) {
+const CORE_LINE_ABBR = {
+  'Ocean Freight': 'OF',
+  THC: 'THC',
+  'B/L Fee': 'B/L',
+  'Telex Release': 'Telex',
+  Power: 'Power',
+}
+
+function SeaCoreLineFieldLabel({ name, t }) {
   const k = CANONICAL_SEA_LINE_KEYS[name]
-  return k ? t(`pricing.${k}`) : name
+  const abbr = CORE_LINE_ABBR[name] || name
+  return (
+    <div className="mb-1.5 text-[13px] font-semibold leading-snug text-gray-900 dark:text-gray-100">
+      <span lang="ar">{k ? t(`pricing.${k}`, name) : name}</span>
+      <span lang="en" className="font-semibold text-blue-700 dark:text-blue-300">
+        {' '}
+        ({abbr})
+      </span>
+    </div>
+  )
 }
 
 /** Shipment Financials–style section: `shipment-fin-card` + static `shipment-fin-card__head` + `__body`. */
@@ -258,27 +273,40 @@ function inferLegacyPricingCode(itemName, presetSlug, oceanUnitTypes, idx = 0) {
   return `otherCharge${idx + 1}`
 }
 
+/** Format free-time cell for DND storage (numeric days + legacy free text). */
+function formatFreeTimeDndCell(v) {
+  const s = String(v ?? '').trim()
+  if (!s || s === '0') return '0 days'
+  if (/^\d+(\.\d+)?$/.test(s)) return `${s} days`
+  return s
+}
+
 function encodeFreeTimeDnd({ pol_detention, pol_demurrage, pod_detention, pod_demurrage }) {
   const lines = []
-  if (pol_detention || pol_demurrage) {
-    lines.push(
-      `POL Detention: ${pol_detention?.trim() || '—'} | Demurrage: ${pol_demurrage?.trim() || '—'}`
-    )
-  }
-  if (pod_detention || pod_demurrage) {
-    lines.push(
-      `POD Detention: ${pod_detention?.trim() || '—'} | Demurrage: ${pod_demurrage?.trim() || '—'}`
-    )
-  }
+  lines.push(
+    `POL Detention: ${formatFreeTimeDndCell(pol_detention)} | Demurrage: ${formatFreeTimeDndCell(pol_demurrage)}`
+  )
+  lines.push(
+    `POD Detention: ${formatFreeTimeDndCell(pod_detention)} | Demurrage: ${formatFreeTimeDndCell(pod_demurrage)}`
+  )
   return lines.join('\n')
+}
+
+function parseFreeTimeDigits(raw) {
+  const s = String(raw ?? '')
+    .trim()
+    .replace(/^—$/, '')
+  if (!s) return '0'
+  const m = s.match(/(\d+(?:\.\d+)?)/)
+  return m ? String(Number(m[1])) : '0'
 }
 
 function parseFreeTimeFromDnd(dnd) {
   const empty = {
-    pol_detention: '',
-    pol_demurrage: '',
-    pod_detention: '',
-    pod_demurrage: '',
+    pol_detention: '0',
+    pol_demurrage: '0',
+    pod_detention: '0',
+    pod_demurrage: '0',
   }
   if (!dnd?.trim()) return empty
   const lines = String(dnd).split('\n').filter(Boolean)
@@ -286,8 +314,8 @@ function parseFreeTimeFromDnd(dnd) {
     const upper = line.toUpperCase()
     const detMatch = line.match(/Detention:\s*([^|]+)/i)
     const demMatch = line.match(/Demurrage:\s*(.+)/i)
-    const det = detMatch?.[1]?.trim().replace(/^—$/, '') ?? ''
-    const dem = demMatch?.[1]?.trim().replace(/^—$/, '') ?? ''
+    const det = parseFreeTimeDigits(detMatch?.[1])
+    const dem = parseFreeTimeDigits(demMatch?.[1])
     if (upper.includes('POL')) {
       empty.pol_detention = det
       empty.pol_demurrage = dem
@@ -300,12 +328,44 @@ function parseFreeTimeFromDnd(dnd) {
   return empty
 }
 
+function buildSeaPricingStateFromOffer(offer, oceanUnitTypes) {
+  const pricing = offer?.pricing || {}
+  const preset = inferPresetFromPricing(offer || {})
+  const meta = resolveOceanMeta(preset, oceanUnitTypes)
+  const coreNames =
+    meta.type === 'Reefer' ? [...DEFAULT_SEA_LINE_NAMES, 'Power'] : [...DEFAULT_SEA_LINE_NAMES]
+  const seaCoreLines = coreNames.map((name) => {
+    const code = inferLegacyPricingCode(name, preset, oceanUnitTypes, 0)
+    const item = pricing[code]
+    return {
+      name,
+      amount: item?.price != null && item.price !== '' ? String(item.price) : '0',
+      currency: item?.currency || 'USD',
+    }
+  })
+  const usedCodes = new Set(
+    coreNames.map((name) => inferLegacyPricingCode(name, preset, oceanUnitTypes, 0))
+  )
+  const extras = Object.entries(pricing)
+    .filter(([code]) => !usedCodes.has(code))
+    .sort(([a], [b]) => a.localeCompare(b))
+  const descParts = offer?.other_charges ? String(offer.other_charges).split(/\s*\|\s*/) : []
+  const seaCustomLines = extras.map(([code, item], idx) => ({
+    id: `loaded-${code}-${idx}`,
+    name: (descParts[idx] && descParts[idx].trim()) || '',
+    amount: item?.price != null && item.price !== '' ? String(item.price) : '0',
+    currency: item?.currency || 'USD',
+  }))
+  return { seaCoreLines, seaCustomLines }
+}
+
 export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit, pricingMode = 'sea' }) {
   const { t, i18n } = useTranslation()
   const { create, update, loading, error } = useMutateOffer()
   const [form, setForm] = useState(defaultSeaForm)
   const [inlandForm, setInlandForm] = useState(defaultInlandForm)
-  const [lineItems, setLineItems] = useState(() => DEFAULT_SEA_LINE_NAMES.map((n) => makeLineItem(n)))
+  const [seaCoreLines, setSeaCoreLines] = useState(initialSeaCoreLines)
+  const [seaCustomLines, setSeaCustomLines] = useState([])
   const [oceanUnitTypes, setOceanUnitTypes] = useState([])
   const [inlandUnitTypes, setInlandUnitTypes] = useState([])
   /** Single sailing date pending add (ISO YYYY-MM-DD from DatePicker) */
@@ -388,7 +448,6 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
       inland_port: offerToEdit.inland_port || '',
       inland_gov: offerToEdit.inland_gov || offerToEdit.region || '',
       inland_area: offerToEdit.inland_city || offerToEdit.destination || '',
-      shipping_line: offerToEdit.shipping_line || '',
       truck_type: truckId,
       price: row?.price != null && row.price !== '' ? String(row.price) : '',
       currency: row?.currency || 'EGP',
@@ -405,7 +464,8 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
 
     if (!offerToEdit) {
       setForm(defaultSeaForm())
-      setLineItems(DEFAULT_SEA_LINE_NAMES.map((n) => makeLineItem(n)))
+      setSeaCoreLines(initialSeaCoreLines())
+      setSeaCustomLines([])
       return
     }
 
@@ -437,35 +497,46 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
       notes: offerToEdit.notes || '',
     })
 
-    const pricing = offerToEdit.pricing || {}
-    const mapped = Object.entries(pricing).map(([code, item], idx) => {
-      const lower = String(code).toLowerCase()
-      let name = 'Other Charges'
-      if (lower.includes('of')) name = 'Ocean Freight'
-      else if (lower.includes('thc')) name = 'THC'
-      else if (lower.includes('power')) name = 'Power'
-      else if (lower.includes('bl')) name = 'B/L Fee'
-      else if (lower.includes('telex')) name = 'Telex Release'
-      return {
-        id: `${Date.now()}-${idx}`,
-        name,
-        description: '',
-        amount: item?.price ?? '',
-        currency: item?.currency || 'USD',
-      }
-    })
-    setLineItems(mapped.length ? mapped : DEFAULT_SEA_LINE_NAMES.map((n) => makeLineItem(n)))
-  }, [offerToEdit, isOpen, pricingMode])
+    const { seaCoreLines: loadedCore, seaCustomLines: loadedCustom } = buildSeaPricingStateFromOffer(
+      offerToEdit,
+      oceanUnitTypes
+    )
+    setSeaCoreLines(loadedCore.length ? loadedCore : initialSeaCoreLines())
+    setSeaCustomLines(loadedCustom)
+  }, [offerToEdit, isOpen, pricingMode, oceanUnitTypes])
 
   const oceanMeta = useMemo(
     () => resolveOceanMeta(form.container_preset, oceanUnitTypes),
     [form.container_preset, oceanUnitTypes]
   )
 
-  const allowedItemNames = useMemo(() => {
-    if (oceanMeta.type === 'Reefer') return BASE_LINE_ITEMS
-    return BASE_LINE_ITEMS.filter((x) => x !== 'Power')
-  }, [oceanMeta.type])
+  const selectedSpec = useMemo(() => {
+    if (!oceanMeta.type || !oceanMeta.size) return ''
+    const typeL = oceanMeta.type === 'Reefer' ? t('pricing.reefer') : t('pricing.dry')
+    const heightL =
+      String(oceanMeta.height).toLowerCase() === 'hq' ? t('pricing.containerHeightHq') : t('pricing.standard')
+    return `${oceanMeta.size} ${heightL} ${typeL}`
+  }, [oceanMeta.type, oceanMeta.size, oceanMeta.height, t])
+
+  const syncSeaCoreLinesForPreset = useCallback(
+    (presetSlug) => {
+      const meta = resolveOceanMeta(presetSlug, oceanUnitTypes)
+      setSeaCoreLines((prev) => {
+        const byName = Object.fromEntries(prev.map((r) => [r.name, r]))
+        const base = DEFAULT_SEA_LINE_NAMES.map((name) => ({
+          name,
+          amount: byName[name]?.amount ?? '0',
+          currency: byName[name]?.currency ?? 'USD',
+        }))
+        if (meta.type === 'Reefer') {
+          const p = byName.Power || { amount: '0', currency: 'USD' }
+          return [...base, { name: 'Power', amount: p.amount, currency: p.currency }]
+        }
+        return base
+      })
+    },
+    [oceanUnitTypes]
+  )
 
   const updateForm = (patch) => setForm((prev) => ({ ...prev, ...patch }))
   const updateInlandForm = (patch) => setInlandForm((prev) => ({ ...prev, ...patch }))
@@ -513,9 +584,12 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
     setDraftFixedSailingDate('')
   }
 
-  const addLineItem = () => setLineItems((prev) => [...prev, makeLineItem('Other Charges')])
-  const removeLineItem = (id) => setLineItems((prev) => prev.filter((x) => x.id !== id))
-  const patchLineItem = (id, patch) => setLineItems((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x)))
+  const patchSeaCoreLine = (name, patch) =>
+    setSeaCoreLines((prev) => prev.map((row) => (row.name === name ? { ...row, ...patch } : row)))
+  const addCustomCharge = () => setSeaCustomLines((prev) => [...prev, makeCustomChargeItem()])
+  const removeCustomCharge = (id) => setSeaCustomLines((prev) => prev.filter((x) => x.id !== id))
+  const patchCustomCharge = (id, patch) =>
+    setSeaCustomLines((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x)))
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -532,7 +606,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
         region: gov,
         pod: searchPod || port,
         pol: '',
-        shipping_line: inlandForm.shipping_line?.trim() || '',
+        shipping_line: '',
         dnd: null,
         transit_time: null,
         valid_from: inlandForm.valid_from || null,
@@ -564,22 +638,42 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
       return
     }
 
-    const parsedItems = lineItems
-      .map((row, idx) => {
+    const parsedCore = seaCoreLines
+      .map((row) => {
         const amount = Number(row.amount)
         if (Number.isNaN(amount) || amount < 0) return null
         if (row.name === 'Power' && oceanMeta.type !== 'Reefer') return null
-        if (row.name === 'Other Charges' && !(row.description || '').trim()) return null
-        const code = inferLegacyPricingCode(row.name, form.container_preset, oceanUnitTypes, idx)
+        const code = inferLegacyPricingCode(row.name, form.container_preset, oceanUnitTypes, 0)
         return {
           code,
           name: row.name,
-          description: (row.description || '').trim(),
+          description: '',
           amount,
           currency: row.currency || 'USD',
         }
       })
       .filter(Boolean)
+
+    let otherIdx = 0
+    const parsedCustom = seaCustomLines
+      .map((row) => {
+        const amount = Number(row.amount)
+        if (Number.isNaN(amount) || amount < 0) return null
+        const label = (row.name || '').trim()
+        if (!label) return null
+        const code = inferLegacyPricingCode('Other Charges', form.container_preset, oceanUnitTypes, otherIdx)
+        otherIdx += 1
+        return {
+          code,
+          name: 'Other Charges',
+          description: label,
+          amount,
+          currency: row.currency || 'USD',
+        }
+      })
+      .filter(Boolean)
+
+    const parsedItems = [...parsedCore, ...parsedCustom]
 
     if (!parsedItems.length) return
 
@@ -669,326 +763,127 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
               icon={MapPin}
               title={t('pricing.formSectionRouteCarrier', 'Route & Carrier')}
               subtitle={t(
-                'pricing.pricingFinRouteCarrierSub',
-                'POL, POD, region, and ocean carrier for this rate.'
+                'pricing.oceanRouteSection1Sub',
+                'POL, POD, region, carrier, container type, and transit time (days).'
               )}
             >
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <div className="min-w-0">
-                  <PricingBilingualFieldLabel
-                    htmlFor="offer-pol"
-                    arabicKey="pricing.oceanRoutePolArabic"
-                    arabicDefault="ميناء التحميل"
-                    englishAbbrKey="pricing.oceanRoutePolEnglishAbbr"
-                    englishAbbrDefault="POL"
-                  />
-                  <PortNameAsyncSelect
-                    id="offer-pol"
-                    value={form.pol}
-                    onChange={(v) => updateForm({ pol: v })}
-                    placeholder={t('pricing.selectOrCreatePol', 'Select or create port')}
-                    aria-label={t('pricing.oceanRoutePolAria', 'Port of loading (POL)')}
-                  />
-                </div>
-                <div className="min-w-0">
-                  <PricingBilingualFieldLabel
-                    htmlFor="offer-pod"
-                    arabicKey="pricing.oceanRoutePodArabic"
-                    arabicDefault="ميناء الوصول"
-                    englishAbbrKey="pricing.oceanRoutePodEnglishAbbr"
-                    englishAbbrDefault="POD"
-                  />
-                  <PortNameAsyncSelect
-                    id="offer-pod"
-                    value={form.pod}
-                    onChange={(v) => updateForm({ pod: v })}
-                    placeholder={t('pricing.selectOrCreatePod', 'Select or create port')}
-                    aria-label={t('pricing.oceanRoutePodAria', 'Port of discharge (POD)')}
-                  />
-                </div>
-                <div className="min-w-0">
-                  <PricingBilingualFieldLabel
-                    htmlFor="offer-sea-region"
-                    arabicKey="pricing.oceanRouteRegionArabic"
-                    arabicDefault="المنطقة"
-                    englishAbbrKey="pricing.oceanRouteRegionEnglishAbbr"
-                    englishAbbrDefault="Region"
-                  />
-                  <PricingRegionAsyncSelect
-                    id="offer-sea-region"
-                    value={form.region}
-                    onChange={(v) => updateForm({ region: v })}
-                    placeholder={t('pricing.selectOrCreateRegion', 'Select or create region')}
-                    aria-label={t('pricing.oceanRouteRegionAria', 'Region')}
-                  />
-                </div>
-                <div className="min-w-0">
-                  <PricingBilingualFieldLabel
-                    htmlFor="offer-shipping-line"
-                    arabicKey="pricing.oceanRouteCarrierArabic"
-                    arabicDefault="الخط الملاحي"
-                    englishAbbrKey="pricing.oceanRouteCarrierEnglishAbbr"
-                    englishAbbrDefault="Shipping Line"
-                  />
-                  <ShippingLineNameAsyncSelect
-                    id="offer-shipping-line"
-                    serviceScope="ocean"
-                    value={form.shipping_line}
-                    onChange={(v) => updateForm({ shipping_line: v })}
-                    placeholder={t('pricing.selectOrCreateShippingLine', 'Select or create shipping line')}
-                    aria-label={t('pricing.oceanRouteCarrierAria', 'Shipping line — ocean freight carriers only')}
-                  />
-                </div>
-              </div>
-            </PricingFinCard>
-
-            <PricingFinCard
-              icon={Package}
-              title={t('pricing.formSectionContainerVehicle', 'Container')}
-              subtitle={t(
-                'pricing.pricingFinContainerSub',
-                'Equipment, transit time, and sailing schedule (weekly or fixed dates).'
-              )}
-            >
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="min-w-0">
-                  <PricingBilingualFieldLabel
-                    htmlFor="offer-container-type"
-                    arabicKey="pricing.oceanRouteContainerTypeArabic"
-                    arabicDefault="نوع الحاوية"
-                    englishAbbrKey="pricing.oceanRouteContainerTypeEnglishAbbr"
-                    englishAbbrDefault="Container Type"
-                  />
-                  <OceanContainerTypeAsyncSelect
-                    id="offer-container-type"
-                    types={oceanUnitTypes}
-                    value={form.container_preset}
-                    onChange={(v) => updateForm({ container_preset: v })}
-                    onTypesUpdated={loadOceanTypes}
-                  />
-                </div>
-                <div className="min-w-0">
-                  <PricingBilingualFieldLabel
-                    htmlFor="offer-transit-time"
-                    arabicKey="pricing.oceanRouteTransitTimeArabic"
-                    arabicDefault="مدة العبور"
-                    englishAbbrKey="pricing.oceanRouteTransitTimeEnglishAbbr"
-                    englishAbbrDefault="Transit Time"
-                  />
-                  <div className="flex items-center gap-2">
-                    <input
-                      id="offer-transit-time"
-                      type="number"
-                      min="0"
-                      className="w-full min-w-0 rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:ring-blue-900/20"
-                      value={form.transit_time_days}
-                      onChange={(e) => updateForm({ transit_time_days: e.target.value })}
-                      placeholder="0"
-                      aria-label={t('pricing.oceanRouteTransitTimeAria', 'Transit time (days)')}
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  <div className="min-w-0">
+                    <PricingBilingualFieldLabel
+                      htmlFor="offer-pol"
+                      arabicKey="pricing.oceanRoutePolArabic"
+                      arabicDefault="ميناء التحميل"
+                      englishAbbrKey="pricing.oceanRoutePolEnglishAbbr"
+                      englishAbbrDefault="POL"
                     />
-                    <span className="whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{t('pricing.days', 'days')}</span>
+                    <PortNameAsyncSelect
+                      id="offer-pol"
+                      value={form.pol}
+                      onChange={(v) => updateForm({ pol: v })}
+                      placeholder={t('pricing.selectOrCreatePol', 'Select or create port')}
+                      aria-label={t('pricing.oceanRoutePolAria', 'Port of loading (POL)')}
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <PricingBilingualFieldLabel
+                      htmlFor="offer-pod"
+                      arabicKey="pricing.oceanRoutePodArabic"
+                      arabicDefault="ميناء الوصول"
+                      englishAbbrKey="pricing.oceanRoutePodEnglishAbbr"
+                      englishAbbrDefault="POD"
+                    />
+                    <PortNameAsyncSelect
+                      id="offer-pod"
+                      value={form.pod}
+                      onChange={(v) => updateForm({ pod: v })}
+                      placeholder={t('pricing.selectOrCreatePod', 'Select or create port')}
+                      aria-label={t('pricing.oceanRoutePodAria', 'Port of discharge (POD)')}
+                    />
+                  </div>
+                  <div className="min-w-0 sm:col-span-2 xl:col-span-1">
+                    <PricingBilingualFieldLabel
+                      htmlFor="offer-sea-region"
+                      arabicKey="pricing.oceanRouteRegionArabic"
+                      arabicDefault="المنطقة"
+                      englishAbbrKey="pricing.oceanRouteRegionEnglishAbbr"
+                      englishAbbrDefault="Region"
+                    />
+                    <PricingRegionAsyncSelect
+                      id="offer-sea-region"
+                      value={form.region}
+                      onChange={(v) => updateForm({ region: v })}
+                      placeholder={t('pricing.selectOrCreateRegion', 'Select or create region')}
+                      aria-label={t('pricing.oceanRouteRegionAria', 'Region')}
+                    />
                   </div>
                 </div>
-              </div>
-
-              <div className="mt-5 border-t border-gray-100 pt-5 dark:border-gray-700/80">
-                <div className="mb-3 text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  {t('pricing.formSectionSailingDatesLong', 'Sailing dates')}
+                <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+                  <div className="min-w-0 xl:col-span-3">
+                    <PricingBilingualFieldLabel
+                      htmlFor="offer-shipping-line"
+                      arabicKey="pricing.oceanRouteCarrierArabic"
+                      arabicDefault="الخط الملاحي"
+                      englishAbbrKey="pricing.oceanRouteCarrierEnglishAbbr"
+                      englishAbbrDefault="Shipping Line"
+                    />
+                    <ShippingLineNameAsyncSelect
+                      id="offer-shipping-line"
+                      serviceScope="ocean"
+                      value={form.shipping_line}
+                      onChange={(v) => updateForm({ shipping_line: v })}
+                      placeholder={t('pricing.selectOrCreateShippingLine', 'Select or create shipping line')}
+                      aria-label={t('pricing.oceanRouteCarrierAria', 'Shipping line — ocean freight carriers only')}
+                    />
+                  </div>
                 </div>
-                <div className="mb-4 flex gap-2 border-b border-gray-100 pb-2 dark:border-gray-700">
-                  <button
-                    type="button"
-                    className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${form.sailing_tab === 'weekly' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'}`}
-                    onClick={() => updateForm({ sailing_tab: 'weekly' })}
-                  >
-                    {t('pricing.sailingTabWeeklyBilingual', 'أسبوعي (Weekly)')}
-                  </button>
-                  <button
-                    type="button"
-                    className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${form.sailing_tab === 'fixed' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'}`}
-                    onClick={() => updateForm({ sailing_tab: 'fixed' })}
-                  >
-                    {t('pricing.sailingTabFixedBilingual', 'تواريخ ثابتة (Fixed dates)')}
-                  </button>
-                </div>
-
-                {form.sailing_tab === 'weekly' ? (
-                  <div className="space-y-4">
-                    <p id="offer-weekly-sailing-hint" className="text-xs leading-relaxed text-gray-600 dark:text-gray-400">
-                      {t(
-                        'pricing.weeklySailingMultiHint',
-                        'Select one or more weekdays (for example Monday and Thursday). Sailings repeat every week on each selected day.'
-                      )}
-                    </p>
-                    <div className="rounded-xl border border-gray-100 bg-gray-50/80 p-4 dark:border-gray-700 dark:bg-gray-900/30">
-                      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                        <h4 className="flex flex-wrap items-center gap-2 text-xs font-bold text-gray-600 dark:text-gray-400">
-                          <PricingBilingualFieldLabel
-                            as="span"
-                            className="text-xs font-bold text-gray-600 dark:text-gray-400"
-                            arabicKey="pricing.weeklySectionTitleArabic"
-                            arabicDefault="أيام الإبحار الأسبوعية"
-                            englishAbbrKey="pricing.weeklySectionTitleEnglishAbbr"
-                            englishAbbrDefault="Weekly"
-                          />
-                          {form.weekly_days.length > 0 ? (
-                            <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-bold text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">
-                              {form.weekly_days.length}
-                            </span>
-                          ) : null}
-                        </h4>
-                        {form.weekly_days.length > 0 ? (
-                          <button
-                            type="button"
-                            className="text-xs font-semibold text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                            onClick={clearAllWeeklyDays}
-                          >
-                            {t('pricing.clearWeeklyDays', 'Clear selection')}
-                          </button>
-                        ) : null}
-                      </div>
-                      <div
-                        className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7"
-                        role="group"
-                        aria-describedby="offer-weekly-sailing-hint"
-                      >
-                        {WEEK_DAYS.map((day) => {
-                          const selected = form.weekly_days.includes(day)
-                          return (
-                            <label
-                              key={day}
-                              className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${
-                                selected
-                                  ? 'border-blue-500 bg-blue-50 text-blue-900 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-100'
-                                  : 'border-gray-200 bg-white text-gray-800 hover:border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:border-gray-500'
-                              }`}
-                            >
-                              <input
-                                type="checkbox"
-                                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                checked={selected}
-                                onChange={() => toggleWeeklyDay(day)}
-                                aria-label={t('pricing.toggleWeekdayAria', 'Toggle {{day}}', {
-                                  day: weekdayLabel(day, t),
-                                })}
-                              />
-                              <span>{weekdayLabel(day, t)}</span>
-                            </label>
-                          )
-                        })}
-                      </div>
-                      {form.weekly_days.length > 0 ? (
-                        <p className="mt-3 text-sm font-semibold text-blue-800 dark:text-blue-200">
-                          {t('pricing.weeklyRepeatsOn', 'Repeats weekly on: {{days}}', { days: weeklySummaryPhrase })}
-                        </p>
-                      ) : (
-                        <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
-                          {t('pricing.noWeeklyDaysSelected', 'No weekdays selected yet — choose one or more above.')}
-                        </p>
-                      )}
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="min-w-0">
+                    <PricingBilingualFieldLabel
+                      htmlFor="offer-container-type"
+                      arabicKey="pricing.oceanRouteContainerTypeArabic"
+                      arabicDefault="نوع الحاوية"
+                      englishAbbrKey="pricing.oceanRouteContainerTypeEnglishAbbr"
+                      englishAbbrDefault="Container Type"
+                    />
+                    <OceanContainerTypeAsyncSelect
+                      id="offer-container-type"
+                      types={oceanUnitTypes}
+                      value={form.container_preset}
+                      onChange={(v) => {
+                        updateForm({ container_preset: v })
+                        syncSeaCoreLinesForPreset(v)
+                      }}
+                      onTypesUpdated={loadOceanTypes}
+                    />
+                    <p className="mt-2 text-xs font-semibold text-blue-700 dark:text-blue-300">{selectedSpec}</p>
+                  </div>
+                  <div className="min-w-0">
+                    <PricingBilingualFieldLabel
+                      htmlFor="offer-transit-time"
+                      arabicKey="pricing.oceanRouteTransitTimeArabic"
+                      arabicDefault="مدة العبور"
+                      englishAbbrKey="pricing.oceanRouteTransitTimeEnglishAbbr"
+                      englishAbbrDefault="Transit Time"
+                    />
+                    <div className="flex items-center gap-2">
+                      <input
+                        id="offer-transit-time"
+                        type="number"
+                        min="0"
+                        step="1"
+                        className="mt-1 w-full min-w-0 rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:ring-blue-900/20"
+                        value={form.transit_time_days}
+                        onChange={(e) => updateForm({ transit_time_days: e.target.value })}
+                        placeholder="0"
+                        aria-label={t('pricing.oceanRouteTransitTimeAria', 'Transit time (days)')}
+                      />
+                      <span className="mt-1 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                        {t('pricing.days', 'days')}
+                      </span>
                     </div>
                   </div>
-                ) : (
-                  <div className="space-y-4">
-                    <p id="offer-fixed-dates-hint" className="text-xs leading-relaxed text-gray-600 dark:text-gray-400">
-                      {t(
-                        'pricing.fixedDatesMultiHint',
-                        'Pick one sailing date at a time, then add it. You can add several dates; remove any chip below if needed.'
-                      )}
-                    </p>
-                    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
-                      <div className="min-w-0 flex-1 sm:max-w-xs">
-                        <PricingBilingualFieldLabel
-                          htmlFor="offer-sailing-fixed-draft"
-                          className="mb-1 block text-xs font-semibold text-gray-600 dark:text-gray-400"
-                          arabicKey="pricing.sailingFixedSingleDateArabic"
-                          arabicDefault="تاريخ الإبحار"
-                          englishAbbrKey="pricing.sailingFixedSingleDateEnglishAbbr"
-                          englishAbbrDefault="Sailing date"
-                        />
-                        <DatePicker
-                          key={`fixed-sail-${offerToEdit?.id ?? 'new'}-${form.sailing_tab}`}
-                          id="offer-sailing-fixed-draft"
-                          className={OFFER_DATE_PICKER_CLASS}
-                          value={draftFixedSailingDate}
-                          onChange={setDraftFixedSailingDate}
-                          locale={i18n.language}
-                          placeholder={UI_DATE_FORMAT}
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        className="shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                        disabled={!canAddDraftFixedSailingDate}
-                        title={
-                          draftFixedSailingDate &&
-                          form.fixed_dates.includes(String(draftFixedSailingDate).trim())
-                            ? t('pricing.sailingDateAlreadyAdded', 'This date is already listed')
-                            : undefined
-                        }
-                        onClick={addDraftFixedSailingDate}
-                        aria-describedby="offer-fixed-dates-hint"
-                      >
-                        {t('pricing.addSailingDate', 'Add date')}
-                      </button>
-                    </div>
-                    <div className="rounded-xl border border-gray-100 bg-gray-50/80 p-4 dark:border-gray-700 dark:bg-gray-900/30">
-                      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                        <h4 className="flex flex-wrap items-center gap-2 text-xs font-bold text-gray-600 dark:text-gray-400">
-                          <PricingBilingualFieldLabel
-                            as="span"
-                            className="text-xs font-bold text-gray-600 dark:text-gray-400"
-                            arabicKey="pricing.fixedDatesSelectedTitleArabic"
-                            arabicDefault="مواعيد الإبحار المختارة"
-                            englishAbbrKey="pricing.fixedDatesSelectedTitleEnglishAbbr"
-                            englishAbbrDefault="Selected dates"
-                          />
-                          {form.fixed_dates.length > 0 ? (
-                            <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-bold text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">
-                              {form.fixed_dates.length}
-                            </span>
-                          ) : null}
-                        </h4>
-                        {form.fixed_dates.length > 0 ? (
-                          <button
-                            type="button"
-                            className="text-xs font-semibold text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                            onClick={clearAllFixedDates}
-                          >
-                            {t('pricing.removeAllFixedDates', 'Remove all')}
-                          </button>
-                        ) : null}
-                      </div>
-                      {form.fixed_dates.length > 0 ? (
-                        <ul className="flex flex-wrap gap-2" role="list">
-                          {form.fixed_dates.map((d) => (
-                            <li
-                              key={d}
-                              role="listitem"
-                              className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-3 py-1.5 text-sm font-medium text-blue-900 shadow-sm dark:border-blue-900/50 dark:bg-gray-800 dark:text-blue-100"
-                            >
-                              <span title={d}>{formatIsoDateDisplay(d, i18n.language)}</span>
-                              <button
-                                type="button"
-                                className="rounded-full p-0.5 hover:bg-blue-100 dark:hover:bg-blue-900/40"
-                                onClick={() => removeFixedDate(d)}
-                                aria-label={t('pricing.removeFixedDateAria', 'Remove {{date}}', {
-                                  date: formatIsoDateDisplay(d, i18n.language),
-                                })}
-                              >
-                                <X className="h-3.5 w-3.5" />
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          {t('pricing.noFixedDates', 'No fixed dates yet — add one or more above.')}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
+                </div>
               </div>
             </PricingFinCard>
 
@@ -1022,10 +917,19 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                       />
                       <input
                         id="offer-pol-detention"
-                        className="mt-1 w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm"
+                        type="number"
+                        min={0}
+                        step={1}
+                        inputMode="numeric"
+                        className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
                         value={form.pol_detention}
-                        onChange={(e) => updateForm({ pol_detention: e.target.value })}
-                        placeholder={t('pricing.freeDaysPlaceholder', 'e.g. 7 days')}
+                        onChange={(e) =>
+                          updateForm({
+                            pol_detention:
+                              e.target.value === '' ? '0' : String(Math.max(0, Math.floor(Number(e.target.value) || 0))),
+                          })
+                        }
+                        placeholder="0"
                       />
                     </div>
                     <div>
@@ -1039,10 +943,19 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                       />
                       <input
                         id="offer-pol-demurrage"
-                        className="mt-1 w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm"
+                        type="number"
+                        min={0}
+                        step={1}
+                        inputMode="numeric"
+                        className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
                         value={form.pol_demurrage}
-                        onChange={(e) => updateForm({ pol_demurrage: e.target.value })}
-                        placeholder={t('pricing.freeDaysPlaceholder', 'e.g. 14 days')}
+                        onChange={(e) =>
+                          updateForm({
+                            pol_demurrage:
+                              e.target.value === '' ? '0' : String(Math.max(0, Math.floor(Number(e.target.value) || 0))),
+                          })
+                        }
+                        placeholder="0"
                       />
                     </div>
                   </div>
@@ -1068,10 +981,19 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                       />
                       <input
                         id="offer-pod-detention"
-                        className="mt-1 w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm"
+                        type="number"
+                        min={0}
+                        step={1}
+                        inputMode="numeric"
+                        className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
                         value={form.pod_detention}
-                        onChange={(e) => updateForm({ pod_detention: e.target.value })}
-                        placeholder={t('pricing.freeDaysPlaceholder', 'e.g. 7 days')}
+                        onChange={(e) =>
+                          updateForm({
+                            pod_detention:
+                              e.target.value === '' ? '0' : String(Math.max(0, Math.floor(Number(e.target.value) || 0))),
+                          })
+                        }
+                        placeholder="0"
                       />
                     </div>
                     <div>
@@ -1085,132 +1007,409 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                       />
                       <input
                         id="offer-pod-demurrage"
-                        className="mt-1 w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm"
+                        type="number"
+                        min={0}
+                        step={1}
+                        inputMode="numeric"
+                        className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
                         value={form.pod_demurrage}
-                        onChange={(e) => updateForm({ pod_demurrage: e.target.value })}
-                        placeholder={t('pricing.freeDaysPlaceholder', 'e.g. 14 days')}
+                        onChange={(e) =>
+                          updateForm({
+                            pod_demurrage:
+                              e.target.value === '' ? '0' : String(Math.max(0, Math.floor(Number(e.target.value) || 0))),
+                          })
+                        }
+                        placeholder="0"
                       />
                     </div>
                   </div>
                 </div>
               </div>
+            </PricingFinCard>
+
+            <PricingFinCard
+              icon={Ship}
+              title={t('pricing.formSectionSailingSchedule', 'Sailing schedule')}
+              subtitle={t('pricing.oceanFormStep3Desc', 'Weekly repeating sailings or fixed calendar dates.')}
+            >
+              <div className="mb-4 flex flex-wrap gap-2 border-b border-gray-100 pb-3 dark:border-gray-700">
+                <button
+                  type="button"
+                  className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${form.sailing_tab === 'fixed' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'}`}
+                  onClick={() => updateForm({ sailing_tab: 'fixed' })}
+                >
+                  {t('pricing.sailingTabFixedBilingual', 'تواريخ ثابتة (Fixed dates)')}
+                </button>
+                <button
+                  type="button"
+                  className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${form.sailing_tab === 'weekly' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'}`}
+                  onClick={() => updateForm({ sailing_tab: 'weekly' })}
+                >
+                  {t('pricing.sailingTabWeeklyBilingual', 'أسبوعي (Weekly)')}
+                </button>
+              </div>
+
+              {form.sailing_tab === 'weekly' ? (
+                <div className="space-y-4">
+                  <p id="offer-weekly-sailing-hint" className="text-xs leading-relaxed text-gray-600 dark:text-gray-400">
+                    {t(
+                      'pricing.weeklySailingMultiHint',
+                      'Select one or more weekdays (for example Monday and Thursday). Sailings repeat every week on each selected day.'
+                    )}
+                  </p>
+                  <div className="rounded-xl border border-gray-100 bg-gray-50/80 p-4 dark:border-gray-700 dark:bg-gray-900/30">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                      <h4 className="flex flex-wrap items-center gap-2 text-xs font-bold text-gray-600 dark:text-gray-400">
+                        <PricingBilingualFieldLabel
+                          as="span"
+                          className="text-xs font-bold text-gray-600 dark:text-gray-400"
+                          arabicKey="pricing.weeklySectionTitleArabic"
+                          arabicDefault="أيام الإبحار الأسبوعية"
+                          englishAbbrKey="pricing.weeklySectionTitleEnglishAbbr"
+                          englishAbbrDefault="Weekly"
+                        />
+                        {form.weekly_days.length > 0 ? (
+                          <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-bold text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">
+                            {form.weekly_days.length}
+                          </span>
+                        ) : null}
+                      </h4>
+                      {form.weekly_days.length > 0 ? (
+                        <button
+                          type="button"
+                          className="text-xs font-semibold text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                          onClick={clearAllWeeklyDays}
+                        >
+                          {t('pricing.clearWeeklyDays', 'Clear selection')}
+                        </button>
+                      ) : null}
+                    </div>
+                    <div
+                      className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7"
+                      role="group"
+                      aria-describedby="offer-weekly-sailing-hint"
+                    >
+                      {WEEK_DAYS.map((day) => {
+                        const selected = form.weekly_days.includes(day)
+                        return (
+                          <label
+                            key={day}
+                            className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${
+                              selected
+                                ? 'border-blue-500 bg-blue-50 text-blue-900 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-100'
+                                : 'border-gray-200 bg-white text-gray-800 hover:border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:border-gray-500'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              checked={selected}
+                              onChange={() => toggleWeeklyDay(day)}
+                              aria-label={t('pricing.toggleWeekdayAria', 'Toggle {{day}}', {
+                                day: weekdayLabel(day, t),
+                              })}
+                            />
+                            <span>{weekdayLabel(day, t)}</span>
+                          </label>
+                        )
+                      })}
+                    </div>
+                    {form.weekly_days.length > 0 ? (
+                      <p className="mt-3 text-sm font-semibold text-blue-800 dark:text-blue-200">
+                        {t('pricing.weeklyRepeatsOn', 'Repeats weekly on: {{days}}', { days: weeklySummaryPhrase })}
+                      </p>
+                    ) : (
+                      <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
+                        {t('pricing.noWeeklyDaysSelected', 'No weekdays selected yet — choose one or more above.')}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <p id="offer-fixed-dates-hint" className="text-xs leading-relaxed text-gray-600 dark:text-gray-400">
+                    {t(
+                      'pricing.fixedDatesMultiHint',
+                      'Pick one sailing date at a time, then add it. You can add several dates; remove any chip below if needed.'
+                    )}
+                  </p>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+                    <div className="min-w-0 flex-1 sm:max-w-xs">
+                      <PricingBilingualFieldLabel
+                        htmlFor="offer-sailing-fixed-draft"
+                        className="mb-1 block text-xs font-semibold text-gray-600 dark:text-gray-400"
+                        arabicKey="pricing.sailingFixedSingleDateArabic"
+                        arabicDefault="تاريخ الإبحار"
+                        englishAbbrKey="pricing.sailingFixedSingleDateEnglishAbbr"
+                        englishAbbrDefault="Sailing date"
+                      />
+                      <DatePicker
+                        key={`fixed-sail-${offerToEdit?.id ?? 'new'}-${form.sailing_tab}`}
+                        id="offer-sailing-fixed-draft"
+                        className={OFFER_DATE_PICKER_CLASS}
+                        value={draftFixedSailingDate}
+                        onChange={setDraftFixedSailingDate}
+                        locale={i18n.language}
+                        placeholder={UI_DATE_FORMAT}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      className="shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      disabled={!canAddDraftFixedSailingDate}
+                      title={
+                        draftFixedSailingDate &&
+                        form.fixed_dates.includes(String(draftFixedSailingDate).trim())
+                          ? t('pricing.sailingDateAlreadyAdded', 'This date is already listed')
+                          : undefined
+                      }
+                      onClick={addDraftFixedSailingDate}
+                      aria-describedby="offer-fixed-dates-hint"
+                    >
+                      {t('pricing.addSailingDate', 'Add date')}
+                    </button>
+                  </div>
+                  <div className="rounded-xl border border-gray-100 bg-gray-50/80 p-4 dark:border-gray-700 dark:bg-gray-900/30">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                      <h4 className="flex flex-wrap items-center gap-2 text-xs font-bold text-gray-600 dark:text-gray-400">
+                        <PricingBilingualFieldLabel
+                          as="span"
+                          className="text-xs font-bold text-gray-600 dark:text-gray-400"
+                          arabicKey="pricing.fixedDatesSelectedTitleArabic"
+                          arabicDefault="مواعيد الإبحار المختارة"
+                          englishAbbrKey="pricing.fixedDatesSelectedTitleEnglishAbbr"
+                          englishAbbrDefault="Selected dates"
+                        />
+                        {form.fixed_dates.length > 0 ? (
+                          <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-bold text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">
+                            {form.fixed_dates.length}
+                          </span>
+                        ) : null}
+                      </h4>
+                      {form.fixed_dates.length > 0 ? (
+                        <button
+                          type="button"
+                          className="text-xs font-semibold text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                          onClick={clearAllFixedDates}
+                        >
+                          {t('pricing.removeAllFixedDates', 'Remove all')}
+                        </button>
+                      ) : null}
+                    </div>
+                    {form.fixed_dates.length > 0 ? (
+                      <ul className="flex flex-wrap gap-2" role="list">
+                        {form.fixed_dates.map((d) => (
+                          <li
+                            key={d}
+                            role="listitem"
+                            className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-3 py-1.5 text-sm font-medium text-blue-900 shadow-sm dark:border-blue-900/50 dark:bg-gray-800 dark:text-blue-100"
+                          >
+                            <span title={d}>{formatIsoDateDisplay(d, i18n.language)}</span>
+                            <button
+                              type="button"
+                              className="rounded-full p-0.5 hover:bg-blue-100 dark:hover:bg-blue-900/40"
+                              onClick={() => removeFixedDate(d)}
+                              aria-label={t('pricing.removeFixedDateAria', 'Remove {{date}}', {
+                                date: formatIsoDateDisplay(d, i18n.language),
+                              })}
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {t('pricing.noFixedDates', 'No fixed dates yet — add one or more above.')}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </PricingFinCard>
 
             <PricingFinCard
               icon={DollarSign}
-              title={t('pricing.pricing', 'Pricing')}
+              title={t('pricing.formSectionPricingBreakdown', 'Pricing breakdown')}
               subtitle={t(
-                'pricing.oceanFormStep4Desc',
-                'Line charges: ocean freight, THC, documentation fees, and currencies.'
+                'pricing.oceanPricingBreakdownSub',
+                'Core ocean charges and optional additional lines.'
               )}
               headMeta={
                 <button
                   type="button"
-                  onClick={addLineItem}
+                  onClick={addCustomCharge}
                   className="shipment-fin-btn shipment-fin-btn--secondary inline-flex items-center gap-1.5 text-xs"
                 >
-                  <Plus className="h-3.5 w-3.5" aria-hidden /> {t('common.add', 'Add')}
+                  <Plus className="h-3.5 w-3.5" aria-hidden /> {t('pricing.addCustomCharge', 'Add charge')}
                 </button>
               }
             >
-              <div className="space-y-3">
-                <div className="hidden md:grid md:grid-cols-12 gap-2 px-1">
-                  <div className="md:col-span-3">
-                    <PricingBilingualFieldLabel
-                      as="div"
-                      className="text-[11px] font-semibold text-gray-600 dark:text-gray-400"
-                      arabicKey="pricing.lineChargeArabic"
-                      arabicDefault="البند"
-                      englishAbbrKey="pricing.lineChargeEnglishAbbr"
-                      englishAbbrDefault="Charge"
-                    />
-                  </div>
-                  <div className="md:col-span-4">
-                    <PricingBilingualFieldLabel
-                      as="div"
-                      className="text-[11px] font-semibold text-gray-600 dark:text-gray-400"
-                      arabicKey="pricing.lineDescriptionArabic"
-                      arabicDefault="الوصف"
-                      englishAbbrKey="pricing.lineDescriptionEnglishAbbr"
-                      englishAbbrDefault="Description"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <PricingBilingualFieldLabel
-                      as="div"
-                      className="text-[11px] font-semibold text-gray-600 dark:text-gray-400"
-                      arabicKey="pricing.lineAmountArabic"
-                      arabicDefault="المبلغ"
-                      englishAbbrKey="pricing.lineAmountEnglishAbbr"
-                      englishAbbrDefault="Amount"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <PricingBilingualFieldLabel
-                      as="div"
-                      className="text-[11px] font-semibold text-gray-600 dark:text-gray-400"
-                      arabicKey="pricing.lineCurrencyArabic"
-                      arabicDefault="العملة"
-                      englishAbbrKey="pricing.lineCurrencyEnglishAbbr"
-                      englishAbbrDefault="Currency"
-                    />
-                  </div>
-                  <div className="md:col-span-1" aria-hidden />
-                </div>
-                {lineItems.map((row) => (
-                  <div key={row.id} className="grid grid-cols-1 md:grid-cols-12 gap-2 items-start">
-                    <div className="md:col-span-3">
-                      <select
-                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm"
-                        value={row.name}
-                        onChange={(e) => patchLineItem(row.id, { name: e.target.value })}
+              <div className="space-y-6">
+                <div>
+                  <p className="mb-3 text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    {t('pricing.oceanPricingCoreTitle', 'Core charges')}
+                  </p>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {seaCoreLines.map((row) => (
+                      <div
+                        key={row.name}
+                        className="rounded-lg border border-gray-100 bg-white p-3 dark:border-gray-700 dark:bg-gray-800/40"
                       >
-                        {allowedItemNames.map((name) => (
-                          <option key={name} value={name}>
-                            {seaLineOptionLabel(name, t)}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="md:col-span-4">
-                      <input
-                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm"
-                        placeholder={row.name === 'Other Charges' ? t('pricing.otherChargeDescription', 'Description (required)') : t('pricing.description', 'Description')}
-                        value={row.description}
-                        onChange={(e) => patchLineItem(row.id, { description: e.target.value })}
-                        required={row.name === 'Other Charges'}
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm"
-                        placeholder={t('pricing.amount', 'Amount')}
-                        value={row.amount}
-                        onChange={(e) => patchLineItem(row.id, { amount: e.target.value })}
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <select className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm" value={row.currency} onChange={(e) => patchLineItem(row.id, { currency: e.target.value })}>
-                        {CURRENCIES.map((c) => (
-                          <option key={c} value={c}>{c}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="md:col-span-1 flex justify-end">
-                      <button type="button" onClick={() => removeLineItem(row.id)} className="p-2 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <Trash2 className="h-4 w-4 text-gray-500" />
-                      </button>
-                    </div>
+                        <SeaCoreLineFieldLabel name={row.name} t={t} />
+                        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-5 sm:items-end">
+                          <div className="sm:col-span-3">
+                            <PricingBilingualFieldLabel
+                              as="div"
+                              className="mb-1 text-[11px] font-semibold text-gray-600 dark:text-gray-400"
+                              arabicKey="pricing.lineAmountArabic"
+                              arabicDefault="المبلغ"
+                              englishAbbrKey="pricing.lineAmountEnglishAbbr"
+                              englishAbbrDefault="Amount"
+                            />
+                            <input
+                              type="number"
+                              min={0}
+                              step="0.01"
+                              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
+                              value={row.amount}
+                              onChange={(e) => patchSeaCoreLine(row.name, { amount: e.target.value })}
+                              placeholder="0"
+                            />
+                          </div>
+                          <div className="sm:col-span-2">
+                            <PricingBilingualFieldLabel
+                              as="div"
+                              className="mb-1 text-[11px] font-semibold text-gray-600 dark:text-gray-400"
+                              arabicKey="pricing.lineCurrencyArabic"
+                              arabicDefault="العملة"
+                              englishAbbrKey="pricing.lineCurrencyEnglishAbbr"
+                              englishAbbrDefault="Currency"
+                            />
+                            <select
+                              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
+                              value={row.currency}
+                              onChange={(e) => patchSeaCoreLine(row.name, { currency: e.target.value })}
+                            >
+                              {CURRENCIES.map((c) => (
+                                <option key={c} value={c}>
+                                  {c}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
+
+                <div className="border-t border-gray-100 pt-5 dark:border-gray-700">
+                  <p className="mb-3 text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    {t('pricing.oceanPricingCustomTitle', 'Custom charges')}
+                  </p>
+                  {seaCustomLines.length === 0 ? (
+                    <p className="shipment-fin-empty-inline m-0 text-sm">
+                      {t('pricing.oceanPricingCustomEmpty', 'No extra charges — use Add charge if needed.')}
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="hidden gap-2 md:grid md:grid-cols-12 md:px-1">
+                        <div className="md:col-span-4">
+                          <PricingBilingualFieldLabel
+                            as="div"
+                            className="text-[11px] font-semibold text-gray-600 dark:text-gray-400"
+                            arabicKey="pricing.customChargeNameArabic"
+                            arabicDefault="اسم الرسوم"
+                            englishAbbrKey="pricing.customChargeNameEnglishAbbr"
+                            englishAbbrDefault="Name"
+                          />
+                        </div>
+                        <div className="md:col-span-3">
+                          <PricingBilingualFieldLabel
+                            as="div"
+                            className="text-[11px] font-semibold text-gray-600 dark:text-gray-400"
+                            arabicKey="pricing.lineAmountArabic"
+                            arabicDefault="المبلغ"
+                            englishAbbrKey="pricing.lineAmountEnglishAbbr"
+                            englishAbbrDefault="Amount"
+                          />
+                        </div>
+                        <div className="md:col-span-3">
+                          <PricingBilingualFieldLabel
+                            as="div"
+                            className="text-[11px] font-semibold text-gray-600 dark:text-gray-400"
+                            arabicKey="pricing.lineCurrencyArabic"
+                            arabicDefault="العملة"
+                            englishAbbrKey="pricing.lineCurrencyEnglishAbbr"
+                            englishAbbrDefault="Currency"
+                          />
+                        </div>
+                        <div className="md:col-span-2" aria-hidden />
+                      </div>
+                      {seaCustomLines.map((row) => (
+                        <div key={row.id} className="grid grid-cols-1 items-start gap-2 md:grid-cols-12">
+                          <div className="md:col-span-4">
+                            <PricingBilingualFieldLabel
+                              htmlFor={`custom-charge-name-${row.id}`}
+                              className="mb-1 text-[11px] font-semibold text-gray-600 dark:text-gray-400 md:hidden"
+                              arabicKey="pricing.customChargeNameArabic"
+                              arabicDefault="اسم الرسوم"
+                              englishAbbrKey="pricing.customChargeNameEnglishAbbr"
+                              englishAbbrDefault="Name"
+                            />
+                            <input
+                              id={`custom-charge-name-${row.id}`}
+                              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
+                              placeholder={t('pricing.customChargeNamePlaceholder', 'Charge name')}
+                              value={row.name}
+                              onChange={(e) => patchCustomCharge(row.id, { name: e.target.value })}
+                            />
+                          </div>
+                          <div className="md:col-span-3">
+                            <input
+                              type="number"
+                              min={0}
+                              step="0.01"
+                              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
+                              placeholder={t('pricing.amount', 'Amount')}
+                              value={row.amount}
+                              onChange={(e) => patchCustomCharge(row.id, { amount: e.target.value })}
+                            />
+                          </div>
+                          <div className="md:col-span-3">
+                            <select
+                              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
+                              value={row.currency}
+                              onChange={(e) => patchCustomCharge(row.id, { currency: e.target.value })}
+                            >
+                              {CURRENCIES.map((c) => (
+                                <option key={c} value={c}>
+                                  {c}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="flex justify-end md:col-span-2">
+                            <button
+                              type="button"
+                              onClick={() => removeCustomCharge(row.id)}
+                              className="rounded-lg border border-gray-200 p-2 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700"
+                              aria-label={t('pricing.removeCustomChargeAria', 'Remove charge')}
+                            >
+                              <Trash2 className="h-4 w-4 text-gray-500" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </PricingFinCard>
 
             <PricingFinCard
-              icon={CalendarDays}
+              icon={FileText}
               title={t('pricing.formSectionValidityNotes', 'Validity & Notes')}
               subtitle={t(
                 'pricing.oceanFormStep5Desc',
@@ -1274,17 +1473,16 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
             <>
             <PricingFinCard
               icon={MapPin}
-              title={t('pricing.formSectionRouteCarrier', 'Route & Carrier')}
+              title={t('pricing.formSectionInlandRoute', 'Route')}
               subtitle={t(
-                'pricing.pricingFinInlandRouteSub',
-                'Port, governorate, inland carrier, and delivery area.'
+                'pricing.formSectionInlandRouteSub',
+                'Port, governorate, and optional delivery area in one row.'
               )}
             >
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div className="min-w-0">
                   <PricingBilingualFieldLabel
                     htmlFor="offer-inland-port"
-                    className="mb-1 block text-sm font-semibold text-gray-700 dark:text-gray-300"
                     arabicKey="pricing.inlandPortArabic"
                     arabicDefault="الميناء"
                     englishAbbrKey="pricing.inlandPortEnglishAbbr"
@@ -1297,10 +1495,9 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                     placeholder={t('pricing.filterAllPorts', 'All ports')}
                   />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <PricingBilingualFieldLabel
                     htmlFor="offer-inland-gov"
-                    className="mb-1 block text-sm font-semibold text-gray-700 dark:text-gray-300"
                     arabicKey="pricing.inlandGovernorateArabic"
                     arabicDefault="المحافظة"
                     englishAbbrKey="pricing.inlandGovernorateEnglishAbbr"
@@ -1308,49 +1505,31 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                   />
                   <select
                     id="offer-inland-gov"
-                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                     value={inlandForm.inland_gov}
                     onChange={(e) => updateInlandForm({ inland_gov: e.target.value })}
                     required
                   >
                     <option value="">{t('common.select', 'Select')}</option>
                     {INLAND_GOVERNORATES.map((g) => (
-                      <option key={g} value={g}>{g}</option>
+                      <option key={g} value={g}>
+                        {g}
+                      </option>
                     ))}
                   </select>
                 </div>
-                <div className="md:col-span-2">
+                <div className="min-w-0">
                   <PricingBilingualFieldLabel
-                    htmlFor="offer-inland-provider"
-                    className="mb-1 block text-sm font-semibold text-gray-700 dark:text-gray-300"
-                    arabicKey="pricing.inlandProviderArabic"
-                    arabicDefault="مزود النقل"
-                    englishAbbrKey="pricing.inlandProviderEnglishAbbr"
-                    englishAbbrDefault="Transport provider"
-                  />
-                  <ShippingLineNameAsyncSelect
-                    id="offer-inland-provider"
-                    serviceScope="inland"
-                    value={inlandForm.shipping_line}
-                    onChange={(v) => updateInlandForm({ shipping_line: v })}
-                    placeholder={t('pricing.filterAllInlandProviders', 'All inland providers')}
-                  />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    {t('pricing.inlandProviderHint', 'Inland / trucking providers only.')}
-                  </p>
-                </div>
-                <div className="md:col-span-2">
-                  <PricingBilingualFieldLabel
-                    className="mb-1 block text-sm font-semibold text-gray-700 dark:text-gray-300"
-                    as="div"
+                    htmlFor="offer-inland-area"
                     arabicKey="pricing.inlandAreaArabic"
                     arabicDefault="المنطقة"
                     englishAbbrKey="pricing.inlandAreaEnglishAbbr"
                     englishAbbrDefault="Area"
                   />
                   <input
+                    id="offer-inland-area"
                     type="text"
-                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                     value={inlandForm.inland_area}
                     onChange={(e) => updateInlandForm({ inland_area: e.target.value })}
                     placeholder={t('pricing.areaPlaceholder', 'Optional')}
@@ -1361,108 +1540,91 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
 
             <PricingFinCard
               icon={Truck}
-              title={t('pricing.formSectionVehicle', 'Vehicle')}
+              title={t('pricing.formSectionInlandVehiclePricing', 'Vehicle & pricing')}
               subtitle={t(
-                'pricing.pricingFinInlandVehicleSub',
-                'Equipment type for this inland move.'
+                'pricing.formSectionInlandVehiclePricingSub',
+                'Truck type and rate — default currency EGP; change if needed.'
               )}
             >
-              <div className="min-w-0">
-                <PricingBilingualFieldLabel
-                  htmlFor="offer-inland-truck-type"
-                  className="mb-1 block text-sm font-semibold text-gray-700 dark:text-gray-300"
-                  arabicKey="pricing.inlandTruckTypeArabic"
-                  arabicDefault="نوع الشاحنة"
-                  englishAbbrKey="pricing.inlandTruckTypeEnglishAbbr"
-                  englishAbbrDefault="Truck type"
-                />
-                <InlandTruckTypeAsyncSelect
-                  id="offer-inland-truck-type"
-                  value={inlandForm.truck_type}
-                  onChange={(v) => updateInlandForm({ truck_type: v })}
-                  placeholder={t('pricing.filterAllTruckTypes', 'All truck types')}
-                />
-              </div>
-            </PricingFinCard>
-
-            <PricingFinCard
-              icon={Clock}
-              title={t('pricing.formSectionFreeTime', 'Free Time')}
-              subtitle={t(
-                'pricing.pricingFinInlandFreeTimeSub',
-                'Detention and demurrage apply to ocean containers, not inland trucking.'
-              )}
-            >
-              <p className="shipment-fin-empty-inline m-0">
-                {t('pricing.inlandFreeTimeNotApplicable', 'Not applicable for inland transport rates.')}
-              </p>
-            </PricingFinCard>
-
-            <PricingFinCard
-              icon={DollarSign}
-              title={t('pricing.pricing', 'Pricing')}
-              subtitle={t(
-                'pricing.pricingFinInlandPricingSub',
-                'Rate amount and currency for the selected truck type.'
-              )}
-            >
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-end">
-                <div>
+              <div className="space-y-5">
+                <div className="min-w-0">
                   <PricingBilingualFieldLabel
-                    className="mb-1 block text-sm font-semibold text-gray-700 dark:text-gray-300"
-                    as="div"
-                    arabicKey="pricing.inlandAmountArabic"
-                    arabicDefault="المبلغ"
-                    englishAbbrKey="pricing.inlandAmountEnglishAbbr"
-                    englishAbbrDefault="Amount"
+                    htmlFor="offer-inland-truck-type"
+                    arabicKey="pricing.inlandTruckTypeArabic"
+                    arabicDefault="نوع الشاحنة"
+                    englishAbbrKey="pricing.inlandTruckTypeEnglishAbbr"
+                    englishAbbrDefault="Truck type"
                   />
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 dark:border-gray-600 dark:bg-gray-800"
-                    value={inlandForm.price}
-                    onChange={(e) => updateInlandForm({ price: e.target.value })}
-                    placeholder="0"
-                    required
+                  <InlandTruckTypeAsyncSelect
+                    id="offer-inland-truck-type"
+                    value={inlandForm.truck_type}
+                    onChange={(v) => updateInlandForm({ truck_type: v })}
+                    placeholder={t('pricing.filterAllTruckTypes', 'All truck types')}
                   />
                 </div>
-                <div>
-                  <PricingBilingualFieldLabel
-                    className="mb-1 block text-sm font-semibold text-gray-700 dark:text-gray-300"
-                    as="div"
-                    arabicKey="pricing.inlandCurrencyArabic"
-                    arabicDefault="العملة"
-                    englishAbbrKey="pricing.inlandCurrencyEnglishAbbr"
-                    englishAbbrDefault="Currency"
-                  />
-                  <select
-                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
-                    value={inlandForm.currency}
-                    onChange={(e) => updateInlandForm({ currency: e.target.value })}
-                  >
-                    {CURRENCIES.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
+                <div className="rounded-xl border-2 border-blue-200/90 bg-blue-50/50 p-4 dark:border-blue-800/60 dark:bg-blue-950/25">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
+                    <div className="min-w-0 flex-1 sm:min-w-[12rem]">
+                      <PricingBilingualFieldLabel
+                        htmlFor="offer-inland-price"
+                        className="mb-1 text-[13px] font-bold text-blue-900 dark:text-blue-100"
+                        arabicKey="pricing.inlandRateArabic"
+                        arabicDefault="السعر / التعرفة"
+                        englishAbbrKey="pricing.inlandRateEnglishAbbr"
+                        englishAbbrDefault="Price / rate"
+                      />
+                      <input
+                        id="offer-inland-price"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        inputMode="decimal"
+                        className="w-full rounded-lg border-2 border-blue-300/80 bg-white px-4 py-3 text-2xl font-bold tabular-nums tracking-tight text-blue-950 shadow-inner focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/25 dark:border-blue-700/80 dark:bg-gray-900 dark:text-blue-50 dark:focus:border-blue-400"
+                        value={inlandForm.price}
+                        onChange={(e) => updateInlandForm({ price: e.target.value })}
+                        placeholder="0"
+                        required
+                        aria-label={t('pricing.inlandPriceAria', 'Inland transport price or rate')}
+                      />
+                    </div>
+                    <div className="w-full min-w-[7.5rem] sm:w-36">
+                      <PricingBilingualFieldLabel
+                        htmlFor="offer-inland-currency"
+                        className="mb-1 text-[13px] font-semibold text-gray-800 dark:text-gray-200"
+                        arabicKey="pricing.inlandCurrencyArabic"
+                        arabicDefault="العملة"
+                        englishAbbrKey="pricing.inlandCurrencyEnglishAbbr"
+                        englishAbbrDefault="Currency"
+                      />
+                      <select
+                        id="offer-inland-currency"
+                        className="w-full rounded-lg border border-gray-200 bg-white px-3 py-3 text-base font-semibold dark:border-gray-600 dark:bg-gray-800"
+                        value={inlandForm.currency}
+                        onChange={(e) => updateInlandForm({ currency: e.target.value })}
+                      >
+                        {CURRENCIES.map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                 </div>
               </div>
             </PricingFinCard>
 
             <PricingFinCard
-              icon={CalendarDays}
+              icon={FileText}
               title={t('pricing.formSectionValidityNotes', 'Validity & Notes')}
               subtitle={t(
-                'pricing.oceanFormStep5Desc',
-                'When this rate applies and any internal notes for your team.'
+                'pricing.inlandValidityNotesSub',
+                'Valid from is required; end date and notes are optional.'
               )}
             >
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
                   <PricingBilingualFieldLabel
-                    className="mb-1 block text-sm font-semibold text-gray-700 dark:text-gray-300"
                     as="div"
                     arabicKey="pricing.validityFromArabic"
                     arabicDefault="صالح من"
@@ -1481,7 +1643,6 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                 </div>
                 <div>
                   <PricingBilingualFieldLabel
-                    className="mb-1 block text-sm font-semibold text-gray-700 dark:text-gray-300"
                     as="div"
                     arabicKey="pricing.validityToArabic"
                     arabicDefault="صالح حتى"
@@ -1497,11 +1658,16 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                     locale={i18n.language}
                     placeholder={UI_DATE_FORMAT}
                   />
+                  <p className="mt-2 text-xs leading-relaxed text-gray-600 dark:text-gray-400">
+                    {t(
+                      'pricing.inlandValidToOpenEndedHint',
+                      'Leave Valid to empty to keep this price active with no end date.'
+                    )}
+                  </p>
                 </div>
                 <div className="md:col-span-2">
                   <PricingBilingualFieldLabel
                     htmlFor="offer-inland-notes"
-                    className="mb-1 block text-sm font-semibold text-gray-700 dark:text-gray-300"
                     arabicKey="pricing.validityNotesArabic"
                     arabicDefault="ملاحظات"
                     englishAbbrKey="pricing.validityNotesEnglishAbbr"
@@ -1510,7 +1676,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                   <textarea
                     id="offer-inland-notes"
                     rows={4}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                    className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                     value={inlandForm.notes}
                     onChange={(e) => updateInlandForm({ notes: e.target.value })}
                     placeholder={t('pricing.notesPlaceholder', 'Internal notes…')}

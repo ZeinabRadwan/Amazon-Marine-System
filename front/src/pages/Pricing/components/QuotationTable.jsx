@@ -4,13 +4,10 @@ import { useTranslation } from 'react-i18next'
 import {
   Eye,
   MoreHorizontal,
-  Download,
   CheckCircle2,
   Clock,
   XCircle,
   Plus,
-  Printer,
-  FileSpreadsheet,
   Zap,
 } from 'lucide-react'
 import Table from '../../../components/Table/Table'
@@ -20,8 +17,6 @@ import { useAuthAccess } from '../../../hooks/useAuthAccess'
 import CreateQuoteModal from './CreateQuoteModal'
 import QuoteDetailModal from './QuoteDetailModal'
 import { formatDate, formatLocaleMoney, sortCurrencyCodes, sumAmountsByCurrencyFromItems } from '../../../utils/dateUtils'
-import { getStoredToken } from '../../Login'
-import { downloadQuotePdf } from '../../../api/pricing'
 import ClientsFilterToolbar from '../../../components/ClientsFilterToolbar'
 import ListingPaginationFooter from '../../../components/ListingPaginationFooter'
 import '../Pricing.css'
@@ -83,19 +78,6 @@ export default function QuotationTable({ refreshKey }) {
     }
   }
 
-  const handleDownloadPdf = async (row) => {
-    try {
-      const token = getStoredToken()
-      if (!token) return
-      const { blob } = await downloadQuotePdf(token, row.id, { locale: i18n.language })
-      const url = URL.createObjectURL(blob)
-      window.open(url, '_blank', 'noopener,noreferrer')
-      window.setTimeout(() => URL.revokeObjectURL(url), 60_000)
-    } catch (e) {
-      console.error(e)
-    }
-  }
-
   const getStatusBadge = (status) => {
     switch (status.toLowerCase()) {
       case 'accepted':
@@ -117,11 +99,6 @@ export default function QuotationTable({ refreshKey }) {
         { label: t('pricing.reject', 'Reject'), onClick: () => handleReject(row) }
       )
     }
-    items.push({
-      label: t('common.download', 'Download PDF'),
-      icon: <Download className="h-4 w-4" />,
-      onClick: () => handleDownloadPdf(row),
-    })
     return items
   }
 
@@ -234,14 +211,6 @@ export default function QuotationTable({ refreshKey }) {
 
   const tableData = useMemo(() => quotes || [], [quotes])
 
-  const onExportPdf = () => {
-    window.alert(t('pricing.exportQuotationsPdfSoon', 'Export quotations to PDF will be available in a future update.'))
-  }
-
-  const onExportExcel = () => {
-    window.alert(t('pricing.exportQuotationsExcelSoon', 'Export quotations to Excel will be available in a future update.'))
-  }
-
   const openCreateQuotation = () => {
     setCreateInitialQuickMode(false)
     setCreateOpen(true)
@@ -267,26 +236,6 @@ export default function QuotationTable({ refreshKey }) {
         onClear={() => setSearch('')}
         endActions={
           <>
-            <div className="clients-filters-toolbar__icon-cluster">
-              <button
-                type="button"
-                className="clients-filters__btn-icon"
-                onClick={onExportPdf}
-                aria-label={t('common.exportPdf', 'Export to PDF')}
-                title={t('common.exportPdf', 'Export to PDF')}
-              >
-                <Printer className="clients-filters__btn-icon-svg" aria-hidden />
-              </button>
-              <button
-                type="button"
-                className="clients-filters__btn-icon clients-filters__btn-icon--export"
-                onClick={onExportExcel}
-                aria-label={t('common.exportExcel', 'Export to Excel')}
-                title={t('common.exportExcel', 'Export to Excel')}
-              >
-                <FileSpreadsheet className="clients-filters__btn-icon-svg" aria-hidden />
-              </button>
-            </div>
             {!isPricingSalesViewOnly ? (
               <div className="clients-filters__actions">
                 <div className="clients-filters-toolbar__icon-cluster">

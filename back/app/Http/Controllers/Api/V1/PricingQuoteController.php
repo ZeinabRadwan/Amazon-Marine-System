@@ -162,9 +162,6 @@ class PricingQuoteController extends Controller
 
         $quote = DB::transaction(function () use ($validated) {
             $quickMode = (bool) ($validated['quick_mode'] ?? false);
-            if (! $quickMode && empty($validated['pricing_offer_id'])) {
-                abort(422, 'pricing_offer_id is required for standard flow.');
-            }
 
             $quickModeReason = isset($validated['quick_mode_reason']) ? trim((string) $validated['quick_mode_reason']) : '';
             if ($quickMode && $quickModeReason === '') {
@@ -292,13 +289,6 @@ class PricingQuoteController extends Controller
             $validated['official_receipts_note'] = $trimmed !== '' ? $trimmed : null;
         }
 
-        if (
-            (array_key_exists('quick_mode', $validated) && ! ((bool) $validated['quick_mode']))
-            && array_key_exists('pricing_offer_id', $validated)
-            && empty($validated['pricing_offer_id'])
-        ) {
-            abort(422, 'pricing_offer_id is required for standard flow.');
-        }
         if ((($validated['schedule_type'] ?? $quote->schedule_type) === 'fixed') && ! empty($validated['sailing_weekdays'] ?? [])) {
             abort(422, 'sailing_weekdays are not allowed for fixed schedule.');
         }

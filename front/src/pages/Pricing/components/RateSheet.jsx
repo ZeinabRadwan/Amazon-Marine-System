@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useDebouncedValue } from '../../../hooks/useDebouncedValue'
 import { useTranslation } from 'react-i18next'
-import { Ship, Truck, AlertCircle, Plus, FileSpreadsheet, Printer, LayoutGrid, Table2 } from 'lucide-react'
+import { Ship, Truck, AlertCircle, Plus, LayoutGrid, Table2 } from 'lucide-react'
 import '../../../components/PageHeader/PageHeader.css'
 import '../../Clients/Clients.css'
 import Tabs from '../../../components/Tabs'
@@ -130,14 +130,6 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
     { id: 'inland', label: t('pricing.inlandTransport', 'Inland Transport'), icon: <Truck className="h-4 w-4" /> },
   ]
 
-  const onExportExcel = () => {
-    window.alert(t('pricing.exportExcelSoon', 'Export to Excel will be available in a future update.'))
-  }
-
-  const onExportPdf = () => {
-    window.alert(t('pricing.exportPdfSoon', 'Export to PDF will be available in a future update.'))
-  }
-
   return (
     <div className="rate-sheet">
       <div className="rate-sheet-subtabs mb-6">
@@ -230,26 +222,6 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
                 {t('common.loading', 'Loading…')}
               </span>
             ) : null}
-            <div className="clients-filters-toolbar__icon-cluster">
-              <button
-                type="button"
-                className="clients-filters__btn-icon"
-                onClick={onExportPdf}
-                aria-label={t('common.exportPdf', 'Export to PDF')}
-                title={t('common.exportPdf', 'Export to PDF')}
-              >
-                <Printer className="clients-filters__btn-icon-svg" aria-hidden />
-              </button>
-              <button
-                type="button"
-                className="clients-filters__btn-icon clients-filters__btn-icon--export"
-                onClick={onExportExcel}
-                aria-label={t('common.exportExcel', 'Export to Excel')}
-                title={t('common.exportExcel', 'Export to Excel')}
-              >
-                <FileSpreadsheet className="clients-filters__btn-icon-svg" aria-hidden />
-              </button>
-            </div>
             <div className="pricing-view-toggle shrink-0" role="group" aria-label={t('pricing.viewModeLabel', 'Layout')}>
               <button
                 type="button"

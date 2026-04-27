@@ -1,8 +1,6 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X, Download } from 'lucide-react'
-import { getStoredToken } from '../../Login'
-import { downloadQuotePdf } from '../../../api/pricing'
+import { X } from 'lucide-react'
 import { formatLocaleMoney, sortCurrencyCodes, sumAmountsByCurrencyFromItems } from '../../../utils/dateUtils'
 
 export default function QuoteDetailModal({ isOpen, quote, onClose }) {
@@ -139,25 +137,6 @@ export default function QuoteDetailModal({ isOpen, quote, onClose }) {
         </div>
 
         <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-2 flex-wrap">
-          <button
-            type="button"
-            onClick={async () => {
-              try {
-                const token = getStoredToken()
-                if (!token || !quote?.id) return
-                const { blob } = await downloadQuotePdf(token, quote.id, { locale: i18n.language })
-                const url = URL.createObjectURL(blob)
-                window.open(url, '_blank', 'noopener,noreferrer')
-                window.setTimeout(() => URL.revokeObjectURL(url), 60_000)
-              } catch (e) {
-                console.error(e)
-              }
-            }}
-            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-          >
-            <Download className="h-4 w-4" aria-hidden />
-            {t('common.download', 'Download PDF')}
-          </button>
           <button onClick={onClose} className="px-5 py-2.5 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-colors">
             {t('common.close', 'Close')}
           </button>
