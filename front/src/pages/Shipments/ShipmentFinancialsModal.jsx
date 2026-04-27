@@ -14,6 +14,7 @@ import { listActivitiesBySubject } from '../../api/activities'
 import { notifyShipmentSalesFinancials } from '../../api/shipments'
 import { useAuthAccess } from '../../hooks/useAuthAccess'
 import { BUCKET_DEFS, expenseBucket, LINE_TEMPLATES, expenseHaystack, partitionBucketRows } from './shipmentFinUtils'
+import Tabs from '../../components/Tabs'
 import '../SDForms/SDForms.css'
 
 // BUCKET_DEFS moved to shipmentFinUtils.js
@@ -136,6 +137,12 @@ function FinSingleExpenseRow({
     setRowError(null)
     if (!categoryMeta?.id) {
       setRowError(t('shipments.fin.errorNoCategory'))
+      return
+    }
+    const descTrimmed = (desc || '').trim()
+    const amountRaw = String(amount ?? '').trim()
+    // Skip untouched template rows during section-level save to avoid duplicate blank records.
+    if (!safeExp.id && descTrimmed === '' && amountRaw === '') {
       return
     }
     const amt = Number(amount)
@@ -316,6 +323,13 @@ function FinPendingOtherChargeRow({
   const [saving, setSaving] = useState(false)
   const [rowError, setRowError] = useState(null)
 
+  useEffect(() => {
+    setDesc(line.desc || '')
+    setAmount(line.amount != null ? String(line.amount) : '')
+    setCurrency(line.currency || 'USD')
+    setRowError(null)
+  }, [line.tempId, line.desc, line.amount, line.currency])
+
   const handleSave = async () => {
     setRowError(null)
     if (!categoryMeta?.id) {
@@ -353,7 +367,7 @@ function FinPendingOtherChargeRow({
   if (!editMode) return null
 
   return (
-    <tr key={line.tempId} className="shipment-fin-other-pending-row">
+    <tr className="shipment-fin-other-pending-row">
       <td>
         <span className="shipment-fin-line-label">{t('shipments.fin.otherChargeLine')}</span>
       </td>
@@ -581,6 +595,7 @@ export default function ShipmentFinancialsModal({
   const [paymentForm, setPaymentForm] = useState({ amount: '', currency_id: '1', method: 'bank', reference: '', paid_at: '' })
   const [paymentSaving, setPaymentSaving] = useState(false)
   const [currencies, setCurrencies] = useState([])
+  const pendingRowSeqRef = useRef(0)
 
   useEffect(() => {
     if (open && shipment?.id != null) {
@@ -716,7 +731,8 @@ export default function ShipmentFinancialsModal({
   const addPendingOtherLine = useCallback((bucketId) => {
     setPendingOtherByBucket((prev) => {
       const list = [...(prev[bucketId] || [])]
-      list.push({ tempId: `t-${Date.now()}`, desc: '', amount: '', currency: 'USD' })
+      pendingRowSeqRef.current += 1
+      list.push({ tempId: `t-${Date.now()}-${pendingRowSeqRef.current}`, desc: '', amount: '', currency: 'USD' })
       return { ...prev, [bucketId]: list }
     })
   }, [])
@@ -1358,6 +1374,49 @@ export default function ShipmentFinancialsModal({
     subKey: 'shipments.fin.bucketOtherSub',
   }
 
+  const financialTabs = useMemo(() => {
+    const items = []
+    if (isAccountingUser) {
+      items.push({
+        id: 'expenses',
+        label: t('shipments.financialsTab.expenses'),
+        icon: <Package className="w-4 h-4" aria-hidden />,
+      })
+    }
+    items.push({
+      id: 'selling',
+      label: t('shipments.financialsTab.selling'),
+      icon: <DollarSign className="w-4 h-4" aria-hidden />,
+    })
+    if (isAccountingUser) {
+      items.push({
+        id: 'invoices',
+        label: t('shipments.financialsTab.invoices'),
+        icon: <FileType className="w-4 h-4" aria-hidden />,
+      })
+      const attachmentCount = expenses.filter((e) => e.has_receipt).length
+      items.push({
+        id: 'attachments',
+        label: t('shipments.financialsTab.attachments', { defaultValue: 'Attachments' }),
+        icon: <Paperclip className="w-4 h-4" aria-hidden />,
+        badge: attachmentCount > 0 ? attachmentCount : undefined,
+      })
+    }
+    items.push(
+      {
+        id: 'summary',
+        label: t('shipments.financialsTab.summary'),
+        icon: <FileText className="w-4 h-4" aria-hidden />,
+      },
+      {
+        id: 'history',
+        label: t('shipments.fin.tabD'),
+        icon: <History className="w-4 h-4" aria-hidden />,
+      }
+    )
+    return items
+  }, [isAccountingUser, expenses, t])
+
   return (
     <div className="client-detail-modal shipments-no-print shipment-fin-modal-root" role="dialog" aria-modal="true" aria-labelledby="shipment-fin-modal-title">
       <div className="client-detail-modal__backdrop" onClick={onClose} />
@@ -1375,41 +1434,7 @@ export default function ShipmentFinancialsModal({
           </button>
         </header>
 
-        <div className="shipment-fin-tab-bar" role="tablist">
-          {isAccountingUser && (
-            <button type="button" role="tab" aria-selected={tab === 'expenses'} className={`shipment-fin-tab ${tab === 'expenses' ? 'shipment-fin-tab--active' : ''}`} onClick={() => setTab('expenses')}>
-              <Package className="shipment-fin-tab__icon" aria-hidden />
-              {t('shipments.financialsTab.expenses')}
-            </button>
-          )}
-          <button type="button" role="tab" aria-selected={tab === 'selling'} className={`shipment-fin-tab ${tab === 'selling' ? 'shipment-fin-tab--active' : ''}`} onClick={() => setTab('selling')}>
-            <DollarSign className="shipment-fin-tab__icon" aria-hidden />
-            {t('shipments.financialsTab.selling')}
-          </button>
-          {isAccountingUser && (
-            <button type="button" role="tab" aria-selected={tab === 'invoices'} className={`shipment-fin-tab ${tab === 'invoices' ? 'shipment-fin-tab--active' : ''}`} onClick={() => setTab('invoices')}>
-              <FileType className="shipment-fin-tab__icon" aria-hidden />
-              {t('shipments.financialsTab.invoices')}
-            </button>
-          )}
-          {isAccountingUser && (
-            <button type="button" role="tab" aria-selected={tab === 'attachments'} className={`shipment-fin-tab ${tab === 'attachments' ? 'shipment-fin-tab--active' : ''}`} onClick={() => setTab('attachments')}>
-              <Paperclip className="shipment-fin-tab__icon" aria-hidden />
-              {t('shipments.financialsTab.attachments', { defaultValue: 'Attachments' })}
-              {expenses.filter((e) => e.has_receipt).length > 0 && (
-                <span className="shipment-fin-tab-badge">{expenses.filter((e) => e.has_receipt).length}</span>
-              )}
-            </button>
-          )}
-          <button type="button" role="tab" aria-selected={tab === 'summary'} className={`shipment-fin-tab ${tab === 'summary' ? 'shipment-fin-tab--active' : ''}`} onClick={() => setTab('summary')}>
-            <FileText className="shipment-fin-tab__icon" aria-hidden />
-            {t('shipments.financialsTab.summary')}
-          </button>
-          <button type="button" role="tab" aria-selected={tab === 'history'} className={`shipment-fin-tab ${tab === 'history' ? 'shipment-fin-tab--active' : ''}`} onClick={() => setTab('history')}>
-            <History className="shipment-fin-tab__icon" aria-hidden />
-            {t('shipments.fin.tabD')}
-          </button>
-        </div>
+        <Tabs tabs={financialTabs} activeTab={tab} onChange={setTab} className="client-detail-modal__tabs" />
 
         <div className="client-detail-modal__body client-detail-modal__body--form shipment-fin-modal__body">
           {finBanner ? (
