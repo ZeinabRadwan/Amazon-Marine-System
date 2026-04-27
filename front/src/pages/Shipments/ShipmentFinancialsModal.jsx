@@ -265,7 +265,7 @@ function FinSingleExpenseRow({
   }
 
   return (
-    <tr key={expense?.id ?? `${tpl?.id || 'null'}-new`}>
+    <tr>
       <td>{showLineLabel ? renderLineLabelCell(tpl) : null}</td>
       <td>
         <input
@@ -711,11 +711,14 @@ export default function ShipmentFinancialsModal({
 
   const saveBucketBatch = useCallback(
     async (bucketId) => {
-      const keys = bucketBatchKeysRef.current[bucketId] || []
+      const keys = Array.from(new Set(bucketBatchKeysRef.current[bucketId] || []))
       setBatchSavingBucket(bucketId)
       try {
         for (const k of keys) {
-          await saveHandlersRef.current.get(k)?.()
+          const saveFn = saveHandlersRef.current.get(k)
+          if (typeof saveFn === 'function') {
+            await saveFn()
+          }
         }
         onExpensesChanged?.()
         setFinBanner({ type: 'success', message: t('shipments.fin.batchSaved') })
@@ -1029,6 +1032,11 @@ export default function ShipmentFinancialsModal({
     setTabBRows((rows) => rows.map((r, i) => (i === idx ? { ...r, ...patch } : r)))
   }
 
+  const expenseRowIdentity = (bucketId, tplId, ex, idx) =>
+    ex?.id != null
+      ? `${bucketId}::${tplId}::id::${ex.id}`
+      : `${bucketId}::${tplId}::draft::${idx}::${ex?.description || ''}::${ex?.amount || ''}::${ex?.currency_code || ''}`
+
   const renderLineLabelCell = (tpl) => (
     <span className="shipment-fin-line-label">
       {t(tpl.labelKey)}
@@ -1209,11 +1217,11 @@ export default function ShipmentFinancialsModal({
       for (const { tpl, matched } of sections) {
         const rowsForTpl = matched.length > 0 ? matched : [null]
         rowsForTpl.forEach((ex, idx) => {
-          const rowKey = `${bucketId}::${tpl.id}::${ex?.id ?? 'new'}::${idx}`
+          const rowKey = expenseRowIdentity(bucketId, tpl.id, ex, idx)
           batchKeys.push(rowKey)
           sectionRows.push(
             <FinSingleExpenseRow
-              key={ex?.id ?? `${bucketId}-${tpl.id}-new-${idx}`}
+              key={rowKey}
               tpl={tpl}
               bucketId={bucketId}
               expense={ex}
