@@ -1,9 +1,10 @@
-import { useMemo, useState, useEffect, useRef } from 'react'
+import { useMemo, useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   X,
   Ship,
   Car,
+  Building2,
   ShieldCheck,
   Shield,
   Paperclip,
@@ -18,15 +19,16 @@ import {
   FileImage,
   Wallet,
   Hash,
-  Building2,
+  Inbox,
 } from 'lucide-react'
 import { downloadExpenseReceipt } from '../../api/expenses'
 import { listShipmentAttachments, uploadShipmentAttachment, deleteShipmentAttachment, downloadShipmentAttachment, updateShipmentAttachment } from '../../api/shipments'
 import { BUCKET_DEFS, expenseBucket, ATTACHMENTS_MODAL_TITLE_KEY } from './shipmentFinUtils'
+import Tabs from '../../components/Tabs'
 import '../SDForms/SDForms.css'
 
 export default function ShipmentAttachmentsModal({ open, shipment, expenses, loading, onClose, token, onAlert }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [activeTab, setActiveTab] = useState('shipment')
   const [directAttachments, setDirectAttachments] = useState([])
   const [directLoading, setDirectLoading] = useState(false)
@@ -41,11 +43,24 @@ export default function ShipmentAttachmentsModal({ open, shipment, expenses, loa
 
   const isUploading = uploadQueue.some((u) => u.status === 'uploading')
 
+  const loadDirectAttachments = useCallback(async () => {
+    if (!token || !shipment?.id) return
+    setDirectLoading(true)
+    try {
+      const res = await listShipmentAttachments(token, shipment.id)
+      setDirectAttachments(res.data || [])
+    } catch (err) {
+      console.error('Failed to load direct attachments', err)
+    } finally {
+      setDirectLoading(false)
+    }
+  }, [token, shipment?.id])
+
   useEffect(() => {
     if (open && shipment?.id) {
       loadDirectAttachments()
     }
-  }, [open, shipment?.id])
+  }, [open, shipment?.id, loadDirectAttachments])
 
   useEffect(() => {
     if (!open) {
@@ -66,19 +81,6 @@ export default function ShipmentAttachmentsModal({ open, shipment, expenses, loa
       return
     }
     if (type === 'error') alert(message)
-  }
-
-  const loadDirectAttachments = async () => {
-    if (!token || !shipment?.id) return
-    setDirectLoading(true)
-    try {
-      const res = await listShipmentAttachments(token, shipment.id)
-      setDirectAttachments(res.data || [])
-    } catch (err) {
-      console.error('Failed to load direct attachments', err)
-    } finally {
-      setDirectLoading(false)
-    }
   }
 
   const isAllowedFile = (file) => {
@@ -282,6 +284,90 @@ export default function ShipmentAttachmentsModal({ open, shipment, expenses, loa
     </div>
   )
 
+  const localizedShipmentId = useMemo(() => {
+    if (shipment?.id == null || shipment?.id === '') return '—'
+    const numeric = Number(shipment.id)
+    if (!Number.isNaN(numeric)) {
+      const locale = i18n.language === 'ar' || String(i18n.language).startsWith('ar') ? 'ar-EG' : 'en-GB'
+      return new Intl.NumberFormat(locale).format(numeric)
+    }
+    return String(shipment.id)
+  }, [shipment?.id, i18n.language])
+
+  const shipmentCompany = useMemo(() => shipment?.client?.company_name || shipment?.client?.name || shipment?.company_name || shipment?.company || '', [shipment])
+
+  const actionBtnClass =
+    'client-detail-modal__btn client-detail-modal__btn--secondary client-detail-modal__btn--sm !p-1.5 !min-w-0'
+
+  const tabs = useMemo(
+    () => [
+      {
+        id: 'shipment',
+        label: t('shipments.attachments.shipmentTab') || 'مرفقات الشحنة',
+        icon: <Paperclip className="w-4 h-4" aria-hidden />,
+      },
+      {
+        id: 'expenses',
+        label: t('shipments.attachments.expenseTab') || 'مرفقات المصروفات',
+        icon: <Wallet className="w-4 h-4" aria-hidden />,
+      },
+    ],
+    [t]
+  )
+
+  const renderEmptyState = (message) => (
+    <div className="client-detail-modal__empty !py-8 !px-4">
+      <div className="flex flex-col items-center justify-center gap-2 text-center">
+        <Inbox className="w-5 h-5 text-muted" />
+        <span>{message}</span>
+      </div>
+    </div>
+  )
+
+  const renderExpenseRowsTable = (rows) => (
+    <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+      <table className="w-full text-sm">
+        <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+          {rows.map((ex) => (
+            <tr key={ex.id} className="align-top">
+              <td className="px-3 py-2.5 min-w-0">
+                <div className="min-w-0 flex items-start gap-2.5">
+                  <FileText className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{ex.description || t('shipments.fin.noDescription')}</p>
+                    <p className="text-[11px] text-muted">
+                      {ex.category_name} {ex.amount > 0 ? `· ${ex.amount} ${ex.currency_code}` : ''}
+                    </p>
+                  </div>
+                </div>
+              </td>
+              <td className="px-3 py-2.5 w-0 whitespace-nowrap">
+                <div className="flex items-center justify-end gap-1.5">
+                  <button
+                    onClick={() => handlePreviewExpense(ex)}
+                    className={actionBtnClass}
+                    title={t('shipments.attachments.preview') || 'Preview'}
+                    aria-label={t('shipments.attachments.preview') || 'Preview'}
+                  >
+                    <Eye className="w-3 h-3" />
+                  </button>
+                  <button
+                    onClick={() => handleDownloadExpense(ex)}
+                    className={actionBtnClass}
+                    title={t('shipments.attachments.downloadAction') || 'Download'}
+                    aria-label={t('shipments.attachments.downloadAction') || 'Download'}
+                  >
+                    <FileDown className="w-3 h-3" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+
   if (!open) return null
 
   return (
@@ -289,44 +375,32 @@ export default function ShipmentAttachmentsModal({ open, shipment, expenses, loa
       <div className="client-detail-modal__backdrop" onClick={onClose} />
       <div className="client-detail-modal__box shipment-fin-modal__box" style={{ maxWidth: '860px' }}>
         <header className="client-detail-modal__header client-detail-modal__header--form shipment-fin-modal__header">
-          <div className="client-detail-modal__header-inner space-y-2">
-            <span className="client-detail-modal__header-label">{t(ATTACHMENTS_MODAL_TITLE_KEY)}</span>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 text-blue-700 px-2.5 py-1 text-xs font-semibold">
+          <div className="client-detail-modal__header-inner">
+            <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-wrap">
+              <span className="client-detail-modal__header-label">{t(ATTACHMENTS_MODAL_TITLE_KEY)}</span>
+              {shipment?.bl_number ? <h2 className="client-detail-modal__title shipment-fin-modal__title-bl">{shipment.bl_number}</h2> : null}
+              <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200">
                 <Hash className="w-3.5 h-3.5" />
-                {t('shipments.attachments.idBadge') || 'ID'}: {shipment?.id }
+                <span className="whitespace-nowrap">
+                  {t('shipments.attachments.idBadge') || 'Shipment ID'}: {localizedShipmentId}
+                </span>
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 px-2.5 py-1 text-xs font-semibold">
-                <Building2 className="w-3.5 h-3.5" />
-                {shipment?.client?.company_name || shipment?.client?.name}
-              </span>
-              <span className="text-xs text-muted">{shipment?.bl_number}</span>
+              {shipmentCompany ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200 max-w-full">
+                  <Building2 className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">
+                    {t('shipments.attachments.companyBadge') || 'Company'}: {shipmentCompany}
+                  </span>
+                </span>
+              ) : null}
             </div>
-            <div className="sd-form-modal-preview__hint">{t('shipments.attachments.headerHint') || 'Manage shipment and expense attachments in one place.'}</div>
           </div>
           <button type="button" className="client-detail-modal__close" onClick={onClose} aria-label={t('common.close') || 'Close'}>
             <X className="client-detail-modal__close-icon" aria-hidden />
           </button>
         </header>
 
-        <div className="client-detail-modal__tabs shipment-fin-tab-bar">
-          <button
-            type="button"
-            className={`shipment-fin-tab rounded-t-xl transition-all duration-200 ${activeTab === 'shipment' ? 'shipment-fin-tab--active shadow-sm' : ''}`}
-            onClick={() => setActiveTab('shipment')}
-          >
-            <Paperclip className="shipment-fin-tab__icon" />
-            {t('shipments.attachments.shipmentTab') || 'مرفقات الشحنة'}
-          </button>
-          <button
-            type="button"
-            className={`shipment-fin-tab rounded-t-xl transition-all duration-200 ${activeTab === 'expenses' ? 'shipment-fin-tab--active shadow-sm' : ''}`}
-            onClick={() => setActiveTab('expenses')}
-          >
-            <Wallet className="shipment-fin-tab__icon" />
-            {t('shipments.attachments.expenseTab') || 'مرفقات المصروفات'}
-          </button>
-        </div>
+        <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} className="client-detail-modal__tabs" />
 
         <div className="client-detail-modal__body shipment-fin-modal__body">
           {loading ? (
@@ -403,108 +477,113 @@ export default function ShipmentAttachmentsModal({ open, shipment, expenses, loa
                           <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted" />
                         </div>
                       ) : directAttachments.length === 0 ? (
-                        <div className="p-8 text-center text-muted text-sm italic">{t('shipments.attachments.noDirect') || 'No direct attachments yet.'}</div>
+                        renderEmptyState(t('shipments.attachments.noDirect') || 'No direct attachments yet.')
                       ) : (
-                        <div className="space-y-2">
-                          {directAttachments.map((a) => {
-                            const TypeIcon = fileTypeIcon(a.name, a.mime_type || '')
-                            return (
-                              <div
-                                key={a.id}
-                                className="group rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/40 px-3 py-2.5 flex items-start justify-between gap-3 hover:shadow-sm transition-shadow"
-                              >
-                                <div className="min-w-0 flex items-start gap-2.5">
-                                  <TypeIcon className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
-                                  <div className="min-w-0">
-                                    {editingId === a.id ? (
-                                      <div className="flex items-center gap-2">
-                                        <input
-                                          type="text"
-                                          className="flex-1 px-3 py-1.5 text-sm bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                          value={editingName}
-                                          onChange={(e) => setEditingName(e.target.value)}
-                                          onKeyDown={(e) => {
-                                            if (e.key === 'Enter') handleSaveEdit(a)
-                                            if (e.key === 'Escape') handleCancelEdit()
-                                          }}
-                                          autoFocus
-                                        />
-                                        {a.name.includes('.') ? <span className="text-xs text-muted">.{a.name.split('.').pop()}</span> : null}
+                        <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                          <table className="w-full text-sm">
+                            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                              {directAttachments.map((a) => {
+                                const TypeIcon = fileTypeIcon(a.name, a.mime_type || '')
+                                return (
+                                  <tr key={a.id} className="align-top">
+                                    <td className="px-3 py-2.5 min-w-0">
+                                      <div className="flex items-start gap-2.5 min-w-0">
+                                        <TypeIcon className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
+                                        <div className="min-w-0">
+                                          {editingId === a.id ? (
+                                            <div className="flex items-center gap-2">
+                                              <input
+                                                type="text"
+                                                className="flex-1 px-3 py-1.5 text-sm bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                                value={editingName}
+                                                onChange={(e) => setEditingName(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                  if (e.key === 'Enter') handleSaveEdit(a)
+                                                  if (e.key === 'Escape') handleCancelEdit()
+                                                }}
+                                                autoFocus
+                                              />
+                                              {a.name.includes('.') ? <span className="text-xs text-muted">.{a.name.split('.').pop()}</span> : null}
+                                            </div>
+                                          ) : (
+                                            <>
+                                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{a.name}</p>
+                                              <p className="text-[11px] text-muted">{a.mime_type || 'file'} · {formatFileSize(a.size)}</p>
+                                            </>
+                                          )}
+                                        </div>
                                       </div>
-                                    ) : (
-                                      <>
-                                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{a.name}</p>
-                                        <p className="text-[11px] text-muted">{a.mime_type || 'file'} · {formatFileSize(a.size)}</p>
-                                      </>
-                                    )}
-                                  </div>
-                                </div>
-                                <div className="shrink-0 flex flex-wrap justify-end gap-1.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                                  {editingId === a.id ? (
-                                    <>
-                                      <button
-                                        onClick={() => handleSaveEdit(a)}
-                                        disabled={savingEdit || isUploading}
-                                        className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold text-green-700 bg-green-50 hover:bg-green-100 rounded-md transition-all disabled:opacity-50"
-                                        title={t('common.save') || 'Save'}
-                                        aria-label={t('common.save') || 'Save'}
-                                      >
-                                        {savingEdit ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-                                      </button>
-                                      <button
-                                        onClick={handleCancelEdit}
-                                        disabled={savingEdit}
-                                        className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-md transition-all disabled:opacity-50"
-                                        title={t('common.cancel') || 'Cancel'}
-                                        aria-label={t('common.cancel') || 'Cancel'}
-                                      >
-                                        <X className="w-3 h-3" />
-                                      </button>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <button
-                                        onClick={() => handleStartEdit(a)}
-                                        disabled={isUploading}
-                                        className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-md transition-all disabled:opacity-50"
-                                        title={t('shipments.attachments.renameAction') || 'تسمية / Rename'}
-                                        aria-label={t('shipments.attachments.renameAction') || 'تسمية / Rename'}
-                                      >
-                                        <Pencil className="w-3 h-3" />
-                                      </button>
-                                      <button
-                                        onClick={() => handlePreviewDirect(a)}
-                                        disabled={isUploading}
-                                        className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold text-violet-700 bg-violet-50 hover:bg-violet-100 rounded-md transition-all disabled:opacity-50"
-                                        title={t('shipments.attachments.preview') || 'Preview'}
-                                        aria-label={t('shipments.attachments.preview') || 'Preview'}
-                                      >
-                                        <Eye className="w-3 h-3" />
-                                      </button>
-                                      <button
-                                        onClick={() => handleDownloadDirect(a)}
-                                        disabled={isUploading}
-                                        className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition-all disabled:opacity-50"
-                                        title={t('common.download') || 'Download'}
-                                        aria-label={t('common.download') || 'Download'}
-                                      >
-                                        <FileDown className="w-3 h-3" />
-                                      </button>
-                                      <button
-                                        onClick={() => setPendingDelete(a)}
-                                        disabled={isUploading}
-                                        className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-md transition-all disabled:opacity-50"
-                                        title={t('common.delete') || 'Delete'}
-                                        aria-label={t('common.delete') || 'Delete'}
-                                      >
-                                        <Trash2 className="w-3 h-3" />
-                                      </button>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                            )
-                          })}
+                                    </td>
+                                    <td className="px-3 py-2.5 w-0 whitespace-nowrap">
+                                      <div className="flex items-center justify-end gap-1.5">
+                                        {editingId === a.id ? (
+                                          <>
+                                            <button
+                                              onClick={() => handleSaveEdit(a)}
+                                              disabled={savingEdit || isUploading}
+                                              className={actionBtnClass}
+                                              title={t('common.save') || 'Save'}
+                                              aria-label={t('common.save') || 'Save'}
+                                            >
+                                              {savingEdit ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                                            </button>
+                                            <button
+                                              onClick={handleCancelEdit}
+                                              disabled={savingEdit}
+                                              className={actionBtnClass}
+                                              title={t('common.cancel') || 'Cancel'}
+                                              aria-label={t('common.cancel') || 'Cancel'}
+                                            >
+                                              <X className="w-3 h-3" />
+                                            </button>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <button
+                                              onClick={() => handleStartEdit(a)}
+                                              disabled={isUploading}
+                                              className={actionBtnClass}
+                                              title={t('shipments.attachments.renameAction') || 'Rename'}
+                                              aria-label={t('shipments.attachments.renameAction') || 'Rename'}
+                                            >
+                                              <Pencil className="w-3 h-3" />
+                                            </button>
+                                            <button
+                                              onClick={() => handlePreviewDirect(a)}
+                                              disabled={isUploading}
+                                              className={actionBtnClass}
+                                              title={t('shipments.attachments.preview') || 'Preview'}
+                                              aria-label={t('shipments.attachments.preview') || 'Preview'}
+                                            >
+                                              <Eye className="w-3 h-3" />
+                                            </button>
+                                            <button
+                                              onClick={() => handleDownloadDirect(a)}
+                                              disabled={isUploading}
+                                              className={actionBtnClass}
+                                              title={t('shipments.attachments.downloadAction') || 'Download'}
+                                              aria-label={t('shipments.attachments.downloadAction') || 'Download'}
+                                            >
+                                              <FileDown className="w-3 h-3" />
+                                            </button>
+                                            <button
+                                              onClick={() => setPendingDelete(a)}
+                                              disabled={isUploading}
+                                              className={actionBtnClass}
+                                              title={t('shipments.attachments.deleteAction') || 'Delete'}
+                                              aria-label={t('shipments.attachments.deleteAction') || 'Delete'}
+                                            >
+                                              <Trash2 className="w-3 h-3" />
+                                            </button>
+                                          </>
+                                        )}
+                                      </div>
+                                    </td>
+                                  </tr>
+                                )
+                              })}
+                            </tbody>
+                          </table>
                         </div>
                       )}
                     </div>
@@ -512,10 +591,9 @@ export default function ShipmentAttachmentsModal({ open, shipment, expenses, loa
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <h3 className="client-detail-modal__section-title m-0">{t('shipments.attachments.expenseDocuments') || 'Expense Attachments'}</h3>
                   {expensesWithFiles.length === 0 ? (
                     <div className="py-8 text-center">
-                      <p className="text-muted text-sm italic">{t('shipments.fin.noAttachments') || 'No expense documents found.'}</p>
+                      {renderEmptyState(t('shipments.fin.noAttachments') || 'No expense attachments found.')}
                     </div>
                   ) : (
                     <>
@@ -534,41 +612,8 @@ export default function ShipmentAttachmentsModal({ open, shipment, expenses, loa
                                 </div>
                               </div>
                             </div>
-                            <div className="border-t border-gray-100 dark:border-gray-800 p-3 space-y-2">
-                              {bucketExpenses.map((ex) => (
-                                <div
-                                  key={ex.id}
-                                  className="group rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/40 px-3 py-2.5 flex items-start justify-between gap-3 hover:shadow-sm transition-shadow"
-                                >
-                                  <div className="min-w-0 flex items-start gap-2.5">
-                                    <FileText className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
-                                    <div className="min-w-0">
-                                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{ex.description || t('shipments.fin.noDescription')}</p>
-                                      <p className="text-[11px] text-muted">
-                                        {ex.category_name} {ex.amount > 0 ? `· ${ex.amount} ${ex.currency_code}` : ''}
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <div className="shrink-0 flex flex-wrap justify-end gap-1.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                                    <button
-                                      onClick={() => handlePreviewExpense(ex)}
-                                      className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold text-violet-700 bg-violet-50 hover:bg-violet-100 rounded-md transition-all"
-                                      title={t('shipments.attachments.preview') || 'Preview'}
-                                      aria-label={t('shipments.attachments.preview') || 'Preview'}
-                                    >
-                                      <Eye className="w-3 h-3" />
-                                    </button>
-                                    <button
-                                      onClick={() => handleDownloadExpense(ex)}
-                                      className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition-all"
-                                      title={t('common.download') || 'Download'}
-                                      aria-label={t('common.download') || 'Download'}
-                                    >
-                                      <FileDown className="w-3 h-3" />
-                                    </button>
-                                  </div>
-                                </div>
-                              ))}
+                            <div className="border-t border-gray-100 dark:border-gray-800 p-3">
+                              {renderExpenseRowsTable(bucketExpenses)}
                             </div>
                           </div>
                         )
@@ -584,41 +629,8 @@ export default function ShipmentAttachmentsModal({ open, shipment, expenses, loa
                               </div>
                             </div>
                           </div>
-                          <div className="border-t border-gray-100 dark:border-gray-800 p-3 space-y-2">
-                            {grouped.other.map((ex) => (
-                              <div
-                                key={ex.id}
-                                className="group rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/40 px-3 py-2.5 flex items-start justify-between gap-3 hover:shadow-sm transition-shadow"
-                              >
-                                <div className="min-w-0 flex items-start gap-2.5">
-                                  <FileText className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
-                                  <div className="min-w-0">
-                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{ex.description || t('shipments.fin.noDescription')}</p>
-                                    <p className="text-[11px] text-muted">
-                                      {ex.category_name} {ex.amount > 0 ? `· ${ex.amount} ${ex.currency_code}` : ''}
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="shrink-0 flex flex-wrap justify-end gap-1.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                                  <button
-                                    onClick={() => handlePreviewExpense(ex)}
-                                    className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold text-violet-700 bg-violet-50 hover:bg-violet-100 rounded-md transition-all"
-                                    title={t('shipments.attachments.preview') || 'Preview'}
-                                    aria-label={t('shipments.attachments.preview') || 'Preview'}
-                                  >
-                                    <Eye className="w-3 h-3" />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDownloadExpense(ex)}
-                                    className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition-all"
-                                    title={t('common.download') || 'Download'}
-                                    aria-label={t('common.download') || 'Download'}
-                                  >
-                                    <FileDown className="w-3 h-3" />
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
+                          <div className="border-t border-gray-100 dark:border-gray-800 p-3">
+                            {renderExpenseRowsTable(grouped.other)}
                           </div>
                         </div>
                       ) : null}
