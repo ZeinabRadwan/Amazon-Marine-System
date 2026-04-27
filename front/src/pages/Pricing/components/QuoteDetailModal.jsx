@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X, Download } from 'lucide-react'
+import { X } from 'lucide-react'
 
 function money(amount, currency) {
   if (amount == null || Number.isNaN(Number(amount))) return '—'
@@ -78,15 +78,9 @@ export default function QuoteDetailModal({ isOpen, quote, onClose }) {
           </div>
         </div>
 
-        <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3">
+        <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex justify-end">
           <button onClick={onClose} className="px-5 py-2.5 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-colors">
             {t('common.close', 'Close')}
-          </button>
-          <button
-            onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL}/v1/pricing/quotes/${quote.id}/pdf`, '_blank')}
-            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors shadow-sm"
-          >
-            <Download className="h-4 w-4" /> {t('common.downloadPdf', 'Download PDF')}
           </button>
         </div>
       </div>

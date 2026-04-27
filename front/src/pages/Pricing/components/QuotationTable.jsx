@@ -8,10 +8,11 @@ import CreateQuoteModal from './CreateQuoteModal'
 import QuoteDetailModal from './QuoteDetailModal'
 import { formatDate } from '../../../utils/dateUtils'
 
-export default function QuotationTable({ refreshKey }) {
+export default function QuotationTable({ refreshKey, openCreateSignal, onCreateClosed }) {
   const { t } = useTranslation()
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const [createOpen, setCreateOpen] = useState(false)
   const [detail, setDetail] = useState(null)
   const { accept, reject, get, loading: mutateLoading } = useMutateQuote()
 
@@ -25,7 +26,12 @@ export default function QuotationTable({ refreshKey }) {
     if (refreshKey > 0) refetch()
   }, [refreshKey])
 
-
+  useEffect(() => {
+    if (openCreateSignal > 0) {
+      setCreateOpen(true)
+      onCreateClosed?.()
+    }
+  }, [openCreateSignal])
 
   const handleView = async (row) => {
     try {
@@ -80,36 +86,21 @@ export default function QuotationTable({ refreshKey }) {
       key: 'actions',
       label: '',
       render: (_, row) => (
-        <div className="flex justify-end gap-1.5 item-center">
-          <button 
-            onClick={() => handleView(row)} 
-            className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/40 dark:text-blue-400 transition-colors" 
-            title={t('common.view', 'View')}
-          >
-            <Eye className="h-4 w-4" />
-          </button>
-          
-          <button 
-            onClick={() => handleAccept(row)}
-            className="px-2 py-1 rounded-lg text-xs font-bold bg-green-50 text-green-600 hover:bg-green-100 dark:bg-green-900/40 dark:text-green-400 border border-green-100 dark:border-green-800 transition-colors"
-          >
-            {t('pricing.accept', 'Accept')}
-          </button>
-
-          <button 
-            onClick={() => handleReject(row)}
-            className="px-2 py-1 rounded-lg text-xs font-bold bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/40 dark:text-red-400 border border-red-100 dark:border-red-800 transition-colors"
-          >
-            {t('pricing.reject', 'Reject')}
-          </button>
-
-          <button 
-            onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL}/v1/pricing/quotes/${row.id}/pdf`, '_blank')}
-            className="p-2 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-300 transition-colors"
-            title={t('common.download', 'PDF')}
-          >
-            <Download className="h-4 w-4" />
-          </button>
+        <div className="flex justify-end">
+          <DropdownMenu
+            align="end"
+            trigger={
+              <button className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                <MoreHorizontal className="h-4 w-4 text-gray-400" />
+              </button>
+            }
+            items={[
+              { label: t('common.view', 'View Details'), icon: <Eye className="h-4 w-4" />, onClick: () => handleView(row) },
+              { label: t('pricing.accept', 'Accept'), onClick: () => handleAccept(row) },
+              { label: t('pricing.reject', 'Reject'), onClick: () => handleReject(row) },
+              { label: t('common.download', 'Download PDF'), icon: <Download className="h-4 w-4" />, onClick: () => console.log('Download', row.id) },
+            ]}
+          />
         </div>
       ),
     },
@@ -138,7 +129,7 @@ export default function QuotationTable({ refreshKey }) {
         </div>
       </div>
 
-      <div className="glass-panel rounded-2xl shadow-sm">
+      <div className="glass-panel rounded-2xl overflow-hidden shadow-sm">
         {error ? (
           <div className="p-6 text-sm text-red-700">{error}</div>
         ) : (
@@ -151,7 +142,11 @@ export default function QuotationTable({ refreshKey }) {
         )}
       </div>
 
-
+      <CreateQuoteModal
+        isOpen={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onSuccess={() => refetch()}
+      />
 
       <QuoteDetailModal
         isOpen={!!detail}

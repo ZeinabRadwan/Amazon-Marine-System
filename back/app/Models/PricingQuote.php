@@ -30,8 +30,6 @@ class PricingQuote extends Model
         'valid_to',
         'notes',
         'status',
-        'available_sailing_days',
-        'weekly_sailings',
     ];
 
     /**
@@ -40,7 +38,6 @@ class PricingQuote extends Model
     protected $casts = [
         'valid_from' => 'date',
         'valid_to' => 'date',
-        'available_sailing_days' => 'array',
     ];
 
     /**

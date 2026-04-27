@@ -8,26 +8,21 @@ import '../Clients/Clients.css'
 import RateSheet from './components/RateSheet'
 import QuotationTable from './components/QuotationTable'
 import OfferFormModal from './components/OfferFormModal'
-import CreateQuoteModal from './components/CreateQuoteModal'
 import './Pricing.css'
 
 export default function Pricing() {
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState('rates')
   const [modalConfig, setModalConfig] = useState({ isOpen: false, offer: null })
-  const [quoteModalConfig, setQuoteModalConfig] = useState({ isOpen: false, sourceOffer: null })
+  const [quoteCreateSignal, setQuoteCreateSignal] = useState(0)
   const [refreshKey, setRefreshKey] = useState(0)
 
   const handleAddClick = () => {
     if (activeTab === 'rates') {
       setModalConfig({ isOpen: true, offer: null })
     } else {
-      setQuoteModalConfig({ isOpen: true, sourceOffer: null })
+      setQuoteCreateSignal((n) => n + 1)
     }
-  }
-
-  const handleCreateQuoteFromOffer = (offer) => {
-    setQuoteModalConfig({ isOpen: true, sourceOffer: offer })
   }
 
   const onExportExcel = () => {
@@ -80,13 +75,9 @@ export default function Pricing() {
 
         <main className="pricing-content">
           {activeTab === 'rates' ? (
-            <RateSheet 
-              refreshKey={refreshKey} 
-              onEdit={(offer) => setModalConfig({ isOpen: true, offer })} 
-              onCreateQuote={handleCreateQuoteFromOffer}
-            />
+            <RateSheet refreshKey={refreshKey} onEdit={(offer) => setModalConfig({ isOpen: true, offer })} />
           ) : (
-            <QuotationTable refreshKey={refreshKey} />
+            <QuotationTable refreshKey={refreshKey} openCreateSignal={quoteCreateSignal} onCreateClosed={() => {}} />
           )}
         </main>
 
@@ -95,16 +86,6 @@ export default function Pricing() {
           offerToEdit={modalConfig.offer}
           onClose={() => setModalConfig({ isOpen: false, offer: null })}
           onSuccess={() => setRefreshKey((k) => k + 1)}
-        />
-
-        <CreateQuoteModal
-          isOpen={quoteModalConfig.isOpen}
-          sourceOffer={quoteModalConfig.sourceOffer}
-          onClose={() => setQuoteModalConfig({ isOpen: false, sourceOffer: null })}
-          onSuccess={() => {
-            setRefreshKey((k) => k + 1)
-            setActiveTab('quotes')
-          }}
         />
       </div>
     </Container>

@@ -21,7 +21,7 @@ const INLAND_PORTS = [
   { value: 'Sokhna', label: 'Ain Sokhna' }
 ]
 
-export default function RateSheet({ refreshKey, onEdit, onCreateQuote }) {
+export default function RateSheet({ refreshKey, onEdit }) {
   const { t } = useTranslation()
   const [type, setType] = useState('sea')
   const [region, setRegion] = useState('')
@@ -147,7 +147,7 @@ export default function RateSheet({ refreshKey, onEdit, onCreateQuote }) {
               Array.from({ length: 6 }).map((_, i) => <OfferSkeleton key={i} />)
             ) : offers?.length > 0 ? (
               offers.map(offer => (
-                <PricingCard key={offer.id} offer={offer} onMutate={refetch} onEdit={onEdit} onView={setDetailOffer} onCreateQuote={onCreateQuote} />
+                <PricingCard key={offer.id} offer={offer} onMutate={refetch} onEdit={onEdit} onView={setDetailOffer} />
               ))
             ) : (
               <div className="col-span-full py-16 text-center text-gray-500 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-700">
@@ -184,7 +184,6 @@ export default function RateSheet({ refreshKey, onEdit, onCreateQuote }) {
         isOpen={!!detailOffer}
         offer={detailOffer}
         onClose={() => setDetailOffer(null)}
-        onCreateQuote={onCreateQuote}
       />
     </div>
   )

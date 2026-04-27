@@ -3,16 +3,22 @@ import { useTranslation } from 'react-i18next'
 import { X, Ship, Truck, Calendar, Clock } from 'lucide-react'
 
 const SEA_ITEMS = [
-  { key: 'ocean', label: "Ocean Freight" },
-  { key: 'thc', label: "THC" },
-  { key: 'power', label: 'Power (Reefer)', optional: true },
+  { key: 'of20', label: "OF 20'DC" },
+  { key: 'of40', label: "OF 40'HQ" },
+  { key: 'thc20', label: "THC 20'DC" },
+  { key: 'thc40', label: "THC 40'HQ" },
+  { key: 'of40rf', label: "OF 40'RF (Reefer)", optional: true },
+  { key: 'thcRf', label: "THC 40'RF", optional: true },
+  { key: 'powerDay', label: 'Power/day (Reefer)', optional: true },
   { key: 'pti', label: 'PTI (Reefer)', optional: true },
-  { key: 'bl', label: 'B/L Fee' },
-  { key: 'telex', label: 'Telex Release' },
 ]
 
 const INLAND_ITEMS = [
-  { key: 'inland', label: "Inland Rate" },
+  { key: 't20d', label: "20' Dry" },
+  { key: 't40d', label: "40' Dry" },
+  { key: 't40hq', label: "40' HQ" },
+  { key: 't20r', label: "20' Reefer", optional: true },
+  { key: 't40r', label: "40' Reefer", optional: true },
   { key: 'generator', label: 'Generator', optional: true },
 ]
 
@@ -30,7 +36,7 @@ function formatMoney(price, currency) {
   }
 }
 
-export default function OfferDetailModal({ isOpen, offer, onClose, onCreateQuote }) {
+export default function OfferDetailModal({ isOpen, offer, onClose }) {
   const { t } = useTranslation()
   const isSea = offer?.pricing_type === 'sea'
 
@@ -73,13 +79,11 @@ export default function OfferDetailModal({ isOpen, offer, onClose, onCreateQuote
               <>
                 <div>
                   <div className="text-xs font-bold text-gray-500 uppercase">{t('pricing.shippingLine', 'Shipping line')}</div>
-                  <div className="font-semibold text-blue-600 dark:text-blue-400">{offer.shipping_line || '—'}</div>
+                  <div className="font-semibold">{offer.shipping_line || '—'}</div>
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-gray-500 uppercase">{t('pricing.containerSpec', 'Container Spec')}</div>
-                  <div className="font-semibold">
-                    {offer.container_size} {offer.container_height === 'HQ' ? 'HQ' : ''} {offer.container_type}
-                  </div>
+                  <div className="text-xs font-bold text-gray-500 uppercase">D&D</div>
+                  <div className="font-semibold">{offer.dnd || '—'}</div>
                 </div>
                 <div>
                   <div className="text-xs font-bold text-gray-500 uppercase">POL</div>
@@ -93,12 +97,6 @@ export default function OfferDetailModal({ isOpen, offer, onClose, onCreateQuote
             ) : (
               <>
                 <div>
-                  <div className="text-xs font-bold text-gray-500 uppercase">{t('pricing.containerSpec', 'Container Spec')}</div>
-                  <div className="font-semibold">
-                    {offer.container_size} {offer.container_height === 'HQ' ? 'HQ' : ''} {offer.container_type}
-                  </div>
-                </div>
-                <div>
                   <div className="text-xs font-bold text-gray-500 uppercase">{t('pricing.port', 'Port')}</div>
                   <div className="font-semibold">{offer.inland_port || '—'}</div>
                 </div>
@@ -110,6 +108,10 @@ export default function OfferDetailModal({ isOpen, offer, onClose, onCreateQuote
                   <div className="text-xs font-bold text-gray-500 uppercase">{t('pricing.governorate', 'Governorate')}</div>
                   <div className="font-semibold">{offer.inland_gov || offer.region || '—'}</div>
                 </div>
+                <div>
+                  <div className="text-xs font-bold text-gray-500 uppercase">{t('pricing.city', 'City')}</div>
+                  <div className="font-semibold">{offer.inland_city || '—'}</div>
+                </div>
               </>
             )}
           </div>
@@ -118,18 +120,12 @@ export default function OfferDetailModal({ isOpen, offer, onClose, onCreateQuote
             <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-300">
               {offer.transit_time && (
                 <span className="inline-flex items-center gap-2">
-                  <Clock className="h-4 w-4" /> {offer.transit_time} Days Transit
+                  <Clock className="h-4 w-4" /> {offer.transit_time}
                 </span>
               )}
-               {offer.free_time && (
+              {offer.sailing_dates?.length > 0 && (
                 <span className="inline-flex items-center gap-2">
-                  <Clock className="h-4 w-4" /> {offer.free_time} Days Free
-                </span>
-              )}
-              {offer.available_sailing_days?.length > 0 && (
-                <span className="inline-flex items-center gap-2">
-                  <Calendar className="h-4 w-4" /> Sailings: {offer.available_sailing_days.join(', ')}
-                  {offer.weekly_sailings && <span className="text-[10px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 px-2 py-0.5 rounded-full">({offer.weekly_sailings}x / week)</span>}
+                  <Calendar className="h-4 w-4" /> {offer.sailing_dates.join(', ')}
                 </span>
               )}
               {offer.valid_to && (
@@ -172,15 +168,9 @@ export default function OfferDetailModal({ isOpen, offer, onClose, onCreateQuote
           )}
         </div>
 
-         <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3">
+        <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex justify-end">
           <button onClick={onClose} className="px-5 py-2.5 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-colors">
             {t('common.close', 'Close')}
-          </button>
-          <button
-            onClick={() => { onCreateQuote?.(offer); onClose(); }} 
-            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors shadow-sm"
-          >
-            {t('pricing.createQuoteFromOffer', 'Create Quote')}
           </button>
         </div>
       </div>

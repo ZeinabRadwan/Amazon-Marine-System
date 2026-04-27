@@ -505,7 +505,6 @@ Route::prefix('v1')->group(function () {
         Route::put('pricing/offers/{offer}', [PricingOfferController::class, 'update']);
         Route::post('pricing/offers/{offer}/activate', [PricingOfferController::class, 'activate']);
         Route::post('pricing/offers/{offer}/archive', [PricingOfferController::class, 'archive']);
-        Route::post('pricing/quotes/from-offer/{offer}', [PricingQuoteController::class, 'createFromOffer']);
 
         // Pricing quotes (customer quotations)
         Route::get('pricing/quotes', [PricingQuoteController::class, 'index']);
@@ -514,7 +513,6 @@ Route::prefix('v1')->group(function () {
         Route::put('pricing/quotes/{quote}', [PricingQuoteController::class, 'update']);
         Route::post('pricing/quotes/{quote}/accept', [PricingQuoteController::class, 'accept']);
         Route::post('pricing/quotes/{quote}/reject', [PricingQuoteController::class, 'reject']);
-        Route::get('pricing/quotes/{quote}/pdf', [PricingQuoteController::class, 'downloadPdf']);
 
         // Treasury
         Route::get('treasury/summary', [TreasuryController::class, 'summary']);
