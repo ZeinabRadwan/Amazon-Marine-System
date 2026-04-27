@@ -1013,6 +1013,7 @@ export default function ShipmentDetailModal({
                           <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">{t('shipments.ops.cutOffDate')}</label>
                           <input
                             type="date"
+                            lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
                             className="clients-input w-full"
                             value={opsData.cut_off_date || ''}
                             onChange={e => setOpsData(prev => ({ ...prev, cut_off_date: e.target.value }))}
@@ -1023,6 +1024,7 @@ export default function ShipmentDetailModal({
                           <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">{t('shipments.ops.etd')}</label>
                           <input
                             type="date"
+                            lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
                             className="clients-input w-full"
                             value={opsData.etd || ''}
                             onChange={e => setOpsData(prev => ({ ...prev, etd: e.target.value }))}
@@ -1033,6 +1035,7 @@ export default function ShipmentDetailModal({
                           <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">{t('shipments.ops.eta')}</label>
                           <input
                             type="date"
+                            lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
                             className="clients-input w-full"
                             value={opsData.eta || ''}
                             onChange={e => setOpsData(prev => ({ ...prev, eta: e.target.value }))}
@@ -1150,6 +1153,7 @@ export default function ShipmentDetailModal({
                               <td className="px-4 py-3">
                                 <input
                                   type="date"
+                                  lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
                                   className="clients-input py-1 text-xs"
                                   value={task.due_date || ''}
                                   onChange={e => updateTask(task.id, 'due_date', e.target.value)}

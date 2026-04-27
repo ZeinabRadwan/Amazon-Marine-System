@@ -623,7 +623,7 @@ export function useCustomerServicesState() {
     getShipmentTrackingUpdates(token, row.id)
       .then((res) => {
         const list = res.data ?? []
-        const locale = i18n.language === 'ar' ? 'ar-EG' : 'en-US'
+        const locale = i18n.language === 'ar' ? 'ar-EG' : 'en-GB'
         const fmt = (d) => {
           if (!d) return '—'
           try {

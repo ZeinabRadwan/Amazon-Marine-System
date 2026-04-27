@@ -15,17 +15,10 @@ import { Bell, Check, CheckCheck, RefreshCw } from 'lucide-react'
 import '../../components/LoaderDots/LoaderDots.css'
 import '../Clients/Clients.css'
 import './Notifications.css'
+import { formatDateTime } from '../../utils/dateUtils'
 
 function formatDate(iso) {
-  if (!iso) return '—'
-  try {
-    return new Date(iso).toLocaleString(undefined, {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    })
-  } catch {
-    return iso
-  }
+  return formatDateTime(iso)
 }
 
 export default function Notifications() {

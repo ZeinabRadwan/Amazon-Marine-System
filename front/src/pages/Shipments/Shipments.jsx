@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getStoredToken } from '../Login'
 import { useAuthAccess } from '../../hooks/useAuthAccess'
-import { formatDate } from '../../utils/dateUtils'
+import { formatDate, toApiDate } from '../../utils/dateUtils'
 import {
   listShipments,
   getShipment,
@@ -72,7 +72,7 @@ import {
 } from '../../utils/shipmentStatusHelpers'
 
 function getMonthFormat(locale) {
-  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-US', { month: 'short', year: 'numeric' })
+  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-GB', { month: 'short', year: 'numeric' })
 }
 
 /** Shipment modal: container size / type dropdown values (stored as shown in `value`). */
@@ -142,7 +142,7 @@ function buildCreatePayload(form) {
   const dp = numOrUndef(form.destination_port_id)
   if (dp != null) body.destination_port_id = dp
   if (form.booking_number?.trim()) body.booking_number = form.booking_number.trim()
-  if (form.booking_date?.trim()) body.booking_date = form.booking_date.trim()
+  if (form.booking_date?.trim()) body.booking_date = toApiDate(form.booking_date.trim())
   if (form.acid_number?.trim() && form.shipment_direction === 'Import') body.acid_number = form.acid_number.trim()
   if (form.bl_number?.trim()) body.bl_number = form.bl_number.trim()
   if (form.shipment_direction) body.shipment_direction = form.shipment_direction
@@ -153,7 +153,7 @@ function buildCreatePayload(form) {
   if (form.container_size?.trim()) body.container_size = form.container_size.trim()
   if (form.container_type?.trim()) body.container_type = form.container_type.trim()
   if (form.loading_place?.trim()) body.loading_place = form.loading_place.trim()
-  if (form.loading_date?.trim()) body.loading_date = form.loading_date.trim()
+  if (form.loading_date?.trim()) body.loading_date = toApiDate(form.loading_date.trim())
   if (form.cargo_description?.trim()) body.cargo_description = form.cargo_description.trim()
   if (form.notes?.trim()) body.notes = form.notes.trim()
   if (form.is_reefer) {
@@ -217,13 +217,13 @@ function buildUpdatePayload(form) {
 
     bl_number: form.bl_number?.trim() || null,
     booking_number: form.booking_number?.trim() || null,
-    booking_date: form.booking_date?.trim() || null,
+    booking_date: form.booking_date?.trim() ? toApiDate(form.booking_date.trim()) : null,
   }
   if (form.shipment_direction === 'Import') {
     body.acid_number = form.acid_number?.trim() || null;
   }
   body.loading_place = form.loading_place?.trim() || null;
-  body.loading_date = form.loading_date?.trim() || null;
+  body.loading_date = form.loading_date?.trim() ? toApiDate(form.loading_date.trim()) : null;
   body.is_reefer = !!form.is_reefer;
   body.reefer_temp = form.reefer_temp?.trim() || null;
   body.reefer_vent = form.reefer_vent?.trim() || null;

@@ -23,7 +23,7 @@ function formatMonthLabel(ym, locale) {
   const y = Number(parts[0])
   const m = Number(parts[1])
   if (!y || !m) return ym
-  return new Date(y, m - 1, 1).toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-US', {
+  return new Date(y, m - 1, 1).toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-GB', {
     month: 'short',
     year: '2-digit',
   })

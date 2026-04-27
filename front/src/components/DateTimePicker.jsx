@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef } from 'react'
 import flatpickr from 'flatpickr'
 import { Arabic } from 'flatpickr/dist/l10n/ar'
 import 'flatpickr/dist/flatpickr.min.css'
+import { UI_DATE_FORMAT } from '../utils/dateUtils'
 
 function parseToDate(str) {
   if (str == null || String(str).trim() === '') return null
@@ -23,7 +24,7 @@ function formatLocalDateTime(d) {
 }
 
 /**
- * Date + time picker (Flatpickr). Emits `Y-m-d H:i` in local time for API datetime fields.
+ * Date + time picker (Flatpickr). Displays day-first and emits `Y-m-d H:i` for API fields.
  */
 export default function DateTimePicker({
   id,
@@ -44,6 +45,7 @@ export default function DateTimePicker({
   disabledRef.current = disabled
 
   const isAr = locale === 'ar' || String(locale).startsWith('ar')
+  const resolvedPlaceholder = placeholder || `${UI_DATE_FORMAT} - hh:mm AM/PM`
 
   /** Flatpickr sets the primary input to type=hidden when altInput is used; React re-renders reset type=text and show raw Y-m-d H:i twice. */
   const hidePrimaryForAlt = () => {
@@ -118,7 +120,7 @@ export default function DateTimePicker({
       ref={inputRef}
       id={id}
       className={className}
-      placeholder={placeholder}
+      placeholder={resolvedPlaceholder}
       readOnly
       disabled={disabled}
       autoComplete="off"

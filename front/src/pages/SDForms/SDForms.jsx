@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { formatDate } from '../../utils/dateUtils'
+import { formatDate, fromApiDate, toApiDate } from '../../utils/dateUtils'
 import { getStoredToken } from '../Login'
 import {
   listSDForms,
@@ -148,7 +148,7 @@ function modelToForm(m) {
     container_type: m.container_type ?? '',
     container_size: m.container_size ?? '',
     num_containers: m.num_containers != null ? String(m.num_containers) : '',
-    requested_vessel_date: m.requested_vessel_date ? String(m.requested_vessel_date).slice(0, 10) : '',
+    requested_vessel_date: m.requested_vessel_date ? fromApiDate(String(m.requested_vessel_date).slice(0, 10)) : '',
     acid_number: m.acid_number ?? '',
     cargo_description: m.cargo_description ?? '',
     hs_code: m.hs_code ?? '',
@@ -182,7 +182,7 @@ function buildPayload(form) {
   if (form.container_type) out.container_type = form.container_type
   if (form.container_size) out.container_size = form.container_size
   if (form.num_containers !== '' && form.num_containers != null) out.num_containers = Number(form.num_containers)
-  if (form.requested_vessel_date) out.requested_vessel_date = form.requested_vessel_date
+  if (form.requested_vessel_date) out.requested_vessel_date = toApiDate(form.requested_vessel_date)
   if (form.acid_number) out.acid_number = form.acid_number
   if (form.cargo_description) out.cargo_description = form.cargo_description
   if (form.hs_code) out.hs_code = form.hs_code
@@ -1037,8 +1037,10 @@ export default function SDForms() {
               </label>
               <input
                 id="sd-c-rvd"
-                type="date"
-                lang="en-GB"
+                type="text"
+                inputMode="numeric"
+                placeholder="DD/MM/YYYY"
+                pattern="\\d{2}/\\d{2}/\\d{4}"
                 value={form.requested_vessel_date}
                 onChange={(e) => setForm((f) => ({ ...f, requested_vessel_date: e.target.value }))}
                 disabled={disabled}
@@ -1505,8 +1507,10 @@ export default function SDForms() {
             </label>
             <input
               id="sd-f-rvd"
-              type="date"
-              lang="en-GB"
+              type="text"
+              inputMode="numeric"
+              placeholder="DD/MM/YYYY"
+              pattern="\\d{2}/\\d{2}/\\d{4}"
               value={form.requested_vessel_date}
               onChange={(e) => setForm((f) => ({ ...f, requested_vessel_date: e.target.value }))}
               disabled={disabled}
@@ -1669,7 +1673,7 @@ export default function SDForms() {
     editSubmitting ||
     deleteSubmitting
 
-  const monthFormat = new Intl.DateTimeFormat(i18n.language === 'ar' ? 'ar-EG' : 'en-US', { month: 'short', year: 'numeric' })
+  const monthFormat = new Intl.DateTimeFormat(i18n.language === 'ar' ? 'ar-EG' : 'en-GB', { month: 'short', year: 'numeric' })
 
   const columns = useMemo(
     () => [

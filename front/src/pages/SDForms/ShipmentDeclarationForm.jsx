@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { ArrowLeft, HelpCircle } from 'lucide-react'
 import { getStoredToken } from '../Login'
 import { createSDForm } from '../../api/sdForms'
+import { toApiDate } from '../../utils/dateUtils'
 import { Container } from '../../components/Container'
 import Alert from '../../components/Alert'
 import './SDForms.css'
@@ -67,7 +68,7 @@ function buildPayload(form) {
   if (form.container_type) out.container_type = form.container_type
   if (form.container_size) out.container_size = form.container_size
   if (form.num_containers !== '' && form.num_containers != null) out.num_containers = Number(form.num_containers)
-  if (form.requested_vessel_date) out.requested_vessel_date = form.requested_vessel_date
+  if (form.requested_vessel_date) out.requested_vessel_date = toApiDate(form.requested_vessel_date)
   if (form.acid_number) out.acid_number = form.acid_number
   if (form.cargo_description) out.cargo_description = form.cargo_description
   if (form.hs_code) out.hs_code = form.hs_code

@@ -57,7 +57,7 @@ import './Clients.css'
 import { localizedStatusLabel } from '../../utils/localizedStatusLabel'
 
 function getMonthFormat(locale) {
-  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-US', { month: 'short', year: 'numeric' })
+  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-GB', { month: 'short', year: 'numeric' })
 }
 
 /** Map status name or id to badge variant for styling */

@@ -665,7 +665,7 @@ export default function ShipmentFinancialsModal({
 
   const invoiceDate = useMemo(() => {
     try {
-      return new Intl.DateTimeFormat(i18n.language === 'ar' ? 'ar-EG' : 'en-US', {
+      return new Intl.DateTimeFormat(i18n.language === 'ar' ? 'ar-EG' : 'en-GB', {
         dateStyle: 'medium',
       }).format(new Date())
     } catch {
@@ -1000,7 +1000,7 @@ export default function ShipmentFinancialsModal({
   let displayInvoiceDate = invoiceDate
   if (clientInvoice?.issue_date) {
     try {
-      displayInvoiceDate = new Intl.DateTimeFormat(i18n.language === 'ar' ? 'ar-EG' : 'en-US', { dateStyle: 'medium' }).format(
+      displayInvoiceDate = new Intl.DateTimeFormat(i18n.language === 'ar' ? 'ar-EG' : 'en-GB', { dateStyle: 'medium' }).format(
         new Date(clientInvoice.issue_date)
       )
     } catch {

@@ -47,7 +47,15 @@ export function NumberInput({ id, label, description, error, required, className
 export function DateInput({ id, label, description, error, required, className = '', ...props }) {
   return (
     <FormField label={label} htmlFor={id} description={description} error={error} required={required} className={className}>
-      <input id={id} type="date" lang="en-GB" className={inputClass} {...props} />
+      <input
+        id={id}
+        type="text"
+        inputMode="numeric"
+        placeholder="DD/MM/YYYY"
+        pattern="\\d{2}/\\d{2}/\\d{4}"
+        className={inputClass}
+        {...props}
+      />
     </FormField>
   )
 }

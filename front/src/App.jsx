@@ -665,12 +665,32 @@ function dashboardTitle(roleKey, t) {
   return map[roleKey] || t('dashboardModule.endpoints.dashboardOverview')
 }
 
+function DateInputLangSync() {
+  const { i18n } = useTranslation()
+
+  useEffect(() => {
+    const lang = i18n.language === 'ar' ? 'ar-EG' : 'en-GB'
+    const applyDateLang = () => {
+      document.querySelectorAll('input[type="date"]').forEach((el) => {
+        el.setAttribute('lang', lang)
+      })
+    }
+    applyDateLang()
+    const observer = new MutationObserver(() => applyDateLang())
+    observer.observe(document.body, { childList: true, subtree: true })
+    return () => observer.disconnect()
+  }, [i18n.language])
+
+  return null
+}
+
 function App() {
   const basename =
     import.meta.env.BASE_URL === '/' ? undefined : import.meta.env.BASE_URL.replace(/\/$/, '')
 
   return (
     <BrowserRouter basename={basename}>
+      <DateInputLangSync />
       <Routes>
         <Route element={<AuthenticatedLayout />}>
           <Route

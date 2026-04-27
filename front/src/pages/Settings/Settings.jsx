@@ -63,6 +63,7 @@ import '../CustomerServices/styles/CustomerServices.css'
 import './Settings.css'
 import LeafletCompanyLocationPicker from '../../components/LeafletCompanyLocationPicker/LeafletCompanyLocationPicker'
 import { localizedStatusLabel } from '../../utils/localizedStatusLabel'
+import { formatDateTime } from '../../utils/dateUtils'
 
 function SectionCard({ title, subtitle, children, actions, compact }) {
   return (
@@ -241,7 +242,7 @@ export default function Settings() {
   const [systemPrefs, setSystemPrefs] = useState({
     timezone: '',
     currency: '',
-    date_format: '',
+    date_format: 'd-m-Y',
     default_tax_pct: '',
   })
   const [notifPrefs, setNotifPrefs] = useState({
@@ -521,7 +522,11 @@ export default function Settings() {
             radius_m: loc.radius_m != null ? String(loc.radius_m) : '',
           }
         })
-        setSystemPrefs((prev) => ({ ...prev, ...(system.preferences || {}) }))
+        setSystemPrefs((prev) => ({
+          ...prev,
+          ...(system.preferences || {}),
+          date_format: system.preferences?.date_format || 'd-m-Y',
+        }))
         setNotifPrefs((prev) => ({ ...prev, ...(notifications.preferences || {}) }))
         setSessionSettings({
           reset_hour: sessions.reset_hour ?? 0,
@@ -1430,7 +1435,7 @@ export default function Settings() {
   }
 
   const activityColumns = [
-    { key: 'created_at', label: t('settings.activity.table.time'), sortable: false, render: (val) => (val ? new Date(val).toLocaleString() : '—') },
+    { key: 'created_at', label: t('settings.activity.table.time'), sortable: false, render: (val) => formatDateTime(val) },
     {
       key: 'event',
       label: t('settings.activity.table.event'),
@@ -1981,13 +1986,14 @@ export default function Settings() {
                           <Search className="clients-filters__search-icon" aria-hidden />
                           <input
                             type="date"
+                            lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
                             value={sessionsFilters.from}
                             onChange={(e) => setSessionsFilters((f) => ({ ...f, from: e.target.value }))}
                             className="clients-input clients-filters__search"
                             aria-label={t('settings.sessions.from')}
                           />
                         </div>
-                        <input type="date" value={sessionsFilters.to} onChange={(e) => setSessionsFilters((f) => ({ ...f, to: e.target.value }))} className="clients-input" aria-label={t('settings.sessions.to')} />
+                        <input type="date" lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'} value={sessionsFilters.to} onChange={(e) => setSessionsFilters((f) => ({ ...f, to: e.target.value }))} className="clients-input" aria-label={t('settings.sessions.to')} />
                         <button type="button" className="clients-filters__clear clients-filters__btn-icon" onClick={() => setSessionsFilters({ from: '', to: '' })} aria-label={t('customerServices.clearFilters')}>
                           <RotateCcw className="clients-filters__btn-icon-svg" aria-hidden />
                         </button>
@@ -2030,13 +2036,14 @@ export default function Settings() {
                           <Search className="clients-filters__search-icon" aria-hidden />
                           <input
                             type="date"
+                            lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
                             value={activityFilters.from}
                             onChange={(e) => setActivityFilters((f) => ({ ...f, from: e.target.value }))}
                             className="clients-input clients-filters__search"
                             aria-label={t('settings.activity.from')}
                           />
                         </div>
-                        <input type="date" value={activityFilters.to} onChange={(e) => setActivityFilters((f) => ({ ...f, to: e.target.value }))} className="clients-input" aria-label={t('settings.activity.to')} />
+                        <input type="date" lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'} value={activityFilters.to} onChange={(e) => setActivityFilters((f) => ({ ...f, to: e.target.value }))} className="clients-input" aria-label={t('settings.activity.to')} />
                         <input
                           type="text"
                           placeholder={t('settings.activity.table.event')}

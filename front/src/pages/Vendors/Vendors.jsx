@@ -44,7 +44,7 @@ import { getVendorTypeBadgeVariant } from './vendorTypeHelpers'
 export const VENDOR_TYPE_KEYS = ['shipping', 'transport', 'customs', 'other']
 
 function getMonthFormat(locale) {
-  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-US', { month: 'short', year: 'numeric' })
+  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-GB', { month: 'short', year: 'numeric' })
 }
 
 const defaultVendorForm = () => ({

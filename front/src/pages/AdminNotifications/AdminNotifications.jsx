@@ -11,6 +11,7 @@ import LoaderDots from '../../components/LoaderDots'
 import '../../components/LoaderDots/LoaderDots.css'
 import '../Clients/Clients.css'
 import './AdminNotifications.css'
+import { formatDateTime } from '../../utils/dateUtils'
 
 function todayYmd() {
   return new Date().toISOString().slice(0, 10)
@@ -24,7 +25,7 @@ function startOfMonthYmd() {
 }
 
 export default function AdminNotifications() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const token = getStoredToken()
 
   const [filters, setFilters] = useState({
@@ -111,7 +112,7 @@ export default function AdminNotifications() {
         key: 'created_at',
         label: t('notificationsAdmin.fields.created_at', 'Time'),
         sortable: false,
-        render: (v) => (v ? new Date(v).toLocaleString() : '—'),
+        render: (v) => formatDateTime(v),
       },
       {
         key: 'event_key',
@@ -179,6 +180,7 @@ export default function AdminNotifications() {
             <div className="clients-filters__fields admin-notifications-filters__fields">
               <input
                 type="date"
+                lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
                 className="clients-input"
                 value={filters.from}
                 onChange={(e) => setFilters((f) => ({ ...f, from: e.target.value, page: 1 }))}
@@ -186,6 +188,7 @@ export default function AdminNotifications() {
               />
               <input
                 type="date"
+                lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
                 className="clients-input"
                 value={filters.to}
                 onChange={(e) => setFilters((f) => ({ ...f, to: e.target.value, page: 1 }))}
@@ -355,11 +358,11 @@ export default function AdminNotifications() {
                 </div>
                 <div>
                   <dt>{t('notificationsAdmin.fields.created_at', 'Time')}</dt>
-                  <dd>{detail.created_at ? new Date(detail.created_at).toLocaleString() : '—'}</dd>
+                  <dd>{formatDateTime(detail.created_at)}</dd>
                 </div>
                 <div>
                   <dt>{t('notificationsAdmin.fields.sent_at', 'Sent at')}</dt>
-                  <dd>{detail.sent_at ? new Date(detail.sent_at).toLocaleString() : '—'}</dd>
+                  <dd>{formatDateTime(detail.sent_at)}</dd>
                 </div>
                 <div>
                   <dt>{t('notificationsAdmin.fields.error_message', 'Error')}</dt>

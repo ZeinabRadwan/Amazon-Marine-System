@@ -860,6 +860,7 @@ export default function Visits() {
               </select>
               <input
                 type="date"
+                lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
                 value={apiFilters.from}
                 onChange={(e) => setApiFilters((f) => ({ ...f, from: e.target.value }))}
                 className="clients-input"
@@ -867,6 +868,7 @@ export default function Visits() {
               />
               <input
                 type="date"
+                lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
                 value={apiFilters.to}
                 onChange={(e) => setApiFilters((f) => ({ ...f, to: e.target.value }))}
                 className="clients-input"
