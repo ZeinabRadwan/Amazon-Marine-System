@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { formatDate, fromApiDate, toApiDate } from '../../utils/dateUtils'
+import { formatDate } from '../../utils/dateUtils'
 import { getStoredToken } from '../Login'
 import {
   listSDForms,
@@ -36,6 +36,7 @@ import Pagination from '../../components/Pagination'
 import LoaderDots from '../../components/LoaderDots'
 import Alert from '../../components/Alert'
 import AsyncSelect from '../../components/AsyncSelect'
+import DatePicker from '../../components/DatePicker'
 import { SDFormsStatsSection, SDFormsChartsSection } from './components'
 import {
   FileSpreadsheet,
@@ -148,7 +149,7 @@ function modelToForm(m) {
     container_type: m.container_type ?? '',
     container_size: m.container_size ?? '',
     num_containers: m.num_containers != null ? String(m.num_containers) : '',
-    requested_vessel_date: m.requested_vessel_date ? fromApiDate(String(m.requested_vessel_date).slice(0, 10)) : '',
+    requested_vessel_date: m.requested_vessel_date ? String(m.requested_vessel_date).slice(0, 10) : '',
     acid_number: m.acid_number ?? '',
     cargo_description: m.cargo_description ?? '',
     hs_code: m.hs_code ?? '',
@@ -182,7 +183,7 @@ function buildPayload(form) {
   if (form.container_type) out.container_type = form.container_type
   if (form.container_size) out.container_size = form.container_size
   if (form.num_containers !== '' && form.num_containers != null) out.num_containers = Number(form.num_containers)
-  if (form.requested_vessel_date) out.requested_vessel_date = toApiDate(form.requested_vessel_date)
+  if (form.requested_vessel_date) out.requested_vessel_date = form.requested_vessel_date
   if (form.acid_number) out.acid_number = form.acid_number
   if (form.cargo_description) out.cargo_description = form.cargo_description
   if (form.hs_code) out.hs_code = form.hs_code
@@ -1041,14 +1042,12 @@ export default function SDForms() {
               <label htmlFor="sd-c-rvd">
                 13. Requested Vessel Date
               </label>
-              <input
+              <DatePicker
                 id="sd-c-rvd"
-                type="text"
-                inputMode="numeric"
-                placeholder="DD/MM/YYYY"
-                pattern="\\d{2}/\\d{2}/\\d{4}"
+                locale={i18n.language}
+                className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition-colors placeholder:text-gray-400 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
                 value={form.requested_vessel_date}
-                onChange={(e) => setForm((f) => ({ ...f, requested_vessel_date: e.target.value }))}
+                onChange={(value) => setForm((f) => ({ ...f, requested_vessel_date: value }))}
                 disabled={disabled}
               />
             </div>
@@ -1511,14 +1510,12 @@ export default function SDForms() {
             <label htmlFor="sd-f-rvd">
               13. Requested Vessel Date
             </label>
-            <input
+            <DatePicker
               id="sd-f-rvd"
-              type="text"
-              inputMode="numeric"
-              placeholder="DD/MM/YYYY"
-              pattern="\\d{2}/\\d{2}/\\d{4}"
+              locale={i18n.language}
+              className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition-colors placeholder:text-gray-400 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
               value={form.requested_vessel_date}
-              onChange={(e) => setForm((f) => ({ ...f, requested_vessel_date: e.target.value }))}
+              onChange={(value) => setForm((f) => ({ ...f, requested_vessel_date: value }))}
               disabled={disabled}
             />
           </div>

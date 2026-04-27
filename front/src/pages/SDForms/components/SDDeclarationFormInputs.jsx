@@ -4,6 +4,7 @@
 
 import { listPorts, createPort } from '../../../api/ports'
 import { listShippingLines, createShippingLine } from '../../../api/shippingLines'
+import DatePicker from '../../../components/DatePicker'
 
 const inputClass =
   'mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition-colors placeholder:text-gray-400 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500'
@@ -47,15 +48,7 @@ export function NumberInput({ id, label, description, error, required, className
 export function DateInput({ id, label, description, error, required, className = '', ...props }) {
   return (
     <FormField label={label} htmlFor={id} description={description} error={error} required={required} className={className}>
-      <input
-        id={id}
-        type="text"
-        inputMode="numeric"
-        placeholder="DD/MM/YYYY"
-        pattern="\\d{2}/\\d{2}/\\d{4}"
-        className={inputClass}
-        {...props}
-      />
+      <DatePicker id={id} className={inputClass} {...props} />
     </FormField>
   )
 }

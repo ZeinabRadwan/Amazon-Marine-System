@@ -373,7 +373,7 @@ export default function ShipmentDeclarationForm() {
               id="sd-decl-vessel-date"
               label="15. Requested Vessel Date"
               value={form.requested_vessel_date}
-              onChange={(e) => setField('requested_vessel_date', e.target.value)}
+              onChange={(value) => setField('requested_vessel_date', value)}
             />
             <NumberInput
               id="sd-decl-num-containers"
