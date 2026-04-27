@@ -294,7 +294,7 @@ export default function ShipmentAttachmentsModal({ open, shipment, expenses, loa
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 text-blue-700 px-2.5 py-1 text-xs font-semibold">
                 <Hash className="w-3.5 h-3.5" />
-                {t('shipments.attachments.idBadge') || 'ID'}: {shipment?.id || '—'}
+                {t('shipments.attachments.idBadge') || 'ID'}: {shipment?.id }
               </span>
               <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 px-2.5 py-1 text-xs font-semibold">
                 <Building2 className="w-3.5 h-3.5" />
