@@ -12,17 +12,20 @@ import './Pagination.css'
  * @param {number} totalPages - Total number of pages
  * @param {(page: number) => void} onPageChange - Called with 1-based page number
  * @param {string} [className] - Optional class for the container
+ * @param {boolean} [disabled] - Disable all controls (e.g. while list is loading)
  */
 export default function Pagination({
   currentPage = 1,
   totalPages = 1,
   onPageChange,
   className = '',
+  disabled = false,
 }) {
   const { t } = useTranslation()
   const safeCurrent = Math.max(1, Math.min(currentPage, totalPages))
   const hasPrev = safeCurrent > 1
   const hasNext = safeCurrent < totalPages
+  const isDisabled = Boolean(disabled)
 
   const getPageNumbers = () => {
     if (totalPages <= 7) {
@@ -57,7 +60,7 @@ export default function Pagination({
       <button
         type="button"
         onClick={() => onPageChange?.(safeCurrent - 1)}
-        disabled={!hasPrev}
+        disabled={isDisabled || !hasPrev}
         className="pagination__btn"
         aria-label={t('pagination.prev')}
       >
@@ -83,6 +86,7 @@ export default function Pagination({
               key={page}
               type="button"
               onClick={() => onPageChange?.(page)}
+              disabled={isDisabled}
               className={`pagination__page ${page === safeCurrent ? 'pagination__page--current' : ''}`}
               aria-label={page === safeCurrent ? t('pagination.currentPage', { num: page }) : t('pagination.goToPage', { num: page })}
               aria-current={page === safeCurrent ? 'page' : undefined}
@@ -96,7 +100,7 @@ export default function Pagination({
       <button
         type="button"
         onClick={() => onPageChange?.(safeCurrent + 1)}
-        disabled={!hasNext}
+        disabled={isDisabled || !hasNext}
         className="pagination__btn"
         aria-label={t('pagination.next')}
       >

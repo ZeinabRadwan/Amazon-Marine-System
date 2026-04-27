@@ -15,9 +15,12 @@ class ShippingLine extends Model
     protected $fillable = [
         'name',
         'active',
+        'service_scope',
     ];
 
     /**
+     * ocean | inland | both — controls which freight forms list this carrier.
+     *
      * @return array<string, string>
      */
     protected function casts(): array

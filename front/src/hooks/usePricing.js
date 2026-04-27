@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { getStoredToken } from '../pages/Login'
 import {
   listOffers,
@@ -19,41 +19,47 @@ export function useOffers(params) {
   const [meta, setMeta] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [refetchTick, setRefetchTick] = useState(0)
 
   // Use stringified params for dependency tracking
   const paramsString = JSON.stringify(params)
 
-  const fetchOffers = useCallback(() => {
+  useEffect(() => {
     const token = getStoredToken()
     if (!token) {
       setError('Not authenticated')
       setLoading(false)
-      return
+      setData([])
+      setMeta(null)
+      return undefined
     }
 
+    const controller = new AbortController()
     setLoading(true)
     setError(null)
 
     const parsedParams = paramsString ? JSON.parse(paramsString) : {}
-    listOffers(token, parsedParams)
+    listOffers(token, parsedParams, { signal: controller.signal })
       .then((res) => {
         setData(res.data ?? [])
         setMeta(res.meta ?? null)
       })
       .catch((err) => {
+        if (err?.name === 'AbortError') return
         setError(err.message || 'Failed to load offers')
         setData([])
+        setMeta(null)
       })
       .finally(() => {
-        setLoading(false)
+        if (!controller.signal.aborted) setLoading(false)
       })
-  }, [paramsString])
 
-  useEffect(() => {
-    fetchOffers()
-  }, [fetchOffers])
+    return () => controller.abort()
+  }, [paramsString, refetchTick])
 
-  return { data, meta, loading, error, refetch: fetchOffers }
+  const refetch = useCallback(() => setRefetchTick((n) => n + 1), [])
+
+  return { data, meta, loading, error, refetch }
 }
 
 export function useMutateOffer() {

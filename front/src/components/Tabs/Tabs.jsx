@@ -15,8 +15,9 @@ function getDir() {
  * @param {string} activeTab - Id of the currently active tab
  * @param {(id: string) => void} onChange - Called when selection changes
  * @param {string} [className] - Optional class for the container
+ * @param {'default'|'main'|'sub'} [variant] - Visual tier: `main` = page-level (bold, prominent); `sub` = section-level (lighter, nested); `default` = legacy pill
  */
-export default function Tabs({ tabs = [], activeTab, onChange, className = '' }) {
+export default function Tabs({ tabs = [], activeTab, onChange, className = '', variant = 'default' }) {
   const listRef = useRef(null)
   const activeIndex = tabs.findIndex((t) => t.id === activeTab)
   const safeIndex = activeIndex >= 0 ? activeIndex : 0
@@ -58,7 +59,7 @@ export default function Tabs({ tabs = [], activeTab, onChange, className = '' })
         ref={listRef}
         role="tablist"
         aria-label="Tabs"
-        className="tabs-pill"
+        className={variant === 'default' ? 'tabs-pill' : `tabs-pill tabs-pill--${variant}`}
       >
         {tabs.map((tab, index) => {
           const isActive = activeTab === tab.id

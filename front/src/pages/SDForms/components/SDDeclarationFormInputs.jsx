@@ -163,7 +163,7 @@ export function ShippingLineField({
   const loadLineOptions = async (q) => {
     if (!token) return []
     try {
-      const res = await listShippingLines(token, { q, active: true })
+      const res = await listShippingLines(token, { q, active: true, service_scope: 'ocean' })
       const data = res.data ?? res
       const arr = Array.isArray(data) ? data : []
       return arr.map((l) => ({
@@ -179,7 +179,7 @@ export function ShippingLineField({
   const handleCreateLine = async (name) => {
     if (!token) return null
     try {
-      const res = await createShippingLine(token, { name, active: true })
+      const res = await createShippingLine(token, { name, active: true, service_scope: 'ocean' })
       const newLine = res.data ?? res
       await onRefreshLines?.()
       return {

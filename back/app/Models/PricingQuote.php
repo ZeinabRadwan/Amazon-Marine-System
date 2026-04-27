@@ -25,6 +25,7 @@ class PricingQuote extends Model
         'pol',
         'pod',
         'shipping_line',
+        'show_carrier_on_pdf',
         'container_type',
         'container_spec',
         'qty',
@@ -36,6 +37,7 @@ class PricingQuote extends Model
         'valid_from',
         'valid_to',
         'notes',
+        'official_receipts_note',
         'status',
     ];
 
@@ -46,6 +48,7 @@ class PricingQuote extends Model
         'valid_from' => 'date',
         'valid_to' => 'date',
         'quick_mode' => 'boolean',
+        'show_carrier_on_pdf' => 'boolean',
         'container_spec' => 'array',
         'free_time_data' => 'array',
         'sailing_weekdays' => 'array',
@@ -83,20 +86,13 @@ class PricingQuote extends Model
         return $this->belongsTo(PricingOfferSnapshot::class, 'origin_rate_snapshot_id');
     }
 
-    /**
-     * @return HasMany
-     */
     public function items(): HasMany
     {
         return $this->hasMany(PricingQuoteItem::class);
     }
 
-    /**
-     * @return HasMany
-     */
     public function sailingDates(): HasMany
     {
         return $this->hasMany(PricingQuoteSailingDate::class);
     }
 }
-

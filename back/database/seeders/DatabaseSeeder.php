@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
             ExpensesSeeder::class,
             InvoicesSeeder::class,
             CustomerServiceSeeder::class,
+            PricingFreightUnitTypesSeeder::class,
             PricingSeeder::class,
             VendorsSeeder::class,
             ClientStatusesSeeder::class,

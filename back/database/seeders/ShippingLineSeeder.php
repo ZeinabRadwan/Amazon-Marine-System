@@ -41,7 +41,7 @@ class ShippingLineSeeder extends Seeder
         foreach ($lines as $name) {
             ShippingLine::updateOrCreate(
                 ['name' => $name],
-                ['active' => true]
+                ['active' => true, 'service_scope' => 'ocean']
             );
         }
     }

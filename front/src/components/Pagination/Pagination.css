@@ -113,7 +113,7 @@
   transition: background 0.2s, border-color 0.2s, color 0.2s;
 }
 
-.pagination__page:hover {
+.pagination__page:hover:not(:disabled) {
   background: var(--pagination-hover-bg);
   border-color: var(--pagination-hover-border);
 }
@@ -134,6 +134,12 @@
   background: var(--pagination-active-bg);
   border-color: var(--pagination-active-border);
   color: var(--pagination-active-text);
+}
+
+.pagination__page:disabled {
+  opacity: var(--pagination-disabled-opacity);
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .pagination__ellipsis {

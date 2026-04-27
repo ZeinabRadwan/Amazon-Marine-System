@@ -39,6 +39,7 @@ use App\Http\Controllers\Api\V1\NotifyPartyModeController;
 use App\Http\Controllers\Api\V1\PdfLayoutController;
 use App\Http\Controllers\Api\V1\PortController;
 use App\Http\Controllers\Api\V1\PreferredCommMethodController;
+use App\Http\Controllers\Api\V1\PricingFreightUnitTypeController;
 use App\Http\Controllers\Api\V1\PricingOfferController;
 use App\Http\Controllers\Api\V1\PricingQuoteController;
 use App\Http\Controllers\Api\V1\ReportController;
@@ -498,6 +499,11 @@ Route::prefix('v1')->group(function () {
         Route::post('vendor-bills/{vendorBill}/payments', [VendorBillController::class, 'recordPayment']);
         Route::get('vendor-bills/export', [VendorBillController::class, 'export']);
 
+        // Pricing — container / truck type catalogs (separate datasets)
+        Route::get('pricing/freight-unit-types', [PricingFreightUnitTypeController::class, 'index']);
+        Route::post('pricing/freight-unit-types', [PricingFreightUnitTypeController::class, 'store']);
+        Route::put('pricing/freight-unit-types/{pricingFreightUnitType}', [PricingFreightUnitTypeController::class, 'update']);
+
         // Pricing offers (sea & inland rate sheets)
         Route::get('pricing/offers', [PricingOfferController::class, 'index']);
         Route::get('pricing/offers/{offer}', [PricingOfferController::class, 'show']);
@@ -508,6 +514,7 @@ Route::prefix('v1')->group(function () {
 
         // Pricing quotes (customer quotations)
         Route::get('pricing/quotes', [PricingQuoteController::class, 'index']);
+        Route::get('pricing/quotes/{quote}/pdf', [PricingQuoteController::class, 'pdf']);
         Route::get('pricing/quotes/{quote}', [PricingQuoteController::class, 'show']);
         Route::post('pricing/quotes', [PricingQuoteController::class, 'store']);
         Route::put('pricing/quotes/{quote}', [PricingQuoteController::class, 'update']);

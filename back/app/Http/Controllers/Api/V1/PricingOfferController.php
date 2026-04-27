@@ -30,6 +30,10 @@ class PricingOfferController extends Controller
             $query->where('pod', $pod);
         }
 
+        if ($pol = $request->query('pol')) {
+            $query->where('pol', $pol);
+        }
+
         if ($shippingLine = $request->query('shipping_line')) {
             $query->where('shipping_line', $shippingLine);
         }
@@ -46,6 +50,10 @@ class PricingOfferController extends Controller
             $query->where('status', $status);
         }
 
+        if ($itemCode = $request->query('pricing_item_code')) {
+            $query->whereHas('items', fn ($q) => $q->where('code', $itemCode));
+        }
+
         if ($from = $request->query('valid_from')) {
             $query->whereDate('valid_to', '>=', $from);
         }
@@ -54,13 +62,17 @@ class PricingOfferController extends Controller
             $query->whereDate('valid_to', '<=', $to);
         }
 
+        // Text search is AND-combined with pol/pod/container filters above — narrows results further.
         if ($q = $request->query('q')) {
-            $query->where(function ($sub) use ($q): void {
-                $sub->where('region', 'like', '%'.$q.'%')
-                    ->orWhere('pod', 'like', '%'.$q.'%')
-                    ->orWhere('shipping_line', 'like', '%'.$q.'%')
-                    ->orWhere('inland_port', 'like', '%'.$q.'%')
-                    ->orWhere('destination', 'like', '%'.$q.'%');
+            $like = '%'.$q.'%';
+            $query->where(function ($sub) use ($like): void {
+                $sub->where('region', 'like', $like)
+                    ->orWhere('pod', 'like', $like)
+                    ->orWhere('pol', 'like', $like)
+                    ->orWhere('shipping_line', 'like', $like)
+                    ->orWhere('inland_port', 'like', $like)
+                    ->orWhere('destination', 'like', $like)
+                    ->orWhere('notes', 'like', $like);
             });
         }
 
@@ -106,6 +118,8 @@ class PricingOfferController extends Controller
             'pricing_type' => ['required', 'string', 'in:sea,inland'],
             'region' => ['required', 'string', 'max:255'],
             'pod' => ['required', 'string', 'max:255'],
+            'valid_from' => ['nullable', 'date'],
+            'weekly_sailing_days' => ['nullable', 'string', 'max:255'],
             'valid_to' => ['nullable', 'date'],
             'status' => ['sometimes', 'string', 'in:draft,active,archived'],
             'notes' => ['nullable', 'string'],
@@ -126,7 +140,7 @@ class PricingOfferController extends Controller
         ]);
 
         $offer = DB::transaction(function () use ($validated) {
-            $offer = new PricingOffer();
+            $offer = new PricingOffer;
             $offer->pricing_type = $validated['pricing_type'];
             $offer->region = $validated['region'];
             $offer->pod = $validated['pod'];
@@ -138,6 +152,8 @@ class PricingOfferController extends Controller
             $offer->destination = $validated['destination'] ?? null;
             $offer->inland_gov = $validated['inland_gov'] ?? null;
             $offer->inland_city = $validated['inland_city'] ?? null;
+            $offer->valid_from = $validated['valid_from'] ?? null;
+            $offer->weekly_sailing_days = $validated['weekly_sailing_days'] ?? null;
             $offer->valid_to = $validated['valid_to'] ?? null;
             $offer->status = $validated['status'] ?? 'draft';
             $offer->other_charges = $validated['other_charges'] ?? null;
@@ -164,6 +180,8 @@ class PricingOfferController extends Controller
         $validated = $request->validate([
             'region' => ['sometimes', 'string', 'max:255'],
             'pod' => ['sometimes', 'string', 'max:255'],
+            'valid_from' => ['sometimes', 'nullable', 'date'],
+            'weekly_sailing_days' => ['sometimes', 'nullable', 'string', 'max:255'],
             'valid_to' => ['sometimes', 'nullable', 'date'],
             'status' => ['sometimes', 'string', 'in:draft,active,archived'],
             'notes' => ['sometimes', 'nullable', 'string'],
@@ -228,7 +246,7 @@ class PricingOfferController extends Controller
     }
 
     /**
-     * @param array<int, string> $dates
+     * @param  array<int, string>  $dates
      */
     protected function syncSailingDates(PricingOffer $offer, array $dates): void
     {
@@ -243,7 +261,7 @@ class PricingOfferController extends Controller
     }
 
     /**
-     * @param array<string, array{price: mixed, currency: mixed}|null> $pricing
+     * @param  array<string, array{price: mixed, currency: mixed}|null>  $pricing
      */
     protected function syncPricingItems(PricingOffer $offer, array $pricing): void
     {
@@ -297,6 +315,8 @@ class PricingOfferController extends Controller
             'pol' => $offer->pol,
             'dnd' => $offer->dnd,
             'transit_time' => $offer->transit_time,
+            'valid_from' => $offer->valid_from?->toDateString(),
+            'weekly_sailing_days' => $offer->weekly_sailing_days,
             'inland_port' => $offer->inland_port,
             'destination' => $offer->destination,
             'inland_gov' => $offer->inland_gov,
@@ -313,4 +333,3 @@ class PricingOfferController extends Controller
         ];
     }
 }
-

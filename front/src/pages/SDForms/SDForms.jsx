@@ -345,7 +345,7 @@ export default function SDForms() {
       listContainerTypes(token).catch(() => ({ data: [] })),
       listContainerSizes(token).catch(() => ({ data: [] })),
       listPorts(token).catch(() => ({ data: [] })),
-      listShippingLines(token).catch(() => ({ data: [] })),
+      listShippingLines(token, { service_scope: 'ocean' }).catch(() => ({ data: [] })),
       listClients(token, { per_page: 100, page: 1 }).catch(() => ({ data: [] })),
       listUsers(token, { per_page: 200 }).catch(() => ({ data: [] })),
     ])
@@ -419,7 +419,7 @@ export default function SDForms() {
   const loadShippingLineOptions = async (q) => {
     if (!token) return []
     try {
-      const res = await listShippingLines(token, { q, active: true })
+      const res = await listShippingLines(token, { q, active: true, service_scope: 'ocean' })
       const data = normalizeListResponse(res)
       return data.map((l) => ({
         value: l.id,
@@ -434,9 +434,9 @@ export default function SDForms() {
   const handleCreateShippingLine = async (name) => {
     if (!token) return null
     try {
-      const res = await createShippingLine(token, { name, active: true })
+      const res = await createShippingLine(token, { name, active: true, service_scope: 'ocean' })
       const newLine = res.data ?? res
-      const updatedLines = await listShippingLines(token)
+      const updatedLines = await listShippingLines(token, { service_scope: 'ocean' })
       setShippingLinesList(normalizeListResponse(updatedLines))
       return {
         value: newLine.id,

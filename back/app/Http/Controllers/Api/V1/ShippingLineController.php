@@ -25,6 +25,16 @@ class ShippingLineController extends Controller
             $query->where('name', 'like', '%'.$search.'%');
         }
 
+        $scope = $request->query('service_scope');
+        if (is_string($scope) && $scope !== '') {
+            $scope = strtolower(trim($scope));
+            if ($scope === 'ocean') {
+                $query->whereIn('service_scope', ['ocean', 'both']);
+            } elseif ($scope === 'inland') {
+                $query->whereIn('service_scope', ['inland', 'both']);
+            }
+        }
+
         $lines = $query->orderBy('name')->get();
 
         return response()->json(['data' => $lines]);
@@ -35,6 +45,7 @@ class ShippingLineController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('shipping_lines', 'name')],
             'active' => ['sometimes', 'boolean'],
+            'service_scope' => ['sometimes', 'string', 'in:ocean,inland,both'],
         ]);
 
         $line = ShippingLine::create($validated);
@@ -52,6 +63,7 @@ class ShippingLineController extends Controller
         $validated = $request->validate([
             'name' => ['sometimes', 'string', 'max:255', Rule::unique('shipping_lines', 'name')->ignore($shipping_line->id)],
             'active' => ['sometimes', 'boolean'],
+            'service_scope' => ['sometimes', 'string', 'in:ocean,inland,both'],
         ]);
 
         $shipping_line->update($validated);

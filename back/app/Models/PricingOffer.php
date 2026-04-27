@@ -25,6 +25,8 @@ class PricingOffer extends Model
         'destination',
         'inland_gov',
         'inland_city',
+        'valid_from',
+        'weekly_sailing_days',
         'valid_to',
         'status',
         'other_charges',
@@ -35,6 +37,7 @@ class PricingOffer extends Model
      * @var array<string, string>
      */
     protected $casts = [
+        'valid_from' => 'date',
         'valid_to' => 'date',
     ];
 
@@ -62,4 +65,3 @@ class PricingOffer extends Model
         return $this->hasMany(PricingOfferSnapshot::class, 'pricing_offer_id');
     }
 }
-

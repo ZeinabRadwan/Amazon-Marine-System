@@ -2,14 +2,43 @@
   animation: fadeIn 0.4s ease-out;
 }
 
-/* Tabs in filter row: don’t stretch pill to full width like text inputs */
-.pricing-page .pricing-toolbar .pricing-tabs-wrap {
-  width: fit-content;
-  max-width: 100%;
+/* Main section tabs: full width, equal flex segments (see Tabs.css flex: 1 on each tab) */
+.pricing-main-tabs {
+  width: 100%;
+  margin-bottom: 1.25rem;
 }
 
-.pricing-page .pricing-toolbar .clients-filters__fields {
-  flex: 1 1 auto;
+/* Section tabs (Ocean / Inland): nested under page tabs — accent rail + inset */
+.pricing-section-tabs-wrap {
+  margin-top: 0.25rem;
+  padding-inline-start: 1rem;
+  border-inline-start: 3px solid rgba(59, 130, 246, 0.28);
+  margin-inline-start: 0.125rem;
+}
+
+[data-theme='dark'] .pricing-section-tabs-wrap {
+  border-inline-start-color: rgba(96, 165, 250, 0.35);
+}
+
+.pricing-main-tabs .pricing-tabs-wrap {
+  width: 100%;
+}
+
+.pricing-main-tabs .tabs-pill {
+  width: 100%;
+}
+
+/* Nested tabs under Price Sheets: same full-width / equal split behavior */
+.rate-sheet-nested-tabs {
+  width: 100%;
+}
+
+.rate-sheet-nested-tabs .pricing-tabs-wrap {
+  width: 100%;
+}
+
+.rate-sheet-nested-tabs .tabs-pill {
+  width: 100%;
 }
 
 @keyframes fadeIn {

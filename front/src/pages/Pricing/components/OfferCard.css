@@ -1,0 +1,217 @@
+/* Reference: UI/pricing.html (Price Sheet Cards) — scoped tokens */
+.pricing-offer-cards {
+  --surface: #ffffff;
+  --text: #1a2150;
+  --text-muted: #8896ad;
+  --border: #e3e8f0;
+  --accent-cyan: #17a2b8;
+}
+
+[data-theme='dark'] .pricing-offer-cards {
+  --surface: #1f2937;
+  --text: #f9fafb;
+  --text-muted: #9ca3af;
+  --border: #374151;
+  --accent-cyan: #22d3ee;
+}
+
+/* Cards grid */
+.offers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 16px;
+  padding: 16px 0;
+}
+
+.offers-grid__empty {
+  grid-column: 1 / -1;
+}
+
+.offer-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: box-shadow .2s, transform .15s;
+}
+
+.offer-card.offer-card--clickable {
+  cursor: pointer;
+}
+
+.offer-card:hover {
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .12);
+  transform: translateY(-2px);
+}
+
+.offer-card-header {
+  padding: 16px 18px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.offer-card-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.shipping-line-badge {
+  background: linear-gradient(135deg, #0ea5e9, #6366f1);
+  color: #fff;
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-size: .78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.inland-badge {
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+}
+
+.offer-card-route {
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.offer-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: .76rem;
+  color: var(--text-muted);
+}
+
+.offer-card-meta span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.badge-validity {
+  color: #22c55e;
+  font-weight: 600;
+}
+
+.offer-card-prices {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.price-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 6px;
+  border-left: 1px solid var(--border);
+}
+
+.price-chip:last-child {
+  border-left: none;
+}
+
+.price-chip-label {
+  font-size: .68rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.price-chip-value {
+  font-size: .82rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.price-chip-reefer .price-chip-label {
+  color: #06b6d4;
+}
+
+.price-chip-reefer .price-chip-value {
+  color: #06b6d4;
+}
+
+.offer-card-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  flex-wrap: wrap;
+}
+
+.offer-total-label {
+  font-size: .78rem;
+  color: var(--text-muted);
+}
+
+.offer-total-values {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  margin-left: auto;
+  text-align: right;
+}
+
+.offer-total-values--empty {
+  font-size: .92rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.offer-total-value {
+  font-size: .92rem;
+  font-weight: 700;
+  color: var(--accent-cyan);
+}
+
+.offer-card-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.offer-card-line .offer-card-dnd-hint {
+  font-size: .75rem;
+  color: var(--text-muted);
+}
+
+/* Buttons inside card actions — aligned with UI/css/styles.css */
+.pricing-offer-cards .offer-card-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.pricing-offer-cards .offer-card-actions .btn-primary {
+  background: linear-gradient(135deg, #1e2a5a, #2e3f8e);
+  color: #fff;
+}
+
+.pricing-offer-cards .offer-card-actions .btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(30, 42, 90, 0.3);
+}
+
+.pricing-offer-cards .offer-card-actions .btn-outline {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.pricing-offer-cards .offer-card-actions .btn-outline:hover {
+  border-color: #4a5bb5;
+  color: var(--text);
+}

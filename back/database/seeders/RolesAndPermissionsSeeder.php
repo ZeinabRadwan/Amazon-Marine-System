@@ -6,6 +6,7 @@ use App\Models\PagePermission;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class RolesAndPermissionsSeeder extends Seeder
 {
@@ -18,7 +19,7 @@ class RolesAndPermissionsSeeder extends Seeder
         Permission::truncate();
         Role::truncate();
         PagePermission::truncate();
-        app()->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+        app()->make(PermissionRegistrar::class)->forgetCachedPermissions();
 
         $permissionGroups = config('permissions.groups', []);
         $allPermissionNames = collect($permissionGroups)->flatten()->unique()->values()->all();
@@ -76,6 +77,24 @@ class RolesAndPermissionsSeeder extends Seeder
         collect($roles)->except('admin')->each(function (Role $role): void {
             $role->syncPermissions([]);
         });
+
+        // Spatie abilities for pricing module (profile `permissions` array + `$user->can()`).
+        if ($pricingRole = $roles['pricing'] ?? null) {
+            $pricingRole->syncPermissions([
+                $permissions['pricing.view_offers'],
+                $permissions['pricing.manage_offers'],
+                $permissions['pricing.view_quotes'],
+                $permissions['pricing.manage_quotes'],
+            ]);
+        }
+
+        if ($salesRole = $roles['sales'] ?? null) {
+            $salesRole->syncPermissions([
+                $permissions['pricing.view_offers'],
+                $permissions['pricing.view_quotes'],
+                $permissions['pricing.manage_quotes'],
+            ]);
+        }
 
         $this->seedPagePermissions($roles);
     }

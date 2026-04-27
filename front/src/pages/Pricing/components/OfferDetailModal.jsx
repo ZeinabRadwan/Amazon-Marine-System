@@ -1,180 +1,385 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X, Ship, Truck, Calendar, Clock } from 'lucide-react'
+import { X, Ship, Truck, FilePlus2 } from 'lucide-react'
+import { formatDate, formatLocaleMoney, sortCurrencyCodes, sumAmountsByCurrencyFromItems, sumPricingObjectByCurrency } from '../../../utils/dateUtils'
+import '../../../components/PageHeader/PageHeader.css'
 
 const SEA_ITEMS = [
-  { key: 'of20', label: "OF 20'DC" },
-  { key: 'of40', label: "OF 40'HQ" },
-  { key: 'thc20', label: "THC 20'DC" },
-  { key: 'thc40', label: "THC 40'HQ" },
-  { key: 'of40rf', label: "OF 40'RF (Reefer)", optional: true },
-  { key: 'thcRf', label: "THC 40'RF", optional: true },
-  { key: 'powerDay', label: 'Power/day (Reefer)', optional: true },
-  { key: 'pti', label: 'PTI (Reefer)', optional: true },
+  { key: 'of20', optional: false },
+  { key: 'of40', optional: false },
+  { key: 'thc20', optional: false },
+  { key: 'thc40', optional: false },
+  { key: 'of40rf', optional: true },
+  { key: 'thcRf', optional: true },
+  { key: 'powerDay', optional: true },
+  { key: 'pti', optional: true },
 ]
 
 const INLAND_ITEMS = [
-  { key: 't20d', label: "20' Dry" },
-  { key: 't40d', label: "40' Dry" },
-  { key: 't40hq', label: "40' HQ" },
-  { key: 't20r', label: "20' Reefer", optional: true },
-  { key: 't40r', label: "40' Reefer", optional: true },
-  { key: 'generator', label: 'Generator', optional: true },
+  { key: 'p20x1', optional: true },
+  { key: 'p40hq', optional: true },
+  { key: 'p40rf', optional: true },
+  { key: 't20d', optional: true },
+  { key: 't40d', optional: true },
+  { key: 't40hq', optional: true },
+  { key: 't20r', optional: true },
+  { key: 't40r', optional: true },
+  { key: 'generator', optional: true },
 ]
 
-function formatMoney(price, currency) {
-  if (price == null || Number.isNaN(Number(price))) return '—'
-  try {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency || 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-    }).format(Number(price))
-  } catch {
-    return `${price} ${currency || ''}`.trim()
-  }
+function breakdownLineLabel(code, t) {
+  return t(`pricing.breakdown.${code}`, { defaultValue: code })
 }
 
-export default function OfferDetailModal({ isOpen, offer, onClose }) {
-  const { t } = useTranslation()
+function seaContainerSummary(pricing, t) {
+  const dash = t('common.dash')
+  if (!pricing) return dash
+  const parts = []
+  if (pricing.of20?.price != null) parts.push(t('pricing.cardContainerOf20'))
+  if (pricing.of40?.price != null) parts.push(t('pricing.cardContainerOf40'))
+  if (pricing.of40rf?.price != null) parts.push(t('pricing.cardContainerOf40Rf'))
+  return parts.length ? parts.join(t('pricing.cardContainerSep')) : dash
+}
+
+function inlandContainerSummary(pricing, t) {
+  const dash = t('common.dash')
+  if (!pricing) return dash
+  const parts = []
+  if (pricing.p20x1?.price != null || pricing.t20d?.price != null) parts.push(t('pricing.detailContainer20'))
+  if (pricing.p40hq?.price != null || pricing.t40hq?.price != null || pricing.t40d?.price != null) {
+    parts.push(t('pricing.detailContainer40'))
+  }
+  if (pricing.p40rf?.price != null) parts.push(t('pricing.detailContainerRf'))
+  return parts.length ? parts.join(t('pricing.cardContainerSep')) : dash
+}
+
+/** Split combined D&D string into POL / POD columns when possible. */
+function splitFreeTimePolPod(dnd) {
+  if (!dnd || !String(dnd).trim()) {
+    return { pol: null, pod: null }
+  }
+  const s = String(dnd).trim()
+  const nl = s.split(/\r?\n/).filter(Boolean)
+  if (nl.length >= 2) {
+    return { pol: nl[0], pod: nl.slice(1).join(' ') }
+  }
+  const slash = s.split(/\s*\/\s+/)
+  if (slash.length >= 2) {
+    return { pol: slash[0], pod: slash.slice(1).join(' / ') }
+  }
+  const pipe = s.split(/\s*\|\s*/)
+  if (pipe.length >= 2) {
+    return { pol: pipe[0], pod: pipe[1] }
+  }
+  return { pol: s, pod: s }
+}
+
+const SEA_KEYS = SEA_ITEMS.map((x) => x.key)
+const INLAND_KEYS = INLAND_ITEMS.map((x) => x.key)
+
+export default function OfferDetailModal({ isOpen, offer, onClose, onCreateQuotation }) {
+  const { t, i18n } = useTranslation()
   const isSea = offer?.pricing_type === 'sea'
 
-  const rows = useMemo(() => {
+  const breakdownRows = useMemo(() => {
     if (!offer) return []
+    const lang = i18n.language
+    const dash = t('common.dash')
+    const fromApi = Array.isArray(offer.pricing_items) ? offer.pricing_items : null
+    if (fromApi?.length) {
+      return fromApi.map((row) => ({
+        key: row.code,
+        label: breakdownLineLabel(row.code, t),
+        value: formatLocaleMoney(row.price, row.currency, lang),
+      }))
+    }
     const items = isSea ? SEA_ITEMS : INLAND_ITEMS
     return items
       .map((it) => {
         const item = offer.pricing?.[it.key]
         if (it.optional && (!item || item.price == null || item.price === '')) return null
+        if (!item || item.price == null) {
+          return it.optional ? null : { key: it.key, label: breakdownLineLabel(it.key, t), value: dash }
+        }
         return {
           key: it.key,
-          label: it.label,
-          value: formatMoney(item?.price, item?.currency),
+          label: breakdownLineLabel(it.key, t),
+          value: formatLocaleMoney(item?.price, item?.currency, lang),
         }
       })
       .filter(Boolean)
+  }, [offer, isSea, t, i18n.language])
+
+  const approxTotalsByCurrency = useMemo(() => {
+    if (!offer) return {}
+    const fromApi = Array.isArray(offer.pricing_items) ? offer.pricing_items : null
+    if (fromApi?.length) {
+      return sumAmountsByCurrencyFromItems(fromApi.map((row) => ({ amount: row.price, currency: row.currency })))
+    }
+    const keys = isSea ? SEA_KEYS : INLAND_KEYS
+    return sumPricingObjectByCurrency(offer.pricing, keys)
   }, [offer, isSea])
+
+  const approxTotalCurrencyKeys = useMemo(
+    () => sortCurrencyCodes(Object.keys(approxTotalsByCurrency).filter((c) => Math.abs(approxTotalsByCurrency[c] || 0) > 1e-9)),
+    [approxTotalsByCurrency]
+  )
+
+  const { pol: freePol, pod: freePod } = splitFreeTimePolPod(offer?.dnd)
 
   if (!isOpen || !offer) return null
 
+  const dash = t('common.dash')
+  const routeLabel = isSea
+    ? `${offer.pol || dash} → ${offer.pod || offer.region || dash}`
+    : `${offer.inland_port || dash} → ${offer.destination || offer.region || dash}`
+
+  const validityLabel = offer.valid_to ? formatDate(offer.valid_to, { locale: i18n.language }) : dash
+
+  const sailingSep = i18n.language?.startsWith('ar') ? ' ، ' : ', '
+  const sailingFormatted =
+    offer.sailing_dates?.length > 0
+      ? offer.sailing_dates.map((d) => formatDate(d, { locale: i18n.language })).join(sailingSep)
+      : dash
+
+  const offerStatusLabel =
+    offer.status === 'active'
+      ? t('pricing.offerStatusActive')
+      : offer.status === 'archived'
+        ? t('pricing.offerStatusArchived')
+        : offer.status === 'draft'
+          ? t('pricing.offerStatusDraft')
+          : offer.status || dash
+
+  const handleCreateQuotation = () => {
+    onCreateQuotation?.(offer)
+    onClose?.()
+  }
+
+  const hasAdditionalInfo =
+    isSea ||
+    (!isSea && (offer.transit_time || offer.region)) ||
+    Boolean(offer.other_charges?.trim())
+
+  const notesText = typeof offer.notes === 'string' ? offer.notes.trim() : ''
+  const hasNotes = Boolean(notesText)
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="px-6 py-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-700">
-          <div className="flex items-center gap-2">
-            {isSea ? <Ship className="h-5 w-5 text-blue-500" /> : <Truck className="h-5 w-5 text-amber-500" />}
-            <h2 className="text-lg font-bold">
-              {t('pricing.offerDetails', 'Offer Details')} <span className="text-gray-400">#{offer.id}</span>
+      <div
+        className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl max-h-[92vh] overflow-hidden flex flex-col border border-gray-100 dark:border-gray-700"
+        role="dialog"
+        aria-labelledby="offer-detail-title"
+        aria-modal="true"
+      >
+        <div className="px-6 py-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-700 shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            {isSea ? <Ship className="h-5 w-5 text-blue-500 shrink-0" /> : <Truck className="h-5 w-5 text-amber-500 shrink-0" />}
+            <h2 id="offer-detail-title" className="text-lg font-bold truncate">
+              {t('pricing.offerDetails', 'Offer Details')} <span className="text-gray-400 font-semibold">#{offer.id}</span>
             </h2>
           </div>
-          <button onClick={onClose} className="p-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded-full transition-colors">
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full transition-colors shrink-0"
+            aria-label={t('common.close', 'Close')}
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {isSea ? (
-              <>
-                <div>
-                  <div className="text-xs font-bold text-gray-500 uppercase">{t('pricing.shippingLine', 'Shipping line')}</div>
-                  <div className="font-semibold">{offer.shipping_line || '—'}</div>
+          {/* Header: Carrier + Route + Container + Validity */}
+          <section
+            className="rounded-2xl border border-gray-200 dark:border-gray-600 p-5 space-y-4"
+            style={{
+              background: 'linear-gradient(145deg, rgba(14, 165, 233, 0.06) 0%, rgba(99, 102, 241, 0.04) 50%, transparent 100%)',
+            }}
+          >
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">
+                  {t('pricing.detailCarrier', 'Carrier')}
+                </p>
+                <p className="text-lg font-bold text-gray-900 dark:text-white truncate">
+                  {isSea ? offer.shipping_line || dash : t('pricing.inlandTransport')}
+                </p>
+              </div>
+              {offer.status ? (
+                <span
+                  className={`shrink-0 px-2.5 py-1 rounded-lg text-xs font-bold uppercase ${
+                    offer.status === 'active'
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
+                      : offer.status === 'archived'
+                        ? 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                        : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200'
+                  }`}
+                >
+                  {offerStatusLabel}
+                </span>
+              ) : null}
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">
+                  {t('pricing.detailRoute', 'Route')}
+                </p>
+                <p className="font-semibold text-gray-900 dark:text-white">{routeLabel}</p>
+              </div>
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">
+                  {t('pricing.filterContainerType', 'Container Type')}
+                </p>
+                <p className="font-semibold text-gray-900 dark:text-white">
+                  {isSea ? seaContainerSummary(offer.pricing, t) : inlandContainerSummary(offer.pricing, t)}
+                </p>
+              </div>
+              <div className="sm:col-span-2">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">
+                  {t('pricing.detailValidity', 'Validity')}
+                </p>
+                <p className="font-semibold text-green-600 dark:text-green-400">{validityLabel}</p>
+              </div>
+            </div>
+          </section>
+
+          {/* Cost breakdown */}
+          <section>
+            <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+              {t('pricing.detailCostBreakdown', 'Cost breakdown')}
+            </h3>
+            <div className="rounded-2xl border border-gray-100 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/40 overflow-hidden">
+              <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                {breakdownRows.map((r) => (
+                  <div key={r.key} className="flex items-center justify-between gap-4 px-4 py-3">
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{r.label}</span>
+                    <span className="text-sm font-bold text-gray-900 dark:text-white tabular-nums">{r.value}</span>
+                  </div>
+                ))}
+              </div>
+              {approxTotalCurrencyKeys.length ? (
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4 px-4 py-3 bg-white/80 dark:bg-gray-800/80 border-t border-gray-200 dark:border-gray-600">
+                  <span className="text-sm font-bold text-gray-600 dark:text-gray-300">
+                    {t('pricing.detailApproxTotal', 'Approx. total')}
+                  </span>
+                  <div className="flex flex-col items-end gap-1">
+                    {approxTotalCurrencyKeys.map((cur) => (
+                      <span key={cur} className="text-base font-bold text-cyan-600 dark:text-cyan-400 tabular-nums">
+                        {formatLocaleMoney(approxTotalsByCurrency[cur], cur, i18n.language)}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-                <div>
-                  <div className="text-xs font-bold text-gray-500 uppercase">D&D</div>
-                  <div className="font-semibold">{offer.dnd || '—'}</div>
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-gray-500 uppercase">POL</div>
-                  <div className="font-semibold">{offer.pol || '—'}</div>
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-gray-500 uppercase">POD</div>
-                  <div className="font-semibold">{offer.pod || '—'}</div>
-                </div>
-              </>
+              ) : null}
+            </div>
+          </section>
+
+          {/* Free time POL / POD */}
+          <section>
+            <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+              {t('pricing.detailFreeTimePolPod', 'Free time (POL / POD)')}
+            </h3>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 p-4">
+                <p className="text-[11px] font-bold uppercase text-gray-500 dark:text-gray-400 mb-2">
+                  {t('pricing.pol', 'POL')}
+                </p>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white whitespace-pre-wrap">
+                  {freePol || dash}
+                </p>
+              </div>
+              <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 p-4">
+                <p className="text-[11px] font-bold uppercase text-gray-500 dark:text-gray-400 mb-2">
+                  {t('pricing.pod', 'POD')}
+                </p>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white whitespace-pre-wrap">
+                  {freePod || dash}
+                </p>
+              </div>
+            </div>
+            {!offer.dnd?.trim() ? (
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{t('pricing.detailNoFreeTime', 'No free time notes on file.')}</p>
+            ) : null}
+          </section>
+
+          {/* Notes — own section only when present */}
+          {hasNotes ? (
+            <section>
+              <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+                {t('pricing.notes', 'Notes')}
+              </h3>
+              <div className="rounded-2xl border border-gray-100 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/40 px-4 py-4">
+                <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{notesText}</p>
+              </div>
+            </section>
+          ) : null}
+
+          {/* Additional info */}
+          <section>
+            <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+              {t('pricing.detailAdditionalInfo', 'Additional info')}
+            </h3>
+            {hasAdditionalInfo ? (
+              <div className="rounded-2xl border border-gray-100 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
+                {isSea ? (
+                  <div className="px-4 py-3 flex flex-col sm:flex-row sm:justify-between gap-1">
+                    <span className="text-xs font-bold uppercase text-gray-500">{t('pricing.transitTimeLabel', 'Transit')}</span>
+                    <span className="text-sm text-gray-800 dark:text-gray-200">{offer.transit_time || dash}</span>
+                  </div>
+                ) : null}
+                {isSea ? (
+                  <div className="px-4 py-3 flex flex-col sm:flex-row sm:justify-between gap-1">
+                    <span className="text-xs font-bold uppercase text-gray-500">{t('pricing.sailingDatesLabel')}</span>
+                    <span className="text-sm text-gray-800 dark:text-gray-200">{sailingFormatted}</span>
+                  </div>
+                ) : null}
+                {!isSea && offer.transit_time ? (
+                  <div className="px-4 py-3 flex flex-col sm:flex-row sm:justify-between gap-1">
+                    <span className="text-xs font-bold uppercase text-gray-500">{t('pricing.transitTimeLabel', 'Transit')}</span>
+                    <span className="text-sm text-gray-800 dark:text-gray-200">{offer.transit_time || dash}</span>
+                  </div>
+                ) : null}
+                {!isSea && offer.region ? (
+                  <div className="px-4 py-3 flex flex-col sm:flex-row sm:justify-between gap-1">
+                    <span className="text-xs font-bold uppercase text-gray-500">{t('pricing.region', 'Region')}</span>
+                    <span className="text-sm text-gray-800 dark:text-gray-200">{offer.region}</span>
+                  </div>
+                ) : null}
+                {offer.other_charges ? (
+                  <div className="px-4 py-3 flex flex-col gap-1">
+                    <span className="text-xs font-bold uppercase text-gray-500">{t('pricing.otherCharges', 'Other charges')}</span>
+                    <span className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{offer.other_charges}</span>
+                  </div>
+                ) : null}
+              </div>
             ) : (
-              <>
-                <div>
-                  <div className="text-xs font-bold text-gray-500 uppercase">{t('pricing.port', 'Port')}</div>
-                  <div className="font-semibold">{offer.inland_port || '—'}</div>
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-gray-500 uppercase">{t('pricing.destination', 'Destination')}</div>
-                  <div className="font-semibold">{offer.destination || '—'}</div>
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-gray-500 uppercase">{t('pricing.governorate', 'Governorate')}</div>
-                  <div className="font-semibold">{offer.inland_gov || offer.region || '—'}</div>
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-gray-500 uppercase">{t('pricing.city', 'City')}</div>
-                  <div className="font-semibold">{offer.inland_city || '—'}</div>
-                </div>
-              </>
+              <p className="text-sm text-gray-500 dark:text-gray-400 py-4 px-1">{t('pricing.detailNoExtra', 'No additional information.')}</p>
             )}
-          </div>
-
-          {isSea && (
-            <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-300">
-              {offer.transit_time && (
-                <span className="inline-flex items-center gap-2">
-                  <Clock className="h-4 w-4" /> {offer.transit_time}
-                </span>
-              )}
-              {offer.sailing_dates?.length > 0 && (
-                <span className="inline-flex items-center gap-2">
-                  <Calendar className="h-4 w-4" /> {offer.sailing_dates.join(', ')}
-                </span>
-              )}
-              {offer.valid_to && (
-                <span className="inline-flex items-center gap-2 font-semibold text-green-600 dark:text-green-400">
-                  <Calendar className="h-4 w-4" /> {t('pricing.validTo', 'Valid until')} {offer.valid_to}
-                </span>
-              )}
-            </div>
-          )}
-
-          <div className="bg-gray-50 dark:bg-gray-900/30 border border-gray-100 dark:border-gray-700 rounded-2xl p-5">
-            <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">
-              {t('pricing.pricing', 'Pricing')}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {rows.map((r) => (
-                <div key={r.key} className="flex items-center justify-between px-4 py-3 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
-                  <span className="text-sm font-semibold text-gray-600 dark:text-gray-300">{r.label}</span>
-                  <span className="text-sm font-bold text-gray-900 dark:text-white">{r.value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {(offer.other_charges || offer.notes) && (
-            <div className="space-y-2">
-              {offer.other_charges && (
-                <div className="text-sm">
-                  <span className="font-bold">{t('pricing.otherCharges', 'Other charges')}: </span>
-                  <span className="text-gray-700 dark:text-gray-300">{offer.other_charges}</span>
-                </div>
-              )}
-              {offer.notes && (
-                <div className="text-sm">
-                  <span className="font-bold">{t('pricing.notes', 'Notes')}: </span>
-                  <span className="text-gray-700 dark:text-gray-300">{offer.notes}</span>
-                </div>
-              )}
-            </div>
-          )}
+          </section>
         </div>
 
-        <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex justify-end">
-          <button onClick={onClose} className="px-5 py-2.5 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-colors">
+        <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex flex-col-reverse sm:flex-row gap-3 sm:justify-end shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-5 py-2.5 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-colors"
+          >
             {t('common.close', 'Close')}
           </button>
+          {typeof onCreateQuotation === 'function' ? (
+            <button
+              type="button"
+              onClick={handleCreateQuotation}
+              className="page-header__btn page-header__btn--primary inline-flex items-center justify-center gap-2"
+            >
+              <FilePlus2 className="h-4 w-4 shrink-0" aria-hidden />
+              {t('pricing.ctaCreateQuotation', 'Create Quotation')}
+            </button>
+          ) : null}
         </div>
       </div>
     </div>
   )
 }
-

@@ -6,7 +6,7 @@ import { ROLE_ID } from '../constants/roles'
 /**
  * Page-level and specific action gates aligned with backend `permissions` from AuthenticatedLayout.
  *
- * @returns {{ hasPageAccess: (pageKey: string) => boolean, hasPermission: (page: string, key: string) => boolean, hasAbility: (name: string) => boolean, permissions: any[], abilityNames: string[], allowedPages: string[], user: object|undefined, isAdminRole: boolean, isAccountant: boolean, isOperations: boolean, roleId: number|undefined }}
+ * @returns {{ hasPageAccess: (pageKey: string) => boolean, hasPermission: (page: string, key: string) => boolean, hasAbility: (name: string) => boolean, permissions: any[], abilityNames: string[], allowedPages: string[], user: object|undefined, isAdminRole: boolean, isAccountant: boolean, isOperations: boolean, isSalesRole: boolean, isPricingSalesViewOnly: boolean, roleId: number|undefined, canManagePricingOffers: boolean }}
  */
 export function useAuthAccess() {
   const {
@@ -30,6 +30,15 @@ export function useAuthAccess() {
 
   const isAccountant = useMemo(() => roleId === ROLE_ID.ACCOUNTANT, [roleId])
   const isOperations = useMemo(() => roleId === ROLE_ID.OPERATIONS, [roleId])
+
+  /** Sales employee (not Sales Manager): browse / search / view only on pricing UI. */
+  const isSalesRole = useMemo(() => {
+    if (roleId === ROLE_ID.SALES) return true
+    const primary = (user?.primary_role ?? user?.roles?.[0]?.name ?? user?.role?.name ?? '').toString().toLowerCase()
+    return primary === 'sales'
+  }, [user, roleId])
+
+  const isPricingSalesViewOnly = useMemo(() => isSalesRole && !isAdminRole, [isSalesRole, isAdminRole])
 
   const hasPageAccess = useCallback(
     (pageKey) => {
@@ -64,6 +73,17 @@ export function useAuthAccess() {
     [isAdminRole, abilityNames]
   )
 
+  /** Price sheets: add/edit/activate/archive offers (not quotations). */
+  const canManagePricingOffers = useMemo(() => {
+    if (isAdminRole) return true
+    if (isPricingSalesViewOnly) return false
+    if (abilityNames.includes('pricing.manage_offers')) return true
+    const primary = (user?.primary_role ?? user?.roles?.[0]?.name ?? user?.role?.name ?? '')
+      .toString()
+      .toLowerCase()
+    return primary === 'pricing'
+  }, [isAdminRole, isPricingSalesViewOnly, abilityNames, user])
+
   return {
     hasPageAccess,
     hasPermission,
@@ -75,6 +95,9 @@ export function useAuthAccess() {
     isAdminRole,
     isAccountant,
     isOperations,
+    isSalesRole,
+    isPricingSalesViewOnly,
     roleId,
+    canManagePricingOffers,
   }
 }

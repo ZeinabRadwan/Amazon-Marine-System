@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\PricingOffer;
+use App\Models\PricingOfferItem;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -95,5 +96,47 @@ class PricingOfferApiTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('data.0.pod', 'جدة');
     }
-}
 
+    public function test_pricing_list_filters_by_pol_and_pricing_item_code(): void
+    {
+        $user = $this->actingAsPricingUser();
+
+        $other = PricingOffer::factory()->create([
+            'pricing_type' => 'sea',
+            'pol' => 'Damietta',
+            'pod' => 'Rotterdam',
+        ]);
+        PricingOfferItem::query()->create([
+            'pricing_offer_id' => $other->id,
+            'code' => 'of40',
+            'price' => 90,
+            'currency_code' => 'USD',
+        ]);
+
+        $match = PricingOffer::factory()->create([
+            'pricing_type' => 'sea',
+            'pol' => 'Sokhna',
+            'pod' => 'جدة',
+        ]);
+        PricingOfferItem::query()->create([
+            'pricing_offer_id' => $match->id,
+            'code' => 'of20',
+            'price' => 100,
+            'currency_code' => 'USD',
+        ]);
+
+        $query = http_build_query([
+            'pricing_type' => 'sea',
+            'pol' => 'Sokhna',
+            'pricing_item_code' => 'of20',
+        ], '', '&', PHP_QUERY_RFC3986);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->getJson('/api/v1/pricing/offers?'.$query);
+
+        $response->assertOk();
+        $ids = collect($response->json('data'))->pluck('id')->all();
+        $this->assertContains($match->id, $ids);
+        $this->assertNotContains($other->id, $ids);
+    }
+}

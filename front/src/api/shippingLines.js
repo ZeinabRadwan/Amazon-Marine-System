@@ -18,6 +18,9 @@ export async function listShippingLines(token, params = {}) {
   const searchParams = new URLSearchParams()
   if (params.q != null && params.q !== '') searchParams.set('q', params.q)
   if (params.active != null && params.active !== '') searchParams.set('active', String(params.active))
+  if (params.service_scope != null && params.service_scope !== '') {
+    searchParams.set('service_scope', String(params.service_scope))
+  }
   const query = searchParams.toString()
   const url = `${getBaseUrl()}/shipping-lines${query ? `?${query}` : ''}`
   const res = await apiFetch(url, { headers: authHeaders(token) })
