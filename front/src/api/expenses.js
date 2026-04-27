@@ -231,6 +231,42 @@ export async function downloadExpenseReceipt(token, expenseId) {
 }
 
 /**
+ * Rename stored receipt filename for an expense.
+ * @param {string} token
+ * @param {number} expenseId
+ * @param {string} name
+ */
+export async function renameExpenseReceipt(token, expenseId, name) {
+  const res = await apiFetch(`${getBaseUrl()}/expenses/${expenseId}/receipt`, {
+    method: 'PATCH',
+    headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(json.message || json.error || `Failed to rename receipt (${res.status})`)
+  }
+  return json.data ?? json
+}
+
+/**
+ * Delete stored receipt for an expense only.
+ * @param {string} token
+ * @param {number} expenseId
+ */
+export async function deleteExpenseReceipt(token, expenseId) {
+  const res = await apiFetch(`${getBaseUrl()}/expenses/${expenseId}/receipt`, {
+    method: 'DELETE',
+    headers: authHeaders(token),
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(json.message || json.error || `Failed to delete receipt (${res.status})`)
+  }
+  return json.data ?? json
+}
+
+/**
  * Returns the receipt download URL for direct use in an anchor tag (with token).
  * @param {string} token
  * @param {number} expenseId

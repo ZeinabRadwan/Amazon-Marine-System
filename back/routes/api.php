@@ -552,6 +552,8 @@ Route::prefix('v1')->group(function () {
         Route::post('expenses', [ExpenseController::class, 'store']);
         Route::post('expenses/{expense}/receipt', [ExpenseController::class, 'uploadReceipt']);
         Route::get('expenses/{expense}/receipt', [ExpenseController::class, 'downloadReceipt']);
+        Route::patch('expenses/{expense}/receipt', [ExpenseController::class, 'renameReceipt']);
+        Route::delete('expenses/{expense}/receipt', [ExpenseController::class, 'deleteReceipt']);
 
         // Notifications
         Route::get('notifications', [NotificationController::class, 'index']);

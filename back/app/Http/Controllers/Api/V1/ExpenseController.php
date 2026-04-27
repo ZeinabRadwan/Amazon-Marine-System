@@ -168,6 +168,7 @@ class ExpenseController extends Controller
                 'invoice_number' => $expense->invoice_number,
                 'has_receipt' => (bool) $expense->has_receipt,
                 'receipt_path' => $expense->receipt_path,
+                'receipt_name' => $expense->receipt_path ? basename($expense->receipt_path) : null,
             ];
         })->values();
 
@@ -239,6 +240,7 @@ class ExpenseController extends Controller
                 'expense_date' => $expense->expense_date?->toDateString(),
                 'invoice_number' => $expense->invoice_number,
                 'has_receipt' => (bool) $expense->has_receipt,
+                'receipt_name' => $expense->receipt_path ? basename($expense->receipt_path) : null,
             ];
         })->values();
 
@@ -457,6 +459,85 @@ class ExpenseController extends Controller
             echo Storage::disk('local')->get($path);
         }, $basename, [
             'Content-Type' => $mimeType,
+        ]);
+    }
+
+    public function renameReceipt(Request $request, Expense $expense): JsonResponse
+    {
+        $user = $request->user();
+        abort_unless(
+            $user && ($user->can('accounting.manage') || $user->hasRole('admin')),
+            403,
+            __('You do not have permission to rename expense receipts.')
+        );
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:180'],
+        ]);
+
+        $path = $expense->receipt_path;
+        if (! $path || ! Storage::disk('local')->exists($path)) {
+            abort(404, __('Receipt file not found.'));
+        }
+
+        $dir = dirname($path);
+        $ext = pathinfo($path, PATHINFO_EXTENSION);
+        $base = pathinfo($validated['name'], PATHINFO_FILENAME);
+        $cleanBase = trim((string) preg_replace('/[^\pL\pN\-_ ]/u', '', $base));
+        $cleanBase = preg_replace('/\s+/', '-', $cleanBase);
+        if ($cleanBase === '') {
+            $cleanBase = 'receipt';
+        }
+
+        $target = $dir.'/'.$cleanBase.($ext ? '.'.$ext : '');
+        $counter = 1;
+        while (Storage::disk('local')->exists($target) && $target !== $path) {
+            $target = $dir.'/'.$cleanBase.'-'.$counter.($ext ? '.'.$ext : '');
+            $counter++;
+        }
+
+        if ($target !== $path) {
+            Storage::disk('local')->move($path, $target);
+            $expense->receipt_path = $target;
+            $expense->has_receipt = true;
+            $expense->save();
+        }
+
+        return response()->json([
+            'data' => [
+                'id' => $expense->id,
+                'receipt_path' => $expense->receipt_path,
+                'receipt_name' => basename((string) $expense->receipt_path),
+                'has_receipt' => true,
+            ],
+        ]);
+    }
+
+    public function deleteReceipt(Request $request, Expense $expense): JsonResponse
+    {
+        $user = $request->user();
+        abort_unless(
+            $user && ($user->can('accounting.manage') || $user->hasRole('admin')),
+            403,
+            __('You do not have permission to delete expense receipts.')
+        );
+
+        $path = $expense->receipt_path;
+        if ($path && Storage::disk('local')->exists($path)) {
+            Storage::disk('local')->delete($path);
+        }
+
+        $expense->receipt_path = null;
+        $expense->has_receipt = false;
+        $expense->save();
+
+        return response()->json([
+            'data' => [
+                'id' => $expense->id,
+                'has_receipt' => false,
+                'receipt_path' => null,
+                'receipt_name' => null,
+            ],
         ]);
     }
 

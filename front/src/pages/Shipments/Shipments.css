@@ -548,19 +548,21 @@
 /* Financials modal header: base look from .client-detail-modal__header--form (SD / Clients form modals) */
 .shipment-fin-modal__header {
   align-items: flex-start;
+  padding-bottom: 0.9rem;
 }
 
 .shipment-fin-modal__title-bl {
   color: inherit;
+  letter-spacing: -0.01em;
 }
 
 .shipment-fin-tab-bar {
   display: flex;
   flex-wrap: wrap;
-  gap: 0;
+  gap: 0.15rem;
   border-bottom: 1px solid var(--form-divider, #e5e7eb);
   background: color-mix(in srgb, var(--form-bg, #fff) 92%, var(--app-bg, #f6f8fb));
-  padding: 0 0.5rem;
+  padding: 0.25rem 0.5rem 0;
 }
 
 [data-theme="dark"] .shipment-fin-tab-bar,
@@ -573,7 +575,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.65rem 0.85rem;
+  padding: 0.62rem 0.9rem;
   font-size: 0.78rem;
   font-weight: 600;
   border: none;
@@ -582,6 +584,8 @@
   cursor: pointer;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
+  border-top-left-radius: 0.55rem;
+  border-top-right-radius: 0.55rem;
 }
 
 .shipment-fin-tab:hover {
@@ -591,6 +595,7 @@
 .shipment-fin-tab--active {
   color: var(--form-primary, #0039c5);
   border-bottom-color: var(--form-primary, #0039c5);
+  background: color-mix(in srgb, var(--form-primary, #0039c5) 7%, var(--form-bg, #fff));
 }
 
 .shipment-fin-tab:focus-visible {
@@ -621,7 +626,7 @@
 }
 
 .shipment-fin-panel {
-  padding: 1.25rem;
+  padding: 1.1rem 1.25rem 1.25rem;
 }
 
 .shipment-fin-panel--expenses {
@@ -634,7 +639,7 @@
   margin-bottom: 0.9rem;
   overflow: hidden;
   background: var(--form-bg, #fff);
-  box-shadow: 0 10px 26px rgba(2, 6, 23, 0.04);
+  box-shadow: 0 8px 22px rgba(2, 6, 23, 0.04);
 }
 
 [data-theme="dark"] .shipment-fin-card,
@@ -973,7 +978,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.3rem;
 }
 
 .shipment-fin-btn {
@@ -1020,6 +1025,12 @@
 
 .shipment-fin-btn--secondary:hover:not(:disabled) {
   background: color-mix(in srgb, var(--form-primary, #0039c5) 8%, var(--form-bg, #fff));
+}
+
+.shipment-fin-btn--sm {
+  padding: 0.3rem 0.38rem;
+  min-width: 1.9rem;
+  min-height: 1.9rem;
 }
 
 [data-theme="dark"] .shipment-fin-btn--danger,
@@ -1080,6 +1091,7 @@
   margin-top: 0.5rem;
   border-radius: 0.7rem;
   border: 1px solid color-mix(in srgb, var(--form-divider, #e5e7eb) 88%, transparent);
+  background: var(--form-bg, #fff);
 }
 
 .shipment-fin-line-table,
@@ -1133,6 +1145,15 @@
 
 .shipment-fin-line-table tbody tr:hover:not(.shipment-fin-template-sep):not(.shipment-fin-receipt-row) {
   background: color-mix(in srgb, var(--form-primary, #0039c5) 5%, transparent);
+}
+
+.shipment-fin-receipt-row td {
+  background: color-mix(in srgb, var(--form-primary, #0039c5) 2%, var(--form-bg, #fff));
+}
+
+[data-theme="dark"] .shipment-fin-receipt-row td,
+.dark .shipment-fin-receipt-row td {
+  background: color-mix(in srgb, var(--form-primary, #60a5fa) 8%, var(--form-bg, #1f2937));
 }
 
 [data-theme="dark"] .shipment-fin-line-table th,

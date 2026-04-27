@@ -1,7 +1,16 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X, ChevronDown, ChevronUp, FileText, DollarSign, FileType, History, Ship, Car, ShieldCheck, Shield, Package, Upload, Bell, Trash2, Paperclip } from 'lucide-react'
-import { createExpense, updateExpense, deleteExpense, uploadExpenseReceipt, downloadExpenseReceipt, listExpenseCategories } from '../../api/expenses'
+import { X, ChevronDown, ChevronUp, FileText, DollarSign, FileType, History, Ship, Car, ShieldCheck, Shield, Package, Upload, Bell, Trash2, Paperclip, Eye, Pencil, FileDown } from 'lucide-react'
+import {
+  createExpense,
+  updateExpense,
+  deleteExpense,
+  uploadExpenseReceipt,
+  downloadExpenseReceipt,
+  renameExpenseReceipt,
+  deleteExpenseReceipt,
+  listExpenseCategories,
+} from '../../api/expenses'
 import {
   listInvoices,
   getInvoice,
@@ -91,6 +100,21 @@ function extractUserDescription(stored, prefix) {
   const s = stored.trim()
   if (s.startsWith(p)) return s.slice(p.length).trim()
   return s
+}
+
+function normalizeTemplateEditableDescription(stored, bucketId, tplId) {
+  const raw = String(stored || '').trim()
+  if (!raw) return ''
+  const strictPrefix = LINE_DESC_PREFIX[tplId] || tplId
+  const strictStripped = extractUserDescription(raw, strictPrefix)
+  if (strictStripped !== raw) return strictStripped
+  const templates = LINE_TEMPLATES[bucketId] || []
+  for (const tpl of templates) {
+    const p = LINE_DESC_PREFIX[tpl.id] || tpl.id
+    const stripped = extractUserDescription(raw, p)
+    if (stripped !== raw) return stripped
+  }
+  return raw
 }
 
 function FinSingleExpenseRow({
@@ -342,7 +366,7 @@ function FinPendingOtherChargeRow({
       return
     }
     const dateStr = new Date().toISOString().slice(0, 10)
-    const fullDesc = `${prefix}: ${(desc || '').trim() || '—'}`
+    const fullDesc = (desc || '').trim()
     setSaving(true)
     try {
       await createExpense(token, {
@@ -596,6 +620,9 @@ export default function ShipmentFinancialsModal({
   const [paymentForm, setPaymentForm] = useState({ amount: '', currency_id: '1', method: 'bank', reference: '', paid_at: '' })
   const [paymentSaving, setPaymentSaving] = useState(false)
   const [currencies, setCurrencies] = useState([])
+  const [renamingReceiptId, setRenamingReceiptId] = useState(null)
+  const [renamingReceiptValue, setRenamingReceiptValue] = useState('')
+  const [receiptActionId, setReceiptActionId] = useState(null)
   const pendingRowSeqRef = useRef(0)
 
   useEffect(() => {
@@ -613,6 +640,9 @@ export default function ShipmentFinancialsModal({
       setHandlingRow({ sell: '', include: true })
       setActivityRows([])
       setPaymentForm({ amount: '', currency_id: '1', method: 'bank', reference: '', paid_at: '' })
+      setRenamingReceiptId(null)
+      setRenamingReceiptValue('')
+      setReceiptActionId(null)
 
       if (token) {
         listCurrencies(token).then(setCurrencies).catch(() => setCurrencies([]))
@@ -752,7 +782,7 @@ export default function ShipmentFinancialsModal({
           if (Number.isNaN(amt) || amt < 0) {
             throw new Error(t('shipments.fin.errorInvalidAmount'))
           }
-          const builtDescription = model.descPrefix ? `${model.descPrefix}: ${descTrimmed || model.tplId}` : descTrimmed
+          const builtDescription = descTrimmed
           if (model.expenseId) {
             await updateExpense(token, model.expenseId, {
               description: builtDescription,
@@ -820,6 +850,80 @@ export default function ShipmentFinancialsModal({
       setFinBanner({ type: 'error', message: err.message || t('shipments.fin.errorReceipt') })
     }
   }, [token, t])
+
+  const openBlobInNewTab = useCallback((blob) => {
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank', 'noopener,noreferrer')
+    setTimeout(() => URL.revokeObjectURL(url), 60000)
+  }, [])
+
+  const handleViewReceipt = useCallback(async (expenseId) => {
+    if (!token) return
+    try {
+      const { blob } = await downloadExpenseReceipt(token, expenseId)
+      openBlobInNewTab(blob)
+    } catch (err) {
+      setFinBanner({ type: 'error', message: err.message || t('shipments.fin.errorReceipt') })
+    }
+  }, [token, t, openBlobInNewTab])
+
+  const receiptNameFromExpense = useCallback((expense) => {
+    if (expense?.receipt_name) return String(expense.receipt_name)
+    if (expense?.receipt_path) {
+      const p = String(expense.receipt_path)
+      const parts = p.split('/')
+      return parts[parts.length - 1] || p
+    }
+    return expense?.description?.trim() || `receipt-${expense?.id || ''}`
+  }, [])
+
+  const receiptBaseNameFromExpense = useCallback((expense) => {
+    const full = receiptNameFromExpense(expense)
+    const dotIdx = full.lastIndexOf('.')
+    return dotIdx > 0 ? full.slice(0, dotIdx) : full
+  }, [receiptNameFromExpense])
+
+  const startRenameReceipt = useCallback((expense) => {
+    setRenamingReceiptId(expense.id)
+    setRenamingReceiptValue(receiptBaseNameFromExpense(expense))
+  }, [receiptBaseNameFromExpense])
+
+  const cancelRenameReceipt = useCallback(() => {
+    setRenamingReceiptId(null)
+    setRenamingReceiptValue('')
+  }, [])
+
+  const saveRenameReceipt = useCallback(async (expenseId) => {
+    if (!token || !expenseId) return
+    const clean = (renamingReceiptValue || '').trim()
+    if (!clean) return
+    setReceiptActionId(expenseId)
+    try {
+      await renameExpenseReceipt(token, expenseId, clean)
+      onExpensesChanged?.()
+      setFinBanner({ type: 'success', message: t('shipments.fin.receiptRenamed') || 'Receipt renamed.' })
+      cancelRenameReceipt()
+    } catch (err) {
+      setFinBanner({ type: 'error', message: err.message || t('shipments.fin.errorReceiptRename') })
+    } finally {
+      setReceiptActionId(null)
+    }
+  }, [token, renamingReceiptValue, onExpensesChanged, t, cancelRenameReceipt])
+
+  const handleDeleteReceipt = useCallback(async (expenseId) => {
+    if (!token || !expenseId) return
+    if (!window.confirm(t('shipments.fin.confirmDeleteReceipt') || 'Delete this attachment?')) return
+    setReceiptActionId(expenseId)
+    try {
+      await deleteExpenseReceipt(token, expenseId)
+      onExpensesChanged?.()
+      setFinBanner({ type: 'success', message: t('shipments.fin.receiptDeleted') || 'Attachment deleted.' })
+    } catch (err) {
+      setFinBanner({ type: 'error', message: err.message || t('shipments.fin.errorReceiptDelete') })
+    } finally {
+      setReceiptActionId(null)
+    }
+  }, [token, onExpensesChanged, t])
 
   const handleSectionUpload = useCallback(async (bucketId, e) => {
     const file = e.target.files?.[0]
@@ -1247,14 +1351,50 @@ export default function ShipmentFinancialsModal({
                             >
                               <Trash2 size={14} />
                             </button>
-                            <button
-                              type="button"
-                              className="shipment-fin-btn shipment-fin-btn--secondary"
-                              onClick={() => handleDownloadReceipt(ex.id)}
-                              title={t('shipments.fin.downloadReceipt')}
-                            >
-                              <Paperclip size={14} />
-                            </button>
+                            {ex.has_receipt ? (
+                              <>
+                                <button
+                                  type="button"
+                                  className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm"
+                                  onClick={() => handleViewReceipt(ex.id)}
+                                  title={t('shipments.fin.viewReceipt')}
+                                  aria-label={t('shipments.fin.viewReceipt')}
+                                  disabled={receiptActionId === ex.id}
+                                >
+                                  <Eye size={14} />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm"
+                                  onClick={() => handleDownloadReceipt(ex.id)}
+                                  title={t('shipments.fin.downloadReceipt')}
+                                  aria-label={t('shipments.fin.downloadReceipt')}
+                                  disabled={receiptActionId === ex.id}
+                                >
+                                  <FileDown size={14} />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm"
+                                  onClick={() => startRenameReceipt(ex)}
+                                  title={t('shipments.fin.renameReceipt')}
+                                  aria-label={t('shipments.fin.renameReceipt')}
+                                  disabled={receiptActionId === ex.id}
+                                >
+                                  <Pencil size={14} />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="shipment-fin-btn shipment-fin-btn--danger shipment-fin-btn--sm"
+                                  onClick={() => handleDeleteReceipt(ex.id)}
+                                  title={t('shipments.fin.deleteReceipt')}
+                                  aria-label={t('shipments.fin.deleteReceipt')}
+                                  disabled={receiptActionId === ex.id}
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </>
+                            ) : null}
                             <label className="shipment-fin-upload" title={t('shipments.fin.uploadReceipt')}>
                               <Paperclip className="shipment-fin-upload__icon" aria-hidden />
                               <input type="file" accept=".pdf,.png,.jpg,.jpeg" className="shipment-fin-upload__input"
@@ -1304,7 +1444,7 @@ export default function ShipmentFinancialsModal({
           const descPrefix = LINE_DESC_PREFIX[tpl.id] || tpl.id
           const categoryCode = categoryCodeForTemplate(bucketId, tpl.id)
           const categoryMeta = categoriesByCode[categoryCode]
-          const initialDesc = extractUserDescription(ex?.description, descPrefix)
+          const initialDesc = normalizeTemplateEditableDescription(ex?.description, bucketId, tpl.id)
           const initialAmount = ex?.amount != null ? String(ex.amount) : ''
           const initialCurrency = ex?.currency_code || 'USD'
           const draft = { desc: initialDesc, amount: initialAmount, currency: initialCurrency, ...(groupDraftByKey[rowKey] || {}) }
@@ -1430,7 +1570,7 @@ export default function ShipmentFinancialsModal({
       if (orphans.length > 0) {
         sectionRows.push(
           <tr key="__orphan-sep" className="shipment-fin-template-sep">
-            <td colSpan={editMode ? 7 : 6}>{t('shipments.fin.otherPosted')}</td>
+            <td colSpan={bucketEditing ? 5 : 4}>{t('shipments.fin.otherPosted')}</td>
           </tr>
         )
         orphans.forEach((ex) => {
@@ -1446,20 +1586,53 @@ export default function ShipmentFinancialsModal({
       if (rows.filter((r) => r.has_receipt).length > 0) {
         sectionRows.push(
           <tr key="__receipts-header" className="shipment-fin-template-sep">
-            <td colSpan={editMode ? 7 : 6}>📎 {t('shipments.fin.attachmentsLabel')}</td>
+            <td colSpan={bucketEditing ? 5 : 4}>📎 {t('shipments.fin.attachmentsLabel')}</td>
           </tr>
         )
         rows.filter((r) => r.has_receipt).forEach((ex) => {
           sectionRows.push(
             <tr key={`receipt-${ex.id}`} className="shipment-fin-receipt-row">
-              <td colSpan={2}>{ex.description?.trim() || '—'}</td>
               <td colSpan={2}>
-                <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary" onClick={() => handleDownloadReceipt(ex.id)}>
-                  <Paperclip size={14} className="shipment-fin-icon-leading" />
-                  {t('shipments.fin.downloadReceipt')}
-                </button>
+                {renamingReceiptId === ex.id ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      className="shipment-fin-input"
+                      value={renamingReceiptValue}
+                      onChange={(e) => setRenamingReceiptValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') saveRenameReceipt(ex.id)
+                        if (e.key === 'Escape') cancelRenameReceipt()
+                      }}
+                    />
+                    <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm" onClick={() => saveRenameReceipt(ex.id)}>
+                      <Upload size={12} />
+                    </button>
+                    <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm" onClick={cancelRenameReceipt}>
+                      <X size={12} />
+                    </button>
+                  </div>
+                ) : (
+                  receiptNameFromExpense(ex)
+                )}
               </td>
-              {editMode ? <td /> : null}
+              <td colSpan={2}>
+                <div className="shipment-fin-actions__inner">
+                  <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm" onClick={() => handleViewReceipt(ex.id)} title={t('shipments.fin.viewReceipt')}>
+                    <Eye size={14} />
+                  </button>
+                  <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm" onClick={() => handleDownloadReceipt(ex.id)} title={t('shipments.fin.downloadReceipt')}>
+                    <FileDown size={14} />
+                  </button>
+                  <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm" onClick={() => startRenameReceipt(ex)} title={t('shipments.fin.renameReceipt')}>
+                    <Pencil size={14} />
+                  </button>
+                  <button type="button" className="shipment-fin-btn shipment-fin-btn--danger shipment-fin-btn--sm" onClick={() => handleDeleteReceipt(ex.id)} title={t('shipments.fin.deleteReceipt')}>
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </td>
+              {bucketEditing ? <td /> : null}
             </tr>
           )
         })
@@ -2052,7 +2225,6 @@ export default function ShipmentFinancialsModal({
             <div key="attachments" className="shipment-fin-panel shipment-fin-panel--enter">
               <div className="shipment-fin-attachments-header mb-4">
                 <div className="fw-600 fs-lg">📎 {t('shipments.tabs.attachments') || 'Shipment Attachments'}</div>
-                <div className="fs-xs text-muted">{t('shipments.tabs.attachmentsHint') || 'All uploaded receipts and documents grouped by financial category.'}</div>
               </div>
               
               {!hasBl ? (
@@ -2092,21 +2264,45 @@ export default function ShipmentFinancialsModal({
                               <tbody>
                                 {bucketRows.filter(e => e.has_receipt).map(ex => (
                                   <tr key={ex.id}>
-                                    <td className="fs-xs text-muted">{ex.expense_date || '—'}</td>
+                                    <td className="fs-xs">{ex.expense_date || '—'}</td>
                                     <td className="fw-500">{ex.description?.trim() || t('shipments.fin.unnamedReceipt')}</td>
                                     <td className="fs-xs">{ex.vendor?.name || '—'}</td>
                                     <td className="shipment-fin-num no-wrap">
-                                      {formatMoney(Number(ex.amount) || 0, numberLocale)} <span className="text-muted fs-xxs">{ex.currency_code}</span>
+                                      {formatMoney(Number(ex.amount) || 0, numberLocale)} <span className="fs-xxs">{ex.currency_code}</span>
                                     </td>
                                     <td className="text-center">
-                                      <button 
-                                        type="button" 
-                                        className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm" 
-                                        onClick={() => handleDownloadReceipt(ex.id)}
-                                      >
-                                        <Paperclip size={12} className="mr-1" />
-                                        {t('shipments.fin.downloadReceipt')}
-                                      </button>
+                                      {renamingReceiptId === ex.id ? (
+                                        <div className="flex items-center justify-center gap-2">
+                                          <input
+                                            type="text"
+                                            className="shipment-fin-input"
+                                            value={renamingReceiptValue}
+                                            onChange={(e) => setRenamingReceiptValue(e.target.value)}
+                                            onKeyDown={(e) => {
+                                              if (e.key === 'Enter') saveRenameReceipt(ex.id)
+                                              if (e.key === 'Escape') cancelRenameReceipt()
+                                            }}
+                                          />
+                                          <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm" onClick={() => saveRenameReceipt(ex.id)}>
+                                            <Upload size={12} />
+                                          </button>
+                                        </div>
+                                      ) : (
+                                        <div className="shipment-fin-actions__inner">
+                                          <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm" onClick={() => handleViewReceipt(ex.id)} title={t('shipments.fin.viewReceipt')}>
+                                            <Eye size={12} />
+                                          </button>
+                                          <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm" onClick={() => handleDownloadReceipt(ex.id)} title={t('shipments.fin.downloadReceipt')}>
+                                            <FileDown size={12} />
+                                          </button>
+                                          <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm" onClick={() => startRenameReceipt(ex)} title={t('shipments.fin.renameReceipt')}>
+                                            <Pencil size={12} />
+                                          </button>
+                                          <button type="button" className="shipment-fin-btn shipment-fin-btn--danger shipment-fin-btn--sm" onClick={() => handleDeleteReceipt(ex.id)} title={t('shipments.fin.deleteReceipt')}>
+                                            <Trash2 size={12} />
+                                          </button>
+                                        </div>
+                                      )}
                                     </td>
                                   </tr>
                                 ))}
