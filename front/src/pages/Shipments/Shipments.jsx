@@ -2020,6 +2020,7 @@ export default function Shipments() {
           loading={financialLoading}
           onClose={() => setAttachmentsShipment(null)}
           token={token}
+          onAlert={setAlert}
         />
 
         {editId && canManageOps && (

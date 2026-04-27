@@ -322,9 +322,36 @@ export async function listShipmentAttachments(token, shipmentId) {
   return json
 }
 
-export async function uploadShipmentAttachment(token, shipmentId, file) {
+export async function uploadShipmentAttachment(token, shipmentId, file, onUploadProgress) {
   const formData = new FormData()
   formData.append('file', file)
+  if (typeof onUploadProgress === 'function') {
+    const url = `${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}/attachments`
+    const json = await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest()
+      xhr.open('POST', url)
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+      xhr.setRequestHeader('Accept', 'application/json')
+      xhr.upload.onprogress = onUploadProgress
+      xhr.onerror = () => reject(new Error('Network error during upload'))
+      xhr.onload = () => {
+        let parsed = {}
+        try {
+          parsed = JSON.parse(xhr.responseText || '{}')
+        } catch {
+          parsed = {}
+        }
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(parsed)
+        } else {
+          reject(new Error(parsed.message || parsed.error || `Failed to upload attachment (${xhr.status})`))
+        }
+      }
+      xhr.send(formData)
+    })
+    return json
+  }
+
   const res = await apiFetch(`${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}/attachments`, {
     method: 'POST',
     headers: {
