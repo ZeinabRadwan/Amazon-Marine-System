@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Mail\SdFormMail;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreSDFormRequest;
 use App\Http\Requests\SubmitSDFormRequest;
@@ -479,29 +480,21 @@ class SDFormController extends Controller
             ], 200);
         }
 
-        $subject = sprintf('SD %s sent to operations', $sdForm->sd_number ?? ('#'.$sdForm->id));
-        $body = view('emails.sd_form_plain', ['form' => $sdForm])->render();
-        if (trim($subject) === '' || trim($body) === '') {
-            return response()->json([
-                'message' => __('Missing required email fields (subject/body).'),
-            ], 500);
-        }
-
         $sentCount = 0;
         $sendErrors = [];
         foreach ($operationsUsers as $user) {
             try {
-                Mail::send([], [], function ($message) use ($user, $subject, $body, $pdfBinary, $filename): void {
-                    $message->to($user->email)
-                        ->subject($subject)
-                        ->setBody($body, 'text/html')
-                        ->attachData($pdfBinary, $filename, [
-                            'mime' => 'application/pdf',
-                        ]);
-                });
+                Mail::to($user->email)->send(new SdFormMail($sdForm, $pdfBinary, $filename));
                 $sentCount++;
             } catch (\Throwable $e) {
                 $sendErrors[] = sprintf('%s: %s', (string) $user->email, $e->getMessage());
+                Log::error('Failed sending SD form email to operations recipient', [
+                    'sd_form_id' => $sdForm->id,
+                    'sd_number' => $sdForm->sd_number,
+                    'recipient_email' => $user->email,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
             }
         }
 
