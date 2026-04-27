@@ -24,6 +24,7 @@ import { listPorts, createPort } from '../../api/ports'
 import { listShippingLines, createShippingLine } from '../../api/shippingLines'
 import { listShipmentStatuses } from '../../api/settings'
 import AsyncSelect from '../../components/AsyncSelect'
+import DatePicker from '../../components/DatePicker'
 import { Container } from '../../components/Container'
 import '../../components/PageHeader/PageHeader.css'
 import { Table } from '../../components/Table'
@@ -1174,11 +1175,12 @@ export default function Shipments() {
           </div>
           <div className="client-detail-modal__form-field">
             <label htmlFor="sh-bdate">{t('shipments.fields.booking_date')}</label>
-            <input
+            <DatePicker
               id="sh-bdate"
-              type="date"
+              locale={i18n.language}
+              className="clients-input"
               value={form.booking_date}
-              onChange={(e) => setForm((f) => ({ ...f, booking_date: e.target.value }))}
+              onChange={(value) => setForm((f) => ({ ...f, booking_date: value }))}
               disabled={disabled}
             />
             <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">
@@ -1394,11 +1396,12 @@ export default function Shipments() {
           </div>
           <div className="client-detail-modal__form-field">
             <label htmlFor="sh-ld">{t('shipments.fields.loading_date')}</label>
-            <input
+            <DatePicker
               id="sh-ld"
-              type="date"
+              locale={i18n.language}
+              className="clients-input"
               value={form.loading_date}
-              onChange={(e) => setForm((f) => ({ ...f, loading_date: e.target.value }))}
+              onChange={(value) => setForm((f) => ({ ...f, loading_date: value }))}
               disabled={disabled}
             />
             <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">
