@@ -139,4 +139,40 @@ class PricingOfferApiTest extends TestCase
         $this->assertContains($match->id, $ids);
         $this->assertNotContains($other->id, $ids);
     }
+
+    public function test_sea_regions_endpoint_returns_distinct_values(): void
+    {
+        $user = $this->actingAsPricingUser();
+
+        PricingOffer::factory()->create([
+            'pricing_type' => 'sea',
+            'region' => 'البحر الأحمر',
+            'pod' => 'جدة',
+        ]);
+        PricingOffer::factory()->create([
+            'pricing_type' => 'sea',
+            'region' => 'الخليج',
+            'pod' => 'دبي',
+        ]);
+        PricingOffer::factory()->create([
+            'pricing_type' => 'inland',
+            'region' => 'القاهرة الكبرى',
+            'pod' => 'x',
+        ]);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->getJson('/api/v1/pricing/offers/sea-regions');
+
+        $response->assertOk();
+        $data = $response->json('data');
+        $this->assertIsArray($data);
+        $this->assertContains('البحر الأحمر', $data);
+        $this->assertContains('الخليج', $data);
+        $this->assertNotContains('القاهرة الكبرى', $data);
+
+        $filtered = $this->actingAs($user, 'sanctum')
+            ->getJson('/api/v1/pricing/offers/sea-regions?q='.rawurlencode('الخل'));
+        $filtered->assertOk();
+        $this->assertContains('الخليج', $filtered->json('data'));
+    }
 }

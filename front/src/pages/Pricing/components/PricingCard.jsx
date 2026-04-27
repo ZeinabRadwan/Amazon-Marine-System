@@ -98,6 +98,7 @@ export default function PricingCard({
 
   if (isSea) {
     const of20s = p.of20?.price != null ? fmt(p.of20.price, p.of20.currency, i18n.language) : t('common.dash')
+    const of20rfs = p.of20rf?.price != null ? fmt(p.of20rf.price, p.of20rf.currency, i18n.language) : null
     const of40s = p.of40?.price != null ? fmt(p.of40.price, p.of40.currency, i18n.language) : t('common.dash')
     const of40rfs = p.of40rf?.price != null ? fmt(p.of40rf.price, p.of40rf.currency, i18n.language) : null
 
@@ -161,6 +162,12 @@ export default function PricingCard({
             <span className="price-chip-label">{t('pricing.priceChipOf20Dc')}</span>
             <span className="price-chip-value">{of20s}</span>
           </div>
+          {of20rfs ? (
+            <div className="price-chip price-chip-reefer">
+              <span className="price-chip-label">{t('pricing.priceChipOf20Rf')}</span>
+              <span className="price-chip-value">{of20rfs}</span>
+            </div>
+          ) : null}
           <div className="price-chip">
             <span className="price-chip-label">{t('pricing.priceChipOf40Hq')}</span>
             <span className="price-chip-value">{of40s}</span>

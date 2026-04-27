@@ -99,6 +99,41 @@ class PricingOfferController extends Controller
         ]);
     }
 
+    /**
+     * Distinct non-empty region values from sea offers (for pricing form AsyncSelect + inline create).
+     */
+    public function seaRegions(Request $request)
+    {
+        $this->authorize('viewAny', PricingOffer::class);
+
+        $validated = $request->validate([
+            'q' => ['sometimes', 'nullable', 'string', 'max:100'],
+        ]);
+
+        $q = isset($validated['q']) ? trim((string) $validated['q']) : '';
+
+        $query = PricingOffer::query()
+            ->where('pricing_type', 'sea')
+            ->whereNotNull('region')
+            ->where('region', '!=', '');
+
+        if ($q !== '') {
+            $query->where('region', 'like', '%'.$q.'%');
+        }
+
+        $regions = $query
+            ->select('region')
+            ->distinct()
+            ->orderBy('region')
+            ->limit(100)
+            ->pluck('region')
+            ->values();
+
+        return response()->json([
+            'data' => $regions,
+        ]);
+    }
+
     public function show(PricingOffer $offer)
     {
         $this->authorize('view', $offer);

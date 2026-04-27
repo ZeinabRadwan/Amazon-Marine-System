@@ -19,7 +19,7 @@ import ClientsFilterToolbar from '../../../components/ClientsFilterToolbar'
 import ListingPaginationFooter from '../../../components/ListingPaginationFooter'
 
 /** Maps to `pricing_offer_items.code` (ocean freight OF rows — matches seeded/API pricing keys). */
-const OCEAN_CONTAINER_ITEM_CODES = ['of20', 'of40', 'of40rf']
+const OCEAN_CONTAINER_ITEM_CODES = ['of20', 'of20rf', 'of40', 'of40rf']
 
 const OFFER_VIEW_STORAGE_KEY = 'pricing-offer-view-mode'
 
@@ -56,9 +56,11 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
         label:
           code === 'of20'
             ? t('pricing.containerOptOf20', `20' Dry`)
-            : code === 'of40'
-              ? t('pricing.containerOptOf40Hc', `40' Dry / HC`)
-              : t('pricing.containerOptOf40Rf', `40' Reefer`),
+            : code === 'of20rf'
+              ? t('pricing.containerOptOf20Rf', `20' Reefer`)
+              : code === 'of40'
+                ? t('pricing.containerOptOf40Hc', `40' Dry / HC`)
+                : t('pricing.containerOptOf40Rf', `40' Reefer`),
       })),
     [t]
   )

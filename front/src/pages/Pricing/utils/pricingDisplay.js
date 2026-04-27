@@ -1,5 +1,5 @@
 /** Shared keys for approx. totals (must match PricingCard). */
-export const SEA_PRICE_KEYS = ['of20', 'of40', 'thc20', 'thc40', 'of40rf', 'thcRf', 'powerDay', 'pti']
+export const SEA_PRICE_KEYS = ['of20', 'of20rf', 'of40', 'thc20', 'thc20rf', 'thc40', 'of40rf', 'thcRf', 'powerDay', 'pti']
 export const INLAND_PRICE_KEYS = ['p20x1', 'p20x2', 'p40hq', 'p40rf', 'generator', 't20d', 't40hq', 't40d', 't40r', 't20r']
 
 /** Outer shell + table classes — Ocean and Inland rate tables use the same layout rules. */
@@ -29,6 +29,7 @@ export function seaContainerSummary(pricing, t) {
   if (!pricing) return dash
   const parts = []
   if (pricing.of20?.price != null) parts.push(t('pricing.cardContainerOf20'))
+  if (pricing.of20rf?.price != null) parts.push(t('pricing.cardContainerOf20Rf'))
   if (pricing.of40?.price != null) parts.push(t('pricing.cardContainerOf40'))
   if (pricing.of40rf?.price != null) parts.push(t('pricing.cardContainerOf40Rf'))
   return parts.length ? parts.join(t('pricing.cardContainerSep')) : dash

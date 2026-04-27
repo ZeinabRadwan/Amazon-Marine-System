@@ -18,6 +18,17 @@ function authHeadersFormData(token) {
   }
 }
 
+export async function listSeaPricingRegions(token, params = {}, fetchInit = {}) {
+  const searchParams = new URLSearchParams()
+  if (params.q) searchParams.set('q', String(params.q))
+  const query = searchParams.toString()
+  const url = `${getBaseUrl()}/pricing/offers/sea-regions${query ? `?${query}` : ''}`
+  const res = await apiFetch(url, { headers: authHeaders(token), ...fetchInit })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to list regions (${res.status})`)
+  return data
+}
+
 export async function listOffers(token, params = {}, fetchInit = {}) {
   const searchParams = new URLSearchParams()
   if (params.pricing_type) searchParams.set('pricing_type', params.pricing_type)

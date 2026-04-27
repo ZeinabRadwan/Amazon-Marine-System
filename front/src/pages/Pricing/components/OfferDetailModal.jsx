@@ -8,8 +8,10 @@ import '../Pricing.css'
 
 const SEA_ITEMS = [
   { key: 'of20', optional: false },
+  { key: 'of20rf', optional: true },
   { key: 'of40', optional: false },
   { key: 'thc20', optional: false },
+  { key: 'thc20rf', optional: true },
   { key: 'thc40', optional: false },
   { key: 'of40rf', optional: true },
   { key: 'thcRf', optional: true },
@@ -56,6 +58,38 @@ function splitFreeTimePolPod(dnd) {
 
 const SEA_KEYS = SEA_ITEMS.map((x) => x.key)
 const INLAND_KEYS = INLAND_ITEMS.map((x) => x.key)
+
+const WEEKDAY_I18N = {
+  Saturday: 'pricing.weekdaySaturday',
+  Sunday: 'pricing.weekdaySunday',
+  Monday: 'pricing.weekdayMonday',
+  Tuesday: 'pricing.weekdayTuesday',
+  Wednesday: 'pricing.weekdayWednesday',
+  Thursday: 'pricing.weekdayThursday',
+  Friday: 'pricing.weekdayFriday',
+}
+
+function formatWeeklySailingLine(raw, t) {
+  if (!raw || !String(raw).trim()) return ''
+  return String(raw)
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((day) => {
+      const k = WEEKDAY_I18N[day]
+      return k ? t(k, day) : day
+    })
+    .join(` ${t('pricing.weekdayJoiner', '+')} `)
+}
+
+function OfferDetailFieldRow({ label, children }) {
+  return (
+    <div className="pricing-offer-detail-card__row">
+      <span className="pricing-offer-detail-card__label">{label}</span>
+      <span className="pricing-offer-detail-card__value">{children}</span>
+    </div>
+  )
+}
 
 export default function OfferDetailModal({ isOpen, offer, onClose, onCreateQuotation }) {
   const { t, i18n } = useTranslation()
@@ -114,7 +148,18 @@ export default function OfferDetailModal({ isOpen, offer, onClose, onCreateQuota
     ? `${offer.pol || dash} → ${offer.pod || offer.region || dash}`
     : `${offer.inland_port || dash} → ${offer.destination || offer.region || dash}`
 
-  const validityLabel = offer.valid_to ? formatDate(offer.valid_to, { locale: i18n.language }) : dash
+  const fromIso = offer.valid_from ? String(offer.valid_from).slice(0, 10) : ''
+  const toIso = offer.valid_to ? String(offer.valid_to).slice(0, 10) : ''
+  const validityRangeLabel =
+    fromIso && toIso
+      ? `${formatDate(fromIso, { locale: i18n.language })} – ${formatDate(toIso, { locale: i18n.language })}`
+      : toIso
+        ? formatDate(toIso, { locale: i18n.language })
+        : fromIso
+          ? formatDate(fromIso, { locale: i18n.language })
+          : dash
+
+  const weeklySailingDisplay = formatWeeklySailingLine(offer.weekly_sailing_days, t)
 
   const sailingSep = i18n.language?.startsWith('ar') ? ' ، ' : ', '
   const sailingFormatted =
@@ -137,9 +182,7 @@ export default function OfferDetailModal({ isOpen, offer, onClose, onCreateQuota
   }
 
   const hasAdditionalInfo =
-    isSea ||
-    (!isSea && (offer.transit_time || offer.region)) ||
-    Boolean(offer.other_charges?.trim())
+    Boolean(offer.other_charges?.trim()) || (!isSea && (offer.transit_time || offer.region))
 
   const notesText = typeof offer.notes === 'string' ? offer.notes.trim() : ''
   const hasNotes = Boolean(notesText)
@@ -152,12 +195,25 @@ export default function OfferDetailModal({ isOpen, offer, onClose, onCreateQuota
         aria-labelledby="offer-detail-title"
         aria-modal="true"
       >
-        <div className="px-6 py-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-700 shrink-0">
-          <div className="flex items-center gap-2 min-w-0">
+        <div className="px-6 py-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-700 shrink-0 gap-3">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
             {isSea ? <Ship className="h-5 w-5 text-blue-500 shrink-0" /> : <Truck className="h-5 w-5 text-amber-500 shrink-0" />}
-            <h2 id="offer-detail-title" className="text-lg font-bold truncate">
+            <h2 id="offer-detail-title" className="text-lg font-bold truncate min-w-0">
               {t('pricing.offerDetails', 'Offer Details')} <span className="text-gray-400 font-semibold">#{offer.id}</span>
             </h2>
+            {offer.status ? (
+              <span
+                className={`shrink-0 px-2.5 py-1 rounded-lg text-xs font-bold uppercase ${
+                  offer.status === 'active'
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
+                    : offer.status === 'archived'
+                      ? 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                      : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200'
+                }`}
+              >
+                {offerStatusLabel}
+              </span>
+            ) : null}
           </div>
           <button
             type="button"
@@ -170,60 +226,76 @@ export default function OfferDetailModal({ isOpen, offer, onClose, onCreateQuota
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Header: Carrier + Route + Container + Validity */}
-          <section
-            className="rounded-2xl border border-gray-200 dark:border-gray-600 p-5 space-y-4"
-            style={{
-              background: 'linear-gradient(145deg, rgba(14, 165, 233, 0.06) 0%, rgba(99, 102, 241, 0.04) 50%, transparent 100%)',
-            }}
-          >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">
-                  {t('pricing.detailCarrier', 'Carrier')}
-                </p>
-                <p className="text-lg font-bold text-gray-900 dark:text-white truncate">
-                  {isSea ? offer.shipping_line || dash : t('pricing.inlandTransport')}
-                </p>
+          {/* Route & equipment — shipment-style grouped card */}
+          {isSea ? (
+            <section className="pricing-offer-detail-card">
+              <h3 className="pricing-offer-detail-card__title">
+                {t('pricing.offerDetailRouteEquipmentTitle', 'Route & equipment')}
+              </h3>
+              <div className="pricing-offer-detail-card__grid">
+                <OfferDetailFieldRow label={t('pricing.offerDetailPolFieldLabel', 'BOL / ميناء التحميل')}>
+                  {offer.pol || dash}
+                </OfferDetailFieldRow>
+                <OfferDetailFieldRow label={t('pricing.offerDetailPodFieldLabel', 'POD / ميناء التفريغ')}>
+                  {offer.pod || dash}
+                </OfferDetailFieldRow>
+                <OfferDetailFieldRow label={t('pricing.offerDetailRegionFieldLabel', 'Region / المنطقة')}>
+                  {offer.region || dash}
+                </OfferDetailFieldRow>
+                <OfferDetailFieldRow label={t('pricing.offerDetailShippingLineFieldLabel', 'Shipping Line / الناقل')}>
+                  {offer.shipping_line || dash}
+                </OfferDetailFieldRow>
+                <OfferDetailFieldRow label={t('pricing.offerDetailContainerTypeFieldLabel', 'Container Type / نوع الحاوية')}>
+                  {seaContainerSummary(offer.pricing, t)}
+                </OfferDetailFieldRow>
+                <OfferDetailFieldRow label={t('pricing.offerDetailTransitFieldLabel', 'Transit Time / مدة العبور')}>
+                  {offer.transit_time || dash}
+                </OfferDetailFieldRow>
+                <OfferDetailFieldRow label={t('pricing.offerDetailValidityFieldLabel', 'Validity / الصلاحية')}>
+                  <span className="text-green-600 dark:text-green-400 font-semibold">{validityRangeLabel}</span>
+                </OfferDetailFieldRow>
+                <div className="pricing-offer-detail-card__row pricing-offer-detail-card__row--full">
+                  <span className="pricing-offer-detail-card__label">
+                    {t('pricing.offerDetailSailingFieldLabel', 'Sailing / الإبحار')}
+                  </span>
+                  <span className="pricing-offer-detail-card__value">
+                    {weeklySailingDisplay || (sailingFormatted !== dash ? sailingFormatted : dash)}
+                  </span>
+                </div>
               </div>
-              {offer.status ? (
-                <span
-                  className={`shrink-0 px-2.5 py-1 rounded-lg text-xs font-bold uppercase ${
-                    offer.status === 'active'
-                      ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
-                      : offer.status === 'archived'
-                        ? 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
-                        : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200'
-                  }`}
-                >
-                  {offerStatusLabel}
-                </span>
-              ) : null}
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">
-                  {t('pricing.detailRoute', 'Route')}
-                </p>
-                <p className="font-semibold text-gray-900 dark:text-white">{routeLabel}</p>
+            </section>
+          ) : (
+            <section className="pricing-offer-detail-card">
+              <h3 className="pricing-offer-detail-card__title">
+                {t('pricing.offerDetailInlandSummaryTitle', 'Route & transport')}
+              </h3>
+              <div className="pricing-offer-detail-card__grid">
+                <OfferDetailFieldRow label={t('pricing.offerDetailInlandPortLabel', 'Port / الميناء')}>
+                  {offer.inland_port || dash}
+                </OfferDetailFieldRow>
+                <OfferDetailFieldRow label={t('pricing.offerDetailInlandRegionLabel', 'Region / المنطقة')}>
+                  {offer.region || dash}
+                </OfferDetailFieldRow>
+                <OfferDetailFieldRow label={t('pricing.offerDetailInlandRouteLabel', 'Route / المسار')}>
+                  {routeLabel}
+                </OfferDetailFieldRow>
+                {offer.transit_time ? (
+                  <OfferDetailFieldRow label={t('pricing.offerDetailTransitFieldLabel', 'Transit Time / مدة العبور')}>
+                    {offer.transit_time}
+                  </OfferDetailFieldRow>
+                ) : null}
+                <OfferDetailFieldRow label={t('pricing.offerDetailShippingLineFieldLabel', 'Shipping Line / الناقل')}>
+                  {offer.shipping_line || t('pricing.inlandTransport')}
+                </OfferDetailFieldRow>
+                <OfferDetailFieldRow label={t('pricing.offerDetailContainerTypeFieldLabel', 'Container Type / نوع الحاوية')}>
+                  {inlandContainerSummary(offer.pricing, t)}
+                </OfferDetailFieldRow>
+                <OfferDetailFieldRow label={t('pricing.offerDetailValidityFieldLabel', 'Validity / الصلاحية')}>
+                  <span className="text-green-600 dark:text-green-400 font-semibold">{validityRangeLabel}</span>
+                </OfferDetailFieldRow>
               </div>
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">
-                  {t('pricing.filterContainerType', 'Container Type')}
-                </p>
-                <p className="font-semibold text-gray-900 dark:text-white">
-                  {isSea ? seaContainerSummary(offer.pricing, t) : inlandContainerSummary(offer.pricing, t)}
-                </p>
-              </div>
-              <div className="sm:col-span-2">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">
-                  {t('pricing.detailValidity', 'Validity')}
-                </p>
-                <p className="font-semibold text-green-600 dark:text-green-400">{validityLabel}</p>
-              </div>
-            </div>
-          </section>
+            </section>
+          )}
 
           {/* Cost breakdown */}
           <section>
@@ -303,18 +375,6 @@ export default function OfferDetailModal({ isOpen, offer, onClose, onCreateQuota
             </h3>
             {hasAdditionalInfo ? (
               <div className="rounded-2xl border border-gray-100 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
-                {isSea ? (
-                  <div className="px-4 py-3 flex flex-col sm:flex-row sm:justify-between gap-1">
-                    <span className="text-xs font-bold uppercase text-gray-500">{t('pricing.transitTimeLabel', 'Transit')}</span>
-                    <span className="text-sm text-gray-800 dark:text-gray-200">{offer.transit_time || dash}</span>
-                  </div>
-                ) : null}
-                {isSea ? (
-                  <div className="px-4 py-3 flex flex-col sm:flex-row sm:justify-between gap-1">
-                    <span className="text-xs font-bold uppercase text-gray-500">{t('pricing.sailingDatesLabel')}</span>
-                    <span className="text-sm text-gray-800 dark:text-gray-200">{sailingFormatted}</span>
-                  </div>
-                ) : null}
                 {!isSea && offer.transit_time ? (
                   <div className="px-4 py-3 flex flex-col sm:flex-row sm:justify-between gap-1">
                     <span className="text-xs font-bold uppercase text-gray-500">{t('pricing.transitTimeLabel', 'Transit')}</span>

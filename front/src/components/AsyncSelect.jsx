@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Search, ChevronDown, X, Loader2, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -73,10 +73,21 @@ const AsyncSelect = ({
     setInputValue('');
   };
 
+  const canCreateNew = useMemo(
+    () =>
+      Boolean(
+        onCreate &&
+          inputValue.trim() &&
+          !isLoading &&
+          !options.some((opt) => opt.label.toLowerCase() === inputValue.trim().toLowerCase())
+      ),
+    [onCreate, inputValue, isLoading, options]
+  );
+
   const handleCreate = async (e) => {
-    e.stopPropagation();
-    if (!onCreate || !inputValue.trim()) return;
-    
+    e?.stopPropagation?.();
+    if (!canCreateNew || isCreating) return;
+
     setIsCreating(true);
     try {
       const newOption = await onCreate(inputValue.trim());
@@ -95,11 +106,6 @@ const AsyncSelect = ({
     onChange(null);
     setInputValue('');
   };
-
-  const showCreateOption = onCreate && 
-    inputValue.trim() && 
-    !isLoading && 
-    !options.some(opt => opt.label.toLowerCase() === inputValue.trim().toLowerCase());
 
   return (
     <div className={`relative w-full ${className}`} ref={dropdownRef}>
@@ -149,6 +155,13 @@ const AsyncSelect = ({
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter') return;
+                  if (!canCreateNew || isCreating) return;
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleCreate(e);
+                }}
               />
             </div>
           </div>
@@ -175,7 +188,7 @@ const AsyncSelect = ({
                   </div>
                 ))}
                 
-                {showCreateOption && (
+                {canCreateNew && (
                   <div
                     className="px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium border-t border-gray-100 dark:border-gray-800"
                     onClick={handleCreate}
@@ -187,7 +200,7 @@ const AsyncSelect = ({
                   </div>
                 )}
 
-                {options.length === 0 && !showCreateOption && (
+                {options.length === 0 && !canCreateNew && (
                   <div className="px-3 py-4 text-sm text-center text-gray-500">
                     {t('common.noResults') || 'No results found'}
                   </div>

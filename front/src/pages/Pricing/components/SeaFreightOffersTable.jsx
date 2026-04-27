@@ -101,6 +101,7 @@ export default function SeaFreightOffersTable({
                   const approx = sumPricingObjectByCurrency(p, SEA_PRICE_KEYS)
                   const totalKeys = sortCurrencyCodes(Object.keys(approx).filter((c) => Math.abs(approx[c] || 0) > 1e-9))
                   const of20s = p.of20?.price != null ? fmt(p.of20.price, p.of20.currency, i18n.language) : null
+                  const of20rfs = p.of20rf?.price != null ? fmt(p.of20rf.price, p.of20rf.currency, i18n.language) : null
                   const of40s = p.of40?.price != null ? fmt(p.of40.price, p.of40.currency, i18n.language) : null
                   const of40rfs = p.of40rf?.price != null ? fmt(p.of40rf.price, p.of40rf.currency, i18n.language) : null
 
@@ -134,6 +135,11 @@ export default function SeaFreightOffersTable({
                               <span className="font-semibold text-gray-500 dark:text-gray-400">{t('pricing.priceChipOf20Dc')}:</span> {of20s}
                             </li>
                           ) : null}
+                          {of20rfs ? (
+                            <li>
+                              <span className="font-semibold text-gray-500 dark:text-gray-400">{t('pricing.priceChipOf20Rf')}:</span> {of20rfs}
+                            </li>
+                          ) : null}
                           {of40s ? (
                             <li>
                               <span className="font-semibold text-gray-500 dark:text-gray-400">{t('pricing.priceChipOf40Hq')}:</span> {of40s}
@@ -144,7 +150,7 @@ export default function SeaFreightOffersTable({
                               <span className="font-semibold text-gray-500 dark:text-gray-400">{t('pricing.priceChipOf40Rf')}:</span> {of40rfs}
                             </li>
                           ) : null}
-                          {!of20s && !of40s && !of40rfs ? <li className="text-gray-400">{dash}</li> : null}
+                          {!of20s && !of20rfs && !of40s && !of40rfs ? <li className="text-gray-400">{dash}</li> : null}
                         </ul>
                       </td>
                       <td className="px-4 py-3 align-top text-gray-700 dark:text-gray-300 text-xs whitespace-pre-wrap">

@@ -67,6 +67,7 @@ function inferContainerFromOffer(offer) {
   const notes = String(offer?.notes || '')
   const specMatch = notes.match(/Container Specification:\s*([^\n]+)/i)
   if (specMatch?.[1]) return specMatch[1].trim()
+  if (offer?.pricing?.of20rf || offer?.pricing?.thc20rf) return '20 Reefer'
   if (offer?.pricing?.of40rf || offer?.pricing?.thcRf || offer?.pricing?.powerDay) return '40 Reefer'
   return '40HQ Dry'
 }

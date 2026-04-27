@@ -2,6 +2,94 @@
   animation: fadeIn 0.4s ease-out;
 }
 
+/* Offer detail modal — grouped section pattern (aligned with shipment detail cards) */
+.pricing-offer-detail-card {
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+[data-theme='dark'] .pricing-offer-detail-card,
+.dark .pricing-offer-detail-card {
+  background: #1f2937;
+  border-color: #374151;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+}
+
+.pricing-offer-detail-card__title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--navy-700, #1e3a5f);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+[data-theme='dark'] .pricing-offer-detail-card__title,
+.dark .pricing-offer-detail-card__title {
+  color: #fbbf24;
+  border-bottom-color: #374151;
+}
+
+.pricing-offer-detail-card__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 1.25rem;
+  align-items: start;
+}
+
+.pricing-offer-detail-card__grid > .pricing-offer-detail-card__row--full {
+  grid-column: 1 / -1;
+}
+
+.pricing-offer-detail-card__row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.35rem 0.65rem;
+  min-width: 0;
+}
+
+.pricing-offer-detail-card__label {
+  flex: 0 1 auto;
+  max-width: min(100%, 12rem);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+[data-theme='dark'] .pricing-offer-detail-card__label,
+.dark .pricing-offer-detail-card__label {
+  color: #9ca3af;
+}
+
+.pricing-offer-detail-card__value {
+  flex: 1 1 10rem;
+  min-width: 0;
+  font-size: 0.9rem;
+  color: #111827;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+[data-theme='dark'] .pricing-offer-detail-card__value,
+.dark .pricing-offer-detail-card__value {
+  color: #f3f4f6;
+}
+
+@media (max-width: 520px) {
+  .pricing-offer-detail-card__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Ocean / Inland under Price Sheets: compact sub-tabs sit above filters (Tabs handles layout) */
 .rate-sheet-subtabs {
   display: flex;

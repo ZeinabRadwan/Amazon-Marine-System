@@ -502,10 +502,12 @@ Route::prefix('v1')->group(function () {
         // Pricing — container / truck type catalogs (separate datasets)
         Route::get('pricing/freight-unit-types', [PricingFreightUnitTypeController::class, 'index']);
         Route::post('pricing/freight-unit-types', [PricingFreightUnitTypeController::class, 'store']);
-        Route::put('pricing/freight-unit-types/{pricingFreightUnitType}', [PricingFreightUnitTypeController::class, 'update']);
+        Route::put('pricing/freight-unit-types/{id}', [PricingFreightUnitTypeController::class, 'update'])
+            ->whereNumber('id');
 
         // Pricing offers (sea & inland rate sheets)
         Route::get('pricing/offers', [PricingOfferController::class, 'index']);
+        Route::get('pricing/offers/sea-regions', [PricingOfferController::class, 'seaRegions']);
         Route::get('pricing/offers/{offer}', [PricingOfferController::class, 'show']);
         Route::post('pricing/offers', [PricingOfferController::class, 'store']);
         Route::put('pricing/offers/{offer}', [PricingOfferController::class, 'update']);
