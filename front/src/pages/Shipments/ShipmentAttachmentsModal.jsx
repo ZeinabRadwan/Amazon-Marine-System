@@ -298,7 +298,7 @@ export default function ShipmentAttachmentsModal({ open, shipment, expenses, loa
               </span>
               <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 px-2.5 py-1 text-xs font-semibold">
                 <Building2 className="w-3.5 h-3.5" />
-                {shipment?.client?.company_name || shipment?.client?.name || '—'}
+                {shipment?.client?.company_name || shipment?.client?.name}
               </span>
               <span className="text-xs text-muted">{shipment?.bl_number || '—'}</span>
             </div>
