@@ -548,7 +548,7 @@ class InvoiceController extends Controller
             403
         );
 
-        $invoice->load(['client', 'items', 'shipment.originPort', 'shipment.destinationPort', 'shipment.shippingLine']);
+        $invoice->load(['client', 'items', 'shipment.originPort', 'shipment.destinationPort', 'shipment.shippingLine', 'shipment.costInvoice']);
         $layout = PdfLayout::where('document_type', 'invoice')->first();
 
         $filename = $invoice->invoice_number.'.pdf';

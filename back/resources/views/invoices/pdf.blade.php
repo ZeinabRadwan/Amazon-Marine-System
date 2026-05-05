@@ -1,5 +1,11 @@
 @extends('pdf.layouts.master')
 
+@push('pdf_head')
+    <style>
+        @include('pdf.partials.sd_branded_document_skin')
+    </style>
+@endpush
+
 @section('pdf_title')
 {{ $labels['doc_title'] }} {{ $invoice->invoice_number }}
 @endsection
@@ -7,12 +13,12 @@
 @section('content')
     @php
         $sectionLabels = [
-            'shipping' => 'Shipping Line Cost / تكلفة الخط الملاحي',
-            'inland' => 'Inland Transport / النقل الداخلي',
-            'customs' => 'Customs Clearance / التخليص الجمركي',
-            'insurance' => 'Insurance / التأمين',
-            'handling' => 'Handling Fees / رسوم الخدمة والمتابعة',
-            'other' => 'Additional Cost Types / تكاليف إضافية',
+            'shipping' => 'COST LINE SHIPPING / تكلفة الخط الملاحي',
+            'inland' => 'TRANSPORT INLAND / النقل الداخلي',
+            'handling' => 'HANDLING FEES / رسوم الخدمة والمتابعة',
+            'other' => 'ADDITIONAL COSTS / تكاليف إضافية',
+            'customs' => 'CUSTOMS CLEARANCE / التخليص الجمركي',
+            'insurance' => 'INSURANCE / التأمين',
         ];
 
         $shippingCodes = ['of', 'thc', 'power', 'bl', 'telex', 'dhl'];
@@ -24,11 +30,42 @@
         $grouped = [
             'shipping' => [],
             'inland' => [],
-            'customs' => [],
-            'insurance' => [],
             'handling' => [],
             'other' => [],
+            'customs' => [],
+            'insurance' => [],
         ];
+
+        $costInvoiceItems = $invoice->shipment?->costInvoice?->items;
+        $costInvoiceItems = is_array($costInvoiceItems) ? $costInvoiceItems : [];
+        $currencyByDesc = [];
+        foreach ($costInvoiceItems as $ci) {
+            $tpl = strtolower(trim((string) ($ci['template_id'] ?? '')));
+            $title = strtolower(trim((string) ($ci['title'] ?? '')));
+            $cur = strtoupper(trim((string) ($ci['currency_code'] ?? '')));
+            if ($cur === '') {
+                continue;
+            }
+            if ($tpl !== '') {
+                $currencyByDesc[$tpl] = $cur;
+            }
+            if ($title !== '') {
+                $currencyByDesc[$title] = $cur;
+            }
+        }
+        $lineCurrency = static function ($desc) use ($currencyByDesc, $invoice) {
+            $k = strtolower(trim((string) $desc));
+            return $currencyByDesc[$k] ?? strtoupper((string) ($invoice->currency_code ?: 'USD'));
+        };
+        $formatBreakdown = static function (array $map): string {
+            if ($map === []) return '—';
+            ksort($map);
+            $parts = [];
+            foreach ($map as $cur => $amt) {
+                $parts[] = strtoupper((string) $cur).' '.number_format((float) $amt, 2);
+            }
+            return implode(' · ', $parts);
+        };
 
         foreach ($invoice->items as $item) {
             $desc = strtolower(trim((string) $item->description));
@@ -56,29 +93,51 @@
         $transitTime = $shipment?->route_text ?: '—';
     @endphp
     <div class="pdf-wrapper">
-        <table class="pdf-invoice-top">
-            <tr>
-                <td class="pdf-invoice-brand">
-                    @if(!empty($headerHtml))
-                        {!! $headerHtml !!}
-                    @else
-                        <div class="pdf-brand-placeholder">{{ $labels['company_name'] }}</div>
-                        <div class="pdf-brand-sub">{{ $labels['company_tagline'] }}</div>
-                    @endif
-                </td>
-                <td class="pdf-invoice-meta">
-                    <div class="pdf-invoice-title">{{ $labels['invoice_title'] }}</div>
-                    <div><span class="pdf-label-strong">{{ $labels['invoice_no'] }}</span> {{ $invoice->invoice_number }}</div>
-                    <div><span class="pdf-label-strong">{{ $labels['date'] }}</span> {{ $invoice->issue_date?->format('d/m/Y') }}</div>
-                    @if($invoice->due_date)
-                        <div><span class="pdf-label-strong">{{ $labels['due_date'] }}</span> {{ $invoice->due_date?->format('d/m/Y') }}</div>
-                    @endif
-                    @if($invoice->shipment)
-                        <div class="pdf-mt-sm"><span class="pdf-label-strong">{{ $labels['shipment_bl'] }}</span> {{ $invoice->shipment->bl_number }}</div>
-                    @endif
-                </td>
-            </tr>
-        </table>
+        @php
+            $logoSrc = \App\Support\PdfLogo::imgSrc();
+        @endphp
+        @if(!empty($headerHtml))
+            {!! $headerHtml !!}
+        @else
+            <header class="pdf-header pdf-header--branded pdf-header--sd">
+                <table class="pdf-header__table">
+                    <tr>
+                        <td class="pdf-header__logo">
+                            @if ($logoSrc)
+                                <img class="pdf-header__logo-img" src="{{ $logoSrc }}" alt="">
+                            @else
+                                <div class="pdf-header__logo-fallback">AM</div>
+                            @endif
+                        </td>
+                        <td class="pdf-header__brand-cell">
+                            <div class="pdf-header__brand-stack">
+                                <div class="pdf-header__brand-line"><strong>{{ $labels['company_name'] }}</strong></div>
+                                <div class="pdf-header__brand-tag">{{ $labels['company_tagline'] }}</div>
+                            </div>
+                        </td>
+                        <td class="pdf-header__doc">
+                            <p class="pdf-header__title">{{ $labels['invoice_title'] }}</p>
+                            <div class="pdf-header__meta-list">
+                                <div class="pdf-header__meta-row">
+                                    <span class="pdf-header__meta-label">{{ $labels['invoice_no'] }}</span>
+                                    <span class="pdf-header__meta-val">{{ $invoice->invoice_number }}</span>
+                                </div>
+                                <div class="pdf-header__meta-row">
+                                    <span class="pdf-header__meta-label">{{ $labels['date'] }}</span>
+                                    <span class="pdf-header__meta-val">{{ $invoice->issue_date?->format('d/m/Y') }}</span>
+                                </div>
+                                @if($invoice->shipment)
+                                    <div class="pdf-header__meta-row">
+                                        <span class="pdf-header__meta-label">{{ $labels['shipment_bl'] }}</span>
+                                        <span class="pdf-header__meta-val">{{ $invoice->shipment->bl_number }}</span>
+                                    </div>
+                                @endif
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </header>
+        @endif
 
         <table class="pdf-party-grid">
             <tr>
@@ -104,13 +163,7 @@
         </table>
         @foreach($grouped as $bucket => $bucketItems)
             @if(count($bucketItems) > 0)
-                @php
-                    $sectionTotals = [];
-                    foreach ($bucketItems as $line) {
-                        $cur = strtoupper((string) ($invoice->currency_code ?: 'USD'));
-                        $sectionTotals[$cur] = ($sectionTotals[$cur] ?? 0) + (float) $line->line_total;
-                    }
-                @endphp
+                @php $sectionTotals = []; @endphp
                 <div class="pdf-notes-block" style="margin-top:10px;">
                     <div class="pdf-notes-block__title">{{ $sectionLabels[$bucket] }}</div>
                 </div>
@@ -125,25 +178,33 @@
                     </thead>
                     <tbody>
                         @foreach($bucketItems as $item)
+                            @php
+                                $cur = $lineCurrency($item->description);
+                                $sectionTotals[$cur] = ($sectionTotals[$cur] ?? 0) + (float) $item->line_total;
+                            @endphp
                             <tr>
                                 <td>{{ $item->description }}</td>
                                 <td class="pdf-text-end">{{ number_format($item->quantity, 2) }}</td>
-                                <td class="pdf-text-end">{{ number_format($item->unit_price, 2) }}</td>
-                                <td class="pdf-text-end">{{ number_format($item->line_total, 2) }}</td>
+                                <td class="pdf-text-end">{{ $cur }} {{ number_format($item->unit_price, 2) }}</td>
+                                <td class="pdf-text-end"><strong>{{ $cur }} {{ number_format($item->line_total, 2) }}</strong></td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
-                <div class="pdf-notes-block" style="margin-top:6px;">
-                    <div><strong>Section Totals / إجمالي القسم:</strong>
-                        @foreach($sectionTotals as $cur => $total)
-                            <span style="margin-inline-end:10px;">{{ $cur }} {{ number_format($total, 2) }}</span>
-                        @endforeach
-                    </div>
+                <div class="pdf-notes-block" style="margin-top:6px; text-align:right;">
+                    <div><strong>Totals Section / إجمالي القسم:</strong> <strong>{{ $formatBreakdown($sectionTotals) }}</strong></div>
                 </div>
             @endif
         @endforeach
 
+        @php
+            $grandByCurrency = [];
+            foreach ($invoice->items as $item) {
+                $cur = $lineCurrency($item->description);
+                $grandByCurrency[$cur] = ($grandByCurrency[$cur] ?? 0) + (float) $item->line_total;
+            }
+            $grandBreakdown = $formatBreakdown($grandByCurrency);
+        @endphp
         <table class="pdf-invoice-top">
             <tr>
                 <td class="pdf-w-spacer"></td>
@@ -151,7 +212,7 @@
                     <table class="pdf-summary-table">
                         <tr>
                             <td>{{ $labels['subtotal'] }}</td>
-                            <td class="pdf-text-end">{{ number_format($invoice->total_amount, 2) }} {{ $invoice->currency_code }}</td>
+                            <td class="pdf-text-end"><strong>{{ $grandBreakdown }}</strong></td>
                         </tr>
                         @if($invoice->is_vat_invoice)
                             <tr>
@@ -162,7 +223,7 @@
                     </table>
                     <div class="pdf-total-box">
                         <span class="pdf-total-box__label">{{ $labels['grand_total'] }}</span>
-                        <span class="pdf-total-box__amount">{{ number_format($invoice->net_amount, 2) }} {{ $invoice->currency_code }}</span>
+                        <span class="pdf-total-box__amount">{{ $grandBreakdown }}</span>
                     </div>
                 </td>
             </tr>
@@ -177,7 +238,7 @@
 
         <div class="pdf-notes-block">
             <div class="pdf-notes-block__title">Payment Instructions — Bank Details<br>تعليمات الدفع — بيانات الحساب البنكي</div>
-            <table class="pdf-table pdf-table--standalone" style="margin-top:8px;">
+            <table class="pdf-table pdf-table--standalone" style="margin-top:8px; table-layout:fixed;">
                 <thead>
                     <tr>
                         <th>Currency / العملة</th>
@@ -194,12 +255,12 @@
                 </tbody>
             </table>
             <div style="margin-top:10px;"><strong>Terms & Conditions / الشروط والأحكام</strong></div>
-            <div style="font-size:12px; line-height:1.55; margin-top:6px;">
-                <div>1) Payment Due: Payment is due by the date specified above. Late payments may be subject to additional charges.<br>الدفع مستحق في التاريخ المحدد — التأخر قد يترتب عليه رسوم إضافية.</div>
-                <div style="margin-top:4px;">2) Official Receipts: Government official receipts are not included in this invoice and will be charged at actual cost with original receipts provided.<br>الإيصالات الرسمية الحكومية غير شاملة في هذه الفاتورة — تُحتسب بقيمتها الفعلية مع تقديم الأصول للعميل.</div>
-                <div style="margin-top:4px;">3) Currency: Payments must be made in the currency specified per charge. Exchange rate conversions are subject to the agreed rate on the day of payment.<br>يتم الدفع بالعملة المحددة لكل بند — تحويل العملات يخضع للسعر المتفق عليه يوم الدفع.</div>
-                <div style="margin-top:4px;">4) Validity: This invoice is valid for 30 days from the issue date. Any disputes must be raised within 7 days of receipt.<br>هذه الفاتورة سارية لمدة 30 يوماً من تاريخ الإصدار — أي اعتراض يجب رفعه خلال 7 أيام من الاستلام.</div>
-            </div>
+            <ol style="font-size:12px; line-height:1.55; margin-top:6px; padding-left:18px;">
+                <li style="margin-bottom:6px;">Payment Due: Payment is due by the date specified above. Late payments may be subject to additional charges.<br>الدفع مستحق في التاريخ المحدد — التأخر قد يترتب عليه رسوم إضافية.</li>
+                <li style="margin-bottom:6px;">Official Receipts: Government official receipts are not included in this invoice and will be charged at actual cost with original receipts provided.<br>الإيصالات الرسمية الحكومية غير شاملة في هذه الفاتورة — تُحتسب بقيمتها الفعلية مع تقديم الأصول للعميل.</li>
+                <li style="margin-bottom:6px;">Currency: Payments must be made in the currency specified per charge. Exchange rate conversions are subject to the agreed rate on the day of payment.<br>يتم الدفع بالعملة المحددة لكل بند — تحويل العملات يخضع للسعر المتفق عليه يوم الدفع.</li>
+                <li>Validity: This invoice is valid for 30 days from the issue date. Any disputes must be raised within 7 days of receipt.<br>هذه الفاتورة سارية لمدة 30 يوماً من تاريخ الإصدار — أي اعتراض يجب رفعه خلال 7 أيام من الاستلام.</li>
+            </ol>
         </div>
 
         <div class="pdf-footer pdf-footer--fixed">
