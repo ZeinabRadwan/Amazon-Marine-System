@@ -431,6 +431,60 @@ class InvoiceController extends Controller
         ]);
     }
 
+    public function issue(Request $request, Invoice $invoice)
+    {
+        $user = $request->user();
+        abort_unless(
+            $user && ($user->can('financial.manage') || $user->can('accounting.manage')),
+            403
+        );
+
+        if ($invoice->status !== 'draft') {
+            return response()->json([
+                'message' => __('Only draft invoices can be issued.'),
+            ], 422);
+        }
+
+        $invoice->status = 'issued';
+        $invoice->save();
+
+        ActivityLogger::log('invoice.issued', $invoice, [
+            'invoice_id' => $invoice->id,
+            'shipment_id' => $invoice->shipment_id,
+        ]);
+
+        return response()->json([
+            'data' => $invoice->fresh(['client', 'shipment', 'items']),
+        ]);
+    }
+
+    public function cancel(Request $request, Invoice $invoice)
+    {
+        $user = $request->user();
+        abort_unless(
+            $user && ($user->can('financial.manage') || $user->can('accounting.manage')),
+            403
+        );
+
+        if ($invoice->status === 'paid') {
+            return response()->json([
+                'message' => __('Paid invoices cannot be cancelled.'),
+            ], 422);
+        }
+
+        $invoice->status = 'cancelled';
+        $invoice->save();
+
+        ActivityLogger::log('invoice.cancelled', $invoice, [
+            'invoice_id' => $invoice->id,
+            'shipment_id' => $invoice->shipment_id,
+        ]);
+
+        return response()->json([
+            'data' => $invoice->fresh(['client', 'shipment', 'items']),
+        ]);
+    }
+
     public function recordPayment(Request $request, Invoice $invoice)
     {
         $user = $request->user();
