@@ -643,6 +643,7 @@ class ShipmentController extends Controller
             'items.*.expense_date' => ['nullable', 'date'],
             'items.*.order_index' => ['nullable', 'integer', 'min:0'],
             'attachment_refs' => ['sometimes', 'array'],
+            'section_meta' => ['sometimes', 'array'],
         ]);
 
         $existing = ShipmentCostInvoice::query()->where('shipment_id', $shipment->id)->first();
@@ -707,9 +708,15 @@ class ShipmentController extends Controller
                 'attachment_refs' => Schema::hasColumn('shipment_cost_invoices', 'attachment_refs')
                     ? ($validated['attachment_refs'] ?? (is_array($existing?->attachment_refs) ? $existing->attachment_refs : []))
                     : null,
+                'section_meta' => Schema::hasColumn('shipment_cost_invoices', 'section_meta')
+                    ? ($validated['section_meta'] ?? (is_array($existing?->section_meta) ? $existing->section_meta : []))
+                    : null,
                 'currency_totals' => $currencyTotals,
                 'total_amount' => $totalAmount,
-            ], static fn ($v, $k) => $k !== 'attachment_refs' || Schema::hasColumn('shipment_cost_invoices', 'attachment_refs'), ARRAY_FILTER_USE_BOTH)
+            ], static fn ($v, $k) => (
+                ($k !== 'attachment_refs' || Schema::hasColumn('shipment_cost_invoices', 'attachment_refs'))
+                && ($k !== 'section_meta' || Schema::hasColumn('shipment_cost_invoices', 'section_meta'))
+            ), ARRAY_FILTER_USE_BOTH)
         );
 
         $shipment->cost_total = $totalAmount;
@@ -748,6 +755,7 @@ class ShipmentController extends Controller
             'status' => $invoice->status,
             'items' => $items,
             'attachment_refs' => is_array($invoice->attachment_refs) ? $invoice->attachment_refs : [],
+            'section_meta' => is_array($invoice->section_meta) ? $invoice->section_meta : [],
             'currency_totals' => is_array($invoice->currency_totals) ? $invoice->currency_totals : [],
             'total_amount' => (float) $invoice->total_amount,
         ];

@@ -575,6 +575,7 @@ function ShipmentFinLoadingSkeleton({ variant }) {
  *   shipment: object | null,
  *   expenses: Array<object>,
  *   attachmentRefs?: Record<string, Array<{name?: string, uploaded_at?: string}>>,
+ *   sectionMeta?: Record<string, { contractor_name?: string, customs_broker_name?: string, insurance_company_name?: string }>,
  *   loading: boolean,
  *   onClose: () => void,
  *   numberLocale: string,
@@ -593,6 +594,7 @@ export default function ShipmentFinancialsModal({
   shipment,
   expenses,
   attachmentRefs = {},
+  sectionMeta = {},
   loading,
   onClose,
   numberLocale,
@@ -612,7 +614,7 @@ export default function ShipmentFinancialsModal({
   
   const [tab, setTab] = useState('selling')
   const [expanded, setExpanded] = useState(() => new Set(['shipping', 'inland', 'customs', 'insurance', 'other']))
-  const [sectionVendorChoice, setSectionVendorChoice] = useState({})
+  const [sectionMetaByBucket, setSectionMetaByBucket] = useState({})
   const [customSectionDefs, setCustomSectionDefs] = useState([])
   const [pendingOtherByBucket, setPendingOtherByBucket] = useState({})
   const [batchSavingBucket, setBatchSavingBucket] = useState(null)
@@ -646,7 +648,7 @@ export default function ShipmentFinancialsModal({
     if (open && shipment?.id != null) {
       setTab(isAccountingUser ? 'expenses' : 'selling')
       setExpanded(new Set(['shipping', 'inland', 'customs', 'insurance', 'other']))
-      setSectionVendorChoice({})
+      setSectionMetaByBucket(sectionMeta || {})
       setCustomSectionDefs([])
       setPendingOtherByBucket({})
       setGroupDraftByKey({})
@@ -678,7 +680,7 @@ export default function ShipmentFinancialsModal({
         listCurrencies(token).then(setCurrencies).catch(() => setCurrencies([]))
       }
     }
-  }, [open, shipment?.id, isAccountingUser, token, attachmentRefs])
+  }, [open, shipment?.id, isAccountingUser, token, attachmentRefs, sectionMeta])
 
   const [categoriesByCode, setCategoriesByCode] = useState({})
 
@@ -823,7 +825,7 @@ export default function ShipmentFinancialsModal({
               amount: amt,
               currency_code: draft.currency || 'USD',
               expense_date: model.expenseDate || new Date().toISOString().slice(0, 10),
-              vendor_id: sectionVendorChoice[bucketId] || model.vendorId || undefined,
+              vendor_id: model.vendorId || undefined,
             })
           } else {
             await createExpense(token, {
@@ -834,7 +836,7 @@ export default function ShipmentFinancialsModal({
               amount: amt,
               currency_code: draft.currency || 'USD',
               expense_date: new Date().toISOString().slice(0, 10),
-              vendor_id: sectionVendorChoice[bucketId] || undefined,
+              vendor_id: undefined,
             })
           }
         }
@@ -859,7 +861,7 @@ export default function ShipmentFinancialsModal({
             amount: amountNum,
             currency_code: line.currency || 'USD',
             expense_date: new Date().toISOString().slice(0, 10),
-            vendor_id: sectionVendorChoice[bucketId] || undefined,
+            vendor_id: undefined,
           })
         }
         setPendingOtherByBucket((prev) => ({ ...prev, [bucketId]: [] }))
@@ -873,7 +875,7 @@ export default function ShipmentFinancialsModal({
         setBatchSavingBucket(null)
       }
     },
-    [deletedIdsByBucket, groupDraftByKey, onExpensesChanged, sectionVendorChoice, shipment?.id, t, token, pendingOtherByBucket, categoriesByCode]
+    [deletedIdsByBucket, groupDraftByKey, onExpensesChanged, shipment?.id, t, token, pendingOtherByBucket, categoriesByCode]
   )
 
   const addPendingOtherLine = useCallback((bucketId) => {
@@ -1074,7 +1076,7 @@ export default function ShipmentFinancialsModal({
             title: desc,
             amount,
             currency_code: (draft.currency || 'USD').toUpperCase(),
-            vendor_id: sectionVendorChoice[sectionId] || model.vendorId || undefined,
+            vendor_id: model.vendorId || undefined,
             expense_category_id: model.categoryId || undefined,
             expense_date: model.expenseDate || new Date().toISOString().slice(0, 10),
             order_index: orderIndex++,
@@ -1100,7 +1102,7 @@ export default function ShipmentFinancialsModal({
             title: desc,
             amount,
             currency_code: (line.currency || 'USD').toUpperCase(),
-            vendor_id: sectionVendorChoice[sectionId] || undefined,
+            vendor_id: undefined,
             expense_date: new Date().toISOString().slice(0, 10),
             order_index: orderIndex++,
           })
@@ -1108,8 +1110,14 @@ export default function ShipmentFinancialsModal({
         }
       }
 
-      if (inlandHasItems && !String(sectionVendorChoice.inland || '').trim()) {
+      if (inlandHasItems && !String(sectionMetaByBucket.inland?.contractor_name || '').trim()) {
         throw new Error(t('shipments.fin.inlandContractorRequired'))
+      }
+      if ((items.some((it) => it.bucket_id === 'customs')) && !String(sectionMetaByBucket.customs?.customs_broker_name || '').trim()) {
+        throw new Error(t('shipments.fin.customsBrokerRequired', { defaultValue: 'Customs broker name is required for Customs Clearance' }))
+      }
+      if ((items.some((it) => it.bucket_id === 'insurance')) && !String(sectionMetaByBucket.insurance?.insurance_company_name || '').trim()) {
+        throw new Error(t('shipments.fin.insuranceCompanyRequired', { defaultValue: 'Insurance company name is required for Insurance section' }))
       }
 
       await updateShipmentCostInvoice(token, shipment.id, {
@@ -1127,6 +1135,7 @@ export default function ShipmentFinancialsModal({
             })),
           ])
         ),
+        section_meta: sectionMetaByBucket,
       })
 
       setPendingOtherByBucket({})
@@ -1140,7 +1149,7 @@ export default function ShipmentFinancialsModal({
     } finally {
       setSavingAllDraft(false)
     }
-  }, [editMode, savingAllDraft, token, shipment?.id, deletedIdsByBucket, groupDraftByKey, pendingOtherByBucket, sectionVendorChoice, sectionAttachmentRefs, customSectionDefs, t, onExpensesChanged, onShipmentTotalsRefresh])
+  }, [editMode, savingAllDraft, token, shipment?.id, deletedIdsByBucket, groupDraftByKey, pendingOtherByBucket, sectionAttachmentRefs, sectionMetaByBucket, customSectionDefs, t, onExpensesChanged, onShipmentTotalsRefresh])
 
   const canAccessInvoices = Boolean(token && (canManageFinancial || canViewSelling))
 
@@ -1541,29 +1550,12 @@ export default function ShipmentFinancialsModal({
     if (bucketId === 'other') {
       // "Other" bucket — fully editable in editMode, static in view mode
       const pendingOthers = pendingOtherByBucket['other'] || []
-      const otherToolbar = editMode ? (
-        <div className="shipment-fin-section-toolbar">
-          <select
-            className="shipment-fin-select shipment-fin-select--vendor"
-            value={sectionVendorChoice['other'] ?? ''}
-            onChange={(e) => setSectionVendorChoice((s) => ({ ...s, other: e.target.value }))}
-          >
-            <option value="">{t('shipments.fin.sectionVendorPlaceholder')}</option>
-            {vendors.map((v) => (
-              <option key={v.id} value={String(v.id)}>
-                {v.name || `#${v.id}`}
-              </option>
-            ))}
-          </select>
-        </div>
-      ) : null
+      const otherToolbar = null
 
       bodyContent = (
         <>
           {otherToolbar}
-          {rows.length === 0 && pendingOthers.length === 0 ? (
-            <p className="shipment-fin-empty-inline">{t('shipments.fin.bucketOtherEmpty')}</p>
-          ) : (
+          {rows.length === 0 && pendingOthers.length === 0 ? null : (
             <div className="shipment-fin-table-wrap shipment-fin-draft-table-wrap">
               <table className="shipment-fin-line-table">
                 {otherTableHead}
@@ -1956,24 +1948,46 @@ export default function ShipmentFinancialsModal({
 
       bucketSaveModelsRef.current[bucketId] = saveModels
 
-      const sectionToolbar =
-        editMode && bucketId === 'inland' ? (
-          <div className="shipment-fin-section-toolbar">
-            <label className="fs-xs fw-600">{t('shipments.fin.inlandContractorLabel')}</label>
-            <select
-              className="shipment-fin-select shipment-fin-select--vendor"
-              value={sectionVendorChoice[bucketId] ?? ''}
-              onChange={(e) => setSectionVendorChoice((s) => ({ ...s, [bucketId]: e.target.value }))}
-            >
-              <option value="">{t('shipments.fin.inlandContractorPlaceholder')}</option>
-              {vendors.map((v) => (
-                <option key={v.id} value={String(v.id)}>
-                  {v.name || `#${v.id}`}
-                </option>
-              ))}
-            </select>
-          </div>
-        ) : null
+      const sectionToolbar = editMode ? (
+        <div className="shipment-fin-section-toolbar">
+          {bucketId === 'inland' ? (
+            <>
+              <label className="fs-xs fw-600">{t('shipments.fin.inlandContractorLabel')}</label>
+              <input
+                type="text"
+                className="shipment-fin-input"
+                value={sectionMetaByBucket.inland?.contractor_name || ''}
+                onChange={(e) => setSectionMetaByBucket((s) => ({ ...s, inland: { ...(s.inland || {}), contractor_name: e.target.value } }))}
+                placeholder={t('shipments.fin.inlandContractorPlaceholder')}
+              />
+            </>
+          ) : null}
+          {bucketId === 'customs' ? (
+            <>
+              <label className="fs-xs fw-600">{t('shipments.fin.customsBrokerLabel', { defaultValue: 'Customs Broker Name' })}</label>
+              <input
+                type="text"
+                className="shipment-fin-input"
+                value={sectionMetaByBucket.customs?.customs_broker_name || ''}
+                onChange={(e) => setSectionMetaByBucket((s) => ({ ...s, customs: { ...(s.customs || {}), customs_broker_name: e.target.value } }))}
+                placeholder={t('shipments.fin.customsBrokerPlaceholder', { defaultValue: 'Enter customs broker name' })}
+              />
+            </>
+          ) : null}
+          {bucketId === 'insurance' ? (
+            <>
+              <label className="fs-xs fw-600">{t('shipments.fin.insuranceCompanyLabel', { defaultValue: 'Insurance Company Name' })}</label>
+              <input
+                type="text"
+                className="shipment-fin-input"
+                value={sectionMetaByBucket.insurance?.insurance_company_name || ''}
+                onChange={(e) => setSectionMetaByBucket((s) => ({ ...s, insurance: { ...(s.insurance || {}), insurance_company_name: e.target.value } }))}
+                placeholder={t('shipments.fin.insuranceCompanyPlaceholder', { defaultValue: 'Enter insurance company name' })}
+              />
+            </>
+          ) : null}
+        </div>
+      ) : null
 
       bodyContent = (
         <>

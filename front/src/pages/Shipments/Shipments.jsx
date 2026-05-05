@@ -400,6 +400,7 @@ export default function Shipments() {
   const [financialExpenses, setFinancialExpenses] = useState([])
   const [financialRows, setFinancialRows] = useState([])
   const [financialAttachmentRefs, setFinancialAttachmentRefs] = useState({})
+  const [financialSectionMeta, setFinancialSectionMeta] = useState({})
   const [financialLoading, setFinancialLoading] = useState(false)
 
   const listParams = useMemo(
@@ -482,6 +483,7 @@ export default function Shipments() {
       .then((res) => {
         setFinancialRows(costInvoiceItemsToRows(res?.data?.items || []))
         setFinancialAttachmentRefs(res?.data?.attachment_refs || {})
+        setFinancialSectionMeta(res?.data?.section_meta || {})
       })
       .catch(() => {})
       .finally(() => setFinancialLoading(false))
@@ -511,11 +513,13 @@ export default function Shipments() {
     if (!financialRow || !token || !canViewShipmentFinancials) {
       setFinancialRows([])
       setFinancialAttachmentRefs({})
+      setFinancialSectionMeta({})
       return
     }
     if (!financialRow.id) {
       setFinancialRows([])
       setFinancialAttachmentRefs({})
+      setFinancialSectionMeta({})
       return
     }
     setFinancialLoading(true)
@@ -523,10 +527,12 @@ export default function Shipments() {
       .then((res) => {
         setFinancialRows(costInvoiceItemsToRows(res?.data?.items || []))
         setFinancialAttachmentRefs(res?.data?.attachment_refs || {})
+        setFinancialSectionMeta(res?.data?.section_meta || {})
       })
       .catch(() => {
         setFinancialRows([])
         setFinancialAttachmentRefs({})
+        setFinancialSectionMeta({})
       })
       .finally(() => setFinancialLoading(false))
   }, [financialRow, token, canViewShipmentFinancials])
@@ -2039,6 +2045,7 @@ export default function Shipments() {
             shipment={financialRow}
             expenses={financialRows}
             attachmentRefs={financialAttachmentRefs}
+            sectionMeta={financialSectionMeta}
             loading={financialLoading}
             onClose={() => setFinancialRow(null)}
             numberLocale={numberLocale}
