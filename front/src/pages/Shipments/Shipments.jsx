@@ -14,6 +14,7 @@ import {
   exportShipments,
   postShipmentTrackingUpdate,
   downloadShipmentPdf,
+  getShipmentCostInvoice,
 } from '../../api/shipments'
 import { listShipmentExpenses } from '../../api/expenses'
 import { listClients } from '../../api/clients'
@@ -71,6 +72,32 @@ import {
   shipmentStatusLegacyLabel,
   shipmentStatusLocalizedLabel,
 } from '../../utils/shipmentStatusHelpers'
+import { ROLE_ID } from '../../constants/roles'
+
+function costInvoiceItemsToRows(items = []) {
+  return (Array.isArray(items) ? items : [])
+    .slice()
+    .sort((a, b) => (Number(a?.order_index || 0) - Number(b?.order_index || 0)) || (Number(a?.line_id || 0) - Number(b?.line_id || 0)))
+    .map((item, idx) => ({
+      id: Number(item?.line_id || idx + 1),
+      line_id: Number(item?.line_id || idx + 1),
+      shipment_id: null,
+      expense_category_id: item?.expense_category_id ?? null,
+      category_name: '',
+      bl_number: '',
+      description: item?.description || '',
+      amount: Number(item?.amount || 0),
+      currency_code: (item?.currency_code || 'USD').toUpperCase(),
+      vendor_id: item?.vendor_id ?? null,
+      expense_date: item?.expense_date || null,
+      has_receipt: false,
+      receipt_name: null,
+      bucket_id: item?.bucket_id || 'other',
+      template_id: item?.template_id || null,
+      order_index: Number(item?.order_index || idx),
+      _source: 'shipment_cost_invoice',
+    }))
+}
 
 function getMonthFormat(locale) {
   return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-GB', { month: 'short', year: 'numeric' })
@@ -235,14 +262,14 @@ function buildUpdatePayload(form) {
 export default function Shipments() {
   const { t, i18n } = useTranslation()
   const { hasPageAccess, user, isAdminRole, isAccountant, isOperations, roleId, hasAbility } = useAuthAccess()
-  const isSalesRepresentative = roleId === 3 || roleId === 2
+  const isSalesRepresentative = roleId === ROLE_ID.SALES || roleId === ROLE_ID.SALES_MANAGER
   // Operations: can manage operational actions (stage update, edit, delete, operations tab)
   const canManageOps = isAdminRole || hasPageAccess
   // Accountant: can see financials (Receipt button → ShipmentFinancialsModal, financial totals card)
-  const canViewShipmentFinancials = isAdminRole || hasPageAccess
-  const canManageFinancial = isAdminRole || hasPageAccess
-  const canViewSelling = isAdminRole || hasPageAccess
-  const canManageExpenses = isAdminRole || hasPageAccess
+  const canViewShipmentFinancials = isAdminRole || isAccountant || isSalesRepresentative
+  const canManageExpenses = isAdminRole || isAccountant
+  const canManageFinancial = isAdminRole || isSalesRepresentative
+  const canViewSelling = isAdminRole || isSalesRepresentative
   const canNotifySalesFinancials = isAdminRole || isAccountant
 
   const token = getStoredToken()
@@ -446,14 +473,14 @@ export default function Shipments() {
   }, [filters.page])
 
   const reloadFinancialExpenses = useCallback(() => {
-    const bl = financialRow?.bl_number?.trim()
-    if (!bl || !token || !canViewShipmentFinancials) return
+    const shipmentId = financialRow?.id
+    if (!shipmentId || !token || !canViewShipmentFinancials) return
     setFinancialLoading(true)
-    listShipmentExpenses(token, { bl })
-      .then((res) => setFinancialRows(res.data ?? []))
+    getShipmentCostInvoice(token, shipmentId)
+      .then((res) => setFinancialRows(costInvoiceItemsToRows(res?.data?.items || [])))
       .catch(() => {})
       .finally(() => setFinancialLoading(false))
-  }, [financialRow?.bl_number, financialRow?.id, token, canViewShipmentFinancials])
+  }, [financialRow?.id, token, canViewShipmentFinancials])
 
   useEffect(() => {
     if (attachmentsShipment?.id) {
@@ -480,14 +507,13 @@ export default function Shipments() {
       setFinancialRows([])
       return
     }
-    const bl = financialRow.bl_number?.trim()
-    if (!bl) {
+    if (!financialRow.id) {
       setFinancialRows([])
       return
     }
     setFinancialLoading(true)
-    listShipmentExpenses(token, { bl })
-      .then((res) => setFinancialRows(res.data ?? []))
+    getShipmentCostInvoice(token, financialRow.id)
+      .then((res) => setFinancialRows(costInvoiceItemsToRows(res?.data?.items || [])))
       .catch(() => setFinancialRows([]))
       .finally(() => setFinancialLoading(false))
   }, [financialRow, token, canViewShipmentFinancials])

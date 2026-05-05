@@ -30,6 +30,9 @@ export const BUCKET_DEFS = [
 ]
 
 export function expenseBucket(expense) {
+  if (expense?.bucket_id && ['shipping', 'inland', 'customs', 'insurance', 'other'].includes(expense.bucket_id)) {
+    return expense.bucket_id
+  }
   const rawDesc = (expense.description || '').trim()
   if (/^other\s*\(shipping\)/i.test(rawDesc) || /^Other Charges:/i.test(rawDesc)) return 'shipping'
   if (/^other\s*\(inland\)/i.test(rawDesc) || /^Other Expenses:/i.test(rawDesc)) return 'inland'

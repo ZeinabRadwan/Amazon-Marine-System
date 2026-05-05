@@ -139,9 +139,10 @@ class ExpenseController extends Controller
 
         $sort = $request->query('sort', 'date');
         if ($sort === 'amount') {
-            $query->orderByDesc('amount');
+            $query->orderByDesc('amount')->orderBy('id');
         } else {
-            $query->orderByDesc('expense_date');
+            // Keep stable item ordering to avoid frontend index/value shuffle after save.
+            $query->orderBy('expense_date')->orderBy('id');
         }
 
         $expenses = $query->get();
@@ -323,6 +324,8 @@ class ExpenseController extends Controller
             'shipment_id' => ['nullable', 'integer', 'exists:shipments,id'],
         ]);
 
+        $oldShipmentId = $expense->shipment_id;
+
         if (array_key_exists('expense_category_id', $validated)) {
             $expense->expense_category_id = $validated['expense_category_id'];
         }
@@ -356,6 +359,10 @@ class ExpenseController extends Controller
         }
 
         $expense->save();
+
+        if ($oldShipmentId && (int) $oldShipmentId !== (int) $expense->shipment_id) {
+            Shipment::recomputeTotals((int) $oldShipmentId);
+        }
 
         if ($expense->shipment_id) {
             $shipment = Shipment::find($expense->shipment_id);

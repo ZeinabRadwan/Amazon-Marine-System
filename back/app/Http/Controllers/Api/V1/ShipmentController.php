@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\Client;
 use App\Models\PdfLayout;
 use App\Models\SDForm;
 use App\Models\Shipment;
+use App\Models\ShipmentCostInvoice;
 use App\Models\ShipmentStatus;
 use App\Models\User;
 use App\Notifications\ShipmentSalesFinancialsNotification;
@@ -150,18 +152,32 @@ class ShipmentController extends Controller
     {
         $this->authorize('view', $shipment);
 
+        $shipment->load([
+            'client',
+            'salesRep',
+            'lineVendor',
+            'shippingLine',
+            'originPort',
+            'destinationPort',
+            'sdForm',
+            'operation',
+            'tasks',
+        ]);
+
+        // Defensive fallback: some legacy rows can keep a client_id while eager-loaded
+        // relation comes back null (stale scope/cache/data inconsistency). Force-resolve.
+        if ($shipment->client === null && ! empty($shipment->client_id)) {
+            $fallbackClient = Client::query()
+                ->select(['id', 'name', 'company_name', 'phone', 'email'])
+                ->find($shipment->client_id);
+
+            if ($fallbackClient) {
+                $shipment->setRelation('client', $fallbackClient);
+            }
+        }
+
         return response()->json([
-            'data' => $shipment->load([
-                'client',
-                'salesRep',
-                'lineVendor',
-                'shippingLine',
-                'originPort',
-                'destinationPort',
-                'sdForm',
-                'operation',
-                'tasks',
-            ]),
+            'data' => $shipment,
         ]);
     }
 
@@ -582,6 +598,142 @@ class ShipmentController extends Controller
         return response()->json([
             'message' => __('Notification recorded.'),
         ]);
+    }
+
+    public function getCostInvoice(Request $request, Shipment $shipment)
+    {
+        $this->authorize('view', $shipment);
+
+        $invoice = ShipmentCostInvoice::query()
+            ->where('shipment_id', $shipment->id)
+            ->first();
+
+        return response()->json([
+            'data' => $invoice ? $this->formatCostInvoice($invoice) : null,
+        ]);
+    }
+
+    public function upsertCostInvoice(Request $request, Shipment $shipment)
+    {
+        $this->authorize('update', $shipment);
+
+        $validated = $request->validate([
+            'invoice_number' => ['nullable', 'string', 'max:255'],
+            'invoice_date' => ['nullable', 'date'],
+            'status' => ['nullable', 'string', 'max:40'],
+            'items' => ['required', 'array'],
+            'items.*.line_id' => ['nullable', 'integer', 'min:1'],
+            'items.*.bucket_id' => ['required', 'string', 'in:shipping,inland,customs,insurance,other'],
+            'items.*.template_id' => ['nullable', 'string', 'max:120'],
+            'items.*.description' => ['nullable', 'string', 'max:500'],
+            'items.*.amount' => ['required', 'numeric', 'min:0'],
+            'items.*.currency_code' => ['required', 'string', 'size:3'],
+            'items.*.vendor_id' => ['nullable', 'integer', 'exists:vendors,id'],
+            'items.*.expense_category_id' => ['nullable', 'integer', 'exists:expense_categories,id'],
+            'items.*.expense_date' => ['nullable', 'date'],
+            'items.*.order_index' => ['nullable', 'integer', 'min:0'],
+        ]);
+
+        $existing = ShipmentCostInvoice::query()->where('shipment_id', $shipment->id)->first();
+        $existingItems = is_array($existing?->items) ? $existing->items : [];
+        $nextLineId = 1;
+        foreach ($existingItems as $prevItem) {
+            $lineId = (int) ($prevItem['line_id'] ?? 0);
+            if ($lineId >= $nextLineId) {
+                $nextLineId = $lineId + 1;
+            }
+        }
+
+        $currencyTotals = [];
+        $normalizedItems = [];
+        $totalAmount = 0.0;
+        foreach ($validated['items'] as $idx => $item) {
+            $amount = (float) $item['amount'];
+            if (! is_finite($amount) || $amount <= 0) {
+                continue;
+            }
+            $currencyCode = strtoupper((string) $item['currency_code']);
+            if ($currencyCode === '') {
+                continue;
+            }
+
+            $lineId = (int) ($item['line_id'] ?? 0);
+            if ($lineId <= 0) {
+                $lineId = $nextLineId;
+                $nextLineId++;
+            }
+
+            $normalizedItems[] = [
+                'line_id' => $lineId,
+                'bucket_id' => $item['bucket_id'],
+                'template_id' => $item['template_id'] ?? null,
+                'description' => isset($item['description']) ? trim((string) $item['description']) : null,
+                'amount' => $amount,
+                'currency_code' => $currencyCode,
+                'vendor_id' => $item['vendor_id'] ?? null,
+                'expense_category_id' => $item['expense_category_id'] ?? null,
+                'expense_date' => $item['expense_date'] ?? null,
+                'order_index' => (int) ($item['order_index'] ?? $idx),
+            ];
+
+            $currencyTotals[$currencyCode] = (float) (($currencyTotals[$currencyCode] ?? 0) + $amount);
+            $totalAmount += $amount;
+        }
+
+        usort($normalizedItems, function (array $a, array $b): int {
+            return ((int) $a['order_index'] <=> (int) $b['order_index']) ?: ((int) $a['line_id'] <=> (int) $b['line_id']);
+        });
+
+        $invoice = ShipmentCostInvoice::query()->updateOrCreate(
+            ['shipment_id' => $shipment->id],
+            [
+                'invoice_number' => $validated['invoice_number'] ?? ($existing?->invoice_number ?? ('SCI-'.$shipment->id)),
+                'invoice_date' => $validated['invoice_date'] ?? ($existing?->invoice_date?->toDateString() ?? now()->toDateString()),
+                'status' => $validated['status'] ?? ($existing?->status ?? 'draft'),
+                'items' => $normalizedItems,
+                'currency_totals' => $currencyTotals,
+                'total_amount' => $totalAmount,
+            ]
+        );
+
+        $shipment->cost_total = $totalAmount;
+        if ($shipment->selling_price_total !== null) {
+            $shipment->profit_total = (float) $shipment->selling_price_total - $totalAmount;
+        }
+        $shipment->saveQuietly();
+
+        ActivityLogger::log('shipment.financial_expense_updated', $shipment, [
+            'shipment_cost_invoice_id' => $invoice->id,
+            'items_count' => count($normalizedItems),
+            'total_amount' => $totalAmount,
+        ]);
+
+        return response()->json([
+            'data' => $this->formatCostInvoice($invoice->fresh()),
+        ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function formatCostInvoice(ShipmentCostInvoice $invoice): array
+    {
+        $items = is_array($invoice->items) ? $invoice->items : [];
+        usort($items, function (array $a, array $b): int {
+            return ((int) ($a['order_index'] ?? 0) <=> (int) ($b['order_index'] ?? 0))
+                ?: ((int) ($a['line_id'] ?? 0) <=> (int) ($b['line_id'] ?? 0));
+        });
+
+        return [
+            'id' => $invoice->id,
+            'shipment_id' => $invoice->shipment_id,
+            'invoice_number' => $invoice->invoice_number,
+            'invoice_date' => optional($invoice->invoice_date)->toDateString(),
+            'status' => $invoice->status,
+            'items' => $items,
+            'currency_totals' => is_array($invoice->currency_totals) ? $invoice->currency_totals : [],
+            'total_amount' => (float) $invoice->total_amount,
+        ];
     }
 
     /**

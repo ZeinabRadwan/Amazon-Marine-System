@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amazon Marine — إدراج فاتورة تكلفة</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0F2340;--navy-mid:#1B3A5C;
+  --orange:#E8790A;--orange-light:#FDF0E0;
+  --green:#0D7A55;--green-light:#E8F7F2;
+  --red:#B91C1C;--red-light:#FEE2E2;
+  --blue:#1D4ED8;--blue-light:#DBEAFE;
+  --gray-50:#F8FAFC;--gray-100:#F1F5F9;--gray-200:#E2E8F0;
+  --gray-400:#94A3B8;--gray-600:#475569;--gray-700:#334155;
+  --white:#FFFFFF;--border:#DDE3ED;
+  --font:'IBM Plex Sans Arabic',sans-serif;
+  --mono:'IBM Plex Mono',monospace;
+}
+body{font-family:var(--font);background:var(--gray-100);color:var(--gray-700);font-size:13px}
+.topbar{background:#fff;border-bottom:1px solid var(--border);padding:0 22px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.topbar h1{font-size:15px;font-weight:700;color:var(--navy)}
+.topbar p{font-size:11px;color:var(--gray-400);margin-top:1px}
+.topbar-right{display:flex;gap:8px}
+.content{max-width:860px;margin:0 auto;padding:20px 16px}
+.breadcrumb{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--gray-400);margin-bottom:16px;flex-wrap:wrap}
+.breadcrumb a{color:var(--blue);cursor:pointer}
+.ship-bar{background:var(--navy);border-radius:10px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.ship-ref{font-size:16px;font-weight:700;color:#fff;font-family:var(--mono)}
+.ship-client{font-size:12px;color:rgba(255,255,255,.5);margin-top:2px}
+.ship-metas{display:flex;gap:14px;flex-wrap:wrap}
+.ship-meta-val{font-size:12px;font-weight:600;color:#fff}
+.ship-meta-lbl{font-size:9px;color:rgba(255,255,255,.4);margin-top:1px}
+.notif-banner{background:var(--blue-light);border:1px solid #93C5FD;border-radius:8px;padding:10px 14px;display:flex;align-items:flex-start;gap:10px;margin-bottom:14px}
+.notif-text{font-size:12px;color:var(--blue);line-height:1.6}
+.section-card{background:#fff;border:1px solid var(--border);border-radius:12px;margin-bottom:14px;overflow:hidden}
+.section-header{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border);background:var(--gray-50);cursor:pointer;user-select:none;flex-wrap:wrap;gap:8px}
+.sec-left{display:flex;align-items:center;gap:10px}
+.sec-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.sec-title{font-size:13px;font-weight:700;color:var(--navy)}
+.sec-sub{font-size:11px;color:var(--gray-400);margin-top:1px}
+.sec-right{display:flex;align-items:center;gap:8px}
+.sec-body{padding:16px 18px}
+.sec-body.collapsed{display:none}
+.meta-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px}
+.fg label{font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:3px}
+.fg input,.fg select{width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:7px;font-size:12px;font-family:var(--font);color:var(--navy)}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--blue)}
+.items-wrap{border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:10px}
+.items-head{display:grid;grid-template-columns:2fr 130px 80px 36px;background:var(--gray-50);border-bottom:1px solid var(--border);padding:7px 12px;font-size:10px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.3px}
+.item-row{display:grid;grid-template-columns:2fr 130px 80px 36px;padding:8px 12px;border-bottom:1px solid var(--gray-100);align-items:center}
+.item-row:last-child{border-bottom:none}
+.item-row:hover{background:var(--gray-50)}
+.item-row.reefer{background:#FFF7ED}
+.item-row.opt{background:var(--gray-50)}
+.item-name{font-size:12px;font-weight:500;color:var(--gray-700)}
+.item-name .en{font-size:10px;color:var(--gray-400);display:block;margin-top:1px;font-weight:400}
+.ibadge{font-size:9px;padding:1px 6px;border-radius:4px;font-weight:600}
+.ibadge.reefer{background:#FED7AA;color:#92400E}
+.ibadge.opt{background:var(--gray-200);color:var(--gray-600)}
+.item-amt input{width:100%;padding:5px 7px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:var(--mono);direction:ltr;text-align:left}
+.item-amt input:focus{outline:none;border-color:var(--blue)}
+.item-cur select{width:100%;padding:5px 6px;border:1px solid var(--border);border-radius:6px;font-size:11px;font-family:var(--font)}
+.item-del{width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--gray-400);font-size:13px}
+.item-del:hover{background:var(--red-light);border-color:var(--red);color:var(--red)}
+.item-del.locked{opacity:.3;cursor:not-allowed;pointer-events:none}
+.add-row{display:flex;gap:8px;align-items:center;padding:8px 12px;background:var(--gray-50);border-top:1px solid var(--border)}
+.add-row input{flex:1;padding:6px 9px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:var(--font)}
+.add-row select{padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:11px;font-family:var(--font)}
+.sec-total{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--orange-light);border-top:2px solid var(--orange);font-size:12px;font-weight:600;color:var(--navy)}
+.sec-total .tv{font-family:var(--mono);font-size:14px;color:var(--orange);font-weight:700}
+.upload-area{border:1.5px dashed var(--border);border-radius:8px;padding:14px;text-align:center;cursor:pointer;background:var(--gray-50);margin-top:12px;transition:all .15s}
+.upload-area:hover{border-color:var(--blue);background:var(--blue-light)}
+.upload-area .ui{font-size:20px;margin-bottom:4px}
+.upload-area .ut{font-size:12px;color:var(--gray-500)}
+.upload-area .us{font-size:10px;color:var(--gray-400);margin-top:2px}
+.file-list{margin-top:8px;display:flex;flex-direction:column;gap:5px}
+.file-item{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:11px}
+.file-item .fn{color:var(--blue);display:flex;align-items:center;gap:5px}
+.file-item .fd{color:var(--gray-400)}
+.file-item .fx{color:var(--gray-400);cursor:pointer;padding:2px 5px;margin-right:4px}
+.file-item .fx:hover{color:var(--red)}
+.badge{display:inline-flex;align-items:center;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px}
+.badge.blue{background:var(--blue-light);color:var(--blue)}
+.badge.green{background:var(--green-light);color:var(--green)}
+.badge.orange{background:var(--orange-light);color:var(--orange)}
+.badge.gray{background:var(--gray-200);color:var(--gray-600)}
+.arrow{font-size:12px;color:var(--gray-400);transition:transform .2s;display:inline-block}
+.arrow.open{transform:rotate(180deg)}
+.btn{padding:8px 16px;border-radius:7px;font-size:12px;font-family:var(--font);cursor:pointer;font-weight:500;border:1px solid var(--border);background:#fff;color:var(--gray-600);display:inline-flex;align-items:center;gap:5px}
+.btn.navy{background:var(--navy);color:#fff;border-color:var(--navy)}
+.btn.sm{padding:5px 11px;font-size:11px}
+.btn.dashed{border-style:dashed;color:var(--blue);border-color:var(--blue)}
+.btn.dashed:hover{background:var(--blue-light)}
+.add-sec-card{border:2px dashed var(--border);border-radius:12px;padding:18px;text-align:center;cursor:pointer;margin-bottom:14px;transition:all .15s}
+.add-sec-card:hover{border-color:var(--blue);background:var(--blue-light)}
+.gt-card{background:var(--navy);border-radius:12px;padding:18px 22px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.gt-lbl{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:4px}
+.gt-val{font-size:22px;font-weight:700;color:var(--orange);font-family:var(--mono)}
+.gt-sub{font-size:10px;color:rgba(255,255,255,.3);margin-top:2px}
+.gt-rows{display:flex;flex-direction:column;gap:6px}
+.gt-row{display:flex;justify-content:space-between;gap:24px;font-size:12px;color:rgba(255,255,255,.6)}
+.gt-row .gv{font-family:var(--mono);color:#fff;font-weight:500}
+.actions-bar{display:flex;gap:10px;flex-wrap:wrap;padding-top:4px;margin-bottom:24px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div><h1>📥 إدراج فاتورة تكلفة / Add Cost Invoice</h1><p>الحسابات — فواتير الشحنة تنزل هنا ثم يصل إشعار للسيلز تلقائياً</p></div>
+  <div class="topbar-right">
+    <button class="btn sm">إلغاء</button>
+    <button class="btn navy sm" onclick="submitForm()">💾 حفظ وإشعار السيلز</button>
+  </div>
+</div>
+
+<div class="content">
+
+<div class="breadcrumb">
+  <a>الشحنات</a><span style="color:var(--gray-300)"> › </span>
+  <a>87485-0958321</a><span style="color:var(--gray-300)"> › </span>
+  <a>الإجراءات</a><span style="color:var(--gray-300)"> › </span>
+  <span style="color:var(--navy);font-weight:600">إدراج فاتورة تكلفة</span>
+</div>
+
+<div class="ship-bar">
+  <div>
+    <div class="ship-ref">87485-0958321</div>
+    <div class="ship-client">شركة الفا للتجارة — Alpha Trading Co.</div>
+  </div>
+  <div class="ship-metas">
+    <div><div class="ship-meta-val">MSC</div><div class="ship-meta-lbl">Shipping Line</div></div>
+    <div style="width:1px;background:rgba(255,255,255,.1)"></div>
+    <div><div class="ship-meta-val">Alex → Hamburg</div><div class="ship-meta-lbl">Route</div></div>
+    <div style="width:1px;background:rgba(255,255,255,.1)"></div>
+    <div><div class="ship-meta-val">40' Dry</div><div class="ship-meta-lbl">Container</div></div>
+    <div style="width:1px;background:rgba(255,255,255,.1)"></div>
+    <div><div class="ship-meta-val">25 Apr 2025</div><div class="ship-meta-lbl">CUT-OFF</div></div>
+    <div style="width:1px;background:rgba(255,255,255,.1)"></div>
+    <div><div class="ship-meta-val" style="color:#FCD34D">أحمد محمود</div><div class="ship-meta-lbl">سيلز — سيصله إشعار</div></div>
+  </div>
+</div>
+
+<div class="notif-banner">
+  <div style="font-size:16px;flex-shrink:0">ℹ️</div>
+  <div class="notif-text">بمجرد الضغط على <strong>حفظ</strong> — سيصل إشعار تلقائي للسيلز <strong>أحمد محمود</strong> بأن فواتير التكلفة جاهزة للمراجعة وإنشاء فاتورة العميل.</div>
+</div>
+
+<!-- =================== SECTION 1: SHIPPING LINE =================== -->
+<div class="section-card" id="sec-shipping">
+  <div class="section-header" onclick="toggle('shipping')">
+    <div class="sec-left">
+      <div class="sec-icon" style="background:#DBEAFE">🚢</div>
+      <div>
+        <div class="sec-title">الخط الملاحي / Shipping Line Costs</div>
+        <div class="sec-sub">MSC — فاتورة الخط الملاحي</div>
+      </div>
+    </div>
+    <div class="sec-right">
+      <span class="badge blue" id="badge-shipping">$0</span>
+      <span class="arrow open" id="arrow-shipping">▼</span>
+    </div>
+  </div>
+  <div class="sec-body" id="body-shipping">
+    <div class="meta-grid">
+      <div class="fg"><label>رقم الفاتورة الأصلية *</label><input type="text" placeholder="MSC-INV-2025-4471" style="font-family:var(--mono)"/></div>
+      <div class="fg"><label>تاريخ الفاتورة *</label><input type="date"/></div>
+      <div class="fg"><label>الخط الملاحي</label><input type="text" value="MSC" style="background:var(--gray-50)" readonly/></div>
+    </div>
+    <div style="font-size:11px;font-weight:600;color:var(--gray-600);margin-bottom:6px">بنود الفاتورة / Line Items</div>
+    <div class="items-wrap">
+      <div class="items-head"><div>البند / Charge</div><div>المبلغ</div><div>العملة</div><div></div></div>
+      <div class="item-row">
+        <div class="item-name">Ocean Freight (OF)<span class="en">أجرة الشحن البحري</span></div>
+        <div class="item-amt"><input type="number" placeholder="0.00" oninput="calc('shipping')"/></div>
+        <div class="item-cur"><select onchange="calc('shipping')"><option>USD</option><option>EGP</option><option>EUR</option></select></div>
+        <button class="item-del" onclick="delRow(this,'shipping')">✕</button>
+      </div>
+      <div class="item-row">
+        <div class="item-name">THC – Terminal Handling Charges<span class="en">رسوم المناولة في الميناء</span></div>
+        <div class="item-amt"><input type="number" placeholder="0.00" oninput="calc('shipping')"/></div>
+        <div class="item-cur"><select onchange="calc('shipping')"><option>USD</option><option>EGP</option><option>EUR</option></select></div>
+        <button class="item-del" onclick="delRow(this,'shipping')">✕</button>
+      </div>
+      <div class="item-row reefer">
+        <div class="item-name">Power Charge <span class="ibadge reefer">Reefer فقط</span><span class="en">رسوم الكهرباء بالميناء</span></div>
+        <div class="item-amt"><input type="number" placeholder="0.00" oninput="calc('shipping')"/></div>
+        <div class="item-cur"><select onchange="calc('shipping')"><option>USD</option><option>EGP</option><option>EUR</option></select></div>
+        <button class="item-del" onclick="delRow(this,'shipping')">✕</button>
+      </div>
+      <div class="item-row">
+        <div class="item-name">Bill of Lading Fee (B/L Fee)<span class="en">رسوم بوليصة الشحن</span></div>
+        <div class="item-amt"><input type="number" placeholder="0.00" oninput="calc('shipping')"/></div>
+        <div class="item-cur"><select onchange="calc('shipping')"><option>USD</option><option>EGP</option><option>EUR</option></select></div>
+        <button class="item-del" onclick="delRow(this,'shipping')">✕</button>
+      </div>
+      <div class="item-row">
+        <div class="item-name">Telex Release Fee<span class="en">رسوم التليكس</span></div>
+        <div class="item-amt"><input type="number" placeholder="0.00" oninput="calc('shipping')"/></div>
+        <div class="item-cur"><select onchange="calc('shipping')"><option>USD</option><option>EGP</option><option>EUR</option></select></div>
+        <button class="item-del" onclick="delRow(this,'shipping')">✕</button>
+      </div>
+      <div class="item-row opt">
+        <div class="item-name">DHL / Courier Fee <span class="ibadge opt">اختياري</span><span class="en">رسوم الشحن البريدي</span></div>
+        <div class="item-amt"><input type="number" placeholder="0.00" oninput="calc('shipping')"/></div>
+        <div class="item-cur"><select onchange="calc('shipping')"><option>USD</option><option>EGP</option><option>EUR</option></select></div>
+        <button class="item-del" onclick="delRow(this,'shipping')">✕</button>
+      </div>
+      <div class="add-row">
+        <input type="text" id="ni-shipping" placeholder="اسم البند الجديد..."/>
+        <select id="nc-shipping"><option>USD</option><option>EGP</option><option>EUR</option></select>
+        <button class="btn sm dashed" onclick="addRow('shipping')">+ إضافة بند</button>
+      </div>
+    </div>
+    <div class="sec-total"><span>إجمالي الخط الملاحي</span><span class="tv" id="tot-shipping">—</span></div>
+    <div class="upload-area" onclick="document.getElementById('f-shipping').click()">
+      <input type="file" id="f-shipping" multiple accept=".pdf" style="display:none" onchange="showFiles(this,'fl-shipping')"/>
+      <div class="ui">📎</div><div class="ut">ارفع فاتورة الخط الملاحي (PDF)</div>
+      <div class="us">يظهر للسيلز عند المراجعة — PDF فقط</div>
+    </div>
+    <div class="file-list" id="fl-shipping"></div>
+  </div>
+</div>
+
+<!-- =================== SECTION 2: INLAND =================== -->
+<div class="section-card" id="sec-inland">
+  <div class="section-header" onclick="toggle('inland')">
+    <div class="sec-left">
+      <div class="sec-icon" style="background:#D1FAE5">🚛</div>
+      <div>
+        <div class="sec-title">النقل الداخلي / Inland Transport Costs</div>
+        <div class="sec-sub">مقاول النقل — أحمد سعيد</div>
+      </div>
+    </div>
+    <div class="sec-right">
+      <span class="badge green" id="badge-inland">0 EGP</span>
+      <span class="arrow open" id="arrow-inland">▼</span>
+    </div>
+  </div>
+  <div class="sec-body" id="body-inland">
+    <div class="meta-grid">
+      <div class="fg"><label>رقم الفاتورة الأصلية *</label><input type="text" placeholder="NQL-2025-889" style="font-family:var(--mono)"/></div>
+      <div class="fg"><label>تاريخ الفاتورة *</label><input type="date"/></div>
+      <div class="fg"><label>المقاول / Contractor</label><input type="text" value="أحمد سعيد — مقاول النقل" style="background:var(--gray-50)" readonly/></div>
+    </div>
+    <div style="font-size:11px;font-weight:600;color:var(--gray-600);margin-bottom:6px">بنود الفاتورة / Line Items</div>
+    <div class="items-wrap">
+      <div class="items-head"><div>البند / Charge</div><div>المبلغ</div><div>العملة</div><div></div></div>
+      <div class="item-row">
+        <div class="item-name">Inland Transportation Freight Cost<span class="en">تكلفة النقل الداخلي</span></div>
+        <div class="item-amt"><input type="number" placeholder="0.00" oninput="calc('inland')"/></div>
+        <div class="item-cur"><select onchange="calc('inland')"><option>EGP</option><option>USD</option><option>EUR</option></select></div>
+        <button class="item-del" onclick="delRow(this,'inland')">✕</button>
+      </div>
+      <div class="item-row reefer">
+        <div class="item-name">Genset Cost <span class="ibadge reefer">Reefer فقط</span><span class="en">تكلفة المولد الكهربائي</span></div>
+        <div class="item-amt"><input type="number" placeholder="0.00" oninput="calc('inland')"/></div>
+        <div class="item-cur"><select onchange="calc('inland')"><option>EGP</option><option>USD</option><option>EUR</option></select></div>
+        <button class="item-del" onclick="delRow(this,'inland')">✕</button>
+      </div>
+      <div class="item-row">
+        <div class="item-name">Official Receipts Cost<span class="en">تكلفة الإيصالات الرسمية</span></div>
+        <div class="item-amt"><input type="number" placeholder="0.00" oninput="calc('inland')"/></div>
+        <div class="item-cur"><select onchange="calc('inland')"><option>EGP</option><option>USD</option><option>EUR</option></select></div>
+        <button class="item-del" onclick="delRow(this,'inland')">✕</button>
+      </div>
+      <div class="item-row opt">
+        <div class="item-name">Overnight Stay Cost (Truck Layover) <span class="ibadge opt">اختياري</span><span class="en">تكلفة المبيت — إقامة السائق</span></div>
+        <div class="item-amt"><input type="number" placeholder="0.00" oninput="calc('inland')"/></div>
+        <div class="item-cur"><select onchange="calc('inland')"><option>EGP</option><option>USD</option><option>EUR</option></select></div>
+        <button class="item-del" onclick="delRow(this,'inland')">✕</button>
+      </div>
+      <div class="add-row">
+        <input type="text" id="ni-inland" placeholder="اسم البند الجديد..."/>
+        <select id="nc-inland"><option>EGP</option><option>USD</option><option>EUR</option></select>
+        <button class="btn sm dashed" onclick="addRow('inland')">+ إضافة بند</button>
+      </div>
+    </div>
+    <div class="sec-total"><span>إجمالي النقل الداخلي</span><span class="tv" id="tot-inland">—</span></div>
+    <div class="upload-area" onclick="document.getElementById('f-inland').click()">
+      <input type="file" id="f-inland" multiple accept=".pdf" style="display:none" onchange="showFiles(this,'fl-inland')"/>
+      <div class="ui">📎</div><div class="ut">ارفع فاتورة مقاول النقل (PDF)</div>
+      <div class="us">يظهر للسيلز عند المراجعة</div>
+    </div>
+    <div class="file-list" id="fl-inland"></div>
+  </div>
+</div>
+
+<!-- =================== SECTION 3: CUSTOMS =================== -->
+<div class="section-card" id="sec-customs">
+  <div class="section-header" onclick="toggle('customs')">
+    <div class="sec-left">
+      <div class="sec-icon" style="background:#FEF3C7">🏛️</div>
+      <div>
+        <div class="sec-title">التخليص الجمركي / Customs Clearance Costs</div>
+        <div class="sec-sub">مكتب الإسكندرية للتخليص الجمركي</div>
+      </div>
+    </div>
+    <div class="sec-right">
+      <span class="badge orange" id="badge-customs">0 EGP</span>
+      <span class="arrow open" id="arrow-customs">▼</span>
+    </div>
+  </div>
+  <div class="sec-body" id="body-customs">
+    <div class="meta-grid">
+      <div class="fg"><label>رقم الفاتورة الأصلية *</label><input type="text" placeholder="TKH-2025-223" style="font-family:var(--mono)"/></div>
+      <div class="fg"><label>تاريخ الفاتورة *</label><input type="date"/></div>
+      <div class="fg"><label>المخلص الجمركي</label><input type="text" value="مكتب الإسكندرية للتخليص" style="background:var(--gray-50)" readonly/></div>
+    </div>
+    <div style="font-size:11px;font-weight:600;color:var(--gray-600);margin-bottom:6px">بنود الفاتورة / Line Items</div>
+    <div class="items-wrap">
+      <div class="items-head"><div>البند / Charge</div><div>المبلغ</div><div>العملة</div><div></div></div>
+      <div class="item-row">
+        <div class="item-name">Customs Declaration Opening Fee<span class="en">رسوم فتح الشهادة الجمركية</span></div>
+        <div class="item-amt"><input type="number" placeholder="0.00" oninput="calc('customs')"/></div>
+        <div class="item-cur"><select onchange="calc('customs')"><option>EGP</option><option>USD</option><option>EUR</option></select></div>
+        <button class="item-del" onclick="delRow(this,'customs')">✕</button>
+      </div>
+      <div class="item-row">
+        <div class="item-name">Official Receipts Fees<span class="en">رسوم الإيصالات الرسمية الحكومية</span></div>
+        <div class="item-amt"><input type="number" placeholder="0.00" oninput="calc('customs')"/></div>
+        <div class="item-cur"><select onchange="calc('customs')"><option>EGP</option><option>USD</option><option>EUR</option></select></div>
+        <button class="item-del" onclick="delRow(this,'customs')">✕</button>
+      </div>
+      <div class="add-row">
+        <input type="text" id="ni-customs" placeholder="اسم البند الجديد..."/>
+        <select id="nc-customs"><option>EGP</option><option>USD</option><option>EUR</option></select>
+        <button class="btn sm dashed" onclick="addRow('customs')">+ إضافة بند</button>
+      </div>
+    </div>
+    <div class="sec-total"><span>إجمالي التخليص الجمركي</span><span class="tv" id="tot-customs">—</span></div>
+    <div class="upload-area" onclick="document.getElementById('f-customs').click()">
+      <input type="file" id="f-customs" multiple accept=".pdf" style="display:none" onchange="showFiles(this,'fl-customs')"/>
+      <div class="ui">📎</div><div class="ut">ارفع فاتورة التخليص الجمركي (PDF)</div>
+      <div class="us">اضغط هنا أو اسحب الملف</div>
+    </div>
+    <div class="file-list" id="fl-customs"></div>
+  </div>
+</div>
+
+<!-- =================== SECTION 4: INSURANCE =================== -->
+<div class="section-card" id="sec-insurance">
+  <div class="section-header" onclick="toggle('insurance')">
+    <div class="sec-left">
+      <div class="sec-icon" style="background:#FCE7F3">🛡️</div>
+      <div>
+        <div class="sec-title">التأمين / Insurance Costs</div>
+        <div class="sec-sub">اختياري — حسب الشحنة</div>
+      </div>
+    </div>
+    <div class="sec-right">
+      <span class="badge gray" id="badge-insurance">0</span>
+      <span class="arrow open" id="arrow-insurance">▼</span>
+    </div>
+  </div>
+  <div class="sec-body" id="body-insurance">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+      <div class="fg"><label>رقم الفاتورة الأصلية</label><input type="text" placeholder="رقم فاتورة التأمين" style="font-family:var(--mono)"/></div>
+      <div class="fg"><label>تاريخ الفاتورة</label><input type="date"/></div>
+      <div class="fg"><label>شركة التأمين</label><input type="text" placeholder="اسم شركة التأمين"/></div>
+    </div>
+    <div style="font-size:11px;font-weight:600;color:var(--gray-600);margin-bottom:6px">بنود الفاتورة / Line Items</div>
+    <div class="items-wrap">
+      <div class="items-head"><div>البند / Charge</div><div>المبلغ</div><div>العملة</div><div></div></div>
+      <div class="item-row">
+        <div class="item-name">Insurance Premium Fee<span class="en">رسوم بوليصة التأمين</span></div>
+        <div class="item-amt"><input type="number" placeholder="0.00" oninput="calc('insurance')"/></div>
+        <div class="item-cur"><select onchange="calc('insurance')"><option>EGP</option><option>USD</option><option>EUR</option></select></div>
+        <button class="item-del" onclick="delRow(this,'insurance')">✕</button>
+      </div>
+      <div class="add-row">
+        <input type="text" id="ni-insurance" placeholder="اسم البند الجديد..."/>
+        <select id="nc-insurance"><option>EGP</option><option>USD</option><option>EUR</option></select>
+        <button class="btn sm dashed" onclick="addRow('insurance')">+ إضافة بند</button>
+      </div>
+    </div>
+    <div class="sec-total"><span>إجمالي التأمين</span><span class="tv" id="tot-insurance">—</span></div>
+    <div class="upload-area" onclick="document.getElementById('f-insurance').click()">
+      <input type="file" id="f-insurance" multiple accept=".pdf" style="display:none" onchange="showFiles(this,'fl-insurance')"/>
+      <div class="ui">📎</div><div class="ut">ارفع وثيقة التأمين (PDF)</div>
+      <div class="us">اضغط هنا أو اسحب الملف</div>
+    </div>
+    <div class="file-list" id="fl-insurance"></div>
+  </div>
+</div>
+
+<!-- CUSTOM SECTIONS -->
+<div id="custom-container"></div>
+
+<!-- ADD SECTION -->
+<div class="add-sec-card" onclick="addCustomSection()">
+  <div style="font-size:20px;margin-bottom:6px">➕</div>
+  <div style="font-size:13px;font-weight:600;color:var(--blue)">إضافة قسم تكلفة جديد</div>
+  <div style="font-size:11px;color:var(--gray-400);margin-top:3px">لو الشحنة دي اشتغلت فيها مع جهة إضافية — أضف قسم مخصص بأي اسم وبنود</div>
+</div>
+
+<!-- GRAND TOTAL -->
+<div class="gt-card">
+  <div>
+    <div class="gt-lbl">إجمالي تكاليف الشحنة الكاملة</div>
+    <div class="gt-val" id="grand-total">—</div>
+    <div class="gt-sub">يظهر للسيلز عند إنشاء فاتورة العميل</div>
+  </div>
+  <div class="gt-rows">
+    <div class="gt-row"><span>🚢 خط ملاحي</span><span class="gv" id="gt-shipping">—</span></div>
+    <div class="gt-row"><span>🚛 نقل داخلي</span><span class="gv" id="gt-inland">—</span></div>
+    <div class="gt-row"><span>🏛️ تخليص جمركي</span><span class="gv" id="gt-customs">—</span></div>
+    <div class="gt-row"><span>🛡️ تأمين</span><span class="gv" id="gt-insurance">—</span></div>
+  </div>
+</div>
+
+<!-- NOTES -->
+<div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:16px">
+  <label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:6px">ملاحظات إضافية للسيلز (اختياري)</label>
+  <textarea placeholder="أي ملاحظات تخص فواتير التكلفة تريد إعلام السيلز بها..." style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;font-family:var(--font);min-height:60px;resize:vertical"></textarea>
+</div>
+
+<div class="actions-bar">
+  <button class="btn navy" onclick="submitForm()" style="padding:10px 22px;font-size:13px">💾 حفظ وإشعار السيلز</button>
+  <button class="btn" style="padding:10px 18px;font-size:13px">حفظ كمسودة</button>
+  <button class="btn" style="padding:10px 18px;font-size:13px">إلغاء</button>
+</div>
+
+</div>
+
+<script>
+var totals = {shipping:{},inland:{},customs:{},insurance:{}};
+var customTotals = {};
+
+function toggle(id) {
+  var b = document.getElementById('body-'+id);
+  var a = document.getElementById('arrow-'+id);
+  if (!b) return;
+  if (b.classList.contains('collapsed')) { b.classList.remove('collapsed'); a.classList.add('open'); }
+  else { b.classList.add('collapsed'); a.classList.remove('open'); }
+}
+
+function calc(sec) {
+  var card = document.getElementById('sec-'+sec);
+  if (!card) return;
+  var rows = card.querySelectorAll('.item-row');
+  var t = {};
+  rows.forEach(function(row) {
+    var inp = row.querySelector('input[type="number"]');
+    var sel = row.querySelector('.item-cur select');
+    if (!inp || !sel) return;
+    var v = parseFloat(inp.value) || 0;
+    if (v === 0) return;
+    var c = sel.value;
+    t[c] = (t[c]||0) + v;
+  });
+  totals[sec] = t;
+  var parts = Object.entries(t).filter(function(e){return e[1]>0;}).map(function(e){return e[1].toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' '+e[0];});
+  var txt = parts.length ? parts.join(' + ') : '—';
+  var tot = document.getElementById('tot-'+sec);
+  var badge = document.getElementById('badge-'+sec);
+  if (tot) tot.textContent = txt;
+  if (badge) badge.textContent = txt==='—'?'0':txt;
+  updateGrand();
+}
+
+function updateGrand() {
+  var all = {};
+  function merge(t) { Object.entries(t).forEach(function(e){ all[e[0]]=(all[e[0]]||0)+e[1]; }); }
+  Object.values(totals).forEach(merge);
+  Object.values(customTotals).forEach(merge);
+  var parts = Object.entries(all).filter(function(e){return e[1]>0;}).map(function(e){return e[1].toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' '+e[0];});
+  var gt = document.getElementById('grand-total');
+  if (gt) gt.textContent = parts.length ? parts.join(' + ') : '—';
+  ['shipping','inland','customs','insurance'].forEach(function(s) {
+    var el = document.getElementById('gt-'+s);
+    if (!el) return;
+    var t = totals[s]||{};
+    var p = Object.entries(t).filter(function(e){return e[1]>0;}).map(function(e){return e[1].toFixed(2)+' '+e[0];});
+    el.textContent = p.length ? p.join(' + ') : '—';
+  });
+}
+
+function delRow(btn, sec) {
+  var row = btn.closest('.item-row');
+  row.style.opacity='0';row.style.transition='opacity .2s';
+  setTimeout(function(){row.remove();calc(sec);},200);
+}
+
+function addRow(sec) {
+  var ni = document.getElementById('ni-'+sec);
+  var nc = document.getElementById('nc-'+sec);
+  if (!ni||!ni.value.trim()) { if(ni){ni.focus();ni.style.borderColor='var(--red)';setTimeout(function(){ni.style.borderColor='';},1500);} return; }
+  var addRowEl = ni.closest('.add-row');
+  var wrap = addRowEl.closest('.items-wrap');
+  var row = document.createElement('div');
+  row.className = 'item-row';
+  row.style.opacity='0';
+  var cur = nc.value;
+  row.innerHTML = '<div class="item-name">'+ni.value.trim()+'<span class="en">بند مخصص</span></div>'+
+    '<div class="item-amt"><input type="number" placeholder="0.00" oninput="calc(\''+sec+'\')"/></div>'+
+    '<div class="item-cur"><select onchange="calc(\''+sec+'\')"><option'+(cur==='USD'?' selected':'')+'>USD</option><option'+(cur==='EGP'?' selected':'')+'>EGP</option><option'+(cur==='EUR'?' selected':'')+'>EUR</option></select></div>'+
+    '<button class="item-del" onclick="delRow(this,\''+sec+'\')">✕</button>';
+  addRowEl.parentNode.insertBefore(row,addRowEl);
+  setTimeout(function(){row.style.opacity='1';row.style.transition='opacity .2s';},10);
+  ni.value='';
+  calc(sec);
+}
+
+function showFiles(input, listId) {
+  var list = document.getElementById(listId);
+  if (!list) return;
+  list.innerHTML='';
+  Array.from(input.files).forEach(function(f) {
+    var d=document.createElement('div');
+    d.className='file-item';
+    d.innerHTML='<div class="fn">📄 '+f.name+'</div>'+
+      '<div style="display:flex;align-items:center;gap:8px"><span class="fd">'+(f.size/1024).toFixed(0)+' KB</span>'+
+      '<span class="badge green" style="font-size:9px">PDF ✓</span>'+
+      '<span class="fx" onclick="this.closest(\'.file-item\').remove()">✕</span></div>';
+    list.appendChild(d);
+  });
+}
+
+var csCount = 0;
+function addCustomSection() {
+  csCount++;
+  var id = 'cs-'+csCount;
+  customTotals[id] = {};
+  var c = document.getElementById('custom-container');
+  var d = document.createElement('div');
+  d.className='section-card';
+  d.setAttribute('data-csid',id);
+  d.innerHTML = '<div class="section-header" onclick="toggle(\''+id+'\')">' +
+    '<div class="sec-left"><div class="sec-icon" style="background:#EDE9FE">➕</div>' +
+    '<div><input type="text" placeholder="اسم القسم..." onclick="event.stopPropagation()" style="border:none;background:transparent;font-size:13px;font-weight:700;color:var(--navy);font-family:var(--font);width:220px;outline:none" value="قسم تكلفة إضافي '+csCount+'"/>' +
+    '<input type="text" placeholder="اسم الجهة..." onclick="event.stopPropagation()" style="border:none;background:transparent;font-size:11px;color:var(--gray-400);font-family:var(--font);width:200px;outline:none;display:block;margin-top:2px"/></div></div>' +
+    '<div class="sec-right"><span class="badge gray" id="badge-'+id+'">0</span>' +
+    '<button onclick="event.stopPropagation();this.closest(\'.section-card\').remove();delete customTotals[\''+id+'\'];updateGrand()" class="btn sm" style="color:var(--red);border-color:var(--red)">حذف القسم</button>' +
+    '<span class="arrow open" id="arrow-'+id+'">▼</span></div></div>' +
+    '<div class="sec-body" id="body-'+id+'">'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">'+
+    '<div class="fg"><label>رقم الفاتورة الأصلية</label><input type="text" placeholder="رقم الفاتورة" style="font-family:var(--mono)"/></div>'+
+    '<div class="fg"><label>تاريخ الفاتورة</label><input type="date"/></div></div>'+
+    '<div style="font-size:11px;font-weight:600;color:var(--gray-600);margin-bottom:6px">بنود الفاتورة / Line Items</div>'+
+    '<div class="items-wrap">'+
+    '<div class="items-head"><div>البند</div><div>المبلغ</div><div>العملة</div><div></div></div>'+
+    '<div class="add-row"><input type="text" id="ni-'+id+'" placeholder="اسم البند..."/>'+
+    '<select id="nc-'+id+'"><option>EGP</option><option>USD</option><option>EUR</option></select>'+
+    '<button class="btn sm dashed" onclick="addCustomRow(\''+id+'\')">+ إضافة بند</button></div></div>'+
+    '<div class="sec-total"><span>إجمالي القسم</span><span class="tv" id="tot-'+id+'">—</span></div>'+
+    '<div class="upload-area" onclick="document.getElementById(\'f-'+id+'\').click()">'+
+    '<input type="file" id="f-'+id+'" multiple accept=".pdf" style="display:none" onchange="showFiles(this,\'fl-'+id+'\')"/>'+
+    '<div class="ui">📎</div><div class="ut">ارفع الفاتورة (PDF)</div></div>'+
+    '<div class="file-list" id="fl-'+id+'"></div></div>';
+  c.appendChild(d);
+}
+
+function addCustomRow(id) {
+  var ni=document.getElementById('ni-'+id);
+  var nc=document.getElementById('nc-'+id);
+  if (!ni||!ni.value.trim()){if(ni)ni.focus();return;}
+  var cur=nc.value;
+  var addRowEl=ni.closest('.add-row');
+  var row=document.createElement('div');
+  row.className='item-row';row.style.opacity='0';
+  row.innerHTML='<div class="item-name">'+ni.value.trim()+'</div>'+
+    '<div class="item-amt"><input type="number" placeholder="0.00" oninput="calcCustom(\''+id+'\')"/></div>'+
+    '<div class="item-cur"><select onchange="calcCustom(\''+id+'\')"><option'+(cur==='EGP'?' selected':'')+'>EGP</option><option'+(cur==='USD'?' selected':'')+'>USD</option><option'+(cur==='EUR'?' selected':'')+'>EUR</option></select></div>'+
+    '<button class="item-del" onclick="this.closest(\'.item-row\').remove();calcCustom(\''+id+'\')">✕</button>';
+  addRowEl.parentNode.insertBefore(row,addRowEl);
+  setTimeout(function(){row.style.opacity='1';row.style.transition='opacity .2s';},10);
+  ni.value='';calcCustom(id);
+}
+
+function calcCustom(id) {
+  var card=document.querySelector('[data-csid="'+id+'"]');
+  if (!card) return;
+  var rows=card.querySelectorAll('.item-row');
+  var t={};
+  rows.forEach(function(row){
+    var inp=row.querySelector('input[type="number"]');
+    var sel=row.querySelector('.item-cur select');
+    if(!inp||!sel)return;
+    var v=parseFloat(inp.value)||0;
+    if(v===0)return;
+    var c=sel.value;
+    t[c]=(t[c]||0)+v;
+  });
+  customTotals[id]=t;
+  var parts=Object.entries(t).filter(function(e){return e[1]>0;}).map(function(e){return e[1].toFixed(2)+' '+e[0];});
+  var txt=parts.length?parts.join(' + '):'—';
+  var tot=document.getElementById('tot-'+id);
+  var badge=document.getElementById('badge-'+id);
+  if(tot)tot.textContent=txt;
+  if(badge)badge.textContent=txt==='—'?'0':txt;
+  updateGrand();
+}
+
+function submitForm() {
+  alert('تم حفظ فواتير التكلفة!\n\n📨 إشعار أرسل للسيلز: أحمد محمود\nيمكنه الآن مراجعة التكاليف وإنشاء فاتورة العميل.');
+}
+</script>
+</body>
+</html>

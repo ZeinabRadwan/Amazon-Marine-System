@@ -337,6 +337,8 @@ Route::prefix('v1')->group(function () {
         Route::get('shipments/{shipment}/attachments/{attachment}/download', [ShipmentAttachmentController::class, 'download']);
         Route::delete('shipments/{shipment}/attachments/{attachment}', [ShipmentAttachmentController::class, 'destroy']);
         Route::get('shipments/{shipment}/pdf', [ShipmentController::class, 'pdf']);
+        Route::get('shipments/{shipment}/cost-invoice', [ShipmentController::class, 'getCostInvoice']);
+        Route::put('shipments/{shipment}/cost-invoice', [ShipmentController::class, 'upsertCostInvoice']);
         Route::post('shipments/{shipment}/notify-sales-financials', [ShipmentController::class, 'notifySalesFinancials']);
         Route::get('shipments/{shipment}/tracking-updates', [ShipmentTrackingUpdateController::class, 'index']);
         Route::post('shipments/{shipment}/tracking-updates', [ShipmentTrackingUpdateController::class, 'store']);

@@ -87,6 +87,10 @@ function shipmentFreeTextNotes(shipment) {
   return typeof raw === 'string' ? raw : ''
 }
 
+function shipmentClientDisplayName(shipment) {
+  return shipment?.client?.company_name ?? shipment?.client?.name ?? shipment?.client_name ?? '—'
+}
+
 export default function ShipmentDetailModal({
   open,
   shipment,
@@ -503,7 +507,7 @@ export default function ShipmentDetailModal({
                         <div className="shipment-detail-card__row">
                           <span className="shipment-detail-card__label">{t('shipments.createModal.clientName')}</span>
                           <span className="shipment-detail-card__value font-semibold">
-                            {shipment.client?.company_name || shipment.client?.name || '—'}
+                            {shipmentClientDisplayName(shipment)}
                           </span>
                         </div>
                         <div className="shipment-detail-card__row">
@@ -709,7 +713,7 @@ export default function ShipmentDetailModal({
                           </div>
                           <div>
                             <div className="font-bold text-gray-900 dark:text-white">
-                              {shipment.client?.name || '—'}
+                              {shipmentClientDisplayName(shipment)}
                             </div>
                             <div className="text-sm text-gray-500">{shipment.client?.company_name}</div>
                           </div>

@@ -197,6 +197,14 @@ class Shipment extends Model
     }
 
     /**
+     * @return HasOne<ShipmentCostInvoice>
+     */
+    public function costInvoice(): HasOne
+    {
+        return $this->hasOne(ShipmentCostInvoice::class);
+    }
+
+    /**
      * Recompute cost_total from all linked expenses and persist it.
      * Call this after any expense create / update / delete on a shipment.
      */
@@ -209,6 +217,8 @@ class Shipment extends Model
 
         $costTotal = (float) DB::table('expenses')
             ->where('shipment_id', $shipmentId)
+            ->whereNotNull('amount')
+            ->where('amount', '>', 0)
             ->sum('amount');
 
         $shipment->cost_total = $costTotal;

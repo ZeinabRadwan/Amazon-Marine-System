@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amazon Marine — إنشاء فاتورة عميل</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0F2340;--navy-mid:#1B3A5C;
+  --orange:#E8790A;--orange-light:#FDF0E0;
+  --green:#0D7A55;--green-light:#E8F7F2;
+  --red:#B91C1C;--red-light:#FEE2E2;
+  --blue:#1D4ED8;--blue-light:#DBEAFE;
+  --gray-50:#F8FAFC;--gray-100:#F1F5F9;--gray-200:#E2E8F0;
+  --gray-400:#94A3B8;--gray-600:#475569;--gray-700:#334155;
+  --white:#fff;--border:#DDE3ED;
+  --font:'IBM Plex Sans Arabic',sans-serif;
+  --mono:'IBM Plex Mono',monospace;
+}
+body{font-family:var(--font);background:var(--gray-100);color:var(--gray-700);font-size:13px}
+.topbar{background:#fff;border-bottom:1px solid var(--border);padding:0 22px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;gap:10px}
+.topbar h1{font-size:14px;font-weight:700;color:var(--navy)}
+.topbar p{font-size:11px;color:var(--gray-400);margin-top:1px}
+.content{max-width:900px;margin:0 auto;padding:18px 16px}
+.breadcrumb{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--gray-400);margin-bottom:14px;flex-wrap:wrap}
+.breadcrumb a{color:var(--blue);cursor:pointer}
+
+/* SHIP BAR */
+.ship-bar{background:var(--navy);border-radius:10px;padding:13px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.ship-ref{font-size:15px;font-weight:700;color:#fff;font-family:var(--mono)}
+.ship-client{font-size:12px;color:rgba(255,255,255,.5);margin-top:2px}
+.ship-metas{display:flex;gap:14px;flex-wrap:wrap}
+.sval{font-size:12px;font-weight:600;color:#fff}
+.slbl{font-size:9px;color:rgba(255,255,255,.4);margin-top:1px}
+.ssep{width:1px;background:rgba(255,255,255,.1)}
+
+/* INFO BANNER */
+.info-banner{background:var(--blue-light);border:1px solid #93C5FD;border-radius:8px;padding:10px 14px;display:flex;align-items:flex-start;gap:10px;margin-bottom:16px}
+.info-text{font-size:12px;color:var(--blue);line-height:1.6}
+.info-text strong{color:var(--navy)}
+
+/* SECTION CARD */
+.sec{background:#fff;border:1px solid var(--border);border-radius:12px;margin-bottom:12px;overflow:hidden}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--gray-50);flex-wrap:wrap;gap:8px}
+.sec-left{display:flex;align-items:center;gap:9px}
+.sec-icon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.sec-title{font-size:13px;font-weight:700;color:var(--navy)}
+.sec-sub{font-size:11px;color:var(--gray-400);margin-top:1px}
+.sec-right{display:flex;align-items:center;gap:8px}
+.sec-body{padding:14px 16px}
+
+/* ITEMS TABLE */
+.items-table{width:100%;border-collapse:collapse;margin-bottom:8px}
+.items-table .th{background:var(--gray-50);padding:7px 10px;font-size:10px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid var(--border)}
+.items-table .th:first-child{border-radius:0}
+/* Columns: name | cost | selling | profit | currency | del */
+.col-name{width:35%}
+.col-cost{width:14%;text-align:left}
+.col-sell{width:14%;text-align:left}
+.col-profit{width:12%;text-align:left}
+.col-cur{width:12%}
+.col-del{width:6%;text-align:center}
+
+.irow{border-bottom:1px solid var(--gray-100)}
+.irow:last-child{border-bottom:none}
+.irow:hover{background:var(--gray-50)}
+.irow td{padding:8px 10px;font-size:12px;vertical-align:middle}
+.iname{font-weight:500;color:var(--gray-700)}
+.iname .en{font-size:10px;color:var(--gray-400);display:block;margin-top:1px;font-weight:400}
+.ibadge{font-size:9px;padding:1px 5px;border-radius:4px;font-weight:600;display:inline-block;margin-top:2px}
+.ib-reefer{background:#FED7AA;color:#92400E}
+.ib-opt{background:var(--gray-200);color:var(--gray-600)}
+.cost-cell{font-family:var(--mono);font-size:11px;color:var(--gray-400);text-align:left}
+.sell-input{width:100%;padding:5px 7px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;font-family:var(--mono);color:var(--navy);text-align:left;direction:ltr;transition:border-color .15s}
+.sell-input:focus{outline:none;border-color:var(--blue);background:var(--blue-light)}
+.sell-input.modified{border-color:var(--green);background:var(--green-light)}
+.profit-cell{font-family:var(--mono);font-size:12px;font-weight:600;text-align:left;min-width:70px}
+.profit-pos{color:var(--green)}
+.profit-neg{color:var(--red)}
+.profit-zero{color:var(--gray-400)}
+.cur-sel{padding:5px 6px;border:1px solid var(--border);border-radius:6px;font-size:11px;font-family:var(--font);background:#fff}
+.del-btn{width:26px;height:26px;border-radius:5px;border:1px solid var(--border);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--gray-400);font-size:12px;margin:auto}
+.del-btn:hover{background:var(--red-light);border-color:var(--red);color:var(--red)}
+
+/* ADD ROW */
+.add-row{display:flex;gap:7px;align-items:center;padding:8px 10px;background:var(--gray-50);border-top:1px solid var(--border)}
+.add-row input{flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:var(--font)}
+.add-row select{padding:5px 7px;border:1px solid var(--border);border-radius:6px;font-size:11px;font-family:var(--font)}
+
+/* SECTION TOTAL */
+.sec-total{display:flex;align-items:center;justify-content:space-between;padding:9px 10px;background:var(--orange-light);border-top:2px solid var(--orange);font-size:12px;font-weight:600}
+.sec-total .stv{font-family:var(--mono);font-size:13px;color:var(--orange);font-weight:700}
+.sec-total .stp{font-family:var(--mono);font-size:11px;color:var(--green);font-weight:600}
+
+/* HANDLING FEES */
+.handling-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:12px}
+.handling-title{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.hf-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;align-items:end}
+.fg label{font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:3px}
+.fg input,.fg select{width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:7px;font-size:12px;font-family:var(--font);color:var(--navy)}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--blue)}
+
+/* GRAND TOTAL */
+.grand-card{background:var(--navy);border-radius:12px;padding:16px 20px;margin-bottom:14px}
+.grand-top{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:12px}
+.grand-main .gl{font-size:11px;color:rgba(255,255,255,.5);margin-bottom:4px}
+.grand-main .gv{font-size:24px;font-weight:700;color:var(--orange);font-family:var(--mono);line-height:1}
+.grand-main .gs{font-size:10px;color:rgba(255,255,255,.3);margin-top:3px}
+.grand-breakdown{display:flex;flex-direction:column;gap:5px}
+.gb-row{display:flex;justify-content:space-between;gap:20px;font-size:11px}
+.gb-lbl{color:rgba(255,255,255,.5)}
+.gb-val{font-family:var(--mono);font-weight:600}
+.gb-val.sell{color:#fff}
+.gb-val.cost{color:rgba(255,255,255,.4)}
+.gb-val.profit{color:var(--green)}
+.grand-divider{height:1px;background:rgba(255,255,255,.1);margin:10px 0}
+.profit-summary{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.ps-item{text-align:center}
+.ps-lbl{font-size:9px;color:rgba(255,255,255,.4);margin-bottom:3px}
+.ps-val{font-size:14px;font-weight:700;font-family:var(--mono)}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px}
+.badge.green{background:var(--green-light);color:var(--green)}
+.badge.blue{background:var(--blue-light);color:var(--blue)}
+.badge.orange{background:var(--orange-light);color:var(--orange)}
+.badge.gray{background:var(--gray-200);color:var(--gray-600)}
+.badge.red{background:var(--red-light);color:var(--red)}
+
+/* BUTTONS */
+.btn{padding:8px 16px;border-radius:7px;font-size:12px;font-family:var(--font);cursor:pointer;font-weight:500;border:1px solid var(--border);background:#fff;color:var(--gray-600);display:inline-flex;align-items:center;gap:5px}
+.btn:hover{background:var(--gray-50)}
+.btn.navy{background:var(--navy);color:#fff;border-color:var(--navy)}
+.btn.green{background:var(--green);color:#fff;border-color:var(--green)}
+.btn.orange{background:var(--orange);color:#fff;border-color:var(--orange)}
+.btn.sm{padding:4px 10px;font-size:11px}
+.btn.dashed{border-style:dashed;color:var(--blue);border-color:var(--blue)}
+.btn.dashed:hover{background:var(--blue-light)}
+.actions-bar{display:flex;gap:10px;flex-wrap:wrap;padding-top:4px;margin-bottom:24px}
+
+/* NOTES */
+.notes-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:14px}
+.notes-card label{font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:6px}
+.notes-card textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;font-family:var(--font);min-height:55px;resize:vertical}
+
+/* LEGEND */
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--gray-400);margin-bottom:12px;align-items:center}
+.legend-item{display:flex;align-items:center;gap:4px}
+.legend-dot{width:10px;height:10px;border-radius:2px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <h1>📤 إنشاء فاتورة عميل / Create Client Invoice</h1>
+    <p>السيلز — التكاليف تنقلت تلقائياً — أدخل سعر البيع لكل بند</p>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <span style="font-size:11px;color:var(--gray-400);font-family:var(--mono)">AM-INV-2025-04-00147</span>
+    <button class="btn sm">حفظ مسودة</button>
+    <button class="btn sm navy" onclick="exportInvoice()">📄 تصدير PDF</button>
+  </div>
+</div>
+
+<div class="content">
+
+<div class="breadcrumb">
+  <a>الشحنات</a><span style="color:var(--gray-300)"> › </span>
+  <a>87485-0958321</a><span style="color:var(--gray-300)"> › </span>
+  <span style="color:var(--navy);font-weight:600">إنشاء فاتورة عميل</span>
+</div>
+
+<!-- SHIP INFO -->
+<div class="ship-bar">
+  <div>
+    <div class="ship-ref">87485-0958321</div>
+    <div class="ship-client">شركة الفا للتجارة — Alpha Trading Co. | AM-INV-2025-04-00147</div>
+  </div>
+  <div class="ship-metas">
+    <div><div class="sval">MSC</div><div class="slbl">Shipping Line</div></div>
+    <div class="ssep"></div>
+    <div><div class="sval">Alex → Hamburg</div><div class="slbl">Route</div></div>
+    <div class="ssep"></div>
+    <div><div class="sval">40' Dry — 1 حاوية</div><div class="slbl">Container</div></div>
+    <div class="ssep"></div>
+    <div><div class="sval">أحمد محمود</div><div class="slbl">السيلز</div></div>
+  </div>
+</div>
+
+<div class="info-banner">
+  <div style="font-size:16px;flex-shrink:0">ℹ️</div>
+  <div class="info-text">
+    <strong>التكاليف تنقلت تلقائياً من الحسابات.</strong> راجع كل بند — أدخل سعر البيع في خانة <strong>سعر العميل</strong> — الربح يتحسب تلقائياً. بعد المراجعة اضغط <strong>تصدير PDF</strong>.
+  </div>
+</div>
+
+<!-- LEGEND -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#F1F5F9;border:1px solid var(--border)"></div> تكلفة أصلية (من الحسابات)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--blue-light);border:1px solid #93C5FD"></div> سعر العميل (تعدّل عليه)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--green-light);border:1px solid #6EE7B7"></div> ربح موجب</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#FED7AA"></div> Reefer فقط</div>
+</div>
+
+<!-- ===================== SEC 1: SHIPPING LINE ===================== -->
+<div class="sec" id="sec-shipping">
+  <div class="sec-hdr">
+    <div class="sec-left">
+      <div class="sec-icon" style="background:#DBEAFE">🚢</div>
+      <div>
+        <div class="sec-title">الخط الملاحي / Shipping Line</div>
+        <div class="sec-sub">MSC — فاتورة #MSC-INV-2025-4471</div>
+      </div>
+    </div>
+    <div class="sec-right">
+      <span class="badge blue" id="badge-s-cost">تكلفة: $1,450</span>
+      <span class="badge green" id="badge-s-sell">سعر: $1,575</span>
+      <span class="badge green" id="badge-s-profit">ربح: +$125</span>
+    </div>
+  </div>
+  <div class="sec-body" style="padding:0">
+    <table class="items-table" style="width:100%">
+      <thead>
+        <tr>
+          <td class="th col-name">البند / Charge</td>
+          <td class="th col-cost">التكلفة (من الحسابات)</td>
+          <td class="th col-sell">سعر العميل ✏️</td>
+          <td class="th col-profit">الربح</td>
+          <td class="th col-cur">العملة</td>
+          <td class="th col-del"></td>
+        </tr>
+      </thead>
+      <tbody id="tbody-shipping">
+        <tr class="irow">
+          <td><div class="iname">Ocean Freight (OF)<span class="en">أجرة الشحن البحري</span></div></td>
+          <td style="text-align:center"><input type="number" class="cnt-input" value="1" min="1" style="width:50px;padding:4px;border:1px solid var(--border);border-radius:5px;font-size:12px;font-family:var(--mono);text-align:center" oninput="calcRow(this.closest('tr').querySelector('.sell-input'))"/></td>
+          <td class="cost-cell">1,200.00</td>
+          <td><input class="sell-input" type="number" value="1350" oninput="calcRow(this)" data-cost="1200" data-sec="shipping"/></td>
+          <td class="profit-cell profit-pos" id="profit-OF">+150.00</td>
+          <td><select class="cur-sel" onchange="calcSec('shipping')"><option>USD</option><option>EGP</option><option>EUR</option></select></td>
+          <td><div class="del-btn" onclick="delRow(this,'shipping')">✕</div></td>
+        </tr>
+        <tr class="irow">
+          <td><div class="iname">THC – Terminal Handling Charges<span class="en">رسوم المناولة في الميناء</span></div></td>
+          <td style="text-align:center"><input type="number" class="cnt-input" value="1" min="1" style="width:50px;padding:4px;border:1px solid var(--border);border-radius:5px;font-size:12px;font-family:var(--mono);text-align:center" oninput="calcRow(this.closest('tr').querySelector('.sell-input'))"/></td>
+          <td class="cost-cell">150.00</td>
+          <td><input class="sell-input" type="number" value="150" oninput="calcRow(this)" data-cost="150" data-sec="shipping"/></td>
+          <td class="profit-cell profit-zero" id="profit-THC">0.00</td>
+          <td><select class="cur-sel" onchange="calcSec('shipping')"><option>USD</option><option>EGP</option><option>EUR</option></select></td>
+          <td><div class="del-btn" onclick="delRow(this,'shipping')">✕</div></td>
+        </tr>
+        <tr class="irow">
+          <td><div class="iname">Bill of Lading Fee (B/L Fee)<span class="en">رسوم بوليصة الشحن</span></div></td>
+          <td style="text-align:center"><input type="number" class="cnt-input" value="1" min="1" style="width:50px;padding:4px;border:1px solid var(--border);border-radius:5px;font-size:12px;font-family:var(--mono);text-align:center" oninput="calcRow(this.closest('tr').querySelector('.sell-input'))"/></td>
+          <td class="cost-cell">50.00</td>
+          <td><input class="sell-input" type="number" value="50" oninput="calcRow(this)" data-cost="50" data-sec="shipping"/></td>
+          <td class="profit-cell profit-zero" id="profit-BL">0.00</td>
+          <td><select class="cur-sel" onchange="calcSec('shipping')"><option>USD</option><option>EGP</option><option>EUR</option></select></td>
+          <td><div class="del-btn" onclick="delRow(this,'shipping')">✕</div></td>
+        </tr>
+        <tr class="irow">
+          <td><div class="iname">Telex Release Fee<span class="en">رسوم التليكس</span></div></td>
+          <td style="text-align:center"><input type="number" class="cnt-input" value="1" min="1" style="width:50px;padding:4px;border:1px solid var(--border);border-radius:5px;font-size:12px;font-family:var(--mono);text-align:center" oninput="calcRow(this.closest('tr').querySelector('.sell-input'))"/></td>
+          <td class="cost-cell">25.00</td>
+          <td><input class="sell-input" type="number" value="25" oninput="calcRow(this)" data-cost="25" data-sec="shipping"/></td>
+          <td class="profit-cell profit-zero" id="profit-Telex">0.00</td>
+          <td><select class="cur-sel" onchange="calcSec('shipping')"><option>USD</option><option>EGP</option><option>EUR</option></select></td>
+          <td><div class="del-btn" onclick="delRow(this,'shipping')">✕</div></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="add-row">
+      <input type="text" id="ni-shipping" placeholder="إضافة بند جديد للشحن..."/>
+      <input type="number" id="nc-shipping" placeholder="تكلفة" style="width:80px;font-family:var(--mono)"/>
+      <select id="ncur-shipping"><option>USD</option><option>EGP</option><option>EUR</option></select>
+      <button class="btn sm dashed" onclick="addRow('shipping')">+ إضافة</button>
+    </div>
+    <div class="sec-total">
+      <span>إجمالي الخط الملاحي</span>
+      <div style="display:flex;gap:16px;align-items:center">
+        <span style="font-size:11px;color:var(--gray-500)">تكلفة: <span class="cost-cell" id="stot-cost-shipping">$1,425</span></span>
+        <span class="stv" id="stot-sell-shipping">$1,575</span>
+        <span class="stp" id="stot-profit-shipping">+$150</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== SEC 2: INLAND ===================== -->
+<div class="sec" id="sec-inland">
+  <div class="sec-hdr">
+    <div class="sec-left">
+      <div class="sec-icon" style="background:#D1FAE5">🚛</div>
+      <div>
+        <div class="sec-title">النقل الداخلي / Inland Transport</div>
+        <div class="sec-sub">أحمد سعيد — فاتورة #NQL-2025-889</div>
+      </div>
+    </div>
+    <div class="sec-right">
+      <span class="badge green" id="badge-i-cost">تكلفة: 4,500 EGP</span>
+      <span class="badge blue" id="badge-i-sell">سعر: 5,200 EGP</span>
+      <span class="badge green" id="badge-i-profit">ربح: +700</span>
+    </div>
+  </div>
+  <div class="sec-body" style="padding:0">
+    <table class="items-table" style="width:100%">
+      <thead>
+        <tr>
+          <td class="th col-name">البند / Charge</td>
+          <td class="th col-cost">التكلفة</td>
+          <td class="th col-sell">سعر العميل ✏️</td>
+          <td class="th col-profit">الربح</td>
+          <td class="th col-cur">العملة</td>
+          <td class="th col-del"></td>
+        </tr>
+      </thead>
+      <tbody id="tbody-inland">
+        <tr class="irow">
+          <td><div class="iname">Inland Transportation Freight Cost<span class="en">تكلفة النقل الداخلي</span></div></td>
+          <td style="text-align:center"><input type="number" class="cnt-input" value="1" min="1" style="width:50px;padding:4px;border:1px solid var(--border);border-radius:5px;font-size:12px;font-family:var(--mono);text-align:center"/></td>
+          <td class="cost-cell">4,500.00</td>
+          <td><input class="sell-input" type="number" value="5200" oninput="calcRow(this)" data-cost="4500" data-sec="inland"/></td>
+          <td class="profit-cell profit-pos">+700.00</td>
+          <td><select class="cur-sel" onchange="calcSec('inland')"><option>EGP</option><option>USD</option><option>EUR</option></select></td>
+          <td><div class="del-btn" onclick="delRow(this,'inland')">✕</div></td>
+        </tr>
+        <tr class="irow">
+          <td><div class="iname">Official Receipts Cost<span class="en">تكلفة الإيصالات الرسمية</span></div></td>
+          <td style="text-align:center"><input type="number" class="cnt-input" value="1" min="1" style="width:50px;padding:4px;border:1px solid var(--border);border-radius:5px;font-size:12px;font-family:var(--mono);text-align:center"/></td>
+          <td class="cost-cell">850.00</td>
+          <td><input class="sell-input" type="number" value="850" oninput="calcRow(this)" data-cost="850" data-sec="inland"/></td>
+          <td class="profit-cell profit-zero">0.00</td>
+          <td><select class="cur-sel" onchange="calcSec('inland')"><option>EGP</option><option>USD</option><option>EUR</option></select></td>
+          <td><div class="del-btn" onclick="delRow(this,'inland')">✕</div></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="add-row">
+      <input type="text" id="ni-inland" placeholder="إضافة بند جديد للنقل..."/>
+      <input type="number" id="nc-inland" placeholder="تكلفة" style="width:80px;font-family:var(--mono)"/>
+      <select id="ncur-inland"><option>EGP</option><option>USD</option><option>EUR</option></select>
+      <button class="btn sm dashed" onclick="addRow('inland')">+ إضافة</button>
+    </div>
+    <div class="sec-total">
+      <span>إجمالي النقل الداخلي</span>
+      <div style="display:flex;gap:16px;align-items:center">
+        <span style="font-size:11px;color:var(--gray-500)">تكلفة: <span class="cost-cell" id="stot-cost-inland">5,350 EGP</span></span>
+        <span class="stv" id="stot-sell-inland">6,050 EGP</span>
+        <span class="stp" id="stot-profit-inland">+700 EGP</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== SEC 3: CUSTOMS ===================== -->
+<div class="sec" id="sec-customs">
+  <div class="sec-hdr">
+    <div class="sec-left">
+      <div class="sec-icon" style="background:#FEF3C7">🏛️</div>
+      <div>
+        <div class="sec-title">التخليص الجمركي / Customs Clearance</div>
+        <div class="sec-sub">مكتب الإسكندرية — فاتورة #TKH-2025-223</div>
+      </div>
+    </div>
+    <div class="sec-right">
+      <span class="badge orange" id="badge-c-cost">تكلفة: 2,500 EGP</span>
+      <span class="badge blue" id="badge-c-sell">سعر: 2,500 EGP</span>
+      <span class="badge gray" id="badge-c-profit">ربح: 0</span>
+    </div>
+  </div>
+  <div class="sec-body" style="padding:0">
+    <table class="items-table" style="width:100%">
+      <thead>
+        <tr>
+          <td class="th col-name">البند / Charge</td>
+          <td class="th col-cost">التكلفة</td>
+          <td class="th col-sell">سعر العميل ✏️</td>
+          <td class="th col-profit">الربح</td>
+          <td class="th col-cur">العملة</td>
+          <td class="th col-del"></td>
+        </tr>
+      </thead>
+      <tbody id="tbody-customs">
+        <tr class="irow">
+          <td><div class="iname">Customs Declaration Opening Fee<span class="en">رسوم فتح الشهادة الجمركية</span></div></td>
+          <td style="text-align:center"><input type="number" class="cnt-input" value="1" min="1" style="width:50px;padding:4px;border:1px solid var(--border);border-radius:5px;font-size:12px;font-family:var(--mono);text-align:center"/></td>
+          <td class="cost-cell">2,500.00</td>
+          <td><input class="sell-input" type="number" value="2500" oninput="calcRow(this)" data-cost="2500" data-sec="customs"/></td>
+          <td class="profit-cell profit-zero">0.00</td>
+          <td><select class="cur-sel" onchange="calcSec('customs')"><option>EGP</option><option>USD</option><option>EUR</option></select></td>
+          <td><div class="del-btn" onclick="delRow(this,'customs')">✕</div></td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="background:var(--gray-50);border-top:1px solid var(--border);padding:10px 14px;display:flex;align-items:center;gap:10px;">
+      <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;font-weight:500;color:var(--gray-700)">
+        <input type="checkbox" id="receipts-checkbox" onchange="toggleReceiptsNote()" style="width:15px;height:15px;accent-color:var(--orange);cursor:pointer"/>
+        إضافة ملاحظة الإيصالات الرسمية في الفاتورة
+      </label>
+      <span style="font-size:10px;color:var(--gray-400)">اختياري — أضفها فقط لو الإيصالات لم تُحدَّد بعد</span>
+    </div>
+    <div id="receipts-note-preview" style="display:none;background:var(--orange-light);border-top:1px solid #FED7AA;padding:8px 12px;font-size:11px;color:#92400E">
+      ⚠️ <strong>الإيصالات الرسمية:</strong> غير شاملة في هذا السعر — يتم تحديدها من هيئة الموانئ وتقديم أصولها للعميل.
+    </div>
+    <div class="add-row">
+      <input type="text" id="ni-customs" placeholder="إضافة بند جديد للتخليص..."/>
+      <input type="number" id="nc-customs" placeholder="تكلفة" style="width:80px;font-family:var(--mono)"/>
+      <select id="ncur-customs"><option>EGP</option><option>USD</option><option>EUR</option></select>
+      <button class="btn sm dashed" onclick="addRow('customs')">+ إضافة</button>
+    </div>
+    <div class="sec-total">
+      <span>إجمالي التخليص الجمركي</span>
+      <div style="display:flex;gap:16px;align-items:center">
+        <span style="font-size:11px;color:var(--gray-500)">تكلفة: <span class="cost-cell">2,500 EGP</span></span>
+        <span class="stv">2,500 EGP</span>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--gray-400)">0</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== HANDLING FEES ===================== -->
+<div class="handling-card">
+  <div class="handling-title">💼 Handling Fees — رسوم الخدمة والمتابعة</div>
+  <div class="hf-grid">
+    <div class="fg">
+      <label>عدد الحاويات / No. of Containers</label>
+      <input type="number" id="hf-containers" value="1" min="1" oninput="calcHandling()"/>
+    </div>
+    <div class="fg">
+      <label>Handling Fee لكل حاوية</label>
+      <input type="number" id="hf-per-unit" value="100" oninput="calcHandling()"/>
+    </div>
+    <div class="fg">
+      <label>العملة</label>
+      <select id="hf-currency" onchange="calcHandling()">
+        <option>USD</option><option>EGP</option><option>EUR</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label>الإجمالي / Total</label>
+      <input type="text" id="hf-total" value="$100 USD" readonly style="background:var(--green-light);font-weight:600;color:var(--green);font-family:var(--mono)"/>
+    </div>
+  </div>
+  <div style="font-size:11px;color:var(--gray-400);margin-top:6px">
+    سيظهر في الفاتورة: <strong>Handling Fees — 1 Container × $100 = $100 USD</strong>
+  </div>
+</div>
+
+<!-- ===================== NOTES ===================== -->
+<div class="notes-card">
+  <label>ملاحظات للعميل (اختياري — تظهر في الفاتورة)</label>
+  <textarea placeholder="مثال: الأسعار صالحة حتى 30 أبريل 2025..."></textarea>
+</div>
+
+<!-- ===================== GRAND TOTAL ===================== -->
+<div class="grand-card">
+  <div class="grand-top">
+    <div class="grand-main">
+      <div class="gl">إجمالي الفاتورة للعميل</div>
+      <div class="gv" id="grand-total">$1,675 + 8,550 EGP</div>
+      <div class="gs">العميل يشوف هذا المبلغ فقط — التكلفة والربح مخفيان</div>
+    </div>
+    <div class="grand-breakdown">
+      <div class="gb-row"><span class="gb-lbl">🚢 شحن بحري</span><span class="gb-val sell" id="gb-shipping">$1,575 USD</span></div>
+      <div class="gb-row"><span class="gb-lbl">🚛 نقل داخلي</span><span class="gb-val sell" id="gb-inland">6,050 EGP</span></div>
+      <div class="gb-row"><span class="gb-lbl">🏛️ تخليص جمركي</span><span class="gb-val sell" id="gb-customs">2,500 EGP</span></div>
+      <div class="gb-row"><span class="gb-lbl">💼 Handling Fees</span><span class="gb-val sell" id="gb-handling">$100 USD</span></div>
+    </div>
+  </div>
+  <div class="grand-divider"></div>
+  <div class="profit-summary">
+    <div class="ps-item">
+      <div class="ps-lbl">إجمالي التكلفة (مخفي)</div>
+      <div class="ps-val" style="color:rgba(255,255,255,.5)">$1,425 + 7,850 EGP</div>
+    </div>
+    <div style="width:1px;height:30px;background:rgba(255,255,255,.1)"></div>
+    <div class="ps-item">
+      <div class="ps-lbl">إجمالي سعر البيع</div>
+      <div class="ps-val" style="color:var(--orange)">$1,675 + 8,550 EGP</div>
+    </div>
+    <div style="width:1px;height:30px;background:rgba(255,255,255,.1)"></div>
+    <div class="ps-item">
+      <div class="ps-lbl">صافي الربح (مخفي عن العميل)</div>
+      <div class="ps-val" style="color:var(--green)">+$250 + 700 EGP</div>
+    </div>
+  </div>
+</div>
+
+<!-- ACTIONS -->
+<div class="actions-bar">
+  <button class="btn navy" onclick="exportInvoice()" style="padding:10px 22px;font-size:13px">📄 تصدير PDF — إرسال للعميل</button>
+  <button class="btn" style="padding:10px 18px;font-size:13px">💾 حفظ مسودة</button>
+  <button class="btn" style="padding:10px 18px;font-size:13px">معاينة الفاتورة</button>
+  <button class="btn" style="padding:10px 18px;font-size:13px">إلغاء</button>
+</div>
+
+</div>
+
+<script>
+// CALC ROW PROFIT
+function calcRow(input) {
+  var cost = parseFloat(input.getAttribute('data-cost')) || 0;
+  var sell = parseFloat(input.value) || 0;
+  var profit = sell - cost;
+  var profitCell = input.closest('tr').querySelector('.profit-cell');
+  if (!profitCell) return;
+  profitCell.textContent = (profit >= 0 ? '+' : '') + profit.toFixed(2);
+  profitCell.className = 'profit-cell ' + (profit > 0 ? 'profit-pos' : profit < 0 ? 'profit-neg' : 'profit-zero');
+  if (sell !== cost) { input.classList.add('modified'); }
+  else { input.classList.remove('modified'); }
+  var sec = input.getAttribute('data-sec');
+  if (sec) calcSec(sec);
+}
+
+function calcSec(sec) {
+  var tbody = document.getElementById('tbody-' + sec);
+  if (!tbody) return;
+  var rows = tbody.querySelectorAll('tr.irow');
+  var totalCost = 0, totalSell = 0;
+  rows.forEach(function(row) {
+    var costCell = row.querySelector('.cost-cell');
+    var sellInput = row.querySelector('.sell-input');
+    if (!costCell || !sellInput) return;
+    var cost = parseFloat(costCell.textContent.replace(/,/g,'')) || 0;
+    var sell = parseFloat(sellInput.value) || 0;
+    totalCost += cost;
+    totalSell += sell;
+  });
+  var profit = totalSell - totalCost;
+  var costEl = document.getElementById('stot-cost-' + sec);
+  var sellEl = document.getElementById('stot-sell-' + sec);
+  var profEl = document.getElementById('stot-profit-' + sec);
+  if (costEl) costEl.textContent = totalCost.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  if (sellEl) sellEl.textContent = totalSell.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  if (profEl) { profEl.textContent = (profit >= 0 ? '+' : '') + profit.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); profEl.style.color = profit >= 0 ? 'var(--green)' : 'var(--red)'; }
+}
+
+function delRow(btn, sec) {
+  var row = btn.closest('tr');
+  row.style.opacity = '0'; row.style.transition = 'opacity .2s';
+  setTimeout(function() { row.remove(); calcSec(sec); }, 200);
+}
+
+function addRow(sec) {
+  var ni = document.getElementById('ni-' + sec);
+  var nc = document.getElementById('nc-' + sec);
+  var ncur = document.getElementById('ncur-' + sec);
+  if (!ni || !ni.value.trim()) { if(ni){ni.focus();ni.style.borderColor='var(--red)';setTimeout(function(){ni.style.borderColor='';},1500);} return; }
+  var cost = parseFloat(nc.value) || 0;
+  var cur = ncur.value;
+  var tbody = document.getElementById('tbody-' + sec);
+  var row = document.createElement('tr');
+  row.className = 'irow'; row.style.opacity = '0';
+  row.innerHTML = '<td><div class="iname">' + ni.value.trim() + '<span class="en">بند مخصص</span></div></td>' +
+    '<td class="cost-cell">' + cost.toFixed(2) + '</td>' +
+    '<td><input class="sell-input" type="number" value="' + cost + '" oninput="calcRow(this)" data-cost="' + cost + '" data-sec="' + sec + '"/></td>' +
+    '<td class="profit-cell profit-zero">0.00</td>' +
+    '<td><select class="cur-sel" onchange="calcSec(\'' + sec + '\')"><option' + (cur==='USD'?' selected':'') + '>USD</option><option' + (cur==='EGP'?' selected':'') + '>EGP</option><option' + (cur==='EUR'?' selected':'') + '>EUR</option></select></td>' +
+    '<td><div class="del-btn" onclick="delRow(this,\'' + sec + '\')">✕</div></td>';
+  tbody.appendChild(row);
+  setTimeout(function(){row.style.opacity='1';row.style.transition='opacity .2s';},10);
+  ni.value=''; nc.value='';
+  calcSec(sec);
+}
+
+function calcHandling() {
+  var containers = parseInt(document.getElementById('hf-containers').value) || 1;
+  var perUnit = parseFloat(document.getElementById('hf-per-unit').value) || 0;
+  var cur = document.getElementById('hf-currency').value;
+  var total = containers * perUnit;
+  var sym = cur === 'USD' ? '$' : cur === 'EUR' ? '€' : '';
+  document.getElementById('hf-total').value = (sym ? sym : '') + total.toFixed(2) + ' ' + cur;
+  document.getElementById('gb-handling').textContent = (sym ? sym : '') + total.toFixed(2) + ' ' + cur;
+  var noteEl = document.querySelector('.handling-card > div:last-child strong');
+  if (noteEl) noteEl.textContent = 'Handling Fees — ' + containers + ' Container' + (containers > 1 ? 's' : '') + ' × ' + (sym || '') + perUnit + ' = ' + (sym || '') + total + ' ' + cur;
+}
+
+function toggleReceiptsNote() {
+  var cb = document.getElementById('receipts-checkbox');
+  var note = document.getElementById('receipts-note-preview');
+  if (note) note.style.display = cb.checked ? 'block' : 'none';
+}
+
+function exportInvoice() {
+  alert('✅ تم تصدير الفاتورة AM-INV-2025-04-00147\n\n📄 PDF جاهز للإرسال للعميل\n📨 نسخة حُفظت في الشحنة\n\nالعميل يرى: بنود البيع فقط — التكلفة والربح مخفيان.');
+}
+
+// Init calc on load
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.sell-input').forEach(function(inp) { calcRow(inp); });
+  calcHandling();
+});
+</script>
+</body>
+</html>

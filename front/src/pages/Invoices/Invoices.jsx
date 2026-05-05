@@ -7,7 +7,6 @@ import '../Clients/Clients.css'
 import Tabs from '../../components/Tabs'
 import InvoiceSummary from './components/InvoiceSummary'
 import InvoicesTable from './components/InvoicesTable'
-import CreateInvoiceModal from './components/CreateInvoiceModal'
 import { getStoredToken } from '../Login'
 import { exportInvoicesCsv } from '../../api/invoices'
 import { useAuthAccess } from '../../hooks/useAuthAccess'
@@ -21,7 +20,6 @@ export default function Invoices() {
 
   const [activeTab, setActiveTab] = useState('all')
   const [refreshKey, setRefreshKey] = useState(0)
-  const [createOpen, setCreateOpen] = useState(false)
   const [exportBusy, setExportBusy] = useState(false)
   const [tableFilters, setTableFilters] = useState({
     search: '',
@@ -107,18 +105,8 @@ export default function Invoices() {
             canManage={canManageInvoices}
             exportLoading={exportBusy}
             onExportCsv={handleExportCsv}
-            onCreateInvoice={canManageInvoices ? () => setCreateOpen(true) : undefined}
           />
         </div>
-
-        <CreateInvoiceModal
-          isOpen={createOpen}
-          onClose={() => setCreateOpen(false)}
-          onSuccess={() => {
-            setCreateOpen(false)
-            setRefreshKey((k) => k + 1)
-          }}
-        />
       </div>
     </Container>
   )

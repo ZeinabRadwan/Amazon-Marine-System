@@ -2777,6 +2777,10 @@
     "trackingEmpty": "لا توجد تحديثات تتبع بعد.",
     "errorTracking": "تعذّر حفظ تحديث التتبع.",
     "fin": {
+      "shipmentCostDetails": "تفاصيل تكلفة الشحنة",
+      "shipmentCostItems": "بنود تكلفة الشحنة",
+      "shipmentNumber": "رقم الشحنة",
+      "clientName": "اسم العميل",
       "tabA": "A) فواتير التكلفة",
       "tabB": "B) تسعير البيع",
       "tabC": "C) فواتير العميل",

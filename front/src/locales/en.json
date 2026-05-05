@@ -2765,6 +2765,10 @@
     "trackingEmpty": "No tracking updates yet.",
     "errorTracking": "Failed to save tracking update.",
     "fin": {
+      "shipmentCostDetails": "Shipment Cost Details",
+      "shipmentCostItems": "Shipment Cost Items",
+      "shipmentNumber": "Shipment Number",
+      "clientName": "Client Name",
       "tabA": "A) Vendor cost invoices",
       "tabB": "B) Sales pricing",
       "tabC": "C) Client invoice",

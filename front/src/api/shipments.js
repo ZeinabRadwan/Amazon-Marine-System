@@ -265,6 +265,30 @@ export async function notifyShipmentSalesFinancials(token, shipmentId) {
   return json
 }
 
+export async function getShipmentCostInvoice(token, shipmentId) {
+  const res = await apiFetch(`${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}/cost-invoice`, {
+    headers: authHeaders(token),
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(json.message || json.error || `Failed to load shipment cost invoice (${res.status})`)
+  }
+  return json
+}
+
+export async function updateShipmentCostInvoice(token, shipmentId, body) {
+  const res = await apiFetch(`${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}/cost-invoice`, {
+    method: 'PUT',
+    headers: authHeaders(token),
+    body: JSON.stringify(body),
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(json.message || json.error || `Failed to save shipment cost invoice (${res.status})`)
+  }
+  return json
+}
+
 export async function getShipmentOperations(token, shipmentId) {
   const res = await apiFetch(`${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}/operations`, {
     headers: authHeaders(token),
