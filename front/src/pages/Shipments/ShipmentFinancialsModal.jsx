@@ -66,6 +66,14 @@ function formatMoney(amount, locale) {
   return new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(amount)
 }
 
+function formatFileSize(size) {
+  const bytes = Number(size) || 0
+  if (bytes <= 0) return '—'
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
 function clientLabel(shipment) {
   return shipment?.client?.company_name ?? shipment?.client?.name ?? '—'
 }
@@ -651,7 +659,18 @@ export default function ShipmentFinancialsModal({
       setRenamingReceiptId(null)
       setRenamingReceiptValue('')
       setReceiptActionId(null)
-      setSectionAttachmentRefs(attachmentRefs || {})
+      const normalizedRefs = {}
+      Object.entries(attachmentRefs || {}).forEach(([bucketId, list]) => {
+        normalizedRefs[bucketId] = (Array.isArray(list) ? list : []).map((ref, idx) => ({
+          id: ref?.id || `att-${bucketId}-${idx}-${Date.now()}`,
+          name: ref?.name || 'attachment',
+          size: Number(ref?.size || 0),
+          type: ref?.type || null,
+          uploaded_at: ref?.uploaded_at || new Date().toISOString(),
+          object_url: ref?.object_url || null,
+        }))
+      })
+      setSectionAttachmentRefs(normalizedRefs)
 
       if (token) {
         listCurrencies(token).then(setCurrencies).catch(() => setCurrencies([]))
@@ -962,15 +981,18 @@ export default function ShipmentFinancialsModal({
 
     setBatchSavingBucket(bucketId)
     try {
+      const objectUrl = URL.createObjectURL(file)
       setSectionAttachmentRefs((prev) => ({
         ...prev,
         [bucketId]: [
           ...(prev[bucketId] || []),
           {
+            id: `att-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
             name: file.name,
             size: file.size,
             type: file.type || null,
             uploaded_at: new Date().toISOString(),
+            object_url: objectUrl,
           },
         ],
       }))
@@ -1018,6 +1040,9 @@ export default function ShipmentFinancialsModal({
           const desc = String(draft.desc || '').trim()
           const amount = Number(draft.amount)
           if (desc === '' && String(draft.amount ?? '').trim() === '') continue
+          if (String(model.tplId || '').toLowerCase() === 'other' && desc === '') {
+            throw new Error(t('shipments.fin.descPlaceholder'))
+          }
           if (Number.isNaN(amount) || amount < 0) {
             throw new Error(t('shipments.fin.errorInvalidAmount'))
           }
@@ -1044,6 +1069,9 @@ export default function ShipmentFinancialsModal({
           const desc = String(line.desc || '').trim()
           const amount = Number(line.amount)
           if (desc === '' && String(line.amount ?? '').trim() === '') continue
+          if (desc === '') {
+            throw new Error(t('shipments.fin.descPlaceholder'))
+          }
           if (Number.isNaN(amount) || amount < 0) {
             throw new Error(t('shipments.fin.errorInvalidAmount'))
           }
@@ -1064,7 +1092,18 @@ export default function ShipmentFinancialsModal({
       await updateShipmentCostInvoice(token, shipment.id, {
         status: 'draft',
         items,
-        attachment_refs: sectionAttachmentRefs,
+        attachment_refs: Object.fromEntries(
+          Object.entries(sectionAttachmentRefs || {}).map(([bucketId, list]) => [
+            bucketId,
+            (list || []).map((a) => ({
+              id: a.id,
+              name: a.name,
+              size: a.size,
+              type: a.type,
+              uploaded_at: a.uploaded_at,
+            })),
+          ])
+        ),
       })
 
       setPendingOtherByBucket({})
@@ -1247,6 +1286,46 @@ export default function ShipmentFinancialsModal({
     setTabBRows((rows) => rows.map((r, i) => (i === idx ? { ...r, ...patch } : r)))
   }
 
+  const renameSectionAttachment = useCallback((bucketId, attachmentId) => {
+    const list = sectionAttachmentRefs[bucketId] || []
+    const item = list.find((a) => a.id === attachmentId)
+    if (!item) return
+    const nextName = window.prompt(t('shipments.fin.renameReceipt'), item.name || '')
+    if (!nextName || !nextName.trim()) return
+    setSectionAttachmentRefs((prev) => ({
+      ...prev,
+      [bucketId]: (prev[bucketId] || []).map((a) => (a.id === attachmentId ? { ...a, name: nextName.trim() } : a)),
+    }))
+  }, [sectionAttachmentRefs, t])
+
+  const deleteSectionAttachment = useCallback((bucketId, attachmentId) => {
+    setSectionAttachmentRefs((prev) => ({
+      ...prev,
+      [bucketId]: (prev[bucketId] || []).filter((a) => a.id !== attachmentId),
+    }))
+  }, [])
+
+  const openSectionAttachment = useCallback((attachment) => {
+    if (!attachment?.object_url) {
+      setFinBanner({ type: 'error', message: t('shipments.fin.errorReceipt') })
+      return
+    }
+    window.open(attachment.object_url, '_blank', 'noopener,noreferrer')
+  }, [t])
+
+  const downloadSectionAttachment = useCallback((attachment) => {
+    if (!attachment?.object_url) {
+      setFinBanner({ type: 'error', message: t('shipments.fin.errorReceipt') })
+      return
+    }
+    const a = document.createElement('a')
+    a.href = attachment.object_url
+    a.download = attachment.name || 'attachment'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+  }, [t])
+
   const sellingVisibleRows = useMemo(
     () => tabBRows.filter((r) => !deletedSellIds.has(r.expenseId)),
     [tabBRows, deletedSellIds]
@@ -1359,6 +1438,43 @@ export default function ShipmentFinancialsModal({
       </thead>
     )
 
+    const attachmentRows = sectionAttachmentRefs[bucketId] || []
+    const attachmentTable = attachmentRows.length > 0 ? (
+      <div className="shipment-fin-table-wrap shipment-fin-draft-table-wrap mt-2">
+        <table className="shipment-fin-line-table">
+          <thead>
+            <tr>
+              <th>{t('shipments.fin.attachmentsLabel')}</th>
+              <th>{t('shipments.fin.colCurrency', { defaultValue: 'Type' })}</th>
+              <th>{t('shipments.fin.invoiceNet', { defaultValue: 'Size' })}</th>
+              <th>{t('shipments.expColDate')}</th>
+              <th>{t('shipments.actions')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {attachmentRows.map((att) => (
+              <tr key={att.id}>
+                <td>{att.name || 'attachment'}</td>
+                <td>{att.type || '—'}</td>
+                <td>{formatFileSize(att.size)}</td>
+                <td>{att.uploaded_at ? new Date(att.uploaded_at).toISOString().slice(0, 10) : '—'}</td>
+                <td className="shipment-fin-actions">
+                  <div className="shipment-fin-actions__inner">
+                    <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm" onClick={() => openSectionAttachment(att)}><Eye size={14} /></button>
+                    <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm" onClick={() => downloadSectionAttachment(att)}><FileDown size={14} /></button>
+                    <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm" onClick={() => renameSectionAttachment(bucketId, att.id)}><Pencil size={14} /></button>
+                    <button type="button" className="shipment-fin-btn shipment-fin-btn--danger shipment-fin-btn--sm" onClick={() => deleteSectionAttachment(bucketId, att.id)}><Trash2 size={14} /></button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    ) : (
+      <div className="shipment-fin-empty-inline">لا يوجد إيصال</div>
+    )
+
     const renderExpenseCells = (ex) => (
       <>
         <td className="shipment-fin-num">{formatMoney(Number(ex?.amount) || 0, numberLocale)}</td>
@@ -1410,7 +1526,7 @@ export default function ShipmentFinancialsModal({
                 <tbody>
                   {rows.map((ex) => (
                     <tr key={ex.id}>
-                      <td>{ex.description?.trim() || ex.invoice_number || '—'}</td>
+                      <td>{ex.title?.trim() || ex.description?.trim() || ex.invoice_number || '—'}</td>
                       <td className="shipment-fin-num">{formatMoney(Number(ex.amount) || 0, numberLocale)}</td>
                       <td>{ex.currency_code || '—'}</td>
                       {bucketEditing ? (
@@ -1561,6 +1677,7 @@ export default function ShipmentFinancialsModal({
               ) : null}
             </div>
           ) : null}
+          {attachmentTable}
         </>
       )
     } else {
@@ -1575,7 +1692,7 @@ export default function ShipmentFinancialsModal({
           const descPrefix = LINE_DESC_PREFIX[tpl.id] || tpl.id
           const categoryCode = categoryCodeForTemplate(bucketId, tpl.id)
           const categoryMeta = categoriesByCode[categoryCode]
-          const initialDesc = normalizeTemplateEditableDescription(ex?.description, bucketId, tpl.id)
+          const initialDesc = String(ex?.title || normalizeTemplateEditableDescription(ex?.description, bucketId, tpl.id) || '')
           const initialAmount = ex?.amount != null ? String(ex.amount) : ''
           const initialCurrency = ex?.currency_code || 'USD'
           const draft = { desc: initialDesc, amount: initialAmount, currency: initialCurrency, ...(groupDraftByKey[rowKey] || {}) }
@@ -1599,7 +1716,7 @@ export default function ShipmentFinancialsModal({
             if (!ex) {
               sectionRows.push(
                 <tr key={rowKey}>
-                  <td>{idx === 0 ? renderLineLabelCell(tpl) : null}</td>
+                  <td>{ex?.title?.trim() || (idx === 0 ? renderLineLabelCell(tpl) : null)}</td>
                   <td className="shipment-fin-num">—</td>
                   <td>—</td>
                 </tr>
@@ -1607,7 +1724,7 @@ export default function ShipmentFinancialsModal({
             } else {
               sectionRows.push(
                 <tr key={rowKey}>
-                  <td>{idx === 0 ? renderLineLabelCell(tpl) : null}</td>
+                  <td>{ex?.title?.trim() || (idx === 0 ? renderLineLabelCell(tpl) : null)}</td>
                   <td className="shipment-fin-num">{formatMoney(Number(ex?.amount) || 0, numberLocale)}</td>
                   <td>{ex?.currency_code || '—'}</td>
                 </tr>
@@ -1618,7 +1735,7 @@ export default function ShipmentFinancialsModal({
 
           sectionRows.push(
             <tr key={rowKey}>
-              <td>{idx === 0 ? renderLineLabelCell(tpl) : null}</td>
+              <td>{draft.desc?.trim() || (idx === 0 ? renderLineLabelCell(tpl) : null)}</td>
               <td>
                 <input
                   type="number"
@@ -1849,6 +1966,7 @@ export default function ShipmentFinancialsModal({
               ) : null}
             </div>
           ) : null}
+          {attachmentTable}
           <div className="shipment-fin-draft-sec-total">
             <span>{t('shipments.fin.netCostLabel')}</span>
             <strong>{subtotalLabel}</strong>
