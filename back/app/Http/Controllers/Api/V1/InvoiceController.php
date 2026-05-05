@@ -7,6 +7,7 @@ use App\Models\Currency;
 use App\Models\CustomerTransaction;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\ShipmentCostInvoice;
 use App\Models\BankAccount;
 use App\Models\PdfLayout;
 use App\Notifications\ShipmentFinancialsCompleted;
@@ -168,6 +169,96 @@ class InvoiceController extends Controller
         return $id === false ? 0 : $id;
     }
 
+    private static function roundMoney(float $value): float
+    {
+        return round($value, 2);
+    }
+
+    /**
+     * @param array<int,InvoiceItem> $items
+     * @return array<string,array{items: array<int,array<string,mixed>>, totals: array<string,float>}>
+     */
+    private function sectionedInvoiceItems(iterable $items): array
+    {
+        $sections = [];
+        foreach ($items as $item) {
+            $section = (string) ($item->section_key ?: 'other');
+            $currency = strtoupper((string) ($item->currency_code ?: 'USD'));
+            $lineTotal = self::roundMoney((float) $item->line_total);
+            $costLineTotal = self::roundMoney((float) ($item->cost_line_total ?? 0));
+            if (! isset($sections[$section])) {
+                $sections[$section] = ['items' => [], 'totals' => []];
+            }
+            $sections[$section]['items'][] = [
+                'id' => $item->id,
+                'description' => $item->description,
+                'title' => $item->title,
+                'quantity' => (float) $item->quantity,
+                'unit_price' => (float) $item->unit_price,
+                'line_total' => $lineTotal,
+                'cost_unit_price' => (float) ($item->cost_unit_price ?? 0),
+                'cost_line_total' => $costLineTotal,
+                'currency_code' => $currency,
+                'section_key' => $section,
+                'order_index' => (int) ($item->order_index ?? 0),
+                'source_key' => $item->source_key,
+            ];
+            $sections[$section]['totals'][$currency] = self::roundMoney((float) ($sections[$section]['totals'][$currency] ?? 0) + $lineTotal);
+        }
+
+        return $sections;
+    }
+
+    /**
+     * @return array<string,float>
+     */
+    private function profitByCurrency(Invoice $invoice): array
+    {
+        $sell = [];
+        $cost = [];
+        foreach ($invoice->items as $item) {
+            $cur = strtoupper((string) ($item->currency_code ?: 'USD'));
+            $sell[$cur] = self::roundMoney((float) ($sell[$cur] ?? 0) + (float) $item->line_total);
+            $cost[$cur] = self::roundMoney((float) ($cost[$cur] ?? 0) + (float) ($item->cost_line_total ?? 0));
+        }
+
+        // fallback when cost_line_total was not sent by frontend
+        if (array_sum($cost) == 0.0 && $invoice->shipment_id) {
+            $costInv = ShipmentCostInvoice::query()->where('shipment_id', $invoice->shipment_id)->first();
+            $costItems = is_array($costInv?->items) ? $costInv->items : [];
+            foreach ($costItems as $ci) {
+                $cur = strtoupper((string) ($ci['currency_code'] ?? 'USD'));
+                $amt = self::roundMoney((float) ($ci['amount'] ?? 0));
+                $cost[$cur] = self::roundMoney((float) ($cost[$cur] ?? 0) + $amt);
+            }
+        }
+
+        $profit = [];
+        foreach (array_unique(array_merge(array_keys($sell), array_keys($cost))) as $cur) {
+            $profit[$cur] = self::roundMoney((float) ($sell[$cur] ?? 0) - (float) ($cost[$cur] ?? 0));
+        }
+
+        return $profit;
+    }
+
+    private function invoicePayload(Invoice $invoice): array
+    {
+        $invoice->loadMissing(['client', 'shipment', 'items', 'payments']);
+        return [
+            ...$invoice->toArray(),
+            'sections' => $this->sectionedInvoiceItems($invoice->items),
+            'totals_by_currency' => collect($invoice->items)
+                ->groupBy(fn (InvoiceItem $i) => strtoupper((string) ($i->currency_code ?: 'USD')))
+                ->map(fn ($g) => self::roundMoney((float) $g->sum('line_total')))
+                ->toArray(),
+            'cost_totals_by_currency' => collect($invoice->items)
+                ->groupBy(fn (InvoiceItem $i) => strtoupper((string) ($i->currency_code ?: 'USD')))
+                ->map(fn ($g) => self::roundMoney((float) $g->sum('cost_line_total')))
+                ->toArray(),
+            'profit_by_currency' => $this->profitByCurrency($invoice),
+        ];
+    }
+
     public function summary(Request $request)
     {
         $user = $request->user();
@@ -269,8 +360,15 @@ class InvoiceController extends Controller
             'items' => ['required', 'array', 'min:1'],
             'items.*.item_id' => ['nullable', 'integer', 'exists:items,id'],
             'items.*.description' => ['required', 'string', 'max:255'],
+            'items.*.title' => ['nullable', 'string', 'max:255'],
             'items.*.quantity' => ['required', 'numeric', 'min:0'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
+            'items.*.currency_code' => ['required', 'string', 'size:3'],
+            'items.*.section_key' => ['nullable', 'string', 'max:60'],
+            'items.*.order_index' => ['nullable', 'integer', 'min:0'],
+            'items.*.source_key' => ['nullable', 'string', 'max:150'],
+            'items.*.cost_unit_price' => ['nullable', 'numeric', 'min:0'],
+            'items.*.cost_line_total' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         $invoice = DB::transaction(function () use ($validated, $user) {
@@ -292,15 +390,28 @@ class InvoiceController extends Controller
             $invoice->save();
 
             foreach ($validated['items'] as $itemData) {
-                $lineTotal = round($itemData['quantity'] * $itemData['unit_price'], 2);
+                $qty = (float) $itemData['quantity'];
+                $unitPrice = (float) $itemData['unit_price'];
+                $lineTotal = self::roundMoney($qty * $unitPrice);
+                $costUnitPrice = (float) ($itemData['cost_unit_price'] ?? 0);
+                $costLineTotal = array_key_exists('cost_line_total', $itemData)
+                    ? self::roundMoney((float) $itemData['cost_line_total'])
+                    : self::roundMoney($qty * $costUnitPrice);
 
                 InvoiceItem::create([
                     'invoice_id' => $invoice->id,
                     'item_id' => $itemData['item_id'] ?? null,
                     'description' => $itemData['description'],
-                    'quantity' => $itemData['quantity'],
-                    'unit_price' => $itemData['unit_price'],
+                    'title' => $itemData['title'] ?? null,
+                    'quantity' => $qty,
+                    'unit_price' => $unitPrice,
                     'line_total' => $lineTotal,
+                    'currency_code' => strtoupper((string) $itemData['currency_code']),
+                    'section_key' => $itemData['section_key'] ?? null,
+                    'order_index' => (int) ($itemData['order_index'] ?? 0),
+                    'source_key' => $itemData['source_key'] ?? null,
+                    'cost_unit_price' => $costUnitPrice,
+                    'cost_line_total' => $costLineTotal,
                 ]);
             }
 
@@ -342,7 +453,7 @@ class InvoiceController extends Controller
         // Fix 7: Auto-PDF trigger could be here if we want to store it.
 
         return response()->json([
-            'data' => $invoice->fresh(['client', 'shipment', 'items']),
+            'data' => $this->invoicePayload($invoice->fresh(['client', 'shipment', 'items', 'payments'])),
         ], 201);
     }
 
@@ -355,7 +466,7 @@ class InvoiceController extends Controller
         );
 
         return response()->json([
-            'data' => $invoice->load(['client', 'shipment', 'items', 'payments']),
+            'data' => $this->invoicePayload($invoice->load(['client', 'shipment', 'items', 'payments'])),
         ]);
     }
 
@@ -379,8 +490,15 @@ class InvoiceController extends Controller
             'items' => ['sometimes', 'array', 'min:1'],
             'items.*.item_id' => ['nullable', 'integer', 'exists:items,id'],
             'items.*.description' => ['required_with:items', 'string', 'max:255'],
+            'items.*.title' => ['nullable', 'string', 'max:255'],
             'items.*.quantity' => ['required_with:items', 'numeric', 'min:0'],
             'items.*.unit_price' => ['required_with:items', 'numeric', 'min:0'],
+            'items.*.currency_code' => ['required_with:items', 'string', 'size:3'],
+            'items.*.section_key' => ['nullable', 'string', 'max:60'],
+            'items.*.order_index' => ['nullable', 'integer', 'min:0'],
+            'items.*.source_key' => ['nullable', 'string', 'max:150'],
+            'items.*.cost_unit_price' => ['nullable', 'numeric', 'min:0'],
+            'items.*.cost_line_total' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         DB::transaction(function () use ($invoice, $validated): void {
@@ -389,15 +507,28 @@ class InvoiceController extends Controller
                 $invoice->items()->delete();
 
                 foreach ($validated['items'] as $itemData) {
-                    $lineTotal = round($itemData['quantity'] * $itemData['unit_price'], 2);
+                    $qty = (float) $itemData['quantity'];
+                    $unitPrice = (float) $itemData['unit_price'];
+                    $lineTotal = self::roundMoney($qty * $unitPrice);
+                    $costUnitPrice = (float) ($itemData['cost_unit_price'] ?? 0);
+                    $costLineTotal = array_key_exists('cost_line_total', $itemData)
+                        ? self::roundMoney((float) $itemData['cost_line_total'])
+                        : self::roundMoney($qty * $costUnitPrice);
 
                     InvoiceItem::create([
                         'invoice_id' => $invoice->id,
                         'item_id' => $itemData['item_id'] ?? null,
                         'description' => $itemData['description'],
-                        'quantity' => $itemData['quantity'],
-                        'unit_price' => $itemData['unit_price'],
+                        'title' => $itemData['title'] ?? null,
+                        'quantity' => $qty,
+                        'unit_price' => $unitPrice,
                         'line_total' => $lineTotal,
+                        'currency_code' => strtoupper((string) $itemData['currency_code']),
+                        'section_key' => $itemData['section_key'] ?? null,
+                        'order_index' => (int) ($itemData['order_index'] ?? 0),
+                        'source_key' => $itemData['source_key'] ?? null,
+                        'cost_unit_price' => $costUnitPrice,
+                        'cost_line_total' => $costLineTotal,
                     ]);
                 }
 
@@ -427,7 +558,7 @@ class InvoiceController extends Controller
         });
 
         return response()->json([
-            'data' => $invoice->fresh(['client', 'shipment', 'items']),
+            'data' => $this->invoicePayload($invoice->fresh(['client', 'shipment', 'items', 'payments'])),
         ]);
     }
 

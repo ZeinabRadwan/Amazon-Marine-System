@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X, ChevronDown, ChevronUp, FileText, DollarSign, History, Ship, Car, ShieldCheck, Shield, Package, Upload, Trash2, Paperclip, Eye, Pencil, FileDown } from 'lucide-react'
+import { X, ChevronDown, ChevronUp, FileText, DollarSign, History, Ship, Car, ShieldCheck, Shield, Package, Upload, Trash2, Paperclip, Eye, Pencil, FileDown, Bell } from 'lucide-react'
 import {
   createExpense,
   updateExpense,
@@ -1242,12 +1242,14 @@ export default function ShipmentFinancialsModal({
       return
     }
     const items = clientInvoice?.items || []
-    const handlingItem = items.find((it) => it.description === HANDLING_FEE_DESCRIPTION)
+    const handlingItem =
+      items.find((it) => String(it.source_key || '') === 'handling-fee') ||
+      items.find((it) => it.description === HANDLING_FEE_DESCRIPTION)
     setHandlingRow({
       include: handlingItem ? Number(handlingItem.quantity) > 0 : true,
       number_of_containers: handlingItem != null ? Number(handlingItem.quantity || 1) : Number(shipment?.container_count || 1),
       handling_fee_per_container: handlingItem != null ? String(handlingItem.unit_price ?? '') : '',
-      currency: clientInvoice?.currency_code || 'USD',
+      currency: (handlingItem?.currency_code || clientInvoice?.currency_code || 'USD').toUpperCase(),
     })
     setDeletedSellIds(new Set())
     setTabBRows(
@@ -1258,17 +1260,21 @@ export default function ShipmentFinancialsModal({
           tplId.toLowerCase() === 'other'
             ? (titleVal || t('shipments.fin.customItemFallback', { defaultValue: 'Custom Item' }))
             : (tplId || titleVal || t('shipments.fin.customItemFallback', { defaultValue: 'Custom Item' }))
-        const match = items.find((it) => it.description === lineLabel)
+        const sourceKey = `expense:${ex.id}`
+        const match =
+          items.find((it) => String(it.source_key || '') === sourceKey) ||
+          items.find((it) => it.description === lineLabel)
         const cost = Number(ex.amount) || 0
         const sellVal = match != null ? Number(match.unit_price) : cost
         const include = match ? Number(match.quantity) > 0 : true
         return {
           expenseId: ex.id,
+          source_key: sourceKey,
           bucket_id: ex.bucket_id || expenseBucket(ex),
           label: lineLabel,
           category_name: ex.category_name || '—',
           cost,
-          currency: ex.currency_code || 'USD',
+          currency: (match?.currency_code || ex.currency_code || 'USD').toUpperCase(),
           sell: Number.isNaN(sellVal) ? '' : String(sellVal),
           include,
         }
@@ -1282,22 +1288,45 @@ export default function ShipmentFinancialsModal({
       setFinBanner({ type: 'error', message: t('shipments.fin.invoiceNoClient') })
       return
     }
-    const curCode = expenses[0]?.currency_code || 'USD'
+    const curCode = (clientInvoice?.currency_code || expenses[0]?.currency_code || 'USD').toUpperCase()
     const foundCurrency = currencies.find(c => c.code === curCode)
     const currencyId = foundCurrency?.id || 1
     const items = []
-    for (const row of tabBRows) {
+    for (const [idx, row] of tabBRows.entries()) {
       if (deletedSellIds.has(row.expenseId)) continue
       if (!row.include) continue
       const sell = Number(row.sell)
       if (Number.isNaN(sell) || sell < 0) continue
-      items.push({ description: row.label, quantity: 1, unit_price: sell })
+      const cost = Number(row.cost) || 0
+      items.push({
+        description: row.label,
+        title: row.label,
+        quantity: 1,
+        unit_price: sell,
+        currency_code: (row.currency || 'USD').toUpperCase(),
+        section_key: row.bucket_id || 'other',
+        order_index: idx,
+        source_key: row.source_key || `expense:${row.expenseId}`,
+        cost_unit_price: cost,
+        cost_line_total: cost,
+      })
     }
     if (handlingRow.include) {
       const qty = Math.max(1, Number(handlingRow.number_of_containers) || 1)
       const h = Number(handlingRow.handling_fee_per_container)
       if (!Number.isNaN(h) && h >= 0) {
-        items.push({ description: HANDLING_FEE_DESCRIPTION, quantity: qty, unit_price: h })
+        items.push({
+          description: HANDLING_FEE_DESCRIPTION,
+          title: HANDLING_FEE_DESCRIPTION,
+          quantity: qty,
+          unit_price: h,
+          currency_code: (handlingRow.currency || 'USD').toUpperCase(),
+          section_key: 'handling',
+          order_index: tabBRows.length + 1,
+          source_key: 'handling-fee',
+          cost_unit_price: 0,
+          cost_line_total: 0,
+        })
       }
     }
     if (items.length === 0) {

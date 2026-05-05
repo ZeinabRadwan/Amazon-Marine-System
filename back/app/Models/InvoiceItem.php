@@ -17,9 +17,16 @@ class InvoiceItem extends Model
         'invoice_id',
         'item_id',
         'description',
+        'title',
         'quantity',
         'unit_price',
         'line_total',
+        'currency_code',
+        'section_key',
+        'order_index',
+        'source_key',
+        'cost_unit_price',
+        'cost_line_total',
     ];
 
     /**
@@ -29,6 +36,9 @@ class InvoiceItem extends Model
         'quantity' => 'decimal:2',
         'unit_price' => 'decimal:2',
         'line_total' => 'decimal:2',
+        'order_index' => 'integer',
+        'cost_unit_price' => 'decimal:2',
+        'cost_line_total' => 'decimal:2',
     ];
 
     /**
