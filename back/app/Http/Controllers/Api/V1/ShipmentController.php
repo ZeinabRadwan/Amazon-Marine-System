@@ -699,15 +699,17 @@ class ShipmentController extends Controller
 
         $invoice = ShipmentCostInvoice::query()->updateOrCreate(
             ['shipment_id' => $shipment->id],
-            [
+            array_filter([
                 'invoice_number' => $validated['invoice_number'] ?? ($existing?->invoice_number ?? ('SCI-'.$shipment->id)),
                 'invoice_date' => $validated['invoice_date'] ?? ($existing?->invoice_date?->toDateString() ?? now()->toDateString()),
                 'status' => $validated['status'] ?? ($existing?->status ?? 'draft'),
                 'items' => array_values($normalizedItems),
-                'attachment_refs' => $validated['attachment_refs'] ?? (is_array($existing?->attachment_refs) ? $existing->attachment_refs : []),
+                'attachment_refs' => Schema::hasColumn('shipment_cost_invoices', 'attachment_refs')
+                    ? ($validated['attachment_refs'] ?? (is_array($existing?->attachment_refs) ? $existing->attachment_refs : []))
+                    : null,
                 'currency_totals' => $currencyTotals,
                 'total_amount' => $totalAmount,
-            ]
+            ], static fn ($v, $k) => $k !== 'attachment_refs' || Schema::hasColumn('shipment_cost_invoices', 'attachment_refs'), ARRAY_FILTER_USE_BOTH)
         );
 
         $shipment->cost_total = $totalAmount;
