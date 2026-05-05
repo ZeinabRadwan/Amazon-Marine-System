@@ -89,12 +89,6 @@
             'insurance' => 'INSURANCE / التأمين',
         ];
 
-        $shippingCodes = ['of', 'thc', 'power', 'bl', 'telex', 'dhl'];
-        $inlandCodes = ['inlandfreight', 'genset', 'receipts', 'overnight'];
-        $customsCodes = ['customs', 'declaration', 'clearance', 'broker'];
-        $insuranceCodes = ['insurance', 'premium'];
-        $handlingCodes = ['handling fee', 'fee handling', 'handling fees'];
-
         $grouped = [
             'shipping' => [],
             'inland' => [],
@@ -103,28 +97,6 @@
             'customs' => [],
             'insurance' => [],
         ];
-
-        $costInvoiceItems = $invoice->shipment?->costInvoice?->items;
-        $costInvoiceItems = is_array($costInvoiceItems) ? $costInvoiceItems : [];
-        $currencyByDesc = [];
-        foreach ($costInvoiceItems as $ci) {
-            $tpl = strtolower(trim((string) ($ci['template_id'] ?? '')));
-            $title = strtolower(trim((string) ($ci['title'] ?? '')));
-            $cur = strtoupper(trim((string) ($ci['currency_code'] ?? '')));
-            if ($cur === '') {
-                continue;
-            }
-            if ($tpl !== '') {
-                $currencyByDesc[$tpl] = $cur;
-            }
-            if ($title !== '') {
-                $currencyByDesc[$title] = $cur;
-            }
-        }
-        $lineCurrency = static function ($desc) use ($currencyByDesc, $invoice) {
-            $k = strtolower(trim((string) $desc));
-            return $currencyByDesc[$k] ?? strtoupper((string) ($invoice->currency_code ?: 'USD'));
-        };
         $formatBreakdown = static function (array $map): string {
             if ($map === []) return '—';
             ksort($map);
@@ -136,19 +108,8 @@
         };
 
         foreach ($invoice->items as $item) {
-            $desc = strtolower(trim((string) $item->description));
-            $bucket = 'other';
-            if (in_array($desc, $shippingCodes, true)) {
-                $bucket = 'shipping';
-            } elseif (in_array($desc, $inlandCodes, true)) {
-                $bucket = 'inland';
-            } elseif (str_contains($desc, 'handling') || in_array($desc, $handlingCodes, true)) {
-                $bucket = 'handling';
-            } elseif (in_array($desc, $customsCodes, true) || str_contains($desc, 'customs')) {
-                $bucket = 'customs';
-            } elseif (in_array($desc, $insuranceCodes, true) || str_contains($desc, 'insurance')) {
-                $bucket = 'insurance';
-            }
+            $bucket = strtolower(trim((string) ($item->section_key ?? '')));
+            if (!array_key_exists($bucket, $grouped)) $bucket = 'other';
             $grouped[$bucket][] = $item;
         }
 
@@ -247,7 +208,7 @@
                     <tbody>
                         @foreach($bucketItems as $item)
                             @php
-                                $cur = $lineCurrency($item->description);
+                                $cur = strtoupper((string) ($item->currency_code ?: $invoice->currency_code ?: 'USD'));
                                 $sectionTotals[$cur] = ($sectionTotals[$cur] ?? 0) + (float) $item->line_total;
                             @endphp
                             <tr>
@@ -268,7 +229,7 @@
         @php
             $grandByCurrency = [];
             foreach ($invoice->items as $item) {
-                $cur = $lineCurrency($item->description);
+                $cur = strtoupper((string) ($item->currency_code ?: $invoice->currency_code ?: 'USD'));
                 $grandByCurrency[$cur] = ($grandByCurrency[$cur] ?? 0) + (float) $item->line_total;
             }
             $grandBreakdown = $formatBreakdown($grandByCurrency);
