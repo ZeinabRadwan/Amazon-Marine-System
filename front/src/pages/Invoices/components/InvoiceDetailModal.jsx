@@ -15,6 +15,15 @@ function money(amount, currency) {
   }
 }
 
+function sectionIdForItem(item) {
+  const text = `${item?.description || ''}`.toLowerCase()
+  if (/ship|line|ocean|freight|thc|b\/?l|telex|courier|dhl|container|of\b|بحري|ملاحي|شحن/.test(text)) return 'shipping'
+  if (/inland|transport|truck|haul|genset|overnight|receipt|داخلي|نقل|برّي/.test(text)) return 'inland'
+  if (/custom|clearance|declar|duty|جمرك|تخليص/.test(text)) return 'customs'
+  if (/insur|premium|تأمين/.test(text)) return 'insurance'
+  return 'additional'
+}
+
 export default function InvoiceDetailModal({ isOpen, invoiceId, onClose, onChanged, canManage = true }) {
   const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
@@ -46,6 +55,29 @@ export default function InvoiceDetailModal({ isOpen, invoiceId, onClose, onChang
     }
   }, [invoice])
 
+  const sectionedItems = useMemo(() => {
+    const defs = [
+      { id: 'shipping', labelKey: 'invoices.sections.shipping' },
+      { id: 'inland', labelKey: 'invoices.sections.inland' },
+      { id: 'customs', labelKey: 'invoices.sections.customs' },
+      { id: 'insurance', labelKey: 'invoices.sections.insurance' },
+      { id: 'additional', labelKey: 'invoices.sections.additional' },
+    ]
+    const map = Object.fromEntries(defs.map((d) => [d.id, []]))
+    ;(invoice?.items || []).forEach((it) => {
+      const sid = sectionIdForItem(it)
+      if (!map[sid]) map[sid] = []
+      map[sid].push(it)
+    })
+    return defs
+      .map((d) => {
+        const rows = map[d.id] || []
+        const subtotal = rows.reduce((acc, it) => acc + (Number(it.line_total) || (Number(it.quantity) || 0) * (Number(it.unit_price) || 0)), 0)
+        return { ...d, rows, subtotal }
+      })
+      .filter((s) => s.rows.length > 0)
+  }, [invoice])
+
   const handleIssue = async () => {
     const token = getStoredToken()
     if (!token || !invoiceId) return
@@ -74,7 +106,7 @@ export default function InvoiceDetailModal({ isOpen, invoiceId, onClose, onChang
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <div className="px-6 py-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-700">
-          <h2 className="text-xl font-bold">{t('invoices.details', 'Invoice Details')}</h2>
+          <h2 className="text-xl font-bold">{t('invoices.detailsTitle', 'Invoice Sections')}</h2>
           <button onClick={onClose} className="p-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded-full transition-colors">
             <X className="h-5 w-5" />
           </button>
@@ -110,30 +142,39 @@ export default function InvoiceDetailModal({ isOpen, invoiceId, onClose, onChang
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 dark:bg-gray-900/20">
-                    <tr>
-                      <th className="p-3 text-left">#</th>
-                      <th className="p-3 text-left">{t('invoices.item.description', 'Description')}</th>
-                      <th className="p-3 text-center">{t('invoices.item.qty', 'Qty')}</th>
-                      <th className="p-3 text-right">{t('invoices.item.unitPrice', 'Unit')}</th>
-                      <th className="p-3 text-right">{t('invoices.item.total', 'Total')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(invoice.items || []).map((it, idx) => (
-                      <tr key={it.id || idx} className="border-t border-gray-200 dark:border-gray-700">
-                        <td className="p-3 text-left">{idx + 1}</td>
-                        <td className="p-3 text-left font-semibold">{it.description}</td>
-                        <td className="p-3 text-center">{it.quantity}</td>
-                        <td className="p-3 text-right">{money(it.unit_price, invoice.currency_code)}</td>
-                        <td className="p-3 text-right font-bold">{money(it.line_total, invoice.currency_code)}</td>
+              {sectionedItems.map((section) => (
+                <div key={section.id} className="rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900/20 font-bold">
+                    {t(section.labelKey)}
+                  </div>
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 dark:bg-gray-900/20">
+                      <tr>
+                        <th className="p-3 text-left">#</th>
+                        <th className="p-3 text-left">{t('invoices.item.description', 'Description')}</th>
+                        <th className="p-3 text-right">{t('invoices.item.total', 'Total')}</th>
+                        <th className="p-3 text-left">{t('invoices.table.currency', 'Currency')}</th>
+                        <th className="p-3 text-center">{t('invoices.actions', 'Actions')}</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {section.rows.map((it, idx) => (
+                        <tr key={it.id || `${section.id}-${idx}`} className="border-t border-gray-200 dark:border-gray-700">
+                          <td className="p-3 text-left">{idx + 1}</td>
+                          <td className="p-3 text-left font-semibold">{it.description}</td>
+                          <td className="p-3 text-right font-bold">{money(it.line_total, invoice.currency_code)}</td>
+                          <td className="p-3 text-left">{invoice.currency_code || '—'}</td>
+                          <td className="p-3 text-center text-gray-400">—</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between text-sm">
+                    <span className="font-semibold">{t('invoices.subtotal', 'Subtotal')}</span>
+                    <span className="font-bold">{money(section.subtotal, invoice.currency_code)}</span>
+                  </div>
+                </div>
+              ))}
 
               {totals && (
                 <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/20 p-4">

@@ -632,7 +632,7 @@ class ShipmentController extends Controller
             'status' => ['nullable', 'string', 'max:40'],
             'items' => ['sometimes', 'array'],
             'items.*.line_id' => ['nullable', 'integer', 'min:1'],
-            'items.*.bucket_id' => ['required', 'string', 'in:shipping,inland,customs,insurance,other'],
+            'items.*.bucket_id' => ['required', 'string', 'max:120'],
             'items.*.template_id' => ['nullable', 'string', 'max:120'],
             'items.*.title' => ['nullable', 'string', 'max:255'],
             'items.*.description' => ['nullable', 'string', 'max:500'],

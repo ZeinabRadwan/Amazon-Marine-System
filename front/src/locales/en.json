@@ -2126,6 +2126,14 @@
     "subtotal": "Subtotal",
     "tax": "Tax",
     "total": "Total",
+    "detailsTitle": "Invoice Details by Section",
+    "sections": {
+      "shipping": "Shipping Line Cost",
+      "inland": "Inland / Transport Cost",
+      "customs": "Customs Clearance",
+      "insurance": "Insurance",
+      "additional": "Additional Costs"
+    },
     "placeholders": {
       "client": "Search clients...",
       "shipment": "Search shipments...",
@@ -2769,6 +2777,12 @@
       "shipmentCostItems": "Shipment Cost Items",
       "shipmentNumber": "Shipment Number",
       "clientName": "Client Name",
+      "inlandContractorLabel": "Contractor / Partner *",
+      "inlandContractorPlaceholder": "Select contractor",
+      "inlandContractorRequired": "Contractor / Partner is required for Inland Transport",
+      "customSectionSub": "Custom cost section",
+      "addNewCostSection": "Add New Cost Section",
+      "noReceipts": "No receipt",
       "breakdown": {
         "shipping": "Shipping line cost",
         "inland": "Internal transport",

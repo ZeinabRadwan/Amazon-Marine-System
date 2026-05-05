@@ -2127,6 +2127,14 @@
     "subtotal": "الإجمالي الفرعي",
     "tax": "الضريبة",
     "total": "الإجمالي الكلي",
+    "detailsTitle": "تفاصيل الفاتورة حسب الأقسام",
+    "sections": {
+      "shipping": "تكلفة الخط الملاحي",
+      "inland": "تكلفة النقل الداخلي",
+      "customs": "التخليص الجمركي",
+      "insurance": "التأمين",
+      "additional": "تكاليف إضافية"
+    },
     "placeholders": {
       "client": "ابحث عن عميل...",
       "shipment": "ابحث عن شحنة...",
@@ -2781,6 +2789,12 @@
       "shipmentCostItems": "بنود تكلفة الشحنة",
       "shipmentNumber": "رقم الشحنة",
       "clientName": "اسم العميل",
+      "inlandContractorLabel": "المقاول / الشريك *",
+      "inlandContractorPlaceholder": "اختر المقاول",
+      "inlandContractorRequired": "المقاول / الشريك مطلوب في قسم النقل الداخلي",
+      "customSectionSub": "قسم تكلفة مخصص",
+      "addNewCostSection": "إضافة قسم تكلفة جديد",
+      "noReceipts": "لا يوجد إيصال",
       "breakdown": {
         "shipping": "تكلفة الخط الملاحي",
         "inland": "النقل الداخلي",
@@ -2799,7 +2813,7 @@
       "bucketInlandSub": "النقل بالشاحنات، الإيصالات، وتكاليف النقل البري",
       "bucketCustomsTitle": "Customs Clearance Cost - تكلفة التخليص الجمركي",
       "bucketCustomsSub": "رسوم فتح الملف والتخليص",
-      "bucketInsuranceTitle": "٤.٤ — التأمين",
+      "bucketInsuranceTitle": "التأمين / Insurance Costs",
       "bucketInsuranceSub": "قسط تأمين البضاعة",
       "bucketOtherTitle": "مصاريف أخرى",
       "bucketOtherSub": "مصروفات لم تطابق التصنيفات المعتادة",

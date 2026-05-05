@@ -613,6 +613,7 @@ export default function ShipmentFinancialsModal({
   const [tab, setTab] = useState('selling')
   const [expanded, setExpanded] = useState(() => new Set(['shipping', 'inland', 'customs', 'insurance', 'other']))
   const [sectionVendorChoice, setSectionVendorChoice] = useState({})
+  const [customSectionDefs, setCustomSectionDefs] = useState([])
   const [pendingOtherByBucket, setPendingOtherByBucket] = useState({})
   const [batchSavingBucket, setBatchSavingBucket] = useState(null)
   const [finBanner, setFinBanner] = useState(null)
@@ -646,6 +647,7 @@ export default function ShipmentFinancialsModal({
       setTab(isAccountingUser ? 'expenses' : 'selling')
       setExpanded(new Set(['shipping', 'inland', 'customs', 'insurance', 'other']))
       setSectionVendorChoice({})
+      setCustomSectionDefs([])
       setPendingOtherByBucket({})
       setGroupDraftByKey({})
       setDeletedIdsByBucket({})
@@ -711,13 +713,27 @@ export default function ShipmentFinancialsModal({
   const byBucket = useMemo(() => {
     const buckets = { shipping: [], inland: [], customs: [], insurance: [], other: [] }
     for (const ex of expenses) {
-      buckets[expenseBucket(ex)].push(ex)
+      const key = expenseBucket(ex)
+      if (!buckets[key]) buckets[key] = []
+      buckets[key].push(ex)
     }
     for (const key of Object.keys(buckets)) {
       buckets[key] = buckets[key].slice().sort((a, b) => Number(a?.id || 0) - Number(b?.id || 0))
     }
     return buckets
   }, [expenses])
+
+  useEffect(() => {
+    const dynamicKeys = Object.keys(byBucket).filter((k) => !['shipping', 'inland', 'customs', 'insurance', 'other'].includes(k))
+    if (dynamicKeys.length === 0) return
+    setCustomSectionDefs((prev) => {
+      const known = new Set(prev.map((d) => d.id))
+      const add = dynamicKeys
+        .filter((k) => !known.has(k))
+        .map((k) => ({ id: k, title: String(k).replace(/^custom-/, '').replace(/-/g, ' ') || 'Custom Section' }))
+      return add.length ? [...prev, ...add] : prev
+    })
+  }, [byBucket])
 
   const totalsByCurrencyAll = useMemo(() => {
     const deletedIds = new Set(Object.values(deletedIdsByBucket).flatMap((s) => Array.from(s || [])))
@@ -1021,9 +1037,10 @@ export default function ShipmentFinancialsModal({
     if (!editMode || savingAllDraft || !token || !shipment?.id) return
     setSavingAllDraft(true)
     try {
-      const sections = [...BUCKET_DEFS.map((d) => d.id), 'other']
+      const sections = [...BUCKET_DEFS.map((d) => d.id), 'other', ...customSectionDefs.map((s) => s.id)]
       const items = []
       let orderIndex = 0
+      let inlandHasItems = false
 
       for (const sectionId of sections) {
         const deletedIds = new Set(Array.from(deletedIdsByBucket[sectionId] || []))
@@ -1062,6 +1079,7 @@ export default function ShipmentFinancialsModal({
             expense_date: model.expenseDate || new Date().toISOString().slice(0, 10),
             order_index: orderIndex++,
           })
+          if (sectionId === 'inland') inlandHasItems = true
         }
 
         const pendingRows = pendingOtherByBucket[sectionId] || []
@@ -1086,7 +1104,12 @@ export default function ShipmentFinancialsModal({
             expense_date: new Date().toISOString().slice(0, 10),
             order_index: orderIndex++,
           })
+          if (sectionId === 'inland') inlandHasItems = true
         }
+      }
+
+      if (inlandHasItems && !String(sectionVendorChoice.inland || '').trim()) {
+        throw new Error(t('shipments.fin.inlandContractorRequired'))
       }
 
       await updateShipmentCostInvoice(token, shipment.id, {
@@ -1117,7 +1140,7 @@ export default function ShipmentFinancialsModal({
     } finally {
       setSavingAllDraft(false)
     }
-  }, [editMode, savingAllDraft, token, shipment?.id, deletedIdsByBucket, groupDraftByKey, pendingOtherByBucket, sectionVendorChoice, sectionAttachmentRefs, t, onExpensesChanged, onShipmentTotalsRefresh])
+  }, [editMode, savingAllDraft, token, shipment?.id, deletedIdsByBucket, groupDraftByKey, pendingOtherByBucket, sectionVendorChoice, sectionAttachmentRefs, customSectionDefs, t, onExpensesChanged, onShipmentTotalsRefresh])
 
   const canAccessInvoices = Boolean(token && (canManageFinancial || canViewSelling))
 
@@ -1285,6 +1308,27 @@ export default function ShipmentFinancialsModal({
   const patchTabBRow = (idx, patch) => {
     setTabBRows((rows) => rows.map((r, i) => (i === idx ? { ...r, ...patch } : r)))
   }
+
+  const addCustomCostSection = useCallback(() => {
+    const title = window.prompt('Section name / اسم القسم')
+    if (!title || !title.trim()) return
+    const id = `custom-${title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`
+    setCustomSectionDefs((prev) => [...prev, { id, title: title.trim() }])
+    setExpanded((prev) => new Set([...prev, id]))
+  }, [])
+
+  const deleteCustomSection = useCallback((bucketId) => {
+    setCustomSectionDefs((prev) => prev.filter((s) => s.id !== bucketId))
+    setPendingOtherByBucket((prev) => ({ ...prev, [bucketId]: [] }))
+    setSectionAttachmentRefs((prev) => ({ ...prev, [bucketId]: [] }))
+    setDeletedIdsByBucket((prev) => {
+      const next = { ...prev, [bucketId]: new Set(prev[bucketId] || []) }
+      ;(byBucket[bucketId] || []).forEach((r) => {
+        if (r?.id) next[bucketId].add(r.id)
+      })
+      return next
+    })
+  }, [byBucket])
 
   const renameSectionAttachment = useCallback((bucketId, attachmentId) => {
     const list = sectionAttachmentRefs[bucketId] || []
@@ -1472,7 +1516,7 @@ export default function ShipmentFinancialsModal({
         </table>
       </div>
     ) : (
-      <div className="shipment-fin-empty-inline">لا يوجد إيصال</div>
+      <div className="shipment-fin-empty-inline">{t('shipments.fin.noReceipts')}</div>
     )
 
     const renderExpenseCells = (ex) => (
@@ -1913,14 +1957,15 @@ export default function ShipmentFinancialsModal({
       bucketSaveModelsRef.current[bucketId] = saveModels
 
       const sectionToolbar =
-        editMode ? (
+        editMode && bucketId === 'inland' ? (
           <div className="shipment-fin-section-toolbar">
+            <label className="fs-xs fw-600">{t('shipments.fin.inlandContractorLabel')}</label>
             <select
               className="shipment-fin-select shipment-fin-select--vendor"
               value={sectionVendorChoice[bucketId] ?? ''}
               onChange={(e) => setSectionVendorChoice((s) => ({ ...s, [bucketId]: e.target.value }))}
             >
-              <option value="">{t('shipments.fin.sectionVendorPlaceholder')}</option>
+              <option value="">{t('shipments.fin.inlandContractorPlaceholder')}</option>
               {vendors.map((v) => (
                 <option key={v.id} value={String(v.id)}>
                   {v.name || `#${v.id}`}
@@ -1975,19 +2020,34 @@ export default function ShipmentFinancialsModal({
       )
     }
 
+    const cardTitle = def.displayTitle || (def.titleKey ? t(def.titleKey) : bucketId)
+    const cardSub = def.displaySub || (def.subKey ? t(def.subKey) : '')
+
     return (
       <div key={bucketId} className="shipment-fin-card">
         <button type="button" className="shipment-fin-card__head" onClick={() => toggleCard(bucketId)}>
           <div className="shipment-fin-card__head-main">
             <Icon className="shipment-fin-card__icon" aria-hidden />
             <div>
-              <div className="shipment-fin-card__title">{t(def.titleKey)}</div>
-              <div className="shipment-fin-card__sub">{t(def.subKey)}</div>
+              <div className="shipment-fin-card__title">{cardTitle}</div>
+              <div className="shipment-fin-card__sub">{cardSub}</div>
             </div>
           </div>
           <div className="shipment-fin-card__head-meta">
             <span className="shipment-fin-card__subtotal">{subtotalLabel}</span>
             <span className={`shipment-fin-badge ${receiptBadgeClass}`}>{t(receiptBadgeKey)}</span>
+            {editMode && def.deletable ? (
+              <button
+                type="button"
+                className="shipment-fin-btn shipment-fin-btn--danger shipment-fin-btn--sm"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  deleteCustomSection(bucketId)
+                }}
+              >
+                {t('shipments.delete')}
+              </button>
+            ) : null}
             {isOpen ? <ChevronUp className="shipment-fin-chevron" /> : <ChevronDown className="shipment-fin-chevron" />}
           </div>
         </button>
@@ -2092,12 +2152,25 @@ export default function ShipmentFinancialsModal({
                 <ShipmentFinLoadingSkeleton variant="expenses" />
               ) : (
                 <>
-                  {BUCKET_DEFS
-                    .filter((d) => (byBucket[d.id] || []).length > 0 || (pendingOtherByBucket[d.id] || []).length > 0 || (sectionAttachmentRefs[d.id] || []).length > 0)
-                    .map((d) => renderBucketCard(d.id, d))}
-                  {((byBucket.other || []).length > 0 || (pendingOtherByBucket.other || []).length > 0 || (sectionAttachmentRefs.other || []).length > 0)
-                    ? renderBucketCard('other', otherDef)
-                    : null}
+                  {BUCKET_DEFS.map((d) => renderBucketCard(d.id, d))}
+                  {renderBucketCard('other', otherDef)}
+                  {customSectionDefs.map((sec) =>
+                    renderBucketCard(sec.id, {
+                      icon: Package,
+                      titleKey: null,
+                      subKey: null,
+                      displayTitle: sec.title,
+                      displaySub: t('shipments.fin.customSectionSub'),
+                      deletable: true,
+                    })
+                  )}
+                  {editMode ? (
+                    <div className="shipment-fin-draft-add-row">
+                      <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary" onClick={addCustomCostSection}>
+                        + {t('shipments.fin.addNewCostSection')}
+                      </button>
+                    </div>
+                  ) : null}
                   <div className="shipment-fin-draft-grand-total">
                     <div className="shipment-fin-draft-total-row"><span>{t('shipments.fin.breakdown.shipping', { defaultValue: 'تكلفة الخط الملاحي' })}</span><strong>{Object.entries(bucketTotalsLive('shipping')).map(([c,v]) => `${c} ${formatMoney(v, 'en-US')}`).join(' · ') || '—'}</strong></div>
                     <div className="shipment-fin-draft-total-row"><span>{t('shipments.fin.breakdown.inland', { defaultValue: 'النقل الداخلي' })}</span><strong>{Object.entries(bucketTotalsLive('inland')).map(([c,v]) => `${c} ${formatMoney(v, 'en-US')}`).join(' · ') || '—'}</strong></div>
