@@ -1284,7 +1284,11 @@ export default function ShipmentFinancialsModal({
     setPricingSaving(true)
     try {
       let inv = clientInvoice
-      if (!inv?.id) {
+      const existingInvoice = inv?.id
+        ? inv
+        : (clientInvoicesList.find((i) => i.status === 'draft') || clientInvoicesList[0] || null)
+
+      if (!existingInvoice?.id) {
         inv = await createInvoice(token, {
           invoice_type_id: 0,
           shipment_id: shipment.id,
@@ -1293,16 +1297,21 @@ export default function ShipmentFinancialsModal({
           currency_id: currencyId,
           items,
         })
-      } else if (inv.status === 'draft') {
-        inv = await updateInvoice(token, inv.id, { items })
+      } else if (existingInvoice.status === 'draft' || existingInvoice.status === 'issued') {
+        inv = await updateInvoice(token, existingInvoice.id, { items })
       } else {
         setFinBanner({ type: 'error', message: t('shipments.fin.pricingNotDraft') })
         return
       }
-      setClientInvoice(inv)
+      const refreshed = await getInvoice(token, inv.id)
+      setClientInvoice(refreshed)
+      setClientInvoicesList((prev) => {
+        const filtered = (Array.isArray(prev) ? prev : []).filter((r) => r.id !== refreshed.id)
+        return [refreshed, ...filtered]
+      })
       onShipmentTotalsRefresh?.()
       setFinBanner({ type: 'success', message: t('shipments.fin.pricingSaved') })
-      return inv
+      return refreshed
     } catch (e) {
       setFinBanner({ type: 'error', message: e?.message || t('shipments.fin.errorSaveLine') })
       return null
@@ -1317,6 +1326,7 @@ export default function ShipmentFinancialsModal({
     handlingRow,
     deletedSellIds,
     clientInvoice,
+    clientInvoicesList,
     t,
     onShipmentTotalsRefresh,
     currencies,
@@ -2346,8 +2356,19 @@ export default function ShipmentFinancialsModal({
                   {sellingSections.map((sec) => {
                     const secTotals = sectionCurrencyTotals(sec.rows)
                     return (
-                      <div key={sec.id} className="shipment-fin-table-wrap mb-3">
-                        <div className="fw-700 mb-2">{sec.label}</div>
+                      <div key={sec.id} className="shipment-fin-card mb-3">
+                        <button type="button" className="shipment-fin-card__head" onClick={() => toggleCard(`sell-${sec.id}`)}>
+                          <div className="shipment-fin-card__head-main">
+                            <DollarSign className="shipment-fin-card__icon" aria-hidden />
+                            <div>
+                              <div className="shipment-fin-card__title">{sec.label}</div>
+                            </div>
+                          </div>
+                          {expanded.has(`sell-${sec.id}`) ? <ChevronUp className="shipment-fin-chevron" /> : <ChevronDown className="shipment-fin-chevron" />}
+                        </button>
+                        {expanded.has(`sell-${sec.id}`) ? (
+                          <div className="shipment-fin-card__body">
+                            <div className="shipment-fin-table-wrap mb-3">
                         <table className="shipment-fin-sell-table shipment-fin-sell-table--wide">
                           <thead>
                             <tr>
@@ -2387,23 +2408,34 @@ export default function ShipmentFinancialsModal({
                             })}
                           </tbody>
                         </table>
+                            </div>
                         <div className="shipment-fin-draft-sec-total">
                           <span>{t('shipments.fin.subtotal', { defaultValue: 'Subtotal' })}</span>
                           {renderStackedTotals(secTotals)}
                         </div>
+                          </div>
+                        ) : null}
                       </div>
                     )
                   })}
 
-                  <div className="shipment-fin-table-wrap mb-3">
-                    <div className="fw-700 mb-2">{t('shipments.fin.sellingSection.handling', { defaultValue: 'Handling Fees / رسوم الخدمة والمتابعة' })}</div>
+                  <div className="shipment-fin-card mb-3">
+                    <button type="button" className="shipment-fin-card__head" onClick={() => toggleCard('sell-handling')}>
+                      <div className="shipment-fin-card__head-main">
+                        <DollarSign className="shipment-fin-card__icon" aria-hidden />
+                        <div className="shipment-fin-card__title">{t('shipments.fin.sellingSection.handling', { defaultValue: 'Handling Fees / رسوم الخدمة والمتابعة' })}</div>
+                      </div>
+                      {expanded.has('sell-handling') ? <ChevronUp className="shipment-fin-chevron" /> : <ChevronDown className="shipment-fin-chevron" />}
+                    </button>
+                    {expanded.has('sell-handling') ? (
+                      <div className="shipment-fin-card__body">
+                    <div className="shipment-fin-table-wrap mb-3">
                     <table className="shipment-fin-sell-table shipment-fin-sell-table--wide">
                       <thead>
                         <tr>
                           <th>{t('shipments.fin.colItem', { defaultValue: 'Item' })}</th>
                           <th>{t('shipments.expColAmount', { defaultValue: 'Amount' })}</th>
                           <th>{t('shipments.fin.colCurrency')}</th>
-                          <th>{t('shipments.actions')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -2422,15 +2454,10 @@ export default function ShipmentFinancialsModal({
                                 {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
                               </select>
                             </td>
-                            <td className="shipment-fin-actions">
-                              <button type="button" className="shipment-fin-btn shipment-fin-btn--danger shipment-fin-btn--sm" onClick={() => setHandlingRow((h) => ({ ...h, include: false }))}>
-                                {t('shipments.delete')}
-                              </button>
-                            </td>
                           </tr>
                         ) : (
                           <tr>
-                            <td colSpan={4} className="text-center">
+                            <td colSpan={3} className="text-center">
                               <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm" onClick={() => setHandlingRow((h) => ({ ...h, include: true }))}>
                                 + {t('shipments.fin.addRow')}
                               </button>
@@ -2443,24 +2470,26 @@ export default function ShipmentFinancialsModal({
                       <span>{t('shipments.fin.subtotal', { defaultValue: 'Subtotal' })}</span>
                       <strong>{handlingRow.include ? `${(handlingRow.currency || 'USD').toUpperCase()} ${formatMoney(handlingTotal, numberLocale)}` : '—'}</strong>
                     </div>
+                    {handlingRow.include ? (
+                      <div className="mt-2">
+                        <button type="button" className="shipment-fin-btn shipment-fin-btn--danger shipment-fin-btn--sm" onClick={() => setHandlingRow((h) => ({ ...h, include: false }))}>
+                          {t('shipments.delete')}
+                        </button>
+                      </div>
+                    ) : null}
+                    </div>
+                    </div>
+                    ) : null}
                   </div>
                   {canManageFinancial ? (
                     <div className="shipment-fin-pricing-actions mt-3">
-                      <button
-                        type="button"
-                        className="client-detail-modal__btn client-detail-modal__btn--secondary"
-                        disabled={pricingSaving}
-                        onClick={savePricingInvoice}
-                      >
-                        {pricingSaving ? t('shipments.saving') : t('shipments.fin.saveDraft', { defaultValue: 'Save as Draft' })}
-                      </button>
                       <button
                         type="button"
                         className="client-detail-modal__btn client-detail-modal__btn--primary"
                         disabled={notifySending || pricingSaving}
                         onClick={handleSaveSalesInvoice}
                       >
-                        {notifySending ? t('shipments.saving') : t('shipments.fin.saveSalesInvoice', { defaultValue: 'Save Sales Invoice' })}
+                        {notifySending ? t('shipments.saving') : t('shipments.fin.saveSalesInvoice', { defaultValue: 'حفظ فاتورة المبيعات' })}
                       </button>
                       {clientInvoice?.id ? (
                         <button
@@ -2468,7 +2497,7 @@ export default function ShipmentFinancialsModal({
                           className="client-detail-modal__btn client-detail-modal__btn--secondary"
                           onClick={handleDownloadInvoicePdf}
                         >
-                          {t('shipments.fin.downloadSalesInvoicePdf', { defaultValue: 'Download as PDF' })}
+                          {t('shipments.fin.downloadSalesInvoicePdf', { defaultValue: 'تحميل PDF' })}
                         </button>
                       ) : null}
                     </div>
