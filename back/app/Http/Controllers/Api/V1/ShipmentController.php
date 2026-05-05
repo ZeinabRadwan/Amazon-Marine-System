@@ -16,6 +16,7 @@ use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Mpdf\Mpdf;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -603,6 +604,9 @@ class ShipmentController extends Controller
     public function getCostInvoice(Request $request, Shipment $shipment)
     {
         $this->authorize('view', $shipment);
+        if (! Schema::hasTable('shipment_cost_invoices')) {
+            return response()->json(['data' => null]);
+        }
 
         $invoice = ShipmentCostInvoice::query()
             ->where('shipment_id', $shipment->id)
@@ -616,6 +620,11 @@ class ShipmentController extends Controller
     public function upsertCostInvoice(Request $request, Shipment $shipment)
     {
         $this->authorize('update', $shipment);
+        if (! Schema::hasTable('shipment_cost_invoices')) {
+            return response()->json([
+                'message' => __('Shipment cost invoices table is missing. Run database migrations.'),
+            ], 500);
+        }
 
         $validated = $request->validate([
             'invoice_number' => ['nullable', 'string', 'max:255'],

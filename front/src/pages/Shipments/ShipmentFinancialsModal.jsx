@@ -1308,7 +1308,6 @@ export default function ShipmentFinancialsModal({
       <thead>
         <tr>
           <th>{t('shipments.fin.colItem')}</th>
-          <th>{t('shipments.fin.colDescription')}</th>
           <th>{t('shipments.expColAmount')}</th>
           <th>{t('shipments.fin.colCurrency')}</th>
           {editMode ? <th>{t('shipments.actions')}</th> : null}
@@ -1318,7 +1317,6 @@ export default function ShipmentFinancialsModal({
 
     const renderExpenseCells = (ex) => (
       <>
-        <td>{ex?.description?.trim() || ex?.invoice_number || '—'}</td>
         <td className="shipment-fin-num">{formatMoney(Number(ex?.amount) || 0, numberLocale)}</td>
         <td>{ex?.currency_code || '—'}</td>
       </>
@@ -1328,7 +1326,6 @@ export default function ShipmentFinancialsModal({
       <thead>
         <tr>
           <th>{t('shipments.fin.colItem')}</th>
-          <th>{t('shipments.fin.colDescription')}</th>
           <th>{t('shipments.expColAmount')}</th>
           <th>{t('shipments.fin.colCurrency')}</th>
           {editMode ? <th>{t('shipments.actions')}</th> : null}
@@ -1369,7 +1366,6 @@ export default function ShipmentFinancialsModal({
                 <tbody>
                   {rows.map((ex) => (
                     <tr key={ex.id}>
-                      <td>—</td>
                       <td>{ex.description?.trim() || ex.invoice_number || '—'}</td>
                       <td className="shipment-fin-num">{formatMoney(Number(ex.amount) || 0, numberLocale)}</td>
                       <td>{ex.currency_code || '—'}</td>
@@ -1454,7 +1450,6 @@ export default function ShipmentFinancialsModal({
                   ))}
                   {pendingOthers.map((line) => (
                     <tr key={line.tempId}>
-                      <td>—</td>
                       <td>
                         <input
                           type="text"
@@ -1464,16 +1459,7 @@ export default function ShipmentFinancialsModal({
                           placeholder={t('shipments.fin.descPlaceholder')}
                         />
                       </td>
-                      <td>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          className="shipment-fin-input shipment-fin-input--num"
-                          value={line.amount}
-                          onChange={(e) => patchPendingOtherLine('other', line.tempId, { amount: e.target.value })}
-                        />
-                      </td>
+                      <td><input type="number" min="0" step="0.01" className="shipment-fin-input shipment-fin-input--num" value={line.amount} onChange={(e) => patchPendingOtherLine('other', line.tempId, { amount: e.target.value })} /></td>
                       <td>
                         <select
                           className="shipment-fin-select"
@@ -1567,7 +1553,6 @@ export default function ShipmentFinancialsModal({
               sectionRows.push(
                 <tr key={rowKey}>
                   <td>{idx === 0 ? renderLineLabelCell(tpl) : null}</td>
-                  <td>—</td>
                   <td className="shipment-fin-num">—</td>
                   <td>—</td>
                 </tr>
@@ -1576,7 +1561,6 @@ export default function ShipmentFinancialsModal({
               sectionRows.push(
                 <tr key={rowKey}>
                   <td>{idx === 0 ? renderLineLabelCell(tpl) : null}</td>
-                  <td>{ex?.description?.trim() || '—'}</td>
                   <td className="shipment-fin-num">{formatMoney(Number(ex?.amount) || 0, numberLocale)}</td>
                   <td>{ex?.currency_code || '—'}</td>
                 </tr>
@@ -1588,16 +1572,6 @@ export default function ShipmentFinancialsModal({
           sectionRows.push(
             <tr key={rowKey}>
               <td>{idx === 0 ? renderLineLabelCell(tpl) : null}</td>
-              <td>
-                <input
-                  type="text"
-                  className="shipment-fin-input"
-                  value={draft.desc}
-                  onChange={(e) => patchGroupDraft(rowKey, { desc: e.target.value })}
-                  placeholder={t('shipments.fin.descPlaceholder')}
-                  disabled={!bucketEditing || batchSavingBucket === bucketId}
-                />
-              </td>
               <td>
                 <input
                   type="number"
@@ -1625,22 +1599,24 @@ export default function ShipmentFinancialsModal({
               </td>
               <td className="shipment-fin-actions">
                 <div className="shipment-fin-actions__inner">
-                  {ex?.id ? (
-                    <button
-                      type="button"
-                      className="shipment-fin-btn shipment-fin-btn--danger shipment-fin-btn--sm"
-                      disabled={!bucketEditing || batchSavingBucket === bucketId}
-                      onClick={() =>
+                  <button
+                    type="button"
+                    className="shipment-fin-btn shipment-fin-btn--danger shipment-fin-btn--sm"
+                    disabled={!bucketEditing || batchSavingBucket === bucketId}
+                    onClick={() => {
+                      if (ex?.id) {
                         setDeletedIdsByBucket((prev) => {
                           const next = new Set(prev[bucketId] || [])
                           next.add(ex.id)
                           return { ...prev, [bucketId]: next }
                         })
+                        return
                       }
-                    >
-                      {t('shipments.delete')}
-                    </button>
-                  ) : null}
+                      patchGroupDraft(rowKey, { desc: '', amount: '', currency: initialCurrency })
+                    }}
+                  >
+                    {t('shipments.delete')}
+                  </button>
                 </div>
               </td>
             </tr>
@@ -1651,7 +1627,6 @@ export default function ShipmentFinancialsModal({
       for (const line of pendingOthers) {
         sectionRows.push(
           <tr key={line.tempId}>
-            <td>—</td>
             <td>
               <input
                 type="text"
@@ -1703,7 +1678,7 @@ export default function ShipmentFinancialsModal({
       if (orphans.length > 0) {
         sectionRows.push(
           <tr key="__orphan-sep" className="shipment-fin-template-sep">
-            <td colSpan={bucketEditing ? 5 : 4}>{t('shipments.fin.otherPosted')}</td>
+            <td colSpan={bucketEditing ? 4 : 3}>{t('shipments.fin.otherPosted')}</td>
           </tr>
         )
         orphans.forEach((ex) => {
@@ -1719,13 +1694,13 @@ export default function ShipmentFinancialsModal({
       if (rows.filter((r) => r.has_receipt).length > 0) {
         sectionRows.push(
           <tr key="__receipts-header" className="shipment-fin-template-sep">
-            <td colSpan={bucketEditing ? 5 : 4}>📎 {t('shipments.fin.attachmentsLabel')}</td>
+            <td colSpan={bucketEditing ? 4 : 3}>📎 {t('shipments.fin.attachmentsLabel')}</td>
           </tr>
         )
         rows.filter((r) => r.has_receipt).forEach((ex) => {
           sectionRows.push(
             <tr key={`receipt-${ex.id}`} className="shipment-fin-receipt-row">
-              <td colSpan={2}>
+              <td>
                 {renamingReceiptId === ex.id ? (
                   <div className="flex items-center gap-2">
                     <input
@@ -1749,7 +1724,7 @@ export default function ShipmentFinancialsModal({
                   receiptNameFromExpense(ex)
                 )}
               </td>
-              <td colSpan={2}>
+              <td colSpan={bucketEditing ? 2 : 1}>
                 <div className="shipment-fin-actions__inner">
                   <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm" onClick={() => handleViewReceipt(ex.id)} title={t('shipments.fin.viewReceipt')}>
                     <Eye size={14} />
