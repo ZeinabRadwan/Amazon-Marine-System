@@ -2007,7 +2007,17 @@
     }
   },
   "accountings": {
-    "title": "الحسابات",
+    "title": "كشف الحسابات",
+    "companyStatement": "كشف حساب الشركة",
+    "customerStatement": "كشف حساب العملاء",
+    "totalInvoicesCount": "إجمالي عدد الفواتير",
+    "totalBilledAmount": "إجمالي قيمة الفواتير",
+    "totalPaidAmount": "إجمالي المدفوع",
+    "remainingBalance": "الرصيد المتبقي",
+    "customerSearchPlaceholder": "بحث باسم العميل...",
+    "invoice": "الفاتورة",
+    "status": "الحالة",
+    "recordPayment": "تسجيل دفعة",
     "loading": "جاري التحميل…",
     "errorLoad": "تعذر تحميل الحسابات.",
     "errorDetail": "تعذر تحميل تفاصيل الحساب.",

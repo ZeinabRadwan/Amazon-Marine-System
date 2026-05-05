@@ -2006,7 +2006,17 @@
     }
   },
   "accountings": {
-    "title": "Accounting",
+    "title": "Accounts Overview",
+    "companyStatement": "Company Statement",
+    "customerStatement": "Customer Statement",
+    "totalInvoicesCount": "Total Invoices Count",
+    "totalBilledAmount": "Total Billed Amount",
+    "totalPaidAmount": "Total Paid Amount",
+    "remainingBalance": "Remaining Balance",
+    "customerSearchPlaceholder": "Search customer...",
+    "invoice": "Invoice",
+    "status": "Status",
+    "recordPayment": "Record Payment",
     "loading": "Loading…",
     "errorLoad": "Failed to load accountings.",
     "errorDetail": "Failed to load accounting details.",

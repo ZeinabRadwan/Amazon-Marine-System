@@ -51,7 +51,6 @@ const SIDEBAR_SECTIONS = [
     sectionKey: 'financial',
     items: [
       { id: 'invoices', menuKey: 'invoices', Icon: InvoiceIcon },
-      { id: 'partnerLedger', menuKey: 'partnerLedger', Icon: WalletIcon },
       { id: 'accounts', menuKey: 'accounts', Icon: WalletIcon },
       { id: 'treasury', menuKey: 'treasury', Icon: WalletIcon },
       { id: 'expenses', menuKey: 'expenses', Icon: InvoiceIcon },

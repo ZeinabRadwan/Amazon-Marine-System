@@ -479,6 +479,9 @@ Route::prefix('v1')->group(function () {
         Route::get('accounting/summary', [AccountingController::class, 'summary']);
         Route::get('accounting/clients', [AccountingController::class, 'clientAccounts']);
         Route::get('accounting/partners', [AccountingController::class, 'partnerAccounts']);
+        Route::get('accounting/company-statement', [AccountingController::class, 'companyStatement']);
+        Route::get('accounting/customer-statements', [AccountingController::class, 'customerStatements']);
+        Route::get('accounting/customer-statements/{client}', [AccountingController::class, 'customerStatementDetail']);
         Route::get('accounting/partners-ledger', [AccountingController::class, 'partnerLedger']);
         Route::get('accounting/partners-ledger/{vendor}', [AccountingController::class, 'partnerLedgerDetail']);
         Route::get('accounting/clients/export', [AccountingController::class, 'exportClients']);

@@ -14,6 +14,24 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AccountingController extends Controller
 {
+    /**
+     * @param array<string,float|int> $map
+     * @return array<string,float>
+     */
+    private function normalizeCurrencyMap(array $map): array
+    {
+        $out = [];
+        foreach ($map as $cur => $val) {
+            $code = strtoupper(trim((string) $cur));
+            if ($code === '') {
+                continue;
+            }
+            $out[$code] = (float) ($out[$code] ?? 0) + (float) $val;
+        }
+        ksort($out);
+        return $out;
+    }
+
     public function stats(Request $request): JsonResponse
     {
         abort_unless(
@@ -392,6 +410,140 @@ class AccountingController extends Controller
                 'partner_name' => $vendor->name,
                 'category' => $vendor->type,
                 'rows' => $rows,
+            ],
+        ]);
+    }
+
+    public function companyStatement(Request $request): JsonResponse
+    {
+        abort_unless($request->user()?->can('accounting.view'), 403);
+
+        $invoices = Invoice::query()->where('invoice_type_id', 0)->get();
+        $payments = Payment::query()->where('type', 'client_receipt')->get();
+
+        $billedByCurrency = [];
+        foreach ($invoices as $inv) {
+            $cur = strtoupper((string) ($inv->currency_code ?: 'USD'));
+            $billedByCurrency[$cur] = ($billedByCurrency[$cur] ?? 0) + (float) $inv->total_amount;
+        }
+        $paidByCurrency = [];
+        foreach ($payments as $p) {
+            $cur = strtoupper((string) ($p->currency_code ?: 'USD'));
+            $paidByCurrency[$cur] = ($paidByCurrency[$cur] ?? 0) + (float) $p->amount;
+        }
+
+        $billedByCurrency = $this->normalizeCurrencyMap($billedByCurrency);
+        $paidByCurrency = $this->normalizeCurrencyMap($paidByCurrency);
+
+        $remaining = [];
+        foreach (array_unique(array_merge(array_keys($billedByCurrency), array_keys($paidByCurrency))) as $cur) {
+            $remaining[$cur] = (float) ($billedByCurrency[$cur] ?? 0) - (float) ($paidByCurrency[$cur] ?? 0);
+        }
+        $remaining = $this->normalizeCurrencyMap($remaining);
+
+        return response()->json([
+            'data' => [
+                'total_invoices_count' => $invoices->count(),
+                'total_billed_amount' => $billedByCurrency,
+                'total_paid_amount' => $paidByCurrency,
+                'remaining_balance' => $remaining,
+            ],
+        ]);
+    }
+
+    public function customerStatements(Request $request): JsonResponse
+    {
+        abort_unless($request->user()?->can('accounting.view'), 403);
+        $search = trim((string) $request->query('search', ''));
+
+        $query = Client::query();
+        if ($search !== '') {
+            $query->where('name', 'like', '%'.$search.'%');
+        }
+        $clients = $query->orderBy('name')->get();
+
+        $rows = $clients->map(function (Client $client) {
+            $invoices = Invoice::query()
+                ->where('invoice_type_id', 0)
+                ->where('client_id', $client->id)
+                ->orderByDesc('issue_date')
+                ->orderByDesc('id')
+                ->get();
+            $invoiceIds = $invoices->pluck('id')->all();
+            $payments = $invoiceIds
+                ? Payment::query()->whereIn('invoice_id', $invoiceIds)->get()
+                : collect();
+
+            $billed = [];
+            foreach ($invoices as $inv) {
+                $cur = strtoupper((string) ($inv->currency_code ?: 'USD'));
+                $billed[$cur] = ($billed[$cur] ?? 0) + (float) $inv->total_amount;
+            }
+            $paid = [];
+            foreach ($payments as $p) {
+                $cur = strtoupper((string) ($p->currency_code ?: 'USD'));
+                $paid[$cur] = ($paid[$cur] ?? 0) + (float) $p->amount;
+            }
+            $billed = $this->normalizeCurrencyMap($billed);
+            $paid = $this->normalizeCurrencyMap($paid);
+            $remaining = [];
+            foreach (array_unique(array_merge(array_keys($billed), array_keys($paid))) as $cur) {
+                $remaining[$cur] = (float) ($billed[$cur] ?? 0) - (float) ($paid[$cur] ?? 0);
+            }
+            $remaining = $this->normalizeCurrencyMap($remaining);
+
+            return [
+                'customer_id' => $client->id,
+                'customer_name' => $client->name,
+                'invoice_count' => $invoices->count(),
+                'total_invoices_value' => $billed,
+                'paid_amount' => $paid,
+                'remaining_balance' => $remaining,
+            ];
+        })->values();
+
+        return response()->json(['data' => $rows]);
+    }
+
+    public function customerStatementDetail(Request $request, Client $client): JsonResponse
+    {
+        abort_unless($request->user()?->can('accounting.view'), 403);
+
+        $invoices = Invoice::query()
+            ->where('invoice_type_id', 0)
+            ->where('client_id', $client->id)
+            ->orderByDesc('issue_date')
+            ->orderByDesc('id')
+            ->get();
+
+        $rows = $invoices->map(function (Invoice $inv) {
+            $paid = (float) Payment::query()->where('invoice_id', $inv->id)->sum('amount');
+            $total = (float) $inv->total_amount;
+            $status = 'unpaid';
+            if ($paid >= $total && $total > 0) {
+                $status = 'paid';
+            } elseif ($paid > 0) {
+                $status = 'partial';
+            }
+            $cur = strtoupper((string) ($inv->currency_code ?: 'USD'));
+
+            return [
+                'invoice_id' => $inv->id,
+                'invoice_reference' => $inv->invoice_number ?: ('INV-'.$inv->id),
+                'shipment_id' => $inv->shipment_id,
+                'status' => $status,
+                'total_amount' => [$cur => $total],
+                'paid_amount' => [$cur => $paid],
+                'remaining_amount' => [$cur => max(0, $total - $paid)],
+                'issue_date' => $inv->issue_date?->toDateString(),
+            ];
+        })->values();
+
+        return response()->json([
+            'data' => [
+                'customer_id' => $client->id,
+                'customer_name' => $client->name,
+                'invoices' => $rows,
             ],
         ]);
     }

@@ -219,3 +219,27 @@ export async function listPayments(token, params = {}) {
   if (!res.ok) throw new Error(data.message || data.error || `Failed to list payments (${res.status})`)
   return data
 }
+
+export async function getCompanyStatement(token) {
+  const res = await apiFetch(`${getBaseUrl()}/accounting/company-statement`, { headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to load company statement (${res.status})`)
+  return data
+}
+
+export async function getCustomerStatements(token, params = {}) {
+  const sp = new URLSearchParams()
+  if (params.search) sp.set('search', params.search)
+  const q = sp.toString()
+  const res = await apiFetch(`${getBaseUrl()}/accounting/customer-statements${q ? `?${q}` : ''}`, { headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to load customer statements (${res.status})`)
+  return data
+}
+
+export async function getCustomerStatementDetail(token, customerId) {
+  const res = await apiFetch(`${getBaseUrl()}/accounting/customer-statements/${customerId}`, { headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to load customer statement detail (${res.status})`)
+  return data
+}
