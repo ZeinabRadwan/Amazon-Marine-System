@@ -19,6 +19,7 @@ class ShipmentCostInvoice extends Model
         'invoice_date',
         'status',
         'items',
+        'attachment_refs',
         'currency_totals',
         'total_amount',
     ];
@@ -29,6 +30,7 @@ class ShipmentCostInvoice extends Model
     protected $casts = [
         'invoice_date' => 'date',
         'items' => 'array',
+        'attachment_refs' => 'array',
         'currency_totals' => 'array',
         'total_amount' => 'decimal:2',
     ];

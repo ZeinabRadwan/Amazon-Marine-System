@@ -630,10 +630,11 @@ class ShipmentController extends Controller
             'invoice_number' => ['nullable', 'string', 'max:255'],
             'invoice_date' => ['nullable', 'date'],
             'status' => ['nullable', 'string', 'max:40'],
-            'items' => ['required', 'array'],
+            'items' => ['sometimes', 'array'],
             'items.*.line_id' => ['nullable', 'integer', 'min:1'],
             'items.*.bucket_id' => ['required', 'string', 'in:shipping,inland,customs,insurance,other'],
             'items.*.template_id' => ['nullable', 'string', 'max:120'],
+            'items.*.title' => ['nullable', 'string', 'max:255'],
             'items.*.description' => ['nullable', 'string', 'max:500'],
             'items.*.amount' => ['required', 'numeric', 'min:0'],
             'items.*.currency_code' => ['required', 'string', 'size:3'],
@@ -641,6 +642,7 @@ class ShipmentController extends Controller
             'items.*.expense_category_id' => ['nullable', 'integer', 'exists:expense_categories,id'],
             'items.*.expense_date' => ['nullable', 'date'],
             'items.*.order_index' => ['nullable', 'integer', 'min:0'],
+            'attachment_refs' => ['sometimes', 'array'],
         ]);
 
         $existing = ShipmentCostInvoice::query()->where('shipment_id', $shipment->id)->first();
@@ -656,7 +658,8 @@ class ShipmentController extends Controller
         $currencyTotals = [];
         $normalizedItems = [];
         $totalAmount = 0.0;
-        foreach ($validated['items'] as $idx => $item) {
+        $incomingItems = $validated['items'] ?? $existingItems;
+        foreach ($incomingItems as $idx => $item) {
             $amount = (float) $item['amount'];
             if (! is_finite($amount) || $amount <= 0) {
                 continue;
@@ -676,6 +679,7 @@ class ShipmentController extends Controller
                 'line_id' => $lineId,
                 'bucket_id' => $item['bucket_id'],
                 'template_id' => $item['template_id'] ?? null,
+                'title' => isset($item['title']) ? trim((string) $item['title']) : null,
                 'description' => isset($item['description']) ? trim((string) $item['description']) : null,
                 'amount' => $amount,
                 'currency_code' => $currencyCode,
@@ -699,7 +703,8 @@ class ShipmentController extends Controller
                 'invoice_number' => $validated['invoice_number'] ?? ($existing?->invoice_number ?? ('SCI-'.$shipment->id)),
                 'invoice_date' => $validated['invoice_date'] ?? ($existing?->invoice_date?->toDateString() ?? now()->toDateString()),
                 'status' => $validated['status'] ?? ($existing?->status ?? 'draft'),
-                'items' => $normalizedItems,
+                'items' => array_values($normalizedItems),
+                'attachment_refs' => $validated['attachment_refs'] ?? (is_array($existing?->attachment_refs) ? $existing->attachment_refs : []),
                 'currency_totals' => $currencyTotals,
                 'total_amount' => $totalAmount,
             ]
@@ -740,6 +745,7 @@ class ShipmentController extends Controller
             'invoice_date' => optional($invoice->invoice_date)->toDateString(),
             'status' => $invoice->status,
             'items' => $items,
+            'attachment_refs' => is_array($invoice->attachment_refs) ? $invoice->attachment_refs : [],
             'currency_totals' => is_array($invoice->currency_totals) ? $invoice->currency_totals : [],
             'total_amount' => (float) $invoice->total_amount,
         ];

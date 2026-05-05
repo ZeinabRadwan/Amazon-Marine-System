@@ -2781,6 +2781,13 @@
       "shipmentCostItems": "بنود تكلفة الشحنة",
       "shipmentNumber": "رقم الشحنة",
       "clientName": "اسم العميل",
+      "breakdown": {
+        "shipping": "تكلفة الخط الملاحي",
+        "inland": "النقل الداخلي",
+        "customs": "التخليص الجمركي",
+        "insurance": "التأمين",
+        "other": "تكاليف إضافية"
+      },
       "tabA": "A) فواتير التكلفة",
       "tabB": "B) تسعير البيع",
       "tabC": "C) فواتير العميل",

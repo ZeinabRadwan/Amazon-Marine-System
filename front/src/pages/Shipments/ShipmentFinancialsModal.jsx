@@ -566,6 +566,7 @@ function ShipmentFinLoadingSkeleton({ variant }) {
  *   open: boolean,
  *   shipment: object | null,
  *   expenses: Array<object>,
+ *   attachmentRefs?: Record<string, Array<{name?: string, uploaded_at?: string}>>,
  *   loading: boolean,
  *   onClose: () => void,
  *   numberLocale: string,
@@ -583,6 +584,7 @@ export default function ShipmentFinancialsModal({
   open,
   shipment,
   expenses,
+  attachmentRefs = {},
   loading,
   onClose,
   numberLocale,
@@ -625,6 +627,7 @@ export default function ShipmentFinancialsModal({
   const [renamingReceiptId, setRenamingReceiptId] = useState(null)
   const [renamingReceiptValue, setRenamingReceiptValue] = useState('')
   const [receiptActionId, setReceiptActionId] = useState(null)
+  const [sectionAttachmentRefs, setSectionAttachmentRefs] = useState({})
   const pendingRowSeqRef = useRef(0)
   const [savingAllDraft, setSavingAllDraft] = useState(false)
   const editMode = Boolean(token && canManageExpenses && shipment?.bl_number?.trim() && shipment?.id)
@@ -646,12 +649,13 @@ export default function ShipmentFinancialsModal({
       setRenamingReceiptId(null)
       setRenamingReceiptValue('')
       setReceiptActionId(null)
+      setSectionAttachmentRefs(attachmentRefs || {})
 
       if (token) {
         listCurrencies(token).then(setCurrencies).catch(() => setCurrencies([]))
       }
     }
-  }, [open, shipment?.id, isAccountingUser, token])
+  }, [open, shipment?.id, isAccountingUser, token, attachmentRefs])
 
   const [categoriesByCode, setCategoriesByCode] = useState({})
 
@@ -952,40 +956,29 @@ export default function ShipmentFinancialsModal({
   const handleSectionUpload = useCallback(async (bucketId, e) => {
     const file = e.target.files?.[0]
     e.target.value = ''
-    if (!file || !token || !shipment?.id) return
-    
+    if (!file) return
+
     setBatchSavingBucket(bucketId)
     try {
-      const categoryCode = otherLineCategoryCode(bucketId)
-      const categoryMeta = categoriesByCode[categoryCode]
-      if (!categoryMeta?.id) throw new Error(t('shipments.fin.errorNoCategory'))
-
-      const prefix = OTHER_DESC_PREFIX[bucketId] || 'Other'
-      const dateStr = new Date().toISOString().slice(0, 10)
-      
-      const res = await createExpense(token, {
-        type: 'shipment',
-        shipment_id: shipment.id,
-        expense_category_id: categoryMeta.id,
-        description: `${prefix}: ${t('shipments.fin.bulkUploadDesc')}`,
-        amount: 0,
-        currency_code: 'USD',
-        expense_date: dateStr,
-        vendor_id: sectionVendorChoice[bucketId] || undefined,
-      })
-      
-      const newEx = res?.data ?? res
-      if (newEx?.id) {
-        await uploadExpenseReceipt(token, newEx.id, file)
-      }
-      onExpensesChanged?.()
+      setSectionAttachmentRefs((prev) => ({
+        ...prev,
+        [bucketId]: [
+          ...(prev[bucketId] || []),
+          {
+            name: file.name,
+            size: file.size,
+            type: file.type || null,
+            uploaded_at: new Date().toISOString(),
+          },
+        ],
+      }))
       setFinBanner({ type: 'success', message: t('shipments.fin.receiptUploaded') })
     } catch (err) {
       setFinBanner({ type: 'error', message: err.message || t('shipments.fin.errorReceipt') })
     } finally {
       setBatchSavingBucket(null)
     }
-  }, [token, shipment, categoriesByCode, sectionVendorChoice, t, onExpensesChanged])
+  }, [t])
 
   const handleNotifySales = useCallback(async () => {
     if (!token || !shipment?.id) return
@@ -1034,7 +1027,7 @@ export default function ShipmentFinancialsModal({
             line_id: Number.isFinite(expenseIdNum) && expenseIdNum > 0 ? expenseIdNum : undefined,
             bucket_id: sectionId,
             template_id: templateId,
-            description: desc,
+            title: desc,
             amount,
             currency_code: (draft.currency || 'USD').toUpperCase(),
             vendor_id: sectionVendorChoice[sectionId] || model.vendorId || undefined,
@@ -1056,7 +1049,7 @@ export default function ShipmentFinancialsModal({
           items.push({
             bucket_id: sectionId,
             template_id: 'other',
-            description: desc,
+            title: desc,
             amount,
             currency_code: (line.currency || 'USD').toUpperCase(),
             vendor_id: sectionVendorChoice[sectionId] || undefined,
@@ -1069,6 +1062,7 @@ export default function ShipmentFinancialsModal({
       await updateShipmentCostInvoice(token, shipment.id, {
         status: 'draft',
         items,
+        attachment_refs: sectionAttachmentRefs,
       })
 
       setPendingOtherByBucket({})
@@ -1082,7 +1076,7 @@ export default function ShipmentFinancialsModal({
     } finally {
       setSavingAllDraft(false)
     }
-  }, [editMode, savingAllDraft, token, shipment?.id, deletedIdsByBucket, groupDraftByKey, pendingOtherByBucket, sectionVendorChoice, t, onExpensesChanged, onShipmentTotalsRefresh])
+  }, [editMode, savingAllDraft, token, shipment?.id, deletedIdsByBucket, groupDraftByKey, pendingOtherByBucket, sectionVendorChoice, sectionAttachmentRefs, t, onExpensesChanged, onShipmentTotalsRefresh])
 
   const canAccessInvoices = Boolean(token && (canManageFinancial || canViewSelling))
 
@@ -1290,8 +1284,9 @@ export default function ShipmentFinancialsModal({
       .map(([c, v]) => `${c} ${formatMoney(v, numberLocale)}`)
     const subtotalLabel = subtotalParts.length ? subtotalParts.join(' · ') : formatMoney(0, numberLocale)
     const linesWithAmount = rows.filter((r) => Number(r.amount) > 0)
-    const allReceipt = linesWithAmount.length > 0 && linesWithAmount.every((r) => r.has_receipt)
-    const partialReceipt = !allReceipt && linesWithAmount.some((r) => r.has_receipt)
+    const sectionAttachmentsCount = (sectionAttachmentRefs[bucketId] || []).length
+    const allReceipt = (linesWithAmount.length > 0 && linesWithAmount.every((r) => r.has_receipt)) || sectionAttachmentsCount > 0
+    const partialReceipt = !allReceipt && (linesWithAmount.some((r) => r.has_receipt) || sectionAttachmentsCount > 0)
     const isOpen = expanded.has(bucketId)
 
     let receiptBadgeClass = 'shipment-fin-badge--draft'
@@ -1376,13 +1371,11 @@ export default function ShipmentFinancialsModal({
                               type="button"
                               className="shipment-fin-btn shipment-fin-btn--danger shipment-fin-btn--sm"
                               onClick={async () => {
-                                if (!window.confirm(t('shipments.fin.confirmDeleteLine'))) return;
-                                try {
-                                  await deleteExpense(token, ex.id);
-                                  onExpensesChanged?.();
-                                } catch (err) {
-                                  setFinBanner({ type: 'error', message: err.message || t('shipments.fin.errorDeleteLine') });
-                                }
+                                setDeletedIdsByBucket((prev) => {
+                                  const next = new Set(prev.other || [])
+                                  next.add(ex.id)
+                                  return { ...prev, other: next }
+                                })
                               }}
                               title={t('shipments.delete')}
                             >
@@ -1512,6 +1505,11 @@ export default function ShipmentFinancialsModal({
               <div className="shipment-fin-draft-upload-icon">📎</div>
               <div className="shipment-fin-draft-upload-title">{t('shipments.fin.uploadReceipt')}</div>
               <div className="shipment-fin-draft-upload-sub">{t('shipments.fin.attachmentsLabel')}</div>
+              {(sectionAttachmentRefs[bucketId] || []).length > 0 ? (
+                <div className="shipment-fin-draft-upload-sub">
+                  {`${(sectionAttachmentRefs[bucketId] || []).length} ${t('shipments.fin.attachmentsLabel')}`}
+                </div>
+              ) : null}
             </div>
           ) : null}
         </>
@@ -1795,6 +1793,11 @@ export default function ShipmentFinancialsModal({
               <div className="shipment-fin-draft-upload-icon">📎</div>
               <div className="shipment-fin-draft-upload-title">{t('shipments.fin.uploadReceipt')}</div>
               <div className="shipment-fin-draft-upload-sub">{t('shipments.fin.attachmentsLabel')}</div>
+              {(sectionAttachmentRefs[bucketId] || []).length > 0 ? (
+                <div className="shipment-fin-draft-upload-sub">
+                  {`${(sectionAttachmentRefs[bucketId] || []).length} ${t('shipments.fin.attachmentsLabel')}`}
+                </div>
+              ) : null}
             </div>
           ) : null}
           <div className="shipment-fin-draft-sec-total">
@@ -1922,14 +1925,18 @@ export default function ShipmentFinancialsModal({
                 <ShipmentFinLoadingSkeleton variant="expenses" />
               ) : (
                 <>
-                  {BUCKET_DEFS.map((d) => renderBucketCard(d.id, d))}
-                  {renderBucketCard('other', otherDef)}
+                  {BUCKET_DEFS
+                    .filter((d) => (byBucket[d.id] || []).length > 0 || (pendingOtherByBucket[d.id] || []).length > 0 || (sectionAttachmentRefs[d.id] || []).length > 0)
+                    .map((d) => renderBucketCard(d.id, d))}
+                  {((byBucket.other || []).length > 0 || (pendingOtherByBucket.other || []).length > 0 || (sectionAttachmentRefs.other || []).length > 0)
+                    ? renderBucketCard('other', otherDef)
+                    : null}
                   <div className="shipment-fin-draft-grand-total">
-                    <div className="shipment-fin-draft-total-row"><span>Shipping line cost</span><strong>{Object.entries(bucketTotalsLive('shipping')).map(([c,v]) => `${c} ${formatMoney(v, 'en-US')}`).join(' · ') || '—'}</strong></div>
-                    <div className="shipment-fin-draft-total-row"><span>Internal transport</span><strong>{Object.entries(bucketTotalsLive('inland')).map(([c,v]) => `${c} ${formatMoney(v, 'en-US')}`).join(' · ') || '—'}</strong></div>
-                    <div className="shipment-fin-draft-total-row"><span>Customs clearance</span><strong>{Object.entries(bucketTotalsLive('customs')).map(([c,v]) => `${c} ${formatMoney(v, 'en-US')}`).join(' · ') || '—'}</strong></div>
-                    <div className="shipment-fin-draft-total-row"><span>Insurance</span><strong>{Object.entries(bucketTotalsLive('insurance')).map(([c,v]) => `${c} ${formatMoney(v, 'en-US')}`).join(' · ') || '—'}</strong></div>
-                    <div className="shipment-fin-draft-total-row"><span>Additional cost types</span><strong>{Object.entries(bucketTotalsLive('other')).map(([c,v]) => `${c} ${formatMoney(v, 'en-US')}`).join(' · ') || '—'}</strong></div>
+                    <div className="shipment-fin-draft-total-row"><span>{t('shipments.fin.breakdown.shipping', { defaultValue: 'تكلفة الخط الملاحي' })}</span><strong>{Object.entries(bucketTotalsLive('shipping')).map(([c,v]) => `${c} ${formatMoney(v, 'en-US')}`).join(' · ') || '—'}</strong></div>
+                    <div className="shipment-fin-draft-total-row"><span>{t('shipments.fin.breakdown.inland', { defaultValue: 'النقل الداخلي' })}</span><strong>{Object.entries(bucketTotalsLive('inland')).map(([c,v]) => `${c} ${formatMoney(v, 'en-US')}`).join(' · ') || '—'}</strong></div>
+                    <div className="shipment-fin-draft-total-row"><span>{t('shipments.fin.breakdown.customs', { defaultValue: 'التخليص الجمركي' })}</span><strong>{Object.entries(bucketTotalsLive('customs')).map(([c,v]) => `${c} ${formatMoney(v, 'en-US')}`).join(' · ') || '—'}</strong></div>
+                    <div className="shipment-fin-draft-total-row"><span>{t('shipments.fin.breakdown.insurance', { defaultValue: 'التأمين' })}</span><strong>{Object.entries(bucketTotalsLive('insurance')).map(([c,v]) => `${c} ${formatMoney(v, 'en-US')}`).join(' · ') || '—'}</strong></div>
+                    <div className="shipment-fin-draft-total-row"><span>{t('shipments.fin.breakdown.other', { defaultValue: 'تكاليف إضافية' })}</span><strong>{Object.entries(bucketTotalsLive('other')).map(([c,v]) => `${c} ${formatMoney(v, 'en-US')}`).join(' · ') || '—'}</strong></div>
                     <div className="shipment-fin-draft-total-row shipment-fin-draft-total-row--final">
                       <span>{t('shipments.fin.netCostLabel')}</span>
                       <strong>

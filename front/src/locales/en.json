@@ -2769,6 +2769,13 @@
       "shipmentCostItems": "Shipment Cost Items",
       "shipmentNumber": "Shipment Number",
       "clientName": "Client Name",
+      "breakdown": {
+        "shipping": "Shipping line cost",
+        "inland": "Internal transport",
+        "customs": "Customs clearance",
+        "insurance": "Insurance",
+        "other": "Additional cost types"
+      },
       "tabA": "A) Vendor cost invoices",
       "tabB": "B) Sales pricing",
       "tabC": "C) Client invoice",

@@ -15,6 +15,7 @@ return new class extends Migration
             $table->date('invoice_date')->nullable();
             $table->string('status', 40)->default('draft');
             $table->json('items')->nullable();
+            $table->json('attachment_refs')->nullable();
             $table->json('currency_totals')->nullable();
             $table->decimal('total_amount', 14, 2)->default(0);
             $table->timestamps();

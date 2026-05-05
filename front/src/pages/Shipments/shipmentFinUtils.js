@@ -111,6 +111,7 @@ export function partitionBucketRows(bucketId, bucketRows, isReefer) {
   if (!templates) {
     return { sections: [], orphans: bucketRows }
   }
+  const templateById = Object.fromEntries(templates.map((tpl) => [tpl.id, tpl]))
   const used = new Set()
   const sections = []
   for (const tpl of templates) {
@@ -121,6 +122,11 @@ export function partitionBucketRows(bucketId, bucketRows, isReefer) {
     const matched = []
     for (const ex of bucketRows) {
       if (used.has(ex.id)) continue
+      if (ex?.template_id && templateById[ex.template_id] && ex.template_id === tpl.id) {
+        matched.push(ex)
+        used.add(ex.id)
+        continue
+      }
       if (tpl.matchers.some((re) => re.test(expenseHaystack(ex)))) {
         matched.push(ex)
         used.add(ex.id)

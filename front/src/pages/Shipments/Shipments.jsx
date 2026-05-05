@@ -85,7 +85,8 @@ function costInvoiceItemsToRows(items = []) {
       expense_category_id: item?.expense_category_id ?? null,
       category_name: '',
       bl_number: '',
-      description: item?.description || '',
+      description: item?.title || item?.description || '',
+      title: item?.title || item?.description || '',
       amount: Number(item?.amount || 0),
       currency_code: (item?.currency_code || 'USD').toUpperCase(),
       vendor_id: item?.vendor_id ?? null,
@@ -398,6 +399,7 @@ export default function Shipments() {
   const [attachmentsShipment, setAttachmentsShipment] = useState(null)
   const [financialExpenses, setFinancialExpenses] = useState([])
   const [financialRows, setFinancialRows] = useState([])
+  const [financialAttachmentRefs, setFinancialAttachmentRefs] = useState({})
   const [financialLoading, setFinancialLoading] = useState(false)
 
   const listParams = useMemo(
@@ -477,7 +479,10 @@ export default function Shipments() {
     if (!shipmentId || !token || !canViewShipmentFinancials) return
     setFinancialLoading(true)
     getShipmentCostInvoice(token, shipmentId)
-      .then((res) => setFinancialRows(costInvoiceItemsToRows(res?.data?.items || [])))
+      .then((res) => {
+        setFinancialRows(costInvoiceItemsToRows(res?.data?.items || []))
+        setFinancialAttachmentRefs(res?.data?.attachment_refs || {})
+      })
       .catch(() => {})
       .finally(() => setFinancialLoading(false))
   }, [financialRow?.id, token, canViewShipmentFinancials])
@@ -505,16 +510,24 @@ export default function Shipments() {
   useEffect(() => {
     if (!financialRow || !token || !canViewShipmentFinancials) {
       setFinancialRows([])
+      setFinancialAttachmentRefs({})
       return
     }
     if (!financialRow.id) {
       setFinancialRows([])
+      setFinancialAttachmentRefs({})
       return
     }
     setFinancialLoading(true)
     getShipmentCostInvoice(token, financialRow.id)
-      .then((res) => setFinancialRows(costInvoiceItemsToRows(res?.data?.items || [])))
-      .catch(() => setFinancialRows([]))
+      .then((res) => {
+        setFinancialRows(costInvoiceItemsToRows(res?.data?.items || []))
+        setFinancialAttachmentRefs(res?.data?.attachment_refs || {})
+      })
+      .catch(() => {
+        setFinancialRows([])
+        setFinancialAttachmentRefs({})
+      })
       .finally(() => setFinancialLoading(false))
   }, [financialRow, token, canViewShipmentFinancials])
 
@@ -2025,6 +2038,7 @@ export default function Shipments() {
             open
             shipment={financialRow}
             expenses={financialRows}
+            attachmentRefs={financialAttachmentRefs}
             loading={financialLoading}
             onClose={() => setFinancialRow(null)}
             numberLocale={numberLocale}
