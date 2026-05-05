@@ -2136,6 +2136,36 @@
   font-weight: 700;
 }
 
+.shipment-fin-payment-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+}
+
+.shipment-fin-payment-modal {
+  width: min(640px, calc(100vw - 2rem));
+  background: #fff;
+  border-radius: 12px;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+}
+
+.shipment-fin-payment-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+@media (max-width: 768px) {
+  .shipment-fin-payment-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .shipment-fin-draft-grand-total {
   background: var(--navy-700, #1e3a5f);
   color: #fff;

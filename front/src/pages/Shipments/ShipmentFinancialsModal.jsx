@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X, ChevronDown, ChevronUp, FileText, DollarSign, FileType, History, Ship, Car, ShieldCheck, Shield, Package, Upload, Trash2, Paperclip, Eye, Pencil, FileDown } from 'lucide-react'
+import { X, ChevronDown, ChevronUp, FileText, DollarSign, History, Ship, Car, ShieldCheck, Shield, Package, Upload, Trash2, Paperclip, Eye, Pencil, FileDown } from 'lucide-react'
 import {
   createExpense,
   updateExpense,
@@ -17,11 +17,13 @@ import {
   createInvoice,
   updateInvoice,
   issueInvoice,
+  recordInvoicePayment,
   downloadInvoicePdf,
   listCurrencies,
 } from '../../api/invoices'
 import { listActivitiesBySubject } from '../../api/activities'
 import { notifyShipmentSalesFinancials, updateShipmentCostInvoice } from '../../api/shipments'
+import { listBankAccounts } from '../../api/accountings'
 import { useAuthAccess } from '../../hooks/useAuthAccess'
 import { ROLE_ID } from '../../constants/roles'
 import { BUCKET_DEFS, expenseBucket, LINE_TEMPLATES, expenseHaystack, partitionBucketRows } from './shipmentFinUtils'
@@ -633,6 +635,18 @@ export default function ShipmentFinancialsModal({
   const [tabBRows, setTabBRows] = useState([])
   const [handlingRow, setHandlingRow] = useState({ include: true, number_of_containers: 1, handling_fee_per_container: '', currency: 'USD' })
   const [deletedSellIds, setDeletedSellIds] = useState(() => new Set())
+  const [currentInvoiceId, setCurrentInvoiceId] = useState(null)
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [bankAccounts, setBankAccounts] = useState([])
+  const [paymentSaving, setPaymentSaving] = useState(false)
+  const [paymentForm, setPaymentForm] = useState({
+    amount: '',
+    currency: 'USD',
+    method: 'bank_transfer',
+    bank_account_id: '',
+    paid_at: new Date().toISOString().slice(0, 10),
+    reference: '',
+  })
 
   const [activityRows, setActivityRows] = useState([])
   const [activityLoading, setActivityLoading] = useState(false)
@@ -658,6 +672,7 @@ export default function ShipmentFinancialsModal({
       setFinBanner(null)
       setClientInvoice(null)
       setClientInvoicesList([])
+      setCurrentInvoiceId(null)
       setTabBRows([])
       setHandlingRow({ include: true, number_of_containers: 1, handling_fee_per_container: '', currency: 'USD' })
       setDeletedSellIds(new Set())
@@ -680,6 +695,7 @@ export default function ShipmentFinancialsModal({
 
       if (token) {
         listCurrencies(token).then(setCurrencies).catch(() => setCurrencies([]))
+        listBankAccounts(token).then((res) => setBankAccounts(Array.isArray(res?.data) ? res.data : [])).catch(() => setBankAccounts([]))
       }
     }
   }, [open, shipment?.id, isAccountingUser, token, attachmentRefs, sectionMeta])
@@ -1163,7 +1179,7 @@ export default function ShipmentFinancialsModal({
 
   useEffect(() => {
     if (!open || !shipment?.id || !token || !canAccessInvoices) return undefined
-    if (tab !== 'selling' && tab !== 'invoices') return undefined
+    if (tab !== 'selling' && tab !== 'summary') return undefined
     let cancelled = false
     setInvoiceLoading(true)
     listInvoices(token, { shipment_id: shipment.id, invoice_type: 'client' })
@@ -1175,15 +1191,22 @@ export default function ShipmentFinancialsModal({
         const pick = draft || list[0]
         if (!pick?.id) {
           setClientInvoice(null)
+          setCurrentInvoiceId(null)
           return undefined
         }
         return getInvoice(token, pick.id).then((full) => {
-          if (!cancelled) setClientInvoice(full)
+          if (!cancelled) {
+            setClientInvoice(full)
+            setCurrentInvoiceId(full?.id || pick.id || null)
+          }
         })
       })
       .catch(() => {
         if (!cancelled) setClientInvoicesList([])
-        if (!cancelled) setClientInvoice(null)
+        if (!cancelled) {
+          setClientInvoice(null)
+          setCurrentInvoiceId(null)
+        }
       })
       .finally(() => {
         if (!cancelled) setInvoiceLoading(false)
@@ -1284,9 +1307,11 @@ export default function ShipmentFinancialsModal({
     setPricingSaving(true)
     try {
       let inv = clientInvoice
-      const existingInvoice = inv?.id
-        ? inv
-        : (clientInvoicesList.find((i) => i.status === 'draft') || clientInvoicesList[0] || null)
+      const existingInvoice = currentInvoiceId
+        ? { id: currentInvoiceId, status: (clientInvoice?.status || 'draft') }
+        : (inv?.id
+          ? inv
+          : (clientInvoicesList.find((i) => i.status === 'draft') || clientInvoicesList[0] || null))
 
       if (!existingInvoice?.id) {
         inv = await createInvoice(token, {
@@ -1305,6 +1330,7 @@ export default function ShipmentFinancialsModal({
       }
       const refreshed = await getInvoice(token, inv.id)
       setClientInvoice(refreshed)
+      setCurrentInvoiceId(refreshed?.id || inv.id)
       setClientInvoicesList((prev) => {
         const filtered = (Array.isArray(prev) ? prev : []).filter((r) => r.id !== refreshed.id)
         return [refreshed, ...filtered]
@@ -1327,6 +1353,7 @@ export default function ShipmentFinancialsModal({
     deletedSellIds,
     clientInvoice,
     clientInvoicesList,
+    currentInvoiceId,
     t,
     onShipmentTotalsRefresh,
     currencies,
@@ -1538,6 +1565,79 @@ export default function ShipmentFinancialsModal({
       </div>
     )
   }, [formatCurrencyBreakdown, t])
+
+  const invoiceFinancialOverview = useMemo(() => {
+    const totalCost = {}
+    const totalSell = {}
+    sellingVisibleRows.forEach((r) => {
+      const cur = (r.currency || 'USD').toUpperCase()
+      const c = Number(r.cost) || 0
+      const s = Number(r.sell) || 0
+      if (c > 0) totalCost[cur] = (totalCost[cur] || 0) + c
+      if (s > 0) totalSell[cur] = (totalSell[cur] || 0) + s
+    })
+    if (handlingRow.include && handlingTotal > 0) {
+      const hCur = (handlingRow.currency || 'USD').toUpperCase()
+      totalSell[hCur] = (totalSell[hCur] || 0) + handlingTotal
+    }
+    const profit = {}
+    const keys = new Set([...Object.keys(totalCost), ...Object.keys(totalSell)])
+    keys.forEach((k) => {
+      profit[k] = (Number(totalSell[k]) || 0) - (Number(totalCost[k]) || 0)
+    })
+
+    const paid = {}
+    ;(clientInvoice?.payments || []).forEach((p) => {
+      const cur = String(p?.currency_code || clientInvoice?.currency_code || 'USD').toUpperCase()
+      const amt = Number(p?.amount) || 0
+      if (amt > 0) paid[cur] = (paid[cur] || 0) + amt
+    })
+
+    const remaining = {}
+    const remKeys = new Set([...Object.keys(totalSell), ...Object.keys(paid)])
+    remKeys.forEach((k) => {
+      remaining[k] = Math.max(0, (Number(totalSell[k]) || 0) - (Number(paid[k]) || 0))
+    })
+
+    const totalSellSum = Object.values(totalSell).reduce((a, b) => a + (Number(b) || 0), 0)
+    const paidSum = Object.values(paid).reduce((a, b) => a + (Number(b) || 0), 0)
+    let status = 'unpaid'
+    if (totalSellSum > 0 && paidSum >= totalSellSum) status = 'paid'
+    else if (paidSum > 0) status = 'partial'
+
+    return { totalCost, totalSell, profit, paid, remaining, status }
+  }, [sellingVisibleRows, handlingRow.include, handlingRow.currency, handlingTotal, clientInvoice])
+
+  const submitInvoicePayment = useCallback(async () => {
+    if (!token || !clientInvoice?.id) return
+    const amount = Number(paymentForm.amount)
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setFinBanner({ type: 'error', message: t('shipments.fin.paymentInvalidAmount') })
+      return
+    }
+    setPaymentSaving(true)
+    try {
+      await recordInvoicePayment(token, clientInvoice.id, {
+        amount,
+        method: paymentForm.method,
+        reference: paymentForm.reference || null,
+        paid_at: paymentForm.paid_at,
+      })
+      const refreshed = await getInvoice(token, clientInvoice.id)
+      setClientInvoice(refreshed)
+      setClientInvoicesList((prev) => {
+        const filtered = (Array.isArray(prev) ? prev : []).filter((r) => r.id !== refreshed.id)
+        return [refreshed, ...filtered]
+      })
+      setShowPaymentModal(false)
+      setPaymentForm((p) => ({ ...p, amount: '', reference: '' }))
+      setFinBanner({ type: 'success', message: t('shipments.fin.paymentRecorded') })
+    } catch (e) {
+      setFinBanner({ type: 'error', message: e?.message || t('shipments.fin.paymentFailed') })
+    } finally {
+      setPaymentSaving(false)
+    }
+  }, [token, clientInvoice?.id, paymentForm, t])
 
   const bucketTotalsLive = useCallback((bucketId) => {
     const rows = byBucket[bucketId] || []
@@ -2214,13 +2314,6 @@ export default function ShipmentFinancialsModal({
         icon: <DollarSign className="w-4 h-4" aria-hidden />,
       })
     }
-    if (isSalesUser) {
-      items.push({
-        id: 'invoices',
-        label: t('shipments.financialsTab.invoices'),
-        icon: <FileType className="w-4 h-4" aria-hidden />,
-      })
-    }
     if (isAccountingUser || isSalesUser) {
       const attachmentCount = expenses.filter((e) => e.has_receipt).length
       items.push({
@@ -2507,70 +2600,6 @@ export default function ShipmentFinancialsModal({
             </div>
           )}
 
-          {tab === 'invoices' && isSalesUser && (
-            <div key="invoices" className="shipment-fin-panel shipment-fin-panel--enter">
-              {!hasBl ? (
-                <p className="client-detail-modal__empty">{t('shipments.financialsNoBl')}</p>
-              ) : invoiceLoading ? (
-                <ShipmentFinLoadingSkeleton variant="invoice" />
-              ) : (
-                <>
-                  <div className="shipment-fin-table-wrap">
-                    <table className="shipment-fin-invoice-table">
-                      <thead>
-                        <tr>
-                          <th>{t('shipments.fin.invoiceNumberLabel')}</th>
-                          <th>{t('shipments.expColDate')}</th>
-                          <th>{t('shipments.fin.invoiceStatus')}</th>
-                          <th>{t('shipments.fin.invoiceNet')}</th>
-                          <th>{t('shipments.fin.paidAmount')}</th>
-                          <th>{t('shipments.fin.remainingAmount')}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {clientInvoicesList.length === 0 ? (
-                          <tr>
-                            <td colSpan={6} className="text-center text-muted py-4">
-                              {t('shipments.fin.noClientInvoiceYet')}
-                            </td>
-                          </tr>
-                        ) : (
-                          clientInvoicesList.map((inv) => {
-                            const invNet = Number(inv.net_amount) || 0
-                            const invPaid = Number(inv.paid_amount) || 0
-                            const invRemaining = Math.max(0, invNet - invPaid)
-                            const statusClass =
-                              inv.status === 'paid'
-                                ? 'shipment-fin-badge--ok'
-                                : inv.status === 'partial'
-                                  ? 'shipment-fin-badge--partial'
-                                  : 'shipment-fin-badge--draft'
-                            return (
-                              <tr key={inv.id}>
-                                <td>{inv.invoice_number || `#${inv.id}`}</td>
-                                <td>{inv.issue_date ? String(inv.issue_date).slice(0, 10) : '—'}</td>
-                                <td>
-                                  <span className={`shipment-fin-badge ${statusClass}`}>
-                                    {inv.status
-                                      ? t(`shipments.fin.invoiceStatusValue.${inv.status}`, { defaultValue: inv.status })
-                                      : t('shipments.fin.noClientInvoiceYet')}
-                                  </span>
-                                </td>
-                                <td className="shipment-fin-num">{formatMoney(invNet, numberLocale)}</td>
-                                <td className="shipment-fin-num">{formatMoney(invPaid, numberLocale)}</td>
-                                <td className="shipment-fin-num">{formatMoney(invRemaining, numberLocale)}</td>
-                              </tr>
-                            )
-                          })
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
           {tab === 'attachments' && (isAccountingUser || isSalesUser) && (
             <div key="attachments" className="shipment-fin-panel shipment-fin-panel--enter">
               <div className="shipment-fin-attachments-header mb-4">
@@ -2730,36 +2759,69 @@ export default function ShipmentFinancialsModal({
             <div key="summary" className="shipment-fin-panel shipment-fin-panel--enter">
               <div className="shipment-fin-summary-grid">
                 <div className="shipment-fin-summary-card">
-                  <div className="shipment-fin-summary-card__label">{t('shipments.fin.summary.totalCost')}</div>
+                  <div className="shipment-fin-summary-card__label">{t('shipments.fin.summary.totalCost', { defaultValue: 'Total Cost' })}</div>
                   <div className="shipment-fin-summary-card__value text-red-600 font-bold text-2xl">
-                    {formatMoney(shipment.cost_total || 0, numberLocale)}
+                    {formatCurrencyBreakdown(invoiceFinancialOverview.totalCost)}
                   </div>
-                  <div className="fs-xs text-muted mt-1">{netBreakdownStr}</div>
                 </div>
 
                 <div className="shipment-fin-summary-card bg-blue-50/50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-900/40">
-                  <div className="shipment-fin-summary-card__label">{t('shipments.fin.summary.totalSelling')}</div>
+                  <div className="shipment-fin-summary-card__label">{t('shipments.fin.summary.totalSelling', { defaultValue: 'Total Selling' })}</div>
                   <div className="shipment-fin-summary-card__value text-blue-600 font-bold text-2xl">
-                    {formatMoney(shipment.selling_price_total || 0, numberLocale)}
+                    {formatCurrencyBreakdown(invoiceFinancialOverview.totalSell)}
                   </div>
-                  <div className="fs-xs text-muted mt-1">{clientInvoice?.currency_code || 'USD'}</div>
                 </div>
 
                 <div className="shipment-fin-summary-card bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-900/40">
-                  <div className="shipment-fin-summary-card__label">{t('shipments.fin.summary.netProfit')}</div>
-                  <div className={`shipment-fin-summary-card__value font-bold text-2xl ${(shipment.profit_total || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                    {formatMoney(shipment.profit_total || 0, numberLocale)}
+                  <div className="shipment-fin-summary-card__label">{t('shipments.fin.summary.netProfit', { defaultValue: 'Net Profit / Loss' })}</div>
+                  <div className="shipment-fin-summary-card__value font-bold text-2xl text-emerald-600">
+                    {formatCurrencyBreakdown(invoiceFinancialOverview.profit)}
                   </div>
-                  <div className="fs-xs text-muted mt-1">
-                    {t('shipments.fin.summary.margin')}: {shipment.selling_price_total ? ((shipment.profit_total / shipment.selling_price_total) * 100).toFixed(1) : 0}%
+                </div>
+
+                <div className="shipment-fin-summary-card">
+                  <div className="shipment-fin-summary-card__label">{t('shipments.fin.paidAmount', { defaultValue: 'Paid Amount' })}</div>
+                  <div className="shipment-fin-summary-card__value font-bold text-2xl">
+                    {formatCurrencyBreakdown(invoiceFinancialOverview.paid)}
+                  </div>
+                </div>
+
+                <div className="shipment-fin-summary-card">
+                  <div className="shipment-fin-summary-card__label">{t('shipments.fin.remainingAmount', { defaultValue: 'Remaining Balance' })}</div>
+                  <div className="shipment-fin-summary-card__value font-bold text-2xl">
+                    {formatCurrencyBreakdown(invoiceFinancialOverview.remaining)}
+                  </div>
+                </div>
+
+                <div className="shipment-fin-summary-card">
+                  <div className="shipment-fin-summary-card__label">{t('shipments.fin.invoiceStatus', { defaultValue: 'Invoice Status' })}</div>
+                  <div className="shipment-fin-summary-card__value font-bold text-2xl">
+                    {t(`shipments.fin.invoiceStatusValue.${invoiceFinancialOverview.status}`, { defaultValue: invoiceFinancialOverview.status })}
                   </div>
                 </div>
               </div>
 
+              <div className="mt-6 flex items-center gap-3">
+                <button
+                  type="button"
+                  className="client-detail-modal__btn client-detail-modal__btn--primary"
+                  disabled={!clientInvoice?.id}
+                  onClick={() => setShowPaymentModal(true)}
+                >
+                  {t('shipments.fin.recordPayment', { defaultValue: 'Record Payment' })}
+                </button>
+                <button
+                  type="button"
+                  className="client-detail-modal__btn client-detail-modal__btn--secondary"
+                  disabled={!clientInvoice?.id}
+                  onClick={handleDownloadInvoicePdf}
+                >
+                  {t('shipments.fin.printPdf', { defaultValue: 'Print Statement' })}
+                </button>
+              </div>
+
               {!isAccountingUser && (
                 <div className="mt-8 p-6 bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-100 dark:border-blue-800 text-center">
-                  <h4 className="text-blue-900 dark:text-blue-200 font-bold mb-2">{t('shipments.fin.salesNotifyTitle')}</h4>
-                  <p className="text-blue-700 dark:text-blue-300 text-sm mb-4">{t('shipments.fin.salesNotifyBody')}</p>
                   <button
                     type="button"
                     className="shipment-fin-cta-btn px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all mx-auto shadow-lg shadow-blue-500/20"
@@ -2801,6 +2863,35 @@ export default function ShipmentFinancialsModal({
               )}
             </div>
           )}
+          {showPaymentModal ? (
+            <div className="shipment-fin-payment-modal-backdrop">
+              <div className="shipment-fin-payment-modal">
+                <h4>{t('shipments.fin.recordPayment', { defaultValue: 'Record Payment' })}</h4>
+                <div className="shipment-fin-payment-grid">
+                  <input type="number" min="0.01" step="0.01" placeholder={t('shipments.expColAmount')} value={paymentForm.amount} onChange={(e) => setPaymentForm((p) => ({ ...p, amount: e.target.value }))} />
+                  <select value={paymentForm.currency} onChange={(e) => setPaymentForm((p) => ({ ...p, currency: e.target.value }))}>
+                    {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <select value={paymentForm.method} onChange={(e) => setPaymentForm((p) => ({ ...p, method: e.target.value }))}>
+                    <option value="bank_transfer">Bank transfer</option>
+                    <option value="cash">Cash</option>
+                    <option value="cheque">Cheque</option>
+                    <option value="internal_transfer">Internal transfer</option>
+                  </select>
+                  <select value={paymentForm.bank_account_id} onChange={(e) => setPaymentForm((p) => ({ ...p, bank_account_id: e.target.value }))}>
+                    <option value="">{t('partnerLedger.payment.sourceAccount', { defaultValue: 'Bank Account' })}</option>
+                    {bankAccounts.map((b) => <option key={b.id} value={b.id}>{b.bank_name} - {b.account_name}</option>)}
+                  </select>
+                  <input type="date" value={paymentForm.paid_at} onChange={(e) => setPaymentForm((p) => ({ ...p, paid_at: e.target.value }))} />
+                  <input placeholder={t('shipments.fin.paymentReference')} value={paymentForm.reference} onChange={(e) => setPaymentForm((p) => ({ ...p, reference: e.target.value }))} />
+                </div>
+                <div className="shipment-fin-pricing-actions mt-3">
+                  <button type="button" className="client-detail-modal__btn client-detail-modal__btn--secondary" onClick={() => setShowPaymentModal(false)}>{t('common.cancel')}</button>
+                  <button type="button" className="client-detail-modal__btn client-detail-modal__btn--primary" disabled={paymentSaving} onClick={submitInvoicePayment}>{paymentSaving ? t('shipments.saving') : t('shipments.fin.recordPayment')}</button>
+                </div>
+              </div>
+            </div>
+          ) : null}
           </div>
         </div>
       </div>

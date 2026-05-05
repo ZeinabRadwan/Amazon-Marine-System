@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amazon Marine — كشف حساب الشركاء</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0F2340;--navy-mid:#1B3A5C;
+  --orange:#E8790A;--orange-light:#FDF0E0;
+  --green:#0D7A55;--green-light:#E8F7F2;
+  --red:#B91C1C;--red-light:#FEE2E2;
+  --blue:#1D4ED8;--blue-light:#DBEAFE;
+  --gray-50:#F8FAFC;--gray-100:#F1F5F9;--gray-200:#E2E8F0;
+  --gray-400:#94A3B8;--gray-600:#475569;--gray-700:#334155;
+  --white:#fff;--border:#DDE3ED;
+  --font:'IBM Plex Sans Arabic',sans-serif;
+  --mono:'IBM Plex Mono',monospace;
+}
+body{font-family:var(--font);background:var(--gray-100);color:var(--gray-700);font-size:13px}
+
+/* LAYOUT */
+.app{display:flex;min-height:100vh}
+.sidebar{width:220px;background:var(--navy);flex-shrink:0;display:flex;flex-direction:column;position:fixed;top:0;bottom:0;right:0;z-index:100;overflow-y:auto}
+.sb-logo{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:9px}
+.sb-mark{width:32px;height:32px;background:var(--orange);border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;color:#fff;flex-shrink:0}
+.sb-name{font-size:12px;font-weight:700;color:#fff}
+.sb-sub{font-size:9px;color:rgba(255,255,255,.3)}
+.sb-sec{padding:12px 14px 3px;font-size:9px;font-weight:700;color:rgba(255,255,255,.25);text-transform:uppercase;letter-spacing:1.2px}
+.nav{display:flex;align-items:center;gap:8px;padding:8px 12px;margin:1px 7px;border-radius:6px;cursor:pointer;color:rgba(255,255,255,.5);font-size:11px;font-weight:500}
+.nav:hover{background:rgba(255,255,255,.07);color:#fff}
+.nav.active{background:var(--orange);color:#fff}
+.main{margin-right:220px;flex:1;display:flex;flex-direction:column}
+.topbar{background:#fff;border-bottom:1px solid var(--border);padding:0 20px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;gap:10px}
+.topbar h1{font-size:14px;font-weight:700;color:var(--navy)}
+.topbar p{font-size:11px;color:var(--gray-400);margin-top:1px}
+.content{padding:18px 20px}
+
+/* TABS */
+.partner-tabs{display:flex;gap:0;background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px}
+.ptab{flex:1;padding:10px 8px;text-align:center;font-size:12px;font-weight:500;color:var(--gray-400);cursor:pointer;border-bottom:3px solid transparent;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
+.ptab:hover{background:var(--gray-50)}
+.ptab.active{color:var(--navy);border-bottom-color:var(--navy);font-weight:700;background:#fff}
+.ptab .ptab-badge{font-size:9px;padding:1px 6px;border-radius:10px;font-weight:700}
+
+/* PARTNER LIST */
+.partner-list{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
+.partner-card{background:#fff;border:1px solid var(--border);border-radius:10px;cursor:pointer;overflow:hidden;transition:all .15s}
+.partner-card:hover{border-color:var(--blue);box-shadow:0 2px 8px rgba(30,58,92,.08)}
+.partner-card.active-card{border-color:var(--navy);border-right:3px solid var(--navy)}
+.pc-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;flex-wrap:wrap;gap:8px}
+.pc-left{display:flex;align-items:center;gap:10px}
+.pc-avatar{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.pc-name{font-size:13px;font-weight:700;color:var(--navy)}
+.pc-type{font-size:10px;color:var(--gray-400);margin-top:1px}
+.pc-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pc-stat{text-align:left}
+.pc-stat-val{font-size:13px;font-weight:700;font-family:var(--mono)}
+.pc-stat-lbl{font-size:9px;color:var(--gray-400);margin-top:1px}
+.pc-sep{width:1px;height:30px;background:var(--border)}
+.badge{display:inline-flex;align-items:center;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px}
+.badge.red{background:var(--red-light);color:var(--red)}
+.badge.green{background:var(--green-light);color:var(--green)}
+.badge.blue{background:var(--blue-light);color:var(--blue)}
+.badge.orange{background:var(--orange-light);color:var(--orange)}
+.badge.gray{background:var(--gray-200);color:var(--gray-600)}
+.badge.amber{background:#FEF3C7;color:#92400E}
+
+/* STATEMENT PANEL */
+.stmt-panel{display:none}
+.stmt-panel.open{display:block}
+
+/* SUMMARY STATS */
+.stats3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.stat{background:#fff;border:1px solid var(--border);border-radius:10px;padding:13px 15px}
+.stat-lbl{font-size:10px;color:var(--gray-400);margin-bottom:5px;font-weight:500}
+.stat-val{font-size:20px;font-weight:700;font-family:var(--mono);line-height:1}
+.stat-sub{font-size:10px;color:var(--gray-400);margin-top:3px}
+.stat.red .stat-val{color:var(--red)}.stat.green .stat-val{color:var(--green)}.stat.orange .stat-val{color:var(--orange)}
+.stat.red{border-top:3px solid var(--red)}.stat.green{border-top:3px solid var(--green)}.stat.orange{border-top:3px solid var(--orange)}
+
+/* SHIPMENT ROWS */
+.ship-rows{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.ship-row{background:#fff;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.ship-row-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;flex-wrap:wrap;gap:8px}
+.ship-row-header:hover{background:var(--gray-50)}
+.ship-row-left{display:flex;align-items:center;gap:10px}
+.ship-ref{font-size:12px;font-weight:700;color:var(--navy);font-family:var(--mono)}
+.ship-route{font-size:11px;color:var(--gray-400)}
+.ship-row-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ship-amount{font-size:13px;font-weight:700;font-family:var(--mono)}
+.ship-detail{display:none;padding:0 14px 12px;border-top:1px solid var(--border)}
+.ship-detail.open{display:block}
+.detail-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px}
+.detail-table th{background:var(--gray-50);padding:7px 10px;text-align:right;font-size:10px;font-weight:600;color:var(--gray-400);border-bottom:1px solid var(--border)}
+.detail-table td{padding:8px 10px;border-bottom:1px solid var(--gray-100);text-align:right}
+.detail-table tr:last-child td{border-bottom:none}
+.detail-table .mono{font-family:var(--mono)}
+.detail-table .red{color:var(--red);font-weight:600}
+.detail-table .green{color:var(--green);font-weight:600}
+.detail-table .gray{color:var(--gray-400)}
+.detail-table .bold{font-weight:600;color:var(--navy)}
+.detail-total-row td{background:var(--orange-light);font-weight:700;border-top:2px solid var(--orange)}
+
+/* PAYMENT SECTION */
+.pay-section{background:var(--gray-50);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:14px}
+.pay-title{font-size:12px;font-weight:700;color:var(--navy);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.pay-table{width:100%;border-collapse:collapse;font-size:12px}
+.pay-table th{background:var(--gray-100);padding:7px 10px;text-align:right;font-size:10px;font-weight:600;color:var(--gray-400);border-bottom:1px solid var(--border)}
+.pay-table td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:right}
+.pay-table tr:last-child td{border-bottom:none}
+.pay-table .mono{font-family:var(--mono)}
+.pay-table .green{color:var(--green);font-weight:600}
+.pay-table .gray{color:var(--gray-400)}
+.note-tag{font-size:10px;background:#FEF3C7;color:#92400E;padding:2px 7px;border-radius:5px;display:inline-block;margin-top:2px}
+
+/* BALANCE BOX */
+.balance-box{background:var(--navy);border-radius:10px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.bal-label{font-size:11px;color:rgba(255,255,255,.5);margin-bottom:3px}
+.bal-val{font-size:20px;font-weight:700;color:var(--orange);font-family:var(--mono)}
+.bal-sub{font-size:10px;color:rgba(255,255,255,.3);margin-top:2px}
+.bal-right{display:flex;flex-direction:column;gap:5px;text-align:left}
+.bal-row{display:flex;justify-content:space-between;gap:20px;font-size:11px;color:rgba(255,255,255,.6)}
+.bal-row .bv{font-family:var(--mono);color:#fff;font-weight:500}
+
+/* EXCEPTION BANNER */
+.exception-banner{background:#FEF3C7;border:1px solid #FDE68A;border-right:4px solid #F59E0B;border-radius:0 8px 8px 0;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#92400E;line-height:1.6}
+.exception-banner strong{color:var(--navy)}
+
+/* BUTTONS */
+.btn{padding:7px 14px;border-radius:7px;font-size:12px;font-family:var(--font);cursor:pointer;font-weight:500;border:1px solid var(--border);background:#fff;color:var(--gray-600);display:inline-flex;align-items:center;gap:5px}
+.btn:hover{background:var(--gray-50)}
+.btn.navy{background:var(--navy);color:#fff;border-color:var(--navy)}
+.btn.green{background:var(--green);color:#fff;border-color:var(--green)}
+.btn.sm{padding:4px 10px;font-size:11px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,35,64,.5);z-index:999;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:12px;padding:20px;width:440px;max-width:95vw;direction:rtl}
+.modal-title{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.fg{margin-bottom:10px}
+.fg label{font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:3px}
+.fg input,.fg select,.fg textarea{width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:7px;font-size:12px;font-family:var(--font);color:var(--navy)}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--blue)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.modal-footer{display:flex;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)}
+
+/* COLLAPSE ARROW */
+.arr{font-size:11px;color:var(--gray-400);transition:transform .2s;display:inline-block}
+.arr.open{transform:rotate(180deg)}
+</style>
+</head>
+<body>
+
+<!-- MODAL: تسجيل دفعة -->
+<div class="modal-overlay" id="payModal">
+  <div class="modal">
+    <div class="modal-title" id="payModal-title">تسجيل دفعة / Record Payment</div>
+    <div class="fg"><label>المبلغ / Amount *</label>
+      <input type="number" id="pay-amount" placeholder="0.00"/>
+    </div>
+    <div class="grid2">
+      <div class="fg"><label>العملة</label>
+        <select id="pay-currency"><option>EGP</option><option>USD</option><option>EUR</option></select>
+      </div>
+      <div class="fg"><label>طريقة الدفع</label>
+        <select><option>تحويل بنكي</option><option>كاش</option><option>شيك</option></select>
+      </div>
+    </div>
+    <div class="fg"><label>من حساب</label>
+      <select><option>البنك الأهلي — EGP</option><option>CIB شركة — EGP</option><option>CIB كابتن — USD</option></select>
+    </div>
+    <div class="fg"><label>تاريخ التحويل *</label><input type="date"/></div>
+    <div class="fg"><label>ربط بشحنة معينة (اختياري)</label>
+      <select>
+        <option value="">— بدون ربط (دفعة عامة) —</option>
+        <option>87485-0958321 — Alex → Hamburg</option>
+        <option>55123-0654321 — Damietta → Barcelona</option>
+        <option>66789-0123456 — Port Said → Jeddah</option>
+      </select>
+    </div>
+    <div class="fg"><label>ملاحظة على التحويل (اختياري)</label>
+      <input type="text" placeholder="مثال: دفعة خاصة بشحنة أبريل أو دفعة عامة..."/>
+    </div>
+    <div class="modal-footer">
+      <button class="btn navy" onclick="closeModal('payModal')">تأكيد وحفظ ✓</button>
+      <button class="btn" onclick="closeModal('payModal')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-mark">AM</div>
+    <div><div class="sb-name">Amazon Marine</div><div class="sb-sub">CRM v1.0</div></div>
+  </div>
+  <div class="sb-sec">الحسابات</div>
+  <div class="nav"><span>🏦</span> الخزينة</div>
+  <div class="nav"><span>📥</span> فواتير التكلفة</div>
+  <div class="nav"><span>📤</span> فواتير العملاء</div>
+  <div class="nav active"><span>🤝</span> كشف حساب الشركاء</div>
+  <div class="nav"><span>👤</span> كشف حساب العملاء</div>
+  <div class="nav"><span>📈</span> تقارير الأرباح</div>
+  <div class="sb-sec">الأوبريشن</div>
+  <div class="nav"><span>📦</span> الشحنات</div>
+  <div class="nav"><span>⚓</span> لوحة العمليات</div>
+</div>
+
+<div class="main">
+<div class="topbar">
+  <div>
+    <h1>🤝 كشف حساب الشركاء / Partner Statements</h1>
+    <p>الخطوط الملاحية — مقاولو النقل — المخلصون الجمركيون — شركات التأمين</p>
+  </div>
+  <div style="display:flex;gap:8px">
+    <input type="text" placeholder="بحث عن شريك..." style="padding:6px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;width:180px;font-family:var(--font)"/>
+    <button class="btn sm navy" onclick="openModal('payModal')">+ تسجيل دفعة</button>
+  </div>
+</div>
+
+<div class="content">
+
+<!-- PARTNER TYPE TABS -->
+<div class="partner-tabs">
+  <div class="ptab active" onclick="switchTab('all',this)">
+    🌐 الكل <span class="ptab-badge badge gray">4 شركاء</span>
+  </div>
+  <div class="ptab" onclick="switchTab('shipping',this)">
+    🚢 الخطوط الملاحية <span class="ptab-badge badge blue">2</span>
+  </div>
+  <div class="ptab" onclick="switchTab('inland',this)">
+    🚛 مقاولو النقل <span class="ptab-badge badge green">1</span>
+  </div>
+  <div class="ptab" onclick="switchTab('customs',this)">
+    🏛️ المخلصون <span class="ptab-badge badge orange">1</span>
+  </div>
+  <div class="ptab" onclick="switchTab('insurance',this)">
+    🛡️ التأمين <span class="ptab-badge badge gray">0</span>
+  </div>
+</div>
+
+<!-- =================== PARTNERS LIST =================== -->
+<div class="partner-list" id="partners-list">
+
+  <!-- MSC -->
+  <div class="partner-card" id="pc-msc">
+    <div class="pc-header" onclick="togglePartner('msc')">
+      <div class="pc-left">
+        <div class="pc-avatar" style="background:#1D4ED8">MS</div>
+        <div>
+          <div class="pc-name">MSC — Mediterranean Shipping Company</div>
+          <div class="pc-type">🚢 خط ملاحي | تُسدَّد بالشحنة</div>
+        </div>
+      </div>
+      <div class="pc-right">
+        <div class="pc-stat">
+          <div class="pc-stat-val red">$8,650</div>
+          <div class="pc-stat-lbl">إجمالي مستحق</div>
+        </div>
+        <div class="pc-sep"></div>
+        <div class="pc-stat">
+          <div class="pc-stat-val green">$6,200</div>
+          <div class="pc-stat-lbl">مدفوع</div>
+        </div>
+        <div class="pc-sep"></div>
+        <div class="pc-stat">
+          <div class="pc-stat-val" style="color:var(--red)">$2,450</div>
+          <div class="pc-stat-lbl">رصيد متبقي</div>
+        </div>
+        <span class="badge red">2 شحنات معلقة</span>
+        <span class="arr" id="arr-msc">▼</span>
+      </div>
+    </div>
+
+    <!-- MSC DETAIL -->
+    <div id="detail-msc" style="display:none;padding:16px;border-top:1px solid var(--border)">
+
+      <!-- STATS -->
+      <div class="stats3">
+        <div class="stat red"><div class="stat-lbl">إجمالي الفواتير</div><div class="stat-val">$8,650</div><div class="stat-sub">من 5 شحنات</div></div>
+        <div class="stat green"><div class="stat-lbl">إجمالي المدفوع</div><div class="stat-val">$6,200</div><div class="stat-sub">هذا الشهر</div></div>
+        <div class="stat orange"><div class="stat-lbl">الرصيد المتبقي</div><div class="stat-val">$2,450</div><div class="stat-sub">مستحق للخط</div></div>
+      </div>
+
+      <!-- EXCEPTION BANNER -->
+      <div class="exception-banner">
+        ⚠️ <strong>قاعدة الخط الملاحي:</strong> لا يتم الدفع للخط إلا بعد تحويل العميل — إلا في الحالات الاستثنائية التي تُدفع فيها مقدماً ويتم التحصيل من العميل لاحقاً.
+      </div>
+
+      <!-- SHIPMENT ROWS -->
+      <div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:8px">الشحنات / Shipments</div>
+      <div class="ship-rows">
+
+        <!-- SHIP 1 -->
+        <div class="ship-row">
+          <div class="ship-row-header" onclick="toggleShipDetail('msc-ship1')">
+            <div class="ship-row-left">
+              <div>
+                <div class="ship-ref">87485-0958321</div>
+                <div class="ship-route">Alexandria → Hamburg | 40' Dry | 15 Apr 2025</div>
+              </div>
+            </div>
+            <div class="ship-row-right">
+              <span class="badge green">✓ مدفوعة</span>
+              <div class="ship-amount green">$1,450</div>
+              <span class="arr" id="arr-msc-ship1">▼</span>
+            </div>
+          </div>
+          <div class="ship-detail" id="detail-msc-ship1">
+            <table class="detail-table">
+              <tr><th>البند</th><th>المبلغ</th><th>العملة</th></tr>
+              <tr><td class="bold">Ocean Freight (OF)</td><td class="mono">1,200.00</td><td>USD</td></tr>
+              <tr><td class="bold">THC</td><td class="mono">150.00</td><td>USD</td></tr>
+              <tr><td class="bold">B/L Fee</td><td class="mono">50.00</td><td>USD</td></tr>
+              <tr><td class="bold">Telex Release</td><td class="mono">25.00</td><td>USD</td></tr>
+              <tr><td class="bold">ISPS</td><td class="mono">25.00</td><td>USD</td></tr>
+              <tr class="detail-total-row"><td colspan="2" class="bold">الإجمالي</td><td class="mono bold">$1,450.00 USD</td></tr>
+            </table>
+            <div style="margin-top:10px;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--green)">
+              ✓ تم الدفع بالكامل — 10 Apr 2025 | تحويل بنكي | أهلي USD
+            </div>
+          </div>
+        </div>
+
+        <!-- SHIP 2 — PENDING (عميل لم يدفع بعد) -->
+        <div class="ship-row">
+          <div class="ship-row-header" onclick="toggleShipDetail('msc-ship2')">
+            <div class="ship-row-left">
+              <div>
+                <div class="ship-ref">55123-0654321</div>
+                <div class="ship-route">Damietta → Barcelona | 40' Reefer | 2 May 2025</div>
+              </div>
+            </div>
+            <div class="ship-row-right">
+              <span class="badge red">⏳ في انتظار تحويل العميل</span>
+              <div class="ship-amount" style="color:var(--red)">$2,100</div>
+              <span class="arr" id="arr-msc-ship2">▼</span>
+            </div>
+          </div>
+          <div class="ship-detail" id="detail-msc-ship2">
+            <div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:7px;padding:9px 12px;margin-bottom:10px;font-size:11px;color:#92400E">
+              ⏳ <strong>لم يتم الدفع بعد</strong> — بانتظار تحويل العميل (شركة Green Valley). بعد استلام التحويل يمكن تسديد فاتورة MSC.
+            </div>
+            <table class="detail-table">
+              <tr><th>البند</th><th>المبلغ</th><th>العملة</th></tr>
+              <tr><td class="bold">Ocean Freight (OF)</td><td class="mono">1,650.00</td><td>USD</td></tr>
+              <tr><td class="bold">THC</td><td class="mono">200.00</td><td>USD</td></tr>
+              <tr><td class="bold">B/L Fee</td><td class="mono">50.00</td><td>USD</td></tr>
+              <tr><td class="bold">PTI (Reefer)</td><td class="mono">120.00</td><td>USD</td></tr>
+              <tr><td class="bold">Power Charge</td><td class="mono">80.00</td><td>USD</td></tr>
+              <tr class="detail-total-row"><td colspan="2" class="bold">الإجمالي</td><td class="mono bold">$2,100.00 USD</td></tr>
+            </table>
+            <div style="margin-top:10px">
+              <button class="btn sm" style="color:var(--amber);border-color:var(--amber)" onclick="openModal('payModal')">💳 دفع استثنائي (قبل تحصيل العميل)</button>
+              <span style="font-size:10px;color:var(--gray-400);margin-right:8px">سيُسجَّل كاستثناء ويظهر في تقرير الذمم</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- SHIP 3 — EXCEPTION -->
+        <div class="ship-row">
+          <div class="ship-row-header" onclick="toggleShipDetail('msc-ship3')">
+            <div class="ship-row-left">
+              <div>
+                <div class="ship-ref">66789-0123456</div>
+                <div class="ship-route">Port Said → Jeddah | 20' Dry | 6 May 2025</div>
+              </div>
+            </div>
+            <div class="ship-row-right">
+              <span class="badge amber">استثناء — دُفع مقدماً</span>
+              <div class="ship-amount" style="color:var(--amber)">$1,100</div>
+              <span class="arr" id="arr-msc-ship3">▼</span>
+            </div>
+          </div>
+          <div class="ship-detail" id="detail-msc-ship3">
+            <div style="background:var(--orange-light);border:1px solid #FDE68A;border-right:4px solid var(--orange);border-radius:0 7px 7px 0;padding:9px 12px;margin-bottom:10px;font-size:11px;color:#92400E">
+              ⚡ <strong>دفع استثنائي:</strong> تم دفع فاتورة MSC قبل تحويل العميل (Delta Foods). العميل مطالب بـ $1,100 — يظهر في كشف حسابه كمستحق.
+            </div>
+            <table class="detail-table">
+              <tr><th>البند</th><th>المبلغ</th><th>العملة</th></tr>
+              <tr><td class="bold">Ocean Freight (OF)</td><td class="mono">900.00</td><td>USD</td></tr>
+              <tr><td class="bold">THC</td><td class="mono">130.00</td><td>USD</td></tr>
+              <tr><td class="bold">B/L Fee</td><td class="mono">45.00</td><td>USD</td></tr>
+              <tr><td class="bold">Telex Release</td><td class="mono">25.00</td><td>USD</td></tr>
+              <tr class="detail-total-row"><td colspan="2" class="bold">الإجمالي</td><td class="mono bold">$1,100.00 USD</td></tr>
+            </table>
+            <div style="font-size:11px;color:var(--orange);margin-top:8px">⚡ تم الدفع: 18 Apr 2025 | CIB USD | استثناء مسجل</div>
+          </div>
+        </div>
+
+      </div><!-- ship-rows -->
+
+      <!-- BALANCE + PAY BUTTON -->
+      <div class="balance-box">
+        <div>
+          <div class="bal-label">الرصيد المتبقي لـ MSC</div>
+          <div class="bal-val">$2,450.00</div>
+          <div class="bal-sub">مستحق في انتظار تحويلات العملاء</div>
+        </div>
+        <div class="bal-right">
+          <div class="bal-row"><span>إجمالي الفواتير</span><span class="bv">$8,650</span></div>
+          <div class="bal-row"><span>إجمالي المدفوع</span><span class="bv">$6,200</span></div>
+          <div class="bal-row"><span>متبقي</span><span class="bv" style="color:var(--orange)">$2,450</span></div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn navy" onclick="openModal('payModal')">+ تسجيل دفعة لـ MSC</button>
+        <button class="btn sm">📄 طباعة كشف الحساب</button>
+      </div>
+
+    </div><!-- detail-msc -->
+  </div><!-- pc-msc -->
+
+  <!-- INLAND: أحمد سعيد -->
+  <div class="partner-card" id="pc-inland">
+    <div class="pc-header" onclick="togglePartner('inland')">
+      <div class="pc-left">
+        <div class="pc-avatar" style="background:#0D7A55">أح</div>
+        <div>
+          <div class="pc-name">أحمد سعيد — مقاول النقل الداخلي</div>
+          <div class="pc-type">🚛 نقل داخلي | حساب جاري | EGP فقط</div>
+        </div>
+      </div>
+      <div class="pc-right">
+        <div class="pc-stat">
+          <div class="pc-stat-val red">11,000 EGP</div>
+          <div class="pc-stat-lbl">إجمالي مستحق</div>
+        </div>
+        <div class="pc-sep"></div>
+        <div class="pc-stat">
+          <div class="pc-stat-val green">5,000 EGP</div>
+          <div class="pc-stat-lbl">مدفوع</div>
+        </div>
+        <div class="pc-sep"></div>
+        <div class="pc-stat">
+          <div class="pc-stat-val" style="color:var(--red)">6,000 EGP</div>
+          <div class="pc-stat-lbl">رصيد متبقي</div>
+        </div>
+        <span class="badge orange">حساب جاري</span>
+        <span class="arr" id="arr-inland">▼</span>
+      </div>
+    </div>
+
+    <!-- INLAND DETAIL -->
+    <div id="detail-inland" style="display:none;padding:16px;border-top:1px solid var(--border)">
+
+      <div class="stats3">
+        <div class="stat red"><div class="stat-lbl">إجمالي الفواتير</div><div class="stat-val">11,000</div><div class="stat-sub">EGP — 3 شحنات</div></div>
+        <div class="stat green"><div class="stat-lbl">إجمالي المدفوع</div><div class="stat-val">5,000</div><div class="stat-sub">EGP — دفعتان</div></div>
+        <div class="stat orange"><div class="stat-lbl">الرصيد المتبقي</div><div class="stat-val">6,000</div><div class="stat-sub">EGP مستحق</div></div>
+      </div>
+
+      <!-- SHIPMENTS -->
+      <div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:8px">الشحنات / Shipments</div>
+      <div class="ship-rows">
+
+        <div class="ship-row">
+          <div class="ship-row-header" onclick="toggleShipDetail('inland-ship1')">
+            <div class="ship-row-left">
+              <div>
+                <div class="ship-ref">87485-0958321</div>
+                <div class="ship-route">الإسكندرية ← → التجمع الخامس | 40' Dry</div>
+              </div>
+            </div>
+            <div class="ship-row-right">
+              <span class="badge green">✓ مدفوعة</span>
+              <div class="ship-amount green">4,500 EGP</div>
+              <span class="arr" id="arr-inland-ship1">▼</span>
+            </div>
+          </div>
+          <div class="ship-detail" id="detail-inland-ship1">
+            <table class="detail-table">
+              <tr><th>البند</th><th>المبلغ (EGP)</th></tr>
+              <tr><td class="bold">Inland Transportation Freight Cost</td><td class="mono">4,500.00</td></tr>
+              <tr class="detail-total-row"><td class="bold">الإجمالي</td><td class="mono bold">4,500 EGP</td></tr>
+            </table>
+            <div style="font-size:11px;color:var(--green);margin-top:8px">✓ تم الدفع — 10 Apr | تحويل CIB | خاص بشحنة 87485</div>
+          </div>
+        </div>
+
+        <div class="ship-row">
+          <div class="ship-row-header" onclick="toggleShipDetail('inland-ship2')">
+            <div class="ship-row-left">
+              <div>
+                <div class="ship-ref">55123-0654321</div>
+                <div class="ship-route">دمياط ← → العاشر من رمضان | 40' Reefer</div>
+              </div>
+            </div>
+            <div class="ship-row-right">
+              <span class="badge amber">⚡ مدفوعة جزئياً</span>
+              <div class="ship-amount" style="color:var(--amber)">6,500 EGP</div>
+              <span class="arr" id="arr-inland-ship2">▼</span>
+            </div>
+          </div>
+          <div class="ship-detail" id="detail-inland-ship2">
+            <table class="detail-table">
+              <tr><th>البند</th><th>المبلغ (EGP)</th></tr>
+              <tr><td class="bold">Inland Transportation Freight Cost</td><td class="mono">5,500.00</td></tr>
+              <tr><td class="bold">Genset Cost (Reefer)</td><td class="mono">1,000.00</td></tr>
+              <tr class="detail-total-row"><td class="bold">الإجمالي</td><td class="mono bold">6,500 EGP</td></tr>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- PAYMENTS LEDGER -->
+      <div class="pay-section">
+        <div class="pay-title">💳 سجل الدفعات / Payment Ledger</div>
+        <table class="pay-table">
+          <tr><th>التاريخ</th><th>المبلغ</th><th>الحساب</th><th>ربط بشحنة</th><th>ملاحظة</th></tr>
+          <tr>
+            <td class="gray">10 Apr</td>
+            <td class="green mono">5,000 EGP</td>
+            <td>CIB EGP</td>
+            <td class="blue" style="font-family:var(--mono);font-size:11px">87485-001</td>
+            <td><span class="note-tag">خاصة بشحنة 87485</span></td>
+          </tr>
+          <tr>
+            <td colspan="5" style="padding:8px 10px;">
+              <div style="text-align:center;color:var(--gray-400);font-size:11px">الدفعة التالية: 6,000 EGP متبقية</div>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- BALANCE -->
+      <div class="balance-box">
+        <div>
+          <div class="bal-label">الرصيد الجاري — أحمد سعيد</div>
+          <div class="bal-val">6,000 EGP</div>
+          <div class="bal-sub">يمكن الدفع مع أو بدون ربط بشحنة محددة</div>
+        </div>
+        <div class="bal-right">
+          <div class="bal-row"><span>إجمالي الفواتير</span><span class="bv">11,000 EGP</span></div>
+          <div class="bal-row"><span>إجمالي المدفوع</span><span class="bv">5,000 EGP</span></div>
+          <div class="bal-row"><span>متبقي</span><span class="bv" style="color:var(--orange)">6,000 EGP</span></div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn navy" onclick="openModal('payModal')">+ تسجيل دفعة لأحمد سعيد</button>
+        <button class="btn sm">📄 طباعة كشف الحساب</button>
+      </div>
+
+    </div>
+  </div><!-- pc-inland -->
+
+  <!-- CUSTOMS: مكتب الإسكندرية -->
+  <div class="partner-card" id="pc-customs">
+    <div class="pc-header" onclick="togglePartner('customs')">
+      <div class="pc-left">
+        <div class="pc-avatar" style="background:#92400E">مخ</div>
+        <div>
+          <div class="pc-name">مكتب الإسكندرية للتخليص الجمركي</div>
+          <div class="pc-type">🏛️ مخلص جمركي | حساب جاري | EGP</div>
+        </div>
+      </div>
+      <div class="pc-right">
+        <div class="pc-stat">
+          <div class="pc-stat-val red">7,500 EGP</div>
+          <div class="pc-stat-lbl">إجمالي مستحق</div>
+        </div>
+        <div class="pc-sep"></div>
+        <div class="pc-stat">
+          <div class="pc-stat-val green">5,000 EGP</div>
+          <div class="pc-stat-lbl">مدفوع</div>
+        </div>
+        <div class="pc-sep"></div>
+        <div class="pc-stat">
+          <div class="pc-stat-val" style="color:var(--red)">2,500 EGP</div>
+          <div class="pc-stat-lbl">رصيد متبقي</div>
+        </div>
+        <span class="badge orange">حساب جاري</span>
+        <span class="arr" id="arr-customs">▼</span>
+      </div>
+    </div>
+    <div id="detail-customs" style="display:none;padding:16px;border-top:1px solid var(--border)">
+      <div class="stats3">
+        <div class="stat red"><div class="stat-lbl">إجمالي الفواتير</div><div class="stat-val">7,500</div><div class="stat-sub">EGP — 3 شحنات</div></div>
+        <div class="stat green"><div class="stat-lbl">إجمالي المدفوع</div><div class="stat-val">5,000</div><div class="stat-sub">EGP</div></div>
+        <div class="stat orange"><div class="stat-lbl">الرصيد المتبقي</div><div class="stat-val">2,500</div><div class="stat-sub">EGP مستحق</div></div>
+      </div>
+      <div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:8px">الشحنات / Shipments</div>
+      <div class="ship-rows">
+        <div class="ship-row">
+          <div class="ship-row-header" onclick="toggleShipDetail('cust-ship1')">
+            <div class="ship-row-left"><div><div class="ship-ref">87485-0958321</div><div class="ship-route">Alexandria → Hamburg</div></div></div>
+            <div class="ship-row-right">
+              <span class="badge green">✓ مدفوعة</span>
+              <div class="ship-amount green">2,500 EGP</div>
+              <span class="arr" id="arr-cust-ship1">▼</span>
+            </div>
+          </div>
+          <div class="ship-detail" id="detail-cust-ship1">
+            <table class="detail-table">
+              <tr><th>البند</th><th>المبلغ (EGP)</th></tr>
+              <tr><td class="bold">Customs Declaration Opening Fee</td><td class="mono">2,500.00</td></tr>
+              <tr class="detail-total-row"><td class="bold">الإجمالي</td><td class="mono bold">2,500 EGP</td></tr>
+            </table>
+          </div>
+        </div>
+        <div class="ship-row">
+          <div class="ship-row-header" onclick="toggleShipDetail('cust-ship2')">
+            <div class="ship-row-left"><div><div class="ship-ref">55123-0654321</div><div class="ship-route">Damietta → Barcelona</div></div></div>
+            <div class="ship-row-right">
+              <span class="badge red">غير مدفوعة</span>
+              <div class="ship-amount" style="color:var(--red)">2,500 EGP</div>
+              <span class="arr" id="arr-cust-ship2">▼</span>
+            </div>
+          </div>
+          <div class="ship-detail" id="detail-cust-ship2">
+            <table class="detail-table">
+              <tr><th>البند</th><th>المبلغ (EGP)</th></tr>
+              <tr><td class="bold">Customs Declaration Opening Fee</td><td class="mono">2,500.00</td></tr>
+              <tr class="detail-total-row"><td class="bold">الإجمالي</td><td class="mono bold">2,500 EGP</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="balance-box">
+        <div><div class="bal-label">الرصيد الجاري — مكتب الإسكندرية</div><div class="bal-val">2,500 EGP</div></div>
+        <div class="bal-right">
+          <div class="bal-row"><span>إجمالي الفواتير</span><span class="bv">7,500 EGP</span></div>
+          <div class="bal-row"><span>مدفوع</span><span class="bv">5,000 EGP</span></div>
+          <div class="bal-row"><span>متبقي</span><span class="bv" style="color:var(--orange)">2,500 EGP</span></div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn navy" onclick="openModal('payModal')">+ تسجيل دفعة للمخلص</button>
+        <button class="btn sm">📄 طباعة كشف الحساب</button>
+      </div>
+    </div>
+  </div><!-- pc-customs -->
+
+</div><!-- partner-list -->
+
+</div><!-- content -->
+</div><!-- main -->
+</div><!-- app -->
+
+<script>
+function togglePartner(id) {
+  var d = document.getElementById('detail-'+id);
+  var a = document.getElementById('arr-'+id);
+  if (!d) return;
+  var isOpen = d.style.display !== 'none';
+  d.style.display = isOpen ? 'none' : 'block';
+  if (a) { if (isOpen) a.classList.remove('open'); else a.classList.add('open'); }
+}
+
+function toggleShipDetail(id) {
+  var d = document.getElementById('detail-'+id);
+  var a = document.getElementById('arr-'+id);
+  if (!d) return;
+  var isOpen = d.classList.contains('open');
+  if (isOpen) { d.classList.remove('open'); if(a) a.classList.remove('open'); }
+  else { d.classList.add('open'); if(a) a.classList.add('open'); }
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-overlay').forEach(function(m) {
+  m.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('open'); });
+});
+
+function switchTab(type, el) {
+  document.querySelectorAll('.ptab').forEach(function(t){ t.classList.remove('active'); });
+  el.classList.add('active');
+}
+</script>
+</body>
+</html>

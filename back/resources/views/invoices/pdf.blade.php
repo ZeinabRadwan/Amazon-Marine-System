@@ -3,6 +3,74 @@
 @push('pdf_head')
     <style>
         @include('pdf.partials.sd_branded_document_skin')
+        .pdf-inv-meta-card {
+            border: 1px solid #dbe2ea;
+            border-radius: 10px;
+            padding: 8px 10px;
+            background: #f8fbff;
+            line-height: 1.55;
+            font-size: 10.3px;
+        }
+        .pdf-inv-section-title {
+            margin-top: 12px;
+            padding: 7px 10px;
+            border: 1px solid #dbe2ea;
+            border-radius: 8px 8px 0 0;
+            background: #11354d;
+            color: #fff;
+            font-weight: 700;
+            font-size: 10.1px;
+            letter-spacing: .02em;
+        }
+        .pdf-inv-items {
+            border-top: none !important;
+            border-radius: 0 0 8px 8px !important;
+            table-layout: fixed;
+        }
+        .pdf-inv-items tbody tr:nth-child(even) td {
+            background: #f8fafc;
+        }
+        .pdf-inv-items td, .pdf-inv-items th {
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+        .pdf-inv-items td:first-child {
+            width: 58%;
+        }
+        .pdf-inv-section-total {
+            margin-top: 0;
+            margin-bottom: 2px;
+            text-align: right;
+            border: 1px solid #e3e8ef;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            padding: 7px 10px;
+            background: #f9fbff;
+            font-size: 10.2px;
+            font-weight: 700;
+        }
+        .pdf-inv-grand-wrap {
+            margin-top: 8px;
+        }
+        .pdf-inv-bank-table {
+            margin-top: 8px;
+            table-layout: fixed;
+        }
+        .pdf-inv-bank-table th, .pdf-inv-bank-table td {
+            font-size: 9.8px;
+            text-align: center;
+            vertical-align: middle;
+            overflow-wrap: anywhere;
+        }
+        .pdf-inv-terms {
+            font-size: 11px;
+            line-height: 1.6;
+            margin-top: 7px;
+            padding-left: 18px;
+        }
+        .pdf-inv-terms li {
+            margin-bottom: 6px;
+        }
     </style>
 @endpush
 
@@ -153,21 +221,21 @@
                 </td>
                 <td class="pdf-party-grid__gap"></td>
                 <td class="pdf-party-card">
+                    <div class="pdf-inv-meta-card">
                     <div><strong>POL → POD:</strong> {{ $pol }} → {{ $pod }}</div>
                     <div><strong>Shipping Line:</strong> {{ $shipLine }}</div>
                     <div><strong>Container:</strong> {{ $container ?: '—' }}</div>
                     <div><strong>Transit Time:</strong> {{ $transitTime }}</div>
                     <div><strong>Shipment Ref:</strong> {{ $shipmentRef }}</div>
+                    </div>
                 </td>
             </tr>
         </table>
         @foreach($grouped as $bucket => $bucketItems)
             @if(count($bucketItems) > 0)
                 @php $sectionTotals = []; @endphp
-                <div class="pdf-notes-block" style="margin-top:10px;">
-                    <div class="pdf-notes-block__title">{{ $sectionLabels[$bucket] }}</div>
-                </div>
-                <table class="pdf-table pdf-table--standalone pdf-table--invoice-items">
+                <div class="pdf-inv-section-title">{{ $sectionLabels[$bucket] }}</div>
+                <table class="pdf-table pdf-table--standalone pdf-table--invoice-items pdf-inv-items">
                     <thead>
                         <tr>
                             <th class="pdf-w-60">{{ $labels['description'] }}</th>
@@ -191,8 +259,8 @@
                         @endforeach
                     </tbody>
                 </table>
-                <div class="pdf-notes-block" style="margin-top:6px; text-align:right;">
-                    <div><strong>Totals Section / إجمالي القسم:</strong> <strong>{{ $formatBreakdown($sectionTotals) }}</strong></div>
+                <div class="pdf-inv-section-total">
+                    <strong>Totals Section / إجمالي القسم:</strong> <strong>{{ $formatBreakdown($sectionTotals) }}</strong>
                 </div>
             @endif
         @endforeach
@@ -205,7 +273,7 @@
             }
             $grandBreakdown = $formatBreakdown($grandByCurrency);
         @endphp
-        <table class="pdf-invoice-top">
+        <table class="pdf-invoice-top pdf-inv-grand-wrap">
             <tr>
                 <td class="pdf-w-spacer"></td>
                 <td class="pdf-w-totals">
@@ -238,7 +306,7 @@
 
         <div class="pdf-notes-block">
             <div class="pdf-notes-block__title">Payment Instructions — Bank Details<br>تعليمات الدفع — بيانات الحساب البنكي</div>
-            <table class="pdf-table pdf-table--standalone" style="margin-top:8px; table-layout:fixed;">
+            <table class="pdf-table pdf-table--standalone pdf-inv-bank-table">
                 <thead>
                     <tr>
                         <th>Currency / العملة</th>
@@ -255,10 +323,10 @@
                 </tbody>
             </table>
             <div style="margin-top:10px;"><strong>Terms & Conditions / الشروط والأحكام</strong></div>
-            <ol style="font-size:12px; line-height:1.55; margin-top:6px; padding-left:18px;">
-                <li style="margin-bottom:6px;">Payment Due: Payment is due by the date specified above. Late payments may be subject to additional charges.<br>الدفع مستحق في التاريخ المحدد — التأخر قد يترتب عليه رسوم إضافية.</li>
-                <li style="margin-bottom:6px;">Official Receipts: Government official receipts are not included in this invoice and will be charged at actual cost with original receipts provided.<br>الإيصالات الرسمية الحكومية غير شاملة في هذه الفاتورة — تُحتسب بقيمتها الفعلية مع تقديم الأصول للعميل.</li>
-                <li style="margin-bottom:6px;">Currency: Payments must be made in the currency specified per charge. Exchange rate conversions are subject to the agreed rate on the day of payment.<br>يتم الدفع بالعملة المحددة لكل بند — تحويل العملات يخضع للسعر المتفق عليه يوم الدفع.</li>
+            <ol class="pdf-inv-terms">
+                <li>Payment Due: Payment is due by the date specified above. Late payments may be subject to additional charges.<br>الدفع مستحق في التاريخ المحدد — التأخر قد يترتب عليه رسوم إضافية.</li>
+                <li>Official Receipts: Government official receipts are not included in this invoice and will be charged at actual cost with original receipts provided.<br>الإيصالات الرسمية الحكومية غير شاملة في هذه الفاتورة — تُحتسب بقيمتها الفعلية مع تقديم الأصول للعميل.</li>
+                <li>Currency: Payments must be made in the currency specified per charge. Exchange rate conversions are subject to the agreed rate on the day of payment.<br>يتم الدفع بالعملة المحددة لكل بند — تحويل العملات يخضع للسعر المتفق عليه يوم الدفع.</li>
                 <li>Validity: This invoice is valid for 30 days from the issue date. Any disputes must be raised within 7 days of receipt.<br>هذه الفاتورة سارية لمدة 30 يوماً من تاريخ الإصدار — أي اعتراض يجب رفعه خلال 7 أيام من الاستلام.</li>
             </ol>
         </div>
