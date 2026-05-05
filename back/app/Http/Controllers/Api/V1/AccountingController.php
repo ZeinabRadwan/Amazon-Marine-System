@@ -274,6 +274,128 @@ class AccountingController extends Controller
         ]);
     }
 
+    public function partnerLedger(Request $request): JsonResponse
+    {
+        abort_unless(
+            $request->user()?->can('accounting.view'),
+            403,
+            __('You do not have permission to view partner ledger.')
+        );
+
+        $query = Vendor::query();
+
+        if ($search = trim((string) $request->query('search', ''))) {
+            $query->where('name', 'like', '%'.$search.'%');
+        }
+
+        $category = trim((string) $request->query('category', 'all'));
+        if ($category !== '' && strtolower($category) !== 'all') {
+            $query->where('type', $category);
+        }
+
+        $vendors = $query->orderBy('name')->get();
+
+        $data = $vendors->map(function (Vendor $vendor): array {
+            $bills = VendorBill::query()
+                ->where('vendor_id', $vendor->id)
+                ->orderByDesc('bill_date')
+                ->orderByDesc('id')
+                ->get();
+
+            $payments = Payment::query()
+                ->where('vendor_id', $vendor->id)
+                ->orderByDesc('paid_at')
+                ->orderByDesc('id')
+                ->get();
+
+            $billedByCurrency = [];
+            foreach ($bills as $bill) {
+                $cur = strtoupper((string) ($bill->currency_code ?: 'USD'));
+                $billedByCurrency[$cur] = ($billedByCurrency[$cur] ?? 0) + (float) $bill->total_amount;
+            }
+
+            $paidByCurrency = [];
+            foreach ($payments as $payment) {
+                $cur = strtoupper((string) ($payment->currency_code ?: 'USD'));
+                $paidByCurrency[$cur] = ($paidByCurrency[$cur] ?? 0) + (float) $payment->amount;
+            }
+
+            $balanceByCurrency = [];
+            $currencies = array_unique(array_merge(array_keys($billedByCurrency), array_keys($paidByCurrency)));
+            foreach ($currencies as $cur) {
+                $balanceByCurrency[$cur] = (float) ($billedByCurrency[$cur] ?? 0) - (float) ($paidByCurrency[$cur] ?? 0);
+            }
+
+            return [
+                'partner_id' => $vendor->id,
+                'partner_name' => $vendor->name,
+                'category' => $vendor->type,
+                'total_invoices_count' => $bills->count(),
+                'total_billed_amount' => $billedByCurrency,
+                'total_paid_amount' => $paidByCurrency,
+                'remaining_balance' => $balanceByCurrency,
+            ];
+        })->values();
+
+        return response()->json(['data' => $data]);
+    }
+
+    public function partnerLedgerDetail(Request $request, Vendor $vendor): JsonResponse
+    {
+        abort_unless(
+            $request->user()?->can('accounting.view'),
+            403,
+            __('You do not have permission to view partner ledger details.')
+        );
+
+        $bills = VendorBill::query()
+            ->where('vendor_id', $vendor->id)
+            ->with(['shipment'])
+            ->orderByDesc('bill_date')
+            ->orderByDesc('id')
+            ->get();
+
+        $rows = $bills->map(function (VendorBill $bill): array {
+            $billCurrency = strtoupper((string) ($bill->currency_code ?: 'USD'));
+            $totalAmount = (float) $bill->total_amount;
+
+            $paidAmount = (float) Payment::query()
+                ->where('vendor_bill_id', $bill->id)
+                ->where('currency_code', $billCurrency)
+                ->sum('amount');
+
+            $status = 'unpaid';
+            if ($paidAmount >= $totalAmount && $totalAmount > 0) {
+                $status = 'paid';
+            } elseif ($paidAmount > 0 && $paidAmount < $totalAmount) {
+                $status = 'partially_paid';
+            }
+
+            return [
+                'shipment_id' => $bill->shipment_id,
+                'invoice_reference' => $bill->bill_number ?: ('VB-'.$bill->id),
+                'amount' => $totalAmount,
+                'currency_breakdown' => [
+                    $billCurrency => $totalAmount,
+                ],
+                'paid_amount' => [
+                    $billCurrency => $paidAmount,
+                ],
+                'status' => $status,
+                'bill_date' => $bill->bill_date?->toDateString(),
+            ];
+        })->values();
+
+        return response()->json([
+            'data' => [
+                'partner_id' => $vendor->id,
+                'partner_name' => $vendor->name,
+                'category' => $vendor->type,
+                'rows' => $rows,
+            ],
+        ]);
+    }
+
     public function exportClients(Request $request): StreamedResponse
     {
         abort_unless(

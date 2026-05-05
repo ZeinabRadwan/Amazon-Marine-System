@@ -556,6 +556,9 @@ class ShipmentController extends Controller
     public function notifySalesFinancials(Request $request, Shipment $shipment)
     {
         $this->authorize('view', $shipment);
+        $validated = $request->validate([
+            'invoice_action' => ['nullable', 'in:created,updated'],
+        ]);
 
         $user = $request->user();
         abort_unless(
@@ -592,7 +595,7 @@ class ShipmentController extends Controller
                 'shipment.notify_sales_financials',
                 $shipment,
                 $recipients,
-                new ShipmentSalesFinancialsNotification($shipment)
+                new ShipmentSalesFinancialsNotification($shipment, $validated['invoice_action'] ?? 'updated')
             );
         }
 

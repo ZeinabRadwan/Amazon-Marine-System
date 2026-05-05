@@ -218,6 +218,20 @@ export async function cancelInvoice(token, invoiceId) {
   return json.data ?? json
 }
 
+export async function downloadInvoicePdf(token, invoiceId) {
+  const res = await apiFetch(`${getBaseUrl()}/invoices/${invoiceId}/pdf`, {
+    headers: authHeaders(token, false),
+  })
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}))
+    throw new Error(json.message || json.error || `Failed to download invoice PDF (${res.status})`)
+  }
+  const blob = await res.blob()
+  const disp = res.headers.get('Content-Disposition') || ''
+  const filename = (disp.match(/filename="?([^"]+)"?/) || [])[1] || `invoice-${invoiceId}.pdf`
+  return { blob, filename }
+}
+
 export async function exportInvoicesCsv(token, params = {}) {
   const searchParams = new URLSearchParams()
   if (params.invoice_type) searchParams.set('invoice_type', String(params.invoice_type))

@@ -63,6 +63,7 @@
       "shipments": "Shipments",
       "sdForms": "SD Forms",
       "invoices": "Invoices",
+      "partnerLedger": "Partner Ledger",
       "accounts": "Accounts",
       "treasury": "Treasury",
       "expenses": "Expenses",
@@ -92,6 +93,71 @@
     "export": "Export",
     "filter": "Filter",
     "refresh": "Refresh"
+  },
+  "partnerLedger": {
+    "title": "Partner Ledger",
+    "tabs": {
+      "ledger": "Partner Ledger",
+      "payments": "Record Payment",
+      "banks": "Bank Accounts",
+      "cashbox": "Cashbox"
+    },
+    "search": "Search by partner name",
+    "categories": {
+      "all": "All",
+      "shipping_line": "Shipping Line",
+      "inland_transport": "Inland Transport",
+      "customs_clearance": "Customs Clearance",
+      "insurance": "Insurance"
+    },
+    "table": {
+      "partner": "Partner",
+      "category": "Category",
+      "invoices": "Total invoices",
+      "billed": "Total billed amount",
+      "paid": "Total paid amount",
+      "balance": "Remaining balance"
+    },
+    "detail": {
+      "shipment": "Shipment ID",
+      "invoice": "Invoice reference",
+      "amount": "Amount",
+      "currency": "Currency breakdown",
+      "status": "Status"
+    },
+    "payment": {
+      "submit": "Record Payment",
+      "amount": "Amount",
+      "method": "Method",
+      "date": "Date",
+      "linked": "Linked",
+      "sourceAccount": "Source account",
+      "partnerId": "Partner ID (optional)",
+      "shipmentId": "Shipment ID (optional)",
+      "invoiceId": "Invoice ID (optional)",
+      "exchangeRate": "Exchange rate (manual)",
+      "targetCurrency": "Target currency",
+      "reference": "Reference",
+      "notes": "Notes"
+    },
+    "bank": {
+      "add": "Add bank account",
+      "bankName": "Bank name",
+      "accountName": "Account name",
+      "accountNumber": "Account number",
+      "currencies": "Supported currencies"
+    },
+    "transfer": {
+      "submit": "Record Transfer",
+      "fromAccount": "From account label",
+      "toAccount": "To account label",
+      "fromAccountId": "From bank account",
+      "toAccountId": "To bank account",
+      "fromAmount": "From amount",
+      "toAmount": "To amount (optional)",
+      "fxRate": "Manual exchange rate",
+      "description": "Description"
+    }
   },
   "footer": {
     "version": "Version",
@@ -2780,15 +2846,31 @@
       "inlandContractorLabel": "Contractor / Partner *",
       "inlandContractorPlaceholder": "Select contractor",
       "inlandContractorRequired": "Contractor / Partner is required for Inland Transport",
+      "customsBrokerLabel": "Customs Broker Name *",
+      "customsBrokerPlaceholder": "Enter customs broker name",
+      "customsBrokerRequired": "Customs broker name is required for Customs Clearance",
+      "insuranceCompanyLabel": "Insurance Company Name *",
+      "insuranceCompanyPlaceholder": "Enter insurance company name",
+      "insuranceCompanyRequired": "Insurance company name is required for Insurance section",
       "customSectionSub": "Custom cost section",
       "addNewCostSection": "Add New Cost Section",
       "noReceipts": "No receipt",
+      "customItemFallback": "Custom Item",
       "breakdown": {
         "shipping": "Shipping line cost",
         "inland": "Internal transport",
         "customs": "Customs clearance",
         "insurance": "Insurance",
         "other": "Additional cost types"
+      },
+      "sellingSection": {
+        "shipping": "Shipment Line Cost / Shipping Line Cost",
+        "inland": "Inland Transport / Land Transport",
+        "customs": "Customs Clearance / Customs Clearance",
+        "insurance": "Insurance / Insurance",
+        "other": "Additional Cost Types / Additional Costs",
+        "handling": "Handling Fees / Service & Follow-up Fees",
+        "handlingLine": "Handling Fees (containers × fee)"
       },
       "tabA": "A) Vendor cost invoices",
       "tabB": "B) Sales pricing",

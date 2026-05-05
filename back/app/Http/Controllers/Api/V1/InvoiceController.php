@@ -7,6 +7,7 @@ use App\Models\Currency;
 use App\Models\CustomerTransaction;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\BankAccount;
 use App\Models\PdfLayout;
 use App\Notifications\ShipmentFinancialsCompleted;
 use App\Services\ActivityLogger;
@@ -507,6 +508,7 @@ class InvoiceController extends Controller
             'footerHtml' => $layout?->footer_html,
             'lang' => $locale,
             'labels' => $labels,
+            'bankAccount' => BankAccount::query()->where('is_active', true)->orderBy('id')->first(),
         ])->render();
 
         $mpdf = new Mpdf([
@@ -551,6 +553,12 @@ class InvoiceController extends Controller
                 'vat' => 'ضريبة القيمة المضافة (14%)',
                 'grand_total' => 'الإجمالي',
                 'notes' => 'ملاحظات',
+                'bank_details' => 'بيانات البنك',
+                'bank_name' => 'اسم البنك',
+                'account_number' => 'رقم الحساب',
+                'iban' => 'IBAN',
+                'swift' => 'SWIFT',
+                'payment_instructions' => 'تعليمات السداد',
                 'generated' => 'أُنشئت في',
                 'system_credit' => 'نظام أمازون مارين',
             ];
@@ -574,6 +582,12 @@ class InvoiceController extends Controller
             'vat' => 'VAT (14%)',
             'grand_total' => 'Grand total',
             'notes' => 'Notes',
+            'bank_details' => 'Bank Details',
+            'bank_name' => 'Bank Name',
+            'account_number' => 'Account Number',
+            'iban' => 'IBAN',
+            'swift' => 'SWIFT',
+            'payment_instructions' => 'Payment Instructions',
             'generated' => 'Generated on',
             'system_credit' => 'Amazon Marine system',
         ];

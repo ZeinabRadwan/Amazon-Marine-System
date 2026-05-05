@@ -35,6 +35,7 @@ import ShipmentDeclarationForm from './pages/SDForms/ShipmentDeclarationForm'
 import Shipments from './pages/Shipments/Shipments'
 import Pricing from './pages/Pricing/Pricing'
 import Invoices from './pages/Invoices/Invoices'
+import PartnerLedger from './pages/PartnerLedger/PartnerLedger'
 import Notifications from './pages/Notifications'
 import AdminNotifications from './pages/AdminNotifications/AdminNotifications'
 import Settings from './pages/Settings'
@@ -820,6 +821,14 @@ function App() {
             element={
               <RequirePageAccess pageKey="invoices">
                 <Invoices />
+              </RequirePageAccess>
+            }
+          />
+          <Route
+            path="/partner-ledger"
+            element={
+              <RequirePageAccess pageKey="accounting">
+                <PartnerLedger />
               </RequirePageAccess>
             }
           />

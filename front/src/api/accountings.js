@@ -107,3 +107,115 @@ export async function exportAccountingsPartners(token, params = {}) {
   }
   return res.blob()
 }
+
+/**
+ * GET {{base_url}}/accounting/partners-ledger – Partner ledger summary
+ */
+export async function getPartnerLedgerSummary(token, params = {}) {
+  const searchParams = new URLSearchParams()
+  if (params.search) searchParams.set('search', params.search)
+  if (params.category) searchParams.set('category', params.category)
+  const q = searchParams.toString()
+  const res = await apiFetch(`${getBaseUrl()}/accounting/partners-ledger${q ? `?${q}` : ''}`, {
+    headers: authHeaders(token),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to load partner ledger (${res.status})`)
+  return data
+}
+
+/**
+ * GET {{base_url}}/accounting/partners-ledger/{partnerId} – Partner ledger detail rows
+ */
+export async function getPartnerLedgerDetail(token, partnerId) {
+  const res = await apiFetch(`${getBaseUrl()}/accounting/partners-ledger/${partnerId}`, {
+    headers: authHeaders(token),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(data.message || data.error || `Failed to load partner ledger details (${res.status})`)
+  }
+  return data
+}
+
+/**
+ * GET {{base_url}}/bank-accounts
+ */
+export async function listBankAccounts(token) {
+  const res = await apiFetch(`${getBaseUrl()}/bank-accounts`, { headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to load bank accounts (${res.status})`)
+  return data
+}
+
+/**
+ * POST {{base_url}}/bank-accounts
+ */
+export async function createBankAccount(token, body) {
+  const res = await apiFetch(`${getBaseUrl()}/bank-accounts`, {
+    method: 'POST',
+    headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to create bank account (${res.status})`)
+  return data
+}
+
+/**
+ * PUT {{base_url}}/bank-accounts/{id}
+ */
+export async function updateBankAccount(token, id, body) {
+  const res = await apiFetch(`${getBaseUrl()}/bank-accounts/${id}`, {
+    method: 'PUT',
+    headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to update bank account (${res.status})`)
+  return data
+}
+
+/**
+ * DELETE {{base_url}}/bank-accounts/{id}
+ */
+export async function deleteBankAccount(token, id) {
+  const res = await apiFetch(`${getBaseUrl()}/bank-accounts/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(token),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to delete bank account (${res.status})`)
+  return data
+}
+
+/**
+ * POST {{base_url}}/payments – generic record payment endpoint
+ */
+export async function recordPayment(token, body) {
+  const res = await apiFetch(`${getBaseUrl()}/payments`, {
+    method: 'POST',
+    headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to record payment (${res.status})`)
+  return data
+}
+
+/**
+ * GET {{base_url}}/payments
+ */
+export async function listPayments(token, params = {}) {
+  const searchParams = new URLSearchParams()
+  if (params.type) searchParams.set('type', params.type)
+  if (params.client_id) searchParams.set('client_id', String(params.client_id))
+  if (params.vendor_id) searchParams.set('vendor_id', String(params.vendor_id))
+  if (params.from) searchParams.set('from', params.from)
+  if (params.to) searchParams.set('to', params.to)
+  const q = searchParams.toString()
+  const res = await apiFetch(`${getBaseUrl()}/payments${q ? `?${q}` : ''}`, { headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to list payments (${res.status})`)
+  return data
+}

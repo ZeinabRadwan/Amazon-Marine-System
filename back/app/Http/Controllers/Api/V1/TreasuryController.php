@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
+use App\Models\BankAccount;
 use App\Models\TreasuryEntry;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -328,6 +329,8 @@ class TreasuryController extends Controller
         $validated = $request->validate([
             'from_account' => ['required', 'string', 'max:255'],
             'to_account' => ['required', 'string', 'max:255', 'different:from_account'],
+            'from_account_id' => ['nullable', 'integer', 'exists:bank_accounts,id'],
+            'to_account_id' => ['nullable', 'integer', 'exists:bank_accounts,id', 'different:from_account_id'],
             'from_amount' => ['required', 'numeric', 'min:0'],
             'from_currency' => ['required', 'string', 'size:3'],
             'to_amount' => ['nullable', 'numeric', 'min:0'],
@@ -338,13 +341,33 @@ class TreasuryController extends Controller
         ]);
 
         $userId = $request->user()->id;
+        $fromCurrency = strtoupper($validated['from_currency']);
+        $toCurrency = strtoupper((string) ($validated['to_currency'] ?? $fromCurrency));
 
-        DB::transaction(function () use ($validated, $userId): void {
+        if ($fromCurrency !== $toCurrency && empty($validated['fx_rate'])) {
+            return response()->json([
+                'message' => __('Manual exchange rate is required for cross-currency transfers.'),
+            ], 422);
+        }
+
+        $fxRate = isset($validated['fx_rate']) ? (float) $validated['fx_rate'] : null;
+        $toAmount = isset($validated['to_amount'])
+            ? (float) $validated['to_amount']
+            : ($fxRate && $fromCurrency !== $toCurrency
+                ? ((float) $validated['from_amount'] * $fxRate)
+                : (float) $validated['from_amount']);
+
+        DB::transaction(function () use ($validated, $userId, $fromCurrency, $toCurrency, $fxRate, $toAmount): void {
             $from = new TreasuryEntry();
             $from->entry_type = 'out';
             $from->source = $validated['from_account'];
+            $from->account_id = $validated['from_account_id'] ?? null;
+            $from->counter_account_id = $validated['to_account_id'] ?? null;
             $from->amount = $validated['from_amount'];
-            $from->currency_code = $validated['from_currency'];
+            $from->currency_code = $fromCurrency;
+            $from->target_currency_code = $toCurrency;
+            $from->exchange_rate = $fxRate;
+            $from->converted_amount = $toAmount;
             $from->reference = $validated['description'] ?? null;
             $from->entry_date = $validated['entry_date'];
             $from->created_by_id = $userId;
@@ -353,8 +376,13 @@ class TreasuryController extends Controller
             $to = new TreasuryEntry();
             $to->entry_type = 'in';
             $to->source = $validated['to_account'];
-            $to->amount = $validated['to_amount'] ?? $validated['from_amount'];
-            $to->currency_code = $validated['to_currency'] ?? $validated['from_currency'];
+            $to->account_id = $validated['to_account_id'] ?? null;
+            $to->counter_account_id = $validated['from_account_id'] ?? null;
+            $to->amount = $toAmount;
+            $to->currency_code = $toCurrency;
+            $to->target_currency_code = $fromCurrency;
+            $to->exchange_rate = $fxRate;
+            $to->converted_amount = (float) $validated['from_amount'];
             $to->reference = $validated['description'] ?? null;
             $to->entry_date = $validated['entry_date'];
             $to->created_by_id = $userId;

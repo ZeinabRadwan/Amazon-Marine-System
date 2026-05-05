@@ -252,11 +252,11 @@ export async function postShipmentTrackingUpdate(token, shipmentId, body) {
 /**
  * POST {{base_url}}/shipments/:shipmentId/notify-sales-financials
  */
-export async function notifyShipmentSalesFinancials(token, shipmentId) {
+export async function notifyShipmentSalesFinancials(token, shipmentId, body = {}) {
   const res = await apiFetch(`${getBaseUrl()}/shipments/${shipmentId}/notify-sales-financials`, {
     method: 'POST',
     headers: authHeaders(token),
-    body: JSON.stringify({}),
+    body: JSON.stringify(body),
   })
   const json = await res.json().catch(() => ({}))
   if (!res.ok) {

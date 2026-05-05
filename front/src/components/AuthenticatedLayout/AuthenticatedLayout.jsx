@@ -75,6 +75,8 @@ function getPageHeaderForPath(pathname, t) {
       return { title: t('pricing.title', 'Pricing'), breadcrumbs: [home, { label: t('pricing.title', 'Pricing') }] }
     case '/invoices':
       return { title: t('invoices.title', 'Invoices'), breadcrumbs: [home, { label: t('invoices.title', 'Invoices') }] }
+    case '/partner-ledger':
+      return { title: t('partnerLedger.title', 'Partner Ledger'), breadcrumbs: [home, { label: t('partnerLedger.title', 'Partner Ledger') }] }
     case '/notifications':
       return { title: t('notifications.title'), breadcrumbs: [home, { label: t('notifications.title') }] }
     case '/customer-services':
@@ -389,6 +391,10 @@ export default function AuthenticatedLayout() {
       navigate('/invoices')
       return
     }
+    if (id === 'partnerLedger') {
+      navigate('/partner-ledger')
+      return
+    }
     if (id === 'notifications') {
       navigate('/notifications')
       return
@@ -444,6 +450,7 @@ export default function AuthenticatedLayout() {
     '/shipments': 'shipments',
     '/pricing': 'pricing',
     '/invoices': 'invoices',
+    '/partner-ledger': 'partnerLedger',
     '/notifications': 'notifications',
     '/settings': 'settings',
     '/admin/notifications': 'adminNotifications',

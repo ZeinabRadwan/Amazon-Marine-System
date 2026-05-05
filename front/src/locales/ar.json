@@ -64,6 +64,7 @@
       "shipments": "الشحنات",
       "sdForms": "نماذج SD",
       "invoices": "الفواتير",
+      "partnerLedger": "كشف حساب الشركاء",
       "accounts": "الحسابات",
       "treasury": "الخزينة",
       "expenses": "المصروفات",
@@ -93,6 +94,71 @@
     "export": "تصدير",
     "filter": "تصفية",
     "refresh": "تحديث"
+  },
+  "partnerLedger": {
+    "title": "كشف حساب الشركاء",
+    "tabs": {
+      "ledger": "كشف حساب الشركاء",
+      "payments": "تسجيل دفعة",
+      "banks": "الحسابات البنكية",
+      "cashbox": "الخزينة"
+    },
+    "search": "بحث باسم الشريك",
+    "categories": {
+      "all": "الكل",
+      "shipping_line": "الخط الملاحي",
+      "inland_transport": "النقل الداخلي",
+      "customs_clearance": "التخليص الجمركي",
+      "insurance": "التأمين"
+    },
+    "table": {
+      "partner": "الشريك",
+      "category": "الفئة",
+      "invoices": "عدد الفواتير",
+      "billed": "إجمالي المفوتر",
+      "paid": "إجمالي المدفوع",
+      "balance": "الرصيد المتبقي"
+    },
+    "detail": {
+      "shipment": "رقم الشحنة",
+      "invoice": "مرجع الفاتورة",
+      "amount": "المبلغ",
+      "currency": "تفصيل العملات",
+      "status": "الحالة"
+    },
+    "payment": {
+      "submit": "تسجيل دفعة",
+      "amount": "المبلغ",
+      "method": "طريقة الدفع",
+      "date": "التاريخ",
+      "linked": "الربط",
+      "sourceAccount": "حساب المصدر",
+      "partnerId": "رقم الشريك (اختياري)",
+      "shipmentId": "رقم الشحنة (اختياري)",
+      "invoiceId": "رقم الفاتورة (اختياري)",
+      "exchangeRate": "سعر الصرف (يدوي)",
+      "targetCurrency": "العملة الهدف",
+      "reference": "المرجع",
+      "notes": "ملاحظات"
+    },
+    "bank": {
+      "add": "إضافة حساب بنكي",
+      "bankName": "اسم البنك",
+      "accountName": "اسم الحساب",
+      "accountNumber": "رقم الحساب",
+      "currencies": "العملات المدعومة"
+    },
+    "transfer": {
+      "submit": "تسجيل تحويل",
+      "fromAccount": "وصف حساب التحويل من",
+      "toAccount": "وصف حساب التحويل إلى",
+      "fromAccountId": "الحساب البنكي المصدر",
+      "toAccountId": "الحساب البنكي الهدف",
+      "fromAmount": "مبلغ التحويل",
+      "toAmount": "المبلغ المحول إليه (اختياري)",
+      "fxRate": "سعر الصرف اليدوي",
+      "description": "الوصف"
+    }
   },
   "footer": {
     "version": "الإصدار",
@@ -2734,7 +2800,7 @@
     "exportPdfError": "تعذّر تصدير PDF. حاول مرة أخرى.",
     "financials": "الماليات",
     "financialsTab": {
-      "selling": "تسعير البيع (المبيعات)",
+      "selling": "إنشاء فاتورة للعميل",
       "expenses": "مجموعات المصروفات",
       "invoices": "فواتير العملاء",
       "attachments": "المرفقات",
@@ -2792,15 +2858,31 @@
       "inlandContractorLabel": "المقاول / الشريك *",
       "inlandContractorPlaceholder": "اختر المقاول",
       "inlandContractorRequired": "المقاول / الشريك مطلوب في قسم النقل الداخلي",
+      "customsBrokerLabel": "اسم المخلص الجمركي *",
+      "customsBrokerPlaceholder": "أدخل اسم المخلص الجمركي",
+      "customsBrokerRequired": "اسم المخلص الجمركي مطلوب في قسم التخليص الجمركي",
+      "insuranceCompanyLabel": "اسم شركة التأمين *",
+      "insuranceCompanyPlaceholder": "أدخل اسم شركة التأمين",
+      "insuranceCompanyRequired": "اسم شركة التأمين مطلوب في قسم التأمين",
       "customSectionSub": "قسم تكلفة مخصص",
       "addNewCostSection": "إضافة قسم تكلفة جديد",
       "noReceipts": "لا يوجد إيصال",
+      "customItemFallback": "بند مخصص",
       "breakdown": {
         "shipping": "تكلفة الخط الملاحي",
         "inland": "النقل الداخلي",
         "customs": "التخليص الجمركي",
         "insurance": "التأمين",
         "other": "تكاليف إضافية"
+      },
+      "sellingSection": {
+        "shipping": "Shipment Line Cost / تكلفة الشحن البحري",
+        "inland": "Inland Transport / النقل البري",
+        "customs": "Customs Clearance / التخليص الجمركي",
+        "insurance": "Insurance / التأمين",
+        "other": "Additional Cost Types / تكاليف إضافية",
+        "handling": "Handling Fees / رسوم الخدمة والمتابعة",
+        "handlingLine": "رسوم الخدمة والمتابعة (عدد الحاويات × الرسوم)"
       },
       "tabA": "A) فواتير التكلفة",
       "tabB": "B) تسعير البيع",

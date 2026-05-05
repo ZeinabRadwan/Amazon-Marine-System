@@ -51,6 +51,7 @@ const SIDEBAR_SECTIONS = [
     sectionKey: 'financial',
     items: [
       { id: 'invoices', menuKey: 'invoices', Icon: InvoiceIcon },
+      { id: 'partnerLedger', menuKey: 'partnerLedger', Icon: WalletIcon },
       { id: 'accounts', menuKey: 'accounts', Icon: WalletIcon },
       { id: 'treasury', menuKey: 'treasury', Icon: WalletIcon },
       { id: 'expenses', menuKey: 'expenses', Icon: InvoiceIcon },
@@ -100,6 +101,7 @@ const SIDEBAR_ID_TO_PAGE_KEY = {
   sdForms: 'sd_forms',
   invoices: 'invoices',
   accounts: 'accounting',
+  partnerLedger: 'accounting',
   treasury: 'treasury',
   expenses: 'expenses',
   pricing: 'pricing',

@@ -104,6 +104,17 @@
             </div>
         @endif
 
+        @if(!empty($bankAccount))
+            <div class="pdf-notes-block">
+                <div class="pdf-notes-block__title">{{ $labels['bank_details'] }}</div>
+                <div>{{ $labels['bank_name'] }}: {{ $bankAccount->bank_name }}</div>
+                <div>{{ $labels['account_number'] }}: {{ $bankAccount->account_number ?: '—' }}</div>
+                <div>{{ $labels['iban'] }}: {{ $bankAccount->iban ?: '—' }}</div>
+                <div>{{ $labels['swift'] }}: {{ $bankAccount->swift_code ?: '—' }}</div>
+                <div>{{ $labels['payment_instructions'] }}: {{ __('Please transfer the amount to the account details above and include invoice number in reference.') }}</div>
+            </div>
+        @endif
+
         <div class="pdf-footer pdf-footer--fixed">
             @if(!empty($footerHtml))
                 {!! $footerHtml !!}

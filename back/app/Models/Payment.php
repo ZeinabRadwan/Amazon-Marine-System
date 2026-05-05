@@ -20,10 +20,17 @@ class Payment extends Model
         'vendor_bill_id',
         'client_id',
         'vendor_id',
+        'shipment_id',
         'amount',
         'currency_code',
+        'source_account_id',
+        'target_account_id',
+        'target_currency_code',
+        'exchange_rate',
+        'converted_amount',
         'method',
         'reference',
+        'notes',
         'paid_at',
         'created_by_id',
     ];
@@ -33,6 +40,8 @@ class Payment extends Model
      */
     protected $casts = [
         'amount' => 'decimal:2',
+        'exchange_rate' => 'decimal:8',
+        'converted_amount' => 'decimal:2',
         'paid_at' => 'datetime',
     ];
 
@@ -66,6 +75,30 @@ class Payment extends Model
     public function vendor(): BelongsTo
     {
         return $this->belongsTo(Vendor::class);
+    }
+
+    /**
+     * @return BelongsTo<Shipment, Payment>
+     */
+    public function shipment(): BelongsTo
+    {
+        return $this->belongsTo(Shipment::class);
+    }
+
+    /**
+     * @return BelongsTo<BankAccount, Payment>
+     */
+    public function sourceAccount(): BelongsTo
+    {
+        return $this->belongsTo(BankAccount::class, 'source_account_id');
+    }
+
+    /**
+     * @return BelongsTo<BankAccount, Payment>
+     */
+    public function targetAccount(): BelongsTo
+    {
+        return $this->belongsTo(BankAccount::class, 'target_account_id');
     }
 
     /**

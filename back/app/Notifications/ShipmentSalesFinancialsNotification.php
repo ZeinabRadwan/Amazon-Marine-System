@@ -12,6 +12,7 @@ class ShipmentSalesFinancialsNotification extends Notification
 
     public function __construct(
         protected Shipment $shipment,
+        protected string $invoiceAction = 'updated',
     ) {
     }
 
@@ -29,6 +30,16 @@ class ShipmentSalesFinancialsNotification extends Notification
     public function toDatabase(object $notifiable): array
     {
         $this->shipment->loadMissing(['client', 'salesRep']);
+        $shipmentRef = $this->shipment->bl_number ?? ('#'.$this->shipment->id);
+        $isArabic = app()->getLocale() === 'ar';
+        $isCreate = strtolower($this->invoiceAction) === 'created';
+        $message = $isArabic
+            ? ($isCreate
+                ? "تم إضافة إدراج فاتورة تكلفة للشحنة رقم {$shipmentRef}"
+                : "تم تحديث إدراج فاتورة تكلفة للشحنة رقم {$shipmentRef}")
+            : ($isCreate
+                ? "Cost invoice has been added for shipment #{$shipmentRef}"
+                : "Cost invoice has been updated for shipment #{$shipmentRef}");
 
         return [
             'type' => 'shipment.notify_sales_financials',
@@ -38,9 +49,9 @@ class ShipmentSalesFinancialsNotification extends Notification
                 ?? $this->shipment->client?->name,
             'sales_rep_id' => $this->shipment->sales_rep_id,
             'sales_rep_name' => $this->shipment->salesRep?->name,
-            'message' => __('Financials for shipment :bl are ready for your review.', [
-                'bl' => $this->shipment->bl_number ?? ('#'.$this->shipment->id),
-            ]),
+            'title' => $isArabic ? 'إدراج فاتورة تكلفة' : 'Cost Invoice Entry',
+            'message' => $message,
+            'body' => $message,
             'url' => null,
         ];
     }

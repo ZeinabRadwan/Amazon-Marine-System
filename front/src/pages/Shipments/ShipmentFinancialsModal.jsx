@@ -16,6 +16,8 @@ import {
   getInvoice,
   createInvoice,
   updateInvoice,
+  issueInvoice,
+  downloadInvoicePdf,
   listCurrencies,
 } from '../../api/invoices'
 import { listActivitiesBySubject } from '../../api/activities'
@@ -720,7 +722,13 @@ export default function ShipmentFinancialsModal({
       buckets[key].push(ex)
     }
     for (const key of Object.keys(buckets)) {
-      buckets[key] = buckets[key].slice().sort((a, b) => Number(a?.id || 0) - Number(b?.id || 0))
+      buckets[key] = buckets[key]
+        .slice()
+        .sort(
+          (a, b) =>
+            Number(a?.order_index ?? Number.MAX_SAFE_INTEGER) - Number(b?.order_index ?? Number.MAX_SAFE_INTEGER)
+            || Number(a?.id || 0) - Number(b?.id || 0)
+        )
     }
     return buckets
   }, [expenses])
@@ -1026,7 +1034,7 @@ export default function ShipmentFinancialsModal({
     if (!token || !shipment?.id) return
     setNotifySending(true)
     try {
-      await notifyShipmentSalesFinancials(token, shipment.id)
+      await notifyShipmentSalesFinancials(token, shipment.id, { invoice_action: 'updated' })
       setFinBanner({ type: 'success', message: t('shipments.fin.notifySalesOk') })
     } catch (e) {
       setFinBanner({ type: 'error', message: e?.message || t('shipments.fin.notifySalesFail') })
@@ -1221,7 +1229,12 @@ export default function ShipmentFinancialsModal({
     setDeletedSellIds(new Set())
     setTabBRows(
       expenses.map((ex) => {
-        const lineLabel = ex.title || ex.description || '—'
+        const tplId = String(ex.template_id || '').trim()
+        const titleVal = String(ex.title || '').trim()
+        const lineLabel =
+          tplId.toLowerCase() === 'other'
+            ? (titleVal || t('shipments.fin.customItemFallback', { defaultValue: 'Custom Item' }))
+            : (tplId || titleVal || t('shipments.fin.customItemFallback', { defaultValue: 'Custom Item' }))
         const match = items.find((it) => it.description === lineLabel)
         const cost = Number(ex.amount) || 0
         const sellVal = match != null ? Number(match.unit_price) : cost
@@ -1289,8 +1302,10 @@ export default function ShipmentFinancialsModal({
       setClientInvoice(inv)
       onShipmentTotalsRefresh?.()
       setFinBanner({ type: 'success', message: t('shipments.fin.pricingSaved') })
+      return inv
     } catch (e) {
       setFinBanner({ type: 'error', message: e?.message || t('shipments.fin.errorSaveLine') })
+      return null
     } finally {
       setPricingSaving(false)
     }
@@ -1306,6 +1321,40 @@ export default function ShipmentFinancialsModal({
     onShipmentTotalsRefresh,
     currencies,
   ])
+
+  const handleSaveSalesInvoice = useCallback(async () => {
+    if (!token || !shipment?.id) return
+    const saved = await savePricingInvoice()
+    if (!saved?.id) return
+    let finalized = saved
+    try {
+      if (saved.status === 'draft') {
+        finalized = await issueInvoice(token, saved.id)
+      }
+      setClientInvoice(finalized)
+      setFinBanner({ type: 'success', message: t('shipments.fin.salesInvoiceFinalized', { defaultValue: 'Sales invoice finalized successfully.' }) })
+      await handleNotifySales()
+    } catch (e) {
+      setFinBanner({ type: 'error', message: e?.message || t('shipments.fin.errorSaveLine') })
+    }
+  }, [token, shipment?.id, savePricingInvoice, handleNotifySales, t])
+
+  const handleDownloadInvoicePdf = useCallback(async () => {
+    if (!token || !clientInvoice?.id) return
+    try {
+      const { blob, filename } = await downloadInvoicePdf(token, clientInvoice.id)
+      const a = document.createElement('a')
+      const url = window.URL.createObjectURL(blob)
+      a.href = url
+      a.download = filename || `invoice-${clientInvoice.id}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+    } catch (e) {
+      setFinBanner({ type: 'error', message: e?.message || t('shipments.fin.errorReceipt') })
+    }
+  }, [token, clientInvoice?.id, t])
 
   if (!open || !shipment) return null
 
@@ -1386,11 +1435,11 @@ export default function ShipmentFinancialsModal({
 
   const sellingSections = useMemo(() => {
     const defs = [
-      { id: 'shipping', label: t('shipments.fin.breakdown.shipping', { defaultValue: 'Shipping Line Cost' }) },
-      { id: 'inland', label: t('shipments.fin.breakdown.inland', { defaultValue: 'Internal Transport' }) },
-      { id: 'customs', label: t('shipments.fin.breakdown.customs', { defaultValue: 'Customs Clearance' }) },
-      { id: 'insurance', label: t('shipments.fin.breakdown.insurance', { defaultValue: 'Insurance' }) },
-      { id: 'other', label: t('shipments.fin.breakdown.other', { defaultValue: 'Additional Cost Types' }) },
+      { id: 'shipping', label: t('shipments.fin.sellingSection.shipping', { defaultValue: 'Shipment Line Cost / تكلفة الشحن البحري' }) },
+      { id: 'inland', label: t('shipments.fin.sellingSection.inland', { defaultValue: 'Inland Transport / النقل البري' }) },
+      { id: 'customs', label: t('shipments.fin.sellingSection.customs', { defaultValue: 'Customs Clearance / التخليص الجمركي' }) },
+      { id: 'insurance', label: t('shipments.fin.sellingSection.insurance', { defaultValue: 'Insurance / التأمين' }) },
+      { id: 'other', label: t('shipments.fin.sellingSection.other', { defaultValue: 'Additional Cost Types / تكاليف إضافية' }) },
     ]
     return defs
       .map((d) => ({ ...d, rows: sellingVisibleRows.filter((r) => (r.bucket_id || 'other') === d.id) }))
@@ -1404,19 +1453,81 @@ export default function ShipmentFinancialsModal({
     return qty * per
   }, [handlingRow])
 
-  const sellingTotals = useMemo(() => {
-    let cost = 0
-    let sell = 0
+  const sectionCurrencyTotals = useCallback(
+    (rows) => {
+      const costRows = []
+      const sellRows = []
+      ;(rows || []).forEach((r) => {
+        const cur = (r.currency || 'USD').toUpperCase()
+        const c = Number(r.cost) || 0
+        const s = Number(r.sell) || 0
+        if (c > 0) costRows.push({ amount: c, currency_code: cur })
+        if (s > 0) sellRows.push({ amount: s, currency_code: cur })
+      })
+      const cost = sumByCurrency(costRows)
+      const sell = sumByCurrency(sellRows)
+      const profit = {}
+      const keys = new Set([...Object.keys(cost), ...Object.keys(sell)])
+      keys.forEach((k) => {
+        profit[k] = (Number(sell[k]) || 0) - (Number(cost[k]) || 0)
+      })
+      return { cost, sell, profit }
+    },
+    []
+  )
+
+  const sellingTotalsByCurrency = useMemo(() => {
+    const costRows = []
+    const sellRows = []
     sellingVisibleRows.forEach((r) => {
       if (!r.include) return
+      const cur = (r.currency || 'USD').toUpperCase()
       const c = Number(r.cost) || 0
       const s = Number(r.sell) || 0
-      cost += c
-      sell += s
+      if (c > 0) costRows.push({ amount: c, currency_code: cur })
+      if (s > 0) sellRows.push({ amount: s, currency_code: cur })
     })
-    sell += handlingTotal
-    return { cost, sell, profit: sell - cost }
-  }, [sellingVisibleRows, handlingTotal])
+    if (handlingTotal > 0) {
+      sellRows.push({ amount: handlingTotal, currency_code: (handlingRow.currency || 'USD').toUpperCase() })
+    }
+    const cost = sumByCurrency(costRows)
+    const sell = sumByCurrency(sellRows)
+    const profit = {}
+    const keys = new Set([...Object.keys(cost), ...Object.keys(sell)])
+    keys.forEach((k) => {
+      profit[k] = (Number(sell[k]) || 0) - (Number(cost[k]) || 0)
+    })
+    return { cost, sell, profit }
+  }, [sellingVisibleRows, handlingTotal, handlingRow.currency])
+
+  const formatCurrencyBreakdown = useCallback(
+    (map) => {
+      const ordered = Object.entries(map || {})
+        .filter(([, v]) => Number(v) !== 0)
+        .sort(([a], [b]) => a.localeCompare(b))
+      return ordered.length ? ordered.map(([c, v]) => `${c} ${formatMoney(v, numberLocale)}`).join(' · ') : '—'
+    },
+    [numberLocale]
+  )
+
+  const renderStackedTotals = useCallback((totals) => {
+    return (
+      <div className="shipment-fin-stacked-totals">
+        <div className="shipment-fin-stacked-totals__row">
+          <span>{t('shipments.fin.footerTotalCost')}</span>
+          <strong>{formatCurrencyBreakdown(totals.cost)}</strong>
+        </div>
+        <div className="shipment-fin-stacked-totals__row">
+          <span>{t('shipments.fields.selling_price_total')}</span>
+          <strong>{formatCurrencyBreakdown(totals.sell)}</strong>
+        </div>
+        <div className="shipment-fin-stacked-totals__row">
+          <span>{t('shipments.fin.profitLabel', { defaultValue: 'Profit (الربح)' })}</span>
+          <strong>{formatCurrencyBreakdown(totals.profit)}</strong>
+        </div>
+      </div>
+    )
+  }, [formatCurrencyBreakdown, t])
 
   const bucketTotalsLive = useCallback((bucketId) => {
     const rows = byBucket[bucketId] || []
@@ -1530,6 +1641,7 @@ export default function ShipmentFinancialsModal({
 
     const renderExpenseCells = (ex) => (
       <>
+        <td>{ex?.title?.trim() || ex?.description?.trim() || 'Custom Item'}</td>
         <td className="shipment-fin-num">{formatMoney(Number(ex?.amount) || 0, numberLocale)}</td>
         <td>{ex?.currency_code || '—'}</td>
       </>
@@ -2232,8 +2344,7 @@ export default function ShipmentFinancialsModal({
               ) : (
                 <>
                   {sellingSections.map((sec) => {
-                    const secCost = sec.rows.reduce((a, r) => a + (r.include ? Number(r.cost) || 0 : 0), 0)
-                    const secSell = sec.rows.reduce((a, r) => a + (r.include ? Number(r.sell) || 0 : 0), 0)
+                    const secTotals = sectionCurrencyTotals(sec.rows)
                     return (
                       <div key={sec.id} className="shipment-fin-table-wrap mb-3">
                         <div className="fw-700 mb-2">{sec.label}</div>
@@ -2242,7 +2353,6 @@ export default function ShipmentFinancialsModal({
                             <tr>
                               <th>{t('shipments.fin.colCharge')}</th>
                               <th>{t('shipments.fields.cost_total')}</th>
-                              {canManageFinancial ? <th className="shipment-fin-th-center">{t('shipments.fin.colInclude')}</th> : null}
                               <th>{t('shipments.fin.colSell')}</th>
                               <th>{t('shipments.fin.colCurrency')}</th>
                               <th>{t('shipments.fin.profitLabel', { defaultValue: 'Profit (الربح)' })}</th>
@@ -2256,13 +2366,8 @@ export default function ShipmentFinancialsModal({
                               const profit = !Number.isNaN(sellNum) ? sellNum - (Number(row.cost) || 0) : 0
                               return (
                                 <tr key={row.expenseId}>
-                                  <td>{row.label || '—'}</td>
+                                  <td>{row.label || t('shipments.fin.customItemFallback', { defaultValue: 'Custom Item' })}</td>
                                   <td className="shipment-fin-num">{formatMoney(row.cost, numberLocale)}</td>
-                                  {canManageFinancial ? (
-                                    <td className="shipment-fin-td-center">
-                                      <input type="checkbox" checked={row.include} onChange={(e) => patchTabBRow(idx, { include: e.target.checked })} />
-                                    </td>
-                                  ) : null}
                                   <td>
                                     {canManageFinancial ? (
                                       <input type="number" min="0" step="0.01" className="shipment-fin-input shipment-fin-input--num" value={row.sell} onChange={(e) => patchTabBRow(idx, { sell: e.target.value })} />
@@ -2284,28 +2389,60 @@ export default function ShipmentFinancialsModal({
                         </table>
                         <div className="shipment-fin-draft-sec-total">
                           <span>{t('shipments.fin.subtotal', { defaultValue: 'Subtotal' })}</span>
-                          <strong>{formatMoney(secSell, numberLocale)} | {t('shipments.fin.footerTotalCost')}: {formatMoney(secCost, numberLocale)}</strong>
+                          {renderStackedTotals(secTotals)}
                         </div>
                       </div>
                     )
                   })}
 
                   <div className="shipment-fin-table-wrap mb-3">
-                    <div className="fw-700 mb-2">{t('shipments.fin.handlingFee', { defaultValue: 'Handling Fees (رسوم الخدمة والمتابعة)' })}</div>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
-                      <input type="number" min="1" className="shipment-fin-input shipment-fin-input--num" value={handlingRow.number_of_containers} onChange={(e) => setHandlingRow((h) => ({ ...h, number_of_containers: e.target.value }))} />
-                      <input type="number" min="0" step="0.01" className="shipment-fin-input shipment-fin-input--num" value={handlingRow.handling_fee_per_container} onChange={(e) => setHandlingRow((h) => ({ ...h, handling_fee_per_container: e.target.value }))} />
-                      <select className="shipment-fin-select" value={handlingRow.currency || invCurrency} onChange={(e) => setHandlingRow((h) => ({ ...h, currency: e.target.value }))}>
-                        {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                      </select>
-                      <div className="shipment-fin-num fw-700">{formatMoney(handlingTotal, numberLocale)}</div>
+                    <div className="fw-700 mb-2">{t('shipments.fin.sellingSection.handling', { defaultValue: 'Handling Fees / رسوم الخدمة والمتابعة' })}</div>
+                    <table className="shipment-fin-sell-table shipment-fin-sell-table--wide">
+                      <thead>
+                        <tr>
+                          <th>{t('shipments.fin.colItem', { defaultValue: 'Item' })}</th>
+                          <th>{t('shipments.expColAmount', { defaultValue: 'Amount' })}</th>
+                          <th>{t('shipments.fin.colCurrency')}</th>
+                          <th>{t('shipments.actions')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {handlingRow.include ? (
+                          <tr>
+                            <td>{t('shipments.fin.sellingSection.handlingLine', { defaultValue: 'Handling Fees (containers × fee)' })}</td>
+                            <td className="shipment-fin-num">
+                              <div className="shipment-fin-handling-amount-grid">
+                                <input type="number" min="1" className="shipment-fin-input shipment-fin-input--num" value={handlingRow.number_of_containers} onChange={(e) => setHandlingRow((h) => ({ ...h, number_of_containers: e.target.value }))} />
+                                <input type="number" min="0" step="0.01" className="shipment-fin-input shipment-fin-input--num" value={handlingRow.handling_fee_per_container} onChange={(e) => setHandlingRow((h) => ({ ...h, handling_fee_per_container: e.target.value }))} />
+                              </div>
+                              <div className="shipment-fin-handling-total">{formatMoney(handlingTotal, numberLocale)}</div>
+                            </td>
+                            <td>
+                              <select className="shipment-fin-select" value={handlingRow.currency || invCurrency} onChange={(e) => setHandlingRow((h) => ({ ...h, currency: e.target.value }))}>
+                                {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                              </select>
+                            </td>
+                            <td className="shipment-fin-actions">
+                              <button type="button" className="shipment-fin-btn shipment-fin-btn--danger shipment-fin-btn--sm" onClick={() => setHandlingRow((h) => ({ ...h, include: false }))}>
+                                {t('shipments.delete')}
+                              </button>
+                            </td>
+                          </tr>
+                        ) : (
+                          <tr>
+                            <td colSpan={4} className="text-center">
+                              <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm" onClick={() => setHandlingRow((h) => ({ ...h, include: true }))}>
+                                + {t('shipments.fin.addRow')}
+                              </button>
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                    <div className="shipment-fin-draft-sec-total">
+                      <span>{t('shipments.fin.subtotal', { defaultValue: 'Subtotal' })}</span>
+                      <strong>{handlingRow.include ? `${(handlingRow.currency || 'USD').toUpperCase()} ${formatMoney(handlingTotal, numberLocale)}` : '—'}</strong>
                     </div>
-                  </div>
-
-                  <div className="shipment-fin-draft-grand-total">
-                    <div className="shipment-fin-draft-total-row"><span>{t('shipments.fields.selling_price_total')}</span><strong>{formatMoney(sellingTotals.sell, numberLocale)}</strong></div>
-                    <div className="shipment-fin-draft-total-row"><span>{t('shipments.fin.footerTotalCost')}</span><strong>{formatMoney(sellingTotals.cost, numberLocale)}</strong></div>
-                    <div className="shipment-fin-draft-total-row shipment-fin-draft-total-row--final"><span>{t('shipments.fin.profitLabel', { defaultValue: 'Profit (الربح)' })}</span><strong>{formatMoney(sellingTotals.profit, numberLocale)}</strong></div>
                   </div>
                   {canManageFinancial ? (
                     <div className="shipment-fin-pricing-actions mt-3">
@@ -2320,11 +2457,20 @@ export default function ShipmentFinancialsModal({
                       <button
                         type="button"
                         className="client-detail-modal__btn client-detail-modal__btn--primary"
-                        disabled={notifySending}
-                        onClick={handleNotifySales}
+                        disabled={notifySending || pricingSaving}
+                        onClick={handleSaveSalesInvoice}
                       >
                         {notifySending ? t('shipments.saving') : t('shipments.fin.saveSalesInvoice', { defaultValue: 'Save Sales Invoice' })}
                       </button>
+                      {clientInvoice?.id ? (
+                        <button
+                          type="button"
+                          className="client-detail-modal__btn client-detail-modal__btn--secondary"
+                          onClick={handleDownloadInvoicePdf}
+                        >
+                          {t('shipments.fin.downloadSalesInvoicePdf', { defaultValue: 'Download as PDF' })}
+                        </button>
+                      ) : null}
                     </div>
                   ) : null}
                 </>
@@ -2440,7 +2586,7 @@ export default function ShipmentFinancialsModal({
                                 {bucketRows.filter(e => e.has_receipt).map(ex => (
                                   <tr key={ex.id}>
                                     <td className="fs-xs">{ex.expense_date || '—'}</td>
-                                    <td className="fw-500">{ex.description?.trim() || t('shipments.fin.unnamedReceipt')}</td>
+                                    <td className="fw-500">{ex.title?.trim() || ex.description?.trim() || t('shipments.fin.unnamedReceipt')}</td>
                                     <td className="fs-xs">{ex.vendor?.name || '—'}</td>
                                     <td className="shipment-fin-num no-wrap">
                                       {formatMoney(Number(ex.amount) || 0, numberLocale)} <span className="fs-xxs">{ex.currency_code}</span>

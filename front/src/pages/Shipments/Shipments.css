@@ -1089,6 +1089,7 @@
 .shipment-fin-table-wrap {
   overflow-x: auto;
   margin-top: 0.5rem;
+  padding: 1rem;
   border-radius: 0.7rem;
   border: 1px solid color-mix(in srgb, var(--form-divider, #e5e7eb) 88%, transparent);
   background: var(--form-bg, #fff);
@@ -2103,12 +2104,36 @@
 .shipment-fin-draft-sec-total {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  gap: 1rem;
   border-top: 2px solid #e8790a;
   background: #fdf0e0;
   padding: 0.55rem 0.75rem;
   border-radius: 0.5rem;
   font-size: 0.78rem;
+}
+
+.shipment-fin-stacked-totals {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.22rem;
+}
+
+.shipment-fin-stacked-totals__row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.shipment-fin-handling-amount-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.shipment-fin-handling-total {
+  margin-top: 0.35rem;
+  font-weight: 700;
 }
 
 .shipment-fin-draft-grand-total {

@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\AdminAttendanceController;
 use App\Http\Controllers\Api\V1\AdminExcuseController;
 use App\Http\Controllers\Api\V1\AdminNotificationController;
 use App\Http\Controllers\Api\V1\AttendanceController;
+use App\Http\Controllers\Api\V1\BankAccountController;
 use App\Http\Controllers\Api\V1\ClientAttachmentController;
 use App\Http\Controllers\Api\V1\ClientContactController;
 use App\Http\Controllers\Api\V1\ClientController;
@@ -36,6 +37,7 @@ use App\Http\Controllers\Api\V1\ItemController;
 use App\Http\Controllers\Api\V1\LeadSourceController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\NotifyPartyModeController;
+use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\PdfLayoutController;
 use App\Http\Controllers\Api\V1\PortController;
 use App\Http\Controllers\Api\V1\PreferredCommMethodController;
@@ -477,13 +479,26 @@ Route::prefix('v1')->group(function () {
         Route::get('accounting/summary', [AccountingController::class, 'summary']);
         Route::get('accounting/clients', [AccountingController::class, 'clientAccounts']);
         Route::get('accounting/partners', [AccountingController::class, 'partnerAccounts']);
+        Route::get('accounting/partners-ledger', [AccountingController::class, 'partnerLedger']);
+        Route::get('accounting/partners-ledger/{vendor}', [AccountingController::class, 'partnerLedgerDetail']);
         Route::get('accounting/clients/export', [AccountingController::class, 'exportClients']);
         Route::get('accounting/partners/export', [AccountingController::class, 'exportPartners']);
+
+        // Bank accounts settings
+        Route::get('bank-accounts', [BankAccountController::class, 'index']);
+        Route::post('bank-accounts', [BankAccountController::class, 'store']);
+        Route::put('bank-accounts/{bankAccount}', [BankAccountController::class, 'update']);
+        Route::delete('bank-accounts/{bankAccount}', [BankAccountController::class, 'destroy']);
+
+        // Record payment
+        Route::get('payments', [PaymentController::class, 'index']);
+        Route::post('payments', [PaymentController::class, 'store']);
 
         // Invoices
         Route::get('invoices', [InvoiceController::class, 'index']);
         Route::get('invoices/summary', [InvoiceController::class, 'summary']);
         Route::get('invoices/{invoice}', [InvoiceController::class, 'show']);
+        Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'pdf']);
         Route::post('invoices', [InvoiceController::class, 'store']);
         Route::put('invoices/{invoice}', [InvoiceController::class, 'update']);
         Route::post('invoices/{invoice}/issue', [InvoiceController::class, 'issue']);

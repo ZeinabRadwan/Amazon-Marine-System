@@ -12,9 +12,10 @@ class PaymentController extends Controller
 {
     public function index(Request $request)
     {
-        abort_unless($request->user()?->can('financial.view'), 403);
+        $user = $request->user();
+        abort_unless($user && ($user->can('financial.view') || $user->can('accounting.view')), 403);
 
-        $query = Payment::query()->with(['invoice', 'vendorBill', 'client', 'vendor', 'createdBy']);
+        $query = Payment::query()->with(['invoice', 'vendorBill', 'client', 'vendor', 'shipment', 'sourceAccount', 'targetAccount', 'createdBy']);
 
         if ($type = $request->query('type')) {
             $query->where('type', $type);
@@ -45,7 +46,8 @@ class PaymentController extends Controller
 
     public function store(Request $request)
     {
-        abort_unless($request->user()?->can('financial.manage'), 403);
+        $user = $request->user();
+        abort_unless($user && ($user->can('financial.manage') || $user->can('accounting.manage')), 403);
 
         $validated = $request->validate([
             'type' => ['required', 'string', 'in:client_receipt,vendor_payment'],
@@ -53,10 +55,17 @@ class PaymentController extends Controller
             'vendor_bill_id' => ['nullable', 'integer', 'exists:vendor_bills,id'],
             'client_id' => ['nullable', 'integer', 'exists:clients,id'],
             'vendor_id' => ['nullable', 'integer', 'exists:vendors,id'],
+            'shipment_id' => ['nullable', 'integer', 'exists:shipments,id'],
             'amount' => ['required', 'numeric', 'min:0.01'],
             'currency_code' => ['required', 'string', 'size:3'],
-            'method' => ['nullable', 'string', 'max:20'],
+            'method' => ['nullable', 'string', 'max:40'],
+            'source_account_id' => ['nullable', 'integer', 'exists:bank_accounts,id'],
+            'target_account_id' => ['nullable', 'integer', 'exists:bank_accounts,id'],
+            'target_currency_code' => ['nullable', 'string', 'size:3'],
+            'exchange_rate' => ['nullable', 'numeric', 'gt:0'],
+            'converted_amount' => ['nullable', 'numeric', 'min:0'],
             'reference' => ['nullable', 'string', 'max:255'],
+            'notes' => ['nullable', 'string'],
             'paid_at' => ['nullable', 'date'],
         ]);
 
@@ -86,7 +95,7 @@ class PaymentController extends Controller
         ]);
 
         return response()->json([
-            'data' => $payment->fresh(['invoice', 'vendorBill', 'client', 'vendor']),
+            'data' => $payment->fresh(['invoice', 'vendorBill', 'client', 'vendor', 'shipment', 'sourceAccount', 'targetAccount']),
         ], 201);
     }
 }
