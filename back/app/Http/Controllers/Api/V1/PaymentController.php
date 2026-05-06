@@ -60,6 +60,7 @@ class PaymentController extends Controller
             'amount' => ['required', 'numeric', 'min:0.01'],
             'currency_code' => ['required', 'string', 'size:3'],
             'method' => ['nullable', 'string', 'max:40'],
+            'bank_account_id' => ['nullable', 'integer', 'exists:bank_accounts,id'],
             'source_account_id' => ['nullable', 'integer', 'exists:bank_accounts,id'],
             'target_account_id' => ['nullable', 'integer', 'exists:bank_accounts,id'],
             'target_currency_code' => ['nullable', 'string', 'size:3'],
@@ -85,6 +86,9 @@ class PaymentController extends Controller
                 $validated['vendor_id'] = $bill->vendor_id;
                 $validated['shipment_id'] = $validated['shipment_id'] ?? $bill->shipment_id;
             }
+        }
+        if (!isset($validated['source_account_id']) && !empty($validated['bank_account_id'])) {
+            $validated['source_account_id'] = $validated['bank_account_id'];
         }
         $payment->fill($validated);
         if ($request->hasFile('proof_file')) {

@@ -332,7 +332,7 @@ class InvoiceController extends Controller
 
     private function invoicePayload(Invoice $invoice): array
     {
-        $invoice->loadMissing(['client', 'shipment', 'items', 'payments']);
+        $invoice->loadMissing(['client', 'shipment', 'items', 'payments.sourceAccount']);
         $attachmentsBySection = $this->sectionAttachmentsForInvoice($invoice);
         $sectionKeys = array_values(array_unique(array_merge(
             self::FIXED_SECTIONS,
@@ -431,6 +431,27 @@ class InvoiceController extends Controller
 
         return [
             ...$invoice->toArray(),
+            'payments' => $invoice->payments
+                ->sortBy(fn ($p) => $p->paid_at ?? $p->created_at)
+                ->values()
+                ->map(function ($p) use ($invoice) {
+                    return [
+                        'id' => $p->id,
+                        'amount' => (float) $p->amount,
+                        'currency_code' => strtoupper((string) ($p->currency_code ?: 'USD')),
+                        'method' => $p->method,
+                        'reference' => $p->reference,
+                        'paid_at' => $p->paid_at?->toDateString(),
+                        'created_at' => $p->created_at?->toDateTimeString(),
+                        'invoice_id' => $p->invoice_id,
+                        'invoice_reference' => $invoice->invoice_number ?: ('INV-'.$invoice->id),
+                        'shipment_id' => $p->shipment_id ?? $invoice->shipment_id,
+                        'shipment_reference' => $invoice->shipment?->bl_number,
+                        'source_account_id' => $p->source_account_id,
+                        'bank_account_name' => $p->sourceAccount?->account_name,
+                        'bank_name' => $p->sourceAccount?->bank_name,
+                    ];
+                })->all(),
             'sections' => $sections,
             'fixed_sections' => self::FIXED_SECTIONS,
             'totals_by_currency' => collect($invoice->items)
@@ -828,7 +849,9 @@ class InvoiceController extends Controller
             'reference' => ['nullable', 'string'],
             'notes' => ['nullable', 'string'],
             'currency_code' => ['nullable', 'string', 'size:3'],
+            'bank_account_id' => ['nullable', 'integer', 'exists:bank_accounts,id'],
             'source_account_id' => ['nullable', 'integer', 'exists:bank_accounts,id'],
+            'shipment_id' => ['nullable', 'integer', 'exists:shipments,id'],
             'target_account_id' => ['nullable', 'integer', 'exists:bank_accounts,id'],
             'target_currency_code' => ['nullable', 'string', 'size:3'],
             'exchange_rate' => ['nullable', 'numeric', 'gt:0'],
@@ -842,7 +865,8 @@ class InvoiceController extends Controller
                 'client_id' => $invoice->client_id,
                 'amount' => $validated['amount'],
                 'currency_code' => strtoupper((string) ($validated['currency_code'] ?? $invoice->currency_code)),
-                'source_account_id' => $validated['source_account_id'] ?? null,
+                'source_account_id' => $validated['source_account_id'] ?? $validated['bank_account_id'] ?? null,
+                'shipment_id' => $validated['shipment_id'] ?? $invoice->shipment_id,
                 'target_account_id' => $validated['target_account_id'] ?? null,
                 'target_currency_code' => $validated['target_currency_code'] ?? null,
                 'exchange_rate' => $validated['exchange_rate'] ?? null,

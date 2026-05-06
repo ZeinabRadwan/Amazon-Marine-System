@@ -1,0 +1,55 @@
+.invoice-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  max-width: 100%;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 0.75rem;
+  line-height: 1;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.invoice-status-badge__icon {
+  width: 0.85rem;
+  height: 0.85rem;
+  flex: 0 0 auto;
+}
+
+.invoice-status-badge__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.invoice-status-badge--paid {
+  background: #ecfdf3;
+  color: #027a48;
+  border-color: #a6f4c5;
+}
+
+.invoice-status-badge--partial {
+  background: #fff7e6;
+  color: #b54708;
+  border-color: #fdd9a0;
+}
+
+.invoice-status-badge--unpaid {
+  background: #fef3f2;
+  color: #b42318;
+  border-color: #fecdca;
+}
+
+.invoice-status-badge--draft {
+  background: #f5f5f5;
+  color: #475467;
+  border-color: #d0d5dd;
+}
+
+.invoice-status-badge--overdue {
+  background: #7f1d1d;
+  color: #fee2e2;
+  border-color: #991b1b;
+}
+

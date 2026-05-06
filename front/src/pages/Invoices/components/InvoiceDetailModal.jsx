@@ -14,6 +14,26 @@ function money(amount, currency) {
   }
 }
 
+function groupByCurrency(rows, amountKey = 'amount', currencyKey = 'currency_code', fallbackCurrency = 'USD') {
+  const out = {}
+  ;(rows || []).forEach((row) => {
+    const amount = Number(row?.[amountKey] ?? 0)
+    if (!Number.isFinite(amount) || amount === 0) return
+    const cur = String(row?.[currencyKey] || fallbackCurrency).toUpperCase()
+    out[cur] = (Number(out[cur]) || 0) + amount
+  })
+  return out
+}
+
+function renderCurrencyMap(map) {
+  const entries = Object.entries(map || {}).filter(([, value]) => Number(value) !== 0)
+  if (!entries.length) return '—'
+  return entries
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([currency, value]) => `${currency}: ${Number(value).toFixed(2)}`)
+    .join(' | ')
+}
+
 function sectionIdForItem(item) {
   const text = `${item?.description || ''}`.toLowerCase()
   if (/ship|line|ocean|freight|thc|b\/?l|telex|courier|dhl|container|of\b|بحري|ملاحي|شحن/.test(text)) return 'shipping'
@@ -58,7 +78,19 @@ export default function InvoiceDetailModal({ isOpen, invoiceId, onClose, onChang
     [i18n.language]
   )
 
-  const totalAmount = useMemo(() => (invoice ? (invoice.net_amount ?? invoice.total_amount ?? 0) : 0), [invoice])
+  const totalsByCurrency = useMemo(() => {
+    if (!invoice) return {}
+    return groupByCurrency(invoice.items || [], 'line_total', 'currency_code', invoice.currency_code || 'USD')
+  }, [invoice])
+  const paidByCurrency = useMemo(() => groupByCurrency(invoice?.payments || [], 'amount', 'currency_code', invoice?.currency_code || 'USD'), [invoice])
+  const remainingByCurrency = useMemo(() => {
+    const allKeys = new Set([...Object.keys(totalsByCurrency), ...Object.keys(paidByCurrency)])
+    const out = {}
+    allKeys.forEach((cur) => {
+      out[cur] = (Number(totalsByCurrency[cur]) || 0) - (Number(paidByCurrency[cur]) || 0)
+    })
+    return out
+  }, [totalsByCurrency, paidByCurrency])
 
   const sectionedItems = useMemo(() => {
     const defs = [
@@ -77,11 +109,50 @@ export default function InvoiceDetailModal({ isOpen, invoiceId, onClose, onChang
     return defs
       .map((d) => {
         const rows = map[d.id] || []
-        const subtotal = rows.reduce((acc, it) => acc + (Number(it.line_total) || (Number(it.quantity) || 0) * (Number(it.unit_price) || 0)), 0)
+        const subtotal = groupByCurrency(rows, 'line_total', 'currency_code', invoice?.currency_code || 'USD')
         return { ...d, rows, subtotal }
       })
       .filter((s) => s.rows.length > 0)
   }, [invoice])
+
+  const paymentsTimeline = useMemo(() => {
+    if (!invoice) return []
+    const rows = []
+    if (invoice.issue_date) {
+      rows.push({
+        id: `inv-created-${invoice.id}`,
+        date: invoice.issue_date,
+        title: t('invoices.timeline.invoiceCreated', 'Invoice Created'),
+        meta: invoice.invoice_number || `INV-${invoice.id}`,
+      })
+    }
+    ;(invoice.payments || []).forEach((p, idx) => {
+      rows.push({
+        id: p.id || `p-${idx}`,
+        date: p.paid_at || p.created_at,
+        title: t('invoices.timeline.paymentAdded', 'Payment Added'),
+        meta: `${p.method || '—'} • ${p.bank_name || p.bank_account_name || t('payments.bankAccountOptional', 'No bank account')}`,
+        amount: `${String(p.currency_code || 'USD').toUpperCase()} ${Number(p.amount || 0).toFixed(2)}`,
+      })
+    })
+    const paidSum = Object.values(paidByCurrency).reduce((acc, n) => acc + (Number(n) || 0), 0)
+    const totalSum = Object.values(totalsByCurrency).reduce((acc, n) => acc + (Number(n) || 0), 0)
+    if (paidSum > 0 && paidSum < totalSum) {
+      rows.push({
+        id: `inv-partial-${invoice.id}`,
+        date: invoice.updated_at || invoice.issue_date,
+        title: t('invoices.timeline.partialPayment', 'Partial Payment'),
+        meta: renderCurrencyMap(remainingByCurrency),
+      })
+    }
+    rows.push({
+      id: `inv-status-${invoice.id}`,
+      date: invoice.updated_at || invoice.issue_date,
+      title: t('invoices.timeline.statusChange', 'Status Change'),
+      meta: String(invoice.status || 'unpaid').toUpperCase(),
+    })
+    return rows.sort((a, b) => new Date(a.date || 0).getTime() - new Date(b.date || 0).getTime())
+  }, [invoice, paidByCurrency, remainingByCurrency, t, totalsByCurrency])
 
   const handleDownloadPdf = useCallback(async () => {
     const token = getStoredToken()
@@ -163,8 +234,8 @@ export default function InvoiceDetailModal({ isOpen, invoiceId, onClose, onChang
                         <tr key={it.id || `${section.id}-${idx}`} className="border-t border-gray-200 dark:border-gray-700">
                           <td className="p-3 text-left">{idx + 1}</td>
                           <td className="p-3 text-left font-semibold">{it.description}</td>
-                          <td className="p-3 text-right font-bold">{money(it.line_total, invoice.currency_code)}</td>
-                          <td className="p-3 text-left">{invoice.currency_code || '—'}</td>
+                          <td className="p-3 text-right font-bold">{money(it.line_total, it.currency_code || invoice.currency_code)}</td>
+                          <td className="p-3 text-left">{it.currency_code || invoice.currency_code || '—'}</td>
                           <td className="p-3 text-center text-gray-400">—</td>
                         </tr>
                       ))}
@@ -177,7 +248,7 @@ export default function InvoiceDetailModal({ isOpen, invoiceId, onClose, onChang
                 <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/20 p-4">
                   <div className="flex items-center justify-between">
                     <span className="font-bold">{t('invoices.totalAmount', 'Total Amount')}</span>
-                    <span className="text-lg font-extrabold">{money(totalAmount, invoice.currency_code)}</span>
+                    <span className="text-lg font-extrabold">{renderCurrencyMap(totalsByCurrency)}</span>
                   </div>
                 </div>
               )}
@@ -197,12 +268,39 @@ export default function InvoiceDetailModal({ isOpen, invoiceId, onClose, onChang
                   <div className="space-y-2">
                     {(invoice.payments || []).map((p) => (
                       <div key={p.id} className="flex items-center justify-between text-sm border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2">
-                        <div className="text-gray-600 dark:text-gray-300">{p.paid_at || p.created_at || '—'} • {p.method}</div>
+                        <div className="text-gray-600 dark:text-gray-300">
+                          {formatDate(p.paid_at || p.created_at)} • {p.method || '—'} • {p.bank_name || p.bank_account_name || t('payments.bankAccountOptional', 'No bank account')}
+                        </div>
                         <div className="font-bold">{money(p.amount, p.currency_code)}</div>
                       </div>
                     ))}
                   </div>
                 )}
+              </div>
+
+              <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-4 space-y-2">
+                <div className="text-sm font-bold">{t('invoices.timeline.title', 'Financial Timeline')}</div>
+                <div className="space-y-2">
+                  {paymentsTimeline.map((event) => (
+                    <div key={event.id} className="flex items-start justify-between text-sm border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2">
+                      <div>
+                        <div className="font-semibold">{event.title}</div>
+                        <div className="text-gray-500">{event.meta || '—'}</div>
+                      </div>
+                      <div className="text-right">
+                        <div>{formatDate(event.date)}</div>
+                        {event.amount ? <div className="font-semibold">{event.amount}</div> : null}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/20 p-4">
+                <div className="text-sm font-bold mb-2">{t('invoices.totalsByCurrency', 'Totals by Currency')}</div>
+                <div className="text-sm">{t('invoices.totalAmount', 'Total Amount')}: <strong>{renderCurrencyMap(totalsByCurrency)}</strong></div>
+                <div className="text-sm">{t('invoices.paidAmount', 'Paid Amount')}: <strong>{renderCurrencyMap(paidByCurrency)}</strong></div>
+                <div className="text-sm">{t('invoices.remainingAmount', 'Remaining Amount')}: <strong>{renderCurrencyMap(remainingByCurrency)}</strong></div>
               </div>
             </>
           )}

@@ -8,6 +8,7 @@ import { StatsCard } from '../../components/StatsCard'
 import { Container } from '../../components/Container'
 import Pagination from '../../components/Pagination'
 import { downloadInvoicePdf } from '../../api/invoices'
+import InvoiceStatusBadge from '../../components/InvoiceStatusBadge'
 import { getStoredToken } from '../Login'
 import {
   getCustomerStatements,
@@ -51,20 +52,6 @@ function normalizeCurrencyMapInput(input) {
   }
   if (typeof input === 'object') return input
   return {}
-}
-
-function getStatusLabel(status, t) {
-  const normalized = String(status || '').toLowerCase()
-  if (normalized === 'paid') return t('invoices.status.paid')
-  if (normalized === 'partial' || normalized === 'partially_paid') return t('invoices.status.partial')
-  return t('invoices.status.unpaid')
-}
-
-function getStatusClass(status) {
-  const normalized = String(status || '').toLowerCase()
-  if (normalized === 'paid') return 'accountings-status-badge accountings-status-badge--active'
-  if (normalized === 'partial' || normalized === 'partially_paid') return 'accountings-status-badge accountings-status-badge--pending'
-  return 'accountings-status-badge accountings-status-badge--inactive'
 }
 
 export default function AccountsOverview() {
@@ -517,7 +504,7 @@ export default function AccountsOverview() {
                         <td>{mapToInline(inv.paid_amount)}</td>
                         <td>{mapToInline(inv.remaining_amount)}</td>
                         <td>
-                          <span className={getStatusClass(inv.status)}>{getStatusLabel(inv.status, t)}</span>
+                          <InvoiceStatusBadge status={inv.status} t={t} />
                         </td>
                         <td>
                           <button
@@ -598,7 +585,7 @@ export default function AccountsOverview() {
                         <td>{mapToInline(row.currency_breakdown)}</td>
                         <td>{mapToInline(row.paid_amount)}</td>
                         <td>
-                          <span className={getStatusClass(row.status)}>{getStatusLabel(row.status, t)}</span>
+                          <InvoiceStatusBadge status={row.status} t={t} />
                         </td>
                         <td>
                           <button

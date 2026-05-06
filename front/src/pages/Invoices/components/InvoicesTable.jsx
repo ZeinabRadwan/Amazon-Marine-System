@@ -2,24 +2,12 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Search, Eye, FileSpreadsheet, RotateCcw, ArrowUpDown, ChevronDown, ChevronUp } from 'lucide-react'
 import { Table, IconActionButton } from '../../../components/Table'
+import InvoiceStatusBadge from '../../../components/InvoiceStatusBadge'
 import Pagination from '../../../components/Pagination'
 import Alert from '../../../components/Alert'
 import { getStoredToken } from '../../Login'
 import { listInvoices } from '../../../api/invoices'
 import InvoiceDetailModal from './InvoiceDetailModal'
-
-/** Map invoice status to Clients-style badge variant (Clients.css) */
-function invoiceStatusVariant(status) {
-  const s = String(status || '').toLowerCase()
-  if (s === 'paid') return 'active'
-  if (s === 'partial') return 'pending'
-  if (s === 'cancelled') return 'inactive'
-  if (s === 'issued') return 'pending'
-  if (s === 'draft') return 'lead'
-  if (s === 'unpaid') return 'default'
-  if (s === 'overdue') return 'inactive'
-  return 'default'
-}
 
 function statusLabel(status, t) {
   const s = String(status || '').toLowerCase()
@@ -196,15 +184,7 @@ export default function InvoicesTable({
     {
       key: 'status',
       label: t('invoices.table.status', 'Status'),
-      render: (v) => {
-        const variant = invoiceStatusVariant(v)
-        const lbl = statusLabel(v, t)
-        return (
-          <span className={`clients-status-badge clients-status-badge--${variant}`} title={lbl}>
-            {lbl}
-          </span>
-        )
-      },
+      render: (v) => <InvoiceStatusBadge status={v} t={t} />,
       sortable: false,
     },
     {

@@ -1649,6 +1649,16 @@ export default function ShipmentFinancialsModal({
     [numberLocale]
   )
 
+  const formatHumanDate = useCallback(
+    (value) => {
+      if (!value) return '—'
+      const d = new Date(value)
+      if (Number.isNaN(d.getTime())) return String(value)
+      return new Intl.DateTimeFormat(i18n.language || 'en', { day: '2-digit', month: 'short', year: 'numeric' }).format(d)
+    },
+    [i18n.language]
+  )
+
   const renderStackedTotals = useCallback((totals) => {
     return (
       <div className="shipment-fin-stacked-totals">
@@ -1734,6 +1744,48 @@ export default function ShipmentFinancialsModal({
     return { totalCost, totalSell, profit, paid, remaining, status }
   }, [sellingVisibleRows, handlingRow.include, handlingRow.currency, handlingTotal, clientInvoice])
 
+  const financialTimelineRows = useMemo(() => {
+    const rows = []
+    if (clientInvoice?.issue_date) {
+      rows.push({
+        id: `invoice-created-${clientInvoice.id}`,
+        type: 'invoice_created',
+        date: clientInvoice.issue_date,
+        title: t('invoices.timeline.invoiceCreated', 'Invoice Created'),
+        details: clientInvoice.invoice_number || `INV-${clientInvoice.id}`,
+      })
+    }
+    ;(clientInvoice?.payments || []).forEach((p, idx) => {
+      rows.push({
+        id: p.id || `payment-${idx}`,
+        type: 'payment_added',
+        date: p.paid_at || p.created_at,
+        title: t('invoices.timeline.paymentAdded', 'Payment Added'),
+        details: `${p.method || '—'} • ${p.bank_name || p.bank_account_name || t('payments.bankAccountOptional', 'No bank account')}`,
+        amount: `${String(p.currency_code || 'USD').toUpperCase()} ${formatMoney(Number(p.amount) || 0, numberLocale)}`,
+      })
+    })
+    if (invoiceFinancialOverview.status === 'partial') {
+      rows.push({
+        id: `partial-${clientInvoice?.id || shipment?.id}`,
+        type: 'partial',
+        date: clientInvoice?.updated_at || clientInvoice?.issue_date,
+        title: t('invoices.timeline.partialPayment', 'Partial Payment'),
+        details: formatCurrencyBreakdown(invoiceFinancialOverview.remaining),
+      })
+    }
+    if (clientInvoice?.status) {
+      rows.push({
+        id: `status-${clientInvoice.id}`,
+        type: 'status_change',
+        date: clientInvoice.updated_at || clientInvoice.issue_date,
+        title: t('invoices.timeline.statusChange', 'Status Change'),
+        details: t(`shipments.fin.invoiceStatusValue.${clientInvoice.status}`, { defaultValue: String(clientInvoice.status).toUpperCase() }),
+      })
+    }
+    return rows.sort((a, b) => new Date(a.date || 0).getTime() - new Date(b.date || 0).getTime())
+  }, [clientInvoice, formatCurrencyBreakdown, invoiceFinancialOverview.remaining, invoiceFinancialOverview.status, numberLocale, shipment?.id, t])
+
   const submitInvoicePayment = useCallback(async () => {
     if (!token || !clientInvoice?.id) return
     const amount = Number(paymentForm.amount)
@@ -1745,7 +1797,10 @@ export default function ShipmentFinancialsModal({
     try {
       await recordInvoicePayment(token, clientInvoice.id, {
         amount,
+        currency_code: paymentForm.currency,
         method: paymentForm.method,
+        source_account_id: paymentForm.bank_account_id ? Number(paymentForm.bank_account_id) : null,
+        shipment_id: shipment?.id ?? null,
         reference: paymentForm.reference || null,
         paid_at: paymentForm.paid_at,
       })
@@ -2916,6 +2971,28 @@ export default function ShipmentFinancialsModal({
 
           {tab === 'summary' && (
             <div key="summary" className="shipment-fin-panel shipment-fin-panel--enter">
+              <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-4 mb-4">
+                <div className="font-semibold mb-2">{t('shipments.fin.linkedInvoices', { defaultValue: 'Linked Invoices' })}</div>
+                {clientInvoicesList.length === 0 ? (
+                  <div className="text-sm text-gray-500">{t('shipments.fin.noLinkedInvoices', { defaultValue: 'No linked invoices yet.' })}</div>
+                ) : (
+                  <div className="space-y-2">
+                    {clientInvoicesList.map((inv) => (
+                      <div key={inv.id} className="flex items-center justify-between text-sm border rounded-lg px-3 py-2">
+                        <div>
+                          <div className="font-medium">{inv.invoice_number || `INV-${inv.id}`}</div>
+                          <div className="text-gray-500">{formatHumanDate(inv.issue_date)}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-semibold">{(inv.currency_code || 'USD').toUpperCase()} {formatMoney(Number(inv.amount || 0), numberLocale)}</div>
+                          <div className="text-xs text-gray-500">{t(`shipments.fin.invoiceStatusValue.${inv.status || 'unpaid'}`, { defaultValue: inv.status || 'unpaid' })}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <div className="shipment-fin-summary-grid">
                 <div className="shipment-fin-summary-card">
                   <div className="shipment-fin-summary-card__label">{t('shipments.fin.summary.totalCost', { defaultValue: 'Total Cost' })}</div>
@@ -2958,6 +3035,47 @@ export default function ShipmentFinancialsModal({
                     {t(`shipments.fin.invoiceStatusValue.${invoiceFinancialOverview.status}`, { defaultValue: invoiceFinancialOverview.status })}
                   </div>
                 </div>
+              </div>
+
+              <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-4 mt-6">
+                <div className="font-semibold mb-2">{t('invoices.payments', 'Payments')}</div>
+                {(clientInvoice?.payments || []).length === 0 ? (
+                  <div className="text-sm text-gray-500">{t('invoices.noPayments', 'No payments yet')}</div>
+                ) : (
+                  <div className="space-y-2">
+                    {(clientInvoice?.payments || []).map((p) => (
+                      <div key={p.id} className="flex items-center justify-between text-sm border rounded-lg px-3 py-2">
+                        <div>
+                          <div className="font-medium">{p.method || '—'} • {p.bank_name || p.bank_account_name || t('payments.bankAccountOptional', 'No bank account')}</div>
+                          <div className="text-gray-500">{formatHumanDate(p.paid_at || p.created_at)} • {p.invoice_reference || clientInvoice?.invoice_number || `INV-${clientInvoice?.id}`}{p.shipment_reference ? ` • ${p.shipment_reference}` : ''}</div>
+                        </div>
+                        <div className="font-semibold">{String(p.currency_code || 'USD').toUpperCase()} {formatMoney(Number(p.amount) || 0, numberLocale)}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-4 mt-6">
+                <div className="font-semibold mb-2">{t('invoices.timeline.title', 'Financial Timeline')}</div>
+                {financialTimelineRows.length === 0 ? (
+                  <div className="text-sm text-gray-500">{t('shipments.fin.auditEmpty')}</div>
+                ) : (
+                  <div className="space-y-2">
+                    {financialTimelineRows.map((entry) => (
+                      <div key={entry.id} className="flex items-start justify-between border rounded-lg px-3 py-2 text-sm">
+                        <div>
+                          <div className="font-medium">{entry.title}</div>
+                          <div className="text-gray-500">{entry.details || '—'}</div>
+                        </div>
+                        <div className="text-right">
+                          <div>{formatHumanDate(entry.date)}</div>
+                          {entry.amount ? <div className="font-semibold">{entry.amount}</div> : null}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="mt-6 flex items-center gap-3">
