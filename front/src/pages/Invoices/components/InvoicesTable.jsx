@@ -57,7 +57,7 @@ export default function InvoicesTable({
   const [sort, setSort] = useState('date')
   const [showSort, setShowSort] = useState(false)
   const [page, setPage] = useState(1)
-  const [perPage, setPerPage] = useState(50)
+  const [perPage, setPerPage] = useState(10)
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)

@@ -171,8 +171,15 @@ export async function recordInvoicePayment(token, invoiceId, body) {
   const payload = {
     amount: body.amount,
     currency_id: body.currency_id,
+    currency_code: body.currency_code ?? null,
     method: body.method,
     reference: body.reference ?? null,
+    notes: body.notes ?? null,
+    source_account_id: body.source_account_id ?? null,
+    target_account_id: body.target_account_id ?? null,
+    target_currency_code: body.target_currency_code ?? null,
+    exchange_rate: body.exchange_rate ?? null,
+    converted_amount: body.converted_amount ?? null,
     paid_at: body.paid_at ?? null,
   }
 

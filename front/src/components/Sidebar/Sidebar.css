@@ -12,10 +12,14 @@
   --sidebar-width-collapsed: 72px;
   --sidebar-transition: width 0.25s ease, min-width 0.25s ease;
 
-  position: relative;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  z-index: 40;
+  width: var(--sidebar-width-expanded);
   min-width: var(--sidebar-width-expanded);
-  height: 100vh;
-  min-height: 100vh;
+  height: 100dvh;
+  min-height: 100dvh;
   background: var(--sidebar-bg);
   color: var(--sidebar-text);
   border-radius: var(--sidebar-radius) 0 0 var(--sidebar-radius);
@@ -25,6 +29,19 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+.sidebar--ltr {
+  left: 0;
+}
+
+.sidebar--rtl {
+  right: 0;
+}
+
+.sidebar--expanded {
+  width: var(--sidebar-width-expanded);
+  min-width: var(--sidebar-width-expanded);
 }
 
 .sidebar--collapsed {
@@ -577,6 +594,7 @@
     top: 0;
     z-index: 1000;
     height: 100vh;
+    min-height: 100vh;
     transform: translateX(0);
     transition: transform 0.25s ease, width 0.25s ease;
   }

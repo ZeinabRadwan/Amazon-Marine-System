@@ -98,7 +98,7 @@ class InvoiceController extends Controller
             $query->orderByDesc('issue_date');
         }
 
-        $perPage = $request->integer('per_page', 20);
+        $perPage = $request->integer('per_page', 10);
         $paginator = $query->paginate($perPage);
 
         $rows = $paginator->getCollection()->map(static function (Invoice $invoice): array {
@@ -826,6 +826,13 @@ class InvoiceController extends Controller
             'amount' => ['required', 'numeric', 'min:0.01'],
             'method' => ['required', 'string'],
             'reference' => ['nullable', 'string'],
+            'notes' => ['nullable', 'string'],
+            'currency_code' => ['nullable', 'string', 'size:3'],
+            'source_account_id' => ['nullable', 'integer', 'exists:bank_accounts,id'],
+            'target_account_id' => ['nullable', 'integer', 'exists:bank_accounts,id'],
+            'target_currency_code' => ['nullable', 'string', 'size:3'],
+            'exchange_rate' => ['nullable', 'numeric', 'gt:0'],
+            'converted_amount' => ['nullable', 'numeric', 'min:0'],
             'paid_at' => ['required', 'date'],
         ]);
 
@@ -834,9 +841,15 @@ class InvoiceController extends Controller
                 'type' => 'client_receipt',
                 'client_id' => $invoice->client_id,
                 'amount' => $validated['amount'],
-                'currency_code' => $invoice->currency_code,
+                'currency_code' => strtoupper((string) ($validated['currency_code'] ?? $invoice->currency_code)),
+                'source_account_id' => $validated['source_account_id'] ?? null,
+                'target_account_id' => $validated['target_account_id'] ?? null,
+                'target_currency_code' => $validated['target_currency_code'] ?? null,
+                'exchange_rate' => $validated['exchange_rate'] ?? null,
+                'converted_amount' => $validated['converted_amount'] ?? null,
                 'method' => $validated['method'],
                 'reference' => $validated['reference'],
+                'notes' => $validated['notes'] ?? null,
                 'paid_at' => $validated['paid_at'],
                 'status' => 'posted',
                 'created_by_id' => $user->id,

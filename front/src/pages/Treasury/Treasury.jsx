@@ -12,6 +12,7 @@ import {
   getTreasuryExpenses,
   createTreasuryExpense,
 } from '../../api/treasury'
+import { listBankAccounts } from '../../api/accountings'
 import { listExpenseCategories } from '../../api/expenses'
 import LoaderDots from '../../components/LoaderDots'
 import { Container } from '../../components/Container'
@@ -62,6 +63,8 @@ const SOURCE_GROUPS = [
     ],
   },
 ]
+
+const CASH_SOURCE_OPTIONS = SOURCE_GROUPS.flatMap((g) => g.options)
 
 function formatMonthLabel(ym, locale) {
   if (!ym || typeof ym !== 'string') return ym
@@ -169,6 +172,7 @@ export default function Treasury() {
   const [sortKey, setSortKey] = useState('date')
 
   const [entries, setEntries] = useState([])
+  const [bankAccounts, setBankAccounts] = useState([])
   const [entriesLoading, setEntriesLoading] = useState(false)
   const [entriesError, setEntriesError] = useState(null)
 
@@ -343,6 +347,13 @@ export default function Treasury() {
       .catch(() => setCategories([]))
   }, [token, canViewAccounting])
 
+  useEffect(() => {
+    if (!token || !canViewAccounting) return
+    listBankAccounts(token)
+      .then((res) => setBankAccounts(Array.isArray(res?.data) ? res.data : []))
+      .catch(() => setBankAccounts([]))
+  }, [token, canViewAccounting])
+
   const runningById = useMemo(() => computeRunningBalances(entries), [entries])
 
   const cashFlowChartData = useMemo(() => {
@@ -365,6 +376,18 @@ export default function Treasury() {
   }, [summaryBal, locale])
 
   const totals = summaryCf?.totals ?? summaryBal?.totals ?? {}
+  const bankBalances = summaryCf?.bank_balances ?? summaryBal?.bank_balances ?? []
+
+  const bankAccountOptions = useMemo(
+    () =>
+      bankAccounts
+        .filter((acc) => acc?.is_active !== false)
+        .map((acc) => ({
+          value: String(acc.id),
+          label: `${acc.bank_name} - ${acc.account_name || acc.account_number || acc.id}`,
+        })),
+    [bankAccounts]
+  )
 
   const exportEntriesCsv = () => {
     const headers = [
@@ -383,7 +406,13 @@ export default function Treasury() {
         [
           row.entry_date,
           row.description,
-          row.entry_type === 'in' ? t('treasury.typeIn') : t('treasury.typeOut'),
+          row.entry_type === 'in'
+            ? t('treasury.typeIn')
+            : row.entry_type === 'out'
+              ? t('treasury.typeOut')
+              : row.entry_type === 'transfer'
+                ? t('treasury.typeTransfer', 'Transfer')
+                : t('treasury.typeExchange', 'Exchange'),
           row.amount,
           row.currency_code,
           row.source,
@@ -441,12 +470,13 @@ export default function Treasury() {
 
   const openEditEntry = (row) => {
     const abs = Math.abs(Number(row.amount) || 0)
+    const sourceValue = row.account_id ? `bank:${row.account_id}` : (row.source || '')
     setTxModal({
       kind: 'entry',
       mode: 'edit',
       id: row.id,
-      entry_type: row.entry_type === 'out' ? 'out' : 'in',
-      source: row.source || '',
+      entry_type: row.entry_type || 'in',
+      source: sourceValue,
       amount: String(abs),
       currency_code: row.currency_code || 'USD',
       entry_date: row.entry_date || todayStr,
@@ -478,9 +508,15 @@ export default function Treasury() {
         window.alert(t('treasury.validationEntry'))
         return
       }
+      const isBank = String(txModal.source).startsWith('bank:')
+      const accountId = isBank ? Number(String(txModal.source).replace('bank:', '')) : null
+      const sourceLabel = isBank
+        ? (bankAccounts.find((b) => Number(b.id) === accountId)?.bank_name || 'bank')
+        : txModal.source
       const body = {
         entry_type: txModal.entry_type,
-        source: txModal.source,
+        source: sourceLabel,
+        account_id: accountId || undefined,
         amount,
         currency_code: txModal.currency_code,
         entry_date: txModal.entry_date,
@@ -519,8 +555,14 @@ export default function Treasury() {
         return
       }
       const body = {
-        from_account: txModal.from_account,
-        to_account: txModal.to_account,
+        from_account: String(txModal.from_account).startsWith('bank:')
+          ? (bankAccounts.find((b) => Number(b.id) === Number(String(txModal.from_account).replace('bank:', '')))?.bank_name || 'bank')
+          : txModal.from_account,
+        to_account: String(txModal.to_account).startsWith('bank:')
+          ? (bankAccounts.find((b) => Number(b.id) === Number(String(txModal.to_account).replace('bank:', '')))?.bank_name || 'bank')
+          : txModal.to_account,
+        from_account_id: String(txModal.from_account).startsWith('bank:') ? Number(String(txModal.from_account).replace('bank:', '')) : undefined,
+        to_account_id: String(txModal.to_account).startsWith('bank:') ? Number(String(txModal.to_account).replace('bank:', '')) : undefined,
         from_amount,
         from_currency: txModal.from_currency,
         to_amount: txModal.to_amount ? Number(txModal.to_amount) : undefined,
@@ -647,6 +689,33 @@ export default function Treasury() {
         />
       </div>
 
+      {bankBalances.length > 0 && (
+        <div className="accountings-table-section mb-4">
+          <div className="accountings-table-wrap">
+            <table className="accountings-table">
+              <thead>
+                <tr>
+                  <th>{t('settings.bankAccounts.table.bankName', 'Bank')}</th>
+                  <th>{t('settings.bankAccounts.table.accountNumber', 'Account')}</th>
+                  <th>{t('treasury.colCurrency')}</th>
+                  <th>{t('treasury.colBalance', 'Balance')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bankBalances.map((b, idx) => (
+                  <tr key={`${b.account_id}-${b.currency_code}-${idx}`}>
+                    <td>{b.bank_name}</td>
+                    <td>{b.account_number || b.account_name || b.account_id}</td>
+                    <td>{b.currency_code}</td>
+                    <td>{formatAmount(b.balance, b.currency_code, locale)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       <div className="clients-extra-panel clients-charts-panel mb-4">
         <div className="clients-charts-grid">
           <div className="clients-chart-wrap">
@@ -749,6 +818,8 @@ export default function Treasury() {
                 <option value="">{t('treasury.allTypes')}</option>
                 <option value="in">{t('treasury.typeIn')}</option>
                 <option value="out">{t('treasury.typeOut')}</option>
+                <option value="transfer">{t('treasury.typeTransfer', 'Transfer')}</option>
+                <option value="exchange">{t('treasury.typeExchange', 'Exchange')}</option>
               </select>
               <select
                 className="clients-input min-w-[140px]"
@@ -879,10 +950,20 @@ export default function Treasury() {
                       <td>
                         <span
                           className={`accountings-status-badge ${
-                            row.entry_type === 'in' ? 'accountings-status-badge--active' : 'accountings-status-badge--pending'
+                            row.entry_type === 'in'
+                              ? 'accountings-status-badge--active'
+                              : row.entry_type === 'out'
+                                ? 'accountings-status-badge--pending'
+                                : 'accountings-status-badge--default'
                           }`}
                         >
-                          {row.entry_type === 'in' ? t('treasury.typeIn') : t('treasury.typeOut')}
+                          {row.entry_type === 'in'
+                            ? t('treasury.typeIn')
+                            : row.entry_type === 'out'
+                              ? t('treasury.typeOut')
+                              : row.entry_type === 'transfer'
+                                ? t('treasury.typeTransfer', 'Transfer')
+                                : t('treasury.typeExchange', 'Exchange')}
                         </span>
                       </td>
                       <td className={Number(row.amount) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}>
@@ -1199,6 +1280,8 @@ export default function Treasury() {
                   >
                     <option value="in">{t('treasury.typeIn')}</option>
                     <option value="out">{t('treasury.typeOut')}</option>
+                    <option value="transfer">{t('treasury.typeTransfer', 'Transfer')}</option>
+                    <option value="exchange">{t('treasury.typeExchange', 'Exchange')}</option>
                   </select>
                 </div>
                 <div className="accountings-field">
@@ -1209,15 +1292,20 @@ export default function Treasury() {
                     onChange={(e) => setTxModal((m) => ({ ...m, source: e.target.value }))}
                   >
                     <option value="">{t('treasury.selectAccount')}</option>
-                    {SOURCE_GROUPS.map((g) => (
-                      <optgroup key={g.labelKey} label={t(g.labelKey)}>
-                        {g.options.map((o) => (
-                          <option key={o.value} value={o.value}>
-                            {t(o.labelKey)}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
+                    <optgroup label={t('treasury.sourceGroup.bank')}>
+                      {bankAccountOptions.map((o) => (
+                        <option key={`entry-${o.value}`} value={`bank:${o.value}`}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label={t('treasury.sourceGroup.cash')}>
+                      {CASH_SOURCE_OPTIONS.map((o) => (
+                        <option key={`entry-${o.value}`} value={o.value}>
+                          {t(o.labelKey)}
+                        </option>
+                      ))}
+                    </optgroup>
                   </select>
                 </div>
                 <div className="accountings-form-grid">
@@ -1311,15 +1399,20 @@ export default function Treasury() {
                     onChange={(e) => setTxModal((m) => ({ ...m, from_account: e.target.value }))}
                   >
                     <option value="">{t('treasury.selectAccount')}</option>
-                    {SOURCE_GROUPS.map((g) => (
-                      <optgroup key={`f-${g.labelKey}`} label={t(g.labelKey)}>
-                        {g.options.map((o) => (
-                          <option key={`f-${o.value}`} value={o.value}>
-                            {t(o.labelKey)}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
+                    <optgroup label={t('treasury.sourceGroup.bank')}>
+                      {bankAccountOptions.map((o) => (
+                        <option key={`f-${o.value}`} value={`bank:${o.value}`}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label={t('treasury.sourceGroup.cash')}>
+                      {CASH_SOURCE_OPTIONS.map((o) => (
+                        <option key={`f-${o.value}`} value={o.value}>
+                          {t(o.labelKey)}
+                        </option>
+                      ))}
+                    </optgroup>
                   </select>
                 </div>
                 <div className="accountings-field">
@@ -1330,15 +1423,20 @@ export default function Treasury() {
                     onChange={(e) => setTxModal((m) => ({ ...m, to_account: e.target.value }))}
                   >
                     <option value="">{t('treasury.selectAccount')}</option>
-                    {SOURCE_GROUPS.map((g) => (
-                      <optgroup key={`t-${g.labelKey}`} label={t(g.labelKey)}>
-                        {g.options.map((o) => (
-                          <option key={`t-${o.value}`} value={o.value}>
-                            {t(o.labelKey)}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
+                    <optgroup label={t('treasury.sourceGroup.bank')}>
+                      {bankAccountOptions.map((o) => (
+                        <option key={`t-${o.value}`} value={`bank:${o.value}`}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label={t('treasury.sourceGroup.cash')}>
+                      {CASH_SOURCE_OPTIONS.map((o) => (
+                        <option key={`t-${o.value}`} value={o.value}>
+                          {t(o.labelKey)}
+                        </option>
+                      ))}
+                    </optgroup>
                   </select>
                 </div>
                 <div className="accountings-form-grid">

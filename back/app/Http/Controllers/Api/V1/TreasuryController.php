@@ -13,6 +13,45 @@ use Illuminate\Support\Facades\DB;
 
 class TreasuryController extends Controller
 {
+    private function normalizeCurrency(string $code): string
+    {
+        $c = strtoupper(trim($code));
+        return $c !== '' ? $c : 'USD';
+    }
+
+    /**
+     * @param array<string, array<string, float>> $balances
+     */
+    private function applyEntryToBalances(array &$balances, TreasuryEntry $entry): void
+    {
+        $type = strtolower((string) $entry->entry_type);
+        $amount = (float) $entry->amount;
+        $currency = $this->normalizeCurrency((string) $entry->currency_code);
+        $targetCurrency = $this->normalizeCurrency((string) ($entry->target_currency_code ?: $currency));
+        $converted = (float) ($entry->converted_amount ?? 0);
+
+        if ($entry->account_id) {
+            $accountId = (string) $entry->account_id;
+            $balances[$accountId] ??= [];
+            $balances[$accountId][$currency] = (float) ($balances[$accountId][$currency] ?? 0);
+
+            if ($type === 'in') {
+                $balances[$accountId][$currency] += $amount;
+            } else {
+                // out / transfer / exchange reduce source side
+                $balances[$accountId][$currency] -= $amount;
+            }
+        }
+
+        if ($entry->counter_account_id) {
+            $counterId = (string) $entry->counter_account_id;
+            $balances[$counterId] ??= [];
+            $creditAmount = $converted > 0 ? $converted : $amount;
+            $creditCurrency = $targetCurrency ?: $currency;
+            $balances[$counterId][$creditCurrency] = (float) ($balances[$counterId][$creditCurrency] ?? 0) + $creditAmount;
+        }
+    }
+
     public function summary(Request $request): JsonResponse
     {
         abort_unless(
@@ -32,30 +71,29 @@ class TreasuryController extends Controller
 
         $balancesByAccount = [];
         foreach ($entries as $entry) {
-            $key = $entry->source.'|'.$entry->currency_code;
-            $amount = (float) $entry->amount;
-
-            if ($entry->entry_type === 'out') {
-                $amount = -$amount;
-            }
-
-            if (! isset($balancesByAccount[$key])) {
-                $balancesByAccount[$key] = 0.0;
-            }
-
-            $balancesByAccount[$key] += $amount;
+            $this->applyEntryToBalances($balancesByAccount, $entry);
         }
 
         $cashBalance = 0.0;
         $bankBalance = 0.0;
-
-        foreach ($balancesByAccount as $key => $value) {
-            [$account, $currency] = explode('|', $key);
-
-            if (str_starts_with($account, 'cash-')) {
-                $cashBalance += $value;
-            } else {
-                $bankBalance += $value;
+        $bankBalances = [];
+        $bankAccounts = BankAccount::query()->get()->keyBy('id');
+        foreach ($balancesByAccount as $accountId => $currencyMap) {
+            foreach ($currencyMap as $currency => $value) {
+                if (is_numeric($accountId) && isset($bankAccounts[(int) $accountId])) {
+                    $bankBalance += (float) $value;
+                    $bank = $bankAccounts[(int) $accountId];
+                    $bankBalances[] = [
+                        'account_id' => $bank->id,
+                        'bank_name' => $bank->bank_name,
+                        'account_name' => $bank->account_name,
+                        'account_number' => $bank->account_number,
+                        'currency_code' => $currency,
+                        'balance' => (float) $value,
+                    ];
+                } else {
+                    $cashBalance += (float) $value;
+                }
             }
         }
 
@@ -99,6 +137,7 @@ class TreasuryController extends Controller
                     'bank_balance' => $bankBalance,
                     'monthly_expenses' => (float) $monthlyExpenses,
                 ],
+                'bank_balances' => $bankBalances,
                 'cash_flow' => [
                     'labels' => $labels,
                     'inbound' => $inboundSeries,
@@ -158,7 +197,8 @@ class TreasuryController extends Controller
         $entries = $query->get();
 
         $rows = $entries->map(static function (TreasuryEntry $entry): array {
-            $sign = $entry->entry_type === 'out' ? -1 : 1;
+            $type = strtolower((string) $entry->entry_type);
+            $sign = in_array($type, ['out', 'transfer', 'exchange'], true) ? -1 : 1;
 
             return [
                 'id' => $entry->id,
@@ -168,6 +208,12 @@ class TreasuryController extends Controller
                 'amount' => $sign * (float) $entry->amount,
                 'currency_code' => $entry->currency_code,
                 'source' => $entry->source,
+                'account_id' => $entry->account_id,
+                'counter_account_id' => $entry->counter_account_id,
+                'payment_id' => $entry->payment_id,
+                'target_currency_code' => $entry->target_currency_code,
+                'exchange_rate' => $entry->exchange_rate,
+                'converted_amount' => $entry->converted_amount,
             ];
         });
 
@@ -237,10 +283,16 @@ class TreasuryController extends Controller
         );
 
         $validated = $request->validate([
-            'entry_type' => ['required', 'in:in,out'],
-            'source' => ['required', 'string', 'max:255'],
+            'entry_type' => ['required', 'in:in,out,transfer,exchange'],
+            'source' => ['nullable', 'string', 'max:255'],
+            'account_id' => ['nullable', 'integer', 'exists:bank_accounts,id'],
+            'counter_account_id' => ['nullable', 'integer', 'exists:bank_accounts,id'],
             'amount' => ['required', 'numeric', 'min:0'],
             'currency_code' => ['required', 'string', 'size:3'],
+            'target_currency_code' => ['nullable', 'string', 'size:3'],
+            'exchange_rate' => ['nullable', 'numeric', 'gt:0'],
+            'converted_amount' => ['nullable', 'numeric', 'min:0'],
+            'payment_id' => ['nullable', 'integer', 'exists:payments,id'],
             'description' => ['nullable', 'string', 'max:255'],
             'entry_date' => ['required', 'date'],
             'notes' => ['nullable', 'string'],
@@ -248,9 +300,15 @@ class TreasuryController extends Controller
 
         $entry = new TreasuryEntry();
         $entry->entry_type = $validated['entry_type'];
-        $entry->source = $validated['source'];
+        $entry->source = $validated['source'] ?? null;
+        $entry->account_id = $validated['account_id'] ?? null;
+        $entry->counter_account_id = $validated['counter_account_id'] ?? null;
         $entry->amount = $validated['amount'];
         $entry->currency_code = $validated['currency_code'];
+        $entry->target_currency_code = $validated['target_currency_code'] ?? null;
+        $entry->exchange_rate = $validated['exchange_rate'] ?? null;
+        $entry->converted_amount = $validated['converted_amount'] ?? null;
+        $entry->payment_id = $validated['payment_id'] ?? null;
         $entry->reference = $validated['description'] ?? null;
         $entry->notes = $validated['notes'] ?? null;
         $entry->entry_date = $validated['entry_date'];
@@ -271,10 +329,16 @@ class TreasuryController extends Controller
         );
 
         $validated = $request->validate([
-            'entry_type' => ['sometimes', 'in:in,out'],
-            'source' => ['sometimes', 'string', 'max:255'],
+            'entry_type' => ['sometimes', 'in:in,out,transfer,exchange'],
+            'source' => ['nullable', 'string', 'max:255'],
+            'account_id' => ['nullable', 'integer', 'exists:bank_accounts,id'],
+            'counter_account_id' => ['nullable', 'integer', 'exists:bank_accounts,id'],
             'amount' => ['sometimes', 'numeric', 'min:0'],
             'currency_code' => ['sometimes', 'string', 'size:3'],
+            'target_currency_code' => ['nullable', 'string', 'size:3'],
+            'exchange_rate' => ['nullable', 'numeric', 'gt:0'],
+            'converted_amount' => ['nullable', 'numeric', 'min:0'],
+            'payment_id' => ['nullable', 'integer', 'exists:payments,id'],
             'description' => ['nullable', 'string', 'max:255'],
             'entry_date' => ['sometimes', 'date'],
             'notes' => ['nullable', 'string'],
@@ -286,11 +350,29 @@ class TreasuryController extends Controller
         if (array_key_exists('source', $validated)) {
             $treasury_entry->source = $validated['source'];
         }
+        if (array_key_exists('account_id', $validated)) {
+            $treasury_entry->account_id = $validated['account_id'];
+        }
+        if (array_key_exists('counter_account_id', $validated)) {
+            $treasury_entry->counter_account_id = $validated['counter_account_id'];
+        }
         if (array_key_exists('amount', $validated)) {
             $treasury_entry->amount = $validated['amount'];
         }
         if (array_key_exists('currency_code', $validated)) {
             $treasury_entry->currency_code = $validated['currency_code'];
+        }
+        if (array_key_exists('target_currency_code', $validated)) {
+            $treasury_entry->target_currency_code = $validated['target_currency_code'];
+        }
+        if (array_key_exists('exchange_rate', $validated)) {
+            $treasury_entry->exchange_rate = $validated['exchange_rate'];
+        }
+        if (array_key_exists('converted_amount', $validated)) {
+            $treasury_entry->converted_amount = $validated['converted_amount'];
+        }
+        if (array_key_exists('payment_id', $validated)) {
+            $treasury_entry->payment_id = $validated['payment_id'];
         }
         if (array_key_exists('description', $validated)) {
             $treasury_entry->reference = $validated['description'];

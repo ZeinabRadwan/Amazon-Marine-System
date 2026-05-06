@@ -150,6 +150,9 @@ export default function Accountings() {
 
   const [selectedClients, setSelectedClients] = useState(() => new Set())
   const [selectedPartners, setSelectedPartners] = useState(() => new Set())
+  const [clientPage, setClientPage] = useState(1)
+  const [partnerPage, setPartnerPage] = useState(1)
+  const tablePageSize = 10
   const [exportBusy, setExportBusy] = useState(false)
 
   const [ledgerModal, setLedgerModal] = useState(null)
@@ -215,6 +218,10 @@ export default function Accountings() {
     loadClients()
   }, [loadClients])
 
+  useEffect(() => {
+    setClientPage(1)
+  }, [debouncedClientSearch, clientCurrency, clientSort])
+
   const loadPartners = useCallback(() => {
     if (!token) return
     setPartnersLoading(true)
@@ -245,6 +252,10 @@ export default function Accountings() {
   useEffect(() => {
     loadPartners()
   }, [loadPartners])
+
+  useEffect(() => {
+    setPartnerPage(1)
+  }, [debouncedPartnerSearch, partnerType, partnerCurrency, partnerSort])
 
   useEffect(() => {
     if (!token) return
@@ -299,6 +310,16 @@ export default function Accountings() {
   }, [partnerRows, chartsDonut])
 
   const bankCards = useMemo(() => aggregateBankByCurrency(treasuryEntries), [treasuryEntries])
+  const clientTotalPages = Math.max(1, Math.ceil(clientRows.length / tablePageSize))
+  const partnerTotalPages = Math.max(1, Math.ceil(partnerRows.length / tablePageSize))
+  const pagedClientRows = useMemo(
+    () => clientRows.slice((clientPage - 1) * tablePageSize, clientPage * tablePageSize),
+    [clientRows, clientPage]
+  )
+  const pagedPartnerRows = useMemo(
+    () => partnerRows.slice((partnerPage - 1) * tablePageSize, partnerPage * tablePageSize),
+    [partnerRows, partnerPage]
+  )
 
   const accountingAlerts = useMemo(() => {
     const out = []
@@ -763,7 +784,7 @@ export default function Accountings() {
                     </tr>
                   )}
                   {!clientsLoading &&
-                    clientRows.map((row) => (
+                    pagedClientRows.map((row) => (
                       <tr key={row.client_id}>
                         <td>
                           <input
@@ -790,13 +811,15 @@ export default function Accountings() {
                         <td className="text-sm text-gray-500">
                           {formatDate(row.last_payment_date)}
                         </td>
-                        <td>
+                        <td className="accountings-table-actions-cell">
                           <button
                             type="button"
-                            className="accountings-btn accountings-btn--small"
+                            className="accountings-action-icon-btn"
+                            title={t('accountings.ledger', 'Statement')}
+                            aria-label={t('accountings.ledger', 'Statement')}
                             onClick={() => setLedgerModal({ type: 'client', row })}
                           >
-                            <FileSpreadsheet className="inline h-3.5 w-3.5" /> {t('accountings.ledger', 'Statement')}
+                            <FileSpreadsheet className="h-4 w-4" />
                           </button>
                         </td>
                       </tr>

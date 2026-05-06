@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
 import { getStoredToken } from '../../Login'
 import { recordInvoicePayment } from '../../../api/invoices'
+import { listBankAccounts } from '../../../api/accountings'
 
 export default function RecordPaymentModal({ isOpen, invoiceId, currencyCode, onClose, onSuccess }) {
   const { t } = useTranslation()
@@ -13,6 +14,22 @@ export default function RecordPaymentModal({ isOpen, invoiceId, currencyCode, on
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [sourceAccountId, setSourceAccountId] = useState('')
+  const [bankAccounts, setBankAccounts] = useState([])
+
+  useEffect(() => {
+    if (!isOpen) return
+    const token = getStoredToken()
+    if (!token) return
+    listBankAccounts(token)
+      .then((res) => setBankAccounts(Array.isArray(res?.data) ? res.data.filter((a) => a?.is_active !== false) : []))
+      .catch(() => setBankAccounts([]))
+  }, [isOpen])
+
+  const selectedBank = useMemo(
+    () => bankAccounts.find((acc) => Number(acc.id) === Number(sourceAccountId)),
+    [bankAccounts, sourceAccountId]
+  )
 
   if (!isOpen) return null
 
@@ -27,6 +44,7 @@ export default function RecordPaymentModal({ isOpen, invoiceId, currencyCode, on
         amount: Number(amount),
         currency_code: currencyCode,
         method,
+        source_account_id: sourceAccountId ? Number(sourceAccountId) : undefined,
         paid_at: paidAt,
         reference: reference || undefined,
         notes: notes || undefined,
@@ -90,6 +108,27 @@ export default function RecordPaymentModal({ isOpen, invoiceId, currencyCode, on
               <label className="block text-xs font-bold text-gray-500 uppercase mb-2">{t('invoices.payment.date', 'Date')}</label>
               <input value={paidAt} onChange={(e) => setPaidAt(e.target.value)} type="date" className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm outline-none" />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">{t('payments.bankAccount', 'Bank account')}</label>
+            <select
+              value={sourceAccountId}
+              onChange={(e) => setSourceAccountId(e.target.value)}
+              className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm outline-none"
+            >
+              <option value="">{t('payments.bankAccountOptional', 'Bank account (optional)')}</option>
+              {bankAccounts.map((bank) => (
+                <option key={bank.id} value={bank.id}>
+                  {bank.bank_name} - {bank.account_name || bank.account_number || bank.id}
+                </option>
+              ))}
+            </select>
+            {selectedBank?.supported_currencies?.length ? (
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {t('settings.bankAccounts.currencies', 'Currencies')}: {selectedBank.supported_currencies.join(', ')}
+              </p>
+            ) : null}
           </div>
 
           <div>

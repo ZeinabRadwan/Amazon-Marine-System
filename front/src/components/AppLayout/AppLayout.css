@@ -7,6 +7,7 @@
   width: 100%;
   background: var(--app-bg, #f6f8fb);
   color: var(--app-text, #1c2030);
+  overflow: visible;
 }
 
 [data-theme="dark"] .app-layout-main {
@@ -19,6 +20,9 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  margin-left: var(--sidebar-width-expanded, 260px);
+  width: calc(100% - var(--sidebar-width-expanded, 260px));
+  transition: margin-inline-start 0.25s ease, width 0.25s ease;
 }
 
 .app-layout-content {
@@ -35,4 +39,29 @@
 .app-layout-page {
   flex: 1;
   min-height: 100%;
+}
+
+.sidebar--collapsed + .app-layout-main {
+  margin-left: var(--sidebar-width-collapsed, 72px);
+  width: calc(100% - var(--sidebar-width-collapsed, 72px));
+}
+
+.sidebar--rtl + .app-layout-main {
+  margin-left: 0;
+  margin-right: var(--sidebar-width-expanded, 260px);
+}
+
+.sidebar--rtl.sidebar--collapsed + .app-layout-main {
+  margin-right: var(--sidebar-width-collapsed, 72px);
+}
+
+@media (max-width: 768px) {
+  .app-layout-main,
+  .sidebar--collapsed + .app-layout-main,
+  .sidebar--rtl + .app-layout-main,
+  .sidebar--rtl.sidebar--collapsed + .app-layout-main {
+    margin-left: 0;
+    margin-right: 0;
+    width: 100%;
+  }
 }
