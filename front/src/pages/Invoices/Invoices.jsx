@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSearchParams } from 'react-router-dom'
 import { Container } from '../../components/Container'
 import '../../components/PageHeader/PageHeader.css'
 import '../../components/Tabs/Tabs.css'
@@ -19,6 +20,7 @@ export default function Invoices() {
   const canManageInvoices = hasPageAccess('invoices')
 
   const [activeTab, setActiveTab] = useState('all')
+  const [searchParams] = useSearchParams()
   const [refreshKey, setRefreshKey] = useState(0)
   const [exportBusy, setExportBusy] = useState(false)
   const [tableFilters, setTableFilters] = useState({
@@ -48,6 +50,7 @@ export default function Invoices() {
   }, [activeTab])
 
   const invoiceType = activeTab === 'partner' ? 'partner' : activeTab === 'client' ? 'client' : ''
+  const initialInvoiceId = searchParams.get('invoice_id') || ''
 
   const handleExportCsv = useCallback(
     async (selectedIdList) => {
@@ -100,6 +103,7 @@ export default function Invoices() {
           <InvoicesTable
             refreshKey={refreshKey}
             invoiceType={invoiceType}
+            initialDetailId={initialInvoiceId}
             onChanged={() => setRefreshKey((k) => k + 1)}
             onFiltersChange={onFiltersChange}
             canManage={canManageInvoices}

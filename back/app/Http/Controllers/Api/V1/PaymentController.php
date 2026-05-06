@@ -7,6 +7,7 @@ use App\Models\Payment;
 use App\Services\ActivityLogger;
 use App\Services\FinancialService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class PaymentController extends Controller
 {
@@ -66,20 +67,9 @@ class PaymentController extends Controller
             'converted_amount' => ['nullable', 'numeric', 'min:0'],
             'reference' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
+            'proof_file' => ['nullable', 'file', 'max:10240'],
             'paid_at' => ['nullable', 'date'],
         ]);
-
-        if ($validated['type'] === 'client_receipt' && empty($validated['invoice_id']) && empty($validated['client_id']) && empty($validated['shipment_id'])) {
-            return response()->json([
-                'message' => __('Client receipt must be linked to an invoice, client, or shipment.'),
-            ], 422);
-        }
-
-        if ($validated['type'] === 'vendor_payment' && empty($validated['vendor_bill_id']) && empty($validated['vendor_id']) && empty($validated['shipment_id'])) {
-            return response()->json([
-                'message' => __('Vendor payment must be linked to a vendor bill, vendor, or shipment.'),
-            ], 422);
-        }
 
         $payment = new Payment();
         if (!empty($validated['invoice_id']) && empty($validated['client_id'])) {
@@ -97,6 +87,10 @@ class PaymentController extends Controller
             }
         }
         $payment->fill($validated);
+        if ($request->hasFile('proof_file')) {
+            $path = $request->file('proof_file')->store('payments/proofs', 'public');
+            $payment->proof_path = $path;
+        }
         $payment->paid_at = $validated['paid_at'] ?? now();
         $payment->created_by_id = $request->user()->id;
         $payment->save();
@@ -109,7 +103,9 @@ class PaymentController extends Controller
         ]);
 
         return response()->json([
-            'data' => $payment->fresh(['invoice', 'vendorBill', 'client', 'vendor', 'shipment', 'sourceAccount', 'targetAccount']),
+            'data' => $payment->fresh(['invoice', 'vendorBill', 'client', 'vendor', 'shipment', 'sourceAccount', 'targetAccount'])?->toArray() + [
+                'proof_url' => $payment->proof_path ? Storage::disk('public')->url($payment->proof_path) : null,
+            ],
         ], 201);
     }
 }

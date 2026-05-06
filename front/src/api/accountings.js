@@ -197,10 +197,11 @@ export async function deleteBankAccount(token, id) {
  * POST {{base_url}}/payments – generic record payment endpoint
  */
 export async function recordPayment(token, body) {
+  const isFormData = typeof FormData !== 'undefined' && body instanceof FormData
   const res = await apiFetch(`${getBaseUrl()}/payments`, {
     method: 'POST',
-    headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    headers: isFormData ? authHeaders(token) : { ...authHeaders(token), 'Content-Type': 'application/json' },
+    body: isFormData ? body : JSON.stringify(body),
   })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to record payment (${res.status})`)

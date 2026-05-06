@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FileSpreadsheet, X, DollarSign, ReceiptText, HandCoins, WalletCards, CircleDollarSign, Eye } from 'lucide-react'
+import { FileSpreadsheet, X, DollarSign, ReceiptText, HandCoins, WalletCards, CircleDollarSign, Eye, Download } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import Tabs from '../../components/Tabs'
 import LoaderDots from '../../components/LoaderDots'
 import { StatsCard } from '../../components/StatsCard'
 import { Container } from '../../components/Container'
 import Pagination from '../../components/Pagination'
+import { downloadInvoicePdf } from '../../api/invoices'
 import { getStoredToken } from '../Login'
 import {
   getCustomerStatements,
@@ -19,7 +21,8 @@ import '../Clients/Clients.css'
 import './Accountings.css'
 
 function mapToInline(value) {
-  const entries = Object.entries(value || {}).filter(([, amount]) => Number(amount) !== 0)
+  const normalized = normalizeCurrencyMapInput(value)
+  const entries = Object.entries(normalized).filter(([, amount]) => Number(amount) !== 0)
   if (!entries.length) return '—'
   return entries.map(([cur, amount]) => `${String(cur).toUpperCase()} ${Number(amount || 0).toFixed(2)}`).join(' · ')
 }
@@ -29,9 +32,25 @@ function sumMap(map) {
 }
 
 function formatCurrencyMap(map) {
-  const entries = Object.entries(map || {}).filter(([, value]) => Number(value) !== 0)
+  const normalized = normalizeCurrencyMapInput(map)
+  const entries = Object.entries(normalized).filter(([, value]) => Number(value) !== 0)
   if (!entries.length) return '—'
   return entries.map(([currency, value]) => `${String(currency).toUpperCase()} ${Number(value || 0).toFixed(2)}`).join(' · ')
+}
+
+function normalizeCurrencyMapInput(input) {
+  if (!input) return {}
+  if (typeof input === 'number') return { USD: Number(input) || 0 }
+  if (Array.isArray(input)) {
+    return input.reduce((acc, row) => {
+      const cur = String(row?.currency || row?.currency_code || 'USD').toUpperCase()
+      const amount = Number(row?.amount ?? row?.value ?? 0)
+      acc[cur] = (Number(acc[cur]) || 0) + amount
+      return acc
+    }, {})
+  }
+  if (typeof input === 'object') return input
+  return {}
 }
 
 function getStatusLabel(status, t) {
@@ -50,6 +69,7 @@ function getStatusClass(status) {
 
 export default function AccountsOverview() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const token = getStoredToken()
   const [activeTab, setActiveTab] = useState('customers')
   const [loading, setLoading] = useState(false)
@@ -64,6 +84,7 @@ export default function AccountsOverview() {
   const [bankAccounts, setBankAccounts] = useState([])
   const [paymentModal, setPaymentModal] = useState(null)
   const [paymentBusy, setPaymentBusy] = useState(false)
+  const [paymentProofFile, setPaymentProofFile] = useState(null)
   const [payment, setPayment] = useState({
     amount: '',
     currency_code: 'USD',
@@ -75,6 +96,7 @@ export default function AccountsOverview() {
     shipment_id: '',
     client_id: '',
     vendor_id: '',
+    vendor_bill_id: '',
   })
 
   const loadOverview = useCallback(async () => {
@@ -116,6 +138,7 @@ export default function AccountsOverview() {
 
   const openPayment = (ctx = {}) => {
     setPaymentModal(true)
+    setPaymentProofFile(null)
     setPayment((prev) => ({
       ...prev,
       link_type: ctx.link_type || 'invoice',
@@ -123,8 +146,60 @@ export default function AccountsOverview() {
       shipment_id: ctx.shipment_id ? String(ctx.shipment_id) : '',
       client_id: ctx.client_id ? String(ctx.client_id) : '',
       vendor_id: ctx.vendor_id ? String(ctx.vendor_id) : '',
+      vendor_bill_id: ctx.vendor_bill_id ? String(ctx.vendor_bill_id) : '',
       currency_code: ctx.currency_code || prev.currency_code || 'USD',
     }))
+  }
+
+  const triggerBlobDownload = (blob, filename) => {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleDownloadInvoicePdf = async (invoiceId) => {
+    if (!token || !invoiceId) return
+    const { blob, filename } = await downloadInvoicePdf(token, invoiceId)
+    triggerBlobDownload(blob, filename || `invoice-${invoiceId}.pdf`)
+  }
+
+  const downloadCustomerStatementSnapshot = async (customerId, customerName) => {
+    if (!token || !customerId) return
+    const res = await getCustomerStatementDetail(token, customerId)
+    const rows = Array.isArray(res?.data?.invoices) ? res.data.invoices : []
+    const lines = [
+      ['Invoice', 'Shipment', 'Date', 'Total', 'Paid', 'Remaining', 'Status'],
+      ...rows.map((r) => [
+        r.invoice_reference || '',
+        r.shipment_reference || '',
+        r.issue_date || '',
+        mapToInline(r.total_amount),
+        mapToInline(r.paid_amount),
+        mapToInline(r.remaining_amount),
+        r.status || '',
+      ]),
+    ].map((row) => row.map((v) => `"${String(v ?? '').replaceAll('"', '""')}"`).join(','))
+    triggerBlobDownload(new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' }), `customer-statement-${customerName || customerId}.csv`)
+  }
+
+  const downloadVendorStatementSnapshot = async (vendorId, vendorName) => {
+    if (!token || !vendorId) return
+    const res = await getPartnerLedgerDetail(token, vendorId)
+    const rows = Array.isArray(res?.data?.rows) ? res.data.rows : []
+    const lines = [
+      ['Invoice', 'Shipment', 'Total', 'Paid', 'Status'],
+      ...rows.map((r) => [
+        r.invoice_reference || '',
+        r.shipment_reference || '',
+        mapToInline(r.currency_breakdown),
+        mapToInline(r.paid_amount),
+        r.status || '',
+      ]),
+    ].map((row) => row.map((v) => `"${String(v ?? '').replaceAll('"', '""')}"`).join(','))
+    triggerBlobDownload(new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' }), `vendor-statement-${vendorName || vendorId}.csv`)
   }
 
   const submitPayment = async () => {
@@ -132,21 +207,22 @@ export default function AccountsOverview() {
     const amount = Number(payment.amount)
     if (!Number.isFinite(amount) || amount <= 0) return
     const isPartner = payment.link_type === 'partner' || payment.link_type === 'shipment_partner'
-    const body = {
-      type: isPartner ? 'vendor_payment' : 'client_receipt',
-      amount,
-      currency_code: payment.currency_code,
-      method: payment.method,
-      source_account_id: payment.source_account_id ? Number(payment.source_account_id) : null,
-      paid_at: payment.paid_at,
-      invoice_id: payment.invoice_id ? Number(payment.invoice_id) : null,
-      shipment_id: payment.shipment_id ? Number(payment.shipment_id) : null,
-      client_id: payment.client_id ? Number(payment.client_id) : null,
-      vendor_id: payment.vendor_id ? Number(payment.vendor_id) : null,
-    }
+    const payload = new FormData()
+    payload.append('type', isPartner ? 'vendor_payment' : 'client_receipt')
+    payload.append('amount', String(amount))
+    payload.append('currency_code', String(payment.currency_code || 'USD').toUpperCase())
+    payload.append('method', payment.method || 'bank_transfer')
+    payload.append('paid_at', payment.paid_at || new Date().toISOString().slice(0, 10))
+    if (payment.source_account_id) payload.append('source_account_id', String(Number(payment.source_account_id)))
+    if (payment.invoice_id) payload.append('invoice_id', String(Number(payment.invoice_id)))
+    if (payment.vendor_bill_id) payload.append('vendor_bill_id', String(Number(payment.vendor_bill_id)))
+    if (payment.shipment_id) payload.append('shipment_id', String(Number(payment.shipment_id)))
+    if (payment.client_id) payload.append('client_id', String(Number(payment.client_id)))
+    if (payment.vendor_id) payload.append('vendor_id', String(Number(payment.vendor_id)))
+    if (paymentProofFile) payload.append('proof_file', paymentProofFile)
     setPaymentBusy(true)
     try {
-      await recordPayment(token, body)
+      await recordPayment(token, payload)
       setPaymentModal(null)
       await loadOverview()
       if (customerDetail?.customer_id) {
@@ -287,6 +363,15 @@ export default function AccountsOverview() {
                         >
                           <DollarSign className="h-4 w-4" />
                         </button>
+                        <button
+                          type="button"
+                          className="accountings-action-icon-btn"
+                          title={t('invoices.downloadPdf', 'Download PDF')}
+                          aria-label={t('invoices.downloadPdf', 'Download PDF')}
+                          onClick={() => downloadCustomerStatementSnapshot(row.customer_id, row.customer_name)}
+                        >
+                          <Download className="h-4 w-4" />
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -361,6 +446,15 @@ export default function AccountsOverview() {
                         >
                           <DollarSign className="h-4 w-4" />
                         </button>
+                        <button
+                          type="button"
+                          className="accountings-action-icon-btn"
+                          title={t('invoices.downloadPdf', 'Download PDF')}
+                          aria-label={t('invoices.downloadPdf', 'Download PDF')}
+                          onClick={() => downloadVendorStatementSnapshot(row.partner_id, row.partner_name)}
+                        >
+                          <Download className="h-4 w-4" />
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -384,9 +478,20 @@ export default function AccountsOverview() {
             <div className="accountings-modal-content accountings-modal-content--wide">
               <div className="flex items-start justify-between gap-3">
                 <h2>{customerDetail.customer_name}</h2>
-                <button type="button" className="accountings-btn accountings-btn--small p-2" onClick={() => setCustomerDetail(null)}>
-                  <X className="h-4 w-4" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="accountings-action-icon-btn"
+                    title={t('invoices.downloadPdf', 'Download PDF')}
+                    aria-label={t('invoices.downloadPdf', 'Download PDF')}
+                    onClick={() => downloadCustomerStatementSnapshot(customerDetail.customer_id, customerDetail.customer_name)}
+                  >
+                    <Download className="h-4 w-4" />
+                  </button>
+                  <button type="button" className="accountings-btn accountings-btn--small p-2" onClick={() => setCustomerDetail(null)}>
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
               <div className="accountings-table-wrap mt-3">
                 <table className="accountings-table">
@@ -420,11 +525,18 @@ export default function AccountsOverview() {
                             className="accountings-action-icon-btn"
                             title={t('accountings.viewInvoice')}
                             aria-label={t('accountings.viewInvoice')}
-                            onClick={() => {
-                              window.location.assign('/invoices')
-                            }}
+                            onClick={() => navigate(`/invoices?invoice_id=${inv.invoice_id}`)}
                           >
                             <Eye className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            className="accountings-action-icon-btn"
+                            title={t('invoices.downloadPdf', 'Download PDF')}
+                            aria-label={t('invoices.downloadPdf', 'Download PDF')}
+                            onClick={() => handleDownloadInvoicePdf(inv.invoice_id)}
+                          >
+                            <Download className="h-4 w-4" />
                           </button>
                           <button
                             type="button"
@@ -451,9 +563,20 @@ export default function AccountsOverview() {
             <div className="accountings-modal-content accountings-modal-content--wide">
               <div className="flex items-start justify-between gap-3">
                 <h2>{partnerDetail.partner_name}</h2>
-                <button type="button" className="accountings-btn accountings-btn--small p-2" onClick={() => setPartnerDetail(null)}>
-                  <X className="h-4 w-4" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="accountings-action-icon-btn"
+                    title={t('invoices.downloadPdf', 'Download PDF')}
+                    aria-label={t('invoices.downloadPdf', 'Download PDF')}
+                    onClick={() => downloadVendorStatementSnapshot(partnerDetail.partner_id, partnerDetail.partner_name)}
+                  >
+                    <Download className="h-4 w-4" />
+                  </button>
+                  <button type="button" className="accountings-btn accountings-btn--small p-2" onClick={() => setPartnerDetail(null)}>
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
               <div className="accountings-table-wrap mt-3">
                 <table className="accountings-table">
@@ -543,6 +666,23 @@ export default function AccountsOverview() {
                   ))}
                 </select>
                 <input type="date" className="clients-input" value={payment.paid_at} onChange={(e) => setPayment((p) => ({ ...p, paid_at: e.target.value }))} />
+                <input
+                  className="clients-input"
+                  placeholder={t('accountings.shipmentIdOptional', 'Shipment ID (optional)')}
+                  value={payment.shipment_id}
+                  onChange={(e) => setPayment((p) => ({ ...p, shipment_id: e.target.value }))}
+                />
+                <input
+                  className="clients-input"
+                  placeholder={t('accountings.invoiceIdOptional', 'Invoice ID (optional)')}
+                  value={payment.invoice_id}
+                  onChange={(e) => setPayment((p) => ({ ...p, invoice_id: e.target.value }))}
+                />
+                <input
+                  type="file"
+                  className="clients-input"
+                  onChange={(e) => setPaymentProofFile(e.target.files?.[0] || null)}
+                />
               </div>
               <div className="accountings-modal-actions">
                 <button type="button" className="accountings-btn" onClick={() => setPaymentModal(null)}>{t('common.cancel', 'Cancel')}</button>

@@ -759,10 +759,10 @@ export default function Accountings() {
                       <input
                         type="checkbox"
                         checked={
-                          clientRows.length > 0 &&
-                          clientRows.every((r) => selectedClients.has(r.client_id))
+                          pagedClientRows.length > 0 &&
+                          pagedClientRows.every((r) => selectedClients.has(r.client_id))
                         }
-                        onChange={(e) => selectAllClients(e.target.checked, clientRows.map((r) => r.client_id))}
+                        onChange={(e) => selectAllClients(e.target.checked, pagedClientRows.map((r) => r.client_id))}
                         title={t('accountings.selectAll', 'Select all')}
                       />
                     </th>
@@ -834,6 +834,16 @@ export default function Accountings() {
                 </tbody>
               </table>
             </div>
+            {!clientsLoading && clientRows.length > 0 && (
+              <div className="clients-pagination">
+                <div className="clients-pagination__left">
+                  <span className="clients-pagination__total">
+                    {t('clients.total', 'Total')}: {clientRows.length}
+                  </span>
+                </div>
+                <Pagination currentPage={clientPage} totalPages={clientTotalPages} onPageChange={setClientPage} />
+              </div>
+            )}
           </div>
         )}
 
@@ -936,10 +946,10 @@ export default function Accountings() {
                       <input
                         type="checkbox"
                         checked={
-                          partnerRows.length > 0 &&
-                          partnerRows.every((r) => selectedPartners.has(r.partner_id))
+                          pagedPartnerRows.length > 0 &&
+                          pagedPartnerRows.every((r) => selectedPartners.has(r.partner_id))
                         }
-                        onChange={(e) => selectAllPartners(e.target.checked, partnerRows.map((r) => r.partner_id))}
+                        onChange={(e) => selectAllPartners(e.target.checked, pagedPartnerRows.map((r) => r.partner_id))}
                         title={t('accountings.selectAll', 'Select all')}
                       />
                     </th>
@@ -961,7 +971,7 @@ export default function Accountings() {
                     </tr>
                   )}
                   {!partnersLoading &&
-                    partnerRows.map((row) => (
+                    pagedPartnerRows.map((row) => (
                       <tr key={row.partner_id}>
                         <td>
                           <input
@@ -986,13 +996,15 @@ export default function Accountings() {
                           {formatAccountingAmount(row.balance, row.currency, locale)}
                         </td>
                         <td>{row.currency || '—'}</td>
-                        <td>
+                        <td className="accountings-table-actions-cell">
                           <button
                             type="button"
-                            className="accountings-btn accountings-btn--small"
+                            className="accountings-action-icon-btn"
+                            title={t('accountings.ledger', 'Statement')}
+                            aria-label={t('accountings.ledger', 'Statement')}
                             onClick={() => setLedgerModal({ type: 'partner', row })}
                           >
-                            <FileSpreadsheet className="inline h-3.5 w-3.5" />
+                            <FileSpreadsheet className="h-4 w-4" />
                           </button>
                         </td>
                       </tr>
@@ -1007,6 +1019,16 @@ export default function Accountings() {
                 </tbody>
               </table>
             </div>
+            {!partnersLoading && partnerRows.length > 0 && (
+              <div className="clients-pagination">
+                <div className="clients-pagination__left">
+                  <span className="clients-pagination__total">
+                    {t('clients.total', 'Total')}: {partnerRows.length}
+                  </span>
+                </div>
+                <Pagination currentPage={partnerPage} totalPages={partnerTotalPages} onPageChange={setPartnerPage} />
+              </div>
+            )}
           </div>
         )}
 

@@ -41,6 +41,7 @@ const STATUS_FILTER_VALUES = ['paid', 'partial', 'unpaid', 'overdue', 'issued', 
 export default function InvoicesTable({
   refreshKey,
   invoiceType,
+  initialDetailId,
   onChanged,
   onFiltersChange,
   canManage = true,
@@ -66,6 +67,14 @@ export default function InvoicesTable({
 
   const [selectedIds, setSelectedIds] = useState(() => new Set())
   const [detailId, setDetailId] = useState(null)
+
+  useEffect(() => {
+    if (!initialDetailId) return
+    const parsed = Number(initialDetailId)
+    if (Number.isFinite(parsed) && parsed > 0) {
+      setDetailId(parsed)
+    }
+  }, [initialDetailId])
 
   const fetchData = () => {
     const token = getStoredToken()

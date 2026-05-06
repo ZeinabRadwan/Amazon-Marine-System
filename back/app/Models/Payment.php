@@ -31,6 +31,7 @@ class Payment extends Model
         'method',
         'reference',
         'notes',
+        'proof_path',
         'paid_at',
         'created_by_id',
     ];
