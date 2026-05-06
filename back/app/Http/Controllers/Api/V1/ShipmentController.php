@@ -793,7 +793,7 @@ class ShipmentController extends Controller
         });
 
         $notifySalesFinancial = (bool) ($validated['notify_sales_financial'] ?? false);
-        $invoice = DB::transaction(function () use ($validated, $existing, $shipment, $normalizedItems, $currencyTotals, $totalAmount, $notifySalesFinancial) {
+        $invoice = DB::transaction(function () use ($validated, $existing, $shipment, $normalizedItems, $currencyTotals, $totalAmount, $notifySalesFinancial, $sectionMeta) {
             $invoice = ShipmentCostInvoice::query()->updateOrCreate(
                 ['shipment_id' => $shipment->id],
                 array_filter([

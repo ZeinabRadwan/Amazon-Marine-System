@@ -1668,10 +1668,10 @@ export default function ShipmentFinancialsModal({
 
   const invoiceFinancialOverview = useMemo(() => {
     const fromApi = clientInvoice?.financial_overview
-    const totalSell = fromApi?.selling_by_currency || {}
-    const totalCost = fromApi?.cost_by_currency || {}
-    const profit = fromApi?.profit_by_currency || {}
-    if (Object.keys(totalSell).length || Object.keys(totalCost).length || Object.keys(profit).length) {
+    const apiTotalSell = fromApi?.selling_by_currency || {}
+    const apiTotalCost = fromApi?.cost_by_currency || {}
+    const apiProfit = fromApi?.profit_by_currency || {}
+    if (Object.keys(apiTotalSell).length || Object.keys(apiTotalCost).length || Object.keys(apiProfit).length) {
       const paid = {}
       ;(clientInvoice?.payments || []).forEach((p) => {
         const cur = String(p?.currency_code || clientInvoice?.currency_code || 'USD').toUpperCase()
@@ -1679,16 +1679,16 @@ export default function ShipmentFinancialsModal({
         if (amt > 0) paid[cur] = (paid[cur] || 0) + amt
       })
       const remaining = {}
-      const remKeys = new Set([...Object.keys(totalSell), ...Object.keys(paid)])
+      const remKeys = new Set([...Object.keys(apiTotalSell), ...Object.keys(paid)])
       remKeys.forEach((k) => {
-        remaining[k] = Math.max(0, (Number(totalSell[k]) || 0) - (Number(paid[k]) || 0))
+        remaining[k] = Math.max(0, (Number(apiTotalSell[k]) || 0) - (Number(paid[k]) || 0))
       })
-      const totalSellSum = Object.values(totalSell).reduce((a, b) => a + (Number(b) || 0), 0)
+      const totalSellSum = Object.values(apiTotalSell).reduce((a, b) => a + (Number(b) || 0), 0)
       const paidSum = Object.values(paid).reduce((a, b) => a + (Number(b) || 0), 0)
       let status = 'unpaid'
       if (totalSellSum > 0 && paidSum >= totalSellSum) status = 'paid'
       else if (paidSum > 0) status = 'partial'
-      return { totalCost, totalSell, profit, paid, remaining, status }
+      return { totalCost: apiTotalCost, totalSell: apiTotalSell, profit: apiProfit, paid, remaining, status }
     }
 
     const totalCost = {}
