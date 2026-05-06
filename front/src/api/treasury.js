@@ -20,6 +20,8 @@ function buildQuery(params = {}) {
   if (params.to) searchParams.set('to', params.to)
   if (params.search) searchParams.set('search', params.search)
   if (params.type) searchParams.set('type', params.type)
+  if (params.account) searchParams.set('account', params.account)
+  if (params.currency) searchParams.set('currency', params.currency)
   if (params.sort) searchParams.set('sort', params.sort)
   if (params.months != null && params.months !== '') searchParams.set('months', String(params.months))
   if (params.category_id != null && params.category_id !== '') {

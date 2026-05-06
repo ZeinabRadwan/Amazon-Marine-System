@@ -162,6 +162,8 @@ export default function Treasury() {
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebounced(search, 400)
   const [typeFilter, setTypeFilter] = useState('')
+  const [accountFilter, setAccountFilter] = useState('')
+  const [currencyFilter, setCurrencyFilter] = useState('')
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
   const [sortKey, setSortKey] = useState('date')
@@ -247,6 +249,8 @@ export default function Treasury() {
     getTreasuryEntries(token, {
       search: debouncedSearch || undefined,
       type: typeFilter || undefined,
+      account: accountFilter || undefined,
+      currency: currencyFilter || undefined,
       from: fromDate || undefined,
       to: toDate || undefined,
       sort: sortKey || 'date',
@@ -257,7 +261,7 @@ export default function Treasury() {
         setEntries([])
       })
       .finally(() => setEntriesLoading(false))
-  }, [token, debouncedSearch, typeFilter, fromDate, toDate, sortKey, canViewAccounting])
+  }, [token, debouncedSearch, typeFilter, accountFilter, currencyFilter, fromDate, toDate, sortKey, canViewAccounting])
 
   const loadExpenses = useCallback(() => {
     if (!token || !canViewAccounting) return
@@ -288,7 +292,7 @@ export default function Treasury() {
 
   useEffect(() => {
     setEntriesPage(1)
-  }, [debouncedSearch, typeFilter, fromDate, toDate, sortKey])
+  }, [debouncedSearch, typeFilter, accountFilter, currencyFilter, fromDate, toDate, sortKey])
 
   useEffect(() => {
     setExpensesPage(1)
@@ -328,6 +332,9 @@ export default function Treasury() {
     const start = (reconPage - 1) * RECON_ROWS_PER_PAGE
     return entries.slice(start, start + RECON_ROWS_PER_PAGE)
   }, [entries, reconPage])
+
+  const accountOptions = useMemo(() => Array.from(new Set(entries.map((e) => e.source).filter(Boolean))).sort(), [entries])
+  const currencyOptions = useMemo(() => Array.from(new Set(entries.map((e) => e.currency_code).filter(Boolean))).sort(), [entries])
 
   useEffect(() => {
     if (!token || !canViewAccounting) return
@@ -743,6 +750,28 @@ export default function Treasury() {
                 <option value="in">{t('treasury.typeIn')}</option>
                 <option value="out">{t('treasury.typeOut')}</option>
               </select>
+              <select
+                className="clients-input min-w-[140px]"
+                value={accountFilter}
+                onChange={(e) => setAccountFilter(e.target.value)}
+                aria-label={t('treasury.accountSource')}
+              >
+                <option value="">{t('treasury.selectAccount')}</option>
+                {accountOptions.map((a) => (
+                  <option key={a} value={a}>{a}</option>
+                ))}
+              </select>
+              <select
+                className="clients-input min-w-[120px]"
+                value={currencyFilter}
+                onChange={(e) => setCurrencyFilter(e.target.value)}
+                aria-label={t('treasury.currency')}
+              >
+                <option value="">{t('treasury.allCurrencies', 'All currencies')}</option>
+                {currencyOptions.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
               <input
                 type="date"
                 className="clients-input min-w-[140px]"
@@ -790,6 +819,8 @@ export default function Treasury() {
                 onClick={() => {
                   setSearch('')
                   setTypeFilter('')
+                  setAccountFilter('')
+                  setCurrencyFilter('')
                   setFromDate('')
                   setToDate('')
                   setSortKey('date')

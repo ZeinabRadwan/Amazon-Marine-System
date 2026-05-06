@@ -58,14 +58,7 @@ export default function InvoiceDetailModal({ isOpen, invoiceId, onClose, onChang
     [i18n.language]
   )
 
-  const totals = useMemo(() => {
-    if (!invoice) return null
-    return {
-      subtotal: invoice.total_amount ?? invoice.net_amount ?? 0,
-      tax: invoice.tax_amount ?? 0,
-      total: invoice.net_amount ?? invoice.total_amount ?? 0,
-    }
-  }, [invoice])
+  const totalAmount = useMemo(() => (invoice ? (invoice.net_amount ?? invoice.total_amount ?? 0) : 0), [invoice])
 
   const sectionedItems = useMemo(() => {
     const defs = [
@@ -177,26 +170,14 @@ export default function InvoiceDetailModal({ isOpen, invoiceId, onClose, onChang
                       ))}
                     </tbody>
                   </table>
-                  <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between text-sm">
-                    <span className="font-semibold">{t('invoices.subtotal', 'Subtotal')}</span>
-                    <span className="font-bold">{money(section.subtotal, invoice.currency_code)}</span>
-                  </div>
                 </div>
               ))}
 
-              {totals && (
+              {invoice && (
                 <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/20 p-4">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-500">{t('invoices.subtotal', 'Subtotal')}</span>
-                    <span className="font-semibold">{money(totals.subtotal, invoice.currency_code)}</span>
-                  </div>
-                  <div className="mt-1 flex items-center justify-between text-sm">
-                    <span className="text-gray-500">{t('invoices.tax', 'Tax')}</span>
-                    <span className="font-semibold">{money(totals.tax, invoice.currency_code)}</span>
-                  </div>
-                  <div className="mt-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-3">
-                    <span className="font-bold">{t('invoices.total', 'Total')}</span>
-                    <span className="text-lg font-extrabold">{money(totals.total, invoice.currency_code)}</span>
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold">{t('invoices.totalAmount', 'Total Amount')}</span>
+                    <span className="text-lg font-extrabold">{money(totalAmount, invoice.currency_code)}</span>
                   </div>
                 </div>
               )}
