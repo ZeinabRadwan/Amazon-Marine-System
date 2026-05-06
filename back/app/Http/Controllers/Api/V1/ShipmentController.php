@@ -10,6 +10,7 @@ use App\Models\Shipment;
 use App\Models\ShipmentCostInvoice;
 use App\Models\ShipmentStatus;
 use App\Models\User;
+use App\Models\Vendor;
 use App\Notifications\ShipmentSalesFinancialsNotification;
 use App\Services\ActivityLogger;
 use App\Services\NotificationService;
@@ -730,6 +731,63 @@ class ShipmentController extends Controller
             return response()->json([
                 'message' => __('Customs Clearance section requires at least one line item.'),
             ], 422);
+        }
+
+        $sectionVendorByBucket = [
+            'shipping' => (int) data_get($sectionMeta, 'shipping.shipping_line_vendor_id', 0),
+            'inland' => (int) data_get($sectionMeta, 'inland.contractor_vendor_id', 0),
+            'customs' => (int) data_get($sectionMeta, 'customs.customs_broker_vendor_id', 0),
+            'insurance' => (int) data_get($sectionMeta, 'insurance.insurance_company_vendor_id', 0),
+        ];
+        $requiredTypeByBucket = [
+            'shipping' => 'shipping_line',
+            'inland' => 'inland_transport',
+            'customs' => 'customs_clearance',
+            'insurance' => 'insurance',
+        ];
+        $vendorIdsToCheck = [];
+        foreach ($sectionVendorByBucket as $id) {
+            if ($id > 0) {
+                $vendorIdsToCheck[] = $id;
+            }
+        }
+        foreach ($normalizedItems as $it) {
+            $vid = (int) ($it['vendor_id'] ?? 0);
+            if ($vid > 0) {
+                $vendorIdsToCheck[] = $vid;
+            }
+        }
+        $vendorTypeById = Vendor::query()
+            ->whereIn('id', array_values(array_unique($vendorIdsToCheck)))
+            ->pluck('type', 'id')
+            ->map(fn ($t) => strtolower(trim((string) $t)));
+        foreach ($requiredTypeByBucket as $bucket => $requiredType) {
+            $metaVendorId = (int) ($sectionVendorByBucket[$bucket] ?? 0);
+            if ($metaVendorId > 0) {
+                $actualType = (string) ($vendorTypeById[$metaVendorId] ?? '');
+                if ($actualType !== $requiredType) {
+                    return response()->json([
+                        'message' => __('Selected vendor type is invalid for :section section.', ['section' => $bucket]),
+                    ], 422);
+                }
+            }
+        }
+        foreach ($normalizedItems as $it) {
+            $bucket = (string) ($it['bucket_id'] ?? '');
+            $requiredType = $requiredTypeByBucket[$bucket] ?? null;
+            if (! $requiredType) {
+                continue;
+            }
+            $vid = (int) ($it['vendor_id'] ?? 0);
+            if ($vid <= 0) {
+                continue;
+            }
+            $actualType = (string) ($vendorTypeById[$vid] ?? '');
+            if ($actualType !== $requiredType) {
+                return response()->json([
+                    'message' => __('Line item vendor type is invalid for :section section.', ['section' => $bucket]),
+                ], 422);
+            }
         }
 
         usort($normalizedItems, function (array $a, array $b): int {
