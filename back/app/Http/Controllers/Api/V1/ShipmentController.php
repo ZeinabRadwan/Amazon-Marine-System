@@ -553,6 +553,32 @@ class ShipmentController extends Controller
     /**
      * Log that vendor bill / financial documentation is ready for sales follow-up.
      */
+    private function dispatchSalesFinancialNotification(Shipment $shipment, string $invoiceAction = 'updated'): void
+    {
+        $recipients = collect();
+        if ($shipment->sales_rep_id) {
+            $sales = User::query()->find($shipment->sales_rep_id);
+            if ($sales) {
+                $recipients->push($sales);
+            }
+        }
+
+        $salesUsers = User::role('sales')
+            ->where('status', 'active')
+            ->get();
+
+        $recipients = $recipients->merge($salesUsers)->unique('id');
+
+        if ($recipients->isNotEmpty()) {
+            $this->notificationService->sendDatabaseNotification(
+                'shipment.notify_sales_financials',
+                $shipment,
+                $recipients,
+                new ShipmentSalesFinancialsNotification($shipment, $invoiceAction)
+            );
+        }
+    }
+
     public function notifySalesFinancials(Request $request, Shipment $shipment)
     {
         $this->authorize('view', $shipment);
@@ -574,30 +600,7 @@ class ShipmentController extends Controller
         ActivityLogger::log('shipment.notify_sales_financials', $shipment, [
             'bl_number' => $shipment->bl_number,
         ]);
-
-        $recipients = collect();
-
-        if ($shipment->sales_rep_id) {
-            $sales = User::query()->find($shipment->sales_rep_id);
-            if ($sales) {
-                $recipients->push($sales);
-            }
-        }
-
-        $salesUsers = User::role('sales')
-            ->where('status', 'active')
-            ->get();
-
-        $recipients = $recipients->merge($salesUsers)->unique('id');
-
-        if ($recipients->isNotEmpty()) {
-            $this->notificationService->sendDatabaseNotification(
-                'shipment.notify_sales_financials',
-                $shipment,
-                $recipients,
-                new ShipmentSalesFinancialsNotification($shipment, $validated['invoice_action'] ?? 'updated')
-            );
-        }
+        $this->dispatchSalesFinancialNotification($shipment, $validated['invoice_action'] ?? 'updated');
 
         return response()->json([
             'message' => __('Notification recorded.'),
@@ -647,6 +650,7 @@ class ShipmentController extends Controller
             'items.*.order_index' => ['nullable', 'integer', 'min:0'],
             'attachment_refs' => ['sometimes', 'array'],
             'section_meta' => ['sometimes', 'array'],
+            'notify_sales_financial' => ['sometimes', 'boolean'],
         ]);
 
         $existing = ShipmentCostInvoice::query()->where('shipment_id', $shipment->id)->first();
@@ -663,6 +667,9 @@ class ShipmentController extends Controller
         $normalizedItems = [];
         $totalAmount = 0.0;
         $incomingItems = $validated['items'] ?? $existingItems;
+        $sectionMeta = is_array($validated['section_meta'] ?? null)
+            ? $validated['section_meta']
+            : (is_array($existing?->section_meta) ? $existing->section_meta : []);
         foreach ($incomingItems as $idx => $item) {
             $amount = (float) $item['amount'];
             if (! is_finite($amount) || $amount <= 0) {
@@ -697,42 +704,83 @@ class ShipmentController extends Controller
             $totalAmount += $amount;
         }
 
+        $inlandItems = array_values(array_filter($normalizedItems, static fn (array $it): bool => ($it['bucket_id'] ?? '') === 'inland'));
+        $customsItems = array_values(array_filter($normalizedItems, static fn (array $it): bool => ($it['bucket_id'] ?? '') === 'customs'));
+        $inlandVendorId = (int) data_get($sectionMeta, 'inland.contractor_vendor_id', 0);
+        $customsVendorId = (int) data_get($sectionMeta, 'customs.customs_broker_vendor_id', 0);
+        $inlandStarted = count($inlandItems) > 0 || $inlandVendorId > 0;
+        $customsStarted = count($customsItems) > 0 || $customsVendorId > 0;
+
+        if ($inlandStarted && $inlandVendorId <= 0) {
+            return response()->json([
+                'message' => __('Inland Transportation section requires contractor vendor selection.'),
+            ], 422);
+        }
+        if ($inlandStarted && count($inlandItems) < 1) {
+            return response()->json([
+                'message' => __('Inland Transportation section requires at least one line item.'),
+            ], 422);
+        }
+        if ($customsStarted && $customsVendorId <= 0) {
+            return response()->json([
+                'message' => __('Customs Clearance section requires customs broker vendor selection.'),
+            ], 422);
+        }
+        if ($customsStarted && count($customsItems) < 1) {
+            return response()->json([
+                'message' => __('Customs Clearance section requires at least one line item.'),
+            ], 422);
+        }
+
         usort($normalizedItems, function (array $a, array $b): int {
             return ((int) $a['order_index'] <=> (int) $b['order_index']) ?: ((int) $a['line_id'] <=> (int) $b['line_id']);
         });
 
-        $invoice = ShipmentCostInvoice::query()->updateOrCreate(
-            ['shipment_id' => $shipment->id],
-            array_filter([
-                'invoice_number' => $validated['invoice_number'] ?? ($existing?->invoice_number ?? ('SCI-'.$shipment->id)),
-                'invoice_date' => $validated['invoice_date'] ?? ($existing?->invoice_date?->toDateString() ?? now()->toDateString()),
-                'status' => $validated['status'] ?? ($existing?->status ?? 'draft'),
-                'items' => array_values($normalizedItems),
-                'attachment_refs' => Schema::hasColumn('shipment_cost_invoices', 'attachment_refs')
-                    ? ($validated['attachment_refs'] ?? (is_array($existing?->attachment_refs) ? $existing->attachment_refs : []))
-                    : null,
-                'section_meta' => Schema::hasColumn('shipment_cost_invoices', 'section_meta')
-                    ? ($validated['section_meta'] ?? (is_array($existing?->section_meta) ? $existing->section_meta : []))
-                    : null,
-                'currency_totals' => $currencyTotals,
+        $notifySalesFinancial = (bool) ($validated['notify_sales_financial'] ?? false);
+        $invoice = DB::transaction(function () use ($validated, $existing, $shipment, $normalizedItems, $currencyTotals, $totalAmount, $notifySalesFinancial) {
+            $invoice = ShipmentCostInvoice::query()->updateOrCreate(
+                ['shipment_id' => $shipment->id],
+                array_filter([
+                    'invoice_number' => $validated['invoice_number'] ?? ($existing?->invoice_number ?? ('SCI-'.$shipment->id)),
+                    'invoice_date' => $validated['invoice_date'] ?? ($existing?->invoice_date?->toDateString() ?? now()->toDateString()),
+                    'status' => $validated['status'] ?? ($existing?->status ?? 'draft'),
+                    'items' => array_values($normalizedItems),
+                    'attachment_refs' => Schema::hasColumn('shipment_cost_invoices', 'attachment_refs')
+                        ? ($validated['attachment_refs'] ?? (is_array($existing?->attachment_refs) ? $existing->attachment_refs : []))
+                        : null,
+                    'section_meta' => Schema::hasColumn('shipment_cost_invoices', 'section_meta')
+                        ? $sectionMeta
+                        : null,
+                    'currency_totals' => $currencyTotals,
+                    'total_amount' => $totalAmount,
+                ], static fn ($v, $k) => (
+                    ($k !== 'attachment_refs' || Schema::hasColumn('shipment_cost_invoices', 'attachment_refs'))
+                    && ($k !== 'section_meta' || Schema::hasColumn('shipment_cost_invoices', 'section_meta'))
+                ), ARRAY_FILTER_USE_BOTH)
+            );
+
+            $shipment->cost_total = $totalAmount;
+            if ($shipment->selling_price_total !== null) {
+                $shipment->profit_total = (float) $shipment->selling_price_total - $totalAmount;
+            }
+            $shipment->saveQuietly();
+
+            ActivityLogger::log('shipment.financial_expense_updated', $shipment, [
+                'shipment_cost_invoice_id' => $invoice->id,
+                'items_count' => count($normalizedItems),
                 'total_amount' => $totalAmount,
-            ], static fn ($v, $k) => (
-                ($k !== 'attachment_refs' || Schema::hasColumn('shipment_cost_invoices', 'attachment_refs'))
-                && ($k !== 'section_meta' || Schema::hasColumn('shipment_cost_invoices', 'section_meta'))
-            ), ARRAY_FILTER_USE_BOTH)
-        );
+            ]);
 
-        $shipment->cost_total = $totalAmount;
-        if ($shipment->selling_price_total !== null) {
-            $shipment->profit_total = (float) $shipment->selling_price_total - $totalAmount;
-        }
-        $shipment->saveQuietly();
+            if ($notifySalesFinancial) {
+                ActivityLogger::log('shipment.notify_sales_financials', $shipment, [
+                    'bl_number' => $shipment->bl_number,
+                    'source' => 'cost_invoice_save',
+                ]);
+                $this->dispatchSalesFinancialNotification($shipment, 'updated');
+            }
 
-        ActivityLogger::log('shipment.financial_expense_updated', $shipment, [
-            'shipment_cost_invoice_id' => $invoice->id,
-            'items_count' => count($normalizedItems),
-            'total_amount' => $totalAmount,
-        ]);
+            return $invoice;
+        });
 
         return response()->json([
             'data' => $this->formatCostInvoice($invoice->fresh()),

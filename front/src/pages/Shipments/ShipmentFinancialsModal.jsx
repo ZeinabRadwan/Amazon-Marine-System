@@ -626,6 +626,7 @@ export default function ShipmentFinancialsModal({
   const [notifySending, setNotifySending] = useState(false)
   const [groupDraftByKey, setGroupDraftByKey] = useState({})
   const [deletedIdsByBucket, setDeletedIdsByBucket] = useState({})
+  const [deletedDraftRowKeysByBucket, setDeletedDraftRowKeysByBucket] = useState({})
   const bucketSaveModelsRef = useRef({})
 
   const [clientInvoice, setClientInvoice] = useState(null)
@@ -659,6 +660,22 @@ export default function ShipmentFinancialsModal({
   const pendingRowSeqRef = useRef(0)
   const [savingAllDraft, setSavingAllDraft] = useState(false)
   const editMode = Boolean(token && canManageExpenses && shipment?.bl_number?.trim() && shipment?.id)
+  const vendorsBySection = useMemo(() => {
+    const list = Array.isArray(vendors) ? vendors : []
+    const normalize = (v) => String(v || '').trim().toLowerCase()
+    const sectionTypeMap = {
+      shipping: new Set(['shipping_line']),
+      inland: new Set(['inland_transport']),
+      customs: new Set(['customs_clearance']),
+      insurance: new Set(['insurance']),
+    }
+    return Object.fromEntries(
+      Object.entries(sectionTypeMap).map(([sectionId, typeSet]) => [
+        sectionId,
+        list.filter((v) => typeSet.has(normalize(v?.type))),
+      ])
+    )
+  }, [vendors])
 
   useEffect(() => {
     if (open && shipment?.id != null) {
@@ -669,6 +686,7 @@ export default function ShipmentFinancialsModal({
       setPendingOtherByBucket({})
       setGroupDraftByKey({})
       setDeletedIdsByBucket({})
+      setDeletedDraftRowKeysByBucket({})
       setFinBanner(null)
       setClientInvoice(null)
       setClientInvoicesList([])
@@ -891,6 +909,7 @@ export default function ShipmentFinancialsModal({
         setPendingOtherByBucket((prev) => ({ ...prev, [bucketId]: [] }))
 
         setDeletedIdsByBucket((prev) => ({ ...prev, [bucketId]: new Set() }))
+        setDeletedDraftRowKeysByBucket((prev) => ({ ...prev, [bucketId]: new Set() }))
         onExpensesChanged?.()
         setFinBanner({ type: 'success', message: t('shipments.fin.batchSaved') })
       } catch (e) {
@@ -1066,7 +1085,8 @@ export default function ShipmentFinancialsModal({
       const sections = [...BUCKET_DEFS.map((d) => d.id), 'other', ...customSectionDefs.map((s) => s.id)]
       const items = []
       let orderIndex = 0
-      let inlandHasItems = false
+      let inlandItemsCount = 0
+      let customsItemsCount = 0
 
       for (const sectionId of sections) {
         const deletedIds = new Set(Array.from(deletedIdsByBucket[sectionId] || []))
@@ -1100,12 +1120,18 @@ export default function ShipmentFinancialsModal({
             title: desc,
             amount,
             currency_code: (draft.currency || 'USD').toUpperCase(),
-            vendor_id: model.vendorId || undefined,
+            vendor_id:
+              model.vendorId
+              || (sectionId === 'shipping' ? (sectionMetaByBucket.shipping?.shipping_line_vendor_id || undefined) : undefined)
+              || (sectionId === 'inland' ? (sectionMetaByBucket.inland?.contractor_vendor_id || undefined) : undefined)
+              || (sectionId === 'customs' ? (sectionMetaByBucket.customs?.customs_broker_vendor_id || undefined) : undefined)
+              || (sectionId === 'insurance' ? (sectionMetaByBucket.insurance?.insurance_company_vendor_id || undefined) : undefined),
             expense_category_id: model.categoryId || undefined,
             expense_date: model.expenseDate || new Date().toISOString().slice(0, 10),
             order_index: orderIndex++,
           })
-          if (sectionId === 'inland') inlandHasItems = true
+          if (sectionId === 'inland') inlandItemsCount += 1
+          if (sectionId === 'customs') customsItemsCount += 1
         }
 
         const pendingRows = pendingOtherByBucket[sectionId] || []
@@ -1126,26 +1152,53 @@ export default function ShipmentFinancialsModal({
             title: desc,
             amount,
             currency_code: (line.currency || 'USD').toUpperCase(),
-            vendor_id: undefined,
+            vendor_id:
+              (sectionId === 'shipping' ? (sectionMetaByBucket.shipping?.shipping_line_vendor_id || undefined) : undefined)
+              || (sectionId === 'inland' ? (sectionMetaByBucket.inland?.contractor_vendor_id || undefined) : undefined)
+              || (sectionId === 'customs' ? (sectionMetaByBucket.customs?.customs_broker_vendor_id || undefined) : undefined)
+              || (sectionId === 'insurance' ? (sectionMetaByBucket.insurance?.insurance_company_vendor_id || undefined) : undefined),
             expense_date: new Date().toISOString().slice(0, 10),
             order_index: orderIndex++,
           })
-          if (sectionId === 'inland') inlandHasItems = true
+          if (sectionId === 'inland') inlandItemsCount += 1
+          if (sectionId === 'customs') customsItemsCount += 1
         }
       }
 
-      if (inlandHasItems && !String(sectionMetaByBucket.inland?.contractor_name || '').trim()) {
+      const inlandStarted = inlandItemsCount > 0 || Boolean(sectionMetaByBucket.inland?.contractor_vendor_id)
+      const customsStarted = customsItemsCount > 0 || Boolean(sectionMetaByBucket.customs?.customs_broker_vendor_id)
+      const shippingStarted = Boolean(items.some((it) => it.bucket_id === 'shipping')) || Boolean(sectionMetaByBucket.shipping?.shipping_line_vendor_id)
+      const insuranceStarted = Boolean(items.some((it) => it.bucket_id === 'insurance')) || Boolean(sectionMetaByBucket.insurance?.insurance_company_vendor_id)
+
+      if (shippingStarted && !Number(sectionMetaByBucket.shipping?.shipping_line_vendor_id || 0)) {
+        throw new Error(t('shipments.fin.shippingLineVendorRequired', { defaultValue: 'Shipping section requires shipping line vendor selection.' }))
+      }
+
+      if (inlandStarted && !Number(sectionMetaByBucket.inland?.contractor_vendor_id || 0)) {
         throw new Error(t('shipments.fin.inlandContractorRequired'))
       }
-      if ((items.some((it) => it.bucket_id === 'customs')) && !String(sectionMetaByBucket.customs?.customs_broker_name || '').trim()) {
+      if (inlandStarted && inlandItemsCount < 1) {
+        throw new Error(t('shipments.fin.inlandAtLeastOneItem', { defaultValue: 'Inland Transportation requires at least one line item.' }))
+      }
+      if (customsStarted && !Number(sectionMetaByBucket.customs?.customs_broker_vendor_id || 0)) {
         throw new Error(t('shipments.fin.customsBrokerRequired', { defaultValue: 'Customs broker name is required for Customs Clearance' }))
       }
+      if (customsStarted && customsItemsCount < 1) {
+        throw new Error(t('shipments.fin.customsAtLeastOneItem', { defaultValue: 'Customs Clearance requires at least one line item.' }))
+      }
       if ((items.some((it) => it.bucket_id === 'insurance')) && !String(sectionMetaByBucket.insurance?.insurance_company_name || '').trim()) {
-        throw new Error(t('shipments.fin.insuranceCompanyRequired', { defaultValue: 'Insurance company name is required for Insurance section' }))
+        // Backward compatible: if old name field is still populated allow it.
+        if (!Number(sectionMetaByBucket.insurance?.insurance_company_vendor_id || 0)) {
+          throw new Error(t('shipments.fin.insuranceCompanyRequired', { defaultValue: 'Insurance section requires insurance company vendor selection.' }))
+        }
+      }
+      if (insuranceStarted && !Number(sectionMetaByBucket.insurance?.insurance_company_vendor_id || 0)) {
+        throw new Error(t('shipments.fin.insuranceCompanyRequired', { defaultValue: 'Insurance section requires insurance company vendor selection.' }))
       }
 
       await updateShipmentCostInvoice(token, shipment.id, {
         status: 'draft',
+        notify_sales_financial: true,
         items,
         attachment_refs: Object.fromEntries(
           Object.entries(sectionAttachmentRefs || {}).map(([bucketId, list]) => [
@@ -1164,6 +1217,7 @@ export default function ShipmentFinancialsModal({
 
       setPendingOtherByBucket({})
       setDeletedIdsByBucket({})
+      setDeletedDraftRowKeysByBucket({})
       setGroupDraftByKey({})
       onExpensesChanged?.()
       onShipmentTotalsRefresh?.()
@@ -1972,6 +2026,7 @@ export default function ShipmentFinancialsModal({
       const sectionRows = []
       const saveModels = []
       const deletedSet = deletedIdsByBucket[bucketId] || new Set()
+      const deletedDraftRowKeys = deletedDraftRowKeysByBucket[bucketId] || new Set()
       for (const { tpl, matched } of sections) {
         const rowsForTpl = matched.length > 0 ? matched : [null]
         rowsForTpl.forEach((ex, idx) => {
@@ -1985,6 +2040,7 @@ export default function ShipmentFinancialsModal({
           const draft = { desc: initialDesc, amount: initialAmount, currency: initialCurrency, ...(groupDraftByKey[rowKey] || {}) }
 
           if (ex?.id && deletedSet.has(ex.id)) return
+          if (!ex?.id && deletedDraftRowKeys.has(rowKey)) return
 
           saveModels.push({
             rowKey,
@@ -2063,7 +2119,16 @@ export default function ShipmentFinancialsModal({
                         })
                         return
                       }
-                      patchGroupDraft(rowKey, { desc: '', amount: '', currency: initialCurrency })
+                      setGroupDraftByKey((prev) => {
+                        const next = { ...prev }
+                        delete next[rowKey]
+                        return next
+                      })
+                      setDeletedDraftRowKeysByBucket((prev) => {
+                        const next = new Set(prev[bucketId] || [])
+                        next.add(rowKey)
+                        return { ...prev, [bucketId]: next }
+                      })
                     }}
                   >
                     {t('shipments.delete')}
@@ -2135,8 +2200,8 @@ export default function ShipmentFinancialsModal({
         orphans.forEach((ex) => {
           sectionRows.push(
             <tr key={ex.id}>
-              <td>—</td>
               {renderExpenseCells(ex)}
+              {bucketEditing ? <td /> : null}
             </tr>
           )
         })
@@ -2201,40 +2266,64 @@ export default function ShipmentFinancialsModal({
 
       const sectionToolbar = editMode ? (
         <div className="shipment-fin-section-toolbar">
+          {bucketId === 'shipping' ? (
+            <>
+              <label className="fs-xs fw-600">{t('shipments.fin.shippingLineVendorLabel', { defaultValue: 'Shipping Line Vendor' })}</label>
+              <select
+                className="shipment-fin-select"
+                value={String(sectionMetaByBucket.shipping?.shipping_line_vendor_id || '')}
+                onChange={(e) => setSectionMetaByBucket((s) => ({ ...s, shipping: { ...(s.shipping || {}), shipping_line_vendor_id: e.target.value ? Number(e.target.value) : null } }))}
+              >
+                <option value="">{t('shipments.fin.shippingLineVendorPlaceholder', { defaultValue: 'Select shipping line vendor' })}</option>
+                {(vendorsBySection.shipping || []).map((v) => (
+                  <option key={v.id} value={v.id}>{v.name}</option>
+                ))}
+              </select>
+            </>
+          ) : null}
           {bucketId === 'inland' ? (
             <>
               <label className="fs-xs fw-600">{t('shipments.fin.inlandContractorLabel')}</label>
-              <input
-                type="text"
-                className="shipment-fin-input"
-                value={sectionMetaByBucket.inland?.contractor_name || ''}
-                onChange={(e) => setSectionMetaByBucket((s) => ({ ...s, inland: { ...(s.inland || {}), contractor_name: e.target.value } }))}
-                placeholder={t('shipments.fin.inlandContractorPlaceholder')}
-              />
+              <select
+                className="shipment-fin-select"
+                value={String(sectionMetaByBucket.inland?.contractor_vendor_id || '')}
+                onChange={(e) => setSectionMetaByBucket((s) => ({ ...s, inland: { ...(s.inland || {}), contractor_vendor_id: e.target.value ? Number(e.target.value) : null } }))}
+              >
+                <option value="">{t('shipments.fin.inlandContractorPlaceholder', { defaultValue: 'Select contractor/partner' })}</option>
+                {(vendorsBySection.inland || []).map((v) => (
+                  <option key={v.id} value={v.id}>{v.name}</option>
+                ))}
+              </select>
             </>
           ) : null}
           {bucketId === 'customs' ? (
             <>
               <label className="fs-xs fw-600">{t('shipments.fin.customsBrokerLabel', { defaultValue: 'Customs Broker Name' })}</label>
-              <input
-                type="text"
-                className="shipment-fin-input"
-                value={sectionMetaByBucket.customs?.customs_broker_name || ''}
-                onChange={(e) => setSectionMetaByBucket((s) => ({ ...s, customs: { ...(s.customs || {}), customs_broker_name: e.target.value } }))}
-                placeholder={t('shipments.fin.customsBrokerPlaceholder', { defaultValue: 'Enter customs broker name' })}
-              />
+              <select
+                className="shipment-fin-select"
+                value={String(sectionMetaByBucket.customs?.customs_broker_vendor_id || '')}
+                onChange={(e) => setSectionMetaByBucket((s) => ({ ...s, customs: { ...(s.customs || {}), customs_broker_vendor_id: e.target.value ? Number(e.target.value) : null } }))}
+              >
+                <option value="">{t('shipments.fin.customsBrokerPlaceholder', { defaultValue: 'Select customs broker' })}</option>
+                {(vendorsBySection.customs || []).map((v) => (
+                  <option key={v.id} value={v.id}>{v.name}</option>
+                ))}
+              </select>
             </>
           ) : null}
           {bucketId === 'insurance' ? (
             <>
-              <label className="fs-xs fw-600">{t('shipments.fin.insuranceCompanyLabel', { defaultValue: 'Insurance Company Name' })}</label>
-              <input
-                type="text"
-                className="shipment-fin-input"
-                value={sectionMetaByBucket.insurance?.insurance_company_name || ''}
-                onChange={(e) => setSectionMetaByBucket((s) => ({ ...s, insurance: { ...(s.insurance || {}), insurance_company_name: e.target.value } }))}
-                placeholder={t('shipments.fin.insuranceCompanyPlaceholder', { defaultValue: 'Enter insurance company name' })}
-              />
+              <label className="fs-xs fw-600">{t('shipments.fin.insuranceCompanyLabel', { defaultValue: 'Insurance Company' })}</label>
+              <select
+                className="shipment-fin-select"
+                value={String(sectionMetaByBucket.insurance?.insurance_company_vendor_id || '')}
+                onChange={(e) => setSectionMetaByBucket((s) => ({ ...s, insurance: { ...(s.insurance || {}), insurance_company_vendor_id: e.target.value ? Number(e.target.value) : null } }))}
+              >
+                <option value="">{t('shipments.fin.insuranceCompanyPlaceholder', { defaultValue: 'Select insurance company' })}</option>
+                {(vendorsBySection.insurance || []).map((v) => (
+                  <option key={v.id} value={v.id}>{v.name}</option>
+                ))}
+              </select>
             </>
           ) : null}
         </div>

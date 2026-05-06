@@ -18,7 +18,9 @@ class FinancialService
      */
     public static function syncInvoiceTotals(Invoice $invoice): void
     {
-        $sum = $invoice->items()->selectRaw('COALESCE(SUM(line_total), 0) as total')->value('total') ?? 0;
+        $sum = (float) InvoiceItem::query()
+            ->where('invoice_id', $invoice->id)
+            ->sum('line_total');
 
         $invoice->total_amount = $sum;
         $invoice->tax_amount = $invoice->tax_amount ?? 0;
@@ -33,7 +35,9 @@ class FinancialService
      */
     public static function syncVendorBillTotals(VendorBill $bill): void
     {
-        $sum = $bill->items()->selectRaw('COALESCE(SUM(line_total), 0) as total')->value('total') ?? 0;
+        $sum = (float) VendorBillItem::query()
+            ->where('vendor_bill_id', $bill->id)
+            ->sum('line_total');
 
         $bill->total_amount = $sum;
         $bill->tax_amount = $bill->tax_amount ?? 0;
