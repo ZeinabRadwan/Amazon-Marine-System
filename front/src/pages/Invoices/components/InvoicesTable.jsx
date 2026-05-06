@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Search, Eye, FileSpreadsheet, RotateCcw, ArrowUpDown, ChevronDown, ChevronUp } from 'lucide-react'
+import { Search, Eye, FileSpreadsheet, RotateCcw, ArrowUpDown, ChevronDown, ChevronUp, Pencil, Trash2, Plus } from 'lucide-react'
 import { Table, IconActionButton } from '../../../components/Table'
 import InvoiceStatusBadge from '../../../components/InvoiceStatusBadge'
 import Pagination from '../../../components/Pagination'
 import Alert from '../../../components/Alert'
 import { getStoredToken } from '../../Login'
-import { listInvoices } from '../../../api/invoices'
+import { deleteInvoice, listInvoices } from '../../../api/invoices'
 import InvoiceDetailModal from './InvoiceDetailModal'
+import CreateInvoiceModal from './CreateInvoiceModal'
 
 function statusLabel(status, t) {
   const s = String(status || '').toLowerCase()
@@ -30,6 +31,7 @@ export default function InvoicesTable({
   refreshKey,
   invoiceType,
   initialDetailId,
+  initialEditId,
   onChanged,
   onFiltersChange,
   canManage = true,
@@ -55,6 +57,10 @@ export default function InvoicesTable({
 
   const [selectedIds, setSelectedIds] = useState(() => new Set())
   const [detailId, setDetailId] = useState(null)
+  const [editId, setEditId] = useState(null)
+  const [createOpen, setCreateOpen] = useState(false)
+  const [deleteId, setDeleteId] = useState(null)
+  const [deleteBusy, setDeleteBusy] = useState(false)
 
   useEffect(() => {
     if (!initialDetailId) return
@@ -63,6 +69,15 @@ export default function InvoicesTable({
       setDetailId(parsed)
     }
   }, [initialDetailId])
+
+  useEffect(() => {
+    if (!initialEditId) return
+    const parsed = Number(initialEditId)
+    if (Number.isFinite(parsed) && parsed > 0) {
+      setEditId(parsed)
+      setCreateOpen(true)
+    }
+  }, [initialEditId])
 
   const fetchData = () => {
     const token = getStoredToken()
@@ -134,6 +149,22 @@ export default function InvoicesTable({
     setDateTo('')
     setSort('date')
     setPage(1)
+  }
+
+  const handleDeleteConfirm = async () => {
+    const token = getStoredToken()
+    if (!token || !deleteId) return
+    setDeleteBusy(true)
+    try {
+      await deleteInvoice(token, deleteId)
+      setDeleteId(null)
+      fetchData()
+      onChanged?.()
+    } catch (e) {
+      setError(e?.message || 'Failed to delete invoice')
+    } finally {
+      setDeleteBusy(false)
+    }
   }
 
   const pagination = {
@@ -208,6 +239,23 @@ export default function InvoicesTable({
             label={t('clients.view')}
             onClick={() => setDetailId(row.id)}
           />
+          {canManage && (
+            <IconActionButton
+              icon={<Pencil className="h-4 w-4" />}
+              label={t('invoices.edit', 'Edit')}
+              onClick={() => {
+                setEditId(row.id)
+                setCreateOpen(true)
+              }}
+            />
+          )}
+          {canManage && (
+            <IconActionButton
+              icon={<Trash2 className="h-4 w-4" />}
+              label={t('invoices.delete', 'Delete')}
+              onClick={() => setDeleteId(row.id)}
+            />
+          )}
         </div>
       ),
       sortable: false,
@@ -334,6 +382,20 @@ export default function InvoicesTable({
                 {t('invoices.create', 'Create Invoice')}
               </button>
             )}
+            {canManage && (
+              <button
+                type="button"
+                className="clients-filters__btn-icon clients-filters__btn-icon--export"
+                aria-label={t('invoices.create', 'Create Invoice')}
+                title={t('invoices.create', 'Create Invoice')}
+                onClick={() => {
+                  setEditId(null)
+                  setCreateOpen(true)
+                }}
+              >
+                <Plus className="clients-filters__btn-icon-svg" aria-hidden />
+              </button>
+            )}
           </div>
         </div>
         <div
@@ -420,6 +482,38 @@ export default function InvoicesTable({
           onChanged?.()
         }}
       />
+
+      <CreateInvoiceModal
+        isOpen={createOpen}
+        invoiceId={editId}
+        onClose={() => {
+          setCreateOpen(false)
+          setEditId(null)
+        }}
+        onSuccess={() => {
+          setCreateOpen(false)
+          setEditId(null)
+          fetchData()
+          onChanged?.()
+        }}
+      />
+
+      {deleteId ? (
+        <div className="clients-modal-overlay">
+          <div className="clients-modal">
+            <h2>{t('invoices.confirmDelete', 'Delete invoice?')}</h2>
+            <p>{t('invoices.confirmDeleteMessage', 'This action cannot be undone.')}</p>
+            <div className="clients-modal-actions">
+              <button type="button" className="clients-btn" onClick={() => setDeleteId(null)} disabled={deleteBusy}>
+                {t('common.cancel', 'Cancel')}
+              </button>
+              <button type="button" className="clients-btn clients-btn--danger" onClick={handleDeleteConfirm} disabled={deleteBusy}>
+                {deleteBusy ? t('common.loading', 'Loading...') : t('invoices.delete', 'Delete')}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

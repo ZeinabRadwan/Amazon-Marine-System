@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X, Plus, Trash2 } from 'lucide-react'
 import { getStoredToken } from '../../Login'
-import { createInvoice, listCurrencies, listItems } from '../../../api/invoices'
+import { createInvoice, getInvoice, listCurrencies, listItems, updateInvoice } from '../../../api/invoices'
 import { listClients } from '../../../api/clients'
 import { listShipments } from '../../../api/shipments'
 import AsyncSelect from '../../../components/AsyncSelect'
@@ -16,7 +16,7 @@ function money(amount, currency) {
   }
 }
 
-export default function CreateInvoiceModal({ isOpen, onClose, onSuccess }) {
+export default function CreateInvoiceModal({ isOpen, onClose, onSuccess, invoiceId = null }) {
   const { t } = useTranslation()
   const [invoiceType, setInvoiceType] = useState('client') // client | partner
   const [clientId, setClientId] = useState(null) // {value, label}
@@ -30,6 +30,7 @@ export default function CreateInvoiceModal({ isOpen, onClose, onSuccess }) {
   const [items, setItems] = useState([{ description: '', quantity: 1, unit_price: 0, item_id: null }])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const isEditMode = Number.isFinite(Number(invoiceId)) && Number(invoiceId) > 0
 
   useEffect(() => {
     if (!isOpen) return
@@ -38,11 +39,39 @@ export default function CreateInvoiceModal({ isOpen, onClose, onSuccess }) {
 
     const token = getStoredToken()
     if (token) {
-      listCurrencies(token)
-        .then(setCurrencies)
-        .catch(() => setCurrencies([]))
+      Promise.all([
+        listCurrencies(token).catch(() => []),
+        isEditMode ? getInvoice(token, invoiceId).catch(() => null) : Promise.resolve(null),
+      ])
+        .then(([currs, existing]) => {
+          setCurrencies(currs)
+          if (!existing) return
+          setInvoiceType(String(existing.invoice_type || 'client').toLowerCase() === 'vendor' ? 'partner' : 'client')
+          setClientId(existing.client ? { value: existing.client.id, label: existing.client.company_name || existing.client.name } : null)
+          setShipmentId(existing.shipment ? { value: existing.shipment.id, label: existing.shipment.bl_number || existing.shipment.booking_number || `ID: ${existing.shipment.id}` } : null)
+          setCurrencyId(existing.currency_id ? String(existing.currency_id) : '')
+          setIsVatInvoice(!!existing.is_vat_invoice)
+          setIssueDate(existing.issue_date || new Date().toISOString().slice(0, 10))
+          setDueDate(existing.due_date || '')
+          setNotes(existing.notes || '')
+          const mappedItems = Array.isArray(existing.items)
+            ? existing.items.map((it) => ({
+                item_id: it.item_id || null,
+                description: it.description || '',
+                quantity: Number(it.quantity) || 0,
+                unit_price: Number(it.unit_price) || 0,
+                currency_code: (it.currency_code || existing.currency_code || 'USD').toUpperCase(),
+                section_key: it.section_key || null,
+                order_index: Number(it.order_index || 0),
+                source_key: it.source_key || null,
+                cost_unit_price: Number(it.cost_unit_price || 0),
+                cost_line_total: Number(it.cost_line_total || 0),
+              }))
+            : []
+          setItems(mappedItems.length ? mappedItems : [{ description: '', quantity: 1, unit_price: 0, item_id: null }])
+        })
     }
-  }, [isOpen])
+  }, [isOpen, isEditMode, invoiceId])
 
   const selectedCurrencyCode = useMemo(() => {
     const c = currencies.find(curr => String(curr.id) === String(currencyId))
@@ -106,25 +135,46 @@ export default function CreateInvoiceModal({ isOpen, onClose, onSuccess }) {
     setError(null)
     try {
       const invoiceTypeId = invoiceType === 'partner' ? 1 : 0
-      const payload = {
-        invoice_type_id: invoiceTypeId,
-        client_id: clientId?.value,
-        shipment_id: shipmentId?.value,
-        currency_id: Number(currencyId),
-        issue_date: issueDate,
-        due_date: dueDate || undefined,
-        is_vat_invoice: !!isVatInvoice,
-        notes: notes || undefined,
-        items: items
-          .filter((it) => String(it.description || '').trim().length > 0)
-          .map((it) => ({
+      const mappedItems = items
+        .filter((it) => String(it.description || '').trim().length > 0)
+        .map((it, idx) => {
+          const qty = Number(it.quantity) || 0
+          const unit = Number(it.unit_price) || 0
+          const lineTotal = qty * unit
+          const costLineTotal = Number(it.cost_line_total ?? lineTotal) || 0
+          const costUnitPrice = qty > 0 ? Number(it.cost_unit_price ?? (costLineTotal / qty)) || 0 : 0
+          return {
             item_id: it.item_id,
             description: it.description,
-            quantity: Number(it.quantity) || 0,
-            unit_price: Number(it.unit_price) || 0,
-          })),
+            quantity: qty,
+            unit_price: unit,
+            currency_code: (it.currency_code || selectedCurrencyCode || 'USD').toUpperCase(),
+            section_key: it.section_key || null,
+            order_index: Number(it.order_index ?? idx),
+            source_key: it.source_key || null,
+            cost_unit_price: costUnitPrice,
+            cost_line_total: costLineTotal,
+          }
+        })
+      if (isEditMode) {
+        await updateInvoice(token, invoiceId, {
+          due_date: dueDate || null,
+          notes: notes || null,
+          items: mappedItems,
+        })
+      } else {
+        await createInvoice(token, {
+          invoice_type_id: invoiceTypeId,
+          client_id: clientId?.value,
+          shipment_id: shipmentId?.value,
+          currency_id: Number(currencyId),
+          issue_date: issueDate,
+          due_date: dueDate || undefined,
+          is_vat_invoice: !!isVatInvoice,
+          notes: notes || undefined,
+          items: mappedItems,
+        })
       }
-      await createInvoice(token, payload)
       onSuccess?.()
     } catch (err) {
       setError(err.message || 'Failed to create invoice')
@@ -137,7 +187,7 @@ export default function CreateInvoiceModal({ isOpen, onClose, onSuccess }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <div className="px-6 py-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-700">
-          <h3 className="text-lg font-bold">{t('invoices.create', 'Create Invoice')}</h3>
+          <h3 className="text-lg font-bold">{isEditMode ? t('invoices.edit', 'Edit Invoice') : t('invoices.create', 'Create Invoice')}</h3>
           <button onClick={onClose} className="p-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded-full transition-colors">
             <X className="h-5 w-5" />
           </button>
@@ -153,7 +203,7 @@ export default function CreateInvoiceModal({ isOpen, onClose, onSuccess }) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase mb-2">{t('invoices.invoiceType', 'Invoice type')}</label>
-              <select value={invoiceType} onChange={(e) => setInvoiceType(e.target.value)} className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm outline-none">
+              <select value={invoiceType} onChange={(e) => setInvoiceType(e.target.value)} disabled={isEditMode} className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm outline-none">
                 <option value="client">{t('invoices.tabs.client', 'Client')}</option>
                 <option value="partner">{t('invoices.tabs.partner', 'Partner')}</option>
               </select>
@@ -280,7 +330,7 @@ export default function CreateInvoiceModal({ isOpen, onClose, onSuccess }) {
               {t('common.cancel', 'Cancel')}
             </button>
             <button disabled={loading} type="submit" className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-bold">
-              {loading ? t('common.loading', 'Loading...') : t('common.save', 'Save')}
+              {loading ? t('common.loading', 'Loading...') : (isEditMode ? t('common.update', 'Update') : t('common.save', 'Save'))}
             </button>
           </div>
         </form>

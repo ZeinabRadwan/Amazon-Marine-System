@@ -156,6 +156,18 @@ export async function updateInvoice(token, invoiceId, body) {
   return json.data ?? json
 }
 
+export async function deleteInvoice(token, invoiceId) {
+  const res = await apiFetch(`${getBaseUrl()}/invoices/${invoiceId}`, {
+    method: 'DELETE',
+    headers: authHeaders(token, false),
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(json.message || json.error || `Failed to delete invoice (${res.status})`)
+  }
+  return json
+}
+
 /**
  * @param {string} token
  * @param {number} invoiceId

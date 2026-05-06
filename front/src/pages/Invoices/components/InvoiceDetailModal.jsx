@@ -115,6 +115,16 @@ export default function InvoiceDetailModal({ isOpen, invoiceId, onClose, onChang
       .filter((s) => s.rows.length > 0)
   }, [invoice])
 
+  const sectionAttachments = useMemo(() => {
+    const out = {}
+    ;(invoice?.sections || []).forEach((section) => {
+      const key = String(section?.key || '').toLowerCase()
+      if (!key) return
+      out[key] = Array.isArray(section?.attachments) ? section.attachments : []
+    })
+    return out
+  }, [invoice])
+
   const paymentsTimeline = useMemo(() => {
     if (!invoice) return []
     const rows = []
@@ -241,6 +251,44 @@ export default function InvoiceDetailModal({ isOpen, invoiceId, onClose, onChang
                       ))}
                     </tbody>
                   </table>
+                  <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/10">
+                    <div className="text-xs font-bold text-gray-500 uppercase mb-2">{t('accountings.attachments', 'Attachments')}</div>
+                    {(sectionAttachments[section.id] || []).length === 0 ? (
+                      <div className="text-sm text-gray-500">—</div>
+                    ) : (
+                      <div className="space-y-2">
+                        {(sectionAttachments[section.id] || []).map((att, idx) => (
+                          <div key={att.id || `${section.id}-att-${idx}`} className="flex items-center justify-between text-sm border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2">
+                            <span className="truncate">{att.name || `attachment-${idx + 1}`}</span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700"
+                                onClick={() => att.url && window.open(att.url, '_blank', 'noopener,noreferrer')}
+                                disabled={!att.url}
+                              >
+                                {t('shipments.fin.viewReceipt', 'View')}
+                              </button>
+                              <button
+                                type="button"
+                                className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700"
+                                onClick={() => {
+                                  if (!att.url) return
+                                  const a = document.createElement('a')
+                                  a.href = att.url
+                                  a.download = att.name || 'attachment'
+                                  a.click()
+                                }}
+                                disabled={!att.url}
+                              >
+                                {t('shipments.fin.downloadReceipt', 'Download')}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))}
 

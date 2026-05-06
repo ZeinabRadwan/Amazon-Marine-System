@@ -838,6 +838,31 @@ class InvoiceController extends Controller
         ]);
     }
 
+    public function destroy(Request $request, Invoice $invoice)
+    {
+        $user = $request->user();
+        abort_unless(
+            $user && ($user->can('financial.manage') || $user->can('accounting.manage')),
+            403
+        );
+
+        if ($invoice->payments()->exists()) {
+            return response()->json([
+                'message' => __('Invoices with payments cannot be deleted.'),
+            ], 422);
+        }
+
+        DB::transaction(function () use ($invoice): void {
+            $invoice->items()->delete();
+            CustomerTransaction::query()->where('invoice_id', $invoice->id)->delete();
+            $invoice->delete();
+        });
+
+        return response()->json([
+            'message' => __('Invoice deleted.'),
+        ]);
+    }
+
     public function recordPayment(Request $request, Invoice $invoice)
     {
         $user = $request->user();

@@ -506,6 +506,7 @@ Route::prefix('v1')->group(function () {
         Route::put('invoices/{invoice}', [InvoiceController::class, 'update']);
         Route::post('invoices/{invoice}/issue', [InvoiceController::class, 'issue']);
         Route::post('invoices/{invoice}/cancel', [InvoiceController::class, 'cancel']);
+        Route::delete('invoices/{invoice}', [InvoiceController::class, 'destroy']);
         Route::post('invoices/{invoice}/payments', [InvoiceController::class, 'recordPayment']);
         Route::get('invoices/export', [InvoiceController::class, 'export']);
 

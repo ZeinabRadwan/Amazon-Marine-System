@@ -825,6 +825,14 @@ function App() {
             }
           />
           <Route
+            path="/invoices/:invoiceId/edit"
+            element={
+              <RequirePageAccess pageKey="invoices">
+                <Invoices />
+              </RequirePageAccess>
+            }
+          />
+          <Route
             path="/partner-ledger"
             element={
               <RequirePageAccess pageKey="accounting">
