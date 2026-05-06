@@ -615,6 +615,7 @@ export default function ShipmentFinancialsModal({
   const { isAccountant, isAdminRole, isSalesRole, roleId } = useAuthAccess()
   const isAccountingUser = isAdminRole || isAccountant
   const isSalesUser = isAdminRole || isSalesRole || roleId === ROLE_ID.SALES_MANAGER
+  const canEditSellingGrid = Boolean(token && isSalesUser)
   
   const [tab, setTab] = useState('selling')
   const [expanded, setExpanded] = useState(() => new Set(['shipping', 'inland', 'customs', 'insurance', 'other']))
@@ -1303,16 +1304,19 @@ export default function ShipmentFinancialsModal({
           items.find((it) => it.description === lineLabel)
         const cost = Number(ex.amount) || 0
         const sellVal = match != null ? Number(match.unit_price) : cost
+        const qtyVal = match != null ? Math.max(1, Number(match.quantity || 1)) : 1
         const include = match ? Number(match.quantity) > 0 : true
         return {
           expenseId: ex.id,
           source_key: sourceKey,
           bucket_id: ex.bucket_id || expenseBucket(ex),
           label: lineLabel,
+          description: match?.description || lineLabel,
           category_name: ex.category_name || '—',
           cost,
           currency: (match?.currency_code || ex.currency_code || 'USD').toUpperCase(),
-          sell: Number.isNaN(sellVal) ? '' : String(sellVal),
+          quantity: qtyVal,
+          unit_price: Number.isNaN(sellVal) ? '' : String(sellVal),
           include,
         }
       })
@@ -1332,19 +1336,20 @@ export default function ShipmentFinancialsModal({
     for (const [idx, row] of tabBRows.entries()) {
       if (deletedSellIds.has(row.expenseId)) continue
       if (!row.include) continue
-      const sell = Number(row.sell)
+      const sell = Number(row.unit_price)
+      const qty = Math.max(1, Number(row.quantity || 1))
       if (Number.isNaN(sell) || sell < 0) continue
       const cost = Number(row.cost) || 0
       items.push({
-        description: row.label,
-        title: row.label,
-        quantity: 1,
+        description: row.description || row.label,
+        title: row.label || row.description,
+        quantity: qty,
         unit_price: sell,
         currency_code: (row.currency || 'USD').toUpperCase(),
         section_key: row.bucket_id || 'other',
         order_index: idx,
         source_key: row.source_key || `expense:${row.expenseId}`,
-        cost_unit_price: cost,
+        cost_unit_price: qty > 0 ? cost / qty : cost,
         cost_line_total: cost,
       })
     }
@@ -1476,6 +1481,41 @@ export default function ShipmentFinancialsModal({
     setTabBRows((rows) => rows.map((r, i) => (i === idx ? { ...r, ...patch } : r)))
   }
 
+  const editableSectionRows = useCallback(
+    (sectionId) => tabBRows.filter((r) => (r.bucket_id || 'other') === sectionId && !deletedSellIds.has(r.expenseId)),
+    [tabBRows, deletedSellIds]
+  )
+
+  const addSellingRow = useCallback((sectionId) => {
+    setTabBRows((rows) => [
+      ...rows,
+      {
+        expenseId: `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        source_key: `manual:${sectionId}`,
+        bucket_id: sectionId,
+        label: t('shipments.fin.customItemFallback', { defaultValue: 'Custom Item' }),
+        description: '',
+        category_name: '—',
+        cost: 0,
+        currency: 'USD',
+        quantity: 1,
+        unit_price: '',
+        include: true,
+      },
+    ])
+  }, [t])
+
+  const duplicateSellingRow = useCallback((row) => {
+    setTabBRows((rows) => [
+      ...rows,
+      {
+        ...row,
+        expenseId: `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        source_key: `${row.source_key || 'manual'}:dup`,
+      },
+    ])
+  }, [])
+
   const addCustomCostSection = useCallback(() => {
     const title = window.prompt('Section name / اسم القسم')
     if (!title || !title.trim()) return
@@ -1599,7 +1639,7 @@ export default function ShipmentFinancialsModal({
       ;(rows || []).forEach((r) => {
         const cur = (r.currency || 'USD').toUpperCase()
         const c = Number(r.cost) || 0
-        const s = Number(r.sell) || 0
+        const s = (Number(r.unit_price) || 0) * Math.max(1, Number(r.quantity || 1))
         if (c > 0) costRows.push({ amount: c, currency_code: cur })
         if (s > 0) sellRows.push({ amount: s, currency_code: cur })
       })
@@ -1622,7 +1662,7 @@ export default function ShipmentFinancialsModal({
       if (!r.include) return
       const cur = (r.currency || 'USD').toUpperCase()
       const c = Number(r.cost) || 0
-      const s = Number(r.sell) || 0
+      const s = (Number(r.unit_price) || 0) * Math.max(1, Number(r.quantity || 1))
       if (c > 0) costRows.push({ amount: c, currency_code: cur })
       if (s > 0) sellRows.push({ amount: s, currency_code: cur })
     })
@@ -1708,7 +1748,7 @@ export default function ShipmentFinancialsModal({
     sellingVisibleRows.forEach((r) => {
       const cur = (r.currency || 'USD').toUpperCase()
       const c = Number(r.cost) || 0
-      const s = Number(r.sell) || 0
+      const s = (Number(r.unit_price) || 0) * Math.max(1, Number(r.quantity || 1))
       if (c > 0) totalCost[cur] = (totalCost[cur] || 0) + c
       if (s > 0) totalSell[cur] = (totalSell[cur] || 0) + s
     })
@@ -2648,10 +2688,11 @@ export default function ShipmentFinancialsModal({
               ) : (
                 <>
                   {sellingSections.map((sec) => {
+                    const liveRows = editableSectionRows(sec.id)
                     const secTotals = {
-                      cost: sec.cost || sectionCurrencyTotals(sec.rows).cost,
-                      sell: sec.sell || sectionCurrencyTotals(sec.rows).sell,
-                      profit: sec.profit || sectionCurrencyTotals(sec.rows).profit,
+                      cost: sectionCurrencyTotals(liveRows).cost,
+                      sell: sectionCurrencyTotals(liveRows).sell,
+                      profit: sectionCurrencyTotals(liveRows).profit,
                     }
                     return (
                       <div key={sec.id} className="shipment-fin-card mb-3">
@@ -2671,41 +2712,84 @@ export default function ShipmentFinancialsModal({
                           <thead>
                             <tr>
                               <th>{t('shipments.fin.colCharge')}</th>
+                              <th>{t('invoices.item.qty', { defaultValue: 'Qty' })}</th>
+                              <th>{t('invoices.item.unitPrice', { defaultValue: 'Unit Price' })}</th>
                               <th>{t('shipments.fields.cost_total')}</th>
-                              <th>{t('shipments.fin.colSell')}</th>
                               <th>{t('shipments.fin.colCurrency')}</th>
+                              <th>{t('shipments.fin.colSell')}</th>
                               <th>{t('shipments.fin.profitLabel', { defaultValue: 'Profit (الربح)' })}</th>
                               <th>{t('shipments.actions')}</th>
                             </tr>
                           </thead>
                           <tbody>
-                            {sec.rows.map((row) => {
+                            {editableSectionRows(sec.id).map((row) => {
                               const idx = tabBRows.findIndex((r) => r.expenseId === row.expenseId)
-                              const isEditableRow = row.expenseId != null && idx >= 0
+                              const isEditableRow = idx >= 0
                               const rowCurrency = (row.currency || row.currency_code || 'USD').toUpperCase()
                               const rowCost = Number(row.cost ?? row.cost_line_total ?? 0) || 0
-                              const sellNum = Number(row.sell ?? row.unit_price ?? 0)
+                              const sellNum = Number(row.unit_price ?? row.sell ?? 0)
                               const rowQty = Number(row.quantity ?? 1) || 1
                               const rowSelling = row.line_total != null ? Number(row.line_total) || 0 : (sellNum * rowQty)
                               const profit = rowSelling - rowCost
                               return (
                                 <tr key={row.id || row.expenseId || row.source_key || `${sec.id}-${row.description}`}>
-                                  <td>{row.label || row.description || t('shipments.fin.customItemFallback', { defaultValue: 'Custom Item' })}</td>
+                                  <td>
+                                    {canEditSellingGrid && isEditableRow ? (
+                                      <input
+                                        type="text"
+                                        className="shipment-fin-input"
+                                        value={row.description || row.label || ''}
+                                        onChange={(e) => patchTabBRow(idx, { description: e.target.value, label: e.target.value || row.label })}
+                                        placeholder={t('shipments.fin.customItemFallback', { defaultValue: 'Custom Item' })}
+                                      />
+                                    ) : (row.label || row.description || t('shipments.fin.customItemFallback', { defaultValue: 'Custom Item' }))}
+                                  </td>
+                                  <td>
+                                    {canEditSellingGrid && isEditableRow ? (
+                                      <input
+                                        type="number"
+                                        min="1"
+                                        step="1"
+                                        className="shipment-fin-input shipment-fin-input--num"
+                                        value={rowQty}
+                                        onChange={(e) => patchTabBRow(idx, { quantity: Math.max(1, Number(e.target.value || 1)) })}
+                                      />
+                                    ) : <span className="shipment-fin-num">{rowQty}</span>}
+                                  </td>
+                                  <td>
+                                    {canEditSellingGrid && isEditableRow ? (
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        className="shipment-fin-input shipment-fin-input--num"
+                                        value={row.unit_price}
+                                        onChange={(e) => patchTabBRow(idx, { unit_price: e.target.value })}
+                                      />
+                                    ) : <span className="shipment-fin-num">{formatMoney(sellNum, numberLocale)}</span>}
+                                  </td>
                                   <td className="shipment-fin-num">{formatMoney(rowCost, numberLocale)}</td>
                                   <td>
-                                    {canManageFinancial && isEditableRow ? (
-                                      <input type="number" min="0" step="0.01" className="shipment-fin-input shipment-fin-input--num" value={row.sell} onChange={(e) => patchTabBRow(idx, { sell: e.target.value })} />
+                                    {canEditSellingGrid && isEditableRow ? (
+                                      <select className="shipment-fin-select" value={rowCurrency} onChange={(e) => patchTabBRow(idx, { currency: e.target.value })}>
+                                        {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                                      </select>
                                     ) : (
-                                      <span className="shipment-fin-num">{formatMoney(rowSelling || 0, numberLocale)}</span>
+                                      rowCurrency || '—'
                                     )}
                                   </td>
-                                  <td>{rowCurrency || '—'}</td>
+                                  <td className="shipment-fin-num">{formatMoney(rowSelling || 0, numberLocale)}</td>
                                   <td className="shipment-fin-num">{formatMoney(profit, numberLocale)}</td>
                                   <td className="shipment-fin-actions">
                                     {isEditableRow ? (
-                                      <button type="button" className="shipment-fin-btn shipment-fin-btn--danger shipment-fin-btn--sm" onClick={() => setDeletedSellIds((prev) => new Set(prev).add(row.expenseId))}>
-                                        {t('shipments.delete')}
-                                      </button>
+                                      <div className="shipment-fin-actions__inner">
+                                        <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm" onClick={() => duplicateSellingRow(row)}>
+                                          {t('common.duplicate', { defaultValue: 'Duplicate' })}
+                                        </button>
+                                        <button type="button" className="shipment-fin-btn shipment-fin-btn--danger shipment-fin-btn--sm" onClick={() => setDeletedSellIds((prev) => new Set(prev).add(row.expenseId))}>
+                                          {t('shipments.delete')}
+                                        </button>
+                                      </div>
                                     ) : <span className="text-muted">—</span>}
                                   </td>
                                 </tr>
@@ -2714,6 +2798,13 @@ export default function ShipmentFinancialsModal({
                           </tbody>
                         </table>
                             </div>
+                        {canEditSellingGrid ? (
+                          <div className="shipment-fin-draft-add-row mb-3">
+                            <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary" onClick={() => addSellingRow(sec.id)}>
+                              + {t('shipments.fin.addRow')}
+                            </button>
+                          </div>
+                        ) : null}
                         <div className="shipment-fin-draft-sec-total">
                           <span>{t('shipments.fin.subtotal', { defaultValue: 'Subtotal' })}</span>
                           {renderStackedTotals(secTotals)}
@@ -2811,7 +2902,7 @@ export default function ShipmentFinancialsModal({
                     </div>
                     ) : null}
                   </div>
-                  {canManageFinancial ? (
+                  {canEditSellingGrid ? (
                     <div className="shipment-fin-pricing-actions mt-3">
                       <button
                         type="button"
