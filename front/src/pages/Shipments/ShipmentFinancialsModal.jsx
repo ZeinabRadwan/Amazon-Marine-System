@@ -1122,7 +1122,6 @@ export default function ShipmentFinancialsModal({
             currency_code: (draft.currency || 'USD').toUpperCase(),
             vendor_id:
               model.vendorId
-              || (sectionId === 'shipping' ? (sectionMetaByBucket.shipping?.shipping_line_vendor_id || undefined) : undefined)
               || (sectionId === 'inland' ? (sectionMetaByBucket.inland?.contractor_vendor_id || undefined) : undefined)
               || (sectionId === 'customs' ? (sectionMetaByBucket.customs?.customs_broker_vendor_id || undefined) : undefined)
               || (sectionId === 'insurance' ? (sectionMetaByBucket.insurance?.insurance_company_vendor_id || undefined) : undefined),
@@ -1153,8 +1152,7 @@ export default function ShipmentFinancialsModal({
             amount,
             currency_code: (line.currency || 'USD').toUpperCase(),
             vendor_id:
-              (sectionId === 'shipping' ? (sectionMetaByBucket.shipping?.shipping_line_vendor_id || undefined) : undefined)
-              || (sectionId === 'inland' ? (sectionMetaByBucket.inland?.contractor_vendor_id || undefined) : undefined)
+              (sectionId === 'inland' ? (sectionMetaByBucket.inland?.contractor_vendor_id || undefined) : undefined)
               || (sectionId === 'customs' ? (sectionMetaByBucket.customs?.customs_broker_vendor_id || undefined) : undefined)
               || (sectionId === 'insurance' ? (sectionMetaByBucket.insurance?.insurance_company_vendor_id || undefined) : undefined),
             expense_date: new Date().toISOString().slice(0, 10),
@@ -1519,20 +1517,22 @@ export default function ShipmentFinancialsModal({
   }, [])
 
   const openSectionAttachment = useCallback((attachment) => {
-    if (!attachment?.object_url) {
+    const link = attachment?.url || attachment?.object_url || null
+    if (!link) {
       setFinBanner({ type: 'error', message: t('shipments.fin.errorReceipt') })
       return
     }
-    window.open(attachment.object_url, '_blank', 'noopener,noreferrer')
+    window.open(link, '_blank', 'noopener,noreferrer')
   }, [t])
 
   const downloadSectionAttachment = useCallback((attachment) => {
-    if (!attachment?.object_url) {
+    const link = attachment?.url || attachment?.object_url || null
+    if (!link) {
       setFinBanner({ type: 'error', message: t('shipments.fin.errorReceipt') })
       return
     }
     const a = document.createElement('a')
-    a.href = attachment.object_url
+    a.href = link
     a.download = attachment.name || 'attachment'
     document.body.appendChild(a)
     a.click()
@@ -1545,6 +1545,32 @@ export default function ShipmentFinancialsModal({
   )
 
   const sellingSections = useMemo(() => {
+    const sectionLabels = {
+      shipping: t('shipments.fin.sellingSection.shipping', { defaultValue: 'Shipment Line Cost / تكلفة الشحن البحري' }),
+      inland: t('shipments.fin.sellingSection.inland', { defaultValue: 'Inland Transport / النقل البري' }),
+      customs: t('shipments.fin.sellingSection.customs', { defaultValue: 'Customs Clearance / التخليص الجمركي' }),
+      insurance: t('shipments.fin.sellingSection.insurance', { defaultValue: 'Insurance / التأمين' }),
+      handling: t('shipments.fin.sellingSection.handling', { defaultValue: 'Handling Fees / رسوم الخدمة والمتابعة' }),
+      other: t('shipments.fin.sellingSection.other', { defaultValue: 'Additional Cost Types / تكاليف إضافية' }),
+    }
+    const fixed = ['shipping', 'inland', 'customs', 'insurance']
+    const apiSections = Array.isArray(clientInvoice?.sections) ? clientInvoice.sections : []
+    if (apiSections.length > 0) {
+      const mapped = apiSections.map((s) => ({
+        id: String(s?.key || 'other'),
+        label: sectionLabels[String(s?.key || 'other')] || String(s?.key || 'other'),
+        rows: Array.isArray(s?.items) ? s.items : [],
+        cost: s?.cost_by_currency || {},
+        sell: s?.selling_by_currency || {},
+        profit: s?.profit_by_currency || {},
+        attachments: Array.isArray(s?.attachments) ? s.attachments : [],
+      }))
+      const byId = new Map(mapped.map((s) => [s.id, s]))
+      return [...fixed, ...mapped.map((s) => s.id).filter((id) => !fixed.includes(id))].map((id) => (
+        byId.get(id) || { id, label: sectionLabels[id] || id, rows: [], cost: {}, sell: {}, profit: {}, attachments: [] }
+      ))
+    }
+
     const defs = [
       { id: 'shipping', label: t('shipments.fin.sellingSection.shipping', { defaultValue: 'Shipment Line Cost / تكلفة الشحن البحري' }) },
       { id: 'inland', label: t('shipments.fin.sellingSection.inland', { defaultValue: 'Inland Transport / النقل البري' }) },
@@ -1555,7 +1581,7 @@ export default function ShipmentFinancialsModal({
     return defs
       .map((d) => ({ ...d, rows: sellingVisibleRows.filter((r) => (r.bucket_id || 'other') === d.id) }))
       .filter((s) => s.rows.length > 0)
-  }, [sellingVisibleRows, t])
+  }, [sellingVisibleRows, t, clientInvoice?.sections])
 
   const handlingTotal = useMemo(() => {
     if (!handlingRow.include) return 0
@@ -1641,6 +1667,30 @@ export default function ShipmentFinancialsModal({
   }, [formatCurrencyBreakdown, t])
 
   const invoiceFinancialOverview = useMemo(() => {
+    const fromApi = clientInvoice?.financial_overview
+    const totalSell = fromApi?.selling_by_currency || {}
+    const totalCost = fromApi?.cost_by_currency || {}
+    const profit = fromApi?.profit_by_currency || {}
+    if (Object.keys(totalSell).length || Object.keys(totalCost).length || Object.keys(profit).length) {
+      const paid = {}
+      ;(clientInvoice?.payments || []).forEach((p) => {
+        const cur = String(p?.currency_code || clientInvoice?.currency_code || 'USD').toUpperCase()
+        const amt = Number(p?.amount) || 0
+        if (amt > 0) paid[cur] = (paid[cur] || 0) + amt
+      })
+      const remaining = {}
+      const remKeys = new Set([...Object.keys(totalSell), ...Object.keys(paid)])
+      remKeys.forEach((k) => {
+        remaining[k] = Math.max(0, (Number(totalSell[k]) || 0) - (Number(paid[k]) || 0))
+      })
+      const totalSellSum = Object.values(totalSell).reduce((a, b) => a + (Number(b) || 0), 0)
+      const paidSum = Object.values(paid).reduce((a, b) => a + (Number(b) || 0), 0)
+      let status = 'unpaid'
+      if (totalSellSum > 0 && paidSum >= totalSellSum) status = 'paid'
+      else if (paidSum > 0) status = 'partial'
+      return { totalCost, totalSell, profit, paid, remaining, status }
+    }
+
     const totalCost = {}
     const totalSell = {}
     sellingVisibleRows.forEach((r) => {
@@ -2257,21 +2307,6 @@ export default function ShipmentFinancialsModal({
 
       const sectionToolbar = editMode ? (
         <div className="shipment-fin-section-toolbar">
-          {bucketId === 'shipping' ? (
-            <>
-              <label className="fs-xs fw-600">{t('shipments.fin.shippingLineVendorLabel', { defaultValue: 'Shipping Line Vendor' })}</label>
-              <select
-                className="shipment-fin-select"
-                value={String(sectionMetaByBucket.shipping?.shipping_line_vendor_id || '')}
-                onChange={(e) => setSectionMetaByBucket((s) => ({ ...s, shipping: { ...(s.shipping || {}), shipping_line_vendor_id: e.target.value ? Number(e.target.value) : null } }))}
-              >
-                <option value="">{t('shipments.fin.shippingLineVendorPlaceholder', { defaultValue: 'Select shipping line vendor' })}</option>
-                {(vendorsBySection.shipping || []).map((v) => (
-                  <option key={v.id} value={v.id}>{v.name}</option>
-                ))}
-              </select>
-            </>
-          ) : null}
           {bucketId === 'inland' ? (
             <>
               <label className="fs-xs fw-600">{t('shipments.fin.inlandContractorLabel')}</label>
@@ -2551,12 +2586,16 @@ export default function ShipmentFinancialsModal({
                 <p className="client-detail-modal__empty">{t('shipments.financialsNoBl')}</p>
               ) : loading || invoiceLoading ? (
                 <ShipmentFinLoadingSkeleton variant="selling" />
-              ) : sellingVisibleRows.length === 0 ? (
+              ) : sellingSections.length === 0 ? (
                 <p className="client-detail-modal__empty">{t('shipments.fin.tabBEmpty')}</p>
               ) : (
                 <>
                   {sellingSections.map((sec) => {
-                    const secTotals = sectionCurrencyTotals(sec.rows)
+                    const secTotals = {
+                      cost: sec.cost || sectionCurrencyTotals(sec.rows).cost,
+                      sell: sec.sell || sectionCurrencyTotals(sec.rows).sell,
+                      profit: sec.profit || sectionCurrencyTotals(sec.rows).profit,
+                    }
                     return (
                       <div key={sec.id} className="shipment-fin-card mb-3">
                         <button type="button" className="shipment-fin-card__head" onClick={() => toggleCard(`sell-${sec.id}`)}>
@@ -2585,25 +2624,32 @@ export default function ShipmentFinancialsModal({
                           <tbody>
                             {sec.rows.map((row) => {
                               const idx = tabBRows.findIndex((r) => r.expenseId === row.expenseId)
-                              const sellNum = Number(row.sell)
-                              const profit = !Number.isNaN(sellNum) ? sellNum - (Number(row.cost) || 0) : 0
+                              const isEditableRow = row.expenseId != null && idx >= 0
+                              const rowCurrency = (row.currency || row.currency_code || 'USD').toUpperCase()
+                              const rowCost = Number(row.cost ?? row.cost_line_total ?? 0) || 0
+                              const sellNum = Number(row.sell ?? row.unit_price ?? 0)
+                              const rowQty = Number(row.quantity ?? 1) || 1
+                              const rowSelling = row.line_total != null ? Number(row.line_total) || 0 : (sellNum * rowQty)
+                              const profit = rowSelling - rowCost
                               return (
-                                <tr key={row.expenseId}>
-                                  <td>{row.label || t('shipments.fin.customItemFallback', { defaultValue: 'Custom Item' })}</td>
-                                  <td className="shipment-fin-num">{formatMoney(row.cost, numberLocale)}</td>
+                                <tr key={row.id || row.expenseId || row.source_key || `${sec.id}-${row.description}`}>
+                                  <td>{row.label || row.description || t('shipments.fin.customItemFallback', { defaultValue: 'Custom Item' })}</td>
+                                  <td className="shipment-fin-num">{formatMoney(rowCost, numberLocale)}</td>
                                   <td>
-                                    {canManageFinancial ? (
+                                    {canManageFinancial && isEditableRow ? (
                                       <input type="number" min="0" step="0.01" className="shipment-fin-input shipment-fin-input--num" value={row.sell} onChange={(e) => patchTabBRow(idx, { sell: e.target.value })} />
                                     ) : (
-                                      <span className="shipment-fin-num">{formatMoney(sellNum || 0, numberLocale)}</span>
+                                      <span className="shipment-fin-num">{formatMoney(rowSelling || 0, numberLocale)}</span>
                                     )}
                                   </td>
-                                  <td>{row.currency || '—'}</td>
+                                  <td>{rowCurrency || '—'}</td>
                                   <td className="shipment-fin-num">{formatMoney(profit, numberLocale)}</td>
                                   <td className="shipment-fin-actions">
-                                    <button type="button" className="shipment-fin-btn shipment-fin-btn--danger shipment-fin-btn--sm" onClick={() => setDeletedSellIds((prev) => new Set(prev).add(row.expenseId))}>
-                                      {t('shipments.delete')}
-                                    </button>
+                                    {isEditableRow ? (
+                                      <button type="button" className="shipment-fin-btn shipment-fin-btn--danger shipment-fin-btn--sm" onClick={() => setDeletedSellIds((prev) => new Set(prev).add(row.expenseId))}>
+                                        {t('shipments.delete')}
+                                      </button>
+                                    ) : <span className="text-muted">—</span>}
                                   </td>
                                 </tr>
                               )
@@ -2614,6 +2660,31 @@ export default function ShipmentFinancialsModal({
                         <div className="shipment-fin-draft-sec-total">
                           <span>{t('shipments.fin.subtotal', { defaultValue: 'Subtotal' })}</span>
                           {renderStackedTotals(secTotals)}
+                        </div>
+                        <div className="shipment-fin-draft-sec-total mt-2">
+                          <span>{t('shipments.fin.attachmentsLabel')}</span>
+                          <div className="shipment-fin-actions__inner">
+                            {(sec.attachments || []).length === 0 ? (
+                              <span className="text-muted">—</span>
+                            ) : (
+                              (sec.attachments || []).map((a, i) => (
+                                <span key={a.id || `${sec.id}-att-${i}`} className="shipment-fin-mini-badge">
+                                  {a.name || 'PDF'}
+                                  {a.url ? (
+                                    <>
+                                      {' '}
+                                      <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm" onClick={() => openSectionAttachment(a)}>
+                                        <Eye size={12} />
+                                      </button>
+                                      <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm" onClick={() => downloadSectionAttachment(a)}>
+                                        <FileDown size={12} />
+                                      </button>
+                                    </>
+                                  ) : null}
+                                </span>
+                              ))
+                            )}
+                          </div>
                         </div>
                           </div>
                         ) : null}
@@ -2717,16 +2788,17 @@ export default function ShipmentFinancialsModal({
               
               {!hasBl ? (
                 <p className="client-detail-modal__empty">{t('shipments.financialsNoBl')}</p>
-              ) : expenses.filter((e) => e.has_receipt).length === 0 ? (
+              ) : sellingSections.every((s) => (s.attachments || []).length === 0) ? (
                 <div className="shipment-fin-empty-inline py-12">
                   <Paperclip size={48} className="text-muted mb-3 opacity-20" />
                   <p>{t('shipments.tabs.noAttachments') || 'No attachments found for this shipment.'}</p>
                 </div>
               ) : (
                 <div className="shipment-fin-attachments-grouped-list">
-                  {Object.entries(byBucket)
-                    .filter(([_, bucketRows]) => bucketRows.some(e => e.has_receipt))
-                    .map(([bucketId, bucketRows]) => {
+                  {sellingSections
+                    .filter((sec) => ['shipping', 'inland', 'customs', 'insurance'].includes(sec.id))
+                    .map((sec) => {
+                      const bucketId = sec.id
                       let titleKey = 'shipments.fin.bucketOtherTitle'
                       if (bucketId === 'shipping') titleKey = 'shipments.fin.bucketShippingTitle'
                       else if (bucketId === 'inland') titleKey = 'shipments.fin.bucketInlandTitle'
@@ -2742,55 +2814,31 @@ export default function ShipmentFinancialsModal({
                             <table className="shipment-fin-line-table">
                               <thead>
                                 <tr>
-                                  <th style={{ width: '100px' }}>{t('shipments.expColDate')}</th>
-                                  <th>{t('shipments.fin.colDescription')}</th>
-                                  <th>{t('shipments.fin.colVendor')}</th>
-                                  <th className="text-right">{t('shipments.expColAmount')}</th>
-                                  <th className="text-center" style={{ width: '120px' }}>{t('shipments.fin.colReceipt')}</th>
+                                  <th style={{ width: '120px' }}>{t('shipments.expColDate')}</th>
+                                  <th>{t('shipments.fin.attachmentsLabel')}</th>
+                                  <th style={{ width: '90px' }}>{t('shipments.fin.colType', { defaultValue: 'Type' })}</th>
+                                  <th className="text-center" style={{ width: '160px' }}>{t('shipments.fin.colReceipt')}</th>
                                 </tr>
                               </thead>
                               <tbody>
-                                {bucketRows.filter(e => e.has_receipt).map(ex => (
-                                  <tr key={ex.id}>
-                                    <td className="fs-xs">{ex.expense_date || '—'}</td>
-                                    <td className="fw-500">{ex.title?.trim() || ex.description?.trim() || t('shipments.fin.unnamedReceipt')}</td>
-                                    <td className="fs-xs">{ex.vendor?.name || '—'}</td>
-                                    <td className="shipment-fin-num no-wrap">
-                                      {formatMoney(Number(ex.amount) || 0, numberLocale)} <span className="fs-xxs">{ex.currency_code}</span>
-                                    </td>
+                                {(sec.attachments || []).length === 0 ? (
+                                  <tr>
+                                    <td colSpan={4} className="text-center text-muted">—</td>
+                                  </tr>
+                                ) : (sec.attachments || []).map((ex, idx) => (
+                                  <tr key={ex.id || `${bucketId}-att-${idx}`}>
+                                    <td className="fs-xs">{ex.uploaded_at || '—'}</td>
+                                    <td className="fw-500">{ex.name || t('shipments.fin.unnamedReceipt')}</td>
+                                    <td className="fs-xs">{ex.type || 'PDF'}</td>
                                     <td className="text-center">
-                                      {renamingReceiptId === ex.id ? (
-                                        <div className="flex items-center justify-center gap-2">
-                                          <input
-                                            type="text"
-                                            className="shipment-fin-input"
-                                            value={renamingReceiptValue}
-                                            onChange={(e) => setRenamingReceiptValue(e.target.value)}
-                                            onKeyDown={(e) => {
-                                              if (e.key === 'Enter') saveRenameReceipt(ex.id)
-                                              if (e.key === 'Escape') cancelRenameReceipt()
-                                            }}
-                                          />
-                                          <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm" onClick={() => saveRenameReceipt(ex.id)}>
-                                            <Upload size={12} />
-                                          </button>
-                                        </div>
-                                      ) : (
-                                        <div className="shipment-fin-actions__inner">
-                                          <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm" onClick={() => handleViewReceipt(ex.id)} title={t('shipments.fin.viewReceipt')}>
-                                            <Eye size={12} />
-                                          </button>
-                                          <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm" onClick={() => handleDownloadReceipt(ex.id)} title={t('shipments.fin.downloadReceipt')}>
-                                            <FileDown size={12} />
-                                          </button>
-                                          <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm" onClick={() => startRenameReceipt(ex)} title={t('shipments.fin.renameReceipt')}>
-                                            <Pencil size={12} />
-                                          </button>
-                                          <button type="button" className="shipment-fin-btn shipment-fin-btn--danger shipment-fin-btn--sm" onClick={() => handleDeleteReceipt(ex.id)} title={t('shipments.fin.deleteReceipt')}>
-                                            <Trash2 size={12} />
-                                          </button>
-                                        </div>
-                                      )}
+                                      <div className="shipment-fin-actions__inner">
+                                        <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm" onClick={() => openSectionAttachment(ex)} title={t('shipments.fin.viewReceipt')} disabled={!ex.url}>
+                                          <Eye size={12} />
+                                        </button>
+                                        <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm" onClick={() => downloadSectionAttachment(ex)} title={t('shipments.fin.downloadReceipt')} disabled={!ex.url}>
+                                          <FileDown size={12} />
+                                        </button>
+                                      </div>
                                     </td>
                                   </tr>
                                 ))}

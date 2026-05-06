@@ -734,13 +734,11 @@ class ShipmentController extends Controller
         }
 
         $sectionVendorByBucket = [
-            'shipping' => (int) data_get($sectionMeta, 'shipping.shipping_line_vendor_id', 0),
             'inland' => (int) data_get($sectionMeta, 'inland.contractor_vendor_id', 0),
             'customs' => (int) data_get($sectionMeta, 'customs.customs_broker_vendor_id', 0),
             'insurance' => (int) data_get($sectionMeta, 'insurance.insurance_company_vendor_id', 0),
         ];
         $requiredTypeByBucket = [
-            'shipping' => 'shipping_line',
             'inland' => 'inland_transport',
             'customs' => 'customs_clearance',
             'insurance' => 'insurance',
