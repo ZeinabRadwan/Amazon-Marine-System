@@ -10,10 +10,20 @@ use App\Models\Vendor;
 use App\Models\VendorBill;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AccountingController extends Controller
 {
+    private function applyCustomerInvoiceFilter($query)
+    {
+        if (Schema::hasColumn('invoices', 'invoice_type')) {
+            $query->where('invoice_type', 'client');
+        } elseif (Schema::hasColumn('invoices', 'invoice_type_id')) {
+            $query->where('invoice_type_id', 0);
+        }
+    }
+
     /**
      * @param array<string,float|int> $map
      * @return array<string,float>
@@ -455,7 +465,9 @@ class AccountingController extends Controller
     {
         abort_unless($request->user()?->can('accounting.view'), 403);
 
-        $invoices = Invoice::query()->where('invoice_type_id', 0)->get();
+        $invoicesQuery = Invoice::query();
+        $this->applyCustomerInvoiceFilter($invoicesQuery);
+        $invoices = $invoicesQuery->get();
         $payments = Payment::query()->where('type', 'client_receipt')->get();
 
         $billedByCurrency = [];
@@ -500,15 +512,18 @@ class AccountingController extends Controller
         $clients = $query->orderBy('name')->get();
 
         $rows = $clients->map(function (Client $client) {
-            $invoices = Invoice::query()
-                ->where('invoice_type_id', 0)
+            $invoicesQuery = Invoice::query()
                 ->where('client_id', $client->id)
                 ->orderByDesc('issue_date')
-                ->orderByDesc('id')
-                ->get();
+                ->orderByDesc('id');
+            $this->applyCustomerInvoiceFilter($invoicesQuery);
+            $invoices = $invoicesQuery->get();
             $invoiceIds = $invoices->pluck('id')->all();
             $payments = $invoiceIds
-                ? Payment::query()->whereIn('invoice_id', $invoiceIds)->get()
+                ? Payment::query()
+                    ->whereIn('invoice_id', $invoiceIds)
+                    ->where('type', 'client_receipt')
+                    ->get()
                 : collect();
 
             $billed = [];
@@ -568,13 +583,13 @@ class AccountingController extends Controller
     {
         abort_unless($request->user()?->can('accounting.view'), 403);
 
-        $invoices = Invoice::query()
-            ->where('invoice_type_id', 0)
+        $invoicesQuery = Invoice::query()
             ->where('client_id', $client->id)
             ->with(['shipment.attachments', 'items', 'payments'])
             ->orderByDesc('issue_date')
-            ->orderByDesc('id')
-            ->get();
+            ->orderByDesc('id');
+        $this->applyCustomerInvoiceFilter($invoicesQuery);
+        $invoices = $invoicesQuery->get();
 
         $rows = $invoices->map(function (Invoice $inv) {
             $paid = (float) $inv->payments->sum('amount');
