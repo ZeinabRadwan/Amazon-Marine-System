@@ -1565,8 +1565,10 @@ export default function ShipmentFinancialsModal({
         profit: s?.profit_by_currency || {},
         attachments: Array.isArray(s?.attachments) ? s.attachments : [],
       }))
-      const byId = new Map(mapped.map((s) => [s.id, s]))
-      return [...fixed, ...mapped.map((s) => s.id).filter((id) => !fixed.includes(id))].map((id) => (
+      // Keep handling rendered by the dedicated handling card below
+      const mappedWithoutHandling = mapped.filter((s) => s.id !== 'handling')
+      const byId = new Map(mappedWithoutHandling.map((s) => [s.id, s]))
+      return [...fixed, ...mappedWithoutHandling.map((s) => s.id).filter((id) => !fixed.includes(id))].map((id) => (
         byId.get(id) || { id, label: sectionLabels[id] || id, rows: [], cost: {}, sell: {}, profit: {}, attachments: [] }
       ))
     }
