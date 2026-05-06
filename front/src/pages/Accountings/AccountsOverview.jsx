@@ -34,6 +34,14 @@ export default function AccountsOverview() {
   const [customers, setCustomers] = useState([])
   const [partners, setPartners] = useState([])
   const [search, setSearch] = useState('')
+  const [customerStatus, setCustomerStatus] = useState('')
+  const [customerDateFrom, setCustomerDateFrom] = useState('')
+  const [customerDateTo, setCustomerDateTo] = useState('')
+  const [customerShipmentId, setCustomerShipmentId] = useState('')
+  const [vendorStatus, setVendorStatus] = useState('')
+  const [vendorDateFrom, setVendorDateFrom] = useState('')
+  const [vendorDateTo, setVendorDateTo] = useState('')
+  const [vendorId, setVendorId] = useState('')
   const [customerDetail, setCustomerDetail] = useState(null)
   const [partnerDetail, setPartnerDetail] = useState(null)
   const [bankAccounts, setBankAccounts] = useState([])
@@ -57,8 +65,20 @@ export default function AccountsOverview() {
     setLoading(true)
     try {
       const [customersRes, partnersRes, banksRes] = await Promise.all([
-        getCustomerStatements(token, { search }),
-        getPartnerLedgerSummary(token, { search }),
+        getCustomerStatements(token, {
+          search,
+          status: customerStatus || undefined,
+          date_from: customerDateFrom || undefined,
+          date_to: customerDateTo || undefined,
+          shipment_id: customerShipmentId || undefined,
+        }),
+        getPartnerLedgerSummary(token, {
+          search,
+          vendor_id: vendorId || undefined,
+          status: vendorStatus || undefined,
+          date_from: vendorDateFrom || undefined,
+          date_to: vendorDateTo || undefined,
+        }),
         listBankAccounts(token),
       ])
       setCustomers(Array.isArray(customersRes?.data) ? customersRes.data : [])
@@ -67,7 +87,7 @@ export default function AccountsOverview() {
     } finally {
       setLoading(false)
     }
-  }, [token, search])
+  }, [token, search, customerStatus, customerDateFrom, customerDateTo, customerShipmentId, vendorStatus, vendorDateFrom, vendorDateTo, vendorId])
 
   useEffect(() => {
     loadOverview()
@@ -207,11 +227,26 @@ export default function AccountsOverview() {
                   <input
                     type="search"
                     className="clients-input clients-filters__search"
-                    placeholder={t('accountings.customerSearchPlaceholder', 'Search customer...')}
+                    placeholder={t('accountings.customerInvoiceSearch', 'Search by invoice # or customer...')}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                   />
                 </div>
+                <select className="clients-input min-w-[140px]" value={customerStatus} onChange={(e) => setCustomerStatus(e.target.value)}>
+                  <option value="">{t('accountings.allStatuses', 'All statuses')}</option>
+                  <option value="paid">{t('invoices.status.paid', 'Paid')}</option>
+                  <option value="partial">{t('invoices.status.partial', 'Partially Paid')}</option>
+                  <option value="unpaid">{t('invoices.status.unpaid', 'Unpaid')}</option>
+                </select>
+                <input type="date" className="clients-input min-w-[140px]" value={customerDateFrom} onChange={(e) => setCustomerDateFrom(e.target.value)} />
+                <input type="date" className="clients-input min-w-[140px]" value={customerDateTo} onChange={(e) => setCustomerDateTo(e.target.value)} />
+                <input
+                  type="number"
+                  className="clients-input min-w-[140px]"
+                  placeholder={t('accountings.shipmentOptional', 'Shipment ID (optional)')}
+                  value={customerShipmentId}
+                  onChange={(e) => setCustomerShipmentId(e.target.value)}
+                />
               </div>
             </div>
             <div className="accountings-table-wrap">
@@ -263,6 +298,34 @@ export default function AccountsOverview() {
 
         {activeTab === 'partners' && (
           <div className="accountings-table-section">
+            <div className="clients-filters-card mb-3">
+              <div className="clients-filters__row clients-filters__row--main">
+                <div className="clients-filters__search-wrap">
+                  <Search className="clients-filters__search-icon" />
+                  <input
+                    type="search"
+                    className="clients-input clients-filters__search"
+                    placeholder={t('accountings.vendorBillSearch', 'Search by bill # or vendor...')}
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </div>
+                <select className="clients-input min-w-[150px]" value={vendorId} onChange={(e) => setVendorId(e.target.value)}>
+                  <option value="">{t('accountings.allVendors', 'All vendors')}</option>
+                  {partners.map((p) => (
+                    <option key={p.partner_id} value={p.partner_id}>{p.partner_name}</option>
+                  ))}
+                </select>
+                <select className="clients-input min-w-[140px]" value={vendorStatus} onChange={(e) => setVendorStatus(e.target.value)}>
+                  <option value="">{t('accountings.allStatuses', 'All statuses')}</option>
+                  <option value="paid">{t('invoices.status.paid', 'Paid')}</option>
+                  <option value="partially_paid">{t('invoices.status.partial', 'Partially Paid')}</option>
+                  <option value="unpaid">{t('invoices.status.unpaid', 'Unpaid')}</option>
+                </select>
+                <input type="date" className="clients-input min-w-[140px]" value={vendorDateFrom} onChange={(e) => setVendorDateFrom(e.target.value)} />
+                <input type="date" className="clients-input min-w-[140px]" value={vendorDateTo} onChange={(e) => setVendorDateTo(e.target.value)} />
+              </div>
+            </div>
             <div className="clients-stats-grid accountings-stats-grid">
               <div className="stats-card">
                 <h4>{t('accountings.totalPayableToPartners', 'Total payable to partners')}</h4>

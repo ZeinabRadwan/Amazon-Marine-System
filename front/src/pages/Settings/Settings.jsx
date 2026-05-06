@@ -54,6 +54,12 @@ import {
   updateCommunicationLogType,
   deleteCommunicationLogType,
 } from '../../api/customerServices'
+import {
+  listBankAccounts,
+  createBankAccount,
+  updateBankAccount,
+  deleteBankAccount,
+} from '../../api/accountings'
 import '../../components/PageHeader/PageHeader.css'
 import '../../components/LoaderDots/LoaderDots.css'
 import '../../components/Tabs/Tabs.css'
@@ -214,6 +220,7 @@ const SETTINGS_TABS = [
   { id: 'system', labelKey: 'settings.tabs.system' },
   { id: 'sessions', labelKey: 'settings.tabs.sessions' },
   { id: 'activity', labelKey: 'settings.tabs.activity' },
+  { id: 'bankAccounts', labelKey: 'settings.tabs.bankAccounts' },
   { id: 'statuses', labelKey: 'settings.tabs.statuses' },
 ]
 
@@ -350,6 +357,20 @@ export default function Settings() {
   const [portSubmitting, setPortSubmitting] = useState(false)
   const [deletePortId, setDeletePortId] = useState(null)
   const [deletePortSubmitting, setDeletePortSubmitting] = useState(false)
+  const [bankAccounts, setBankAccounts] = useState([])
+  const [bankAccountModal, setBankAccountModal] = useState(null)
+  const [bankAccountForm, setBankAccountForm] = useState({
+    bank_name: '',
+    account_name: '',
+    account_number: '',
+    iban: '',
+    swift_code: '',
+    supported_currencies: [],
+    is_active: true,
+  })
+  const [bankAccountSubmitting, setBankAccountSubmitting] = useState(false)
+  const [deleteBankAccountId, setDeleteBankAccountId] = useState(null)
+  const [deleteBankAccountSubmitting, setDeleteBankAccountSubmitting] = useState(false)
 
   const [statusesTabLoading, setStatusesTabLoading] = useState(false)
   const [contentMgmtSection, setContentMgmtSection] = useState('ports')
@@ -497,12 +518,13 @@ export default function Settings() {
       setLoading(true)
       setError('')
       try {
-        const [settingsRes, todayRes, historyRes, activitiesRes, statusesRes] = await Promise.all([
+        const [settingsRes, todayRes, historyRes, activitiesRes, statusesRes, bankAccountsRes] = await Promise.all([
           getSettings(token),
           getTodaySession(token).catch(() => null),
           listSessionsHistory(token, {}).catch(() => ({ data: [] })),
           listActivities(token, { page: 1 }).catch(() => ({ data: [] })),
           listShipmentStatuses(token).catch(() => ({ data: [] })),
+          listBankAccounts(token).catch(() => ({ data: [] })),
         ])
 
         if (cancelled) return
@@ -557,6 +579,7 @@ export default function Settings() {
           setActivityTotalPages(1)
         }
         setShipmentStatuses(Array.isArray(statusesRes?.data) ? statusesRes.data : [])
+        setBankAccounts(Array.isArray(bankAccountsRes?.data) ? bankAccountsRes.data : [])
       } catch (e) {
         if (!cancelled) setError(e.message || t('settings.errors.load'))
       } finally {
@@ -1257,6 +1280,94 @@ export default function Settings() {
     }
   }
 
+  async function refreshBankAccounts() {
+    if (!token) return
+    try {
+      const res = await listBankAccounts(token)
+      const list = res?.data ?? res
+      setBankAccounts(Array.isArray(list) ? list : [])
+    } catch {
+      setBankAccounts([])
+    }
+  }
+
+  function openNewBankAccount() {
+    setBankAccountForm({
+      bank_name: '',
+      account_name: '',
+      account_number: '',
+      iban: '',
+      swift_code: '',
+      supported_currencies: [],
+      is_active: true,
+    })
+    setBankAccountModal('create')
+  }
+
+  function openEditBankAccount(row) {
+    setBankAccountForm({
+      bank_name: row.bank_name ?? '',
+      account_name: row.account_name ?? '',
+      account_number: row.account_number ?? '',
+      iban: row.iban ?? '',
+      swift_code: row.swift_code ?? '',
+      supported_currencies: Array.isArray(row.supported_currencies) ? row.supported_currencies : [],
+      is_active: row.is_active !== false,
+    })
+    setBankAccountModal({ mode: 'edit', id: row.id })
+  }
+
+  async function handleSaveBankAccount(e) {
+    e.preventDefault()
+    if (!token || !String(bankAccountForm.bank_name).trim() || !String(bankAccountForm.account_number).trim()) return
+    const isEdit = bankAccountModal?.mode === 'edit' && bankAccountModal.id != null
+    setBankAccountSubmitting(true)
+    setError('')
+    try {
+      const currencies = String(bankAccountForm.supported_currencies || '')
+        .split(',')
+        .map((v) => v.trim().toUpperCase())
+        .filter(Boolean)
+      const body = {
+        bank_name: String(bankAccountForm.bank_name).trim(),
+        account_name: String(bankAccountForm.account_name || '').trim() || null,
+        account_number: String(bankAccountForm.account_number).trim(),
+        iban: String(bankAccountForm.iban || '').trim() || null,
+        swift_code: String(bankAccountForm.swift_code || '').trim() || null,
+        supported_currencies: currencies,
+        is_active: Boolean(bankAccountForm.is_active),
+      }
+      if (isEdit) {
+        await updateBankAccount(token, bankAccountModal.id, body)
+      } else {
+        await createBankAccount(token, body)
+      }
+      await refreshBankAccounts()
+      setBankAccountModal(null)
+      setAlert({ type: 'success', message: isEdit ? t('settings.bankAccounts.updated') : t('settings.bankAccounts.created') })
+    } catch (err) {
+      setError(err.message || t('settings.errors.saveBankAccount'))
+    } finally {
+      setBankAccountSubmitting(false)
+    }
+  }
+
+  async function handleDeleteBankAccountConfirm() {
+    if (!token || deleteBankAccountId == null) return
+    setDeleteBankAccountSubmitting(true)
+    setError('')
+    try {
+      await deleteBankAccount(token, deleteBankAccountId)
+      await refreshBankAccounts()
+      setDeleteBankAccountId(null)
+      setAlert({ type: 'success', message: t('settings.bankAccounts.deleted') })
+    } catch (err) {
+      setError(err.message || t('settings.errors.deleteBankAccount'))
+    } finally {
+      setDeleteBankAccountSubmitting(false)
+    }
+  }
+
   const sessionsHistoryColumns = [
     { key: 'session_date', label: t('settings.sessions.table.date'), sortable: false },
     {
@@ -1726,6 +1837,45 @@ export default function Settings() {
     },
   ]
 
+  const bankAccountColumns = [
+    { key: 'bank_name', label: t('settings.bankAccounts.table.bankName'), sortable: false, render: (val) => val ?? '—' },
+    { key: 'account_number', label: t('settings.bankAccounts.table.accountNumber'), sortable: false, render: (val) => val ?? '—' },
+    { key: 'iban', label: t('settings.bankAccounts.table.iban'), sortable: false, render: (val) => val ?? '—' },
+    { key: 'swift_code', label: t('settings.bankAccounts.table.swift'), sortable: false, render: (val) => val ?? '—' },
+    {
+      key: 'supported_currencies',
+      label: t('settings.bankAccounts.table.currencies'),
+      sortable: false,
+      render: (val) => (Array.isArray(val) && val.length ? val.join(', ') : '—'),
+    },
+    {
+      key: 'is_active',
+      label: t('settings.bankAccounts.table.status'),
+      sortable: false,
+      render: (val) => (val ? t('settings.bankAccounts.active') : t('settings.bankAccounts.inactive')),
+    },
+    {
+      key: 'actions',
+      label: t('settings.bankAccounts.table.actions'),
+      sortable: false,
+      render: (_, row) => (
+        <div className="clients-table-actions flex flex-wrap gap-2 justify-end" role="group" aria-label={t('settings.bankAccounts.table.actions')}>
+          <IconActionButton
+            icon={<Pencil className="h-4 w-4" />}
+            label={t('settings.bankAccounts.edit')}
+            onClick={() => openEditBankAccount(row)}
+          />
+          <IconActionButton
+            icon={<Trash2 className="h-4 w-4" />}
+            label={t('settings.bankAccounts.delete')}
+            variant="danger"
+            onClick={() => setDeleteBankAccountId(row.id)}
+          />
+        </div>
+      ),
+    },
+  ]
+
   if (!token) {
     return (
       <Container size="xl">
@@ -2119,6 +2269,27 @@ export default function Settings() {
                         )}
                       </div>
                     )}
+                  </SectionCard>
+                </div>
+              )}
+            </div>
+
+            {/* Tab: Bank Accounts */}
+            <div role="tabpanel" className={`cs-tab-panel settings-tab-panel ${activeTab === 'bankAccounts' ? 'cs-tab-panel--active' : ''}`}>
+              {activeTab === 'bankAccounts' && (
+                <div className="settings-tab-content settings-tab-content--animate">
+                  <SectionCard
+                    title={t('settings.bankAccounts.cardTitle')}
+                    subtitle={t('settings.bankAccounts.subtitle')}
+                    actions={
+                      <button type="button" className="page-header__btn page-header__btn--primary" onClick={openNewBankAccount}>
+                        {t('settings.bankAccounts.addTitle')}
+                      </button>
+                    }
+                  >
+                    <div className="settings-table-card">
+                      <Table columns={bankAccountColumns} data={bankAccounts} getRowKey={(r) => r.id} emptyMessage={t('settings.bankAccounts.empty')} />
+                    </div>
                   </SectionCard>
                 </div>
               )}
@@ -2832,6 +3003,101 @@ export default function Settings() {
             onClose={() => setDeletePortId(null)}
             onConfirm={handleDeletePortConfirm}
             submitting={deletePortSubmitting}
+            danger
+          />
+        ) : null}
+
+        {bankAccountModal === 'create' || bankAccountModal?.mode === 'edit' ? (
+          <SettingsFormModal
+            title={bankAccountModal?.mode === 'edit' ? t('settings.bankAccounts.editTitle') : t('settings.bankAccounts.addTitle')}
+            titleId="settings-bank-account-modal-title"
+            onClose={() => setBankAccountModal(null)}
+            submitting={bankAccountSubmitting}
+            onSubmit={handleSaveBankAccount}
+            primaryLabel={t('settings.bankAccounts.save')}
+            cancelLabel={t('settings.bankAccounts.cancel')}
+          >
+            <SettingsModalField label={t('settings.bankAccounts.bankName')} htmlFor="settings-bank-name">
+              <input
+                id="settings-bank-name"
+                className="clients-input"
+                required
+                value={bankAccountForm.bank_name}
+                onChange={(e) => setBankAccountForm((p) => ({ ...p, bank_name: e.target.value }))}
+              />
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.bankAccounts.accountName')} htmlFor="settings-bank-account-name">
+              <input
+                id="settings-bank-account-name"
+                className="clients-input"
+                value={bankAccountForm.account_name}
+                onChange={(e) => setBankAccountForm((p) => ({ ...p, account_name: e.target.value }))}
+              />
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.bankAccounts.accountNumber')} htmlFor="settings-bank-account-number">
+              <input
+                id="settings-bank-account-number"
+                className="clients-input"
+                required
+                value={bankAccountForm.account_number}
+                onChange={(e) => setBankAccountForm((p) => ({ ...p, account_number: e.target.value }))}
+              />
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.bankAccounts.iban')} htmlFor="settings-bank-iban">
+              <input
+                id="settings-bank-iban"
+                className="clients-input"
+                value={bankAccountForm.iban}
+                onChange={(e) => setBankAccountForm((p) => ({ ...p, iban: e.target.value }))}
+              />
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.bankAccounts.swift')} htmlFor="settings-bank-swift">
+              <input
+                id="settings-bank-swift"
+                className="clients-input"
+                value={bankAccountForm.swift_code}
+                onChange={(e) => setBankAccountForm((p) => ({ ...p, swift_code: e.target.value }))}
+              />
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.bankAccounts.currencies')} htmlFor="settings-bank-currencies">
+              <input
+                id="settings-bank-currencies"
+                className="clients-input"
+                placeholder={t('settings.bankAccounts.currenciesHint')}
+                value={Array.isArray(bankAccountForm.supported_currencies) ? bankAccountForm.supported_currencies.join(', ') : ''}
+                onChange={(e) =>
+                  setBankAccountForm((p) => ({
+                    ...p,
+                    supported_currencies: e.target.value
+                      .split(',')
+                      .map((v) => v.trim().toUpperCase())
+                      .filter(Boolean),
+                  }))
+                }
+              />
+            </SettingsModalField>
+            <div className="client-detail-modal__form-field client-detail-modal__form-field--full settings-modal-checkbox-field">
+              <label htmlFor="settings-bank-active" className="settings-modal-checkbox-field__label">
+                {t('settings.bankAccounts.status')}
+              </label>
+              <input
+                id="settings-bank-active"
+                type="checkbox"
+                className="settings-checkbox"
+                checked={bankAccountForm.is_active}
+                onChange={(e) => setBankAccountForm((p) => ({ ...p, is_active: e.target.checked }))}
+              />
+            </div>
+          </SettingsFormModal>
+        ) : null}
+
+        {deleteBankAccountId != null ? (
+          <SettingsConfirmModal
+            title={t('settings.bankAccounts.deleteTitle')}
+            message={t('settings.bankAccounts.deleteConfirm')}
+            onClose={() => setDeleteBankAccountId(null)}
+            onConfirm={handleDeleteBankAccountConfirm}
+            submitting={deleteBankAccountSubmitting}
             danger
           />
         ) : null}

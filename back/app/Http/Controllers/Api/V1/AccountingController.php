@@ -195,9 +195,11 @@ class AccountingController extends Controller
         $rows = $clients->map(function (Client $client) use ($currencyFilter) {
             $invoicesQuery = Invoice::query()
                 ->where('client_id', $client->id);
+            $this->applyCustomerInvoiceFilter($invoicesQuery);
 
             $paymentsQuery = Payment::query()
-                ->where('client_id', $client->id);
+                ->where('client_id', $client->id)
+                ->where('type', 'client_receipt');
 
             if ($currencyFilter) {
                 $invoicesQuery->where('currency_code', $currencyFilter);
@@ -264,7 +266,8 @@ class AccountingController extends Controller
                 ->where('vendor_id', $vendor->id);
 
             $paymentsQuery = Payment::query()
-                ->where('vendor_id', $vendor->id);
+                ->where('vendor_id', $vendor->id)
+                ->where('type', 'vendor_payment');
 
             if ($currencyFilter) {
                 $billsQuery->where('currency_code', $currencyFilter);
@@ -311,9 +314,16 @@ class AccountingController extends Controller
         );
 
         $query = Vendor::query();
+        $vendorId = $request->query('vendor_id');
+        $status = trim((string) $request->query('status', ''));
+        $dateFrom = $request->query('date_from');
+        $dateTo = $request->query('date_to');
 
         if ($search = trim((string) $request->query('search', ''))) {
             $query->where('name', 'like', '%'.$search.'%');
+        }
+        if ($vendorId) {
+            $query->where('id', (int) $vendorId);
         }
 
         $category = trim((string) $request->query('category', 'all'));
@@ -323,15 +333,31 @@ class AccountingController extends Controller
 
         $vendors = $query->orderBy('name')->get();
 
-        $data = $vendors->map(function (Vendor $vendor): array {
-            $bills = VendorBill::query()
+        $data = $vendors->map(function (Vendor $vendor) use ($search, $status, $dateFrom, $dateTo): ?array {
+            $billsQuery = VendorBill::query()
                 ->where('vendor_id', $vendor->id)
                 ->orderByDesc('bill_date')
-                ->orderByDesc('id')
-                ->get();
+                ->orderByDesc('id');
+            if ($search !== '') {
+                $billsQuery->where('bill_number', 'like', '%'.$search.'%');
+            }
+            if ($status !== '') {
+                $billsQuery->where('status', $status);
+            }
+            if ($dateFrom) {
+                $billsQuery->whereDate('bill_date', '>=', $dateFrom);
+            }
+            if ($dateTo) {
+                $billsQuery->whereDate('bill_date', '<=', $dateTo);
+            }
+            $bills = $billsQuery->get();
+            if (($search !== '' || $status !== '' || $dateFrom || $dateTo) && $bills->isEmpty()) {
+                return null;
+            }
 
             $payments = Payment::query()
                 ->where('vendor_id', $vendor->id)
+                ->where('type', 'vendor_payment')
                 ->orderByDesc('paid_at')
                 ->orderByDesc('id')
                 ->get();
@@ -364,7 +390,7 @@ class AccountingController extends Controller
                 'total_paid_amount' => $paidByCurrency,
                 'remaining_balance' => $balanceByCurrency,
             ];
-        })->values();
+        })->filter()->values();
 
         return response()->json(['data' => $data]);
     }
@@ -504,6 +530,10 @@ class AccountingController extends Controller
     {
         abort_unless($request->user()?->can('accounting.view'), 403);
         $search = trim((string) $request->query('search', ''));
+        $status = trim((string) $request->query('status', ''));
+        $dateFrom = $request->query('date_from');
+        $dateTo = $request->query('date_to');
+        $shipmentId = $request->query('shipment_id');
 
         $query = Client::query();
         if ($search !== '') {
@@ -511,13 +541,37 @@ class AccountingController extends Controller
         }
         $clients = $query->orderBy('name')->get();
 
-        $rows = $clients->map(function (Client $client) {
+        $rows = $clients->map(function (Client $client) use ($search, $status, $dateFrom, $dateTo, $shipmentId) {
             $invoicesQuery = Invoice::query()
                 ->where('client_id', $client->id)
                 ->orderByDesc('issue_date')
                 ->orderByDesc('id');
             $this->applyCustomerInvoiceFilter($invoicesQuery);
+            if ($search !== '') {
+                $invoicesQuery->where(function ($q) use ($search): void {
+                    $q->where('invoice_number', 'like', '%'.$search.'%')
+                        ->orWhereHas('client', function ($q2) use ($search): void {
+                            $q2->where('name', 'like', '%'.$search.'%');
+                        });
+                });
+            }
+            if ($status !== '') {
+                $mapStatus = $status === 'partial' ? 'partial' : $status;
+                $invoicesQuery->where('status', $mapStatus);
+            }
+            if ($dateFrom) {
+                $invoicesQuery->whereDate('issue_date', '>=', $dateFrom);
+            }
+            if ($dateTo) {
+                $invoicesQuery->whereDate('issue_date', '<=', $dateTo);
+            }
+            if ($shipmentId) {
+                $invoicesQuery->where('shipment_id', (int) $shipmentId);
+            }
             $invoices = $invoicesQuery->get();
+            if (($search !== '' || $status !== '' || $dateFrom || $dateTo || $shipmentId) && $invoices->isEmpty()) {
+                return null;
+            }
             $invoiceIds = $invoices->pluck('id')->all();
             $payments = $invoiceIds
                 ? Payment::query()
@@ -574,7 +628,7 @@ class AccountingController extends Controller
                 'remaining_balance' => $remaining,
                 'invoice_status_counts' => $invoiceStatuses,
             ];
-        })->values();
+        })->filter()->values();
 
         return response()->json(['data' => $rows]);
     }
@@ -683,12 +737,14 @@ class AccountingController extends Controller
         $clients = $query->orderBy('name')->get();
 
         $rows = $clients->map(function (Client $client) {
-            $invoices = Invoice::query()
-                ->where('client_id', $client->id)
-                ->get();
+            $invoicesQuery = Invoice::query()
+                ->where('client_id', $client->id);
+            $this->applyCustomerInvoiceFilter($invoicesQuery);
+            $invoices = $invoicesQuery->get();
 
             $payments = Payment::query()
                 ->where('client_id', $client->id)
+                ->where('type', 'client_receipt')
                 ->get();
 
             $totalSales = (float) $invoices->sum('total_amount');
@@ -757,6 +813,7 @@ class AccountingController extends Controller
 
             $payments = Payment::query()
                 ->where('vendor_id', $vendor->id)
+                ->where('type', 'vendor_payment')
                 ->get();
 
             $totalDue = (float) $bills->sum('total_amount');

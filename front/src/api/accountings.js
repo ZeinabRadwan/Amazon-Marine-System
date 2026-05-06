@@ -115,6 +115,10 @@ export async function getPartnerLedgerSummary(token, params = {}) {
   const searchParams = new URLSearchParams()
   if (params.search) searchParams.set('search', params.search)
   if (params.category) searchParams.set('category', params.category)
+  if (params.vendor_id) searchParams.set('vendor_id', String(params.vendor_id))
+  if (params.status) searchParams.set('status', params.status)
+  if (params.date_from) searchParams.set('date_from', params.date_from)
+  if (params.date_to) searchParams.set('date_to', params.date_to)
   const q = searchParams.toString()
   const res = await apiFetch(`${getBaseUrl()}/accounting/partners-ledger${q ? `?${q}` : ''}`, {
     headers: authHeaders(token),
@@ -230,6 +234,10 @@ export async function getCompanyStatement(token) {
 export async function getCustomerStatements(token, params = {}) {
   const sp = new URLSearchParams()
   if (params.search) sp.set('search', params.search)
+  if (params.status) sp.set('status', params.status)
+  if (params.date_from) sp.set('date_from', params.date_from)
+  if (params.date_to) sp.set('date_to', params.date_to)
+  if (params.shipment_id) sp.set('shipment_id', String(params.shipment_id))
   const q = sp.toString()
   const res = await apiFetch(`${getBaseUrl()}/accounting/customer-statements${q ? `?${q}` : ''}`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))

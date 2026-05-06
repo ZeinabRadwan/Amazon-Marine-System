@@ -50,11 +50,11 @@ const SIDEBAR_SECTIONS = [
   {
     sectionKey: 'financial',
     items: [
+      { id: 'pricing', menuKey: 'pricing', Icon: PriceTagIcon },
       { id: 'invoices', menuKey: 'invoices', Icon: InvoiceIcon },
       { id: 'accounts', menuKey: 'accounts', Icon: WalletIcon },
-      { id: 'treasury', menuKey: 'treasury', Icon: WalletIcon },
       { id: 'expenses', menuKey: 'expenses', Icon: InvoiceIcon },
-      { id: 'pricing', menuKey: 'pricing', Icon: PriceTagIcon },
+      { id: 'treasury', menuKey: 'treasury', Icon: WalletIcon },
     ],
   },
   {
