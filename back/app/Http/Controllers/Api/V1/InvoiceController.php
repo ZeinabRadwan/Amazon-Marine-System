@@ -21,6 +21,8 @@ use Mpdf\Mpdf;
 
 class InvoiceController extends Controller
 {
+    private const FIXED_SECTIONS = ['shipping', 'inland', 'customs', 'insurance'];
+    private const EXTRA_SECTIONS = ['handling', 'other'];
     private const TYPE_ID_TO_CODE = [
         0 => 'client',
         1 => 'vendor',
@@ -185,6 +187,82 @@ class InvoiceController extends Controller
         return self::$invoiceItemsHasTitleColumn;
     }
 
+    private static function normalizeSectionKey(?string $sectionKey): string
+    {
+        $key = strtolower(trim((string) ($sectionKey ?? '')));
+        if ($key === '' || $key === 'additional') {
+            return 'other';
+        }
+
+        return $key;
+    }
+
+    /**
+     * @param array<string,float> $into
+     * @return array<string,float>
+     */
+    private static function addMoneyMap(array $into, string $currencyCode, float $amount): array
+    {
+        $code = strtoupper((string) $currencyCode ?: 'USD');
+        $into[$code] = self::roundMoney((float) ($into[$code] ?? 0) + $amount);
+
+        return $into;
+    }
+
+    /**
+     * @param array<string,float> $sell
+     * @param array<string,float> $cost
+     * @return array<string,float>
+     */
+    private static function diffMoneyMap(array $sell, array $cost): array
+    {
+        $out = [];
+        foreach (array_unique(array_merge(array_keys($sell), array_keys($cost))) as $cur) {
+            $out[$cur] = self::roundMoney((float) ($sell[$cur] ?? 0) - (float) ($cost[$cur] ?? 0));
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return array<string,array<int,array<string,mixed>>>
+     */
+    private function sectionAttachmentsForInvoice(Invoice $invoice): array
+    {
+        if (! $invoice->shipment_id) {
+            return [];
+        }
+        $costInvoice = ShipmentCostInvoice::query()
+            ->where('shipment_id', $invoice->shipment_id)
+            ->first();
+        $refs = is_array($costInvoice?->attachment_refs) ? $costInvoice->attachment_refs : [];
+        $out = [];
+        foreach ($refs as $sectionKey => $rows) {
+            if (! is_array($rows)) {
+                continue;
+            }
+            $normalizedKey = self::normalizeSectionKey((string) $sectionKey);
+            foreach ($rows as $row) {
+                if (! is_array($row)) {
+                    continue;
+                }
+                $id = isset($row['id']) ? (int) $row['id'] : null;
+                $name = isset($row['name']) ? (string) $row['name'] : null;
+                $kind = strtoupper((string) ($row['type'] ?? ''));
+                $isPdf = str_contains($kind, 'PDF') || ($name && str_ends_with(strtolower($name), '.pdf'));
+                $out[$normalizedKey][] = [
+                    'id' => $id,
+                    'name' => $name,
+                    'type' => $isPdf ? 'PDF' : ($kind ?: null),
+                    'uploaded_at' => $row['uploaded_at'] ?? null,
+                    'url' => $id ? url('/api/v1/shipments/'.$invoice->shipment_id.'/attachments/'.$id.'/download') : null,
+                ];
+            }
+        }
+
+        return $out;
+    }
+
     /**
      * @param array<int,InvoiceItem> $items
      * @return array<string,array{items: array<int,array<string,mixed>>, totals: array<string,float>}>
@@ -255,9 +333,106 @@ class InvoiceController extends Controller
     private function invoicePayload(Invoice $invoice): array
     {
         $invoice->loadMissing(['client', 'shipment', 'items', 'payments']);
+        $attachmentsBySection = $this->sectionAttachmentsForInvoice($invoice);
+        $sectionKeys = array_values(array_unique(array_merge(
+            self::FIXED_SECTIONS,
+            self::EXTRA_SECTIONS,
+            array_map(
+                static fn (InvoiceItem $item): string => self::normalizeSectionKey($item->section_key),
+                $invoice->items->all()
+            ),
+            array_keys($attachmentsBySection)
+        )));
+
+        $sectionMap = [];
+        foreach ($sectionKeys as $key) {
+            $sectionMap[$key] = [
+                'key' => $key,
+                'items' => [],
+                'selling_by_currency' => [],
+                'cost_by_currency' => [],
+            ];
+        }
+
+        foreach ($invoice->items as $item) {
+            $sectionKey = self::normalizeSectionKey($item->section_key);
+            $currency = strtoupper((string) ($item->currency_code ?: 'USD'));
+            $lineTotal = self::roundMoney((float) $item->line_total);
+            $costLineTotal = self::roundMoney((float) ($item->cost_line_total ?? 0));
+
+            if (! isset($sectionMap[$sectionKey])) {
+                $sectionMap[$sectionKey] = [
+                    'key' => $sectionKey,
+                    'items' => [],
+                    'selling_by_currency' => [],
+                    'cost_by_currency' => [],
+                ];
+            }
+            $sectionMap[$sectionKey]['items'][] = [
+                'id' => $item->id,
+                'description' => $item->description,
+                'title' => $item->title,
+                'quantity' => (float) $item->quantity,
+                'unit_price' => (float) $item->unit_price,
+                'line_total' => $lineTotal,
+                'cost_unit_price' => (float) ($item->cost_unit_price ?? 0),
+                'cost_line_total' => $costLineTotal,
+                'currency_code' => $currency,
+                'section_key' => $sectionKey,
+                'order_index' => (int) ($item->order_index ?? 0),
+                'source_key' => $item->source_key,
+            ];
+            $sectionMap[$sectionKey]['selling_by_currency'] = self::addMoneyMap(
+                $sectionMap[$sectionKey]['selling_by_currency'],
+                $currency,
+                $lineTotal
+            );
+            $sectionMap[$sectionKey]['cost_by_currency'] = self::addMoneyMap(
+                $sectionMap[$sectionKey]['cost_by_currency'],
+                $currency,
+                $costLineTotal
+            );
+        }
+
+        $sections = [];
+        $overallSelling = [];
+        $overallCost = [];
+        foreach ($sectionKeys as $key) {
+            $section = $sectionMap[$key] ?? [
+                'key' => $key,
+                'items' => [],
+                'selling_by_currency' => [],
+                'cost_by_currency' => [],
+            ];
+            usort($section['items'], static function (array $a, array $b): int {
+                return ((int) ($a['order_index'] ?? 0) <=> (int) ($b['order_index'] ?? 0))
+                    ?: ((int) ($a['id'] ?? 0) <=> (int) ($b['id'] ?? 0));
+            });
+            $profit = self::diffMoneyMap($section['selling_by_currency'], $section['cost_by_currency']);
+            foreach ($section['selling_by_currency'] as $cur => $amount) {
+                $overallSelling = self::addMoneyMap($overallSelling, $cur, (float) $amount);
+            }
+            foreach ($section['cost_by_currency'] as $cur => $amount) {
+                $overallCost = self::addMoneyMap($overallCost, $cur, (float) $amount);
+            }
+
+            $sections[] = [
+                'key' => $key,
+                'items' => $section['items'],
+                'selling_by_currency' => $section['selling_by_currency'],
+                'final_selling_price_by_currency' => $section['selling_by_currency'],
+                'cost_by_currency' => $section['cost_by_currency'],
+                'markup_by_currency' => $profit,
+                'profit_by_currency' => $profit,
+                'attachments' => $attachmentsBySection[$key] ?? [],
+            ];
+        }
+        $overallProfit = self::diffMoneyMap($overallSelling, $overallCost);
+
         return [
             ...$invoice->toArray(),
-            'sections' => $this->sectionedInvoiceItems($invoice->items),
+            'sections' => $sections,
+            'fixed_sections' => self::FIXED_SECTIONS,
             'totals_by_currency' => collect($invoice->items)
                 ->groupBy(fn (InvoiceItem $i) => strtoupper((string) ($i->currency_code ?: 'USD')))
                 ->map(fn ($g) => self::roundMoney((float) $g->sum('line_total')))
@@ -267,6 +442,13 @@ class InvoiceController extends Controller
                 ->map(fn ($g) => self::roundMoney((float) $g->sum('cost_line_total')))
                 ->toArray(),
             'profit_by_currency' => $this->profitByCurrency($invoice),
+            'financial_overview' => [
+                'selling_by_currency' => $overallSelling,
+                'cost_by_currency' => $overallCost,
+                'markup_by_currency' => $overallProfit,
+                'profit_by_currency' => $overallProfit,
+                'final_selling_price_by_currency' => $overallSelling,
+            ],
         ];
     }
 
@@ -706,8 +888,11 @@ class InvoiceController extends Controller
         $locale = strtolower((string) $request->header('X-App-Locale', 'en')) === 'ar' ? 'ar' : 'en';
         $labels = $this->invoicePdfLabels($locale);
 
+        $invoiceData = $this->invoicePayload($invoice);
+
         $html = view('invoices.pdf', [
             'invoice' => $invoice,
+            'invoiceData' => $invoiceData,
             'headerHtml' => $layout?->header_html,
             'footerHtml' => $layout?->footer_html,
             'lang' => $locale,

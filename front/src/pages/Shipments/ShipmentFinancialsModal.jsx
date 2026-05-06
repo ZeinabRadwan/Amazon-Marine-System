@@ -1451,7 +1451,13 @@ export default function ShipmentFinancialsModal({
       if (saved.status === 'draft') {
         finalized = await issueInvoice(token, saved.id)
       }
-      setClientInvoice(finalized)
+      const refreshed = await getInvoice(token, finalized.id || saved.id)
+      setClientInvoice(refreshed)
+      setCurrentInvoiceId(refreshed?.id || finalized.id || saved.id)
+      setClientInvoicesList((prev) => {
+        const filtered = (Array.isArray(prev) ? prev : []).filter((r) => r.id !== refreshed.id)
+        return [refreshed, ...filtered]
+      })
       setFinBanner({ type: 'success', message: t('shipments.fin.salesInvoiceFinalized', { defaultValue: 'Sales invoice finalized successfully.' }) })
       await handleNotifySales()
     } catch (e) {

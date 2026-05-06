@@ -3,6 +3,137 @@
 @push('pdf_head')
     <style>
         @include('pdf.partials.sd_branded_document_skin')
+        .invoice-title { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+        .meta-box { border: 1px solid #dbe2ea; border-radius: 8px; padding: 8px; font-size: 10px; line-height: 1.5; }
+        .section-title { margin-top: 10px; padding: 6px 8px; background: #11354d; color: #fff; border-radius: 6px 6px 0 0; font-weight: 700; font-size: 10px; }
+        .section-empty { border: 1px solid #dbe2ea; border-top: 0; padding: 8px; font-size: 10px; color: #6b7280; }
+        .section-table { border-top: 0 !important; border-radius: 0 0 6px 6px !important; table-layout: fixed; }
+        .section-table td, .section-table th { font-size: 9.6px; overflow-wrap: anywhere; }
+        .totals-row { margin-top: 4px; border: 1px solid #e2e8f0; padding: 6px 8px; border-radius: 6px; font-size: 10px; }
+        .attachments-list { margin: 6px 0 0 16px; padding: 0; font-size: 9.6px; }
+        .summary-box { margin-top: 12px; border: 1px solid #dbe2ea; border-radius: 8px; padding: 8px; }
+        .summary-box div { font-size: 10px; line-height: 1.6; }
+    </style>
+@endpush
+
+@section('pdf_title')
+{{ $labels['doc_title'] }} {{ $invoice->invoice_number }}
+@endsection
+
+@section('content')
+    @php
+        $data = is_array($invoiceData ?? null) ? $invoiceData : [];
+        $sections = is_array($data['sections'] ?? null) ? $data['sections'] : [];
+        $sectionLabels = [
+            'shipping' => 'Shipping Line',
+            'inland' => 'Inland Transportation',
+            'customs' => 'Customs Clearance',
+            'insurance' => 'Insurance',
+            'handling' => 'Handling',
+            'other' => 'Other',
+        ];
+        $formatBreakdown = static function (array $map): string {
+            if ($map === []) { return '—'; }
+            ksort($map);
+            $parts = [];
+            foreach ($map as $cur => $amt) {
+                $parts[] = strtoupper((string) $cur).' '.number_format((float) $amt, 2);
+            }
+            return implode(' · ', $parts);
+        };
+    @endphp
+
+    <div class="pdf-wrapper">
+        <div class="invoice-title">{{ $labels['invoice_title'] }} {{ $invoice->invoice_number }}</div>
+        <table class="pdf-party-grid">
+            <tr>
+                <td class="pdf-party-card">
+                    <div class="pdf-party-card__label">{{ $labels['billed_to'] }}</div>
+                    <div class="pdf-party-card__name">{{ $invoice->client?->name ?? '—' }}</div>
+                    <div>{{ $labels['date'] }} {{ $invoice->issue_date?->format('d/m/Y') }}</div>
+                    <div>{{ $labels['due_date'] }} {{ $invoice->due_date?->format('d/m/Y') ?: '—' }}</div>
+                </td>
+                <td class="pdf-party-grid__gap"></td>
+                <td class="pdf-party-card">
+                    <div class="meta-box">
+                        <div><strong>{{ $labels['shipment_bl'] }}</strong> {{ $invoice->shipment?->bl_number ?: '—' }}</div>
+                        <div><strong>POL → POD:</strong> {{ $invoice->shipment?->originPort?->name ?: '—' }} → {{ $invoice->shipment?->destinationPort?->name ?: '—' }}</div>
+                        <div><strong>Shipping Line:</strong> {{ $invoice->shipment?->shippingLine?->name ?: '—' }}</div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        @foreach($sections as $section)
+            @php
+                $key = (string) ($section['key'] ?? 'other');
+                $items = is_array($section['items'] ?? null) ? $section['items'] : [];
+                $attachments = is_array($section['attachments'] ?? null) ? $section['attachments'] : [];
+            @endphp
+            <div class="section-title">{{ $sectionLabels[$key] ?? ucfirst($key) }}</div>
+            @if(count($items) === 0)
+                <div class="section-empty">No line items.</div>
+            @else
+                <table class="pdf-table pdf-table--standalone section-table">
+                    <thead>
+                        <tr>
+                            <th class="pdf-w-50">{{ $labels['description'] }}</th>
+                            <th class="pdf-w-10 pdf-text-end">{{ $labels['qty'] }}</th>
+                            <th class="pdf-w-20 pdf-text-end">{{ $labels['unit_price'] }}</th>
+                            <th class="pdf-w-20 pdf-text-end">{{ $labels['line_total'] }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($items as $item)
+                            <tr>
+                                <td>{{ $item['description'] ?? '—' }}</td>
+                                <td class="pdf-text-end">{{ number_format((float) ($item['quantity'] ?? 0), 2) }}</td>
+                                <td class="pdf-text-end">{{ strtoupper((string) ($item['currency_code'] ?? 'USD')) }} {{ number_format((float) ($item['unit_price'] ?? 0), 2) }}</td>
+                                <td class="pdf-text-end"><strong>{{ strtoupper((string) ($item['currency_code'] ?? 'USD')) }} {{ number_format((float) ($item['line_total'] ?? 0), 2) }}</strong></td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @endif
+
+            <div class="totals-row">
+                <div><strong>Cost:</strong> {{ $formatBreakdown((array) ($section['cost_by_currency'] ?? [])) }}</div>
+                <div><strong>Selling:</strong> {{ $formatBreakdown((array) ($section['selling_by_currency'] ?? [])) }}</div>
+                <div><strong>Markup:</strong> {{ $formatBreakdown((array) ($section['markup_by_currency'] ?? [])) }}</div>
+                <div><strong>Profit:</strong> {{ $formatBreakdown((array) ($section['profit_by_currency'] ?? [])) }}</div>
+                <div><strong>Attachments:</strong></div>
+                @if(count($attachments) === 0)
+                    <div>—</div>
+                @else
+                    <ul class="attachments-list">
+                        @foreach($attachments as $attachment)
+                            <li>
+                                {{ $attachment['name'] ?? 'PDF' }}
+                                @if(!empty($attachment['uploaded_at'])) ({{ $attachment['uploaded_at'] }}) @endif
+                                @if(!empty($attachment['url'])) - {{ $attachment['url'] }} @endif
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </div>
+        @endforeach
+
+        <div class="summary-box">
+            <div><strong>{{ $labels['subtotal'] }}:</strong> {{ $formatBreakdown((array) ($data['financial_overview']['final_selling_price_by_currency'] ?? $data['totals_by_currency'] ?? [])) }}</div>
+            <div><strong>Total Cost:</strong> {{ $formatBreakdown((array) ($data['financial_overview']['cost_by_currency'] ?? $data['cost_totals_by_currency'] ?? [])) }}</div>
+            <div><strong>Total Profit:</strong> {{ $formatBreakdown((array) ($data['financial_overview']['profit_by_currency'] ?? $data['profit_by_currency'] ?? [])) }}</div>
+            @if($invoice->is_vat_invoice)
+                <div><strong>{{ $labels['vat'] }}:</strong> {{ number_format((float) $invoice->tax_amount, 2) }} {{ $invoice->currency_code }}</div>
+            @endif
+            <div><strong>{{ $labels['grand_total'] }}:</strong> {{ $formatBreakdown((array) ($data['financial_overview']['final_selling_price_by_currency'] ?? $data['totals_by_currency'] ?? [])) }}</div>
+        </div>
+    </div>
+@endsection
+@extends('pdf.layouts.master')
+
+@push('pdf_head')
+    <style>
+        @include('pdf.partials.sd_branded_document_skin')
         .pdf-inv-meta-card {
             border: 1px solid #dbe2ea;
             border-radius: 10px;
