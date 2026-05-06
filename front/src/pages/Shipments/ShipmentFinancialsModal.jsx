@@ -54,8 +54,9 @@ function otherLineCategoryCode(bucketId) {
 // expenseBucket moved to shipmentFinUtils.js
 
 function sumByCurrency(rows) {
+  const safeRows = Array.isArray(rows) ? rows : []
   const map = {}
-  for (const r of rows) {
+  for (const r of safeRows) {
     const curRaw = String(r.currency_code || '').trim().toUpperCase()
     const amt = Number(r.amount)
     if (!Number.isFinite(amt) || amt <= 0) continue
@@ -618,7 +619,7 @@ export default function ShipmentFinancialsModal({
   const canEditSellingGrid = Boolean(token && isSalesUser)
   
   const [tab, setTab] = useState('selling')
-  const [expanded, setExpanded] = useState(() => new Set(['shipping', 'inland', 'customs', 'insurance', 'other']))
+  const [expanded, setExpanded] = useState(() => new Set())
   const [sectionMetaByBucket, setSectionMetaByBucket] = useState({})
   const [customSectionDefs, setCustomSectionDefs] = useState([])
   const [pendingOtherByBucket, setPendingOtherByBucket] = useState({})
@@ -681,7 +682,7 @@ export default function ShipmentFinancialsModal({
   useEffect(() => {
     if (open && shipment?.id != null) {
       setTab(isAccountingUser ? 'expenses' : 'selling')
-      setExpanded(new Set(['shipping', 'inland', 'customs', 'insurance', 'other']))
+      setExpanded(new Set())
       setSectionMetaByBucket(sectionMeta || {})
       setCustomSectionDefs([])
       setPendingOtherByBucket({})
@@ -1521,6 +1522,8 @@ export default function ShipmentFinancialsModal({
     if (!title || !title.trim()) return
     const id = `custom-${title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`
     setCustomSectionDefs((prev) => [...prev, { id, title: title.trim() }])
+    setPendingOtherByBucket((prev) => ({ ...prev, [id]: prev[id] || [] }))
+    setSectionAttachmentRefs((prev) => ({ ...prev, [id]: prev[id] || [] }))
     setExpanded((prev) => new Set([...prev, id]))
   }, [])
 
@@ -1899,7 +1902,7 @@ export default function ShipmentFinancialsModal({
 
   const renderBucketCard = (bucketId, def) => {
     const bucketEditing = editMode
-    const rows = byBucket[bucketId]
+    const rows = Array.isArray(byBucket[bucketId]) ? byBucket[bucketId] : []
     const Icon = def?.icon ?? Package
     const sums = sumByCurrency(rows)
     const subtotalParts = Object.entries(sums)
