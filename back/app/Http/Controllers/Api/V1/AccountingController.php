@@ -8,6 +8,7 @@ use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Vendor;
 use App\Models\VendorBill;
+use App\Services\AccountingAggregationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -22,24 +23,6 @@ class AccountingController extends Controller
         } elseif (Schema::hasColumn('invoices', 'invoice_type_id')) {
             $query->where('invoice_type_id', 0);
         }
-    }
-
-    /**
-     * @param array<string,float|int> $map
-     * @return array<string,float>
-     */
-    private function normalizeCurrencyMap(array $map): array
-    {
-        $out = [];
-        foreach ($map as $cur => $val) {
-            $code = strtoupper(trim((string) $cur));
-            if ($code === '') {
-                continue;
-            }
-            $out[$code] = (float) ($out[$code] ?? 0) + (float) $val;
-        }
-        ksort($out);
-        return $out;
     }
 
     public function stats(Request $request): JsonResponse
@@ -206,10 +189,11 @@ class AccountingController extends Controller
                 $paymentsQuery->where('currency_code', $currencyFilter);
             }
 
-            $invoices = $invoicesQuery->get();
+            $invoices = $invoicesQuery->with('items')->get();
             $payments = $paymentsQuery->get();
 
-            $totalSales = (float) $invoices->sum('total_amount');
+            $aggregated = AccountingAggregationService::aggregateInvoices($invoices);
+            $totalSales = (float) array_sum($aggregated['total_invoiced_per_currency']);
             $paid = (float) $payments->sum('amount');
             $balance = $totalSales - $paid;
 
@@ -493,13 +477,13 @@ class AccountingController extends Controller
 
         $invoicesQuery = Invoice::query();
         $this->applyCustomerInvoiceFilter($invoicesQuery);
-        $invoices = $invoicesQuery->get();
+        $invoices = $invoicesQuery->with('items')->get();
         $payments = Payment::query()->where('type', 'client_receipt')->get();
 
         $billedByCurrency = [];
         foreach ($invoices as $inv) {
-            $cur = strtoupper((string) ($inv->currency_code ?: 'USD'));
-            $billedByCurrency[$cur] = ($billedByCurrency[$cur] ?? 0) + (float) $inv->total_amount;
+            $totals = AccountingAggregationService::invoiceTotalsPerCurrency($inv);
+            $billedByCurrency = AccountingAggregationService::addCurrencyMaps($billedByCurrency, $totals);
         }
         $paidByCurrency = [];
         foreach ($payments as $p) {
@@ -507,14 +491,14 @@ class AccountingController extends Controller
             $paidByCurrency[$cur] = ($paidByCurrency[$cur] ?? 0) + (float) $p->amount;
         }
 
-        $billedByCurrency = $this->normalizeCurrencyMap($billedByCurrency);
-        $paidByCurrency = $this->normalizeCurrencyMap($paidByCurrency);
+        $billedByCurrency = AccountingAggregationService::normalizeCurrencyMap($billedByCurrency);
+        $paidByCurrency = AccountingAggregationService::normalizeCurrencyMap($paidByCurrency);
 
         $remaining = [];
         foreach (array_unique(array_merge(array_keys($billedByCurrency), array_keys($paidByCurrency))) as $cur) {
             $remaining[$cur] = (float) ($billedByCurrency[$cur] ?? 0) - (float) ($paidByCurrency[$cur] ?? 0);
         }
-        $remaining = $this->normalizeCurrencyMap($remaining);
+        $remaining = AccountingAggregationService::normalizeCurrencyMap($remaining);
 
         return response()->json([
             'data' => [
@@ -568,35 +552,12 @@ class AccountingController extends Controller
             if ($shipmentId) {
                 $invoicesQuery->where('shipment_id', (int) $shipmentId);
             }
-            $invoices = $invoicesQuery->get();
+            $invoices = $invoicesQuery->with('items')->get();
             if (($search !== '' || $status !== '' || $dateFrom || $dateTo || $shipmentId) && $invoices->isEmpty()) {
                 return null;
             }
-            $invoiceIds = $invoices->pluck('id')->all();
-            $payments = $invoiceIds
-                ? Payment::query()
-                    ->whereIn('invoice_id', $invoiceIds)
-                    ->where('type', 'client_receipt')
-                    ->get()
-                : collect();
-
-            $billed = [];
-            foreach ($invoices as $inv) {
-                $cur = strtoupper((string) ($inv->currency_code ?: 'USD'));
-                $billed[$cur] = ($billed[$cur] ?? 0) + (float) $inv->total_amount;
-            }
-            $paid = [];
-            foreach ($payments as $p) {
-                $cur = strtoupper((string) ($p->currency_code ?: 'USD'));
-                $paid[$cur] = ($paid[$cur] ?? 0) + (float) $p->amount;
-            }
-            $billed = $this->normalizeCurrencyMap($billed);
-            $paid = $this->normalizeCurrencyMap($paid);
-            $remaining = [];
-            foreach (array_unique(array_merge(array_keys($billed), array_keys($paid))) as $cur) {
-                $remaining[$cur] = (float) ($billed[$cur] ?? 0) - (float) ($paid[$cur] ?? 0);
-            }
-            $remaining = $this->normalizeCurrencyMap($remaining);
+            $invoices->loadMissing('items');
+            $aggregated = AccountingAggregationService::aggregateInvoices($invoices);
 
             $invoiceStatuses = [
                 'paid' => 0,
@@ -604,28 +565,17 @@ class AccountingController extends Controller
                 'unpaid' => 0,
             ];
             foreach ($invoices as $inv) {
-                $cur = strtoupper((string) ($inv->currency_code ?: 'USD'));
-                $invTotal = (float) $inv->total_amount;
-                $invPaid = (float) Payment::query()
-                    ->where('invoice_id', $inv->id)
-                    ->where('currency_code', $cur)
-                    ->sum('amount');
-                if ($invPaid >= $invTotal && $invTotal > 0) {
-                    $invoiceStatuses['paid']++;
-                } elseif ($invPaid > 0) {
-                    $invoiceStatuses['partial']++;
-                } else {
-                    $invoiceStatuses['unpaid']++;
-                }
+                $statusKey = AccountingAggregationService::invoiceStatementTotals($inv)['status'];
+                $invoiceStatuses[$statusKey] = (int) ($invoiceStatuses[$statusKey] ?? 0) + 1;
             }
 
             return [
                 'customer_id' => $client->id,
                 'customer_name' => $client->name,
                 'invoice_count' => $invoices->count(),
-                'total_invoices_value' => $billed,
-                'paid_amount' => $paid,
-                'remaining_balance' => $remaining,
+                'total_invoices_value' => $aggregated['total_invoiced_per_currency'],
+                'paid_amount' => $aggregated['total_paid_per_currency'],
+                'remaining_balance' => $aggregated['total_remaining_per_currency'],
                 'invoice_status_counts' => $invoiceStatuses,
             ];
         })->filter()->values();
@@ -646,15 +596,7 @@ class AccountingController extends Controller
         $invoices = $invoicesQuery->get();
 
         $rows = $invoices->map(function (Invoice $inv) {
-            $paid = (float) $inv->payments->sum('amount');
-            $total = (float) $inv->total_amount;
-            $status = 'unpaid';
-            if ($paid >= $total && $total > 0) {
-                $status = 'paid';
-            } elseif ($paid > 0) {
-                $status = 'partial';
-            }
-            $cur = strtoupper((string) ($inv->currency_code ?: 'USD'));
+            $computed = AccountingAggregationService::invoiceStatementTotals($inv);
 
             $paymentHistory = $inv->payments
                 ->sortByDesc(fn (Payment $p) => $p->paid_at?->toDateString() ?? '')
@@ -694,10 +636,14 @@ class AccountingController extends Controller
                 'invoice_reference' => $inv->invoice_number ?: ('INV-'.$inv->id),
                 'shipment_id' => $inv->shipment_id,
                 'shipment_reference' => $inv->shipment?->bl_number,
-                'status' => $status,
-                'total_amount' => [$cur => $total],
-                'paid_amount' => [$cur => $paid],
-                'remaining_amount' => [$cur => max(0, $total - $paid)],
+                'status' => $computed['status'],
+                'total_invoiced_per_currency' => $computed['total_invoiced_per_currency'],
+                'total_paid_per_currency' => $computed['total_paid_per_currency'],
+                'total_remaining_per_currency' => $computed['total_remaining_per_currency'],
+                // Backward-compatible keys consumed by existing frontend.
+                'total_amount' => $computed['total_invoiced_per_currency'],
+                'paid_amount' => $computed['total_paid_per_currency'],
+                'remaining_amount' => $computed['total_remaining_per_currency'],
                 'issue_date' => $inv->issue_date?->toDateString(),
                 'due_date' => $inv->due_date?->toDateString(),
                 'line_items' => $items,
@@ -747,7 +693,8 @@ class AccountingController extends Controller
                 ->where('type', 'client_receipt')
                 ->get();
 
-            $totalSales = (float) $invoices->sum('total_amount');
+            $aggregated = AccountingAggregationService::aggregateInvoices($invoices);
+            $totalSales = (float) array_sum($aggregated['total_invoiced_per_currency']);
             $paid = (float) $payments->sum('amount');
             $balance = $totalSales - $paid;
 

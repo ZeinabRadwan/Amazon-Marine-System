@@ -104,15 +104,19 @@
   --form-focus-ring: color-mix(in srgb, var(--form-primary) 50%, transparent);
 }
 
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
   background-color: var(--app-bg);
   color: var(--app-text);
-}
-#root {
-  min-height: 100vh;
 }
 
 a {

@@ -1319,7 +1319,7 @@ export default function Settings() {
 
   async function handleSaveBankAccount(e) {
     e.preventDefault()
-    if (!token || !String(bankAccountForm.bank_name).trim() || !String(bankAccountForm.account_number).trim()) return
+    if (!token || !String(bankAccountForm.bank_name).trim() || !String(bankAccountForm.account_name).trim()) return
     const isEdit = bankAccountModal?.mode === 'edit' && bankAccountModal.id != null
     setBankAccountSubmitting(true)
     setError('')
@@ -3030,6 +3030,7 @@ export default function Settings() {
               <input
                 id="settings-bank-account-name"
                 className="clients-input"
+                required
                 value={bankAccountForm.account_name}
                 onChange={(e) => setBankAccountForm((p) => ({ ...p, account_name: e.target.value }))}
               />

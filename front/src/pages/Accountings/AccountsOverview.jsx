@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Search, FileSpreadsheet, X, DollarSign } from 'lucide-react'
+import { Search, FileSpreadsheet, X, DollarSign, ReceiptText, HandCoins, WalletCards, CircleDollarSign } from 'lucide-react'
 import Tabs from '../../components/Tabs'
 import LoaderDots from '../../components/LoaderDots'
+import { StatsCard } from '../../components/StatsCard'
 import { Container } from '../../components/Container'
 import { getStoredToken } from '../Login'
 import {
@@ -24,6 +25,20 @@ function mapToInline(value) {
 
 function sumMap(map) {
   return Object.values(map || {}).reduce((acc, n) => acc + (Number(n) || 0), 0)
+}
+
+function getStatusLabel(status, t) {
+  const normalized = String(status || '').toLowerCase()
+  if (normalized === 'paid') return t('invoices.status.paid')
+  if (normalized === 'partial' || normalized === 'partially_paid') return t('invoices.status.partial')
+  return t('invoices.status.unpaid')
+}
+
+function getStatusClass(status) {
+  const normalized = String(status || '').toLowerCase()
+  if (normalized === 'paid') return 'accountings-status-badge accountings-status-badge--active'
+  if (normalized === 'partial' || normalized === 'partially_paid') return 'accountings-status-badge accountings-status-badge--pending'
+  return 'accountings-status-badge accountings-status-badge--inactive'
 }
 
 export default function AccountsOverview() {
@@ -171,10 +186,10 @@ export default function AccountsOverview() {
         acc.payable += sumMap(row.total_billed_amount)
         acc.paid += sumMap(row.total_paid_amount)
         acc.remaining += sumMap(row.remaining_balance)
-        acc.shipments += Number(row.linked_shipments_count || 0)
+        acc.unpaid += Number(row.bill_status_counts?.unpaid || row.unpaid_bills_count || 0)
         return acc
       },
-      { payable: 0, paid: 0, remaining: 0, shipments: 0 }
+      { payable: 0, paid: 0, remaining: 0, unpaid: 0 }
     )
     return totals
   }, [partners])
@@ -188,7 +203,7 @@ export default function AccountsOverview() {
             onChange={setActiveTab}
             tabs={[
               { id: 'customers', label: t('accountings.customerStatement', 'Customer Statement') },
-              { id: 'partners', label: t('accountings.vendorStatements', 'Vendor Statements') },
+              { id: 'partners', label: t('accountings.vendorStatementTab') },
             ]}
           />
         </div>
@@ -198,22 +213,10 @@ export default function AccountsOverview() {
         {activeTab === 'customers' && (
           <div className="accountings-table-section">
             <div className="clients-stats-grid accountings-stats-grid">
-              <div className="stats-card">
-                <h4>{t('accountings.totalCustomerReceivables', 'Total customer receivables')}</h4>
-                <p>{customerSummary.receivables.toFixed(2)}</p>
-              </div>
-              <div className="stats-card">
-                <h4>{t('accountings.totalPaidByCustomers', 'Total paid by customers')}</h4>
-                <p>{customerSummary.paid.toFixed(2)}</p>
-              </div>
-              <div className="stats-card">
-                <h4>{t('accountings.totalOutstandingBalance', 'Total outstanding balance')}</h4>
-                <p>{customerSummary.outstanding.toFixed(2)}</p>
-              </div>
-              <div className="stats-card">
-                <h4>{t('accountings.unpaidInvoicesCount', 'Number of unpaid invoices')}</h4>
-                <p>{customerSummary.unpaid}</p>
-              </div>
+              <StatsCard title={t('accountings.unpaidInvoicesCount')} value={customerSummary.unpaid} icon={<ReceiptText />} variant="amber" />
+              <StatsCard title={t('accountings.totalOutstandingBalance')} value={customerSummary.outstanding.toFixed(2)} icon={<HandCoins />} variant="red" />
+              <StatsCard title={t('accountings.totalPaidByCustomers')} value={customerSummary.paid.toFixed(2)} icon={<CircleDollarSign />} variant="green" />
+              <StatsCard title={t('accountings.totalCustomerReceivables')} value={customerSummary.receivables.toFixed(2)} icon={<WalletCards />} variant="blue" />
             </div>
           </div>
         )}
@@ -227,23 +230,23 @@ export default function AccountsOverview() {
                   <input
                     type="search"
                     className="clients-input clients-filters__search"
-                    placeholder={t('accountings.customerInvoiceSearch', 'Search by invoice # or customer...')}
+                    placeholder={t('accountings.customerInvoiceSearch')}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                   />
                 </div>
                 <select className="clients-input min-w-[140px]" value={customerStatus} onChange={(e) => setCustomerStatus(e.target.value)}>
-                  <option value="">{t('accountings.allStatuses', 'All statuses')}</option>
-                  <option value="paid">{t('invoices.status.paid', 'Paid')}</option>
-                  <option value="partial">{t('invoices.status.partial', 'Partially Paid')}</option>
-                  <option value="unpaid">{t('invoices.status.unpaid', 'Unpaid')}</option>
+                  <option value="">{t('accountings.allStatuses')}</option>
+                  <option value="paid">{t('invoices.status.paid')}</option>
+                  <option value="partial">{t('invoices.status.partial')}</option>
+                  <option value="unpaid">{t('invoices.status.unpaid')}</option>
                 </select>
                 <input type="date" className="clients-input min-w-[140px]" value={customerDateFrom} onChange={(e) => setCustomerDateFrom(e.target.value)} />
                 <input type="date" className="clients-input min-w-[140px]" value={customerDateTo} onChange={(e) => setCustomerDateTo(e.target.value)} />
                 <input
                   type="number"
                   className="clients-input min-w-[140px]"
-                  placeholder={t('accountings.shipmentOptional', 'Shipment ID (optional)')}
+                  placeholder={t('accountings.shipmentOptional')}
                   value={customerShipmentId}
                   onChange={(e) => setCustomerShipmentId(e.target.value)}
                 />
@@ -254,11 +257,11 @@ export default function AccountsOverview() {
                 <thead>
                   <tr>
                     <th>{t('accountings.colClient', 'Customer')}</th>
-                    <th>{t('accountings.totalBilledAmount', 'Total amount')}</th>
-                    <th>{t('accountings.totalPaidAmount', 'Paid amount')}</th>
-                    <th>{t('accountings.remainingBalance', 'Remaining amount')}</th>
-                    <th>{t('accountings.unpaidInvoicesCount', 'Unpaid invoices')}</th>
-                    <th>{t('accountings.colActions', 'Actions')}</th>
+                    <th>{t('accountings.totalBilledAmount')}</th>
+                    <th>{t('accountings.totalPaidAmount')}</th>
+                    <th>{t('accountings.remainingBalance')}</th>
+                    <th>{t('accountings.unpaidInvoicesCount')}</th>
+                    <th>{t('accountings.colActions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -271,14 +274,14 @@ export default function AccountsOverview() {
                       <td>{Number(row.invoice_status_counts?.unpaid || 0)}</td>
                       <td>
                         <button type="button" className="accountings-btn accountings-btn--small mr-2" onClick={() => openCustomerDetail(row.customer_id)}>
-                          <FileSpreadsheet className="inline h-3.5 w-3.5" /> {t('accountings.ledger', 'Statement')}
+                          <FileSpreadsheet className="inline h-3.5 w-3.5" /> {t('accountings.ledger')}
                         </button>
                         <button
                           type="button"
                           className="accountings-btn accountings-btn--small"
                           onClick={() => openPayment({ link_type: 'customer', client_id: row.customer_id })}
                         >
-                          <DollarSign className="inline h-3.5 w-3.5" /> {t('accountings.recordPayment', 'Record Payment')}
+                          <DollarSign className="inline h-3.5 w-3.5" /> {t('accountings.recordPayment')}
                         </button>
                       </td>
                     </tr>
@@ -298,6 +301,7 @@ export default function AccountsOverview() {
 
         {activeTab === 'partners' && (
           <div className="accountings-table-section">
+            <h2 className="mb-3 text-base font-semibold">{t('accountings.vendorStatementTitle')}</h2>
             <div className="clients-filters-card mb-3">
               <div className="clients-filters__row clients-filters__row--main">
                 <div className="clients-filters__search-wrap">
@@ -305,56 +309,44 @@ export default function AccountsOverview() {
                   <input
                     type="search"
                     className="clients-input clients-filters__search"
-                    placeholder={t('accountings.vendorBillSearch', 'Search by bill # or vendor...')}
+                    placeholder={t('accountings.vendorBillSearch')}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                   />
                 </div>
                 <select className="clients-input min-w-[150px]" value={vendorId} onChange={(e) => setVendorId(e.target.value)}>
-                  <option value="">{t('accountings.allVendors', 'All vendors')}</option>
+                  <option value="">{t('accountings.allVendors')}</option>
                   {partners.map((p) => (
                     <option key={p.partner_id} value={p.partner_id}>{p.partner_name}</option>
                   ))}
                 </select>
                 <select className="clients-input min-w-[140px]" value={vendorStatus} onChange={(e) => setVendorStatus(e.target.value)}>
-                  <option value="">{t('accountings.allStatuses', 'All statuses')}</option>
-                  <option value="paid">{t('invoices.status.paid', 'Paid')}</option>
-                  <option value="partially_paid">{t('invoices.status.partial', 'Partially Paid')}</option>
-                  <option value="unpaid">{t('invoices.status.unpaid', 'Unpaid')}</option>
+                  <option value="">{t('accountings.allStatuses')}</option>
+                  <option value="paid">{t('invoices.status.paid')}</option>
+                  <option value="partially_paid">{t('invoices.status.partial')}</option>
+                  <option value="unpaid">{t('invoices.status.unpaid')}</option>
                 </select>
                 <input type="date" className="clients-input min-w-[140px]" value={vendorDateFrom} onChange={(e) => setVendorDateFrom(e.target.value)} />
                 <input type="date" className="clients-input min-w-[140px]" value={vendorDateTo} onChange={(e) => setVendorDateTo(e.target.value)} />
               </div>
             </div>
             <div className="clients-stats-grid accountings-stats-grid">
-              <div className="stats-card">
-                <h4>{t('accountings.totalPayableToPartners', 'Total payable to partners')}</h4>
-                <p>{partnerSummary.payable.toFixed(2)}</p>
-              </div>
-              <div className="stats-card">
-                <h4>{t('accountings.totalPaid', 'Total paid')}</h4>
-                <p>{partnerSummary.paid.toFixed(2)}</p>
-              </div>
-              <div className="stats-card">
-                <h4>{t('accountings.remainingBalance', 'Remaining balance')}</h4>
-                <p>{partnerSummary.remaining.toFixed(2)}</p>
-              </div>
-              <div className="stats-card">
-                <h4>{t('accountings.linkedShipmentsCount', 'Number of linked shipments')}</h4>
-                <p>{partnerSummary.shipments}</p>
-              </div>
+              <StatsCard title={t('accountings.unpaidBillsCount')} value={partnerSummary.unpaid} icon={<ReceiptText />} variant="amber" />
+              <StatsCard title={t('accountings.totalOutstandingPayable')} value={partnerSummary.remaining.toFixed(2)} icon={<HandCoins />} variant="red" />
+              <StatsCard title={t('accountings.totalPaidToVendors')} value={partnerSummary.paid.toFixed(2)} icon={<CircleDollarSign />} variant="green" />
+              <StatsCard title={t('accountings.totalPayable')} value={partnerSummary.payable.toFixed(2)} icon={<WalletCards />} variant="blue" />
             </div>
             <div className="accountings-table-wrap mt-3">
               <table className="accountings-table">
                 <thead>
                   <tr>
-                    <th>{t('accountings.colPartner', 'Vendor name')}</th>
-                    <th>{t('accountings.colType', 'Vendor type')}</th>
-                    <th>{t('accountings.colTotalDue', 'Total due')}</th>
-                    <th>{t('accountings.totalPaidAmount', 'Paid amount')}</th>
-                    <th>{t('accountings.remainingBalance', 'Remaining balance')}</th>
-                    <th>{t('accountings.linkedShipmentsCount', 'Linked shipments')}</th>
-                    <th>{t('accountings.colActions', 'Actions')}</th>
+                    <th>{t('accountings.vendorName')}</th>
+                    <th>{t('accountings.vendorType')}</th>
+                    <th>{t('accountings.colTotalDue')}</th>
+                    <th>{t('accountings.totalPaidAmount')}</th>
+                    <th>{t('accountings.remainingBalance')}</th>
+                    <th>{t('accountings.linkedShipmentsCount')}</th>
+                    <th>{t('accountings.colActions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -368,14 +360,14 @@ export default function AccountsOverview() {
                       <td>{row.linked_shipments_count || 0}</td>
                       <td>
                         <button type="button" className="accountings-btn accountings-btn--small mr-2" onClick={() => openPartnerDetail(row.partner_id)}>
-                          <FileSpreadsheet className="inline h-3.5 w-3.5" /> {t('accountings.ledger', 'Statement')}
+                          <FileSpreadsheet className="inline h-3.5 w-3.5" /> {t('accountings.ledger')}
                         </button>
                         <button
                           type="button"
                           className="accountings-btn accountings-btn--small"
                           onClick={() => openPayment({ link_type: 'partner', vendor_id: row.partner_id })}
                         >
-                          <DollarSign className="inline h-3.5 w-3.5" /> {t('accountings.recordPayment', 'Record Payment')}
+                          <DollarSign className="inline h-3.5 w-3.5" /> {t('accountings.recordPayment')}
                         </button>
                       </td>
                     </tr>
@@ -400,63 +392,41 @@ export default function AccountsOverview() {
                 <table className="accountings-table">
                   <thead>
                     <tr>
-                      <th>{t('accountings.invoice', 'Invoice')}</th>
-                      <th>{t('accountings.shipment', 'Shipment reference')}</th>
-                      <th>{t('accountings.issueDate', 'Issue date')}</th>
-                      <th>{t('accountings.totalBilledAmount', 'Total')}</th>
-                      <th>{t('accountings.totalPaidAmount', 'Paid')}</th>
-                      <th>{t('accountings.remainingBalance', 'Remaining')}</th>
-                      <th>{t('accountings.status', 'Status')}</th>
-                      <th>{t('accountings.colActions', 'Actions')}</th>
+                      <th>{t('accountings.invoiceNumber')}</th>
+                      <th>{t('accountings.shipmentReference')}</th>
+                      <th>{t('accountings.issueDate')}</th>
+                      <th>{t('accountings.totalAmount')}</th>
+                      <th>{t('accountings.paidAmount')}</th>
+                      <th>{t('accountings.remainingAmount')}</th>
+                      <th>{t('accountings.status')}</th>
+                      <th>{t('accountings.colActions')}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {(customerDetail.invoices || []).map((inv) => (
-                      <tr key={inv.invoice_id}>
+                      <tr key={inv.invoice_id} className="accountings-invoice-row">
                         <td>{inv.invoice_reference}</td>
                         <td>{inv.shipment_reference || '—'}</td>
                         <td>{inv.issue_date || '—'}</td>
                         <td>{mapToInline(inv.total_amount)}</td>
                         <td>{mapToInline(inv.paid_amount)}</td>
                         <td>{mapToInline(inv.remaining_amount)}</td>
-                        <td>{inv.status}</td>
+                        <td>
+                          <span className={getStatusClass(inv.status)}>{getStatusLabel(inv.status, t)}</span>
+                        </td>
                         <td>
                           <button
                             type="button"
                             className="accountings-btn accountings-btn--small"
                             onClick={() => openPayment({ link_type: 'invoice', invoice_id: inv.invoice_id, shipment_id: inv.shipment_id })}
                           >
-                            {t('accountings.recordPayment', 'Record Payment')}
+                            {t('accountings.recordPayment')}
                           </button>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              </div>
-              <div className="mt-4">
-                {(customerDetail.invoices || []).map((inv) => (
-                  <details key={`details-${inv.invoice_id}`} className="mb-2">
-                    <summary className="font-semibold cursor-pointer">
-                      {inv.invoice_reference} - {t('accountings.details', 'Details')}
-                    </summary>
-                    <div className="mt-2 text-sm">
-                      <div><strong>{t('accountings.sections', 'Sections / Items')}:</strong></div>
-                      <ul>
-                        {(inv.line_items || []).map((it) => (
-                          <li key={it.id}>{it.section_key || 'other'} - {it.description} ({it.currency_code} {Number(it.line_total || 0).toFixed(2)})</li>
-                        ))}
-                      </ul>
-                      <div><strong>{t('accountings.attachments', 'Attachments')}:</strong> {(inv.attachments || []).map((a) => a.name).join(', ') || '—'}</div>
-                      <div><strong>{t('accountings.paymentHistory', 'Payment history')}:</strong></div>
-                      <ul>
-                        {(inv.payment_history || []).map((p) => (
-                          <li key={p.id}>{p.paid_at || '—'} - {p.method || '—'} - {p.currency_code} {Number(p.amount || 0).toFixed(2)}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </details>
-                ))}
               </div>
             </div>
           </div>
@@ -476,12 +446,12 @@ export default function AccountsOverview() {
                 <table className="accountings-table">
                   <thead>
                     <tr>
-                      <th>{t('accountings.invoice', 'Invoice')}</th>
-                      <th>{t('accountings.shipment', 'Shipment')}</th>
-                      <th>{t('accountings.totalBilledAmount', 'Total due')}</th>
-                      <th>{t('accountings.totalPaidAmount', 'Paid')}</th>
-                      <th>{t('accountings.status', 'Status')}</th>
-                      <th>{t('accountings.colActions', 'Actions')}</th>
+                      <th>{t('accountings.invoiceNumber')}</th>
+                      <th>{t('accountings.shipmentReference')}</th>
+                      <th>{t('accountings.colTotalDue')}</th>
+                      <th>{t('accountings.totalPaidAmount')}</th>
+                      <th>{t('accountings.status')}</th>
+                      <th>{t('accountings.colActions')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -491,14 +461,16 @@ export default function AccountsOverview() {
                         <td>{row.shipment_reference || '—'}</td>
                         <td>{mapToInline(row.currency_breakdown)}</td>
                         <td>{mapToInline(row.paid_amount)}</td>
-                        <td>{row.status}</td>
+                        <td>
+                          <span className={getStatusClass(row.status)}>{getStatusLabel(row.status, t)}</span>
+                        </td>
                         <td>
                           <button
                             type="button"
                             className="accountings-btn accountings-btn--small"
                             onClick={() => openPayment({ link_type: 'shipment_partner', shipment_id: row.shipment_id, vendor_id: partnerDetail.partner_id })}
                           >
-                            {t('accountings.recordPayment', 'Record Payment')}
+                            {t('accountings.recordPayment')}
                           </button>
                         </td>
                       </tr>

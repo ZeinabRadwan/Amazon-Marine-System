@@ -10,6 +10,7 @@ use App\Models\TreasuryEntry;
 use App\Models\VendorBill;
 use App\Models\VendorBillItem;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class FinancialService
 {
@@ -77,9 +78,11 @@ class FinancialService
             if ($payment->invoice_id) {
                 $invoice = Invoice::query()->find($payment->invoice_id);
                 if ($invoice) {
-                    $paid = (float) Payment::query()->where('invoice_id', $invoice->id)->sum('amount');
-                    $target = (float) ($invoice->net_amount ?: $invoice->total_amount);
-                    $invoice->status = $paid >= $target && $target > 0 ? 'paid' : ($paid > 0 ? 'partial' : 'unpaid');
+                    $computed = AccountingAggregationService::invoiceStatementTotals($invoice);
+                    $invoice->status = $computed['status'];
+                    if (Schema::hasColumn('invoices', 'paid_amount')) {
+                        $invoice->paid_amount = (float) array_sum($computed['total_paid_per_currency']);
+                    }
                     $invoice->save();
                 }
             }
