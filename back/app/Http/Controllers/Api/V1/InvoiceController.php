@@ -16,6 +16,7 @@ use App\Services\FinancialService;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Mpdf\Mpdf;
 
 class InvoiceController extends Controller
@@ -24,6 +25,7 @@ class InvoiceController extends Controller
         0 => 'client',
         1 => 'vendor',
     ];
+    private static ?bool $invoiceItemsHasTitleColumn = null;
 
     public function __construct(
         private NotificationService $notificationService
@@ -172,6 +174,15 @@ class InvoiceController extends Controller
     private static function roundMoney(float $value): float
     {
         return round($value, 2);
+    }
+
+    private static function invoiceItemsHasTitleColumn(): bool
+    {
+        if (self::$invoiceItemsHasTitleColumn === null) {
+            self::$invoiceItemsHasTitleColumn = Schema::hasColumn('invoice_items', 'title');
+        }
+
+        return self::$invoiceItemsHasTitleColumn;
     }
 
     /**
@@ -398,11 +409,10 @@ class InvoiceController extends Controller
                     ? self::roundMoney((float) $itemData['cost_line_total'])
                     : self::roundMoney($qty * $costUnitPrice);
 
-                InvoiceItem::create([
+                $invoiceItemPayload = [
                     'invoice_id' => $invoice->id,
                     'item_id' => $itemData['item_id'] ?? null,
                     'description' => $itemData['description'],
-                    'title' => $itemData['title'] ?? null,
                     'quantity' => $qty,
                     'unit_price' => $unitPrice,
                     'line_total' => $lineTotal,
@@ -412,7 +422,12 @@ class InvoiceController extends Controller
                     'source_key' => $itemData['source_key'] ?? null,
                     'cost_unit_price' => $costUnitPrice,
                     'cost_line_total' => $costLineTotal,
-                ]);
+                ];
+                if (self::invoiceItemsHasTitleColumn()) {
+                    $invoiceItemPayload['title'] = $itemData['title'] ?? null;
+                }
+
+                InvoiceItem::create($invoiceItemPayload);
             }
 
             $invoice->refresh();
@@ -515,11 +530,10 @@ class InvoiceController extends Controller
                         ? self::roundMoney((float) $itemData['cost_line_total'])
                         : self::roundMoney($qty * $costUnitPrice);
 
-                    InvoiceItem::create([
+                    $invoiceItemPayload = [
                         'invoice_id' => $invoice->id,
                         'item_id' => $itemData['item_id'] ?? null,
                         'description' => $itemData['description'],
-                        'title' => $itemData['title'] ?? null,
                         'quantity' => $qty,
                         'unit_price' => $unitPrice,
                         'line_total' => $lineTotal,
@@ -529,7 +543,12 @@ class InvoiceController extends Controller
                         'source_key' => $itemData['source_key'] ?? null,
                         'cost_unit_price' => $costUnitPrice,
                         'cost_line_total' => $costLineTotal,
-                    ]);
+                    ];
+                    if (self::invoiceItemsHasTitleColumn()) {
+                        $invoiceItemPayload['title'] = $itemData['title'] ?? null;
+                    }
+
+                    InvoiceItem::create($invoiceItemPayload);
                 }
 
                 $invoice->refresh();
