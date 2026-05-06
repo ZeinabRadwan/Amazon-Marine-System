@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X, DollarSign, FileText, Printer, CheckCircle, Ban } from 'lucide-react'
+import { X, DollarSign, Download } from 'lucide-react'
 import { getStoredToken } from '../../Login'
-import { getInvoice, issueInvoice, cancelInvoice } from '../../../api/invoices'
+import { downloadInvoicePdf, getInvoice } from '../../../api/invoices'
 import RecordPaymentModal from './RecordPaymentModal'
-import InvoicePdfPreviewModal from './InvoicePdfPreviewModal'
 
 function money(amount, currency) {
   const n = Number(amount) || 0
@@ -25,12 +24,11 @@ function sectionIdForItem(item) {
 }
 
 export default function InvoiceDetailModal({ isOpen, invoiceId, onClose, onChanged, canManage = true }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [invoice, setInvoice] = useState(null)
   const [paymentOpen, setPaymentOpen] = useState(false)
-  const [previewOpen, setPreviewOpen] = useState(false)
 
   useEffect(() => {
     if (!isOpen || !invoiceId) return
@@ -46,6 +44,20 @@ export default function InvoiceDetailModal({ isOpen, invoiceId, onClose, onChang
 
   const canRecordPayment = invoice && !['paid', 'cancelled'].includes(String(invoice.status || '').toLowerCase())
 
+  const formatDate = useCallback(
+    (value) => {
+      if (!value) return '—'
+      const date = new Date(value)
+      if (Number.isNaN(date.getTime())) return value
+      return new Intl.DateTimeFormat(i18n.language || 'en', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      }).format(date)
+    },
+    [i18n.language]
+  )
+
   const totals = useMemo(() => {
     if (!invoice) return null
     return {
@@ -57,11 +69,11 @@ export default function InvoiceDetailModal({ isOpen, invoiceId, onClose, onChang
 
   const sectionedItems = useMemo(() => {
     const defs = [
-      { id: 'shipping', labelKey: 'invoices.sections.shipping' },
-      { id: 'inland', labelKey: 'invoices.sections.inland' },
-      { id: 'customs', labelKey: 'invoices.sections.customs' },
-      { id: 'insurance', labelKey: 'invoices.sections.insurance' },
-      { id: 'additional', labelKey: 'invoices.sections.additional' },
+      { id: 'shipping', labelKey: 'invoices.sections.shipping', fallback: 'Shipping' },
+      { id: 'inland', labelKey: 'invoices.sections.inland', fallback: 'Inland Transport' },
+      { id: 'customs', labelKey: 'invoices.sections.customs', fallback: 'Customs Clearance' },
+      { id: 'insurance', labelKey: 'invoices.sections.insurance', fallback: 'Insurance' },
+      { id: 'additional', labelKey: 'invoices.sections.additional', fallback: 'Additional Costs' },
     ]
     const map = Object.fromEntries(defs.map((d) => [d.id, []]))
     ;(invoice?.items || []).forEach((it) => {
@@ -78,27 +90,23 @@ export default function InvoiceDetailModal({ isOpen, invoiceId, onClose, onChang
       .filter((s) => s.rows.length > 0)
   }, [invoice])
 
-  const handleIssue = async () => {
+  const handleDownloadPdf = useCallback(async () => {
     const token = getStoredToken()
     if (!token || !invoiceId) return
     try {
-      await issueInvoice(token, invoiceId)
-      onChanged?.()
+      const { blob, filename } = await downloadInvoicePdf(token, invoiceId)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename || `invoice-${invoiceId}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
     } catch (e) {
-      setError(e.message || 'Failed to issue invoice')
+      setError(e.message || 'Failed to download invoice PDF')
     }
-  }
-
-  const handleCancel = async () => {
-    const token = getStoredToken()
-    if (!token || !invoiceId) return
-    try {
-      await cancelInvoice(token, invoiceId)
-      onChanged?.()
-    } catch (e) {
-      setError(e.message || 'Failed to cancel invoice')
-    }
-  }
+  }, [invoiceId])
 
   if (!isOpen) return null
 
@@ -106,7 +114,7 @@ export default function InvoiceDetailModal({ isOpen, invoiceId, onClose, onChang
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <div className="px-6 py-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-700">
-          <h2 className="text-xl font-bold">{t('invoices.detailsTitle', 'Invoice Sections')}</h2>
+          <h2 className="text-xl font-bold">{t('invoices.detailsBySections', 'Invoice Details by Sections')}</h2>
           <button onClick={onClose} className="p-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded-full transition-colors">
             <X className="h-5 w-5" />
           </button>
@@ -127,11 +135,11 @@ export default function InvoiceDetailModal({ isOpen, invoiceId, onClose, onChang
                 <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-900/20">
                   <div className="text-xs font-bold text-gray-500 uppercase">{t('invoices.table.number', 'Invoice #')}</div>
                   <div className="text-lg font-extrabold">{invoice.invoice_number}</div>
-                  <div className="text-xs text-gray-500">{t('invoices.table.date', 'Date')}: {invoice.issue_date || '—'}</div>
-                  <div className="text-xs text-gray-500">{t('invoices.dueDate', 'Due')}: {invoice.due_date || '—'}</div>
+                  <div className="text-xs text-gray-500">{t('invoices.invoiceDate', 'Invoice Date')}: {formatDate(invoice.issue_date)}</div>
+                  <div className="text-xs text-gray-500">{t('invoices.dueDate', 'Due Date')}: {formatDate(invoice.due_date)}</div>
                 </div>
                 <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-900/20">
-                  <div className="text-xs font-bold text-gray-500 uppercase">{t('invoices.table.party', 'Client/Partner')}</div>
+                  <div className="text-xs font-bold text-gray-500 uppercase">{t('invoices.customer', 'Customer')}</div>
                   <div className="text-lg font-bold">{invoice.client?.name || '—'}</div>
                   <div className="text-xs text-gray-500">{invoice.client?.phone || ''} {invoice.client?.email ? `• ${invoice.client.email}` : ''}</div>
                 </div>
@@ -144,8 +152,8 @@ export default function InvoiceDetailModal({ isOpen, invoiceId, onClose, onChang
 
               {sectionedItems.map((section) => (
                 <div key={section.id} className="rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                  <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900/20 font-bold">
-                    {t(section.labelKey)}
+                  <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900/20 text-sm font-bold uppercase tracking-wide">
+                    {t(section.labelKey, section.fallback)}
                   </div>
                   <table className="w-full text-sm">
                     <thead className="bg-gray-50 dark:bg-gray-900/20">
@@ -193,8 +201,15 @@ export default function InvoiceDetailModal({ isOpen, invoiceId, onClose, onChang
                 </div>
               )}
 
-              <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-4">
-                <div className="text-sm font-bold mb-2">{t('invoices.payments', 'Payments')}</div>
+              <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-4 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-sm font-bold">{t('invoices.payments', 'Payments')}</div>
+                  {canManage && canRecordPayment && (
+                    <button onClick={() => setPaymentOpen(true)} className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-2">
+                      <DollarSign className="h-4 w-4" /> {t('invoices.recordPayment', 'Record payment')}
+                    </button>
+                  )}
+                </div>
                 {(invoice.payments || []).length === 0 ? (
                   <div className="text-sm text-gray-500">{t('invoices.noPayments', 'No payments yet')}</div>
                 ) : (
@@ -213,26 +228,8 @@ export default function InvoiceDetailModal({ isOpen, invoiceId, onClose, onChang
         </div>
 
         <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3 flex-wrap">
-          {canManage && invoice?.status === 'draft' && (
-            <button onClick={handleIssue} className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold inline-flex items-center gap-2">
-              <CheckCircle className="h-4 w-4" /> {t('invoices.issue', 'Issue')}
-            </button>
-          )}
-          {canManage && invoice && invoice.status !== 'cancelled' && (
-            <button onClick={handleCancel} className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm font-bold inline-flex items-center gap-2">
-              <Ban className="h-4 w-4" /> {t('invoices.cancel', 'Cancel')}
-            </button>
-          )}
-          <button onClick={() => setPreviewOpen(true)} className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm font-bold inline-flex items-center gap-2">
-            <FileText className="h-4 w-4" /> {t('invoices.previewPdf', 'Preview PDF')}
-          </button>
-          {canManage && canRecordPayment && (
-            <button onClick={() => setPaymentOpen(true)} className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold inline-flex items-center gap-2">
-              <DollarSign className="h-4 w-4" /> {t('invoices.recordPayment', 'Record payment')}
-            </button>
-          )}
-          <button onClick={() => window.print()} className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm font-bold inline-flex items-center gap-2">
-            <Printer className="h-4 w-4" /> {t('common.print', 'Print')}
+          <button onClick={handleDownloadPdf} className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold inline-flex items-center gap-2">
+            <Download className="h-4 w-4" /> {t('shipments.fin.downloadSalesInvoicePdf', 'Download PDF')}
           </button>
         </div>
 
@@ -245,12 +242,6 @@ export default function InvoiceDetailModal({ isOpen, invoiceId, onClose, onChang
             setPaymentOpen(false)
             onChanged?.()
           }}
-        />
-
-        <InvoicePdfPreviewModal
-          isOpen={previewOpen}
-          invoice={invoice}
-          onClose={() => setPreviewOpen(false)}
         />
       </div>
     </div>

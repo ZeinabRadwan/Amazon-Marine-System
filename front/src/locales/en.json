@@ -2203,6 +2203,11 @@
     "tax": "Tax",
     "total": "Total",
     "detailsTitle": "Invoice Details by Section",
+    "detailsBySections": "Invoice Details by Sections",
+    "customer": "Customer",
+    "payments": "Payments",
+    "recordPayment": "Record payment",
+    "noPayments": "No payments yet",
     "sections": {
       "shipping": "Shipping Line Cost",
       "inland": "Inland / Transport Cost",
