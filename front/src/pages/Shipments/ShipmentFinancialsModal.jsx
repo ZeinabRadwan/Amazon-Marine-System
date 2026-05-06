@@ -662,18 +662,18 @@ export default function ShipmentFinancialsModal({
   const editMode = Boolean(token && canManageExpenses && shipment?.bl_number?.trim() && shipment?.id)
   const vendorsBySection = useMemo(() => {
     const list = Array.isArray(vendors) ? vendors : []
-    const normalize = (v) => String(v || '').trim().toLowerCase()
+    const normalize = (v) => String(v || '').trim().toLowerCase().replace(/[\s-]+/g, '_')
     const sectionTypeMap = {
-      shipping: new Set(['shipping_line']),
-      inland: new Set(['inland_transport']),
-      customs: new Set(['customs_clearance']),
-      insurance: new Set(['insurance']),
+      shipping: ['shipping_line', 'shipping', 'line', 'shippingline'],
+      inland: ['inland_transport', 'inland', 'transport', 'contractor', 'trucker'],
+      customs: ['customs_clearance', 'customs', 'broker', 'customs_broker'],
+      insurance: ['insurance', 'insurer', 'insurance_company'],
     }
     return Object.fromEntries(
-      Object.entries(sectionTypeMap).map(([sectionId, typeSet]) => [
-        sectionId,
-        list.filter((v) => typeSet.has(normalize(v?.type))),
-      ])
+      Object.entries(sectionTypeMap).map(([sectionId, aliases]) => {
+        const filtered = list.filter((v) => aliases.includes(normalize(v?.type)))
+        return [sectionId, filtered]
+      })
     )
   }, [vendors])
 
@@ -1167,12 +1167,6 @@ export default function ShipmentFinancialsModal({
 
       const inlandStarted = inlandItemsCount > 0 || Boolean(sectionMetaByBucket.inland?.contractor_vendor_id)
       const customsStarted = customsItemsCount > 0 || Boolean(sectionMetaByBucket.customs?.customs_broker_vendor_id)
-      const shippingStarted = Boolean(items.some((it) => it.bucket_id === 'shipping')) || Boolean(sectionMetaByBucket.shipping?.shipping_line_vendor_id)
-      const insuranceStarted = Boolean(items.some((it) => it.bucket_id === 'insurance')) || Boolean(sectionMetaByBucket.insurance?.insurance_company_vendor_id)
-
-      if (shippingStarted && !Number(sectionMetaByBucket.shipping?.shipping_line_vendor_id || 0)) {
-        throw new Error(t('shipments.fin.shippingLineVendorRequired', { defaultValue: 'Shipping section requires shipping line vendor selection.' }))
-      }
 
       if (inlandStarted && !Number(sectionMetaByBucket.inland?.contractor_vendor_id || 0)) {
         throw new Error(t('shipments.fin.inlandContractorRequired'))
@@ -1185,15 +1179,6 @@ export default function ShipmentFinancialsModal({
       }
       if (customsStarted && customsItemsCount < 1) {
         throw new Error(t('shipments.fin.customsAtLeastOneItem', { defaultValue: 'Customs Clearance requires at least one line item.' }))
-      }
-      if ((items.some((it) => it.bucket_id === 'insurance')) && !String(sectionMetaByBucket.insurance?.insurance_company_name || '').trim()) {
-        // Backward compatible: if old name field is still populated allow it.
-        if (!Number(sectionMetaByBucket.insurance?.insurance_company_vendor_id || 0)) {
-          throw new Error(t('shipments.fin.insuranceCompanyRequired', { defaultValue: 'Insurance section requires insurance company vendor selection.' }))
-        }
-      }
-      if (insuranceStarted && !Number(sectionMetaByBucket.insurance?.insurance_company_vendor_id || 0)) {
-        throw new Error(t('shipments.fin.insuranceCompanyRequired', { defaultValue: 'Insurance section requires insurance company vendor selection.' }))
       }
 
       await updateShipmentCostInvoice(token, shipment.id, {
