@@ -349,6 +349,7 @@ class AccountingController extends Controller
                 'partner_name' => $vendor->name,
                 'category' => $vendor->type,
                 'total_invoices_count' => $bills->count(),
+                'linked_shipments_count' => $bills->pluck('shipment_id')->filter()->unique()->count(),
                 'total_billed_amount' => $billedByCurrency,
                 'total_paid_amount' => $paidByCurrency,
                 'remaining_balance' => $balanceByCurrency,
@@ -368,7 +369,7 @@ class AccountingController extends Controller
 
         $bills = VendorBill::query()
             ->where('vendor_id', $vendor->id)
-            ->with(['shipment'])
+            ->with(['shipment.attachments', 'items', 'payments'])
             ->orderByDesc('bill_date')
             ->orderByDesc('id')
             ->get();
@@ -377,8 +378,7 @@ class AccountingController extends Controller
             $billCurrency = strtoupper((string) ($bill->currency_code ?: 'USD'));
             $totalAmount = (float) $bill->total_amount;
 
-            $paidAmount = (float) Payment::query()
-                ->where('vendor_bill_id', $bill->id)
+            $paidAmount = (float) $bill->payments
                 ->where('currency_code', $billCurrency)
                 ->sum('amount');
 
@@ -389,8 +389,42 @@ class AccountingController extends Controller
                 $status = 'partially_paid';
             }
 
+            $items = $bill->items->map(static function ($item) use ($billCurrency): array {
+                return [
+                    'id' => $item->id,
+                    'description' => $item->description,
+                    'section_key' => $item->section_key,
+                    'quantity' => (float) $item->quantity,
+                    'unit_price' => (float) $item->unit_price,
+                    'line_total' => (float) $item->line_total,
+                    'currency_code' => strtoupper((string) ($item->currency_code ?: $billCurrency)),
+                ];
+            })->values()->all();
+            $paymentHistory = $bill->payments
+                ->sortByDesc(fn (Payment $p) => $p->paid_at?->toDateString() ?? '')
+                ->values()
+                ->map(static function (Payment $p): array {
+                    return [
+                        'id' => $p->id,
+                        'amount' => (float) $p->amount,
+                        'currency_code' => strtoupper((string) ($p->currency_code ?: 'USD')),
+                        'method' => $p->method,
+                        'paid_at' => $p->paid_at?->toDateString(),
+                        'reference' => $p->reference,
+                    ];
+                })->all();
+            $attachments = $bill->shipment?->attachments
+                ? $bill->shipment->attachments->map(static function ($a): array {
+                    return [
+                        'id' => $a->id,
+                        'name' => $a->name ?? $a->file_name ?? $a->original_name ?? ('attachment-'.$a->id),
+                    ];
+                })->values()->all()
+                : [];
+
             return [
                 'shipment_id' => $bill->shipment_id,
+                'shipment_reference' => $bill->shipment?->bl_number,
                 'invoice_reference' => $bill->bill_number ?: ('VB-'.$bill->id),
                 'amount' => $totalAmount,
                 'currency_breakdown' => [
@@ -401,6 +435,9 @@ class AccountingController extends Controller
                 ],
                 'status' => $status,
                 'bill_date' => $bill->bill_date?->toDateString(),
+                'line_items' => $items,
+                'payment_history' => $paymentHistory,
+                'attachments' => $attachments,
             ];
         })->values();
 
@@ -492,6 +529,27 @@ class AccountingController extends Controller
             }
             $remaining = $this->normalizeCurrencyMap($remaining);
 
+            $invoiceStatuses = [
+                'paid' => 0,
+                'partial' => 0,
+                'unpaid' => 0,
+            ];
+            foreach ($invoices as $inv) {
+                $cur = strtoupper((string) ($inv->currency_code ?: 'USD'));
+                $invTotal = (float) $inv->total_amount;
+                $invPaid = (float) Payment::query()
+                    ->where('invoice_id', $inv->id)
+                    ->where('currency_code', $cur)
+                    ->sum('amount');
+                if ($invPaid >= $invTotal && $invTotal > 0) {
+                    $invoiceStatuses['paid']++;
+                } elseif ($invPaid > 0) {
+                    $invoiceStatuses['partial']++;
+                } else {
+                    $invoiceStatuses['unpaid']++;
+                }
+            }
+
             return [
                 'customer_id' => $client->id,
                 'customer_name' => $client->name,
@@ -499,6 +557,7 @@ class AccountingController extends Controller
                 'total_invoices_value' => $billed,
                 'paid_amount' => $paid,
                 'remaining_balance' => $remaining,
+                'invoice_status_counts' => $invoiceStatuses,
             ];
         })->values();
 
@@ -512,12 +571,13 @@ class AccountingController extends Controller
         $invoices = Invoice::query()
             ->where('invoice_type_id', 0)
             ->where('client_id', $client->id)
+            ->with(['shipment.attachments', 'items', 'payments'])
             ->orderByDesc('issue_date')
             ->orderByDesc('id')
             ->get();
 
         $rows = $invoices->map(function (Invoice $inv) {
-            $paid = (float) Payment::query()->where('invoice_id', $inv->id)->sum('amount');
+            $paid = (float) $inv->payments->sum('amount');
             $total = (float) $inv->total_amount;
             $status = 'unpaid';
             if ($paid >= $total && $total > 0) {
@@ -527,15 +587,53 @@ class AccountingController extends Controller
             }
             $cur = strtoupper((string) ($inv->currency_code ?: 'USD'));
 
+            $paymentHistory = $inv->payments
+                ->sortByDesc(fn (Payment $p) => $p->paid_at?->toDateString() ?? '')
+                ->values()
+                ->map(static function (Payment $p): array {
+                    return [
+                        'id' => $p->id,
+                        'amount' => (float) $p->amount,
+                        'currency_code' => strtoupper((string) ($p->currency_code ?: 'USD')),
+                        'method' => $p->method,
+                        'paid_at' => $p->paid_at?->toDateString(),
+                        'reference' => $p->reference,
+                    ];
+                })->all();
+            $attachments = $inv->shipment?->attachments
+                ? $inv->shipment->attachments->map(static function ($a): array {
+                    return [
+                        'id' => $a->id,
+                        'name' => $a->name ?? $a->file_name ?? $a->original_name ?? ('attachment-'.$a->id),
+                    ];
+                })->values()->all()
+                : [];
+            $items = $inv->items->map(static function ($item): array {
+                return [
+                    'id' => $item->id,
+                    'description' => $item->description,
+                    'section_key' => $item->section_key,
+                    'quantity' => (float) $item->quantity,
+                    'unit_price' => (float) $item->unit_price,
+                    'line_total' => (float) $item->line_total,
+                    'currency_code' => strtoupper((string) ($item->currency_code ?: 'USD')),
+                ];
+            })->values()->all();
+
             return [
                 'invoice_id' => $inv->id,
                 'invoice_reference' => $inv->invoice_number ?: ('INV-'.$inv->id),
                 'shipment_id' => $inv->shipment_id,
+                'shipment_reference' => $inv->shipment?->bl_number,
                 'status' => $status,
                 'total_amount' => [$cur => $total],
                 'paid_amount' => [$cur => $paid],
                 'remaining_amount' => [$cur => max(0, $total - $paid)],
                 'issue_date' => $inv->issue_date?->toDateString(),
+                'due_date' => $inv->due_date?->toDateString(),
+                'line_items' => $items,
+                'attachments' => $attachments,
+                'payment_history' => $paymentHistory,
             ];
         })->values();
 

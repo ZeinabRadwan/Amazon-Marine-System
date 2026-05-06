@@ -58,16 +58,40 @@ class FinancialService
 
             TreasuryEntry::create([
                 'entry_type' => $entryType,
-                'source' => 'payment',
+                'source' => $payment->source_account_id ? ('bank-'.$payment->source_account_id) : 'payment',
+                'account_id' => $payment->source_account_id,
+                'counter_account_id' => $payment->target_account_id,
                 'payment_id' => $payment->id,
                 'amount' => $payment->amount,
                 'currency_code' => $payment->currency_code,
+                'target_currency_code' => $payment->target_currency_code,
+                'exchange_rate' => $payment->exchange_rate,
+                'converted_amount' => $payment->converted_amount,
                 'method' => $payment->method,
                 'reference' => $payment->reference,
-                'notes' => null,
+                'notes' => $payment->notes,
                 'entry_date' => $payment->paid_at?->toDateString() ?? now()->toDateString(),
                 'created_by_id' => $payment->created_by_id,
             ]);
+
+            if ($payment->invoice_id) {
+                $invoice = Invoice::query()->find($payment->invoice_id);
+                if ($invoice) {
+                    $paid = (float) Payment::query()->where('invoice_id', $invoice->id)->sum('amount');
+                    $target = (float) ($invoice->net_amount ?: $invoice->total_amount);
+                    $invoice->status = $paid >= $target && $target > 0 ? 'paid' : ($paid > 0 ? 'partial' : 'unpaid');
+                    $invoice->save();
+                }
+            }
+            if ($payment->vendor_bill_id) {
+                $bill = VendorBill::query()->find($payment->vendor_bill_id);
+                if ($bill) {
+                    $paid = (float) Payment::query()->where('vendor_bill_id', $bill->id)->sum('amount');
+                    $target = (float) ($bill->net_amount ?: $bill->total_amount);
+                    $bill->status = $paid >= $target && $target > 0 ? 'paid' : ($paid > 0 ? 'partially_paid' : 'unpaid');
+                    $bill->save();
+                }
+            }
 
             // Recalculate shipment totals if tied to a shipment via invoice or bill
             if ($payment->invoice && $payment->invoice->shipment_id) {

@@ -69,19 +69,33 @@ class PaymentController extends Controller
             'paid_at' => ['nullable', 'date'],
         ]);
 
-        if ($validated['type'] === 'client_receipt' && empty($validated['invoice_id']) && empty($validated['client_id'])) {
+        if ($validated['type'] === 'client_receipt' && empty($validated['invoice_id']) && empty($validated['client_id']) && empty($validated['shipment_id'])) {
             return response()->json([
-                'message' => __('Client receipt must be linked to an invoice or client.'),
+                'message' => __('Client receipt must be linked to an invoice, client, or shipment.'),
             ], 422);
         }
 
-        if ($validated['type'] === 'vendor_payment' && empty($validated['vendor_bill_id']) && empty($validated['vendor_id'])) {
+        if ($validated['type'] === 'vendor_payment' && empty($validated['vendor_bill_id']) && empty($validated['vendor_id']) && empty($validated['shipment_id'])) {
             return response()->json([
-                'message' => __('Vendor payment must be linked to a vendor bill or vendor.'),
+                'message' => __('Vendor payment must be linked to a vendor bill, vendor, or shipment.'),
             ], 422);
         }
 
         $payment = new Payment();
+        if (!empty($validated['invoice_id']) && empty($validated['client_id'])) {
+            $invoice = \App\Models\Invoice::query()->find($validated['invoice_id']);
+            if ($invoice) {
+                $validated['client_id'] = $invoice->client_id;
+                $validated['shipment_id'] = $validated['shipment_id'] ?? $invoice->shipment_id;
+            }
+        }
+        if (!empty($validated['vendor_bill_id']) && empty($validated['vendor_id'])) {
+            $bill = \App\Models\VendorBill::query()->find($validated['vendor_bill_id']);
+            if ($bill) {
+                $validated['vendor_id'] = $bill->vendor_id;
+                $validated['shipment_id'] = $validated['shipment_id'] ?? $bill->shipment_id;
+            }
+        }
         $payment->fill($validated);
         $payment->paid_at = $validated['paid_at'] ?? now();
         $payment->created_by_id = $request->user()->id;

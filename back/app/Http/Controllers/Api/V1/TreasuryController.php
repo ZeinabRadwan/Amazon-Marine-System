@@ -125,6 +125,12 @@ class TreasuryController extends Controller
         if ($type = $request->query('type')) {
             $query->where('entry_type', $type);
         }
+        if ($account = $request->query('account')) {
+            $query->where('source', $account);
+        }
+        if ($currency = $request->query('currency')) {
+            $query->where('currency_code', strtoupper((string) $currency));
+        }
 
         if ($from = $request->query('from')) {
             $query->whereDate('entry_date', '>=', $from);

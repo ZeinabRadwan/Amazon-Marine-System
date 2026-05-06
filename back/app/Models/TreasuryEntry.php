@@ -16,9 +16,14 @@ class TreasuryEntry extends Model
     protected $fillable = [
         'entry_type',
         'source',
+        'account_id',
+        'counter_account_id',
         'payment_id',
         'amount',
         'currency_code',
+        'exchange_rate',
+        'target_currency_code',
+        'converted_amount',
         'method',
         'reference',
         'notes',
@@ -31,6 +36,8 @@ class TreasuryEntry extends Model
      */
     protected $casts = [
         'amount' => 'decimal:2',
+        'exchange_rate' => 'decimal:8',
+        'converted_amount' => 'decimal:2',
         'entry_date' => 'date',
     ];
 
