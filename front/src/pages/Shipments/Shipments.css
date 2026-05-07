@@ -633,6 +633,238 @@
   padding-top: 1rem;
 }
 
+/* Expenses tab visual parity with add_cost_inoice.html */
+.shipment-fin-panel--expenses {
+  background: #f1f5f9;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-card {
+  background: #fff;
+  border: 1px solid #dde3ed;
+  border-radius: 12px;
+  margin-bottom: 14px;
+  box-shadow: none;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-card__head {
+  padding: 13px 18px;
+  background: #f8fafc;
+  border-bottom: 1px solid #dde3ed;
+  gap: 10px;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-card__head:hover {
+  background: #f8fafc;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-card__head-main {
+  gap: 10px;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-card__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  padding: 7px;
+  color: #0f2340;
+  background: #dbeafe;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-card__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f2340;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-card__sub {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 1px;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-card__head-meta {
+  gap: 8px;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-card__subtotal {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-badge {
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 20px;
+  padding: 2px 8px;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-badge--ok {
+  background: #e8f7f2;
+  color: #0d7a55;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-badge--partial {
+  background: #fdf0e0;
+  color: #e8790a;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-badge--draft {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-chevron {
+  color: #94a3b8;
+  width: 12px;
+  height: 12px;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-card__body {
+  padding: 16px 18px;
+  border-top: none;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-table-wrap {
+  border: 1px solid #dde3ed;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 10px;
+  margin-top: 0;
+  padding: 0;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-line-table {
+  font-size: 12px;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-line-table th,
+.shipment-fin-panel--expenses .shipment-fin-line-table td {
+  border: none;
+  border-bottom: 1px solid #f1f5f9;
+  padding: 8px 12px;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-line-table th {
+  background: #f8fafc;
+  border-bottom: 1px solid #dde3ed;
+  font-size: 10px;
+  font-weight: 600;
+  color: #94a3b8;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  position: static;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-line-table tbody tr:hover:not(.shipment-fin-template-sep):not(.shipment-fin-receipt-row) {
+  background: #f8fafc;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-input,
+.shipment-fin-panel--expenses .shipment-fin-select {
+  font-size: 12px;
+  border: 1px solid #dde3ed;
+  border-radius: 6px;
+  padding: 5px 7px;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-input--num {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  text-align: left;
+  direction: ltr;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-actions__inner {
+  gap: 6px;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-btn {
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-btn--secondary {
+  border-color: #1d4ed8;
+  border-style: dashed;
+  color: #1d4ed8;
+  background: #fff;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-btn--secondary:hover:not(:disabled) {
+  background: #dbeafe;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-btn--danger {
+  width: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0;
+  border: 1px solid #dde3ed;
+  color: #94a3b8;
+  background: #fff;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-btn--danger:hover:not(:disabled) {
+  border-color: #b91c1c;
+  color: #b91c1c;
+  background: #fee2e2;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-draft-add-row {
+  margin: 8px 0 10px;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-draft-upload-area {
+  border: 1.5px dashed #dde3ed;
+  border-radius: 8px;
+  padding: 14px;
+  min-height: auto;
+  background: #f8fafc;
+  margin-top: 12px;
+  margin-bottom: 8px;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-draft-upload-area:hover {
+  border-color: #1d4ed8;
+  background: #dbeafe;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-draft-upload-icon {
+  font-size: 20px;
+  margin-bottom: 4px;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-draft-upload-title {
+  font-size: 12px;
+  color: #334155;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-draft-upload-sub {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-draft-sec-total {
+  border-top: 2px solid #e8790a;
+  background: #fdf0e0;
+  padding: 10px 12px;
+  border-radius: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #0f2340;
+}
+
+.shipment-fin-panel--expenses .shipment-fin-draft-sec-total strong {
+  color: #e8790a;
+  font-size: 14px;
+  font-weight: 700;
+}
+
 .shipment-fin-card {
   border: 1px solid var(--form-divider, #e5e7eb);
   border-radius: 0.9rem;
