@@ -1956,7 +1956,7 @@ export default function ShipmentFinancialsModal({
 
     const attachmentRows = sectionAttachmentRefs[bucketId] || []
     const attachmentTable = attachmentRows.length > 0 ? (
-      <div className="items-wrap mt-2">
+      <div className="shipment-fin-table-wrap shipment-fin-draft-table-wrap mt-2">
         <table className="shipment-fin-line-table">
           <thead>
             <tr>
@@ -1988,7 +1988,7 @@ export default function ShipmentFinancialsModal({
         </table>
       </div>
     ) : (
-      <div className="file-list"><div className="file-item"><span className="fd">{t('shipments.fin.noReceipts')}</span></div></div>
+      <div className="shipment-fin-empty-inline">{t('shipments.fin.noReceipts')}</div>
     )
 
     const renderExpenseCells = (ex) => (
@@ -2020,7 +2020,7 @@ export default function ShipmentFinancialsModal({
         <>
           {otherToolbar}
           {rows.length === 0 && pendingOthers.length === 0 ? null : (
-            <div className="items-wrap">
+            <div className="shipment-fin-table-wrap shipment-fin-draft-table-wrap">
               <table className="shipment-fin-line-table">
                 {otherTableHead}
                 <tbody>
@@ -2151,14 +2151,14 @@ export default function ShipmentFinancialsModal({
             </div>
           )}
           {editMode ? (
-            <div className="add-row">
-              <button type="button" className="btn sm dashed" onClick={() => addPendingOtherLine('other')}>
+            <div className="shipment-fin-draft-add-row">
+              <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary" onClick={() => addPendingOtherLine('other')}>
                 + {t('shipments.fin.addRow')}
               </button>
             </div>
           ) : null}
           {editMode ? (
-            <div className="upload-area" onClick={() => document.getElementById(`fin-upload-${bucketId}`)?.click()}>
+            <div className="shipment-fin-draft-upload-area" onClick={() => document.getElementById(`fin-upload-${bucketId}`)?.click()}>
               <input
                 id={`fin-upload-${bucketId}`}
                 type="file"
@@ -2167,11 +2167,11 @@ export default function ShipmentFinancialsModal({
                 onChange={(e) => handleSectionUpload(bucketId, e)}
                 disabled={batchSavingBucket === bucketId}
               />
-              <div className="ui">📎</div>
-              <div className="ut">{t('shipments.fin.uploadReceipt')}</div>
-              <div className="us">{t('shipments.fin.attachmentsLabel')}</div>
+              <div className="shipment-fin-draft-upload-icon">📎</div>
+              <div className="shipment-fin-draft-upload-title">{t('shipments.fin.uploadReceipt')}</div>
+              <div className="shipment-fin-draft-upload-sub">{t('shipments.fin.attachmentsLabel')}</div>
               {(sectionAttachmentRefs[bucketId] || []).length > 0 ? (
-                <div className="us">
+                <div className="shipment-fin-draft-upload-sub">
                   {`${(sectionAttachmentRefs[bucketId] || []).length} ${t('shipments.fin.attachmentsLabel')}`}
                 </div>
               ) : null}
@@ -2476,21 +2476,21 @@ export default function ShipmentFinancialsModal({
       bodyContent = (
         <>
           {sectionToolbar}
-          <div className="items-wrap">
+          <div className="shipment-fin-table-wrap shipment-fin-draft-table-wrap">
             <table className="shipment-fin-line-table">
               {tableHead}
               <tbody>{sectionRows}</tbody>
             </table>
           </div>
           {editMode ? (
-            <div className="add-row">
-              <button type="button" className="btn sm dashed" onClick={() => addPendingOtherLine(bucketId)}>
+            <div className="shipment-fin-draft-add-row">
+              <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary" onClick={() => addPendingOtherLine(bucketId)}>
                 + {t('shipments.fin.addRow')}
               </button>
             </div>
           ) : null}
           {editMode ? (
-            <div className="upload-area" onClick={() => document.getElementById(`fin-upload-${bucketId}`)?.click()}>
+            <div className="shipment-fin-draft-upload-area" onClick={() => document.getElementById(`fin-upload-${bucketId}`)?.click()}>
               <input
                 id={`fin-upload-${bucketId}`}
                 type="file"
@@ -2499,20 +2499,20 @@ export default function ShipmentFinancialsModal({
                 onChange={(e) => handleSectionUpload(bucketId, e)}
                 disabled={batchSavingBucket === bucketId}
               />
-              <div className="ui">📎</div>
-              <div className="ut">{t('shipments.fin.uploadReceipt')}</div>
-              <div className="us">{t('shipments.fin.attachmentsLabel')}</div>
+              <div className="shipment-fin-draft-upload-icon">📎</div>
+              <div className="shipment-fin-draft-upload-title">{t('shipments.fin.uploadReceipt')}</div>
+              <div className="shipment-fin-draft-upload-sub">{t('shipments.fin.attachmentsLabel')}</div>
               {(sectionAttachmentRefs[bucketId] || []).length > 0 ? (
-                <div className="us">
+                <div className="shipment-fin-draft-upload-sub">
                   {`${(sectionAttachmentRefs[bucketId] || []).length} ${t('shipments.fin.attachmentsLabel')}`}
                 </div>
               ) : null}
             </div>
           ) : null}
           {attachmentTable}
-          <div className="sec-total">
+          <div className="shipment-fin-draft-sec-total">
             <span>{t('shipments.fin.netCostLabel')}</span>
-            <span className="tv">{subtotalLabel}</span>
+            <strong>{subtotalLabel}</strong>
           </div>
         </>
       )
@@ -2521,29 +2521,19 @@ export default function ShipmentFinancialsModal({
     const cardTitle = def.displayTitle || (def.titleKey ? t(def.titleKey) : bucketId)
     const cardSub = def.displaySub || (def.subKey ? t(def.subKey) : '')
 
-    const badgeColorClass = bucketId === 'shipping'
-      ? 'blue'
-      : bucketId === 'inland'
-        ? 'green'
-        : bucketId === 'customs'
-          ? 'orange'
-          : 'gray'
-
     return (
-      <div key={bucketId} className="section-card" id={`sec-${bucketId}`}>
-        <button type="button" className="section-header" onClick={() => toggleCard(bucketId)}>
-          <div className="sec-left">
-            <div className="sec-icon"><Icon className="shipment-fin-card__icon" aria-hidden /></div>
+      <div key={bucketId} className="shipment-fin-card">
+        <button type="button" className="shipment-fin-card__head" onClick={() => toggleCard(bucketId)}>
+          <div className="shipment-fin-card__head-main">
+            <Icon className="shipment-fin-card__icon" aria-hidden />
             <div>
-              <div className="sec-title">{cardTitle}</div>
-              <div className="sec-sub">{cardSub}</div>
+              <div className="shipment-fin-card__title">{cardTitle}</div>
+              <div className="shipment-fin-card__sub">{cardSub}</div>
             </div>
           </div>
-          <div className="sec-right">
-            <span className={`badge ${badgeColorClass}`}>{subtotalLabel}</span>
-            <span className={`badge ${receiptBadgeClass === 'shipment-fin-badge--ok' ? 'green' : receiptBadgeClass === 'shipment-fin-badge--partial' ? 'orange' : 'gray'}`}>
-              {t(receiptBadgeKey)}
-            </span>
+          <div className="shipment-fin-card__head-meta">
+            <span className="shipment-fin-card__subtotal">{subtotalLabel}</span>
+            <span className={`shipment-fin-badge ${receiptBadgeClass}`}>{t(receiptBadgeKey)}</span>
             {editMode && def.deletable ? (
               <button
                 type="button"
@@ -2556,10 +2546,10 @@ export default function ShipmentFinancialsModal({
                 {t('shipments.delete')}
               </button>
             ) : null}
-            <span className={`arrow ${isOpen ? 'open' : ''}`}>{isOpen ? '▼' : '▼'}</span>
+            {isOpen ? <ChevronUp className="shipment-fin-chevron" /> : <ChevronDown className="shipment-fin-chevron" />}
           </div>
         </button>
-        {isOpen && <div className="sec-body">{bodyContent}</div>}
+        {isOpen && <div className="shipment-fin-card__body">{bodyContent}</div>}
       </div>
     )
   }
@@ -2666,30 +2656,28 @@ export default function ShipmentFinancialsModal({
                     })
                   )}
                   {editMode ? (
-                    <div className="add-sec-card">
-                      <button type="button" className="btn sm dashed" onClick={addCustomCostSection}>
+                    <div className="shipment-fin-draft-add-row">
+                      <button type="button" className="shipment-fin-btn shipment-fin-btn--secondary" onClick={addCustomCostSection}>
                         + {t('shipments.fin.addNewCostSection')}
                       </button>
                     </div>
                   ) : null}
-                  <div className="gt-card">
-                    <div className="gt-rows w-100">
-                      <div className="gt-row"><span>{t('shipments.fin.breakdown.shipping', { defaultValue: 'تكلفة الخط الملاحي' })}</span><span className="gv">{Object.entries(bucketTotalsLive('shipping')).map(([c,v]) => `${c} ${formatMoney(v, 'en-US')}`).join(' · ') || '—'}</span></div>
-                      <div className="gt-row"><span>{t('shipments.fin.breakdown.inland', { defaultValue: 'النقل الداخلي' })}</span><span className="gv">{Object.entries(bucketTotalsLive('inland')).map(([c,v]) => `${c} ${formatMoney(v, 'en-US')}`).join(' · ') || '—'}</span></div>
-                      <div className="gt-row"><span>{t('shipments.fin.breakdown.customs', { defaultValue: 'التخليص الجمركي' })}</span><span className="gv">{Object.entries(bucketTotalsLive('customs')).map(([c,v]) => `${c} ${formatMoney(v, 'en-US')}`).join(' · ') || '—'}</span></div>
-                      <div className="gt-row"><span>{t('shipments.fin.breakdown.insurance', { defaultValue: 'التأمين' })}</span><span className="gv">{Object.entries(bucketTotalsLive('insurance')).map(([c,v]) => `${c} ${formatMoney(v, 'en-US')}`).join(' · ') || '—'}</span></div>
-                      <div className="gt-row"><span>{t('shipments.fin.breakdown.other', { defaultValue: 'تكاليف إضافية' })}</span><span className="gv">{Object.entries(bucketTotalsLive('other')).map(([c,v]) => `${c} ${formatMoney(v, 'en-US')}`).join(' · ') || '—'}</span></div>
-                      <div className="gt-row">
-                        <span>{t('shipments.fin.netCostLabel')}</span>
-                        <span className="gv">
+                  <div className="shipment-fin-draft-grand-total">
+                    <div className="shipment-fin-draft-total-row"><span>{t('shipments.fin.breakdown.shipping', { defaultValue: 'تكلفة الخط الملاحي' })}</span><strong>{Object.entries(bucketTotalsLive('shipping')).map(([c,v]) => `${c} ${formatMoney(v, 'en-US')}`).join(' · ') || '—'}</strong></div>
+                    <div className="shipment-fin-draft-total-row"><span>{t('shipments.fin.breakdown.inland', { defaultValue: 'النقل الداخلي' })}</span><strong>{Object.entries(bucketTotalsLive('inland')).map(([c,v]) => `${c} ${formatMoney(v, 'en-US')}`).join(' · ') || '—'}</strong></div>
+                    <div className="shipment-fin-draft-total-row"><span>{t('shipments.fin.breakdown.customs', { defaultValue: 'التخليص الجمركي' })}</span><strong>{Object.entries(bucketTotalsLive('customs')).map(([c,v]) => `${c} ${formatMoney(v, 'en-US')}`).join(' · ') || '—'}</strong></div>
+                    <div className="shipment-fin-draft-total-row"><span>{t('shipments.fin.breakdown.insurance', { defaultValue: 'التأمين' })}</span><strong>{Object.entries(bucketTotalsLive('insurance')).map(([c,v]) => `${c} ${formatMoney(v, 'en-US')}`).join(' · ') || '—'}</strong></div>
+                    <div className="shipment-fin-draft-total-row"><span>{t('shipments.fin.breakdown.other', { defaultValue: 'تكاليف إضافية' })}</span><strong>{Object.entries(bucketTotalsLive('other')).map(([c,v]) => `${c} ${formatMoney(v, 'en-US')}`).join(' · ') || '—'}</strong></div>
+                    <div className="shipment-fin-draft-total-row shipment-fin-draft-total-row--final">
+                      <span>{t('shipments.fin.netCostLabel')}</span>
+                      <strong>
                         {netBreakdownStr}
-                        </span>
-                      </div>
+                      </strong>
                     </div>
-                    <div className="actions-bar">
+                    <div className="shipment-fin-draft-actions-footer">
                       <button
                         type="button"
-                        className="btn"
+                        className="client-detail-modal__btn client-detail-modal__btn--secondary"
                         disabled={savingAllDraft}
                         onClick={handleSaveAllDraft}
                       >
@@ -2697,7 +2685,7 @@ export default function ShipmentFinancialsModal({
                       </button>
                       <button
                         type="button"
-                        className="btn navy"
+                        className="client-detail-modal__btn client-detail-modal__btn--primary"
                         disabled={notifySending}
                         onClick={handleNotifySales}
                       >

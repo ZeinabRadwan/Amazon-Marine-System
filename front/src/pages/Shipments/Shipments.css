@@ -663,21 +663,14 @@
   gap: 10px;
 }
 
-.shipment-fin-panel--expenses .shipment-fin-cost-sec-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.shipment-fin-panel--expenses .shipment-fin-card__icon {
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  font-size: 15px;
+  padding: 7px;
+  color: #0f2340;
   background: #dbeafe;
 }
-
-.shipment-fin-panel--expenses .shipment-fin-cost-sec-icon--inland { background: #d1fae5; }
-.shipment-fin-panel--expenses .shipment-fin-cost-sec-icon--customs { background: #fef3c7; }
-.shipment-fin-panel--expenses .shipment-fin-cost-sec-icon--insurance { background: #fce7f3; }
-.shipment-fin-panel--expenses .shipment-fin-cost-sec-icon--other { background: #ede9fe; }
 
 .shipment-fin-panel--expenses .shipment-fin-card__title {
   font-size: 13px;
@@ -702,13 +695,6 @@
   border-radius: 20px;
   background: #dbeafe;
   color: #1d4ed8;
-}
-
-.shipment-fin-panel--expenses .shipment-fin-cost-lines-label {
-  font-size: 11px;
-  font-weight: 600;
-  color: #475569;
-  margin-bottom: 6px;
 }
 
 .shipment-fin-panel--expenses .shipment-fin-badge {
@@ -774,15 +760,6 @@
   text-transform: uppercase;
   position: static;
 }
-
-.shipment-fin-panel--expenses .shipment-fin-line-table th:nth-child(1),
-.shipment-fin-panel--expenses .shipment-fin-line-table td:nth-child(1) { width: auto; }
-.shipment-fin-panel--expenses .shipment-fin-line-table th:nth-child(2),
-.shipment-fin-panel--expenses .shipment-fin-line-table td:nth-child(2) { width: 130px; }
-.shipment-fin-panel--expenses .shipment-fin-line-table th:nth-child(3),
-.shipment-fin-panel--expenses .shipment-fin-line-table td:nth-child(3) { width: 80px; }
-.shipment-fin-panel--expenses .shipment-fin-line-table th:nth-child(4),
-.shipment-fin-panel--expenses .shipment-fin-line-table td:nth-child(4) { width: 36px; text-align: center; }
 
 .shipment-fin-panel--expenses .shipment-fin-line-table tbody tr:hover:not(.shipment-fin-template-sep):not(.shipment-fin-receipt-row) {
   background: #f8fafc;
