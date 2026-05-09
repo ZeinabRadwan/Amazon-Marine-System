@@ -543,10 +543,6 @@ class AccountingController extends Controller
                         });
                 });
             }
-            if ($status !== '') {
-                $mapStatus = $status === 'partial' ? 'partial' : $status;
-                $invoicesQuery->where('status', $mapStatus);
-            }
             if ($dateFrom) {
                 $invoicesQuery->whereDate('issue_date', '>=', $dateFrom);
             }
@@ -561,6 +557,18 @@ class AccountingController extends Controller
                 return null;
             }
             $invoices->loadMissing('items');
+            // Payment status filter must match computed settlement (payments vs lines), not invoices.status column.
+            if ($status !== '') {
+                $mapStatus = $status === 'partial' ? 'partial' : $status;
+                $invoices = $invoices
+                    ->filter(function (Invoice $inv) use ($mapStatus): bool {
+                        return AccountingAggregationService::invoiceStatementTotals($inv)['status'] === $mapStatus;
+                    })
+                    ->values();
+                if ($invoices->isEmpty()) {
+                    return null;
+                }
+            }
             $aggregated = AccountingAggregationService::aggregateInvoices($invoices);
 
             $invoiceStatuses = [
@@ -573,10 +581,16 @@ class AccountingController extends Controller
                 $invoiceStatuses[$statusKey] = (int) ($invoiceStatuses[$statusKey] ?? 0) + 1;
             }
 
+            $shipmentsCount = $invoices->pluck('shipment_id')
+                ->filter(fn ($id) => $id !== null && (int) $id > 0)
+                ->unique()
+                ->count();
+
             return [
                 'customer_id' => $client->id,
                 'customer_name' => $client->name,
                 'invoice_count' => $invoices->count(),
+                'shipments_count' => $shipmentsCount,
                 'total_invoices_value' => $aggregated['total_invoiced_per_currency'],
                 'paid_amount' => $aggregated['total_paid_per_currency'],
                 'remaining_balance' => $aggregated['total_remaining_per_currency'],
@@ -660,6 +674,7 @@ class AccountingController extends Controller
             'data' => [
                 'customer_id' => $client->id,
                 'customer_name' => $client->name,
+                'phone' => $client->phone,
                 'invoices' => $rows,
             ],
         ]);
