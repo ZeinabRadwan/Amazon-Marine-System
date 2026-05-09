@@ -19,6 +19,7 @@ import {
   FileSpreadsheet,
   Search,
   Eye,
+  List,
   RotateCcw,
   Wallet,
   HandCoins,
@@ -190,23 +191,12 @@ export default function Treasury() {
   const [expenseCategoryId, setExpenseCategoryId] = useState('')
   const [categories, setCategories] = useState([])
 
-  const [txModal, setTxModal] = useState(null)
-  const [expenseModalOpen, setExpenseModalOpen] = useState(false)
-  const [saving, setSaving] = useState(false)
+  /** @type {[object | null, (r: object | null) => void]} */
+  const [entryViewRow, setEntryViewRow] = useState(null)
 
   const [reconStatement, setReconStatement] = useState('')
   const [reconLedger, setReconLedger] = useState('')
   const [reconChecks, setReconChecks] = useState(() => ({}))
-
-  const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), [])
-
-  const [expenseForm, setExpenseForm] = useState({
-    expense_category_id: '',
-    description: '',
-    amount: '',
-    currency_code: 'USD',
-    expense_date: '',
-  })
 
   const [treasuryTab, setTreasuryTab] = useState('movements')
 
@@ -221,7 +211,7 @@ export default function Treasury() {
       {
         id: 'movements',
         label: t('treasury.tabs.movements'),
-        icon: <ArrowLeftRight className="h-4 w-4" aria-hidden />,
+        icon: <List className="h-4 w-4" aria-hidden />,
       },
       {
         id: 'reconciliation',
@@ -367,37 +357,14 @@ export default function Treasury() {
       .catch(() => setCategories([]))
   }, [token, canViewAccounting])
 
-  useEffect(() => {
-    if (!token || !canViewAccounting) return
-    listBankAccounts(token)
-      .then((res) => setBankAccounts(Array.isArray(res?.data) ? res.data : []))
-      .catch(() => setBankAccounts([]))
-  }, [token, canViewAccounting])
-
   const { balanceById: runningById } = useMemo(() => computeRunningBalances(entries), [entries])
 
   const exchangePairs = useMemo(() => buildTreasuryExchangePairs(exchangeRates), [exchangeRates])
 
-  const bankAccountOptions = useMemo(
-    () =>
-      bankAccounts
-        .filter((acc) => acc?.is_active !== false)
-        .map((acc) => ({
-          value: String(acc.id),
-          label: `${acc.bank_name} - ${acc.account_name || acc.account_number || acc.id}`,
-        })),
-    [bankAccounts]
-  )
-
   const bankFilterOptions = useMemo(() => {
     if (bankLedgerOverview?.banks?.length) return bankLedgerOverview.banks
-    return bankAccounts.map((b) => ({
-      id: b.id,
-      bank_name: b.bank_name,
-      account_name: b.account_name,
-      account_number: b.account_number,
-    }))
-  }, [bankLedgerOverview, bankAccounts])
+    return []
+  }, [bankLedgerOverview])
 
   const exportEntriesCsv = () => {
     const headers = [
@@ -466,178 +433,6 @@ export default function Treasury() {
     a.download = `treasury-expenses-${new Date().toISOString().slice(0, 10)}.csv`
     a.click()
     URL.revokeObjectURL(a.href)
-  }
-
-  const openAddEntry = () => {
-    setTxModal({
-      kind: 'entry',
-      mode: 'create',
-      entry_type: 'in',
-      source: '',
-      amount: '',
-      currency_code: 'USD',
-      entry_date: todayStr,
-      description: '',
-      notes: '',
-    })
-  }
-
-  const openEditEntry = (row) => {
-    const abs = Math.abs(Number(row.amount) || 0)
-    const sourceValue = row.account_id ? `bank:${row.account_id}` : (row.source || '')
-    setTxModal({
-      kind: 'entry',
-      mode: 'edit',
-      id: row.id,
-      entry_type: row.entry_type || 'in',
-      source: sourceValue,
-      amount: String(abs),
-      currency_code: row.currency_code || 'USD',
-      entry_date: row.entry_date || todayStr,
-      description: row.description || '',
-      notes: '',
-    })
-  }
-
-  const openTransfer = () => {
-    setTxModal({
-      kind: 'transfer',
-      from_account: '',
-      to_account: '',
-      from_amount: '',
-      from_currency: 'USD',
-      to_amount: '',
-      to_currency: '',
-      entry_date: todayStr,
-      description: '',
-    })
-  }
-
-  const submitEntry = async () => {
-    if (!token || !txModal || txModal.kind !== 'entry') return
-    setSaving(true)
-    try {
-      const amount = Number(txModal.amount)
-      if (!txModal.source || Number.isNaN(amount) || amount < 0) {
-        window.alert(t('treasury.validationEntry'))
-        return
-      }
-      const isBank = String(txModal.source).startsWith('bank:')
-      const accountId = isBank ? Number(String(txModal.source).replace('bank:', '')) : null
-      const sourceLabel = isBank
-        ? (bankAccounts.find((b) => Number(b.id) === accountId)?.bank_name || 'bank')
-        : txModal.source
-      const body = {
-        entry_type: txModal.entry_type,
-        source: sourceLabel,
-        account_id: accountId || undefined,
-        amount,
-        currency_code: txModal.currency_code,
-        entry_date: txModal.entry_date,
-        description: txModal.description || undefined,
-        notes: txModal.notes || undefined,
-      }
-      if (txModal.mode === 'create') {
-        await createTreasuryEntry(token, body)
-      } else {
-        await updateTreasuryEntry(token, txModal.id, body)
-      }
-      setTxModal(null)
-      loadEntries()
-      loadBankOverview()
-    } catch (e) {
-      window.alert(e?.message || t('treasury.errorSave'))
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const submitTransfer = async () => {
-    if (!token || !txModal || txModal.kind !== 'transfer') return
-    setSaving(true)
-    try {
-      const from_amount = Number(txModal.from_amount)
-      if (
-        !txModal.from_account ||
-        !txModal.to_account ||
-        Number.isNaN(from_amount) ||
-        from_amount < 0 ||
-        txModal.from_account === txModal.to_account
-      ) {
-        window.alert(t('treasury.validationTransfer'))
-        return
-      }
-      const body = {
-        from_account: String(txModal.from_account).startsWith('bank:')
-          ? (bankAccounts.find((b) => Number(b.id) === Number(String(txModal.from_account).replace('bank:', '')))?.bank_name || 'bank')
-          : txModal.from_account,
-        to_account: String(txModal.to_account).startsWith('bank:')
-          ? (bankAccounts.find((b) => Number(b.id) === Number(String(txModal.to_account).replace('bank:', '')))?.bank_name || 'bank')
-          : txModal.to_account,
-        from_account_id: String(txModal.from_account).startsWith('bank:') ? Number(String(txModal.from_account).replace('bank:', '')) : undefined,
-        to_account_id: String(txModal.to_account).startsWith('bank:') ? Number(String(txModal.to_account).replace('bank:', '')) : undefined,
-        from_amount,
-        from_currency: txModal.from_currency,
-        to_amount: txModal.to_amount ? Number(txModal.to_amount) : undefined,
-        to_currency: txModal.to_currency || undefined,
-        entry_date: txModal.entry_date,
-        description: txModal.description || undefined,
-      }
-      await createTreasuryTransfer(token, body)
-      setTxModal(null)
-      loadEntries()
-      loadBankOverview()
-    } catch (e) {
-      window.alert(e?.message || t('treasury.errorSave'))
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleDeleteEntry = async (row) => {
-    if (!token || !canManageAccounting) return
-    if (!window.confirm(t('treasury.confirmDelete'))) return
-    try {
-      await deleteTreasuryEntry(token, row.id)
-      loadEntries()
-      loadBankOverview()
-    } catch (e) {
-      window.alert(e?.message || t('treasury.errorDelete'))
-    }
-  }
-
-  const submitExpense = async () => {
-    if (!token) return
-    setSaving(true)
-    try {
-      const amount = Number(expenseForm.amount)
-      const catId = Number(expenseForm.expense_category_id)
-      if (!catId || !expenseForm.description?.trim() || Number.isNaN(amount) || amount < 0) {
-        window.alert(t('treasury.validationExpense'))
-        return
-      }
-      await createTreasuryExpense(token, {
-        expense_category_id: catId,
-        description: expenseForm.description.trim(),
-        amount,
-        currency_code: expenseForm.currency_code,
-        expense_date: expenseForm.expense_date,
-      })
-      setExpenseModalOpen(false)
-      setExpenseForm({
-        expense_category_id: '',
-        description: '',
-        amount: '',
-        currency_code: 'USD',
-        expense_date: todayStr,
-      })
-      loadExpenses()
-      loadBankOverview()
-    } catch (e) {
-      window.alert(e?.message || t('treasury.errorSave'))
-    } finally {
-      setSaving(false)
-    }
   }
 
   const reconDiff = useMemo(() => {
@@ -920,22 +715,6 @@ export default function Treasury() {
               </select>
             </div>
             <div className="clients-filters__actions">
-              {canManageAccounting && (
-                <>
-                  <button type="button" className="page-header__btn page-header__btn--primary" onClick={openAddEntry}>
-                    <Plus className="inline h-3.5 w-3.5" /> {t('treasury.addMovement')}
-                  </button>
-                  <button
-                    type="button"
-                    className="clients-filters__btn-icon"
-                    onClick={openTransfer}
-                    aria-label={t('treasury.transfer')}
-                    title={t('treasury.transfer')}
-                  >
-                    <ArrowLeftRight className="clients-filters__btn-icon-svg" aria-hidden />
-                  </button>
-                </>
-              )}
               <button
                 type="button"
                 className="clients-filters__clear clients-filters__btn-icon"
@@ -981,13 +760,13 @@ export default function Treasury() {
                 <th>{t('treasury.colCurrency')}</th>
                 <th>{t('treasury.colReference', 'Reference')}</th>
                 <th>{t('treasury.colRunning')}</th>
-                {canManageAccounting && <th>{t('treasury.colActions')}</th>}
+                <th>{t('treasury.colView')}</th>
               </tr>
             </thead>
             <tbody>
               {entriesLoading && (
                 <tr>
-                  <td colSpan={canManageAccounting ? 9 : 8}>
+                  <td colSpan={9}>
                     <LoaderDots />
                   </td>
                 </tr>
@@ -1036,32 +815,22 @@ export default function Treasury() {
                         {row.reference_label || '—'}
                       </td>
                       <td>{runDisplay}</td>
-                      {canManageAccounting && (
-                        <td>
-                          <button
-                            type="button"
-                            className="accountings-btn accountings-btn--small mr-1"
-                            onClick={() => openEditEntry(row)}
-                            aria-label={t('treasury.edit')}
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            className="accountings-btn accountings-btn--small accountings-btn--danger"
-                            onClick={() => handleDeleteEntry(row)}
-                            aria-label={t('treasury.delete')}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </td>
-                      )}
+                      <td>
+                        <button
+                          type="button"
+                          className="accountings-btn accountings-btn--small"
+                          onClick={() => setEntryViewRow(row)}
+                          aria-label={t('treasury.viewEntry')}
+                        >
+                          <Eye className="h-3.5 w-3.5" aria-hidden />
+                        </button>
+                      </td>
                     </tr>
                   )
                 })}
               {!entriesLoading && entries.length === 0 && (
                 <tr>
-                  <td colSpan={canManageAccounting ? 9 : 8} className="accountings-empty">
+                  <td colSpan={9} className="accountings-empty">
                     {t('treasury.emptyMovements')}
                   </td>
                 </tr>
@@ -1213,18 +982,6 @@ export default function Treasury() {
               </select>
             </div>
             <div className="clients-filters__actions">
-              {canManageAccounting && (
-                <button
-                  type="button"
-                  className="page-header__btn page-header__btn--primary"
-                  onClick={() => {
-                    setExpenseForm((f) => ({ ...f, expense_date: todayStr }))
-                    setExpenseModalOpen(true)
-                  }}
-                >
-                  <Plus className="inline h-3.5 w-3.5" /> {t('treasury.addExpense')}
-                </button>
-              )}
               <button
                 type="button"
                 className="clients-filters__clear clients-filters__btn-icon"
@@ -1324,352 +1081,77 @@ export default function Treasury() {
 
       </div>
 
-      {txModal?.kind === 'entry' && (
+      {entryViewRow && (
         <div className="accountings-modal" role="dialog" aria-modal="true">
           <button
             type="button"
             className="accountings-modal-backdrop"
-            onClick={() => !saving && setTxModal(null)}
+            onClick={() => setEntryViewRow(null)}
             aria-label={t('treasury.close')}
           />
           <div className="accountings-modal-content accountings-modal-content--wide">
-            <h2>{txModal.mode === 'create' ? t('treasury.modalAddEntry') : t('treasury.modalEditEntry')}</h2>
-            <div className="accountings-form">
-              <div className="accountings-form-scroll">
-                <div className="accountings-field">
-                  <label>{t('treasury.entryType')}</label>
-                  <select
-                    className="accountings-input"
-                    value={txModal.entry_type}
-                    onChange={(e) => setTxModal((m) => ({ ...m, entry_type: e.target.value }))}
+            <h2>{t('treasury.entryDetailTitle')}</h2>
+            <div className="treasury-entry-view accountings-form">
+              <dl className="treasury-entry-view-dl">
+                <dt>{t('treasury.colDate')}</dt>
+                <dd>{entryViewRow.entry_date || '—'}</dd>
+                <dt>{t('treasury.colFlow')}</dt>
+                <dd>{flowTypeLabel(entryViewRow, t)}</dd>
+                <dt>{t('treasury.colDescription')}</dt>
+                <dd className="break-words">
+                  {[entryViewRow.description, entryViewRow.reference_label].filter(Boolean).join(' · ') || '—'}
+                </dd>
+                <dt>{t('treasury.colType')}</dt>
+                <dd>{entryViewRow.entry_type || '—'}</dd>
+                <dt>{t('treasury.colAmount')}</dt>
+                <dd className="tabular-nums">{formatPlainAmount(entryViewRow.amount, locale)}</dd>
+                <dt>{t('treasury.colCurrency')}</dt>
+                <dd>
+                  <CurrencyCodeBadge code={entryViewRow.currency_code} />
+                </dd>
+                <dt>{t('treasury.colReference')}</dt>
+                <dd>{entryViewRow.reference_label || '—'}</dd>
+                <dt>{t('treasury.colRunning')}</dt>
+                <dd className="tabular-nums">
+                  {runningById.get(entryViewRow.id)?.running != null
+                    ? formatPlainAmount(runningById.get(entryViewRow.id).running, locale)
+                    : '—'}
+                </dd>
+                <dt>{t('treasury.detailPaymentId')}</dt>
+                <dd>{entryViewRow.payment_id ?? '—'}</dd>
+                <dt>{t('treasury.detailAccountIds')}</dt>
+                <dd className="tabular-nums">
+                  {entryViewRow.account_id ?? '—'} / {entryViewRow.counter_account_id ?? '—'}
+                </dd>
+              </dl>
+              <div className="treasury-entry-view-links mt-4 flex flex-wrap items-center gap-3">
+                {entryViewRow.invoice_id ? (
+                  <Link
+                    className="accountings-btn accountings-btn--small accountings-btn--primary"
+                    to={`/invoices/${entryViewRow.invoice_id}/edit`}
+                    onClick={() => setEntryViewRow(null)}
                   >
-                    <option value="in">{t('treasury.typeIn')}</option>
-                    <option value="out">{t('treasury.typeOut')}</option>
-                    <option value="transfer">{t('treasury.typeTransfer', 'Transfer')}</option>
-                    <option value="exchange">{t('treasury.typeExchange', 'Exchange')}</option>
-                  </select>
-                </div>
-                <div className="accountings-field">
-                  <label>{t('treasury.accountSource')}</label>
-                  <select
-                    className="accountings-input"
-                    value={txModal.source}
-                    onChange={(e) => setTxModal((m) => ({ ...m, source: e.target.value }))}
+                    {t('treasury.linkOpenInvoice')}
+                  </Link>
+                ) : null}
+                {entryViewRow.shipment_id ? (
+                  <Link
+                    className="accountings-btn accountings-btn--small"
+                    to={`/shipments?shipment_id=${entryViewRow.shipment_id}`}
+                    onClick={() => setEntryViewRow(null)}
                   >
-                    <option value="">{t('treasury.selectAccount')}</option>
-                    <optgroup label={t('treasury.sourceGroup.bank')}>
-                      {bankAccountOptions.map((o) => (
-                        <option key={`entry-${o.value}`} value={`bank:${o.value}`}>
-                          {o.label}
-                        </option>
-                      ))}
-                    </optgroup>
-                    <optgroup label={t('treasury.sourceGroup.cash')}>
-                      {CASH_SOURCE_OPTIONS.map((o) => (
-                        <option key={`entry-${o.value}`} value={o.value}>
-                          {t(o.labelKey)}
-                        </option>
-                      ))}
-                    </optgroup>
-                  </select>
-                </div>
-                <div className="accountings-form-grid">
-                  <div className="accountings-field">
-                    <label>{t('treasury.amount')}</label>
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      className="accountings-input"
-                      value={txModal.amount}
-                      onChange={(e) => setTxModal((m) => ({ ...m, amount: e.target.value }))}
-                    />
-                  </div>
-                  <div className="accountings-field">
-                    <label>{t('treasury.currency')}</label>
-                    <select
-                      className="accountings-input"
-                      value={txModal.currency_code}
-                      onChange={(e) => setTxModal((m) => ({ ...m, currency_code: e.target.value }))}
-                    >
-                      <option value="USD">USD</option>
-                      <option value="EUR">EUR</option>
-                      <option value="EGP">EGP</option>
-                    </select>
-                  </div>
-                  <div className="accountings-field accountings-field--full">
-                    <label>{t('treasury.entryDate')}</label>
-                    <input
-                      type="date"
-                      className="accountings-input"
-                      value={txModal.entry_date}
-                      onChange={(e) => setTxModal((m) => ({ ...m, entry_date: e.target.value }))}
-                    />
-                  </div>
-                  <div className="accountings-field accountings-field--full">
-                    <label>{t('treasury.description')}</label>
-                    <input
-                      type="text"
-                      className="accountings-input"
-                      value={txModal.description}
-                      onChange={(e) => setTxModal((m) => ({ ...m, description: e.target.value }))}
-                    />
-                  </div>
-                  <div className="accountings-field accountings-field--full">
-                    <label>{t('treasury.notes')}</label>
-                    <textarea
-                      className="accountings-input"
-                      rows={2}
-                      value={txModal.notes}
-                      onChange={(e) => setTxModal((m) => ({ ...m, notes: e.target.value }))}
-                    />
-                  </div>
-                </div>
+                    {t('treasury.linkOpenShipment')}
+                  </Link>
+                ) : null}
+                {entryViewRow.vendor_bill_id ? (
+                  <span className="text-sm text-slate-600 dark:text-slate-400">
+                    {t('treasury.vendorBillRef')}: #{entryViewRow.vendor_bill_id}
+                  </span>
+                ) : null}
               </div>
               <div className="accountings-modal-actions">
-                <button type="button" className="accountings-btn" disabled={saving} onClick={() => setTxModal(null)}>
-                  {t('treasury.cancel')}
-                </button>
-                <button
-                  type="button"
-                  className="accountings-btn accountings-btn--primary"
-                  disabled={saving}
-                  onClick={submitEntry}
-                >
-                  {saving ? t('treasury.saving') : t('treasury.save')}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {txModal?.kind === 'transfer' && (
-        <div className="accountings-modal" role="dialog" aria-modal="true">
-          <button
-            type="button"
-            className="accountings-modal-backdrop"
-            onClick={() => !saving && setTxModal(null)}
-            aria-label={t('treasury.close')}
-          />
-          <div className="accountings-modal-content accountings-modal-content--wide">
-            <h2>{t('treasury.modalTransfer')}</h2>
-            <div className="accountings-form">
-              <div className="accountings-form-scroll">
-                <div className="accountings-field">
-                  <label>{t('treasury.fromAccount')}</label>
-                  <select
-                    className="accountings-input"
-                    value={txModal.from_account}
-                    onChange={(e) => setTxModal((m) => ({ ...m, from_account: e.target.value }))}
-                  >
-                    <option value="">{t('treasury.selectAccount')}</option>
-                    <optgroup label={t('treasury.sourceGroup.bank')}>
-                      {bankAccountOptions.map((o) => (
-                        <option key={`f-${o.value}`} value={`bank:${o.value}`}>
-                          {o.label}
-                        </option>
-                      ))}
-                    </optgroup>
-                    <optgroup label={t('treasury.sourceGroup.cash')}>
-                      {CASH_SOURCE_OPTIONS.map((o) => (
-                        <option key={`f-${o.value}`} value={o.value}>
-                          {t(o.labelKey)}
-                        </option>
-                      ))}
-                    </optgroup>
-                  </select>
-                </div>
-                <div className="accountings-field">
-                  <label>{t('treasury.toAccount')}</label>
-                  <select
-                    className="accountings-input"
-                    value={txModal.to_account}
-                    onChange={(e) => setTxModal((m) => ({ ...m, to_account: e.target.value }))}
-                  >
-                    <option value="">{t('treasury.selectAccount')}</option>
-                    <optgroup label={t('treasury.sourceGroup.bank')}>
-                      {bankAccountOptions.map((o) => (
-                        <option key={`t-${o.value}`} value={`bank:${o.value}`}>
-                          {o.label}
-                        </option>
-                      ))}
-                    </optgroup>
-                    <optgroup label={t('treasury.sourceGroup.cash')}>
-                      {CASH_SOURCE_OPTIONS.map((o) => (
-                        <option key={`t-${o.value}`} value={o.value}>
-                          {t(o.labelKey)}
-                        </option>
-                      ))}
-                    </optgroup>
-                  </select>
-                </div>
-                <div className="accountings-form-grid">
-                  <div className="accountings-field">
-                    <label>{t('treasury.fromAmount')}</label>
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      className="accountings-input"
-                      value={txModal.from_amount}
-                      onChange={(e) => setTxModal((m) => ({ ...m, from_amount: e.target.value }))}
-                    />
-                  </div>
-                  <div className="accountings-field">
-                    <label>{t('treasury.fromCurrency')}</label>
-                    <select
-                      className="accountings-input"
-                      value={txModal.from_currency}
-                      onChange={(e) => setTxModal((m) => ({ ...m, from_currency: e.target.value }))}
-                    >
-                      <option value="USD">USD</option>
-                      <option value="EUR">EUR</option>
-                      <option value="EGP">EGP</option>
-                    </select>
-                  </div>
-                  <div className="accountings-field">
-                    <label>{t('treasury.toAmountOptional')}</label>
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      className="accountings-input"
-                      value={txModal.to_amount}
-                      onChange={(e) => setTxModal((m) => ({ ...m, to_amount: e.target.value }))}
-                    />
-                  </div>
-                  <div className="accountings-field">
-                    <label>{t('treasury.toCurrencyOptional')}</label>
-                    <select
-                      className="accountings-input"
-                      value={txModal.to_currency}
-                      onChange={(e) => setTxModal((m) => ({ ...m, to_currency: e.target.value }))}
-                    >
-                      <option value="">{t('treasury.sameAsFrom')}</option>
-                      <option value="USD">USD</option>
-                      <option value="EUR">EUR</option>
-                      <option value="EGP">EGP</option>
-                    </select>
-                  </div>
-                  <div className="accountings-field accountings-field--full">
-                    <label>{t('treasury.entryDate')}</label>
-                    <input
-                      type="date"
-                      className="accountings-input"
-                      value={txModal.entry_date}
-                      onChange={(e) => setTxModal((m) => ({ ...m, entry_date: e.target.value }))}
-                    />
-                  </div>
-                  <div className="accountings-field accountings-field--full">
-                    <label>{t('treasury.description')}</label>
-                    <input
-                      type="text"
-                      className="accountings-input"
-                      value={txModal.description}
-                      onChange={(e) => setTxModal((m) => ({ ...m, description: e.target.value }))}
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="accountings-modal-actions">
-                <button type="button" className="accountings-btn" disabled={saving} onClick={() => setTxModal(null)}>
-                  {t('treasury.cancel')}
-                </button>
-                <button
-                  type="button"
-                  className="accountings-btn accountings-btn--primary"
-                  disabled={saving}
-                  onClick={submitTransfer}
-                >
-                  {saving ? t('treasury.saving') : t('treasury.save')}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {expenseModalOpen && (
-        <div className="accountings-modal" role="dialog" aria-modal="true">
-          <button
-            type="button"
-            className="accountings-modal-backdrop"
-            onClick={() => !saving && setExpenseModalOpen(false)}
-            aria-label={t('treasury.close')}
-          />
-          <div className="accountings-modal-content">
-            <h2>{t('treasury.modalAddExpense')}</h2>
-            <div className="accountings-form">
-              <div className="accountings-field">
-                <label>{t('treasury.expenseCategory')}</label>
-                <select
-                  className="accountings-input"
-                  value={expenseForm.expense_category_id}
-                  onChange={(e) => setExpenseForm((f) => ({ ...f, expense_category_id: e.target.value }))}
-                >
-                  <option value="">{t('treasury.selectCategory')}</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={String(c.id)}>
-                      {c.name ?? c.code ?? c.id}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="accountings-field">
-                <label>{t('treasury.description')}</label>
-                <input
-                  type="text"
-                  className="accountings-input"
-                  value={expenseForm.description}
-                  onChange={(e) => setExpenseForm((f) => ({ ...f, description: e.target.value }))}
-                />
-              </div>
-              <div className="accountings-form-grid">
-                <div className="accountings-field">
-                  <label>{t('treasury.amount')}</label>
-                  <input
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    className="accountings-input"
-                    value={expenseForm.amount}
-                    onChange={(e) => setExpenseForm((f) => ({ ...f, amount: e.target.value }))}
-                  />
-                </div>
-                <div className="accountings-field">
-                  <label>{t('treasury.currency')}</label>
-                  <select
-                    className="accountings-input"
-                    value={expenseForm.currency_code}
-                    onChange={(e) => setExpenseForm((f) => ({ ...f, currency_code: e.target.value }))}
-                  >
-                    <option value="USD">USD</option>
-                    <option value="EUR">EUR</option>
-                    <option value="EGP">EGP</option>
-                  </select>
-                </div>
-                <div className="accountings-field accountings-field--full">
-                  <label>{t('treasury.expenseDate')}</label>
-                  <input
-                    type="date"
-                    className="accountings-input"
-                    value={expenseForm.expense_date}
-                    onChange={(e) => setExpenseForm((f) => ({ ...f, expense_date: e.target.value }))}
-                  />
-                </div>
-              </div>
-              <div className="accountings-modal-actions">
-                <button type="button" className="accountings-btn" disabled={saving} onClick={() => setExpenseModalOpen(false)}>
-                  {t('treasury.cancel')}
-                </button>
-                <button
-                  type="button"
-                  className="accountings-btn accountings-btn--primary"
-                  disabled={saving}
-                  onClick={submitExpense}
-                >
-                  {saving ? t('treasury.saving') : t('treasury.save')}
+                <button type="button" className="accountings-btn" onClick={() => setEntryViewRow(null)}>
+                  {t('treasury.close')}
                 </button>
               </div>
             </div>

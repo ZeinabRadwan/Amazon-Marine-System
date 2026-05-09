@@ -336,15 +336,14 @@
   font-variant-numeric: tabular-nums;
 }
 
-.treasury-stats--compact .clients-stats-grid {
-  gap: 0.75rem;
+/* Stats band uses full container width (no max-width centering) */
+.treasury-stats-band {
+  width: 100%;
+  max-width: none;
 }
 
-@media (min-width: 1024px) {
-  .treasury-stats--compact {
-    max-width: 1100px;
-    margin-inline: auto;
-  }
+.treasury-stats--compact .clients-stats-grid {
+  gap: 1rem;
 }
 
 .treasury-flow-badge {
@@ -383,26 +382,37 @@
   color: rgb(29 78 216);
 }
 
-/* Five headline stats — aligned with Accountings StatsCard grid */
-.treasury-stats-grid--5.accountings-stats-grid {
+/* Five headline stats — full-width row, equal columns, equal-height cards */
+.treasury-stats-band .treasury-stats-grid--5.accountings-stats-grid {
+  width: 100%;
+  max-width: none;
   margin-bottom: 0;
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.treasury-stats-band .treasury-stats-grid--5.accountings-stats-grid > .accountings-stat-card {
+  height: 100%;
+  min-height: 118px;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 @media (min-width: 640px) {
-  .treasury-stats-grid--5 {
-    grid-template-columns: repeat(2, 1fr);
+  .treasury-stats-band .treasury-stats-grid--5.accountings-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 1024px) {
-  .treasury-stats-grid--5 {
-    grid-template-columns: repeat(3, 1fr);
+  .treasury-stats-band .treasury-stats-grid--5.accountings-stats-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
-@media (min-width: 1400px) {
-  .treasury-stats-grid--5 {
-    grid-template-columns: repeat(5, 1fr);
+@media (min-width: 1280px) {
+  .treasury-stats-band .treasury-stats-grid--5.accountings-stats-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
 
@@ -446,4 +456,22 @@
 
 .treasury-acc-cur-num--muted {
   opacity: 0.85;
+}
+
+/* Read-only entry detail modal */
+.treasury-entry-view-dl {
+  display: grid;
+  grid-template-columns: minmax(7rem, auto) 1fr;
+  gap: 0.35rem 1rem;
+  font-size: 0.875rem;
+}
+
+.treasury-entry-view-dl dt {
+  font-weight: 600;
+  color: var(--form-muted, #64748b);
+}
+
+.treasury-entry-view-dl dd {
+  margin: 0;
+  word-break: break-word;
 }
