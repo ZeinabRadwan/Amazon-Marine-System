@@ -14,6 +14,7 @@ use App\Models\VendorBill;
 use App\Services\AccountingAggregationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -81,9 +82,9 @@ class AccountingController extends Controller
 
     /**
      * @return array{
-     *   totals: array{receivables: float, payables: float, net: float, currencies: \Illuminate\Support\Collection<int, string>},
+     *   totals: array{receivables: float, payables: float, net: float, currencies: Collection<int, string>},
      *   receivables_payables: array{labels: array<int, string>, receivables: array<int, float>, payables: array<int, float>},
-     *   balance_by_currency: \Illuminate\Support\Collection<int, array{currency: string, balance: float}>
+     *   balance_by_currency: Collection<int, array{currency: string, balance: float}>
      * }
      */
     private function buildAccountingSummaryData(int $months): array
@@ -808,8 +809,6 @@ class AccountingController extends Controller
      * Partner Statement: shipment cost lines for aggregation. Primary source is saved
      * {@see ShipmentCostInvoice} items (same as Shipment Financials / cost_total); legacy
      * {@see Expense} rows are used only when a shipment has no cost invoice with positive lines.
-     *
-     * @return \Illuminate\Http\JsonResponse
      */
     public function partnerStatementShipmentCosts(Request $request): JsonResponse
     {
@@ -926,13 +925,14 @@ class AccountingController extends Controller
         }
         $shipmentIds = array_values(array_unique(array_filter($shipmentIds)));
 
-        [$contexts, $vendorNames] = $this->buildAccountingPartnerContextsForShipments($shipmentIds, $lineVendorIds);
+        [$contexts, $vendorNames, $vendorTypes] = $this->buildAccountingPartnerContextsForShipments($shipmentIds, $lineVendorIds);
 
         return response()->json([
             'data' => [
                 'lines' => $lines,
                 'contexts' => $contexts,
                 'vendor_names' => $vendorNames,
+                'vendor_types' => $vendorTypes,
             ],
         ]);
     }
@@ -940,7 +940,7 @@ class AccountingController extends Controller
     /**
      * @param  list<int>  $ids
      * @param  list<int>  $extraVendorIdsForLabels
-     * @return array{0: array<string, array<string, mixed>>, 1: array<string, string>}
+     * @return array{0: array<string, array<string, mixed>>, 1: array<string, string>, 2: array<string, string>}
      */
     private function buildAccountingPartnerContextsForShipments(array $ids, array $extraVendorIdsForLabels = []): array
     {
@@ -948,7 +948,7 @@ class AccountingController extends Controller
         $ids = array_values(array_filter($ids, static fn (int $id) => $id > 0));
 
         if ($ids === []) {
-            return [[], []];
+            return [[], [], []];
         }
 
         $shipments = Shipment::query()
@@ -995,15 +995,18 @@ class AccountingController extends Controller
 
         $vendorIdsForLabels = array_values(array_unique(array_filter($vendorIdsForLabels)));
         $vendorNames = [];
+        $vendorTypes = [];
         if ($vendorIdsForLabels !== []) {
-            $vendorNames = Vendor::query()
+            $vendorRows = Vendor::query()
                 ->whereIn('id', $vendorIdsForLabels)
-                ->pluck('name', 'id')
-                ->mapWithKeys(fn ($name, $id) => [(string) $id => $name])
-                ->all();
+                ->get(['id', 'name', 'type']);
+            foreach ($vendorRows as $v) {
+                $vendorNames[(string) $v->id] = $v->name;
+                $vendorTypes[(string) $v->id] = $v->type ? (string) $v->type : 'other';
+            }
         }
 
-        return [$contexts, $vendorNames];
+        return [$contexts, $vendorNames, $vendorTypes];
     }
 
     /**
