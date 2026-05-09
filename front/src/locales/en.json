@@ -2398,11 +2398,7 @@
   "treasury": {
     "title": "Treasury",
     "noPermission": "You do not have permission to view treasury.",
-    "tabs": {
-      "movements": "Treasury board — fund movements",
-      "reconciliation": "Bank reconciliation",
-      "expenses": "Expense management"
-    },
+    "movementsTitle": "Treasury movements",
     "stats": {
       "cash": "Cash on hand",
       "bank": "Bank accounts",
@@ -2464,6 +2460,7 @@
       "customerIn": "Incoming (customers)",
       "partnerOut": "Outgoing (partners)",
       "effectiveBalance": "Effective balance",
+      "currencyBalances": "Balances by currency",
       "rowBalance": "Balance",
       "rowIn": "In (customers)",
       "rowOut": "Out (partners)",
@@ -2473,15 +2470,24 @@
       "allBanks": "All banks"
     },
     "exchange": {
-      "dailyTitle": "Daily exchange rates",
+      "dailyTitle": "Daily Exchange Rates",
+      "dailySubtitle": "Bank of Egypt / Central Bank rates — official bulletin (as of {{date}})",
+      "dailySubtitleSource": "Bank of Egypt (Central Bank of Egypt) — official foreign exchange bulletin.",
+      "ratesPanelAria": "Official Central Bank of Egypt exchange rates",
+      "ratesFootnote": "USD and EUR vs EGP are taken from the CBE statistical bulletin (EGP per one unit of foreign currency, mid of buy/sell). USD/EUR and EUR/USD shown here are cross rates derived from those bulletin values.",
       "loading": "Loading rates…",
       "unavailable": "Official rates could not be loaded.",
       "refresh": "Refresh",
-      "asOf": "CBE Egypt — rates as of {{date}}",
       "usdToEgp": "USD → EGP",
       "eurToEgp": "EUR → EGP",
       "usdToEur": "USD → EUR",
-      "eurToUsd": "EUR → USD"
+      "eurToUsd": "EUR → USD",
+      "pairExplain": {
+        "usd_egp": "Central Bank of Egypt bulletin: Egyptian pounds per one US dollar (mid rate).",
+        "eur_egp": "Central Bank of Egypt bulletin: Egyptian pounds per one euro (mid rate).",
+        "usd_eur": "Cross rate from CBE bulletin mids (USD vs EGP and EUR vs EGP).",
+        "eur_usd": "Cross rate from CBE bulletin mids (USD vs EGP and EUR vs EGP)."
+      }
     },
     "flow": {
       "customer": "Customer",

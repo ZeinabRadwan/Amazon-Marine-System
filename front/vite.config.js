@@ -21,8 +21,9 @@ function viteBaseFromEnv(raw) {
 
 export default defineConfig(({ mode }) => {
   const fileEnv = loadEnv(mode, __dirname, '')
+  // Default to local artisan (`php artisan serve` → :8000). Override in .env.development (e.g. XAMPP URL).
   const devProxyTarget =
-    fileEnv.DEV_API_PROXY_TARGET || 'https://back.crm-amazonltd.live/'
+    fileEnv.DEV_API_PROXY_TARGET || fileEnv.VITE_DEV_PROXY_TARGET || 'http://127.0.0.1:8000/'
   const base = viteBaseFromEnv(fileEnv.VITE_BASE_PATH)
 
   return {

@@ -54,10 +54,18 @@ function formatAmount(amount, locale) {
 }
 
 /**
- * @param {{ value: unknown, className?: string, size?: 'sm' | 'md', emptyLabel?: string, amountFirst?: boolean }} props
+ * @param {{ value: unknown, className?: string, size?: 'sm' | 'md', emptyLabel?: string, amountFirst?: boolean, numberLocale?: string }} props
  */
-export function CurrencyMapBadges({ value, className = '', size = 'md', emptyLabel, amountFirst = false }) {
+export function CurrencyMapBadges({
+  value,
+  className = '',
+  size = 'md',
+  emptyLabel,
+  amountFirst = false,
+  numberLocale,
+}) {
   const { i18n } = useTranslation()
+  const localeForAmounts = numberLocale ?? i18n.language
   const normalized = normalizeAccountingCurrencyMap(value)
   const entries = sortCurrencyEntries(Object.entries(normalized)).filter(([, amount]) => Number(amount) !== 0)
   const empty = emptyLabel ?? '—'
@@ -80,13 +88,13 @@ export function CurrencyMapBadges({ value, className = '', size = 'md', emptyLab
           >
             {amountFirst ? (
               <>
-                <span className="accounting-currency-badge__amount">{formatAmount(amount, i18n.language)}</span>
+                <span className="accounting-currency-badge__amount">{formatAmount(amount, localeForAmounts)}</span>
                 <span className="accounting-currency-badge__code">{label}</span>
               </>
             ) : (
               <>
                 <span className="accounting-currency-badge__code">{label}</span>
-                <span className="accounting-currency-badge__amount">{formatAmount(amount, i18n.language)}</span>
+                <span className="accounting-currency-badge__amount">{formatAmount(amount, localeForAmounts)}</span>
               </>
             )}
           </span>

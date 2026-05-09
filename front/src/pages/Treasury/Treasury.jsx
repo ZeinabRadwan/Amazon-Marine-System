@@ -7,9 +7,7 @@ import {
   getTreasuryBankOverview,
   getTreasuryDailyExchangeRates,
   getTreasuryEntries,
-  getTreasuryExpenses,
 } from '../../api/treasury'
-import { listExpenseCategories } from '../../api/expenses'
 import LoaderDots from '../../components/LoaderDots'
 import { Container } from '../../components/Container'
 import '../../components/LoaderDots/LoaderDots.css'
@@ -19,7 +17,6 @@ import {
   FileSpreadsheet,
   Search,
   Eye,
-  List,
   RotateCcw,
   Wallet,
   HandCoins,
@@ -27,96 +24,125 @@ import {
   Building2,
 } from 'lucide-react'
 import '../../components/PageHeader/PageHeader.css'
-import '../../components/Tabs/Tabs.css'
 import '../Clients/Clients.css'
 import '../Accountings/Accountings.css'
 import '../Accountings/CurrencyMapBadges.css'
 import { CurrencyMapBadges, CurrencyCodeBadge } from '../Accountings/CurrencyMapBadges'
+import { StatsCard } from '../../components/StatsCard'
+import Pagination from '../../components/Pagination'
+import './Treasury.css'
 
 function singleCurrencyMap(amount, currencyCode) {
   const cur = String(currencyCode || 'USD').toUpperCase()
   return { [cur]: Number(amount) || 0 }
 }
-import { StatsCard } from '../../components/StatsCard'
-import Tabs from '../../components/Tabs'
-import Pagination from '../../components/Pagination'
-import './Treasury.css'
 
-const RECON_ROWS_PER_PAGE = 12
+/** Western digits (0–9) for all treasury figures; independent of UI language. */
+const TREASURY_NUMBER_LOCALE = 'en-US'
 
-function formatAmount(amount, currency, locale) {
+function formatAmount(amount, currency) {
   const n = Number(amount)
   if (Number.isNaN(n)) return '—'
   const cur = currency || 'USD'
   try {
-    return new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en-US', {
+    return new Intl.NumberFormat(TREASURY_NUMBER_LOCALE, {
       style: 'currency',
       currency: cur,
+      minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-      minimumFractionDigits: 0,
     }).format(n)
   } catch {
-    return `${n} ${cur}`
+    return `${n.toFixed(2)} ${cur}`
   }
 }
 
-function formatCompactNumber(n, locale) {
-  const x = Number(n)
-  if (Number.isNaN(x)) return '—'
-  return new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en-US', {
-    maximumFractionDigits: 2,
-    minimumFractionDigits: 0,
-    notation: 'compact',
-    compactDisplay: 'short',
-  }).format(x)
-}
-
 /** Plain numeric amount (no currency symbol); pair with {@link CurrencyCodeBadge}. */
-function formatPlainAmount(amount, locale) {
+function formatPlainAmount(amount) {
   const n = Number(amount)
   if (Number.isNaN(n)) return '—'
-  return new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en-US', {
+  return new Intl.NumberFormat(TREASURY_NUMBER_LOCALE, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(n)
 }
 
-/** Format one official FX pair from API (EGP legs vs cross). */
-function formatTreasuryFxPair(pair, locale) {
+/** Format one official FX pair from API. */
+function formatTreasuryFxPair(pair) {
   const n = Number(pair?.rate)
   if (Number.isNaN(n)) return '—'
-  const egpLeg = pair?.to === 'EGP' || pair?.from === 'EGP'
-  const max = egpLeg ? 4 : 6
-  return n.toLocaleString(locale, { maximumFractionDigits: max, minimumFractionDigits: 0 })
+  return new Intl.NumberFormat(TREASURY_NUMBER_LOCALE, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(n)
 }
 
-function formatTreasuryAsOf(isoDate, locale) {
+function formatTreasuryAsOf(isoDate) {
   if (!isoDate || typeof isoDate !== 'string') return ''
   try {
     const d = new Date(`${isoDate}T12:00:00`)
     if (Number.isNaN(d.getTime())) return isoDate
-    return d.toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' })
+    return d.toLocaleDateString(TREASURY_NUMBER_LOCALE, { year: 'numeric', month: 'short', day: 'numeric' })
   } catch {
     return isoDate
   }
 }
 
-/** Largest absolute ledger leg when default-currency total is unavailable (still one line, no grid). */
-function dominantLedgerBalance(bank) {
-  const m = bank?.balance_by_currency
-  if (!m || typeof m !== 'object') return null
-  let best = null
-  let bestAbs = -1
-  for (const [code, raw] of Object.entries(m)) {
-    const n = Number(raw)
-    if (!Number.isFinite(n)) continue
-    const abs = Math.abs(n)
-    if (abs >= bestAbs) {
-      bestAbs = abs
-      best = { currency: String(code).toUpperCase(), amount: n }
-    }
+/** Subtitle date for the FX block (e.g. "06 May 2026"). Western digits; order DD Mon YYYY. */
+function formatTreasuryFxSectionDate(isoDate) {
+  if (!isoDate || typeof isoDate !== 'string') return ''
+  try {
+    const d = new Date(`${isoDate}T12:00:00`)
+    if (Number.isNaN(d.getTime())) return isoDate
+    return new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    }).format(d)
+  } catch {
+    return isoDate
   }
-  return best
+}
+
+const TREASURY_CURRENCY_SORT_PRIORITY = ['EGP', 'USD', 'EUR']
+
+function normalizeBalanceByCurrency(map) {
+  const out = {}
+  if (!map || typeof map !== 'object') return out
+  for (const [k, v] of Object.entries(map)) {
+    const code = String(k).toUpperCase()
+    const n = Number(v)
+    out[code] = Number.isFinite(n) ? n : 0
+  }
+  return out
+}
+
+function sortTreasuryCurrencyCodes(codes) {
+  const uniq = [...new Set(codes.map((c) => String(c).toUpperCase()))].filter(Boolean)
+  return uniq.sort((a, b) => {
+    const ia = TREASURY_CURRENCY_SORT_PRIORITY.indexOf(a)
+    const ib = TREASURY_CURRENCY_SORT_PRIORITY.indexOf(b)
+    if (ia !== -1 || ib !== -1) {
+      if (ia === -1) return 1
+      if (ib === -1) return -1
+      return ia - ib
+    }
+    return a.localeCompare(b)
+  })
+}
+
+/** Supported currencies first (when configured); otherwise currencies present in the ledger map. */
+function treasuryBankDisplayCurrencies(bank) {
+  const supported = Array.isArray(bank?.supported_currencies) ? bank.supported_currencies : []
+  const fromSupported = sortTreasuryCurrencyCodes(supported)
+  if (fromSupported.length > 0) return fromSupported
+  const bal = normalizeBalanceByCurrency(bank?.balance_by_currency)
+  return sortTreasuryCurrencyCodes(Object.keys(bal))
+}
+
+/** One line: two decimals + ISO code (e.g. "30.00 USD"). */
+function formatPlainAmountWithCode(amount, currencyCode) {
+  const code = String(currencyCode || '').toUpperCase()
+  return `${formatPlainAmount(amount)} ${code}`.trim()
 }
 
 function deriveFlowType(row) {
@@ -222,46 +248,11 @@ export default function Treasury() {
   const [entriesLoading, setEntriesLoading] = useState(false)
   const [entriesError, setEntriesError] = useState(null)
 
-  const [expenseRows, setExpenseRows] = useState([])
-  const [expensesLoading, setExpensesLoading] = useState(false)
-  const [expenseCategoryId, setExpenseCategoryId] = useState('')
-  const [categories, setCategories] = useState([])
-
   /** @type {[object | null, (r: object | null) => void]} */
   const [entryViewRow, setEntryViewRow] = useState(null)
 
-  const [reconStatement, setReconStatement] = useState('')
-  const [reconLedger, setReconLedger] = useState('')
-  const [reconChecks, setReconChecks] = useState(() => ({}))
-
-  const [treasuryTab, setTreasuryTab] = useState('movements')
-
   const [entriesPage, setEntriesPage] = useState(1)
   const [entriesPerPage, setEntriesPerPage] = useState(15)
-  const [expensesPage, setExpensesPage] = useState(1)
-  const [expensesPerPage, setExpensesPerPage] = useState(15)
-  const [reconPage, setReconPage] = useState(1)
-
-  const treasuryTabs = useMemo(
-    () => [
-      {
-        id: 'movements',
-        label: t('treasury.tabs.movements'),
-        icon: <List className="h-4 w-4" aria-hidden />,
-      },
-      {
-        id: 'reconciliation',
-        label: t('treasury.tabs.reconciliation'),
-        icon: <Landmark className="h-4 w-4" aria-hidden />,
-      },
-      {
-        id: 'expenses',
-        label: t('treasury.tabs.expenses'),
-        icon: <Receipt className="h-4 w-4" aria-hidden />,
-      },
-    ],
-    [t],
-  )
 
   const loadBankOverview = useCallback(() => {
     if (!token || !canViewAccounting) return
@@ -311,17 +302,6 @@ export default function Treasury() {
     canViewAccounting,
   ])
 
-  const loadExpenses = useCallback(() => {
-    if (!token || !canViewAccounting) return
-    setExpensesLoading(true)
-    getTreasuryExpenses(token, {
-      category_id: expenseCategoryId || undefined,
-    })
-      .then((res) => setExpenseRows(Array.isArray(res.data) ? res.data : []))
-      .catch(() => setExpenseRows([]))
-      .finally(() => setExpensesLoading(false))
-  }, [token, expenseCategoryId, canViewAccounting])
-
   useEffect(() => {
     loadEntries()
   }, [loadEntries])
@@ -347,60 +327,21 @@ export default function Treasury() {
   }, [loadDailyFx])
 
   useEffect(() => {
-    loadExpenses()
-  }, [loadExpenses])
-
-  useEffect(() => {
     setEntriesPage(1)
   }, [debouncedSearch, typeFilter, currencyFilter, selectedBankId, fromDate, toDate, sortKey])
 
-  useEffect(() => {
-    setExpensesPage(1)
-  }, [expenseCategoryId])
-
-  useEffect(() => {
-    setReconPage(1)
-  }, [debouncedSearch, typeFilter, fromDate, toDate, sortKey])
-
   const entriesLastPage = Math.max(1, Math.ceil(entries.length / entriesPerPage))
-  const expensesLastPage = Math.max(1, Math.ceil(expenseRows.length / expensesPerPage))
-  const reconLastPage = Math.max(1, Math.ceil(entries.length / RECON_ROWS_PER_PAGE))
 
   useEffect(() => {
     setEntriesPage((p) => Math.min(p, entriesLastPage))
   }, [entriesLastPage])
-
-  useEffect(() => {
-    setExpensesPage((p) => Math.min(p, expensesLastPage))
-  }, [expensesLastPage])
-
-  useEffect(() => {
-    setReconPage((p) => Math.min(p, reconLastPage))
-  }, [reconLastPage])
 
   const pagedEntries = useMemo(() => {
     const start = (entriesPage - 1) * entriesPerPage
     return entries.slice(start, start + entriesPerPage)
   }, [entries, entriesPage, entriesPerPage])
 
-  const pagedExpenseRows = useMemo(() => {
-    const start = (expensesPage - 1) * expensesPerPage
-    return expenseRows.slice(start, start + expensesPerPage)
-  }, [expenseRows, expensesPage, expensesPerPage])
-
-  const pagedReconEntries = useMemo(() => {
-    const start = (reconPage - 1) * RECON_ROWS_PER_PAGE
-    return entries.slice(start, start + RECON_ROWS_PER_PAGE)
-  }, [entries, reconPage])
-
   const currencyOptions = useMemo(() => Array.from(new Set(entries.map((e) => e.currency_code).filter(Boolean))).sort(), [entries])
-
-  useEffect(() => {
-    if (!token || !canViewAccounting) return
-    listExpenseCategories(token)
-      .then((r) => setCategories(Array.isArray(r.data) ? r.data : []))
-      .catch(() => setCategories([]))
-  }, [token, canViewAccounting])
 
   const { balanceById: runningById } = useMemo(() => computeRunningBalances(entries), [entries])
 
@@ -439,10 +380,10 @@ export default function Treasury() {
           flowTypeLabel(row, t),
           row.description || row.reference_label || '',
           financialTypeLabel(row, t),
-          formatPlainAmount(row.amount, locale),
+          formatPlainAmount(row.amount),
           row.currency_code,
           row.reference_label || '',
-          rb != null ? formatPlainAmount(rb.running, locale) : '',
+          rb != null ? formatPlainAmount(rb.running) : '',
         ]
           .map(escapeCsvCell)
           .join(',')
@@ -455,47 +396,6 @@ export default function Treasury() {
     a.click()
     URL.revokeObjectURL(a.href)
   }
-
-  const exportExpensesCsv = () => {
-    const headers = [
-      t('treasury.colDate'),
-      t('treasury.colDescription'),
-      t('treasury.expenseCategory'),
-      t('treasury.colAmount'),
-      t('treasury.colCurrency'),
-    ]
-    const lines = [headers.map(escapeCsvCell).join(',')]
-    for (const row of expenseRows) {
-      lines.push(
-        [row.expense_date, row.description, row.category_name, row.amount, row.currency_code]
-          .map(escapeCsvCell)
-          .join(',')
-      )
-    }
-    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' })
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = `treasury-expenses-${new Date().toISOString().slice(0, 10)}.csv`
-    a.click()
-    URL.revokeObjectURL(a.href)
-  }
-
-  const reconDiff = useMemo(() => {
-    const a = Number(reconStatement)
-    const b = Number(reconLedger)
-    if (Number.isNaN(a) || Number.isNaN(b)) return null
-    return a - b
-  }, [reconStatement, reconLedger])
-
-  const bankLedgerHint = useMemo(() => {
-    let sum = 0
-    for (const e of entries) {
-      const src = e.source || ''
-      if (src.startsWith('cash-')) continue
-      sum += Number(e.amount) || 0
-    }
-    return sum
-  }, [entries])
 
   if (!canViewAccounting) {
     return (
@@ -519,7 +419,12 @@ export default function Treasury() {
               bankOverviewLoading ? (
                 <span className="treasury-muted">…</span>
               ) : (
-                <CurrencyMapBadges value={bankLedgerOverview?.global?.total_balance_by_currency} size="sm" amountFirst />
+                <CurrencyMapBadges
+                  value={bankLedgerOverview?.global?.total_balance_by_currency}
+                  size="sm"
+                  amountFirst
+                  numberLocale={TREASURY_NUMBER_LOCALE}
+                />
               )
             }
             icon={<Wallet className="h-4 w-4" aria-hidden />}
@@ -532,7 +437,12 @@ export default function Treasury() {
               bankOverviewLoading ? (
                 <span className="treasury-muted">…</span>
               ) : (
-                <CurrencyMapBadges value={bankLedgerOverview?.global?.total_customer_in_by_currency} size="sm" amountFirst />
+                <CurrencyMapBadges
+                  value={bankLedgerOverview?.global?.total_customer_in_by_currency}
+                  size="sm"
+                  amountFirst
+                  numberLocale={TREASURY_NUMBER_LOCALE}
+                />
               )
             }
             icon={<Receipt className="h-4 w-4" aria-hidden />}
@@ -556,6 +466,7 @@ export default function Treasury() {
                   value={bankLedgerOverview?.global?.customer_outstanding_receivables_by_currency}
                   size="sm"
                   amountFirst
+                  numberLocale={TREASURY_NUMBER_LOCALE}
                 />
               )
             }
@@ -569,7 +480,12 @@ export default function Treasury() {
               bankOverviewLoading ? (
                 <span className="treasury-muted">…</span>
               ) : (
-                <CurrencyMapBadges value={bankLedgerOverview?.global?.total_partner_out_by_currency} size="sm" amountFirst />
+                <CurrencyMapBadges
+                  value={bankLedgerOverview?.global?.total_partner_out_by_currency}
+                  size="sm"
+                  amountFirst
+                  numberLocale={TREASURY_NUMBER_LOCALE}
+                />
               )
             }
             icon={<Send className="h-4 w-4" aria-hidden />}
@@ -593,6 +509,7 @@ export default function Treasury() {
                   value={bankLedgerOverview?.global?.partner_payables_outstanding_by_currency}
                   size="sm"
                   amountFirst
+                  numberLocale={TREASURY_NUMBER_LOCALE}
                 />
               )
             }
@@ -602,9 +519,28 @@ export default function Treasury() {
         </div>
       </section>
 
-      <section className="treasury-rate-bar-section mb-4" aria-label={t('treasury.exchange.dailyTitle')}>
-        <div className="treasury-rate-bar">
-          <div className="treasury-rate-bar-title">{t('treasury.exchange.dailyTitle')}</div>
+      <section
+        className="treasury-fx-section mb-4"
+        aria-labelledby="treasury-fx-heading"
+      >
+        <header className="treasury-fx-heading">
+          <h2 id="treasury-fx-heading" className="treasury-fx-title">
+            {t('treasury.exchange.dailyTitle')}
+          </h2>
+          <p className="treasury-fx-subtitle">
+            {treasuryFxOk && dailyFxResponse?.data?.as_of
+              ? t('treasury.exchange.dailySubtitle', {
+                  date: formatTreasuryFxSectionDate(dailyFxResponse.data.as_of),
+                })
+              : t('treasury.exchange.dailySubtitleSource')}
+          </p>
+        </header>
+
+        <div
+          className="treasury-rate-bar"
+          role="region"
+          aria-label={t('treasury.exchange.ratesPanelAria')}
+        >
           <div className="treasury-rate-bar-items">
             {dailyFxLoading ? (
               <span className="treasury-rate-bar-status">{t('treasury.exchange.loading')}</span>
@@ -613,9 +549,9 @@ export default function Treasury() {
                 {treasuryFxPairs.map((p, idx) => (
                   <Fragment key={p.id}>
                     {idx > 0 ? <div className="treasury-rate-sep" aria-hidden /> : null}
-                    <div className="treasury-rate-item">
+                    <div className="treasury-rate-item" title={t(`treasury.exchange.pairExplain.${p.id}`)}>
                       <span className="treasury-rate-lbl">{t(p.label_key)}</span>
-                      <span className="treasury-rate-val">{formatTreasuryFxPair(p, locale)}</span>
+                      <span className="treasury-rate-val">{formatTreasuryFxPair(p)}</span>
                     </div>
                   </Fragment>
                 ))}
@@ -634,12 +570,9 @@ export default function Treasury() {
             <span>{t('treasury.exchange.refresh')}</span>
           </button>
         </div>
-        {treasuryFxOk && dailyFxResponse?.data?.as_of ? (
-          <p className="treasury-rate-meta">
-            {t('treasury.exchange.asOf', {
-              date: formatTreasuryAsOf(dailyFxResponse.data.as_of, locale),
-            })}
-          </p>
+
+        {treasuryFxOk ? (
+          <p className="treasury-fx-footnote">{t('treasury.exchange.ratesFootnote')}</p>
         ) : null}
       </section>
 
@@ -689,22 +622,28 @@ export default function Treasury() {
                     {bank.account_number || bank.iban ? (
                       <div className="treasury-acc-sub">{bank.account_number || bank.iban}</div>
                     ) : null}
-                    <div className="treasury-acc-balance-row">
-                      <span className="treasury-acc-balance-label">{t('treasury.bankOverview.effectiveBalance')}</span>
-                      <span className="treasury-acc-balance-value treasury-acc-mono">
-                        {bank.total_balance_in_default != null
-                          ? formatAmount(
-                              bank.total_balance_in_default.amount,
-                              bank.total_balance_in_default.currency,
-                              locale,
-                            )
-                          : (() => {
-                              const d = dominantLedgerBalance(bank)
-                              return d
-                                ? formatAmount(d.amount, d.currency, locale)
-                                : '—'
-                            })()}
-                      </span>
+                    <div className="treasury-acc-balances">
+                      <div className="treasury-acc-balances-label">{t('treasury.bankOverview.currencyBalances')}</div>
+                      {(() => {
+                        const byCur = normalizeBalanceByCurrency(bank.balance_by_currency)
+                        const codes = treasuryBankDisplayCurrencies(bank)
+                        if (!codes.length) {
+                          return (
+                            <p className="treasury-acc-balances-empty">{t('treasury.bankOverview.noCurrenciesConfigured')}</p>
+                          )
+                        }
+                        return (
+                          <ul className="treasury-acc-balance-list" role="list">
+                            {codes.map((code) => (
+                              <li key={code} className="treasury-acc-balance-line">
+                                <span className="treasury-acc-balance-amount" dir="ltr" lang="en">
+                                  {formatPlainAmountWithCode(byCur[code] ?? 0, code)}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        )
+                      })()}
                     </div>
                   </div>
                 </button>
@@ -715,13 +654,12 @@ export default function Treasury() {
           ))}
       </div>
 
-      <div className="invoices-tabs-section">
-        <div className="invoices-tabs-wrap">
-          <Tabs tabs={treasuryTabs} activeTab={treasuryTab} onChange={setTreasuryTab} />
-        </div>
+      <section className="treasury-movements-section" aria-labelledby="treasury-movements-title">
+        <h2 id="treasury-movements-title" className="treasury-section-title">
+          {t('treasury.movementsTitle')}
+        </h2>
 
-        {treasuryTab === 'movements' && (
-            <div className="accountings-table-section">
+        <div className="accountings-table-section">
         <div className="clients-filters-card">
           <div className="clients-filters__row clients-filters__row--main">
             <div className="clients-filters__search-wrap" dir={isAr ? 'rtl' : 'ltr'}>
@@ -863,7 +801,7 @@ export default function Treasury() {
               {!entriesLoading &&
                 pagedEntries.map((row) => {
                   const rb = runningById.get(row.id)
-                  const runDisplay = rb != null ? formatPlainAmount(rb.running, locale) : '—'
+                  const runDisplay = rb != null ? formatPlainAmount(rb.running) : '—'
                   const flow = deriveFlowType(row)
                   const desc = [row.description, row.reference_label].filter(Boolean).join(' · ') || '—'
                   const ft = deriveFinancialType(row)
@@ -889,6 +827,7 @@ export default function Treasury() {
                           value={singleCurrencyMap(row.amount, row.currency_code)}
                           size="sm"
                           amountFirst
+                          numberLocale={TREASURY_NUMBER_LOCALE}
                         />
                       </td>
                       <td
@@ -955,220 +894,8 @@ export default function Treasury() {
             />
           </div>
         )}
-            </div>
-        )}
-
-        {treasuryTab === 'reconciliation' && (
-      <div className="treasury-recon card-like mb-4">
-        <h3 className="treasury-section-title">{t('treasury.reconTitle')}</h3>
-        <p className="treasury-muted treasury-recon-note">{t('treasury.reconNote')}</p>
-        <div className="treasury-recon-grid">
-          <div className="accountings-field">
-            <label htmlFor="recon-statement">{t('treasury.reconStatement')}</label>
-            <input
-              id="recon-statement"
-              type="number"
-              className="accountings-input"
-              value={reconStatement}
-              onChange={(e) => setReconStatement(e.target.value)}
-            />
-          </div>
-          <div className="accountings-field">
-            <label htmlFor="recon-ledger">{t('treasury.reconLedger')}</label>
-            <input
-              id="recon-ledger"
-              type="number"
-              className="accountings-input"
-              value={reconLedger}
-              onChange={(e) => setReconLedger(e.target.value)}
-            />
-          </div>
         </div>
-        <button
-          type="button"
-          className="accountings-btn accountings-btn--small mb-3"
-          onClick={() => setReconLedger(String(bankLedgerHint))}
-        >
-          {t('treasury.reconFillFromEntries')}
-        </button>
-        <p className="treasury-recon-diff">
-          {t('treasury.reconDiff')}:{' '}
-          {reconDiff != null && !Number.isNaN(reconDiff) ? formatCompactNumber(reconDiff, locale) : '—'}
-        </p>
-        <div className="accountings-table-wrap">
-          <table className="accountings-table">
-            <thead>
-              <tr>
-                <th className="w-10">{t('treasury.reconMatched')}</th>
-                <th>{t('treasury.colDate')}</th>
-                <th>{t('treasury.colDescription')}</th>
-                <th>{t('treasury.colAmount')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pagedReconEntries.map((row) => (
-                <tr key={`recon-${row.id}`}>
-                  <td>
-                    <input
-                      type="checkbox"
-                      checked={!!reconChecks[row.id]}
-                      onChange={(e) =>
-                        setReconChecks((prev) => ({ ...prev, [row.id]: e.target.checked }))
-                      }
-                      aria-label={t('treasury.reconMatched')}
-                    />
-                  </td>
-                  <td>{row.entry_date}</td>
-                  <td>{row.description || '—'}</td>
-                  <td>{formatAmount(row.amount, row.currency_code, locale)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {entries.length > 0 && (
-          <div className="clients-pagination">
-            <div className="clients-pagination__left">
-              <span className="clients-pagination__total">
-                {t('clients.total', 'Total')}: {entries.length}
-              </span>
-              <span className="clients-pagination__total text-sm opacity-80">
-                {t('treasury.reconRowsPerPage', { count: RECON_ROWS_PER_PAGE })}
-              </span>
-            </div>
-            <Pagination
-              currentPage={Math.min(reconPage, reconLastPage)}
-              totalPages={reconLastPage}
-              onPageChange={setReconPage}
-            />
-          </div>
-        )}
-      </div>
-        )}
-
-        {treasuryTab === 'expenses' && (
-          <div className="accountings-table-section">
-        <div className="clients-filters-card">
-          <div className="clients-filters__row clients-filters__row--main">
-            <div className="clients-filters__fields flex-1">
-              <select
-                className="clients-input min-w-[200px]"
-                value={expenseCategoryId}
-                onChange={(e) => setExpenseCategoryId(e.target.value)}
-                aria-label={t('treasury.expenseCategory')}
-              >
-                <option value="">{t('treasury.allCategories')}</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={String(c.id)}>
-                    {c.name ?? c.code ?? c.id}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="clients-filters__actions">
-              <button
-                type="button"
-                className="clients-filters__clear clients-filters__btn-icon"
-                onClick={() => setExpenseCategoryId('')}
-                aria-label={t('invoices.clearFilters', 'Clear filters')}
-                title={t('invoices.clearFilters', 'Clear filters')}
-              >
-                <RotateCcw className="clients-filters__btn-icon-svg" aria-hidden />
-              </button>
-              <button
-                type="button"
-                className="clients-filters__btn-icon clients-filters__btn-icon--export"
-                onClick={exportExpensesCsv}
-                disabled={!expenseRows.length}
-                aria-label={t('treasury.export')}
-                title={t('treasury.export')}
-              >
-                <FileSpreadsheet className="clients-filters__btn-icon-svg" aria-hidden />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="accountings-table-wrap">
-          <table className="accountings-table">
-            <thead>
-              <tr>
-                <th>{t('treasury.colDate')}</th>
-                <th>{t('treasury.colDescription')}</th>
-                <th>{t('treasury.expenseCategory')}</th>
-                <th>{t('treasury.colAmount')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {expensesLoading && (
-                <tr>
-                  <td colSpan={4}>
-                    <LoaderDots />
-                  </td>
-                </tr>
-              )}
-              {!expensesLoading &&
-                pagedExpenseRows.map((row) => (
-                  <tr key={row.id}>
-                    <td>{row.expense_date}</td>
-                    <td>{row.description}</td>
-                    <td>{row.category_name}</td>
-                    <td>
-                      <CurrencyMapBadges
-                        value={singleCurrencyMap(row.amount, row.currency_code)}
-                        size="sm"
-                        amountFirst
-                      />
-                    </td>
-                  </tr>
-                ))}
-              {!expensesLoading && expenseRows.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="accountings-empty">
-                    {t('treasury.emptyExpenses')}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {!expensesLoading && expenseRows.length > 0 && (
-          <div className="clients-pagination">
-            <div className="clients-pagination__left">
-              <span className="clients-pagination__total">
-                {t('clients.total', 'Total')}: {expenseRows.length}
-              </span>
-              <label className="clients-pagination__per-page">
-                <span className="clients-pagination__per-page-label">{t('clients.perPage', 'Per page')}</span>
-                <select
-                  value={expensesPerPage}
-                  onChange={(e) => {
-                    setExpensesPerPage(Number(e.target.value))
-                    setExpensesPage(1)
-                  }}
-                  className="clients-select clients-pagination__select"
-                  aria-label={t('clients.perPage', 'Per page')}
-                >
-                  <option value={10}>10</option>
-                  <option value={15}>15</option>
-                  <option value={25}>25</option>
-                  <option value={50}>50</option>
-                </select>
-              </label>
-            </div>
-            <Pagination
-              currentPage={Math.min(expensesPage, expensesLastPage)}
-              totalPages={expensesLastPage}
-              onPageChange={setExpensesPage}
-            />
-          </div>
-        )}
-      </div>
-        )}
-
-      </div>
+      </section>
 
       {entryViewRow && (
         <div className="accountings-modal" role="dialog" aria-modal="true">
@@ -1193,7 +920,7 @@ export default function Treasury() {
                 <dt>{t('treasury.colType')}</dt>
                 <dd>{entryViewRow.entry_type || '—'}</dd>
                 <dt>{t('treasury.colAmount')}</dt>
-                <dd className="tabular-nums">{formatPlainAmount(entryViewRow.amount, locale)}</dd>
+                <dd className="tabular-nums">{formatPlainAmount(entryViewRow.amount)}</dd>
                 <dt>{t('treasury.colCurrency')}</dt>
                 <dd>
                   <CurrencyCodeBadge code={entryViewRow.currency_code} />
@@ -1203,7 +930,7 @@ export default function Treasury() {
                 <dt>{t('treasury.colRunning')}</dt>
                 <dd className="tabular-nums">
                   {runningById.get(entryViewRow.id)?.running != null
-                    ? formatPlainAmount(runningById.get(entryViewRow.id).running, locale)
+                    ? formatPlainAmount(runningById.get(entryViewRow.id).running)
                     : '—'}
                 </dd>
                 <dt>{t('treasury.detailPaymentId')}</dt>
