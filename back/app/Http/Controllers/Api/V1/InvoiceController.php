@@ -18,6 +18,7 @@ use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Mpdf\Mpdf;
 
 class InvoiceController extends Controller
@@ -258,15 +259,26 @@ class InvoiceController extends Controller
                         ->whereKey($id)
                         ->value('path');
                 }
+                $fullFilesystemPath = null;
+                if ($storagePath !== null && $storagePath !== '' && ! str_contains($storagePath, '..')) {
+                    try {
+                        $fullFilesystemPath = Storage::disk('local')->path($storagePath);
+                    } catch (\Throwable) {
+                        $fullFilesystemPath = null;
+                    }
+                }
+                $downloadUrl = ($id > 0 && $invoice->shipment_id)
+                    ? url('/api/v1/shipments/'.$invoice->shipment_id.'/attachments/'.$id.'/download')
+                    : null;
                 $out[$normalizedKey][] = [
                     'id' => $id > 0 ? $id : 0,
                     'name' => $name,
                     'type' => $isPdf ? 'PDF' : ($kind ?: null),
                     'uploaded_at' => $row['uploaded_at'] ?? null,
                     'path' => $storagePath,
-                    'url' => ($id > 0 && $invoice->shipment_id)
-                        ? url('/api/v1/shipments/'.$invoice->shipment_id.'/attachments/'.$id.'/download')
-                        : null,
+                    'full_path' => $fullFilesystemPath,
+                    'url' => $downloadUrl,
+                    'download_url' => $downloadUrl,
                 ];
             }
         }

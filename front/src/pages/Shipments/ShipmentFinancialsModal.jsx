@@ -27,6 +27,7 @@ import {
   updateShipmentCostInvoice,
   getShipmentCostInvoice,
   downloadShipmentAttachment,
+  uploadShipmentAttachment,
 } from '../../api/shipments'
 import { listBankAccounts } from '../../api/accountings'
 import { useAuthAccess } from '../../hooks/useAuthAccess'
@@ -34,6 +35,8 @@ import { ROLE_ID } from '../../constants/roles'
 import { BUCKET_DEFS, expenseBucket, LINE_TEMPLATES, expenseHaystack, partitionBucketRows } from './shipmentFinUtils'
 import Tabs from '../../components/Tabs'
 import '../SDForms/SDForms.css'
+import { apiFetch } from '../../api/http'
+import { getApiBaseUrl } from '../../api/apiBaseUrl'
 
 // BUCKET_DEFS moved to shipmentFinUtils.js
 
@@ -48,6 +51,91 @@ const OTHER_DESC_PREFIX = {
 
 /** Matches draft client invoice line used for handling / service fee. */
 const HANDLING_FEE_DESCRIPTION = 'Handling Fee'
+
+/** Build same download URL the SPA uses (when API omits `url` but `id` is valid). */
+function buildShipmentAttachmentDownloadUrl(att, shipmentId) {
+  if (!shipmentId || !hasShipmentAttachmentId(att)) return null
+  const base = getApiBaseUrl().replace(/\/?$/, '')
+  return `${base}/shipments/${encodeURIComponent(String(shipmentId))}/attachments/${encodeURIComponent(String(att.id))}/download`
+}
+
+/**
+ * Resolves a fetchable URL: explicit API fields, then synthetic /shipments/.../download for numeric ids.
+ * @param {object | null} att
+ * @param {string|number|undefined} shipmentId
+ */
+function resolveAttachmentDirectUrl(att, shipmentId) {
+  if (!att) return null
+  const explicit = att.url || att.object_url || att.download_url || null
+  if (explicit) return explicit
+  return buildShipmentAttachmentDownloadUrl(att, shipmentId) || null
+}
+
+/** Merge cost-invoice refs (authoritative after upload) with invoice API rows; prefer real ids/urls. */
+function mergeSectionAttachmentsForSelling(fromCostInvoiceRefs, fromInvoiceApi) {
+  const merged = [...(fromCostInvoiceRefs || []), ...(fromInvoiceApi || [])]
+  const byName = new Map()
+  for (const item of merged) {
+    const name = String(item?.name || '').trim().toLowerCase()
+    const key = name || `__id_${item?.id ?? Math.random()}`
+    const prev = byName.get(key)
+    const score = (x) =>
+      (Number(x?.id) > 0 ? 100 : 0) + (x?.url || x?.download_url ? 20 : 0) + (x?.object_url ? 10 : 0) + (x?.path || x?.full_path ? 1 : 0)
+    if (!prev || score(item) > score(prev)) {
+      byName.set(key, item)
+    }
+  }
+  return Array.from(byName.values())
+}
+
+/** Numeric shipment_attachment id required for downloadShipmentAttachment */
+function hasShipmentAttachmentId(att) {
+  const aid = att?.id
+  if (aid == null || aid === '') return false
+  const n = Number(aid)
+  return Number.isFinite(n) && n > 0
+}
+
+/** Normalize relative paths from Laravel `url()` so fetch() targets the API host */
+function normalizeAttachmentFetchUrl(raw) {
+  if (raw == null || typeof raw !== 'string') return null
+  const t = raw.trim()
+  if (!t) return null
+  if (/^https?:\/\//i.test(t)) return t
+  const apiBase = getApiBaseUrl().replace(/\/?$/, '')
+  const siteBase = apiBase.replace(/\/api\/v1\/?$/i, '') || ''
+  if (t.startsWith('/')) return `${siteBase}${t}`
+  return `${siteBase}/${t}`
+}
+
+async function fetchAttachmentBlobFromDirectUrl(directUrl, token) {
+  const abs = normalizeAttachmentFetchUrl(directUrl)
+  if (!abs) throw new Error('Invalid attachment URL')
+  if (!token) throw new Error('Not authenticated')
+  const res = await apiFetch(abs, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: '*/*',
+    },
+  })
+  if (!res.ok) {
+    const j = await res.json().catch(() => ({}))
+    throw new Error(j.message || j.error || `Request failed (${res.status})`)
+  }
+  return res.blob()
+}
+
+function triggerBrowserDownloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename || 'attachment'
+  a.rel = 'noopener noreferrer'
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
 
 function otherLineCategoryCode(bucketId) {
   if (bucketId === 'insurance') return 'OTH'
@@ -820,11 +908,14 @@ export default function ShipmentFinancialsModal({
       const normalizedRefs = {}
       Object.entries(attachmentRefs || {}).forEach(([bucketId, list]) => {
         normalizedRefs[bucketId] = (Array.isArray(list) ? list : []).map((ref, idx) => ({
-          id: ref?.id || `att-${bucketId}-${idx}-${Date.now()}`,
+          id: ref?.id != null && ref?.id !== '' ? ref.id : `att-${bucketId}-${idx}-${Date.now()}`,
           name: ref?.name || 'attachment',
           size: Number(ref?.size || 0),
-          type: ref?.type || null,
+          type: ref?.type || ref?.mime_type || null,
           uploaded_at: ref?.uploaded_at || new Date().toISOString(),
+          url: ref?.url || ref?.download_url || null,
+          path: ref?.path || null,
+          full_path: ref?.full_path || null,
           object_url: ref?.object_url || null,
         }))
       })
@@ -1176,35 +1267,43 @@ export default function ShipmentFinancialsModal({
     }
   }, [token, onExpensesChanged, t])
 
-  const handleSectionUpload = useCallback(async (bucketId, e) => {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (!file) return
+  const handleSectionUpload = useCallback(
+    async (bucketId, e) => {
+      const file = e.target.files?.[0]
+      e.target.value = ''
+      if (!file) return
+      if (!token || !shipment?.id) {
+        setFinBanner({ type: 'error', message: t('shipments.fin.errorReceiptNoUrl') })
+        return
+      }
 
-    setBatchSavingBucket(bucketId)
-    try {
-      const objectUrl = URL.createObjectURL(file)
-      setSectionAttachmentRefs((prev) => ({
-        ...prev,
-        [bucketId]: [
-          ...(prev[bucketId] || []),
-          {
-            id: `att-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-            name: file.name,
-            size: file.size,
-            type: file.type || null,
-            uploaded_at: new Date().toISOString(),
-            object_url: objectUrl,
-          },
-        ],
-      }))
-      setFinBanner({ type: 'success', message: t('shipments.fin.receiptUploaded') })
-    } catch (err) {
-      setFinBanner({ type: 'error', message: err.message || t('shipments.fin.errorReceipt') })
-    } finally {
-      setBatchSavingBucket(null)
-    }
-  }, [t])
+      setBatchSavingBucket(bucketId)
+      try {
+        const json = await uploadShipmentAttachment(token, shipment.id, file)
+        const data = json?.data ?? json
+        const row = {
+          id: data.id,
+          name: data.name || file.name,
+          size: Number(data.size ?? file.size) || 0,
+          type: data.mime_type || file.type || null,
+          uploaded_at: data.created_at || new Date().toISOString(),
+          url: data.url || null,
+          path: data.path || null,
+          object_url: null,
+        }
+        setSectionAttachmentRefs((prev) => ({
+          ...prev,
+          [bucketId]: [...(prev[bucketId] || []), row],
+        }))
+        setFinBanner({ type: 'success', message: t('shipments.fin.receiptUploaded') })
+      } catch (err) {
+        setFinBanner({ type: 'error', message: err.message || t('shipments.fin.errorReceipt') })
+      } finally {
+        setBatchSavingBucket(null)
+      }
+    },
+    [token, shipment?.id, t]
+  )
 
   const handleNotifySales = useCallback(async () => {
     if (!token || !shipment?.id) return
@@ -1330,13 +1429,24 @@ export default function ShipmentFinancialsModal({
         attachment_refs: Object.fromEntries(
           Object.entries(sectionAttachmentRefs || {}).map(([bucketId, list]) => [
             bucketId,
-            (list || []).map((a) => ({
-              id: a.id,
-              name: a.name,
-              size: a.size,
-              type: a.type,
-              uploaded_at: a.uploaded_at,
-            })),
+            (list || [])
+              .map((a) => {
+                const idNum = Number(a.id)
+                if (!Number.isFinite(idNum) || idNum <= 0) return null
+                const row = {
+                  id: idNum,
+                  name: a.name,
+                  size: a.size,
+                  type: a.type,
+                  uploaded_at: a.uploaded_at,
+                }
+                if (a.url) row.url = a.url
+                if (a.download_url && !row.url) row.url = a.download_url
+                if (a.path) row.path = a.path
+                if (a.full_path) row.full_path = a.full_path
+                return row
+              })
+              .filter(Boolean),
           ])
         ),
         section_meta: sectionMetaByBucket,
@@ -1817,77 +1927,125 @@ export default function ShipmentFinancialsModal({
   const canOpenShipmentAttachment = useCallback(
     (att) => {
       if (!att) return false
-      if (att.url || att.object_url || att.download_url) return true
-      const aid = att.id
-      if (aid == null || aid === '' || Number(aid) === 0) return false
-      return Boolean(token && shipment?.id)
+      if (att.object_url) return true
+      if (token && shipment?.id && resolveAttachmentDirectUrl(att, shipment.id)) return true
+      return Boolean(token && shipment?.id && hasShipmentAttachmentId(att))
     },
     [token, shipment?.id]
   )
 
   const openSectionAttachment = useCallback(
     async (attachment) => {
-      const direct = attachment?.url || attachment?.object_url || attachment?.download_url || null
-      if (direct) {
-        window.open(direct, '_blank', 'noopener,noreferrer')
-        return
-      }
-      const attId = attachment?.id
       const sid = shipment?.id
-      if (!token || !sid || attId == null || attId === '' || Number(attId) === 0) {
-        setFinBanner({ type: 'error', message: t('shipments.fin.errorReceiptNoUrl') })
+      const direct = resolveAttachmentDirectUrl(attachment, sid)
+
+      if (token && sid && hasShipmentAttachmentId(attachment)) {
+        try {
+          const { blob } = await downloadShipmentAttachment(token, sid, attachment.id)
+          openBlobInNewTab(blob)
+          return
+        } catch (firstErr) {
+          if (!direct) {
+            setFinBanner({
+              type: 'error',
+              message: firstErr?.message || t('shipments.fin.errorAttachmentOpen'),
+            })
+            return
+          }
+        }
+      }
+
+      if (direct && token) {
+        try {
+          const blob = await fetchAttachmentBlobFromDirectUrl(direct, token)
+          openBlobInNewTab(blob)
+          return
+        } catch (urlErr) {
+          const abs = normalizeAttachmentFetchUrl(direct)
+          if (abs) {
+            window.open(abs, '_blank', 'noopener,noreferrer')
+            return
+          }
+          setFinBanner({
+            type: 'error',
+            message: urlErr?.message || t('shipments.fin.errorAttachmentOpen'),
+          })
+          return
+        }
+      }
+
+      if (direct) {
+        const abs = normalizeAttachmentFetchUrl(direct) || direct
+        window.open(abs, '_blank', 'noopener,noreferrer')
         return
       }
-      try {
-        const { blob } = await downloadShipmentAttachment(token, sid, attId)
-        const url = window.URL.createObjectURL(blob)
-        window.open(url, '_blank', 'noopener,noreferrer')
-        window.setTimeout(() => window.URL.revokeObjectURL(url), 60000)
-      } catch (err) {
-        setFinBanner({
-          type: 'error',
-          message: err?.message || t('shipments.fin.errorAttachmentOpen'),
-        })
-      }
+
+      setFinBanner({ type: 'error', message: t('shipments.fin.errorReceiptNoUrl') })
     },
-    [token, shipment?.id, t]
+    [token, shipment?.id, t, openBlobInNewTab]
   )
 
   const downloadSectionAttachment = useCallback(
     async (attachment) => {
-      const direct = attachment?.url || attachment?.object_url || attachment?.download_url || null
+      const sid = shipment?.id
+      const direct = resolveAttachmentDirectUrl(attachment, sid)
+
+      if (token && sid && hasShipmentAttachmentId(attachment)) {
+        try {
+          const { blob, filename } = await downloadShipmentAttachment(token, sid, attachment.id)
+          triggerBrowserDownloadBlob(blob, filename || attachment.name || 'attachment')
+          return
+        } catch (firstErr) {
+          if (!direct) {
+            setFinBanner({
+              type: 'error',
+              message: firstErr?.message || t('shipments.fin.errorDownload'),
+            })
+            return
+          }
+        }
+      }
+
+      if (direct && token) {
+        try {
+          const blob = await fetchAttachmentBlobFromDirectUrl(direct, token)
+          triggerBrowserDownloadBlob(blob, attachment.name || 'attachment')
+          return
+        } catch (urlErr) {
+          const abs = normalizeAttachmentFetchUrl(direct)
+          if (abs) {
+            const a = document.createElement('a')
+            a.href = abs
+            a.download = attachment.name || 'attachment'
+            a.target = '_blank'
+            a.rel = 'noopener noreferrer'
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+            return
+          }
+          setFinBanner({
+            type: 'error',
+            message: urlErr?.message || t('shipments.fin.errorDownload'),
+          })
+          return
+        }
+      }
+
       if (direct) {
+        const abs = normalizeAttachmentFetchUrl(direct) || direct
         const a = document.createElement('a')
-        a.href = direct
+        a.href = abs
         a.download = attachment.name || 'attachment'
+        a.target = '_blank'
         a.rel = 'noopener noreferrer'
         document.body.appendChild(a)
         a.click()
         document.body.removeChild(a)
         return
       }
-      const attId = attachment?.id
-      const sid = shipment?.id
-      if (!token || !sid || attId == null || attId === '' || Number(attId) === 0) {
-        setFinBanner({ type: 'error', message: t('shipments.fin.errorReceiptNoUrl') })
-        return
-      }
-      try {
-        const { blob, filename } = await downloadShipmentAttachment(token, sid, attId)
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = filename || attachment.name || 'attachment'
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        window.URL.revokeObjectURL(url)
-      } catch (err) {
-        setFinBanner({
-          type: 'error',
-          message: err?.message || t('shipments.fin.errorDownload'),
-        })
-      }
+
+      setFinBanner({ type: 'error', message: t('shipments.fin.errorReceiptNoUrl') })
     },
     [token, shipment?.id, t]
   )
@@ -1908,22 +2066,37 @@ export default function ShipmentFinancialsModal({
     const fixed = ['shipping', 'inland', 'customs', 'insurance']
     const apiSections = Array.isArray(clientInvoice?.sections) ? clientInvoice.sections : []
     if (apiSections.length > 0) {
-      const mapped = apiSections.map((s) => ({
-        id: String(s?.key || 'other'),
-        label: sectionLabels[String(s?.key || 'other')] || String(s?.key || 'other'),
-        rows: Array.isArray(s?.items) ? s.items : [],
-        cost: s?.cost_by_currency || {},
-        sell: s?.selling_by_currency || {},
-        profit: s?.profit_by_currency || {},
-        attachments: Array.isArray(s?.attachments) ? s.attachments : [],
-      }))
+      const mapped = apiSections.map((s) => {
+        const sk = String(s?.key || 'other')
+        return {
+          id: sk,
+          label: sectionLabels[sk] || String(s?.key || 'other'),
+          rows: Array.isArray(s?.items) ? s.items : [],
+          cost: s?.cost_by_currency || {},
+          sell: s?.selling_by_currency || {},
+          profit: s?.profit_by_currency || {},
+          attachments: mergeSectionAttachmentsForSelling(sectionAttachmentRefs[sk], Array.isArray(s?.attachments) ? s.attachments : []),
+        }
+      })
       // Keep handling rendered by the dedicated handling card below; drop "other" — merged into shipping via editableSectionRows
       const mappedWithoutHandling = mapped.filter((s) => s.id !== 'handling' && s.id !== 'other')
       const byId = new Map(mappedWithoutHandling.map((s) => [s.id, s]))
       const dynamicIds = mappedWithoutHandling.map((s) => s.id).filter((id) => !fixed.includes(id))
-      return [...fixed, ...dynamicIds].map((id) =>
-        byId.get(id) || { id, label: sectionLabels[id] || id, rows: [], cost: {}, sell: {}, profit: {}, attachments: [] }
-      )
+      return [...fixed, ...dynamicIds].map((id) => {
+        const base = byId.get(id) || {
+          id,
+          label: sectionLabels[id] || id,
+          rows: [],
+          cost: {},
+          sell: {},
+          profit: {},
+          attachments: [],
+        }
+        return {
+          ...base,
+          attachments: mergeSectionAttachmentsForSelling(sectionAttachmentRefs[id], base.attachments || []),
+        }
+      })
     }
 
     const defs = [
@@ -1935,6 +2108,7 @@ export default function ShipmentFinancialsModal({
     return defs
       .map((d) => ({
         ...d,
+        attachments: mergeSectionAttachmentsForSelling(sectionAttachmentRefs[d.id], []),
         rows: sellingVisibleRows.filter((r) => {
           const bid = r.bucket_id || 'other'
           if (d.id === 'shipping') return bid === 'shipping' || bid === 'other'
@@ -1942,7 +2116,7 @@ export default function ShipmentFinancialsModal({
         }),
       }))
       .filter((s) => s.rows.length > 0)
-  }, [sellingVisibleRows, t, clientInvoice?.sections])
+  }, [sellingVisibleRows, t, clientInvoice?.sections, sectionAttachmentRefs])
 
   const handlingTotal = useMemo(() => {
     if (!handlingRow.include) return 0
@@ -3437,7 +3611,14 @@ export default function ShipmentFinancialsModal({
                                           className="shipment-fin-client-att-name"
                                           onClick={() => openSectionAttachment(a)}
                                           disabled={!canOpen}
-                                          title={canOpen ? t('shipments.fin.viewReceipt') : undefined}
+                                          title={
+                                            [
+                                              canOpen ? t('shipments.fin.viewReceipt') : null,
+                                              a.full_path || a.path || null,
+                                            ]
+                                              .filter(Boolean)
+                                              .join(' · ') || undefined
+                                          }
                                         >
                                           {a.name || 'PDF'}
                                         </button>
