@@ -1,18 +1,13 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { getStoredToken } from '../Login'
 import { useAuthAccess } from '../../hooks/useAuthAccess'
 import {
   getTreasuryBankOverview,
   getTreasuryEntries,
-  createTreasuryEntry,
-  updateTreasuryEntry,
-  deleteTreasuryEntry,
-  createTreasuryTransfer,
   getTreasuryExpenses,
-  createTreasuryExpense,
 } from '../../api/treasury'
-import { listBankAccounts } from '../../api/accountings'
 import { listCurrencies } from '../../api/invoices'
 import { listExpenseCategories } from '../../api/expenses'
 import LoaderDots from '../../components/LoaderDots'
@@ -22,11 +17,8 @@ import {
   Landmark,
   Receipt,
   FileSpreadsheet,
-  Plus,
   Search,
-  Pencil,
-  Trash2,
-  ArrowLeftRight,
+  Eye,
   RotateCcw,
   Wallet,
   HandCoins,
@@ -45,29 +37,6 @@ import Pagination from '../../components/Pagination'
 import './Treasury.css'
 
 const RECON_ROWS_PER_PAGE = 12
-
-const SOURCE_GROUPS = [
-  {
-    labelKey: 'treasury.sourceGroup.cash',
-    options: [
-      { value: 'cash-egp', labelKey: 'treasury.source.cashEgp' },
-      { value: 'cash-usd', labelKey: 'treasury.source.cashUsd' },
-      { value: 'cash-eur', labelKey: 'treasury.source.cashEur' },
-    ],
-  },
-  {
-    labelKey: 'treasury.sourceGroup.bank',
-    options: [
-      { value: 'bank-cib-egp', labelKey: 'treasury.source.bankCibEgp' },
-      { value: 'bank-cib-usd', labelKey: 'treasury.source.bankCibUsd' },
-      { value: 'bank-qnb-egp', labelKey: 'treasury.source.bankQnbEgp' },
-      { value: 'bank-nbe-egp', labelKey: 'treasury.source.bankNbeEgp' },
-      { value: 'bank-nbe-usd', labelKey: 'treasury.source.bankNbeUsd' },
-    ],
-  },
-]
-
-const CASH_SOURCE_OPTIONS = SOURCE_GROUPS.flatMap((g) => g.options)
 
 function formatAmount(amount, currency, locale) {
   const n = Number(amount)
@@ -199,7 +168,6 @@ export default function Treasury() {
   const isAr = locale.startsWith('ar')
 
   const canViewAccounting = hasPageAccess('treasury')
-  const canManageAccounting = hasPageAccess('treasury')
 
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebounced(search, 400)
@@ -210,7 +178,6 @@ export default function Treasury() {
   const [sortKey, setSortKey] = useState('date')
 
   const [entries, setEntries] = useState([])
-  const [bankAccounts, setBankAccounts] = useState([])
   const [bankLedgerOverview, setBankLedgerOverview] = useState(null)
   const [bankOverviewLoading, setBankOverviewLoading] = useState(false)
   const [exchangeRates, setExchangeRates] = useState([])
