@@ -557,7 +557,7 @@ class AccountingController extends Controller
                 $invoicesQuery->where('shipment_id', (int) $shipmentId);
             }
             $invoices = $invoicesQuery->with('items')->get();
-            if (($search !== '' || $status !== '' || $dateFrom || $dateTo || $shipmentId) && $invoices->isEmpty()) {
+            if ($invoices->isEmpty()) {
                 return null;
             }
             $invoices->loadMissing('items');
