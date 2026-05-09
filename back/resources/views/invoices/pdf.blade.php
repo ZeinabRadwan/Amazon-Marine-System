@@ -107,7 +107,7 @@
         .pdf-inv-meta-en {
             font-size: 7.5px;
             font-weight: 700;
-            color: #b91c1c;
+            color: #ec7f00;
             text-transform: uppercase;
             letter-spacing: 0.05em;
             line-height: 1.1;
@@ -329,22 +329,36 @@
             line-height: 0;
         }
 
-        .pdf-inv-charges-shell {
+        /* One card per charge section — separated gaps, radius preserved (no single merged shell) */
+        .pdf-inv-section-card {
             border: 1px solid #dde3ed;
             border-radius: 8px;
-            overflow: hidden;
-            margin-bottom: 12px;
+            margin-bottom: 14px;
+            background: #ffffff;
+            overflow: visible;
+        }
+        .pdf-inv-section-card:last-child {
+            margin-bottom: 0;
         }
 
         .pdf-inv-sec-head {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
             background: #0f2d4a;
+            border-radius: 8px 8px 0 0;
+        }
+        .pdf-inv-sec-head tr:first-child td:first-child {
+            border-top-left-radius: 8px;
+        }
+        .pdf-inv-sec-head tr:first-child td:last-child {
+            border-top-right-radius: 8px;
         }
         .pdf-inv-sec-head td {
             padding: 8px 12px;
             vertical-align: middle;
             border: none;
+            background: #0f2d4a;
         }
         .pdf-inv-sec-title-stack {
             text-align: left;
@@ -376,125 +390,175 @@
             width: 100%;
             border-collapse: collapse;
             border: none;
+            border-top: 1px solid #dde3ed;
             table-layout: fixed;
+            border-radius: 0 0 8px 8px;
+            overflow: hidden;
+        }
+        /* Beat shared `.pdf-sd-doc .pdf-table th` — keep column header strip light, not navy */
+        .pdf-inv-html .pdf-inv-section-card .pdf-inv-table thead th {
+            background: #f1f5f9 !important;
+            color: #64748b !important;
+        }
+        .pdf-inv-html .pdf-inv-section-card .pdf-inv-table tbody td {
+            background: #ffffff;
+        }
+        .pdf-inv-html .pdf-inv-section-card .pdf-inv-table tbody tr:nth-child(even) td {
+            background: #f8fafc !important;
         }
         .pdf-inv-table th {
-            background: #f1f5f9;
-            padding: 7px 10px;
-            font-size: 9px;
+            padding: 7px 8px;
+            font-size: 8.5px;
             font-weight: 700;
-            color: #64748b;
             text-align: left;
             text-transform: uppercase;
             letter-spacing: 0.04em;
             border-bottom: 1px solid #dde3ed;
         }
-        .pdf-inv-table th.pdf-inv-th-num,
-        .pdf-inv-table td.pdf-inv-td-num {
-            text-align: right;
+        .pdf-inv-table th.pdf-inv-th-center,
+        .pdf-inv-table td.pdf-inv-td-center {
+            text-align: center;
         }
         .pdf-inv-table td {
-            padding: 8px 10px;
+            padding: 7px 8px;
             border-bottom: 1px solid #f1f5f9;
             font-size: 10.5px;
-            vertical-align: top;
+            vertical-align: middle;
             overflow-wrap: anywhere;
             word-break: break-word;
         }
-        .pdf-inv-table tbody tr:nth-child(even) td {
-            background: #f8fafc;
+        .pdf-inv-table td.pdf-inv-col-qty,
+        .pdf-inv-table th.pdf-inv-col-qty {
+            font-variant-numeric: tabular-nums;
+        }
+        .pdf-inv-table td.pdf-inv-col-amt,
+        .pdf-inv-table td.pdf-inv-col-cur {
+            font-size: 9.5px;
+            font-weight: 600;
+            color: #334155;
+            font-family: DejaVu Sans Mono, monospace;
         }
         .pdf-inv-table .pdf-inv-col-item {
-            width: 38%;
+            width: 42%;
+        }
+        .pdf-inv-table .pdf-inv-col-qty {
+            width: 11%;
         }
         .pdf-inv-table .pdf-inv-col-amt {
-            width: 47%;
+            width: 24%;
         }
         .pdf-inv-table .pdf-inv-col-cur {
-            width: 15%;
+            width: 13%;
+        }
+        .pdf-inv-section-card .pdf-inv-table tbody tr.pdf-inv-subtotal-row td:first-child {
+            border-bottom-left-radius: 8px;
+        }
+        .pdf-inv-section-card .pdf-inv-table tbody tr.pdf-inv-subtotal-row td:last-child {
+            border-bottom-right-radius: 8px;
         }
         .pdf-inv-table .pdf-inv-subtotal-row td {
             background: #fef3e8 !important;
             border-top: 3px solid #ec7f00;
             font-weight: 800;
-            font-size: 12px;
+            font-size: 11px;
             color: #0f2d4a;
-            padding: 11px 12px !important;
+            padding: 10px 10px !important;
             vertical-align: middle;
         }
-        .pdf-inv-table .pdf-inv-subtotal-row .pdf-inv-sub-label {
-            font-size: 12px;
-            letter-spacing: 0.02em;
-        }
-        .pdf-inv-table .pdf-inv-subtotal-row .pdf-inv-sub-amt {
-            text-align: right;
+        .pdf-inv-table .pdf-inv-subtotal-row td.pdf-inv-sub-amt {
+            text-align: center;
             font-family: DejaVu Sans Mono, monospace;
             font-weight: 800;
-            font-size: 13px;
+            font-size: 11px;
             color: #9a3412;
             letter-spacing: 0.02em;
         }
+        .pdf-inv-table .pdf-inv-subtotal-row .pdf-inv-sub-label {
+            font-size: 11px;
+            letter-spacing: 0.02em;
+        }
 
+        /* Grand total — compact like amazon_marine_invoice_template.html `.grand-total` */
         .pdf-inv-grand {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
             background: #0f2d4a;
-            border-radius: 10px;
+            border-radius: 8px;
             overflow: hidden;
-            margin: 20px 0 14px;
-            border: 2px solid #1b3a5c;
+            margin: 14px 0 10px;
+            border: 1px solid rgba(27, 58, 92, 0.9);
         }
         .pdf-inv-grand td {
-            padding: 16px 20px;
-            vertical-align: top;
+            padding: 11px 14px;
+            vertical-align: middle;
             border: none;
+            background: #0f2d4a;
         }
         .pdf-inv-grand-title {
-            font-size: 16px;
+            font-size: 12px;
             font-weight: 700;
             color: #ffffff;
-            letter-spacing: 0.03em;
+            letter-spacing: 0.02em;
+            line-height: 1.25;
         }
         .pdf-inv-grand-breakdown {
             width: 100%;
             border-collapse: collapse;
         }
         .pdf-inv-grand-breakdown td {
-            padding: 5px 0;
-            font-size: 10.5px;
-            color: rgba(255, 255, 255, 0.72);
+            padding: 2px 0;
+            font-size: 9px;
+            line-height: 1.35;
+            vertical-align: middle;
+            border: none;
+            background: transparent;
         }
-        .pdf-inv-grand-breakdown .pdf-inv-gtr-val {
+        .pdf-inv-grand-breakdown tr:not(.pdf-inv-grand-cur):not(.pdf-inv-grand-divider) td:first-child {
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 500;
+        }
+        .pdf-inv-grand-breakdown tr:not(.pdf-inv-grand-cur):not(.pdf-inv-grand-divider) .pdf-inv-gtr-val {
             text-align: right;
             font-family: DejaVu Sans Mono, monospace;
-            color: #ffffff;
+            font-size: 9px;
             font-weight: 600;
+            color: rgba(255, 255, 255, 0.92);
             white-space: nowrap;
         }
         .pdf-inv-grand-divider td {
-            padding: 6px 0 !important;
+            padding: 4px 0 !important;
             border-top: 1px solid rgba(255, 255, 255, 0.15);
             font-size: 0;
             line-height: 0;
+            height: 1px;
         }
         .pdf-inv-grand-cur td {
-            padding-top: 6px !important;
-            font-size: 11px;
-            font-weight: 700;
+            padding: 3px 0 !important;
+            font-size: 9px;
+            font-weight: 600;
             color: #ffffff !important;
         }
+        .pdf-inv-grand-cur td:first-child {
+            color: #ffffff !important;
+            font-weight: 600;
+        }
         .pdf-inv-grand-cur .pdf-inv-gtr-val {
+            text-align: right;
+            font-family: DejaVu Sans Mono, monospace;
             color: #ec7f00 !important;
-            font-size: 14px;
-            font-weight: 800;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
         }
         .pdf-inv-grand-vat {
-            margin-top: 10px;
-            padding-top: 10px;
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
-            font-size: 10px;
-            font-weight: 700;
-            color: rgba(255, 255, 255, 0.85);
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255, 255, 255, 0.18);
+            font-size: 9px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.78);
+            line-height: 1.35;
         }
 
         .pdf-inv-bank-wrap {
@@ -506,6 +570,11 @@
         .pdf-inv-bank-head {
             background: #1b3a5c;
             padding: 8px 14px;
+            text-align: right;
+        }
+        .pdf-inv-bank-head-stack {
+            display: block;
+            text-align: right;
         }
         .pdf-inv-bank-head-en {
             font-size: 11px;
@@ -513,15 +582,19 @@
             color: #ffffff;
             letter-spacing: 0.02em;
             line-height: 1.35;
+            text-align: right;
+        }
+        .pdf-inv-bank-head-en + .pdf-inv-bank-head-en {
+            margin-top: 2px;
         }
         .pdf-inv-bank-head-ar {
             font-size: 10px;
             font-weight: 600;
             color: rgba(255, 255, 255, 0.55);
-            margin-top: 4px;
+            margin-top: 6px;
             line-height: 1.35;
             direction: rtl;
-            text-align: left;
+            text-align: right;
         }
         .pdf-inv-bank-table {
             width: 100%;
@@ -550,31 +623,30 @@
         .pdf-inv-bank-table tr:last-child td {
             border-bottom: none;
         }
+        /* Soft pill badges — no stroke; compact type */
         .pdf-inv-cur-badge {
             display: inline-block;
-            padding: 3px 10px;
-            border-radius: 6px;
-            font-size: 10px;
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 8px;
             font-weight: 700;
-            letter-spacing: 0.08em;
+            letter-spacing: 0.06em;
             font-family: DejaVu Sans, sans-serif;
-            border: 1px solid transparent;
+            border: none;
+            line-height: 1.25;
+            box-shadow: 0 1px 3px rgba(15, 45, 74, 0.12);
         }
-        /* Match amazon_marine_invoice_template.html .cur-badge mapping */
         .pdf-inv-cur-badge--egp {
             background: #dbeafe;
             color: #1d4ed8;
-            border-color: rgba(29, 78, 216, 0.15);
         }
         .pdf-inv-cur-badge--usd {
             background: #d1fae5;
             color: #0d7a55;
-            border-color: rgba(13, 122, 85, 0.18);
         }
         .pdf-inv-cur-badge--eur {
             background: #fef3c7;
             color: #92400e;
-            border-color: rgba(146, 64, 14, 0.2);
         }
 
         .pdf-inv-terms-wrap {
@@ -583,6 +655,7 @@
             border-radius: 8px;
             padding: 10px 14px 12px;
             margin-bottom: 8px;
+            overflow: hidden;
         }
         .pdf-inv-terms-title {
             font-size: 11px;
@@ -596,6 +669,10 @@
         .pdf-inv-terms-table {
             width: 100%;
             border-collapse: collapse;
+        }
+        /* Avoid row splits across pages (keeps numbering / rounded block tidy in mPDF) */
+        .pdf-inv-terms-table tr {
+            page-break-inside: avoid;
         }
         .pdf-inv-terms-table td {
             vertical-align: top;
@@ -871,13 +948,17 @@ Tax Invoice {{ $invoice->invoice_number }}
             </tr>
         </table>
 
-        <div class="pdf-inv-charges-shell">
-            @foreach($grouped as $bucket => $bucketItems)
-                @if(count($bucketItems) > 0)
-                    @php
-                        $sectionTotals = [];
-                        $meta = $sectionMeta[$bucket] ?? ['en' => ucfirst($bucket), 'ar' => ''];
-                    @endphp
+        @foreach($grouped as $bucket => $bucketItems)
+            @if(count($bucketItems) > 0)
+                @php
+                    $sectionTotals = [];
+                    $meta = $sectionMeta[$bucket] ?? ['en' => ucfirst($bucket), 'ar' => ''];
+                    foreach ($bucketItems as $item) {
+                        $c = strtoupper((string) ($item->currency_code ?: $invoice->currency_code ?: 'USD'));
+                        $sectionTotals[$c] = ($sectionTotals[$c] ?? 0) + (float) $item->line_total;
+                    }
+                @endphp
+                <div class="pdf-inv-section-card">
                     <table class="pdf-inv-sec-head" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
                         <tr>
                             <td class="pdf-inv-sec-title-stack">
@@ -887,22 +968,17 @@ Tax Invoice {{ $invoice->invoice_number }}
                                 @endif
                             </td>
                             <td class="pdf-inv-sec-total" style="width:38%;">
-                                @foreach($bucketItems as $item)
-                                    @php
-                                        $c = strtoupper((string) ($item->currency_code ?: $invoice->currency_code ?: 'USD'));
-                                        $sectionTotals[$c] = ($sectionTotals[$c] ?? 0) + (float) $item->line_total;
-                                    @endphp
-                                @endforeach
                                 {{ $formatBreakdown($sectionTotals) }}
                             </td>
                         </tr>
                     </table>
-                    <table class="pdf-inv-table pdf-table pdf-table--standalone" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
+                    <table class="pdf-inv-table" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
                         <thead>
                             <tr>
                                 <th class="pdf-inv-col-item">Item name</th>
-                                <th class="pdf-inv-col-amt pdf-inv-th-num">Amount</th>
-                                <th class="pdf-inv-col-cur pdf-inv-th-num">Currency</th>
+                                <th class="pdf-inv-col-qty pdf-inv-th-center">Qty</th>
+                                <th class="pdf-inv-col-amt pdf-inv-th-center">Amount</th>
+                                <th class="pdf-inv-col-cur pdf-inv-th-center">Currency</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -912,32 +988,30 @@ Tax Invoice {{ $invoice->invoice_number }}
                                     $itemDesc = trim((string) ($item->description ?? ''));
                                     $itemTitle = trim((string) ($item->title ?? ''));
                                     $catalogName = trim((string) ($item->item?->name ?? ''));
-                                    $tokenLooksAbbrev = $itemDesc !== ''
-                                        && strlen($itemDesc) <= 5
-                                        && ! str_contains($itemDesc, ' ');
-                                    $itemName = $itemDesc;
-                                    if ($tokenLooksAbbrev) {
-                                        $itemName = $itemTitle !== '' ? $itemTitle : ($catalogName !== '' ? $catalogName : $itemDesc);
-                                    }
-                                    if ($itemName === '') {
-                                        $itemName = $itemTitle !== '' ? $itemTitle : $catalogName;
-                                    }
+                                    $itemName = $itemDesc !== '' ? $itemDesc : ($itemTitle !== '' ? $itemTitle : $catalogName);
+                                    $itemName = $itemName !== '' ? $itemName : '—';
+                                    $qtyFloat = (float) ($item->quantity ?? 0);
+                                    $qtyDisplay = abs($qtyFloat - round($qtyFloat)) < 0.000001
+                                        ? (string) (int) round($qtyFloat)
+                                        : rtrim(rtrim(number_format($qtyFloat, 2, '.', ''), '0'), '.');
                                 @endphp
                                 <tr>
                                     <td class="pdf-inv-col-item">{{ $itemName }}</td>
-                                    <td class="pdf-inv-col-amt pdf-inv-td-num">{{ number_format((float) $item->line_total, 2) }}</td>
-                                    <td class="pdf-inv-col-cur pdf-inv-td-num">{{ $cur }}</td>
+                                    <td class="pdf-inv-col-qty pdf-inv-td-center">{{ $qtyDisplay }}</td>
+                                    <td class="pdf-inv-col-amt pdf-inv-td-center">{{ number_format((float) $item->line_total, 2) }}</td>
+                                    <td class="pdf-inv-col-cur pdf-inv-td-center">{{ $cur }}</td>
                                 </tr>
                             @endforeach
                             <tr class="pdf-inv-subtotal-row">
                                 <td class="pdf-inv-sub-label"><strong>{{ $meta['en'] }} Total</strong></td>
+                                <td class="pdf-inv-td-center">—</td>
                                 <td colspan="2" class="pdf-inv-sub-amt">{{ $formatBreakdown($sectionTotals) }}</td>
                             </tr>
                         </tbody>
                     </table>
-                @endif
-            @endforeach
-        </div>
+                </div>
+            @endif
+        @endforeach
 
         @php
             $invoiceSections = $invoiceData['sections'] ?? [];
@@ -1001,8 +1075,11 @@ Tax Invoice {{ $invoice->invoice_number }}
 
         <div class="pdf-inv-bank-wrap">
             <div class="pdf-inv-bank-head">
-                <div class="pdf-inv-bank-head-en">Payment Instructions — Bank Details</div>
-                <div class="pdf-inv-bank-head-ar">تعليمات الدفع — بيانات الحساب البنكي</div>
+                <div class="pdf-inv-bank-head-stack">
+                    <div class="pdf-inv-bank-head-en">Payment Instructions</div>
+                    <div class="pdf-inv-bank-head-en">Bank Details</div>
+                    <div class="pdf-inv-bank-head-ar">تعليمات الدفع / بيانات الحساب البنكي</div>
+                </div>
             </div>
             <table class="pdf-inv-bank-table" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
                 <thead>
@@ -1073,5 +1150,24 @@ Tax Invoice {{ $invoice->invoice_number }}
                 </tr>
             </table>
         </div>
+
+        @if (!empty($footerHtml))
+            <footer class="pdf-footer">
+                {!! $footerHtml !!}
+            </footer>
+        @endif
     </div>
 @endsection
+
+@push('pdf_footer_fullbleed')
+    @if ($pdfFooterBanner = \App\Support\PdfLogo::footerImgSrc())
+        <table class="pdf-footer-fullbleed" width="100%" cellspacing="0" cellpadding="0" border="0"
+            role="presentation">
+            <tr>
+                <td class="pdf-footer-fullbleed__cell">
+                    <img class="pdf-footer-fullbleed__img" src="{{ $pdfFooterBanner }}" alt="">
+                </td>
+            </tr>
+        </table>
+    @endif
+@endpush
