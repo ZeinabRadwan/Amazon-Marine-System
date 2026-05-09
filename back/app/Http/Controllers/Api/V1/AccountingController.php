@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Client;
+use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\Payment;
+use App\Models\Shipment;
+use App\Models\ShipmentCostInvoice;
 use App\Models\Vendor;
 use App\Models\VendorBill;
 use App\Services\AccountingAggregationService;
@@ -799,5 +802,234 @@ class AccountingController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Partner Statement: shipment cost lines for aggregation. Primary source is saved
+     * {@see ShipmentCostInvoice} items (same as Shipment Financials / cost_total); legacy
+     * {@see Expense} rows are used only when a shipment has no cost invoice with positive lines.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function partnerStatementShipmentCosts(Request $request): JsonResponse
+    {
+        abort_unless(
+            $request->user()?->can('accounting.view'),
+            403,
+            __('You do not have permission to view partner statement shipment costs.')
+        );
+
+        $lines = [];
+        $shipmentsWithInvoiceLines = [];
+
+        if (Schema::hasTable('shipment_cost_invoices')) {
+            $invoices = ShipmentCostInvoice::query()
+                ->with([
+                    'shipment' => fn ($q) => $q->with('lineVendor:id,name')->select(['id', 'bl_number', 'line_vendor_id']),
+                ])
+                ->get(['shipment_id', 'items']);
+
+            foreach ($invoices as $inv) {
+                $items = is_array($inv->items) ? $inv->items : [];
+                $shipment = $inv->shipment;
+                $bl = $shipment?->bl_number ?? '';
+                $sid = (int) $inv->shipment_id;
+
+                $hasPositiveLine = false;
+                foreach ($items as $it) {
+                    $amt = (float) ($it['amount'] ?? 0);
+                    if (! is_finite($amt) || $amt <= 0) {
+                        continue;
+                    }
+                    $hasPositiveLine = true;
+                    $bucketId = (string) ($it['bucket_id'] ?? 'other');
+                    $vidRaw = $it['vendor_id'] ?? null;
+                    $vid = null;
+                    if ($vidRaw !== null && $vidRaw !== '') {
+                        $vidNum = (int) $vidRaw;
+                        $vid = $vidNum > 0 ? $vidNum : null;
+                    }
+
+                    $title = isset($it['title']) ? (string) $it['title'] : '';
+                    $desc = isset($it['description']) ? (string) $it['description'] : '';
+                    $label = trim($title !== '' ? $title : $desc);
+
+                    $lines[] = [
+                        'id' => isset($it['line_id']) ? (int) $it['line_id'] : null,
+                        'shipment_id' => $sid,
+                        'bl_number' => $bl,
+                        'category_name' => '',
+                        'description' => $label,
+                        'amount' => $amt,
+                        'currency_code' => strtoupper((string) ($it['currency_code'] ?? 'USD')),
+                        'vendor_id' => $vid,
+                        'vendor_name' => '',
+                        'bucket_id' => $bucketId,
+                        'expense_date' => $it['expense_date'] ?? null,
+                        'invoice_number' => null,
+                        '_source' => 'cost_invoice',
+                    ];
+                }
+
+                if ($hasPositiveLine) {
+                    $shipmentsWithInvoiceLines[$sid] = true;
+                }
+            }
+        }
+
+        $expenseQuery = Expense::query()
+            ->whereNotNull('shipment_id')
+            ->with(['category', 'vendor', 'shipment']);
+
+        if ($shipmentsWithInvoiceLines !== []) {
+            $expenseQuery->whereNotIn('shipment_id', array_keys($shipmentsWithInvoiceLines));
+        }
+
+        $expenses = $expenseQuery
+            ->orderBy('expense_date')
+            ->orderBy('id')
+            ->get();
+
+        foreach ($expenses as $expense) {
+            $amt = (float) $expense->amount;
+            if (! is_finite($amt) || $amt <= 0) {
+                continue;
+            }
+            $lines[] = [
+                'id' => $expense->id,
+                'shipment_id' => $expense->shipment_id,
+                'bl_number' => $expense->shipment?->bl_number ?? '',
+                'category_name' => $expense->category?->name ?? '',
+                'description' => $expense->description,
+                'amount' => $amt,
+                'currency_code' => $expense->currency_code,
+                'vendor_id' => $expense->vendor_id,
+                'vendor_name' => $expense->vendor?->name ?? '',
+                'bucket_id' => null,
+                'expense_date' => $expense->expense_date?->toDateString(),
+                'invoice_number' => $expense->invoice_number,
+                '_source' => 'expense',
+            ];
+        }
+
+        $shipmentIds = [];
+        $lineVendorIds = [];
+        foreach ($lines as $ln) {
+            $sid = (int) ($ln['shipment_id'] ?? 0);
+            if ($sid > 0) {
+                $shipmentIds[] = $sid;
+            }
+            $v = (int) ($ln['vendor_id'] ?? 0);
+            if ($v > 0) {
+                $lineVendorIds[] = $v;
+            }
+        }
+        $shipmentIds = array_values(array_unique(array_filter($shipmentIds)));
+
+        [$contexts, $vendorNames] = $this->buildAccountingPartnerContextsForShipments($shipmentIds, $lineVendorIds);
+
+        return response()->json([
+            'data' => [
+                'lines' => $lines,
+                'contexts' => $contexts,
+                'vendor_names' => $vendorNames,
+            ],
+        ]);
+    }
+
+    /**
+     * @param  list<int>  $ids
+     * @param  list<int>  $extraVendorIdsForLabels
+     * @return array{0: array<string, array<string, mixed>>, 1: array<string, string>}
+     */
+    private function buildAccountingPartnerContextsForShipments(array $ids, array $extraVendorIdsForLabels = []): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map(static fn ($id) => (int) $id, $ids))));
+        $ids = array_values(array_filter($ids, static fn (int $id) => $id > 0));
+
+        if ($ids === []) {
+            return [[], []];
+        }
+
+        $shipments = Shipment::query()
+            ->whereIn('id', $ids)
+            ->with(['lineVendor:id,name'])
+            ->get(['id', 'line_vendor_id']);
+
+        $invoiceByShipmentId = collect();
+        if (Schema::hasTable('shipment_cost_invoices')) {
+            $invoiceByShipmentId = ShipmentCostInvoice::query()
+                ->whereIn('shipment_id', $ids)
+                ->get(['shipment_id', 'section_meta'])
+                ->keyBy('shipment_id');
+        }
+
+        $vendorIdsForLabels = [];
+        foreach ($extraVendorIdsForLabels as $ev) {
+            $v = (int) $ev;
+            if ($v > 0) {
+                $vendorIdsForLabels[] = $v;
+            }
+        }
+
+        $contexts = [];
+        foreach ($shipments as $shipment) {
+            $lineVid = $shipment->line_vendor_id ? (int) $shipment->line_vendor_id : null;
+            if ($lineVid !== null && $lineVid > 0) {
+                $vendorIdsForLabels[] = $lineVid;
+            }
+
+            $invoice = $invoiceByShipmentId->get($shipment->id);
+            $sectionMeta = is_array($invoice?->section_meta) ? $invoice->section_meta : [];
+
+            foreach (self::vendorIdsFromSectionMetaForAccounting($sectionMeta) as $vid) {
+                $vendorIdsForLabels[] = $vid;
+            }
+
+            $contexts[(string) $shipment->id] = [
+                'line_vendor_id' => $lineVid,
+                'line_vendor_name' => $shipment->lineVendor?->name,
+                'section_meta' => $sectionMeta,
+            ];
+        }
+
+        $vendorIdsForLabels = array_values(array_unique(array_filter($vendorIdsForLabels)));
+        $vendorNames = [];
+        if ($vendorIdsForLabels !== []) {
+            $vendorNames = Vendor::query()
+                ->whereIn('id', $vendorIdsForLabels)
+                ->pluck('name', 'id')
+                ->mapWithKeys(fn ($name, $id) => [(string) $id => $name])
+                ->all();
+        }
+
+        return [$contexts, $vendorNames];
+    }
+
+    /**
+     * @param  array<string, mixed>  $meta
+     * @return list<int>
+     */
+    private static function vendorIdsFromSectionMetaForAccounting(array $meta): array
+    {
+        $ids = [];
+        foreach ($meta as $block) {
+            if (! is_array($block)) {
+                continue;
+            }
+            foreach ($block as $k => $v) {
+                if (! is_string($k)) {
+                    continue;
+                }
+                if ($k === 'vendor_id' || str_ends_with($k, '_vendor_id')) {
+                    $id = (int) $v;
+                    if ($id > 0) {
+                        $ids[] = $id;
+                    }
+                }
+            }
+        }
+
+        return $ids;
     }
 }
