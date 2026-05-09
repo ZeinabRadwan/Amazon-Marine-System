@@ -52,6 +52,137 @@ class TreasuryController extends Controller
         }
     }
 
+    /**
+     * @param  array<string, float>  $map
+     * @return array<string, float>
+     */
+    private function roundMoneyMap(array $map): array
+    {
+        $out = [];
+        foreach ($map as $k => $v) {
+            $out[strtoupper((string) $k)] = round((float) $v, 2);
+        }
+
+        return $out;
+    }
+
+    /**
+     * Per-bank balances (from ledger), customer vs partner splits, non-negative display balances.
+     */
+    public function bankOverview(Request $request): JsonResponse
+    {
+        abort_unless(
+            $request->user()?->can('accounting.view'),
+            403,
+            __('You do not have permission to view treasury bank overview.')
+        );
+
+        $banks = BankAccount::query()
+            ->where('is_active', true)
+            ->orderBy('bank_name')
+            ->orderBy('account_name')
+            ->get();
+
+        $entries = TreasuryEntry::query()
+            ->with([
+                'payment.invoice',
+                'payment.shipment',
+                'payment.vendorBill',
+            ])
+            ->orderBy('entry_date')
+            ->orderBy('id')
+            ->get();
+
+        $balancesByAccount = [];
+        foreach ($entries as $entry) {
+            $this->applyEntryToBalances($balancesByAccount, $entry);
+        }
+
+        $bankPayload = [];
+        foreach ($banks as $bank) {
+            $idKey = (string) $bank->id;
+            $rawMap = $balancesByAccount[$idKey] ?? [];
+            $balanceRaw = [];
+            foreach ($rawMap as $cur => $val) {
+                $balanceRaw[$this->normalizeCurrency((string) $cur)] = round((float) $val, 2);
+            }
+
+            $insufficient = false;
+            $balanceDisplay = [];
+            foreach ($balanceRaw as $cur => $val) {
+                if ($val < 0) {
+                    $insufficient = true;
+                    $balanceDisplay[$cur] = 0.0;
+                } else {
+                    $balanceDisplay[$cur] = $val;
+                }
+            }
+
+            $customerIn = [];
+            $partnerOut = [];
+            foreach ($entries as $entry) {
+                if ((int) $entry->account_id !== (int) $bank->id) {
+                    continue;
+                }
+                $pay = $entry->payment;
+                $currency = $this->normalizeCurrency((string) $entry->currency_code);
+                $amt = (float) $entry->amount;
+                $type = strtolower((string) $entry->entry_type);
+                if ($pay && $pay->type === 'client_receipt' && $type === 'in') {
+                    $customerIn[$currency] = ($customerIn[$currency] ?? 0) + $amt;
+                }
+                if ($pay && $pay->type === 'vendor_payment' && in_array($type, ['out', 'transfer', 'exchange'], true)) {
+                    $partnerOut[$currency] = ($partnerOut[$currency] ?? 0) + $amt;
+                }
+            }
+
+            $bankPayload[] = [
+                'id' => $bank->id,
+                'bank_name' => $bank->bank_name,
+                'account_name' => $bank->account_name,
+                'account_number' => $bank->account_number,
+                'iban' => $bank->iban ?? null,
+                'supported_currencies' => is_array($bank->supported_currencies) ? $bank->supported_currencies : [],
+                'balance_by_currency' => $this->roundMoneyMap($balanceDisplay),
+                'balance_raw_by_currency' => $this->roundMoneyMap($balanceRaw),
+                'insufficient_funds' => $insufficient,
+                'customer_in_by_currency' => $this->roundMoneyMap($customerIn),
+                'partner_out_by_currency' => $this->roundMoneyMap($partnerOut),
+            ];
+        }
+
+        $sumMaps = static function (array $rows, string $key): array {
+            $out = [];
+            foreach ($rows as $row) {
+                $map = $row[$key] ?? [];
+                if (! is_array($map)) {
+                    continue;
+                }
+                foreach ($map as $c => $v) {
+                    $cu = strtoupper((string) $c);
+                    $out[$cu] = (float) ($out[$cu] ?? 0) + (float) $v;
+                }
+            }
+
+            return array_map(fn (float $x) => round($x, 2), $out);
+        };
+
+        $globalCustomer = $sumMaps($bankPayload, 'customer_in_by_currency');
+        $globalPartner = $sumMaps($bankPayload, 'partner_out_by_currency');
+        $globalBalanceDisplay = $sumMaps($bankPayload, 'balance_by_currency');
+
+        return response()->json([
+            'data' => [
+                'global' => [
+                    'total_balance_by_currency' => $globalBalanceDisplay,
+                    'total_customer_in_by_currency' => $globalCustomer,
+                    'total_partner_out_by_currency' => $globalPartner,
+                ],
+                'banks' => $bankPayload,
+            ],
+        ]);
+    }
+
     public function summary(Request $request): JsonResponse
     {
         abort_unless(
@@ -159,10 +290,22 @@ class TreasuryController extends Controller
             __('You do not have permission to view treasury entries.')
         );
 
-        $query = TreasuryEntry::query();
+        $query = TreasuryEntry::query()->with([
+            'payment.invoice',
+            'payment.shipment',
+            'payment.vendorBill',
+        ]);
 
         if ($type = $request->query('type')) {
             $query->where('entry_type', $type);
+        }
+        if ($bankAccountId = $request->query('bank_account_id')) {
+            $id = (int) $bankAccountId;
+            if ($id > 0) {
+                $query->where(function ($q) use ($id): void {
+                    $q->where('account_id', $id)->orWhere('counter_account_id', $id);
+                });
+            }
         }
         if ($account = $request->query('account')) {
             $query->where('source', $account);
@@ -196,9 +339,38 @@ class TreasuryController extends Controller
 
         $entries = $query->get();
 
-        $rows = $entries->map(static function (TreasuryEntry $entry): array {
+        $rows = $entries->map(function (TreasuryEntry $entry): array {
             $type = strtolower((string) $entry->entry_type);
             $sign = in_array($type, ['out', 'transfer', 'exchange'], true) ? -1 : 1;
+
+            $pay = $entry->payment;
+            $paymentType = $pay ? (string) $pay->type : null;
+            $flowType = 'internal';
+            if ($paymentType === 'client_receipt') {
+                $flowType = 'customer';
+            } elseif ($paymentType === 'vendor_payment') {
+                $flowType = 'partner';
+            } elseif (! $entry->payment_id) {
+                $flowType = $type === 'transfer' ? 'transfer' : 'manual';
+            }
+
+            $refLabel = '';
+            if ($pay) {
+                if ($pay->relationLoaded('invoice') && $pay->invoice) {
+                    $refLabel = (string) ($pay->invoice->invoice_number ?? '');
+                } elseif ($pay->relationLoaded('vendorBill') && $pay->vendorBill) {
+                    $refLabel = (string) ($pay->vendorBill->bill_number ?? '');
+                }
+                if ($refLabel === '' && $pay->relationLoaded('shipment') && $pay->shipment?->bl_number) {
+                    $refLabel = (string) $pay->shipment->bl_number;
+                }
+                if ($refLabel === '' && $pay->reference) {
+                    $refLabel = (string) $pay->reference;
+                }
+            }
+            if ($refLabel === '' && $entry->reference) {
+                $refLabel = (string) $entry->reference;
+            }
 
             return [
                 'id' => $entry->id,
@@ -211,6 +383,9 @@ class TreasuryController extends Controller
                 'account_id' => $entry->account_id,
                 'counter_account_id' => $entry->counter_account_id,
                 'payment_id' => $entry->payment_id,
+                'payment_type' => $paymentType,
+                'flow_type' => $flowType,
+                'reference_label' => $refLabel,
                 'target_currency_code' => $entry->target_currency_code,
                 'exchange_rate' => $entry->exchange_rate,
                 'converted_amount' => $entry->converted_amount,
