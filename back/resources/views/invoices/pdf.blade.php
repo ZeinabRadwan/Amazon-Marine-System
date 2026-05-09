@@ -78,7 +78,7 @@
             content: none !important;
         }
         .pdf-inv-html .pdf-inv-bg-navy {
-            background: #262a5b;
+            background: #0f2d4a;
             color: #ffffff;
         }
         .pdf-inv-html .pdf-inv-orange {
@@ -112,7 +112,7 @@
             margin-top: 3px;
             font-size: 12px;
             font-weight: 700;
-            color: #262a5b;
+            color: #0f2d4a;
             direction: rtl;
             unicode-bidi: embed;
             text-align: right;
@@ -174,7 +174,7 @@
         .pdf-inv-meta-val {
             font-size: 9.5px;
             font-weight: 700;
-            color: #262a5b;
+            color: #0f2d4a;
             line-height: 1.15;
             white-space: nowrap;
         }
@@ -232,7 +232,7 @@
         .pdf-inv-party-name {
             font-size: 13px;
             font-weight: 700;
-            color: #262a5b;
+            color: #0f2d4a;
             margin: 0 0 8px;
             line-height: 1.25;
         }
@@ -240,7 +240,7 @@
             margin: -4px 0 8px;
             font-weight: 700;
             font-size: 11px;
-            color: #262a5b;
+            color: #0f2d4a;
             line-height: 1.35;
         }
         .pdf-inv-party-detail {
@@ -270,13 +270,12 @@
             border-spacing: 0;
             margin: 0;
             table-layout: fixed;
-            background: #262a5b;
+            background: #0f2d4a;
         }
         .pdf-inv-route-tpl-bar > tbody > tr > td {
             padding: 0;
             border: none;
             vertical-align: middle;
-            background: #262a5b;
         }
         .pdf-inv-route-tpl-ports-cell {
             width: 52%;
@@ -344,6 +343,7 @@
             text-align: center;
             padding: 0 8px !important;
         }
+        /* Matches .rmeta-val / .rmeta-lbl in amazon_marine_invoice_template.html */
         .pdf-inv-route-tpl-rmeta-val {
             font-size: 11px;
             font-weight: 700;
@@ -353,6 +353,7 @@
         }
         .pdf-inv-route-tpl-rmeta-lbl {
             font-size: 8px;
+            font-weight: 400;
             color: rgba(255, 255, 255, 0.4);
             margin-top: 2px;
             line-height: 1.25;
@@ -365,6 +366,7 @@
             background: rgba(255, 255, 255, 0.1);
             font-size: 0;
             line-height: 0;
+            overflow: hidden;
         }
 
         /* Bordered wrapper clips children; navy section head has no radius (avoids overflow+navy on same node) */
@@ -383,13 +385,13 @@
             width: 100%;
             border-collapse: collapse;
             border-spacing: 0;
-            background: #262a5b;
+            background: #0f2d4a;
         }
         .pdf-inv-sec-head td {
             padding: 8px 12px;
             vertical-align: middle;
             border: none;
-            background: #262a5b;
+            background: #0f2d4a;
         }
         .pdf-inv-sec-title-stack {
             text-align: left;
@@ -461,7 +463,7 @@
         .pdf-inv-table td.pdf-inv-col-item {
             font-size: 11px;
             font-weight: 600;
-            color: #262a5b;
+            color: #0f2d4a;
             font-family: var(--en);
             line-height: 1.45;
         }
@@ -493,7 +495,7 @@
             border-top: 3px solid #ec7f00;
             font-weight: 800;
             font-size: 11px;
-            color: #262a5b;
+            color: #0f2d4a;
             padding: 10px 10px !important;
             vertical-align: middle;
         }
@@ -509,7 +511,7 @@
             font-size: 11px;
             font-weight: 800;
             letter-spacing: 0.02em;
-            color: #262a5b;
+            color: #0f2d4a;
         }
 
         /* Grand total: rounded border on wrapper only — inner table is navy without radius/overflow */
@@ -523,7 +525,7 @@
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
-            background: #262a5b;
+            background: #0f2d4a;
             margin: 0;
             border: none;
         }
@@ -531,7 +533,7 @@
             padding: 11px 14px;
             vertical-align: middle;
             border: none;
-            background: #262a5b;
+            background: #0f2d4a;
         }
         .pdf-inv-grand-title {
             font-size: 12px;
@@ -724,7 +726,7 @@
         .pdf-inv-terms-title {
             font-size: 11px;
             font-weight: 700;
-            color: #262a5b;
+            color: #0f2d4a;
             margin-bottom: 10px;
             text-align: left;
             letter-spacing: 0.02em;
@@ -748,7 +750,7 @@
         }
         .pdf-inv-term-num-plain {
             font-weight: 700;
-            color: #262a5b;
+            color: #0f2d4a;
             margin-right: 6px;
         }
         .pdf-inv-term-ar {
@@ -771,7 +773,7 @@
         }
         .pdf-inv-notes__title {
             font-weight: 700;
-            color: #262a5b;
+            color: #0f2d4a;
             margin-bottom: 6px;
             font-size: 10.5px;
         }
@@ -981,17 +983,12 @@ Tax Invoice {{ $invoice->invoice_number }}
                                     <div class="pdf-inv-route-tpl-rmeta-val">{{ $shipLine }}</div>
                                     <div class="pdf-inv-route-tpl-rmeta-lbl">Carrier</div>
                                 </td>
-                                <td class="pdf-inv-route-tpl-rmeta-sep" valign="middle">&nbsp;</td>
-                                <td class="pdf-inv-route-tpl-rmeta" valign="middle">
-                                    <div class="pdf-inv-route-tpl-rmeta-val">{{ $container }}</div>
-                                    <div class="pdf-inv-route-tpl-rmeta-lbl">Container Type</div>
-                                </td>
-                                <td class="pdf-inv-route-tpl-rmeta-sep" valign="middle">&nbsp;</td>
+                                <td class="pdf-inv-route-tpl-rmeta-sep" valign="middle"></td>
                                 <td class="pdf-inv-route-tpl-rmeta" valign="middle">
                                     <div class="pdf-inv-route-tpl-rmeta-val">{{ $transitTime }}</div>
                                     <div class="pdf-inv-route-tpl-rmeta-lbl">Transit Time</div>
                                 </td>
-                                <td class="pdf-inv-route-tpl-rmeta-sep" valign="middle">&nbsp;</td>
+                                <td class="pdf-inv-route-tpl-rmeta-sep" valign="middle"></td>
                                 <td class="pdf-inv-route-tpl-rmeta" valign="middle">
                                     <div class="pdf-inv-route-tpl-rmeta-val">{{ $refShipmentData }}</div>
                                     <div class="pdf-inv-route-tpl-rmeta-lbl">Shipment Ref</div>
@@ -1135,12 +1132,8 @@ Tax Invoice {{ $invoice->invoice_number }}
             <div class="pdf-inv-bank-head">
                 <table class="pdf-inv-bank-head-row" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
                     <tr>
-                        <td class="pdf-inv-bank-head-left">Payment Structure</td>
-                        <td class="pdf-inv-bank-head-right">Bank Details</td>
-                    </tr>
-                    <tr class="pdf-inv-bank-head-sub-row">
-                        <td class="pdf-inv-bank-head-sub-spacer">&nbsp;</td>
-                        <td class="pdf-inv-bank-head-ar">تعليمات الدفع / بيانات الحساب البنكي</td>
+                        <td class="pdf-inv-bank-head-left">Payment Structure - Bank Details</td>
+                        <td class="pdf-inv-bank-head-ar pdf-inv-bank-head-right">تعليمات الدفع / بيانات الحساب البنكي</td>
                     </tr>
                 </table>
             </div>
