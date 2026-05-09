@@ -88,6 +88,11 @@
             border-color: #dde3ed;
         }
 
+        /*
+         * mPDF rounds corners reliably when `border-radius` sits on a bordered wrapper (div / outer shell).
+         * Inner navy tables stay square — clips come from `.pdf-inv-*-wrap` / `.pdf-inv-section-card`, not `overflow:hidden` on navy-only layers.
+         */
+
         /* Invoice-only overrides on SD form header (same markup as sd_forms/pdf.blade.php) */
         .pdf-sd-doc .pdf-inv-header-title {
             text-transform: none;
@@ -171,14 +176,20 @@
             font-size: 9.5px;
         }
 
-        .pdf-inv-parties {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
+        /* Rounded frame on wrapper div — inner table stays square (mPDF-friendly) */
+        .pdf-inv-parties-wrap {
             border: 1px solid #e2e8f0;
-            border-radius: 12px;
+            border-radius: 8px;
             overflow: hidden;
             margin: 12px 0;
+            background: #ffffff;
+        }
+        .pdf-inv-parties {
+            width: 100%;
+            border-collapse: collapse;
+            border-spacing: 0;
+            border: none;
+            margin: 0;
             background: #ffffff;
         }
         .pdf-inv-parties td {
@@ -253,15 +264,19 @@
             text-align: right;
         }
 
-        /* Shipment route strip — mirrors amazon_marine_invoice_template.html `.route-bar` (navy + POL → POD + metas) */
+        /* Navy fill lives inside a bordered wrapper — no radius/overflow on navy table itself */
+        .pdf-inv-route-wrap {
+            border: 1px solid #0f2d4a;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 0 0 12px;
+        }
         .pdf-inv-route-bar {
             width: 100%;
-            border-collapse: separate;
+            border-collapse: collapse;
             border-spacing: 0;
             background: #0f2d4a;
-            border-radius: 8px;
-            margin: 0 0 12px;
-            overflow: hidden;
+            margin: 0;
             table-layout: fixed;
         }
         .pdf-inv-route-bar > tbody > tr > td {
@@ -366,13 +381,13 @@
             line-height: 0;
         }
 
-        /* One card per charge section — separated gaps, radius preserved (no single merged shell) */
+        /* Bordered wrapper clips children; navy section head has no radius (avoids overflow+navy on same node) */
         .pdf-inv-section-card {
             border: 1px solid #dde3ed;
             border-radius: 8px;
             margin-bottom: 14px;
             background: #ffffff;
-            overflow: visible;
+            overflow: hidden;
         }
         .pdf-inv-section-card:last-child {
             margin-bottom: 0;
@@ -380,16 +395,9 @@
 
         .pdf-inv-sec-head {
             width: 100%;
-            border-collapse: separate;
+            border-collapse: collapse;
             border-spacing: 0;
             background: #0f2d4a;
-            border-radius: 8px 8px 0 0;
-        }
-        .pdf-inv-sec-head tr:first-child td:first-child {
-            border-top-left-radius: 8px;
-        }
-        .pdf-inv-sec-head tr:first-child td:last-child {
-            border-top-right-radius: 8px;
         }
         .pdf-inv-sec-head td {
             padding: 8px 12px;
@@ -429,8 +437,6 @@
             border: none;
             border-top: 1px solid #dde3ed;
             table-layout: fixed;
-            border-radius: 0 0 8px 8px;
-            overflow: hidden;
         }
         /* Beat shared `.pdf-sd-doc .pdf-table th` — keep column header strip light, not navy */
         .pdf-inv-html .pdf-inv-section-card .pdf-inv-table thead th {
@@ -487,12 +493,6 @@
         .pdf-inv-table .pdf-inv-col-cur {
             width: 13%;
         }
-        .pdf-inv-section-card .pdf-inv-table tbody tr.pdf-inv-subtotal-row td:first-child {
-            border-bottom-left-radius: 8px;
-        }
-        .pdf-inv-section-card .pdf-inv-table tbody tr.pdf-inv-subtotal-row td:last-child {
-            border-bottom-right-radius: 8px;
-        }
         .pdf-inv-table .pdf-inv-subtotal-row td {
             background: #fef3e8 !important;
             border-top: 3px solid #ec7f00;
@@ -515,16 +515,20 @@
             letter-spacing: 0.02em;
         }
 
-        /* Grand total — compact like amazon_marine_invoice_template.html `.grand-total` */
+        /* Grand total: rounded border on wrapper only — inner table is navy without radius/overflow */
+        .pdf-inv-grand-wrap {
+            border: 1px solid rgba(27, 58, 92, 0.9);
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 14px 0 10px;
+        }
         .pdf-inv-grand {
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
             background: #0f2d4a;
-            border-radius: 8px;
-            overflow: hidden;
-            margin: 14px 0 10px;
-            border: 1px solid rgba(27, 58, 92, 0.9);
+            margin: 0;
+            border: none;
         }
         .pdf-inv-grand td {
             padding: 11px 14px;
@@ -603,6 +607,7 @@
             border-radius: 8px;
             overflow: hidden;
             margin-bottom: 12px;
+            background: #ffffff;
         }
         .pdf-inv-bank-head {
             background: #1b3a5c;
@@ -692,7 +697,6 @@
             border-radius: 8px;
             padding: 10px 14px 12px;
             margin-bottom: 8px;
-            overflow: hidden;
         }
         .pdf-inv-terms-title {
             font-size: 11px;
@@ -899,6 +903,7 @@ Tax Invoice {{ $invoice->invoice_number }}
             </tr>
         </table>
 
+        <div class="pdf-inv-parties-wrap">
         <table class="pdf-inv-parties" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
             <tr>
                 <td width="49%">
@@ -935,8 +940,10 @@ Tax Invoice {{ $invoice->invoice_number }}
                 </td>
             </tr>
         </table>
+        </div>
 
         {{-- Route bar — same structure as amazon_marine_invoice_template.html `.route-bar` (route-ports + route-metas) --}}
+        <div class="pdf-inv-route-wrap">
         <table class="pdf-inv-route-bar" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
             <tr>
                 <td>
@@ -984,6 +991,7 @@ Tax Invoice {{ $invoice->invoice_number }}
                 </td>
             </tr>
         </table>
+        </div>
 
         @foreach($grouped as $bucket => $bucketItems)
             @if(count($bucketItems) > 0)
@@ -1053,6 +1061,7 @@ Tax Invoice {{ $invoice->invoice_number }}
         @php
             $invoiceSections = $invoiceData['sections'] ?? [];
         @endphp
+        <div class="pdf-inv-grand-wrap">
         <table class="pdf-inv-grand" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
             <tr>
                 <td width="34%">
@@ -1102,6 +1111,7 @@ Tax Invoice {{ $invoice->invoice_number }}
                 </td>
             </tr>
         </table>
+        </div>
 
         @if($invoice->notes)
             <div class="pdf-inv-notes">
