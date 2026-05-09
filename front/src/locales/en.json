@@ -2470,7 +2470,6 @@
       "customerIn": "Incoming (customers)",
       "partnerOut": "Outgoing (partners)",
       "effectiveBalance": "Effective balance",
-      "currencyBalances": "Balances by currency",
       "rowBalance": "Balance",
       "rowIn": "In (customers)",
       "rowOut": "Out (partners)",
@@ -2479,7 +2478,7 @@
       "noCashWalletsSection": "No treasury cash wallets yet. Seed or configure NSP, Vodafone Cash, and Physical cash in bank accounts.",
       "noBanks": "No active bank accounts.",
       "filterBank": "Bank account",
-      "allBanks": "All banks"
+      "allBanks": "All banks and cash wallets"
     },
     "exchange": {
       "dailyTitle": "Daily Exchange Rates",

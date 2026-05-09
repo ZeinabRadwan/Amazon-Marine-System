@@ -2471,7 +2471,6 @@
       "customerIn": "الوارد (عملاء)",
       "partnerOut": "الصادر (شركاء)",
       "effectiveBalance": "الرصيد الفعلي",
-      "currencyBalances": "أرصدة حسب العملة",
       "rowBalance": "الرصيد",
       "rowIn": "وارد (عملاء)",
       "rowOut": "صادر (شركاء)",
@@ -2480,7 +2479,7 @@
       "noCashWalletsSection": "لا توجد محافظ نقدية بعد. أضِف أو زِر البذرة لمحافظ NSP وفودافون والصندوق النقدي.",
       "noBanks": "لا توجد حسابات بنكية نشطة.",
       "filterBank": "الحساب البنكي",
-      "allBanks": "كل البنوك"
+      "allBanks": "كل البنوك والخزائن"
     },
     "exchange": {
       "dailyTitle": "أسعار صرف اليوم",

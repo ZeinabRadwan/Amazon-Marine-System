@@ -40,6 +40,13 @@ function singleCurrencyMap(amount, currencyCode) {
 /** Western digits (0–9) for all treasury figures; independent of UI language. */
 const TREASURY_NUMBER_LOCALE = 'en-US'
 
+/**
+ * Currencies surfaced in stat tiles when an aggregate is empty/all-zero.
+ * Forces explicit "0.00 USD" badges instead of a "—" placeholder so the dashboard never
+ * renders an ambiguous dash for a missing value (single source of truth principle).
+ */
+const TREASURY_STAT_FALLBACK_CURRENCIES = ['USD']
+
 /** Plain numeric amount (no currency symbol); pair with {@link CurrencyCodeBadge}. */
 function formatPlainAmount(amount) {
   const n = Number(amount)
@@ -103,13 +110,10 @@ function sortTreasuryCurrencyCodes(codes) {
   })
 }
 
-/** Supported currencies first (when configured); otherwise currencies present in the ledger map. */
+/** Bank accounts: configured supported currencies only (no ledger fallback). */
 function treasuryBankDisplayCurrencies(bank) {
   const supported = Array.isArray(bank?.supported_currencies) ? bank.supported_currencies : []
-  const fromSupported = sortTreasuryCurrencyCodes(supported)
-  if (fromSupported.length > 0) return fromSupported
-  const bal = normalizeBalanceByCurrency(bank?.balance_by_currency)
-  return sortTreasuryCurrencyCodes(Object.keys(bal))
+  return sortTreasuryCurrencyCodes(supported)
 }
 
 /** Prefer API `allowed_currencies` (banks + fixed cash-wallet rules). */
@@ -121,10 +125,20 @@ function treasuryAccountDisplayCurrencies(account) {
   return treasuryBankDisplayCurrencies(account)
 }
 
-/** One line: two decimals + ISO code (e.g. "30.00 USD"). */
-function formatPlainAmountWithCode(amount, currencyCode) {
-  const code = String(currencyCode || '').toUpperCase()
-  return `${formatPlainAmount(amount)} ${code}`.trim()
+/** Supported currencies that have a non-zero balance (hide zero legs). */
+function treasuryNonZeroSupportedCodes(account, byCur) {
+  return treasuryAccountDisplayCurrencies(account).filter((code) => {
+    const n = Number(byCur[code] ?? 0)
+    return Number.isFinite(n) && n !== 0
+  })
+}
+
+function treasuryCurrencyBadgeVariant(code) {
+  const c = String(code || '').toUpperCase()
+  if (c === 'EGP') return 'egp'
+  if (c === 'USD') return 'usd'
+  if (c === 'EUR') return 'eur'
+  return 'default'
 }
 
 function deriveFlowType(row) {
@@ -424,6 +438,7 @@ export default function Treasury() {
                   size="sm"
                   amountFirst
                   numberLocale={TREASURY_NUMBER_LOCALE}
+                  zeroFallbackCurrencies={TREASURY_STAT_FALLBACK_CURRENCIES}
                 />
               )
             }
@@ -442,6 +457,7 @@ export default function Treasury() {
                   size="sm"
                   amountFirst
                   numberLocale={TREASURY_NUMBER_LOCALE}
+                  zeroFallbackCurrencies={TREASURY_STAT_FALLBACK_CURRENCIES}
                 />
               )
             }
@@ -467,6 +483,7 @@ export default function Treasury() {
                   size="sm"
                   amountFirst
                   numberLocale={TREASURY_NUMBER_LOCALE}
+                  zeroFallbackCurrencies={TREASURY_STAT_FALLBACK_CURRENCIES}
                 />
               )
             }
@@ -485,6 +502,7 @@ export default function Treasury() {
                   size="sm"
                   amountFirst
                   numberLocale={TREASURY_NUMBER_LOCALE}
+                  zeroFallbackCurrencies={TREASURY_STAT_FALLBACK_CURRENCIES}
                 />
               )
             }
@@ -510,6 +528,7 @@ export default function Treasury() {
                   size="sm"
                   amountFirst
                   numberLocale={TREASURY_NUMBER_LOCALE}
+                  zeroFallbackCurrencies={TREASURY_STAT_FALLBACK_CURRENCIES}
                 />
               )
             }
@@ -519,28 +538,20 @@ export default function Treasury() {
         </div>
       </section>
 
-      <section
-        className="treasury-fx-section mb-4"
-        aria-labelledby="treasury-fx-heading"
-      >
-        <header className="treasury-fx-heading">
-          <h2 id="treasury-fx-heading" className="treasury-fx-title">
-            {t('treasury.exchange.dailyTitle')}
-          </h2>
-          <p className="treasury-fx-subtitle">
-            {treasuryFxOk && dailyFxResponse?.data?.as_of
-              ? t('treasury.exchange.dailySubtitle', {
-                  date: formatTreasuryFxSectionDate(dailyFxResponse.data.as_of),
-                })
-              : t('treasury.exchange.dailySubtitleSource')}
-          </p>
-        </header>
-
-        <div
-          className="treasury-rate-bar"
-          role="region"
-          aria-label={t('treasury.exchange.ratesPanelAria')}
-        >
+      <section className="treasury-fx-section mb-4" aria-labelledby="treasury-fx-heading">
+        <div className="treasury-rate-bar" role="region" aria-label={t('treasury.exchange.ratesPanelAria')}>
+          <header className="treasury-fx-heading">
+            <h2 id="treasury-fx-heading" className="treasury-fx-title">
+              {t('treasury.exchange.dailyTitle')}
+            </h2>
+            <p className="treasury-fx-subtitle">
+              {treasuryFxOk && dailyFxResponse?.data?.as_of
+                ? t('treasury.exchange.dailySubtitle', {
+                    date: formatTreasuryFxSectionDate(dailyFxResponse.data.as_of),
+                  })
+                : t('treasury.exchange.dailySubtitleSource')}
+            </p>
+          </header>
           <div className="treasury-rate-bar-items">
             {dailyFxLoading ? (
               <span className="treasury-rate-bar-status">{t('treasury.exchange.loading')}</span>
@@ -570,10 +581,6 @@ export default function Treasury() {
             <span>{t('treasury.exchange.refresh')}</span>
           </button>
         </div>
-
-        {treasuryFxOk ? (
-          <p className="treasury-fx-footnote">{t('treasury.exchange.ratesFootnote')}</p>
-        ) : null}
       </section>
 
       {bankOverviewLoading ? (
@@ -623,21 +630,29 @@ export default function Treasury() {
                         <div className="treasury-acc-sub">{bank.account_number || bank.iban}</div>
                       ) : null}
                       <div className="treasury-acc-balances">
-                        <div className="treasury-acc-balances-label">{t('treasury.bankOverview.currencyBalances')}</div>
                         {(() => {
                           const byCur = normalizeBalanceByCurrency(bank.balance_by_currency)
-                          const codes = treasuryAccountDisplayCurrencies(bank)
-                          if (!codes.length) {
+                          const supported = treasuryAccountDisplayCurrencies(bank)
+                          if (!supported.length) {
                             return (
                               <p className="treasury-acc-balances-empty">{t('treasury.bankOverview.noCurrenciesConfigured')}</p>
                             )
                           }
+                          const rows = treasuryNonZeroSupportedCodes(bank, byCur)
+                          if (!rows.length) {
+                            return null
+                          }
                           return (
-                            <ul className="treasury-acc-balance-list" role="list">
-                              {codes.map((code) => (
-                                <li key={code} className="treasury-acc-balance-line">
-                                  <span className="treasury-acc-balance-amount" dir="ltr" lang="en">
-                                    {formatPlainAmountWithCode(byCur[code] ?? 0, code)}
+                            <ul className="treasury-acc-currency-badge-list" role="list">
+                              {rows.map((code) => (
+                                <li key={code} className="treasury-acc-currency-badge-row">
+                                  <span
+                                    className={`treasury-acc-currency-pill treasury-acc-currency-pill--${treasuryCurrencyBadgeVariant(code)}`}
+                                  >
+                                    {code}
+                                  </span>
+                                  <span className="treasury-acc-currency-amount" dir="ltr" lang="en">
+                                    {formatPlainAmount(byCur[code] ?? 0)}
                                   </span>
                                 </li>
                               ))}
@@ -695,21 +710,29 @@ export default function Treasury() {
                         <div className="treasury-acc-sub">{box.account_number || box.iban}</div>
                       ) : null}
                       <div className="treasury-acc-balances">
-                        <div className="treasury-acc-balances-label">{t('treasury.bankOverview.currencyBalances')}</div>
                         {(() => {
                           const byCur = normalizeBalanceByCurrency(box.balance_by_currency)
-                          const codes = treasuryAccountDisplayCurrencies(box)
-                          if (!codes.length) {
+                          const supported = treasuryAccountDisplayCurrencies(box)
+                          if (!supported.length) {
                             return (
                               <p className="treasury-acc-balances-empty">{t('treasury.bankOverview.noCurrenciesConfigured')}</p>
                             )
                           }
+                          const rows = treasuryNonZeroSupportedCodes(box, byCur)
+                          if (!rows.length) {
+                            return null
+                          }
                           return (
-                            <ul className="treasury-acc-balance-list" role="list">
-                              {codes.map((code) => (
-                                <li key={code} className="treasury-acc-balance-line">
-                                  <span className="treasury-acc-balance-amount" dir="ltr" lang="en">
-                                    {formatPlainAmountWithCode(byCur[code] ?? 0, code)}
+                            <ul className="treasury-acc-currency-badge-list" role="list">
+                              {rows.map((code) => (
+                                <li key={code} className="treasury-acc-currency-badge-row">
+                                  <span
+                                    className={`treasury-acc-currency-pill treasury-acc-currency-pill--${treasuryCurrencyBadgeVariant(code)}`}
+                                  >
+                                    {code}
+                                  </span>
+                                  <span className="treasury-acc-currency-amount" dir="ltr" lang="en">
+                                    {formatPlainAmount(byCur[code] ?? 0)}
                                   </span>
                                 </li>
                               ))}
@@ -758,7 +781,7 @@ export default function Treasury() {
                 }}
                 aria-label={t('treasury.bankOverview.filterBank', 'Bank account')}
               >
-                <option value="">{t('treasury.bankOverview.allBanks', 'All banks')}</option>
+                <option value="">{t('treasury.bankOverview.allBanks', 'All banks and cash wallets')}</option>
                 {bankFilterOptions.map((b) => (
                   <option key={b.id} value={String(b.id)}>
                     {b.bank_name} — {b.account_name || b.account_number || b.id}

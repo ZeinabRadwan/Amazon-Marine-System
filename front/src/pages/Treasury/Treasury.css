@@ -389,15 +389,6 @@
   border-top: 1px solid var(--form-divider, #e5e7eb);
 }
 
-.treasury-acc-balances-label {
-  font-size: 0.65rem;
-  font-weight: 600;
-  color: var(--form-muted, #94a3b8);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-bottom: 0.35rem;
-}
-
 .treasury-acc-balances-empty {
   margin: 0;
   font-size: 0.75rem;
@@ -406,27 +397,73 @@
   line-height: 1.35;
 }
 
-.treasury-acc-balance-list {
+/* Full-width badge rows: [ CODE ] amount — EGP orange, USD green, EUR blue */
+.treasury-acc-currency-badge-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.45rem;
+  width: 100%;
 }
 
-.treasury-acc-balance-line {
-  margin: 0;
-  padding: 0;
-  line-height: 1.35;
+.treasury-acc-currency-badge-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  min-width: 0;
+  padding: 0.4rem 0.5rem;
+  border-radius: 8px;
+  background: var(--gray-50, #f8fafc);
+  border: 1px solid var(--form-divider, #e5e7eb);
 }
 
-.treasury-acc-balance-amount {
-  display: inline-block;
+[data-theme='dark'] .treasury-acc-currency-badge-row,
+.dark .treasury-acc-currency-badge-row {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--form-divider);
+}
+
+.treasury-acc-currency-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-width: 3.25rem;
+  padding: 0.22rem 0.55rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  border-radius: 6px;
+  color: #fff;
+}
+
+.treasury-acc-currency-pill--egp {
+  background: linear-gradient(135deg, #c2410c, #f97316);
+}
+
+.treasury-acc-currency-pill--usd {
+  background: linear-gradient(135deg, #166534, #22c55e);
+}
+
+.treasury-acc-currency-pill--eur {
+  background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+}
+
+.treasury-acc-currency-pill--default {
+  background: linear-gradient(135deg, #475569, #64748b);
+}
+
+.treasury-acc-currency-amount {
   font-size: 0.9375rem;
   font-weight: 700;
-  color: var(--root-text, #0f2340);
   font-variant-numeric: tabular-nums;
+  color: var(--root-text, #0f2340);
+  text-align: end;
+  min-width: 0;
   white-space: nowrap;
 }
 
@@ -435,43 +472,28 @@
   margin-bottom: 1rem;
 }
 
-.treasury-fx-heading {
-  margin-bottom: 0.625rem;
+.treasury-rate-bar .treasury-fx-heading {
+  margin: 0;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 52rem;
 }
 
 .treasury-fx-title {
   margin: 0 0 0.25rem;
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: var(--root-text, #1c2030);
+  color: #ffffff;
 }
 
 .treasury-fx-subtitle {
   margin: 0;
   max-width: 52rem;
-  font-size: 0.8125rem;
+  font-size: 0.6rem;
   line-height: 1.45;
   font-weight: 500;
   color: var(--form-muted, #64748b);
-}
-
-[data-theme='dark'] .treasury-fx-subtitle,
-.dark .treasury-fx-subtitle {
-  color: var(--form-text-secondary, #94a3b8);
-}
-
-.treasury-fx-footnote {
-  margin: 0.5rem 0 0;
-  max-width: 52rem;
-  font-size: 0.75rem;
-  line-height: 1.45;
-  color: var(--form-muted, #64748b);
-}
-
-[data-theme='dark'] .treasury-fx-footnote,
-.dark .treasury-fx-footnote {
-  color: var(--form-text-secondary, #94a3b8);
 }
 
 .treasury-rate-bar {
@@ -483,6 +505,13 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+@media (max-width: 720px) {
+  .treasury-rate-bar .treasury-fx-heading {
+    flex-basis: 100%;
+    max-width: none;
+  }
 }
 
 .treasury-rate-bar-items {

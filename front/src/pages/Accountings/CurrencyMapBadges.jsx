@@ -10,13 +10,22 @@ export function normalizeAccountingCurrencyMap(input) {
   if (typeof input === 'number') return { USD: Number(input) || 0 }
   if (Array.isArray(input)) {
     return input.reduce((acc, row) => {
-      const cur = String(row?.currency || row?.currency_code || 'USD').toUpperCase()
+      const cur = String(row?.currency || row?.currency_code || 'USD').toUpperCase().trim() || 'USD'
       const amount = Number(row?.amount ?? row?.value ?? 0)
-      acc[cur] = (Number(acc[cur]) || 0) + amount
+      acc[cur] = (Number(acc[cur]) || 0) + (Number.isFinite(amount) ? amount : 0)
       return acc
     }, {})
   }
-  if (typeof input === 'object') return { ...input }
+  if (typeof input === 'object') {
+    // Always re-key by uppercase so backend variants ("Usd" vs "USD") collapse into a single bucket.
+    const out = {}
+    for (const [k, v] of Object.entries(input)) {
+      const cur = String(k || 'USD').toUpperCase().trim() || 'USD'
+      const amount = Number(v ?? 0)
+      out[cur] = (Number(out[cur]) || 0) + (Number.isFinite(amount) ? amount : 0)
+    }
+    return out
+  }
   return {}
 }
 
@@ -54,7 +63,19 @@ function formatAmount(amount, locale) {
 }
 
 /**
- * @param {{ value: unknown, className?: string, size?: 'sm' | 'md', emptyLabel?: string, amountFirst?: boolean, numberLocale?: string }} props
+ * @param {{
+ *   value: unknown,
+ *   className?: string,
+ *   size?: 'sm' | 'md',
+ *   emptyLabel?: string,
+ *   amountFirst?: boolean,
+ *   numberLocale?: string,
+ *   zeroFallbackCurrencies?: string[],
+ * }} props
+ *
+ * `zeroFallbackCurrencies` — when the value is empty/all-zero, render a `0.00 X` badge for each
+ * listed currency instead of the bare `emptyLabel`. Lets dashboard tiles avoid "—" placeholders
+ * and always show an explicit zero value with currency context.
  */
 export function CurrencyMapBadges({
   value,
@@ -63,15 +84,26 @@ export function CurrencyMapBadges({
   emptyLabel,
   amountFirst = false,
   numberLocale,
+  zeroFallbackCurrencies,
 }) {
   const { i18n } = useTranslation()
   const localeForAmounts = numberLocale ?? i18n.language
   const normalized = normalizeAccountingCurrencyMap(value)
-  const entries = sortCurrencyEntries(Object.entries(normalized)).filter(([, amount]) => Number(amount) !== 0)
-  const empty = emptyLabel ?? '—'
+  let entries = sortCurrencyEntries(Object.entries(normalized)).filter(([, amount]) => Number(amount) !== 0)
 
   if (!entries.length) {
-    return <span className="accounting-currency-empty text-slate-400">{empty}</span>
+    const fallbackList = Array.isArray(zeroFallbackCurrencies)
+      ? zeroFallbackCurrencies
+          .map((c) => String(c || '').toUpperCase().trim())
+          .filter((c) => c !== '')
+      : []
+    if (fallbackList.length) {
+      const dedup = Array.from(new Set(fallbackList))
+      entries = sortCurrencyEntries(dedup.map((c) => [c, 0]))
+    } else {
+      const empty = emptyLabel ?? '0'
+      return <span className="accounting-currency-empty text-slate-400">{empty}</span>
+    }
   }
 
   const sizeClass = size === 'sm' ? 'accounting-currency-stack--sm' : ''

@@ -8,8 +8,9 @@ use App\Models\ExpenseCategory;
 use App\Models\BankAccount;
 use App\Models\Currency;
 use App\Models\Invoice;
+use App\Models\Payment;
+use App\Models\ShipmentCostInvoice;
 use App\Models\TreasuryEntry;
-use App\Models\VendorBill;
 use App\Services\AccountingAggregationService;
 use App\Services\CbeOfficialExchangeRateService;
 use App\Services\TreasuryAccountCurrencyService;
@@ -62,6 +63,91 @@ class TreasuryController extends Controller
         }
 
         return $out;
+    }
+
+    /**
+     * Sum every persisted payment of a given type, grouped by uppercase currency code.
+     * Single source of truth for the dashboard: actual payments only, never derived from treasury entries.
+     *
+     * @return array<string, float>
+     */
+    private function sumPaymentsByCurrency(string $paymentType): array
+    {
+        $rows = Payment::query()
+            ->where('type', $paymentType)
+            ->get(['amount', 'currency_code']);
+
+        $totals = [];
+        foreach ($rows as $row) {
+            $cur = strtoupper(trim((string) ($row->currency_code ?? '')));
+            if ($cur === '') {
+                $cur = 'USD';
+            }
+            $totals[$cur] = (float) ($totals[$cur] ?? 0) + (float) $row->amount;
+        }
+
+        return $this->roundMoneyMap($totals);
+    }
+
+    /**
+     * Partner liabilities = approved {@see ShipmentCostInvoice} totals MINUS actual partner payments,
+     * grouped per currency, clamped to ≥ 0. Drafts and cancelled invoices are excluded.
+     * Aligned with Partner Statement / Shipment Financials (cost_total) — a single source of truth
+     * for partner obligations, replacing the legacy {@see VendorBill}-based derivation.
+     *
+     * @param  array<string, float>  $partnerPaidByCurrency  Already grouped per uppercase currency code.
+     * @return array<string, float>
+     */
+    private function partnerPayablesFromCostInvoices(array $partnerPaidByCurrency): array
+    {
+        if (! Schema::hasTable('shipment_cost_invoices')) {
+            return [];
+        }
+
+        $billed = [];
+
+        $invoices = ShipmentCostInvoice::query()
+            ->whereNotIn('status', ['draft', 'cancelled'])
+            ->get(['currency_totals', 'items']);
+
+        foreach ($invoices as $invoice) {
+            $totals = is_array($invoice->currency_totals) ? $invoice->currency_totals : [];
+
+            // Fallback: rebuild from items[] when currency_totals wasn't persisted on legacy rows.
+            if (empty($totals)) {
+                foreach (is_array($invoice->items) ? $invoice->items : [] as $item) {
+                    $cur = strtoupper(trim((string) ($item['currency_code'] ?? 'USD')));
+                    if ($cur === '') {
+                        $cur = 'USD';
+                    }
+                    $amt = (float) ($item['amount'] ?? 0);
+                    if (! is_finite($amt) || $amt <= 0) {
+                        continue;
+                    }
+                    $totals[$cur] = (float) ($totals[$cur] ?? 0) + $amt;
+                }
+            }
+
+            foreach ($totals as $cur => $amt) {
+                $code = strtoupper(trim((string) $cur));
+                if ($code === '') {
+                    continue;
+                }
+                $billed[$code] = (float) ($billed[$code] ?? 0) + (float) $amt;
+            }
+        }
+
+        $remaining = [];
+        $currencies = array_unique(array_merge(array_keys($billed), array_keys($partnerPaidByCurrency)));
+        foreach ($currencies as $cur) {
+            $code = strtoupper(trim((string) $cur));
+            if ($code === '') {
+                continue;
+            }
+            $remaining[$code] = (float) ($billed[$code] ?? 0) - (float) ($partnerPaidByCurrency[$code] ?? 0);
+        }
+
+        return $this->clampMoneyMapNonNegative($remaining);
     }
 
     /**
@@ -230,23 +316,25 @@ class TreasuryController extends Controller
             return array_map(fn (float $x) => round($x, 2), $out);
         };
 
-        $globalCustomer = $sumMaps($bankPayload, 'customer_in_by_currency');
-        $globalPartner = $sumMaps($bankPayload, 'partner_out_by_currency');
+        // Bank totals — only authoritative source is the ledger; sum every bank's display balance per currency.
         $globalBalanceDisplay = $sumMaps($bankPayload, 'balance_by_currency');
 
+        // Customer receipts & partner payments — pull straight from the payments table (single source of truth),
+        // not from the per-bank entry-derived maps. Avoids any double-counting via paired transfer legs.
+        $globalCustomer = $this->sumPaymentsByCurrency('client_receipt');
+        $globalPartner = $this->sumPaymentsByCurrency('vendor_payment');
+
+        // Customer outstanding receivables — sum of unpaid/partial invoices, grouped per currency.
         $openInvoices = Invoice::query()
             ->with('items')
-            ->whereNotIn('status', ['cancelled'])
+            ->whereNotIn('status', ['cancelled', 'draft'])
             ->get();
         $arAgg = AccountingAggregationService::aggregateInvoices($openInvoices);
         $customerOutstandingReceivables = $this->clampMoneyMapNonNegative($arAgg['total_remaining_per_currency']);
 
-        $openBills = VendorBill::query()
-            ->with('items')
-            ->whereNotIn('status', ['cancelled', 'draft'])
-            ->get();
-        $apAgg = AccountingAggregationService::aggregateVendorBills($openBills);
-        $partnerPayablesOutstanding = $this->clampMoneyMapNonNegative($apAgg['total_remaining_per_currency']);
+        // Partner liabilities — sum of unpaid/partial cost invoices, grouped per currency.
+        // Replaces the legacy VendorBill source so the dashboard matches Shipment Financials and Partner Statement.
+        $partnerPayablesOutstanding = $this->partnerPayablesFromCostInvoices($globalPartner);
 
         $bankAccountsOnly = array_values(array_filter(
             $bankPayload,
