@@ -24,6 +24,7 @@
         .pdf-inv-html .pdf-inv-party-role-ar,
         .pdf-inv-html .pdf-inv-header-title-ar,
         .pdf-inv-html .pdf-inv-sec-title-ar,
+        .pdf-inv-html .pdf-inv-grand-title-ar,
         .pdf-inv-html .pdf-inv-term-ar,
         .pdf-inv-html .pdf-inv-bank-head-ar {
             font-family: var(--ar);
@@ -118,12 +119,19 @@
             text-align: right;
         }
 
+        /* Shared chrome for meta / parties / route — same border + radius as charge cards (mPDF clips inner tables) */
+        .pdf-inv-panel-wrap {
+            border: 1px solid #dde3ed;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 0 0 12px;
+            background: #ffffff;
+        }
         .pdf-inv-meta-row {
             width: 100%;
             border-collapse: collapse;
-            background: transparent;
-            border-top: 1px solid #e8edf3;
-            border-bottom: 1px solid #e8edf3;
+            background: #ffffff;
+            border: none;
             margin: 0;
             table-layout: fixed;
         }
@@ -176,14 +184,6 @@
             font-size: 9.5px;
         }
 
-        /* Rounded frame on wrapper div — inner table stays square (mPDF-friendly) */
-        .pdf-inv-parties-wrap {
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            overflow: hidden;
-            margin: 12px 0;
-            background: #ffffff;
-        }
         .pdf-inv-parties {
             width: 100%;
             border-collapse: collapse;
@@ -264,13 +264,7 @@
             text-align: right;
         }
 
-        /* Navy fill inside bordered wrapper — single horizontal band: left grid | right B/L + POL→POD */
-        .pdf-inv-route-wrap {
-            border: 1px solid #0f2d4a;
-            border-radius: 8px;
-            overflow: hidden;
-            margin: 0 0 12px;
-        }
+        /* Route navy band sits inside .pdf-inv-panel-wrap (neutral outer radius) */
         .pdf-inv-route-bar {
             width: 100%;
             border-collapse: collapse;
@@ -444,9 +438,9 @@
             border-top: 1px solid #dde3ed;
             table-layout: fixed;
         }
-        /* Beat shared `.pdf-sd-doc .pdf-table th` — keep column header strip light, not navy */
+        /* Column headers: no fill — text + bottom rule only (beats `.pdf-sd-doc .pdf-table th` navy/grey) */
         .pdf-inv-html .pdf-inv-section-card .pdf-inv-table thead th {
-            background: #f1f5f9 !important;
+            background: transparent !important;
             color: #64748b !important;
         }
         .pdf-inv-html .pdf-inv-section-card .pdf-inv-table tbody td {
@@ -456,25 +450,34 @@
             background: #f8fafc !important;
         }
         .pdf-inv-table th {
-            padding: 7px 8px;
+            padding: 8px 8px;
             font-size: 8.5px;
             font-weight: 700;
             text-align: left;
             text-transform: uppercase;
             letter-spacing: 0.04em;
             border-bottom: 1px solid #dde3ed;
+            background: transparent;
         }
         .pdf-inv-table th.pdf-inv-th-center,
         .pdf-inv-table td.pdf-inv-td-center {
             text-align: center;
         }
         .pdf-inv-table td {
-            padding: 7px 8px;
+            padding: 8px 8px;
             border-bottom: 1px solid #f1f5f9;
             font-size: 10.5px;
             vertical-align: middle;
             overflow-wrap: anywhere;
             word-break: break-word;
+        }
+        /* Item names: full template body typography — not downsized vs qty/amount columns */
+        .pdf-inv-table td.pdf-inv-col-item {
+            font-size: 11px;
+            font-weight: 600;
+            color: #0f2d4a;
+            font-family: var(--en);
+            line-height: 1.45;
         }
         .pdf-inv-table td.pdf-inv-col-qty,
         .pdf-inv-table th.pdf-inv-col-qty {
@@ -512,13 +515,15 @@
             text-align: center;
             font-family: DejaVu Sans Mono, monospace;
             font-weight: 800;
-            font-size: 11px;
-            color: #9a3412;
+            font-size: 12px;
+            color: #ec7f00;
             letter-spacing: 0.02em;
         }
         .pdf-inv-table .pdf-inv-subtotal-row .pdf-inv-sub-label {
             font-size: 11px;
+            font-weight: 800;
             letter-spacing: 0.02em;
+            color: #0f2d4a;
         }
 
         /* Grand total: rounded border on wrapper only — inner table is navy without radius/overflow */
@@ -549,6 +554,17 @@
             letter-spacing: 0.02em;
             line-height: 1.25;
         }
+        .pdf-inv-grand-title-ar {
+            font-size: 10px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-top: 8px;
+            line-height: 1.35;
+            direction: rtl;
+            unicode-bidi: embed;
+            text-align: left;
+            opacity: 0.95;
+        }
         .pdf-inv-grand-breakdown {
             width: 100%;
             border-collapse: collapse;
@@ -562,8 +578,8 @@
             background: transparent;
         }
         .pdf-inv-grand-breakdown tr:not(.pdf-inv-grand-cur):not(.pdf-inv-grand-divider) td:first-child {
-            color: rgba(255, 255, 255, 0.5);
-            font-weight: 500;
+            color: #ffffff !important;
+            font-weight: 600;
         }
         .pdf-inv-grand-breakdown tr:not(.pdf-inv-grand-cur):not(.pdf-inv-grand-divider) .pdf-inv-gtr-val {
             text-align: right;
@@ -586,9 +602,10 @@
             font-weight: 600;
             color: #ffffff !important;
         }
+        /* Per-currency total labels: brand orange, bold */
         .pdf-inv-grand-cur td:first-child {
-            color: #ffffff !important;
-            font-weight: 600;
+            color: #ec7f00 !important;
+            font-weight: 800;
         }
         .pdf-inv-grand-cur .pdf-inv-gtr-val {
             text-align: right;
@@ -618,31 +635,48 @@
         .pdf-inv-bank-head {
             background: #1b3a5c;
             padding: 8px 14px;
-            text-align: right;
         }
-        .pdf-inv-bank-head-stack {
-            display: block;
-            text-align: right;
+        .pdf-inv-bank-head-row {
+            width: 100%;
+            border-collapse: collapse;
         }
-        .pdf-inv-bank-head-en {
+        .pdf-inv-bank-head-row td {
+            padding: 0 0 6px;
+            border: none;
+            vertical-align: baseline;
+        }
+        .pdf-inv-bank-head-left {
             font-size: 11px;
             font-weight: 700;
             color: #ffffff;
             letter-spacing: 0.02em;
-            line-height: 1.35;
+            text-align: left;
+            width: 50%;
+        }
+        .pdf-inv-bank-head-right {
+            font-size: 11px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 0.02em;
             text-align: right;
+            width: 50%;
         }
-        .pdf-inv-bank-head-en + .pdf-inv-bank-head-en {
-            margin-top: 2px;
-        }
-        .pdf-inv-bank-head-ar {
+        .pdf-inv-bank-head-sub-row td {
+            padding: 0;
+            border: none;
             font-size: 10px;
             font-weight: 600;
-            color: rgba(255, 255, 255, 0.55);
-            margin-top: 6px;
+            color: rgba(255, 255, 255, 0.72);
             line-height: 1.35;
-            direction: rtl;
+        }
+        .pdf-inv-bank-head-sub-spacer {
+            width: 50%;
+        }
+        .pdf-inv-bank-head-ar {
+            width: 50%;
             text-align: right;
+            direction: rtl;
+            unicode-bidi: embed;
         }
         .pdf-inv-bank-table {
             width: 100%;
@@ -650,8 +684,8 @@
             table-layout: fixed;
         }
         .pdf-inv-bank-table th {
-            background: #f1f5f9;
-            padding: 7px 10px;
+            background: transparent;
+            padding: 8px 10px;
             font-size: 9px;
             font-weight: 700;
             color: #64748b;
@@ -713,41 +747,26 @@
             letter-spacing: 0.02em;
             line-height: 1.45;
         }
-        .pdf-inv-terms-table {
-            width: 100%;
-            border-collapse: collapse;
+        .pdf-inv-terms-list {
+            margin: 0;
+            padding: 0;
         }
-        /* Avoid row splits across pages (keeps numbering / rounded block tidy in mPDF) */
-        .pdf-inv-terms-table tr {
-            page-break-inside: avoid;
-        }
-        .pdf-inv-terms-table td {
-            vertical-align: top;
-            padding: 0 0 10px;
-            border: none;
+        .pdf-inv-term-line {
+            margin: 0 0 10px;
+            padding: 0;
             font-size: 10px;
             line-height: 1.6;
             color: #475569;
             text-align: left;
+            page-break-inside: avoid;
         }
-        .pdf-inv-terms-table tr:last-child td {
-            padding-bottom: 0 !important;
+        .pdf-inv-term-line:last-child {
+            margin-bottom: 0;
         }
-        .pdf-inv-term-num-cell {
-            width: 22px;
-            padding-right: 8px !important;
-            padding-bottom: 10px !important;
-        }
-        .pdf-inv-term-num {
-            width: 16px;
-            height: 16px;
-            background: #0f2d4a;
-            border-radius: 50%;
-            color: #ffffff;
-            font-size: 8px;
+        .pdf-inv-term-num-plain {
             font-weight: 700;
-            text-align: center;
-            line-height: 16px;
+            color: #0f2d4a;
+            margin-right: 6px;
         }
         .pdf-inv-term-ar {
             font-size: 9px;
@@ -785,7 +804,7 @@ Tax Invoice {{ $invoice->invoice_number }}
         $sectionMeta = [
             'shipping' => ['en' => 'Ocean Freight', 'ar' => 'الشحن البحري'],
             'inland' => ['en' => 'Inland Transport', 'ar' => 'النقل الداخلي'],
-            'handling' => ['en' => 'Handling Fees', 'ar' => 'رسوم الخدمة والمتابعة'],
+            'handling' => ['en' => 'Custom Declaration Opening Fee', 'ar' => 'رسوم فتح الشهادة الجمركية'],
             'other' => ['en' => 'Additional Costs', 'ar' => 'تكاليف إضافية'],
             'customs' => ['en' => 'Customs Clearance', 'ar' => 'التخليص الجمركي'],
             'insurance' => ['en' => 'Insurance', 'ar' => 'التأمين'],
@@ -886,6 +905,7 @@ Tax Invoice {{ $invoice->invoice_number }}
             </header>
         @endif
 
+        <div class="pdf-inv-panel-wrap">
         <table class="pdf-inv-meta-row" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
             <tr>
                 <td class="pdf-inv-meta-cell" width="24%">
@@ -913,8 +933,9 @@ Tax Invoice {{ $invoice->invoice_number }}
                 </td>
             </tr>
         </table>
+        </div>
 
-        <div class="pdf-inv-parties-wrap">
+        <div class="pdf-inv-panel-wrap">
         <table class="pdf-inv-parties" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
             <tr>
                 <td width="49%">
@@ -954,7 +975,7 @@ Tax Invoice {{ $invoice->invoice_number }}
         </div>
 
         {{-- Route band: one row — LEFT carrier/container/transit/reference | RIGHT B/L + POL→POD --}}
-        <div class="pdf-inv-route-wrap">
+        <div class="pdf-inv-panel-wrap">
             <table class="pdf-inv-route-bar" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
                 <tr>
                     <td class="pdf-inv-route-col pdf-inv-route-col--left" valign="middle">
@@ -1078,6 +1099,7 @@ Tax Invoice {{ $invoice->invoice_number }}
             <tr>
                 <td width="34%">
                     <div class="pdf-inv-grand-title">Grand Total</div>
+                    <div class="pdf-inv-grand-title-ar">الإجمالي الكلي</div>
                 </td>
                 <td width="66%">
                     <table class="pdf-inv-grand-breakdown" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
@@ -1134,11 +1156,16 @@ Tax Invoice {{ $invoice->invoice_number }}
 
         <div class="pdf-inv-bank-wrap">
             <div class="pdf-inv-bank-head">
-                <div class="pdf-inv-bank-head-stack">
-                    <div class="pdf-inv-bank-head-en">Payment Instructions</div>
-                    <div class="pdf-inv-bank-head-en">Bank Details</div>
-                    <div class="pdf-inv-bank-head-ar">تعليمات الدفع / بيانات الحساب البنكي</div>
-                </div>
+                <table class="pdf-inv-bank-head-row" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
+                    <tr>
+                        <td class="pdf-inv-bank-head-left">Payment Structure</td>
+                        <td class="pdf-inv-bank-head-right">Bank Details</td>
+                    </tr>
+                    <tr class="pdf-inv-bank-head-sub-row">
+                        <td class="pdf-inv-bank-head-sub-spacer">&nbsp;</td>
+                        <td class="pdf-inv-bank-head-ar">تعليمات الدفع / بيانات الحساب البنكي</td>
+                    </tr>
+                </table>
             </div>
             <table class="pdf-inv-bank-table" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
                 <thead>
@@ -1178,36 +1205,12 @@ Tax Invoice {{ $invoice->invoice_number }}
 
         <div class="pdf-inv-terms-wrap">
             <div class="pdf-inv-terms-title">Terms &amp; Conditions / الشروط والأحكام</div>
-            <table class="pdf-inv-terms-table" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
-                <tr>
-                    <td class="pdf-inv-term-num-cell"><div class="pdf-inv-term-num">1</div></td>
-                    <td>
-                        <strong>Payment Due:</strong> Payment is due by the date specified above. Late payments may be subject to additional charges.
-                        <div class="pdf-inv-term-ar">الدفع مستحق في التاريخ المحدد — التأخر قد يترتب عليه رسوم إضافية.</div>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="pdf-inv-term-num-cell"><div class="pdf-inv-term-num">2</div></td>
-                    <td>
-                        <strong>Official Receipts:</strong> Government official receipts are not included in this invoice and will be charged at actual cost with original receipts provided.
-                        <div class="pdf-inv-term-ar">الإيصالات الرسمية الحكومية غير شاملة في هذه الفاتورة — تُحتسب بقيمتها الفعلية مع تقديم الأصول للعميل.</div>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="pdf-inv-term-num-cell"><div class="pdf-inv-term-num">3</div></td>
-                    <td>
-                        <strong>Currency:</strong> Payments must be made in the currency specified per charge. Exchange rate conversions are subject to the agreed rate on the day of payment.
-                        <div class="pdf-inv-term-ar">يتم الدفع بالعملة المحددة لكل بند — تحويل العملات يخضع للسعر المتفق عليه يوم الدفع.</div>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="pdf-inv-term-num-cell"><div class="pdf-inv-term-num">4</div></td>
-                    <td>
-                        <strong>Validity:</strong> This invoice is valid for 30 days from the issue date. Any disputes must be raised within 7 days of receipt.
-                        <div class="pdf-inv-term-ar">هذه الفاتورة سارية لمدة 30 يوماً من تاريخ الإصدار — أي اعتراض يجب رفعه خلال 7 أيام من الاستلام.</div>
-                    </td>
-                </tr>
-            </table>
+            <div class="pdf-inv-terms-list">
+                <div class="pdf-inv-term-line"><span class="pdf-inv-term-num-plain">1.</span><strong>Payment Due:</strong> Payment is due by the date specified above. Late payments may be subject to additional charges.<div class="pdf-inv-term-ar">الدفع مستحق في التاريخ المحدد — التأخر قد يترتب عليه رسوم إضافية.</div></div>
+                <div class="pdf-inv-term-line"><span class="pdf-inv-term-num-plain">2.</span><strong>Official Receipts:</strong> Government official receipts are not included in this invoice and will be charged at actual cost with original receipts provided.<div class="pdf-inv-term-ar">الإيصالات الرسمية الحكومية غير شاملة في هذه الفاتورة — تُحتسب بقيمتها الفعلية مع تقديم الأصول للعميل.</div></div>
+                <div class="pdf-inv-term-line"><span class="pdf-inv-term-num-plain">3.</span><strong>Currency:</strong> Payments must be made in the currency specified per charge. Exchange rate conversions are subject to the agreed rate on the day of payment.<div class="pdf-inv-term-ar">يتم الدفع بالعملة المحددة لكل بند — تحويل العملات يخضع للسعر المتفق عليه يوم الدفع.</div></div>
+                <div class="pdf-inv-term-line"><span class="pdf-inv-term-num-plain">4.</span><strong>Validity:</strong> This invoice is valid for 30 days from the issue date. Any disputes must be raised within 7 days of receipt.<div class="pdf-inv-term-ar">هذه الفاتورة سارية لمدة 30 يوماً من تاريخ الإصدار — أي اعتراض يجب رفعه خلال 7 أيام من الاستلام.</div></div>
+            </div>
         </div>
 
         @if (!empty($footerHtml))
