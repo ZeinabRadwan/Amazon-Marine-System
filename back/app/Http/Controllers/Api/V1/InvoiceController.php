@@ -8,6 +8,7 @@ use App\Models\Currency;
 use App\Models\CustomerTransaction;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\Payment;
 use App\Models\PdfLayout;
 use App\Models\ShipmentAttachment;
 use App\Models\ShipmentCostInvoice;
@@ -525,72 +526,55 @@ class InvoiceController extends Controller
 
         $months = max(1, (int) $request->query('months', 6));
         $from = now()->subMonths($months - 1)->startOfMonth();
-        $today = now()->toDateString();
 
         $invoices = Invoice::query()
             ->whereDate('issue_date', '>=', $from)
             ->get();
 
         $totalCount = $invoices->count();
-        $paidAmount = (float) $invoices->where('status', 'paid')->sum('net_amount');
-        $partialAmount = (float) $invoices->where('status', 'partial')->sum('net_amount');
-        $unpaidAmount = (float) $invoices->whereIn('status', ['unpaid', 'issued', 'draft'])->sum('net_amount');
+        $paidCount = $invoices->where('status', 'paid')->count();
+        $partialCount = $invoices->where('status', 'partial')->count();
+        $unpaidCount = $invoices->whereIn('status', ['unpaid', 'issued', 'draft'])->count();
 
-        $overdueAmount = (float) $invoices->filter(function (Invoice $invoice) use ($today) {
-            return in_array($invoice->status, ['unpaid', 'issued'], true)
-                && $invoice->due_date
-                && $invoice->due_date->toDateString() < $today;
-        })->sum('net_amount');
+        $invoiceIds = $invoices->pluck('id');
+        $paidAmountFromPayments = $invoiceIds->isEmpty()
+            ? 0.0
+            : (float) Payment::query()->whereIn('invoice_id', $invoiceIds)->sum('amount');
 
         $labels = [];
         $paidSeries = [];
+        $partialSeries = [];
+        $unpaidSeries = [];
         $cursor = $from->copy();
 
         while ($cursor <= now()) {
             $key = $cursor->format('Y-m');
             $labels[] = $key;
             $monthInvoices = $invoices->filter(fn ($i) => $i->issue_date?->format('Y-m') === $key);
-            $paidSeries[] = (float) $monthInvoices->where('status', 'paid')->sum('net_amount');
+            $paidSeries[] = $monthInvoices->where('status', 'paid')->count();
+            $partialSeries[] = $monthInvoices->where('status', 'partial')->count();
+            $unpaidSeries[] = $monthInvoices->whereIn('status', ['unpaid', 'issued', 'draft'])->count();
             $cursor->addMonth();
-        }
-
-        $statusGroups = [
-            'paid' => ['paid'],
-            'partial' => ['partial'],
-            'unpaid' => ['unpaid', 'issued', 'draft'],
-            'overdue' => ['unpaid', 'issued'],
-        ];
-
-        $statusLabels = [];
-        $statusValues = [];
-
-        foreach ($statusGroups as $label => $statuses) {
-            if ($label === 'overdue') {
-                $value = $overdueAmount;
-            } else {
-                $value = (float) $invoices->whereIn('status', $statuses)->sum('net_amount');
-            }
-
-            $statusLabels[] = $label;
-            $statusValues[] = $value;
         }
 
         return response()->json([
             'data' => [
                 'cards' => [
                     'total_count' => $totalCount,
-                    'paid_amount' => $paidAmount,
-                    'partial_amount' => $partialAmount,
-                    'unpaid_amount' => $unpaidAmount,
-                    'overdue_amount' => $overdueAmount,
+                    'paid_count' => $paidCount,
+                    'partial_count' => $partialCount,
+                    'unpaid_count' => $unpaidCount,
+                    'paid_amount' => self::roundMoney($paidAmountFromPayments),
                 ],
                 'monthly' => [
                     'labels' => $labels,
                     'paid' => $paidSeries,
+                    'partial' => $partialSeries,
+                    'unpaid' => $unpaidSeries,
                 ],
                 'by_status' => [
-                    'labels' => $statusLabels,
-                    'values' => $statusValues,
+                    'labels' => ['paid', 'partial', 'unpaid'],
+                    'values' => [$paidCount, $partialCount, $unpaidCount],
                 ],
             ],
         ]);
