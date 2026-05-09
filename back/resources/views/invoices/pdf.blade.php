@@ -288,69 +288,49 @@
             text-align: right;
         }
 
-        .pdf-inv-route {
+        .pdf-inv-ship-row {
             width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            background: #ffffff;
+            border-collapse: collapse;
+            background: #fafbfc;
             border: 1px solid #e2e8f0;
             border-radius: 10px;
             margin-bottom: 12px;
             overflow: hidden;
+            table-layout: fixed;
         }
-        .pdf-inv-route td {
-            padding: 12px 14px;
+        .pdf-inv-ship-row tr td.pdf-inv-ship-cell {
             vertical-align: middle;
+            padding: 6px 8px;
             border: none;
             background: #fafbfc;
-        }
-        .pdf-inv-route-inner {
-            background: #fafbfc !important;
-        }
-        .pdf-inv-port-name {
-            font-size: 13px;
-            font-weight: 700;
-            color: #0f2d4a;
-        }
-        .pdf-inv-port-label {
-            font-size: 7.5px;
-            color: #94a3b8;
-            margin-top: 3px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-        .pdf-inv-route-arrow {
-            color: #ec7f00;
-            font-size: 15px;
-            font-weight: 700;
-            padding: 0 8px;
-        }
-        .pdf-inv-rmeta-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .pdf-inv-rmeta-table td {
-            padding: 0 6px;
-            vertical-align: top;
             text-align: center;
-            border: none;
+            white-space: nowrap;
         }
-        .pdf-inv-rmeta-sep {
+        .pdf-inv-ship-row tr td.pdf-inv-ship-sep {
             width: 1px;
-            background: #e2e8f0;
+            min-width: 1px;
+            max-width: 1px;
             padding: 0 !important;
+            background: #cbd5e1;
+            vertical-align: middle;
+            border: none;
+            font-size: 0;
+            line-height: 0;
         }
-        .pdf-inv-rmeta-val {
+        .pdf-inv-ship-lbl {
+            font-size: 8px;
+            font-weight: 600;
+            color: #64748b;
+            line-height: 1.2;
+            margin: 0 0 3px;
+            text-transform: none;
+            letter-spacing: 0.01em;
+        }
+        .pdf-inv-ship-val {
             font-size: 10px;
             font-weight: 700;
             color: #0f2d4a;
-        }
-        .pdf-inv-rmeta-lbl {
-            font-size: 7.5px;
-            color: #94a3b8;
-            margin-top: 3px;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
+            line-height: 1.2;
         }
 
         .pdf-inv-charges-shell {
@@ -428,45 +408,65 @@
         .pdf-inv-table tbody tr:nth-child(even) td {
             background: #f8fafc;
         }
+        .pdf-inv-table .pdf-inv-col-item {
+            width: 38%;
+        }
+        .pdf-inv-table .pdf-inv-col-amt {
+            width: 47%;
+        }
+        .pdf-inv-table .pdf-inv-col-cur {
+            width: 15%;
+        }
         .pdf-inv-table .pdf-inv-subtotal-row td {
-            background: #fdf0e0 !important;
-            border-top: 2px solid #ec7f00;
-            font-weight: 700;
-            font-size: 11px;
+            background: #fef3e8 !important;
+            border-top: 3px solid #ec7f00;
+            font-weight: 800;
+            font-size: 12px;
             color: #0f2d4a;
+            padding: 11px 12px !important;
+            vertical-align: middle;
+        }
+        .pdf-inv-table .pdf-inv-subtotal-row .pdf-inv-sub-label {
+            font-size: 12px;
+            letter-spacing: 0.02em;
         }
         .pdf-inv-table .pdf-inv-subtotal-row .pdf-inv-sub-amt {
             text-align: right;
             font-family: DejaVu Sans Mono, monospace;
-            color: #bd6b02;
+            font-weight: 800;
+            font-size: 13px;
+            color: #9a3412;
+            letter-spacing: 0.02em;
         }
 
         .pdf-inv-grand {
             width: 100%;
             border-collapse: collapse;
             background: #0f2d4a;
-            border-radius: 8px;
+            border-radius: 10px;
             overflow: hidden;
-            margin: 14px 0 12px;
+            margin: 20px 0 14px;
+            border: 2px solid #1b3a5c;
         }
         .pdf-inv-grand td {
-            padding: 14px 18px;
+            padding: 16px 20px;
             vertical-align: top;
             border: none;
         }
         .pdf-inv-grand-title {
-            font-size: 14px;
+            font-size: 16px;
             font-weight: 700;
             color: #ffffff;
+            letter-spacing: 0.03em;
         }
         .pdf-inv-grand-breakdown {
             width: 100%;
             border-collapse: collapse;
         }
         .pdf-inv-grand-breakdown td {
-            padding: 3px 0;
-            font-size: 10px;
-            color: rgba(255, 255, 255, 0.55);
+            padding: 5px 0;
+            font-size: 10.5px;
+            color: rgba(255, 255, 255, 0.72);
         }
         .pdf-inv-grand-breakdown .pdf-inv-gtr-val {
             text-align: right;
@@ -489,7 +489,8 @@
         }
         .pdf-inv-grand-cur .pdf-inv-gtr-val {
             color: #ec7f00 !important;
-            font-size: 13px;
+            font-size: 14px;
+            font-weight: 800;
         }
         .pdf-inv-grand-vat {
             margin-top: 10px;
@@ -616,12 +617,12 @@ Tax Invoice {{ $invoice->invoice_number }}
 @section('content')
     @php
         $sectionMeta = [
-            'shipping' => ['icon' => '🚢', 'en' => 'Ocean Freight', 'ar' => 'الشحن البحري'],
-            'inland' => ['icon' => '🚛', 'en' => 'Inland Transport', 'ar' => 'النقل الداخلي'],
-            'handling' => ['icon' => '💼', 'en' => 'Handling Fees', 'ar' => 'رسوم الخدمة والمتابعة'],
-            'other' => ['icon' => '📋', 'en' => 'Additional Costs', 'ar' => 'تكاليف إضافية'],
-            'customs' => ['icon' => '🏛️', 'en' => 'Customs Clearance', 'ar' => 'التخليص الجمركي'],
-            'insurance' => ['icon' => '🛡️', 'en' => 'Insurance', 'ar' => 'التأمين'],
+            'shipping' => ['en' => 'Ocean Freight', 'ar' => 'الشحن البحري'],
+            'inland' => ['en' => 'Inland Transport', 'ar' => 'النقل الداخلي'],
+            'handling' => ['en' => 'Handling Fees', 'ar' => 'رسوم الخدمة والمتابعة'],
+            'other' => ['en' => 'Additional Costs', 'ar' => 'تكاليف إضافية'],
+            'customs' => ['en' => 'Customs Clearance', 'ar' => 'التخليص الجمركي'],
+            'insurance' => ['en' => 'Insurance', 'ar' => 'التأمين'],
         ];
 
         $grouped = [
@@ -784,53 +785,26 @@ Tax Invoice {{ $invoice->invoice_number }}
             </tr>
         </table>
 
-        <table class="pdf-inv-route" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
+        <table class="pdf-inv-ship-row" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
             <tr>
-                <td class="pdf-inv-route-inner">
-                    <table width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
-                        <tr>
-                            <td style="vertical-align:middle;">
-                                <table cellspacing="0" cellpadding="0" border="0" role="presentation" style="border-collapse:collapse;">
-                                    <tr>
-                                        <td style="vertical-align:middle;">
-                                            <div class="pdf-inv-port-name">{{ $pol }}</div>
-                                            <div class="pdf-inv-port-label">POL — Port of Loading</div>
-                                        </td>
-                                        <td class="pdf-inv-route-arrow" style="vertical-align:middle;">→</td>
-                                        <td style="vertical-align:middle;">
-                                            <div class="pdf-inv-port-name">{{ $pod }}</div>
-                                            <div class="pdf-inv-port-label">POD — Port of Discharge</div>
-                                        </td>
-                                    </tr>
-                                </table>
-                            </td>
-                            <td style="width:52%;">
-                                <table class="pdf-inv-rmeta-table" cellspacing="0" cellpadding="0" border="0" role="presentation">
-                                    <tr>
-                                        <td>
-                                            <div class="pdf-inv-rmeta-val">{{ $shipLine }}</div>
-                                            <div class="pdf-inv-rmeta-lbl">Carrier</div>
-                                        </td>
-                                        <td class="pdf-inv-rmeta-sep"></td>
-                                        <td>
-                                            <div class="pdf-inv-rmeta-val">{{ $container }}</div>
-                                            <div class="pdf-inv-rmeta-lbl">Containers</div>
-                                        </td>
-                                        <td class="pdf-inv-rmeta-sep"></td>
-                                        <td>
-                                            <div class="pdf-inv-rmeta-val">{{ $transitTime }}</div>
-                                            <div class="pdf-inv-rmeta-lbl">Transit Time</div>
-                                        </td>
-                                        <td class="pdf-inv-rmeta-sep"></td>
-                                        <td>
-                                            <div class="pdf-inv-rmeta-val">{{ $shipmentRef }}</div>
-                                            <div class="pdf-inv-rmeta-lbl">Shipment Ref</div>
-                                        </td>
-                                    </tr>
-                                </table>
-                            </td>
-                        </tr>
-                    </table>
+                <td class="pdf-inv-ship-cell" width="24%">
+                    <div class="pdf-inv-ship-lbl">Port of Loading</div>
+                    <div class="pdf-inv-ship-val">{{ $pol }}</div>
+                </td>
+                <td class="pdf-inv-ship-sep"></td>
+                <td class="pdf-inv-ship-cell" width="24%">
+                    <div class="pdf-inv-ship-lbl">Port of Discharge</div>
+                    <div class="pdf-inv-ship-val">{{ $pod }}</div>
+                </td>
+                <td class="pdf-inv-ship-sep"></td>
+                <td class="pdf-inv-ship-cell" width="24%">
+                    <div class="pdf-inv-ship-lbl">Transit Time</div>
+                    <div class="pdf-inv-ship-val">{{ $transitTime }}</div>
+                </td>
+                <td class="pdf-inv-ship-sep"></td>
+                <td class="pdf-inv-ship-cell" width="24%">
+                    <div class="pdf-inv-ship-lbl">Shipment Ref</div>
+                    <div class="pdf-inv-ship-val">{{ $shipmentRef }}</div>
                 </td>
             </tr>
         </table>
@@ -840,12 +814,12 @@ Tax Invoice {{ $invoice->invoice_number }}
                 @if(count($bucketItems) > 0)
                     @php
                         $sectionTotals = [];
-                        $meta = $sectionMeta[$bucket] ?? ['icon' => '📌', 'en' => ucfirst($bucket), 'ar' => ''];
+                        $meta = $sectionMeta[$bucket] ?? ['en' => ucfirst($bucket), 'ar' => ''];
                     @endphp
                     <table class="pdf-inv-sec-head" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
                         <tr>
                             <td class="pdf-inv-sec-title-stack">
-                                <div class="pdf-inv-sec-title-en">{{ $meta['icon'] }} {{ $meta['en'] }}</div>
+                                <div class="pdf-inv-sec-title-en">{{ $meta['en'] }}</div>
                                 @if(!empty($meta['ar']))
                                     <div class="pdf-inv-sec-title-ar">{{ $meta['ar'] }}</div>
                                 @endif
@@ -864,28 +838,39 @@ Tax Invoice {{ $invoice->invoice_number }}
                     <table class="pdf-inv-table pdf-table pdf-table--standalone" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
                         <thead>
                             <tr>
-                                <th style="width:46%;">Description</th>
-                                <th class="pdf-inv-th-num" style="width:12%;">Qty</th>
-                                <th class="pdf-inv-th-num" style="width:20%;">Unit Price</th>
-                                <th class="pdf-inv-th-num" style="width:22%;">Line Total</th>
+                                <th class="pdf-inv-col-item">Item name</th>
+                                <th class="pdf-inv-col-amt pdf-inv-th-num">Amount</th>
+                                <th class="pdf-inv-col-cur pdf-inv-th-num">Currency</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($bucketItems as $item)
                                 @php
                                     $cur = strtoupper((string) ($item->currency_code ?: $invoice->currency_code ?: 'USD'));
+                                    $itemDesc = trim((string) ($item->description ?? ''));
+                                    $itemTitle = trim((string) ($item->title ?? ''));
+                                    $catalogName = trim((string) ($item->item?->name ?? ''));
+                                    $tokenLooksAbbrev = $itemDesc !== ''
+                                        && strlen($itemDesc) <= 5
+                                        && ! str_contains($itemDesc, ' ');
+                                    $itemName = $itemDesc;
+                                    if ($tokenLooksAbbrev) {
+                                        $itemName = $itemTitle !== '' ? $itemTitle : ($catalogName !== '' ? $catalogName : $itemDesc);
+                                    }
+                                    if ($itemName === '') {
+                                        $itemName = $itemTitle !== '' ? $itemTitle : $catalogName;
+                                    }
                                 @endphp
                                 <tr>
-                                    <td>{{ $item->description }}</td>
-                                    <td class="pdf-inv-td-num">{{ number_format($item->quantity, 2) }}</td>
-                                    <td class="pdf-inv-td-num">{{ $cur }} {{ number_format($item->unit_price, 2) }}</td>
-                                    <td class="pdf-inv-td-num"><strong>{{ $cur }} {{ number_format($item->line_total, 2) }}</strong></td>
+                                    <td class="pdf-inv-col-item">{{ $itemName }}</td>
+                                    <td class="pdf-inv-col-amt pdf-inv-td-num">{{ number_format((float) $item->line_total, 2) }}</td>
+                                    <td class="pdf-inv-col-cur pdf-inv-td-num">{{ $cur }}</td>
                                 </tr>
                             @endforeach
                             <tr class="pdf-inv-subtotal-row">
-                                <td colspan="3"><strong>{{ $meta['en'] }} Total</strong></td>
-                                <td class="pdf-inv-sub-amt">{{ $formatBreakdown($sectionTotals) }}</td>
-                                </tr>
+                                <td class="pdf-inv-sub-label"><strong>{{ $meta['en'] }} Total</strong></td>
+                                <td colspan="2" class="pdf-inv-sub-amt">{{ $formatBreakdown($sectionTotals) }}</td>
+                            </tr>
                         </tbody>
                     </table>
                 @endif
@@ -909,8 +894,8 @@ Tax Invoice {{ $invoice->invoice_number }}
                                     continue;
                                 }
                                 $sk = (string) ($sec['key'] ?? '');
-                                $sm = $sectionMeta[$sk] ?? ['icon' => '📌', 'en' => ucfirst($sk)];
-                                $lineLabel = ($sm['icon'] ?? '').' '.($sm['en'] ?? $sk);
+                                $sm = $sectionMeta[$sk] ?? ['en' => ucfirst($sk)];
+                                $lineLabel = (string) ($sm['en'] ?? $sk);
                             @endphp
                             <tr>
                                 <td>{{ trim($lineLabel) }}</td>

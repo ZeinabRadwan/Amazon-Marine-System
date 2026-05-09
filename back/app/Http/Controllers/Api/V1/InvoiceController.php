@@ -3,14 +3,14 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\BankAccount;
 use App\Models\Currency;
 use App\Models\CustomerTransaction;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\PdfLayout;
 use App\Models\ShipmentAttachment;
 use App\Models\ShipmentCostInvoice;
-use App\Models\BankAccount;
-use App\Models\PdfLayout;
 use App\Notifications\ShipmentFinancialsCompleted;
 use App\Services\ActivityLogger;
 use App\Services\FinancialService;
@@ -24,11 +24,14 @@ use Mpdf\Mpdf;
 class InvoiceController extends Controller
 {
     private const FIXED_SECTIONS = ['shipping', 'inland', 'customs', 'insurance'];
+
     private const EXTRA_SECTIONS = ['handling', 'other'];
+
     private const TYPE_ID_TO_CODE = [
         0 => 'client',
         1 => 'vendor',
     ];
+
     private static ?bool $invoiceItemsHasTitleColumn = null;
 
     public function __construct(
@@ -200,7 +203,7 @@ class InvoiceController extends Controller
     }
 
     /**
-     * @param array<string,float> $into
+     * @param  array<string,float>  $into
      * @return array<string,float>
      */
     private static function addMoneyMap(array $into, string $currencyCode, float $amount): array
@@ -212,8 +215,8 @@ class InvoiceController extends Controller
     }
 
     /**
-     * @param array<string,float> $sell
-     * @param array<string,float> $cost
+     * @param  array<string,float>  $sell
+     * @param  array<string,float>  $cost
      * @return array<string,float>
      */
     private static function diffMoneyMap(array $sell, array $cost): array
@@ -287,7 +290,7 @@ class InvoiceController extends Controller
     }
 
     /**
-     * @param array<int,InvoiceItem> $items
+     * @param  array<int,InvoiceItem>  $items
      * @return array<string,array{items: array<int,array<string,mixed>>, totals: array<string,float>}>
      */
     private function sectionedInvoiceItems(iterable $items): array
@@ -965,7 +968,7 @@ class InvoiceController extends Controller
             403
         );
 
-        $invoice->load(['client', 'items', 'shipment.originPort', 'shipment.destinationPort', 'shipment.shippingLine', 'shipment.costInvoice']);
+        $invoice->load(['client', 'items.item', 'shipment.originPort', 'shipment.destinationPort', 'shipment.shippingLine', 'shipment.costInvoice']);
         $layout = PdfLayout::where('document_type', 'invoice')->first();
 
         $filename = $invoice->invoice_number.'.pdf';
