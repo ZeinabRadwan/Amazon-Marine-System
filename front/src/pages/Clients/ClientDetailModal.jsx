@@ -9,6 +9,8 @@ import Shimmer from '../../components/Shimmer'
 import { useShipmentTrackingUpdates } from '../../hooks/useShipmentTrackingUpdates'
 import VisitStatusBadge from '../Visits/VisitStatusBadge'
 import { localizedStatusLabel } from '../../utils/localizedStatusLabel'
+import '../Accountings/Accountings.css'
+import CustomerStatementInteractive from '../Accountings/CustomerStatementInteractive'
 import './Clients.css'
 import './ClientDetailModal.css'
 
@@ -255,22 +257,6 @@ export default function ClientDetailModal({
 
   if (!open) return null
 
-  const formatCurrency = (v) =>
-    typeof v === 'number'
-      ? new Intl.NumberFormat(numberLocale, {
-          style: 'currency',
-          currency: 'USD',
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        }).format(v)
-      : (v ?? '—')
-
-
-
-
-
-  const clientFinancial = financialSummaryList.find((item) => Number(item.id) === Number(detailId))
-
   const tabs = [
     { id: 'info', label: t('clients.tabs.info', 'Info') },
     { id: 'visits', label: t('clients.tabs.visits', 'Visits') },
@@ -278,13 +264,15 @@ export default function ClientDetailModal({
     { id: 'attachments', label: t('clients.tabs.attachments', 'Attachments') },
     { id: 'notes', label: t('clients.tabs.notes', 'Notes') },
     { id: 'followups', label: t('clients.tabs.followups', 'Follow-ups') },
-    { id: 'financial', label: t('clients.tabs.financial', 'Financial summary') },
+    { id: 'financial', label: t('clients.tabs.financial', 'Financial summary / Statement') },
   ]
 
   return (
     <div className="client-detail-modal" role="dialog" aria-modal="true" aria-labelledby="client-detail-modal-title">
       <div className="client-detail-modal__backdrop" onClick={onClose} />
-      <div className="client-detail-modal__box">
+      <div
+        className={`client-detail-modal__box${detailTab === 'financial' ? ' client-detail-modal__box--financial-statement' : ''}`}
+      >
         <header className="client-detail-modal__header client-detail-modal__header--ui-modal">
           <div className="client-detail-modal__ui-modal-head">
             <h2 id="client-detail-modal-title" className="client-detail-modal__ui-modal-title">
@@ -1275,41 +1263,9 @@ export default function ClientDetailModal({
             </section>
           )}
 
-          {detailTab === 'financial' && (
-            <section className="client-detail-modal__section">
-              <h3 className="client-detail-modal__section-title">{t('clients.financialSummary')}</h3>
-              {clientFinancial == null ? (
-                <p className="client-detail-modal__empty">{t('clients.noFinancialData')}</p>
-              ) : (
-                <div className="client-detail-modal__grid client-detail-modal__grid--card">
-                  <div className="client-detail-modal__row">
-                    <span className="client-detail-modal__label">{t('clients.fields.name')}</span>
-                    <span className="client-detail-modal__value">{clientFinancial.name ?? '—'}</span>
-                  </div>
-                  <div className="client-detail-modal__row">
-                    <span className="client-detail-modal__label">{t('clients.fields.company_name')}</span>
-                    <span className="client-detail-modal__value">{clientFinancial.company_name ?? '—'}</span>
-                  </div>
-                  <div className="client-detail-modal__row">
-                    <span className="client-detail-modal__label">{t('clients.financialFields.balance_due')}</span>
-                    <span className="client-detail-modal__value client-detail-modal__value--currency">
-                      {formatCurrency(clientFinancial.balance_due)}
-                    </span>
-                  </div>
-                  <div className="client-detail-modal__row">
-                    <span className="client-detail-modal__label">{t('clients.financialFields.last_payment_at')}</span>
-                    <span className="client-detail-modal__value">{formatDate(clientFinancial.last_payment_at)}</span>
-                  </div>
-                  <div className="client-detail-modal__row">
-                    <span className="client-detail-modal__label">{t('clients.financialFields.open_invoices_count')}</span>
-                    <span className="client-detail-modal__value">
-                      {typeof clientFinancial.open_invoices_count === 'number'
-                        ? clientFinancial.open_invoices_count
-                        : (clientFinancial.open_invoices_count ?? '—')}
-                    </span>
-                  </div>
-                </div>
-              )}
+          {detailTab === 'financial' && detailId != null && (
+            <section className="client-detail-modal__section client-detail-modal__section--financial-statement">
+              <CustomerStatementInteractive customerId={detailId} variant="embedded" />
             </section>
           )}
         </div>

@@ -1,11 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import { Container } from '../../components/Container'
 import '../../components/PageHeader/PageHeader.css'
-import '../../components/Tabs/Tabs.css'
 import '../Clients/Clients.css'
-import Tabs from '../../components/Tabs'
 import InvoiceSummary from './components/InvoiceSummary'
 import InvoicesTable from './components/InvoicesTable'
 import { getStoredToken } from '../Login'
@@ -19,7 +17,6 @@ export default function Invoices() {
   const canViewInvoices = hasPageAccess('invoices')
   const canManageInvoices = hasPageAccess('invoices')
 
-  const [activeTab, setActiveTab] = useState('all')
   const [searchParams] = useSearchParams()
   const [refreshKey, setRefreshKey] = useState(0)
   const [exportBusy, setExportBusy] = useState(false)
@@ -36,20 +33,6 @@ export default function Invoices() {
     setTableFilters(f)
   }, [])
 
-  const tabs = useMemo(
-    () => [
-      { id: 'all', label: t('invoices.tabs.all', 'All') },
-      { id: 'client', label: t('invoices.tabs.client', 'Client Invoices') },
-      { id: 'partner', label: t('invoices.tabs.partner', 'Partner Invoices') },
-    ],
-    [t]
-  )
-
-  useEffect(() => {
-    // placeholder: sync tab with URL if needed
-  }, [activeTab])
-
-  const invoiceType = activeTab === 'partner' ? 'partner' : activeTab === 'client' ? 'client' : ''
   const initialInvoiceId = searchParams.get('invoice_id') || ''
 
   const handleExportCsv = useCallback(
@@ -64,7 +47,6 @@ export default function Invoices() {
           useIds
             ? { ids: selectedIdList }
             : {
-                invoice_type: invoiceType || undefined,
                 search: tableFilters.search || undefined,
                 status: tableFilters.status || undefined,
                 currency_id: tableFilters.currencyId || undefined,
@@ -78,7 +60,7 @@ export default function Invoices() {
         setExportBusy(false)
       }
     },
-    [invoiceType, tableFilters, t]
+    [tableFilters, t]
   )
 
   if (!canViewInvoices) {
@@ -96,21 +78,15 @@ export default function Invoices() {
       <div className="clients-page invoices-page">
         <InvoiceSummary refreshKey={refreshKey} />
 
-        <div className="invoices-tabs-section">
-          <div className="invoices-tabs-wrap">
-            <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
-          </div>
-          <InvoicesTable
-            refreshKey={refreshKey}
-            invoiceType={invoiceType}
-            initialDetailId={initialInvoiceId}
-            onChanged={() => setRefreshKey((k) => k + 1)}
-            onFiltersChange={onFiltersChange}
-            canManage={canManageInvoices}
-            exportLoading={exportBusy}
-            onExportCsv={handleExportCsv}
-          />
-        </div>
+        <InvoicesTable
+          refreshKey={refreshKey}
+          initialDetailId={initialInvoiceId}
+          onChanged={() => setRefreshKey((k) => k + 1)}
+          onFiltersChange={onFiltersChange}
+          canManage={canManageInvoices}
+          exportLoading={exportBusy}
+          onExportCsv={handleExportCsv}
+        />
       </div>
     </Container>
   )

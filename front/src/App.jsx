@@ -23,6 +23,8 @@ import Users from './pages/Users'
 import RolesPermissions from './pages/RolesPermissions'
 import Clients from './pages/Clients'
 import Accountings from './pages/Accountings'
+import CustomerStatementDetailPage from './pages/Accountings/CustomerStatementDetailPage'
+import PartnerStatementDetailPage from './pages/Accountings/PartnerStatementDetailPage'
 import Treasury from './pages/Treasury'
 import Expenses from './pages/Expenses'
 import Vendors from './pages/Vendors'
@@ -739,6 +741,22 @@ function App() {
             element={
               <RequirePageAccess pageKey="accounting">
                 <Accountings />
+              </RequirePageAccess>
+            }
+          />
+          <Route
+            path="/accountings/customers/:customerId/statement"
+            element={
+              <RequirePageAccess pageKey="accounting">
+                <CustomerStatementDetailPage />
+              </RequirePageAccess>
+            }
+          />
+          <Route
+            path="/accountings/partners/:partnerId/statement"
+            element={
+              <RequirePageAccess pageKey="accounting">
+                <PartnerStatementDetailPage />
               </RequirePageAccess>
             }
           />

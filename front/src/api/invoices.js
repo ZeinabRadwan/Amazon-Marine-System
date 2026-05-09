@@ -4,6 +4,7 @@
 
 import { getApiBaseUrl } from './apiBaseUrl'
 import { apiFetch } from './http'
+import { mapInvoiceListResponse, mapInvoiceResponse } from '../utils/invoiceResponse'
 
 const getBaseUrl = getApiBaseUrl
 
@@ -75,7 +76,7 @@ export async function listInvoices(token, params = {}) {
   if (!res.ok) {
     throw new Error(json.message || json.error || `Failed to list invoices (${res.status})`)
   }
-  return { data: json.data ?? [], meta: json.meta ?? null }
+  return { data: mapInvoiceListResponse(json.data ?? []), meta: json.meta ?? null }
 }
 
 /**
@@ -88,7 +89,8 @@ export async function getInvoice(token, invoiceId) {
   if (!res.ok) {
     throw new Error(json.message || json.error || `Failed to load invoice (${res.status})`)
   }
-  return json.data ?? json
+  const payload = json.data ?? json
+  return mapInvoiceResponse(payload)
 }
 
 /**
@@ -202,7 +204,13 @@ export async function recordInvoicePayment(token, invoiceId, body) {
   })
   const json = await res.json().catch(() => ({}))
   if (!res.ok) {
-    throw new Error(json.message || json.error || `Failed to record payment (${res.status})`)
+    const fromErrors =
+      json.errors && typeof json.errors === 'object'
+        ? Object.values(json.errors)
+            .flat()
+            .filter((m) => typeof m === 'string' && m.trim())
+        : []
+    throw new Error(fromErrors[0] || json.message || json.error || `Failed to record payment (${res.status})`)
   }
   return json.data ?? json
 }

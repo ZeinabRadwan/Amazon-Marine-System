@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Invoice;
 use App\Models\Payment;
+use App\Models\VendorBill;
 use Illuminate\Support\Collection;
 
 class AccountingAggregationService
@@ -192,6 +193,97 @@ class AccountingAggregationService
 
         return [
             'total_invoiced_per_currency' => $invoiced,
+            'total_paid_per_currency' => $paid,
+            'total_remaining_per_currency' => $remaining,
+        ];
+    }
+
+    /**
+     * Vendor bill totals in the bill's currency (from line items, fallback net_amount).
+     *
+     * @return array<string, float>
+     */
+    public static function vendorBillTotalsPerCurrency(VendorBill $bill): array
+    {
+        $currency = strtoupper(trim((string) ($bill->currency_code ?: 'USD')));
+        $sum = 0.0;
+        $rows = $bill->relationLoaded('items')
+            ? $bill->items
+            : $bill->items()->get(['line_total']);
+
+        foreach ($rows as $item) {
+            $sum += (float) ($item->line_total ?? 0);
+        }
+
+        if ($sum <= 0.00001) {
+            $sum = (float) ($bill->net_amount ?? 0);
+        }
+
+        return self::normalizeCurrencyMap([$currency => $sum]);
+    }
+
+    /**
+     * @return array<string, float>
+     */
+    public static function vendorBillPaidPerCurrency(int $vendorBillId): array
+    {
+        $payments = Payment::query()
+            ->where('vendor_bill_id', $vendorBillId)
+            ->where('type', 'vendor_payment')
+            ->get(['currency_code', 'amount']);
+
+        $paid = [];
+        foreach ($payments as $payment) {
+            $currency = strtoupper((string) ($payment->currency_code ?: 'USD'));
+            $paid[$currency] = (float) ($paid[$currency] ?? 0) + (float) $payment->amount;
+        }
+
+        return self::normalizeCurrencyMap($paid);
+    }
+
+    /**
+     * @return array{
+     *   total_billed_per_currency: array<string,float>,
+     *   total_paid_per_currency: array<string,float>,
+     *   total_remaining_per_currency: array<string,float>
+     * }
+     */
+    public static function vendorBillStatementTotals(VendorBill $bill): array
+    {
+        $billed = self::vendorBillTotalsPerCurrency($bill);
+        $paid = self::vendorBillPaidPerCurrency($bill->id);
+        $remaining = self::subtractCurrencyMaps($billed, $paid);
+
+        return [
+            'total_billed_per_currency' => $billed,
+            'total_paid_per_currency' => $paid,
+            'total_remaining_per_currency' => $remaining,
+        ];
+    }
+
+    /**
+     * @param Collection<int, VendorBill> $bills
+     * @return array{
+     *   total_billed_per_currency: array<string,float>,
+     *   total_paid_per_currency: array<string,float>,
+     *   total_remaining_per_currency: array<string,float>
+     * }
+     */
+    public static function aggregateVendorBills(Collection $bills): array
+    {
+        $billed = [];
+        $paid = [];
+        $remaining = [];
+
+        foreach ($bills as $bill) {
+            $totals = self::vendorBillStatementTotals($bill);
+            $billed = self::addCurrencyMaps($billed, $totals['total_billed_per_currency']);
+            $paid = self::addCurrencyMaps($paid, $totals['total_paid_per_currency']);
+            $remaining = self::addCurrencyMaps($remaining, $totals['total_remaining_per_currency']);
+        }
+
+        return [
+            'total_billed_per_currency' => $billed,
             'total_paid_per_currency' => $paid,
             'total_remaining_per_currency' => $remaining,
         ];

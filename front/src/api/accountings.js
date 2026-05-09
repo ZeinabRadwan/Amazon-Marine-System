@@ -204,7 +204,16 @@ export async function recordPayment(token, body) {
     body: isFormData ? body : JSON.stringify(body),
   })
   const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.message || data.error || `Failed to record payment (${res.status})`)
+  if (!res.ok) {
+    const fromErrors =
+      data.errors && typeof data.errors === 'object'
+        ? Object.values(data.errors)
+            .flat()
+            .filter((m) => typeof m === 'string' && m.trim())
+        : []
+    const msg = fromErrors[0] || data.message || data.error || `Failed to record payment (${res.status})`
+    throw new Error(msg)
+  }
   return data
 }
 

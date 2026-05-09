@@ -6,10 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\BankAccount;
+use App\Models\Invoice;
 use App\Models\TreasuryEntry;
+use App\Models\VendorBill;
+use App\Services\AccountingAggregationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class TreasuryController extends Controller
 {
@@ -53,6 +57,72 @@ class TreasuryController extends Controller
     }
 
     /**
+     * Raw ledger balances per bank account and currency (negative allowed).
+     *
+     * @return array<string, array<string, float>>
+     */
+    private function computeRawBalancesByAccount(?int $excludeEntryId = null): array
+    {
+        $query = TreasuryEntry::query()->orderBy('entry_date')->orderBy('id');
+        if ($excludeEntryId) {
+            $query->where('id', '!=', $excludeEntryId);
+        }
+
+        $balancesByAccount = [];
+        foreach ($query->get() as $entry) {
+            $this->applyEntryToBalances($balancesByAccount, $entry);
+        }
+
+        return $balancesByAccount;
+    }
+
+    /**
+     * @param  array<string, array<string, float>>  $balancesByAccount
+     */
+    private function getRawBalanceForBankCurrency(array $balancesByAccount, int $bankId, string $currency): float
+    {
+        $key = (string) $bankId;
+        $cur = $this->normalizeCurrency($currency);
+
+        return (float) ($balancesByAccount[$key][$cur] ?? 0);
+    }
+
+    /**
+     * Block debits when the bank leg does not have enough raw balance in that currency.
+     *
+     * @param  array<string, mixed>  $validated
+     */
+    private function assertSufficientBankBalance(array $validated, ?int $excludeEntryId = null): ?JsonResponse
+    {
+        $accountId = isset($validated['account_id']) ? (int) $validated['account_id'] : 0;
+        if ($accountId <= 0) {
+            return null;
+        }
+
+        $type = strtolower((string) ($validated['entry_type'] ?? ''));
+        if (! in_array($type, ['out', 'transfer', 'exchange'], true)) {
+            return null;
+        }
+
+        $amount = (float) ($validated['amount'] ?? 0);
+        if ($amount <= 0 || ! is_finite($amount)) {
+            return null;
+        }
+
+        $currency = $this->normalizeCurrency((string) ($validated['currency_code'] ?? 'USD'));
+        $balances = $this->computeRawBalancesByAccount($excludeEntryId);
+        $avail = $this->getRawBalanceForBankCurrency($balances, $accountId, $currency);
+
+        if ($avail + 1e-6 < $amount) {
+            return response()->json([
+                'message' => __('bank.insufficient_balance_currency'),
+            ], 422);
+        }
+
+        return null;
+    }
+
+    /**
      * @param  array<string, float>  $map
      * @return array<string, float>
      */
@@ -61,6 +131,20 @@ class TreasuryController extends Controller
         $out = [];
         foreach ($map as $k => $v) {
             $out[strtoupper((string) $k)] = round((float) $v, 2);
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param  array<string, float>  $map
+     * @return array<string, float>
+     */
+    private function clampMoneyMapNonNegative(array $map): array
+    {
+        $out = [];
+        foreach ($map as $k => $v) {
+            $out[strtoupper((string) $k)] = round(max(0.0, (float) $v), 2);
         }
 
         return $out;
@@ -107,11 +191,14 @@ class TreasuryController extends Controller
                 $balanceRaw[$this->normalizeCurrency((string) $cur)] = round((float) $val, 2);
             }
 
-            $insufficient = false;
             $balanceDisplay = [];
             foreach ($balanceRaw as $cur => $val) {
                 if ($val < 0) {
-                    $insufficient = true;
+                    Log::debug('Treasury ledger discrepancy: negative raw balance before clamp', [
+                        'bank_id' => $bank->id,
+                        'currency' => $cur,
+                        'raw_balance' => $val,
+                    ]);
                     $balanceDisplay[$cur] = 0.0;
                 } else {
                     $balanceDisplay[$cur] = $val;
@@ -131,7 +218,7 @@ class TreasuryController extends Controller
                 if ($pay && $pay->type === 'client_receipt' && $type === 'in') {
                     $customerIn[$currency] = ($customerIn[$currency] ?? 0) + $amt;
                 }
-                if ($pay && $pay->type === 'vendor_payment' && in_array($type, ['out', 'transfer', 'exchange'], true)) {
+                if ($pay && $pay->type === 'vendor_payment' && $type === 'out') {
                     $partnerOut[$currency] = ($partnerOut[$currency] ?? 0) + $amt;
                 }
             }
@@ -144,8 +231,6 @@ class TreasuryController extends Controller
                 'iban' => $bank->iban ?? null,
                 'supported_currencies' => is_array($bank->supported_currencies) ? $bank->supported_currencies : [],
                 'balance_by_currency' => $this->roundMoneyMap($balanceDisplay),
-                'balance_raw_by_currency' => $this->roundMoneyMap($balanceRaw),
-                'insufficient_funds' => $insufficient,
                 'customer_in_by_currency' => $this->roundMoneyMap($customerIn),
                 'partner_out_by_currency' => $this->roundMoneyMap($partnerOut),
             ];
@@ -171,12 +256,28 @@ class TreasuryController extends Controller
         $globalPartner = $sumMaps($bankPayload, 'partner_out_by_currency');
         $globalBalanceDisplay = $sumMaps($bankPayload, 'balance_by_currency');
 
+        $openInvoices = Invoice::query()
+            ->with('items')
+            ->whereNotIn('status', ['cancelled'])
+            ->get();
+        $arAgg = AccountingAggregationService::aggregateInvoices($openInvoices);
+        $customerOutstandingReceivables = $this->clampMoneyMapNonNegative($arAgg['total_remaining_per_currency']);
+
+        $openBills = VendorBill::query()
+            ->with('items')
+            ->whereNotIn('status', ['cancelled'])
+            ->get();
+        $apAgg = AccountingAggregationService::aggregateVendorBills($openBills);
+        $partnerPayablesOutstanding = $this->clampMoneyMapNonNegative($apAgg['total_remaining_per_currency']);
+
         return response()->json([
             'data' => [
                 'global' => [
                     'total_balance_by_currency' => $globalBalanceDisplay,
                     'total_customer_in_by_currency' => $globalCustomer,
                     'total_partner_out_by_currency' => $globalPartner,
+                    'customer_outstanding_receivables_by_currency' => $customerOutstandingReceivables,
+                    'partner_payables_outstanding_by_currency' => $partnerPayablesOutstanding,
                 ],
                 'banks' => $bankPayload,
             ],
@@ -302,9 +403,8 @@ class TreasuryController extends Controller
         if ($bankAccountId = $request->query('bank_account_id')) {
             $id = (int) $bankAccountId;
             if ($id > 0) {
-                $query->where(function ($q) use ($id): void {
-                    $q->where('account_id', $id)->orWhere('counter_account_id', $id);
-                });
+                // Primary ledger leg only — avoids duplicate rows per transfer (out on source, in on target).
+                $query->where('account_id', $id);
             }
         }
         if ($account = $request->query('account')) {

@@ -1,3 +1,5 @@
+@import '../Accountings/CurrencyMapBadges.css';
+
 /* Invoices page – aligns with Clients layout (uses clients-page + Clients.css) */
 
 .invoices-tabs-section {
@@ -447,4 +449,15 @@
     align-items: center;
     padding-inline-start: 54px;
   }
+}
+
+/* Invoice list — multi-currency badges (uses accounting-currency-badge EGP/USD/EUR colors) */
+.invoices-table-totals-cell {
+  display: block;
+  text-align: end;
+}
+
+.invoices-table-totals-cell .accounting-currency-stack {
+  justify-content: flex-end;
+  width: 100%;
 }

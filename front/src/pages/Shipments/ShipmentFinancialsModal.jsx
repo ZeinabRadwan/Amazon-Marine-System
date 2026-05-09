@@ -21,6 +21,8 @@ import {
   downloadInvoicePdf,
   listCurrencies,
 } from '../../api/invoices'
+import { CurrencyMapBadges } from '../Accountings/CurrencyMapBadges'
+import '../Accountings/CurrencyMapBadges.css'
 import { listActivitiesBySubject } from '../../api/activities'
 import {
   notifyShipmentSalesFinancials,
@@ -4046,8 +4048,18 @@ export default function ShipmentFinancialsModal({
                           <div className="font-medium">{inv.invoice_number || `INV-${inv.id}`}</div>
                           <div className="text-gray-500">{formatHumanDate(inv.issue_date)}</div>
                         </div>
-                        <div className="text-right">
-                          <div className="font-semibold">{(inv.currency_code || 'USD').toUpperCase()} {formatMoney(Number(inv.amount || 0), numberLocale)}</div>
+                        <div className="text-right space-y-0.5">
+                          <div className="flex justify-end">
+                            <CurrencyMapBadges
+                              value={
+                                inv.totalsByCurrency && Object.keys(inv.totalsByCurrency).length
+                                  ? inv.totalsByCurrency
+                                  : { [(inv.currency_code || 'USD').toUpperCase()]: Number(inv.amount || 0) }
+                              }
+                              size="sm"
+                              amountFirst
+                            />
+                          </div>
                           <div className="text-xs text-gray-500">{t(`shipments.fin.invoiceStatusValue.${inv.status || 'unpaid'}`, { defaultValue: inv.status || 'unpaid' })}</div>
                         </div>
                       </div>

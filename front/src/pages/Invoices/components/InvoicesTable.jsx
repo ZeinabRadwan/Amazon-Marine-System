@@ -7,6 +7,7 @@ import Pagination from '../../../components/Pagination'
 import Alert from '../../../components/Alert'
 import { getStoredToken } from '../../Login'
 import { deleteInvoice, listInvoices } from '../../../api/invoices'
+import { CurrencyMapBadges } from '../../Accountings/CurrencyMapBadges'
 import InvoiceDetailModal from './InvoiceDetailModal'
 import CreateInvoiceModal from './CreateInvoiceModal'
 
@@ -27,9 +28,17 @@ function statusLabel(status, t) {
 
 const STATUS_FILTER_VALUES = ['paid', 'partial', 'unpaid', 'overdue', 'issued', 'draft', 'cancelled']
 
+function InvoiceListTotalsCell({ row }) {
+  return (
+    <div className="invoices-table-totals-cell">
+      <CurrencyMapBadges value={row.totalsByCurrency} size="sm" amountFirst emptyLabel="—" />
+    </div>
+  )
+}
+
 export default function InvoicesTable({
   refreshKey,
-  invoiceType,
+  invoiceType = '',
   initialDetailId,
   onChanged,
   onFiltersChange,
@@ -195,12 +204,11 @@ export default function InvoicesTable({
     },
     { key: 'shipment_bl', label: t('invoices.table.shipment', 'Shipment'), sortable: false },
     {
-      key: 'amount',
-      label: t('invoices.table.amount', 'Amount'),
-      render: (v) => <span className="tabular-nums font-semibold">{Number(v || 0).toLocaleString()}</span>,
+      key: 'totalsByCurrency',
+      label: t('invoices.table.invoiceTotal', 'Invoice total'),
+      render: (_, row) => <InvoiceListTotalsCell row={row} />,
       sortable: false,
     },
-    { key: 'currency_code', label: t('invoices.table.currency', 'Currency'), sortable: false },
     {
       key: 'status',
       label: t('invoices.table.status', 'Status'),

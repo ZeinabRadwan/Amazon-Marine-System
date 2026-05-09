@@ -23,6 +23,9 @@ function buildQuery(params = {}) {
   if (params.account) searchParams.set('account', params.account)
   if (params.currency) searchParams.set('currency', params.currency)
   if (params.sort) searchParams.set('sort', params.sort)
+  if (params.bank_account_id != null && params.bank_account_id !== '') {
+    searchParams.set('bank_account_id', String(params.bank_account_id))
+  }
   if (params.months != null && params.months !== '') searchParams.set('months', String(params.months))
   if (params.category_id != null && params.category_id !== '') {
     searchParams.set('category_id', String(params.category_id))
@@ -35,6 +38,20 @@ function buildQuery(params = {}) {
  * @param {string} token
  * @param {{ months?: number }} [params]
  */
+/**
+ * GET /treasury/bank-overview — per-bank ledger balances, customer/partner splits.
+ */
+export async function getTreasuryBankOverview(token) {
+  const res = await apiFetch(`${getBaseUrl()}/treasury/bank-overview`, {
+    headers: authHeaders(token),
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(json.message || json.error || `Failed to load bank treasury overview (${res.status})`)
+  }
+  return json.data ?? json
+}
+
 export async function getTreasurySummary(token, params = {}) {
   const q = buildQuery(params)
   const res = await apiFetch(`${getBaseUrl()}/treasury/summary${q ? `?${q}` : ''}`, {

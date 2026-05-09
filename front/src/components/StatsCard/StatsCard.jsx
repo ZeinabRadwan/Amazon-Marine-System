@@ -99,11 +99,17 @@ export default function StatsCard({
         )}
       </div>
 
-      {/* Row 2: Number + Title stacked */}
+      {/* Row 2: Number + Title stacked (numbers vs rich currency badges) */}
       <div className="mt-2.5 min-w-0">
-        <p className="text-xl font-bold leading-tight tabular-nums text-gray-900 dark:text-gray-100">
-          {typeof value === 'number' ? formatValue(value, i18n.language) : value}
-        </p>
+        {typeof value === 'number' ? (
+          <p className="text-xl font-bold leading-tight tabular-nums text-gray-900 dark:text-gray-100">
+            {formatValue(value, i18n.language)}
+          </p>
+        ) : typeof value === 'string' ? (
+          <p className="text-xl font-bold leading-tight tabular-nums text-gray-900 dark:text-gray-100">{value}</p>
+        ) : (
+          <div className="accounting-stats-card-value-rich">{value}</div>
+        )}
         <p
           id={titleId}
           className="mt-0.5 text-sm font-medium text-slate-600 dark:text-slate-400"

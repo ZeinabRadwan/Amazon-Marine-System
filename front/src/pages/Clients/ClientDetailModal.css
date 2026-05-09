@@ -500,6 +500,19 @@ body .flatpickr-calendar {
   max-height: 92vh;
 }
 
+/* Accounting customer statement embedded in Client Detail */
+.client-detail-modal__box--financial-statement {
+  max-width: min(1200px, 96vw);
+}
+
+.client-detail-modal .accountings-modal {
+  z-index: 1101;
+}
+
+.client-detail-modal__section--financial-statement {
+  margin-bottom: 0;
+}
+
 /* Visits page – read-only visit detail (تفاصيل الزيارة) */
 .client-detail-modal__box--visit-detail {
   max-width: 520px;

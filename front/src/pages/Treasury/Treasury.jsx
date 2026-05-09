@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { getStoredToken } from '../Login'
 import { useAuthAccess } from '../../hooks/useAuthAccess'
 import {
-  getTreasurySummary,
+  getTreasuryBankOverview,
   getTreasuryEntries,
   createTreasuryEntry,
   updateTreasuryEntry,
@@ -13,15 +13,12 @@ import {
   createTreasuryExpense,
 } from '../../api/treasury'
 import { listBankAccounts } from '../../api/accountings'
+import { listCurrencies } from '../../api/invoices'
 import { listExpenseCategories } from '../../api/expenses'
 import LoaderDots from '../../components/LoaderDots'
 import { Container } from '../../components/Container'
-import { GroupedBarChart, LineChart } from '../../components/Charts'
-import '../../components/Charts/Charts.css'
 import '../../components/LoaderDots/LoaderDots.css'
-import { StatsCard } from '../../components/StatsCard'
 import {
-  Wallet,
   Landmark,
   Receipt,
   FileSpreadsheet,
@@ -36,7 +33,8 @@ import '../../components/PageHeader/PageHeader.css'
 import '../../components/Tabs/Tabs.css'
 import '../Clients/Clients.css'
 import '../Accountings/Accountings.css'
-import '../Invoices/Invoices.css'
+import '../Accountings/CurrencyMapBadges.css'
+import { CurrencyMapBadges } from '../Accountings/CurrencyMapBadges'
 import Tabs from '../../components/Tabs'
 import Pagination from '../../components/Pagination'
 import './Treasury.css'
@@ -66,19 +64,6 @@ const SOURCE_GROUPS = [
 
 const CASH_SOURCE_OPTIONS = SOURCE_GROUPS.flatMap((g) => g.options)
 
-function formatMonthLabel(ym, locale) {
-  if (!ym || typeof ym !== 'string') return ym
-  const parts = ym.split('-')
-  if (parts.length < 2) return ym
-  const y = Number(parts[0])
-  const m = Number(parts[1])
-  if (!y || !m) return ym
-  return new Date(y, m - 1, 1).toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-GB', {
-    month: 'short',
-    year: '2-digit',
-  })
-}
-
 function formatAmount(amount, currency, locale) {
   const n = Number(amount)
   if (Number.isNaN(n)) return '—'
@@ -106,7 +91,24 @@ function formatCompactNumber(n, locale) {
   }).format(x)
 }
 
-function computeRunningBalances(rows) {
+function deriveFlowType(row) {
+  if (row?.flow_type) return String(row.flow_type).toLowerCase()
+  if (row?.payment_type === 'client_receipt') return 'customer'
+  if (row?.payment_type === 'vendor_payment') return 'partner'
+  if (!row?.payment_id) return String(row?.entry_type || '').toLowerCase() === 'transfer' ? 'transfer' : 'manual'
+  return 'internal'
+}
+
+function flowTypeLabel(row, t) {
+  const f = deriveFlowType(row)
+  if (f === 'customer') return t('treasury.flow.customer', 'Customer')
+  if (f === 'partner') return t('treasury.flow.partner', 'Partner')
+  if (f === 'transfer') return t('treasury.flow.transfer', 'Transfer')
+  if (f === 'manual') return t('treasury.flow.manual', 'Manual / Other')
+  return t('treasury.flow.internal', 'Internal')
+}
+
+function computeRunningBalances(rows, clampZero = true) {
   const byCurrency = new Map()
   for (const r of rows) {
     const cur = r.currency_code || 'USD'
@@ -114,6 +116,7 @@ function computeRunningBalances(rows) {
     byCurrency.get(cur).push(r)
   }
   const balanceById = new Map()
+  let hasNegative = false
   for (const [, list] of byCurrency) {
     const sorted = [...list].sort((a, b) => {
       const da = a.entry_date || ''
@@ -124,10 +127,12 @@ function computeRunningBalances(rows) {
     let run = 0
     for (const r of sorted) {
       run += Number(r.amount) || 0
-      balanceById.set(r.id, { running: run, currency: r.currency_code || 'USD' })
+      if (run < 0) hasNegative = true
+      const displayRun = clampZero ? Math.max(0, run) : run
+      balanceById.set(r.id, { running: displayRun, rawRunning: run, currency: r.currency_code || 'USD' })
     }
   }
-  return balanceById
+  return { balanceById, hasNegative }
 }
 
 function escapeCsvCell(s) {
@@ -147,7 +152,7 @@ function useDebounced(value, delayMs) {
 
 export default function Treasury() {
   const { t, i18n } = useTranslation()
-  const { user, hasPageAccess } = useAuthAccess()
+  const { hasPageAccess } = useAuthAccess()
   const token = getStoredToken()
   const locale = String(i18n?.language ?? '').toLowerCase().startsWith('ar') ? 'ar-EG' : 'en-US'
   const isAr = locale.startsWith('ar')
@@ -155,17 +160,9 @@ export default function Treasury() {
   const canViewAccounting = hasPageAccess('treasury')
   const canManageAccounting = hasPageAccess('treasury')
 
-  const [monthsBar, setMonthsBar] = useState(6)
-  const [monthsLine, setMonthsLine] = useState(6)
-  const [summaryCf, setSummaryCf] = useState(null)
-  const [summaryBal, setSummaryBal] = useState(null)
-  const [summaryCfLoading, setSummaryCfLoading] = useState(false)
-  const [summaryBalLoading, setSummaryBalLoading] = useState(false)
-
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebounced(search, 400)
   const [typeFilter, setTypeFilter] = useState('')
-  const [accountFilter, setAccountFilter] = useState('')
   const [currencyFilter, setCurrencyFilter] = useState('')
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
@@ -173,6 +170,10 @@ export default function Treasury() {
 
   const [entries, setEntries] = useState([])
   const [bankAccounts, setBankAccounts] = useState([])
+  const [bankLedgerOverview, setBankLedgerOverview] = useState(null)
+  const [bankOverviewLoading, setBankOverviewLoading] = useState(false)
+  const [exchangeRates, setExchangeRates] = useState([])
+  const [selectedBankId, setSelectedBankId] = useState('')
   const [entriesLoading, setEntriesLoading] = useState(false)
   const [entriesError, setEntriesError] = useState(null)
 
@@ -228,23 +229,14 @@ export default function Treasury() {
     [t],
   )
 
-  const loadSummaryCf = useCallback(() => {
+  const loadBankOverview = useCallback(() => {
     if (!token || !canViewAccounting) return
-    setSummaryCfLoading(true)
-    getTreasurySummary(token, { months: monthsBar })
-      .then((data) => setSummaryCf(data))
-      .catch(() => setSummaryCf(null))
-      .finally(() => setSummaryCfLoading(false))
-  }, [token, monthsBar, canViewAccounting])
-
-  const loadSummaryBal = useCallback(() => {
-    if (!token || !canViewAccounting) return
-    setSummaryBalLoading(true)
-    getTreasurySummary(token, { months: monthsLine })
-      .then((data) => setSummaryBal(data))
-      .catch(() => setSummaryBal(null))
-      .finally(() => setSummaryBalLoading(false))
-  }, [token, monthsLine, canViewAccounting])
+    setBankOverviewLoading(true)
+    getTreasuryBankOverview(token)
+      .then((data) => setBankLedgerOverview(data))
+      .catch(() => setBankLedgerOverview(null))
+      .finally(() => setBankOverviewLoading(false))
+  }, [token, canViewAccounting])
 
   const loadEntries = useCallback(() => {
     if (!token || !canViewAccounting) return
@@ -253,8 +245,8 @@ export default function Treasury() {
     getTreasuryEntries(token, {
       search: debouncedSearch || undefined,
       type: typeFilter || undefined,
-      account: accountFilter || undefined,
       currency: currencyFilter || undefined,
+      bank_account_id: selectedBankId || undefined,
       from: fromDate || undefined,
       to: toDate || undefined,
       sort: sortKey || 'date',
@@ -265,7 +257,17 @@ export default function Treasury() {
         setEntries([])
       })
       .finally(() => setEntriesLoading(false))
-  }, [token, debouncedSearch, typeFilter, accountFilter, currencyFilter, fromDate, toDate, sortKey, canViewAccounting])
+  }, [
+    token,
+    debouncedSearch,
+    typeFilter,
+    currencyFilter,
+    selectedBankId,
+    fromDate,
+    toDate,
+    sortKey,
+    canViewAccounting,
+  ])
 
   const loadExpenses = useCallback(() => {
     if (!token || !canViewAccounting) return
@@ -279,16 +281,19 @@ export default function Treasury() {
   }, [token, expenseCategoryId, canViewAccounting])
 
   useEffect(() => {
-    loadSummaryCf()
-  }, [loadSummaryCf])
-
-  useEffect(() => {
-    loadSummaryBal()
-  }, [loadSummaryBal])
-
-  useEffect(() => {
     loadEntries()
   }, [loadEntries])
+
+  useEffect(() => {
+    loadBankOverview()
+  }, [loadBankOverview])
+
+  useEffect(() => {
+    if (!token || !canViewAccounting) return
+    listCurrencies(token)
+      .then((rows) => setExchangeRates(Array.isArray(rows) ? rows : []))
+      .catch(() => setExchangeRates([]))
+  }, [token, canViewAccounting])
 
   useEffect(() => {
     loadExpenses()
@@ -296,7 +301,7 @@ export default function Treasury() {
 
   useEffect(() => {
     setEntriesPage(1)
-  }, [debouncedSearch, typeFilter, accountFilter, currencyFilter, fromDate, toDate, sortKey])
+  }, [debouncedSearch, typeFilter, currencyFilter, selectedBankId, fromDate, toDate, sortKey])
 
   useEffect(() => {
     setExpensesPage(1)
@@ -337,7 +342,6 @@ export default function Treasury() {
     return entries.slice(start, start + RECON_ROWS_PER_PAGE)
   }, [entries, reconPage])
 
-  const accountOptions = useMemo(() => Array.from(new Set(entries.map((e) => e.source).filter(Boolean))).sort(), [entries])
   const currencyOptions = useMemo(() => Array.from(new Set(entries.map((e) => e.currency_code).filter(Boolean))).sort(), [entries])
 
   useEffect(() => {
@@ -354,29 +358,17 @@ export default function Treasury() {
       .catch(() => setBankAccounts([]))
   }, [token, canViewAccounting])
 
-  const runningById = useMemo(() => computeRunningBalances(entries), [entries])
+  const { balanceById: runningById, hasNegative: ledgerNegativeRunning } = useMemo(
+    () => computeRunningBalances(entries),
+    [entries],
+  )
 
-  const cashFlowChartData = useMemo(() => {
-    const cf = summaryCf?.cash_flow
-    if (!cf?.labels?.length) return []
-    return cf.labels.map((label, i) => ({
-      label: formatMonthLabel(label, locale),
-      in: Number(cf.inbound?.[i]) || 0,
-      out: Number(cf.outbound?.[i]) || 0,
-    }))
-  }, [summaryCf, locale])
+  const globalInsufficientFunds = Boolean(bankLedgerOverview?.banks?.some((b) => b.insufficient_funds))
 
-  const balanceChartData = useMemo(() => {
-    const b = summaryBal?.balance
-    if (!b?.labels?.length) return []
-    return b.labels.map((label, i) => ({
-      label: formatMonthLabel(label, locale),
-      balance: Number(b.balance?.[i]) || 0,
-    }))
-  }, [summaryBal, locale])
-
-  const totals = summaryCf?.totals ?? summaryBal?.totals ?? {}
-  const bankBalances = summaryCf?.bank_balances ?? summaryBal?.bank_balances ?? []
+  const selectedBankOverviewRow = useMemo(() => {
+    if (!bankLedgerOverview?.banks || !selectedBankId) return null
+    return bankLedgerOverview.banks.find((b) => Number(b.id) === Number(selectedBankId)) ?? null
+  }, [bankLedgerOverview, selectedBankId])
 
   const bankAccountOptions = useMemo(
     () =>
@@ -389,13 +381,25 @@ export default function Treasury() {
     [bankAccounts]
   )
 
+  const bankFilterOptions = useMemo(() => {
+    if (bankLedgerOverview?.banks?.length) return bankLedgerOverview.banks
+    return bankAccounts.map((b) => ({
+      id: b.id,
+      bank_name: b.bank_name,
+      account_name: b.account_name,
+      account_number: b.account_number,
+    }))
+  }, [bankLedgerOverview, bankAccounts])
+
   const exportEntriesCsv = () => {
     const headers = [
       t('treasury.colDate'),
+      t('treasury.colFlow', 'Flow'),
       t('treasury.colDescription'),
       t('treasury.colType'),
       t('treasury.colAmount'),
       t('treasury.colCurrency'),
+      t('treasury.colReference', 'Reference'),
       t('treasury.colSource'),
       t('treasury.colRunning'),
     ]
@@ -405,7 +409,8 @@ export default function Treasury() {
       lines.push(
         [
           row.entry_date,
-          row.description,
+          flowTypeLabel(row, t),
+          row.description || row.reference_label || '',
           row.entry_type === 'in'
             ? t('treasury.typeIn')
             : row.entry_type === 'out'
@@ -415,6 +420,7 @@ export default function Treasury() {
                 : t('treasury.typeExchange', 'Exchange'),
           row.amount,
           row.currency_code,
+          row.reference_label || '',
           row.source,
           rb != null ? rb.running : '',
         ]
@@ -530,8 +536,7 @@ export default function Treasury() {
       }
       setTxModal(null)
       loadEntries()
-      loadSummaryCf()
-      loadSummaryBal()
+      loadBankOverview()
     } catch (e) {
       window.alert(e?.message || t('treasury.errorSave'))
     } finally {
@@ -573,8 +578,7 @@ export default function Treasury() {
       await createTreasuryTransfer(token, body)
       setTxModal(null)
       loadEntries()
-      loadSummaryCf()
-      loadSummaryBal()
+      loadBankOverview()
     } catch (e) {
       window.alert(e?.message || t('treasury.errorSave'))
     } finally {
@@ -588,8 +592,7 @@ export default function Treasury() {
     try {
       await deleteTreasuryEntry(token, row.id)
       loadEntries()
-      loadSummaryCf()
-      loadSummaryBal()
+      loadBankOverview()
     } catch (e) {
       window.alert(e?.message || t('treasury.errorDelete'))
     }
@@ -621,8 +624,7 @@ export default function Treasury() {
         expense_date: todayStr,
       })
       loadExpenses()
-      loadSummaryCf()
-      loadSummaryBal()
+      loadBankOverview()
     } catch (e) {
       window.alert(e?.message || t('treasury.errorSave'))
     } finally {
@@ -657,136 +659,133 @@ export default function Treasury() {
     )
   }
 
-  const chartsBootLoading = !summaryCf && !summaryBal && (summaryCfLoading || summaryBalLoading)
-
   return (
     <Container size="xl">
       <div className="clients-page treasury-page">
-      {chartsBootLoading && (
-        <div className="accountings-page-loader" aria-live="polite" aria-busy="true">
-          <LoaderDots />
+      {(globalInsufficientFunds ||
+        ledgerNegativeRunning ||
+        selectedBankOverviewRow?.insufficient_funds) && (
+        <div className="treasury-alert treasury-alert--warn mb-4" role="alert">
+          {t(
+            'treasury.insufficientFunds',
+            'Insufficient funds — balances cannot be negative; displayed amounts are shown as zero.',
+          )}
         </div>
       )}
 
-      <div className="clients-stats-grid treasury-stats">
-        <StatsCard
-          title={t('treasury.stats.cash')}
-          value={formatCompactNumber(totals.cash_balance, locale)}
-          icon={<Wallet className="h-6 w-6" />}
-          variant="green"
-        />
-        <StatsCard
-          title={t('treasury.stats.bank')}
-          value={formatCompactNumber(totals.bank_balance, locale)}
-          icon={<Landmark className="h-6 w-6" />}
-          variant="blue"
-        />
-        <StatsCard
-          title={t('treasury.stats.monthlyExpenses')}
-          value={formatCompactNumber(totals.monthly_expenses, locale)}
-          icon={<Receipt className="h-6 w-6" />}
-          variant="amber"
-        />
+      <div className="treasury-stats3 mb-4">
+        <div className="treasury-stat treasury-stat--green">
+          <div className="treasury-stat-lbl">{t('treasury.bankOverview.totalBalances', 'Total bank balances')}</div>
+          <div className="treasury-stat-val-rich">
+            {bankOverviewLoading ? (
+              <span className="treasury-muted">…</span>
+            ) : (
+              <CurrencyMapBadges value={bankLedgerOverview?.global?.total_balance_by_currency} size="sm" amountFirst />
+            )}
+          </div>
+        </div>
+        <div className="treasury-stat treasury-stat--orange">
+          <div className="treasury-stat-lbl">{t('treasury.bankOverview.receivables', 'Customer receipts')}</div>
+          <div className="treasury-stat-val-rich">
+            {bankOverviewLoading ? (
+              <span className="treasury-muted">…</span>
+            ) : (
+              <CurrencyMapBadges value={bankLedgerOverview?.global?.total_customer_in_by_currency} size="sm" amountFirst />
+            )}
+          </div>
+        </div>
+        <div className="treasury-stat treasury-stat--red">
+          <div className="treasury-stat-lbl">{t('treasury.bankOverview.liabilities', 'Partner payments')}</div>
+          <div className="treasury-stat-val-rich">
+            {bankOverviewLoading ? (
+              <span className="treasury-muted">…</span>
+            ) : (
+              <CurrencyMapBadges value={bankLedgerOverview?.global?.total_partner_out_by_currency} size="sm" amountFirst />
+            )}
+          </div>
+        </div>
       </div>
 
-      {bankBalances.length > 0 && (
-        <div className="accountings-table-section mb-4">
-          <div className="accountings-table-wrap">
-            <table className="accountings-table">
-              <thead>
-                <tr>
-                  <th>{t('settings.bankAccounts.table.bankName', 'Bank')}</th>
-                  <th>{t('settings.bankAccounts.table.accountNumber', 'Account')}</th>
-                  <th>{t('treasury.colCurrency')}</th>
-                  <th>{t('treasury.colBalance', 'Balance')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {bankBalances.map((b, idx) => (
-                  <tr key={`${b.account_id}-${b.currency_code}-${idx}`}>
-                    <td>{b.bank_name}</td>
-                    <td>{b.account_number || b.account_name || b.account_id}</td>
-                    <td>{b.currency_code}</td>
-                    <td>{formatAmount(b.balance, b.currency_code, locale)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <div className="treasury-sec-title mb-2">{t('treasury.bankOverview.accountsTitle', 'Bank accounts')}</div>
+      <div className="treasury-accounts-grid mb-4">
+        {bankOverviewLoading && (
+          <div className="treasury-banks-loading">
+            <LoaderDots />
+          </div>
+        )}
+        {!bankOverviewLoading &&
+          (bankLedgerOverview?.banks?.length ? (
+            bankLedgerOverview.banks.map((bank, idx) => {
+              const active = String(selectedBankId) === String(bank.id)
+              const bandMod = idx % 6
+              return (
+                <button
+                  key={bank.id}
+                  type="button"
+                  className={`treasury-acc-card treasury-acc-card--band-${bandMod}${active ? ' treasury-acc-card--active' : ''}`}
+                  onClick={() =>
+                    setSelectedBankId((prev) => (String(prev) === String(bank.id) ? '' : String(bank.id)))
+                  }
+                >
+                  <div className={`treasury-acc-band treasury-acc-band--${bandMod}`} aria-hidden />
+                  <div className="treasury-acc-body">
+                    <div className="treasury-acc-kicker">
+                      <Landmark className="h-3.5 w-3.5 opacity-70" aria-hidden />
+                      {t('treasury.bankOverview.account', 'Account')}
+                    </div>
+                    <div className="treasury-acc-name">{bank.bank_name}</div>
+                    <div className="treasury-acc-sub">{bank.account_name || bank.account_number || '—'}</div>
+                    <div className="treasury-acc-currencies-label">{t('settings.bankAccounts.currencies', 'Currencies')}</div>
+                    <div className="treasury-acc-chip-row">
+                      {(Array.isArray(bank.supported_currencies) ? bank.supported_currencies : []).map((c) => (
+                        <span key={c} className="treasury-cur-chip">
+                          {String(c).toUpperCase()}
+                        </span>
+                      ))}
+                      {!bank.supported_currencies?.length ? <span className="treasury-muted text-sm">—</span> : null}
+                    </div>
+                    <div className="treasury-acc-row mt-2">
+                      <span>{t('treasury.bankOverview.currentBalance', 'Balance')}</span>
+                      <span className="treasury-acc-mono">
+                        <CurrencyMapBadges value={bank.balance_by_currency} size="sm" amountFirst />
+                      </span>
+                    </div>
+                    <div className="treasury-acc-row treasury-acc-row--muted">
+                      <span>{t('treasury.bankOverview.customerIn', 'Incoming (customers)')}</span>
+                      <span className="treasury-acc-mono">
+                        <CurrencyMapBadges value={bank.customer_in_by_currency} size="sm" amountFirst />
+                      </span>
+                    </div>
+                    <div className="treasury-acc-row treasury-acc-row--muted">
+                      <span>{t('treasury.bankOverview.partnerOut', 'Outgoing (partners)')}</span>
+                      <span className="treasury-acc-mono">
+                        <CurrencyMapBadges value={bank.partner_out_by_currency} size="sm" amountFirst />
+                      </span>
+                    </div>
+                    {bank.insufficient_funds ? (
+                      <div className="treasury-acc-warn">{t('treasury.insufficientFundsShort', 'Insufficient funds')}</div>
+                    ) : null}
+                  </div>
+                </button>
+              )
+            })
+          ) : (
+            <p className="treasury-muted">{t('treasury.bankOverview.noBanks', 'No active bank accounts.')}</p>
+          ))}
+      </div>
+
+      {exchangeRates.length > 0 && (
+        <div className="treasury-rate-bar mb-4">
+          <div className="treasury-rate-bar-inner">
+            {exchangeRates.slice(0, 8).map((c) => (
+              <div key={c.code || c.id} className="treasury-rate-item">
+                <span className="treasury-rate-lbl">{String(c.code || '').toUpperCase()}</span>
+                <span className="treasury-rate-val">{Number(c.exchange_rate ?? c.rate ?? 0).toLocaleString(locale)}</span>
+              </div>
+            ))}
           </div>
         </div>
       )}
-
-      <div className="clients-extra-panel clients-charts-panel mb-4">
-        <div className="clients-charts-grid">
-          <div className="clients-chart-wrap">
-            <div className="chart-wrap">
-              <div className="accountings-chart-card-head">
-                <h4 className="chart-title accountings-chart-card-head__title">
-                  {t('treasury.cashFlowInboundOutbound')}
-                </h4>
-                <select
-                  className="clients-input accountings-chart-card__period min-w-[140px]"
-                  value={monthsBar}
-                  onChange={(e) => setMonthsBar(Number(e.target.value))}
-                  aria-label={t('treasury.chartPeriod')}
-                >
-                  <option value={6}>{t('treasury.months6')}</option>
-                  <option value={12}>{t('treasury.months12')}</option>
-                </select>
-              </div>
-              {summaryCfLoading && !cashFlowChartData.length ? (
-                <div className="treasury-chart-empty">{t('treasury.loadingCharts')}</div>
-              ) : cashFlowChartData.length ? (
-                <GroupedBarChart
-                  className="chart--nested"
-                  data={cashFlowChartData}
-                  xKey="label"
-                  series={[
-                    { key: 'in', color: '#10b981', name: t('treasury.seriesInbound') },
-                    { key: 'out', color: '#ef4444', name: t('treasury.seriesOutbound') },
-                  ]}
-                  title=""
-                  height={260}
-                />
-              ) : (
-                <div className="treasury-chart-empty">{t('treasury.chartsNoData')}</div>
-              )}
-            </div>
-          </div>
-          <div className="clients-chart-wrap">
-            <div className="chart-wrap">
-              <div className="accountings-chart-card-head">
-                <h4 className="chart-title accountings-chart-card-head__title">
-                  {t('treasury.balanceEndOfMonth')}
-                </h4>
-                <select
-                  className="clients-input accountings-chart-card__period min-w-[140px]"
-                  value={monthsLine}
-                  onChange={(e) => setMonthsLine(Number(e.target.value))}
-                  aria-label={t('treasury.chartPeriod')}
-                >
-                  <option value={6}>{t('treasury.months6')}</option>
-                  <option value={12}>{t('treasury.months12')}</option>
-                </select>
-              </div>
-              {summaryBalLoading && !balanceChartData.length ? (
-                <div className="treasury-chart-empty">{t('treasury.loadingCharts')}</div>
-              ) : balanceChartData.length ? (
-                <LineChart
-                  className="chart--nested"
-                  data={balanceChartData}
-                  xKey="label"
-                  lines={[{ dataKey: 'balance', name: t('treasury.seriesBalance'), stroke: '#3b82f6' }]}
-                  height={260}
-                  allowDecimals
-                />
-              ) : (
-                <div className="treasury-chart-empty">{t('treasury.chartsNoData')}</div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
 
       <div className="invoices-tabs-section">
         <div className="invoices-tabs-wrap">
@@ -810,6 +809,22 @@ export default function Treasury() {
             </div>
             <div className="clients-filters__fields">
               <select
+                className="clients-input min-w-[200px]"
+                value={selectedBankId}
+                onChange={(e) => {
+                  setEntriesPage(1)
+                  setSelectedBankId(e.target.value)
+                }}
+                aria-label={t('treasury.bankOverview.filterBank', 'Bank account')}
+              >
+                <option value="">{t('treasury.bankOverview.allBanks', 'All banks')}</option>
+                {bankFilterOptions.map((b) => (
+                  <option key={b.id} value={String(b.id)}>
+                    {b.bank_name} — {b.account_name || b.account_number || b.id}
+                  </option>
+                ))}
+              </select>
+              <select
                 className="clients-input min-w-[140px]"
                 value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value)}
@@ -820,17 +835,6 @@ export default function Treasury() {
                 <option value="out">{t('treasury.typeOut')}</option>
                 <option value="transfer">{t('treasury.typeTransfer', 'Transfer')}</option>
                 <option value="exchange">{t('treasury.typeExchange', 'Exchange')}</option>
-              </select>
-              <select
-                className="clients-input min-w-[140px]"
-                value={accountFilter}
-                onChange={(e) => setAccountFilter(e.target.value)}
-                aria-label={t('treasury.accountSource')}
-              >
-                <option value="">{t('treasury.selectAccount')}</option>
-                {accountOptions.map((a) => (
-                  <option key={a} value={a}>{a}</option>
-                ))}
               </select>
               <select
                 className="clients-input min-w-[120px]"
@@ -890,8 +894,8 @@ export default function Treasury() {
                 onClick={() => {
                   setSearch('')
                   setTypeFilter('')
-                  setAccountFilter('')
                   setCurrencyFilter('')
+                  setSelectedBankId('')
                   setFromDate('')
                   setToDate('')
                   setSortKey('date')
@@ -922,10 +926,12 @@ export default function Treasury() {
             <thead>
               <tr>
                 <th>{t('treasury.colDate')}</th>
+                <th>{t('treasury.colFlow', 'Flow')}</th>
                 <th>{t('treasury.colDescription')}</th>
                 <th>{t('treasury.colType')}</th>
                 <th>{t('treasury.colAmount')}</th>
                 <th>{t('treasury.colCurrency')}</th>
+                <th>{t('treasury.colReference', 'Reference')}</th>
                 <th>{t('treasury.colRunning')}</th>
                 {canManageAccounting && <th>{t('treasury.colActions')}</th>}
               </tr>
@@ -933,7 +939,7 @@ export default function Treasury() {
             <tbody>
               {entriesLoading && (
                 <tr>
-                  <td colSpan={canManageAccounting ? 7 : 6}>
+                  <td colSpan={canManageAccounting ? 9 : 8}>
                     <LoaderDots />
                   </td>
                 </tr>
@@ -943,10 +949,17 @@ export default function Treasury() {
                   const rb = runningById.get(row.id)
                   const runDisplay =
                     rb != null ? formatAmount(rb.running, rb.currency, locale) : '—'
+                  const flow = deriveFlowType(row)
+                  const desc = [row.description, row.reference_label].filter(Boolean).join(' · ') || '—'
                   return (
                     <tr key={row.id}>
                       <td>{row.entry_date}</td>
-                      <td>{row.description || '—'}</td>
+                      <td>
+                        <span className={`treasury-flow-badge treasury-flow-badge--${flow}`}>
+                          {flowTypeLabel(row, t)}
+                        </span>
+                      </td>
+                      <td className="max-w-[220px]">{desc}</td>
                       <td>
                         <span
                           className={`accountings-status-badge ${
@@ -970,6 +983,9 @@ export default function Treasury() {
                         {formatAmount(row.amount, row.currency_code, locale)}
                       </td>
                       <td>{row.currency_code}</td>
+                      <td className="max-w-[180px] truncate" title={row.reference_label || ''}>
+                        {row.reference_label || '—'}
+                      </td>
                       <td>{runDisplay}</td>
                       {canManageAccounting && (
                         <td>
@@ -996,7 +1012,7 @@ export default function Treasury() {
                 })}
               {!entriesLoading && entries.length === 0 && (
                 <tr>
-                  <td colSpan={canManageAccounting ? 7 : 6} className="accountings-empty">
+                  <td colSpan={canManageAccounting ? 9 : 8} className="accountings-empty">
                     {t('treasury.emptyMovements')}
                   </td>
                 </tr>

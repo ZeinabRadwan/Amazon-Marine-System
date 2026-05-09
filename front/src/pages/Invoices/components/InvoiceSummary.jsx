@@ -7,12 +7,13 @@ import { LineChart, DonutChart } from '../../../components/Charts'
 import { StatsCard } from '../../../components/StatsCard'
 import '../../../components/Charts/Charts.css'
 
-function formatMoney(amount, currency = 'USD') {
-  const n = Number(amount) || 0
+function formatCount(value, locale) {
+  const n = Number(value)
+  const safe = Number.isFinite(n) ? n : 0
   try {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(n)
+    return new Intl.NumberFormat(locale).format(safe)
   } catch {
-    return `${n} ${currency}`
+    return String(safe)
   }
 }
 
@@ -77,9 +78,9 @@ export default function InvoiceSummary({ refreshKey }) {
   }, [monthsDonut, refreshKey])
 
   const cards = dataLine?.cards
-  const paid = cards?.paid_amount ?? 0
-  const partial = cards?.partial_amount ?? 0
-  const unpaid = cards?.unpaid_amount ?? 0
+  const paidCount = cards?.paid_count ?? 0
+  const partialCount = cards?.partial_count ?? 0
+  const unpaidCount = cards?.unpaid_count ?? 0
   const totalCount = cards?.total_count
 
   const monthlyChartData = useMemo(() => {
@@ -88,6 +89,8 @@ export default function InvoiceSummary({ refreshKey }) {
     return m.labels.map((label, i) => ({
       label: formatMonthLabel(label, locale),
       paid: Number(m.paid?.[i]) || 0,
+      partial: Number(m.partial?.[i]) || 0,
+      unpaid: Number(m.unpaid?.[i]) || 0,
     }))
   }, [dataLine, locale])
 
@@ -102,9 +105,7 @@ export default function InvoiceSummary({ refreshKey }) {
 
   const totalDisplay =
     totalCount != null && totalCount !== ''
-      ? typeof totalCount === 'number'
-        ? new Intl.NumberFormat(i18n.language).format(totalCount)
-        : String(totalCount)
+      ? formatCount(totalCount, i18n.language)
       : '—'
 
   const periodSelect = (id, value, onChange) => (
@@ -131,19 +132,19 @@ export default function InvoiceSummary({ refreshKey }) {
         />
         <StatsCard
           title={t('invoices.stats.paid', 'Paid')}
-          value={formatMoney(paid, 'USD')}
+          value={formatCount(paidCount, i18n.language)}
           icon={<CheckCircle className="h-6 w-6" />}
           variant="green"
         />
         <StatsCard
           title={t('invoices.stats.partial', 'Partial')}
-          value={formatMoney(partial, 'USD')}
+          value={formatCount(partialCount, i18n.language)}
           icon={<Clock className="h-6 w-6" />}
           variant="amber"
         />
         <StatsCard
           title={t('invoices.stats.unpaid', 'Unpaid')}
-          value={formatMoney(unpaid, 'USD')}
+          value={formatCount(unpaidCount, i18n.language)}
           icon={<AlertCircle className="h-6 w-6" />}
           variant="red"
         />
@@ -155,7 +156,7 @@ export default function InvoiceSummary({ refreshKey }) {
             <div className="chart-wrap">
               <div className="invoices-chart-card-head">
                 <h4 className="chart-title invoices-chart-card-head__title">
-                  {t('invoices.charts.monthlyPaid', 'Monthly revenue (paid)')}
+                  {t('invoices.charts.monthlyByStatus', 'Monthly invoices by status')}
                 </h4>
                 {periodSelect('invoices-chart-months-line', monthsLine, setMonthsLine)}
               </div>
@@ -170,12 +171,22 @@ export default function InvoiceSummary({ refreshKey }) {
                   lines={[
                     {
                       dataKey: 'paid',
-                      name: t('invoices.charts.seriesPaid', 'Paid amount'),
+                      name: t('invoices.charts.seriesPaidCount', 'Paid (count)'),
                       stroke: '#22c55e',
+                    },
+                    {
+                      dataKey: 'partial',
+                      name: t('invoices.charts.seriesPartialCount', 'Partial (count)'),
+                      stroke: '#eab308',
+                    },
+                    {
+                      dataKey: 'unpaid',
+                      name: t('invoices.charts.seriesUnpaidCount', 'Unpaid (count)'),
+                      stroke: '#ef4444',
                     },
                   ]}
                   height={260}
-                  allowDecimals
+                  allowDecimals={false}
                 />
               ) : (
                 <p className="text-sm text-gray-500 dark:text-gray-400">{t('invoices.chartsNoData', 'No chart data')}</p>
@@ -199,7 +210,7 @@ export default function InvoiceSummary({ refreshKey }) {
                   data={donutData}
                   nameKey="name"
                   valueKey="value"
-                  valueLabel={t('invoices.charts.amount', 'Amount')}
+                  valueLabel={t('invoices.charts.count', 'Invoices')}
                   title=""
                   height={260}
                 />

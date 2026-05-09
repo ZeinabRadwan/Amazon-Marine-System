@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getStoredToken } from '../Login'
 import { useAuthAccess } from '../../hooks/useAuthAccess'
@@ -267,6 +268,7 @@ function buildUpdatePayload(form) {
 
 export default function Shipments() {
   const { t, i18n } = useTranslation()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { hasPageAccess, user, isAdminRole, isAccountant, isOperations, roleId, hasAbility } = useAuthAccess()
   const isSalesRepresentative = roleId === ROLE_ID.SALES || roleId === ROLE_ID.SALES_MANAGER
   // Operations: can manage operational actions (stage update, edit, delete, operations tab)
@@ -392,6 +394,34 @@ export default function Shipments() {
   const [detailLoading, setDetailLoading] = useState(false)
   const [detailTab, setDetailTab] = useState('info')
 
+  /** Same pattern as Invoices + `invoice_id`: keep `?shipment_id=` in the URL while detail is open (Strict Mode–safe). */
+  const shipmentIdFromUrl = searchParams.get('shipment_id') ?? ''
+  useEffect(() => {
+    if (!shipmentIdFromUrl) return
+    const id = Number(shipmentIdFromUrl)
+    if (Number.isFinite(id) && id > 0) {
+      setDetailId(id)
+    }
+  }, [shipmentIdFromUrl])
+
+  const stripShipmentIdFromUrl = useCallback(() => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        if (!next.has('shipment_id')) return prev
+        next.delete('shipment_id')
+        return next
+      },
+      { replace: true },
+    )
+  }, [setSearchParams])
+
+  const closeShipmentDetailModal = useCallback(() => {
+    setDetailId(null)
+    setDetailShipment(null)
+    setDetailTab('info')
+    stripShipmentIdFromUrl()
+  }, [stripShipmentIdFromUrl])
 
   const [deleteId, setDeleteId] = useState(null)
   const [deleteSubmitting, setDeleteSubmitting] = useState(false)
@@ -1951,15 +1981,10 @@ export default function Shipments() {
           detailTab={detailTab}
           onTabChange={setDetailTab}
           statusOptions={statusOptions}
-          onClose={() => {
-            setDetailId(null)
-            setDetailShipment(null)
-            setDetailTab('info')
-          }}
+          onClose={closeShipmentDetailModal}
           onEdit={(s) => {
             openEdit(s)
-            setDetailId(null)
-            setDetailShipment(null)
+            closeShipmentDetailModal()
           }}
           canManageOps={canManageOps}
           canViewFinancialTotals={canViewShipmentFinancials}

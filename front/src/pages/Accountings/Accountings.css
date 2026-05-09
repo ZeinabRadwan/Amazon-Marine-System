@@ -1,3 +1,5 @@
+@import './CurrencyMapBadges.css';
+
 .accountings-page {
   padding: 0;
   position: relative;
@@ -60,6 +62,19 @@
     grid-template-columns: repeat(4, 1fr);
     gap: 1rem;
   }
+}
+
+/* Statement tabs: one unified stats band below tabs (Customer + Partner). */
+.accountings-statement-stats {
+  margin-bottom: 1.25rem;
+}
+
+.accountings-stats-grid--statement {
+  margin-bottom: 0;
+}
+
+.accountings-stats-grid--statement .accountings-stat-card {
+  min-height: 118px;
 }
 
 /* Search & filter card */
@@ -1184,4 +1199,715 @@
 
 .accountings-chart-card__period {
   flex-shrink: 0;
+}
+
+/* Statement detail modals — navy header (Shipment Financials ship-bar parity) + scrollable body */
+.accountings-modal-content--statement-detail {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.accountings-statement-detail-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1.25rem 1.5rem 1.5rem;
+}
+
+.accountings-statement-detail-header .accountings-statement-detail-title {
+  margin: 0 0 8px;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.accountings-statement-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+  padding: 18px 20px 18px 24px;
+  background: #0f2340;
+  border: none;
+  border-radius: 12px 12px 0 0;
+  box-shadow: none;
+}
+
+.accountings-statement-detail-header__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.accountings-statement-detail-header__actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* Download / export — same footprint as Shipment Financials header close (40×40, 20px icon) */
+.accountings-statement-detail-header__icon-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.accountings-statement-detail-header__icon-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.accountings-statement-detail-header__icon-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.accountings-statement-detail-header__icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* Close — inherits ClientDetailModal sizing; navy header overrides color (financial modal parity) */
+.accountings-statement-detail-header .accountings-statement-detail-header__close.client-detail-modal__close {
+  margin-top: 2px;
+  color: #fff;
+}
+
+.accountings-statement-detail-header .accountings-statement-detail-header__close.client-detail-modal__close:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.accountings-statement-detail-header .accountings-statement-detail-header__close .client-detail-modal__close-icon {
+  color: inherit;
+}
+
+.accountings-statement-detail-eyebrow {
+  margin: 0 0 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.accountings-statement-detail-meta {
+  margin: 0;
+}
+
+.accountings-statement-detail-meta__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 12px;
+  margin: 0;
+}
+
+.accountings-statement-detail-meta__row dt {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.accountings-statement-detail-meta__row dd {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #fff;
+}
+
+.accountings-statement-detail-type-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--form-primary, #0039c5) 14%, transparent);
+  color: var(--form-primary, #0039c5);
+  border: 1px solid color-mix(in srgb, var(--form-primary, #0039c5) 28%, transparent);
+}
+
+[data-theme='dark'] .accountings-statement-detail-type-pill,
+.dark .accountings-statement-detail-type-pill {
+  background: color-mix(in srgb, var(--form-primary, #60a5fa) 18%, transparent);
+  color: #93c5fd;
+  border-color: color-mix(in srgb, var(--form-primary, #60a5fa) 35%, transparent);
+}
+
+/* Partner type chip on navy statement header */
+.accountings-statement-detail-header .accountings-statement-detail-type-pill {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.accountings-statement-detail-body > .accountings-statement-detail-summary-grid:first-child {
+  margin-top: 0;
+}
+
+.accountings-statement-detail-summary-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .accountings-statement-detail-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .accountings-statement-detail-summary-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.accountings-statement-detail-summary-grid .shipment-fin-summary-card__value {
+  margin-top: 0.5rem;
+}
+
+.accountings-statement-detail-summary-grid .shipment-fin-summary-card__value .accounting-currency-stack {
+  justify-content: flex-end;
+}
+
+/* Customer statement wireframe-style sections (ref: كشف حساب العميل HTML) */
+.accountings-wire-section {
+  margin-top: 1.25rem;
+}
+
+.accountings-wire-section--payments {
+  margin-bottom: 0.5rem;
+}
+
+.accountings-wire-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.accountings-wire-section-title {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--root-text, #0f2340);
+  letter-spacing: 0.02em;
+}
+
+.accountings-wire-section-hint {
+  font-size: 0.6875rem;
+  font-weight: 400;
+  color: var(--form-text, #64748b);
+}
+
+.accountings-wire-card-table {
+  border-radius: 10px;
+}
+
+.accountings-wire-table thead th {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--form-text, #64748b);
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.accountings-wire-mono {
+  font-family: ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', monospace;
+}
+
+.accountings-wire-rate-cell {
+  max-width: 180px;
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+.accountings-wire-rate-list {
+  margin: 0;
+  padding-inline-start: 1rem;
+}
+
+.accountings-wire-rate-line {
+  display: inline-block;
+}
+
+.accountings-wire-empty {
+  margin: 0;
+  padding: 14px;
+  font-size: 0.875rem;
+  color: var(--form-text, #64748b);
+  background: var(--root-bg, #f8fafc);
+  border: 1px dashed var(--form-divider, #e2e8f0);
+  border-radius: 8px;
+  text-align: center;
+}
+
+/* Payment ledger expandable rows */
+.accountings-pay-ledger {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.accountings-pay-row-wrap {
+  border: 1px solid var(--form-divider, #e2e8f0);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--form-bg, #fff);
+}
+
+[data-theme='dark'] .accountings-pay-row-wrap,
+.dark .accountings-pay-row-wrap {
+  border-color: var(--form-divider);
+  background: var(--form-bg);
+}
+
+.accountings-pay-row-header {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  margin: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: start;
+  font: inherit;
+  color: inherit;
+}
+
+.accountings-pay-row-header:hover {
+  background: color-mix(in srgb, var(--form-primary, #0039c5) 4%, transparent);
+}
+
+.accountings-pay-row-header:focus-visible {
+  outline: 2px solid var(--form-focus-ring, var(--form-primary, #0039c5));
+  outline-offset: 2px;
+}
+
+.accountings-pay-inline-link {
+  display: inline;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--form-primary, #0039c5);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.accountings-pay-inline-link:hover {
+  opacity: 0.88;
+}
+
+.accountings-pay-inline-link--muted {
+  font-weight: 500;
+  color: color-mix(in srgb, var(--form-text, #64748b) 92%, var(--form-primary, #0039c5));
+}
+
+.accountings-pay-row-primary-amt--badges .accounting-currency-stack {
+  justify-content: flex-end;
+}
+
+.accountings-pay-row-header__left {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.accountings-pay-row-header__right {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.accountings-pay-row-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--root-text);
+}
+
+.accountings-pay-row-sub {
+  margin-top: 2px;
+  font-size: 0.6875rem;
+  color: var(--form-text, #64748b);
+}
+
+.accountings-pay-row-seq {
+  font-weight: 500;
+}
+
+.accountings-pay-row-ship-band {
+  width: 100%;
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px 12px;
+  margin-top: 6px;
+}
+
+.accountings-statement-ship-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.accountings-statement-ship-meta--compact .accountings-statement-ship-meta__primary {
+  font-size: 0.75rem;
+}
+
+.accountings-statement-ship-meta--compact .accountings-statement-ship-meta__sub {
+  font-size: 0.625rem;
+}
+
+@media (min-width: 560px) {
+  .accountings-pay-detail-wide {
+    grid-column: 1 / -1;
+  }
+}
+
+.accountings-pay-detail-shipment-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 10px 14px;
+}
+
+.accountings-pay-row-amounts {
+  text-align: end;
+}
+
+.accountings-pay-row-primary-amt {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #047857;
+}
+
+[data-theme='dark'] .accountings-pay-row-primary-amt,
+.dark .accountings-pay-row-primary-amt {
+  color: #34d399;
+}
+
+.accountings-pay-row-conv {
+  margin-top: 2px;
+  font-size: 0.625rem;
+  color: var(--form-text, #64748b);
+}
+
+.accountings-pay-row-chevron {
+  opacity: 0.55;
+  margin-top: 4px;
+}
+
+.accountings-pay-row-detail {
+  padding: 12px 14px;
+  border-top: 1px solid var(--form-divider, #e2e8f0);
+  background: var(--root-bg, #f8fafc);
+}
+
+[data-theme='dark'] .accountings-pay-row-detail,
+.dark .accountings-pay-row-detail {
+  background: color-mix(in srgb, var(--form-bg, #1f2937) 92%, #000);
+}
+
+.accountings-pay-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px 14px;
+}
+
+@media (min-width: 560px) {
+  .accountings-pay-detail-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.accountings-pay-detail-lbl {
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--form-text, #64748b);
+  margin-bottom: 3px;
+}
+
+.accountings-pay-detail-val {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--root-text);
+  word-break: break-word;
+}
+
+.accountings-pay-notes {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--form-divider, #e2e8f0);
+  font-size: 0.8125rem;
+  color: var(--form-text);
+}
+
+.accountings-pay-attach-row {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.accountings-pay-doc-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--form-divider);
+  background: var(--form-bg);
+  color: var(--form-primary, #1d4ed8);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.accountings-pay-doc-link:hover {
+  background: color-mix(in srgb, var(--form-primary, #2563eb) 10%, var(--form-bg));
+}
+
+.accountings-pay-no-attach {
+  font-size: 0.75rem;
+  color: var(--form-text, #94a3b8);
+}
+
+.accountings-wire-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.accountings-wire-badge--method {
+  border: 1px solid transparent;
+}
+
+.accountings-wire-badge--bank_transfer {
+  background: rgba(219, 234, 254, 0.95);
+  color: #1d4ed8;
+  border-color: rgba(59, 130, 246, 0.35);
+}
+
+.accountings-wire-badge--cash {
+  background: rgba(209, 250, 229, 0.95);
+  color: #047857;
+}
+
+.accountings-wire-badge--cheque,
+.accountings-wire-badge--check {
+  background: rgba(254, 243, 199, 0.95);
+  color: #92400e;
+}
+
+.accountings-wire-badge--other {
+  background: var(--root-bg, #f1f5f9);
+  color: var(--form-text, #475569);
+  border: 1px solid var(--form-divider);
+}
+
+.accountings-wire-badge--closing {
+  background: rgba(209, 250, 229, 0.9);
+  color: #047857;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.accountings-wire-badge--attached {
+  font-size: 0.5625rem;
+  padding: 2px 6px;
+  margin-inline-start: 4px;
+  background: rgba(209, 250, 229, 0.95);
+  color: #047857;
+}
+
+[data-theme='dark'] .accountings-wire-badge--bank_transfer,
+.dark .accountings-wire-badge--bank_transfer {
+  background: rgba(30, 58, 138, 0.45);
+  color: #93c5fd;
+}
+
+[data-theme='dark'] .accountings-wire-badge--cash,
+.dark .accountings-wire-badge--cash {
+  background: rgba(6, 78, 59, 0.45);
+  color: #6ee7b7;
+}
+
+[data-theme='dark'] .accountings-wire-badge--closing,
+.dark .accountings-wire-badge--closing {
+  background: rgba(6, 78, 59, 0.45);
+  color: #6ee7b7;
+}
+
+/* ─── Full-page statement details (ledger layout) ─── */
+.accountings-statement-page {
+  width: 100%;
+}
+
+.accountings-statement-page__toolbar {
+  margin-bottom: 1.25rem;
+}
+
+.accountings-statement-page__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--root-text-muted, #475569);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.accountings-statement-page__back:hover {
+  color: var(--link-hover, #2563eb);
+}
+
+.accountings-statement-page__header {
+  border-radius: 12px;
+  margin-bottom: 0;
+}
+
+.accountings-statement-page__body {
+  padding-bottom: 2.5rem;
+}
+
+.accountings-statement-page__body .accountings-statement-detail-summary-grid {
+  gap: 1rem;
+}
+
+.accountings-statement-page__table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 10px;
+}
+
+.accountings-statement-page .accountings-wire-table {
+  width: max(100%, 720px);
+}
+
+.accountings-statement-page__cost-desc {
+  max-width: min(42rem, 60vw);
+  word-break: break-word;
+}
+
+@media (max-width: 768px) {
+  .accountings-statement-page__cost-desc {
+    max-width: none;
+  }
+}
+
+.accountings-statement-page-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+}
+
+.accountings-statement-page-error,
+.accountings-statement-page-empty {
+  padding: 2rem 0;
+  color: var(--root-text-muted, #64748b);
+}
+
+.accountings-statement-embedded__title {
+  font-size: 1.25rem;
+  line-height: 1.35;
+}
+
+/* Partner statement: one row per shipment, expand for lines + payments */
+.accountings-partner-ship-ledger-table .accountings-partner-ship-header-row > td {
+  border-bottom: 1px solid var(--form-divider, #e5e7eb);
+}
+
+.accountings-partner-ship-expand-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--root-text-muted, #64748b);
+}
+
+.accountings-partner-ship-expand-btn:hover {
+  background: rgba(148, 163, 184, 0.15);
+}
+
+.accountings-partner-ship-col-expand {
+  width: 2.25rem;
+}
+
+.accountings-partner-ship-nested {
+  padding: 14px 16px 18px;
+  background: rgba(248, 250, 252, 0.65);
+  border-top: 1px dashed var(--form-divider, #e5e7eb);
+}
+
+[data-theme='dark'] .accountings-partner-ship-nested,
+.dark .accountings-partner-ship-nested {
+  background: rgba(15, 23, 42, 0.35);
+  border-top-color: rgba(148, 163, 184, 0.25);
+}
+
+.accountings-partner-subsection-title {
+  margin: 0 0 8px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--form-text-muted, #64748b);
+}
+
+.accountings-partner-subsection-title:not(:first-child) {
+  margin-top: 18px;
+}
+
+.accountings-partner-ship-actions {
+  justify-content: flex-end;
 }
