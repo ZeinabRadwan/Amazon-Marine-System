@@ -232,6 +232,18 @@ export async function getCompanyStatement(token) {
   return data
 }
 
+/**
+ * GET {{base_url}}/accounting/partner-statement-shipment-costs – Cost-invoice lines (+ expense fallback) with partner contexts.
+ */
+export async function getPartnerStatementShipmentCosts(token) {
+  const res = await apiFetch(`${getBaseUrl()}/accounting/partner-statement-shipment-costs`, {
+    headers: authHeaders(token),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to load partner statement shipment costs (${res.status})`)
+  return data
+}
+
 export async function getCustomerStatements(token, params = {}) {
   const sp = new URLSearchParams()
   if (params.search) sp.set('search', params.search)

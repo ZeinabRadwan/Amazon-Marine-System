@@ -46,6 +46,37 @@ function appendShipmentListParams(searchParams, params = {}) {
  * GET {{base_url}}/shipments
  * Response: { data: Shipment[], meta: { current_page, last_page, per_page, total, from, to } }
  */
+/**
+ * Batch-read shipment line vendor + cost-invoice section_meta for Partner Statement aggregation.
+ * @param {string} token
+ * @param {number[]} shipmentIds
+ */
+export async function getShipmentsAccountingPartnerContext(token, shipmentIds = []) {
+  const unique = [...new Set(shipmentIds.map((id) => Number(id)).filter((n) => Number.isFinite(n) && n > 0))]
+  const contexts = {}
+  const vendor_names = {}
+  const chunkSize = 150
+  for (let i = 0; i < unique.length; i += chunkSize) {
+    const slice = unique.slice(i, i + chunkSize)
+    if (!slice.length) continue
+    const q = new URLSearchParams()
+    q.set('shipment_ids', slice.join(','))
+    const res = await apiFetch(`${getBaseUrl()}/shipments/accounting-partner-context?${q.toString()}`, {
+      headers: authHeaders(token),
+    })
+    const json = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      throw new Error(json.message || json.error || `Failed to load shipment partner context (${res.status})`)
+    }
+    const payload = json.data ?? json
+    const ctx = payload.contexts ?? {}
+    const names = payload.vendor_names ?? {}
+    Object.assign(contexts, ctx)
+    Object.assign(vendor_names, names)
+  }
+  return { contexts, vendor_names }
+}
+
 export async function listShipments(token, params = {}) {
   const searchParams = new URLSearchParams()
   appendShipmentListParams(searchParams, params)

@@ -13,11 +13,17 @@ import { getStoredToken } from '../Login'
 import {
   getCustomerStatements,
   getCustomerStatementDetail,
-  getPartnerLedgerSummary,
-  getPartnerLedgerDetail,
+  getPartnerStatementShipmentCosts,
   listBankAccounts,
+  listPayments,
   recordPayment,
 } from '../../api/accountings'
+import {
+  UNASSIGNED_PARTNER_SENTINEL,
+  aggregateShipmentCostsByPartner,
+  mergeCurrencyMaps,
+  remainingBalanceAfterPaid,
+} from '../Shipments/shipmentFinancialAggregation'
 import '../Clients/Clients.css'
 import './Accountings.css'
 
@@ -26,10 +32,6 @@ function mapToInline(value) {
   const entries = Object.entries(normalized).filter(([, amount]) => Number(amount) !== 0)
   if (!entries.length) return '—'
   return entries.map(([cur, amount]) => `${String(cur).toUpperCase()} ${Number(amount || 0).toFixed(2)}`).join(' · ')
-}
-
-function sumMap(map) {
-  return Object.values(map || {}).reduce((acc, n) => acc + (Number(n) || 0), 0)
 }
 
 function formatCurrencyMap(map) {
@@ -61,7 +63,13 @@ export default function AccountsOverview() {
   const [activeTab, setActiveTab] = useState('customers')
   const [loading, setLoading] = useState(false)
   const [customers, setCustomers] = useState([])
-  const [partners, setPartners] = useState([])
+  /** Partner Statement lines: cost-invoice items when saved (aligned with Shipment Financials); expense fallback otherwise. */
+  const [partnerStatementCostLines, setPartnerStatementCostLines] = useState([])
+  /** Per shipment: line vendor + cost-invoice section_meta (matches ShipmentFinancialsModal data). */
+  const [shipmentPartnerContexts, setShipmentPartnerContexts] = useState({})
+  const [partnerVendorNames, setPartnerVendorNames] = useState({})
+  /** Vendor payments (partner payables settled). */
+  const [vendorPayments, setVendorPayments] = useState([])
   const [statusFilter, setStatusFilter] = useState('')
   const [customerPage, setCustomerPage] = useState(1)
   const [vendorPage, setVendorPage] = useState(1)
@@ -90,18 +98,23 @@ export default function AccountsOverview() {
     if (!token) return
     setLoading(true)
     try {
-      const [customersRes, partnersRes, banksRes] = await Promise.all([
+      const [customersRes, partnerCostsRes, banksRes, paymentsRes] = await Promise.all([
         getCustomerStatements(token, {
           status: statusFilter || undefined,
         }),
-        getPartnerLedgerSummary(token, {
-          status: statusFilter === 'partial' ? 'partially_paid' : (statusFilter || undefined),
-        }),
+        getPartnerStatementShipmentCosts(token),
         listBankAccounts(token),
+        listPayments(token, { type: 'vendor_payment' }),
       ])
       setCustomers(Array.isArray(customersRes?.data) ? customersRes.data : [])
-      setPartners(Array.isArray(partnersRes?.data) ? partnersRes.data : [])
+      const pdata = partnerCostsRes?.data ?? partnerCostsRes
+      const costLines = Array.isArray(pdata?.lines) ? pdata.lines : []
+      setPartnerStatementCostLines(costLines)
+      setShipmentPartnerContexts(pdata?.contexts && typeof pdata.contexts === 'object' ? pdata.contexts : {})
+      setPartnerVendorNames(pdata?.vendor_names && typeof pdata.vendor_names === 'object' ? pdata.vendor_names : {})
+
       setBankAccounts(Array.isArray(banksRes?.data) ? banksRes.data : [])
+      setVendorPayments(Array.isArray(paymentsRes?.data) ? paymentsRes.data : [])
     } finally {
       setLoading(false)
     }
@@ -117,10 +130,16 @@ export default function AccountsOverview() {
     setCustomerDetail(res?.data || null)
   }
 
-  const openPartnerDetail = async (partnerId) => {
-    if (!token || !partnerId) return
-    const res = await getPartnerLedgerDetail(token, partnerId)
-    setPartnerDetail(res?.data || null)
+  const openPartnerCostDetail = (partnerRow) => {
+    if (!partnerRow) return
+    setPartnerDetail({
+      partner_id: partnerRow.partner_id,
+      partner_name: partnerRow.partner_name,
+      payable_by_currency: partnerRow.payable_by_currency,
+      paid_by_currency: partnerRow.paid_by_currency || {},
+      remaining_by_currency: partnerRow.remaining_by_currency || {},
+      lines: partnerRow.lines || [],
+    })
   }
 
   const openPayment = (ctx = {}) => {
@@ -172,21 +191,23 @@ export default function AccountsOverview() {
     triggerBlobDownload(new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' }), `customer-statement-${customerName || customerId}.csv`)
   }
 
-  const downloadVendorStatementSnapshot = async (vendorId, vendorName) => {
-    if (!token || !vendorId) return
-    const res = await getPartnerLedgerDetail(token, vendorId)
-    const rows = Array.isArray(res?.data?.rows) ? res.data.rows : []
-    const lines = [
-      ['Invoice', 'Shipment', 'Total', 'Paid', 'Status'],
+  const downloadPartnerCostSnapshot = (partnerName, lines) => {
+    const rows = Array.isArray(lines) ? lines : []
+    const csvLines = [
+      ['BL', 'Shipment ID', 'Date', 'Description', 'Currency', 'Amount'],
       ...rows.map((r) => [
-        r.invoice_reference || '',
-        r.shipment_reference || '',
-        mapToInline(r.currency_breakdown),
-        mapToInline(r.paid_amount),
-        r.status || '',
+        r.bl_number || '',
+        r.shipment_id != null ? String(r.shipment_id) : '',
+        r.expense_date || '',
+        r.description || '',
+        r.currency_code || '',
+        Number(r.amount) || 0,
       ]),
     ].map((row) => row.map((v) => `"${String(v ?? '').replaceAll('"', '""')}"`).join(','))
-    triggerBlobDownload(new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' }), `vendor-statement-${vendorName || vendorId}.csv`)
+    triggerBlobDownload(
+      new Blob([csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' }),
+      `partner-cost-statement-${partnerName || 'partner'}.csv`,
+    )
   }
 
   const submitPayment = async () => {
@@ -215,8 +236,8 @@ export default function AccountsOverview() {
       if (customerDetail?.customer_id) {
         await openCustomerDetail(customerDetail.customer_id)
       }
-      if (partnerDetail?.partner_id) {
-        await openPartnerDetail(partnerDetail.partner_id)
+      if (partnerDetail) {
+        setPartnerDetail(null)
       }
     } finally {
       setPaymentBusy(false)
@@ -227,8 +248,8 @@ export default function AccountsOverview() {
     const totals = customers.reduce(
       (acc, row) => {
         acc.invoiceCount += Number(row.invoice_count || 0)
-        acc.paidMap = mergeCurrencyMap(acc.paidMap, row.paid_amount || {})
-        acc.outstandingMap = mergeCurrencyMap(acc.outstandingMap, row.remaining_balance || {})
+        acc.paidMap = mergeCurrencyMaps(acc.paidMap, row.paid_amount || {})
+        acc.outstandingMap = mergeCurrencyMaps(acc.outstandingMap, row.remaining_balance || {})
         acc.unpaid += Number(row.invoice_status_counts?.unpaid || 0)
         return acc
       },
@@ -237,31 +258,92 @@ export default function AccountsOverview() {
     return totals
   }, [customers])
 
-  const partnerSummary = useMemo(() => {
-    const totals = partners.reduce(
-      (acc, row) => {
-        acc.invoiceCount += Number(row.total_invoices_count || 0)
-        acc.paidMap = mergeCurrencyMap(acc.paidMap, row.total_paid_amount || {})
-        acc.outstandingMap = mergeCurrencyMap(acc.outstandingMap, row.remaining_balance || {})
-        acc.unpaid += Number(row.bill_status_counts?.unpaid || row.unpaid_bills_count || 0)
-        return acc
-      },
-      { invoiceCount: 0, paidMap: {}, outstandingMap: {}, unpaid: 0 }
+  const partnerCostRows = useMemo(
+    () =>
+      aggregateShipmentCostsByPartner(partnerStatementCostLines, shipmentPartnerContexts, partnerVendorNames),
+    [partnerStatementCostLines, shipmentPartnerContexts, partnerVendorNames],
+  )
+
+  /** Per-partner: shipment costs (payable) + vendor_payment totals by partner id + remaining (cost-based only). */
+  const partnerStatementRows = useMemo(() => {
+    const paidByVendorId = new Map()
+    for (const p of vendorPayments || []) {
+      const vid = Number(p.vendor_id)
+      if (!Number.isFinite(vid) || vid <= 0) continue
+      const cur = String(p.currency_code || 'USD').toUpperCase()
+      const amt = Number(p.amount) || 0
+      if (amt <= 0) continue
+      if (!paidByVendorId.has(vid)) paidByVendorId.set(vid, {})
+      const m = paidByVendorId.get(vid)
+      m[cur] = (m[cur] || 0) + amt
+    }
+    return partnerCostRows.map((row) => {
+      const pid = row.partner_id
+      const paidMap = pid ? paidByVendorId.get(pid) || {} : {}
+      const remainingMap = remainingBalanceAfterPaid(row.payable_by_currency || {}, paidMap)
+      return {
+        ...row,
+        paid_by_currency: paidMap,
+        remaining_by_currency: remainingMap,
+      }
+    })
+  }, [partnerCostRows, vendorPayments])
+
+  /** Partner Statement totals: cost lines (invoice-first), payable by currency, vendor payments for those partners, remaining. */
+  const partnerCostSummary = useMemo(() => {
+    const lineCount = partnerCostRows.reduce((acc, row) => acc + row.expense_line_count, 0)
+    const dueMap = partnerCostRows.reduce(
+      (acc, row) => mergeCurrencyMaps(acc, row.payable_by_currency || {}),
+      {},
     )
-    return totals
-  }, [partners])
+
+    const vendorIdsFromCosts = new Set()
+    for (const row of partnerCostRows) {
+      if (row.partner_id) {
+        vendorIdsFromCosts.add(row.partner_id)
+      }
+    }
+    const paidMap = {}
+    if (vendorIdsFromCosts.size > 0) {
+      for (const p of vendorPayments || []) {
+        const vid = Number(p.vendor_id)
+        if (!vendorIdsFromCosts.has(vid)) {
+          continue
+        }
+        const cur = String(p.currency_code || 'USD').toUpperCase()
+        const amt = Number(p.amount) || 0
+        if (amt <= 0) {
+          continue
+        }
+        paidMap[cur] = (paidMap[cur] || 0) + amt
+      }
+    }
+
+    const remainingMap = {}
+    const currencies = new Set([...Object.keys(dueMap), ...Object.keys(paidMap)])
+    for (const c of currencies) {
+      remainingMap[c] = (Number(dueMap[c]) || 0) - (Number(paidMap[c]) || 0)
+    }
+
+    return { lineCount, dueMap, paidMap, remainingMap }
+  }, [partnerCostRows, vendorPayments])
 
   const customerTotalPages = Math.max(1, Math.ceil(customers.length / pageSize))
-  const vendorTotalPages = Math.max(1, Math.ceil(partners.length / pageSize))
+  const partnerTotalPages = Math.max(1, Math.ceil(partnerStatementRows.length / pageSize))
 
   const pagedCustomers = useMemo(
     () => customers.slice((customerPage - 1) * pageSize, customerPage * pageSize),
     [customers, customerPage]
   )
-  const pagedPartners = useMemo(
-    () => partners.slice((vendorPage - 1) * pageSize, vendorPage * pageSize),
-    [partners, vendorPage]
+  const pagedPartnerRows = useMemo(
+    () => partnerStatementRows.slice((vendorPage - 1) * pageSize, vendorPage * pageSize),
+    [partnerStatementRows, vendorPage],
   )
+
+  const partnerDisplayName = (name) =>
+    name === UNASSIGNED_PARTNER_SENTINEL
+      ? t('accountings.unassignedPartnerCosts', 'Unassigned partner')
+      : name
 
   return (
     <Container size="xl">
@@ -272,31 +354,33 @@ export default function AccountsOverview() {
             onChange={setActiveTab}
             tabs={[
               { id: 'customers', label: t('accountings.customerStatement', 'Customer Statement') },
-              { id: 'partners', label: t('accountings.vendorStatementTab') },
+              { id: 'partners', label: t('accountings.partnerStatementTab', 'Partner Statement') },
             ]}
           />
         </div>
 
         {loading ? <LoaderDots /> : null}
 
-        <div className="clients-filters-card mb-3">
-          <div className="clients-filters__row clients-filters__row--main">
-            <select
-              className="clients-input min-w-[160px]"
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value)
-                setCustomerPage(1)
-                setVendorPage(1)
-              }}
-            >
-              <option value="">{t('accountings.allStatuses')}</option>
-              <option value="paid">{t('invoices.status.paid')}</option>
-              <option value="partial">{t('invoices.status.partial')}</option>
-              <option value="unpaid">{t('invoices.status.unpaid')}</option>
-            </select>
+        {activeTab === 'customers' && (
+          <div className="clients-filters-card mb-3">
+            <div className="clients-filters__row clients-filters__row--main">
+              <select
+                className="clients-input min-w-[160px]"
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value)
+                  setCustomerPage(1)
+                  setVendorPage(1)
+                }}
+              >
+                <option value="">{t('accountings.allStatuses')}</option>
+                <option value="paid">{t('invoices.status.paid')}</option>
+                <option value="partial">{t('invoices.status.partial')}</option>
+                <option value="unpaid">{t('invoices.status.unpaid')}</option>
+              </select>
+            </div>
           </div>
-        </div>
+        )}
 
         {activeTab === 'customers' && (
           <div className="accountings-table-section">
@@ -316,10 +400,9 @@ export default function AccountsOverview() {
                 <thead>
                   <tr>
                     <th>{t('accountings.colClient', 'Customer')}</th>
-                    <th>{t('accountings.totalBilledAmount')}</th>
+                    <th>{t('accountings.colInvoiceCount', 'Total invoices')}</th>
                     <th>{t('accountings.totalPaidAmount')}</th>
                     <th>{t('accountings.remainingBalance')}</th>
-                    <th>{t('accountings.unpaidInvoicesCount')}</th>
                     <th>{t('accountings.colActions')}</th>
                   </tr>
                 </thead>
@@ -327,10 +410,9 @@ export default function AccountsOverview() {
                   {pagedCustomers.map((row) => (
                     <tr key={row.customer_id}>
                       <td>{row.customer_name}</td>
-                      <td>{mapToInline(row.total_invoices_value)}</td>
+                      <td>{Number(row.invoice_count || 0)}</td>
                       <td>{mapToInline(row.paid_amount)}</td>
                       <td>{mapToInline(row.remaining_balance)}</td>
-                      <td>{Number(row.invoice_status_counts?.unpaid || 0)}</td>
                       <td>
                         <button
                           type="button"
@@ -364,7 +446,7 @@ export default function AccountsOverview() {
                   ))}
                   {!customers.length && !loading && (
                     <tr>
-                      <td colSpan={6} className="accountings-empty py-8 text-center">
+                      <td colSpan={5} className="accountings-empty py-8 text-center">
                         {t('accountings.emptyClients', 'No customer accounts found.')}
                       </td>
                     </tr>
@@ -385,60 +467,90 @@ export default function AccountsOverview() {
 
         {activeTab === 'partners' && (
           <div className="accountings-table-section">
-            <h2 className="mb-3 text-base font-semibold">{t('accountings.vendorStatementTitle')}</h2>
             <div className="clients-stats-grid accountings-stats-grid">
-              <StatsCard title={t('accountings.totalInvoicesCount')} value={partnerSummary.invoiceCount} icon={<WalletCards />} variant="blue" />
-              <StatsCard title={t('accountings.unpaidInvoicesCount')} value={partnerSummary.unpaid} icon={<ReceiptText />} variant="amber" />
-              <StatsCard title={t('accountings.totalPaidAmount')} value={formatCurrencyMap(partnerSummary.paidMap)} icon={<CircleDollarSign />} variant="green" />
-              <StatsCard title={t('accountings.outstandingBalance')} value={formatCurrencyMap(partnerSummary.outstandingMap)} icon={<HandCoins />} variant="red" />
+              <StatsCard
+                title={t('accountings.costLinesCount', 'Cost lines')}
+                value={partnerCostSummary.lineCount}
+                icon={<ReceiptText />}
+                variant="blue"
+              />
+              <StatsCard
+                title={t('accountings.partnerTotalPayable', 'Total payable')}
+                value={formatCurrencyMap(partnerCostSummary.dueMap)}
+                icon={<CircleDollarSign />}
+                variant="amber"
+              />
+              <StatsCard
+                title={t('accountings.partnerPaidTotal', 'Paid')}
+                value={formatCurrencyMap(partnerCostSummary.paidMap)}
+                icon={<WalletCards />}
+                variant="green"
+              />
+              <StatsCard
+                title={t('accountings.partnerRemainingTotal', 'Remaining')}
+                value={formatCurrencyMap(partnerCostSummary.remainingMap)}
+                icon={<HandCoins />}
+                variant="red"
+              />
             </div>
             <div className="accountings-table-wrap mt-3">
               <table className="accountings-table">
                 <thead>
                   <tr>
-                    <th>{t('accountings.vendorName')}</th>
-                    <th>{t('accountings.vendorType')}</th>
-                    <th>{t('accountings.colTotalDue')}</th>
-                    <th>{t('accountings.totalPaidAmount')}</th>
-                    <th>{t('accountings.remainingBalance')}</th>
-                    <th>{t('accountings.linkedShipmentsCount')}</th>
+                    <th>{t('accountings.colPartner', 'Partner')}</th>
+                    <th>{t('accountings.partnerTotalPayable', 'Total payable')}</th>
+                    <th>{t('accountings.partnerTableTotalPaid', 'Total paid')}</th>
+                    <th>{t('accountings.partnerTableRemainingBalance', 'Remaining balance')}</th>
                     <th>{t('accountings.colActions')}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {pagedPartners.map((row) => (
-                    <tr key={row.partner_id}>
-                      <td>{row.partner_name}</td>
-                      <td>{row.category || '—'}</td>
-                      <td>{mapToInline(row.total_billed_amount)}</td>
-                      <td>{mapToInline(row.total_paid_amount)}</td>
-                      <td>{mapToInline(row.remaining_balance)}</td>
-                      <td>{row.linked_shipments_count || 0}</td>
+                  {pagedPartnerRows.map((row) => (
+                    <tr key={row.key}>
+                      <td className="font-semibold">{partnerDisplayName(row.partner_name)}</td>
+                      <td>{mapToInline(row.payable_by_currency)}</td>
+                      <td className="text-emerald-700 dark:text-emerald-400">{mapToInline(row.paid_by_currency)}</td>
+                      <td
+                        className={
+                          Object.values(row.remaining_by_currency || {}).some((v) => Number(v) > 0.0001)
+                            ? 'font-semibold text-red-700 dark:text-red-400'
+                            : 'font-semibold text-emerald-700 dark:text-emerald-400'
+                        }
+                      >
+                        {mapToInline(row.remaining_by_currency)}
+                      </td>
                       <td>
                         <button
                           type="button"
                           className="accountings-action-icon-btn"
                           title={t('accountings.viewStatement')}
                           aria-label={t('accountings.viewStatement')}
-                          onClick={() => openPartnerDetail(row.partner_id)}
+                          onClick={() => openPartnerCostDetail(row)}
                         >
                           <FileSpreadsheet className="h-4 w-4" />
                         </button>
                         <button
                           type="button"
                           className="accountings-action-icon-btn"
-                          title={t('accountings.recordPayment')}
+                          disabled={!row.partner_id}
+                          title={
+                            row.partner_id
+                              ? t('accountings.recordPayment')
+                              : t('accountings.partnerPaymentNeedsVendor', 'Link costs to a partner to record payment')
+                          }
                           aria-label={t('accountings.recordPayment')}
-                          onClick={() => openPayment({ link_type: 'partner', vendor_id: row.partner_id })}
+                          onClick={() =>
+                            row.partner_id && openPayment({ link_type: 'partner', vendor_id: row.partner_id })
+                          }
                         >
                           <DollarSign className="h-4 w-4" />
                         </button>
                         <button
                           type="button"
                           className="accountings-action-icon-btn"
-                          title={t('invoices.downloadPdf', 'Download PDF')}
-                          aria-label={t('invoices.downloadPdf', 'Download PDF')}
-                          onClick={() => downloadVendorStatementSnapshot(row.partner_id, row.partner_name)}
+                          title={t('accountings.exportCsv', 'Download CSV')}
+                          aria-label={t('accountings.exportCsv', 'Download CSV')}
+                          onClick={() => downloadPartnerCostSnapshot(row.partner_name, row.lines)}
                         >
                           <Download className="h-4 w-4" />
                         </button>
@@ -447,14 +559,19 @@ export default function AccountsOverview() {
                   ))}
                 </tbody>
               </table>
+              {!partnerStatementRows.length && !loading && (
+                <p className="accountings-empty py-8 text-center text-gray-600 dark:text-gray-400">
+                  {t('accountings.emptyPartnerCosts', 'No shipment cost lines found. Record costs under Shipment Financials.')}
+                </p>
+              )}
             </div>
             <div className="clients-pagination">
               <div className="clients-pagination__left">
                 <span className="clients-pagination__total">
-                  {t('clients.total', 'Total')}: {partners.length}
+                  {t('clients.total', 'Total')}: {partnerStatementRows.length}
                 </span>
               </div>
-              <Pagination currentPage={vendorPage} totalPages={vendorTotalPages} onPageChange={setVendorPage} />
+              <Pagination currentPage={vendorPage} totalPages={partnerTotalPages} onPageChange={setVendorPage} />
             </div>
           </div>
         )}
@@ -549,14 +666,19 @@ export default function AccountsOverview() {
             <button type="button" className="accountings-modal-backdrop" onClick={() => setPartnerDetail(null)} />
             <div className="accountings-modal-content accountings-modal-content--wide">
               <div className="flex items-start justify-between gap-3">
-                <h2>{partnerDetail.partner_name}</h2>
+                <div>
+                  <h2 className="mb-1">{partnerDisplayName(partnerDetail.partner_name)}</h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {t('accountings.partnerCostModalSubtitle', 'Shipment cost lines for this partner')}
+                  </p>
+                </div>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     className="accountings-action-icon-btn"
-                    title={t('invoices.downloadPdf', 'Download PDF')}
-                    aria-label={t('invoices.downloadPdf', 'Download PDF')}
-                    onClick={() => downloadVendorStatementSnapshot(partnerDetail.partner_id, partnerDetail.partner_name)}
+                    title={t('accountings.exportCsv', 'Download CSV')}
+                    aria-label={t('accountings.exportCsv', 'Download CSV')}
+                    onClick={() => downloadPartnerCostSnapshot(partnerDetail.partner_name, partnerDetail.lines)}
                   >
                     <Download className="h-4 w-4" />
                   </button>
@@ -565,67 +687,75 @@ export default function AccountsOverview() {
                   </button>
                 </div>
               </div>
+              <div className="accountings-detail mt-3 space-y-2">
+                <div className="accountings-detail-row">
+                  <span className="accountings-detail-label">{t('accountings.partnerTotalPayable', 'Total payable')}</span>
+                  <span className="accountings-detail-value font-semibold">
+                    {mapToInline(partnerDetail.payable_by_currency)}
+                  </span>
+                </div>
+                <div className="accountings-detail-row">
+                  <span className="accountings-detail-label">{t('accountings.partnerTableTotalPaid', 'Total paid')}</span>
+                  <span className="accountings-detail-value font-semibold text-emerald-700 dark:text-emerald-400">
+                    {mapToInline(partnerDetail.paid_by_currency)}
+                  </span>
+                </div>
+                <div className="accountings-detail-row">
+                  <span className="accountings-detail-label">{t('accountings.partnerTableRemainingBalance', 'Remaining balance')}</span>
+                  <span className="accountings-detail-value font-semibold text-red-700 dark:text-red-400">
+                    {mapToInline(partnerDetail.remaining_by_currency)}
+                  </span>
+                </div>
+              </div>
               <div className="accountings-table-wrap mt-3">
                 <table className="accountings-table">
                   <thead>
                     <tr>
-                      <th>{t('accountings.invoiceNumber')}</th>
-                      <th>{t('accountings.shipmentReference')}</th>
-                      <th>{t('accountings.colTotalDue')}</th>
-                      <th>{t('accountings.totalPaidAmount')}</th>
-                      <th>{t('accountings.status')}</th>
+                      <th>{t('accountings.colBl', 'BL')}</th>
+                      <th>{t('accountings.shipmentId', 'Shipment')}</th>
+                      <th>{t('accountings.issueDate', 'Date')}</th>
+                      <th>{t('accountings.colCategory', 'Category')}</th>
+                      <th>{t('accountings.description', 'Description')}</th>
+                      <th>{t('accountings.colCurrency', 'Currency')}</th>
+                      <th>{t('accountings.colAmount', 'Amount')}</th>
                       <th>{t('accountings.colActions')}</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {(partnerDetail.rows || []).map((row) => (
-                      <tr key={row.invoice_reference}>
-                        <td>{row.invoice_reference}</td>
-                        <td>{row.shipment_reference || '—'}</td>
-                        <td>{mapToInline(row.currency_breakdown)}</td>
-                        <td>{mapToInline(row.paid_amount)}</td>
+                    {(partnerDetail.lines || []).map((line) => (
+                      <tr key={line.id}>
+                        <td>{line.bl_number || '—'}</td>
+                        <td>{line.shipment_id != null ? String(line.shipment_id) : '—'}</td>
+                        <td>{line.expense_date || '—'}</td>
+                        <td>{line.category_name || '—'}</td>
+                        <td>{line.description || '—'}</td>
+                        <td>{line.currency_code || '—'}</td>
+                        <td className="font-medium">{Number(line.amount || 0).toFixed(2)}</td>
                         <td>
-                          <InvoiceStatusBadge status={row.status} t={t} />
-                        </td>
-                        <td>
-                          <button
-                            type="button"
-                            className="accountings-action-icon-btn"
-                            title={t('accountings.recordPayment')}
-                            aria-label={t('accountings.recordPayment')}
-                            onClick={() => openPayment({ link_type: 'shipment_partner', shipment_id: row.shipment_id, vendor_id: partnerDetail.partner_id })}
-                          >
-                            <DollarSign className="h-4 w-4" />
-                          </button>
+                          {partnerDetail.partner_id ? (
+                            <button
+                              type="button"
+                              className="accountings-action-icon-btn"
+                              title={t('accountings.recordPayment')}
+                              aria-label={t('accountings.recordPayment')}
+                              onClick={() =>
+                                openPayment({
+                                  link_type: 'shipment_partner',
+                                  shipment_id: line.shipment_id,
+                                  vendor_id: partnerDetail.partner_id,
+                                })
+                              }
+                            >
+                              <DollarSign className="h-4 w-4" />
+                            </button>
+                          ) : (
+                            <span className="text-xs text-gray-500">—</span>
+                          )}
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              </div>
-              <div className="mt-4">
-                {(partnerDetail.rows || []).map((row) => (
-                  <details key={`prow-${row.invoice_reference}`} className="mb-2">
-                    <summary className="font-semibold cursor-pointer">
-                      {row.invoice_reference} - {t('accountings.details', 'Details')}
-                    </summary>
-                    <div className="mt-2 text-sm">
-                      <div><strong>{t('accountings.sections', 'Sections / Items')}:</strong></div>
-                      <ul>
-                        {(row.line_items || []).map((it) => (
-                          <li key={it.id}>{it.section_key || 'other'} - {it.description} ({it.currency_code} {Number(it.line_total || 0).toFixed(2)})</li>
-                        ))}
-                      </ul>
-                      <div><strong>{t('accountings.attachments', 'Attachments')}:</strong> {(row.attachments || []).map((a) => a.name).join(', ') || '—'}</div>
-                      <div><strong>{t('accountings.paymentHistory', 'Payment history')}:</strong></div>
-                      <ul>
-                        {(row.payment_history || []).map((p) => (
-                          <li key={p.id}>{p.paid_at || '—'} - {p.method || '—'} - {p.currency_code} {Number(p.amount || 0).toFixed(2)}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </details>
-                ))}
               </div>
             </div>
           </div>
@@ -683,12 +813,4 @@ export default function AccountsOverview() {
       </div>
     </Container>
   )
-}
-
-function mergeCurrencyMap(target, source) {
-  const out = { ...(target || {}) }
-  for (const [currency, amount] of Object.entries(source || {})) {
-    out[currency] = (Number(out[currency]) || 0) + (Number(amount) || 0)
-  }
-  return out
 }
