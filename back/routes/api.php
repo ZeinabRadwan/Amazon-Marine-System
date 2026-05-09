@@ -331,6 +331,7 @@ Route::prefix('v1')->group(function () {
         Route::get('shipments/stats', [ShipmentController::class, 'stats']);
         Route::get('shipments/charts', [ShipmentController::class, 'charts']);
         Route::get('shipments/export', [ShipmentController::class, 'export']);
+        Route::get('shipments/accounting-partner-context', [ShipmentController::class, 'accountingPartnerContext']);
         Route::get('shipments', [ShipmentController::class, 'index']);
         Route::post('shipments', [ShipmentController::class, 'store']);
         Route::get('shipments/{shipment}/attachments', [ShipmentAttachmentController::class, 'index']);

@@ -943,6 +943,108 @@ class ShipmentController extends Controller
     }
 
     /**
+     * Batch-read shipment line vendor + cost-invoice section_meta for accounting Partner Statement (read-only).
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function accountingPartnerContext(Request $request)
+    {
+        abort_unless($request->user()?->can('accounting.view'), 403);
+
+        $raw = (string) $request->query('shipment_ids', '');
+        $ids = array_values(array_unique(array_filter(array_map(static fn ($v) => (int) trim((string) $v), explode(',', $raw)))));
+        $ids = array_values(array_filter($ids, static fn (int $id) => $id > 0));
+        $ids = array_slice($ids, 0, 400);
+
+        if ($ids === []) {
+            return response()->json([
+                'data' => [
+                    'contexts' => (object) [],
+                    'vendor_names' => (object) [],
+                ],
+            ]);
+        }
+
+        $shipments = Shipment::query()
+            ->whereIn('id', $ids)
+            ->with(['lineVendor:id,name'])
+            ->get(['id', 'line_vendor_id']);
+
+        $invoices = ShipmentCostInvoice::query()
+            ->whereIn('shipment_id', $ids)
+            ->get(['shipment_id', 'section_meta']);
+
+        $invoiceByShipmentId = $invoices->keyBy('shipment_id');
+
+        $vendorIdsForLabels = [];
+
+        $contexts = [];
+        foreach ($shipments as $shipment) {
+            $lineVid = $shipment->line_vendor_id ? (int) $shipment->line_vendor_id : null;
+            if ($lineVid !== null && $lineVid > 0) {
+                $vendorIdsForLabels[] = $lineVid;
+            }
+
+            $invoice = $invoiceByShipmentId->get($shipment->id);
+            $sectionMeta = is_array($invoice?->section_meta) ? $invoice->section_meta : [];
+
+            foreach (self::vendorIdsFromSectionMeta($sectionMeta) as $vid) {
+                $vendorIdsForLabels[] = $vid;
+            }
+
+            $contexts[(string) $shipment->id] = [
+                'line_vendor_id' => $lineVid,
+                'line_vendor_name' => $shipment->lineVendor?->name,
+                'section_meta' => $sectionMeta,
+            ];
+        }
+
+        $vendorIdsForLabels = array_values(array_unique(array_filter($vendorIdsForLabels)));
+        $vendorNames = [];
+        if ($vendorIdsForLabels !== []) {
+            $vendorNames = Vendor::query()
+                ->whereIn('id', $vendorIdsForLabels)
+                ->pluck('name', 'id')
+                ->mapWithKeys(fn ($name, $id) => [(string) $id => $name])
+                ->all();
+        }
+
+        return response()->json([
+            'data' => [
+                'contexts' => $contexts,
+                'vendor_names' => $vendorNames,
+            ],
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $meta
+     * @return list<int>
+     */
+    private static function vendorIdsFromSectionMeta(array $meta): array
+    {
+        $ids = [];
+        foreach ($meta as $block) {
+            if (! is_array($block)) {
+                continue;
+            }
+            foreach ($block as $k => $v) {
+                if (! is_string($k)) {
+                    continue;
+                }
+                if ($k === 'vendor_id' || str_ends_with($k, '_vendor_id')) {
+                    $id = (int) $v;
+                    if ($id > 0) {
+                        $ids[] = $id;
+                    }
+                }
+            }
+        }
+
+        return $ids;
+    }
+
+    /**
      * @return array<string, string>
      */
     private function shipmentPdfLabels(string $locale): array
