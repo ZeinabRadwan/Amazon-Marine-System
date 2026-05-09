@@ -40,8 +40,15 @@ class PaymentController extends Controller
 
         $payments = $query->orderByDesc('paid_at')->get();
 
+        $data = $payments->map(static function (Payment $p): array {
+            $arr = $p->toArray();
+            $arr['proof_url'] = $p->proof_path ? Storage::disk('public')->url($p->proof_path) : null;
+
+            return $arr;
+        });
+
         return response()->json([
-            'data' => $payments,
+            'data' => $data,
         ]);
     }
 

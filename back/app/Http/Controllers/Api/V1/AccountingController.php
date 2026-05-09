@@ -640,6 +640,7 @@ class AccountingController extends Controller
                         $targetAccountLabel = $acct !== '' ? $bank.' — '.$acct : ($bank !== '' ? $bank : null);
                     }
                     $shipmentRef = $p->shipment?->bl_number ?? $inv->shipment?->bl_number;
+                    $shipMeta = $p->shipment ?? $inv->shipment;
 
                     $isFinalSettlingPayment = $computed['status'] === 'paid'
                         && $invoicePaymentCount > 0
@@ -662,6 +663,8 @@ class AccountingController extends Controller
                         'proof_filename' => $p->proof_path ? basename((string) $p->proof_path) : null,
                         'shipment_id' => $p->shipment_id,
                         'shipment_reference' => $shipmentRef,
+                        'shipment_type' => $shipMeta?->shipment_type,
+                        'booking_number' => $shipMeta?->booking_number,
                         'invoice_id' => $inv->id,
                         'invoice_reference' => $inv->invoice_number ?: ('INV-'.$inv->id),
                         'target_account_label' => $targetAccountLabel,
@@ -695,6 +698,8 @@ class AccountingController extends Controller
                 'invoice_reference' => $inv->invoice_number ?: ('INV-'.$inv->id),
                 'shipment_id' => $inv->shipment_id,
                 'shipment_reference' => $inv->shipment?->bl_number,
+                'shipment_type' => $inv->shipment?->shipment_type,
+                'booking_number' => $inv->shipment?->booking_number,
                 'status' => $computed['status'],
                 'total_invoiced_per_currency' => $computed['total_invoiced_per_currency'],
                 'total_paid_per_currency' => $computed['total_paid_per_currency'],
@@ -880,7 +885,13 @@ class AccountingController extends Controller
         if (Schema::hasTable('shipment_cost_invoices')) {
             $invoices = ShipmentCostInvoice::query()
                 ->with([
-                    'shipment' => fn ($q) => $q->with('lineVendor:id,name')->select(['id', 'bl_number', 'line_vendor_id']),
+                    'shipment' => fn ($q) => $q->with('lineVendor:id,name')->select([
+                        'id',
+                        'bl_number',
+                        'line_vendor_id',
+                        'shipment_type',
+                        'booking_number',
+                    ]),
                 ])
                 ->get(['shipment_id', 'items']);
 
@@ -913,6 +924,8 @@ class AccountingController extends Controller
                         'id' => isset($it['line_id']) ? (int) $it['line_id'] : null,
                         'shipment_id' => $sid,
                         'bl_number' => $bl,
+                        'shipment_type' => $shipment?->shipment_type,
+                        'booking_number' => $shipment?->booking_number,
                         'category_name' => '',
                         'description' => $label,
                         'amount' => $amt,
@@ -954,6 +967,8 @@ class AccountingController extends Controller
                 'id' => $expense->id,
                 'shipment_id' => $expense->shipment_id,
                 'bl_number' => $expense->shipment?->bl_number ?? '',
+                'shipment_type' => $expense->shipment?->shipment_type,
+                'booking_number' => $expense->shipment?->booking_number,
                 'category_name' => $expense->category?->name ?? '',
                 'description' => $expense->description,
                 'amount' => $amt,
