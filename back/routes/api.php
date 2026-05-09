@@ -548,6 +548,7 @@ Route::prefix('v1')->group(function () {
 
         // Treasury
         Route::get('treasury/summary', [TreasuryController::class, 'summary']);
+        Route::get('treasury/daily-exchange-rates', [TreasuryController::class, 'dailyExchangeRates']);
         Route::get('treasury/bank-overview', [TreasuryController::class, 'bankOverview']);
         Route::get('treasury/entries', [TreasuryController::class, 'entries']);
         Route::post('treasury/entries', [TreasuryController::class, 'storeEntry']);

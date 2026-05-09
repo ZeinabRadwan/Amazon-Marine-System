@@ -35,4 +35,13 @@ return [
         ],
     ],
 
+    /*
+    | Official FX page scraped for Treasury daily rates (Central Bank of Egypt).
+    | Override URL only if CBE changes paths; do not point at unofficial sources.
+    */
+    'cbe_fx' => [
+        'url' => env('CBE_FX_URL', 'https://www.cbe.org.eg/en/economic-research/statistics/exchange-rates'),
+        'timeout' => (int) env('CBE_FX_TIMEOUT', 20),
+    ],
+
 ];

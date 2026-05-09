@@ -1,14 +1,14 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { getStoredToken } from '../Login'
 import { useAuthAccess } from '../../hooks/useAuthAccess'
 import {
   getTreasuryBankOverview,
+  getTreasuryDailyExchangeRates,
   getTreasuryEntries,
   getTreasuryExpenses,
 } from '../../api/treasury'
-import { listCurrencies } from '../../api/invoices'
 import { listExpenseCategories } from '../../api/expenses'
 import LoaderDots from '../../components/LoaderDots'
 import { Container } from '../../components/Container'
@@ -32,6 +32,11 @@ import '../Clients/Clients.css'
 import '../Accountings/Accountings.css'
 import '../Accountings/CurrencyMapBadges.css'
 import { CurrencyMapBadges, CurrencyCodeBadge } from '../Accountings/CurrencyMapBadges'
+
+function singleCurrencyMap(amount, currencyCode) {
+  const cur = String(currencyCode || 'USD').toUpperCase()
+  return { [cur]: Number(amount) || 0 }
+}
 import { StatsCard } from '../../components/StatsCard'
 import Tabs from '../../components/Tabs'
 import Pagination from '../../components/Pagination'
@@ -76,30 +81,42 @@ function formatPlainAmount(amount, locale) {
   }).format(n)
 }
 
-/**
- * FX pairs from `/currencies`: rate = units of default currency per 1 unit (see BankPaymentCurrencyService).
- */
-function buildTreasuryExchangePairs(currencyRows) {
-  const list = Array.isArray(currencyRows) ? currencyRows : []
-  const pick = (code) => list.find((c) => String(c.code || '').toUpperCase() === code)
-  const rate = (c) => (c ? Number(c.exchange_rate ?? c.rate ?? 0) : 0)
-  const usd = pick('USD')
-  const eur = pick('EUR')
-  const rUsd = rate(usd)
-  const rEur = rate(eur)
-  const out = []
-  if (rUsd > 0) out.push({ id: 'usd-egp', labelKey: 'treasury.exchange.usdToEgp', value: rUsd })
-  if (rEur > 0) out.push({ id: 'eur-egp', labelKey: 'treasury.exchange.eurToEgp', value: rEur })
-  if (rUsd > 0 && rEur > 0) {
-    out.push({ id: 'usd-eur', labelKey: 'treasury.exchange.usdToEur', value: rUsd / rEur })
-    out.push({ id: 'eur-usd', labelKey: 'treasury.exchange.eurToUsd', value: rEur / rUsd })
-  }
-  return out
+/** Format one official FX pair from API (EGP legs vs cross). */
+function formatTreasuryFxPair(pair, locale) {
+  const n = Number(pair?.rate)
+  if (Number.isNaN(n)) return '—'
+  const egpLeg = pair?.to === 'EGP' || pair?.from === 'EGP'
+  const max = egpLeg ? 4 : 6
+  return n.toLocaleString(locale, { maximumFractionDigits: max, minimumFractionDigits: 0 })
 }
 
-function normalizeBankSupportedCurrencies(raw) {
-  if (!Array.isArray(raw)) return []
-  return [...new Set(raw.map((c) => String(c).toUpperCase()).filter((c) => c.length === 3))].sort()
+function formatTreasuryAsOf(isoDate, locale) {
+  if (!isoDate || typeof isoDate !== 'string') return ''
+  try {
+    const d = new Date(`${isoDate}T12:00:00`)
+    if (Number.isNaN(d.getTime())) return isoDate
+    return d.toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' })
+  } catch {
+    return isoDate
+  }
+}
+
+/** Largest absolute ledger leg when default-currency total is unavailable (still one line, no grid). */
+function dominantLedgerBalance(bank) {
+  const m = bank?.balance_by_currency
+  if (!m || typeof m !== 'object') return null
+  let best = null
+  let bestAbs = -1
+  for (const [code, raw] of Object.entries(m)) {
+    const n = Number(raw)
+    if (!Number.isFinite(n)) continue
+    const abs = Math.abs(n)
+    if (abs >= bestAbs) {
+      bestAbs = abs
+      best = { currency: String(code).toUpperCase(), amount: n }
+    }
+  }
+  return best
 }
 
 function deriveFlowType(row) {
@@ -181,7 +198,8 @@ export default function Treasury() {
   const [entries, setEntries] = useState([])
   const [bankLedgerOverview, setBankLedgerOverview] = useState(null)
   const [bankOverviewLoading, setBankOverviewLoading] = useState(false)
-  const [exchangeRates, setExchangeRates] = useState([])
+  const [dailyFxResponse, setDailyFxResponse] = useState(null)
+  const [dailyFxLoading, setDailyFxLoading] = useState(true)
   const [selectedBankId, setSelectedBankId] = useState('')
   const [entriesLoading, setEntriesLoading] = useState(false)
   const [entriesError, setEntriesError] = useState(null)
@@ -294,12 +312,21 @@ export default function Treasury() {
     loadBankOverview()
   }, [loadBankOverview])
 
-  useEffect(() => {
-    if (!token || !canViewAccounting) return
-    listCurrencies(token)
-      .then((rows) => setExchangeRates(Array.isArray(rows) ? rows : []))
-      .catch(() => setExchangeRates([]))
+  const loadDailyFx = useCallback(() => {
+    if (!token || !canViewAccounting) {
+      setDailyFxLoading(false)
+      return
+    }
+    setDailyFxLoading(true)
+    getTreasuryDailyExchangeRates(token)
+      .then((json) => setDailyFxResponse(json))
+      .catch(() => setDailyFxResponse({ ok: false, data: { pairs: [] } }))
+      .finally(() => setDailyFxLoading(false))
   }, [token, canViewAccounting])
+
+  useEffect(() => {
+    loadDailyFx()
+  }, [loadDailyFx])
 
   useEffect(() => {
     loadExpenses()
@@ -359,7 +386,15 @@ export default function Treasury() {
 
   const { balanceById: runningById } = useMemo(() => computeRunningBalances(entries), [entries])
 
-  const exchangePairs = useMemo(() => buildTreasuryExchangePairs(exchangeRates), [exchangeRates])
+  const treasuryFxPairs = useMemo(() => {
+    const pairs = dailyFxResponse?.data?.pairs
+    if (!Array.isArray(pairs)) return []
+    const order = ['usd_egp', 'eur_egp', 'usd_eur']
+    const map = new Map(pairs.map((p) => [p.id, p]))
+    return order.map((id) => map.get(id)).filter(Boolean)
+  }, [dailyFxResponse])
+
+  const treasuryFxOk = dailyFxResponse?.ok === true && treasuryFxPairs.length > 0
 
   const bankFilterOptions = useMemo(() => {
     if (bankLedgerOverview?.banks?.length) return bankLedgerOverview.banks
@@ -495,7 +530,14 @@ export default function Treasury() {
           />
           <StatsCard
             className="accountings-stat-card"
-            title={t('treasury.bankOverview.customerOutstanding')}
+            title={
+              <>
+                {t('treasury.bankOverview.customerOutstanding')}
+                <span className="treasury-stat-subtitle">
+                  ({t('treasury.bankOverview.customerOutstandingSubtitle')})
+                </span>
+              </>
+            }
             value={
               bankOverviewLoading ? (
                 <span className="treasury-muted">…</span>
@@ -543,23 +585,46 @@ export default function Treasury() {
         </div>
       </section>
 
-      {exchangePairs.length > 0 && (
-        <div className="mb-4">
-          <div className="treasury-sec-title mb-2">{t('treasury.exchange.dailyTitle')}</div>
-          <div className="treasury-rate-bar">
-            <div className="treasury-rate-bar-inner">
-              {exchangePairs.map((p) => (
-                <div key={p.id} className="treasury-rate-item">
-                  <span className="treasury-rate-lbl">{t(p.labelKey)}</span>
-                  <span className="treasury-rate-val">
-                    {Number(p.value).toLocaleString(locale, { maximumFractionDigits: 6 })}
-                  </span>
-                </div>
-              ))}
-            </div>
+      <section className="treasury-rate-bar-section mb-4" aria-label={t('treasury.exchange.dailyTitle')}>
+        <div className="treasury-rate-bar">
+          <div className="treasury-rate-bar-title">{t('treasury.exchange.dailyTitle')}</div>
+          <div className="treasury-rate-bar-items">
+            {dailyFxLoading ? (
+              <span className="treasury-rate-bar-status">{t('treasury.exchange.loading')}</span>
+            ) : treasuryFxOk ? (
+              <>
+                {treasuryFxPairs.map((p, idx) => (
+                  <Fragment key={p.id}>
+                    {idx > 0 ? <div className="treasury-rate-sep" aria-hidden /> : null}
+                    <div className="treasury-rate-item">
+                      <span className="treasury-rate-lbl">{t(p.label_key)}</span>
+                      <span className="treasury-rate-val">{formatTreasuryFxPair(p, locale)}</span>
+                    </div>
+                  </Fragment>
+                ))}
+              </>
+            ) : (
+              <span className="treasury-rate-bar-status">{t('treasury.exchange.unavailable')}</span>
+            )}
           </div>
+          <button
+            type="button"
+            className="treasury-rate-refresh"
+            onClick={() => loadDailyFx()}
+            disabled={dailyFxLoading}
+          >
+            <RotateCcw className="h-3.5 w-3.5" aria-hidden />
+            <span>{t('treasury.exchange.refresh')}</span>
+          </button>
         </div>
-      )}
+        {treasuryFxOk && dailyFxResponse?.data?.as_of ? (
+          <p className="treasury-rate-meta">
+            {t('treasury.exchange.asOf', {
+              date: formatTreasuryAsOf(dailyFxResponse.data.as_of, locale),
+            })}
+          </p>
+        ) : null}
+      </section>
 
       <div className="treasury-sec-title mb-2">{t('treasury.bankOverview.accountsTitle')}</div>
       <div className="treasury-accounts-grid mb-4">
@@ -573,7 +638,6 @@ export default function Treasury() {
             bankLedgerOverview.banks.map((bank, idx) => {
               const active = String(selectedBankId) === String(bank.id)
               const bandMod = idx % 6
-              const curRows = normalizeBankSupportedCurrencies(bank.supported_currencies)
               return (
                 <button
                   key={bank.id}
@@ -586,40 +650,39 @@ export default function Treasury() {
                 >
                   <div className={`treasury-acc-band treasury-acc-band--${bandMod}`} aria-hidden />
                   <div className="treasury-acc-body">
-                    <div className="treasury-acc-kicker">
-                      <Landmark className="h-3.5 w-3.5 opacity-70" aria-hidden />
-                      {t('treasury.bankOverview.account')}
+                    <div className="treasury-acc-header">
+                      <span className="treasury-acc-kicker">
+                        <Landmark className="h-3.5 w-3.5 opacity-70" aria-hidden />
+                        {t('treasury.bankOverview.account')}
+                      </span>
+                      <span className="treasury-acc-headline">
+                        <span className="treasury-acc-name">{bank.bank_name}</span>
+                        <span className="treasury-acc-sep" aria-hidden>
+                          {' '}
+                          —{' '}
+                        </span>
+                        <span className="treasury-acc-sub">
+                          {bank.account_name || bank.account_number || '—'}
+                        </span>
+                      </span>
                     </div>
-                    <div className="treasury-acc-name">{bank.bank_name}</div>
-                    <div className="treasury-acc-sub">{bank.account_name || bank.account_number || '—'}</div>
-                    {curRows.length ? (
-                      <>
-                        <div className="treasury-acc-cur-head" aria-hidden>
-                          <span />
-                          <span>{t('treasury.bankOverview.rowBalance')}</span>
-                          <span>{t('treasury.bankOverview.rowIn')}</span>
-                          <span>{t('treasury.bankOverview.rowOut')}</span>
-                        </div>
-                        {curRows.map((cur) => (
-                          <div key={`${bank.id}-${cur}`} className="treasury-acc-cur-row">
-                            <span className="treasury-acc-cur-badge-wrap">
-                              <CurrencyCodeBadge code={cur} />
-                            </span>
-                            <span className="treasury-acc-cur-num treasury-acc-mono">
-                              {formatPlainAmount(bank.balance_by_currency?.[cur] ?? 0, locale)}
-                            </span>
-                            <span className="treasury-acc-cur-num treasury-acc-cur-num--muted treasury-acc-mono">
-                              {formatPlainAmount(bank.customer_in_by_currency?.[cur] ?? 0, locale)}
-                            </span>
-                            <span className="treasury-acc-cur-num treasury-acc-cur-num--muted treasury-acc-mono">
-                              {formatPlainAmount(bank.partner_out_by_currency?.[cur] ?? 0, locale)}
-                            </span>
-                          </div>
-                        ))}
-                      </>
-                    ) : (
-                      <p className="treasury-muted mt-2 text-xs">{t('treasury.bankOverview.noCurrenciesConfigured')}</p>
-                    )}
+                    <div className="treasury-acc-balance-row">
+                      <span className="treasury-acc-balance-label">{t('treasury.bankOverview.effectiveBalance')}</span>
+                      <span className="treasury-acc-balance-value treasury-acc-mono">
+                        {bank.total_balance_in_default != null
+                          ? formatAmount(
+                              bank.total_balance_in_default.amount,
+                              bank.total_balance_in_default.currency,
+                              locale,
+                            )
+                          : (() => {
+                              const d = dominantLedgerBalance(bank)
+                              return d
+                                ? formatAmount(d.amount, d.currency, locale)
+                                : '—'
+                            })()}
+                      </span>
+                    </div>
                   </div>
                 </button>
               )
@@ -757,7 +820,6 @@ export default function Treasury() {
                 <th>{t('treasury.colDescription')}</th>
                 <th>{t('treasury.colType')}</th>
                 <th>{t('treasury.colAmount')}</th>
-                <th>{t('treasury.colCurrency')}</th>
                 <th>{t('treasury.colReference', 'Reference')}</th>
                 <th>{t('treasury.colRunning')}</th>
                 <th>{t('treasury.colView')}</th>
@@ -766,7 +828,7 @@ export default function Treasury() {
             <tbody>
               {entriesLoading && (
                 <tr>
-                  <td colSpan={9}>
+                  <td colSpan={8}>
                     <LoaderDots />
                   </td>
                 </tr>
@@ -805,11 +867,12 @@ export default function Treasury() {
                                 : t('treasury.typeExchange', 'Exchange')}
                         </span>
                       </td>
-                      <td className={`treasury-acc-mono ${Number(row.amount) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
-                        {formatPlainAmount(row.amount, locale)}
-                      </td>
                       <td>
-                        <CurrencyCodeBadge code={row.currency_code} />
+                        <CurrencyMapBadges
+                          value={singleCurrencyMap(row.amount, row.currency_code)}
+                          size="sm"
+                          amountFirst
+                        />
                       </td>
                       <td className="max-w-[180px] truncate" title={row.reference_label || ''}>
                         {row.reference_label || '—'}
@@ -830,7 +893,7 @@ export default function Treasury() {
                 })}
               {!entriesLoading && entries.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="accountings-empty">
+                  <td colSpan={8} className="accountings-empty">
                     {t('treasury.emptyMovements')}
                   </td>
                 </tr>
@@ -1013,13 +1076,12 @@ export default function Treasury() {
                 <th>{t('treasury.colDescription')}</th>
                 <th>{t('treasury.expenseCategory')}</th>
                 <th>{t('treasury.colAmount')}</th>
-                <th>{t('treasury.colCurrency')}</th>
               </tr>
             </thead>
             <tbody>
               {expensesLoading && (
                 <tr>
-                  <td colSpan={5}>
+                  <td colSpan={4}>
                     <LoaderDots />
                   </td>
                 </tr>
@@ -1030,13 +1092,18 @@ export default function Treasury() {
                     <td>{row.expense_date}</td>
                     <td>{row.description}</td>
                     <td>{row.category_name}</td>
-                    <td>{formatAmount(row.amount, row.currency_code, locale)}</td>
-                    <td>{row.currency_code}</td>
+                    <td>
+                      <CurrencyMapBadges
+                        value={singleCurrencyMap(row.amount, row.currency_code)}
+                        size="sm"
+                        amountFirst
+                      />
+                    </td>
                   </tr>
                 ))}
               {!expensesLoading && expenseRows.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="accountings-empty">
+                  <td colSpan={4} className="accountings-empty">
                     {t('treasury.emptyExpenses')}
                   </td>
                 </tr>

@@ -6,14 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\BankAccount;
+use App\Models\Currency;
 use App\Models\Invoice;
 use App\Models\TreasuryEntry;
 use App\Models\VendorBill;
 use App\Services\AccountingAggregationService;
+use App\Services\CbeOfficialExchangeRateService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class TreasuryController extends Controller
 {
@@ -151,6 +154,64 @@ class TreasuryController extends Controller
     }
 
     /**
+     * Sum per-currency ledger balances into the system default currency using {@see Currency::$exchange_rate}
+     * (units of default currency per one unit of that code — same convention as {@see \App\Services\BankPaymentCurrencyService}).
+     * Ledger figures already reflect net treasury position including customer receipts and partner payments.
+     *
+     * @param  array<string, float>  $balanceDisplay
+     * @return array{currency: string, amount: float}|null
+     */
+    private function totalBalanceInDefaultCurrency(array $balanceDisplay): ?array
+    {
+        if (! Schema::hasTable('currencies')) {
+            return null;
+        }
+
+        $default = Currency::query()
+            ->where('is_active', true)
+            ->where('is_default', true)
+            ->first();
+
+        if (! $default) {
+            return null;
+        }
+
+        $defaultCode = strtoupper(trim((string) $default->code));
+        if ($defaultCode === '') {
+            return null;
+        }
+
+        if ($balanceDisplay === []) {
+            return ['currency' => $defaultCode, 'amount' => 0.0];
+        }
+
+        $sum = 0.0;
+        foreach ($balanceDisplay as $curRaw => $amt) {
+            $cur = strtoupper(trim((string) $curRaw));
+            if ($cur === '') {
+                continue;
+            }
+
+            $row = Currency::query()->whereRaw('UPPER(code) = ?', [$cur])->first();
+            if (! $row) {
+                return null;
+            }
+
+            $rate = (float) ($row->exchange_rate ?? 0);
+            if ($rate <= 0 || ! is_finite($rate)) {
+                return null;
+            }
+
+            $sum += (float) $amt * $rate;
+        }
+
+        return [
+            'currency' => $defaultCode,
+            'amount' => round($sum, 2),
+        ];
+    }
+
+    /**
      * Per-bank balances (from ledger), customer vs partner splits, non-negative display balances.
      */
     public function bankOverview(Request $request): JsonResponse
@@ -233,6 +294,7 @@ class TreasuryController extends Controller
                 'balance_by_currency' => $this->roundMoneyMap($balanceDisplay),
                 'customer_in_by_currency' => $this->roundMoneyMap($customerIn),
                 'partner_out_by_currency' => $this->roundMoneyMap($partnerOut),
+                'total_balance_in_default' => $this->totalBalanceInDefaultCurrency($balanceDisplay),
             ];
         }
 
@@ -814,6 +876,43 @@ class TreasuryController extends Controller
         return response()->json([
             'data' => $expense->load('category'),
         ], 201);
+    }
+
+    /**
+     * Official daily FX from Central Bank of Egypt (scraped HTML). No invented fallback rates.
+     */
+    public function dailyExchangeRates(Request $request): JsonResponse
+    {
+        abort_unless(
+            $request->user()?->can('accounting.view'),
+            403,
+            __('You do not have permission to view treasury exchange rates.')
+        );
+
+        try {
+            $data = app(CbeOfficialExchangeRateService::class)->fetch();
+
+            return response()->json([
+                'ok' => true,
+                'data' => $data,
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('Treasury daily exchange rates unavailable', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'ok' => false,
+                'message' => __('Exchange rates are temporarily unavailable.'),
+                'data' => [
+                    'pairs' => [],
+                    'source' => null,
+                    'source_url' => null,
+                    'as_of' => null,
+                    'fetched_at' => null,
+                ],
+            ]);
+        }
     }
 }
 

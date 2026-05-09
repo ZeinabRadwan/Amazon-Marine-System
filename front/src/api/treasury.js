@@ -52,6 +52,21 @@ export async function getTreasuryBankOverview(token) {
   return json.data ?? json
 }
 
+/**
+ * GET /treasury/daily-exchange-rates — CBE official USD/EUR vs EGP (+ derived USD/EUR cross).
+ * @returns {Promise<{ ok: boolean, data?: object, message?: string }>}
+ */
+export async function getTreasuryDailyExchangeRates(token) {
+  const res = await apiFetch(`${getBaseUrl()}/treasury/daily-exchange-rates`, {
+    headers: authHeaders(token),
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(json.message || json.error || `Failed to load exchange rates (${res.status})`)
+  }
+  return json
+}
+
 export async function getTreasurySummary(token, params = {}) {
   const q = buildQuery(params)
   const res = await apiFetch(`${getBaseUrl()}/treasury/summary${q ? `?${q}` : ''}`, {
