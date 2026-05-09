@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\BankAccount;
 use App\Models\Client;
 use App\Models\Expense;
 use App\Models\Invoice;
@@ -10,6 +11,7 @@ use App\Models\Payment;
 use App\Models\Shipment;
 use App\Models\ShipmentCostInvoice;
 use App\Models\Vendor;
+use App\Models\TreasuryEntry;
 use App\Models\VendorBill;
 use App\Services\AccountingAggregationService;
 use Illuminate\Http\JsonResponse;
@@ -608,7 +610,7 @@ class AccountingController extends Controller
 
         $invoicesQuery = Invoice::query()
             ->where('client_id', $client->id)
-            ->with(['shipment.attachments', 'items', 'payments.shipment', 'payments.targetAccount'])
+            ->with(['shipment.attachments', 'items', 'payments.shipment', 'payments.targetAccount', 'payments.sourceAccount'])
             ->orderByDesc('issue_date')
             ->orderByDesc('id');
         $this->applyCustomerInvoiceFilter($invoicesQuery);
@@ -632,12 +634,38 @@ class AccountingController extends Controller
                 ->values()
                 ->map(static function (Payment $p) use ($inv, $computed, $sequenceByPaymentId, $lastPaymentId, $invoicePaymentCount): array {
                     $proofUrl = $p->proof_path ? Storage::disk('public')->url($p->proof_path) : null;
-                    $ta = $p->targetAccount;
+                    // Client receipts: receiving account is usually source_account_id (InvoiceController / PaymentController).
+                    $recvAcct = $p->sourceAccount ?? $p->targetAccount;
                     $targetAccountLabel = null;
-                    if ($ta) {
-                        $bank = trim((string) ($ta->bank_name ?? ''));
-                        $acct = trim((string) ($ta->account_name ?? ''));
+                    if ($recvAcct) {
+                        $bank = trim((string) ($recvAcct->bank_name ?? ''));
+                        $acct = trim((string) ($recvAcct->account_name ?? ''));
                         $targetAccountLabel = $acct !== '' ? $bank.' — '.$acct : ($bank !== '' ? $bank : null);
+                    }
+                    if ($targetAccountLabel === null) {
+                        foreach ([$p->source_account_id, $p->target_account_id] as $accountId) {
+                            if ($accountId) {
+                                $ba = BankAccount::query()->find((int) $accountId);
+                                if ($ba) {
+                                    $bank = trim((string) ($ba->bank_name ?? ''));
+                                    $acct = trim((string) ($ba->account_name ?? ''));
+                                    $targetAccountLabel = $acct !== '' ? $bank.' — '.$acct : ($bank !== '' ? $bank : null);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if ($targetAccountLabel === null && $p->id) {
+                        $te = TreasuryEntry::query()->where('payment_id', $p->id)->orderByDesc('id')->first();
+                        $treasuryAccountId = $te?->account_id ?? $te?->counter_account_id;
+                        if ($treasuryAccountId) {
+                            $ba = BankAccount::query()->find((int) $treasuryAccountId);
+                            if ($ba) {
+                                $bank = trim((string) ($ba->bank_name ?? ''));
+                                $acct = trim((string) ($ba->account_name ?? ''));
+                                $targetAccountLabel = $acct !== '' ? $bank.' — '.$acct : ($bank !== '' ? $bank : null);
+                            }
+                        }
                     }
                     $shipmentRef = $p->shipment?->bl_number ?? $inv->shipment?->bl_number;
                     $shipMeta = $p->shipment ?? $inv->shipment;
@@ -667,6 +695,7 @@ class AccountingController extends Controller
                         'booking_number' => $shipMeta?->booking_number,
                         'invoice_id' => $inv->id,
                         'invoice_reference' => $inv->invoice_number ?: ('INV-'.$inv->id),
+                        'invoice_currency_code' => strtoupper((string) ($inv->currency_code ?: 'USD')),
                         'target_account_label' => $targetAccountLabel,
                         'payment_sequence' => $sequenceByPaymentId[$p->id] ?? null,
                         'invoice_payment_count' => $invoicePaymentCount,
