@@ -31,7 +31,7 @@ class CashWalletController extends Controller
 
         $wallets = BankAccount::query()
             ->where('treasury_account_kind', BankAccount::TREASURY_KIND_CASH_WALLET)
-            ->orderByRaw("FIELD(cash_wallet_kind, ?, ?, ?)", [
+            ->orderByRaw('FIELD(cash_wallet_kind, ?, ?, ?)', [
                 BankAccount::CASH_WALLET_PHYSICAL,
                 BankAccount::CASH_WALLET_NSP,
                 BankAccount::CASH_WALLET_VODAFONE,
@@ -55,9 +55,11 @@ class CashWalletController extends Controller
     {
         abort_unless($request->user()?->can('accounting.manage'), 403);
 
+        // Per the Settings spec, a treasury wallet has *only* a name + supported currencies
+        // (no banking-identity fields, no separate display name). `account_name` is mirrored
+        // server-side from `bank_name` so legacy code paths that still read it stay valid.
         $validated = $request->validate([
             'bank_name' => ['required', 'string', 'max:255'],
-            'account_name' => ['nullable', 'string', 'max:255'],
             'cash_wallet_kind' => ['required', 'string', Rule::in([
                 BankAccount::CASH_WALLET_NSP,
                 BankAccount::CASH_WALLET_VODAFONE,
@@ -82,7 +84,7 @@ class CashWalletController extends Controller
 
         $wallet = BankAccount::query()->create([
             'bank_name' => $validated['bank_name'],
-            'account_name' => $validated['account_name'] ?? $validated['bank_name'],
+            'account_name' => $validated['bank_name'],
             'account_number' => null,
             'iban' => null,
             'swift_code' => null,
@@ -103,18 +105,17 @@ class CashWalletController extends Controller
         abort_unless($request->user()?->can('accounting.manage'), 403);
         $this->assertIsCashWallet($cashWallet);
 
+        // Treasury wallets carry only a name + active flag from the UI. `cash_wallet_kind`
+        // cannot change after creation (it pins currency rules and ledger identity), and
+        // `account_name` is mirrored from `bank_name` automatically.
         $validated = $request->validate([
             'bank_name' => ['sometimes', 'string', 'max:255'],
-            'account_name' => ['sometimes', 'nullable', 'string', 'max:255'],
             'is_active' => ['sometimes', 'boolean'],
-            // cash_wallet_kind cannot change after creation: it pins the currency rules and ledger identity.
         ]);
 
         if (array_key_exists('bank_name', $validated)) {
             $cashWallet->bank_name = $validated['bank_name'];
-        }
-        if (array_key_exists('account_name', $validated)) {
-            $cashWallet->account_name = $validated['account_name'] ?? $cashWallet->bank_name;
+            $cashWallet->account_name = $validated['bank_name'];
         }
         if (array_key_exists('is_active', $validated)) {
             $cashWallet->is_active = (bool) $validated['is_active'];

@@ -2400,6 +2400,29 @@
     "title": "الخزينة",
     "noPermission": "ليس لديك صلاحية عرض الخزينة.",
     "movementsTitle": "حركات الخزينة",
+    "actions": {
+      "internalTransfer": "تحويل داخلي",
+      "currencyExchange": "صرف عملة",
+      "internalTransferTitle": "تحويل داخلي",
+      "currencyExchangeTitle": "صرف عملة",
+      "internalTransferLead": "تحريك الأموال بين حسابات الخزينة. يُنشأ قيدان تلقائياً (صادر من المصدر، وارد إلى الوجهة).",
+      "currencyExchangeLead": "تحويل بين العملات بأسعار اليوم الرسمية أو سعر يدوي. يُحدَّث الحسابان ويُخزَّن مصدر السعر AUTO أو MANUAL.",
+      "submitTransfer": "تسجيل التحويل",
+      "submitExchange": "تسجيل الصرف",
+      "exchangeRateMode": "طريقة سعر الصرف",
+      "rateModeAuto": "تلقائي — أسعار اليوم (البنك المركزي)",
+      "rateModeManual": "يدوي",
+      "fromCurrency": "من عملة",
+      "toCurrency": "إلى عملة",
+      "manualFxRateHint": "سعر الصرف (وحدات عملة «إلى» لكل 1 من عملة «من»)",
+      "fxPreviewLabel": "معاينة (تلقائي)",
+      "fxPreviewLine": "المضاعف {{rate}} → تقريباً {{amount}} {{cur}} دائن",
+      "fxUnavailable": "أسعار اليوم غير متاحة. حدّث الأسعار أعلاه أو اختر السعر اليدوي.",
+      "sameCurrencyExchange": "اختر عملتين مختلفتين لعملية الصرف.",
+      "transferInvalidAccounts": "اختر حسابين مختلفين.",
+      "invalidAmount": "أدخل مبلغاً صالحاً أكبر من صفر.",
+      "invalidFxRate": "أدخل سعر صرف صالحاً أكبر من صفر."
+    },
     "stats": {
       "cash": "رصيد الخزينة النقدية",
       "bank": "الحسابات البنكية",
@@ -2420,8 +2443,9 @@
     "addMovement": "إضافة حركة",
     "transfer": "تحويل",
     "searchPlaceholder": "بحث في المرجع أو الملاحظات…",
-    "filterType": "النوع",
-    "allTypes": "الكل",
+    "filterType": "نوع الحركة",
+    "allTypes": "جميع الأنواع",
+    "allCurrencies": "جميع العملات",
     "typeIn": "إيداع",
     "typeOut": "سحب",
     "typeExchange": "صرف عملة",
@@ -2429,9 +2453,6 @@
     "typeExpense": "مصروف",
     "dateFrom": "من",
     "dateTo": "إلى",
-    "sortBy": "الترتيب",
-    "sortDate": "التاريخ",
-    "sortAmount": "المبلغ",
     "colDate": "التاريخ",
     "colDescription": "الوصف",
     "colType": "النوع",
@@ -2439,6 +2460,11 @@
     "colCurrency": "العملة",
     "colSource": "المصدر",
     "colRunning": "الرصيد",
+    "colBalance": "الرصيد",
+    "colTransactionType": "نوع الحركة",
+    "colAccount": "الحساب",
+    "colDebit": "وارد",
+    "colCredit": "صادر",
     "colView": "عرض",
     "viewEntry": "عرض تفاصيل الحركة",
     "entryDetailTitle": "تفاصيل الحركة",
@@ -2452,20 +2478,20 @@
     "statsSummaryRegion": "ملخص الخزينة",
     "sections": {
       "bankAccounts": "الحسابات البنكية",
-      "cashWallets": "محافظ النقد (خزينة تشغيلية)"
+      "cashWallets": "حسابات الخزينة التشغيلية"
     },
     "cashWallet": {
-      "kicker": "محفظة نقدية"
+      "kicker": "حساب خزينة تشغيلي"
     },
     "bankOverview": {
       "totalBalances": "إجمالي أرصدة البنوك",
       "receivables": "إيصالات العملاء",
-      "customerOutstanding": "مديونيات العملاء",
+      "customerOutstanding": "ذمم العملاء",
       "customerOutstandingSubtitle": "غير محصلة",
       "partnerPayments": "مدفوعات الشركاء",
-      "partnerPayables": "التزامات الشركة",
-      "partnerPayablesSubtitle": "غير مسددة",
-      "accountsTitle": "الحسابات البنكية والخزائن",
+      "partnerLiabilities": "مطلوبات الشركاء",
+      "partnerLiabilitiesSubtitle": "مستحقة للشركاء",
+      "accountsTitle": "الحسابات البنكية وحسابات الخزينة التشغيلية",
       "account": "الحساب",
       "currentBalance": "الرصيد",
       "customerIn": "الوارد (عملاء)",
@@ -2475,11 +2501,12 @@
       "rowIn": "وارد (عملاء)",
       "rowOut": "صادر (شركاء)",
       "noCurrenciesConfigured": "لا توجد عملات مدعومة لهذا الحساب.",
+      "currencySupported": "مدعومة",
       "noBankAccountsSection": "لا توجد حسابات بنكية رسمية مهيأة.",
-      "noCashWalletsSection": "لا توجد محافظ نقدية بعد. أضِف أو زِر البذرة لمحافظ NSP وفودافون والصندوق النقدي.",
+      "noCashWalletsSection": "لا توجد حسابات خزينة تشغيلية بعد.",
       "noBanks": "لا توجد حسابات بنكية نشطة.",
       "filterBank": "الحساب البنكي",
-      "allBanks": "كل البنوك والخزائن"
+      "allBanks": "كل البنوك وحسابات الخزينة"
     },
     "exchange": {
       "dailyTitle": "أسعار صرف اليوم",
@@ -2500,6 +2527,14 @@
         "usd_eur": "سعر متقاطع محسوب من الأوسط الرسمي للدولار واليورو مقابل الجنيه في نشرة البنك المركزي.",
         "eur_usd": "سعر متقاطع محسوب من الأوسط الرسمي للدولار واليورو مقابل الجنيه في نشرة البنك المركزي."
       }
+    },
+    "txnType": {
+      "deposit": "إيداع",
+      "withdraw": "سحب",
+      "expense": "مصروف",
+      "internalTransfer": "تحويل داخلي",
+      "currencyExchange": "صرف عملة",
+      "other": "أخرى"
     },
     "flow": {
       "customer": "عميل",
@@ -3439,7 +3474,7 @@
       "system": "النظام والإشعارات",
       "sessions": "إدارة الجلسات",
       "activity": "سجل النشاط",
-      "bankAccounts": "الحسابات البنكية والخزائن",
+      "bankAccounts": "الحسابات البنكية وحسابات الخزينة التشغيلية",
       "statuses": "المحتوى (الموانئ والحالات)"
     },
     "contentMgmt": {
@@ -3771,7 +3806,7 @@
       }
     },
     "bankAccounts": {
-      "cardTitle": "الحسابات البنكية والخزائن",
+      "cardTitle": "الحسابات البنكية وحسابات الخزينة التشغيلية",
       "sectionBanks": "الحسابات البنكية",
       "subtitle": "إدارة الحسابات البنكية المستخدمة في المدفوعات والخزينة.",
       "addTitle": "إضافة حساب بنكي",
@@ -3808,30 +3843,30 @@
       }
     },
     "cashWallets": {
-      "cardTitle": "محافظ النقد",
-      "subtitle": "محافظ تشغيلية ثابتة (NSP، فودافون كاش، الصندوق النقدي) تُسجَّل حركاتها في دفتر الخزينة مثل الحسابات البنكية تماماً.",
-      "addTitle": "إضافة محفظة نقدية",
-      "editTitle": "تعديل محفظة نقدية",
-      "name": "اسم المحفظة",
+      "cardTitle": "حسابات الخزينة التشغيلية",
+      "subtitle": "حسابات خزينة تشغيلية ثابتة (NSP، فودافون كاش، الصندوق النقدي) تُسجَّل حركاتها في دفتر الخزينة مثل الحسابات البنكية تماماً.",
+      "addTitle": "إضافة حساب خزينة",
+      "editTitle": "تعديل حساب خزينة",
+      "name": "اسم الحساب",
       "accountName": "الاسم العرضي",
-      "kind": "نوع المحفظة",
+      "kind": "نوع الحساب",
       "kindNsp": "NSP",
       "kindVodafone": "فودافون كاش",
       "kindPhysical": "الصندوق النقدي",
-      "kindLocked": "نوع المحفظة لا يتغير بعد الإنشاء — يحدد قواعد العملات وارتباط دفتر الخزينة.",
+      "kindLocked": "نوع الحساب لا يتغير بعد الإنشاء — يحدد قواعد العملات وارتباط دفتر الخزينة.",
       "currencies": "العملات",
-      "currenciesAuto": "تُحدَّد تلقائياً حسب نوع المحفظة (NSP وفودافون: EGP فقط، الصندوق النقدي: EGP + USD + EUR).",
+      "currenciesAuto": "تُحدَّد تلقائياً حسب نوع الحساب (NSP وفودافون: EGP فقط، الصندوق النقدي: EGP + USD + EUR).",
       "status": "نشط",
       "active": "نشط",
       "inactive": "غير نشط",
       "save": "حفظ",
       "cancel": "إلغاء",
       "edit": "تعديل",
-      "created": "تم إنشاء المحفظة النقدية.",
-      "updated": "تم تحديث المحفظة النقدية.",
-      "duplicateKind": "توجد محفظة نقدية بنفس النوع بالفعل.",
+      "created": "تم إنشاء حساب الخزينة.",
+      "updated": "تم تحديث حساب الخزينة.",
+      "duplicateKind": "يوجد حساب خزينة بنفس النوع بالفعل.",
       "table": {
-        "name": "اسم المحفظة",
+        "name": "اسم الحساب",
         "kind": "النوع",
         "currencies": "العملات",
         "status": "الحالة",
@@ -3868,8 +3903,8 @@
       "deletePort": "فشل حذف الميناء.",
       "saveBankAccount": "فشل حفظ الحساب البنكي.",
       "deleteBankAccount": "فشل حذف الحساب البنكي.",
-      "loadCashWallets": "فشل تحميل المحافظ النقدية.",
-      "saveCashWallet": "فشل حفظ المحفظة النقدية."
+      "loadCashWallets": "فشل تحميل حسابات الخزينة التشغيلية.",
+      "saveCashWallet": "فشل حفظ حساب الخزينة التشغيلية."
     }
   }
 }

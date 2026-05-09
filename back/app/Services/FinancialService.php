@@ -9,9 +9,9 @@ use App\Models\Shipment;
 use App\Models\TreasuryEntry;
 use App\Models\VendorBill;
 use App\Models\VendorBillItem;
-use App\Services\TreasuryLedgerBalanceService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class FinancialService
 {
@@ -78,6 +78,11 @@ class FinancialService
 
                 TreasuryEntry::create([
                     'entry_type' => $entryType,
+                    'ledger_side' => $entryType === 'in'
+                        ? TreasuryJournalPostingService::SIDE_DEBIT
+                        : TreasuryJournalPostingService::SIDE_CREDIT,
+                    'journal_kind' => TreasuryJournalPostingService::KIND_PAYMENT,
+                    'journal_transaction_id' => (string) Str::uuid(),
                     'source' => $payment->source_account_id ? ('bank-'.$payment->source_account_id) : 'payment',
                     'account_id' => $payment->source_account_id,
                     'counter_account_id' => $payment->target_account_id,
@@ -96,6 +101,11 @@ class FinancialService
             } else {
                 TreasuryEntry::create([
                     'entry_type' => $entryType,
+                    'ledger_side' => $entryType === 'in'
+                        ? TreasuryJournalPostingService::SIDE_DEBIT
+                        : TreasuryJournalPostingService::SIDE_CREDIT,
+                    'journal_kind' => TreasuryJournalPostingService::KIND_PAYMENT,
+                    'journal_transaction_id' => (string) Str::uuid(),
                     'source' => $payment->source_account_id ? ('bank-'.$payment->source_account_id) : 'payment',
                     'account_id' => $payment->source_account_id,
                     'counter_account_id' => $payment->target_account_id,
@@ -175,4 +185,3 @@ class FinancialService
         }
     }
 }
-

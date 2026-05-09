@@ -427,6 +427,41 @@
   border-color: var(--form-divider);
 }
 
+/* Zero-balance row: still shown so users see the supported currency, but visually muted
+   and accompanied by a "supported" tag. Identical rule for banks + treasury accounts. */
+.treasury-acc-currency-badge-row--zero {
+  opacity: 0.7;
+  border-style: dashed;
+}
+
+.treasury-acc-currency-badge-row--zero .treasury-acc-currency-amount {
+  color: var(--form-muted, #64748b);
+  font-weight: 600;
+}
+
+.treasury-acc-currency-supported {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--form-muted, #64748b);
+  background: var(--gray-100, #f1f5f9);
+  border: 1px solid var(--form-divider, #e5e7eb);
+  white-space: nowrap;
+}
+
+[data-theme='dark'] .treasury-acc-currency-supported,
+.dark .treasury-acc-currency-supported {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--form-muted);
+  border-color: var(--form-divider);
+}
+
 .treasury-acc-currency-pill {
   display: inline-flex;
   align-items: center;
@@ -695,6 +730,114 @@
   color: rgb(148 163 184);
 }
 
+/* Movements table: transaction type (Deposit / Withdraw / …) */
+.treasury-txn-type {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  white-space: normal;
+  hyphens: auto;
+}
+
+.treasury-txn-type--deposit {
+  background: rgb(209 250 229);
+  color: rgb(4 120 87);
+}
+
+.treasury-txn-type--withdraw {
+  background: rgb(254 226 226);
+  color: rgb(185 28 28);
+}
+
+.treasury-txn-type--expense {
+  background: rgb(254 249 195);
+  color: rgb(133 77 14);
+}
+
+.treasury-txn-type--internal-transfer {
+  background: rgb(237 233 254);
+  color: rgb(91 33 182);
+}
+
+.treasury-txn-type--currency-exchange {
+  background: rgb(219 234 254);
+  color: rgb(29 78 216);
+}
+
+.treasury-txn-type--other {
+  background: rgb(241 245 249);
+  color: rgb(71 85 105);
+}
+
+.dark .treasury-txn-type--deposit,
+[data-theme='dark'] .treasury-txn-type--deposit {
+  background: rgba(6, 78, 59, 0.45);
+  color: rgb(110 231 183);
+}
+
+.dark .treasury-txn-type--withdraw,
+[data-theme='dark'] .treasury-txn-type--withdraw {
+  background: rgba(127, 29, 29, 0.45);
+  color: rgb(252 165 165);
+}
+
+.dark .treasury-txn-type--expense,
+[data-theme='dark'] .treasury-txn-type--expense {
+  background: rgba(113, 63, 18, 0.4);
+  color: rgb(253 230 138);
+}
+
+.dark .treasury-txn-type--internal-transfer,
+[data-theme='dark'] .treasury-txn-type--internal-transfer {
+  background: rgba(76, 29, 149, 0.4);
+  color: rgb(196 181 253);
+}
+
+.dark .treasury-txn-type--currency-exchange,
+[data-theme='dark'] .treasury-txn-type--currency-exchange {
+  background: rgba(30, 64, 175, 0.4);
+  color: rgb(147 197 253);
+}
+
+.dark .treasury-txn-type--other,
+[data-theme='dark'] .treasury-txn-type--other {
+  background: rgba(51, 65, 85, 0.45);
+  color: rgb(148 163 184);
+}
+
+/* Debit column = incoming (green); Credit column = outgoing (red) — amount glyphs only */
+.treasury-ledger-money {
+  display: inline-flex;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.treasury-ledger-money--incoming .accounting-currency-badge__amount {
+  color: rgb(4 120 87);
+  font-weight: 700;
+}
+
+.treasury-ledger-money--outgoing .accounting-currency-badge__amount {
+  color: rgb(185 28 28);
+  font-weight: 700;
+}
+
+.dark .treasury-ledger-money--incoming .accounting-currency-badge__amount,
+[data-theme='dark'] .treasury-ledger-money--incoming .accounting-currency-badge__amount {
+  color: rgb(110 231 183);
+}
+
+.dark .treasury-ledger-money--outgoing .accounting-currency-badge__amount,
+[data-theme='dark'] .treasury-ledger-money--outgoing .accounting-currency-badge__amount {
+  color: rgb(252 165 165);
+}
+
 /* Ledger-style cell alignment helpers — used by the Treasury Movements table only.
  * `--end` right-aligns numeric columns (Amount, Balance) so digits line up neatly,
  * `--center` centers the badge / action columns. `text-align: end` keeps it RTL-safe. */
@@ -778,4 +921,96 @@
 .treasury-entry-view-dl dd {
   margin: 0;
   word-break: break-word;
+}
+
+/* Movements section header + transfer / FX modals */
+.treasury-movements-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.treasury-movements-head__title {
+  margin-bottom: 0;
+}
+
+.treasury-movements-head__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.treasury-movements-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.treasury-modal-lead {
+  margin: 0 0 1rem;
+  font-size: 0.8125rem;
+  color: var(--form-text, #64748b);
+  line-height: 1.45;
+}
+
+.treasury-modal-error {
+  margin-bottom: 0.75rem;
+}
+
+.treasury-modal-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .treasury-modal-grid--2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.treasury-modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.treasury-modal-field--full {
+  grid-column: 1 / -1;
+}
+
+.treasury-modal-field span:first-child {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--form-muted, #64748b);
+}
+
+.treasury-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 0.25rem;
+}
+
+.treasury-modal-preview {
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--form-divider, #e5e7eb);
+  background: var(--form-bg-muted, rgba(148, 163, 184, 0.08));
+}
+
+.treasury-modal-preview__label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.treasury-modal-preview__body {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.4;
 }

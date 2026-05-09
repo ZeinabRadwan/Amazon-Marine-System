@@ -374,9 +374,11 @@ export default function Settings() {
   const [deletePortSubmitting, setDeletePortSubmitting] = useState(false)
   const [bankAccounts, setBankAccounts] = useState([])
   const [bankAccountModal, setBankAccountModal] = useState(null)
+  // Bank form is strictly bank-identity fields per the Settings spec:
+  // bank name + account number + IBAN + SWIFT + multi-currency support + active flag.
+  // No "account name" here — the backend mirrors it from `bank_name` for legacy compatibility.
   const [bankAccountForm, setBankAccountForm] = useState({
     bank_name: '',
-    account_name: '',
     account_number: '',
     iban: '',
     swift_code: '',
@@ -388,13 +390,13 @@ export default function Settings() {
   const [deleteBankAccountSubmitting, setDeleteBankAccountSubmitting] = useState(false)
 
   // Cash wallets — separate operational treasury entity (see /cash-wallets API).
-  // Only label + active flag are editable post-creation; the wallet kind is locked
-  // because it pins currency rules and ledger identity.
+  // Per the Settings spec, a treasury wallet has *only* a name + supported currencies;
+  // wallet kind is locked post-creation (it pins currency rules and ledger identity),
+  // currencies are auto-derived from the kind, and the active flag toggles availability.
   const [cashWallets, setCashWallets] = useState([])
   const [cashWalletModal, setCashWalletModal] = useState(null)
   const [cashWalletForm, setCashWalletForm] = useState({
     bank_name: '',
-    account_name: '',
     is_active: true,
   })
   const [cashWalletSubmitting, setCashWalletSubmitting] = useState(false)
@@ -1336,10 +1338,20 @@ export default function Settings() {
   function openEditCashWallet(row) {
     setCashWalletForm({
       bank_name: row.name ?? row.bank_name ?? '',
-      account_name: row.account_name ?? '',
       is_active: row.is_active !== false,
     })
-    setCashWalletModal({ mode: 'edit', id: row.id, kind: row.cash_wallet_kind })
+    // Modal carries the wallet's identity + the read-only currency list so the form
+    // can render currency badges without having to keep a hot reference to the row.
+    setCashWalletModal({
+      mode: 'edit',
+      id: row.id,
+      kind: row.cash_wallet_kind,
+      currencies: Array.isArray(row.allowed_currencies) && row.allowed_currencies.length
+        ? row.allowed_currencies
+        : Array.isArray(row.supported_currencies)
+          ? row.supported_currencies
+          : [],
+    })
   }
 
   async function handleSaveCashWallet(e) {
@@ -1349,9 +1361,10 @@ export default function Settings() {
     setCashWalletSubmitting(true)
     setError('')
     try {
+      // Treasury wallets accept only `bank_name` + `is_active` from the UI; the server
+      // mirrors `account_name` from `bank_name` and locks `cash_wallet_kind` + currencies.
       const body = {
         bank_name: String(cashWalletForm.bank_name).trim(),
-        account_name: String(cashWalletForm.account_name || '').trim() || null,
         is_active: Boolean(cashWalletForm.is_active),
       }
       await updateCashWallet(token, cashWalletModal.id, body)
@@ -1368,7 +1381,6 @@ export default function Settings() {
   function openNewBankAccount() {
     setBankAccountForm({
       bank_name: '',
-      account_name: '',
       account_number: '',
       iban: '',
       swift_code: '',
@@ -1381,7 +1393,6 @@ export default function Settings() {
   function openEditBankAccount(row) {
     setBankAccountForm({
       bank_name: row.bank_name ?? '',
-      account_name: row.account_name ?? '',
       account_number: row.account_number ?? '',
       iban: row.iban ?? '',
       swift_code: row.swift_code ?? '',
@@ -1405,7 +1416,7 @@ export default function Settings() {
 
   async function handleSaveBankAccount(e) {
     e.preventDefault()
-    if (!token || !String(bankAccountForm.bank_name).trim() || !String(bankAccountForm.account_name).trim()) return
+    if (!token || !String(bankAccountForm.bank_name).trim()) return
     const isEdit = bankAccountModal?.mode === 'edit' && bankAccountModal.id != null
     setBankAccountSubmitting(true)
     setError('')
@@ -1417,10 +1428,10 @@ export default function Settings() {
             .split(',')
             .map((v) => v.trim().toUpperCase())
             .filter(Boolean)
+      // No `account_name` sent — server mirrors it from `bank_name`.
       const body = {
         bank_name: String(bankAccountForm.bank_name).trim(),
-        account_name: String(bankAccountForm.account_name || '').trim() || null,
-        account_number: String(bankAccountForm.account_number).trim(),
+        account_number: String(bankAccountForm.account_number || '').trim() || null,
         iban: String(bankAccountForm.iban || '').trim() || null,
         swift_code: String(bankAccountForm.swift_code || '').trim() || null,
         supported_currencies: currencies,
@@ -3222,20 +3233,10 @@ export default function Settings() {
                 onChange={(e) => setBankAccountForm((p) => ({ ...p, bank_name: e.target.value }))}
               />
             </SettingsModalField>
-            <SettingsModalField label={t('settings.bankAccounts.accountName')} htmlFor="settings-bank-account-name">
-              <input
-                id="settings-bank-account-name"
-                className="clients-input"
-                required
-                value={bankAccountForm.account_name}
-                onChange={(e) => setBankAccountForm((p) => ({ ...p, account_name: e.target.value }))}
-              />
-            </SettingsModalField>
             <SettingsModalField label={t('settings.bankAccounts.accountNumber')} htmlFor="settings-bank-account-number">
               <input
                 id="settings-bank-account-number"
                 className="clients-input"
-                required
                 value={bankAccountForm.account_number}
                 onChange={(e) => setBankAccountForm((p) => ({ ...p, account_number: e.target.value }))}
               />
@@ -3338,18 +3339,28 @@ export default function Settings() {
                 onChange={(e) => setCashWalletForm((p) => ({ ...p, bank_name: e.target.value }))}
               />
             </SettingsModalField>
-            <SettingsModalField label={t('settings.cashWallets.accountName')} htmlFor="settings-cash-wallet-account-name">
-              <input
-                id="settings-cash-wallet-account-name"
-                className="clients-input"
-                value={cashWalletForm.account_name}
-                onChange={(e) => setCashWalletForm((p) => ({ ...p, account_name: e.target.value }))}
-              />
-            </SettingsModalField>
             <SettingsModalField label={t('settings.cashWallets.currencies')} htmlFor="settings-cash-wallet-currencies">
-              <p id="settings-cash-wallet-currencies" className="settings-bank-currency-picker__hint">
-                {t('settings.cashWallets.currenciesAuto')}
-              </p>
+              <div
+                id="settings-cash-wallet-currencies"
+                className="settings-bank-currency-badges settings-bank-currency-badges--inline"
+                role="list"
+                aria-label={t('settings.cashWallets.currencies')}
+              >
+                {(Array.isArray(cashWalletModal.currencies) ? cashWalletModal.currencies : []).map((c) => {
+                  const code = String(c).toUpperCase()
+                  const v = settingsBankCurrencyVariant(code)
+                  return (
+                    <span
+                      key={code}
+                      role="listitem"
+                      className={`settings-bank-currency-badge settings-bank-currency-badge--${v} settings-bank-currency-badge--readonly`}
+                    >
+                      {code}
+                    </span>
+                  )
+                })}
+              </div>
+              <p className="settings-bank-currency-picker__hint">{t('settings.cashWallets.currenciesAuto')}</p>
             </SettingsModalField>
             <div className="client-detail-modal__form-field client-detail-modal__form-field--full settings-modal-checkbox-field">
               <label htmlFor="settings-cash-wallet-active" className="settings-modal-checkbox-field__label">

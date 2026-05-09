@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TreasuryEntry extends Model
@@ -22,6 +22,10 @@ class TreasuryEntry extends Model
         'amount',
         'currency_code',
         'exchange_rate',
+        'exchange_rate_source',
+        'journal_transaction_id',
+        'journal_kind',
+        'ledger_side',
         'target_currency_code',
         'converted_amount',
         'method',

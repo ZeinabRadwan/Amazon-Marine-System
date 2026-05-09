@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo, useCallback, Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
 import { getStoredToken } from '../Login'
 import { useAuthAccess } from '../../hooks/useAuthAccess'
 import {
+  createTreasuryTransfer,
   getTreasuryBankOverview,
   getTreasuryDailyExchangeRates,
   getTreasuryEntries,
@@ -16,18 +16,19 @@ import {
   Receipt,
   FileSpreadsheet,
   Search,
-  Eye,
   RotateCcw,
   Wallet,
   HandCoins,
   Send,
   Building2,
+  ArrowRightLeft,
+  Repeat2,
 } from 'lucide-react'
 import '../../components/PageHeader/PageHeader.css'
 import '../Clients/Clients.css'
 import '../Accountings/Accountings.css'
 import '../Accountings/CurrencyMapBadges.css'
-import { CurrencyMapBadges, CurrencyCodeBadge } from '../Accountings/CurrencyMapBadges'
+import { CurrencyMapBadges } from '../Accountings/CurrencyMapBadges'
 import { StatsCard } from '../../components/StatsCard'
 import Pagination from '../../components/Pagination'
 import './Treasury.css'
@@ -125,11 +126,20 @@ function treasuryAccountDisplayCurrencies(account) {
   return treasuryBankDisplayCurrencies(account)
 }
 
-/** Supported currencies that have a non-zero balance (hide zero legs). */
-function treasuryNonZeroSupportedCodes(account, byCur) {
-  return treasuryAccountDisplayCurrencies(account).filter((code) => {
-    const n = Number(byCur[code] ?? 0)
-    return Number.isFinite(n) && n !== 0
+/**
+ * Project the configured-currency list onto current balances. Every supported currency is
+ * always returned (even when its balance is zero) so the Treasury cards explicitly indicate
+ * that the account *can hold* that currency. Zero balances carry `isZero: true` so the UI
+ * can mute them while still showing the pill — a single unified rule for both bank accounts
+ * and operational treasury accounts.
+ *
+ * @returns {Array<{ code: string, amount: number, isZero: boolean }>}
+ */
+function treasurySupportedCurrencyRows(account, byCur) {
+  return treasuryAccountDisplayCurrencies(account).map((code) => {
+    const raw = Number(byCur[code] ?? 0)
+    const amount = Number.isFinite(raw) ? raw : 0
+    return { code, amount, isZero: amount === 0 }
   })
 }
 
@@ -141,39 +151,67 @@ function treasuryCurrencyBadgeVariant(code) {
   return 'default'
 }
 
-function deriveFlowType(row) {
-  if (row?.flow_type) return String(row.flow_type).toLowerCase()
-  if (row?.payment_type === 'client_receipt') return 'customer'
-  if (row?.payment_type === 'vendor_payment') return 'partner'
-  if (!row?.payment_id) return String(row?.entry_type || '').toLowerCase() === 'transfer' ? 'transfer' : 'manual'
-  return 'internal'
+/** Maps ledger row to a treasury transaction type label key (see treasury.txnType.*). */
+function deriveTransactionTypeKey(row) {
+  const et = String(row?.entry_type || '').toLowerCase()
+  if (et === 'exchange') return 'currencyExchange'
+  if (et === 'transfer') return 'internalTransfer'
+  if (et === 'expense') return 'expense'
+  if (et === 'in') return 'deposit'
+  if (et === 'out') return 'withdraw'
+  return 'other'
 }
 
-function flowTypeLabel(row, t) {
-  const f = deriveFlowType(row)
-  if (f === 'customer') return t('treasury.flow.customer', 'Customer')
-  if (f === 'partner') return t('treasury.flow.partner', 'Partner')
-  if (f === 'transfer') return t('treasury.flow.transfer', 'Transfer')
-  if (f === 'manual') return t('treasury.flow.manual', 'Manual / Other')
-  return t('treasury.flow.internal', 'Internal')
+function transactionTypeLabel(row, t) {
+  const k = deriveTransactionTypeKey(row)
+  const fallbacks = {
+    deposit: 'Deposit',
+    withdraw: 'Withdraw',
+    expense: 'Expense',
+    internalTransfer: 'Internal Transfer',
+    currencyExchange: 'Currency Exchange',
+    other: 'Other',
+  }
+  return t(`treasury.txnType.${k}`, fallbacks[k] ?? fallbacks.other)
 }
 
-/**
- * Classify a treasury entry as credit (cash in, دائن) or debit (cash out, مدين).
- * Driven by the signed amount returned by the API ('in' → +, 'out'/'transfer'/'exchange' → -),
- * never by parsing the +/- glyph in the displayed string.
- */
-function deriveFinancialType(row) {
-  const amt = Number(row?.amount)
-  if (!Number.isFinite(amt) || amt === 0) return 'neutral'
-  return amt > 0 ? 'credit' : 'debit'
+const TXN_TYPE_CLASS = {
+  deposit: 'treasury-txn-type--deposit',
+  withdraw: 'treasury-txn-type--withdraw',
+  expense: 'treasury-txn-type--expense',
+  internalTransfer: 'treasury-txn-type--internal-transfer',
+  currencyExchange: 'treasury-txn-type--currency-exchange',
+  other: 'treasury-txn-type--other',
 }
 
-function financialTypeLabel(row, t) {
-  const k = deriveFinancialType(row)
-  if (k === 'credit') return t('treasury.financialType.credit', 'Credit')
-  if (k === 'debit') return t('treasury.financialType.debit', 'Debit')
-  return t('treasury.financialType.neutral', '—')
+function treasuryAccountOptionLabel(b) {
+  if (!b) return ''
+  return [b.bank_name, b.account_name].filter(Boolean).join(' — ') || String(b.id)
+}
+
+/** Same hub formula as backend {@link TreasuryOfficialFxRateService} (CBE mids). */
+function treasuryOfficialFxMultiplier(fromCur, toCur, pairs) {
+  const from = String(fromCur || '').toUpperCase()
+  const to = String(toCur || '').toUpperCase()
+  if (from === to) return 1
+  const allowed = ['USD', 'EUR', 'EGP']
+  if (!allowed.includes(from) || !allowed.includes(to)) return null
+  const list = Array.isArray(pairs) ? pairs : []
+  const usdEgp = list.find((p) => p.id === 'usd_egp')?.rate
+  const eurEgp = list.find((p) => p.id === 'eur_egp')?.rate
+  const nu = Number(usdEgp)
+  const ne = Number(eurEgp)
+  if (!Number.isFinite(nu) || !Number.isFinite(ne) || nu <= 0 || ne <= 0) return null
+  const egpPer = (code) => {
+    if (code === 'EGP') return 1
+    if (code === 'USD') return nu
+    if (code === 'EUR') return ne
+    return 0
+  }
+  const a = egpPer(from)
+  const b = egpPer(to)
+  if (!a || !b) return null
+  return a / b
 }
 
 function computeRunningBalances(rows, clampZero = true) {
@@ -220,12 +258,13 @@ function useDebounced(value, delayMs) {
 
 export default function Treasury() {
   const { t, i18n } = useTranslation()
-  const { hasPageAccess } = useAuthAccess()
+  const { hasPageAccess, hasAbility } = useAuthAccess()
   const token = getStoredToken()
   const locale = String(i18n?.language ?? '').toLowerCase().startsWith('ar') ? 'ar-EG' : 'en-US'
   const isAr = locale.startsWith('ar')
 
   const canViewAccounting = hasPageAccess('treasury')
+  const canManageTreasury = hasAbility('accounting.manage')
 
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebounced(search, 400)
@@ -233,8 +272,6 @@ export default function Treasury() {
   const [currencyFilter, setCurrencyFilter] = useState('')
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
-  const [sortKey, setSortKey] = useState('date')
-
   const [entries, setEntries] = useState([])
   const [bankLedgerOverview, setBankLedgerOverview] = useState(null)
   const [bankOverviewLoading, setBankOverviewLoading] = useState(false)
@@ -244,8 +281,33 @@ export default function Treasury() {
   const [entriesLoading, setEntriesLoading] = useState(false)
   const [entriesError, setEntriesError] = useState(null)
 
-  /** @type {[object | null, (r: object | null) => void]} */
-  const [entryViewRow, setEntryViewRow] = useState(null)
+  const [transferModalOpen, setTransferModalOpen] = useState(false)
+  const [exchangeModalOpen, setExchangeModalOpen] = useState(false)
+  const [transferModalError, setTransferModalError] = useState(null)
+  const [exchangeModalError, setExchangeModalError] = useState(null)
+  const [transferSubmitting, setTransferSubmitting] = useState(false)
+  const [exchangeSubmitting, setExchangeSubmitting] = useState(false)
+
+  const [internalForm, setInternalForm] = useState({
+    from_account_id: '',
+    to_account_id: '',
+    amount: '',
+    currency_code: 'USD',
+    entry_date: new Date().toISOString().slice(0, 10),
+    description: '',
+  })
+
+  const [exchangeForm, setExchangeForm] = useState({
+    from_account_id: '',
+    to_account_id: '',
+    from_currency: 'USD',
+    to_currency: 'EGP',
+    amount: '',
+    entry_date: new Date().toISOString().slice(0, 10),
+    rate_mode: 'auto',
+    fx_rate: '',
+    description: '',
+  })
 
   const [entriesPage, setEntriesPage] = useState(1)
   const [entriesPerPage, setEntriesPerPage] = useState(15)
@@ -271,7 +333,6 @@ export default function Treasury() {
       bank_account_id: selectedBankId || undefined,
       from: fromDate || undefined,
       to: toDate || undefined,
-      sort: sortKey || 'date',
     })
       .then((res) => {
         const rows = Array.isArray(res.data) ? res.data : []
@@ -294,7 +355,6 @@ export default function Treasury() {
     selectedBankId,
     fromDate,
     toDate,
-    sortKey,
     canViewAccounting,
   ])
 
@@ -324,7 +384,7 @@ export default function Treasury() {
 
   useEffect(() => {
     setEntriesPage(1)
-  }, [debouncedSearch, typeFilter, currencyFilter, selectedBankId, fromDate, toDate, sortKey])
+  }, [debouncedSearch, typeFilter, currencyFilter, selectedBankId, fromDate, toDate])
 
   const entriesLastPage = Math.max(1, Math.ceil(entries.length / entriesPerPage))
 
@@ -374,30 +434,71 @@ export default function Treasury() {
     [bankAccountsRows, cashWalletRows],
   )
 
+  const accountIdToLabel = useMemo(() => {
+    const m = new Map()
+    for (const b of bankFilterOptions) {
+      const label = [b.bank_name, b.account_name].filter(Boolean).join(' — ') || String(b.id)
+      m.set(String(b.id), label)
+    }
+    return m
+  }, [bankFilterOptions])
+
+  const accountById = useMemo(() => {
+    const m = new Map()
+    for (const b of bankFilterOptions) {
+      m.set(String(b.id), b)
+    }
+    return m
+  }, [bankFilterOptions])
+
+  const internalCurrencyOptions = useMemo(() => {
+    const acc = internalForm.from_account_id ? accountById.get(String(internalForm.from_account_id)) : null
+    const codes = acc ? treasuryAccountDisplayCurrencies(acc) : sortTreasuryCurrencyCodes(['EGP', 'USD', 'EUR'])
+    return codes.length ? codes : ['USD']
+  }, [accountById, internalForm.from_account_id])
+
+  const exchangePreviewMult = useMemo(() => {
+    if (exchangeForm.rate_mode !== 'auto') return null
+    if (exchangeForm.from_currency === exchangeForm.to_currency) return null
+    const pairs = dailyFxResponse?.data?.pairs
+    return treasuryOfficialFxMultiplier(exchangeForm.from_currency, exchangeForm.to_currency, pairs)
+  }, [exchangeForm.rate_mode, exchangeForm.from_currency, exchangeForm.to_currency, dailyFxResponse])
+
+  const exchangePreviewToAmount = useMemo(() => {
+    const amt = Number(exchangeForm.amount)
+    if (!Number.isFinite(amt) || amt <= 0 || exchangePreviewMult == null) return null
+    return amt * exchangePreviewMult
+  }, [exchangeForm.amount, exchangePreviewMult])
+
   const exportEntriesCsv = () => {
     const headers = [
       t('treasury.colDate'),
-      t('treasury.colFlow', 'Flow'),
       t('treasury.colDescription'),
-      t('treasury.colFinancialType', 'Financial type'),
-      t('treasury.colAmount'),
+      t('treasury.colTransactionType', 'Transaction type'),
+      t('treasury.colAccount', 'Account'),
+      t('treasury.colDebit', 'Debit'),
+      t('treasury.colCredit', 'Credit'),
+      t('treasury.colBalance', 'Balance'),
       t('treasury.colCurrency'),
-      t('treasury.colReference', 'Reference'),
-      t('treasury.colRunning'),
     ]
     const lines = [headers.map(escapeCsvCell).join(',')]
     for (const row of entries) {
       const rb = runningById.get(row.id)
+      const amt = Number(row.amount)
+      const debit = Number.isFinite(amt) && amt > 0 ? formatPlainAmount(amt) : ''
+      const credit = Number.isFinite(amt) && amt < 0 ? formatPlainAmount(Math.abs(amt)) : ''
+      const acct =
+        row.account_id != null ? accountIdToLabel.get(String(row.account_id)) ?? `#${row.account_id}` : '—'
       lines.push(
         [
           row.entry_date,
-          flowTypeLabel(row, t),
-          row.description || row.reference_label || '',
-          financialTypeLabel(row, t),
-          formatPlainAmount(row.amount),
-          row.currency_code,
-          row.reference_label || '',
+          [row.description, row.reference_label].filter(Boolean).join(' · ') || '',
+          transactionTypeLabel(row, t),
+          acct,
+          debit,
+          credit,
           rb != null ? formatPlainAmount(rb.running) : '',
+          row.currency_code || '',
         ]
           .map(escapeCsvCell)
           .join(',')
@@ -409,6 +510,47 @@ export default function Treasury() {
     a.download = `treasury-movements-${new Date().toISOString().slice(0, 10)}.csv`
     a.click()
     URL.revokeObjectURL(a.href)
+  }
+
+  /**
+   * Unified balance renderer for both bank accounts and operational treasury accounts.
+   * Always shows every supported currency — zero balances render as `0.00` with a muted
+   * `--zero` modifier and a "supported" tag, so users can always see which currencies an
+   * account is configured to hold even when it has no funds in them.
+   */
+  const renderAccountBalances = (account) => {
+    const supported = treasuryAccountDisplayCurrencies(account)
+    if (!supported.length) {
+      return (
+        <p className="treasury-acc-balances-empty">{t('treasury.bankOverview.noCurrenciesConfigured')}</p>
+      )
+    }
+    const byCur = normalizeBalanceByCurrency(account.balance_by_currency)
+    const rows = treasurySupportedCurrencyRows(account, byCur)
+    return (
+      <ul className="treasury-acc-currency-badge-list" role="list">
+        {rows.map(({ code, amount, isZero }) => (
+          <li
+            key={code}
+            className={`treasury-acc-currency-badge-row${isZero ? ' treasury-acc-currency-badge-row--zero' : ''}`}
+          >
+            <span
+              className={`treasury-acc-currency-pill treasury-acc-currency-pill--${treasuryCurrencyBadgeVariant(code)}`}
+            >
+              {code}
+            </span>
+            <span className="treasury-acc-currency-amount" dir="ltr" lang="en">
+              {formatPlainAmount(amount)}
+            </span>
+            {isZero ? (
+              <span className="treasury-acc-currency-supported" aria-label={t('treasury.bankOverview.currencySupported')}>
+                {t('treasury.bankOverview.currencySupported')}
+              </span>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+    )
   }
 
   if (!canViewAccounting) {
@@ -513,9 +655,9 @@ export default function Treasury() {
             className="accountings-stat-card"
             title={
               <>
-                {t('treasury.bankOverview.partnerPayables')}
+                {t('treasury.bankOverview.partnerLiabilities')}
                 <span className="treasury-stat-subtitle">
-                  ({t('treasury.bankOverview.partnerPayablesSubtitle')})
+                  ({t('treasury.bankOverview.partnerLiabilitiesSubtitle')})
                 </span>
               </>
             }
@@ -524,7 +666,7 @@ export default function Treasury() {
                 <span className="treasury-muted">…</span>
               ) : (
                 <CurrencyMapBadges
-                  value={bankLedgerOverview?.global?.partner_payables_outstanding_by_currency}
+                  value={bankLedgerOverview?.global?.partner_liabilities_outstanding_by_currency}
                   size="sm"
                   amountFirst
                   numberLocale={TREASURY_NUMBER_LOCALE}
@@ -629,37 +771,7 @@ export default function Treasury() {
                       {bank.account_number || bank.iban ? (
                         <div className="treasury-acc-sub">{bank.account_number || bank.iban}</div>
                       ) : null}
-                      <div className="treasury-acc-balances">
-                        {(() => {
-                          const byCur = normalizeBalanceByCurrency(bank.balance_by_currency)
-                          const supported = treasuryAccountDisplayCurrencies(bank)
-                          if (!supported.length) {
-                            return (
-                              <p className="treasury-acc-balances-empty">{t('treasury.bankOverview.noCurrenciesConfigured')}</p>
-                            )
-                          }
-                          const rows = treasuryNonZeroSupportedCodes(bank, byCur)
-                          if (!rows.length) {
-                            return null
-                          }
-                          return (
-                            <ul className="treasury-acc-currency-badge-list" role="list">
-                              {rows.map((code) => (
-                                <li key={code} className="treasury-acc-currency-badge-row">
-                                  <span
-                                    className={`treasury-acc-currency-pill treasury-acc-currency-pill--${treasuryCurrencyBadgeVariant(code)}`}
-                                  >
-                                    {code}
-                                  </span>
-                                  <span className="treasury-acc-currency-amount" dir="ltr" lang="en">
-                                    {formatPlainAmount(byCur[code] ?? 0)}
-                                  </span>
-                                </li>
-                              ))}
-                            </ul>
-                          )
-                        })()}
-                      </div>
+                      <div className="treasury-acc-balances">{renderAccountBalances(bank)}</div>
                     </div>
                   </button>
                 )
@@ -709,50 +821,48 @@ export default function Treasury() {
                       {box.account_number || box.iban ? (
                         <div className="treasury-acc-sub">{box.account_number || box.iban}</div>
                       ) : null}
-                      <div className="treasury-acc-balances">
-                        {(() => {
-                          const byCur = normalizeBalanceByCurrency(box.balance_by_currency)
-                          const supported = treasuryAccountDisplayCurrencies(box)
-                          if (!supported.length) {
-                            return (
-                              <p className="treasury-acc-balances-empty">{t('treasury.bankOverview.noCurrenciesConfigured')}</p>
-                            )
-                          }
-                          const rows = treasuryNonZeroSupportedCodes(box, byCur)
-                          if (!rows.length) {
-                            return null
-                          }
-                          return (
-                            <ul className="treasury-acc-currency-badge-list" role="list">
-                              {rows.map((code) => (
-                                <li key={code} className="treasury-acc-currency-badge-row">
-                                  <span
-                                    className={`treasury-acc-currency-pill treasury-acc-currency-pill--${treasuryCurrencyBadgeVariant(code)}`}
-                                  >
-                                    {code}
-                                  </span>
-                                  <span className="treasury-acc-currency-amount" dir="ltr" lang="en">
-                                    {formatPlainAmount(byCur[code] ?? 0)}
-                                  </span>
-                                </li>
-                              ))}
-                            </ul>
-                          )
-                        })()}
-                      </div>
+                      <div className="treasury-acc-balances">{renderAccountBalances(box)}</div>
                     </div>
                   </button>
                 )
               })
-            ) : null /* Cash wallets are auto-seeded server-side; this branch should never hit. */}
+            ) : null /* Operational treasury accounts are auto-seeded server-side; this branch should never hit. */}
           </div>
         </>
       )}
 
       <section className="treasury-movements-section" aria-labelledby="treasury-movements-title">
-        <h2 id="treasury-movements-title" className="treasury-section-title">
-          {t('treasury.movementsTitle')}
-        </h2>
+        <div className="treasury-movements-head">
+          <h2 id="treasury-movements-title" className="treasury-section-title treasury-movements-head__title">
+            {t('treasury.movementsTitle')}
+          </h2>
+          {canManageTreasury ? (
+            <div className="treasury-movements-head__actions">
+              <button
+                type="button"
+                className="accountings-btn accountings-btn--small accountings-btn--primary treasury-movements-action-btn"
+                onClick={() => {
+                  setTransferModalError(null)
+                  setTransferModalOpen(true)
+                }}
+              >
+                <ArrowRightLeft className="h-4 w-4" aria-hidden />
+                {t('treasury.actions.internalTransfer')}
+              </button>
+              <button
+                type="button"
+                className="accountings-btn accountings-btn--small accountings-btn--primary treasury-movements-action-btn"
+                onClick={() => {
+                  setExchangeModalError(null)
+                  setExchangeModalOpen(true)
+                }}
+              >
+                <Repeat2 className="h-4 w-4" aria-hidden />
+                {t('treasury.actions.currencyExchange')}
+              </button>
+            </div>
+          ) : null}
+        </div>
 
         <div className="accountings-table-section">
         <div className="clients-filters-card">
@@ -805,7 +915,7 @@ export default function Treasury() {
                 onChange={(e) => setCurrencyFilter(e.target.value)}
                 aria-label={t('treasury.currency')}
               >
-                <option value="">{t('treasury.allCurrencies', 'All currencies')}</option>
+                <option value="">{t('treasury.allCurrencies')}</option>
                 {currencyOptions.map((c) => (
                   <option key={c} value={c}>{c}</option>
                 ))}
@@ -824,15 +934,6 @@ export default function Treasury() {
                 onChange={(e) => setToDate(e.target.value)}
                 aria-label={t('treasury.dateTo')}
               />
-              <select
-                className="clients-input min-w-[140px]"
-                value={sortKey}
-                onChange={(e) => setSortKey(e.target.value)}
-                aria-label={t('treasury.sortBy')}
-              >
-                <option value="date">{t('treasury.sortDate')}</option>
-                <option value="amount">{t('treasury.sortAmount')}</option>
-              </select>
             </div>
             <div className="clients-filters__actions">
               <button
@@ -845,7 +946,6 @@ export default function Treasury() {
                   setSelectedBankId('')
                   setFromDate('')
                   setToDate('')
-                  setSortKey('date')
                 }}
                 aria-label={t('invoices.clearFilters', 'Clear filters')}
                 title={t('invoices.clearFilters', 'Clear filters')}
@@ -873,23 +973,22 @@ export default function Treasury() {
             <thead>
               <tr>
                 <th className="treasury-ledger-th">{t('treasury.colDate')}</th>
-                <th className="treasury-ledger-th">{t('treasury.colFlow', 'Flow')}</th>
                 <th className="treasury-ledger-th">{t('treasury.colDescription')}</th>
-                <th className="treasury-ledger-th treasury-ledger-th--center">
-                  {t('treasury.colFinancialType', 'Financial type')}
+                <th className="treasury-ledger-th">{t('treasury.colTransactionType', 'Transaction type')}</th>
+                <th className="treasury-ledger-th">{t('treasury.colAccount', 'Account')}</th>
+                <th className="treasury-ledger-th treasury-ledger-th--end">
+                  {t('treasury.colDebit', 'Debit')}
                 </th>
-                <th className="treasury-ledger-th treasury-ledger-th--end">{t('treasury.colAmount')}</th>
-                <th className="treasury-ledger-th">{t('treasury.colReference', 'Reference')}</th>
-                <th className="treasury-ledger-th treasury-ledger-th--end">{t('treasury.colRunning')}</th>
-                <th className="treasury-ledger-th treasury-ledger-th--center">
-                  {t('treasury.colActions', 'Actions')}
+                <th className="treasury-ledger-th treasury-ledger-th--end">
+                  {t('treasury.colCredit', 'Credit')}
                 </th>
+                <th className="treasury-ledger-th treasury-ledger-th--end">{t('treasury.colBalance', 'Balance')}</th>
               </tr>
             </thead>
             <tbody>
               {entriesLoading && (
                 <tr>
-                  <td colSpan={8}>
+                  <td colSpan={7}>
                     <LoaderDots />
                   </td>
                 </tr>
@@ -897,60 +996,71 @@ export default function Treasury() {
               {!entriesLoading &&
                 pagedEntries.map((row) => {
                   const rb = runningById.get(row.id)
-                  const runDisplay = rb != null ? formatPlainAmount(rb.running) : '—'
-                  const flow = deriveFlowType(row)
+                  const txnKey = deriveTransactionTypeKey(row)
                   const desc = [row.description, row.reference_label].filter(Boolean).join(' · ') || '—'
-                  const ft = deriveFinancialType(row)
-                  return (
-                    <tr key={row.id} className="treasury-ledger-row">
-                      <td className="treasury-ledger-cell whitespace-nowrap">{row.entry_date}</td>
-                      <td className="treasury-ledger-cell">
-                        <span className={`treasury-flow-badge treasury-flow-badge--${flow}`}>
-                          {flowTypeLabel(row, t)}
-                        </span>
-                      </td>
-                      <td className="treasury-ledger-cell max-w-[220px]">{desc}</td>
-                      <td className="treasury-ledger-cell treasury-ledger-cell--center">
-                        <span
-                          className={`treasury-finance-badge treasury-finance-badge--${ft}`}
-                          aria-label={financialTypeLabel(row, t)}
-                        >
-                          {financialTypeLabel(row, t)}
-                        </span>
-                      </td>
-                      <td className="treasury-ledger-cell treasury-ledger-cell--end">
+                  const amt = Number(row.amount)
+                  const debitCell =
+                    Number.isFinite(amt) && amt > 0 ? (
+                      <div className="treasury-ledger-money treasury-ledger-money--incoming">
                         <CurrencyMapBadges
-                          value={singleCurrencyMap(row.amount, row.currency_code)}
+                          value={singleCurrencyMap(amt, row.currency_code)}
                           size="sm"
                           amountFirst
                           numberLocale={TREASURY_NUMBER_LOCALE}
                         />
-                      </td>
-                      <td
-                        className="treasury-ledger-cell max-w-[180px] truncate"
-                        title={row.reference_label || ''}
-                      >
-                        {row.reference_label || '—'}
-                      </td>
-                      <td className="treasury-ledger-cell treasury-ledger-cell--end tabular-nums">
-                        {runDisplay}
-                      </td>
-                      <td className="treasury-ledger-cell treasury-ledger-cell--center">
-                        <button
-                          type="button"
-                          className="accountings-btn accountings-btn--small"
-                          onClick={() => setEntryViewRow(row)}
-                          aria-label={t('treasury.viewEntry')}
+                      </div>
+                    ) : (
+                      '—'
+                    )
+                  const creditCell =
+                    Number.isFinite(amt) && amt < 0 ? (
+                      <div className="treasury-ledger-money treasury-ledger-money--outgoing">
+                        <CurrencyMapBadges
+                          value={singleCurrencyMap(Math.abs(amt), row.currency_code)}
+                          size="sm"
+                          amountFirst
+                          numberLocale={TREASURY_NUMBER_LOCALE}
+                        />
+                      </div>
+                    ) : (
+                      '—'
+                    )
+                  const acctLabel =
+                    row.account_id != null
+                      ? accountIdToLabel.get(String(row.account_id)) ?? `#${row.account_id}`
+                      : '—'
+                  return (
+                    <tr key={row.id} className="treasury-ledger-row">
+                      <td className="treasury-ledger-cell whitespace-nowrap">{row.entry_date}</td>
+                      <td className="treasury-ledger-cell max-w-[min(28rem,55vw)]">{desc}</td>
+                      <td className="treasury-ledger-cell">
+                        <span
+                          className={`treasury-txn-type ${TXN_TYPE_CLASS[txnKey] ?? TXN_TYPE_CLASS.other}`}
                         >
-                          <Eye className="h-3.5 w-3.5" aria-hidden />
-                        </button>
+                          {transactionTypeLabel(row, t)}
+                        </span>
+                      </td>
+                      <td className="treasury-ledger-cell max-w-[14rem]">{acctLabel}</td>
+                      <td className="treasury-ledger-cell treasury-ledger-cell--end">{debitCell}</td>
+                      <td className="treasury-ledger-cell treasury-ledger-cell--end">{creditCell}</td>
+                      <td className="treasury-ledger-cell treasury-ledger-cell--end">
+                        {rb != null ? (
+                          <CurrencyMapBadges
+                            value={singleCurrencyMap(rb.running, row.currency_code)}
+                            size="sm"
+                            amountFirst
+                            numberLocale={TREASURY_NUMBER_LOCALE}
+                          />
+                        ) : (
+                          '—'
+                        )}
                       </td>
                     </tr>
                   )
                 })}
               {!entriesLoading && entries.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="accountings-empty">
+                  <td colSpan={7} className="accountings-empty">
                     {t('treasury.emptyMovements')}
                   </td>
                 </tr>
@@ -991,85 +1101,426 @@ export default function Treasury() {
           </div>
         )}
         </div>
-      </section>
 
-      {entryViewRow && (
-        <div className="accountings-modal" role="dialog" aria-modal="true">
-          <button
-            type="button"
-            className="accountings-modal-backdrop"
-            onClick={() => setEntryViewRow(null)}
-            aria-label={t('treasury.close')}
-          />
-          <div className="accountings-modal-content accountings-modal-content--wide">
-            <h2>{t('treasury.entryDetailTitle')}</h2>
-            <div className="treasury-entry-view accountings-form">
-              <dl className="treasury-entry-view-dl">
-                <dt>{t('treasury.colDate')}</dt>
-                <dd>{entryViewRow.entry_date || '—'}</dd>
-                <dt>{t('treasury.colFlow')}</dt>
-                <dd>{flowTypeLabel(entryViewRow, t)}</dd>
-                <dt>{t('treasury.colDescription')}</dt>
-                <dd className="break-words">
-                  {[entryViewRow.description, entryViewRow.reference_label].filter(Boolean).join(' · ') || '—'}
-                </dd>
-                <dt>{t('treasury.colType')}</dt>
-                <dd>{entryViewRow.entry_type || '—'}</dd>
-                <dt>{t('treasury.colAmount')}</dt>
-                <dd className="tabular-nums">{formatPlainAmount(entryViewRow.amount)}</dd>
-                <dt>{t('treasury.colCurrency')}</dt>
-                <dd>
-                  <CurrencyCodeBadge code={entryViewRow.currency_code} />
-                </dd>
-                <dt>{t('treasury.colReference')}</dt>
-                <dd>{entryViewRow.reference_label || '—'}</dd>
-                <dt>{t('treasury.colRunning')}</dt>
-                <dd className="tabular-nums">
-                  {runningById.get(entryViewRow.id)?.running != null
-                    ? formatPlainAmount(runningById.get(entryViewRow.id).running)
-                    : '—'}
-                </dd>
-                <dt>{t('treasury.detailPaymentId')}</dt>
-                <dd>{entryViewRow.payment_id ?? '—'}</dd>
-                <dt>{t('treasury.detailAccountIds')}</dt>
-                <dd className="tabular-nums">
-                  {entryViewRow.account_id ?? '—'} / {entryViewRow.counter_account_id ?? '—'}
-                </dd>
-              </dl>
-              <div className="treasury-entry-view-links mt-4 flex flex-wrap items-center gap-3">
-                {entryViewRow.invoice_id ? (
-                  <Link
-                    className="accountings-btn accountings-btn--small accountings-btn--primary"
-                    to={`/invoices/${entryViewRow.invoice_id}/edit`}
-                    onClick={() => setEntryViewRow(null)}
+        {transferModalOpen && (
+          <div className="accountings-modal" role="dialog" aria-modal="true" aria-labelledby="treasury-modal-transfer-title">
+            <button
+              type="button"
+              className="accountings-modal-backdrop"
+              disabled={transferSubmitting}
+              onClick={() => setTransferModalOpen(false)}
+              aria-label={t('treasury.close')}
+            />
+            <div className="accountings-modal-content">
+              <h2 id="treasury-modal-transfer-title">{t('treasury.actions.internalTransferTitle')}</h2>
+              <p className="treasury-modal-lead">{t('treasury.actions.internalTransferLead')}</p>
+              {transferModalError ? (
+                <p className="accountings-error treasury-modal-error" role="alert">
+                  {transferModalError}
+                </p>
+              ) : null}
+              <form
+                className="treasury-modal-grid treasury-modal-grid--2 accountings-form"
+                onSubmit={async (e) => {
+                  e.preventDefault()
+                  if (!token || !canManageTreasury) return
+                  const fromId = internalForm.from_account_id
+                  const toId = internalForm.to_account_id
+                  if (!fromId || !toId || fromId === toId) {
+                    setTransferModalError(t('treasury.actions.transferInvalidAccounts'))
+                    return
+                  }
+                  const fromAcc = accountById.get(String(fromId))
+                  const toAcc = accountById.get(String(toId))
+                  const amt = Number(internalForm.amount)
+                  if (!Number.isFinite(amt) || amt <= 0) {
+                    setTransferModalError(t('treasury.actions.invalidAmount'))
+                    return
+                  }
+                  setTransferSubmitting(true)
+                  setTransferModalError(null)
+                  try {
+                    await createTreasuryTransfer(token, {
+                      from_account: treasuryAccountOptionLabel(fromAcc),
+                      to_account: treasuryAccountOptionLabel(toAcc),
+                      from_account_id: Number(fromId),
+                      to_account_id: Number(toId),
+                      from_amount: amt,
+                      from_currency: internalForm.currency_code,
+                      to_currency: internalForm.currency_code,
+                      entry_date: internalForm.entry_date,
+                      description: internalForm.description.trim() || undefined,
+                    })
+                    setTransferModalOpen(false)
+                    loadBankOverview()
+                    loadEntries()
+                  } catch (err) {
+                    setTransferModalError(err?.message || String(err))
+                  } finally {
+                    setTransferSubmitting(false)
+                  }
+                }}
+              >
+                <label className="treasury-modal-field">
+                  <span>{t('treasury.fromAccount')}</span>
+                  <select
+                    className="clients-input w-full"
+                    required
+                    value={internalForm.from_account_id}
+                    onChange={(e) =>
+                      setInternalForm((p) => ({ ...p, from_account_id: e.target.value }))
+                    }
                   >
-                    {t('treasury.linkOpenInvoice')}
-                  </Link>
-                ) : null}
-                {entryViewRow.shipment_id ? (
-                  <Link
-                    className="accountings-btn accountings-btn--small"
-                    to={`/shipments?shipment_id=${entryViewRow.shipment_id}`}
-                    onClick={() => setEntryViewRow(null)}
+                    <option value="">{t('treasury.selectAccount')}</option>
+                    {bankFilterOptions.map((b) => (
+                      <option key={`tf-${b.id}`} value={String(b.id)}>
+                        {treasuryAccountOptionLabel(b)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="treasury-modal-field">
+                  <span>{t('treasury.toAccount')}</span>
+                  <select
+                    className="clients-input w-full"
+                    required
+                    value={internalForm.to_account_id}
+                    onChange={(e) =>
+                      setInternalForm((p) => ({ ...p, to_account_id: e.target.value }))
+                    }
                   >
-                    {t('treasury.linkOpenShipment')}
-                  </Link>
-                ) : null}
-                {entryViewRow.vendor_bill_id ? (
-                  <span className="text-sm text-slate-600 dark:text-slate-400">
-                    {t('treasury.vendorBillRef')}: #{entryViewRow.vendor_bill_id}
-                  </span>
-                ) : null}
-              </div>
-              <div className="accountings-modal-actions">
-                <button type="button" className="accountings-btn" onClick={() => setEntryViewRow(null)}>
-                  {t('treasury.close')}
-                </button>
-              </div>
+                    <option value="">{t('treasury.selectAccount')}</option>
+                    {bankFilterOptions
+                      .filter((b) => String(b.id) !== String(internalForm.from_account_id))
+                      .map((b) => (
+                        <option key={`tt-${b.id}`} value={String(b.id)}>
+                          {treasuryAccountOptionLabel(b)}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+                <label className="treasury-modal-field">
+                  <span>{t('treasury.amount')}</span>
+                  <input
+                    className="clients-input w-full"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    required
+                    value={internalForm.amount}
+                    onChange={(e) => setInternalForm((p) => ({ ...p, amount: e.target.value }))}
+                  />
+                </label>
+                <label className="treasury-modal-field">
+                  <span>{t('treasury.currency')}</span>
+                  <select
+                    className="clients-input w-full"
+                    required
+                    value={internalForm.currency_code}
+                    onChange={(e) =>
+                      setInternalForm((p) => ({ ...p, currency_code: e.target.value }))
+                    }
+                  >
+                    {internalCurrencyOptions.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="treasury-modal-field treasury-modal-field--full">
+                  <span>{t('treasury.entryDate')}</span>
+                  <input
+                    className="clients-input w-full"
+                    type="date"
+                    required
+                    value={internalForm.entry_date}
+                    onChange={(e) =>
+                      setInternalForm((p) => ({ ...p, entry_date: e.target.value }))
+                    }
+                  />
+                </label>
+                <label className="treasury-modal-field treasury-modal-field--full">
+                  <span>{t('treasury.description')}</span>
+                  <input
+                    className="clients-input w-full"
+                    value={internalForm.description}
+                    onChange={(e) =>
+                      setInternalForm((p) => ({ ...p, description: e.target.value }))
+                    }
+                  />
+                </label>
+                <div className="treasury-modal-actions treasury-modal-field--full">
+                  <button
+                    type="button"
+                    className="accountings-btn"
+                    disabled={transferSubmitting}
+                    onClick={() => setTransferModalOpen(false)}
+                  >
+                    {t('treasury.cancel')}
+                  </button>
+                  <button
+                    type="submit"
+                    className="accountings-btn accountings-btn--primary"
+                    disabled={transferSubmitting}
+                  >
+                    {transferSubmitting ? t('treasury.saving') : t('treasury.actions.submitTransfer')}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {exchangeModalOpen && (
+          <div className="accountings-modal" role="dialog" aria-modal="true" aria-labelledby="treasury-modal-exchange-title">
+            <button
+              type="button"
+              className="accountings-modal-backdrop"
+              disabled={exchangeSubmitting}
+              onClick={() => setExchangeModalOpen(false)}
+              aria-label={t('treasury.close')}
+            />
+            <div className="accountings-modal-content">
+              <h2 id="treasury-modal-exchange-title">{t('treasury.actions.currencyExchangeTitle')}</h2>
+              <p className="treasury-modal-lead">{t('treasury.actions.currencyExchangeLead')}</p>
+              {exchangeModalError ? (
+                <p className="accountings-error treasury-modal-error" role="alert">
+                  {exchangeModalError}
+                </p>
+              ) : null}
+              <form
+                className="treasury-modal-grid treasury-modal-grid--2 accountings-form"
+                onSubmit={async (e) => {
+                  e.preventDefault()
+                  if (!token || !canManageTreasury) return
+                  const fromId = exchangeForm.from_account_id
+                  const toId = exchangeForm.to_account_id
+                  if (!fromId || !toId || fromId === toId) {
+                    setExchangeModalError(t('treasury.actions.transferInvalidAccounts'))
+                    return
+                  }
+                  if (exchangeForm.from_currency === exchangeForm.to_currency) {
+                    setExchangeModalError(t('treasury.actions.sameCurrencyExchange'))
+                    return
+                  }
+                  if (exchangeForm.rate_mode === 'auto' && exchangePreviewMult == null) {
+                    setExchangeModalError(t('treasury.actions.fxUnavailable'))
+                    return
+                  }
+                  const fromAcc = accountById.get(String(fromId))
+                  const toAcc = accountById.get(String(toId))
+                  const amt = Number(exchangeForm.amount)
+                  if (!Number.isFinite(amt) || amt <= 0) {
+                    setExchangeModalError(t('treasury.actions.invalidAmount'))
+                    return
+                  }
+                  if (exchangeForm.rate_mode === 'manual') {
+                    const r = Number(exchangeForm.fx_rate)
+                    if (!Number.isFinite(r) || r <= 0) {
+                      setExchangeModalError(t('treasury.actions.invalidFxRate'))
+                      return
+                    }
+                  }
+                  setExchangeSubmitting(true)
+                  setExchangeModalError(null)
+                  try {
+                    const payload = {
+                      from_account: treasuryAccountOptionLabel(fromAcc),
+                      to_account: treasuryAccountOptionLabel(toAcc),
+                      from_account_id: Number(fromId),
+                      to_account_id: Number(toId),
+                      from_amount: amt,
+                      from_currency: exchangeForm.from_currency,
+                      to_currency: exchangeForm.to_currency,
+                      entry_date: exchangeForm.entry_date,
+                      description: exchangeForm.description.trim() || undefined,
+                      exchange_rate_source: exchangeForm.rate_mode === 'auto' ? 'AUTO' : 'MANUAL',
+                    }
+                    if (exchangeForm.rate_mode === 'manual') {
+                      payload.fx_rate = Number(exchangeForm.fx_rate)
+                    }
+                    await createTreasuryTransfer(token, payload)
+                    setExchangeModalOpen(false)
+                    loadBankOverview()
+                    loadEntries()
+                  } catch (err) {
+                    setExchangeModalError(err?.message || String(err))
+                  } finally {
+                    setExchangeSubmitting(false)
+                  }
+                }}
+              >
+                <label className="treasury-modal-field">
+                  <span>{t('treasury.fromAccount')}</span>
+                  <select
+                    className="clients-input w-full"
+                    required
+                    value={exchangeForm.from_account_id}
+                    onChange={(e) =>
+                      setExchangeForm((p) => ({ ...p, from_account_id: e.target.value }))
+                    }
+                  >
+                    <option value="">{t('treasury.selectAccount')}</option>
+                    {bankFilterOptions.map((b) => (
+                      <option key={`xf-${b.id}`} value={String(b.id)}>
+                        {treasuryAccountOptionLabel(b)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="treasury-modal-field">
+                  <span>{t('treasury.toAccount')}</span>
+                  <select
+                    className="clients-input w-full"
+                    required
+                    value={exchangeForm.to_account_id}
+                    onChange={(e) =>
+                      setExchangeForm((p) => ({ ...p, to_account_id: e.target.value }))
+                    }
+                  >
+                    <option value="">{t('treasury.selectAccount')}</option>
+                    {bankFilterOptions
+                      .filter((b) => String(b.id) !== String(exchangeForm.from_account_id))
+                      .map((b) => (
+                        <option key={`xt-${b.id}`} value={String(b.id)}>
+                          {treasuryAccountOptionLabel(b)}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+                <label className="treasury-modal-field">
+                  <span>{t('treasury.actions.fromCurrency')}</span>
+                  <select
+                    className="clients-input w-full"
+                    required
+                    value={exchangeForm.from_currency}
+                    onChange={(e) =>
+                      setExchangeForm((p) => ({ ...p, from_currency: e.target.value }))
+                    }
+                  >
+                    {['USD', 'EUR', 'EGP'].map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="treasury-modal-field">
+                  <span>{t('treasury.actions.toCurrency')}</span>
+                  <select
+                    className="clients-input w-full"
+                    required
+                    value={exchangeForm.to_currency}
+                    onChange={(e) =>
+                      setExchangeForm((p) => ({ ...p, to_currency: e.target.value }))
+                    }
+                  >
+                    {['USD', 'EUR', 'EGP'].map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="treasury-modal-field">
+                  <span>{t('treasury.amount')}</span>
+                  <input
+                    className="clients-input w-full"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    required
+                    value={exchangeForm.amount}
+                    onChange={(e) => setExchangeForm((p) => ({ ...p, amount: e.target.value }))}
+                  />
+                </label>
+                <label className="treasury-modal-field">
+                  <span>{t('treasury.entryDate')}</span>
+                  <input
+                    className="clients-input w-full"
+                    type="date"
+                    required
+                    value={exchangeForm.entry_date}
+                    onChange={(e) =>
+                      setExchangeForm((p) => ({ ...p, entry_date: e.target.value }))
+                    }
+                  />
+                </label>
+                <label className="treasury-modal-field treasury-modal-field--full">
+                  <span>{t('treasury.actions.exchangeRateMode')}</span>
+                  <select
+                    className="clients-input w-full"
+                    value={exchangeForm.rate_mode}
+                    onChange={(e) =>
+                      setExchangeForm((p) => ({ ...p, rate_mode: e.target.value }))
+                    }
+                  >
+                    <option value="auto">{t('treasury.actions.rateModeAuto')}</option>
+                    <option value="manual">{t('treasury.actions.rateModeManual')}</option>
+                  </select>
+                </label>
+                {exchangeForm.rate_mode === 'manual' ? (
+                  <label className="treasury-modal-field treasury-modal-field--full">
+                    <span>{t('treasury.actions.manualFxRateHint')}</span>
+                    <input
+                      className="clients-input w-full"
+                      type="number"
+                      min="0"
+                      step="any"
+                      required={exchangeForm.rate_mode === 'manual'}
+                      value={exchangeForm.fx_rate}
+                      onChange={(e) =>
+                        setExchangeForm((p) => ({ ...p, fx_rate: e.target.value }))
+                      }
+                    />
+                  </label>
+                ) : (
+                  <div className="treasury-modal-field treasury-modal-field--full treasury-modal-preview">
+                    <span className="treasury-modal-preview__label">{t('treasury.actions.fxPreviewLabel')}</span>
+                    <p className="treasury-modal-preview__body">
+                      {exchangePreviewMult != null && exchangePreviewToAmount != null
+                        ? t('treasury.actions.fxPreviewLine', {
+                            rate: formatPlainAmount(exchangePreviewMult),
+                            amount: formatPlainAmount(exchangePreviewToAmount),
+                            cur: exchangeForm.to_currency,
+                          })
+                        : t('treasury.actions.fxUnavailable')}
+                    </p>
+                  </div>
+                )}
+                <label className="treasury-modal-field treasury-modal-field--full">
+                  <span>{t('treasury.description')}</span>
+                  <input
+                    className="clients-input w-full"
+                    value={exchangeForm.description}
+                    onChange={(e) =>
+                      setExchangeForm((p) => ({ ...p, description: e.target.value }))
+                    }
+                  />
+                </label>
+                <div className="treasury-modal-actions treasury-modal-field--full">
+                  <button
+                    type="button"
+                    className="accountings-btn"
+                    disabled={exchangeSubmitting}
+                    onClick={() => setExchangeModalOpen(false)}
+                  >
+                    {t('treasury.cancel')}
+                  </button>
+                  <button
+                    type="submit"
+                    className="accountings-btn accountings-btn--primary"
+                    disabled={exchangeSubmitting}
+                  >
+                    {exchangeSubmitting ? t('treasury.saving') : t('treasury.actions.submitExchange')}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+      </section>
       </div>
     </Container>
   )

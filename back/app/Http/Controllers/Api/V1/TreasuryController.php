@@ -3,29 +3,35 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Models\Expense;
-use App\Models\ExpenseCategory;
 use App\Models\BankAccount;
 use App\Models\Currency;
+use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\ShipmentCostInvoice;
 use App\Models\TreasuryEntry;
 use App\Services\AccountingAggregationService;
+use App\Services\BankPaymentCurrencyService;
 use App\Services\CbeOfficialExchangeRateService;
 use App\Services\TreasuryAccountCurrencyService;
+use App\Services\TreasuryJournalPostingService;
 use App\Services\TreasuryLedgerBalanceService;
+use App\Services\TreasuryOfficialFxRateService;
 use Database\Seeders\TreasuryCashWalletsSeeder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class TreasuryController extends Controller
 {
     public function __construct(
         private TreasuryLedgerBalanceService $ledgerBalance,
+        private TreasuryOfficialFxRateService $officialFx,
+        private TreasuryJournalPostingService $journalPosting,
     ) {}
 
     /**
@@ -99,7 +105,7 @@ class TreasuryController extends Controller
      * @param  array<string, float>  $partnerPaidByCurrency  Already grouped per uppercase currency code.
      * @return array<string, float>
      */
-    private function partnerPayablesFromCostInvoices(array $partnerPaidByCurrency): array
+    private function partnerLiabilitiesFromCostInvoices(array $partnerPaidByCurrency): array
     {
         if (! Schema::hasTable('shipment_cost_invoices')) {
             return [];
@@ -153,7 +159,7 @@ class TreasuryController extends Controller
 
     /**
      * Sum per-currency ledger balances into the system default currency using {@see Currency::$exchange_rate}
-     * (units of default currency per one unit of that code — same convention as {@see \App\Services\BankPaymentCurrencyService}).
+     * (units of default currency per one unit of that code — same convention as {@see BankPaymentCurrencyService}).
      * Ledger figures already reflect net treasury position including customer receipts and partner payments.
      *
      * @param  array<string, float>  $balanceDisplay
@@ -338,9 +344,9 @@ class TreasuryController extends Controller
         $arAgg = AccountingAggregationService::aggregateInvoices($openInvoices);
         $customerOutstandingReceivables = $this->clampMoneyMapNonNegative($arAgg['total_remaining_per_currency']);
 
-        // Partner liabilities — sum of unpaid/partial cost invoices, grouped per currency.
-        // Replaces the legacy VendorBill source so the dashboard matches Shipment Financials and Partner Statement.
-        $partnerPayablesOutstanding = $this->partnerPayablesFromCostInvoices($globalPartner);
+        // Partner liabilities (amounts owed to partners) — approved cost invoice totals minus vendor payments,
+        // grouped per currency. Matches Shipment Financials / Partner Statement (not legacy VendorBill).
+        $partnerLiabilitiesOutstanding = $this->partnerLiabilitiesFromCostInvoices($globalPartner);
 
         $bankAccountsOnly = array_values(array_filter(
             $bankPayload,
@@ -351,6 +357,8 @@ class TreasuryController extends Controller
             static fn (array $row): bool => ($row['treasury_account_kind'] ?? BankAccount::TREASURY_KIND_BANK) === BankAccount::TREASURY_KIND_CASH_WALLET
         ));
 
+        // Global aggregates align with treasury statement categories: Customer Receipts, Customer Receivables,
+        // Partner Payments, Partner Liabilities (amounts owed to partners — cost invoices net of vendor payments).
         return response()->json([
             'data' => [
                 'global' => [
@@ -358,7 +366,7 @@ class TreasuryController extends Controller
                     'total_customer_in_by_currency' => $globalCustomer,
                     'total_partner_out_by_currency' => $globalPartner,
                     'customer_outstanding_receivables_by_currency' => $customerOutstandingReceivables,
-                    'partner_payables_outstanding_by_currency' => $partnerPayablesOutstanding,
+                    'partner_liabilities_outstanding_by_currency' => $partnerLiabilitiesOutstanding,
                 ],
                 'bank_accounts' => $bankAccountsOnly,
                 'cash_wallets' => $cashWalletsOnly,
@@ -571,7 +579,11 @@ class TreasuryController extends Controller
                 'reference_label' => $refLabel,
                 'target_currency_code' => $entry->target_currency_code,
                 'exchange_rate' => $entry->exchange_rate,
+                'exchange_rate_source' => $entry->exchange_rate_source,
                 'converted_amount' => $entry->converted_amount,
+                'journal_transaction_id' => $entry->journal_transaction_id,
+                'journal_kind' => $entry->journal_kind,
+                'ledger_side' => $entry->ledger_side,
             ];
         });
 
@@ -658,7 +670,7 @@ class TreasuryController extends Controller
 
         try {
             TreasuryAccountCurrencyService::assertTreasuryEntryCurrencies($validated);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return response()->json([
                 'message' => collect($e->errors())->flatten()->first() ?? __('Validation failed.'),
                 'errors' => $e->errors(),
@@ -669,7 +681,7 @@ class TreasuryController extends Controller
             return $fail;
         }
 
-        $entry = new TreasuryEntry();
+        $entry = new TreasuryEntry;
         $entry->entry_type = $validated['entry_type'];
         $entry->source = $validated['source'] ?? null;
         $entry->account_id = $validated['account_id'] ?? null;
@@ -684,6 +696,14 @@ class TreasuryController extends Controller
         $entry->notes = $validated['notes'] ?? null;
         $entry->entry_date = $validated['entry_date'];
         $entry->created_by_id = $request->user()->id;
+        $entryTypeLower = strtolower((string) $validated['entry_type']);
+        $entry->journal_transaction_id = (string) Str::uuid();
+        $entry->journal_kind = TreasuryJournalPostingService::KIND_MANUAL;
+        $entry->ledger_side = match ($entryTypeLower) {
+            'in' => TreasuryJournalPostingService::SIDE_DEBIT,
+            'out' => TreasuryJournalPostingService::SIDE_CREDIT,
+            default => null,
+        };
         $entry->save();
 
         return response()->json([
@@ -764,7 +784,7 @@ class TreasuryController extends Controller
         ];
         try {
             TreasuryAccountCurrencyService::assertTreasuryEntryCurrencies($mergedForCurrencyCheck);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return response()->json([
                 'message' => collect($e->errors())->flatten()->first() ?? __('Validation failed.'),
                 'errors' => $e->errors(),
@@ -820,7 +840,8 @@ class TreasuryController extends Controller
             'from_currency' => ['required', 'string', 'size:3'],
             'to_amount' => ['nullable', 'numeric', 'min:0'],
             'to_currency' => ['nullable', 'string', 'size:3'],
-            'fx_rate' => ['nullable', 'numeric', 'min:0'],
+            'fx_rate' => ['nullable', 'numeric', 'gt:0'],
+            'exchange_rate_source' => ['nullable', 'string', 'in:AUTO,MANUAL'],
             'description' => ['nullable', 'string', 'max:255'],
             'entry_date' => ['required', 'date'],
         ]);
@@ -829,18 +850,40 @@ class TreasuryController extends Controller
         $fromCurrency = strtoupper($validated['from_currency']);
         $toCurrency = strtoupper((string) ($validated['to_currency'] ?? $fromCurrency));
 
-        if ($fromCurrency !== $toCurrency && empty($validated['fx_rate'])) {
-            return response()->json([
-                'message' => __('Manual exchange rate is required for cross-currency transfers.'),
-            ], 422);
-        }
+        $explicitSource = isset($validated['exchange_rate_source'])
+            ? strtoupper(trim((string) $validated['exchange_rate_source']))
+            : '';
 
-        $fxRate = isset($validated['fx_rate']) ? (float) $validated['fx_rate'] : null;
-        $toAmount = isset($validated['to_amount'])
-            ? (float) $validated['to_amount']
-            : ($fxRate && $fromCurrency !== $toCurrency
-                ? ((float) $validated['from_amount'] * $fxRate)
-                : (float) $validated['from_amount']);
+        $fxRate = null;
+        $toAmount = (float) $validated['from_amount'];
+        $storedSource = null;
+
+        if ($fromCurrency !== $toCurrency) {
+            if ($explicitSource === 'AUTO') {
+                try {
+                    $mult = $this->officialFx->multiplier($fromCurrency, $toCurrency);
+                } catch (ValidationException $e) {
+                    return response()->json([
+                        'message' => collect($e->errors())->flatten()->first() ?? __('Validation failed.'),
+                        'errors' => $e->errors(),
+                    ], 422);
+                }
+                $fxRate = round($mult, 8);
+                $toAmount = round((float) $validated['from_amount'] * $mult, 2);
+                $storedSource = 'AUTO';
+            } else {
+                if (empty($validated['fx_rate'])) {
+                    return response()->json([
+                        'message' => __('Manual exchange rate is required for cross-currency transfers.'),
+                    ], 422);
+                }
+                $fxRate = round((float) $validated['fx_rate'], 8);
+                $toAmount = isset($validated['to_amount'])
+                    ? round((float) $validated['to_amount'], 2)
+                    : round((float) $validated['from_amount'] * $fxRate, 2);
+                $storedSource = 'MANUAL';
+            }
+        }
 
         $fromAccountId = isset($validated['from_account_id']) ? (int) $validated['from_account_id'] : 0;
         $toAccountId = isset($validated['to_account_id']) ? (int) $validated['to_account_id'] : 0;
@@ -852,7 +895,7 @@ class TreasuryController extends Controller
                 $fromCurrency,
                 $toCurrency
             );
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return response()->json([
                 'message' => collect($e->errors())->flatten()->first() ?? __('Validation failed.'),
                 'errors' => $e->errors(),
@@ -867,7 +910,7 @@ class TreasuryController extends Controller
                     (float) $validated['from_amount'],
                     null
                 );
-            } catch (\Illuminate\Validation\ValidationException $e) {
+            } catch (ValidationException $e) {
                 return response()->json([
                     'message' => collect($e->errors())->flatten()->first() ?? __('bank.insufficient_balance_currency'),
                     'errors' => $e->errors(),
@@ -875,40 +918,29 @@ class TreasuryController extends Controller
             }
         }
 
-        DB::transaction(function () use ($validated, $userId, $fromCurrency, $toCurrency, $fxRate, $toAmount): void {
-            $from = new TreasuryEntry();
-            $from->entry_type = 'out';
-            $from->source = $validated['from_account'];
-            $from->account_id = $validated['from_account_id'] ?? null;
-            $from->counter_account_id = $validated['to_account_id'] ?? null;
-            $from->amount = $validated['from_amount'];
-            $from->currency_code = $fromCurrency;
-            $from->target_currency_code = $toCurrency;
-            $from->exchange_rate = $fxRate;
-            $from->converted_amount = $toAmount;
-            $from->reference = $validated['description'] ?? null;
-            $from->entry_date = $validated['entry_date'];
-            $from->created_by_id = $userId;
-            $from->save();
-
-            $to = new TreasuryEntry();
-            $to->entry_type = 'in';
-            $to->source = $validated['to_account'];
-            $to->account_id = $validated['to_account_id'] ?? null;
-            $to->counter_account_id = $validated['from_account_id'] ?? null;
-            $to->amount = $toAmount;
-            $to->currency_code = $toCurrency;
-            $to->target_currency_code = $fromCurrency;
-            $to->exchange_rate = $fxRate;
-            $to->converted_amount = (float) $validated['from_amount'];
-            $to->reference = $validated['description'] ?? null;
-            $to->entry_date = $validated['entry_date'];
-            $to->created_by_id = $userId;
-            $to->save();
+        /** @var array{0: TreasuryEntry, 1: TreasuryEntry} $pair */
+        $pair = DB::transaction(function () use ($validated, $userId, $fromCurrency, $toCurrency, $fxRate, $toAmount, $storedSource): array {
+            return $this->journalPosting->postTransferPair(
+                $validated,
+                $fromCurrency,
+                $toCurrency,
+                $fxRate,
+                $toAmount,
+                $storedSource,
+                $userId,
+            );
         });
+
+        [$creditLeg, $debitLeg] = $pair;
 
         return response()->json([
             'message' => __('Transfer recorded.'),
+            'data' => [
+                'journal_transaction_id' => $creditLeg->journal_transaction_id,
+                'journal_kind' => $creditLeg->journal_kind,
+                'credit_entry_id' => $creditLeg->id,
+                'debit_entry_id' => $debitLeg->id,
+            ],
         ], 201);
     }
 
@@ -928,7 +960,7 @@ class TreasuryController extends Controller
             'expense_date' => ['required', 'date'],
         ]);
 
-        $expense = new Expense();
+        $expense = new Expense;
         $expense->expense_category_id = $validated['expense_category_id'];
         $expense->description = $validated['description'];
         $expense->amount = $validated['amount'];
@@ -979,4 +1011,3 @@ class TreasuryController extends Controller
         }
     }
 }
-

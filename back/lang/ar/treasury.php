@@ -4,4 +4,6 @@ return [
     'bank_account_required_outgoing' => 'يجب اختيار حساب بنكي للحركات الصادرة من الخزينة.',
     'account_has_no_allowed_currencies' => 'لا توجد عملات مسموح بها لهذا الحساب الخزيني.',
     'currency_not_allowed_for_account' => 'العملة :currency غير مسموح بها لهذا الحساب الخزيني.',
+    'fx_auto_unavailable' => 'تعذّر تحميل أسعار الصرف الرسمية لليوم. اختر سعراً يدوياً أو أعد المحاولة.',
+    'fx_auto_only_usd_eur_egp' => 'الأسعار التلقائية متاحة لعملات الدولار واليورو والجنيه فقط.',
 ];

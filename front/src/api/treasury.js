@@ -39,7 +39,9 @@ function buildQuery(params = {}) {
  * @param {{ months?: number }} [params]
  */
 /**
- * GET /treasury/bank-overview — per-bank ledger balances, customer/partner splits.
+ * GET /treasury/bank-overview — per-bank ledger balances; global.{total_customer_in_by_currency,
+ * customer_outstanding_receivables_by_currency, total_partner_out_by_currency,
+ * partner_liabilities_outstanding_by_currency} match treasury statement categories.
  */
 export async function getTreasuryBankOverview(token) {
   const res = await apiFetch(`${getBaseUrl()}/treasury/bank-overview`, {
@@ -82,7 +84,7 @@ export async function getTreasurySummary(token, params = {}) {
 /**
  * GET /treasury/entries
  * @param {string} token
- * @param {{ from?: string, to?: string, search?: string, type?: 'in'|'out', sort?: 'date'|'amount' }} [params]
+ * @param {{ from?: string, to?: string, search?: string, type?: string }} [params]
  */
 export async function getTreasuryEntries(token, params = {}) {
   const q = buildQuery(params)

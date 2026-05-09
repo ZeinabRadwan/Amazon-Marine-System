@@ -2399,6 +2399,29 @@
     "title": "Treasury",
     "noPermission": "You do not have permission to view treasury.",
     "movementsTitle": "Treasury movements",
+    "actions": {
+      "internalTransfer": "Internal Transfer",
+      "currencyExchange": "Currency Exchange",
+      "internalTransferTitle": "Internal transfer",
+      "currencyExchangeTitle": "Currency exchange",
+      "internalTransferLead": "Move funds between treasury accounts. Two ledger legs are posted automatically (out from source, in to destination).",
+      "currencyExchangeLead": "Convert between currencies using official daily rates or a manual rate. Both accounts are updated; rate source is stored as AUTO or MANUAL.",
+      "submitTransfer": "Record transfer",
+      "submitExchange": "Record exchange",
+      "exchangeRateMode": "Exchange rate mode",
+      "rateModeAuto": "Auto — system daily rates (CBE)",
+      "rateModeManual": "Manual override",
+      "fromCurrency": "From currency",
+      "toCurrency": "To currency",
+      "manualFxRateHint": "Exchange rate (units of “to” currency per 1 unit of “from”)",
+      "fxPreviewLabel": "Preview (auto)",
+      "fxPreviewLine": "Multiplier {{rate}} → approx. {{amount}} {{cur}} credited",
+      "fxUnavailable": "Daily rates are not available. Refresh rates above or switch to manual.",
+      "sameCurrencyExchange": "Choose two different currencies for an exchange.",
+      "transferInvalidAccounts": "Select two different accounts.",
+      "invalidAmount": "Enter a valid amount greater than zero.",
+      "invalidFxRate": "Enter a valid exchange rate greater than zero."
+    },
     "stats": {
       "cash": "Cash on hand",
       "bank": "Bank accounts",
@@ -2419,8 +2442,9 @@
     "addMovement": "Add movement",
     "transfer": "Transfer",
     "searchPlaceholder": "Search reference or notes…",
-    "filterType": "Type",
-    "allTypes": "All",
+    "filterType": "Transaction type",
+    "allTypes": "All Types",
+    "allCurrencies": "All Currencies",
     "typeIn": "Deposit",
     "typeOut": "Withdraw",
     "typeExchange": "Currency exchange",
@@ -2428,9 +2452,6 @@
     "typeExpense": "Expense",
     "dateFrom": "From",
     "dateTo": "To",
-    "sortBy": "Sort",
-    "sortDate": "Date",
-    "sortAmount": "Amount",
     "colDate": "Date",
     "colDescription": "Description",
     "colType": "Type",
@@ -2438,6 +2459,11 @@
     "colCurrency": "Currency",
     "colSource": "Source",
     "colRunning": "Running balance",
+    "colBalance": "Balance",
+    "colTransactionType": "Transaction type",
+    "colAccount": "Account",
+    "colDebit": "Debit",
+    "colCredit": "Credit",
     "colView": "View",
     "viewEntry": "View entry details",
     "entryDetailTitle": "Movement details",
@@ -2451,20 +2477,20 @@
     "statsSummaryRegion": "Treasury summary",
     "sections": {
       "bankAccounts": "Bank accounts",
-      "cashWallets": "Treasury cash wallets"
+      "cashWallets": "Operational treasury accounts"
     },
     "cashWallet": {
-      "kicker": "Cash wallet"
+      "kicker": "Treasury account"
     },
     "bankOverview": {
       "totalBalances": "Total bank balances",
-      "receivables": "Customer receipts",
-      "customerOutstanding": "Customer receivables",
+      "receivables": "Customer Receipts",
+      "customerOutstanding": "Customer Receivables",
       "customerOutstandingSubtitle": "uncollected",
-      "partnerPayments": "Partner payments",
-      "partnerPayables": "Company liabilities",
-      "partnerPayablesSubtitle": "unpaid",
-      "accountsTitle": "Bank accounts and cash boxes",
+      "partnerPayments": "Partner Payments",
+      "partnerLiabilities": "Partner Liabilities",
+      "partnerLiabilitiesSubtitle": "owed to partners",
+      "accountsTitle": "Bank accounts & operational treasury accounts",
       "account": "Account",
       "currentBalance": "Balance",
       "customerIn": "Incoming (customers)",
@@ -2474,11 +2500,12 @@
       "rowIn": "In (customers)",
       "rowOut": "Out (partners)",
       "noCurrenciesConfigured": "No supported currencies configured for this account.",
+      "currencySupported": "supported",
       "noBankAccountsSection": "No formal bank accounts configured.",
-      "noCashWalletsSection": "No treasury cash wallets yet. Seed or configure NSP, Vodafone Cash, and Physical cash in bank accounts.",
+      "noCashWalletsSection": "No operational treasury accounts yet.",
       "noBanks": "No active bank accounts.",
       "filterBank": "Bank account",
-      "allBanks": "All banks and cash wallets"
+      "allBanks": "All banks & treasury accounts"
     },
     "exchange": {
       "dailyTitle": "Daily Exchange Rates",
@@ -2499,6 +2526,14 @@
         "usd_eur": "Cross rate from CBE bulletin mids (USD vs EGP and EUR vs EGP).",
         "eur_usd": "Cross rate from CBE bulletin mids (USD vs EGP and EUR vs EGP)."
       }
+    },
+    "txnType": {
+      "deposit": "Deposit",
+      "withdraw": "Withdraw",
+      "expense": "Expense",
+      "internalTransfer": "Internal Transfer",
+      "currencyExchange": "Currency Exchange",
+      "other": "Other"
     },
     "flow": {
       "customer": "Customer",
@@ -3417,7 +3452,7 @@
       "system": "System & Notifications",
       "sessions": "Session Management",
       "activity": "Activity History",
-      "bankAccounts": "Bank Accounts & Cash Wallets",
+      "bankAccounts": "Bank Accounts & Treasury Accounts",
       "statuses": "Content (Ports & Statuses)"
     },
     "contentMgmt": {
@@ -3749,7 +3784,7 @@
       }
     },
     "bankAccounts": {
-      "cardTitle": "Bank Accounts & Cash Wallets",
+      "cardTitle": "Bank Accounts & Operational Treasury Accounts",
       "sectionBanks": "Bank accounts",
       "subtitle": "Manage bank accounts used in payments and treasury.",
       "addTitle": "Add bank account",
@@ -3786,30 +3821,30 @@
       }
     },
     "cashWallets": {
-      "cardTitle": "Cash Wallets",
-      "subtitle": "Operational cash wallets (NSP, Vodafone Cash, Cash Treasury). They participate in the treasury ledger exactly like bank accounts.",
-      "addTitle": "Add cash wallet",
-      "editTitle": "Edit cash wallet",
-      "name": "Wallet name",
+      "cardTitle": "Operational Treasury Accounts",
+      "subtitle": "Operational treasury accounts (NSP, Vodafone Cash, Cash Treasury). They participate in the treasury ledger exactly like bank accounts.",
+      "addTitle": "Add treasury account",
+      "editTitle": "Edit treasury account",
+      "name": "Account name",
       "accountName": "Display name",
-      "kind": "Wallet type",
+      "kind": "Account type",
       "kindNsp": "NSP",
       "kindVodafone": "Vodafone Cash",
       "kindPhysical": "Cash Treasury",
-      "kindLocked": "Wallet type cannot be changed after creation — it pins the currency rules and ledger identity.",
+      "kindLocked": "Account type cannot be changed after creation — it pins the currency rules and ledger identity.",
       "currencies": "Currencies",
-      "currenciesAuto": "Determined by wallet type (NSP & Vodafone: EGP only; Cash Treasury: EGP + USD + EUR).",
+      "currenciesAuto": "Determined by account type (NSP & Vodafone: EGP only; Cash Treasury: EGP + USD + EUR).",
       "status": "Active",
       "active": "Active",
       "inactive": "Inactive",
       "save": "Save",
       "cancel": "Cancel",
       "edit": "Edit",
-      "created": "Cash wallet created.",
-      "updated": "Cash wallet updated.",
-      "duplicateKind": "A cash wallet of this type already exists.",
+      "created": "Treasury account created.",
+      "updated": "Treasury account updated.",
+      "duplicateKind": "A treasury account of this type already exists.",
       "table": {
-        "name": "Wallet name",
+        "name": "Account name",
         "kind": "Type",
         "currencies": "Currencies",
         "status": "Status",
@@ -3846,8 +3881,8 @@
       "deletePort": "Failed to delete port.",
       "saveBankAccount": "Failed to save bank account.",
       "deleteBankAccount": "Failed to delete bank account.",
-      "loadCashWallets": "Failed to load cash wallets.",
-      "saveCashWallet": "Failed to save cash wallet."
+      "loadCashWallets": "Failed to load operational treasury accounts.",
+      "saveCashWallet": "Failed to save operational treasury account."
     }
   }
 }
