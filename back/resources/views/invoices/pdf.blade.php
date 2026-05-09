@@ -33,7 +33,6 @@
         .pdf-inv-html .pdf-inv-meta-val-mono,
         .pdf-inv-html td.pdf-inv-col-amt,
         .pdf-inv-html td.pdf-inv-col-cur,
-        .pdf-inv-html .pdf-inv-route-bl-val,
         .pdf-inv-html .pdf-inv-grand-breakdown .pdf-inv-gtr-val,
         .pdf-inv-html .pdf-inv-grand-cur .pdf-inv-gtr-val,
         .pdf-inv-html .pdf-inv-sub-amt,
@@ -79,7 +78,7 @@
             content: none !important;
         }
         .pdf-inv-html .pdf-inv-bg-navy {
-            background: #0f2d4a;
+            background: #262a5b;
             color: #ffffff;
         }
         .pdf-inv-html .pdf-inv-orange {
@@ -113,7 +112,7 @@
             margin-top: 3px;
             font-size: 12px;
             font-weight: 700;
-            color: #0f2d4a;
+            color: #262a5b;
             direction: rtl;
             unicode-bidi: embed;
             text-align: right;
@@ -175,7 +174,7 @@
         .pdf-inv-meta-val {
             font-size: 9.5px;
             font-weight: 700;
-            color: #0f2d4a;
+            color: #262a5b;
             line-height: 1.15;
             white-space: nowrap;
         }
@@ -233,7 +232,7 @@
         .pdf-inv-party-name {
             font-size: 13px;
             font-weight: 700;
-            color: #0f2d4a;
+            color: #262a5b;
             margin: 0 0 8px;
             line-height: 1.25;
         }
@@ -241,7 +240,7 @@
             margin: -4px 0 8px;
             font-weight: 700;
             font-size: 11px;
-            color: #0f2d4a;
+            color: #262a5b;
             line-height: 1.35;
         }
         .pdf-inv-party-detail {
@@ -264,161 +263,108 @@
             text-align: right;
         }
 
-        /* Route band: one card row — left meta | divider | B/L + POL — ➜ — POD */
-        .pdf-inv-route-card {
+        /* Route band — aligned with amazon_marine_invoice_template.html .route-bar / .route-ports / .route-metas */
+        .pdf-inv-route-tpl-bar {
             width: 100%;
             border-collapse: collapse;
             border-spacing: 0;
             margin: 0;
             table-layout: fixed;
-            background: #0f2d4a;
+            background: #262a5b;
         }
-        .pdf-inv-route-card > tbody > tr > td {
+        .pdf-inv-route-tpl-bar > tbody > tr > td {
             padding: 0;
             border: none;
             vertical-align: middle;
-            background: #0f2d4a;
+            background: #262a5b;
         }
-        .pdf-inv-route-card-left {
-            width: 46%;
-            padding: 14px 16px !important;
+        .pdf-inv-route-tpl-ports-cell {
+            width: 52%;
+            padding: 10px 10px 10px 18px !important;
         }
-        .pdf-inv-route-card-divider {
+        .pdf-inv-route-tpl-metas-cell {
+            width: 48%;
+            padding: 10px 18px 10px 10px !important;
+            text-align: right;
+        }
+        .pdf-inv-route-tpl-ports {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        .pdf-inv-route-tpl-ports td {
+            border: none;
+            vertical-align: middle;
+            padding: 0;
+            background: transparent;
+        }
+        .pdf-inv-route-tpl-port {
+            width: 44%;
+        }
+        .pdf-inv-route-tpl-port--end {
+            text-align: right;
+        }
+        .pdf-inv-route-tpl-port--end .pdf-inv-route-tpl-port-name,
+        .pdf-inv-route-tpl-port--end .pdf-inv-route-tpl-port-lbl {
+            text-align: right;
+        }
+        .pdf-inv-route-tpl-port-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: #ffffff;
+            line-height: 1.2;
+            word-break: break-word;
+        }
+        .pdf-inv-route-tpl-port-lbl {
+            font-size: 8px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-top: 2px;
+            line-height: 1.25;
+        }
+        .pdf-inv-route-tpl-arrow {
+            width: 12%;
+            text-align: center;
+            font-size: 16px;
+            font-weight: 700;
+            color: #ec7f00;
+            line-height: 1;
+            padding: 0 4px !important;
+        }
+        .pdf-inv-route-tpl-metas {
+            border-collapse: collapse;
+            margin-left: auto;
+        }
+        .pdf-inv-route-tpl-metas td {
+            border: none;
+            vertical-align: middle;
+            padding: 0;
+            background: transparent;
+        }
+        .pdf-inv-route-tpl-rmeta {
+            text-align: center;
+            padding: 0 8px !important;
+        }
+        .pdf-inv-route-tpl-rmeta-val {
+            font-size: 11px;
+            font-weight: 700;
+            color: #ffffff;
+            line-height: 1.25;
+            word-break: break-word;
+        }
+        .pdf-inv-route-tpl-rmeta-lbl {
+            font-size: 8px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-top: 2px;
+            line-height: 1.25;
+        }
+        .pdf-inv-route-tpl-rmeta-sep {
             width: 1px;
             min-width: 1px;
             max-width: 1px;
             padding: 0 !important;
-            background: rgba(255, 255, 255, 0.18);
+            background: rgba(255, 255, 255, 0.1);
             font-size: 0;
             line-height: 0;
-        }
-        .pdf-inv-route-card-right {
-            padding: 14px 16px !important;
-        }
-        .pdf-inv-route-meta {
-            width: 100%;
-        }
-        .pdf-inv-route-meta-row {
-            display: table;
-            width: 100%;
-            margin: 0 0 6px;
-            table-layout: fixed;
-        }
-        .pdf-inv-route-meta-row:last-child {
-            margin-bottom: 0;
-        }
-        .pdf-inv-route-meta-lbl,
-        .pdf-inv-route-meta-val {
-            display: table-cell;
-            vertical-align: top;
-            padding: 0;
-            border: none;
-        }
-        .pdf-inv-route-meta-lbl {
-            width: 34%;
-            font-size: 8px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.45);
-            white-space: nowrap;
-            padding-right: 10px !important;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            line-height: 1.35;
-        }
-        .pdf-inv-route-meta-val {
-            font-size: 10px;
-            font-weight: 700;
-            color: #ffffff;
-            line-height: 1.35;
-            word-break: break-word;
-        }
-        .pdf-inv-route-bl-wrap {
-            margin: 0 0 12px;
-        }
-        .pdf-inv-route-bl-lbl {
-            font-size: 8px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.45);
-            letter-spacing: 0.05em;
-            margin: 0 0 4px;
-            line-height: 1.2;
-        }
-        .pdf-inv-route-bl-val {
-            font-family: DejaVu Sans Mono, monospace;
-            font-size: 11px;
-            font-weight: 700;
-            color: #ffffff;
-            letter-spacing: 0.02em;
-            word-break: break-all;
-            line-height: 1.3;
-        }
-        .pdf-inv-route-flow {
-            display: table;
-            width: 100%;
-            table-layout: fixed;
-            border-collapse: collapse;
-        }
-        .pdf-inv-route-flow-pol,
-        .pdf-inv-route-flow-mid,
-        .pdf-inv-route-flow-pod {
-            display: table-cell;
-            vertical-align: middle;
-            padding: 0;
-            border: none;
-        }
-        .pdf-inv-route-flow-pol {
-            width: 38%;
-            text-align: left;
-            padding-right: 6px;
-        }
-        .pdf-inv-route-flow-mid {
-            width: 24%;
-            text-align: center;
-            padding: 0 4px;
-        }
-        .pdf-inv-route-mid-track {
-            white-space: nowrap;
-            line-height: 1.2;
-        }
-        .pdf-inv-route-flow-pod {
-            width: 38%;
-            text-align: right;
-            padding-left: 6px;
-        }
-        .pdf-inv-route-port-val {
-            font-size: 12px;
-            font-weight: 800;
-            color: #ffffff;
-            line-height: 1.25;
-            word-break: break-word;
-        }
-        .pdf-inv-route-port-sub {
-            font-size: 7.5px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.42);
-            margin-top: 4px;
-            line-height: 1.3;
-        }
-        .pdf-inv-route-dash {
-            color: rgba(255, 255, 255, 0.22);
-            font-size: 11px;
-            font-weight: 400;
-            letter-spacing: 0;
-        }
-        .pdf-inv-route-arr {
-            color: #ec7f00;
-            font-size: 16px;
-            font-weight: 800;
-            padding: 0 2px;
-            line-height: 1;
-        }
-        .pdf-inv-route-dir {
-            font-size: 7.5px;
-            font-weight: 700;
-            color: rgba(255, 255, 255, 0.65);
-            margin-top: 6px;
-            letter-spacing: 0.06em;
-            line-height: 1.25;
         }
 
         /* Bordered wrapper clips children; navy section head has no radius (avoids overflow+navy on same node) */
@@ -437,13 +383,13 @@
             width: 100%;
             border-collapse: collapse;
             border-spacing: 0;
-            background: #0f2d4a;
+            background: #262a5b;
         }
         .pdf-inv-sec-head td {
             padding: 8px 12px;
             vertical-align: middle;
             border: none;
-            background: #0f2d4a;
+            background: #262a5b;
         }
         .pdf-inv-sec-title-stack {
             text-align: left;
@@ -515,7 +461,7 @@
         .pdf-inv-table td.pdf-inv-col-item {
             font-size: 11px;
             font-weight: 600;
-            color: #0f2d4a;
+            color: #262a5b;
             font-family: var(--en);
             line-height: 1.45;
         }
@@ -547,7 +493,7 @@
             border-top: 3px solid #ec7f00;
             font-weight: 800;
             font-size: 11px;
-            color: #0f2d4a;
+            color: #262a5b;
             padding: 10px 10px !important;
             vertical-align: middle;
         }
@@ -563,7 +509,7 @@
             font-size: 11px;
             font-weight: 800;
             letter-spacing: 0.02em;
-            color: #0f2d4a;
+            color: #262a5b;
         }
 
         /* Grand total: rounded border on wrapper only — inner table is navy without radius/overflow */
@@ -577,7 +523,7 @@
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
-            background: #0f2d4a;
+            background: #262a5b;
             margin: 0;
             border: none;
         }
@@ -585,7 +531,7 @@
             padding: 11px 14px;
             vertical-align: middle;
             border: none;
-            background: #0f2d4a;
+            background: #262a5b;
         }
         .pdf-inv-grand-title {
             font-size: 12px;
@@ -778,7 +724,7 @@
         .pdf-inv-terms-title {
             font-size: 11px;
             font-weight: 700;
-            color: #0f2d4a;
+            color: #262a5b;
             margin-bottom: 10px;
             text-align: left;
             letter-spacing: 0.02em;
@@ -802,7 +748,7 @@
         }
         .pdf-inv-term-num-plain {
             font-weight: 700;
-            color: #0f2d4a;
+            color: #262a5b;
             margin-right: 6px;
         }
         .pdf-inv-term-ar {
@@ -825,7 +771,7 @@
         }
         .pdf-inv-notes__title {
             font-weight: 700;
-            color: #0f2d4a;
+            color: #262a5b;
             margin-bottom: 6px;
             font-size: 10.5px;
         }
@@ -878,7 +824,6 @@ Tax Invoice {{ $invoice->invoice_number }}
         }
 
         $shipment = $invoice->shipment;
-        $shipmentRef = $shipment?->bl_number ?: '—';
         $pol = $shipment?->originPort?->name ?: '—';
         $pod = $shipment?->destinationPort?->name ?: '—';
         $shipLine = $shipment?->shippingLine?->name ?: '—';
@@ -889,7 +834,6 @@ Tax Invoice {{ $invoice->invoice_number }}
         $container = ($cc !== null && $cc !== '') ? ((string) $cc.' × '.$containerMid) : ($containerMid !== '' ? $containerMid : '—');
         $container = trim(preg_replace('/\s+/', ' ', $container)) ?: '—';
         $transitTime = $shipment?->route_text ?: '—';
-        $directionFlow = trim((string) ($shipment?->shipment_direction ?? ''));
         $refShipmentData = trim((string) ($shipment?->booking_number ?? ''));
         if ($refShipmentData === '') {
             $refShipmentData = trim((string) ($shipment?->acid_number ?? ''));
@@ -1011,54 +955,49 @@ Tax Invoice {{ $invoice->invoice_number }}
         </table>
         </div>
 
-        {{-- Route band: single card — left meta | divider | B/L + POL — ➜ — POD --}}
+        {{-- Route band — same structure as amazon_marine_invoice_template.html: .route-ports | .route-metas --}}
         <div class="pdf-inv-panel-wrap">
-            <table class="pdf-inv-route-card" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
+            <table class="pdf-inv-route-tpl-bar" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
                 <tr>
-                    <td class="pdf-inv-route-card-left" valign="middle">
-                        <div class="pdf-inv-route-meta">
-                            <div class="pdf-inv-route-meta-row">
-                                <span class="pdf-inv-route-meta-lbl">Carrier</span>
-                                <span class="pdf-inv-route-meta-val">{{ $shipLine }}</span>
-                            </div>
-                            <div class="pdf-inv-route-meta-row">
-                                <span class="pdf-inv-route-meta-lbl">Container</span>
-                                <span class="pdf-inv-route-meta-val">{{ $container }}</span>
-                            </div>
-                            <div class="pdf-inv-route-meta-row">
-                                <span class="pdf-inv-route-meta-lbl">Transit Time</span>
-                                <span class="pdf-inv-route-meta-val">{{ $transitTime }}</span>
-                            </div>
-                            <div class="pdf-inv-route-meta-row">
-                                <span class="pdf-inv-route-meta-lbl">Reference</span>
-                                <span class="pdf-inv-route-meta-val">{{ $refShipmentData }}</span>
-                            </div>
-                        </div>
+                    <td class="pdf-inv-route-tpl-ports-cell" valign="middle">
+                        <table class="pdf-inv-route-tpl-ports" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
+                            <tr>
+                                <td class="pdf-inv-route-tpl-port" valign="middle">
+                                    <div class="pdf-inv-route-tpl-port-name">{{ $pol }}</div>
+                                    <div class="pdf-inv-route-tpl-port-lbl">POL — Port of Loading</div>
+                                </td>
+                                <td class="pdf-inv-route-tpl-arrow" valign="middle">→</td>
+                                <td class="pdf-inv-route-tpl-port pdf-inv-route-tpl-port--end" valign="middle">
+                                    <div class="pdf-inv-route-tpl-port-name">{{ $pod }}</div>
+                                    <div class="pdf-inv-route-tpl-port-lbl">POD — Port of Discharge</div>
+                                </td>
+                            </tr>
+                        </table>
                     </td>
-                    <td class="pdf-inv-route-card-divider" valign="middle">&nbsp;</td>
-                    <td class="pdf-inv-route-card-right" valign="middle">
-                        <div class="pdf-inv-route-bl-wrap">
-                            <div class="pdf-inv-route-bl-lbl">B/L</div>
-                            <div class="pdf-inv-route-bl-val">{{ $shipmentRef }}</div>
-                        </div>
-                        <div class="pdf-inv-route-flow">
-                            <div class="pdf-inv-route-flow-pol">
-                                <div class="pdf-inv-route-port-val">{{ $pol }}</div>
-                                <div class="pdf-inv-route-port-sub">POL (Port of Loading)</div>
-                            </div>
-                            <div class="pdf-inv-route-flow-mid">
-                                <div class="pdf-inv-route-mid-track">
-                                    <span class="pdf-inv-route-dash">——</span><span class="pdf-inv-route-arr">➜</span><span class="pdf-inv-route-dash">——</span>
-                                </div>
-                                @if($directionFlow !== '')
-                                    <div class="pdf-inv-route-dir">{{ $directionFlow }}</div>
-                                @endif
-                            </div>
-                            <div class="pdf-inv-route-flow-pod">
-                                <div class="pdf-inv-route-port-val">{{ $pod }}</div>
-                                <div class="pdf-inv-route-port-sub">POD (Port of Discharge)</div>
-                            </div>
-                        </div>
+                    <td class="pdf-inv-route-tpl-metas-cell" valign="middle">
+                        <table class="pdf-inv-route-tpl-metas" cellspacing="0" cellpadding="0" border="0" role="presentation" align="right">
+                            <tr>
+                                <td class="pdf-inv-route-tpl-rmeta" valign="middle">
+                                    <div class="pdf-inv-route-tpl-rmeta-val">{{ $shipLine }}</div>
+                                    <div class="pdf-inv-route-tpl-rmeta-lbl">Carrier</div>
+                                </td>
+                                <td class="pdf-inv-route-tpl-rmeta-sep" valign="middle">&nbsp;</td>
+                                <td class="pdf-inv-route-tpl-rmeta" valign="middle">
+                                    <div class="pdf-inv-route-tpl-rmeta-val">{{ $container }}</div>
+                                    <div class="pdf-inv-route-tpl-rmeta-lbl">Container Type</div>
+                                </td>
+                                <td class="pdf-inv-route-tpl-rmeta-sep" valign="middle">&nbsp;</td>
+                                <td class="pdf-inv-route-tpl-rmeta" valign="middle">
+                                    <div class="pdf-inv-route-tpl-rmeta-val">{{ $transitTime }}</div>
+                                    <div class="pdf-inv-route-tpl-rmeta-lbl">Transit Time</div>
+                                </td>
+                                <td class="pdf-inv-route-tpl-rmeta-sep" valign="middle">&nbsp;</td>
+                                <td class="pdf-inv-route-tpl-rmeta" valign="middle">
+                                    <div class="pdf-inv-route-tpl-rmeta-val">{{ $refShipmentData }}</div>
+                                    <div class="pdf-inv-route-tpl-rmeta-lbl">Shipment Ref</div>
+                                </td>
+                            </tr>
+                        </table>
                     </td>
                 </tr>
             </table>
