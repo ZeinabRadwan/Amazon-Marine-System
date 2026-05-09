@@ -285,19 +285,21 @@ export default function ClientDetailModal({
     <div className="client-detail-modal" role="dialog" aria-modal="true" aria-labelledby="client-detail-modal-title">
       <div className="client-detail-modal__backdrop" onClick={onClose} />
       <div className="client-detail-modal__box">
-        <header className="client-detail-modal__header client-detail-modal__header--detail">
-          <div className="client-detail-modal__header-inner">
-            <span className="client-detail-modal__header-label">{t('clients.detail')}</span>
-            <h2 id="client-detail-modal-title" className="client-detail-modal__title client-detail-modal__title--client">
-              {detailClient ? (detailClient.company_name || detailClient.name || '—') : '—'}
+        <header className="client-detail-modal__header client-detail-modal__header--ui-modal">
+          <div className="client-detail-modal__ui-modal-head">
+            <h2 id="client-detail-modal-title" className="client-detail-modal__ui-modal-title">
+              <Users className="client-detail-modal__ui-modal-title-icon" aria-hidden />
+              <span>{t('clients.detail')}</span>
+              <span className="client-detail-modal__ui-modal-sep"> — </span>
+              <span>{detailClient ? (detailClient.company_name || detailClient.name || '—') : '—'}</span>
             </h2>
-            {detailClient?.company_name && detailClient?.name && detailClient.company_name !== detailClient.name && (
-              <p className="client-detail-modal__subtitle">{detailClient.name}</p>
-            )}
+            {detailClient?.company_name && detailClient?.name && detailClient.company_name !== detailClient.name ? (
+              <p className="client-detail-modal__ui-modal-sub">{detailClient.name}</p>
+            ) : null}
           </div>
           <button
             type="button"
-            className="client-detail-modal__close"
+            className="client-detail-modal__close client-detail-modal__close--ui-modal"
             onClick={onClose}
             aria-label={t('clients.close')}
           >

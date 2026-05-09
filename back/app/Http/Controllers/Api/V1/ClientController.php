@@ -542,6 +542,12 @@ class ClientController extends Controller
 
         $shipment = new Shipment($validated);
         $shipment->client_id = $client->id;
+
+        // Sales rep is always the authenticated user who creates the shipment (same as ShipmentController::store).
+        if ($request->user()) {
+            $shipment->sales_rep_id = $request->user()->id;
+        }
+
         $shipment->status = $shipment->status ?? 'draft';
         $shipment->mode = $shipment->mode ?? 'Sea';
         $shipment->shipment_type = $shipment->shipment_type ?? 'FCL';
@@ -552,7 +558,7 @@ class ClientController extends Controller
         ]);
 
         return response()->json([
-            'data' => $shipment->fresh(['client', 'originPort', 'destinationPort']),
+            'data' => $shipment->fresh(['client', 'salesRep', 'originPort', 'destinationPort']),
         ], 201);
     }
 

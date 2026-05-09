@@ -78,9 +78,13 @@ function costInvoiceItemsToRows(items = []) {
   return (Array.isArray(items) ? items : [])
     .slice()
     .sort((a, b) => (Number(a?.order_index || 0) - Number(b?.order_index || 0)) || (Number(a?.line_id || 0) - Number(b?.line_id || 0)))
-    .map((item, idx) => ({
-      id: Number(item?.line_id || idx + 1),
-      line_id: Number(item?.line_id || idx + 1),
+    .map((item, idx) => {
+      const lidRaw = item?.line_id
+      const lid = lidRaw != null && lidRaw !== '' ? Number(lidRaw) : NaN
+      const hasLine = Number.isFinite(lid) && lid > 0
+      return {
+      id: hasLine ? lid : `ci-pending-${idx}`,
+      line_id: hasLine ? lid : undefined,
       shipment_id: null,
       expense_category_id: item?.expense_category_id ?? null,
       category_name: '',
@@ -97,7 +101,8 @@ function costInvoiceItemsToRows(items = []) {
       template_id: item?.template_id || null,
       order_index: Number(item?.order_index || idx),
       _source: 'shipment_cost_invoice',
-    }))
+    }
+    })
 }
 
 function getMonthFormat(locale) {

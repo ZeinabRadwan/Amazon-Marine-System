@@ -115,8 +115,21 @@ export function partitionBucketRows(bucketId, bucketRows, isReefer) {
   const used = new Set()
   const sections = []
   for (const tpl of templates) {
+    // Reefer-only template rows still bind saved lines by explicit template_id from the API.
+    // Otherwise a line saved as template_id "power" / "genset" would never be marked "used" when
+    // the shipment is not flagged reefer, and would appear under "Recorded Custom Items".
     if (tpl.reeferOnly && !isReefer) {
-      sections.push({ tpl, matched: [] })
+      const matched = []
+      for (const ex of bucketRows) {
+        if (used.has(ex.id)) {
+          continue
+        }
+        if (ex?.template_id && templateById[ex.template_id] && ex.template_id === tpl.id) {
+          matched.push(ex)
+          used.add(ex.id)
+        }
+      }
+      sections.push({ tpl, matched })
       continue
     }
     const matched = []

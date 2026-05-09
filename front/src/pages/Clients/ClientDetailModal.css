@@ -680,6 +680,106 @@ body .flatpickr-calendar {
   background: linear-gradient(to bottom, var(--root-bg), var(--form-bg));
 }
 
+/* UI kit modal header parity: UI/css/styles.css `.modal-header` (e.g. clients.html client detail, shipments.html clipboard/stage modal) */
+.client-detail-modal__header--ui-modal {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--form-divider, #e8eaef);
+  background: var(--form-bg, #fff);
+}
+
+[data-theme="dark"] .client-detail-modal__header--ui-modal,
+.dark .client-detail-modal__header--ui-modal {
+  border-bottom-color: var(--form-divider, #374151);
+  background: var(--form-bg, #1f2937);
+}
+
+.client-detail-modal__ui-modal-head {
+  flex: 1;
+  min-width: 0;
+}
+
+.client-detail-modal__ui-modal-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--root-text, #1c2030);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  word-break: break-word;
+}
+
+[data-theme="dark"] .client-detail-modal__ui-modal-title,
+.dark .client-detail-modal__ui-modal-title {
+  color: var(--form-text, #f3f4f6);
+}
+
+.client-detail-modal__ui-modal-title-icon {
+  width: 1.125rem;
+  height: 1.125rem;
+  flex-shrink: 0;
+  margin-inline-end: 8px;
+  color: color-mix(in srgb, var(--form-text, #6b7280) 88%, var(--root-text, #111827));
+}
+
+[data-theme="dark"] .client-detail-modal__ui-modal-title-icon,
+.dark .client-detail-modal__ui-modal-title-icon {
+  color: color-mix(in srgb, var(--form-text, #e5e7eb) 75%, transparent);
+}
+
+.client-detail-modal__ui-modal-sep {
+  font-weight: 700;
+}
+
+.client-detail-modal__ui-modal-sub {
+  margin: 3px 0 0;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  font-weight: 400;
+  opacity: 0.6;
+  color: var(--root-text, #1c2030);
+}
+
+[data-theme="dark"] .client-detail-modal__ui-modal-sub,
+.dark .client-detail-modal__ui-modal-sub {
+  color: var(--form-text, #e5e7eb);
+}
+
+.client-detail-modal__close--ui-modal {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--app-bg, #f6f8fb);
+  color: var(--form-text, #6b7280);
+}
+
+.client-detail-modal__close--ui-modal:hover:not(:disabled) {
+  background: var(--form-error-bg, #fee2e2);
+  color: var(--form-error-text, #b91c1c);
+}
+
+[data-theme="dark"] .client-detail-modal__close--ui-modal,
+.dark .client-detail-modal__close--ui-modal {
+  background: var(--form-input-bg, #111827);
+  color: color-mix(in srgb, var(--form-text, #e5e7eb) 72%, transparent);
+}
+
+[data-theme="dark"] .client-detail-modal__close--ui-modal:hover:not(:disabled),
+.dark .client-detail-modal__close--ui-modal:hover:not(:disabled) {
+  background: color-mix(in srgb, #ef4444 24%, transparent);
+  color: #fecaca;
+}
+
+.client-detail-modal__close--ui-modal .client-detail-modal__close-icon {
+  width: 18px;
+  height: 18px;
+}
+
 .client-detail-modal__header--form .client-detail-modal__title {
   margin: 0;
   font-size: 1.3125rem;
@@ -1261,7 +1361,7 @@ body .flatpickr-calendar {
 }
 
 .client-detail-modal__body--form .client-detail-modal__body-inner {
-  padding-top: 8px;
+  padding: 24px 20px;
 }
 
 .client-detail-modal__body-inner .client-detail-modal__section {

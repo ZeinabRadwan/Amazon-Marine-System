@@ -487,7 +487,7 @@ class ShipmentController extends Controller
     private function buildShipmentListQuery(Request $request)
     {
         $query = Shipment::query()
-            ->with(['client', 'lineVendor', 'shippingLine'])
+            ->with(['client', 'salesRep', 'lineVendor', 'shippingLine'])
             ->select('shipments.*');
 
         $user = $request->user();
@@ -682,6 +682,23 @@ class ShipmentController extends Controller
             }
 
             $lineId = (int) ($item['line_id'] ?? 0);
+            $tplKey = isset($item['template_id']) ? trim((string) $item['template_id']) : '';
+            $bucketKey = (string) ($item['bucket_id'] ?? '');
+            if ($lineId <= 0 && $tplKey !== '' && $bucketKey !== '') {
+                foreach ($existingItems as $prevItem) {
+                    if (($prevItem['bucket_id'] ?? '') !== $bucketKey) {
+                        continue;
+                    }
+                    if ((string) ($prevItem['template_id'] ?? '') !== $tplKey) {
+                        continue;
+                    }
+                    $reuse = (int) ($prevItem['line_id'] ?? 0);
+                    if ($reuse > 0) {
+                        $lineId = $reuse;
+                        break;
+                    }
+                }
+            }
             if ($lineId <= 0) {
                 $lineId = $nextLineId;
                 $nextLineId++;
