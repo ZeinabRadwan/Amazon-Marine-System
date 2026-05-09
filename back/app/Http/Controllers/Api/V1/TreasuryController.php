@@ -12,6 +12,7 @@ use App\Models\TreasuryEntry;
 use App\Models\VendorBill;
 use App\Services\AccountingAggregationService;
 use App\Services\CbeOfficialExchangeRateService;
+use App\Services\TreasuryLedgerBalanceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,75 +21,9 @@ use Illuminate\Support\Facades\Schema;
 
 class TreasuryController extends Controller
 {
-    private function normalizeCurrency(string $code): string
-    {
-        $c = strtoupper(trim($code));
-        return $c !== '' ? $c : 'USD';
-    }
-
-    /**
-     * @param array<string, array<string, float>> $balances
-     */
-    private function applyEntryToBalances(array &$balances, TreasuryEntry $entry): void
-    {
-        $type = strtolower((string) $entry->entry_type);
-        $amount = (float) $entry->amount;
-        $currency = $this->normalizeCurrency((string) $entry->currency_code);
-        $targetCurrency = $this->normalizeCurrency((string) ($entry->target_currency_code ?: $currency));
-        $converted = (float) ($entry->converted_amount ?? 0);
-
-        if ($entry->account_id) {
-            $accountId = (string) $entry->account_id;
-            $balances[$accountId] ??= [];
-            $balances[$accountId][$currency] = (float) ($balances[$accountId][$currency] ?? 0);
-
-            if ($type === 'in') {
-                $balances[$accountId][$currency] += $amount;
-            } else {
-                // out / transfer / exchange reduce source side
-                $balances[$accountId][$currency] -= $amount;
-            }
-        }
-
-        if ($entry->counter_account_id) {
-            $counterId = (string) $entry->counter_account_id;
-            $balances[$counterId] ??= [];
-            $creditAmount = $converted > 0 ? $converted : $amount;
-            $creditCurrency = $targetCurrency ?: $currency;
-            $balances[$counterId][$creditCurrency] = (float) ($balances[$counterId][$creditCurrency] ?? 0) + $creditAmount;
-        }
-    }
-
-    /**
-     * Raw ledger balances per bank account and currency (negative allowed).
-     *
-     * @return array<string, array<string, float>>
-     */
-    private function computeRawBalancesByAccount(?int $excludeEntryId = null): array
-    {
-        $query = TreasuryEntry::query()->orderBy('entry_date')->orderBy('id');
-        if ($excludeEntryId) {
-            $query->where('id', '!=', $excludeEntryId);
-        }
-
-        $balancesByAccount = [];
-        foreach ($query->get() as $entry) {
-            $this->applyEntryToBalances($balancesByAccount, $entry);
-        }
-
-        return $balancesByAccount;
-    }
-
-    /**
-     * @param  array<string, array<string, float>>  $balancesByAccount
-     */
-    private function getRawBalanceForBankCurrency(array $balancesByAccount, int $bankId, string $currency): float
-    {
-        $key = (string) $bankId;
-        $cur = $this->normalizeCurrency($currency);
-
-        return (float) ($balancesByAccount[$key][$cur] ?? 0);
-    }
+    public function __construct(
+        private TreasuryLedgerBalanceService $ledgerBalance,
+    ) {}
 
     /**
      * Block debits when the bank leg does not have enough raw balance in that currency.
@@ -97,32 +32,7 @@ class TreasuryController extends Controller
      */
     private function assertSufficientBankBalance(array $validated, ?int $excludeEntryId = null): ?JsonResponse
     {
-        $accountId = isset($validated['account_id']) ? (int) $validated['account_id'] : 0;
-        if ($accountId <= 0) {
-            return null;
-        }
-
-        $type = strtolower((string) ($validated['entry_type'] ?? ''));
-        if (! in_array($type, ['out', 'transfer', 'exchange'], true)) {
-            return null;
-        }
-
-        $amount = (float) ($validated['amount'] ?? 0);
-        if ($amount <= 0 || ! is_finite($amount)) {
-            return null;
-        }
-
-        $currency = $this->normalizeCurrency((string) ($validated['currency_code'] ?? 'USD'));
-        $balances = $this->computeRawBalancesByAccount($excludeEntryId);
-        $avail = $this->getRawBalanceForBankCurrency($balances, $accountId, $currency);
-
-        if ($avail + 1e-6 < $amount) {
-            return response()->json([
-                'message' => __('bank.insufficient_balance_currency'),
-            ], 422);
-        }
-
-        return null;
+        return $this->ledgerBalance->assertSufficientBankBalanceForEntryPayload($validated, $excludeEntryId);
     }
 
     /**
@@ -238,10 +148,7 @@ class TreasuryController extends Controller
             ->orderBy('id')
             ->get();
 
-        $balancesByAccount = [];
-        foreach ($entries as $entry) {
-            $this->applyEntryToBalances($balancesByAccount, $entry);
-        }
+        $balancesByAccount = $this->ledgerBalance->computeRawBalancesByAccount();
 
         $bankPayload = [];
         foreach ($banks as $bank) {
@@ -249,7 +156,7 @@ class TreasuryController extends Controller
             $rawMap = $balancesByAccount[$idKey] ?? [];
             $balanceRaw = [];
             foreach ($rawMap as $cur => $val) {
-                $balanceRaw[$this->normalizeCurrency((string) $cur)] = round((float) $val, 2);
+                $balanceRaw[$this->ledgerBalance->normalizeCurrency((string) $cur)] = round((float) $val, 2);
             }
 
             $balanceDisplay = [];
@@ -273,7 +180,7 @@ class TreasuryController extends Controller
                     continue;
                 }
                 $pay = $entry->payment;
-                $currency = $this->normalizeCurrency((string) $entry->currency_code);
+                $currency = $this->ledgerBalance->normalizeCurrency((string) $entry->currency_code);
                 $amt = (float) $entry->amount;
                 $type = strtolower((string) $entry->entry_type);
                 if ($pay && $pay->type === 'client_receipt' && $type === 'in') {
@@ -363,10 +270,7 @@ class TreasuryController extends Controller
 
         $byCurrency = $entries->groupBy('currency_code');
 
-        $balancesByAccount = [];
-        foreach ($entries as $entry) {
-            $this->applyEntryToBalances($balancesByAccount, $entry);
-        }
+        $balancesByAccount = $this->ledgerBalance->computeRawBalancesByAccount();
 
         $cashBalance = 0.0;
         $bankBalance = 0.0;
@@ -801,12 +705,17 @@ class TreasuryController extends Controller
 
         $fromAccountId = isset($validated['from_account_id']) ? (int) $validated['from_account_id'] : 0;
         if ($fromAccountId > 0) {
-            $balances = $this->computeRawBalancesByAccount();
-            $avail = $this->getRawBalanceForBankCurrency($balances, $fromAccountId, $fromCurrency);
-            $need = (float) $validated['from_amount'];
-            if ($avail + 1e-6 < $need) {
+            try {
+                $this->ledgerBalance->ensureDebitDoesNotOverdraft(
+                    $fromAccountId,
+                    $fromCurrency,
+                    (float) $validated['from_amount'],
+                    null
+                );
+            } catch (\Illuminate\Validation\ValidationException $e) {
                 return response()->json([
-                    'message' => __('bank.insufficient_balance_currency'),
+                    'message' => collect($e->errors())->flatten()->first() ?? __('bank.insufficient_balance_currency'),
+                    'errors' => $e->errors(),
                 ], 422);
             }
         }

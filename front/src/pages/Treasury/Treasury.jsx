@@ -136,6 +136,24 @@ function flowTypeLabel(row, t) {
   return t('treasury.flow.internal', 'Internal')
 }
 
+/**
+ * Classify a treasury entry as credit (cash in, دائن) or debit (cash out, مدين).
+ * Driven by the signed amount returned by the API ('in' → +, 'out'/'transfer'/'exchange' → -),
+ * never by parsing the +/- glyph in the displayed string.
+ */
+function deriveFinancialType(row) {
+  const amt = Number(row?.amount)
+  if (!Number.isFinite(amt) || amt === 0) return 'neutral'
+  return amt > 0 ? 'credit' : 'debit'
+}
+
+function financialTypeLabel(row, t) {
+  const k = deriveFinancialType(row)
+  if (k === 'credit') return t('treasury.financialType.credit', 'Credit')
+  if (k === 'debit') return t('treasury.financialType.debit', 'Debit')
+  return t('treasury.financialType.neutral', '—')
+}
+
 function computeRunningBalances(rows, clampZero = true) {
   const byCurrency = new Map()
   for (const r of rows) {
@@ -407,6 +425,7 @@ export default function Treasury() {
       t('treasury.colFlow', 'Flow'),
       t('treasury.colDescription'),
       t('treasury.colType'),
+      t('treasury.colFinancialType', 'Financial type'),
       t('treasury.colAmount'),
       t('treasury.colCurrency'),
       t('treasury.colReference', 'Reference'),
@@ -428,6 +447,7 @@ export default function Treasury() {
               : row.entry_type === 'transfer'
                 ? t('treasury.typeTransfer', 'Transfer')
                 : t('treasury.typeExchange', 'Exchange'),
+          financialTypeLabel(row, t),
           formatPlainAmount(row.amount, locale),
           row.currency_code,
           row.reference_label || '',
@@ -567,7 +587,14 @@ export default function Treasury() {
           />
           <StatsCard
             className="accountings-stat-card"
-            title={t('treasury.bankOverview.partnerPayables')}
+            title={
+              <>
+                {t('treasury.bankOverview.partnerPayables')}
+                <span className="treasury-stat-subtitle">
+                  ({t('treasury.bankOverview.partnerPayablesSubtitle')})
+                </span>
+              </>
+            }
             value={
               bankOverviewLoading ? (
                 <span className="treasury-muted">…</span>
@@ -819,6 +846,7 @@ export default function Treasury() {
                 <th>{t('treasury.colFlow', 'Flow')}</th>
                 <th>{t('treasury.colDescription')}</th>
                 <th>{t('treasury.colType')}</th>
+                <th>{t('treasury.colFinancialType', 'Financial type')}</th>
                 <th>{t('treasury.colAmount')}</th>
                 <th>{t('treasury.colReference', 'Reference')}</th>
                 <th>{t('treasury.colRunning')}</th>
@@ -828,7 +856,7 @@ export default function Treasury() {
             <tbody>
               {entriesLoading && (
                 <tr>
-                  <td colSpan={8}>
+                  <td colSpan={9}>
                     <LoaderDots />
                   </td>
                 </tr>
@@ -868,6 +896,19 @@ export default function Treasury() {
                         </span>
                       </td>
                       <td>
+                        {(() => {
+                          const ft = deriveFinancialType(row)
+                          return (
+                            <span
+                              className={`treasury-finance-badge treasury-finance-badge--${ft}`}
+                              aria-label={financialTypeLabel(row, t)}
+                            >
+                              {financialTypeLabel(row, t)}
+                            </span>
+                          )
+                        })()}
+                      </td>
+                      <td>
                         <CurrencyMapBadges
                           value={singleCurrencyMap(row.amount, row.currency_code)}
                           size="sm"
@@ -893,7 +934,7 @@ export default function Treasury() {
                 })}
               {!entriesLoading && entries.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="accountings-empty">
+                  <td colSpan={9} className="accountings-empty">
                     {t('treasury.emptyMovements')}
                   </td>
                 </tr>

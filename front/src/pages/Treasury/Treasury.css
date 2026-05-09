@@ -485,6 +485,22 @@
   gap: 1rem;
 }
 
+/* Small parenthetical clarifier shown next to a stat title (e.g. "غير مسددة"). */
+/* Inline so it never adds a line-break or affects the card's reserved height. */
+.treasury-stat-subtitle {
+  display: inline;
+  margin-inline-start: 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 400;
+  color: rgb(100 116 139);
+  white-space: nowrap;
+}
+
+.dark .treasury-stat-subtitle,
+[data-theme='dark'] .treasury-stat-subtitle {
+  color: rgb(148 163 184);
+}
+
 .treasury-flow-badge {
   display: inline-flex;
   align-items: center;
@@ -521,6 +537,53 @@
   color: rgb(29 78 216);
 }
 
+/* Credit / Debit pill — driven by the signed amount, never by the +/- glyph. */
+/* Mirrors the size/typography of .treasury-flow-badge for visual consistency. */
+.treasury-finance-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.treasury-finance-badge--credit {
+  background: rgb(209 250 229);
+  color: rgb(4 120 87);
+}
+
+.dark .treasury-finance-badge--credit,
+[data-theme='dark'] .treasury-finance-badge--credit {
+  background: rgba(6, 78, 59, 0.45);
+  color: rgb(110 231 183);
+}
+
+.treasury-finance-badge--debit {
+  background: rgb(254 226 226);
+  color: rgb(185 28 28);
+}
+
+.dark .treasury-finance-badge--debit,
+[data-theme='dark'] .treasury-finance-badge--debit {
+  background: rgba(127, 29, 29, 0.45);
+  color: rgb(252 165 165);
+}
+
+.treasury-finance-badge--neutral {
+  background: rgb(241 245 249);
+  color: rgb(100 116 139);
+}
+
+.dark .treasury-finance-badge--neutral,
+[data-theme='dark'] .treasury-finance-badge--neutral {
+  background: rgba(51, 65, 85, 0.45);
+  color: rgb(148 163 184);
+}
+
 /* Five headline stats — full-width row, equal columns, equal-height cards */
 .treasury-stats-band .treasury-stats-grid--5.accountings-stats-grid {
   width: 100%;
@@ -553,48 +616,6 @@
   .treasury-stats-band .treasury-stats-grid--5.accountings-stats-grid {
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
-}
-
-/* Bank card — one row per supported currency (wireframe cur-row) */
-.treasury-acc-cur-head {
-  display: grid;
-  grid-template-columns: minmax(4rem, auto) 1fr 1fr 1fr;
-  gap: 0.35rem 0.5rem;
-  align-items: center;
-  margin-top: 0.65rem;
-  margin-bottom: 0.25rem;
-  font-size: 0.6rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--form-muted, #94a3b8);
-}
-
-.treasury-acc-cur-row {
-  display: grid;
-  grid-template-columns: minmax(4rem, auto) 1fr 1fr 1fr;
-  gap: 0.35rem 0.5rem;
-  align-items: center;
-  padding: 0.35rem 0.45rem;
-  margin-bottom: 0.35rem;
-  border-radius: 6px;
-  border: 1px solid var(--form-divider, #e5e7eb);
-  background: var(--gray-50, #f8fafc);
-}
-
-.treasury-acc-cur-badge-wrap {
-  display: flex;
-  align-items: center;
-}
-
-.treasury-acc-cur-num {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-align: end;
-}
-
-.treasury-acc-cur-num--muted {
-  opacity: 0.85;
 }
 
 /* Read-only entry detail modal */

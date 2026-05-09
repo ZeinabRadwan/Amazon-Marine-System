@@ -2489,6 +2489,12 @@
       "manual": "Manual / Other",
       "internal": "Internal"
     },
+    "colFinancialType": "Financial type",
+    "financialType": {
+      "credit": "Credit",
+      "debit": "Debit",
+      "neutral": "—"
+    },
     "colActions": "Actions",
     "emptyMovements": "No movements match your filters.",
     "reconTitle": "Bank reconciliation",

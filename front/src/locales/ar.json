@@ -2490,6 +2490,12 @@
       "manual": "يدوي / آخر",
       "internal": "داخلي"
     },
+    "colFinancialType": "النوع المالي",
+    "financialType": {
+      "credit": "دائن",
+      "debit": "مدين",
+      "neutral": "—"
+    },
     "colActions": "إجراءات",
     "emptyMovements": "لا توجد حركات مطابقة للمرشحات.",
     "reconTitle": "التسوية البنكية",
