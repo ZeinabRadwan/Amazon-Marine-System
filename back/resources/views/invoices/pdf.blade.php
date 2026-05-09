@@ -269,7 +269,6 @@
             width: 100%;
             border-collapse: collapse;
             border-spacing: 0;
-            background: #0f2d4a;
             margin: 0;
             table-layout: fixed;
         }
@@ -576,9 +575,9 @@
             vertical-align: middle;
             border: none;
             background: transparent;
+            color: #ffffff !important;
         }
         .pdf-inv-grand-breakdown tr:not(.pdf-inv-grand-cur):not(.pdf-inv-grand-divider) td:first-child {
-            color: #ffffff !important;
             font-weight: 600;
         }
         .pdf-inv-grand-breakdown tr:not(.pdf-inv-grand-cur):not(.pdf-inv-grand-divider) .pdf-inv-gtr-val {
@@ -586,7 +585,6 @@
             font-family: DejaVu Sans Mono, monospace;
             font-size: 9px;
             font-weight: 600;
-            color: rgba(255, 255, 255, 0.92);
             white-space: nowrap;
         }
         .pdf-inv-grand-divider td {
@@ -602,15 +600,13 @@
             font-weight: 600;
             color: #ffffff !important;
         }
-        /* Per-currency total labels: brand orange, bold */
         .pdf-inv-grand-cur td:first-child {
-            color: #ec7f00 !important;
             font-weight: 800;
         }
         .pdf-inv-grand-cur .pdf-inv-gtr-val {
             text-align: right;
             font-family: DejaVu Sans Mono, monospace;
-            color: #ec7f00 !important;
+            color: #ffffff !important;
             font-size: 11px;
             font-weight: 700;
             white-space: nowrap;
