@@ -706,6 +706,7 @@
 .settings-page .client-detail-modal {
   position: fixed;
   inset: 0;
+  min-height: 100vh;
 }
 
 .settings-page .client-detail-modal .client-detail-modal__backdrop {
@@ -727,4 +728,176 @@
 @keyframes settingsLoadingPulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }
+}
+
+/* ─── Bank accounts: supported currency badges (multi-select) ─── */
+.settings-bank-currency-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.settings-bank-currency-picker__hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--form-muted, #64748b);
+}
+
+.settings-bank-currency-badges--inline {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  max-width: 100%;
+}
+
+.settings-bank-currency-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 3.25rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.12s ease;
+  font-family: inherit;
+}
+
+.settings-bank-currency-badge:focus-visible {
+  outline: 2px solid var(--form-primary, #0039c5);
+  outline-offset: 2px;
+}
+
+.settings-bank-currency-badge:not(.settings-bank-currency-badge--readonly):hover {
+  transform: translateY(-1px);
+}
+
+.settings-bank-currency-badge--compact {
+  min-width: 2.75rem;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.7rem;
+}
+
+.settings-bank-currency-badge--readonly {
+  cursor: default;
+  pointer-events: none;
+}
+
+/* EGP — orange */
+.settings-bank-currency-badge--egp {
+  color: #c2410c;
+  background: color-mix(in srgb, #ea580c 14%, var(--form-bg, #ffffff));
+  border-color: color-mix(in srgb, #ea580c 38%, transparent);
+}
+
+.settings-bank-currency-badge--egp.settings-bank-currency-badge--selected {
+  color: #fff;
+  background: linear-gradient(165deg, #fb923c 0%, #ea580c 55%, #c2410c 100%);
+  border-color: #9a3412;
+  box-shadow: 0 2px 10px rgba(234, 88, 12, 0.38);
+}
+
+/* USD — green */
+.settings-bank-currency-badge--usd {
+  color: #047857;
+  background: color-mix(in srgb, #10b981 14%, var(--form-bg, #ffffff));
+  border-color: color-mix(in srgb, #10b981 38%, transparent);
+}
+
+.settings-bank-currency-badge--usd.settings-bank-currency-badge--selected {
+  color: #fff;
+  background: linear-gradient(165deg, #34d399 0%, #059669 55%, #047857 100%);
+  border-color: #065f46;
+  box-shadow: 0 2px 10px rgba(5, 150, 105, 0.35);
+}
+
+/* EUR — blue */
+.settings-bank-currency-badge--eur {
+  color: #1d4ed8;
+  background: color-mix(in srgb, #3b82f6 14%, var(--form-bg, #ffffff));
+  border-color: color-mix(in srgb, #3b82f6 38%, transparent);
+}
+
+.settings-bank-currency-badge--eur.settings-bank-currency-badge--selected {
+  color: #fff;
+  background: linear-gradient(165deg, #60a5fa 0%, #2563eb 55%, #1d4ed8 100%);
+  border-color: #1e40af;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.35);
+}
+
+/* Unknown code from API */
+.settings-bank-currency-badge--other {
+  color: var(--form-muted, #64748b);
+  background: color-mix(in srgb, var(--form-muted, #64748b) 12%, var(--form-bg, #ffffff));
+  border-color: var(--form-divider, #e2e8f0);
+}
+
+.settings-bank-currency-badge--other.settings-bank-currency-badge--selected {
+  color: var(--form-text, #0f172a);
+  background: var(--form-divider, #e2e8f0);
+  border-color: #94a3b8;
+  box-shadow: none;
+}
+
+[data-theme='dark'] .settings-bank-currency-badge--egp,
+.dark .settings-bank-currency-badge--egp {
+  color: #fdba74;
+  background: color-mix(in srgb, #ea580c 22%, var(--form-bg, #1f2937));
+  border-color: color-mix(in srgb, #fb923c 45%, transparent);
+}
+
+[data-theme='dark'] .settings-bank-currency-badge--usd,
+.dark .settings-bank-currency-badge--usd {
+  color: #6ee7b7;
+  background: color-mix(in srgb, #10b981 20%, var(--form-bg, #1f2937));
+  border-color: color-mix(in srgb, #34d399 40%, transparent);
+}
+
+[data-theme='dark'] .settings-bank-currency-badge--eur,
+.dark .settings-bank-currency-badge--eur {
+  color: #93c5fd;
+  background: color-mix(in srgb, #3b82f6 22%, var(--form-bg, #1f2937));
+  border-color: color-mix(in srgb, #60a5fa 42%, transparent);
+}
+
+[data-theme='dark'] .settings-bank-currency-badge--egp.settings-bank-currency-badge--selected,
+.dark .settings-bank-currency-badge--egp.settings-bank-currency-badge--selected {
+  color: #fff;
+  background: linear-gradient(165deg, #fb923c 0%, #ea580c 100%);
+  border-color: #fed7aa;
+  box-shadow: 0 2px 12px rgba(251, 146, 60, 0.35);
+}
+
+[data-theme='dark'] .settings-bank-currency-badge--usd.settings-bank-currency-badge--selected,
+.dark .settings-bank-currency-badge--usd.settings-bank-currency-badge--selected {
+  color: #fff;
+  background: linear-gradient(165deg, #34d399 0%, #059669 100%);
+  border-color: #a7f3d0;
+  box-shadow: 0 2px 12px rgba(52, 211, 153, 0.32);
+}
+
+[data-theme='dark'] .settings-bank-currency-badge--eur.settings-bank-currency-badge--selected,
+.dark .settings-bank-currency-badge--eur.settings-bank-currency-badge--selected {
+  color: #fff;
+  background: linear-gradient(165deg, #60a5fa 0%, #2563eb 100%);
+  border-color: #bfdbfe;
+  box-shadow: 0 2px 12px rgba(96, 165, 250, 0.35);
+}
+
+[data-theme='dark'] .settings-bank-currency-badge--other,
+.dark .settings-bank-currency-badge--other {
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(148, 163, 184, 0.35);
 }

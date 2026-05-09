@@ -3589,7 +3589,7 @@
       "iban": "IBAN",
       "swift": "رمز SWIFT",
       "currencies": "العملات المدعومة",
-      "currenciesHint": "مثال: USD, EUR, EGP",
+      "currenciesHint": "اختر عملة واحدة أو أكثر.",
       "status": "نشط",
       "active": "نشط",
       "inactive": "غير نشط",

@@ -3567,7 +3567,7 @@
       "iban": "IBAN",
       "swift": "SWIFT code",
       "currencies": "Supported currencies",
-      "currenciesHint": "Example: USD, EUR, EGP",
+      "currenciesHint": "Select one or more currencies.",
       "status": "Active",
       "active": "Active",
       "inactive": "Inactive",

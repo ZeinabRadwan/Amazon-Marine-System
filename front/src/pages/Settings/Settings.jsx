@@ -71,6 +71,17 @@ import LeafletCompanyLocationPicker from '../../components/LeafletCompanyLocatio
 import { localizedStatusLabel } from '../../utils/localizedStatusLabel'
 import { formatDateTime } from '../../utils/dateUtils'
 
+/** Fixed options for bank account supported currencies (badges in modal + table). */
+const SETTINGS_BANK_ACCOUNT_CURRENCIES = ['EGP', 'USD', 'EUR']
+
+function settingsBankCurrencyVariant(code) {
+  const u = String(code || '').toUpperCase()
+  if (u === 'EGP') return 'egp'
+  if (u === 'USD') return 'usd'
+  if (u === 'EUR') return 'eur'
+  return 'other'
+}
+
 function SectionCard({ title, subtitle, children, actions, compact }) {
   return (
     <section className={`settings-section-card ${compact ? 'settings-section-card--compact' : ''}`.trim()}>
@@ -1317,6 +1328,18 @@ export default function Settings() {
     setBankAccountModal({ mode: 'edit', id: row.id })
   }
 
+  function toggleBankAccountCurrency(code) {
+    const upper = String(code).toUpperCase()
+    setBankAccountForm((p) => {
+      const list = Array.isArray(p.supported_currencies) ? [...p.supported_currencies] : []
+      const normalized = list.map((c) => String(c).trim().toUpperCase()).filter(Boolean)
+      const idx = normalized.indexOf(upper)
+      if (idx >= 0) normalized.splice(idx, 1)
+      else normalized.push(upper)
+      return { ...p, supported_currencies: normalized }
+    })
+  }
+
   async function handleSaveBankAccount(e) {
     e.preventDefault()
     if (!token || !String(bankAccountForm.bank_name).trim() || !String(bankAccountForm.account_name).trim()) return
@@ -1324,10 +1347,13 @@ export default function Settings() {
     setBankAccountSubmitting(true)
     setError('')
     try {
-      const currencies = String(bankAccountForm.supported_currencies || '')
-        .split(',')
-        .map((v) => v.trim().toUpperCase())
-        .filter(Boolean)
+      const rawCur = bankAccountForm.supported_currencies
+      const currencies = Array.isArray(rawCur)
+        ? rawCur.map((v) => String(v).trim().toUpperCase()).filter(Boolean)
+        : String(rawCur || '')
+            .split(',')
+            .map((v) => v.trim().toUpperCase())
+            .filter(Boolean)
       const body = {
         bank_name: String(bankAccountForm.bank_name).trim(),
         account_name: String(bankAccountForm.account_name || '').trim() || null,
@@ -1846,7 +1872,26 @@ export default function Settings() {
       key: 'supported_currencies',
       label: t('settings.bankAccounts.table.currencies'),
       sortable: false,
-      render: (val) => (Array.isArray(val) && val.length ? val.join(', ') : '—'),
+      render: (val) =>
+        Array.isArray(val) && val.length ? (
+          <div className="settings-bank-currency-badges settings-bank-currency-badges--inline" role="list">
+            {val.map((c) => {
+              const code = String(c).toUpperCase()
+              const v = settingsBankCurrencyVariant(code)
+              return (
+                <span
+                  key={code}
+                  role="listitem"
+                  className={`settings-bank-currency-badge settings-bank-currency-badge--${v} settings-bank-currency-badge--readonly settings-bank-currency-badge--compact`}
+                >
+                  {code}
+                </span>
+              )
+            })}
+          </div>
+        ) : (
+          '—'
+        ),
     },
     {
       key: 'is_active',
@@ -3061,21 +3106,31 @@ export default function Settings() {
               />
             </SettingsModalField>
             <SettingsModalField label={t('settings.bankAccounts.currencies')} htmlFor="settings-bank-currencies">
-              <input
+              <div
                 id="settings-bank-currencies"
-                className="clients-input"
-                placeholder={t('settings.bankAccounts.currenciesHint')}
-                value={Array.isArray(bankAccountForm.supported_currencies) ? bankAccountForm.supported_currencies.join(', ') : ''}
-                onChange={(e) =>
-                  setBankAccountForm((p) => ({
-                    ...p,
-                    supported_currencies: e.target.value
-                      .split(',')
-                      .map((v) => v.trim().toUpperCase())
-                      .filter(Boolean),
-                  }))
-                }
-              />
+                className="settings-bank-currency-picker"
+                role="group"
+                aria-label={t('settings.bankAccounts.currencies')}
+              >
+                {SETTINGS_BANK_ACCOUNT_CURRENCIES.map((code) => {
+                  const selected =
+                    Array.isArray(bankAccountForm.supported_currencies) &&
+                    bankAccountForm.supported_currencies.map((c) => String(c).toUpperCase()).includes(code)
+                  const v = settingsBankCurrencyVariant(code)
+                  return (
+                    <button
+                      key={code}
+                      type="button"
+                      className={`settings-bank-currency-badge settings-bank-currency-badge--${v}${selected ? ' settings-bank-currency-badge--selected' : ''}`}
+                      aria-pressed={selected}
+                      onClick={() => toggleBankAccountCurrency(code)}
+                    >
+                      {code}
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="settings-bank-currency-picker__hint">{t('settings.bankAccounts.currenciesHint')}</p>
             </SettingsModalField>
             <div className="client-detail-modal__form-field client-detail-modal__form-field--full settings-modal-checkbox-field">
               <label htmlFor="settings-bank-active" className="settings-modal-checkbox-field__label">
