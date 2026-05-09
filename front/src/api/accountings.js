@@ -144,9 +144,19 @@ export async function getPartnerLedgerDetail(token, partnerId) {
 
 /**
  * GET {{base_url}}/bank-accounts
+ *
+ * @param {string} token
+ * @param {{ kind?: 'bank' | 'cash_wallet' }} [options]  Optional filter — pass `{ kind: 'bank' }`
+ *   to scope the response to bank accounts only (Settings table). Without it, the endpoint
+ *   returns every treasury account (banks + cash wallets) so payment-account dropdowns keep
+ *   showing all selectable destinations.
  */
-export async function listBankAccounts(token) {
-  const res = await apiFetch(`${getBaseUrl()}/bank-accounts`, { headers: authHeaders(token) })
+export async function listBankAccounts(token, options = {}) {
+  const params = new URLSearchParams()
+  if (options.kind) params.set('kind', String(options.kind))
+  const qs = params.toString()
+  const url = `${getBaseUrl()}/bank-accounts${qs ? `?${qs}` : ''}`
+  const res = await apiFetch(url, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to load bank accounts (${res.status})`)
   return data

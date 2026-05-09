@@ -3417,7 +3417,7 @@
       "system": "System & Notifications",
       "sessions": "Session Management",
       "activity": "Activity History",
-      "bankAccounts": "Bank Accounts",
+      "bankAccounts": "Bank Accounts & Cash Wallets",
       "statuses": "Content (Ports & Statuses)"
     },
     "contentMgmt": {
@@ -3749,7 +3749,8 @@
       }
     },
     "bankAccounts": {
-      "cardTitle": "Bank Accounts",
+      "cardTitle": "Bank Accounts & Cash Wallets",
+      "sectionBanks": "Bank accounts",
       "subtitle": "Manage bank accounts used in payments and treasury.",
       "addTitle": "Add bank account",
       "editTitle": "Edit bank account",
@@ -3784,6 +3785,37 @@
         "actions": "Actions"
       }
     },
+    "cashWallets": {
+      "cardTitle": "Cash Wallets",
+      "subtitle": "Operational cash wallets (NSP, Vodafone Cash, Cash Treasury). They participate in the treasury ledger exactly like bank accounts.",
+      "addTitle": "Add cash wallet",
+      "editTitle": "Edit cash wallet",
+      "name": "Wallet name",
+      "accountName": "Display name",
+      "kind": "Wallet type",
+      "kindNsp": "NSP",
+      "kindVodafone": "Vodafone Cash",
+      "kindPhysical": "Cash Treasury",
+      "kindLocked": "Wallet type cannot be changed after creation — it pins the currency rules and ledger identity.",
+      "currencies": "Currencies",
+      "currenciesAuto": "Determined by wallet type (NSP & Vodafone: EGP only; Cash Treasury: EGP + USD + EUR).",
+      "status": "Active",
+      "active": "Active",
+      "inactive": "Inactive",
+      "save": "Save",
+      "cancel": "Cancel",
+      "edit": "Edit",
+      "created": "Cash wallet created.",
+      "updated": "Cash wallet updated.",
+      "duplicateKind": "A cash wallet of this type already exists.",
+      "table": {
+        "name": "Wallet name",
+        "kind": "Type",
+        "currencies": "Currencies",
+        "status": "Status",
+        "actions": "Actions"
+      }
+    },
     "errors": {
       "load": "Failed to load settings.",
       "saveCompanyProfile": "Failed to save company profile.",
@@ -3813,7 +3845,9 @@
       "savePort": "Failed to save port.",
       "deletePort": "Failed to delete port.",
       "saveBankAccount": "Failed to save bank account.",
-      "deleteBankAccount": "Failed to delete bank account."
+      "deleteBankAccount": "Failed to delete bank account.",
+      "loadCashWallets": "Failed to load cash wallets.",
+      "saveCashWallet": "Failed to save cash wallet."
     }
   }
 }

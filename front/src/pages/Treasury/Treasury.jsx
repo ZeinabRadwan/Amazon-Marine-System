@@ -744,9 +744,7 @@ export default function Treasury() {
                   </button>
                 )
               })
-            ) : (
-              <p className="treasury-muted treasury-accounts-grid__empty">{t('treasury.bankOverview.noCashWalletsSection')}</p>
-            )}
+            ) : null /* Cash wallets are auto-seeded server-side; this branch should never hit. */}
           </div>
         </>
       )}

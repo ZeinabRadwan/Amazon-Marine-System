@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\AdminExcuseController;
 use App\Http\Controllers\Api\V1\AdminNotificationController;
 use App\Http\Controllers\Api\V1\AttendanceController;
 use App\Http\Controllers\Api\V1\BankAccountController;
+use App\Http\Controllers\Api\V1\CashWalletController;
 use App\Http\Controllers\Api\V1\ClientAttachmentController;
 use App\Http\Controllers\Api\V1\ClientContactController;
 use App\Http\Controllers\Api\V1\ClientController;
@@ -489,11 +490,19 @@ Route::prefix('v1')->group(function () {
         Route::get('accounting/clients/export', [AccountingController::class, 'exportClients']);
         Route::get('accounting/partners/export', [AccountingController::class, 'exportPartners']);
 
-        // Bank accounts settings
+        // Bank accounts settings (banks only — cash wallets live under /cash-wallets).
         Route::get('bank-accounts', [BankAccountController::class, 'index']);
         Route::post('bank-accounts', [BankAccountController::class, 'store']);
         Route::put('bank-accounts/{bankAccount}', [BankAccountController::class, 'update']);
         Route::delete('bank-accounts/{bankAccount}', [BankAccountController::class, 'destroy']);
+
+        // Cash wallets — first-class operational treasury wallets (NSP / Vodafone Cash / Cash Treasury).
+        // Auto-seeded on read so the UI never shows "no wallets yet". Shares the underlying ledger
+        // FK with bank_accounts so wallets behave identically to banks in treasury entries.
+        Route::get('cash-wallets', [CashWalletController::class, 'index']);
+        Route::post('cash-wallets', [CashWalletController::class, 'store']);
+        Route::get('cash-wallets/{cashWallet}', [CashWalletController::class, 'show']);
+        Route::match(['put', 'patch'], 'cash-wallets/{cashWallet}', [CashWalletController::class, 'update']);
 
         // Record payment
         Route::get('payments', [PaymentController::class, 'index']);

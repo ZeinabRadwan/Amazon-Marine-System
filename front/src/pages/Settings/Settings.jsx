@@ -60,6 +60,10 @@ import {
   updateBankAccount,
   deleteBankAccount,
 } from '../../api/accountings'
+import {
+  listCashWallets,
+  updateCashWallet,
+} from '../../api/cashWallets'
 import '../../components/PageHeader/PageHeader.css'
 import '../../components/LoaderDots/LoaderDots.css'
 import '../../components/Tabs/Tabs.css'
@@ -383,6 +387,18 @@ export default function Settings() {
   const [deleteBankAccountId, setDeleteBankAccountId] = useState(null)
   const [deleteBankAccountSubmitting, setDeleteBankAccountSubmitting] = useState(false)
 
+  // Cash wallets — separate operational treasury entity (see /cash-wallets API).
+  // Only label + active flag are editable post-creation; the wallet kind is locked
+  // because it pins currency rules and ledger identity.
+  const [cashWallets, setCashWallets] = useState([])
+  const [cashWalletModal, setCashWalletModal] = useState(null)
+  const [cashWalletForm, setCashWalletForm] = useState({
+    bank_name: '',
+    account_name: '',
+    is_active: true,
+  })
+  const [cashWalletSubmitting, setCashWalletSubmitting] = useState(false)
+
   const [statusesTabLoading, setStatusesTabLoading] = useState(false)
   const [contentMgmtSection, setContentMgmtSection] = useState('ports')
   const [companySection, setCompanySection] = useState('profile')
@@ -529,13 +545,16 @@ export default function Settings() {
       setLoading(true)
       setError('')
       try {
-        const [settingsRes, todayRes, historyRes, activitiesRes, statusesRes, bankAccountsRes] = await Promise.all([
+        const [settingsRes, todayRes, historyRes, activitiesRes, statusesRes, bankAccountsRes, cashWalletsRes] = await Promise.all([
           getSettings(token),
           getTodaySession(token).catch(() => null),
           listSessionsHistory(token, {}).catch(() => ({ data: [] })),
           listActivities(token, { page: 1 }).catch(() => ({ data: [] })),
           listShipmentStatuses(token).catch(() => ({ data: [] })),
-          listBankAccounts(token).catch(() => ({ data: [] })),
+          // Settings → Banks table is banks-only; cash wallets live in their own section.
+          listBankAccounts(token, { kind: 'bank' }).catch(() => ({ data: [] })),
+          // Cash wallets are auto-seeded on read by the backend, so the empty state never shows.
+          listCashWallets(token).catch(() => ({ data: [] })),
         ])
 
         if (cancelled) return
@@ -591,6 +610,7 @@ export default function Settings() {
         }
         setShipmentStatuses(Array.isArray(statusesRes?.data) ? statusesRes.data : [])
         setBankAccounts(Array.isArray(bankAccountsRes?.data) ? bankAccountsRes.data : [])
+        setCashWallets(Array.isArray(cashWalletsRes?.data) ? cashWalletsRes.data : [])
       } catch (e) {
         if (!cancelled) setError(e.message || t('settings.errors.load'))
       } finally {
@@ -1294,11 +1314,54 @@ export default function Settings() {
   async function refreshBankAccounts() {
     if (!token) return
     try {
-      const res = await listBankAccounts(token)
+      const res = await listBankAccounts(token, { kind: 'bank' })
       const list = res?.data ?? res
       setBankAccounts(Array.isArray(list) ? list : [])
     } catch {
       setBankAccounts([])
+    }
+  }
+
+  async function refreshCashWallets() {
+    if (!token) return
+    try {
+      const res = await listCashWallets(token)
+      const list = res?.data ?? res
+      setCashWallets(Array.isArray(list) ? list : [])
+    } catch {
+      setCashWallets([])
+    }
+  }
+
+  function openEditCashWallet(row) {
+    setCashWalletForm({
+      bank_name: row.name ?? row.bank_name ?? '',
+      account_name: row.account_name ?? '',
+      is_active: row.is_active !== false,
+    })
+    setCashWalletModal({ mode: 'edit', id: row.id, kind: row.cash_wallet_kind })
+  }
+
+  async function handleSaveCashWallet(e) {
+    e.preventDefault()
+    if (!token || cashWalletModal?.mode !== 'edit' || cashWalletModal.id == null) return
+    if (!String(cashWalletForm.bank_name).trim()) return
+    setCashWalletSubmitting(true)
+    setError('')
+    try {
+      const body = {
+        bank_name: String(cashWalletForm.bank_name).trim(),
+        account_name: String(cashWalletForm.account_name || '').trim() || null,
+        is_active: Boolean(cashWalletForm.is_active),
+      }
+      await updateCashWallet(token, cashWalletModal.id, body)
+      await refreshCashWallets()
+      setCashWalletModal(null)
+      setAlert({ type: 'success', message: t('settings.cashWallets.updated') })
+    } catch (err) {
+      setError(err.message || t('settings.errors.saveCashWallet'))
+    } finally {
+      setCashWalletSubmitting(false)
     }
   }
 
@@ -1921,6 +1984,82 @@ export default function Settings() {
     },
   ]
 
+  const cashWalletKindLabel = (kind) => {
+    switch (String(kind || '').toLowerCase()) {
+      case 'nsp':
+        return t('settings.cashWallets.kindNsp')
+      case 'vodafone':
+        return t('settings.cashWallets.kindVodafone')
+      case 'physical':
+        return t('settings.cashWallets.kindPhysical')
+      default:
+        return kind || '—'
+    }
+  }
+
+  const cashWalletColumns = [
+    {
+      key: 'name',
+      label: t('settings.cashWallets.table.name'),
+      sortable: false,
+      render: (val, row) => val ?? row.bank_name ?? '—',
+    },
+    {
+      key: 'cash_wallet_kind',
+      label: t('settings.cashWallets.table.kind'),
+      sortable: false,
+      render: (val) => cashWalletKindLabel(val),
+    },
+    {
+      key: 'allowed_currencies',
+      label: t('settings.cashWallets.table.currencies'),
+      sortable: false,
+      render: (val, row) => {
+        const list = Array.isArray(val) && val.length
+          ? val
+          : Array.isArray(row?.supported_currencies) ? row.supported_currencies : []
+        if (!list.length) return '—'
+        return (
+          <div className="settings-bank-currency-badges settings-bank-currency-badges--inline" role="list">
+            {list.map((c) => {
+              const code = String(c).toUpperCase()
+              const v = settingsBankCurrencyVariant(code)
+              return (
+                <span
+                  key={code}
+                  role="listitem"
+                  className={`settings-bank-currency-badge settings-bank-currency-badge--${v} settings-bank-currency-badge--readonly settings-bank-currency-badge--compact`}
+                >
+                  {code}
+                </span>
+              )
+            })}
+          </div>
+        )
+      },
+    },
+    {
+      key: 'is_active',
+      label: t('settings.cashWallets.table.status'),
+      sortable: false,
+      render: (val) => (val ? t('settings.cashWallets.active') : t('settings.cashWallets.inactive')),
+    },
+    {
+      key: 'actions',
+      label: t('settings.cashWallets.table.actions'),
+      sortable: false,
+      render: (_, row) => (
+        <div className="clients-table-actions flex flex-wrap gap-2 justify-end" role="group" aria-label={t('settings.cashWallets.table.actions')}>
+          <IconActionButton
+            icon={<Pencil className="h-4 w-4" />}
+            label={t('settings.cashWallets.edit')}
+            onClick={() => openEditCashWallet(row)}
+          />
+        </div>
+      ),
+    },
+  ]
+
   if (!token) {
     return (
       <Container size="xl">
@@ -2319,12 +2458,13 @@ export default function Settings() {
               )}
             </div>
 
-            {/* Tab: Bank Accounts */}
+            {/* Tab: Bank Accounts & Cash Wallets — two independent sections in one tab. */}
             <div role="tabpanel" className={`cs-tab-panel settings-tab-panel ${activeTab === 'bankAccounts' ? 'cs-tab-panel--active' : ''}`}>
               {activeTab === 'bankAccounts' && (
                 <div className="settings-tab-content settings-tab-content--animate">
+                  {/* Section 1 — bank accounts (CRUD-able, banks-only via ?kind=bank). */}
                   <SectionCard
-                    title={t('settings.bankAccounts.cardTitle')}
+                    title={t('settings.bankAccounts.sectionBanks')}
                     subtitle={t('settings.bankAccounts.subtitle')}
                     actions={
                       <button type="button" className="page-header__btn page-header__btn--primary" onClick={openNewBankAccount}>
@@ -2334,6 +2474,17 @@ export default function Settings() {
                   >
                     <div className="settings-table-card">
                       <Table columns={bankAccountColumns} data={bankAccounts} getRowKey={(r) => r.id} emptyMessage={t('settings.bankAccounts.empty')} />
+                    </div>
+                  </SectionCard>
+
+                  {/* Section 2 — cash wallets (NSP / Vodafone Cash / Cash Treasury). */}
+                  {/* Backend auto-seeds these on every read, so the table is always populated. */}
+                  <SectionCard
+                    title={t('settings.cashWallets.cardTitle')}
+                    subtitle={t('settings.cashWallets.subtitle')}
+                  >
+                    <div className="settings-table-card">
+                      <Table columns={cashWalletColumns} data={cashWallets} getRowKey={(r) => r.id} />
                     </div>
                   </SectionCard>
                 </div>
@@ -3156,6 +3307,63 @@ export default function Settings() {
             submitting={deleteBankAccountSubmitting}
             danger
           />
+        ) : null}
+
+        {cashWalletModal?.mode === 'edit' ? (
+          <SettingsFormModal
+            title={t('settings.cashWallets.editTitle')}
+            titleId="settings-cash-wallet-modal-title"
+            onClose={() => setCashWalletModal(null)}
+            submitting={cashWalletSubmitting}
+            onSubmit={handleSaveCashWallet}
+            primaryLabel={t('settings.cashWallets.save')}
+            cancelLabel={t('settings.cashWallets.cancel')}
+          >
+            <SettingsModalField label={t('settings.cashWallets.kind')} htmlFor="settings-cash-wallet-kind">
+              <input
+                id="settings-cash-wallet-kind"
+                className="clients-input"
+                value={cashWalletKindLabel(cashWalletModal.kind)}
+                disabled
+                readOnly
+              />
+              <p className="settings-bank-currency-picker__hint">{t('settings.cashWallets.kindLocked')}</p>
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.cashWallets.name')} htmlFor="settings-cash-wallet-name">
+              <input
+                id="settings-cash-wallet-name"
+                className="clients-input"
+                required
+                value={cashWalletForm.bank_name}
+                onChange={(e) => setCashWalletForm((p) => ({ ...p, bank_name: e.target.value }))}
+              />
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.cashWallets.accountName')} htmlFor="settings-cash-wallet-account-name">
+              <input
+                id="settings-cash-wallet-account-name"
+                className="clients-input"
+                value={cashWalletForm.account_name}
+                onChange={(e) => setCashWalletForm((p) => ({ ...p, account_name: e.target.value }))}
+              />
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.cashWallets.currencies')} htmlFor="settings-cash-wallet-currencies">
+              <p id="settings-cash-wallet-currencies" className="settings-bank-currency-picker__hint">
+                {t('settings.cashWallets.currenciesAuto')}
+              </p>
+            </SettingsModalField>
+            <div className="client-detail-modal__form-field client-detail-modal__form-field--full settings-modal-checkbox-field">
+              <label htmlFor="settings-cash-wallet-active" className="settings-modal-checkbox-field__label">
+                {t('settings.cashWallets.status')}
+              </label>
+              <input
+                id="settings-cash-wallet-active"
+                type="checkbox"
+                className="settings-checkbox"
+                checked={cashWalletForm.is_active}
+                onChange={(e) => setCashWalletForm((p) => ({ ...p, is_active: e.target.checked }))}
+              />
+            </div>
+          </SettingsFormModal>
         ) : null}
       </div>
     </Container>

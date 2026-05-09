@@ -15,6 +15,7 @@ use App\Services\AccountingAggregationService;
 use App\Services\CbeOfficialExchangeRateService;
 use App\Services\TreasuryAccountCurrencyService;
 use App\Services\TreasuryLedgerBalanceService;
+use Database\Seeders\TreasuryCashWalletsSeeder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -218,6 +219,11 @@ class TreasuryController extends Controller
             403,
             __('You do not have permission to view treasury bank overview.')
         );
+
+        // Auto-seed the three canonical cash wallets (NSP / Vodafone Cash / Cash Treasury)
+        // so the Treasury page never renders the "no wallets yet" empty state, even on a
+        // fresh install where the seeder hasn't been explicitly run.
+        TreasuryCashWalletsSeeder::ensureSeeded();
 
         $banks = BankAccount::query()
             ->where('is_active', true)

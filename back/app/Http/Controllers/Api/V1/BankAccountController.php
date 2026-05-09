@@ -13,9 +13,17 @@ class BankAccountController extends Controller
     public function index(Request $request): JsonResponse
     {
         abort_unless($request->user()?->can('accounting.view'), 403);
-        return response()->json([
-            'data' => BankAccount::query()->orderBy('bank_name')->orderBy('account_name')->get(),
-        ]);
+
+        $query = BankAccount::query()->orderBy('bank_name')->orderBy('account_name');
+
+        // Optional `?kind=bank|cash_wallet` filter — Settings uses `kind=bank` to narrow the
+        // banks-only table; payment forms keep the unscoped default (banks + cash wallets together).
+        $kind = strtolower(trim((string) $request->query('kind', '')));
+        if ($kind === BankAccount::TREASURY_KIND_BANK || $kind === BankAccount::TREASURY_KIND_CASH_WALLET) {
+            $query->where('treasury_account_kind', $kind);
+        }
+
+        return response()->json(['data' => $query->get()]);
     }
 
     public function store(Request $request): JsonResponse
