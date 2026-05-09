@@ -509,11 +509,23 @@
         }
         .pdf-inv-bank-head {
             background: #1b3a5c;
-            padding: 9px 14px;
+            padding: 8px 14px;
+        }
+        .pdf-inv-bank-head-en {
             font-size: 11px;
             font-weight: 700;
             color: #ffffff;
             letter-spacing: 0.02em;
+            line-height: 1.35;
+        }
+        .pdf-inv-bank-head-ar {
+            font-size: 10px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.55);
+            margin-top: 4px;
+            line-height: 1.35;
+            direction: rtl;
+            text-align: left;
         }
         .pdf-inv-bank-table {
             width: 100%;
@@ -532,45 +544,48 @@
             border-bottom: 1px solid #dde3ed;
         }
         .pdf-inv-bank-table td {
-            padding: 8px 10px;
-            font-size: 9.5px;
+            padding: 8px 12px;
+            font-size: 11px;
             border-bottom: 1px solid #f1f5f9;
             vertical-align: middle;
             overflow-wrap: anywhere;
+            font-family: DejaVu Sans Mono, monospace;
         }
         .pdf-inv-bank-table tr:last-child td {
             border-bottom: none;
         }
         .pdf-inv-cur-badge {
             display: inline-block;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 9px;
-            font-weight: 800;
-            letter-spacing: 0.06em;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            font-family: DejaVu Sans, sans-serif;
+            border: 1px solid transparent;
+        }
+        /* Match amazon_marine_invoice_template.html .cur-badge mapping */
+        .pdf-inv-cur-badge--egp {
+            background: #dbeafe;
+            color: #1d4ed8;
+            border-color: rgba(29, 78, 216, 0.15);
         }
         .pdf-inv-cur-badge--usd {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-        .pdf-inv-cur-badge--egp {
-            background: #fef3c7;
-            color: #92400e;
+            background: #d1fae5;
+            color: #0d7a55;
+            border-color: rgba(13, 122, 85, 0.18);
         }
         .pdf-inv-cur-badge--eur {
-            background: #e0e7ff;
-            color: #3730a3;
-        }
-        .pdf-inv-cur-badge--gen {
-            background: #f1f5f9;
-            color: #334155;
+            background: #fef3c7;
+            color: #92400e;
+            border-color: rgba(146, 64, 14, 0.2);
         }
 
         .pdf-inv-terms-wrap {
             background: #f8fafc;
             border: 1px solid #dde3ed;
             border-radius: 8px;
-            padding: 12px 14px 10px;
+            padding: 10px 14px 12px;
             margin-bottom: 8px;
         }
         .pdf-inv-terms-title {
@@ -578,18 +593,49 @@
             font-weight: 700;
             color: #0f2d4a;
             margin-bottom: 10px;
-            text-align: center;
+            text-align: left;
             letter-spacing: 0.02em;
+            line-height: 1.45;
         }
-        .pdf-inv-terms-list {
-            margin: 0;
-            padding-left: 18px;
+        .pdf-inv-terms-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .pdf-inv-terms-table td {
+            vertical-align: top;
+            padding: 0 0 10px;
+            border: none;
             font-size: 10px;
-            line-height: 1.65;
-            color: #334155;
+            line-height: 1.6;
+            color: #475569;
+            text-align: left;
         }
-        .pdf-inv-terms-list li {
-            margin-bottom: 8px;
+        .pdf-inv-terms-table tr:last-child td {
+            padding-bottom: 0 !important;
+        }
+        .pdf-inv-term-num-cell {
+            width: 22px;
+            padding-right: 8px !important;
+            padding-bottom: 10px !important;
+        }
+        .pdf-inv-term-num {
+            width: 16px;
+            height: 16px;
+            background: #0f2d4a;
+            border-radius: 50%;
+            color: #ffffff;
+            font-size: 8px;
+            font-weight: 700;
+            text-align: center;
+            line-height: 16px;
+        }
+        .pdf-inv-term-ar {
+            font-size: 9px;
+            color: #94a3b8;
+            direction: rtl;
+            text-align: right;
+            margin-top: 4px;
+            line-height: 1.55;
         }
 
         .pdf-inv-notes {
@@ -678,16 +724,6 @@ Tax Invoice {{ $invoice->invoice_number }}
         }
 
         $currencyOrder = ['USD', 'EGP', 'EUR'];
-        $bankAccountsList = \App\Models\BankAccount::query()->where('is_active', true)->orderBy('id')->get();
-
-        $badgeClass = static function (string $code): string {
-            return match (strtoupper($code)) {
-                'USD' => 'pdf-inv-cur-badge--usd',
-                'EGP' => 'pdf-inv-cur-badge--egp',
-                'EUR' => 'pdf-inv-cur-badge--eur',
-                default => 'pdf-inv-cur-badge--gen',
-            };
-        };
     @endphp
     <div class="pdf-wrapper pdf-inv-html" dir="ltr" lang="en" style="direction:ltr;text-align:left;">
         @php
@@ -937,69 +973,79 @@ Tax Invoice {{ $invoice->invoice_number }}
             </div>
         @endif
 
-        @php
-            $bankRows = [];
-            foreach ($bankAccountsList as $acc) {
-                $currencies = is_array($acc->supported_currencies) ? $acc->supported_currencies : [];
-                if ($currencies === []) {
-                    $bankRows[] = ['currency' => '—', 'account' => $acc];
-                    continue;
-                }
-                foreach ($currencies as $c) {
-                    $bankRows[] = ['currency' => strtoupper((string) $c), 'account' => $acc];
-                }
-            }
-        @endphp
         <div class="pdf-inv-bank-wrap">
-            <div class="pdf-inv-bank-head">Payment Instructions — Bank Details</div>
+            <div class="pdf-inv-bank-head">
+                <div class="pdf-inv-bank-head-en">Payment Instructions — Bank Details</div>
+                <div class="pdf-inv-bank-head-ar">تعليمات الدفع — بيانات الحساب البنكي</div>
+            </div>
             <table class="pdf-inv-bank-table" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
                 <thead>
                     <tr>
-                        <th style="width:12%;">Currency</th>
-                        <th style="width:22%;">Beneficiary</th>
-                        <th style="width:14%;">Bank</th>
+                        <th style="width:14%;">Currency / العملة</th>
+                        <th style="width:22%;">Beneficiary Account</th>
                         <th style="width:14%;">Account No.</th>
-                        <th style="width:22%;">IBAN</th>
-                        <th style="width:16%;">SWIFT</th>
+                        <th style="width:30%;">IBAN No.</th>
+                        <th style="width:20%;">SWIFT Code</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($bankRows as $row)
-                        @php
-                            $acc = $row['account'];
-                            $cur = $row['currency'];
-                        @endphp
-                        <tr>
-                            <td>
-                                @if($cur !== '—')
-                                    <span class="pdf-inv-cur-badge {{ $badgeClass($cur) }}">{{ $cur }}</span>
-                                @else
-                                    —
-                                @endif
-                            </td>
-                            <td>{{ $acc->account_name ?: '—' }}</td>
-                            <td>{{ $acc->bank_name ?: '—' }}</td>
-                            <td>{{ $acc->account_number ?: '—' }}</td>
-                            <td>{{ $acc->iban ?: '—' }}</td>
-                            <td>{{ $acc->swift_code ?: '—' }}</td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="6" style="text-align:center;color:#64748b;font-size:10px;">No active bank accounts on file.</td>
-                        </tr>
-                    @endforelse
+                    <tr>
+                        <td><span class="pdf-inv-cur-badge pdf-inv-cur-badge--egp">EGP</span></td>
+                        <td>Amazon Marine</td>
+                        <td>100053729837</td>
+                        <td>EG1300100154000000100053729837</td>
+                        <td>CIBEEGCX154</td>
+                    </tr>
+                    <tr>
+                        <td><span class="pdf-inv-cur-badge pdf-inv-cur-badge--usd">USD</span></td>
+                        <td>Amazon Marine</td>
+                        <td>100053729848</td>
+                        <td>EG0700100154000000100053729848</td>
+                        <td>CIBEEGCX154</td>
+                    </tr>
+                    <tr>
+                        <td><span class="pdf-inv-cur-badge pdf-inv-cur-badge--eur">EUR</span></td>
+                        <td>Amazon Marine</td>
+                        <td>100053729864</td>
+                        <td>EG6000100154000000100053729864</td>
+                        <td>CIBEEGCX154</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
 
         <div class="pdf-inv-terms-wrap">
-            <div class="pdf-inv-terms-title">Terms &amp; Conditions</div>
-            <ol class="pdf-inv-terms-list">
-                <li><strong>Payment Due:</strong> Payment is due by the date specified above. Late payments may be subject to additional charges.</li>
-                <li><strong>Official Receipts:</strong> Government official receipts are not included in this invoice and will be charged at actual cost with original receipts provided.</li>
-                <li><strong>Currency:</strong> Payments must be made in the currency specified per charge. Exchange rate conversions are subject to the agreed rate on the day of payment.</li>
-                <li><strong>Validity:</strong> This invoice is valid for 30 days from the issue date. Any disputes must be raised within 7 days of receipt.</li>
-            </ol>
+            <div class="pdf-inv-terms-title">Terms &amp; Conditions / الشروط والأحكام</div>
+            <table class="pdf-inv-terms-table" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
+                <tr>
+                    <td class="pdf-inv-term-num-cell"><div class="pdf-inv-term-num">1</div></td>
+                    <td>
+                        <strong>Payment Due:</strong> Payment is due by the date specified above. Late payments may be subject to additional charges.
+                        <div class="pdf-inv-term-ar">الدفع مستحق في التاريخ المحدد — التأخر قد يترتب عليه رسوم إضافية.</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="pdf-inv-term-num-cell"><div class="pdf-inv-term-num">2</div></td>
+                    <td>
+                        <strong>Official Receipts:</strong> Government official receipts are not included in this invoice and will be charged at actual cost with original receipts provided.
+                        <div class="pdf-inv-term-ar">الإيصالات الرسمية الحكومية غير شاملة في هذه الفاتورة — تُحتسب بقيمتها الفعلية مع تقديم الأصول للعميل.</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="pdf-inv-term-num-cell"><div class="pdf-inv-term-num">3</div></td>
+                    <td>
+                        <strong>Currency:</strong> Payments must be made in the currency specified per charge. Exchange rate conversions are subject to the agreed rate on the day of payment.
+                        <div class="pdf-inv-term-ar">يتم الدفع بالعملة المحددة لكل بند — تحويل العملات يخضع للسعر المتفق عليه يوم الدفع.</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="pdf-inv-term-num-cell"><div class="pdf-inv-term-num">4</div></td>
+                    <td>
+                        <strong>Validity:</strong> This invoice is valid for 30 days from the issue date. Any disputes must be raised within 7 days of receipt.
+                        <div class="pdf-inv-term-ar">هذه الفاتورة سارية لمدة 30 يوماً من تاريخ الإصدار — أي اعتراض يجب رفعه خلال 7 أيام من الاستلام.</div>
+                    </td>
+                </tr>
+            </table>
         </div>
     </div>
 @endsection
