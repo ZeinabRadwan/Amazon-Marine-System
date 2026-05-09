@@ -3,6 +3,43 @@
 @push('pdf_head')
     <style>
         @include('pdf.partials.sd_branded_document_skin')
+        /* Fonts aligned with amazon_marine_invoice_template.html: --en Inter, --ar Cairo (registered in mPDF via MpdfInvoiceFonts) */
+        :root {
+            --en: inter, 'DejaVu Sans', sans-serif;
+            --ar: cairo, 'DejaVu Sans', sans-serif;
+        }
+        body.pdf-body {
+            font-family: var(--en);
+        }
+        .pdf-inv-html,
+        .pdf-inv-html table,
+        .pdf-inv-html td,
+        .pdf-inv-html th,
+        .pdf-inv-html div,
+        .pdf-inv-html p {
+            font-family: var(--en);
+        }
+        .pdf-inv-html *[dir="rtl"],
+        .pdf-inv-html .pdf-inv-meta-ar,
+        .pdf-inv-html .pdf-inv-party-role-ar,
+        .pdf-inv-html .pdf-inv-header-title-ar,
+        .pdf-inv-html .pdf-inv-sec-title-ar,
+        .pdf-inv-html .pdf-inv-term-ar,
+        .pdf-inv-html .pdf-inv-bank-head-ar {
+            font-family: var(--ar);
+        }
+        /* Preserve monospace for amounts / IBANs like the HTML invoice template */
+        .pdf-inv-html .pdf-inv-meta-val-mono,
+        .pdf-inv-html td.pdf-inv-col-amt,
+        .pdf-inv-html td.pdf-inv-col-cur,
+        .pdf-inv-html .pdf-inv-rmeta-val--mono,
+        .pdf-inv-html .pdf-inv-grand-breakdown .pdf-inv-gtr-val,
+        .pdf-inv-html .pdf-inv-grand-cur .pdf-inv-gtr-val,
+        .pdf-inv-html .pdf-inv-sub-amt,
+        .pdf-inv-html .pdf-inv-bank-table td,
+        .pdf-inv-html .pdf-inv-sec-total {
+            font-family: 'DejaVu Sans Mono', monospace;
+        }
         /* Invoice PDF — English / LTR layout (structure aligned with amazon_marine_invoice_template.html) */
         body.pdf-body .pdf-page-header {
             margin: 0 !important;
@@ -631,7 +668,7 @@
             font-size: 8px;
             font-weight: 700;
             letter-spacing: 0.06em;
-            font-family: DejaVu Sans, sans-serif;
+            font-family: var(--en);
             border: none;
             line-height: 1.25;
             box-shadow: 0 1px 3px rgba(15, 45, 74, 0.12);

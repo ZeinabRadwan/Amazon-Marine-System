@@ -15,6 +15,7 @@ use App\Notifications\ShipmentFinancialsCompleted;
 use App\Services\ActivityLogger;
 use App\Services\FinancialService;
 use App\Services\NotificationService;
+use App\Support\MpdfInvoiceFonts;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -988,15 +989,14 @@ class InvoiceController extends Controller
             'bankAccount' => BankAccount::query()->where('is_active', true)->orderBy('id')->first(),
         ])->render();
 
-        $mpdf = new Mpdf([
+        $mpdf = new Mpdf(MpdfInvoiceFonts::mergeOptions([
             'mode' => 'utf-8',
-            'default_font' => 'dejavusans',
             'format' => 'A4',
             'margin_top' => 10,
             'margin_bottom' => 15,
             'margin_left' => 10,
             'margin_right' => 10,
-        ]);
+        ]));
 
         $mpdf->WriteHTML($html);
 
