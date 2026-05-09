@@ -2251,7 +2251,8 @@
   },
   "payments": {
     "bankAccount": "الحساب البنكي",
-    "bankAccountOptional": "الحساب البنكي (اختياري)"
+    "bankAccountOptional": "الحساب البنكي (اختياري)",
+    "insufficientBalanceCurrency": "رصيد غير كافٍ بهذه العملة."
   },
   "invoices": {
     "title": "الفواتير",

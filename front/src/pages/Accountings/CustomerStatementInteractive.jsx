@@ -7,6 +7,7 @@ import { Container } from '../../components/Container'
 import { downloadInvoicePdf } from '../../api/invoices'
 import { getStoredToken } from '../Login'
 import { getCustomerStatementDetail, listBankAccounts, recordPayment } from '../../api/accountings'
+import { getTreasuryBankOverview } from '../../api/treasury'
 import '../Clients/Clients.css'
 import '../Clients/ClientDetailModal.css'
 import '../Shipments/Shipments.css'
@@ -14,7 +15,11 @@ import './Accountings.css'
 import { currencyMapToExportPlain } from './CurrencyMapBadges'
 import AccountingsPaymentModal from './AccountingsPaymentModal'
 import CustomerStatementBody from './CustomerStatementBody'
-import { normalizeAccountingsPaymentCurrency } from './accountingsStatementShared'
+import {
+  bankSupportsCurrency,
+  normalizeAccountingsPaymentCurrency,
+  validateWithdrawalAgainstTreasuryBank,
+} from './accountingsStatementShared'
 
 /**
  * Shared customer statement: data loading, payment modal, and statement UI.
@@ -32,6 +37,7 @@ export default function CustomerStatementInteractive({ customerId, variant = 'pa
 
   const [customerPaymentExpanded, setCustomerPaymentExpanded] = useState({})
   const [bankAccounts, setBankAccounts] = useState([])
+  const [treasuryBankOverview, setTreasuryBankOverview] = useState(null)
   const [paymentModal, setPaymentModal] = useState(null)
   const [paymentSubmitError, setPaymentSubmitError] = useState(null)
   const [paymentBusy, setPaymentBusy] = useState(false)
@@ -66,13 +72,15 @@ export default function CustomerStatementInteractive({ customerId, variant = 'pa
       setLoading(true)
       setLoadError(null)
       try {
-        const [detailRes, banksRes] = await Promise.all([
+        const [detailRes, banksRes, treasuryRes] = await Promise.all([
           getCustomerStatementDetail(token, String(customerId)),
           listBankAccounts(token),
+          getTreasuryBankOverview(token).catch(() => null),
         ])
         if (!cancelled) {
           setCustomerDetail(detailRes?.data || null)
           setBankAccounts(Array.isArray(banksRes?.data) ? banksRes.data : [])
+          setTreasuryBankOverview(treasuryRes && typeof treasuryRes === 'object' ? treasuryRes : null)
         }
       } catch (e) {
         if (!cancelled) setLoadError(e?.message || String(e))
@@ -152,10 +160,32 @@ export default function CustomerStatementInteractive({ customerId, variant = 'pa
     const amount = Number(payment.amount)
     if (!Number.isFinite(amount) || amount <= 0) return
     const isPartner = payment.link_type === 'partner' || payment.link_type === 'shipment_partner'
+    const curCode = normalizeAccountingsPaymentCurrency(payment.currency_code)
+    const selectedBank = bankAccounts.find((b) => Number(b.id) === Number(payment.source_account_id))
+    const fxScenario =
+      Boolean(selectedBank) &&
+      Array.isArray(selectedBank.supported_currencies) &&
+      selectedBank.supported_currencies.length > 0 &&
+      !bankSupportsCurrency(selectedBank, curCode)
+    if (
+      isPartner &&
+      payment.source_account_id &&
+      !fxScenario &&
+      Array.isArray(treasuryBankOverview?.banks) &&
+      !validateWithdrawalAgainstTreasuryBank({
+        bankId: payment.source_account_id,
+        currencyCode: curCode,
+        amount,
+        treasuryBanks: treasuryBankOverview.banks,
+      }).ok
+    ) {
+      setPaymentSubmitError(t('payments.insufficientBalanceCurrency'))
+      return
+    }
     const payload = new FormData()
     payload.append('type', isPartner ? 'vendor_payment' : 'client_receipt')
     payload.append('amount', String(amount))
-    payload.append('currency_code', normalizeAccountingsPaymentCurrency(payment.currency_code))
+    payload.append('currency_code', curCode)
     payload.append('method', payment.method || 'bank_transfer')
     payload.append('paid_at', payment.paid_at || new Date().toISOString().slice(0, 10))
     if (payment.source_account_id) payload.append('source_account_id', String(Number(payment.source_account_id)))

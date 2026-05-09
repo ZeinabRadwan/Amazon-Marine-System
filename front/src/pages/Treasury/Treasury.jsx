@@ -424,12 +424,10 @@ export default function Treasury() {
       t('treasury.colDate'),
       t('treasury.colFlow', 'Flow'),
       t('treasury.colDescription'),
-      t('treasury.colType'),
       t('treasury.colFinancialType', 'Financial type'),
       t('treasury.colAmount'),
       t('treasury.colCurrency'),
       t('treasury.colReference', 'Reference'),
-      t('treasury.colSource'),
       t('treasury.colRunning'),
     ]
     const lines = [headers.map(escapeCsvCell).join(',')]
@@ -440,18 +438,10 @@ export default function Treasury() {
           row.entry_date,
           flowTypeLabel(row, t),
           row.description || row.reference_label || '',
-          row.entry_type === 'in'
-            ? t('treasury.typeIn')
-            : row.entry_type === 'out'
-              ? t('treasury.typeOut')
-              : row.entry_type === 'transfer'
-                ? t('treasury.typeTransfer', 'Transfer')
-                : t('treasury.typeExchange', 'Exchange'),
           financialTypeLabel(row, t),
           formatPlainAmount(row.amount, locale),
           row.currency_code,
           row.reference_label || '',
-          row.source,
           rb != null ? formatPlainAmount(rb.running, locale) : '',
         ]
           .map(escapeCsvCell)
@@ -677,6 +667,7 @@ export default function Treasury() {
                 >
                   <div className={`treasury-acc-band treasury-acc-band--${bandMod}`} aria-hidden />
                   <div className="treasury-acc-body">
+                    {/* Line 1: kicker label + combined account name (bank / account_name) on a single row. */}
                     <div className="treasury-acc-header">
                       <span className="treasury-acc-kicker">
                         <Landmark className="h-3.5 w-3.5 opacity-70" aria-hidden />
@@ -684,15 +675,20 @@ export default function Treasury() {
                       </span>
                       <span className="treasury-acc-headline">
                         <span className="treasury-acc-name">{bank.bank_name}</span>
-                        <span className="treasury-acc-sep" aria-hidden>
-                          {' '}
-                          —{' '}
-                        </span>
-                        <span className="treasury-acc-sub">
-                          {bank.account_name || bank.account_number || '—'}
-                        </span>
+                        {bank.account_name ? (
+                          <>
+                            <span className="treasury-acc-sep" aria-hidden>
+                              {' / '}
+                            </span>
+                            <span className="treasury-acc-name">{bank.account_name}</span>
+                          </>
+                        ) : null}
                       </span>
                     </div>
+                    {/* Line 2: subtitle (account number or IBAN) on its own line, smaller font. */}
+                    {bank.account_number || bank.iban ? (
+                      <div className="treasury-acc-sub">{bank.account_number || bank.iban}</div>
+                    ) : null}
                     <div className="treasury-acc-balance-row">
                       <span className="treasury-acc-balance-label">{t('treasury.bankOverview.effectiveBalance')}</span>
                       <span className="treasury-acc-balance-value treasury-acc-mono">
@@ -842,21 +838,24 @@ export default function Treasury() {
           <table className="accountings-table">
             <thead>
               <tr>
-                <th>{t('treasury.colDate')}</th>
-                <th>{t('treasury.colFlow', 'Flow')}</th>
-                <th>{t('treasury.colDescription')}</th>
-                <th>{t('treasury.colType')}</th>
-                <th>{t('treasury.colFinancialType', 'Financial type')}</th>
-                <th>{t('treasury.colAmount')}</th>
-                <th>{t('treasury.colReference', 'Reference')}</th>
-                <th>{t('treasury.colRunning')}</th>
-                <th>{t('treasury.colView')}</th>
+                <th className="treasury-ledger-th">{t('treasury.colDate')}</th>
+                <th className="treasury-ledger-th">{t('treasury.colFlow', 'Flow')}</th>
+                <th className="treasury-ledger-th">{t('treasury.colDescription')}</th>
+                <th className="treasury-ledger-th treasury-ledger-th--center">
+                  {t('treasury.colFinancialType', 'Financial type')}
+                </th>
+                <th className="treasury-ledger-th treasury-ledger-th--end">{t('treasury.colAmount')}</th>
+                <th className="treasury-ledger-th">{t('treasury.colReference', 'Reference')}</th>
+                <th className="treasury-ledger-th treasury-ledger-th--end">{t('treasury.colRunning')}</th>
+                <th className="treasury-ledger-th treasury-ledger-th--center">
+                  {t('treasury.colActions', 'Actions')}
+                </th>
               </tr>
             </thead>
             <tbody>
               {entriesLoading && (
                 <tr>
-                  <td colSpan={9}>
+                  <td colSpan={8}>
                     <LoaderDots />
                   </td>
                 </tr>
@@ -867,59 +866,41 @@ export default function Treasury() {
                   const runDisplay = rb != null ? formatPlainAmount(rb.running, locale) : '—'
                   const flow = deriveFlowType(row)
                   const desc = [row.description, row.reference_label].filter(Boolean).join(' · ') || '—'
+                  const ft = deriveFinancialType(row)
                   return (
-                    <tr key={row.id}>
-                      <td>{row.entry_date}</td>
-                      <td>
+                    <tr key={row.id} className="treasury-ledger-row">
+                      <td className="treasury-ledger-cell whitespace-nowrap">{row.entry_date}</td>
+                      <td className="treasury-ledger-cell">
                         <span className={`treasury-flow-badge treasury-flow-badge--${flow}`}>
                           {flowTypeLabel(row, t)}
                         </span>
                       </td>
-                      <td className="max-w-[220px]">{desc}</td>
-                      <td>
+                      <td className="treasury-ledger-cell max-w-[220px]">{desc}</td>
+                      <td className="treasury-ledger-cell treasury-ledger-cell--center">
                         <span
-                          className={`accountings-status-badge ${
-                            row.entry_type === 'in'
-                              ? 'accountings-status-badge--active'
-                              : row.entry_type === 'out'
-                                ? 'accountings-status-badge--pending'
-                                : 'accountings-status-badge--default'
-                          }`}
+                          className={`treasury-finance-badge treasury-finance-badge--${ft}`}
+                          aria-label={financialTypeLabel(row, t)}
                         >
-                          {row.entry_type === 'in'
-                            ? t('treasury.typeIn')
-                            : row.entry_type === 'out'
-                              ? t('treasury.typeOut')
-                              : row.entry_type === 'transfer'
-                                ? t('treasury.typeTransfer', 'Transfer')
-                                : t('treasury.typeExchange', 'Exchange')}
+                          {financialTypeLabel(row, t)}
                         </span>
                       </td>
-                      <td>
-                        {(() => {
-                          const ft = deriveFinancialType(row)
-                          return (
-                            <span
-                              className={`treasury-finance-badge treasury-finance-badge--${ft}`}
-                              aria-label={financialTypeLabel(row, t)}
-                            >
-                              {financialTypeLabel(row, t)}
-                            </span>
-                          )
-                        })()}
-                      </td>
-                      <td>
+                      <td className="treasury-ledger-cell treasury-ledger-cell--end">
                         <CurrencyMapBadges
                           value={singleCurrencyMap(row.amount, row.currency_code)}
                           size="sm"
                           amountFirst
                         />
                       </td>
-                      <td className="max-w-[180px] truncate" title={row.reference_label || ''}>
+                      <td
+                        className="treasury-ledger-cell max-w-[180px] truncate"
+                        title={row.reference_label || ''}
+                      >
                         {row.reference_label || '—'}
                       </td>
-                      <td>{runDisplay}</td>
-                      <td>
+                      <td className="treasury-ledger-cell treasury-ledger-cell--end tabular-nums">
+                        {runDisplay}
+                      </td>
+                      <td className="treasury-ledger-cell treasury-ledger-cell--center">
                         <button
                           type="button"
                           className="accountings-btn accountings-btn--small"
@@ -934,7 +915,7 @@ export default function Treasury() {
                 })}
               {!entriesLoading && entries.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="accountings-empty">
+                  <td colSpan={8} className="accountings-empty">
                     {t('treasury.emptyMovements')}
                   </td>
                 </tr>

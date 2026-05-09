@@ -910,55 +910,62 @@ class InvoiceController extends Controller
             'paid_at' => ['required', 'date'],
         ]);
 
-        $payment = DB::transaction(function () use ($invoice, $validated, $user) {
-            $validated['currency_code'] = strtoupper((string) ($validated['currency_code'] ?? $invoice->currency_code));
-            if (! isset($validated['source_account_id']) && ! empty($validated['bank_account_id'])) {
-                $validated['source_account_id'] = $validated['bank_account_id'];
-            }
-            BankPaymentCurrencyService::prepareForBank($validated);
+        try {
+            $payment = DB::transaction(function () use ($invoice, $validated, $user) {
+                $validated['currency_code'] = strtoupper((string) ($validated['currency_code'] ?? $invoice->currency_code));
+                if (! isset($validated['source_account_id']) && ! empty($validated['bank_account_id'])) {
+                    $validated['source_account_id'] = $validated['bank_account_id'];
+                }
+                BankPaymentCurrencyService::prepareForBank($validated);
 
-            $payment = $invoice->payments()->create([
-                'type' => 'client_receipt',
-                'client_id' => $invoice->client_id,
-                'amount' => $validated['amount'],
-                'currency_code' => $validated['currency_code'],
-                'source_account_id' => $validated['source_account_id'] ?? $validated['bank_account_id'] ?? null,
-                'shipment_id' => $validated['shipment_id'] ?? $invoice->shipment_id,
-                'target_account_id' => $validated['target_account_id'] ?? null,
-                'target_currency_code' => $validated['target_currency_code'] ?? null,
-                'exchange_rate' => $validated['exchange_rate'] ?? null,
-                'converted_amount' => $validated['converted_amount'] ?? null,
-                'method' => $validated['method'],
-                'reference' => $validated['reference'],
-                'notes' => $validated['notes'] ?? null,
-                'paid_at' => $validated['paid_at'],
-                'status' => 'posted',
-                'created_by_id' => $user->id,
-            ]);
+                $payment = $invoice->payments()->create([
+                    'type' => 'client_receipt',
+                    'client_id' => $invoice->client_id,
+                    'amount' => $validated['amount'],
+                    'currency_code' => $validated['currency_code'],
+                    'source_account_id' => $validated['source_account_id'] ?? $validated['bank_account_id'] ?? null,
+                    'shipment_id' => $validated['shipment_id'] ?? $invoice->shipment_id,
+                    'target_account_id' => $validated['target_account_id'] ?? null,
+                    'target_currency_code' => $validated['target_currency_code'] ?? null,
+                    'exchange_rate' => $validated['exchange_rate'] ?? null,
+                    'converted_amount' => $validated['converted_amount'] ?? null,
+                    'method' => $validated['method'],
+                    'reference' => $validated['reference'],
+                    'notes' => $validated['notes'] ?? null,
+                    'paid_at' => $validated['paid_at'],
+                    'status' => 'posted',
+                    'created_by_id' => $user->id,
+                ]);
 
-            FinancialService::handlePaymentPosted($payment);
+                FinancialService::handlePaymentPosted($payment);
 
-            // Record a Credit in Customer Transactions
-            CustomerTransaction::create([
-                'customer_id' => $invoice->client_id,
-                'invoice_id' => $invoice->id,
-                'type' => 'credit',
-                'amount' => $validated['amount'],
-                'currency_id' => $invoice->currency_id,
-                'description' => __('Payment received for invoice :number', ['number' => $invoice->invoice_number]),
-            ]);
+                // Record a Credit in Customer Transactions
+                CustomerTransaction::create([
+                    'customer_id' => $invoice->client_id,
+                    'invoice_id' => $invoice->id,
+                    'type' => 'credit',
+                    'amount' => $validated['amount'],
+                    'currency_id' => $invoice->currency_id,
+                    'description' => __('Payment received for invoice :number', ['number' => $invoice->invoice_number]),
+                ]);
 
-            // Update status based on balance
-            $totalPaid = $invoice->payments()->where('status', 'posted')->sum('amount');
-            if ($totalPaid >= $invoice->net_amount) {
-                $invoice->status = 'paid';
-            } elseif ($totalPaid > 0) {
-                $invoice->status = 'partial';
-            }
-            $invoice->save();
+                // Update status based on balance
+                $totalPaid = $invoice->payments()->where('status', 'posted')->sum('amount');
+                if ($totalPaid >= $invoice->net_amount) {
+                    $invoice->status = 'paid';
+                } elseif ($totalPaid > 0) {
+                    $invoice->status = 'partial';
+                }
+                $invoice->save();
 
-            return $payment;
-        });
+                return $payment;
+            });
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => collect($e->errors())->flatten()->first() ?? __('bank.insufficient_balance_currency'),
+                'errors' => $e->errors(),
+            ], 422);
+        }
 
         return response()->json([
             'data' => $payment,

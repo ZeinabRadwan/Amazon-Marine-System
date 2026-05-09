@@ -73,6 +73,22 @@ class TreasuryLedgerBalanceService
     }
 
     /**
+     * Compute balances from an arbitrary entry set (e.g. date-filtered), not the full ledger.
+     *
+     * @param  iterable<TreasuryEntry>  $entries
+     * @return array<string, array<string, float>>
+     */
+    public function computeRawBalancesFromEntries(iterable $entries): array
+    {
+        $balancesByAccount = [];
+        foreach ($entries as $entry) {
+            $this->applyEntryToBalances($balancesByAccount, $entry);
+        }
+
+        return $balancesByAccount;
+    }
+
+    /**
      * @param  array<string, array<string, float>>  $balancesByAccount
      */
     public function getRawBalanceForBankCurrency(array $balancesByAccount, int $bankId, string $currency): float

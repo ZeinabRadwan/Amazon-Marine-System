@@ -12,7 +12,12 @@ import {
   recordPayment,
   listPayments,
 } from '../../api/accountings'
-import { getTreasurySummary, getTreasuryEntries, createTreasuryTransfer } from '../../api/treasury'
+import { getTreasuryBankOverview, getTreasurySummary, getTreasuryEntries, createTreasuryTransfer } from '../../api/treasury'
+import {
+  bankSupportsCurrency,
+  normalizeAccountingsPaymentCurrency,
+  validateWithdrawalAgainstTreasuryBank,
+} from '../Accountings/accountingsStatementShared'
 import { Container } from '../../components/Container'
 import LoaderDots from '../../components/LoaderDots'
 import Tabs from '../../components/Tabs'
@@ -57,6 +62,8 @@ export default function PartnerLedger() {
   const [bankRows, setBankRows] = useState([])
   const [treasurySummary, setTreasurySummary] = useState(null)
   const [treasuryEntries, setTreasuryEntries] = useState([])
+  const [treasuryBankOverview, setTreasuryBankOverview] = useState(null)
+  const [paymentSubmitError, setPaymentSubmitError] = useState(null)
 
   const [paymentForm, setPaymentForm] = useState({
     type: 'vendor_payment',
@@ -113,6 +120,9 @@ export default function PartnerLedger() {
     listPayments(token).then((res) => setPaymentRows(Array.isArray(res?.data) ? res.data : [])).catch(() => setPaymentRows([]))
     getTreasurySummary(token, { months: 6 }).then((res) => setTreasurySummary(res)).catch(() => setTreasurySummary(null))
     getTreasuryEntries(token, {}).then((res) => setTreasuryEntries(Array.isArray(res?.data) ? res.data : [])).catch(() => setTreasuryEntries([]))
+    getTreasuryBankOverview(token)
+      .then((res) => setTreasuryBankOverview(res && typeof res === 'object' ? res : null))
+      .catch(() => setTreasuryBankOverview(null))
   }, [token, canView])
 
   useEffect(() => {
@@ -139,15 +149,45 @@ export default function PartnerLedger() {
   const submitPayment = async (e) => {
     e.preventDefault()
     if (!canManage || !token) return
-    await recordPayment(token, {
-      ...paymentForm,
-      amount: Number(paymentForm.amount),
-      source_account_id: paymentForm.source_account_id ? Number(paymentForm.source_account_id) : null,
-      vendor_id: paymentForm.vendor_id ? Number(paymentForm.vendor_id) : null,
-      shipment_id: paymentForm.shipment_id ? Number(paymentForm.shipment_id) : null,
-      invoice_id: paymentForm.invoice_id ? Number(paymentForm.invoice_id) : null,
-      exchange_rate: paymentForm.exchange_rate ? Number(paymentForm.exchange_rate) : null,
-    })
+    setPaymentSubmitError(null)
+    const amount = Number(paymentForm.amount)
+    if (!Number.isFinite(amount) || amount <= 0) return
+    const curCode = normalizeAccountingsPaymentCurrency(paymentForm.currency_code)
+    const selectedBank = bankRows.find((b) => Number(b.id) === Number(paymentForm.source_account_id))
+    const fxScenario =
+      Boolean(selectedBank) &&
+      Array.isArray(selectedBank.supported_currencies) &&
+      selectedBank.supported_currencies.length > 0 &&
+      !bankSupportsCurrency(selectedBank, curCode)
+    if (
+      paymentForm.source_account_id &&
+      !fxScenario &&
+      Array.isArray(treasuryBankOverview?.banks) &&
+      !validateWithdrawalAgainstTreasuryBank({
+        bankId: paymentForm.source_account_id,
+        currencyCode: curCode,
+        amount,
+        treasuryBanks: treasuryBankOverview.banks,
+      }).ok
+    ) {
+      setPaymentSubmitError(t('payments.insufficientBalanceCurrency'))
+      return
+    }
+    try {
+      await recordPayment(token, {
+        ...paymentForm,
+        currency_code: curCode,
+        amount,
+        source_account_id: paymentForm.source_account_id ? Number(paymentForm.source_account_id) : null,
+        vendor_id: paymentForm.vendor_id ? Number(paymentForm.vendor_id) : null,
+        shipment_id: paymentForm.shipment_id ? Number(paymentForm.shipment_id) : null,
+        invoice_id: paymentForm.invoice_id ? Number(paymentForm.invoice_id) : null,
+        exchange_rate: paymentForm.exchange_rate ? Number(paymentForm.exchange_rate) : null,
+      })
+    } catch (err) {
+      setPaymentSubmitError(err?.message || String(err))
+      return
+    }
     setPaymentForm((prev) => ({ ...prev, amount: '', reference: '', notes: '' }))
     loadSupportData()
     loadLedger()
@@ -303,6 +343,11 @@ export default function PartnerLedger() {
         {activeTab === 'payments' && (
           <div className="clients-table-card">
             <form className="partner-ledger__form-grid" onSubmit={submitPayment}>
+              {paymentSubmitError ? (
+                <p className="text-sm text-red-600 dark:text-red-400 col-span-full m-0" role="alert">
+                  {paymentSubmitError}
+                </p>
+              ) : null}
               <input required type="number" step="0.01" placeholder={t('partnerLedger.payment.amount', 'Amount')} value={paymentForm.amount} onChange={(e) => setPaymentForm((p) => ({ ...p, amount: e.target.value }))} />
               <select value={paymentForm.currency_code} onChange={(e) => setPaymentForm((p) => ({ ...p, currency_code: e.target.value }))}>
                 <option value="USD">USD</option><option value="EGP">EGP</option><option value="EUR">EUR</option>

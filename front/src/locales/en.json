@@ -2250,7 +2250,8 @@
   },
   "payments": {
     "bankAccount": "Bank account",
-    "bankAccountOptional": "Bank account (optional)"
+    "bankAccountOptional": "Bank account (optional)",
+    "insufficientBalanceCurrency": "Insufficient balance in this currency."
   },
   "invoices": {
     "title": "Invoices",

@@ -270,7 +270,7 @@ class TreasuryController extends Controller
 
         $byCurrency = $entries->groupBy('currency_code');
 
-        $balancesByAccount = $this->ledgerBalance->computeRawBalancesByAccount();
+        $balancesByAccount = $this->ledgerBalance->computeRawBalancesFromEntries($entries);
 
         $cashBalance = 0.0;
         $bankBalance = 0.0;

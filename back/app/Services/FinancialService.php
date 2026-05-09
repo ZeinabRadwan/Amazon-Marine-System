@@ -9,6 +9,7 @@ use App\Models\Shipment;
 use App\Models\TreasuryEntry;
 use App\Models\VendorBill;
 use App\Models\VendorBillItem;
+use App\Services\TreasuryLedgerBalanceService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -54,6 +55,8 @@ class FinancialService
     public static function handlePaymentPosted(Payment $payment): void
     {
         DB::transaction(function () use ($payment) {
+            app(TreasuryLedgerBalanceService::class)->ensureVendorPaymentBankDebitAllowed($payment);
+
             // Treasury entry
             $entryType = $payment->type === 'client_receipt' ? 'in' : 'out';
 

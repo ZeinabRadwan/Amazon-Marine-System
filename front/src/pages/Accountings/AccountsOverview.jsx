@@ -26,6 +26,7 @@ import {
   listPayments,
   recordPayment,
 } from '../../api/accountings'
+import { getTreasuryBankOverview } from '../../api/treasury'
 import {
   UNASSIGNED_PARTNER_SENTINEL,
   aggregateShipmentCostsByPartner,
@@ -43,6 +44,8 @@ import {
 import AccountingsPaymentModal from './AccountingsPaymentModal'
 import {
   EPS,
+  bankSupportsCurrency,
+  validateWithdrawalAgainstTreasuryBank,
   rowPaymentStatus,
   partnerCategoryKey,
   partnerMatchesDateFilter,
@@ -80,6 +83,8 @@ export default function AccountsOverview() {
   const [vendorPage, setVendorPage] = useState(1)
   const pageSize = 10
   const [bankAccounts, setBankAccounts] = useState([])
+  /** Raw treasury bank-overview payload ({ banks }) for withdrawal validation */
+  const [treasuryBankOverview, setTreasuryBankOverview] = useState(null)
   const [paymentModal, setPaymentModal] = useState(null)
   const [paymentSubmitError, setPaymentSubmitError] = useState(null)
   const [paymentBusy, setPaymentBusy] = useState(false)
@@ -107,7 +112,7 @@ export default function AccountsOverview() {
     if (!token) return
     setLoading(true)
     try {
-      const [customersRes, partnerCostsRes, banksRes, paymentsRes] = await Promise.all([
+      const [customersRes, partnerCostsRes, banksRes, paymentsRes, treasuryRes] = await Promise.all([
         getCustomerStatements(token, {
           status: statementPaymentStatus || undefined,
           search: debouncedSearch || undefined,
@@ -117,6 +122,7 @@ export default function AccountsOverview() {
         getPartnerStatementShipmentCosts(token),
         listBankAccounts(token),
         listPayments(token, { type: 'vendor_payment' }),
+        getTreasuryBankOverview(token).catch(() => null),
       ])
       setCustomers(Array.isArray(customersRes?.data) ? customersRes.data : [])
       const pdata = partnerCostsRes?.data ?? partnerCostsRes
@@ -128,6 +134,7 @@ export default function AccountsOverview() {
 
       setBankAccounts(Array.isArray(banksRes?.data) ? banksRes.data : [])
       setVendorPayments(Array.isArray(paymentsRes?.data) ? paymentsRes.data : [])
+      setTreasuryBankOverview(treasuryRes && typeof treasuryRes === 'object' ? treasuryRes : null)
     } finally {
       setLoading(false)
     }
@@ -210,10 +217,34 @@ export default function AccountsOverview() {
     const amount = Number(payment.amount)
     if (!Number.isFinite(amount) || amount <= 0) return
     const isPartner = payment.link_type === 'partner' || payment.link_type === 'shipment_partner'
+    const curCode = normalizeAccountingsPaymentCurrency(payment.currency_code)
+    const selectedBank = bankAccounts.find((b) => Number(b.id) === Number(payment.source_account_id))
+    const fxScenario =
+      Boolean(selectedBank) &&
+      Array.isArray(selectedBank.supported_currencies) &&
+      selectedBank.supported_currencies.length > 0 &&
+      !bankSupportsCurrency(selectedBank, curCode)
+    if (
+      isPartner &&
+      payment.source_account_id &&
+      !fxScenario &&
+      Array.isArray(treasuryBankOverview?.banks)
+    ) {
+      const check = validateWithdrawalAgainstTreasuryBank({
+        bankId: payment.source_account_id,
+        currencyCode: curCode,
+        amount,
+        treasuryBanks: treasuryBankOverview.banks,
+      })
+      if (!check.ok) {
+        setPaymentSubmitError(t('payments.insufficientBalanceCurrency'))
+        return
+      }
+    }
     const payload = new FormData()
     payload.append('type', isPartner ? 'vendor_payment' : 'client_receipt')
     payload.append('amount', String(amount))
-    payload.append('currency_code', normalizeAccountingsPaymentCurrency(payment.currency_code))
+    payload.append('currency_code', curCode)
     payload.append('method', payment.method || 'bank_transfer')
     payload.append('paid_at', payment.paid_at || new Date().toISOString().slice(0, 10))
     if (payment.source_account_id) payload.append('source_account_id', String(Number(payment.source_account_id)))

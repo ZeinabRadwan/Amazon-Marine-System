@@ -198,19 +198,30 @@ class VendorBillController extends Controller
             'paid_at' => ['nullable', 'date'],
         ]);
 
-        $payment = new Payment();
-        $payment->type = 'vendor_payment';
-        $payment->vendor_bill_id = $vendorBill->id;
-        $payment->vendor_id = $vendorBill->vendor_id;
-        $payment->amount = $validated['amount'];
-        $payment->currency_code = $validated['currency_code'];
-        $payment->method = $validated['method'];
-        $payment->reference = $validated['reference'] ?? null;
-        $payment->paid_at = $validated['paid_at'] ?? now();
-        $payment->created_by_id = $request->user()->id;
-        $payment->save();
+        try {
+            $payment = DB::transaction(function () use ($validated, $vendorBill, $request) {
+                $payment = new Payment();
+                $payment->type = 'vendor_payment';
+                $payment->vendor_bill_id = $vendorBill->id;
+                $payment->vendor_id = $vendorBill->vendor_id;
+                $payment->amount = $validated['amount'];
+                $payment->currency_code = $validated['currency_code'];
+                $payment->method = $validated['method'];
+                $payment->reference = $validated['reference'] ?? null;
+                $payment->paid_at = $validated['paid_at'] ?? now();
+                $payment->created_by_id = $request->user()->id;
+                $payment->save();
 
-        FinancialService::handlePaymentPosted($payment);
+                FinancialService::handlePaymentPosted($payment);
+
+                return $payment;
+            });
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => collect($e->errors())->flatten()->first() ?? __('bank.insufficient_balance_currency'),
+                'errors' => $e->errors(),
+            ], 422);
+        }
 
         ActivityLogger::log('vendor_bill.payment_recorded', $vendorBill, [
             'payment_id' => $payment->id,

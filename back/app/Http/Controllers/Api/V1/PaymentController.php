@@ -8,8 +8,10 @@ use App\Services\ActivityLogger;
 use App\Services\BankPaymentCurrencyService;
 use App\Services\FinancialService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class PaymentController extends Controller
 {
@@ -99,7 +101,6 @@ class PaymentController extends Controller
             'paid_at' => ['nullable', 'date'],
         ]);
 
-        $payment = new Payment();
         if (!empty($validated['invoice_id']) && empty($validated['client_id'])) {
             $invoice = \App\Models\Invoice::query()->find($validated['invoice_id']);
             if ($invoice) {
@@ -118,16 +119,29 @@ class PaymentController extends Controller
             $validated['source_account_id'] = $validated['bank_account_id'];
         }
         BankPaymentCurrencyService::prepareForBank($validated);
-        $payment->fill($validated);
-        if ($request->hasFile('proof_file')) {
-            $path = $request->file('proof_file')->store('payments/proofs', 'public');
-            $payment->proof_path = $path;
-        }
-        $payment->paid_at = $validated['paid_at'] ?? now();
-        $payment->created_by_id = $request->user()->id;
-        $payment->save();
 
-        FinancialService::handlePaymentPosted($payment);
+        try {
+            $payment = DB::transaction(function () use ($request, $validated, $user) {
+                $payment = new Payment();
+                $payment->fill($validated);
+                if ($request->hasFile('proof_file')) {
+                    $path = $request->file('proof_file')->store('payments/proofs', 'public');
+                    $payment->proof_path = $path;
+                }
+                $payment->paid_at = $validated['paid_at'] ?? now();
+                $payment->created_by_id = $user->id;
+                $payment->save();
+
+                FinancialService::handlePaymentPosted($payment);
+
+                return $payment;
+            });
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => collect($e->errors())->flatten()->first() ?? __('bank.insufficient_balance_currency'),
+                'errors' => $e->errors(),
+            ], 422);
+        }
 
         ActivityLogger::log('payment.created', $payment, [
             'type' => $payment->type,

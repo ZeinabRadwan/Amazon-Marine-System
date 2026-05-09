@@ -233,13 +233,14 @@
   padding: 0.75rem 1rem 1rem;
 }
 
-/* Single-row header: Account label + Bank — treasury account (no vertical stack) */
+/* Line 1 of the account card header: kicker label + combined account name on one row. */
+/* The subtitle (account number / IBAN) is rendered as a separate sibling block below, never inline here. */
 .treasury-acc-header {
   display: flex;
   align-items: baseline;
   flex-wrap: nowrap;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.15rem;
   min-width: 0;
 }
 
@@ -582,6 +583,39 @@
 [data-theme='dark'] .treasury-finance-badge--neutral {
   background: rgba(51, 65, 85, 0.45);
   color: rgb(148 163 184);
+}
+
+/* Ledger-style cell alignment helpers — used by the Treasury Movements table only.
+ * `--end` right-aligns numeric columns (Amount, Balance) so digits line up neatly,
+ * `--center` centers the badge / action columns. `text-align: end` keeps it RTL-safe. */
+.treasury-ledger-th,
+.treasury-ledger-cell {
+  vertical-align: middle;
+}
+
+.treasury-ledger-th--end,
+.treasury-ledger-cell--end {
+  text-align: end;
+}
+
+.treasury-ledger-th--center,
+.treasury-ledger-cell--center {
+  text-align: center;
+}
+
+/* Right-aligned cells render their inline-flex badges flush to the end edge. */
+.treasury-ledger-cell--end > .accounting-currency-stack {
+  justify-content: flex-end;
+}
+
+/* Subtle row separators reinforce the ledger feel without overpowering the badges. */
+.treasury-ledger-row:hover {
+  background: rgba(15, 23, 42, 0.025);
+}
+
+.dark .treasury-ledger-row:hover,
+[data-theme='dark'] .treasury-ledger-row:hover {
+  background: rgba(148, 163, 184, 0.07);
 }
 
 /* Five headline stats — full-width row, equal columns, equal-height cards */

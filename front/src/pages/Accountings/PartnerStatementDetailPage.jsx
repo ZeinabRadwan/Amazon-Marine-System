@@ -19,6 +19,7 @@ import {
   listPayments,
   recordPayment,
 } from '../../api/accountings'
+import { getTreasuryBankOverview } from '../../api/treasury'
 import {
   UNASSIGNED_PARTNER_SENTINEL,
   aggregateShipmentCostsByPartner,
@@ -32,6 +33,8 @@ import './Accountings.css'
 import { CurrencyMapBadges } from './CurrencyMapBadges'
 import AccountingsPaymentModal from './AccountingsPaymentModal'
 import {
+  bankSupportsCurrency,
+  validateWithdrawalAgainstTreasuryBank,
   countDistinctShipmentsFromLines,
   enrichPartnerCostLines,
   currencyMapHasPositivePaid,
@@ -70,6 +73,7 @@ export default function PartnerStatementDetailPage() {
   const [partnerVendorTypes, setPartnerVendorTypes] = useState({})
   const [vendorPayments, setVendorPayments] = useState([])
   const [bankAccounts, setBankAccounts] = useState([])
+  const [treasuryBankOverview, setTreasuryBankOverview] = useState(null)
 
   const [shipmentExpand, setShipmentExpand] = useState({})
   const [paymentModal, setPaymentModal] = useState(null)
@@ -108,10 +112,11 @@ export default function PartnerStatementDetailPage() {
       setLoading(true)
       setLoadError(null)
       try {
-        const [partnerCostsRes, banksRes, paymentsRes] = await Promise.all([
+        const [partnerCostsRes, banksRes, paymentsRes, treasuryRes] = await Promise.all([
           getPartnerStatementShipmentCosts(token),
           listBankAccounts(token),
           listPayments(token, { type: 'vendor_payment' }),
+          getTreasuryBankOverview(token).catch(() => null),
         ])
         if (cancelled) return
         const pdata = partnerCostsRes?.data ?? partnerCostsRes
@@ -122,6 +127,7 @@ export default function PartnerStatementDetailPage() {
         setPartnerVendorTypes(pdata?.vendor_types && typeof pdata.vendor_types === 'object' ? pdata.vendor_types : {})
         setBankAccounts(Array.isArray(banksRes?.data) ? banksRes.data : [])
         setVendorPayments(Array.isArray(paymentsRes?.data) ? paymentsRes.data : [])
+        setTreasuryBankOverview(treasuryRes && typeof treasuryRes === 'object' ? treasuryRes : null)
       } catch (e) {
         if (!cancelled) setLoadError(e?.message || String(e))
       } finally {
@@ -340,10 +346,32 @@ export default function PartnerStatementDetailPage() {
     const amount = Number(payment.amount)
     if (!Number.isFinite(amount) || amount <= 0) return
     const isPartner = payment.link_type === 'partner' || payment.link_type === 'shipment_partner'
+    const curCode = normalizeAccountingsPaymentCurrency(payment.currency_code)
+    const selectedBank = bankAccounts.find((b) => Number(b.id) === Number(payment.source_account_id))
+    const fxScenario =
+      Boolean(selectedBank) &&
+      Array.isArray(selectedBank.supported_currencies) &&
+      selectedBank.supported_currencies.length > 0 &&
+      !bankSupportsCurrency(selectedBank, curCode)
+    if (
+      isPartner &&
+      payment.source_account_id &&
+      !fxScenario &&
+      Array.isArray(treasuryBankOverview?.banks) &&
+      !validateWithdrawalAgainstTreasuryBank({
+        bankId: payment.source_account_id,
+        currencyCode: curCode,
+        amount,
+        treasuryBanks: treasuryBankOverview.banks,
+      }).ok
+    ) {
+      setPaymentSubmitError(t('payments.insufficientBalanceCurrency'))
+      return
+    }
     const payload = new FormData()
     payload.append('type', isPartner ? 'vendor_payment' : 'client_receipt')
     payload.append('amount', String(amount))
-    payload.append('currency_code', normalizeAccountingsPaymentCurrency(payment.currency_code))
+    payload.append('currency_code', curCode)
     payload.append('method', payment.method || 'bank_transfer')
     payload.append('paid_at', payment.paid_at || new Date().toISOString().slice(0, 10))
     if (payment.source_account_id) payload.append('source_account_id', String(Number(payment.source_account_id)))

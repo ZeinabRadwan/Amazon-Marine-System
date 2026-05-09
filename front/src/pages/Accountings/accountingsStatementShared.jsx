@@ -4,6 +4,28 @@ import { expenseBucket, LINE_TEMPLATES } from '../Shipments/shipmentFinUtils'
 /** Paid / partial / unpaid from currency maps (customer balances or partner settlement). */
 export const EPS = 0.0001
 
+/**
+ * Client-side guard before vendor_payment with a bank account (same currency leg only).
+ * FX auto-convert flows skip this — the API enforces converted ledger amounts.
+ *
+ * @param {{ bankId: string|number, currencyCode: string, amount: number, treasuryBanks: unknown[] }} p
+ * @returns {{ ok: boolean }}
+ */
+export function validateWithdrawalAgainstTreasuryBank(p) {
+  const banks = Array.isArray(p?.treasuryBanks) ? p.treasuryBanks : []
+  const bid = Number(p?.bankId)
+  if (!Number.isFinite(bid) || bid <= 0) return { ok: true }
+  const amt = Number(p?.amount)
+  if (!Number.isFinite(amt) || amt <= 0) return { ok: true }
+  const bank = banks.find((b) => Number(b?.id) === bid)
+  const map = bank?.balance_by_currency
+  if (!bank || !map || typeof map !== 'object') return { ok: true }
+  const c = String(p?.currencyCode || '').toUpperCase()
+  const avail = Number(map[c] ?? map[String(c)] ?? 0)
+  if (amt > avail + EPS) return { ok: false }
+  return { ok: true }
+}
+
 export function rowPaymentStatus(paidMap, remainingMap) {
   const currencies = new Set([
     ...Object.keys(paidMap || {}),
