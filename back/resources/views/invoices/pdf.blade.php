@@ -25,6 +25,21 @@
             width: auto;
             box-sizing: border-box;
         }
+        /* theme `.pdf-wrapper` adds border:1px on all sides — removes thin line above logo/header */
+        .pdf-wrapper.pdf-inv-html {
+            border: none !important;
+            border-top: none !important;
+            padding: 0 !important;
+            background: transparent !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            outline: none !important;
+        }
+        .pdf-wrapper.pdf-inv-html::before,
+        .pdf-wrapper.pdf-inv-html::after {
+            display: none !important;
+            content: none !important;
+        }
         .pdf-inv-html .pdf-inv-bg-navy {
             background: #0f2d4a;
             color: #ffffff;
@@ -50,19 +65,20 @@
         }
         .pdf-inv-header__logo img {
             height: auto;
-            max-height: 40px;
+            max-height: 8px;
             width: auto;
-            max-width: 88px;
+            max-width: 18px;
             display: block;
+            object-fit: contain;
         }
         .pdf-inv-header__logo-fallback {
-            width: 56px;
-            height: 36px;
-            border: 2px solid #ec7f00;
-            border-radius: 6px;
+            width: 11px;
+            height: 7px;
+            border: 1px solid #ec7f00;
+            border-radius: 2px;
             text-align: center;
-            line-height: 32px;
-            font-size: 8px;
+            line-height: 5px;
+            font-size: 4px;
             font-weight: 800;
             color: #0f2d4a;
             background: #f8fafc;
@@ -76,18 +92,49 @@
             margin: 0;
             padding: 0;
         }
+        .pdf-inv-brand-sub {
+            margin-top: 4px;
+            font-size: 11px;
+            color: #0f2d4a;
+            line-height: 1.25;
+        }
+        .pdf-inv-brand-sub strong {
+            font-weight: 700;
+        }
+        .pdf-inv-tagline {
+            margin-top: 2px;
+            font-size: 9px;
+            font-weight: 600;
+            color: #475569;
+            letter-spacing: 0.05em;
+            line-height: 1.25;
+        }
         .pdf-inv-header__doc {
             text-align: right;
             vertical-align: middle;
+        }
+        .pdf-inv-tax-title-row {
+            text-align: right;
+            line-height: 1.25;
+            white-space: nowrap;
         }
         .pdf-inv-tax-label {
             font-size: 17px;
             font-weight: 700;
             color: #ec7f00;
             letter-spacing: 0.05em;
-            line-height: 1.2;
             margin: 0;
             padding: 0;
+            display: inline;
+        }
+        .pdf-inv-tax-ar {
+            display: inline;
+            margin-left: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            color: #0f2d4a;
+            direction: rtl;
+            unicode-bidi: embed;
         }
         .pdf-inv-inv-ref {
             font-size: 10.5px;
@@ -102,9 +149,9 @@
             width: 100%;
             border-collapse: collapse;
             background: #f8fafc;
-            border: 1px solid #e8edf3;
-            border-left: none;
-            border-right: none;
+            border: none !important;
+            border-top: none !important;
+            border-bottom: 1px solid #e8edf3;
             margin: 0;
         }
         .pdf-inv-meta-stack td {
@@ -611,10 +658,14 @@ Tax Invoice {{ $invoice->invoice_number }}
                         @endif
                     </td>
                     <td width="46%">
-                        <div class="pdf-inv-title-primary">Amazon Shipping Invoice</div>
+                        <div class="pdf-inv-title-primary">Amazon Marine</div>
+                        <div class="pdf-inv-brand-sub"><strong>Amazon Marine</strong></div>
+                        <div class="pdf-inv-tagline">Shipping Agency</div>
                     </td>
                     <td width="32%" class="pdf-inv-header__doc">
-                        <div class="pdf-inv-tax-label">Tax Invoice</div>
+                        <div class="pdf-inv-tax-title-row">
+                            <span class="pdf-inv-tax-label">Tax Invoice</span><span class="pdf-inv-tax-ar"><strong>فاتورة ضريبية</strong></span>
+                        </div>
                         <div class="pdf-inv-inv-ref">REF: {{ $invoice->invoice_number }}</div>
                     </td>
                 </tr>
