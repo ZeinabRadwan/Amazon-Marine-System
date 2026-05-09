@@ -4,6 +4,7 @@ import { X } from 'lucide-react'
 import { getStoredToken } from '../../Login'
 import { recordInvoicePayment } from '../../../api/invoices'
 import { listBankAccounts } from '../../../api/accountings'
+import '../../Clients/ClientDetailModal.css'
 
 export default function RecordPaymentModal({ isOpen, invoiceId, currencyCode, onClose, onSuccess }) {
   const { t } = useTranslation()
@@ -51,7 +52,7 @@ export default function RecordPaymentModal({ isOpen, invoiceId, currencyCode, on
       })
       onSuccess?.()
     } catch (err) {
-      setError(err.message || 'Failed to record payment')
+      setError(err.message || t('invoices.payment.recordFailed'))
     } finally {
       setLoading(false)
     }
@@ -99,9 +100,9 @@ export default function RecordPaymentModal({ isOpen, invoiceId, currencyCode, on
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase mb-2">{t('invoices.payment.method', 'Method')}</label>
               <select value={method} onChange={(e) => setMethod(e.target.value)} className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm outline-none">
-                <option value="bank_transfer">bank_transfer</option>
-                <option value="cash">cash</option>
-                <option value="cheque">cheque</option>
+                <option value="bank_transfer">{t('invoices.payment.methodBankTransfer')}</option>
+                <option value="cash">{t('invoices.payment.methodCash')}</option>
+                <option value="cheque">{t('invoices.payment.methodCheque')}</option>
               </select>
             </div>
             <div>
@@ -142,10 +143,10 @@ export default function RecordPaymentModal({ isOpen, invoiceId, currencyCode, on
           </div>
 
           <div className="flex justify-end gap-3 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm font-bold">
+            <button type="button" onClick={onClose} className="client-detail-modal__btn client-detail-modal__btn--secondary">
               {t('common.cancel', 'Cancel')}
             </button>
-            <button disabled={loading} type="submit" className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-bold">
+            <button disabled={loading} type="submit" className="client-detail-modal__btn client-detail-modal__btn--primary">
               {loading ? t('common.loading', 'Loading...') : t('common.save', 'Save')}
             </button>
           </div>

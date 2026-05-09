@@ -3524,10 +3524,10 @@ export default function ShipmentFinancialsModal({
                               <table className="shipment-fin-line-table shipment-fin-line-table--client-invoice">
                                 <thead>
                                   <tr>
-                                    <th>{t('shipments.fin.cliColFeeName', { defaultValue: 'Fee Name (full name)' })}</th>
+                                    <th>{t('shipments.fin.cliColFeeName', { defaultValue: 'Fee Name' })}</th>
                                     <th>{t('shipments.fin.cliColOriginalCost', { defaultValue: 'Original Cost' })}</th>
-                                    <th>{t('shipments.fin.cliColClientPrice', { defaultValue: 'Client Price (editable)' })}</th>
-                                    <th>{t('shipments.fin.cliColProfitCalculated', { defaultValue: 'Profit (calculated)' })}</th>
+                                    <th>{t('shipments.fin.cliColClientPrice', { defaultValue: 'Client Price' })}</th>
+                                    <th>{t('shipments.fin.cliColProfitCalculated', { defaultValue: 'Profit' })}</th>
                                     <th>{t('shipments.fin.colCurrency')}</th>
                                     <th className="shipment-fin-th--client-actions">
                                       {t('shipments.fin.cliColActionsHeader', { defaultValue: 'الإجراءات / Actions' })}

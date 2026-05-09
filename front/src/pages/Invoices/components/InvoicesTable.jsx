@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Search, Eye, FileSpreadsheet, RotateCcw, ArrowUpDown, ChevronDown, ChevronUp, Pencil, Trash2, Plus } from 'lucide-react'
+import { Search, Eye, FileSpreadsheet, RotateCcw, ArrowUpDown, ChevronDown, ChevronUp, Trash2, Plus } from 'lucide-react'
 import { Table, IconActionButton } from '../../../components/Table'
 import InvoiceStatusBadge from '../../../components/InvoiceStatusBadge'
 import Pagination from '../../../components/Pagination'
@@ -31,7 +31,6 @@ export default function InvoicesTable({
   refreshKey,
   invoiceType,
   initialDetailId,
-  initialEditId,
   onChanged,
   onFiltersChange,
   canManage = true,
@@ -57,7 +56,6 @@ export default function InvoicesTable({
 
   const [selectedIds, setSelectedIds] = useState(() => new Set())
   const [detailId, setDetailId] = useState(null)
-  const [editId, setEditId] = useState(null)
   const [createOpen, setCreateOpen] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
   const [deleteBusy, setDeleteBusy] = useState(false)
@@ -69,15 +67,6 @@ export default function InvoicesTable({
       setDetailId(parsed)
     }
   }, [initialDetailId])
-
-  useEffect(() => {
-    if (!initialEditId) return
-    const parsed = Number(initialEditId)
-    if (Number.isFinite(parsed) && parsed > 0) {
-      setEditId(parsed)
-      setCreateOpen(true)
-    }
-  }, [initialEditId])
 
   const fetchData = () => {
     const token = getStoredToken()
@@ -241,16 +230,6 @@ export default function InvoicesTable({
           />
           {canManage && (
             <IconActionButton
-              icon={<Pencil className="h-4 w-4" />}
-              label={t('invoices.edit', 'Edit')}
-              onClick={() => {
-                setEditId(row.id)
-                setCreateOpen(true)
-              }}
-            />
-          )}
-          {canManage && (
-            <IconActionButton
               icon={<Trash2 className="h-4 w-4" />}
               label={t('invoices.delete', 'Delete')}
               onClick={() => setDeleteId(row.id)}
@@ -388,10 +367,7 @@ export default function InvoicesTable({
                 className="clients-filters__btn-icon clients-filters__btn-icon--export"
                 aria-label={t('invoices.create', 'Create Invoice')}
                 title={t('invoices.create', 'Create Invoice')}
-                onClick={() => {
-                  setEditId(null)
-                  setCreateOpen(true)
-                }}
+                onClick={() => setCreateOpen(true)}
               >
                 <Plus className="clients-filters__btn-icon-svg" aria-hidden />
               </button>
@@ -473,6 +449,7 @@ export default function InvoicesTable({
       )}
 
       <InvoiceDetailModal
+        key={detailId ?? 'invoice-detail-closed'}
         invoiceId={detailId}
         isOpen={!!detailId}
         onClose={() => setDetailId(null)}
@@ -485,14 +462,10 @@ export default function InvoicesTable({
 
       <CreateInvoiceModal
         isOpen={createOpen}
-        invoiceId={editId}
-        onClose={() => {
-          setCreateOpen(false)
-          setEditId(null)
-        }}
+        invoiceId={null}
+        onClose={() => setCreateOpen(false)}
         onSuccess={() => {
           setCreateOpen(false)
-          setEditId(null)
           fetchData()
           onChanged?.()
         }}

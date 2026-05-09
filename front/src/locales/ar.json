@@ -17,6 +17,7 @@
     "add": "إضافة",
     "edit": "تعديل",
     "save": "حفظ",
+    "notes": "ملاحظات",
     "delete":"حذف",
     "day": "اليوم",
     "month": "الشهر",
@@ -2138,6 +2139,10 @@
     "close": "إغلاق",
     "print": "طباعة"
   },
+  "payments": {
+    "bankAccount": "الحساب البنكي",
+    "bankAccountOptional": "الحساب البنكي (اختياري)"
+  },
   "invoices": {
     "title": "الفواتير",
     "subtitle": "إدارة الفواتير والمدفوعات والتصدير",
@@ -2231,11 +2236,28 @@
     "subtotal": "الإجمالي الفرعي",
     "tax": "الضريبة",
     "total": "الإجمالي الكلي",
-    "detailsTitle": "تفاصيل الفاتورة حسب الأقسام",
-    "detailsBySections": "تفاصيل الفاتورة حسب الأقسام",
+    "detailsTitle": "تفاصيل الفاتورة",
+    "detailsBySections": "تفاصيل الفاتورة",
     "customer": "العميل",
+    "shipBarPhone": "📞 رقم التليفون",
+    "shipBarEmail": "✉️ الإيميل",
+    "detailModal": {
+      "tabInvoice": "بيانات الفاتورة",
+      "tabPayments": "مدفوعات الفاتورة"
+    },
     "payments": "المدفوعات",
     "recordPayment": "تسجيل دفعة",
+    "payment": {
+      "amount": "المبلغ",
+      "currency": "العملة",
+      "method": "طريقة الدفع",
+      "date": "التاريخ",
+      "reference": "المرجع",
+      "methodBankTransfer": "تحويل بنكي",
+      "methodCash": "نقدي",
+      "methodCheque": "شيك",
+      "recordFailed": "تعذّر تسجيل الدفعة."
+    },
     "noPayments": "لا توجد مدفوعات حتى الآن",
     "sections": {
       "shipping": "تكلفة الخط الملاحي",
@@ -3033,10 +3055,10 @@
       "colVendor": "المورّد",
       "colVendorType": "نوع المورّد",
       "colCharge": "الرسوم",
-      "cliColFeeName": "اسم الرسم (الاسم الكامل)",
+      "cliColFeeName": "اسم الرسم",
       "cliColOriginalCost": "التكلفة الأصلية",
-      "cliColClientPrice": "سعر العميل (قابل للتعديل)",
-      "cliColProfitCalculated": "الربح (محسوب)",
+      "cliColClientPrice": "سعر العميل",
+      "cliColProfitCalculated": "الربح",
       "cliColActionsHeader": "الإجراءات / Actions",
       "colSell": "البيع",
       "colMargin": "الهامش",

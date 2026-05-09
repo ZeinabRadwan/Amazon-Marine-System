@@ -16,6 +16,7 @@
     "add": "Add",
     "edit": "Edit",
     "save": "Save",
+    "notes": "Notes",
     "delete":"Delete",
     "day": "Day",
     "month": "Month",
@@ -2137,6 +2138,10 @@
     "close": "Close",
     "print": "Print"
   },
+  "payments": {
+    "bankAccount": "Bank account",
+    "bankAccountOptional": "Bank account (optional)"
+  },
   "invoices": {
     "title": "Invoices",
     "subtitle": "Manage invoices, payments, and exports",
@@ -2230,11 +2235,28 @@
     "subtotal": "Subtotal",
     "tax": "Tax",
     "total": "Total",
-    "detailsTitle": "Invoice Details by Section",
-    "detailsBySections": "Invoice Details by Sections",
+    "detailsTitle": "Invoice details",
+    "detailsBySections": "Invoice details",
     "customer": "Customer",
+    "shipBarPhone": "📞 Phone",
+    "shipBarEmail": "✉️ Email",
+    "detailModal": {
+      "tabInvoice": "Invoice data",
+      "tabPayments": "Invoice payments"
+    },
     "payments": "Payments",
     "recordPayment": "Record payment",
+    "payment": {
+      "amount": "Amount",
+      "currency": "Currency",
+      "method": "Method",
+      "date": "Date",
+      "reference": "Reference",
+      "methodBankTransfer": "Bank transfer",
+      "methodCash": "Cash",
+      "methodCheque": "Cheque",
+      "recordFailed": "Could not record payment."
+    },
     "noPayments": "No payments yet",
     "sections": {
       "shipping": "Shipping Line Cost",
@@ -3011,10 +3033,10 @@
       "colVendor": "Vendor",
       "colVendorType": "Vendor type",
       "colCharge": "Charge",
-      "cliColFeeName": "Fee Name (full name)",
+      "cliColFeeName": "Fee Name",
       "cliColOriginalCost": "Original Cost",
-      "cliColClientPrice": "Client Price (editable)",
-      "cliColProfitCalculated": "Profit (calculated)",
+      "cliColClientPrice": "Client Price",
+      "cliColProfitCalculated": "Profit",
       "cliColActionsHeader": "الإجراءات / Actions",
       "colSell": "Sell",
       "colMargin": "Margin",

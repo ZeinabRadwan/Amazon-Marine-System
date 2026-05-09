@@ -39,3 +39,412 @@
 .invoices-stats-grid {
   margin-bottom: 1.5rem;
 }
+
+/* Invoice detail modal — 5 cols (no Actions); thead matches ShipmentFinancials client-invoice (Shipments.css) */
+
+.shipment-fin-panel--expenses.shipment-fin-panel--client-invoice.invoice-detail-modal__fin-client
+  .invoice-detail-sec-table
+  th:nth-child(1),
+.shipment-fin-panel--expenses.shipment-fin-panel--client-invoice.invoice-detail-modal__fin-client
+  .invoice-detail-sec-table
+  td:nth-child(1) {
+  min-width: 140px;
+  width: auto;
+}
+
+.shipment-fin-panel--expenses.shipment-fin-panel--client-invoice.invoice-detail-modal__fin-client
+  .invoice-detail-sec-table
+  th:nth-child(2),
+.shipment-fin-panel--expenses.shipment-fin-panel--client-invoice.invoice-detail-modal__fin-client
+  .invoice-detail-sec-table
+  td:nth-child(2) {
+  width: 100px;
+}
+
+.shipment-fin-panel--expenses.shipment-fin-panel--client-invoice.invoice-detail-modal__fin-client
+  .invoice-detail-sec-table
+  th:nth-child(3),
+.shipment-fin-panel--expenses.shipment-fin-panel--client-invoice.invoice-detail-modal__fin-client
+  .invoice-detail-sec-table
+  td:nth-child(3) {
+  width: 104px;
+}
+
+.shipment-fin-panel--expenses.shipment-fin-panel--client-invoice.invoice-detail-modal__fin-client
+  .invoice-detail-sec-table
+  th:nth-child(4),
+.shipment-fin-panel--expenses.shipment-fin-panel--client-invoice.invoice-detail-modal__fin-client
+  .invoice-detail-sec-table
+  td:nth-child(4) {
+  width: 108px;
+  min-width: 96px;
+}
+
+.shipment-fin-panel--expenses.shipment-fin-panel--client-invoice.invoice-detail-modal__fin-client
+  .invoice-detail-sec-table
+  th:nth-child(5),
+.shipment-fin-panel--expenses.shipment-fin-panel--client-invoice.invoice-detail-modal__fin-client
+  .invoice-detail-sec-table
+  td:nth-child(5) {
+  width: 72px;
+}
+
+.shipment-fin-panel--expenses.shipment-fin-panel--client-invoice.invoice-detail-modal__fin-client
+  .shipment-fin-draft-sec-total--client-invoice {
+  border-top: 2px solid #e8790a;
+  background: #fdf0e0;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #0f2340;
+}
+
+[data-theme='dark']
+  .shipment-fin-panel--expenses.shipment-fin-panel--client-invoice.invoice-detail-modal__fin-client
+  .shipment-fin-draft-sec-total--client-invoice,
+.dark
+  .shipment-fin-panel--expenses.shipment-fin-panel--client-invoice.invoice-detail-modal__fin-client
+  .shipment-fin-draft-sec-total--client-invoice {
+  background: color-mix(in srgb, #e8790a 22%, var(--form-bg, #1f2937));
+  color: var(--form-text, #f1f5f9);
+  border-top-color: #ea580c;
+}
+
+/* Invoice detail — Payments tab: transaction-style list + financial timeline */
+
+.invoice-payment-tx-card {
+  border-radius: 1rem;
+  border: 1px solid var(--form-divider, #e5e7eb);
+  background: linear-gradient(180deg, var(--form-bg, #ffffff) 0%, color-mix(in srgb, var(--root-bg, #f8fafc) 85%, var(--form-bg, #ffffff)) 100%);
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+}
+
+[data-theme='dark'] .invoice-payment-tx-card,
+.dark .invoice-payment-tx-card {
+  border-color: rgba(148, 163, 184, 0.22);
+  background: linear-gradient(
+    180deg,
+    var(--form-bg, #1f2937) 0%,
+    color-mix(in srgb, var(--form-bg, #1f2937) 92%, #0f172a) 100%
+  );
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+}
+
+.invoice-payment-tx-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--form-divider, #e5e7eb);
+}
+
+[data-theme='dark'] .invoice-payment-tx-card__head,
+.dark .invoice-payment-tx-card__head {
+  border-bottom-color: rgba(148, 163, 184, 0.18);
+}
+
+.invoice-payment-tx-card__title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--form-text, #0f172a);
+}
+
+.invoice-payment-tx-card__empty {
+  padding: 28px 16px;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--form-muted, #64748b);
+}
+
+[data-theme='dark'] .invoice-payment-tx-card__empty,
+.dark .invoice-payment-tx-card__empty {
+  color: #94a3b8;
+}
+
+.invoice-payment-tx-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.invoice-payment-tx {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--form-divider, #e5e7eb);
+  transition: background-color 0.15s ease;
+}
+
+.invoice-payment-tx:last-child {
+  border-bottom: none;
+}
+
+.invoice-payment-tx:hover {
+  background: color-mix(in srgb, var(--form-primary, #0039c5) 4%, transparent);
+}
+
+[data-theme='dark'] .invoice-payment-tx,
+.dark .invoice-payment-tx {
+  border-bottom-color: rgba(148, 163, 184, 0.14);
+}
+
+[data-theme='dark'] .invoice-payment-tx:hover,
+.dark .invoice-payment-tx:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.invoice-payment-tx__icon-wrap {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, #059669 14%, var(--form-bg, #ffffff));
+  color: #047857;
+}
+
+[data-theme='dark'] .invoice-payment-tx__icon-wrap,
+.dark .invoice-payment-tx__icon-wrap {
+  background: color-mix(in srgb, #34d399 16%, var(--form-bg, #1f2937));
+  color: #6ee7b7;
+}
+
+.invoice-payment-tx__icon {
+  width: 20px;
+  height: 20px;
+}
+
+.invoice-payment-tx__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.invoice-payment-tx__title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--form-text, #0f172a);
+  line-height: 1.35;
+}
+
+.invoice-payment-tx__meta {
+  margin-top: 4px;
+  font-size: 0.8125rem;
+  color: var(--form-muted, #64748b);
+  line-height: 1.4;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 6px;
+}
+
+.invoice-payment-tx__dot {
+  opacity: 0.55;
+  user-select: none;
+}
+
+.invoice-payment-tx__bank {
+  min-width: 0;
+  word-break: break-word;
+}
+
+.invoice-payment-tx__amount-col {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  text-align: end;
+  padding-top: 2px;
+}
+
+.invoice-payment-tx__amount {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: #047857;
+}
+
+[data-theme='dark'] .invoice-payment-tx__amount,
+.dark .invoice-payment-tx__amount {
+  color: #34d399;
+}
+
+/* Financial timeline — vertical rail + compact panels */
+
+.invoice-fin-timeline-card {
+  border-radius: 1rem;
+  border: 1px solid var(--form-divider, #e5e7eb);
+  background: var(--form-bg, #ffffff);
+  padding: 14px 16px 16px;
+}
+
+[data-theme='dark'] .invoice-fin-timeline-card,
+.dark .invoice-fin-timeline-card {
+  border-color: rgba(148, 163, 184, 0.22);
+  background: var(--form-bg, #1f2937);
+}
+
+.invoice-fin-timeline-card__head {
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin-bottom: 12px;
+  color: var(--form-text, #0f172a);
+}
+
+.invoice-fin-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.invoice-fin-timeline__item {
+  position: relative;
+  padding-inline-start: 26px;
+  padding-bottom: 14px;
+}
+
+.invoice-fin-timeline__item:last-child {
+  padding-bottom: 0;
+}
+
+.invoice-fin-timeline__item::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 8px;
+  top: 22px;
+  bottom: 2px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--form-divider, #e5e7eb);
+}
+
+[data-theme='dark'] .invoice-fin-timeline__item::before,
+.dark .invoice-fin-timeline__item::before {
+  background: rgba(148, 163, 184, 0.28);
+}
+
+.invoice-fin-timeline__item:last-child::before {
+  display: none;
+}
+
+.invoice-fin-timeline__dot {
+  position: absolute;
+  inset-inline-start: 0;
+  top: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--form-bg, #ffffff);
+  border: 2px solid color-mix(in srgb, var(--form-primary, #0039c5) 35%, var(--form-divider, #cbd5e1));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--form-primary, #0039c5) 8%, transparent);
+}
+
+[data-theme='dark'] .invoice-fin-timeline__dot,
+.dark .invoice-fin-timeline__dot {
+  background: var(--form-bg, #1f2937);
+  border-color: color-mix(in srgb, #60a5fa 45%, rgba(148, 163, 184, 0.5));
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.12);
+}
+
+.invoice-fin-timeline__panel {
+  border: 1px solid var(--form-divider, #e5e7eb);
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: linear-gradient(180deg, var(--form-bg, #ffffff) 0%, var(--root-bg, #f8fafc) 100%);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+[data-theme='dark'] .invoice-fin-timeline__panel,
+.dark .invoice-fin-timeline__panel {
+  border-color: rgba(148, 163, 184, 0.2);
+  background: linear-gradient(180deg, var(--form-bg, #1f2937) 0%, rgba(15, 23, 42, 0.35) 100%);
+}
+
+.invoice-fin-timeline__item:hover .invoice-fin-timeline__panel {
+  border-color: color-mix(in oklab, var(--form-primary, #0039c5) 28%, var(--form-divider, #e5e7eb));
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+}
+
+.invoice-fin-timeline__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px 16px;
+}
+
+.invoice-fin-timeline__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.invoice-fin-timeline__title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--form-text, #0f172a);
+}
+
+.invoice-fin-timeline__meta {
+  margin-top: 4px;
+  font-size: 0.8125rem;
+  color: var(--form-muted, #64748b);
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.invoice-fin-timeline__side {
+  flex-shrink: 0;
+  text-align: end;
+}
+
+.invoice-fin-timeline__date {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--form-muted, #64748b);
+  font-variant-numeric: tabular-nums;
+}
+
+.invoice-fin-timeline__amt {
+  margin-top: 4px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--form-text, #0f172a);
+}
+
+[data-theme='dark'] .invoice-fin-timeline__amt,
+.dark .invoice-fin-timeline__amt {
+  color: #e2e8f0;
+}
+
+@media (max-width: 520px) {
+  .invoice-fin-timeline__row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .invoice-fin-timeline__side {
+    text-align: start;
+    padding-top: 4px;
+    border-top: 1px dashed var(--form-divider, #e5e7eb);
+  }
+
+  .invoice-payment-tx {
+    flex-wrap: wrap;
+  }
+
+  .invoice-payment-tx__amount-col {
+    width: 100%;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+    padding-inline-start: 54px;
+  }
+}

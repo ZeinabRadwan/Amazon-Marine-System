@@ -152,3 +152,98 @@ export function partitionBucketRows(bucketId, bucketRows, isReefer) {
 }
 
 export const ATTACHMENTS_MODAL_TITLE_KEY = 'shipments.tabs.attachments'
+
+const OTHER_DESC_PREFIX = {
+  shipping: 'Other Charges',
+  inland: 'Other Expenses',
+  customs: 'Other Customs Expenses',
+  insurance: 'Other Insurance Expenses',
+}
+
+function extractUserDescription(stored, prefix) {
+  if (!stored || typeof stored !== 'string') return ''
+  const p = `${prefix}:`
+  const s = stored.trim()
+  if (s.startsWith(p)) return s.slice(p.length).trim()
+  return s
+}
+
+function orphanOrCustomInvoiceFeeTitle(it, bucket, t) {
+  const base = OTHER_DESC_PREFIX[bucket] || 'Other'
+  const fromDesc = extractUserDescription(it.description || '', base)
+  const title = String(it.title || '').trim()
+  return (
+    title ||
+    fromDesc ||
+    String(it.description || '').trim() ||
+    t('shipments.fin.customItemFallback', { defaultValue: 'Custom Item' })
+  )
+}
+
+/** Parse template id from client-invoice source_key, e.g. `shipping::of::draft::…` → `of`. */
+export function parseTemplateIdFromInvoiceSourceKey(sourceKey) {
+  const s = String(sourceKey || '').trim()
+  if (!s) return ''
+  const parts = s.split('::').map((p) => p.trim()).filter(Boolean)
+  if (parts.length >= 2 && ['shipping', 'inland', 'customs', 'insurance'].includes(parts[0])) {
+    return parts[1].toLowerCase()
+  }
+  return ''
+}
+
+function invoiceItemBucket(it) {
+  const sk = String(it.section_key || '').trim().toLowerCase()
+  if (sk === 'shipping') return 'shipping'
+  if (sk === 'inland') return 'inland'
+  if (sk === 'customs') return 'customs'
+  if (sk === 'insurance') return 'insurance'
+  return expenseBucket({
+    description: it.description,
+    category_name: it.category_name,
+    bucket_id: undefined,
+  })
+}
+
+/**
+ * Fee column label for persisted invoice lines — matches ShipmentFinancials selling grid (template keys + matchers).
+ * @param {object} it Invoice line ({ description, title, section_key, source_key, category_name, invoice_number })
+ * @param {(key: string, opts?: object) => string} t i18n `t`
+ * @param {boolean} [isReefer]
+ */
+export function resolveInvoiceItemFeeDisplayName(it, t, isReefer = false) {
+  const bucket = invoiceItemBucket(it)
+  const templates = LINE_TEMPLATES[bucket] || []
+  const tid =
+    String(it.template_id || parseTemplateIdFromInvoiceSourceKey(it.source_key) || '')
+      .trim()
+      .toLowerCase()
+
+  if (tid && tid !== 'other') {
+    const tpl = templates.find((x) => x.id === tid)
+    if (tpl) return t(tpl.labelKey)
+  }
+
+  const synthetic = {
+    category_name: it.category_name,
+    description: it.description,
+    invoice_number: it.invoice_number,
+    title: it.title,
+  }
+  const hay = expenseHaystack(synthetic)
+
+  for (const tpl of templates) {
+    if (tpl.reeferOnly && !isReefer) continue
+    if (tpl.matchers.some((re) => re.test(hay))) {
+      return t(tpl.labelKey)
+    }
+  }
+
+  const descRaw = String(it.description || '').trim()
+  const descLower = descRaw.toLowerCase()
+  if (descLower && templates.some((x) => x.id === descLower)) {
+    const tpl = templates.find((x) => x.id === descLower)
+    if (tpl) return t(tpl.labelKey)
+  }
+
+  return orphanOrCustomInvoiceFeeTitle(it, bucket, t)
+}
