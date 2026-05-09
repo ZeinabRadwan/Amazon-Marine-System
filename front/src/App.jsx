@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom'
 import {
   Calendar,
   BarChart3,
@@ -43,6 +43,13 @@ import Reports from './pages/Reports/Reports'
 import Documents from './pages/Documents/Documents'
 import { getStoredToken } from './pages/Login'
 import FollowUpWorkloadWidgets from './components/FollowUpWorkloadWidgets'
+
+/** Old edit URLs open invoice detail (read-only); editing was removed from the UI. */
+function InvoiceEditRouteRedirect() {
+  const { invoiceId } = useParams()
+  const q = invoiceId ? `?invoice_id=${encodeURIComponent(invoiceId)}` : ''
+  return <Navigate to={`/invoices${q}`} replace />
+}
 import {
   getDashboardAdminOverview,
   getDashboardSalesManager,
@@ -828,7 +835,7 @@ function App() {
             path="/invoices/:invoiceId/edit"
             element={
               <RequirePageAccess pageKey="invoices">
-                <Invoices />
+                <InvoiceEditRouteRedirect />
               </RequirePageAccess>
             }
           />
