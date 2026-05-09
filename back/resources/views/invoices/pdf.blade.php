@@ -3,161 +3,489 @@
 @push('pdf_head')
     <style>
         @include('pdf.partials.sd_branded_document_skin')
-        .pdf-inv-meta-card {
-            border: 1px solid #dbe2ea;
-            border-radius: 10px;
-            padding: 8px 10px;
-            background: #f8fbff;
-            line-height: 1.55;
-            font-size: 10.3px;
+        /* Invoice PDF — English / LTR layout (structure aligned with amazon_marine_invoice_template.html) */
+        .pdf-inv-html {
+            direction: ltr;
+            text-align: left;
         }
-        .pdf-inv-section-title {
-            margin-top: 16px;
-            padding: 9px 12px 6px;
-            border: 1px solid #dbe2ea;
-            border-radius: 8px 8px 0 0;
-            background: #11354d;
-            color: #fff;
-            font-weight: 700;
-            font-size: 10.3px;
-            letter-spacing: .03em;
-            text-align: center;
-            text-transform: uppercase;
-            position: relative;
+        .pdf-inv-html .pdf-inv-bg-navy {
+            background: #0f2d4a;
+            color: #ffffff;
         }
-        .pdf-inv-section-title::after {
-            content: '';
+        .pdf-inv-html .pdf-inv-orange {
+            color: #ec7f00;
+        }
+        .pdf-inv-html .pdf-inv-border {
+            border-color: #dde3ed;
+        }
+
+        .pdf-inv-header {
+            background: #0f2d4a;
+            padding: 14px 18px;
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .pdf-inv-header td {
+            vertical-align: middle;
+            border: none;
+            padding: 4px 8px;
+        }
+        .pdf-inv-header__logo img {
+            height: 48px;
+            width: auto;
             display: block;
-            width: 86%;
-            margin: 6px auto 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.7);
         }
-        .pdf-inv-items {
-            border-top: none !important;
-            border-radius: 0 0 8px 8px !important;
+        .pdf-inv-header__logo-fallback {
+            width: 48px;
+            height: 48px;
+            border: 2px solid #ffffff;
+            border-radius: 8px;
+            text-align: center;
+            line-height: 44px;
+            font-weight: 800;
+            color: #0f2d4a;
+            background: #ffffff;
+        }
+        .pdf-inv-company-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 0.02em;
+        }
+        .pdf-inv-company-sub {
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.45);
+            margin-top: 3px;
+            letter-spacing: 0.06em;
+        }
+        .pdf-inv-header__doc {
+            text-align: right;
+        }
+        .pdf-inv-inv-label {
+            font-size: 20px;
+            font-weight: 700;
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            line-height: 1.15;
+        }
+        .pdf-inv-inv-ref {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.45);
+            margin-top: 5px;
+            font-family: DejaVu Sans Mono, monospace;
+            letter-spacing: 0.04em;
+        }
+        .pdf-inv-header-accent td {
+            height: 3px;
+            padding: 0;
+            background: #ec7f00;
+            font-size: 0;
+            line-height: 0;
+        }
+
+        .pdf-inv-meta-bar {
+            width: 100%;
+            border-collapse: collapse;
+            background: #f8fafc;
+            border-bottom: 1px solid #dde3ed;
+        }
+        .pdf-inv-meta-bar td {
+            vertical-align: top;
+            padding: 10px 14px;
+            border: none;
+        }
+        .pdf-inv-meta-divider {
+            width: 1px;
+            background: #dde3ed;
+            padding: 0 !important;
+        }
+        .pdf-inv-meta-label {
+            font-size: 8.5px;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 3px;
+        }
+        .pdf-inv-meta-val {
+            font-size: 11px;
+            font-weight: 600;
+            color: #0f2d4a;
+        }
+        .pdf-inv-meta-val--danger {
+            color: #b91c1c;
+        }
+        .pdf-inv-meta-val-mono {
+            font-family: DejaVu Sans Mono, monospace;
+        }
+
+        .pdf-inv-parties {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #dde3ed;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 12px 0 10px;
+        }
+        .pdf-inv-parties td {
+            vertical-align: top;
+            padding: 12px 16px;
+            border: none;
+        }
+        .pdf-inv-party-div {
+            width: 1px;
+            background: #dde3ed;
+            padding: 0 !important;
+        }
+        .pdf-inv-party-role {
+            font-size: 9px;
+            font-weight: 700;
+            color: #ec7f00;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 4px;
+        }
+        .pdf-inv-party-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: #0f2d4a;
+            margin: 4px 0 6px;
+        }
+        .pdf-inv-party-detail {
+            font-size: 10px;
+            color: #64748b;
+            line-height: 1.65;
+        }
+
+        .pdf-inv-route {
+            width: 100%;
+            border-collapse: collapse;
+            background: #0f2d4a;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+        .pdf-inv-route td {
+            padding: 10px 16px;
+            vertical-align: middle;
+            border: none;
+        }
+        .pdf-inv-port-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+        .pdf-inv-port-label {
+            font-size: 8px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-top: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .pdf-inv-route-arrow {
+            color: #ec7f00;
+            font-size: 16px;
+            font-weight: 700;
+            padding: 0 6px;
+        }
+        .pdf-inv-rmeta-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .pdf-inv-rmeta-table td {
+            padding: 0 8px;
+            vertical-align: top;
+            text-align: center;
+            border: none;
+        }
+        .pdf-inv-rmeta-sep {
+            width: 1px;
+            background: rgba(255, 255, 255, 0.12);
+            padding: 0 !important;
+        }
+        .pdf-inv-rmeta-val {
+            font-size: 11px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+        .pdf-inv-rmeta-lbl {
+            font-size: 8px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-top: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .pdf-inv-charges-shell {
+            border: 1px solid #dde3ed;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .pdf-inv-sec-head {
+            width: 100%;
+            border-collapse: collapse;
+            background: #0f2d4a;
+        }
+        .pdf-inv-sec-head td {
+            padding: 8px 12px;
+            vertical-align: middle;
+            border: none;
+        }
+        .pdf-inv-sec-title-stack {
+            text-align: left;
+        }
+        .pdf-inv-sec-title-en {
+            font-size: 11px;
+            font-weight: 700;
+            color: #ffffff;
+            line-height: 1.25;
+        }
+        .pdf-inv-sec-title-ar {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 3px;
+            direction: rtl;
+            unicode-bidi: embed;
+            text-align: left;
+        }
+        .pdf-inv-sec-total {
+            text-align: right;
+            font-size: 11px;
+            font-weight: 700;
+            color: #ec7f00;
+            font-family: DejaVu Sans Mono, monospace;
+            white-space: nowrap;
+        }
+
+        .pdf-inv-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: none;
             table-layout: fixed;
         }
-        .pdf-inv-items tbody tr:nth-child(even) td {
-            background: #f8fafc;
+        .pdf-inv-table th {
+            background: #f1f5f9;
+            padding: 7px 10px;
+            font-size: 9px;
+            font-weight: 700;
+            color: #64748b;
+            text-align: left;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            border-bottom: 1px solid #dde3ed;
         }
-        .pdf-inv-items td, .pdf-inv-items th {
+        .pdf-inv-table th.pdf-inv-th-num,
+        .pdf-inv-table td.pdf-inv-td-num {
+            text-align: right;
+        }
+        .pdf-inv-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 10.5px;
+            vertical-align: top;
             overflow-wrap: anywhere;
             word-break: break-word;
         }
-        .pdf-inv-items td:first-child {
-            width: 58%;
+        .pdf-inv-table tbody tr:nth-child(even) td {
+            background: #f8fafc;
         }
-        .pdf-inv-section-total {
-            margin-top: 0;
-            margin-bottom: 8px;
-            text-align: center;
-            border: 1px solid #e3e8ef;
-            border-top: none;
-            border-radius: 0 0 8px 8px;
-            padding: 10px 12px;
-            background: #f9fbff;
-            font-size: 10.3px;
+        .pdf-inv-table .pdf-inv-subtotal-row td {
+            background: #fdf0e0 !important;
+            border-top: 2px solid #ec7f00;
             font-weight: 700;
-            letter-spacing: .01em;
-            line-height: 1.7;
+            font-size: 11px;
+            color: #0f2d4a;
         }
-        .pdf-inv-section-total::after {
-            content: '';
-            display: block;
-            width: 55%;
-            margin: 6px auto 0;
-            border-bottom: 1px solid #b8c8d8;
+        .pdf-inv-table .pdf-inv-subtotal-row .pdf-inv-sub-amt {
+            text-align: right;
+            font-family: DejaVu Sans Mono, monospace;
+            color: #bd6b02;
         }
-        .pdf-inv-grand-wrap {
-            margin-top: 12px;
+
+        .pdf-inv-grand {
+            width: 100%;
+            border-collapse: collapse;
+            background: #0f2d4a;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 14px 0 12px;
+        }
+        .pdf-inv-grand td {
+            padding: 14px 18px;
+            vertical-align: top;
+            border: none;
+        }
+        .pdf-inv-grand-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+        .pdf-inv-grand-breakdown {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .pdf-inv-grand-breakdown td {
+            padding: 3px 0;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.55);
+        }
+        .pdf-inv-grand-breakdown .pdf-inv-gtr-val {
+            text-align: right;
+            font-family: DejaVu Sans Mono, monospace;
+            color: #ffffff;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .pdf-inv-grand-divider td {
+            padding: 6px 0 !important;
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            font-size: 0;
+            line-height: 0;
+        }
+        .pdf-inv-grand-cur td {
+            padding-top: 6px !important;
+            font-size: 11px;
+            font-weight: 700;
+            color: #ffffff !important;
+        }
+        .pdf-inv-grand-cur .pdf-inv-gtr-val {
+            color: #ec7f00 !important;
+            font-size: 13px;
+        }
+        .pdf-inv-grand-vat {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 10px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .pdf-inv-bank-wrap {
+            border: 1px solid #dde3ed;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+        .pdf-inv-bank-head {
+            background: #1b3a5c;
+            padding: 9px 14px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 0.02em;
         }
         .pdf-inv-bank-table {
-            margin-top: 8px;
+            width: 100%;
+            border-collapse: collapse;
             table-layout: fixed;
         }
-        .pdf-inv-bank-table th, .pdf-inv-bank-table td {
-            font-size: 9.8px;
-            text-align: center;
+        .pdf-inv-bank-table th {
+            background: #f1f5f9;
+            padding: 7px 10px;
+            font-size: 9px;
+            font-weight: 700;
+            color: #64748b;
+            text-align: left;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            border-bottom: 1px solid #dde3ed;
+        }
+        .pdf-inv-bank-table td {
+            padding: 8px 10px;
+            font-size: 9.5px;
+            border-bottom: 1px solid #f1f5f9;
             vertical-align: middle;
             overflow-wrap: anywhere;
         }
-        .pdf-inv-terms {
-            font-size: 10.2px;
-            line-height: 1.6;
-            margin: 8px 0 0;
-            padding-left: 20px;
+        .pdf-inv-bank-table tr:last-child td {
+            border-bottom: none;
         }
-        .pdf-inv-terms li {
+        .pdf-inv-cur-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+        }
+        .pdf-inv-cur-badge--usd {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        .pdf-inv-cur-badge--egp {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .pdf-inv-cur-badge--eur {
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+        .pdf-inv-cur-badge--gen {
+            background: #f1f5f9;
+            color: #334155;
+        }
+
+        .pdf-inv-terms-wrap {
+            background: #f8fafc;
+            border: 1px solid #dde3ed;
+            border-radius: 8px;
+            padding: 12px 14px 10px;
             margin-bottom: 8px;
-            padding-left: 2px;
-        }
-        .pdf-inv-bank-heading {
-            margin-top: 2px;
-            margin-bottom: 10px;
-            text-align: center;
-            font-weight: 700;
-            font-size: 10.8px;
-            letter-spacing: .01em;
         }
         .pdf-inv-terms-title {
-            margin-top: 12px;
-            margin-bottom: 8px;
-            text-align: center;
+            font-size: 11px;
             font-weight: 700;
-            font-size: 10.7px;
-            letter-spacing: .01em;
+            color: #0f2d4a;
+            margin-bottom: 10px;
+            text-align: center;
+            letter-spacing: 0.02em;
         }
-        .pdf-inv-terms-wrap {
-            border: 1px solid #e3e8ef;
+        .pdf-inv-terms-list {
+            margin: 0;
+            padding-left: 18px;
+            font-size: 10px;
+            line-height: 1.65;
+            color: #334155;
+        }
+        .pdf-inv-terms-list li {
+            margin-bottom: 8px;
+        }
+
+        .pdf-inv-notes {
+            margin: 12px 0;
+            padding: 10px 12px;
+            border: 1px solid #dde3ed;
             border-radius: 8px;
             background: #fbfdff;
-            padding: 10px 12px 6px;
+            font-size: 10.2px;
+            line-height: 1.55;
         }
-        .pdf-total-single {
-            border: 1px solid #d8e2ed;
-            border-radius: 9px;
-            background: #f5f9ff;
-            padding: 10px 12px;
-            text-align: center;
-        }
-        .pdf-total-single__label {
-            font-size: 10px;
+        .pdf-inv-notes__title {
             font-weight: 700;
-            color: #11354d;
-            text-transform: uppercase;
-            letter-spacing: .04em;
-        }
-        .pdf-total-single__amount {
-            margin-top: 5px;
-            font-size: 12.5px;
-            font-weight: 800;
-            color: #0f3045;
-            line-height: 1.4;
-        }
-        .pdf-total-single__vat {
-            margin-top: 5px;
-            padding-top: 5px;
-            border-top: 1px solid #c8d7e6;
-            font-size: 9.8px;
-            font-weight: 700;
-            color: #24475f;
+            color: #0f2d4a;
+            margin-bottom: 6px;
+            font-size: 10.5px;
         }
     </style>
 @endpush
 
 @section('pdf_title')
-{{ $labels['doc_title'] }} {{ $invoice->invoice_number }}
+Tax Invoice {{ $invoice->invoice_number }}
 @endsection
 
 @section('content')
     @php
-        $sectionLabels = [
-            'shipping' => 'COST LINE SHIPPING / تكلفة الخط الملاحي',
-            'inland' => 'TRANSPORT INLAND / النقل الداخلي',
-            'handling' => 'HANDLING FEES / رسوم الخدمة والمتابعة',
-            'other' => 'ADDITIONAL COSTS / تكاليف إضافية',
-            'customs' => 'CUSTOMS CLEARANCE / التخليص الجمركي',
-            'insurance' => 'INSURANCE / التأمين',
+        $sectionMeta = [
+            'shipping' => ['icon' => '🚢', 'en' => 'Ocean Freight', 'ar' => 'الشحن البحري'],
+            'inland' => ['icon' => '🚛', 'en' => 'Inland Transport', 'ar' => 'النقل الداخلي'],
+            'handling' => ['icon' => '💼', 'en' => 'Handling Fees', 'ar' => 'رسوم الخدمة والمتابعة'],
+            'other' => ['icon' => '📋', 'en' => 'Additional Costs', 'ar' => 'تكاليف إضافية'],
+            'customs' => ['icon' => '🏛️', 'en' => 'Customs Clearance', 'ar' => 'التخليص الجمركي'],
+            'insurance' => ['icon' => '🛡️', 'en' => 'Insurance', 'ar' => 'التأمين'],
         ];
 
         $grouped = [
@@ -168,19 +496,25 @@
             'customs' => [],
             'insurance' => [],
         ];
+
         $formatBreakdown = static function (array $map): string {
-            if ($map === []) return '—';
+            if ($map === []) {
+                return '—';
+            }
             ksort($map);
             $parts = [];
             foreach ($map as $cur => $amt) {
                 $parts[] = strtoupper((string) $cur).' '.number_format((float) $amt, 2);
             }
+
             return implode(' · ', $parts);
         };
 
         foreach ($invoice->items as $item) {
             $bucket = strtolower(trim((string) ($item->section_key ?? '')));
-            if (!array_key_exists($bucket, $grouped)) $bucket = 'other';
+            if (! array_key_exists($bucket, $grouped)) {
+                $bucket = 'other';
+            }
             $grouped[$bucket][] = $item;
         }
 
@@ -189,191 +523,370 @@
         $pol = $shipment?->originPort?->name ?: '—';
         $pod = $shipment?->destinationPort?->name ?: '—';
         $shipLine = $shipment?->shippingLine?->name ?: '—';
-        $container = trim(($shipment?->container_count ?: '—').' x '.($shipment?->container_size ?: '').' '.($shipment?->container_type ?: ''));
+        $cc = $shipment?->container_count;
+        $csz = trim((string) ($shipment?->container_size ?? ''));
+        $cty = trim((string) ($shipment?->container_type ?? ''));
+        $containerMid = trim($csz.' '.$cty);
+        $container = ($cc !== null && $cc !== '') ? ((string) $cc.' × '.$containerMid) : ($containerMid !== '' ? $containerMid : '—');
+        $container = trim(preg_replace('/\s+/', ' ', $container)) ?: '—';
         $transitTime = $shipment?->route_text ?: '—';
+        $sailingDate = $shipment?->loading_date ?? $shipment?->booking_date;
+        $issueDateFormatted = $invoice->issue_date?->format('F j, Y') ?? '—';
+        $dueDateFormatted = $invoice->due_date?->format('F j, Y') ?? '—';
+        $sailingFormatted = $sailingDate?->format('F j, Y') ?? '—';
+        $todayStr = now()->toDateString();
+        $dueIsPast = $invoice->due_date && $invoice->due_date->toDateString() < $todayStr && ! in_array($invoice->status, ['paid'], true);
+
+        $grandByCurrency = [];
+        foreach ($invoice->items as $item) {
+            $cur = strtoupper((string) ($item->currency_code ?: $invoice->currency_code ?: 'USD'));
+            $grandByCurrency[$cur] = ($grandByCurrency[$cur] ?? 0) + (float) $item->line_total;
+        }
+
+        $currencyOrder = ['USD', 'EGP', 'EUR'];
+        $bankAccountsList = \App\Models\BankAccount::query()->where('is_active', true)->orderBy('id')->get();
+
+        $badgeClass = static function (string $code): string {
+            return match (strtoupper($code)) {
+                'USD' => 'pdf-inv-cur-badge--usd',
+                'EGP' => 'pdf-inv-cur-badge--egp',
+                'EUR' => 'pdf-inv-cur-badge--eur',
+                default => 'pdf-inv-cur-badge--gen',
+            };
+        };
     @endphp
-    <div class="pdf-wrapper">
+    <div class="pdf-wrapper pdf-inv-html" dir="ltr" lang="en" style="direction:ltr;text-align:left;">
         @php
             $logoSrc = \App\Support\PdfLogo::imgSrc();
         @endphp
         @if(!empty($headerHtml))
             {!! $headerHtml !!}
         @else
-            <header class="pdf-header pdf-header--branded pdf-header--sd">
-                <table class="pdf-header__table">
-                    <tr>
-                        <td class="pdf-header__logo">
-                            @if ($logoSrc)
-                                <img class="pdf-header__logo-img" src="{{ $logoSrc }}" alt="">
-                            @else
-                                <div class="pdf-header__logo-fallback">AM</div>
-                            @endif
-                        </td>
-                        <td class="pdf-header__brand-cell">
-                            <div class="pdf-header__brand-stack">
-                                <div class="pdf-header__brand-line"><strong>{{ $labels['company_name'] }}</strong></div>
-                                <div class="pdf-header__brand-tag">{{ $labels['company_tagline'] }}</div>
-                            </div>
-                        </td>
-                        <td class="pdf-header__doc">
-                            <p class="pdf-header__title">{{ $labels['invoice_title'] }}</p>
-                            <div class="pdf-header__meta-list">
-                                <div class="pdf-header__meta-row">
-                                    <span class="pdf-header__meta-label">{{ $labels['invoice_no'] }}</span>
-                                    <span class="pdf-header__meta-val">{{ $invoice->invoice_number }}</span>
-                                </div>
-                                <div class="pdf-header__meta-row">
-                                    <span class="pdf-header__meta-label">{{ $labels['date'] }}</span>
-                                    <span class="pdf-header__meta-val">{{ $invoice->issue_date?->format('d/m/Y') }}</span>
-                                </div>
-                                @if($invoice->shipment)
-                                    <div class="pdf-header__meta-row">
-                                        <span class="pdf-header__meta-label">{{ $labels['shipment_bl'] }}</span>
-                                        <span class="pdf-header__meta-val">{{ $invoice->shipment->bl_number }}</span>
-                                    </div>
-                                @endif
-                            </div>
-                        </td>
-                    </tr>
-                </table>
-            </header>
+            <table class="pdf-inv-header" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
+                <tr>
+                    <td width="28%" class="pdf-inv-header__logo">
+                        @if ($logoSrc)
+                            <img src="{{ $logoSrc }}" alt="">
+                        @else
+                            <div class="pdf-inv-header__logo-fallback">AM</div>
+                        @endif
+                    </td>
+                    <td width="44%">
+                        <div class="pdf-inv-company-name">Amazon Marine</div>
+                        <div class="pdf-inv-company-sub">Shipping Agency</div>
+                    </td>
+                    <td width="28%" class="pdf-inv-header__doc">
+                        <div class="pdf-inv-inv-label">Tax Invoice</div>
+                        <div class="pdf-inv-inv-ref">REF: {{ $invoice->invoice_number }}</div>
+                    </td>
+                </tr>
+            </table>
+            <table class="pdf-inv-header-accent" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
+                <tr><td></td></tr>
+            </table>
         @endif
 
-        <table class="pdf-party-grid">
+        <table class="pdf-inv-meta-bar" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
             <tr>
-                <td class="pdf-party-card">
-                    <div class="pdf-party-card__label">{{ $labels['billed_to'] }}</div>
-                    <div class="pdf-party-card__name">{{ $invoice->client?->name ?? '—' }}</div>
-                    @if($invoice->client?->address)
-                        <div>{{ $invoice->client->address }}</div>
-                    @endif
-                    @if($invoice->client?->phone)
-                        <div>{{ $invoice->client->phone }}</div>
-                    @endif
+                <td>
+                    <div class="pdf-inv-meta-label">Invoice No.</div>
+                    <div class="pdf-inv-meta-val pdf-inv-meta-val-mono">{{ $invoice->invoice_number }}</div>
                 </td>
-                <td class="pdf-party-grid__gap"></td>
-                <td class="pdf-party-card">
-                    <div class="pdf-inv-meta-card">
-                    <div><strong>POL → POD:</strong> {{ $pol }} → {{ $pod }}</div>
-                    <div><strong>Shipping Line:</strong> {{ $shipLine }}</div>
-                    <div><strong>Container:</strong> {{ $container ?: '—' }}</div>
-                    <div><strong>Transit Time:</strong> {{ $transitTime }}</div>
-                    <div><strong>Shipment Ref:</strong> {{ $shipmentRef }}</div>
-                    </div>
+                <td class="pdf-inv-meta-divider"></td>
+                <td>
+                    <div class="pdf-inv-meta-label">Issue Date</div>
+                    <div class="pdf-inv-meta-val">{{ $issueDateFormatted }}</div>
+                </td>
+                <td class="pdf-inv-meta-divider"></td>
+                <td>
+                    <div class="pdf-inv-meta-label">Due Date</div>
+                    <div class="pdf-inv-meta-val @if($dueIsPast) pdf-inv-meta-val--danger @endif">{{ $dueDateFormatted }}</div>
+                </td>
+                <td class="pdf-inv-meta-divider"></td>
+                <td>
+                    <div class="pdf-inv-meta-label">Sailing Date</div>
+                    <div class="pdf-inv-meta-val">{{ $sailingFormatted }}</div>
+                </td>
+                <td class="pdf-inv-meta-divider"></td>
+                <td>
+                    <div class="pdf-inv-meta-label">Containers</div>
+                    <div class="pdf-inv-meta-val">{{ $container }}</div>
                 </td>
             </tr>
         </table>
-        @foreach($grouped as $bucket => $bucketItems)
-            @if(count($bucketItems) > 0)
-                @php $sectionTotals = []; @endphp
-                <div class="pdf-inv-section-title">{{ $sectionLabels[$bucket] }}</div>
-                <table class="pdf-table pdf-table--standalone pdf-table--invoice-items pdf-inv-items">
-                    <thead>
-                        <tr>
-                            <th class="pdf-w-60">{{ $labels['description'] }}</th>
-                            <th class="pdf-w-13 pdf-text-end">{{ $labels['qty'] }}</th>
-                            <th class="pdf-w-13 pdf-text-end">{{ $labels['unit_price'] }}</th>
-                            <th class="pdf-w-14 pdf-text-end">{{ $labels['line_total'] }}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($bucketItems as $item)
-                            @php
-                                $cur = strtoupper((string) ($item->currency_code ?: $invoice->currency_code ?: 'USD'));
-                                $sectionTotals[$cur] = ($sectionTotals[$cur] ?? 0) + (float) $item->line_total;
-                            @endphp
-                            <tr>
-                                <td>{{ $item->description }}</td>
-                                <td class="pdf-text-end">{{ number_format($item->quantity, 2) }}</td>
-                                <td class="pdf-text-end">{{ $cur }} {{ number_format($item->unit_price, 2) }}</td>
-                                <td class="pdf-text-end"><strong>{{ $cur }} {{ number_format($item->line_total, 2) }}</strong></td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-                <div class="pdf-inv-section-total">
-                    <strong>Totals Section / إجمالي القسم:</strong> <strong>{{ $formatBreakdown($sectionTotals) }}</strong>
-                </div>
-            @endif
-        @endforeach
 
-        @php
-            $grandByCurrency = [];
-            foreach ($invoice->items as $item) {
-                $cur = strtoupper((string) ($item->currency_code ?: $invoice->currency_code ?: 'USD'));
-                $grandByCurrency[$cur] = ($grandByCurrency[$cur] ?? 0) + (float) $item->line_total;
-            }
-            $grandBreakdown = $formatBreakdown($grandByCurrency);
-        @endphp
-        <table class="pdf-invoice-top pdf-inv-grand-wrap">
+        <table class="pdf-inv-parties" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
             <tr>
-                <td class="pdf-w-spacer"></td>
-                <td class="pdf-w-totals">
-                    <div class="pdf-total-single">
-                        <div class="pdf-total-single__label">{{ $labels['grand_total'] }}</div>
-                        <div class="pdf-total-single__amount">{{ $grandBreakdown }}</div>
-                        @if($invoice->is_vat_invoice)
-                            <div class="pdf-total-single__vat">{{ $labels['vat'] }}: {{ number_format($invoice->tax_amount, 2) }} {{ strtoupper((string) $invoice->currency_code) }}</div>
+                <td width="49%">
+                    <div class="pdf-inv-party-role">From / Issued By</div>
+                    <div class="pdf-inv-party-name">Amazon Marine</div>
+                    <div class="pdf-inv-party-detail">
+                        Shipping Agency
+                        @if($shipment?->salesRep)
+                            <br>
+                            @if($shipment->salesRep->email)
+                                <span>{{ $shipment->salesRep->email }}</span>
+                            @endif
+                            @if($shipment->salesRep->phone)
+                                <br>{{ $shipment->salesRep->phone }}
+                            @endif
+                        @endif
+                    </div>
+                </td>
+                <td class="pdf-inv-party-div"></td>
+                <td width="49%">
+                    <div class="pdf-inv-party-role">Billed To</div>
+                    <div class="pdf-inv-party-name">{{ $invoice->client?->name ?? '—' }}</div>
+                    <div class="pdf-inv-party-detail">
+                        @if($invoice->client?->company_name)
+                            <span>{{ $invoice->client->company_name }}</span><br>
+                        @endif
+                        @if($invoice->client?->address)
+                            <span>{{ $invoice->client->address }}</span><br>
+                        @endif
+                        @if($invoice->client?->phone)
+                            <span>{{ $invoice->client->phone }}</span>
+                        @endif
+                        @if($invoice->client?->email)
+                            @if($invoice->client?->phone)<br>@endif
+                            <span>{{ $invoice->client->email }}</span>
                         @endif
                     </div>
                 </td>
             </tr>
         </table>
 
+        <table class="pdf-inv-route" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
+            <tr>
+                <td>
+                    <table width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
+                        <tr>
+                            <td style="vertical-align:middle;">
+                                <table cellspacing="0" cellpadding="0" border="0" role="presentation" style="border-collapse:collapse;">
+                                    <tr>
+                                        <td style="vertical-align:middle;">
+                                            <div class="pdf-inv-port-name">{{ $pol }}</div>
+                                            <div class="pdf-inv-port-label">POL — Port of Loading</div>
+                                        </td>
+                                        <td class="pdf-inv-route-arrow" style="vertical-align:middle;">→</td>
+                                        <td style="vertical-align:middle;">
+                                            <div class="pdf-inv-port-name">{{ $pod }}</div>
+                                            <div class="pdf-inv-port-label">POD — Port of Discharge</div>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                            <td style="width:52%;">
+                                <table class="pdf-inv-rmeta-table" cellspacing="0" cellpadding="0" border="0" role="presentation">
+                                    <tr>
+                                        <td>
+                                            <div class="pdf-inv-rmeta-val">{{ $shipLine }}</div>
+                                            <div class="pdf-inv-rmeta-lbl">Carrier</div>
+                                        </td>
+                                        <td class="pdf-inv-rmeta-sep"></td>
+                                        <td>
+                                            <div class="pdf-inv-rmeta-val">{{ $container }}</div>
+                                            <div class="pdf-inv-rmeta-lbl">Containers</div>
+                                        </td>
+                                        <td class="pdf-inv-rmeta-sep"></td>
+                                        <td>
+                                            <div class="pdf-inv-rmeta-val">{{ $transitTime }}</div>
+                                            <div class="pdf-inv-rmeta-lbl">Transit Time</div>
+                                        </td>
+                                        <td class="pdf-inv-rmeta-sep"></td>
+                                        <td>
+                                            <div class="pdf-inv-rmeta-val">{{ $shipmentRef }}</div>
+                                            <div class="pdf-inv-rmeta-lbl">Shipment Ref</div>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+
+        <div class="pdf-inv-charges-shell">
+            @foreach($grouped as $bucket => $bucketItems)
+                @if(count($bucketItems) > 0)
+                    @php
+                        $sectionTotals = [];
+                        $meta = $sectionMeta[$bucket] ?? ['icon' => '📌', 'en' => ucfirst($bucket), 'ar' => ''];
+                    @endphp
+                    <table class="pdf-inv-sec-head" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
+                        <tr>
+                            <td class="pdf-inv-sec-title-stack">
+                                <div class="pdf-inv-sec-title-en">{{ $meta['icon'] }} {{ $meta['en'] }}</div>
+                                @if(!empty($meta['ar']))
+                                    <div class="pdf-inv-sec-title-ar">{{ $meta['ar'] }}</div>
+                                @endif
+                            </td>
+                            <td class="pdf-inv-sec-total" style="width:38%;">
+                                @foreach($bucketItems as $item)
+                                    @php
+                                        $c = strtoupper((string) ($item->currency_code ?: $invoice->currency_code ?: 'USD'));
+                                        $sectionTotals[$c] = ($sectionTotals[$c] ?? 0) + (float) $item->line_total;
+                                    @endphp
+                                @endforeach
+                                {{ $formatBreakdown($sectionTotals) }}
+                            </td>
+                        </tr>
+                    </table>
+                    <table class="pdf-inv-table pdf-table pdf-table--standalone" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
+                        <thead>
+                            <tr>
+                                <th style="width:46%;">Description</th>
+                                <th class="pdf-inv-th-num" style="width:12%;">Qty</th>
+                                <th class="pdf-inv-th-num" style="width:20%;">Unit Price</th>
+                                <th class="pdf-inv-th-num" style="width:22%;">Line Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($bucketItems as $item)
+                                @php
+                                    $cur = strtoupper((string) ($item->currency_code ?: $invoice->currency_code ?: 'USD'));
+                                @endphp
+                                <tr>
+                                    <td>{{ $item->description }}</td>
+                                    <td class="pdf-inv-td-num">{{ number_format($item->quantity, 2) }}</td>
+                                    <td class="pdf-inv-td-num">{{ $cur }} {{ number_format($item->unit_price, 2) }}</td>
+                                    <td class="pdf-inv-td-num"><strong>{{ $cur }} {{ number_format($item->line_total, 2) }}</strong></td>
+                                </tr>
+                            @endforeach
+                            <tr class="pdf-inv-subtotal-row">
+                                <td colspan="3"><strong>{{ $meta['en'] }} Total</strong></td>
+                                <td class="pdf-inv-sub-amt">{{ $formatBreakdown($sectionTotals) }}</td>
+                                </tr>
+                        </tbody>
+                    </table>
+                @endif
+            @endforeach
+        </div>
+
+        @php
+            $invoiceSections = $invoiceData['sections'] ?? [];
+        @endphp
+        <table class="pdf-inv-grand" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
+            <tr>
+                <td width="34%">
+                    <div class="pdf-inv-grand-title">Grand Total</div>
+                </td>
+                <td width="66%">
+                    <table class="pdf-inv-grand-breakdown" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
+                        @foreach($invoiceSections as $sec)
+                            @php
+                                $sellMap = $sec['selling_by_currency'] ?? [];
+                                if ($sellMap === [] || ($sec['items'] ?? []) === []) {
+                                    continue;
+                                }
+                                $sk = (string) ($sec['key'] ?? '');
+                                $sm = $sectionMeta[$sk] ?? ['icon' => '📌', 'en' => ucfirst($sk)];
+                                $lineLabel = ($sm['icon'] ?? '').' '.($sm['en'] ?? $sk);
+                            @endphp
+                            <tr>
+                                <td>{{ trim($lineLabel) }}</td>
+                                <td class="pdf-inv-gtr-val">{{ $formatBreakdown($sellMap) }}</td>
+                            </tr>
+                        @endforeach
+                        <tr class="pdf-inv-grand-divider"><td colspan="2"></td></tr>
+                        @foreach($currencyOrder as $curCode)
+                            @php
+                                $amt = (float) ($grandByCurrency[$curCode] ?? 0);
+                            @endphp
+                            <tr class="pdf-inv-grand-cur">
+                                <td>Total {{ $curCode }}</td>
+                                <td class="pdf-inv-gtr-val">{{ number_format($amt, 2) }} {{ $curCode }}</td>
+                            </tr>
+                        @endforeach
+                        @foreach($grandByCurrency as $curCode => $amt)
+                            @if(! in_array($curCode, $currencyOrder, true) && (float) $amt != 0.0)
+                                <tr class="pdf-inv-grand-cur">
+                                    <td>Total {{ $curCode }}</td>
+                                    <td class="pdf-inv-gtr-val">{{ number_format((float) $amt, 2) }} {{ $curCode }}</td>
+                                </tr>
+                            @endif
+                        @endforeach
+                    </table>
+                    @if($invoice->is_vat_invoice)
+                        <div class="pdf-inv-grand-vat">
+                            VAT: {{ number_format($invoice->tax_amount, 2) }} {{ strtoupper((string) $invoice->currency_code) }}
+                        </div>
+                    @endif
+                </td>
+            </tr>
+        </table>
+
         @if($invoice->notes)
-            <div class="pdf-notes-block">
-                <div class="pdf-notes-block__title">{{ $labels['notes'] }}</div>
+            <div class="pdf-inv-notes">
+                <div class="pdf-inv-notes__title">Notes</div>
                 <div>{{ $invoice->notes }}</div>
             </div>
         @endif
 
-        <div class="pdf-notes-block">
-            <div class="pdf-inv-bank-heading">Payment Instructions — Bank Details<br>تعليمات الدفع — بيانات الحساب البنكي</div>
-            <table class="pdf-table pdf-table--standalone pdf-inv-bank-table">
+        @php
+            $bankRows = [];
+            foreach ($bankAccountsList as $acc) {
+                $currencies = is_array($acc->supported_currencies) ? $acc->supported_currencies : [];
+                if ($currencies === []) {
+                    $bankRows[] = ['currency' => '—', 'account' => $acc];
+                    continue;
+                }
+                foreach ($currencies as $c) {
+                    $bankRows[] = ['currency' => strtoupper((string) $c), 'account' => $acc];
+                }
+            }
+        @endphp
+        <div class="pdf-inv-bank-wrap">
+            <div class="pdf-inv-bank-head">Payment Instructions — Bank Details</div>
+            <table class="pdf-inv-bank-table" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
                 <thead>
                     <tr>
-                        <th>Currency / العملة</th>
-                        <th>Beneficiary Account</th>
-                        <th>Account No.</th>
-                        <th>IBAN No.</th>
-                        <th>SWIFT Code</th>
+                        <th style="width:12%;">Currency</th>
+                        <th style="width:22%;">Beneficiary</th>
+                        <th style="width:14%;">Bank</th>
+                        <th style="width:14%;">Account No.</th>
+                        <th style="width:22%;">IBAN</th>
+                        <th style="width:16%;">SWIFT</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr><td>EGP</td><td>Amazon Marine</td><td>100053729837</td><td>EG1300100154000000100053729837</td><td>CIBEEGCX154</td></tr>
-                    <tr><td>USD</td><td>Amazon Marine</td><td>100053729848</td><td>EG0700100154000000100053729848</td><td>CIBEEGCX154</td></tr>
-                    <tr><td>EUR</td><td>Amazon Marine</td><td>100053729864</td><td>EG6000100154000000100053729864</td><td>CIBEEGCX154</td></tr>
+                    @forelse($bankRows as $row)
+                        @php
+                            $acc = $row['account'];
+                            $cur = $row['currency'];
+                        @endphp
+                        <tr>
+                            <td>
+                                @if($cur !== '—')
+                                    <span class="pdf-inv-cur-badge {{ $badgeClass($cur) }}">{{ $cur }}</span>
+                                @else
+                                    —
+                                @endif
+                            </td>
+                            <td>{{ $acc->account_name ?: '—' }}</td>
+                            <td>{{ $acc->bank_name ?: '—' }}</td>
+                            <td>{{ $acc->account_number ?: '—' }}</td>
+                            <td>{{ $acc->iban ?: '—' }}</td>
+                            <td>{{ $acc->swift_code ?: '—' }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" style="text-align:center;color:#64748b;font-size:10px;">No active bank accounts on file.</td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
-            <div class="pdf-inv-terms-title">Terms & Conditions / الشروط والأحكام</div>
-            <div class="pdf-inv-terms-wrap">
-                <ol class="pdf-inv-terms">
-                    <li>Payment Due: Payment is due by the date specified above. Late payments may be subject to additional charges.<br>الدفع مستحق في التاريخ المحدد — التأخر قد يترتب عليه رسوم إضافية.</li>
-                    <li>Official Receipts: Government official receipts are not included in this invoice and will be charged at actual cost with original receipts provided.<br>الإيصالات الرسمية الحكومية غير شاملة في هذه الفاتورة — تُحتسب بقيمتها الفعلية مع تقديم الأصول للعميل.</li>
-                    <li>Currency: Payments must be made in the currency specified per charge. Exchange rate conversions are subject to the agreed rate on the day of payment.<br>يتم الدفع بالعملة المحددة لكل بند — تحويل العملات يخضع للسعر المتفق عليه يوم الدفع.</li>
-                    <li>Validity: This invoice is valid for 30 days from the issue date. Any disputes must be raised within 7 days of receipt.<br>هذه الفاتورة سارية لمدة 30 يوماً من تاريخ الإصدار — أي اعتراض يجب رفعه خلال 7 أيام من الاستلام.</li>
-                </ol>
-            </div>
         </div>
 
-        <div class="pdf-footer pdf-footer--fixed">
-            @if(!empty($footerHtml))
-                {!! $footerHtml !!}
-            @else
-                {{ $labels['generated'] }} {{ now()->format('d/m/Y H:i:s') }} | {{ $labels['system_credit'] }}
-            @endif
+        <div class="pdf-inv-terms-wrap">
+            <div class="pdf-inv-terms-title">Terms &amp; Conditions</div>
+            <ol class="pdf-inv-terms-list">
+                <li><strong>Payment Due:</strong> Payment is due by the date specified above. Late payments may be subject to additional charges.</li>
+                <li><strong>Official Receipts:</strong> Government official receipts are not included in this invoice and will be charged at actual cost with original receipts provided.</li>
+                <li><strong>Currency:</strong> Payments must be made in the currency specified per charge. Exchange rate conversions are subject to the agreed rate on the day of payment.</li>
+                <li><strong>Validity:</strong> This invoice is valid for 30 days from the issue date. Any disputes must be raised within 7 days of receipt.</li>
+            </ol>
         </div>
     </div>
 @endsection
-
-@push('pdf_footer_fullbleed')
-    @if($pdfFooterBanner = \App\Support\PdfLogo::footerImgSrc())
-        <table class="pdf-footer-fullbleed" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
-            <tr>
-                <td class="pdf-footer-fullbleed__cell">
-                    <img class="pdf-footer-fullbleed__img" src="{{ $pdfFooterBanner }}" alt="">
-                </td>
-            </tr>
-        </table>
-    @endif
-@endpush

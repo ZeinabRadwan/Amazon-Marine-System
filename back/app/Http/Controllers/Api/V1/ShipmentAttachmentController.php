@@ -110,6 +110,8 @@ class ShipmentAttachmentController extends Controller
             'id' => $attachment->id,
             'name' => $attachment->name,
             'url' => $this->downloadUrl($request, $shipment, $attachment),
+            /** Relative path on the local disk (for debugging / ERP integrations). */
+            'path' => $attachment->path,
             'mime_type' => $attachment->mime_type,
             'size' => $attachment->size,
             'created_at' => $attachment->created_at,

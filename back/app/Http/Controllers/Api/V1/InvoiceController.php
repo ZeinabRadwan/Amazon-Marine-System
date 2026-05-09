@@ -7,6 +7,7 @@ use App\Models\Currency;
 use App\Models\CustomerTransaction;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\ShipmentAttachment;
 use App\Models\ShipmentCostInvoice;
 use App\Models\BankAccount;
 use App\Models\PdfLayout;
@@ -246,16 +247,26 @@ class InvoiceController extends Controller
                 if (! is_array($row)) {
                     continue;
                 }
-                $id = isset($row['id']) ? (int) $row['id'] : null;
+                $id = isset($row['id']) ? (int) $row['id'] : 0;
                 $name = isset($row['name']) ? (string) $row['name'] : null;
                 $kind = strtoupper((string) ($row['type'] ?? ''));
                 $isPdf = str_contains($kind, 'PDF') || ($name && str_ends_with(strtolower($name), '.pdf'));
+                $storagePath = null;
+                if ($id > 0 && $invoice->shipment_id) {
+                    $storagePath = ShipmentAttachment::query()
+                        ->where('shipment_id', $invoice->shipment_id)
+                        ->whereKey($id)
+                        ->value('path');
+                }
                 $out[$normalizedKey][] = [
-                    'id' => $id,
+                    'id' => $id > 0 ? $id : 0,
                     'name' => $name,
                     'type' => $isPdf ? 'PDF' : ($kind ?: null),
                     'uploaded_at' => $row['uploaded_at'] ?? null,
-                    'url' => $id ? url('/api/v1/shipments/'.$invoice->shipment_id.'/attachments/'.$id.'/download') : null,
+                    'path' => $storagePath,
+                    'url' => ($id > 0 && $invoice->shipment_id)
+                        ? url('/api/v1/shipments/'.$invoice->shipment_id.'/attachments/'.$id.'/download')
+                        : null,
                 ];
             }
         }
