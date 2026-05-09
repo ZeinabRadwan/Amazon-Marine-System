@@ -28,13 +28,18 @@ import {
   Trash2,
   ArrowLeftRight,
   RotateCcw,
+  Wallet,
+  HandCoins,
+  Send,
+  Building2,
 } from 'lucide-react'
 import '../../components/PageHeader/PageHeader.css'
 import '../../components/Tabs/Tabs.css'
 import '../Clients/Clients.css'
 import '../Accountings/Accountings.css'
 import '../Accountings/CurrencyMapBadges.css'
-import { CurrencyMapBadges } from '../Accountings/CurrencyMapBadges'
+import { CurrencyMapBadges, CurrencyCodeBadge } from '../Accountings/CurrencyMapBadges'
+import { StatsCard } from '../../components/StatsCard'
 import Tabs from '../../components/Tabs'
 import Pagination from '../../components/Pagination'
 import './Treasury.css'
@@ -89,6 +94,42 @@ function formatCompactNumber(n, locale) {
     notation: 'compact',
     compactDisplay: 'short',
   }).format(x)
+}
+
+/** Plain numeric amount (no currency symbol); pair with {@link CurrencyCodeBadge}. */
+function formatPlainAmount(amount, locale) {
+  const n = Number(amount)
+  if (Number.isNaN(n)) return '—'
+  return new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(n)
+}
+
+/**
+ * FX pairs from `/currencies`: rate = units of default currency per 1 unit (see BankPaymentCurrencyService).
+ */
+function buildTreasuryExchangePairs(currencyRows) {
+  const list = Array.isArray(currencyRows) ? currencyRows : []
+  const pick = (code) => list.find((c) => String(c.code || '').toUpperCase() === code)
+  const rate = (c) => (c ? Number(c.exchange_rate ?? c.rate ?? 0) : 0)
+  const usd = pick('USD')
+  const eur = pick('EUR')
+  const rUsd = rate(usd)
+  const rEur = rate(eur)
+  const out = []
+  if (rUsd > 0) out.push({ id: 'usd-egp', labelKey: 'treasury.exchange.usdToEgp', value: rUsd })
+  if (rEur > 0) out.push({ id: 'eur-egp', labelKey: 'treasury.exchange.eurToEgp', value: rEur })
+  if (rUsd > 0 && rEur > 0) {
+    out.push({ id: 'usd-eur', labelKey: 'treasury.exchange.usdToEur', value: rUsd / rEur })
+    out.push({ id: 'eur-usd', labelKey: 'treasury.exchange.eurToUsd', value: rEur / rUsd })
+  }
+  return out
+}
+
+function normalizeBankSupportedCurrencies(raw) {
+  if (!Array.isArray(raw)) return []
+  return [...new Set(raw.map((c) => String(c).toUpperCase()).filter((c) => c.length === 3))].sort()
 }
 
 function deriveFlowType(row) {
@@ -240,6 +281,7 @@ export default function Treasury() {
 
   const loadEntries = useCallback(() => {
     if (!token || !canViewAccounting) return
+    setEntries([])
     setEntriesLoading(true)
     setEntriesError(null)
     getTreasuryEntries(token, {
@@ -251,7 +293,14 @@ export default function Treasury() {
       to: toDate || undefined,
       sort: sortKey || 'date',
     })
-      .then((res) => setEntries(Array.isArray(res.data) ? res.data : []))
+      .then((res) => {
+        const rows = Array.isArray(res.data) ? res.data : []
+        const byId = new Map()
+        for (const r of rows) {
+          if (r && r.id != null && !byId.has(r.id)) byId.set(r.id, r)
+        }
+        setEntries([...byId.values()])
+      })
       .catch((e) => {
         setEntriesError(e?.message || 'Error')
         setEntries([])
@@ -358,17 +407,9 @@ export default function Treasury() {
       .catch(() => setBankAccounts([]))
   }, [token, canViewAccounting])
 
-  const { balanceById: runningById, hasNegative: ledgerNegativeRunning } = useMemo(
-    () => computeRunningBalances(entries),
-    [entries],
-  )
+  const { balanceById: runningById } = useMemo(() => computeRunningBalances(entries), [entries])
 
-  const globalInsufficientFunds = Boolean(bankLedgerOverview?.banks?.some((b) => b.insufficient_funds))
-
-  const selectedBankOverviewRow = useMemo(() => {
-    if (!bankLedgerOverview?.banks || !selectedBankId) return null
-    return bankLedgerOverview.banks.find((b) => Number(b.id) === Number(selectedBankId)) ?? null
-  }, [bankLedgerOverview, selectedBankId])
+  const exchangePairs = useMemo(() => buildTreasuryExchangePairs(exchangeRates), [exchangeRates])
 
   const bankAccountOptions = useMemo(
     () =>
@@ -418,11 +459,11 @@ export default function Treasury() {
               : row.entry_type === 'transfer'
                 ? t('treasury.typeTransfer', 'Transfer')
                 : t('treasury.typeExchange', 'Exchange'),
-          row.amount,
+          formatPlainAmount(row.amount, locale),
           row.currency_code,
           row.reference_label || '',
           row.source,
-          rb != null ? rb.running : '',
+          rb != null ? formatPlainAmount(rb.running, locale) : '',
         ]
           .map(escapeCsvCell)
           .join(',')
@@ -662,51 +703,103 @@ export default function Treasury() {
   return (
     <Container size="xl">
       <div className="clients-page treasury-page">
-      {(globalInsufficientFunds ||
-        ledgerNegativeRunning ||
-        selectedBankOverviewRow?.insufficient_funds) && (
-        <div className="treasury-alert treasury-alert--warn mb-4" role="alert">
-          {t(
-            'treasury.insufficientFunds',
-            'Insufficient funds — balances cannot be negative; displayed amounts are shown as zero.',
-          )}
+      <section className="treasury-stats-band treasury-stats--compact mb-4" aria-label={t('treasury.statsSummaryRegion', 'Treasury summary')}>
+        <div className="clients-stats-grid accountings-stats-grid accountings-stats-grid--statement treasury-stats-grid--5">
+          <StatsCard
+            className="accountings-stat-card"
+            title={t('treasury.bankOverview.totalBalances')}
+            value={
+              bankOverviewLoading ? (
+                <span className="treasury-muted">…</span>
+              ) : (
+                <CurrencyMapBadges value={bankLedgerOverview?.global?.total_balance_by_currency} size="sm" amountFirst />
+              )
+            }
+            icon={<Wallet className="h-4 w-4" aria-hidden />}
+            variant="green"
+          />
+          <StatsCard
+            className="accountings-stat-card"
+            title={t('treasury.bankOverview.receivables')}
+            value={
+              bankOverviewLoading ? (
+                <span className="treasury-muted">…</span>
+              ) : (
+                <CurrencyMapBadges value={bankLedgerOverview?.global?.total_customer_in_by_currency} size="sm" amountFirst />
+              )
+            }
+            icon={<Receipt className="h-4 w-4" aria-hidden />}
+            variant="amber"
+          />
+          <StatsCard
+            className="accountings-stat-card"
+            title={t('treasury.bankOverview.customerOutstanding')}
+            value={
+              bankOverviewLoading ? (
+                <span className="treasury-muted">…</span>
+              ) : (
+                <CurrencyMapBadges
+                  value={bankLedgerOverview?.global?.customer_outstanding_receivables_by_currency}
+                  size="sm"
+                  amountFirst
+                />
+              )
+            }
+            icon={<HandCoins className="h-4 w-4" aria-hidden />}
+            variant="red"
+          />
+          <StatsCard
+            className="accountings-stat-card"
+            title={t('treasury.bankOverview.partnerPayments')}
+            value={
+              bankOverviewLoading ? (
+                <span className="treasury-muted">…</span>
+              ) : (
+                <CurrencyMapBadges value={bankLedgerOverview?.global?.total_partner_out_by_currency} size="sm" amountFirst />
+              )
+            }
+            icon={<Send className="h-4 w-4" aria-hidden />}
+            variant="blue"
+          />
+          <StatsCard
+            className="accountings-stat-card"
+            title={t('treasury.bankOverview.partnerPayables')}
+            value={
+              bankOverviewLoading ? (
+                <span className="treasury-muted">…</span>
+              ) : (
+                <CurrencyMapBadges
+                  value={bankLedgerOverview?.global?.partner_payables_outstanding_by_currency}
+                  size="sm"
+                  amountFirst
+                />
+              )
+            }
+            icon={<Building2 className="h-4 w-4" aria-hidden />}
+            variant="default"
+          />
+        </div>
+      </section>
+
+      {exchangePairs.length > 0 && (
+        <div className="mb-4">
+          <div className="treasury-sec-title mb-2">{t('treasury.exchange.dailyTitle')}</div>
+          <div className="treasury-rate-bar">
+            <div className="treasury-rate-bar-inner">
+              {exchangePairs.map((p) => (
+                <div key={p.id} className="treasury-rate-item">
+                  <span className="treasury-rate-lbl">{t(p.labelKey)}</span>
+                  <span className="treasury-rate-val">
+                    {Number(p.value).toLocaleString(locale, { maximumFractionDigits: 6 })}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
-      <div className="treasury-stats3 mb-4">
-        <div className="treasury-stat treasury-stat--green">
-          <div className="treasury-stat-lbl">{t('treasury.bankOverview.totalBalances', 'Total bank balances')}</div>
-          <div className="treasury-stat-val-rich">
-            {bankOverviewLoading ? (
-              <span className="treasury-muted">…</span>
-            ) : (
-              <CurrencyMapBadges value={bankLedgerOverview?.global?.total_balance_by_currency} size="sm" amountFirst />
-            )}
-          </div>
-        </div>
-        <div className="treasury-stat treasury-stat--orange">
-          <div className="treasury-stat-lbl">{t('treasury.bankOverview.receivables', 'Customer receipts')}</div>
-          <div className="treasury-stat-val-rich">
-            {bankOverviewLoading ? (
-              <span className="treasury-muted">…</span>
-            ) : (
-              <CurrencyMapBadges value={bankLedgerOverview?.global?.total_customer_in_by_currency} size="sm" amountFirst />
-            )}
-          </div>
-        </div>
-        <div className="treasury-stat treasury-stat--red">
-          <div className="treasury-stat-lbl">{t('treasury.bankOverview.liabilities', 'Partner payments')}</div>
-          <div className="treasury-stat-val-rich">
-            {bankOverviewLoading ? (
-              <span className="treasury-muted">…</span>
-            ) : (
-              <CurrencyMapBadges value={bankLedgerOverview?.global?.total_partner_out_by_currency} size="sm" amountFirst />
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="treasury-sec-title mb-2">{t('treasury.bankOverview.accountsTitle', 'Bank accounts')}</div>
+      <div className="treasury-sec-title mb-2">{t('treasury.bankOverview.accountsTitle')}</div>
       <div className="treasury-accounts-grid mb-4">
         {bankOverviewLoading && (
           <div className="treasury-banks-loading">
@@ -718,53 +811,53 @@ export default function Treasury() {
             bankLedgerOverview.banks.map((bank, idx) => {
               const active = String(selectedBankId) === String(bank.id)
               const bandMod = idx % 6
+              const curRows = normalizeBankSupportedCurrencies(bank.supported_currencies)
               return (
                 <button
                   key={bank.id}
                   type="button"
                   className={`treasury-acc-card treasury-acc-card--band-${bandMod}${active ? ' treasury-acc-card--active' : ''}`}
-                  onClick={() =>
+                  onClick={() => {
+                    setEntries([])
                     setSelectedBankId((prev) => (String(prev) === String(bank.id) ? '' : String(bank.id)))
-                  }
+                  }}
                 >
                   <div className={`treasury-acc-band treasury-acc-band--${bandMod}`} aria-hidden />
                   <div className="treasury-acc-body">
                     <div className="treasury-acc-kicker">
                       <Landmark className="h-3.5 w-3.5 opacity-70" aria-hidden />
-                      {t('treasury.bankOverview.account', 'Account')}
+                      {t('treasury.bankOverview.account')}
                     </div>
                     <div className="treasury-acc-name">{bank.bank_name}</div>
                     <div className="treasury-acc-sub">{bank.account_name || bank.account_number || '—'}</div>
-                    <div className="treasury-acc-currencies-label">{t('settings.bankAccounts.currencies', 'Currencies')}</div>
-                    <div className="treasury-acc-chip-row">
-                      {(Array.isArray(bank.supported_currencies) ? bank.supported_currencies : []).map((c) => (
-                        <span key={c} className="treasury-cur-chip">
-                          {String(c).toUpperCase()}
-                        </span>
-                      ))}
-                      {!bank.supported_currencies?.length ? <span className="treasury-muted text-sm">—</span> : null}
-                    </div>
-                    <div className="treasury-acc-row mt-2">
-                      <span>{t('treasury.bankOverview.currentBalance', 'Balance')}</span>
-                      <span className="treasury-acc-mono">
-                        <CurrencyMapBadges value={bank.balance_by_currency} size="sm" amountFirst />
-                      </span>
-                    </div>
-                    <div className="treasury-acc-row treasury-acc-row--muted">
-                      <span>{t('treasury.bankOverview.customerIn', 'Incoming (customers)')}</span>
-                      <span className="treasury-acc-mono">
-                        <CurrencyMapBadges value={bank.customer_in_by_currency} size="sm" amountFirst />
-                      </span>
-                    </div>
-                    <div className="treasury-acc-row treasury-acc-row--muted">
-                      <span>{t('treasury.bankOverview.partnerOut', 'Outgoing (partners)')}</span>
-                      <span className="treasury-acc-mono">
-                        <CurrencyMapBadges value={bank.partner_out_by_currency} size="sm" amountFirst />
-                      </span>
-                    </div>
-                    {bank.insufficient_funds ? (
-                      <div className="treasury-acc-warn">{t('treasury.insufficientFundsShort', 'Insufficient funds')}</div>
-                    ) : null}
+                    {curRows.length ? (
+                      <>
+                        <div className="treasury-acc-cur-head" aria-hidden>
+                          <span />
+                          <span>{t('treasury.bankOverview.rowBalance')}</span>
+                          <span>{t('treasury.bankOverview.rowIn')}</span>
+                          <span>{t('treasury.bankOverview.rowOut')}</span>
+                        </div>
+                        {curRows.map((cur) => (
+                          <div key={`${bank.id}-${cur}`} className="treasury-acc-cur-row">
+                            <span className="treasury-acc-cur-badge-wrap">
+                              <CurrencyCodeBadge code={cur} />
+                            </span>
+                            <span className="treasury-acc-cur-num treasury-acc-mono">
+                              {formatPlainAmount(bank.balance_by_currency?.[cur] ?? 0, locale)}
+                            </span>
+                            <span className="treasury-acc-cur-num treasury-acc-cur-num--muted treasury-acc-mono">
+                              {formatPlainAmount(bank.customer_in_by_currency?.[cur] ?? 0, locale)}
+                            </span>
+                            <span className="treasury-acc-cur-num treasury-acc-cur-num--muted treasury-acc-mono">
+                              {formatPlainAmount(bank.partner_out_by_currency?.[cur] ?? 0, locale)}
+                            </span>
+                          </div>
+                        ))}
+                      </>
+                    ) : (
+                      <p className="treasury-muted mt-2 text-xs">{t('treasury.bankOverview.noCurrenciesConfigured')}</p>
+                    )}
                   </div>
                 </button>
               )
@@ -773,19 +866,6 @@ export default function Treasury() {
             <p className="treasury-muted">{t('treasury.bankOverview.noBanks', 'No active bank accounts.')}</p>
           ))}
       </div>
-
-      {exchangeRates.length > 0 && (
-        <div className="treasury-rate-bar mb-4">
-          <div className="treasury-rate-bar-inner">
-            {exchangeRates.slice(0, 8).map((c) => (
-              <div key={c.code || c.id} className="treasury-rate-item">
-                <span className="treasury-rate-lbl">{String(c.code || '').toUpperCase()}</span>
-                <span className="treasury-rate-val">{Number(c.exchange_rate ?? c.rate ?? 0).toLocaleString(locale)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       <div className="invoices-tabs-section">
         <div className="invoices-tabs-wrap">
@@ -812,6 +892,7 @@ export default function Treasury() {
                 className="clients-input min-w-[200px]"
                 value={selectedBankId}
                 onChange={(e) => {
+                  setEntries([])
                   setEntriesPage(1)
                   setSelectedBankId(e.target.value)
                 }}
@@ -947,8 +1028,7 @@ export default function Treasury() {
               {!entriesLoading &&
                 pagedEntries.map((row) => {
                   const rb = runningById.get(row.id)
-                  const runDisplay =
-                    rb != null ? formatAmount(rb.running, rb.currency, locale) : '—'
+                  const runDisplay = rb != null ? formatPlainAmount(rb.running, locale) : '—'
                   const flow = deriveFlowType(row)
                   const desc = [row.description, row.reference_label].filter(Boolean).join(' · ') || '—'
                   return (
@@ -979,10 +1059,12 @@ export default function Treasury() {
                                 : t('treasury.typeExchange', 'Exchange')}
                         </span>
                       </td>
-                      <td className={Number(row.amount) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}>
-                        {formatAmount(row.amount, row.currency_code, locale)}
+                      <td className={`treasury-acc-mono ${Number(row.amount) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                        {formatPlainAmount(row.amount, locale)}
                       </td>
-                      <td>{row.currency_code}</td>
+                      <td>
+                        <CurrencyCodeBadge code={row.currency_code} />
+                      </td>
                       <td className="max-w-[180px] truncate" title={row.reference_label || ''}>
                         {row.reference_label || '—'}
                       </td>

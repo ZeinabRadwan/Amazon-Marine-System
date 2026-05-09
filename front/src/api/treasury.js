@@ -95,6 +95,16 @@ export async function getTreasuryEntries(token, params = {}) {
  *   notes?: string,
  * }} body
  */
+function treasuryApiError(json, fallback, status) {
+  if (json?.message) return json.message
+  const errs = json?.errors
+  if (errs && typeof errs === 'object') {
+    const parts = Object.values(errs).flat().filter(Boolean)
+    if (parts.length) return parts.join(' ')
+  }
+  return json?.error || fallback || `Request failed (${status})`
+}
+
 export async function createTreasuryEntry(token, body) {
   const res = await apiFetch(`${getBaseUrl()}/treasury/entries`, {
     method: 'POST',
@@ -103,7 +113,7 @@ export async function createTreasuryEntry(token, body) {
   })
   const json = await res.json().catch(() => ({}))
   if (!res.ok) {
-    throw new Error(json.message || json.error || `Failed to create treasury entry (${res.status})`)
+    throw new Error(treasuryApiError(json, null, res.status))
   }
   return json.data ?? json
 }
@@ -119,7 +129,7 @@ export async function updateTreasuryEntry(token, id, body) {
   })
   const json = await res.json().catch(() => ({}))
   if (!res.ok) {
-    throw new Error(json.message || json.error || `Failed to update treasury entry (${res.status})`)
+    throw new Error(treasuryApiError(json, null, res.status))
   }
   return json.data ?? json
 }
@@ -150,7 +160,7 @@ export async function createTreasuryTransfer(token, body) {
   })
   const json = await res.json().catch(() => ({}))
   if (!res.ok) {
-    throw new Error(json.message || json.error || `Failed to record transfer (${res.status})`)
+    throw new Error(treasuryApiError(json, null, res.status))
   }
   return json
 }

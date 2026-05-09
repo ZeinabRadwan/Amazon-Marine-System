@@ -382,3 +382,68 @@
   background: rgb(219 234 254);
   color: rgb(29 78 216);
 }
+
+/* Five headline stats — aligned with Accountings StatsCard grid */
+.treasury-stats-grid--5.accountings-stats-grid {
+  margin-bottom: 0;
+}
+
+@media (min-width: 640px) {
+  .treasury-stats-grid--5 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .treasury-stats-grid--5 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1400px) {
+  .treasury-stats-grid--5 {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+/* Bank card — one row per supported currency (wireframe cur-row) */
+.treasury-acc-cur-head {
+  display: grid;
+  grid-template-columns: minmax(4rem, auto) 1fr 1fr 1fr;
+  gap: 0.35rem 0.5rem;
+  align-items: center;
+  margin-top: 0.65rem;
+  margin-bottom: 0.25rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--form-muted, #94a3b8);
+}
+
+.treasury-acc-cur-row {
+  display: grid;
+  grid-template-columns: minmax(4rem, auto) 1fr 1fr 1fr;
+  gap: 0.35rem 0.5rem;
+  align-items: center;
+  padding: 0.35rem 0.45rem;
+  margin-bottom: 0.35rem;
+  border-radius: 6px;
+  border: 1px solid var(--form-divider, #e5e7eb);
+  background: var(--gray-50, #f8fafc);
+}
+
+.treasury-acc-cur-badge-wrap {
+  display: flex;
+  align-items: center;
+}
+
+.treasury-acc-cur-num {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: end;
+}
+
+.treasury-acc-cur-num--muted {
+  opacity: 0.85;
+}
