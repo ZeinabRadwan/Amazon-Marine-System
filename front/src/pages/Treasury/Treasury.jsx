@@ -40,22 +40,6 @@ function singleCurrencyMap(amount, currencyCode) {
 /** Western digits (0–9) for all treasury figures; independent of UI language. */
 const TREASURY_NUMBER_LOCALE = 'en-US'
 
-function formatAmount(amount, currency) {
-  const n = Number(amount)
-  if (Number.isNaN(n)) return '—'
-  const cur = currency || 'USD'
-  try {
-    return new Intl.NumberFormat(TREASURY_NUMBER_LOCALE, {
-      style: 'currency',
-      currency: cur,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(n)
-  } catch {
-    return `${n.toFixed(2)} ${cur}`
-  }
-}
-
 /** Plain numeric amount (no currency symbol); pair with {@link CurrencyCodeBadge}. */
 function formatPlainAmount(amount) {
   const n = Number(amount)
@@ -74,17 +58,6 @@ function formatTreasuryFxPair(pair) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(n)
-}
-
-function formatTreasuryAsOf(isoDate) {
-  if (!isoDate || typeof isoDate !== 'string') return ''
-  try {
-    const d = new Date(`${isoDate}T12:00:00`)
-    if (Number.isNaN(d.getTime())) return isoDate
-    return d.toLocaleDateString(TREASURY_NUMBER_LOCALE, { year: 'numeric', month: 'short', day: 'numeric' })
-  } catch {
-    return isoDate
-  }
 }
 
 /** Subtitle date for the FX block (e.g. "06 May 2026"). Western digits; order DD Mon YYYY. */
@@ -137,6 +110,15 @@ function treasuryBankDisplayCurrencies(bank) {
   if (fromSupported.length > 0) return fromSupported
   const bal = normalizeBalanceByCurrency(bank?.balance_by_currency)
   return sortTreasuryCurrencyCodes(Object.keys(bal))
+}
+
+/** Prefer API `allowed_currencies` (banks + fixed cash-wallet rules). */
+function treasuryAccountDisplayCurrencies(account) {
+  const allowed = account?.allowed_currencies
+  if (Array.isArray(allowed) && allowed.length > 0) {
+    return sortTreasuryCurrencyCodes(allowed)
+  }
+  return treasuryBankDisplayCurrencies(account)
 }
 
 /** One line: two decimals + ISO code (e.g. "30.00 USD"). */
@@ -355,10 +337,28 @@ export default function Treasury() {
 
   const treasuryFxOk = dailyFxResponse?.ok === true && treasuryFxPairs.length > 0
 
-  const bankFilterOptions = useMemo(() => {
-    if (bankLedgerOverview?.banks?.length) return bankLedgerOverview.banks
-    return []
+  const bankAccountsRows = useMemo(() => {
+    if (Array.isArray(bankLedgerOverview?.bank_accounts)) {
+      return bankLedgerOverview.bank_accounts
+    }
+    const legacy = bankLedgerOverview?.banks
+    if (!Array.isArray(legacy)) return []
+    return legacy.filter((b) => (b.treasury_account_kind ?? 'bank') === 'bank')
   }, [bankLedgerOverview])
+
+  const cashWalletRows = useMemo(() => {
+    if (Array.isArray(bankLedgerOverview?.cash_wallets)) {
+      return bankLedgerOverview.cash_wallets
+    }
+    const legacy = bankLedgerOverview?.banks
+    if (!Array.isArray(legacy)) return []
+    return legacy.filter((b) => b.treasury_account_kind === 'cash_wallet')
+  }, [bankLedgerOverview])
+
+  const bankFilterOptions = useMemo(
+    () => [...bankAccountsRows, ...cashWalletRows],
+    [bankAccountsRows, cashWalletRows],
+  )
 
   const exportEntriesCsv = () => {
     const headers = [
@@ -576,83 +576,157 @@ export default function Treasury() {
         ) : null}
       </section>
 
-      <div className="treasury-sec-title mb-2">{t('treasury.bankOverview.accountsTitle')}</div>
-      <div className="treasury-accounts-grid mb-4">
-        {bankOverviewLoading && (
-          <div className="treasury-banks-loading">
-            <LoaderDots />
-          </div>
-        )}
-        {!bankOverviewLoading &&
-          (bankLedgerOverview?.banks?.length ? (
-            bankLedgerOverview.banks.map((bank, idx) => {
-              const active = String(selectedBankId) === String(bank.id)
-              const bandMod = idx % 6
-              return (
-                <button
-                  key={bank.id}
-                  type="button"
-                  className={`treasury-acc-card treasury-acc-card--band-${bandMod}${active ? ' treasury-acc-card--active' : ''}`}
-                  onClick={() => {
-                    setEntries([])
-                    setSelectedBankId((prev) => (String(prev) === String(bank.id) ? '' : String(bank.id)))
-                  }}
-                >
-                  <div className={`treasury-acc-band treasury-acc-band--${bandMod}`} aria-hidden />
-                  <div className="treasury-acc-body">
-                    {/* Line 1: kicker label + combined account name (bank / account_name) on a single row. */}
-                    <div className="treasury-acc-header">
-                      <span className="treasury-acc-kicker">
-                        <Landmark className="h-3.5 w-3.5 opacity-70" aria-hidden />
-                        {t('treasury.bankOverview.account')}
-                      </span>
-                      <span className="treasury-acc-headline">
-                        <span className="treasury-acc-name">{bank.bank_name}</span>
-                        {bank.account_name ? (
-                          <>
-                            <span className="treasury-acc-sep" aria-hidden>
-                              {' / '}
-                            </span>
-                            <span className="treasury-acc-name">{bank.account_name}</span>
-                          </>
-                        ) : null}
-                      </span>
-                    </div>
-                    {/* Line 2: subtitle (account number or IBAN) on its own line, smaller font. */}
-                    {bank.account_number || bank.iban ? (
-                      <div className="treasury-acc-sub">{bank.account_number || bank.iban}</div>
-                    ) : null}
-                    <div className="treasury-acc-balances">
-                      <div className="treasury-acc-balances-label">{t('treasury.bankOverview.currencyBalances')}</div>
-                      {(() => {
-                        const byCur = normalizeBalanceByCurrency(bank.balance_by_currency)
-                        const codes = treasuryBankDisplayCurrencies(bank)
-                        if (!codes.length) {
+      {bankOverviewLoading ? (
+        <div className="treasury-banks-loading treasury-banks-loading--sections mb-4">
+          <LoaderDots />
+        </div>
+      ) : (
+        <>
+          <div className="treasury-sec-title mb-2">{t('treasury.sections.bankAccounts')}</div>
+          <div className="treasury-accounts-grid mb-4">
+            {bankAccountsRows.length ? (
+              bankAccountsRows.map((bank, idx) => {
+                const active = String(selectedBankId) === String(bank.id)
+                const bandMod = idx % 6
+                return (
+                  <button
+                    key={`bank-${bank.id}`}
+                    type="button"
+                    className={`treasury-acc-card treasury-acc-card--bank treasury-acc-card--band-${bandMod}${
+                      active ? ' treasury-acc-card--active' : ''
+                    }`}
+                    onClick={() => {
+                      setEntries([])
+                      setSelectedBankId((prev) => (String(prev) === String(bank.id) ? '' : String(bank.id)))
+                    }}
+                  >
+                    <div className={`treasury-acc-band treasury-acc-band--${bandMod}`} aria-hidden />
+                    <div className="treasury-acc-body">
+                      <div className="treasury-acc-header">
+                        <span className="treasury-acc-kicker">
+                          <Landmark className="h-3.5 w-3.5 opacity-70" aria-hidden />
+                          {t('treasury.bankOverview.account')}
+                        </span>
+                        <span className="treasury-acc-headline">
+                          <span className="treasury-acc-name">{bank.bank_name}</span>
+                          {bank.account_name ? (
+                            <>
+                              <span className="treasury-acc-sep" aria-hidden>
+                                {' / '}
+                              </span>
+                              <span className="treasury-acc-name">{bank.account_name}</span>
+                            </>
+                          ) : null}
+                        </span>
+                      </div>
+                      {bank.account_number || bank.iban ? (
+                        <div className="treasury-acc-sub">{bank.account_number || bank.iban}</div>
+                      ) : null}
+                      <div className="treasury-acc-balances">
+                        <div className="treasury-acc-balances-label">{t('treasury.bankOverview.currencyBalances')}</div>
+                        {(() => {
+                          const byCur = normalizeBalanceByCurrency(bank.balance_by_currency)
+                          const codes = treasuryAccountDisplayCurrencies(bank)
+                          if (!codes.length) {
+                            return (
+                              <p className="treasury-acc-balances-empty">{t('treasury.bankOverview.noCurrenciesConfigured')}</p>
+                            )
+                          }
                           return (
-                            <p className="treasury-acc-balances-empty">{t('treasury.bankOverview.noCurrenciesConfigured')}</p>
+                            <ul className="treasury-acc-balance-list" role="list">
+                              {codes.map((code) => (
+                                <li key={code} className="treasury-acc-balance-line">
+                                  <span className="treasury-acc-balance-amount" dir="ltr" lang="en">
+                                    {formatPlainAmountWithCode(byCur[code] ?? 0, code)}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
                           )
-                        }
-                        return (
-                          <ul className="treasury-acc-balance-list" role="list">
-                            {codes.map((code) => (
-                              <li key={code} className="treasury-acc-balance-line">
-                                <span className="treasury-acc-balance-amount" dir="ltr" lang="en">
-                                  {formatPlainAmountWithCode(byCur[code] ?? 0, code)}
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
-                        )
-                      })()}
+                        })()}
+                      </div>
                     </div>
-                  </div>
-                </button>
-              )
-            })
-          ) : (
-            <p className="treasury-muted">{t('treasury.bankOverview.noBanks', 'No active bank accounts.')}</p>
-          ))}
-      </div>
+                  </button>
+                )
+              })
+            ) : (
+              <p className="treasury-muted treasury-accounts-grid__empty">{t('treasury.bankOverview.noBankAccountsSection')}</p>
+            )}
+          </div>
+
+          <div className="treasury-sec-title mb-2 treasury-sec-title--spaced">{t('treasury.sections.cashWallets')}</div>
+          <div className="treasury-accounts-grid mb-4">
+            {cashWalletRows.length ? (
+              cashWalletRows.map((box, idx) => {
+                const active = String(selectedBankId) === String(box.id)
+                const bandMod = idx % 6
+                return (
+                  <button
+                    key={`cash-${box.id}`}
+                    type="button"
+                    className={`treasury-acc-card treasury-acc-card--cash treasury-acc-card--band-${bandMod}${
+                      active ? ' treasury-acc-card--active' : ''
+                    }`}
+                    onClick={() => {
+                      setEntries([])
+                      setSelectedBankId((prev) => (String(prev) === String(box.id) ? '' : String(box.id)))
+                    }}
+                  >
+                    <div className={`treasury-acc-band treasury-acc-band--${bandMod}`} aria-hidden />
+                    <div className="treasury-acc-body">
+                      <div className="treasury-acc-header">
+                        <span className="treasury-acc-kicker">
+                          <Wallet className="h-3.5 w-3.5 opacity-70" aria-hidden />
+                          {t('treasury.cashWallet.kicker')}
+                        </span>
+                        <span className="treasury-acc-headline">
+                          <span className="treasury-acc-name">{box.bank_name}</span>
+                          {box.account_name ? (
+                            <>
+                              <span className="treasury-acc-sep" aria-hidden>
+                                {' / '}
+                              </span>
+                              <span className="treasury-acc-name">{box.account_name}</span>
+                            </>
+                          ) : null}
+                        </span>
+                      </div>
+                      {box.account_number || box.iban ? (
+                        <div className="treasury-acc-sub">{box.account_number || box.iban}</div>
+                      ) : null}
+                      <div className="treasury-acc-balances">
+                        <div className="treasury-acc-balances-label">{t('treasury.bankOverview.currencyBalances')}</div>
+                        {(() => {
+                          const byCur = normalizeBalanceByCurrency(box.balance_by_currency)
+                          const codes = treasuryAccountDisplayCurrencies(box)
+                          if (!codes.length) {
+                            return (
+                              <p className="treasury-acc-balances-empty">{t('treasury.bankOverview.noCurrenciesConfigured')}</p>
+                            )
+                          }
+                          return (
+                            <ul className="treasury-acc-balance-list" role="list">
+                              {codes.map((code) => (
+                                <li key={code} className="treasury-acc-balance-line">
+                                  <span className="treasury-acc-balance-amount" dir="ltr" lang="en">
+                                    {formatPlainAmountWithCode(byCur[code] ?? 0, code)}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          )
+                        })()}
+                      </div>
+                    </div>
+                  </button>
+                )
+              })
+            ) : (
+              <p className="treasury-muted treasury-accounts-grid__empty">{t('treasury.bankOverview.noCashWalletsSection')}</p>
+            )}
+          </div>
+        </>
+      )}
 
       <section className="treasury-movements-section" aria-labelledby="treasury-movements-title">
         <h2 id="treasury-movements-title" className="treasury-section-title">
@@ -700,8 +774,9 @@ export default function Treasury() {
                 <option value="">{t('treasury.allTypes')}</option>
                 <option value="in">{t('treasury.typeIn')}</option>
                 <option value="out">{t('treasury.typeOut')}</option>
-                <option value="transfer">{t('treasury.typeTransfer', 'Transfer')}</option>
-                <option value="exchange">{t('treasury.typeExchange', 'Exchange')}</option>
+                <option value="exchange">{t('treasury.typeExchange')}</option>
+                <option value="transfer">{t('treasury.typeTransfer')}</option>
+                <option value="expense">{t('treasury.typeExpense')}</option>
               </select>
               <select
                 className="clients-input min-w-[120px]"

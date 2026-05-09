@@ -2421,9 +2421,12 @@
     "transfer": "تحويل",
     "searchPlaceholder": "بحث في المرجع أو الملاحظات…",
     "filterType": "النوع",
-    "allTypes": "كل الأنواع",
-    "typeIn": "وارد",
-    "typeOut": "صادر",
+    "allTypes": "الكل",
+    "typeIn": "إيداع",
+    "typeOut": "سحب",
+    "typeExchange": "صرف عملة",
+    "typeTransfer": "تحويل داخلي",
+    "typeExpense": "مصروف",
     "dateFrom": "من",
     "dateTo": "إلى",
     "sortBy": "الترتيب",
@@ -2447,6 +2450,13 @@
     "colFlow": "التدفق",
     "colReference": "المرجع",
     "statsSummaryRegion": "ملخص الخزينة",
+    "sections": {
+      "bankAccounts": "الحسابات البنكية",
+      "cashWallets": "محافظ النقد (خزينة تشغيلية)"
+    },
+    "cashWallet": {
+      "kicker": "محفظة نقدية"
+    },
     "bankOverview": {
       "totalBalances": "إجمالي أرصدة البنوك",
       "receivables": "إيصالات العملاء",
@@ -2466,12 +2476,14 @@
       "rowIn": "وارد (عملاء)",
       "rowOut": "صادر (شركاء)",
       "noCurrenciesConfigured": "لا توجد عملات مدعومة لهذا الحساب.",
+      "noBankAccountsSection": "لا توجد حسابات بنكية رسمية مهيأة.",
+      "noCashWalletsSection": "لا توجد محافظ نقدية بعد. أضِف أو زِر البذرة لمحافظ NSP وفودافون والصندوق النقدي.",
       "noBanks": "لا توجد حسابات بنكية نشطة.",
       "filterBank": "الحساب البنكي",
       "allBanks": "كل البنوك"
     },
     "exchange": {
-      "dailyTitle": "أسعار الصرف اليومية",
+      "dailyTitle": "أسعار صرف اليوم",
       "dailySubtitle": "البنك المركزي المصري — النشرة الرسمية للأسعار (اعتبارًا من {{date}})",
       "dailySubtitleSource": "البنك المركزي المصري — النشرة الرسمية لأسعار الصرف الأجنبي.",
       "ratesPanelAria": "أسعار الصرف الرسمية للبنك المركزي المصري",

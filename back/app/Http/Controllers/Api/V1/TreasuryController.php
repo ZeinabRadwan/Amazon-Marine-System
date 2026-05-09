@@ -12,6 +12,7 @@ use App\Models\TreasuryEntry;
 use App\Models\VendorBill;
 use App\Services\AccountingAggregationService;
 use App\Services\CbeOfficialExchangeRateService;
+use App\Services\TreasuryAccountCurrencyService;
 use App\Services\TreasuryLedgerBalanceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -191,6 +192,11 @@ class TreasuryController extends Controller
                 }
             }
 
+            $kind = strtolower(trim((string) ($bank->treasury_account_kind ?? '')));
+            if ($kind === '') {
+                $kind = BankAccount::TREASURY_KIND_BANK;
+            }
+
             $bankPayload[] = [
                 'id' => $bank->id,
                 'bank_name' => $bank->bank_name,
@@ -198,6 +204,9 @@ class TreasuryController extends Controller
                 'account_number' => $bank->account_number,
                 'iban' => $bank->iban ?? null,
                 'supported_currencies' => is_array($bank->supported_currencies) ? $bank->supported_currencies : [],
+                'treasury_account_kind' => $kind,
+                'cash_wallet_kind' => $bank->cash_wallet_kind,
+                'allowed_currencies' => $bank->allowedTreasuryCurrencyCodes(),
                 'balance_by_currency' => $this->roundMoneyMap($balanceDisplay),
                 'customer_in_by_currency' => $this->roundMoneyMap($customerIn),
                 'partner_out_by_currency' => $this->roundMoneyMap($partnerOut),
@@ -239,6 +248,15 @@ class TreasuryController extends Controller
         $apAgg = AccountingAggregationService::aggregateVendorBills($openBills);
         $partnerPayablesOutstanding = $this->clampMoneyMapNonNegative($apAgg['total_remaining_per_currency']);
 
+        $bankAccountsOnly = array_values(array_filter(
+            $bankPayload,
+            static fn (array $row): bool => ($row['treasury_account_kind'] ?? BankAccount::TREASURY_KIND_BANK) === BankAccount::TREASURY_KIND_BANK
+        ));
+        $cashWalletsOnly = array_values(array_filter(
+            $bankPayload,
+            static fn (array $row): bool => ($row['treasury_account_kind'] ?? BankAccount::TREASURY_KIND_BANK) === BankAccount::TREASURY_KIND_CASH_WALLET
+        ));
+
         return response()->json([
             'data' => [
                 'global' => [
@@ -248,6 +266,8 @@ class TreasuryController extends Controller
                     'customer_outstanding_receivables_by_currency' => $customerOutstandingReceivables,
                     'partner_payables_outstanding_by_currency' => $partnerPayablesOutstanding,
                 ],
+                'bank_accounts' => $bankAccountsOnly,
+                'cash_wallets' => $cashWalletsOnly,
                 'banks' => $bankPayload,
             ],
         ]);
@@ -542,6 +562,15 @@ class TreasuryController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
+        try {
+            TreasuryAccountCurrencyService::assertTreasuryEntryCurrencies($validated);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => collect($e->errors())->flatten()->first() ?? __('Validation failed.'),
+                'errors' => $e->errors(),
+            ], 422);
+        }
+
         if ($fail = $this->assertSufficientBankBalance($validated)) {
             return $fail;
         }
@@ -632,6 +661,22 @@ class TreasuryController extends Controller
             $treasury_entry->notes = $validated['notes'];
         }
 
+        $mergedForCurrencyCheck = [
+            'entry_type' => $treasury_entry->entry_type,
+            'account_id' => $treasury_entry->account_id,
+            'counter_account_id' => $treasury_entry->counter_account_id,
+            'currency_code' => $treasury_entry->currency_code,
+            'target_currency_code' => $treasury_entry->target_currency_code,
+        ];
+        try {
+            TreasuryAccountCurrencyService::assertTreasuryEntryCurrencies($mergedForCurrencyCheck);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => collect($e->errors())->flatten()->first() ?? __('Validation failed.'),
+                'errors' => $e->errors(),
+            ], 422);
+        }
+
         $mergedForDebitCheck = [
             'entry_type' => $treasury_entry->entry_type,
             'account_id' => $treasury_entry->account_id,
@@ -704,6 +749,22 @@ class TreasuryController extends Controller
                 : (float) $validated['from_amount']);
 
         $fromAccountId = isset($validated['from_account_id']) ? (int) $validated['from_account_id'] : 0;
+        $toAccountId = isset($validated['to_account_id']) ? (int) $validated['to_account_id'] : 0;
+
+        try {
+            TreasuryAccountCurrencyService::assertTransferCurrencies(
+                $fromAccountId,
+                $toAccountId,
+                $fromCurrency,
+                $toCurrency
+            );
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => collect($e->errors())->flatten()->first() ?? __('Validation failed.'),
+                'errors' => $e->errors(),
+            ], 422);
+        }
+
         if ($fromAccountId > 0) {
             try {
                 $this->ledgerBalance->ensureDebitDoesNotOverdraft(

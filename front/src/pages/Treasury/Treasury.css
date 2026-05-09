@@ -196,6 +196,23 @@
   justify-content: center;
 }
 
+.treasury-banks-loading--sections {
+  padding: 2.5rem 1rem;
+}
+
+.treasury-accounts-grid__empty {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.treasury-sec-title--spaced {
+  margin-top: 0.25rem;
+}
+
+.treasury-acc-card--cash {
+  border-style: dashed;
+}
+
 .treasury-acc-card {
   text-align: start;
   background: var(--form-bg, #fff);

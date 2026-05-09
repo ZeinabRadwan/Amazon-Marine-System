@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\BankAccount;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class BankAccountController extends Controller
 {
@@ -29,6 +30,13 @@ class BankAccountController extends Controller
             'supported_currencies' => ['nullable', 'array'],
             'supported_currencies.*' => ['string', 'size:3'],
             'is_active' => ['nullable', 'boolean'],
+            'treasury_account_kind' => ['nullable', 'string', 'in:bank,cash_wallet'],
+            'cash_wallet_kind' => [
+                'nullable',
+                'string',
+                'in:nsp,vodafone,physical',
+                Rule::requiredIf(static fn () => ($request->input('treasury_account_kind') ?? BankAccount::TREASURY_KIND_BANK) === BankAccount::TREASURY_KIND_CASH_WALLET),
+            ],
         ]);
         $account = BankAccount::query()->create($validated);
         return response()->json(['data' => $account], 201);
@@ -46,6 +54,17 @@ class BankAccountController extends Controller
             'supported_currencies' => ['nullable', 'array'],
             'supported_currencies.*' => ['string', 'size:3'],
             'is_active' => ['nullable', 'boolean'],
+            'treasury_account_kind' => ['nullable', 'string', 'in:bank,cash_wallet'],
+            'cash_wallet_kind' => [
+                'nullable',
+                'string',
+                'in:nsp,vodafone,physical',
+                Rule::requiredIf(static function () use ($request, $bankAccount): bool {
+                    $kind = $request->input('treasury_account_kind') ?? $bankAccount->treasury_account_kind ?? BankAccount::TREASURY_KIND_BANK;
+
+                    return $kind === BankAccount::TREASURY_KIND_CASH_WALLET;
+                }),
+            ],
         ]);
         $bankAccount->fill($validated);
         $bankAccount->save();

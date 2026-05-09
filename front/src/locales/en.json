@@ -2420,9 +2420,12 @@
     "transfer": "Transfer",
     "searchPlaceholder": "Search reference or notes…",
     "filterType": "Type",
-    "allTypes": "All types",
-    "typeIn": "Inbound",
-    "typeOut": "Outbound",
+    "allTypes": "All",
+    "typeIn": "Deposit",
+    "typeOut": "Withdraw",
+    "typeExchange": "Currency exchange",
+    "typeTransfer": "Internal transfer",
+    "typeExpense": "Expense",
     "dateFrom": "From",
     "dateTo": "To",
     "sortBy": "Sort",
@@ -2446,6 +2449,13 @@
     "colFlow": "Flow",
     "colReference": "Reference",
     "statsSummaryRegion": "Treasury summary",
+    "sections": {
+      "bankAccounts": "Bank accounts",
+      "cashWallets": "Treasury cash wallets"
+    },
+    "cashWallet": {
+      "kicker": "Cash wallet"
+    },
     "bankOverview": {
       "totalBalances": "Total bank balances",
       "receivables": "Customer receipts",
@@ -2465,6 +2475,8 @@
       "rowIn": "In (customers)",
       "rowOut": "Out (partners)",
       "noCurrenciesConfigured": "No supported currencies configured for this account.",
+      "noBankAccountsSection": "No formal bank accounts configured.",
+      "noCashWalletsSection": "No treasury cash wallets yet. Seed or configure NSP, Vodafone Cash, and Physical cash in bank accounts.",
       "noBanks": "No active bank accounts.",
       "filterBank": "Bank account",
       "allBanks": "All banks"

@@ -35,20 +35,12 @@ class BankPaymentCurrencyService
             return;
         }
 
-        $supportedRaw = $bank->supported_currencies;
-        $supported = [];
-        if (is_array($supportedRaw)) {
-            foreach ($supportedRaw as $c) {
-                $u = strtoupper(trim((string) $c));
-                if ($u !== '' && strlen($u) === 3) {
-                    $supported[] = $u;
-                }
-            }
-            $supported = array_values(array_unique($supported));
-        }
+        $supported = $bank->allowedTreasuryCurrencyCodes();
 
         if ($supported === []) {
-            return;
+            throw ValidationException::withMessages([
+                'currency_code' => [__('bank.bank_account_requires_allowed_currencies')],
+            ]);
         }
 
         $payCur = strtoupper(trim((string) ($validated['currency_code'] ?? '')));
