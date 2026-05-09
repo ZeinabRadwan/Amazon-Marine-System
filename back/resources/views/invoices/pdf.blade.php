@@ -4,9 +4,26 @@
     <style>
         @include('pdf.partials.sd_branded_document_skin')
         /* Invoice PDF — English / LTR layout (structure aligned with amazon_marine_invoice_template.html) */
+        body.pdf-body .pdf-page-header {
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            line-height: 0;
+        }
+        body.pdf-body .pdf-page-header__img {
+            display: block;
+            margin: 0;
+            padding: 0;
+            border: none;
+            vertical-align: bottom;
+        }
         .pdf-inv-html {
             direction: ltr;
             text-align: left;
+            margin-left: -12px;
+            margin-right: -12px;
+            width: auto;
+            box-sizing: border-box;
         }
         .pdf-inv-html .pdf-inv-bg-navy {
             background: #0f2d4a;
@@ -20,122 +37,133 @@
         }
 
         .pdf-inv-header {
-            background: #0f2d4a;
-            padding: 14px 18px;
+            background: #ffffff;
+            padding: 6px 0;
             width: 100%;
             border-collapse: collapse;
+            margin: 0;
         }
         .pdf-inv-header td {
             vertical-align: middle;
             border: none;
-            padding: 4px 8px;
+            padding: 2px 0;
         }
         .pdf-inv-header__logo img {
-            height: 48px;
+            height: auto;
+            max-height: 40px;
             width: auto;
+            max-width: 88px;
             display: block;
         }
         .pdf-inv-header__logo-fallback {
-            width: 48px;
-            height: 48px;
-            border: 2px solid #ffffff;
-            border-radius: 8px;
+            width: 56px;
+            height: 36px;
+            border: 2px solid #ec7f00;
+            border-radius: 6px;
             text-align: center;
-            line-height: 44px;
+            line-height: 32px;
+            font-size: 8px;
             font-weight: 800;
             color: #0f2d4a;
-            background: #ffffff;
+            background: #f8fafc;
         }
-        .pdf-inv-company-name {
-            font-size: 15px;
+        .pdf-inv-title-primary {
+            font-size: 14px;
             font-weight: 700;
-            color: #ffffff;
+            color: #0f2d4a;
             letter-spacing: 0.02em;
-        }
-        .pdf-inv-company-sub {
-            font-size: 9px;
-            color: rgba(255, 255, 255, 0.45);
-            margin-top: 3px;
-            letter-spacing: 0.06em;
+            line-height: 1.25;
+            margin: 0;
+            padding: 0;
         }
         .pdf-inv-header__doc {
             text-align: right;
+            vertical-align: middle;
         }
-        .pdf-inv-inv-label {
-            font-size: 20px;
+        .pdf-inv-tax-label {
+            font-size: 17px;
             font-weight: 700;
-            color: #ffffff;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            line-height: 1.15;
+            color: #ec7f00;
+            letter-spacing: 0.05em;
+            line-height: 1.2;
+            margin: 0;
+            padding: 0;
         }
         .pdf-inv-inv-ref {
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.45);
-            margin-top: 5px;
+            font-size: 10.5px;
+            color: #0f2d4a;
+            margin-top: 4px;
             font-family: DejaVu Sans Mono, monospace;
-            letter-spacing: 0.04em;
-        }
-        .pdf-inv-header-accent td {
-            height: 3px;
-            padding: 0;
-            background: #ec7f00;
-            font-size: 0;
-            line-height: 0;
+            font-weight: 600;
+            letter-spacing: 0.03em;
         }
 
-        .pdf-inv-meta-bar {
+        .pdf-inv-meta-stack {
             width: 100%;
             border-collapse: collapse;
             background: #f8fafc;
-            border-bottom: 1px solid #dde3ed;
+            border: 1px solid #e8edf3;
+            border-left: none;
+            border-right: none;
+            margin: 0;
         }
-        .pdf-inv-meta-bar td {
+        .pdf-inv-meta-stack td {
             vertical-align: top;
-            padding: 10px 14px;
+            padding: 4px 0;
             border: none;
+            border-bottom: 1px solid #e8edf3;
         }
-        .pdf-inv-meta-divider {
-            width: 1px;
-            background: #dde3ed;
-            padding: 0 !important;
+        .pdf-inv-meta-stack tr:last-child td {
+            border-bottom: none;
         }
-        .pdf-inv-meta-label {
-            font-size: 8.5px;
+        .pdf-inv-meta-en {
+            font-size: 8px;
             font-weight: 700;
-            color: #94a3b8;
+            color: #b91c1c;
             text-transform: uppercase;
             letter-spacing: 0.06em;
-            margin-bottom: 3px;
+            line-height: 1.2;
+            margin: 0;
+        }
+        .pdf-inv-meta-ar {
+            font-size: 7.5px;
+            color: #64748b;
+            line-height: 1.15;
+            margin: 1px 0 3px;
+            direction: rtl;
+            unicode-bidi: embed;
+            text-align: left;
         }
         .pdf-inv-meta-val {
-            font-size: 11px;
-            font-weight: 600;
+            font-size: 10px;
+            font-weight: 700;
             color: #0f2d4a;
-        }
-        .pdf-inv-meta-val--danger {
-            color: #b91c1c;
+            line-height: 1.25;
         }
         .pdf-inv-meta-val-mono {
             font-family: DejaVu Sans Mono, monospace;
+            font-size: 10px;
         }
 
         .pdf-inv-parties {
             width: 100%;
-            border-collapse: collapse;
-            border: 1px solid #dde3ed;
-            border-radius: 8px;
+            border-collapse: separate;
+            border-spacing: 0;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
             overflow: hidden;
-            margin: 12px 0 10px;
+            margin: 10px 0;
+            background: #ffffff;
         }
         .pdf-inv-parties td {
             vertical-align: top;
-            padding: 12px 16px;
+            padding: 14px 16px;
             border: none;
+            background: #ffffff;
         }
         .pdf-inv-party-div {
             width: 1px;
-            background: #dde3ed;
+            background: #e8edf3;
             padding: 0 !important;
         }
         .pdf-inv-party-role {
@@ -144,75 +172,89 @@
             color: #ec7f00;
             text-transform: uppercase;
             letter-spacing: 0.08em;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
         }
         .pdf-inv-party-name {
             font-size: 13px;
             font-weight: 700;
             color: #0f2d4a;
-            margin: 4px 0 6px;
+            margin: 0 0 6px;
         }
         .pdf-inv-party-detail {
             font-size: 10px;
             color: #64748b;
-            line-height: 1.65;
+            line-height: 1.55;
+        }
+        .pdf-inv-party-right {
+            text-align: right;
+        }
+        .pdf-inv-party-right .pdf-inv-party-role,
+        .pdf-inv-party-right .pdf-inv-party-name,
+        .pdf-inv-party-right .pdf-inv-party-detail {
+            text-align: right;
         }
 
         .pdf-inv-route {
             width: 100%;
-            border-collapse: collapse;
-            background: #0f2d4a;
-            border-radius: 8px;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
             margin-bottom: 12px;
             overflow: hidden;
         }
         .pdf-inv-route td {
-            padding: 10px 16px;
+            padding: 12px 14px;
             vertical-align: middle;
             border: none;
+            background: #fafbfc;
+        }
+        .pdf-inv-route-inner {
+            background: #fafbfc !important;
         }
         .pdf-inv-port-name {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 700;
-            color: #ffffff;
+            color: #0f2d4a;
         }
         .pdf-inv-port-label {
-            font-size: 8px;
-            color: rgba(255, 255, 255, 0.4);
-            margin-top: 2px;
+            font-size: 7.5px;
+            color: #94a3b8;
+            margin-top: 3px;
             text-transform: uppercase;
-            letter-spacing: 0.04em;
+            letter-spacing: 0.05em;
         }
         .pdf-inv-route-arrow {
             color: #ec7f00;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 700;
-            padding: 0 6px;
+            padding: 0 8px;
         }
         .pdf-inv-rmeta-table {
             width: 100%;
             border-collapse: collapse;
         }
         .pdf-inv-rmeta-table td {
-            padding: 0 8px;
+            padding: 0 6px;
             vertical-align: top;
             text-align: center;
             border: none;
         }
         .pdf-inv-rmeta-sep {
             width: 1px;
-            background: rgba(255, 255, 255, 0.12);
+            background: #e2e8f0;
             padding: 0 !important;
         }
         .pdf-inv-rmeta-val {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 700;
-            color: #ffffff;
+            color: #0f2d4a;
         }
         .pdf-inv-rmeta-lbl {
-            font-size: 8px;
-            color: rgba(255, 255, 255, 0.4);
-            margin-top: 2px;
+            font-size: 7.5px;
+            color: #94a3b8;
+            margin-top: 3px;
             text-transform: uppercase;
             letter-spacing: 0.04em;
         }
@@ -532,10 +574,7 @@ Tax Invoice {{ $invoice->invoice_number }}
         $transitTime = $shipment?->route_text ?: '—';
         $sailingDate = $shipment?->loading_date ?? $shipment?->booking_date;
         $issueDateFormatted = $invoice->issue_date?->format('F j, Y') ?? '—';
-        $dueDateFormatted = $invoice->due_date?->format('F j, Y') ?? '—';
         $sailingFormatted = $sailingDate?->format('F j, Y') ?? '—';
-        $todayStr = now()->toDateString();
-        $dueIsPast = $invoice->due_date && $invoice->due_date->toDateString() < $todayStr && ! in_array($invoice->status, ['paid'], true);
 
         $grandByCurrency = [];
         foreach ($invoice->items as $item) {
@@ -564,52 +603,50 @@ Tax Invoice {{ $invoice->invoice_number }}
         @else
             <table class="pdf-inv-header" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
                 <tr>
-                    <td width="28%" class="pdf-inv-header__logo">
+                    <td width="22%" class="pdf-inv-header__logo">
                         @if ($logoSrc)
                             <img src="{{ $logoSrc }}" alt="">
                         @else
                             <div class="pdf-inv-header__logo-fallback">AM</div>
                         @endif
                     </td>
-                    <td width="44%">
-                        <div class="pdf-inv-company-name">Amazon Marine</div>
-                        <div class="pdf-inv-company-sub">Shipping Agency</div>
+                    <td width="46%">
+                        <div class="pdf-inv-title-primary">Amazon Shipping Invoice</div>
                     </td>
-                    <td width="28%" class="pdf-inv-header__doc">
-                        <div class="pdf-inv-inv-label">Tax Invoice</div>
+                    <td width="32%" class="pdf-inv-header__doc">
+                        <div class="pdf-inv-tax-label">Tax Invoice</div>
                         <div class="pdf-inv-inv-ref">REF: {{ $invoice->invoice_number }}</div>
                     </td>
                 </tr>
             </table>
-            <table class="pdf-inv-header-accent" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
-                <tr><td></td></tr>
-            </table>
         @endif
 
-        <table class="pdf-inv-meta-bar" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
+        <table class="pdf-inv-meta-stack" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
             <tr>
                 <td>
-                    <div class="pdf-inv-meta-label">Invoice No.</div>
+                    <div class="pdf-inv-meta-en">Invoice Number</div>
+                    <div class="pdf-inv-meta-ar">الفاتورة</div>
                     <div class="pdf-inv-meta-val pdf-inv-meta-val-mono">{{ $invoice->invoice_number }}</div>
                 </td>
-                <td class="pdf-inv-meta-divider"></td>
+            </tr>
+            <tr>
                 <td>
-                    <div class="pdf-inv-meta-label">Issue Date</div>
+                    <div class="pdf-inv-meta-en">Issue Date</div>
+                    <div class="pdf-inv-meta-ar">تاريخ الإصدار</div>
                     <div class="pdf-inv-meta-val">{{ $issueDateFormatted }}</div>
                 </td>
-                <td class="pdf-inv-meta-divider"></td>
+            </tr>
+            <tr>
                 <td>
-                    <div class="pdf-inv-meta-label">Due Date</div>
-                    <div class="pdf-inv-meta-val @if($dueIsPast) pdf-inv-meta-val--danger @endif">{{ $dueDateFormatted }}</div>
-                </td>
-                <td class="pdf-inv-meta-divider"></td>
-                <td>
-                    <div class="pdf-inv-meta-label">Sailing Date</div>
+                    <div class="pdf-inv-meta-en">Selling Date</div>
+                    <div class="pdf-inv-meta-ar">تاريخ الإبحار</div>
                     <div class="pdf-inv-meta-val">{{ $sailingFormatted }}</div>
                 </td>
-                <td class="pdf-inv-meta-divider"></td>
+            </tr>
+            <tr>
                 <td>
-                    <div class="pdf-inv-meta-label">Containers</div>
+                    <div class="pdf-inv-meta-en">Containers</div>
+                    <div class="pdf-inv-meta-ar">عدد الحاويات</div>
                     <div class="pdf-inv-meta-val">{{ $container }}</div>
                 </td>
             </tr>
@@ -618,29 +655,18 @@ Tax Invoice {{ $invoice->invoice_number }}
         <table class="pdf-inv-parties" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
             <tr>
                 <td width="49%">
-                    <div class="pdf-inv-party-role">From / Issued By</div>
+                    <div class="pdf-inv-party-role">Form Issue By</div>
                     <div class="pdf-inv-party-name">Amazon Marine</div>
-                    <div class="pdf-inv-party-detail">
-                        Shipping Agency
-                        @if($shipment?->salesRep)
-                            <br>
-                            @if($shipment->salesRep->email)
-                                <span>{{ $shipment->salesRep->email }}</span>
-                            @endif
-                            @if($shipment->salesRep->phone)
-                                <br>{{ $shipment->salesRep->phone }}
-                            @endif
-                        @endif
-                    </div>
+                    <div class="pdf-inv-party-detail">5th Settlement, New Cairo</div>
                 </td>
                 <td class="pdf-inv-party-div"></td>
-                <td width="49%">
-                    <div class="pdf-inv-party-role">Billed To</div>
+                <td width="49%" class="pdf-inv-party-right">
+                    <div class="pdf-inv-party-role">Invoice To</div>
                     <div class="pdf-inv-party-name">{{ $invoice->client?->name ?? '—' }}</div>
+                    @if($invoice->client?->company_name)
+                        <div class="pdf-inv-party-detail" style="margin-bottom:6px;font-weight:600;color:#334155;">{{ $invoice->client->company_name }}</div>
+                    @endif
                     <div class="pdf-inv-party-detail">
-                        @if($invoice->client?->company_name)
-                            <span>{{ $invoice->client->company_name }}</span><br>
-                        @endif
                         @if($invoice->client?->address)
                             <span>{{ $invoice->client->address }}</span><br>
                         @endif
@@ -658,7 +684,7 @@ Tax Invoice {{ $invoice->invoice_number }}
 
         <table class="pdf-inv-route" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
             <tr>
-                <td>
+                <td class="pdf-inv-route-inner">
                     <table width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
                         <tr>
                             <td style="vertical-align:middle;">
