@@ -16,6 +16,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AccountingController extends Controller
@@ -607,7 +608,7 @@ class AccountingController extends Controller
 
         $invoicesQuery = Invoice::query()
             ->where('client_id', $client->id)
-            ->with(['shipment.attachments', 'items', 'payments'])
+            ->with(['shipment.attachments', 'items', 'payments.shipment', 'payments.targetAccount'])
             ->orderByDesc('issue_date')
             ->orderByDesc('id');
         $this->applyCustomerInvoiceFilter($invoicesQuery);
@@ -616,10 +617,34 @@ class AccountingController extends Controller
         $rows = $invoices->map(function (Invoice $inv) {
             $computed = AccountingAggregationService::invoiceStatementTotals($inv);
 
+            $paymentsChrono = $inv->payments
+                ->sortBy(fn (Payment $p) => $p->paid_at?->getTimestamp() ?? 0)
+                ->values();
+            $sequenceByPaymentId = [];
+            foreach ($paymentsChrono as $idx => $p) {
+                $sequenceByPaymentId[$p->id] = $idx + 1;
+            }
+            $lastPaymentId = $paymentsChrono->last()?->id;
+            $invoicePaymentCount = $paymentsChrono->count();
+
             $paymentHistory = $inv->payments
                 ->sortByDesc(fn (Payment $p) => $p->paid_at?->toDateString() ?? '')
                 ->values()
-                ->map(static function (Payment $p): array {
+                ->map(static function (Payment $p) use ($inv, $computed, $sequenceByPaymentId, $lastPaymentId, $invoicePaymentCount): array {
+                    $proofUrl = $p->proof_path ? Storage::disk('public')->url($p->proof_path) : null;
+                    $ta = $p->targetAccount;
+                    $targetAccountLabel = null;
+                    if ($ta) {
+                        $bank = trim((string) ($ta->bank_name ?? ''));
+                        $acct = trim((string) ($ta->account_name ?? ''));
+                        $targetAccountLabel = $acct !== '' ? $bank.' — '.$acct : ($bank !== '' ? $bank : null);
+                    }
+                    $shipmentRef = $p->shipment?->bl_number ?? $inv->shipment?->bl_number;
+
+                    $isFinalSettlingPayment = $computed['status'] === 'paid'
+                        && $invoicePaymentCount > 0
+                        && $lastPaymentId === $p->id;
+
                     return [
                         'id' => $p->id,
                         'amount' => (float) $p->amount,
@@ -627,6 +652,22 @@ class AccountingController extends Controller
                         'method' => $p->method,
                         'paid_at' => $p->paid_at?->toDateString(),
                         'reference' => $p->reference,
+                        'notes' => $p->notes,
+                        'exchange_rate' => $p->exchange_rate !== null ? (float) $p->exchange_rate : null,
+                        'converted_amount' => $p->converted_amount !== null ? (float) $p->converted_amount : null,
+                        'target_currency_code' => $p->target_currency_code
+                            ? strtoupper((string) $p->target_currency_code)
+                            : null,
+                        'proof_url' => $proofUrl,
+                        'proof_filename' => $p->proof_path ? basename((string) $p->proof_path) : null,
+                        'shipment_id' => $p->shipment_id,
+                        'shipment_reference' => $shipmentRef,
+                        'invoice_id' => $inv->id,
+                        'invoice_reference' => $inv->invoice_number ?: ('INV-'.$inv->id),
+                        'target_account_label' => $targetAccountLabel,
+                        'payment_sequence' => $sequenceByPaymentId[$p->id] ?? null,
+                        'invoice_payment_count' => $invoicePaymentCount,
+                        'is_final_settling_payment' => $isFinalSettlingPayment,
                     ];
                 })->all();
             $attachments = $inv->shipment?->attachments
