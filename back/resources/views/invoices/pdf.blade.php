@@ -145,92 +145,139 @@
             letter-spacing: 0.03em;
         }
 
-        .pdf-inv-meta-stack {
+        .pdf-inv-meta-row {
             width: 100%;
             border-collapse: collapse;
             background: #f8fafc;
             border: none !important;
-            border-top: none !important;
             border-bottom: 1px solid #e8edf3;
             margin: 0;
+            table-layout: fixed;
         }
-        .pdf-inv-meta-stack td {
-            vertical-align: top;
-            padding: 4px 0;
+        .pdf-inv-meta-row tr td.pdf-inv-meta-cell {
+            vertical-align: middle;
+            padding: 5px 6px;
             border: none;
-            border-bottom: 1px solid #e8edf3;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
         }
-        .pdf-inv-meta-stack tr:last-child td {
-            border-bottom: none;
+        .pdf-inv-meta-row tr td.pdf-inv-meta-sep {
+            width: 1px;
+            min-width: 1px;
+            max-width: 1px;
+            padding: 0 !important;
+            background: #cbd5e1;
+            vertical-align: middle;
+            border: none;
+            font-size: 0;
+            line-height: 0;
         }
         .pdf-inv-meta-en {
-            font-size: 8px;
+            font-size: 7.5px;
             font-weight: 700;
             color: #b91c1c;
             text-transform: uppercase;
-            letter-spacing: 0.06em;
-            line-height: 1.2;
+            letter-spacing: 0.05em;
+            line-height: 1.1;
             margin: 0;
         }
         .pdf-inv-meta-ar {
-            font-size: 7.5px;
+            font-size: 7px;
             color: #64748b;
-            line-height: 1.15;
-            margin: 1px 0 3px;
+            line-height: 1.1;
+            margin: 0 0 2px;
             direction: rtl;
             unicode-bidi: embed;
-            text-align: left;
+            text-align: center;
         }
         .pdf-inv-meta-val {
-            font-size: 10px;
+            font-size: 9.5px;
             font-weight: 700;
             color: #0f2d4a;
-            line-height: 1.25;
+            line-height: 1.15;
+            white-space: nowrap;
         }
         .pdf-inv-meta-val-mono {
             font-family: DejaVu Sans Mono, monospace;
-            font-size: 10px;
+            font-size: 9.5px;
         }
 
         .pdf-inv-parties {
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
+            border: 1px solid #0f2d4a;
+            border-radius: 14px;
             overflow: hidden;
             margin: 10px 0;
-            background: #ffffff;
+            background: #0f2d4a;
         }
         .pdf-inv-parties td {
             vertical-align: top;
-            padding: 14px 16px;
+            padding: 14px 18px;
             border: none;
-            background: #ffffff;
+            background: #0f2d4a;
+            color: #ffffff;
         }
         .pdf-inv-party-div {
-            width: 1px;
-            background: #e8edf3;
+            width: 2px;
+            min-width: 2px;
+            max-width: 2px;
+            background: rgba(255, 255, 255, 0.28);
             padding: 0 !important;
+            border: none;
+        }
+        .pdf-inv-parties .pdf-inv-party-role,
+        .pdf-inv-parties .pdf-inv-party-role-ar,
+        .pdf-inv-parties .pdf-inv-party-name,
+        .pdf-inv-parties .pdf-inv-party-detail,
+        .pdf-inv-parties .pdf-inv-party-company {
+            color: #ffffff;
+        }
+        .pdf-inv-parties .pdf-inv-party-detail strong {
+            color: #ffffff;
+            font-weight: 700;
         }
         .pdf-inv-party-role {
             font-size: 9px;
             font-weight: 700;
-            color: #ec7f00;
+            color: #ffffff;
             text-transform: uppercase;
             letter-spacing: 0.08em;
-            margin-bottom: 6px;
+            margin-bottom: 3px;
+            line-height: 1.2;
+        }
+        .pdf-inv-party-role-ar {
+            font-size: 8px;
+            font-weight: 600;
+            color: #ffffff;
+            letter-spacing: 0.02em;
+            margin-bottom: 8px;
+            line-height: 1.25;
+            direction: rtl;
+            unicode-bidi: embed;
+        }
+        .pdf-inv-party-right .pdf-inv-party-role-ar {
+            text-align: right;
         }
         .pdf-inv-party-name {
             font-size: 13px;
             font-weight: 700;
-            color: #0f2d4a;
+            color: #ffffff;
             margin: 0 0 6px;
         }
         .pdf-inv-party-detail {
             font-size: 10px;
-            color: #64748b;
+            color: #ffffff;
             line-height: 1.55;
+        }
+        .pdf-inv-party-company {
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 10px;
+            color: #ffffff;
+            line-height: 1.45;
         }
         .pdf-inv-party-right {
             text-align: right;
@@ -672,30 +719,27 @@ Tax Invoice {{ $invoice->invoice_number }}
             </table>
         @endif
 
-        <table class="pdf-inv-meta-stack" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
+        <table class="pdf-inv-meta-row" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
             <tr>
-                <td>
+                <td class="pdf-inv-meta-cell" width="24%">
                     <div class="pdf-inv-meta-en">Invoice Number</div>
                     <div class="pdf-inv-meta-ar">الفاتورة</div>
                     <div class="pdf-inv-meta-val pdf-inv-meta-val-mono">{{ $invoice->invoice_number }}</div>
                 </td>
-            </tr>
-            <tr>
-                <td>
+                <td class="pdf-inv-meta-sep"></td>
+                <td class="pdf-inv-meta-cell" width="24%">
                     <div class="pdf-inv-meta-en">Issue Date</div>
                     <div class="pdf-inv-meta-ar">تاريخ الإصدار</div>
                     <div class="pdf-inv-meta-val">{{ $issueDateFormatted }}</div>
                 </td>
-            </tr>
-            <tr>
-                <td>
-                    <div class="pdf-inv-meta-en">Selling Date</div>
+                <td class="pdf-inv-meta-sep"></td>
+                <td class="pdf-inv-meta-cell" width="24%">
+                    <div class="pdf-inv-meta-en">Shipping Date</div>
                     <div class="pdf-inv-meta-ar">تاريخ الإبحار</div>
                     <div class="pdf-inv-meta-val">{{ $sailingFormatted }}</div>
                 </td>
-            </tr>
-            <tr>
-                <td>
+                <td class="pdf-inv-meta-sep"></td>
+                <td class="pdf-inv-meta-cell" width="24%">
                     <div class="pdf-inv-meta-en">Containers</div>
                     <div class="pdf-inv-meta-ar">عدد الحاويات</div>
                     <div class="pdf-inv-meta-val">{{ $container }}</div>
@@ -706,16 +750,23 @@ Tax Invoice {{ $invoice->invoice_number }}
         <table class="pdf-inv-parties" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
             <tr>
                 <td width="49%">
-                    <div class="pdf-inv-party-role">Form Issue By</div>
+                    <div class="pdf-inv-party-role">From Issue By</div>
+                    <div class="pdf-inv-party-role-ar">مصدر بواسطة</div>
                     <div class="pdf-inv-party-name">Amazon Marine</div>
-                    <div class="pdf-inv-party-detail">5th Settlement, New Cairo</div>
+                    <div class="pdf-inv-party-detail">
+                        <strong>Address:</strong> 5th Settlement, New Cairo<br>
+                        <strong>Email:</strong> cs@amazonmarine.ltd<br>
+                        <strong>Website:</strong> www.amazonmarine.ltd<br>
+                        <strong>Phone:</strong> +20 2 25601776
+                    </div>
                 </td>
                 <td class="pdf-inv-party-div"></td>
                 <td width="49%" class="pdf-inv-party-right">
-                    <div class="pdf-inv-party-role">Invoice To</div>
+                    <div class="pdf-inv-party-role">Build To</div>
+                    <div class="pdf-inv-party-role-ar">فاتورة إلى</div>
                     <div class="pdf-inv-party-name">{{ $invoice->client?->name ?? '—' }}</div>
                     @if($invoice->client?->company_name)
-                        <div class="pdf-inv-party-detail" style="margin-bottom:6px;font-weight:600;color:#334155;">{{ $invoice->client->company_name }}</div>
+                        <div class="pdf-inv-party-company">{{ $invoice->client->company_name }}</div>
                     @endif
                     <div class="pdf-inv-party-detail">
                         @if($invoice->client?->address)
