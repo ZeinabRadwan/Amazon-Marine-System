@@ -1038,6 +1038,7 @@ class InvoiceController extends Controller
                 'payment_instructions' => 'تعليمات السداد',
                 'generated' => 'أُنشئت في',
                 'system_credit' => 'نظام أمازون مارين',
+                'brand_contact' => 'Tel: +201200744888  |  info@amazonmarine.com',
             ];
         }
 
@@ -1045,6 +1046,7 @@ class InvoiceController extends Controller
             'doc_title' => 'Invoice',
             'company_name' => 'AMAZON MARINE',
             'company_tagline' => 'Shipping & logistics services',
+            'brand_contact' => 'Tel: +201200744888  |  info@amazonmarine.com',
             'invoice_title' => 'Invoice',
             'invoice_no' => 'No:',
             'date' => 'Date:',

@@ -51,112 +51,43 @@
             border-color: #dde3ed;
         }
 
-        .pdf-inv-header {
-            background: #ffffff;
-            padding: 6px 0;
-            width: 100%;
-            border-collapse: collapse;
-            margin: 0;
+        /* Invoice-only overrides on SD form header (same markup as sd_forms/pdf.blade.php) */
+        .pdf-sd-doc .pdf-inv-header-title {
+            text-transform: none;
+            letter-spacing: 0.04em;
+            line-height: 1.25;
+            margin: 0 0 6px;
+            padding: 0;
         }
-        .pdf-inv-header td {
-            vertical-align: middle;
-            border: none;
-            padding: 2px 0;
-        }
-        .pdf-inv-header__logo img {
-            height: auto;
-            max-height: 8px;
-            width: auto;
-            max-width: 18px;
+        .pdf-sd-doc .pdf-inv-header-title-en {
             display: block;
-            object-fit: contain;
-        }
-        .pdf-inv-header__logo-fallback {
-            width: 11px;
-            height: 7px;
-            border: 1px solid #ec7f00;
-            border-radius: 2px;
-            text-align: center;
-            line-height: 5px;
-            font-size: 4px;
-            font-weight: 800;
-            color: #0f2d4a;
-            background: #f8fafc;
-        }
-        .pdf-inv-title-primary {
             font-size: 14px;
             font-weight: 700;
-            color: #0f2d4a;
-            letter-spacing: 0.02em;
-            line-height: 1.25;
-            margin: 0;
-            padding: 0;
-        }
-        .pdf-inv-brand-sub {
-            margin-top: 4px;
-            font-size: 11px;
-            color: #0f2d4a;
-            line-height: 1.25;
-        }
-        .pdf-inv-brand-sub strong {
-            font-weight: 700;
-        }
-        .pdf-inv-tagline {
-            margin-top: 2px;
-            font-size: 9px;
-            font-weight: 600;
-            color: #475569;
-            letter-spacing: 0.05em;
-            line-height: 1.25;
-        }
-        .pdf-inv-header__doc {
-            text-align: right;
-            vertical-align: middle;
-        }
-        .pdf-inv-tax-title-row {
-            text-align: right;
-            line-height: 1.25;
-            white-space: nowrap;
-        }
-        .pdf-inv-tax-label {
-            font-size: 17px;
-            font-weight: 700;
             color: #ec7f00;
-            letter-spacing: 0.05em;
-            margin: 0;
-            padding: 0;
-            display: inline;
         }
-        .pdf-inv-tax-ar {
-            display: inline;
-            margin-left: 10px;
-            font-size: 15px;
+        .pdf-sd-doc .pdf-inv-header-title-ar {
+            display: block;
+            margin-top: 3px;
+            font-size: 12px;
             font-weight: 700;
             color: #0f2d4a;
             direction: rtl;
             unicode-bidi: embed;
-        }
-        .pdf-inv-inv-ref {
-            font-size: 10.5px;
-            color: #0f2d4a;
-            margin-top: 4px;
-            font-family: DejaVu Sans Mono, monospace;
-            font-weight: 600;
-            letter-spacing: 0.03em;
+            text-align: right;
         }
 
         .pdf-inv-meta-row {
             width: 100%;
             border-collapse: collapse;
-            background: #f8fafc;
-            border: none !important;
+            background: transparent;
+            border-top: 1px solid #e8edf3;
             border-bottom: 1px solid #e8edf3;
             margin: 0;
             table-layout: fixed;
         }
         .pdf-inv-meta-row tr td.pdf-inv-meta-cell {
             vertical-align: middle;
-            padding: 5px 6px;
+            padding: 8px 6px;
             border: none;
             text-align: center;
             white-space: nowrap;
@@ -207,54 +138,44 @@
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
-            border: 1px solid #0f2d4a;
-            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
             overflow: hidden;
-            margin: 10px 0;
-            background: #0f2d4a;
+            margin: 12px 0;
+            background: #ffffff;
         }
         .pdf-inv-parties td {
             vertical-align: top;
-            padding: 14px 18px;
+            padding: 16px 18px;
             border: none;
-            background: #0f2d4a;
-            color: #ffffff;
+            background: #ffffff;
         }
         .pdf-inv-party-div {
-            width: 2px;
-            min-width: 2px;
-            max-width: 2px;
-            background: rgba(255, 255, 255, 0.28);
+            width: 1px;
+            min-width: 1px;
+            max-width: 1px;
             padding: 0 !important;
+            background: #e2e8f0;
+            vertical-align: stretch;
             border: none;
-        }
-        .pdf-inv-parties .pdf-inv-party-role,
-        .pdf-inv-parties .pdf-inv-party-role-ar,
-        .pdf-inv-parties .pdf-inv-party-name,
-        .pdf-inv-parties .pdf-inv-party-detail,
-        .pdf-inv-parties .pdf-inv-party-company {
-            color: #ffffff;
-        }
-        .pdf-inv-parties .pdf-inv-party-detail strong {
-            color: #ffffff;
-            font-weight: 700;
+            font-size: 0;
+            line-height: 0;
         }
         .pdf-inv-party-role {
-            font-size: 9px;
+            font-size: 10px;
             font-weight: 700;
-            color: #ffffff;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            margin-bottom: 3px;
-            line-height: 1.2;
+            color: #ec7f00;
+            text-transform: none;
+            letter-spacing: 0.02em;
+            margin: 0 0 3px;
+            line-height: 1.25;
         }
         .pdf-inv-party-role-ar {
-            font-size: 8px;
-            font-weight: 600;
-            color: #ffffff;
-            letter-spacing: 0.02em;
-            margin-bottom: 8px;
-            line-height: 1.25;
+            font-size: 7.5px;
+            font-weight: 500;
+            color: #94a3b8;
+            margin: 0 0 10px;
+            line-height: 1.35;
             direction: rtl;
             unicode-bidi: embed;
         }
@@ -264,26 +185,33 @@
         .pdf-inv-party-name {
             font-size: 13px;
             font-weight: 700;
-            color: #ffffff;
-            margin: 0 0 6px;
-        }
-        .pdf-inv-party-detail {
-            font-size: 10px;
-            color: #ffffff;
-            line-height: 1.55;
+            color: #0f2d4a;
+            margin: 0 0 8px;
+            line-height: 1.25;
         }
         .pdf-inv-party-company {
-            margin-bottom: 6px;
+            margin: -4px 0 8px;
+            font-weight: 700;
+            font-size: 11px;
+            color: #0f2d4a;
+            line-height: 1.35;
+        }
+        .pdf-inv-party-detail {
+            font-size: 9px;
+            font-weight: 400;
+            color: #64748b;
+            line-height: 1.55;
+        }
+        .pdf-inv-party-detail strong {
             font-weight: 600;
-            font-size: 10px;
-            color: #ffffff;
-            line-height: 1.45;
+            color: #64748b;
         }
         .pdf-inv-party-right {
             text-align: right;
         }
         .pdf-inv-party-right .pdf-inv-party-role,
         .pdf-inv-party-right .pdf-inv-party-name,
+        .pdf-inv-party-right .pdf-inv-party-company,
         .pdf-inv-party-right .pdf-inv-party-detail {
             text-align: right;
         }
@@ -724,36 +652,40 @@ Tax Invoice {{ $invoice->invoice_number }}
         }
 
         $currencyOrder = ['USD', 'EGP', 'EUR'];
+
+        $logoSrc = \App\Support\PdfLogo::imgSrc();
     @endphp
-    <div class="pdf-wrapper pdf-inv-html" dir="ltr" lang="en" style="direction:ltr;text-align:left;">
-        @php
-            $logoSrc = \App\Support\PdfLogo::imgSrc();
-        @endphp
+    <div class="pdf-wrapper pdf-inv-html pdf-sd-doc" dir="ltr" lang="en" style="direction:ltr;text-align:left;">
         @if(!empty($headerHtml))
             {!! $headerHtml !!}
         @else
-            <table class="pdf-inv-header" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
-                <tr>
-                    <td width="22%" class="pdf-inv-header__logo">
-                        @if ($logoSrc)
-                            <img src="{{ $logoSrc }}" alt="">
-                        @else
-                            <div class="pdf-inv-header__logo-fallback">AM</div>
-                        @endif
-                    </td>
-                    <td width="46%">
-                        <div class="pdf-inv-title-primary">Amazon Marine</div>
-                        <div class="pdf-inv-brand-sub"><strong>Amazon Marine</strong></div>
-                        <div class="pdf-inv-tagline">Shipping Agency</div>
-                    </td>
-                    <td width="32%" class="pdf-inv-header__doc">
-                        <div class="pdf-inv-tax-title-row">
-                            <span class="pdf-inv-tax-label">Tax Invoice</span><span class="pdf-inv-tax-ar"><strong>فاتورة ضريبية</strong></span>
-                        </div>
-                        <div class="pdf-inv-inv-ref">REF: {{ $invoice->invoice_number }}</div>
-                    </td>
-                </tr>
-            </table>
+            <header class="pdf-header pdf-header--branded pdf-header--sd">
+                <table class="pdf-header__table">
+                    <tr>
+                        <td class="pdf-header__logo">
+                            @if ($logoSrc)
+                                <img class="pdf-header__logo-img" src="{{ $logoSrc }}" alt="">
+                            @else
+                                <div class="pdf-header__logo-fallback">AM</div>
+                            @endif
+                        </td>
+                        <td class="pdf-header__brand-cell">
+                            <div class="pdf-header__brand-stack">
+                                <div class="pdf-header__brand-line"><strong>{{ $labels['company_name'] }}</strong></div>
+                                <div class="pdf-header__brand-tag">{{ $labels['company_tagline'] }}</div>
+                                <span class="pdf-header__brand-contact">{{ $labels['brand_contact'] }}</span>
+                            </div>
+                        </td>
+                        <td class="pdf-header__doc">
+                            <p class="pdf-header__title pdf-inv-header-title">
+                                <span class="pdf-inv-header-title-en">Tax Invoice</span>
+                                <span class="pdf-inv-header-title-ar">فاتورة ضريبية</span>
+                            </p>
+                            <div class="pdf-header__sd-big">{{ $invoice->invoice_number }}</div>
+                        </td>
+                    </tr>
+                </table>
+            </header>
         @endif
 
         <table class="pdf-inv-meta-row" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
