@@ -330,18 +330,24 @@
             padding: 0 4px !important;
         }
         .pdf-inv-route-tpl-metas {
+            width: 100%;
             border-collapse: collapse;
             margin-left: auto;
+            table-layout: fixed;
         }
         .pdf-inv-route-tpl-metas td {
             border: none;
             vertical-align: middle;
-            padding: 0;
             background: transparent;
         }
+        /* Same divider tone as .pdf-inv-meta-sep (invoice meta row); border renders reliably in mPDF vs empty 1px cells */
         .pdf-inv-route-tpl-rmeta {
+            width: 33.33%;
             text-align: center;
-            padding: 0 8px !important;
+            padding: 4px 8px !important;
+        }
+        .pdf-inv-route-tpl-rmeta--split {
+            border-left: 1px solid #cbd5e1;
         }
         /* Matches .rmeta-val / .rmeta-lbl in amazon_marine_invoice_template.html */
         .pdf-inv-route-tpl-rmeta-val {
@@ -357,16 +363,6 @@
             color: rgba(255, 255, 255, 0.4);
             margin-top: 2px;
             line-height: 1.25;
-        }
-        .pdf-inv-route-tpl-rmeta-sep {
-            width: 1px;
-            min-width: 1px;
-            max-width: 1px;
-            padding: 0 !important;
-            background: rgba(255, 255, 255, 0.1);
-            font-size: 0;
-            line-height: 0;
-            overflow: hidden;
         }
 
         /* Bordered wrapper clips children; navy section head has no radius (avoids overflow+navy on same node) */
@@ -977,19 +973,17 @@ Tax Invoice {{ $invoice->invoice_number }}
                         </table>
                     </td>
                     <td class="pdf-inv-route-tpl-metas-cell" valign="middle">
-                        <table class="pdf-inv-route-tpl-metas" cellspacing="0" cellpadding="0" border="0" role="presentation" align="right">
+                        <table class="pdf-inv-route-tpl-metas" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
                             <tr>
                                 <td class="pdf-inv-route-tpl-rmeta" valign="middle">
                                     <div class="pdf-inv-route-tpl-rmeta-val">{{ $shipLine }}</div>
                                     <div class="pdf-inv-route-tpl-rmeta-lbl">Carrier</div>
                                 </td>
-                                <td class="pdf-inv-route-tpl-rmeta-sep" valign="middle"></td>
-                                <td class="pdf-inv-route-tpl-rmeta" valign="middle">
+                                <td class="pdf-inv-route-tpl-rmeta pdf-inv-route-tpl-rmeta--split" valign="middle">
                                     <div class="pdf-inv-route-tpl-rmeta-val">{{ $transitTime }}</div>
                                     <div class="pdf-inv-route-tpl-rmeta-lbl">Transit Time</div>
                                 </td>
-                                <td class="pdf-inv-route-tpl-rmeta-sep" valign="middle"></td>
-                                <td class="pdf-inv-route-tpl-rmeta" valign="middle">
+                                <td class="pdf-inv-route-tpl-rmeta pdf-inv-route-tpl-rmeta--split" valign="middle">
                                     <div class="pdf-inv-route-tpl-rmeta-val">{{ $refShipmentData }}</div>
                                     <div class="pdf-inv-route-tpl-rmeta-lbl">Shipment Ref</div>
                                 </td>
