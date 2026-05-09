@@ -265,7 +265,7 @@ class TreasuryController extends Controller
 
         $openBills = VendorBill::query()
             ->with('items')
-            ->whereNotIn('status', ['cancelled'])
+            ->whereNotIn('status', ['cancelled', 'draft'])
             ->get();
         $apAgg = AccountingAggregationService::aggregateVendorBills($openBills);
         $partnerPayablesOutstanding = $this->clampMoneyMapNonNegative($apAgg['total_remaining_per_currency']);
@@ -573,6 +573,10 @@ class TreasuryController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
+        if ($fail = $this->assertSufficientBankBalance($validated)) {
+            return $fail;
+        }
+
         $entry = new TreasuryEntry();
         $entry->entry_type = $validated['entry_type'];
         $entry->source = $validated['source'] ?? null;
@@ -659,6 +663,16 @@ class TreasuryController extends Controller
             $treasury_entry->notes = $validated['notes'];
         }
 
+        $mergedForDebitCheck = [
+            'entry_type' => $treasury_entry->entry_type,
+            'account_id' => $treasury_entry->account_id,
+            'amount' => $treasury_entry->amount,
+            'currency_code' => $treasury_entry->currency_code,
+        ];
+        if ($fail = $this->assertSufficientBankBalance($mergedForDebitCheck, $treasury_entry->id)) {
+            return $fail;
+        }
+
         $treasury_entry->save();
 
         return response()->json([
@@ -719,6 +733,18 @@ class TreasuryController extends Controller
             : ($fxRate && $fromCurrency !== $toCurrency
                 ? ((float) $validated['from_amount'] * $fxRate)
                 : (float) $validated['from_amount']);
+
+        $fromAccountId = isset($validated['from_account_id']) ? (int) $validated['from_account_id'] : 0;
+        if ($fromAccountId > 0) {
+            $balances = $this->computeRawBalancesByAccount();
+            $avail = $this->getRawBalanceForBankCurrency($balances, $fromAccountId, $fromCurrency);
+            $need = (float) $validated['from_amount'];
+            if ($avail + 1e-6 < $need) {
+                return response()->json([
+                    'message' => __('bank.insufficient_balance_currency'),
+                ], 422);
+            }
+        }
 
         DB::transaction(function () use ($validated, $userId, $fromCurrency, $toCurrency, $fxRate, $toAmount): void {
             $from = new TreasuryEntry();
