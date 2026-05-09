@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Services\ActivityLogger;
+use App\Services\BankPaymentCurrencyService;
 use App\Services\FinancialService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 class PaymentController extends Controller
@@ -16,7 +18,25 @@ class PaymentController extends Controller
         $user = $request->user();
         abort_unless($user && ($user->can('financial.view') || $user->can('accounting.view')), 403);
 
-        $query = Payment::query()->with(['invoice', 'vendorBill', 'client', 'vendor', 'shipment', 'sourceAccount', 'targetAccount', 'createdBy']);
+        $query = Payment::query()->with([
+            'invoice',
+            'vendorBill',
+            'client',
+            'vendor',
+            'shipment',
+            'sourceAccount',
+            'targetAccount',
+            'createdBy',
+        ]);
+
+        if (Schema::hasTable('treasury_entries')) {
+            $query->with([
+                'treasuryEntries' => static fn ($q) => $q
+                    ->select(['id', 'payment_id', 'reference', 'entry_date', 'notes'])
+                    ->orderByDesc('id')
+                    ->limit(5),
+            ]);
+        }
 
         if ($type = $request->query('type')) {
             $query->where('type', $type);
@@ -97,6 +117,7 @@ class PaymentController extends Controller
         if (!isset($validated['source_account_id']) && !empty($validated['bank_account_id'])) {
             $validated['source_account_id'] = $validated['bank_account_id'];
         }
+        BankPaymentCurrencyService::prepareForBank($validated);
         $payment->fill($validated);
         if ($request->hasFile('proof_file')) {
             $path = $request->file('proof_file')->store('payments/proofs', 'public');

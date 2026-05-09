@@ -920,6 +920,9 @@ class AccountingController extends Controller
                         'line_vendor_id',
                         'shipment_type',
                         'booking_number',
+                        'acid_number',
+                        'booking_date',
+                        'is_reefer',
                     ]),
                 ])
                 ->get(['shipment_id', 'items']);
@@ -945,9 +948,14 @@ class AccountingController extends Controller
                         $vid = $vidNum > 0 ? $vidNum : null;
                     }
 
-                    $title = isset($it['title']) ? (string) $it['title'] : '';
-                    $desc = isset($it['description']) ? (string) $it['description'] : '';
-                    $label = trim($title !== '' ? $title : $desc);
+                    $title = isset($it['title']) ? trim((string) $it['title']) : '';
+                    $desc = isset($it['description']) ? trim((string) $it['description']) : '';
+                    $lbl = isset($it['label']) ? trim((string) $it['label']) : '';
+                    $name = isset($it['name']) ? trim((string) $it['name']) : '';
+                    $display = $lbl !== '' ? $lbl : ($name !== '' ? $name : ($title !== '' ? $title : $desc));
+
+                    $tplRaw = $it['template_id'] ?? null;
+                    $templateId = $tplRaw !== null && $tplRaw !== '' ? (string) $tplRaw : null;
 
                     $lines[] = [
                         'id' => isset($it['line_id']) ? (int) $it['line_id'] : null,
@@ -955,8 +963,15 @@ class AccountingController extends Controller
                         'bl_number' => $bl,
                         'shipment_type' => $shipment?->shipment_type,
                         'booking_number' => $shipment?->booking_number,
+                        'acid_number' => $shipment?->acid_number,
+                        'booking_date' => $shipment?->booking_date?->toDateString(),
+                        'is_reefer' => (bool) ($shipment?->is_reefer ?? false),
                         'category_name' => '',
-                        'description' => $label,
+                        'description' => $display,
+                        'title' => $title !== '' ? $title : null,
+                        'label' => $lbl !== '' ? $lbl : null,
+                        'name' => $name !== '' ? $name : null,
+                        'template_id' => $templateId,
                         'amount' => $amt,
                         'currency_code' => strtoupper((string) ($it['currency_code'] ?? 'USD')),
                         'vendor_id' => $vid,
@@ -976,7 +991,19 @@ class AccountingController extends Controller
 
         $expenseQuery = Expense::query()
             ->whereNotNull('shipment_id')
-            ->with(['category', 'vendor', 'shipment']);
+            ->with([
+                'category',
+                'vendor',
+                'shipment' => fn ($q) => $q->select([
+                    'id',
+                    'bl_number',
+                    'shipment_type',
+                    'booking_number',
+                    'acid_number',
+                    'booking_date',
+                    'is_reefer',
+                ]),
+            ]);
 
         if ($shipmentsWithInvoiceLines !== []) {
             $expenseQuery->whereNotIn('shipment_id', array_keys($shipmentsWithInvoiceLines));
@@ -992,14 +1019,25 @@ class AccountingController extends Controller
             if (! is_finite($amt) || $amt <= 0) {
                 continue;
             }
+            $catName = trim((string) ($expense->category?->name ?? ''));
+            $expDesc = trim((string) ($expense->description ?? ''));
+            $expDisplay = $expDesc !== '' ? $expDesc : $catName;
+
             $lines[] = [
                 'id' => $expense->id,
                 'shipment_id' => $expense->shipment_id,
                 'bl_number' => $expense->shipment?->bl_number ?? '',
                 'shipment_type' => $expense->shipment?->shipment_type,
                 'booking_number' => $expense->shipment?->booking_number,
-                'category_name' => $expense->category?->name ?? '',
-                'description' => $expense->description,
+                'acid_number' => $expense->shipment?->acid_number,
+                'booking_date' => $expense->shipment?->booking_date?->toDateString(),
+                'is_reefer' => (bool) ($expense->shipment?->is_reefer ?? false),
+                'category_name' => $catName,
+                'description' => $expDisplay,
+                'title' => $expDesc !== '' ? $expDesc : null,
+                'label' => null,
+                'name' => null,
+                'template_id' => null,
                 'amount' => $amt,
                 'currency_code' => $expense->currency_code,
                 'vendor_id' => $expense->vendor_id,

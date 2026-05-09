@@ -13,6 +13,7 @@ use App\Models\ShipmentAttachment;
 use App\Models\ShipmentCostInvoice;
 use App\Notifications\ShipmentFinancialsCompleted;
 use App\Services\ActivityLogger;
+use App\Services\BankPaymentCurrencyService;
 use App\Services\FinancialService;
 use App\Services\NotificationService;
 use App\Support\MpdfInvoiceFonts;
@@ -47,7 +48,13 @@ class InvoiceController extends Controller
             403
         );
 
-        $query = Invoice::query()->with(['client', 'shipment']);
+        $query = Invoice::query()->with([
+            'client',
+            'shipment',
+            'items' => static function ($q): void {
+                $q->select('id', 'invoice_id', 'currency_code', 'line_total');
+            },
+        ]);
 
         if ($status = $request->query('status')) {
             $query->where('status', $status);
@@ -110,6 +117,13 @@ class InvoiceController extends Controller
         $rows = $paginator->getCollection()->map(static function (Invoice $invoice): array {
             $partyName = $invoice->client?->name ?? '';
 
+            $fallbackCurrency = strtoupper((string) ($invoice->currency_code ?: 'USD'));
+            $totalsByCurrency = collect($invoice->items)
+                ->groupBy(fn (InvoiceItem $i) => strtoupper((string) ($i->currency_code ?: $fallbackCurrency)))
+                ->map(fn ($g) => self::roundMoney((float) $g->sum('line_total')))
+                ->filter(fn (float $v) => abs($v) > 1e-9)
+                ->toArray();
+
             return [
                 'id' => $invoice->id,
                 'invoice_type' => $invoice->invoice_type,
@@ -119,6 +133,7 @@ class InvoiceController extends Controller
                 'shipment_bl' => $invoice->shipment?->bl_number,
                 'amount' => (float) $invoice->net_amount,
                 'currency_code' => $invoice->currency_code,
+                'totals_by_currency' => $totalsByCurrency,
                 'status' => $invoice->status,
                 'is_vat_invoice' => (bool) $invoice->is_vat_invoice,
                 'issue_date' => $invoice->issue_date?->toDateString(),
@@ -912,11 +927,17 @@ class InvoiceController extends Controller
         ]);
 
         $payment = DB::transaction(function () use ($invoice, $validated, $user) {
+            $validated['currency_code'] = strtoupper((string) ($validated['currency_code'] ?? $invoice->currency_code));
+            if (! isset($validated['source_account_id']) && ! empty($validated['bank_account_id'])) {
+                $validated['source_account_id'] = $validated['bank_account_id'];
+            }
+            BankPaymentCurrencyService::prepareForBank($validated);
+
             $payment = $invoice->payments()->create([
                 'type' => 'client_receipt',
                 'client_id' => $invoice->client_id,
                 'amount' => $validated['amount'],
-                'currency_code' => strtoupper((string) ($validated['currency_code'] ?? $invoice->currency_code)),
+                'currency_code' => $validated['currency_code'],
                 'source_account_id' => $validated['source_account_id'] ?? $validated['bank_account_id'] ?? null,
                 'shipment_id' => $validated['shipment_id'] ?? $invoice->shipment_id,
                 'target_account_id' => $validated['target_account_id'] ?? null,

@@ -57,23 +57,58 @@ class FinancialService
             // Treasury entry
             $entryType = $payment->type === 'client_receipt' ? 'in' : 'out';
 
-            TreasuryEntry::create([
-                'entry_type' => $entryType,
-                'source' => $payment->source_account_id ? ('bank-'.$payment->source_account_id) : 'payment',
-                'account_id' => $payment->source_account_id,
-                'counter_account_id' => $payment->target_account_id,
-                'payment_id' => $payment->id,
-                'amount' => $payment->amount,
-                'currency_code' => $payment->currency_code,
-                'target_currency_code' => $payment->target_currency_code,
-                'exchange_rate' => $payment->exchange_rate,
-                'converted_amount' => $payment->converted_amount,
-                'method' => $payment->method,
-                'reference' => $payment->reference,
-                'notes' => $payment->notes,
-                'entry_date' => $payment->paid_at?->toDateString() ?? now()->toDateString(),
-                'created_by_id' => $payment->created_by_id,
-            ]);
+            $ledgerCurrency = strtoupper(trim((string) ($payment->target_currency_code ?? '')));
+            $payCurrency = strtoupper(trim((string) ($payment->currency_code ?? '')));
+            $hasFx = $payment->converted_amount !== null
+                && (float) $payment->converted_amount > 0
+                && $ledgerCurrency !== ''
+                && $ledgerCurrency !== $payCurrency;
+
+            if ($hasFx) {
+                $originalAmount = (float) $payment->amount;
+                $ledgerAmount = (float) $payment->converted_amount;
+                $fxNote = __('bank.treasury_fx_note', [
+                    'amount' => $originalAmount,
+                    'currency' => $payCurrency,
+                ]);
+                $notes = trim(implode("\n", array_filter([$payment->notes, $fxNote])));
+
+                TreasuryEntry::create([
+                    'entry_type' => $entryType,
+                    'source' => $payment->source_account_id ? ('bank-'.$payment->source_account_id) : 'payment',
+                    'account_id' => $payment->source_account_id,
+                    'counter_account_id' => $payment->target_account_id,
+                    'payment_id' => $payment->id,
+                    'amount' => $ledgerAmount,
+                    'currency_code' => $ledgerCurrency,
+                    'exchange_rate' => $payment->exchange_rate,
+                    'converted_amount' => $originalAmount,
+                    'target_currency_code' => $payCurrency,
+                    'method' => $payment->method,
+                    'reference' => $payment->reference,
+                    'notes' => $notes,
+                    'entry_date' => $payment->paid_at?->toDateString() ?? now()->toDateString(),
+                    'created_by_id' => $payment->created_by_id,
+                ]);
+            } else {
+                TreasuryEntry::create([
+                    'entry_type' => $entryType,
+                    'source' => $payment->source_account_id ? ('bank-'.$payment->source_account_id) : 'payment',
+                    'account_id' => $payment->source_account_id,
+                    'counter_account_id' => $payment->target_account_id,
+                    'payment_id' => $payment->id,
+                    'amount' => $payment->amount,
+                    'currency_code' => $payCurrency !== '' ? $payCurrency : $payment->currency_code,
+                    'target_currency_code' => null,
+                    'exchange_rate' => null,
+                    'converted_amount' => null,
+                    'method' => $payment->method,
+                    'reference' => $payment->reference,
+                    'notes' => $payment->notes,
+                    'entry_date' => $payment->paid_at?->toDateString() ?? now()->toDateString(),
+                    'created_by_id' => $payment->created_by_id,
+                ]);
+            }
 
             if ($payment->invoice_id) {
                 $invoice = Invoice::query()->find($payment->invoice_id);
