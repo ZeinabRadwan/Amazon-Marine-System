@@ -872,6 +872,7 @@ export default function ShipmentFinancialsModal({
   const [receiptActionId, setReceiptActionId] = useState(null)
   const [sectionAttachmentRefs, setSectionAttachmentRefs] = useState({})
   const pendingRowSeqRef = useRef(0)
+  const finModalShellRef = useRef(null)
   const [savingAllDraft, setSavingAllDraft] = useState(false)
   const [savingSectionId, setSavingSectionId] = useState(null)
   const editMode = Boolean(token && canManageExpenses && shipment?.bl_number?.trim() && shipment?.id)
@@ -891,6 +892,21 @@ export default function ShipmentFinancialsModal({
       })
     )
   }, [vendors])
+
+  useEffect(() => {
+    const root = finModalShellRef.current
+    if (!root) return undefined
+    const onWheelCapture = (e) => {
+      const t = e.target
+      if (t instanceof HTMLInputElement && t.type === 'number') {
+        e.preventDefault()
+      }
+    }
+    root.addEventListener('wheel', onWheelCapture, { capture: true, passive: false })
+    return () => {
+      root.removeEventListener('wheel', onWheelCapture, true)
+    }
+  }, [])
 
   useEffect(() => {
     if (open && shipment?.id != null) {
@@ -3307,6 +3323,7 @@ export default function ShipmentFinancialsModal({
 
   return (
     <div
+      ref={finModalShellRef}
       className={`client-detail-modal shipments-no-print shipment-fin-modal-root${tab === 'selling' ? ' shipment-fin-modal-root--selling-tab' : ''}`}
       role="dialog"
       aria-modal="true"
@@ -4130,7 +4147,7 @@ export default function ShipmentFinancialsModal({
                           <div className="font-medium">{p.method || '—'} • {p.bank_name || p.bank_account_name || t('payments.bankAccountOptional', 'No bank account')}</div>
                           <div className="text-gray-500">{formatHumanDate(p.paid_at || p.created_at)} • {p.invoice_reference || clientInvoice?.invoice_number || `INV-${clientInvoice?.id}`}{p.shipment_reference ? ` • ${p.shipment_reference}` : ''}</div>
                         </div>
-                        <div className="font-semibold">{String(p.currency_code || 'USD').toUpperCase()} {formatMoney(Number(p.amount) || 0, numberLocale)}</div>
+                        <div className="font-semibold">{formatMoneyWithCurrency(p.amount, p.currency_code, numberLocale)}</div>
                       </div>
                     ))}
                   </div>
@@ -4226,7 +4243,15 @@ export default function ShipmentFinancialsModal({
               <div className="shipment-fin-payment-modal">
                 <h4>{t('shipments.fin.recordPayment', { defaultValue: 'Record Payment' })}</h4>
                 <div className="shipment-fin-payment-grid">
-                  <input type="number" min="0.01" step="0.01" placeholder={t('shipments.expColAmount')} value={paymentForm.amount} onChange={(e) => setPaymentForm((p) => ({ ...p, amount: e.target.value }))} />
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    className="shipment-fin-input shipment-fin-input--num"
+                    placeholder={t('shipments.expColAmount')}
+                    value={paymentForm.amount}
+                    onChange={(e) => setPaymentForm((p) => ({ ...p, amount: e.target.value }))}
+                  />
                   <select value={paymentForm.currency} onChange={(e) => setPaymentForm((p) => ({ ...p, currency: e.target.value }))}>
                     {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
