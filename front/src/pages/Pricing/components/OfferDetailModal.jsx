@@ -277,7 +277,7 @@ export default function OfferDetailModal({ isOpen, offer, onClose, onCreateQuota
           <div className="sea-search-detail-topbar">
             <div>
               <h2 id="offer-detail-title" className="sea-search-detail-modal-title">
-                عند الضغط على عرض سعر — تفاصيل البنود / Rate detail view
+                تفاصيل عرض الشحن البحري / Sea Freight Rate detail view
               </h2>
             </div>
             <button
