@@ -236,56 +236,6 @@ function formatShipBarDate(isoOrStr) {
 
 const CURRENCIES = ['EGP', 'USD', 'EUR']
 
-/** Persisted on invoice items for lines added only on the sales invoice (no shipment expense). */
-const INVOICE_MANUAL_SOURCE_PREFIX = 'invoice-manual:'
-
-function isManualInvoiceApiItem(it) {
-  if (!it || typeof it !== 'object') return false
-  const sk = String(it.source_key || '')
-  if (!sk || sk === 'handling-fee') return false
-  if (sk.startsWith(INVOICE_MANUAL_SOURCE_PREFIX)) return true
-  return String(it.section_key || '').toLowerCase() === 'manual'
-}
-
-/** Quantity used for selling total (matches save payload rules). */
-function invoiceLineQuantityForSell(row) {
-  const bid = row.bucket_id || 'other'
-  if (bid === 'insurance') return 1
-  const q = Number(row.quantity)
-  if (!Number.isFinite(q) || q <= 0) return 1
-  return Math.max(0.01, q)
-}
-
-function buildManualTabBRowFromInvoiceItem(it) {
-  const sk = String(it.source_key || '')
-  const idPart = sk.startsWith(INVOICE_MANUAL_SOURCE_PREFIX)
-    ? sk.slice(INVOICE_MANUAL_SOURCE_PREFIX.length).trim()
-    : ''
-  const stableId = idPart || `iid-${it.id ?? Date.now()}`
-  const qtyRaw = Number(it.quantity)
-  const qty = Number.isFinite(qtyRaw) && qtyRaw > 0 ? qtyRaw : 1
-  const up = Number(it.unit_price)
-  const desc = String(it.description || it.title || '').trim() || '—'
-  return {
-    expenseId: `manual-${stableId}`,
-    source_key: `${INVOICE_MANUAL_SOURCE_PREFIX}${stableId}`,
-    bucket_id: 'manual',
-    isManualInvoiceLine: true,
-    template_id: null,
-    expense_title: '',
-    expense_description: desc,
-    invoice_number: null,
-    label: desc,
-    description: desc,
-    category_name: '—',
-    cost: Number(it.cost_line_total) || 0,
-    currency: String(it.currency_code || 'USD').toUpperCase(),
-    quantity: qty,
-    unit_price: Number.isFinite(up) ? String(up) : '',
-    include: qty > 0,
-  }
-}
-
 /** English prefixes stored in `description` so template matchers keep working. */
 const LINE_DESC_PREFIX = {
   thc: 'THC – Terminal Handling Charges - عوائد الشحن / رسوم تداول الحاويات بالميناء',
@@ -377,9 +327,6 @@ function resolveCostItemStyleFeeNameFromExpense(ex, t, isReefer) {
 }
 
 function resolveCostItemStyleFeeNameFromRow(row, t, isReefer) {
-  if (row.isManualInvoiceLine || row.bucket_id === 'manual') {
-    return (row.description || row.label || '').trim() || t('shipments.fin.manualInvoiceItem', { defaultValue: 'Additional item' })
-  }
   if (String(row.expenseId || '').startsWith('tmp-')) {
     return t('shipments.fin.customItemFallback', { defaultValue: 'Custom Item' })
   }
@@ -914,12 +861,6 @@ export default function ShipmentFinancialsModal({
     bank_account_id: '',
     paid_at: new Date().toISOString().slice(0, 10),
     reference: '',
-  })
-  const [manualInvoiceAddDraft, setManualInvoiceAddDraft] = useState({
-    desc: '',
-    quantity: '1',
-    unit_price: '',
-    currency: 'USD',
   })
 
   const [activityRows, setActivityRows] = useState([])
