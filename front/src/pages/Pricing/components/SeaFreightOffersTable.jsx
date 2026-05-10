@@ -130,7 +130,7 @@ export default function SeaFreightOffersTable({
   return (
     <div className="sea-rates-list">
       <div className="sea-rates-list-title">
-        <span>نتائج البحث — {offers?.length || 0} عروض / Search results — {offers?.length || 0} rates found</span>
+        <span>أسعار الشحن البحري المحفوظة — {offers?.length || 0} عروض / Saved sea freight rates — {offers?.length || 0} found</span>
       </div>
       <div className="sea-search-results">
         {loading

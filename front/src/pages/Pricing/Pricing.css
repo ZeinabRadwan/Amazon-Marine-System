@@ -461,7 +461,6 @@
   display: flex;
   width: 100%;
   max-width: 780px;
-  max-height: 92vh;
   flex-direction: column;
   overflow: hidden;
   border: 1px solid #e0e0e0;
@@ -486,19 +485,6 @@
   color: #666;
   font-size: 14px;
   font-weight: 600;
-}
-
-.sea-search-detail-close {
-  display: inline-flex;
-  width: 36px;
-  height: 36px;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #d0d0d0;
-  border-radius: 999px;
-  background: #fff;
-  color: #1a1a1a;
-  cursor: pointer;
 }
 
 .sea-search-detail-scroll {

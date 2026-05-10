@@ -264,7 +264,7 @@ export default function OfferDetailModal({ isOpen, offer, onClose, onCreateQuota
       ? approxTotalCurrencyKeys.map((currency) => formatLocaleMoney(approxTotalsByCurrency[currency], currency, i18n.language)).join(' + ')
       : dash
     const sailingLabel = weeklySailingDisplay || (sailingFormatted !== dash ? sailingFormatted : dash)
-    const validityLabel = toIso ? formatDate(toIso, { locale: i18n.language }) : dash
+    const validityLabel = toIso ? formatDate(toIso, { locale: i18n.language }) : 'بدون تاريخ انتهاء'
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -283,7 +283,7 @@ export default function OfferDetailModal({ isOpen, offer, onClose, onCreateQuota
             <button
               type="button"
               onClick={onClose}
-              className="sea-search-detail-close"
+              className="p-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full transition-colors shrink-0"
               aria-label={t('common.close', 'Close')}
             >
               <X className="h-5 w-5" />
