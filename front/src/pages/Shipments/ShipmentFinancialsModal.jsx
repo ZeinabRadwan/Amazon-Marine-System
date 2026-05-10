@@ -1732,7 +1732,12 @@ export default function ShipmentFinancialsModal({
   }, [open, shipment?.id, token, tab])
 
   useEffect(() => {
-    const items = Array.isArray(clientInvoice?.items) ? clientInvoice.items : []
+    if (!expenses.length) {
+      setTabBRows([])
+      setHandlingRow({ include: true, number_of_containers: 1, handling_fee_per_container: '', currency: 'USD' })
+      return
+    }
+    const items = clientInvoice?.items || []
     const handlingItem =
       items.find((it) => String(it.source_key || '') === 'handling-fee') ||
       items.find((it) => it.description === HANDLING_FEE_DESCRIPTION)
@@ -1744,48 +1749,38 @@ export default function ShipmentFinancialsModal({
     })
     setDeletedSellIds(new Set())
     const isReefer = Boolean(shipment?.is_reefer)
-
-    const manualRowsFromInvoice = items
-      .filter((it) => isManualInvoiceApiItem(it))
-      .sort((a, b) => (Number(a.order_index) || 0) - (Number(b.order_index) || 0))
-      .map((it) => buildManualTabBRowFromInvoiceItem(it))
-
-    if (!expenses.length) {
-      setTabBRows(manualRowsFromInvoice)
-      return
-    }
-
-    const expenseRows = expenses.map((ex) => {
-      const feeName = resolveCostItemStyleFeeNameFromExpense(ex, t, isReefer)
-      const sourceKey = `expense:${ex.id}`
-      const match =
-        items.find((it) => String(it.source_key || '') === sourceKey) ||
-        items.find((it) => it.description === feeName)
-      const cost = Number(ex.amount) || 0
-      const sellVal = match != null ? Number(match.unit_price) : cost
-      const qtyVal = (ex.bucket_id || expenseBucket(ex)) === 'insurance'
-        ? 1
-        : (match != null ? Math.max(1, Number(match.quantity || 1)) : 1)
-      const include = match ? Number(match.quantity) > 0 : true
-      return {
-        expenseId: ex.id,
-        source_key: sourceKey,
-        bucket_id: ex.bucket_id || expenseBucket(ex),
-        template_id: ex.template_id || null,
-        expense_title: ex.title || '',
-        expense_description: ex.description || '',
-        invoice_number: ex.invoice_number,
-        label: feeName,
-        description: match?.description || feeName,
-        category_name: ex.category_name || '—',
-        cost,
-        currency: (match?.currency_code || ex.currency_code || 'USD').toUpperCase(),
-        quantity: qtyVal,
-        unit_price: Number.isNaN(sellVal) ? '' : String(sellVal),
-        include,
-      }
-    })
-    setTabBRows([...expenseRows, ...manualRowsFromInvoice])
+    setTabBRows(
+      expenses.map((ex) => {
+        const feeName = resolveCostItemStyleFeeNameFromExpense(ex, t, isReefer)
+        const sourceKey = `expense:${ex.id}`
+        const match =
+          items.find((it) => String(it.source_key || '') === sourceKey) ||
+          items.find((it) => it.description === feeName)
+        const cost = Number(ex.amount) || 0
+        const sellVal = match != null ? Number(match.unit_price) : cost
+        const qtyVal = (ex.bucket_id || expenseBucket(ex)) === 'insurance'
+          ? 1
+          : (match != null ? Math.max(1, Number(match.quantity || 1)) : 1)
+        const include = match ? Number(match.quantity) > 0 : true
+        return {
+          expenseId: ex.id,
+          source_key: sourceKey,
+          bucket_id: ex.bucket_id || expenseBucket(ex),
+          template_id: ex.template_id || null,
+          expense_title: ex.title || '',
+          expense_description: ex.description || '',
+          invoice_number: ex.invoice_number,
+          label: feeName,
+          description: match?.description || feeName,
+          category_name: ex.category_name || '—',
+          cost,
+          currency: (match?.currency_code || ex.currency_code || 'USD').toUpperCase(),
+          quantity: qtyVal,
+          unit_price: Number.isNaN(sellVal) ? '' : String(sellVal),
+          include,
+        }
+      })
+    )
   }, [expenses, clientInvoice, shipment?.container_count, shipment?.is_reefer, t])
 
   const savePricingInvoice = useCallback(async () => {
@@ -1794,12 +1789,7 @@ export default function ShipmentFinancialsModal({
       setFinBanner({ type: 'error', message: t('shipments.fin.invoiceNoClient') })
       return
     }
-    const curCode = (
-      clientInvoice?.currency_code ||
-      expenses[0]?.currency_code ||
-      tabBRows.find((r) => r.currency)?.currency ||
-      'USD'
-    ).toUpperCase()
+    const curCode = (clientInvoice?.currency_code || expenses[0]?.currency_code || 'USD').toUpperCase()
     const foundCurrency = currencies.find(c => c.code === curCode)
     const currencyId = foundCurrency?.id || 1
     const items = []
@@ -1808,32 +1798,6 @@ export default function ShipmentFinancialsModal({
       if (String(row.expenseId || '').startsWith('tmp-')) continue
       if (deletedSellIds.has(row.expenseId)) continue
       if (!row.include) continue
-
-      if (row.isManualInvoiceLine || row.bucket_id === 'manual') {
-        const sell = Number(row.unit_price)
-        const qty = invoiceLineQuantityForSell(row)
-        if (Number.isNaN(sell) || sell < 0) continue
-        const desc = (row.description || '').trim() || t('shipments.fin.manualInvoiceItem', { defaultValue: 'Additional item' })
-        const keyTail = String(row.expenseId || '').startsWith('manual-')
-          ? String(row.expenseId).slice('manual-'.length)
-          : String(row.expenseId ?? idx)
-        items.push({
-          description: desc,
-          title: desc,
-          quantity: qty,
-          unit_price: sell,
-          currency_code: (row.currency || 'USD').toUpperCase(),
-          section_key: 'manual',
-          order_index: idx,
-          source_key: row.source_key?.startsWith(INVOICE_MANUAL_SOURCE_PREFIX)
-            ? row.source_key
-            : `${INVOICE_MANUAL_SOURCE_PREFIX}${keyTail}`,
-          cost_unit_price: 0,
-          cost_line_total: Number(row.cost) || 0,
-        })
-        continue
-      }
-
       const sell = Number(row.unit_price)
       const qty = (row.bucket_id || 'other') === 'insurance' ? 1 : Math.max(1, Number(row.quantity || 1))
       if (Number.isNaN(sell) || sell < 0) continue
@@ -1995,59 +1959,11 @@ export default function ShipmentFinancialsModal({
         if (deletedSellIds.has(r.expenseId)) return false
         if (String(r.expenseId || '').startsWith('tmp-')) return false
         const bid = r.bucket_id || 'other'
-        if (sectionId === 'manual') return bid === 'manual'
         if (sectionId === 'shipping') return bid === 'shipping' || bid === 'other'
         return bid === sectionId
       }),
     [tabBRows, deletedSellIds]
   )
-
-  const addManualInvoiceLineFromDraft = useCallback(() => {
-    const desc = (manualInvoiceAddDraft.desc || '').trim()
-    const unit = Number(manualInvoiceAddDraft.unit_price)
-    if (!desc) {
-      setFinBanner({
-        type: 'error',
-        message: t('shipments.fin.manualInvoiceNeedDesc', { defaultValue: 'Enter item description.' }),
-      })
-      return
-    }
-    if (Number.isNaN(unit) || unit < 0) {
-      setFinBanner({
-        type: 'error',
-        message: t('shipments.fin.manualInvoiceNeedPrice', { defaultValue: 'Enter a valid unit price.' }),
-      })
-      return
-    }
-    pendingRowSeqRef.current += 1
-    const stableId = `${Date.now()}-${pendingRowSeqRef.current}`
-    const qtyNum = Math.max(0.01, Number(manualInvoiceAddDraft.quantity) || 1)
-    const cur = String(manualInvoiceAddDraft.currency || 'USD').toUpperCase()
-    setTabBRows((prev) => [
-      ...prev,
-      {
-        expenseId: `manual-${stableId}`,
-        source_key: `${INVOICE_MANUAL_SOURCE_PREFIX}${stableId}`,
-        bucket_id: 'manual',
-        isManualInvoiceLine: true,
-        template_id: null,
-        expense_title: '',
-        expense_description: desc,
-        invoice_number: null,
-        label: desc,
-        description: desc,
-        category_name: '—',
-        cost: 0,
-        currency: cur,
-        quantity: qtyNum,
-        unit_price: String(unit),
-        include: true,
-      },
-    ])
-    setManualInvoiceAddDraft((d) => ({ desc: '', quantity: '1', unit_price: '', currency: d.currency || 'USD' }))
-    setExpanded((prev) => new Set(prev).add('sell-manual'))
-    setFinBanner(null)
-  }, [manualInvoiceAddDraft, t])
 
   const addCustomCostSection = useCallback(() => {
     const title = window.prompt('Section name / اسم القسم')
@@ -2223,29 +2139,14 @@ export default function ShipmentFinancialsModal({
   )
 
   const sellingSections = useMemo(() => {
-    const manualExtraLabel = t('shipments.fin.sellingSection.manualExtra', {
-      defaultValue: 'Additional invoice lines / بنود إضافية',
-    })
     const sectionLabels = {
       shipping: t('shipments.fin.sellingSection.shipping', { defaultValue: 'Shipment Line Cost / تكلفة الشحن البحري' }),
       inland: t('shipments.fin.sellingSection.inland', { defaultValue: 'Inland Transport / النقل البري' }),
       customs: t('shipments.fin.sellingSection.customs', { defaultValue: 'Customs Clearance / التخليص الجمركي' }),
       insurance: t('shipments.fin.sellingSection.insurance', { defaultValue: 'Insurance / التأمين' }),
       handling: t('shipments.fin.sellingSection.handling', { defaultValue: 'Handling Fees / رسوم الخدمة والمتابعة' }),
-      manual: manualExtraLabel,
     }
     const fixed = ['shipping', 'inland', 'customs', 'insurance']
-    const showManualSection =
-      canEditSellingGrid || sellingVisibleRows.some((r) => (r.bucket_id || '') === 'manual')
-    const manualSectionSkeleton = {
-      id: 'manual',
-      label: manualExtraLabel,
-      rows: [],
-      cost: {},
-      sell: {},
-      profit: {},
-      attachments: mergeSectionAttachmentsForSelling(sectionAttachmentRefs.manual, []),
-    }
     const apiSections = Array.isArray(clientInvoice?.sections) ? clientInvoice.sections : []
     if (apiSections.length > 0) {
       const mapped = apiSections.map((s) => {
@@ -2264,7 +2165,7 @@ export default function ShipmentFinancialsModal({
       const mappedWithoutHandling = mapped.filter((s) => s.id !== 'handling' && s.id !== 'other')
       const byId = new Map(mappedWithoutHandling.map((s) => [s.id, s]))
       const dynamicIds = mappedWithoutHandling.map((s) => s.id).filter((id) => !fixed.includes(id))
-      let core = [...fixed, ...dynamicIds].map((id) => {
+      return [...fixed, ...dynamicIds].map((id) => {
         const base = byId.get(id) || {
           id,
           label: sectionLabels[id] || id,
@@ -2279,10 +2180,6 @@ export default function ShipmentFinancialsModal({
           attachments: mergeSectionAttachmentsForSelling(sectionAttachmentRefs[id], base.attachments || []),
         }
       })
-      if (showManualSection && !core.some((s) => s.id === 'manual')) {
-        core = [...core, { ...manualSectionSkeleton, attachments: mergeSectionAttachmentsForSelling(sectionAttachmentRefs.manual, []) }]
-      }
-      return core
     }
 
     const defs = [
@@ -2290,7 +2187,6 @@ export default function ShipmentFinancialsModal({
       { id: 'inland', label: t('shipments.fin.sellingSection.inland', { defaultValue: 'Inland Transport / النقل البري' }) },
       { id: 'customs', label: t('shipments.fin.sellingSection.customs', { defaultValue: 'Customs Clearance / التخليص الجمركي' }) },
       { id: 'insurance', label: t('shipments.fin.sellingSection.insurance', { defaultValue: 'Insurance / التأمين' }) },
-      { id: 'manual', label: manualExtraLabel },
     ]
     return defs
       .map((d) => ({
@@ -2298,13 +2194,12 @@ export default function ShipmentFinancialsModal({
         attachments: mergeSectionAttachmentsForSelling(sectionAttachmentRefs[d.id], []),
         rows: sellingVisibleRows.filter((r) => {
           const bid = r.bucket_id || 'other'
-          if (d.id === 'manual') return bid === 'manual'
           if (d.id === 'shipping') return bid === 'shipping' || bid === 'other'
           return bid === d.id
         }),
       }))
-      .filter((s) => s.rows.length > 0 || (s.id === 'manual' && showManualSection))
-  }, [sellingVisibleRows, t, clientInvoice?.sections, sectionAttachmentRefs, canEditSellingGrid])
+      .filter((s) => s.rows.length > 0)
+  }, [sellingVisibleRows, t, clientInvoice?.sections, sectionAttachmentRefs])
 
   const handlingTotal = useMemo(() => {
     if (!handlingRow.include) return 0
@@ -2320,7 +2215,7 @@ export default function ShipmentFinancialsModal({
       ;(rows || []).forEach((r) => {
         const cur = (r.currency || 'USD').toUpperCase()
         const c = Number(r.cost) || 0
-        const s = (Number(r.unit_price) || 0) * invoiceLineQuantityForSell(r)
+        const s = (Number(r.unit_price) || 0) * Math.max(1, Number(r.quantity || 1))
         if (c > 0) costRows.push({ amount: c, currency_code: cur })
         if (s > 0) sellRows.push({ amount: s, currency_code: cur })
       })
@@ -2343,7 +2238,7 @@ export default function ShipmentFinancialsModal({
       if (!r.include) return
       const cur = (r.currency || 'USD').toUpperCase()
       const c = Number(r.cost) || 0
-      const s = (Number(r.unit_price) || 0) * invoiceLineQuantityForSell(r)
+      const s = (Number(r.unit_price) || 0) * Math.max(1, Number(r.quantity || 1))
       if (c > 0) costRows.push({ amount: c, currency_code: cur })
       if (s > 0) sellRows.push({ amount: s, currency_code: cur })
     })
@@ -2449,7 +2344,7 @@ export default function ShipmentFinancialsModal({
     sellingVisibleRows.forEach((r) => {
       const cur = (r.currency || 'USD').toUpperCase()
       const c = Number(r.cost) || 0
-      const s = (Number(r.unit_price) || 0) * invoiceLineQuantityForSell(r)
+      const s = (Number(r.unit_price) || 0) * Math.max(1, Number(r.quantity || 1))
       if (c > 0) totalCost[cur] = (totalCost[cur] || 0) + c
       if (s > 0) totalSell[cur] = (totalSell[cur] || 0) + s
     })
@@ -2496,7 +2391,6 @@ export default function ShipmentFinancialsModal({
     if (k === 'inland') return '🚛'
     if (k === 'customs') return '🏛️'
     if (k === 'insurance') return '🛡️'
-    if (k === 'manual') return '📝'
     return '📦'
   }, [])
 
@@ -2505,9 +2399,6 @@ export default function ShipmentFinancialsModal({
       const id = String(sec?.id || '')
       if (id === 'shipping' || id === 'inland' || id === 'customs' || id === 'insurance') {
         return t(`shipments.fin.breakdown.${id}`)
-      }
-      if (id === 'manual') {
-        return t('shipments.fin.breakdown.manual', { defaultValue: 'Additional items' })
       }
       return sec?.label || id
     },
