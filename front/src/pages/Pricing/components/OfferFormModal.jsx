@@ -1,12 +1,6 @@
-import { createElement, useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  X,
-  Save,
-  MapPin,
-  FileText,
-  Truck,
-} from 'lucide-react'
+import { X } from 'lucide-react'
 import '../../Shipments/Shipments.css'
 import { useMutateOffer } from '../../../hooks/usePricing'
 import { getStoredToken } from '../../Login'
@@ -36,14 +30,22 @@ function formatIsoDateDisplay(iso, locale) {
   return formatDate(new Date(y, m - 1, d), { locale })
 }
 
-/** Same styling as SD Form `DateInput` for flatpickr (primary input hidden; alt shows d/m/Y). */
-const OFFER_DATE_PICKER_CLASS =
-  'mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition-colors placeholder:text-gray-400 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500'
-
 /** Legacy inland keys when API list is empty */
 const LEGACY_INLAND_ORDER = ['t20d', 't40d', 'p20x2', 't40r']
 
-const INLAND_GOVERNORATES = ['القاهرة الكبرى', 'الإسكندرية', 'الدلتا']
+const INLAND_GOVERNORATES = [
+  'القاهرة',
+  'الجيزة',
+  'الإسكندرية',
+  'الشرقية',
+  'المنوفية',
+  'البحيرة',
+  'الإسماعيلية',
+  'بورسعيد',
+  'السويس',
+  'القاهرة الكبرى',
+  'الدلتا',
+]
 
 const defaultInlandForm = () => ({
   inland_port: '',
@@ -52,6 +54,8 @@ const defaultInlandForm = () => ({
   truck_type: 't40d',
   price: '',
   currency: 'EGP',
+  generator_price: '',
+  generator_currency: 'EGP',
   valid_from: '',
   valid_to: '',
   notes: '',
@@ -91,6 +95,11 @@ function inlandPriceForTruck(pricing, truckId) {
   return direct
 }
 
+function isInlandReeferTruck(truckId) {
+  const s = String(truckId || '').toLowerCase()
+  return s.includes('reefer') || s.includes('rf') || s.includes('refrigerated') || s === 't40r'
+}
+
 const defaultSeaForm = () => ({
   pricing_type: 'sea',
   pol: '',
@@ -121,60 +130,6 @@ const makeCustomChargeItem = () => ({
   amount: '0',
   currency: 'USD',
 })
-
-/** Shipment Financials–style section: `shipment-fin-card` + static `shipment-fin-card__head` + `__body`. */
-function PricingFinCard({ icon, title, subtitle, headMeta = null, children }) {
-  return (
-    <div className="shipment-fin-card">
-      <div className="shipment-fin-card__head" role="group" aria-label={typeof title === 'string' ? title : undefined}>
-        <div className="shipment-fin-card__head-main">
-          {icon ? createElement(icon, { className: 'shipment-fin-card__icon', 'aria-hidden': true }) : null}
-          <div>
-            <div className="shipment-fin-card__title">{title}</div>
-            {subtitle ? <div className="shipment-fin-card__sub">{subtitle}</div> : null}
-          </div>
-        </div>
-        {headMeta != null && headMeta !== false ? (
-          <div className="shipment-fin-card__head-meta">{headMeta}</div>
-        ) : null}
-      </div>
-      <div className="shipment-fin-card__body">{children}</div>
-    </div>
-  )
-}
-
-/**
- * Pricing field labels: Arabic + English/abbreviation in parentheses, e.g. ميناء التحميل (POL).
- * @param {'label'|'p'|'div'|'h4'|'span'} as - wrapper element; use label when htmlFor is set.
- */
-function PricingBilingualFieldLabel({
-  as: Tag = 'label',
-  htmlFor,
-  arabicKey,
-  arabicDefault,
-  englishAbbrKey,
-  englishAbbrDefault,
-  className = 'mb-1.5 block text-[13px] font-semibold leading-snug text-gray-900 dark:text-gray-100',
-}) {
-  const { t } = useTranslation()
-  const inner = (
-    <>
-      <span lang="ar">{t(arabicKey, arabicDefault)}</span>
-      <span lang="en" className="text-blue-700 dark:text-blue-300 font-semibold">
-        {' '}
-        ({t(englishAbbrKey, englishAbbrDefault)})
-      </span>
-    </>
-  )
-  if (Tag === 'label') {
-    return (
-      <label htmlFor={htmlFor} className={className}>
-        {inner}
-      </label>
-    )
-  }
-  return createElement(Tag, { className }, inner)
-}
 
 function inferPresetFromPricing(offer) {
   const p = offer?.pricing || {}
@@ -394,6 +349,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
     }
     const truckId = inferInlandTruckFromPricing(offerToEdit.pricing, inlandUnitTypes)
     const row = inlandPriceForTruck(offerToEdit.pricing, truckId)
+    const generator = offerToEdit.pricing?.generator
     setInlandForm({
       inland_port: offerToEdit.inland_port || '',
       inland_gov: offerToEdit.inland_gov || offerToEdit.region || '',
@@ -401,6 +357,8 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
       truck_type: truckId,
       price: row?.price != null && row.price !== '' ? String(row.price) : '',
       currency: row?.currency || 'EGP',
+      generator_price: generator?.price != null && generator.price !== '' ? String(generator.price) : '',
+      generator_currency: generator?.currency || 'EGP',
       valid_from: offerToEdit.valid_from ? String(offerToEdit.valid_from).slice(0, 10) : '',
       valid_to: offerToEdit.valid_to ? String(offerToEdit.valid_to).slice(0, 10) : '',
       notes: offerToEdit.notes || '',
@@ -525,6 +483,20 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
       if (!gov || !port || Number.isNaN(amount) || amount < 0) return
 
       const searchPod = [port, inlandForm.inland_area.trim(), gov].filter(Boolean).join(' ')
+      const inlandPricing = {
+        [inlandForm.truck_type]: {
+          price: amount,
+          currency: inlandForm.currency || 'EGP',
+        },
+      }
+      const generatorAmount = Number(inlandForm.generator_price)
+      if (isInlandReeferTruck(inlandForm.truck_type) && inlandForm.generator_price !== '' && !Number.isNaN(generatorAmount) && generatorAmount >= 0) {
+        inlandPricing.generator = {
+          price: generatorAmount,
+          currency: inlandForm.generator_currency || 'EGP',
+        }
+      }
+
       const payload = {
         pricing_type: 'inland',
         region: gov,
@@ -543,12 +515,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
         inland_gov: gov,
         inland_city: inlandForm.inland_area.trim() || null,
         destination: inlandForm.inland_area.trim() || null,
-        pricing: {
-          [inlandForm.truck_type]: {
-            price: amount,
-            currency: inlandForm.currency || 'EGP',
-          },
-        },
+        pricing: inlandPricing,
       }
 
       try {
@@ -661,8 +628,8 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">
             {effectiveMode === 'inland'
               ? offerToEdit
-                ? t('pricing.editInlandOffer', 'Edit Inland Transport Rate')
-                : t('pricing.addInlandOffer', 'Inland Transport Price')
+                ? 'تعديل سعر نقل داخلي / Edit Inland Rate'
+                : 'إضافة سعر نقل داخلي / Add Inland Rate'
               : offerToEdit
                 ? 'تعديل عرض سعر شحن بحري / Edit Rate Sea Freight'
                 : 'إضافة عرض سعر جديد شحن بحري / Add New Rate Sea Freight'}
@@ -1081,47 +1048,28 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
               </div>
             </div>
             ) : (
-            <>
-            <PricingFinCard
-              icon={MapPin}
-              title={t('pricing.formSectionInlandRoute', 'Route')}
-              subtitle={t(
-                'pricing.formSectionInlandRouteSub',
-                'Port, governorate, and optional delivery area in one row.'
-              )}
-            >
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <div className="min-w-0">
-                  <PricingBilingualFieldLabel
-                    htmlFor="offer-inland-port"
-                    arabicKey="pricing.inlandPortArabic"
-                    arabicDefault="الميناء"
-                    englishAbbrKey="pricing.inlandPortEnglishAbbr"
-                    englishAbbrDefault="Port"
-                  />
+            <div className="inland-rate-form" role="region" aria-label="Inland transport rate">
+              <div className="inland-rate-section-title">القسم 1: المسار / Route</div>
+              <div className="inland-rate-grid inland-rate-grid-3">
+                <div>
+                  <label htmlFor="offer-inland-port" className="inland-rate-label">الميناء / Port</label>
                   <PortNameAsyncSelect
                     id="offer-inland-port"
                     value={inlandForm.inland_port}
                     onChange={(v) => updateInlandForm({ inland_port: v })}
-                    placeholder={t('pricing.filterAllPorts', 'All ports')}
+                    placeholder="اختر الميناء"
                   />
                 </div>
-                <div className="min-w-0">
-                  <PricingBilingualFieldLabel
-                    htmlFor="offer-inland-gov"
-                    arabicKey="pricing.inlandGovernorateArabic"
-                    arabicDefault="المحافظة"
-                    englishAbbrKey="pricing.inlandGovernorateEnglishAbbr"
-                    englishAbbrDefault="Governorate"
-                  />
+                <div>
+                  <label htmlFor="offer-inland-gov" className="inland-rate-label">المحافظة / Governorate</label>
                   <select
                     id="offer-inland-gov"
-                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                    className="inland-rate-select"
                     value={inlandForm.inland_gov}
                     onChange={(e) => updateInlandForm({ inland_gov: e.target.value })}
                     required
                   >
-                    <option value="">{t('common.select', 'Select')}</option>
+                    <option value="">اختر المحافظة</option>
                     {INLAND_GOVERNORATES.map((g) => (
                       <option key={g} value={g}>
                         {g}
@@ -1129,123 +1077,104 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                     ))}
                   </select>
                 </div>
-                <div className="min-w-0">
-                  <PricingBilingualFieldLabel
-                    htmlFor="offer-inland-area"
-                    arabicKey="pricing.inlandAreaArabic"
-                    arabicDefault="المنطقة"
-                    englishAbbrKey="pricing.inlandAreaEnglishAbbr"
-                    englishAbbrDefault="Area"
-                  />
+                <div>
+                  <label htmlFor="offer-inland-area" className="inland-rate-label">المنطقة / Zone (اختياري)</label>
                   <input
                     id="offer-inland-area"
                     type="text"
-                    className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                    className="inland-rate-input"
                     value={inlandForm.inland_area}
                     onChange={(e) => updateInlandForm({ inland_area: e.target.value })}
-                    placeholder={t('pricing.areaPlaceholder', 'Optional')}
+                    placeholder="مثال: التجمع الخامس، العاشر من رمضان..."
                   />
                 </div>
               </div>
-            </PricingFinCard>
 
-            <PricingFinCard
-              icon={Truck}
-              title={t('pricing.formSectionInlandVehiclePricing', 'Vehicle & pricing')}
-              subtitle={t(
-                'pricing.formSectionInlandVehiclePricingSub',
-                'Truck type and rate — default currency EGP; change if needed.'
-              )}
-            >
-              <div className="space-y-5">
-                <div className="min-w-0">
-                  <PricingBilingualFieldLabel
-                    htmlFor="offer-inland-truck-type"
-                    arabicKey="pricing.inlandTruckTypeArabic"
-                    arabicDefault="نوع الشاحنة"
-                    englishAbbrKey="pricing.inlandTruckTypeEnglishAbbr"
-                    englishAbbrDefault="Truck type"
-                  />
+              <div className="inland-rate-sub-section">
+                <span>المحافظة أو المنطقة مش موجودة؟</span>
+                <button type="button" className="inland-rate-btn inland-rate-btn-small">+ إضافة محافظة / منطقة جديدة</button>
+              </div>
+
+              <div className="inland-rate-section-title">القسم 2: نوع العربية والسعر / Vehicle Type &amp; Rate</div>
+              <div className="inland-rate-grid inland-rate-grid-2">
+                <div>
+                  <label htmlFor="offer-inland-truck-type" className="inland-rate-label">نوع العربية / Vehicle Type</label>
                   <InlandTruckTypeAsyncSelect
                     id="offer-inland-truck-type"
                     value={inlandForm.truck_type}
                     onChange={(v) => updateInlandForm({ truck_type: v })}
-                    placeholder={t('pricing.filterAllTruckTypes', 'All truck types')}
+                    placeholder="اختر نوع العربية"
                   />
                 </div>
-                <div className="rounded-xl border-2 border-blue-200/90 bg-blue-50/50 p-4 dark:border-blue-800/60 dark:bg-blue-950/25">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
-                    <div className="min-w-0 flex-1 sm:min-w-[12rem]">
-                      <PricingBilingualFieldLabel
-                        htmlFor="offer-inland-price"
-                        className="mb-1 text-[13px] font-bold text-blue-900 dark:text-blue-100"
-                        arabicKey="pricing.inlandRateArabic"
-                        arabicDefault="السعر / التعرفة"
-                        englishAbbrKey="pricing.inlandRateEnglishAbbr"
-                        englishAbbrDefault="Price / rate"
-                      />
-                      <input
-                        id="offer-inland-price"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        inputMode="decimal"
-                        className="w-full rounded-lg border-2 border-blue-300/80 bg-white px-4 py-3 text-2xl font-bold tabular-nums tracking-tight text-blue-950 shadow-inner focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/25 dark:border-blue-700/80 dark:bg-gray-900 dark:text-blue-50 dark:focus:border-blue-400"
-                        value={inlandForm.price}
-                        onChange={(e) => updateInlandForm({ price: e.target.value })}
-                        placeholder="0"
-                        required
-                        aria-label={t('pricing.inlandPriceAria', 'Inland transport price or rate')}
-                      />
-                    </div>
-                    <div className="w-full min-w-[7.5rem] sm:w-36">
-                      <PricingBilingualFieldLabel
-                        htmlFor="offer-inland-currency"
-                        className="mb-1 text-[13px] font-semibold text-gray-800 dark:text-gray-200"
-                        arabicKey="pricing.inlandCurrencyArabic"
-                        arabicDefault="العملة"
-                        englishAbbrKey="pricing.inlandCurrencyEnglishAbbr"
-                        englishAbbrDefault="Currency"
-                      />
-                      <select
-                        id="offer-inland-currency"
-                        className="w-full rounded-lg border border-gray-200 bg-white px-3 py-3 text-base font-semibold dark:border-gray-600 dark:bg-gray-800"
-                        value={inlandForm.currency}
-                        onChange={(e) => updateInlandForm({ currency: e.target.value })}
-                      >
-                        {CURRENCIES.map((c) => (
-                          <option key={c} value={c}>
-                            {c}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                <div>
+                  <label htmlFor="offer-inland-price" className="inland-rate-label">السعر / Rate</label>
+                  <div className="inland-rate-input-group">
+                    <input
+                      id="offer-inland-price"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      inputMode="decimal"
+                      className="inland-rate-input"
+                      value={inlandForm.price}
+                      onChange={(e) => updateInlandForm({ price: e.target.value })}
+                      placeholder="0"
+                      required
+                      aria-label={t('pricing.inlandPriceAria', 'Inland transport price or rate')}
+                    />
+                    <select
+                      id="offer-inland-currency"
+                      className="inland-rate-select"
+                      value={inlandForm.currency}
+                      onChange={(e) => updateInlandForm({ currency: e.target.value })}
+                    >
+                      <option value="EGP">EGP</option>
+                      <option value="USD">USD</option>
+                    </select>
                   </div>
                 </div>
               </div>
-            </PricingFinCard>
 
-            <PricingFinCard
-              icon={FileText}
-              title={t('pricing.formSectionValidityNotes', 'Validity & Notes')}
-              subtitle={t(
-                'pricing.inlandValidityNotesSub',
-                'Valid from is required; end date and notes are optional.'
-              )}
-            >
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {isInlandReeferTruck(inlandForm.truck_type) ? (
+                <div className="inland-rate-reefer-section">
+                  <div className="inland-rate-hint">في حالة عربية 40' Reefer فقط — سعر المولد:</div>
+                  <div className="inland-rate-grid inland-rate-grid-2">
+                    <div>
+                      <label htmlFor="offer-inland-generator-price" className="inland-rate-label">سعر المولد / Generator (per trip)</label>
+                      <div className="inland-rate-input-group">
+                        <input
+                          id="offer-inland-generator-price"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          className="inland-rate-input"
+                          value={inlandForm.generator_price}
+                          onChange={(e) => updateInlandForm({ generator_price: e.target.value })}
+                          placeholder="0"
+                        />
+                        <select
+                          className="inland-rate-select"
+                          value={inlandForm.generator_currency}
+                          onChange={(e) => updateInlandForm({ generator_currency: e.target.value })}
+                        >
+                          <option value="EGP">EGP</option>
+                          <option value="USD">USD</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="inland-rate-reefer-note">⚠ يظهر فقط عند اختيار عربية 40' Reefer</div>
+                </div>
+              ) : null}
+
+              <div className="inland-rate-section-title">القسم 3: الصلاحية / Validity</div>
+              <div className="inland-rate-grid inland-rate-grid-2">
                 <div>
-                  <PricingBilingualFieldLabel
-                    as="div"
-                    arabicKey="pricing.validityFromArabic"
-                    arabicDefault="صالح من"
-                    englishAbbrKey="pricing.validityFromEnglishAbbr"
-                    englishAbbrDefault="Valid From"
-                  />
+                  <label className="inland-rate-label">صالح من / Valid From</label>
                   <DatePicker
                     key={`in-vf-${offerToEdit?.id ?? 'new'}`}
                     id="offer-inland-valid-from"
-                    className={OFFER_DATE_PICKER_CLASS}
+                    className="inland-rate-date-input"
                     value={inlandForm.valid_from}
                     onChange={(v) => updateInlandForm({ valid_from: v })}
                     locale={i18n.language}
@@ -1253,61 +1182,45 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                   />
                 </div>
                 <div>
-                  <PricingBilingualFieldLabel
-                    as="div"
-                    arabicKey="pricing.validityToArabic"
-                    arabicDefault="صالح حتى"
-                    englishAbbrKey="pricing.validityToEnglishAbbr"
-                    englishAbbrDefault="Valid To"
-                  />
+                  <label className="inland-rate-label">صالح حتى / Valid To (اختياري)</label>
                   <DatePicker
                     key={`in-vt-${offerToEdit?.id ?? 'new'}`}
                     id="offer-inland-valid-to"
-                    className={OFFER_DATE_PICKER_CLASS}
+                    className="inland-rate-date-input"
                     value={inlandForm.valid_to}
                     onChange={(v) => updateInlandForm({ valid_to: v })}
                     locale={i18n.language}
                     placeholder={UI_DATE_FORMAT}
                   />
-                  <p className="mt-2 text-xs leading-relaxed text-gray-600 dark:text-gray-400">
-                    {t(
-                      'pricing.inlandValidToOpenEndedHint',
-                      'Leave Valid to empty to keep this price active with no end date.'
-                    )}
-                  </p>
-                </div>
-                <div className="md:col-span-2">
-                  <PricingBilingualFieldLabel
-                    htmlFor="offer-inland-notes"
-                    arabicKey="pricing.validityNotesArabic"
-                    arabicDefault="ملاحظات"
-                    englishAbbrKey="pricing.validityNotesEnglishAbbr"
-                    englishAbbrDefault="Notes"
-                  />
-                  <textarea
-                    id="offer-inland-notes"
-                    rows={4}
-                    className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                    value={inlandForm.notes}
-                    onChange={(e) => updateInlandForm({ notes: e.target.value })}
-                    placeholder={t('pricing.notesPlaceholder', 'Internal notes…')}
-                  />
                 </div>
               </div>
-            </PricingFinCard>
-            </>
+
+              <div className="inland-rate-sub-section inland-rate-sub-section-start">
+                لو مفيش تاريخ انتهاء — السعر يفضل سارياً لحد ما يتعدل أو يتحذف يدوياً
+              </div>
+
+              <div className="inland-rate-notes">
+                <label htmlFor="offer-inland-notes" className="inland-rate-label">ملاحظات / Notes (اختياري)</label>
+                <textarea
+                  id="offer-inland-notes"
+                  className="inland-rate-textarea"
+                  value={inlandForm.notes}
+                  onChange={(e) => updateInlandForm({ notes: e.target.value })}
+                  placeholder="أي ملاحظات خاصة بالمسار أو السعر..."
+                />
+              </div>
+            </div>
             )}
           </form>
           </div>
         </div>
 
-        <div className={effectiveMode === 'sea' ? 'sea-rate-actions shrink-0' : 'px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3 shrink-0'}>
-          <button type="button" onClick={onClose} className={effectiveMode === 'sea' ? 'sea-rate-btn sea-rate-btn-footer' : 'px-5 py-2.5 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-colors'}>
-            {effectiveMode === 'sea' ? 'إلغاء / Cancel' : t('common.cancel', 'Cancel')}
+        <div className={effectiveMode === 'sea' ? 'sea-rate-actions shrink-0' : effectiveMode === 'inland' ? 'inland-rate-actions shrink-0' : 'px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3 shrink-0'}>
+          <button type="button" onClick={onClose} className={effectiveMode === 'sea' ? 'sea-rate-btn sea-rate-btn-footer' : effectiveMode === 'inland' ? 'inland-rate-btn inland-rate-btn-footer' : 'px-5 py-2.5 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-colors'}>
+            {effectiveMode === 'sea' || effectiveMode === 'inland' ? 'إلغاء / Cancel' : t('common.cancel', 'Cancel')}
           </button>
-          <button type="submit" form="offerForm" disabled={loading} className={effectiveMode === 'sea' ? 'sea-rate-btn sea-rate-btn-primary sea-rate-btn-footer' : 'px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors flex items-center gap-2 disabled:opacity-50'}>
-            {effectiveMode === 'sea' ? null : <Save className="h-4 w-4" />}
-            {effectiveMode === 'sea' ? (loading ? t('common.saving', 'Saving...') : 'حفظ / Save') : loading ? t('common.saving', 'Saving...') : t('common.save', 'Save')}
+          <button type="submit" form="offerForm" disabled={loading} className={effectiveMode === 'sea' ? 'sea-rate-btn sea-rate-btn-primary sea-rate-btn-footer' : effectiveMode === 'inland' ? 'inland-rate-btn inland-rate-btn-primary inland-rate-btn-footer' : 'px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors flex items-center gap-2 disabled:opacity-50'}>
+            {effectiveMode === 'sea' || effectiveMode === 'inland' ? (loading ? t('common.saving', 'Saving...') : 'حفظ / Save') : loading ? t('common.saving', 'Saving...') : t('common.save', 'Save')}
           </button>
         </div>
       </div>

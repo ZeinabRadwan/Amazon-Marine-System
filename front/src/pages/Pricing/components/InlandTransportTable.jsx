@@ -1,103 +1,89 @@
-import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CheckCircle, Archive, Loader2, FilePlus2, Eye, Pencil } from 'lucide-react'
-import { useMutateOffer } from '../../../hooks/usePricing'
-import { IconActionButton, IconActionButtonGroup } from '../../../components/Table'
-import { formatDate, formatLocaleMoney, sortCurrencyCodes, sumPricingObjectByCurrency } from '../../../utils/dateUtils'
-import {
-  INLAND_PRICE_KEYS,
-  PRICING_RATES_TABLE_CLASS,
-  PRICING_RATES_TABLE_WRAP_CLASS,
-  formatSailingDates,
-  inlandContainerSummary,
-} from '../utils/pricingDisplay'
+import { formatDate, formatLocaleMoney } from '../../../utils/dateUtils'
+import { INLAND_PRICE_KEYS } from '../utils/pricingDisplay'
 import '../Pricing.css'
-import './OfferCard.css'
 
 function fmt(price, currency, language) {
   return formatLocaleMoney(price, currency, language)
 }
 
-function formatGovArea(offer, dash) {
+function formatGovArea(offer, dash = '—') {
   const gov = (offer.inland_gov || offer.region || '').trim()
   const area = (offer.destination || offer.inland_city || '').trim()
-  if (gov && area) return `${gov} / ${area}`
+  if (gov && area) return `${gov} — ${area}`
   if (gov) return gov
   if (area) return area
   return dash
+}
+
+function primaryInlandPrice(pricing) {
+  const p = pricing || {}
+  for (const key of INLAND_PRICE_KEYS) {
+    if (key === 'generator') continue
+    const row = p[key]
+    if (row?.price != null && row.price !== '') return { key, row }
+  }
+  return null
+}
+
+function truckLabelFromKey(key, t) {
+  if (key === 't20d' || key === 'p20x1' || key === 't20r') return t('pricing.inlandChip20dc', `20' Dry`)
+  if (key === 'p20x2') return t('pricing.inlandChipTwin20', `Twin 20'`)
+  if (key === 'p40rf' || key === 't40r') return t('pricing.inlandChip40rf', `40' Reefer`)
+  if (key === 'p40hq' || key === 't40hq' || key === 't40d') return t('pricing.inlandChip40hq', `40' Dry`)
+  return key || '—'
+}
+
+function isReeferKey(key) {
+  return key === 'p40rf' || key === 't40r' || String(key || '').toLowerCase().includes('rf')
 }
 
 export default function InlandTransportTable({
   offers = [],
   loading = false,
   onView,
-  onCreateQuotation,
-  showCreateQuotation = true,
   onEdit,
   canManageOffers = true,
-  onMutate,
 }) {
   const { t, i18n } = useTranslation()
-  const dash = t('common.dash')
-  const { activate, archive, loading: mutateLoading } = useMutateOffer()
-  const [actionOfferId, setActionOfferId] = useState(null)
-  const [actionKind, setActionKind] = useState(null)
-
-  const runAction = async (offer, kind, fn) => {
-    setActionOfferId(offer.id)
-    setActionKind(kind)
-    try {
-      await fn(offer.id)
-      onMutate?.()
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setActionOfferId(null)
-      setActionKind(null)
-    }
-  }
-
-  const rowBusy = (offerId) => mutateLoading && actionOfferId === offerId
+  const dash = t('common.dash', '—')
 
   return (
-    <div className={PRICING_RATES_TABLE_WRAP_CLASS}>
-      <div className="overflow-x-auto">
-        <table className={PRICING_RATES_TABLE_CLASS}>
+    <div className="inland-rates-list">
+      <div className="inland-rates-list-title">
+        <span>الأسعار المحفوظة / Saved Rates</span>
+      </div>
+      <div className="inland-rates-card">
+        <div className="overflow-x-auto">
+        <table className="inland-rates-table">
           <thead>
-            <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/80">
-              <th scope="col" className="px-4 py-3 font-bold text-xs uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                {t('pricing.route', 'Route')}
+            <tr>
+              <th scope="col">
+                الميناء / Port
               </th>
-              <th scope="col" className="px-4 py-3 font-bold text-xs uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                {t('pricing.inlandColGovArea', 'Governorate / Area')}
+              <th scope="col">
+                المحافظة / المنطقة
               </th>
-              <th scope="col" className="px-4 py-3 font-bold text-xs uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                {t('pricing.containerType', 'Container')}
+              <th scope="col">
+                نوع العربية
               </th>
-              <th scope="col" className="px-4 py-3 font-bold text-xs uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                {t('pricing.seaTableColSpotRates', 'Spot rates')}
+              <th scope="col">
+                السعر
               </th>
-              <th scope="col" className="px-4 py-3 font-bold text-xs uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                {t('pricing.seaTableColValiditySailing', 'Validity / sailings')}
+              <th scope="col">
+                الصلاحية
               </th>
-              <th scope="col" className="px-4 py-3 font-bold text-xs uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                {t('pricing.tableColApproxTotal', 'Approx. total')}
-              </th>
-              <th
-                scope="col"
-                className="px-4 py-3 font-bold text-xs uppercase tracking-wider text-gray-600 dark:text-gray-300 text-end whitespace-nowrap min-w-[12rem] w-[12rem]"
-              >
-                {t('pricing.inlandColActions', 'Actions')}
+              <th scope="col" aria-label={t('pricing.inlandColActions', 'Actions')}>
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+          <tbody>
             {loading
               ? Array.from({ length: 6 }).map((_, i) => (
                   <tr key={`sk-${i}`} className="animate-pulse">
-                    {Array.from({ length: 7 }).map((__, j) => (
-                      <td key={j} className="px-4 py-4">
-                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+                    {Array.from({ length: 6 }).map((__, j) => (
+                      <td key={j}>
+                        <div className="h-4 w-3/4 rounded bg-gray-200" />
                       </td>
                     ))}
                   </tr>
@@ -105,171 +91,67 @@ export default function InlandTransportTable({
               : offers.map((offer) => {
                   const p = offer.pricing || {}
                   const archived = offer.status === 'archived'
-                  const sailingStr = formatSailingDates(offer.sailing_dates, i18n.language)
+                  const primary = primaryInlandPrice(p)
+                  const generator = p.generator
                   const validStr = offer.valid_to ? formatDate(offer.valid_to, { locale: i18n.language }) : ''
-                  const approx = sumPricingObjectByCurrency(p, INLAND_PRICE_KEYS)
-                  const totalKeys = sortCurrencyCodes(Object.keys(approx).filter((c) => Math.abs(approx[c] || 0) > 1e-9))
-
-                  const p20s =
-                    p.p20x1?.price != null
-                      ? fmt(p.p20x1.price, p.p20x1.currency, i18n.language)
-                      : p.t20d?.price != null
-                        ? fmt(p.t20d.price, p.t20d.currency, i18n.language)
-                        : null
-                  const p40s =
-                    p.p40hq?.price != null
-                      ? fmt(p.p40hq.price, p.p40hq.currency, i18n.language)
-                      : p.t40hq?.price != null
-                        ? fmt(p.t40hq.price, p.t40hq.currency, i18n.language)
-                        : p.t40d?.price != null
-                          ? fmt(p.t40d.price, p.t40d.currency, i18n.language)
-                          : null
-                  const p40rfs = p.p40rf?.price != null ? fmt(p.p40rf.price, p.p40rf.currency, i18n.language) : null
-
-                  const inlandContainerLabel = inlandContainerSummary(p, t)
+                  const truckLabel = primary ? truckLabelFromKey(primary.key, t) : dash
                   const govAreaLabel = formatGovArea(offer, dash)
+                  const priceText = primary ? fmt(primary.row.price, primary.row.currency || 'EGP', i18n.language) : dash
                   return (
                     <tr
                       key={offer.id}
-                      className={`pricing-rates-table__row ${archived ? 'opacity-70' : ''}`}
+                      className={archived ? 'opacity-70' : ''}
                     >
-                      <td className="px-4 py-3 align-top font-semibold text-gray-900 dark:text-white whitespace-nowrap">
-                        {(offer.inland_port || dash)} → {(offer.destination || offer.region || dash)}
+                      <td>
+                        {offer.inland_port || dash}
                       </td>
-                      <td className="px-4 py-3 align-top text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
-                        {govAreaLabel !== dash ? (
-                          <span className="pricing-table-badge pricing-table-badge--muted whitespace-normal">
-                            {govAreaLabel}
+                      <td>
+                        {govAreaLabel}
+                      </td>
+                      <td>
+                        <span className={`inland-vehicle-badge ${isReeferKey(primary?.key) ? 'inland-vehicle-badge--reefer' : 'inland-vehicle-badge--dry'}`}>
+                          {truckLabel}
+                        </span>
+                      </td>
+                      <td style={{ fontWeight: 500 }}>
+                        {priceText}
+                        {generator?.price != null ? (
+                          <span className="ms-1 text-[11px] text-gray-500">
+                            + {fmt(generator.price, generator.currency || primary?.row?.currency || 'EGP', i18n.language)} مولد
                           </span>
-                        ) : (
-                          dash
-                        )}
-                      </td>
-                      <td className="px-4 py-3 align-top text-gray-700 dark:text-gray-300 text-xs">
-                        {inlandContainerLabel !== dash ? (
-                          <span className="pricing-table-badge pricing-table-badge--muted">{inlandContainerLabel}</span>
-                        ) : (
-                          dash
-                        )}
-                      </td>
-                      <td className="px-4 py-3 align-top text-gray-800 dark:text-gray-200">
-                        <ul className="space-y-1 list-none m-0 p-0 text-xs">
-                          {p20s ? (
-                            <li>
-                              <span className="font-semibold text-gray-500 dark:text-gray-400">{t('pricing.inlandChip20dc')}:</span> {p20s}
-                            </li>
-                          ) : null}
-                          {p40s ? (
-                            <li>
-                              <span className="font-semibold text-gray-500 dark:text-gray-400">{t('pricing.inlandChip40hq')}:</span> {p40s}
-                            </li>
-                          ) : null}
-                          {p40rfs ? (
-                            <li>
-                              <span className="font-semibold text-gray-500 dark:text-gray-400">{t('pricing.inlandChip40rf')}:</span> {p40rfs}
-                            </li>
-                          ) : null}
-                          {!p20s && !p40s && !p40rfs ? <li className="text-gray-400">{dash}</li> : null}
-                        </ul>
-                      </td>
-                      <td className="px-4 py-3 align-top text-gray-700 dark:text-gray-300 text-xs whitespace-pre-wrap">
-                        {validStr ? (
-                          <>
-                            <span className="pricing-table-badge pricing-table-badge--validity mb-1 inline-flex">
-                              {t('pricing.validTo', 'Valid until')}: {validStr}
-                            </span>
-                            {'\n'}
-                          </>
                         ) : null}
-                        <span className="font-semibold text-gray-500 dark:text-gray-400">{t('pricing.sailings', 'Sailings')}:</span> {sailingStr}
                       </td>
-                      <td className="px-4 py-3 align-top font-semibold text-gray-900 dark:text-white">
-                        <div className="flex flex-col gap-0.5">
-                          {totalKeys.length
-                            ? totalKeys.map((cur) => (
-                                <span key={cur} className="pricing-money-total">
-                                  {formatLocaleMoney(approx[cur], cur, i18n.language)}
-                                </span>
-                              ))
-                            : dash}
-                        </div>
+                      <td>
+                        {validStr ? (
+                          <span className="inland-validity-warn">ينتهي {validStr}</span>
+                        ) : (
+                          <span className="inland-validity-none">بدون انتهاء</span>
+                        )}
                       </td>
-                      <td className="px-4 py-3 align-middle text-end min-w-[12rem]" onClick={(e) => e.stopPropagation()}>
-                        <div className="inline-flex justify-end max-w-full">
-                          <IconActionButtonGroup
-                            className="justify-end"
-                            aria-label={t('pricing.inlandColActions', 'Actions')}
-                          >
-                            <IconActionButton
-                              icon={<Eye className="h-4 w-4" />}
-                              label={t('common.view', 'View')}
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                onView?.(offer)
-                              }}
-                            />
-                            {showCreateQuotation ? (
-                              <IconActionButton
-                                icon={<FilePlus2 className="h-4 w-4" />}
-                                label={t('pricing.createQuoteFromRate', 'Create Quote')}
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  onCreateQuotation?.(offer)
-                                }}
-                              />
-                            ) : null}
-                            {canManageOffers ? (
-                              <IconActionButton
-                                icon={<Pencil className="h-4 w-4" />}
-                                label={t('common.edit', 'Edit')}
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  onEdit?.(offer)
-                                }}
-                              />
-                            ) : null}
-                            {canManageOffers && offer.status !== 'active' ? (
-                              <IconActionButton
-                                icon={
-                                  actionOfferId === offer.id && actionKind === 'activate' && mutateLoading ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <CheckCircle className="h-4 w-4" />
-                                  )
-                                }
-                                label={t('common.activate', 'Activate')}
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  runAction(offer, 'activate', activate)
-                                }}
-                                disabled={rowBusy(offer.id)}
-                              />
-                            ) : null}
-                            {canManageOffers && offer.status !== 'archived' ? (
-                              <IconActionButton
-                                icon={
-                                  actionOfferId === offer.id && actionKind === 'archive' && mutateLoading ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <Archive className="h-4 w-4" />
-                                  )
-                                }
-                                label={t('common.archive', 'Archive')}
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  runAction(offer, 'archive', archive)
-                                }}
-                                disabled={rowBusy(offer.id)}
-                              />
-                            ) : null}
-                          </IconActionButtonGroup>
-                        </div>
+                      <td className="inland-rates-action-cell">
+                        {canManageOffers ? (
+                          <button type="button" className="inland-rates-action-btn" onClick={() => onEdit?.(offer)}>
+                            تعديل
+                          </button>
+                        ) : (
+                          <button type="button" className="inland-rates-action-btn" onClick={() => onView?.(offer)}>
+                            عرض
+                          </button>
+                        )}
                       </td>
                     </tr>
                   )
                 })}
+            {!loading && (!offers || offers.length === 0) ? (
+              <tr>
+                <td colSpan={6} className="inland-rates-empty">
+                  {t('pricing.noOffers', 'No offers found matching your filters')}
+                </td>
+              </tr>
+            ) : null}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   )

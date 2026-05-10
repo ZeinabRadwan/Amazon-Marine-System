@@ -186,7 +186,7 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
                 aria-label={t('pricing.governorate', 'Governorate')}
               >
                 <option value="">{t('pricing.filterAllGovernorates', 'All governorates')}</option>
-                {['القاهرة الكبرى', 'الإسكندرية', 'الدلتا'].map((r) => (
+                {['القاهرة', 'الجيزة', 'الإسكندرية', 'الشرقية', 'المنوفية', 'البحيرة', 'الإسماعيلية', 'بورسعيد', 'السويس', 'القاهرة الكبرى', 'الدلتا'].map((r) => (
                   <option key={r} value={r}>
                     {r}
                   </option>
@@ -222,28 +222,30 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
                 {t('common.loading', 'Loading…')}
               </span>
             ) : null}
-            <div className="pricing-view-toggle shrink-0" role="group" aria-label={t('pricing.viewModeLabel', 'Layout')}>
-              <button
-                type="button"
-                className="pricing-view-toggle__btn"
-                aria-pressed={offerViewMode === 'grid'}
-                aria-label={t('pricing.viewAsGrid', 'Grid')}
-                title={t('pricing.viewAsGrid', 'Grid')}
-                onClick={() => setOfferViewMode('grid')}
-              >
-                <LayoutGrid className="h-4 w-4 shrink-0" aria-hidden />
-              </button>
-              <button
-                type="button"
-                className="pricing-view-toggle__btn"
-                aria-pressed={offerViewMode === 'table'}
-                aria-label={t('pricing.viewAsTable', 'Table')}
-                title={t('pricing.viewAsTable', 'Table')}
-                onClick={() => setOfferViewMode('table')}
-              >
-                <Table2 className="h-4 w-4 shrink-0" aria-hidden />
-              </button>
-            </div>
+            {type === 'sea' ? (
+              <div className="pricing-view-toggle shrink-0" role="group" aria-label={t('pricing.viewModeLabel', 'Layout')}>
+                <button
+                  type="button"
+                  className="pricing-view-toggle__btn"
+                  aria-pressed={offerViewMode === 'grid'}
+                  aria-label={t('pricing.viewAsGrid', 'Grid')}
+                  title={t('pricing.viewAsGrid', 'Grid')}
+                  onClick={() => setOfferViewMode('grid')}
+                >
+                  <LayoutGrid className="h-4 w-4 shrink-0" aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  className="pricing-view-toggle__btn"
+                  aria-pressed={offerViewMode === 'table'}
+                  aria-label={t('pricing.viewAsTable', 'Table')}
+                  title={t('pricing.viewAsTable', 'Table')}
+                  onClick={() => setOfferViewMode('table')}
+                >
+                  <Table2 className="h-4 w-4 shrink-0" aria-hidden />
+                </button>
+              </div>
+            ) : null}
             {typeof onAddOffer === 'function' && canManagePricingOffers ? (
               <div className="clients-filters__actions">
                 <button
@@ -273,49 +275,23 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
         <>
           <div
             className={
-              offerViewMode === 'grid'
+              type === 'sea' && offerViewMode === 'grid'
                 ? 'pricing-offer-cards offers-grid mb-8'
                 : 'mb-8'
             }
           >
-            {!loading && (!offers || offers.length === 0) ? (
+            {type === 'inland' ? (
+              <InlandTransportTable
+                offers={offers || []}
+                loading={loading}
+                onEdit={onEdit}
+                canManageOffers={canManagePricingOffers}
+                onView={setDetailOffer}
+              />
+            ) : !loading && (!offers || offers.length === 0) ? (
               <div className="offers-grid__empty py-16 text-center text-gray-500 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-700">
                 <p className="text-lg font-medium">{t('pricing.noOffers', 'No offers found matching your filters')}</p>
               </div>
-            ) : type === 'inland' ? (
-              offerViewMode === 'table' ? (
-                <InlandTransportTable
-                  offers={offers || []}
-                  loading={loading}
-                  onMutate={refetch}
-                  onEdit={onEdit}
-                  canManageOffers={canManagePricingOffers}
-                  showCreateQuotation={!isPricingSalesViewOnly}
-                  onView={setDetailOffer}
-                  onCreateQuotation={(selectedOffer) => {
-                    setQuoteSourceOffer(selectedOffer)
-                    setCreateQuoteOpen(true)
-                  }}
-                />
-              ) : loading ? (
-                Array.from({ length: 6 }).map((_, i) => <OfferSkeleton key={i} />)
-              ) : (
-                (offers || []).map((offer) => (
-                  <PricingCard
-                    key={offer.id}
-                    offer={offer}
-                    onMutate={refetch}
-                    onEdit={onEdit}
-                    canManageOffers={canManagePricingOffers}
-                    showCreateQuotation={!isPricingSalesViewOnly}
-                    onView={setDetailOffer}
-                    onCreateQuotation={(selectedOffer) => {
-                      setQuoteSourceOffer(selectedOffer)
-                      setCreateQuoteOpen(true)
-                    }}
-                  />
-                ))
-              )
             ) : offerViewMode === 'table' ? (
               <SeaFreightOffersTable
                 offers={offers || []}
