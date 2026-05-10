@@ -3238,6 +3238,8 @@
       "saveSalesPricing": "حفظ تسعير البيع",
       "saveSalesInvoice": "حفظ فاتورة المبيعات",
       "downloadSalesInvoicePdf": "تحميل PDF",
+      "previewInvoice": "معاينة الفاتورة",
+      "previewModalTitle": "معاينة الفاتورة",
       "salesInvoiceFinalized": "تم اعتماد فاتورة المبيعات بنجاح.",
       "pricingSaved": "تم حفظ تسعير البيع.",
       "invoiceRef": "فاتورة",

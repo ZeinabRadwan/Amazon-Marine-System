@@ -258,6 +258,18 @@
   transform-origin: 50% 8%;
 }
 
+/* Hide spinners on numeric fields; wheel stepping is blocked via JS on the modal root. */
+.shipment-fin-modal-root input[type='number']::-webkit-outer-spin-button,
+.shipment-fin-modal-root input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.shipment-fin-modal-root input[type='number'] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
 @keyframes shipment-fin-backdrop-in {
   from {
     opacity: 0;

@@ -1,0 +1,191 @@
+.invoice-doc-preview-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+  box-sizing: border-box;
+}
+
+.invoice-doc-preview-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  cursor: pointer;
+}
+
+.invoice-doc-preview-modal__shell {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: min(1100px, calc(100vw - 1.5rem));
+  height: min(92vh, 960px);
+  max-height: calc(100vh - 1.5rem);
+  background: var(--color-surface, #ffffff);
+  color: var(--color-text, #111827);
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.invoice-doc-preview-modal__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-shrink: 0;
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  background: var(--color-surface, #ffffff);
+}
+
+.invoice-doc-preview-modal__title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+}
+
+.invoice-doc-preview-modal__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.invoice-doc-preview-modal__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+
+.invoice-doc-preview-modal__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.invoice-doc-preview-modal__btn--ghost {
+  background: transparent;
+  border-color: rgba(0, 0, 0, 0.12);
+  color: inherit;
+}
+
+.invoice-doc-preview-modal__btn--ghost:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.invoice-doc-preview-modal__btn--primary {
+  background: #0f2d4a;
+  color: #fff;
+  border-color: #0f2d4a;
+}
+
+.invoice-doc-preview-modal__btn--primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+[data-theme='dark'] .invoice-doc-preview-modal__shell,
+.dark .invoice-doc-preview-modal__shell {
+  background: var(--color-surface, #1e293b);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] .invoice-doc-preview-modal__toolbar,
+.dark .invoice-doc-preview-modal__toolbar {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] .invoice-doc-preview-modal__btn--ghost,
+.dark .invoice-doc-preview-modal__btn--ghost {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+[data-theme='dark'] .invoice-doc-preview-modal__btn--ghost:hover:not(:disabled),
+.dark .invoice-doc-preview-modal__btn--ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.invoice-doc-preview-modal__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #f3f4f6;
+}
+
+.invoice-doc-preview-modal__iframe {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  border: 0;
+  background: #fff;
+}
+
+.invoice-doc-preview-modal__state {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  font-size: 0.95rem;
+  color: #6b7280;
+}
+
+.invoice-doc-preview-modal__state--error {
+  color: #b91c1c;
+  text-align: center;
+  max-width: 28rem;
+  margin: 0 auto;
+}
+
+@media (max-width: 640px) {
+  .invoice-doc-preview-modal {
+    padding: 0;
+  }
+
+  .invoice-doc-preview-modal__shell {
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    border-radius: 0;
+  }
+
+  .invoice-doc-preview-modal__toolbar {
+    flex-wrap: wrap;
+  }
+}
+
+@media print {
+  .invoice-doc-preview-modal__toolbar,
+  .invoice-doc-preview-modal__backdrop {
+    display: none !important;
+  }
+
+  .invoice-doc-preview-modal {
+    position: static;
+    padding: 0;
+  }
+
+  .invoice-doc-preview-modal__shell {
+    box-shadow: none;
+    border: none;
+    width: 100%;
+    height: auto;
+    max-height: none;
+  }
+
+  .invoice-doc-preview-modal__body {
+    background: #fff;
+  }
+}

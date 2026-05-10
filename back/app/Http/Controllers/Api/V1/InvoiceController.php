@@ -22,6 +22,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Mpdf\Mpdf;
 
 class InvoiceController extends Controller
@@ -933,7 +934,6 @@ class InvoiceController extends Controller
                     'reference' => $validated['reference'],
                     'notes' => $validated['notes'] ?? null,
                     'paid_at' => $validated['paid_at'],
-                    'status' => 'posted',
                     'created_by_id' => $user->id,
                 ]);
 
@@ -950,7 +950,7 @@ class InvoiceController extends Controller
                 ]);
 
                 // Update status based on balance
-                $totalPaid = $invoice->payments()->where('status', 'posted')->sum('amount');
+                $totalPaid = (float) $invoice->payments()->sum('amount');
                 if ($totalPaid >= $invoice->net_amount) {
                     $invoice->status = 'paid';
                 } elseif ($totalPaid > 0) {
@@ -960,7 +960,7 @@ class InvoiceController extends Controller
 
                 return $payment;
             });
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return response()->json([
                 'message' => collect($e->errors())->flatten()->first() ?? __('bank.insufficient_balance_currency'),
                 'errors' => $e->errors(),
@@ -973,6 +973,43 @@ class InvoiceController extends Controller
         ]);
     }
 
+    /**
+     * Same Blade template as {@see pdf()}, with assets usable in a browser (HTTP URLs instead of file://).
+     *
+     * @return array<string, mixed>
+     */
+    private function invoicePdfViewData(Request $request, Invoice $invoice, bool $htmlPreview): array
+    {
+        $invoice->load(['client', 'items.item', 'shipment.originPort', 'shipment.destinationPort', 'shipment.shippingLine', 'shipment.costInvoice']);
+        $layout = PdfLayout::where('document_type', 'invoice')->first();
+
+        $locale = strtolower((string) $request->header('X-App-Locale', 'en')) === 'ar' ? 'ar' : 'en';
+
+        return [
+            'invoice' => $invoice,
+            'invoiceData' => $this->invoicePayload($invoice),
+            'headerHtml' => $layout?->header_html,
+            'footerHtml' => $layout?->footer_html,
+            'lang' => $locale,
+            'labels' => $this->invoicePdfLabels($locale),
+            'bankAccount' => BankAccount::query()->where('is_active', true)->orderBy('id')->first(),
+            'htmlPreview' => $htmlPreview,
+        ];
+    }
+
+    public function html(Request $request, Invoice $invoice)
+    {
+        $user = $request->user();
+        abort_unless(
+            $user && ($user->can('financial.view') || $user->can('accounting.view')),
+            403
+        );
+
+        $documentHtml = view('invoices.pdf', $this->invoicePdfViewData($request, $invoice, true))->render();
+
+        return response($documentHtml, 200)->header('Content-Type', 'text/html; charset=UTF-8');
+    }
+
     public function pdf(Request $request, Invoice $invoice)
     {
         $user = $request->user();
@@ -981,25 +1018,9 @@ class InvoiceController extends Controller
             403
         );
 
-        $invoice->load(['client', 'items.item', 'shipment.originPort', 'shipment.destinationPort', 'shipment.shippingLine', 'shipment.costInvoice']);
-        $layout = PdfLayout::where('document_type', 'invoice')->first();
-
         $filename = $invoice->invoice_number.'.pdf';
 
-        $locale = strtolower((string) $request->header('X-App-Locale', 'en')) === 'ar' ? 'ar' : 'en';
-        $labels = $this->invoicePdfLabels($locale);
-
-        $invoiceData = $this->invoicePayload($invoice);
-
-        $html = view('invoices.pdf', [
-            'invoice' => $invoice,
-            'invoiceData' => $invoiceData,
-            'headerHtml' => $layout?->header_html,
-            'footerHtml' => $layout?->footer_html,
-            'lang' => $locale,
-            'labels' => $labels,
-            'bankAccount' => BankAccount::query()->where('is_active', true)->orderBy('id')->first(),
-        ])->render();
+        $html = view('invoices.pdf', $this->invoicePdfViewData($request, $invoice, false))->render();
 
         $mpdf = new Mpdf(MpdfInvoiceFonts::mergeOptions([
             'mode' => 'utf-8',

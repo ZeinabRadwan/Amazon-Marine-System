@@ -36,6 +36,7 @@ import { useAuthAccess } from '../../hooks/useAuthAccess'
 import { ROLE_ID } from '../../constants/roles'
 import { BUCKET_DEFS, expenseBucket, LINE_TEMPLATES, expenseHaystack, partitionBucketRows } from './shipmentFinUtils'
 import Tabs from '../../components/Tabs'
+import InvoiceDocumentPreviewModal from '../../components/InvoiceDocumentPreviewModal'
 import '../SDForms/SDForms.css'
 import { apiFetch } from '../../api/http'
 import { getApiBaseUrl } from '../../api/apiBaseUrl'
@@ -846,6 +847,7 @@ export default function ShipmentFinancialsModal({
   const [deletedSellIds, setDeletedSellIds] = useState(() => new Set())
   const [currentInvoiceId, setCurrentInvoiceId] = useState(null)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [invoicePreviewOpen, setInvoicePreviewOpen] = useState(false)
   const [bankAccounts, setBankAccounts] = useState([])
   const [paymentSaving, setPaymentSaving] = useState(false)
   const [paymentForm, setPaymentForm] = useState({
@@ -866,8 +868,10 @@ export default function ShipmentFinancialsModal({
   const [receiptActionId, setReceiptActionId] = useState(null)
   const [sectionAttachmentRefs, setSectionAttachmentRefs] = useState({})
   const pendingRowSeqRef = useRef(0)
+  const finModalRootRef = useRef(null)
   const [savingAllDraft, setSavingAllDraft] = useState(false)
   const [savingSectionId, setSavingSectionId] = useState(null)
+  const [categoriesByCode, setCategoriesByCode] = useState({})
   const editMode = Boolean(token && canManageExpenses && shipment?.bl_number?.trim() && shipment?.id)
   const vendorsBySection = useMemo(() => {
     const list = Array.isArray(vendors) ? vendors : []
@@ -897,6 +901,7 @@ export default function ShipmentFinancialsModal({
       setDeletedIdsByBucket({})
       setDeletedDraftRowKeysByBucket({})
       setFinBanner(null)
+      setInvoicePreviewOpen(false)
       setClientInvoice(null)
       setClientInvoicesList([])
       setCurrentInvoiceId(null)
@@ -930,7 +935,23 @@ export default function ShipmentFinancialsModal({
     }
   }, [open, shipment?.id, isAccountingUser, token, attachmentRefs, sectionMeta])
 
-  const [categoriesByCode, setCategoriesByCode] = useState({})
+  useEffect(() => {
+    if (!open) {
+      return undefined
+    }
+    const root = finModalRootRef.current
+    if (!root) {
+      return undefined
+    }
+    const stopWheelOnNumberInputs = (e) => {
+      const t = e.target
+      if (t instanceof HTMLInputElement && t.type === 'number') {
+        e.preventDefault()
+      }
+    }
+    root.addEventListener('wheel', stopWheelOnNumberInputs, { passive: false, capture: true })
+    return () => root.removeEventListener('wheel', stopWheelOnNumberInputs, { capture: true })
+  }, [open])
 
   useEffect(() => {
     if (!open || !token || !canManageExpenses) {
@@ -3301,6 +3322,7 @@ export default function ShipmentFinancialsModal({
 
   return (
     <div
+      ref={finModalRootRef}
       className={`client-detail-modal shipments-no-print shipment-fin-modal-root${tab === 'selling' ? ' shipment-fin-modal-root--selling-tab' : ''}`}
       role="dialog"
       aria-modal="true"
@@ -3872,9 +3894,18 @@ export default function ShipmentFinancialsModal({
                         {notifySending ? t('shipments.saving') : t('shipments.fin.saveSalesInvoice', { defaultValue: 'حفظ فاتورة المبيعات' })}
                       </button>
                       {clientInvoice?.id ? (
-                        <button type="button" className="client-detail-modal__btn client-detail-modal__btn--secondary" onClick={handleDownloadInvoicePdf}>
-                          {t('shipments.fin.downloadSalesInvoicePdf', { defaultValue: 'تحميل PDF' })}
-                        </button>
+                        <>
+                          <button
+                            type="button"
+                            className="client-detail-modal__btn client-detail-modal__btn--secondary"
+                            onClick={() => setInvoicePreviewOpen(true)}
+                          >
+                            {t('shipments.fin.previewInvoice', { defaultValue: 'Preview Invoice' })}
+                          </button>
+                          <button type="button" className="client-detail-modal__btn client-detail-modal__btn--secondary" onClick={handleDownloadInvoicePdf}>
+                            {t('shipments.fin.downloadSalesInvoicePdf', { defaultValue: 'تحميل PDF' })}
+                          </button>
+                        </>
                       ) : null}
                     </div>
                   ) : null}
@@ -4244,6 +4275,12 @@ export default function ShipmentFinancialsModal({
               </div>
             </div>
           ) : null}
+          <InvoiceDocumentPreviewModal
+            open={invoicePreviewOpen}
+            onClose={() => setInvoicePreviewOpen(false)}
+            token={token}
+            invoiceId={clientInvoice?.id}
+          />
           </div>
         </div>
       </div>

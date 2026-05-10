@@ -245,6 +245,26 @@ export async function cancelInvoice(token, invoiceId) {
   return json.data ?? json
 }
 
+/**
+ * HTML for the same Blade view as the PDF; uses browser-safe image URLs.
+ * @param {string} token
+ * @param {number|string} invoiceId
+ * @returns {Promise<string>}
+ */
+export async function fetchInvoiceHtmlPreview(token, invoiceId) {
+  const res = await apiFetch(`${getBaseUrl()}/invoices/${invoiceId}/html`, {
+    headers: {
+      ...authHeaders(token, false),
+      Accept: 'text/html,application/json;q=0.9,*/*;q=0.8',
+    },
+  })
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}))
+    throw new Error(json.message || json.error || `Failed to load invoice preview (${res.status})`)
+  }
+  return res.text()
+}
+
 export async function downloadInvoicePdf(token, invoiceId) {
   const res = await apiFetch(`${getBaseUrl()}/invoices/${invoiceId}/pdf`, {
     headers: authHeaders(token, false),

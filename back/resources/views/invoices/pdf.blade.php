@@ -849,7 +849,9 @@ Tax Invoice {{ $invoice->invoice_number }}
 
         $currencyOrder = ['USD', 'EGP', 'EUR'];
 
-        $logoSrc = \App\Support\PdfLogo::imgSrc();
+        $logoSrc = ($htmlPreview ?? false)
+            ? (is_file(public_path('images/logo_lightmode.png')) ? asset('images/logo_lightmode.png') : null)
+            : \App\Support\PdfLogo::imgSrc();
     @endphp
     <div class="pdf-wrapper pdf-inv-html pdf-sd-doc" dir="ltr" lang="en" style="direction:ltr;text-align:left;">
         @if(!empty($headerHtml))
@@ -1186,7 +1188,12 @@ Tax Invoice {{ $invoice->invoice_number }}
 @endsection
 
 @push('pdf_footer_fullbleed')
-    @if ($pdfFooterBanner = \App\Support\PdfLogo::footerImgSrc())
+    @php
+        $pdfFooterBanner = ($htmlPreview ?? false)
+            ? (is_file(public_path('images/footer.png')) ? asset('images/footer.png') : null)
+            : \App\Support\PdfLogo::footerImgSrc();
+    @endphp
+    @if ($pdfFooterBanner)
         <table class="pdf-footer-fullbleed" width="100%" cellspacing="0" cellpadding="0" border="0"
             role="presentation">
             <tr>

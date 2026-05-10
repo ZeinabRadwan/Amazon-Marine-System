@@ -12,7 +12,12 @@
 </head>
 <body class="pdf-body">
     {{-- Corner gradients removed: mPDF paints fixed radial fades as a pale wash over the top header image. --}}
-    @if($pdfHeaderBanner = \App\Support\PdfLogo::headerImgSrc())
+    @php
+        $pdfHeaderBanner = ($htmlPreview ?? false)
+            ? (is_file(public_path('images/header.png')) ? asset('images/header.png') : null)
+            : \App\Support\PdfLogo::headerImgSrc();
+    @endphp
+    @if($pdfHeaderBanner)
         <div class="pdf-page-header">
             <img class="pdf-page-header__img" src="{{ $pdfHeaderBanner }}" alt="">
         </div>

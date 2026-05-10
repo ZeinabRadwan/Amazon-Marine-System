@@ -1,11 +1,13 @@
 {{-- Unified PDF theme: invoice, shipment, SD form PDFs. Use literal colors/sizes below — mPDF does not resolve var() in borders (empty color → crash in _setBorderLine). :root kept for reference only. --}}
 <style>
+    @unless($htmlPreview ?? false)
     @font-face {
         font-family: 'Amiri';
         src: url('{{ str_replace('\\', '/', resource_path('fonts/Amiri-Regular.ttf')) }}') format('truetype');
         font-weight: normal;
         font-style: normal;
     }
+    @endunless
 
     :root {
         --pdf-primary: #ec7f00;

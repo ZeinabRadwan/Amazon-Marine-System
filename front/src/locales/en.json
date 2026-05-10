@@ -3226,6 +3226,8 @@
       "saveSalesPricing": "Save sales pricing",
       "saveSalesInvoice": "Save Sales Invoice",
       "downloadSalesInvoicePdf": "Download as PDF",
+      "previewInvoice": "Preview Invoice",
+      "previewModalTitle": "Invoice preview",
       "salesInvoiceFinalized": "Sales invoice finalized successfully.",
       "pricingSaved": "Sales pricing saved.",
       "invoiceRef": "Invoice",
