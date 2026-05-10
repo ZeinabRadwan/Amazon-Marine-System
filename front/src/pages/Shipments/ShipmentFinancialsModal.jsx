@@ -323,6 +323,12 @@ function isManualInvoiceLineRow(row) {
   return Boolean(row?.is_manual_invoice_line) || String(row?.bucket_id || '') === LEGACY_MANUAL_EXTRA_BUCKET
 }
 
+/** Matches InvoiceController::update — paid/cancelled cannot change lines or notes. */
+function invoiceStatusBlocksEditing(status) {
+  const s = String(status ?? '').toLowerCase()
+  return s === 'paid' || s === 'cancelled'
+}
+
 /**
  * @param {Record<string, unknown>} it
  */
@@ -887,7 +893,7 @@ export default function ShipmentFinancialsModal({
   const isAccountingUser = isAdminRole || isAccountant
   const isSalesUser = isAdminRole || isSalesRole || roleId === ROLE_ID.SALES_MANAGER
   const canEditSellingGrid = Boolean(token && isSalesUser)
-  
+
   const [tab, setTab] = useState('selling')
   const [expanded, setExpanded] = useState(() => new Set())
   const [sectionMetaByBucket, setSectionMetaByBucket] = useState({})
@@ -904,12 +910,17 @@ export default function ShipmentFinancialsModal({
 
   const [clientInvoice, setClientInvoice] = useState(null)
   const [clientInvoicesList, setClientInvoicesList] = useState([])
+  const canEditClientInvoiceLines = useMemo(
+    () => canEditSellingGrid && (!clientInvoice?.id || !invoiceStatusBlocksEditing(clientInvoice.status)),
+    [canEditSellingGrid, clientInvoice?.id, clientInvoice?.status]
+  )
   const [invoiceLoading, setInvoiceLoading] = useState(false)
   const [pricingSaving, setPricingSaving] = useState(false)
   const [expenseInvoiceRows, setExpenseInvoiceRows] = useState([])
   const [manualInvoiceRows, setManualInvoiceRows] = useState([])
   /** Per selling-section draft row for adding manual invoice lines (Create Customer Invoice tab). */
   const [invoiceManualLineDraftBySection, setInvoiceManualLineDraftBySection] = useState({})
+  const [invoiceNotesDraft, setInvoiceNotesDraft] = useState('')
   const tabBRows = useMemo(() => [...expenseInvoiceRows, ...manualInvoiceRows], [expenseInvoiceRows, manualInvoiceRows])
   const [handlingRow, setHandlingRow] = useState({ include: true, number_of_containers: 1, handling_fee_per_container: '', currency: 'USD' })
   const [deletedSellIds, setDeletedSellIds] = useState(() => new Set())
@@ -1717,6 +1728,11 @@ export default function ShipmentFinancialsModal({
   }, [open, shipment?.id, token, tab, canAccessInvoices])
 
   useEffect(() => {
+    if (!open) return
+    setInvoiceNotesDraft(clientInvoice?.notes != null ? String(clientInvoice.notes) : '')
+  }, [open, clientInvoice?.id, clientInvoice?.notes])
+
+  useEffect(() => {
     if (!open || !shipment?.id || !token || tab !== 'history') return undefined
     let cancelled = false
     setActivityLoading(true)
@@ -1869,6 +1885,7 @@ export default function ShipmentFinancialsModal({
       setFinBanner({ type: 'error', message: t('shipments.fin.pricingNoLines') })
       return
     }
+    const notesTrim = String(invoiceNotesDraft ?? '').trim()
     setPricingSaving(true)
     try {
       let inv = clientInvoice
@@ -1885,12 +1902,13 @@ export default function ShipmentFinancialsModal({
           client_id: shipment.client_id,
           issue_date: new Date().toISOString().slice(0, 10),
           currency_id: currencyId,
+          notes: notesTrim || null,
           items,
         })
-      } else if (existingInvoice.status === 'draft' || existingInvoice.status === 'issued') {
-        inv = await updateInvoice(token, existingInvoice.id, { items })
+      } else if (!invoiceStatusBlocksEditing(existingInvoice.status)) {
+        inv = await updateInvoice(token, existingInvoice.id, { items, notes: notesTrim || null })
       } else {
-        setFinBanner({ type: 'error', message: t('shipments.fin.pricingNotDraft') })
+        setFinBanner({ type: 'error', message: t('shipments.fin.pricingInvoiceLocked') })
         return
       }
       const refreshed = await getInvoice(token, inv.id)
@@ -1919,6 +1937,7 @@ export default function ShipmentFinancialsModal({
     clientInvoice,
     clientInvoicesList,
     currentInvoiceId,
+    invoiceNotesDraft,
     t,
     onShipmentTotalsRefresh,
     currencies,
@@ -2258,7 +2277,7 @@ export default function ShipmentFinancialsModal({
           attachments: mergeSectionAttachmentsForSelling(mergedRefs, base.attachments || []),
         }
       })
-      return core.filter((s) => s.rows.length > 0 || canEditSellingGrid)
+      return core.filter((s) => s.rows.length > 0 || canEditClientInvoiceLines)
     }
 
     const defs = [
@@ -2282,8 +2301,8 @@ export default function ShipmentFinancialsModal({
           return bid === d.id
         }),
       }))
-      .filter((s) => s.rows.length > 0 || canEditSellingGrid)
-  }, [sellingVisibleRows, t, clientInvoice?.sections, sectionAttachmentRefs, canEditSellingGrid])
+      .filter((s) => s.rows.length > 0 || canEditClientInvoiceLines)
+  }, [sellingVisibleRows, t, clientInvoice?.sections, sectionAttachmentRefs, canEditClientInvoiceLines])
 
   const handlingTotal = useMemo(() => {
     if (!handlingRow.include) return 0
@@ -3647,6 +3666,22 @@ export default function ShipmentFinancialsModal({
                 <p className="client-detail-modal__empty">{t('shipments.fin.tabBEmpty')}</p>
               ) : (
                 <>
+                  <div className="shipment-fin-invoice-notes mb-3">
+                    <label htmlFor="fin-inv-notes" className="shipment-fin-invoice-notes__label">
+                      {t('shipments.fin.invoiceNotesLabel', { defaultValue: 'Invoice notes' })}
+                    </label>
+                    <textarea
+                      id="fin-inv-notes"
+                      rows={2}
+                      className="shipment-fin-input shipment-fin-invoice-notes__textarea"
+                      value={invoiceNotesDraft}
+                      onChange={(e) => setInvoiceNotesDraft(e.target.value)}
+                      disabled={!canEditClientInvoiceLines}
+                      placeholder={t('shipments.fin.invoiceNotesPlaceholder', {
+                        defaultValue: 'Optional notes shown on the invoice document…',
+                      })}
+                    />
+                  </div>
                   {sellingSections.map((sec) => {
                     const liveRows = editableSectionRows(sec.id)
                     const st = sectionCurrencyTotals(liveRows)
@@ -3753,12 +3788,12 @@ export default function ShipmentFinancialsModal({
                                                     expense_description: e.target.value,
                                                   })
                                                 }
-                                                disabled={!canEditSellingGrid || !isEditableRow}
+                                                disabled={!canEditClientInvoiceLines || !isEditableRow}
                                               />
                                             </div>
                                           </td>
                                           <td className="shipment-fin-num">
-                                            {canEditSellingGrid && isEditableRow ? (
+                                            {canEditClientInvoiceLines && isEditableRow ? (
                                               <input
                                                 type="number"
                                                 min="0"
@@ -3772,7 +3807,7 @@ export default function ShipmentFinancialsModal({
                                             )}
                                           </td>
                                           <td>
-                                            {canEditSellingGrid && isEditableRow ? (
+                                            {canEditClientInvoiceLines && isEditableRow ? (
                                               <input
                                                 type="number"
                                                 min="0"
@@ -3793,7 +3828,7 @@ export default function ShipmentFinancialsModal({
                                             />
                                           </td>
                                           <td className="shipment-fin-cur-cell">
-                                            {canEditSellingGrid && isEditableRow ? (
+                                            {canEditClientInvoiceLines && isEditableRow ? (
                                               <select
                                                 className="shipment-fin-select shipment-fin-cli-manual-cur"
                                                 value={rowCurrency}
@@ -3814,6 +3849,7 @@ export default function ShipmentFinancialsModal({
                                               <button
                                                 type="button"
                                                 className="shipment-fin-btn shipment-fin-btn--danger shipment-fin-btn--sm"
+                                                disabled={!canEditClientInvoiceLines}
                                                 onClick={() =>
                                                   setManualInvoiceRows((rows) => rows.filter((r) => r.expenseId !== row.expenseId))
                                                 }
@@ -3840,7 +3876,7 @@ export default function ShipmentFinancialsModal({
                                         </td>
                                         <td className="shipment-fin-num">{formatShipmentMoneyDigits(originalUnitPrice, numberLocale)}</td>
                                         <td>
-                                          {canEditSellingGrid && isEditableRow ? (
+                                          {canEditClientInvoiceLines && isEditableRow ? (
                                             <input
                                               type="number"
                                               min="0"
@@ -3866,6 +3902,7 @@ export default function ShipmentFinancialsModal({
                                             <button
                                               type="button"
                                               className="shipment-fin-btn shipment-fin-btn--danger shipment-fin-btn--sm"
+                                              disabled={!canEditClientInvoiceLines}
                                               onClick={() => setDeletedSellIds((prev) => new Set(prev).add(row.expenseId))}
                                               title={t('shipments.delete')}
                                               aria-label={t('shipments.delete')}
@@ -3879,7 +3916,7 @@ export default function ShipmentFinancialsModal({
                                       </tr>
                                     )
                                   })}
-                                  {canEditSellingGrid
+                                  {canEditClientInvoiceLines
                                     ? (() => {
                                         const d = { ...defaultManualInvoiceDraft(), ...invoiceManualLineDraftBySection[sec.id] }
                                         const up = d.unit_price === '' || d.unit_price == null ? NaN : Number(d.unit_price)
@@ -4075,6 +4112,7 @@ export default function ShipmentFinancialsModal({
                                   className="shipment-fin-input shipment-fin-input--num"
                                   value={handlingRow.number_of_containers}
                                   onChange={(e) => setHandlingRow((h) => ({ ...h, number_of_containers: e.target.value }))}
+                                  disabled={!canEditClientInvoiceLines}
                                 />
                               </div>
                               <div className="fin-cli-fg">
@@ -4087,6 +4125,7 @@ export default function ShipmentFinancialsModal({
                                   className="shipment-fin-input shipment-fin-input--num"
                                   value={handlingRow.handling_fee_per_container}
                                   onChange={(e) => setHandlingRow((h) => ({ ...h, handling_fee_per_container: e.target.value }))}
+                                  disabled={!canEditClientInvoiceLines}
                                 />
                               </div>
                               <div className="fin-cli-fg">
@@ -4096,6 +4135,7 @@ export default function ShipmentFinancialsModal({
                                   className="shipment-fin-select shipment-fin-cli-handling-cur"
                                   value={handlingRow.currency || invCurrency}
                                   onChange={(e) => setHandlingRow((h) => ({ ...h, currency: e.target.value }))}
+                                  disabled={!canEditClientInvoiceLines}
                                 >
                                   {CURRENCIES.map((c) => (
                                     <option key={c} value={c}>
@@ -4124,6 +4164,7 @@ export default function ShipmentFinancialsModal({
                               <button
                                 type="button"
                                 className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm"
+                                disabled={!canEditClientInvoiceLines}
                                 onClick={() => setHandlingRow((h) => ({ ...h, include: false }))}
                               >
                                 {t('shipments.delete')}
@@ -4135,6 +4176,7 @@ export default function ShipmentFinancialsModal({
                             <button
                               type="button"
                               className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm shipment-fin-btn--dashed"
+                              disabled={!canEditClientInvoiceLines}
                               onClick={() => setHandlingRow((h) => ({ ...h, include: true }))}
                             >
                               + {t('shipments.fin.addRow')}
@@ -4260,16 +4302,18 @@ export default function ShipmentFinancialsModal({
                     </div>
                   </div>
 
-                  {canEditSellingGrid ? (
+                  {canEditSellingGrid && (canEditClientInvoiceLines || clientInvoice?.id) ? (
                     <div className="shipment-fin-draft-actions-footer">
-                      <button
-                        type="button"
-                        className="client-detail-modal__btn client-detail-modal__btn--primary"
-                        disabled={notifySending || pricingSaving}
-                        onClick={handleSaveSalesInvoice}
-                      >
-                        {notifySending ? t('shipments.saving') : t('shipments.fin.saveSalesInvoice', { defaultValue: 'حفظ فاتورة المبيعات' })}
-                      </button>
+                      {canEditClientInvoiceLines ? (
+                        <button
+                          type="button"
+                          className="client-detail-modal__btn client-detail-modal__btn--primary"
+                          disabled={notifySending || pricingSaving}
+                          onClick={handleSaveSalesInvoice}
+                        >
+                          {notifySending ? t('shipments.saving') : t('shipments.fin.saveSalesInvoice', { defaultValue: 'حفظ فاتورة المبيعات' })}
+                        </button>
+                      ) : null}
                       {clientInvoice?.id ? (
                         <>
                           <button

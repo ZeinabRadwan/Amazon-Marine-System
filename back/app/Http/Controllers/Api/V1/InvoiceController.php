@@ -723,9 +723,10 @@ class InvoiceController extends Controller
             403
         );
 
-        if (! in_array($invoice->status, ['draft', 'issued'], true)) {
+        // Allow edits while invoice is still open (including unpaid / partially paid). Lock only terminal states.
+        if (in_array($invoice->status, ['paid', 'cancelled'], true)) {
             return response()->json([
-                'message' => __('Only draft or issued invoices can be edited.'),
+                'message' => __('Paid or cancelled invoices cannot be edited.'),
             ], 422);
         }
 
