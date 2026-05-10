@@ -304,7 +304,24 @@ function resolveCostItemStyleFeeNameFromExpense(ex, t, isReefer) {
   return orphanOrCustomFeeTitle(ex, bucket, t)
 }
 
-const MANUAL_INVOICE_BUCKET_ID = 'manual_extra'
+/** Legacy DB `section_key` for manual lines before per-section buckets (grouped under shipping). */
+const LEGACY_MANUAL_EXTRA_BUCKET = 'manual_extra'
+
+function normalizeInvoiceManualBucketFromItem(sectionKey) {
+  const k = String(sectionKey ?? '').trim().toLowerCase()
+  if (k === LEGACY_MANUAL_EXTRA_BUCKET || k === 'additional' || k === '') return 'other'
+  return k || 'other'
+}
+
+/** Selling tab section card id → stored row `bucket_id` / API `section_key`. */
+function sectionIdToManualBucketId(sectionId) {
+  const id = String(sectionId || 'shipping').trim().toLowerCase()
+  return id || 'shipping'
+}
+
+function isManualInvoiceLineRow(row) {
+  return Boolean(row?.is_manual_invoice_line) || String(row?.bucket_id || '') === LEGACY_MANUAL_EXTRA_BUCKET
+}
 
 /**
  * @param {Record<string, unknown>} it
@@ -323,7 +340,7 @@ function mapInvoiceItemToManualRow(it) {
   return {
     expenseId,
     source_key: sk || `manual:${suffix}`,
-    bucket_id: MANUAL_INVOICE_BUCKET_ID,
+    bucket_id: normalizeInvoiceManualBucketFromItem(it.section_key),
     is_manual_invoice_line: true,
     template_id: 'other',
     expense_title: String(it.title || it.description || ''),
@@ -339,13 +356,14 @@ function mapInvoiceItemToManualRow(it) {
   }
 }
 
-function createEmptyManualInvoiceRow(invCurrency = 'USD') {
+function createEmptyManualInvoiceRow(invCurrency = 'USD', sectionBucketId = 'shipping') {
   const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
   const expenseId = `manual-temp-${suffix}`
+  const bucket = String(sectionBucketId || 'shipping').trim().toLowerCase() || 'shipping'
   return {
     expenseId,
     source_key: `manual:${suffix}`,
-    bucket_id: MANUAL_INVOICE_BUCKET_ID,
+    bucket_id: bucket,
     is_manual_invoice_line: true,
     template_id: 'other',
     expense_title: '',
@@ -362,7 +380,7 @@ function createEmptyManualInvoiceRow(invCurrency = 'USD') {
 }
 
 function resolveCostItemStyleFeeNameFromRow(row, t, isReefer) {
-  if (row.is_manual_invoice_line || (row.bucket_id || '') === MANUAL_INVOICE_BUCKET_ID) {
+  if (isManualInvoiceLineRow(row)) {
     const name = String(row.description || row.label || row.expense_title || '').trim()
 
     return name || t('shipments.fin.customItemFallback', { defaultValue: 'Custom Item' })
@@ -890,6 +908,8 @@ export default function ShipmentFinancialsModal({
   const [pricingSaving, setPricingSaving] = useState(false)
   const [expenseInvoiceRows, setExpenseInvoiceRows] = useState([])
   const [manualInvoiceRows, setManualInvoiceRows] = useState([])
+  /** Per selling-section draft row for adding manual invoice lines (Create Customer Invoice tab). */
+  const [invoiceManualLineDraftBySection, setInvoiceManualLineDraftBySection] = useState({})
   const tabBRows = useMemo(() => [...expenseInvoiceRows, ...manualInvoiceRows], [expenseInvoiceRows, manualInvoiceRows])
   const [handlingRow, setHandlingRow] = useState({ include: true, number_of_containers: 1, handling_fee_per_container: '', currency: 'USD' })
   const [deletedSellIds, setDeletedSellIds] = useState(() => new Set())
@@ -1820,7 +1840,7 @@ export default function ShipmentFinancialsModal({
         quantity: qty,
         unit_price: sell,
         currency_code: (row.currency || 'USD').toUpperCase(),
-        section_key: row.is_manual_invoice_line ? MANUAL_INVOICE_BUCKET_ID : (row.bucket_id || 'other'),
+        section_key: row.bucket_id || 'other',
         order_index: idx,
         source_key: row.source_key || `expense:${row.expenseId}`,
         cost_unit_price: qty > 0 ? cost / qty : cost,
@@ -1969,14 +1989,48 @@ export default function ShipmentFinancialsModal({
     }
   }
 
+  const defaultManualInvoiceDraft = () => ({
+    description: '',
+    cost: '',
+    unit_price: '',
+    currency: String(invCurrency || 'USD').toUpperCase(),
+  })
+
+  const patchInvoiceManualDraft = (sectionId, patch) => {
+    setInvoiceManualLineDraftBySection((prev) => ({
+      ...prev,
+      [sectionId]: { ...defaultManualInvoiceDraft(), ...(prev[sectionId] || {}), ...patch },
+    }))
+  }
+
+  const clearInvoiceManualDraft = (sectionId) => {
+    setInvoiceManualLineDraftBySection((prev) => ({ ...prev, [sectionId]: defaultManualInvoiceDraft() }))
+  }
+
+  const commitInvoiceManualDraft = (sectionId) => {
+    setInvoiceManualLineDraftBySection((prev) => {
+      const cur = { ...defaultManualInvoiceDraft(), ...prev[sectionId] }
+      if (!String(cur.description || '').trim()) return prev
+      const bucketId = sectionIdToManualBucketId(sectionId)
+      const costNum = cur.cost === '' || cur.cost == null ? 0 : Number(cur.cost)
+      const currency = String(cur.currency || invCurrency || 'USD').toUpperCase()
+      const newRow = {
+        ...createEmptyManualInvoiceRow(currency, bucketId),
+        description: String(cur.description).trim(),
+        expense_description: String(cur.description).trim(),
+        cost: Number.isFinite(costNum) ? costNum : 0,
+        unit_price: cur.unit_price === '' || cur.unit_price == null ? '' : String(cur.unit_price),
+      }
+      setManualInvoiceRows((rows) => [...rows, newRow])
+      return { ...prev, [sectionId]: defaultManualInvoiceDraft() }
+    })
+  }
+
   const editableSectionRows = useCallback(
     (sectionId) =>
       tabBRows.filter((r) => {
         if (deletedSellIds.has(r.expenseId)) return false
         if (String(r.expenseId || '').startsWith('tmp-')) return false
-        if (sectionId === 'invoice_manual') {
-          return (r.bucket_id || '') === MANUAL_INVOICE_BUCKET_ID
-        }
         const bid = r.bucket_id || 'other'
         if (sectionId === 'shipping') return bid === 'shipping' || bid === 'other'
         return bid === sectionId
@@ -2158,25 +2212,12 @@ export default function ShipmentFinancialsModal({
   )
 
   const sellingSections = useMemo(() => {
-    const manualInvoiceLinesLabel = t('shipments.fin.sellingSection.manualInvoiceLines', {
-      defaultValue: 'Additional invoice lines / بنود إضافية',
-    })
-    const manualSectionShell = {
-      id: 'invoice_manual',
-      label: manualInvoiceLinesLabel,
-      rows: [],
-      cost: {},
-      sell: {},
-      profit: {},
-      attachments: [],
-    }
     const sectionLabels = {
       shipping: t('shipments.fin.sellingSection.shipping', { defaultValue: 'Shipment Line Cost / تكلفة الشحن البحري' }),
       inland: t('shipments.fin.sellingSection.inland', { defaultValue: 'Inland Transport / النقل البري' }),
       customs: t('shipments.fin.sellingSection.customs', { defaultValue: 'Customs Clearance / التخليص الجمركي' }),
       insurance: t('shipments.fin.sellingSection.insurance', { defaultValue: 'Insurance / التأمين' }),
       handling: t('shipments.fin.sellingSection.handling', { defaultValue: 'Handling Fees / رسوم الخدمة والمتابعة' }),
-      invoice_manual: manualInvoiceLinesLabel,
     }
     const fixed = ['shipping', 'inland', 'customs', 'insurance']
     const apiSections = Array.isArray(clientInvoice?.sections) ? clientInvoice.sections : []
@@ -2209,12 +2250,15 @@ export default function ShipmentFinancialsModal({
           profit: {},
           attachments: [],
         }
+        const refsFromBucket = sectionAttachmentRefs[id] || []
+        const mergedRefs =
+          id === 'shipping' ? [...refsFromBucket, ...(sectionAttachmentRefs.invoice_manual || [])] : refsFromBucket
         return {
           ...base,
-          attachments: mergeSectionAttachmentsForSelling(sectionAttachmentRefs[id], base.attachments || []),
+          attachments: mergeSectionAttachmentsForSelling(mergedRefs, base.attachments || []),
         }
       })
-      return [...core, { ...manualSectionShell, label: manualInvoiceLinesLabel }]
+      return core.filter((s) => s.rows.length > 0 || canEditSellingGrid)
     }
 
     const defs = [
@@ -2226,21 +2270,19 @@ export default function ShipmentFinancialsModal({
     return defs
       .map((d) => ({
         ...d,
-        attachments: mergeSectionAttachmentsForSelling(sectionAttachmentRefs[d.id], []),
+        attachments: mergeSectionAttachmentsForSelling(
+          d.id === 'shipping'
+            ? [...(sectionAttachmentRefs.shipping || []), ...(sectionAttachmentRefs.invoice_manual || [])]
+            : sectionAttachmentRefs[d.id] || [],
+          []
+        ),
         rows: sellingVisibleRows.filter((r) => {
           const bid = r.bucket_id || 'other'
           if (d.id === 'shipping') return bid === 'shipping' || bid === 'other'
           return bid === d.id
         }),
       }))
-      .concat([
-        {
-          ...manualSectionShell,
-          attachments: mergeSectionAttachmentsForSelling(sectionAttachmentRefs.invoice_manual, []),
-          rows: sellingVisibleRows.filter((r) => (r.bucket_id || '') === MANUAL_INVOICE_BUCKET_ID),
-        },
-      ])
-      .filter((s) => s.rows.length > 0 || (canEditSellingGrid && s.id === 'invoice_manual'))
+      .filter((s) => s.rows.length > 0 || canEditSellingGrid)
   }, [sellingVisibleRows, t, clientInvoice?.sections, sectionAttachmentRefs, canEditSellingGrid])
 
   const handlingTotal = useMemo(() => {
@@ -2326,7 +2368,6 @@ export default function ShipmentFinancialsModal({
     if (k === 'customs') return 'shipments.fin.secTotalCustoms'
     if (k === 'insurance') return 'shipments.fin.secTotalInsurance'
     if (k === 'other') return 'shipments.fin.secTotalOther'
-    if (k === 'invoice_manual') return 'shipments.fin.secTotalManualInvoice'
     return 'shipments.fin.secTotalGeneric'
   }, [])
 
@@ -3619,9 +3660,7 @@ export default function ShipmentFinancialsModal({
                             ? 'shipment-fin-cost-sec-icon--customs'
                             : sec.id === 'insurance'
                               ? 'shipment-fin-cost-sec-icon--insurance'
-                              : sec.id === 'invoice_manual'
-                                ? 'shipment-fin-cost-sec-icon--other'
-                                : 'shipment-fin-cost-sec-icon--other'
+                              : 'shipment-fin-cost-sec-icon--other'
                     const cliEmoji =
                       sec.id === 'shipping'
                         ? '🚢'
@@ -3631,9 +3670,7 @@ export default function ShipmentFinancialsModal({
                             ? '🏛️'
                             : sec.id === 'insurance'
                               ? '🛡️'
-                              : sec.id === 'invoice_manual'
-                                ? '📝'
-                                : '📦'
+                              : '📦'
                     const sellCardKey = `sell-${sec.id}`
                     const isOpen = expanded.has(sellCardKey)
                     return (
@@ -3685,8 +3722,7 @@ export default function ShipmentFinancialsModal({
                                   {editableSectionRows(sec.id).map((row) => {
                                     const idx = tabBRows.findIndex((r) => r.expenseId === row.expenseId)
                                     const isEditableRow = idx >= 0
-                                    const isManualInvoiceRow =
-                                      row.is_manual_invoice_line || (row.bucket_id || '') === MANUAL_INVOICE_BUCKET_ID
+                                    const isManualInvoiceRow = isManualInvoiceLineRow(row)
                                     const rowCurrency = (row.currency || row.currency_code || 'USD').toUpperCase()
                                     const rowCost = Number(row.cost ?? row.cost_line_total ?? 0) || 0
                                     const sellNum = Number(row.unit_price ?? row.sell ?? 0)
@@ -3843,22 +3879,107 @@ export default function ShipmentFinancialsModal({
                                       </tr>
                                     )
                                   })}
+                                  {canEditSellingGrid
+                                    ? (() => {
+                                        const d = { ...defaultManualInvoiceDraft(), ...invoiceManualLineDraftBySection[sec.id] }
+                                        const up = d.unit_price === '' || d.unit_price == null ? NaN : Number(d.unit_price)
+                                        const co = d.cost === '' || d.cost == null ? NaN : Number(d.cost)
+                                        const draftProfit =
+                                          Number.isFinite(up) && Number.isFinite(co) ? up - co : null
+                                        const draftProfitTone =
+                                          draftProfit == null || !Number.isFinite(draftProfit)
+                                            ? 'zero'
+                                            : draftProfit > 0
+                                              ? 'pos'
+                                              : draftProfit < 0
+                                                ? 'neg'
+                                                : 'zero'
+                                        return (
+                                          <tr key={`${sec.id}-invoice-manual-draft`} className="shipment-fin-cli-manual-draft-row">
+                                            <td>
+                                              <div className="shipment-fin-cli-manual-name-only">
+                                                <input
+                                                  type="text"
+                                                  className="shipment-fin-input shipment-fin-cli-manual-desc"
+                                                  value={d.description}
+                                                  placeholder={t('shipments.fin.manualLineNamePh', { defaultValue: 'Item name' })}
+                                                  onChange={(e) => patchInvoiceManualDraft(sec.id, { description: e.target.value })}
+                                                />
+                                              </div>
+                                            </td>
+                                            <td className="shipment-fin-num">
+                                              <input
+                                                type="number"
+                                                min="0"
+                                                step="0.01"
+                                                className="shipment-fin-input shipment-fin-input--num"
+                                                value={d.cost}
+                                                onChange={(e) => patchInvoiceManualDraft(sec.id, { cost: e.target.value })}
+                                              />
+                                            </td>
+                                            <td>
+                                              <input
+                                                type="number"
+                                                min="0"
+                                                step="0.01"
+                                                className="shipment-fin-input shipment-fin-input--num"
+                                                value={d.unit_price}
+                                                onChange={(e) => patchInvoiceManualDraft(sec.id, { unit_price: e.target.value })}
+                                              />
+                                            </td>
+                                            <td
+                                              className={`shipment-fin-num shipment-fin-profit-cell shipment-fin-profit-cell--${draftProfitTone}`}
+                                            >
+                                              {draftProfit != null && Number.isFinite(draftProfit) ? (
+                                                <ShipmentMoneyDigits
+                                                  amount={draftProfit}
+                                                  numberLocale={numberLocale}
+                                                  sign={draftProfit > 0 ? '+' : undefined}
+                                                />
+                                              ) : (
+                                                '—'
+                                              )}
+                                            </td>
+                                            <td className="shipment-fin-cur-cell">
+                                              <select
+                                                className="shipment-fin-select shipment-fin-cli-manual-cur"
+                                                value={d.currency}
+                                                onChange={(e) => patchInvoiceManualDraft(sec.id, { currency: e.target.value })}
+                                              >
+                                                {CURRENCIES.map((c) => (
+                                                  <option key={c} value={c}>
+                                                    {c}
+                                                  </option>
+                                                ))}
+                                              </select>
+                                            </td>
+                                            <td className="shipment-fin-line-del-cell">
+                                              <div className="shipment-fin-actions__inner">
+                                                <button
+                                                  type="button"
+                                                  className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm shipment-fin-btn--dashed"
+                                                  onClick={() => commitInvoiceManualDraft(sec.id)}
+                                                  title={t('shipments.fin.addInvoiceLineItem', { defaultValue: 'إضافة بند' })}
+                                                >
+                                                  +
+                                                </button>
+                                                <button
+                                                  type="button"
+                                                  className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm"
+                                                  onClick={() => clearInvoiceManualDraft(sec.id)}
+                                                  title={t('shipments.fin.clearDraftLine', { defaultValue: 'Clear' })}
+                                                >
+                                                  ✕
+                                                </button>
+                                              </div>
+                                            </td>
+                                          </tr>
+                                        )
+                                      })()
+                                    : null}
                                 </tbody>
                               </table>
                             </div>
-                            {sec.id === 'invoice_manual' && canEditSellingGrid ? (
-                              <div className="shipment-fin-draft-add-row shipment-fin-draft-add-row--client-invoice">
-                                <button
-                                  type="button"
-                                  className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm shipment-fin-btn--dashed"
-                                  onClick={() =>
-                                    setManualInvoiceRows((prev) => [...prev, createEmptyManualInvoiceRow(invCurrency)])
-                                  }
-                                >
-                                  + {t('shipments.fin.addInvoiceLineItem', { defaultValue: 'إضافة بند' })}
-                                </button>
-                              </div>
-                            ) : null}
                             {renderClientInvoiceSecTotal(secTotals, sec.id)}
                             <div className="shipment-fin-client-meta-strip">
                               <span className="shipment-fin-client-meta-strip__lbl">{t('shipments.fin.attachmentsLabel')}</span>

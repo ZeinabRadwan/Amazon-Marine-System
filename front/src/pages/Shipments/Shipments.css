@@ -1386,6 +1386,13 @@
   min-width: 0;
 }
 
+/* Create Customer Invoice: inline “add line” row under section table (matches cost draft-add styling). */
+.shipment-fin-cli-manual-draft-row td {
+  border-top: 1px dashed var(--form-divider, #e5e7eb);
+  vertical-align: middle;
+  padding-top: 0.5rem;
+}
+
 .shipment-fin-cli-manual-desc {
   width: 100%;
   font-size: 12px;

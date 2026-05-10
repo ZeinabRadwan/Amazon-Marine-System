@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amazon Marine CRM - Inland Transport Pricing Wireframe</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #f5f5f5;
+  color: #1a1a1a;
+  padding: 2rem;
+  direction: rtl;
+}
+.container { max-width: 780px; margin: 0 auto; }
+.card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.badge {
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-weight: 500;
+}
+.badge-green { background: #EAF3DE; color: #3B6D11; }
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e0e0e0;
+  margin-top: 24px;
+}
+.section-title:first-of-type { margin-top: 0; }
+.grid {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.grid-3 { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.grid-2 { grid-template-columns: 1fr 1fr; }
+label {
+  display: block;
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 4px;
+}
+select, input[type="text"], input[type="number"], input[type="date"], textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  font-size: 14px;
+  background: #fff;
+  color: #1a1a1a;
+  font-family: inherit;
+  direction: ltr;
+}
+textarea { min-height: 50px; resize: vertical; direction: rtl; }
+.input-group { display: flex; gap: 4px; }
+.input-group input { flex: 1; }
+.input-group select { width: 70px; font-size: 12px; }
+.hint { font-size: 12px; color: #888; margin-bottom: 8px; }
+.sub-section {
+  background: #f9f9f9;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: #888;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.reefer-section {
+  background: #f9f9f9;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 20px;
+  border-right: 3px solid #1D9E75;
+}
+.btn {
+  padding: 6px 16px;
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  color: #1a1a1a;
+}
+.btn-primary {
+  background: #E6F1FB;
+  color: #0C447C;
+  border-color: #85B7EB;
+  font-weight: 600;
+}
+.actions {
+  display: flex;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e0e0e0;
+}
+.list-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.filters { display: flex; gap: 8px; align-items: center; }
+.filters select { font-size: 12px; padding: 4px 8px; width: auto; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+th {
+  text-align: right;
+  padding: 10px 12px;
+  font-weight: 500;
+  color: #888;
+  font-size: 11px;
+  background: #f5f5f5;
+  border-bottom: 1px solid #e0e0e0;
+}
+td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.vehicle-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+.vehicle-dry { background: #f1f1f1; color: #444; }
+.vehicle-reefer { background: #EAF3DE; color: #3B6D11; }
+.validity-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 8px;
+}
+.validity-none { color: #888; }
+.validity-warn { background: #FAEEDA; color: #854F0B; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- === ENTRY FORM === -->
+<div class="card">
+  <div class="page-title">
+    <span>إضافة سعر نقل داخلي / Add inland rate</span>
+    <span class="badge badge-green">Inland transport</span>
+  </div>
+
+  <div class="section-title">القسم 1: المسار / Route</div>
+  <div class="grid grid-3">
+    <div>
+      <label>الميناء / Port</label>
+      <select>
+        <option>اختر الميناء</option>
+        <option>الإسكندرية / Alexandria</option>
+        <option>الدخيلة / Dekheila</option>
+        <option>دمياط / Damietta</option>
+        <option>بورسعيد غرب / Port Said West</option>
+        <option>بورسعيد شرق / Port Said East</option>
+        <option>السخنة / Sokhna</option>
+        <option>الأدبية / Adabiya</option>
+      </select>
+    </div>
+    <div>
+      <label>المحافظة / Governorate</label>
+      <select>
+        <option>اختر المحافظة</option>
+        <option>القاهرة</option>
+        <option>الجيزة</option>
+        <option>الإسكندرية</option>
+        <option>الشرقية</option>
+        <option>المنوفية</option>
+        <option>البحيرة</option>
+        <option>الإسماعيلية</option>
+        <option>بورسعيد</option>
+        <option>السويس</option>
+      </select>
+    </div>
+    <div>
+      <label>المنطقة / Zone (اختياري)</label>
+      <input type="text" placeholder="مثال: التجمع الخامس، العاشر من رمضان..." />
+    </div>
+  </div>
+
+  <div class="sub-section">
+    <span>المحافظة أو المنطقة مش موجودة؟</span>
+    <button class="btn" style="font-size: 12px; padding: 4px 12px;">+ إضافة محافظة / منطقة جديدة</button>
+  </div>
+
+  <div class="section-title">القسم 2: نوع العربية والسعر / Vehicle type & rate</div>
+  <div class="grid grid-2">
+    <div>
+      <label>نوع العربية / Vehicle type</label>
+      <select id="vehicle-type" onchange="toggleGenerator()">
+        <option value="">اختر نوع العربية</option>
+        <option value="dry20">عربية 20' Dry</option>
+        <option value="dry40">عربية 40' Dry</option>
+        <option value="twin20">عربيتين 20' (Twin)</option>
+        <option value="reefer40">عربية 40' Reefer</option>
+      </select>
+    </div>
+    <div>
+      <label>السعر / Rate</label>
+      <div class="input-group">
+        <input type="number" placeholder="0" />
+        <select><option>EGP</option><option>USD</option></select>
+      </div>
+    </div>
+  </div>
+
+  <div class="reefer-section" id="generator-section" style="display: none;">
+    <div class="hint">في حالة عربية 40' Reefer فقط — سعر المولد:</div>
+    <div class="grid grid-2">
+      <div>
+        <label>سعر المولد / Generator (per trip)</label>
+        <div class="input-group">
+          <input type="number" placeholder="0" />
+          <select><option>EGP</option><option>USD</option></select>
+        </div>
+      </div>
+    </div>
+    <div style="font-size: 11px; color: #1D9E75; margin-top: 6px;">⚠ يظهر فقط عند اختيار عربية 40' Reefer</div>
+  </div>
+
+  <div class="section-title">القسم 3: الصلاحية / Validity</div>
+  <div class="grid grid-2">
+    <div>
+      <label>صالح من / Valid from</label>
+      <input type="date" />
+    </div>
+    <div>
+      <label>صالح حتى / Valid to (اختياري)</label>
+      <input type="date" />
+    </div>
+  </div>
+
+  <div class="sub-section" style="justify-content: flex-start;">
+    لو مفيش تاريخ انتهاء — السعر يفضل سارياً لحد ما يتعدل أو يتحذف يدوياً
+  </div>
+
+  <div style="margin-bottom: 16px;">
+    <label>ملاحظات / Notes (اختياري)</label>
+    <textarea placeholder="أي ملاحظات خاصة بالمسار أو السعر..."></textarea>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-primary" style="padding: 8px 24px;">حفظ / Save</button>
+    <button class="btn" style="padding: 8px 24px;">إلغاء / Cancel</button>
+  </div>
+</div>
+
+<!-- === SAVED RATES LIST === -->
+<div class="list-title">
+  <span>الأسعار المحفوظة / Saved rates</span>
+  <div class="filters">
+    <select><option>كل الموانئ</option><option>الإسكندرية</option><option>السخنة</option><option>دمياط</option></select>
+    <select><option>كل العربيات</option><option>20' Dry</option><option>40' Dry</option><option>Twin 20'</option><option>40' Reefer</option></select>
+  </div>
+</div>
+
+<div class="card" style="padding: 0; overflow: hidden;">
+  <table>
+    <thead>
+      <tr>
+        <th>الميناء</th>
+        <th>المحافظة / المنطقة</th>
+        <th>نوع العربية</th>
+        <th>السعر</th>
+        <th>الصلاحية</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>الإسكندرية</td>
+        <td>القاهرة — التجمع الخامس</td>
+        <td><span class="vehicle-badge vehicle-dry">20' Dry</span></td>
+        <td style="font-weight: 500;">4,500 EGP</td>
+        <td><span class="validity-none">بدون انتهاء</span></td>
+        <td style="text-align: left;"><button class="btn" style="font-size: 12px; padding: 3px 10px;">تعديل</button></td>
+      </tr>
+      <tr>
+        <td>الإسكندرية</td>
+        <td>القاهرة — التجمع الخامس</td>
+        <td><span class="vehicle-badge vehicle-dry">40' Dry</span></td>
+        <td style="font-weight: 500;">6,500 EGP</td>
+        <td><span class="validity-none">بدون انتهاء</span></td>
+        <td style="text-align: left;"><button class="btn" style="font-size: 12px; padding: 3px 10px;">تعديل</button></td>
+      </tr>
+      <tr>
+        <td>الإسكندرية</td>
+        <td>القاهرة — التجمع الخامس</td>
+        <td><span class="vehicle-badge vehicle-reefer">40' Reefer</span></td>
+        <td style="font-weight: 500;">8,000 EGP <span style="font-size: 11px; color: #888;">+ 500 مولد</span></td>
+        <td><span class="validity-none">بدون انتهاء</span></td>
+        <td style="text-align: left;"><button class="btn" style="font-size: 12px; padding: 3px 10px;">تعديل</button></td>
+      </tr>
+      <tr>
+        <td>السخنة</td>
+        <td>الشرقية — العاشر من رمضان</td>
+        <td><span class="vehicle-badge vehicle-dry">40' Dry</span></td>
+        <td style="font-weight: 500;">5,000 EGP</td>
+        <td><span class="validity-badge validity-warn">ينتهي 30 Apr</span></td>
+        <td style="text-align: left;"><button class="btn" style="font-size: 12px; padding: 3px 10px;">تعديل</button></td>
+      </tr>
+      <tr>
+        <td>دمياط</td>
+        <td>الإسماعيلية</td>
+        <td><span class="vehicle-badge vehicle-dry">Twin 20'</span></td>
+        <td style="font-weight: 500;">5,000 EGP</td>
+        <td><span class="validity-none">بدون انتهاء</span></td>
+        <td style="text-align: left;"><button class="btn" style="font-size: 12px; padding: 3px 10px;">تعديل</button></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+</div>
+
+<script>
+function toggleGenerator() {
+  var sel = document.getElementById('vehicle-type');
+  var section = document.getElementById('generator-section');
+  section.style.display = (sel.value === 'reefer40') ? 'block' : 'none';
+}
+</script>
+</body>
+</html>
