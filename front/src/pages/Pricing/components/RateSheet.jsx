@@ -16,6 +16,8 @@ import PortNameAsyncSelect from './PortNameAsyncSelect'
 import InlandLocationAsyncSelect from './InlandLocationAsyncSelect'
 import ClientsFilterToolbar from '../../../components/ClientsFilterToolbar'
 import ListingPaginationFooter from '../../../components/ListingPaginationFooter'
+import { getStoredToken } from '../../Login'
+import { listPricingFreightUnitTypes } from '../../../api/pricingFreightUnitTypes'
 
 /** Maps to `pricing_offer_items.code` (ocean freight OF rows — matches seeded/API pricing keys). */
 const OCEAN_CONTAINER_ITEM_CODES = ['of20', 'of20rf', 'of40', 'of40rf']
@@ -29,6 +31,8 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
   const [seaItemCode, setSeaItemCode] = useState('')
   const [region, setRegion] = useState('')
   const [pod, setPod] = useState('')
+  const [inlandTruckType, setInlandTruckType] = useState('')
+  const [inlandTruckTypes, setInlandTruckTypes] = useState([])
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(12)
@@ -58,7 +62,7 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
   // Reset page when any filter changes (debounced text counts as one logical filter).
   useEffect(() => {
     setPage(1)
-  }, [type, seaPol, seaPod, seaItemCode, region, pod, debouncedSearch])
+  }, [type, seaPol, seaPod, seaItemCode, region, pod, inlandTruckType, debouncedSearch])
 
   useEffect(() => {
     setPage(1)
@@ -79,6 +83,7 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
           pricing_type: 'inland',
           region: region || undefined,
           inland_port: pod || undefined,
+          pricing_item_code: inlandTruckType || undefined,
           q: debouncedSearch || undefined,
           page,
           per_page: perPage,
@@ -92,6 +97,7 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
     if (id === 'sea') {
       setRegion('')
       setPod('')
+      setInlandTruckType('')
     } else {
       setSeaPol('')
       setSeaPod('')
@@ -103,6 +109,23 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
   useEffect(() => {
     if (refreshKey > 0) refetch()
   }, [refreshKey])
+
+  useEffect(() => {
+    if (type !== 'inland') return
+
+    const token = getStoredToken()
+    if (!token) return
+
+    listPricingFreightUnitTypes(token, { dataset: 'inland_truck' })
+      .then((res) => {
+        const rows = res?.data ?? res
+        setInlandTruckTypes(Array.isArray(rows) ? rows : [])
+      })
+      .catch((e) => {
+        console.error(e)
+        setInlandTruckTypes([])
+      })
+  }, [type, refreshKey])
 
   const rateModeTabs = [
     { id: 'sea', label: t('pricing.oceanFreight', 'Ocean Freight'), icon: <Ship className="h-4 w-4" /> },
@@ -171,6 +194,19 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
                 placeholder={t('pricing.filterAllPorts', 'All ports')}
                 aria-label={t('pricing.port', 'Port')}
               />
+              <select
+                value={inlandTruckType}
+                onChange={(e) => setInlandTruckType(e.target.value)}
+                className="clients-select w-full"
+                aria-label={t('pricing.filterTruckType', 'Truck Type')}
+              >
+                <option value="">{t('pricing.filterAllTruckTypes', 'All truck types')}</option>
+                {inlandTruckTypes.map((truck) => (
+                  <option key={truck.slug} value={truck.slug}>
+                    {truck.label || truck.slug}
+                  </option>
+                ))}
+              </select>
             </>
           )
         }
@@ -185,6 +221,7 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
             : () => {
                 setRegion('')
                 setPod('')
+                setInlandTruckType('')
                 setSearch('')
               }
         }
