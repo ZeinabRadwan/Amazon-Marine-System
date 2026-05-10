@@ -246,210 +246,148 @@ export default function OfferDetailModal({ isOpen, offer, onClose, onCreateQuota
 
   if (isSea) {
     const ft = parseFreeTimeFromDnd(offer.dnd || '')
-    const fixedDates = Array.isArray(offer.sailing_dates) ? offer.sailing_dates : []
-    const weeklyDays = offer.weekly_sailing_days
-      ? String(offer.weekly_sailing_days).split(',').map((s) => s.trim()).filter(Boolean)
-      : []
-    const scheduleMode = fixedDates.length ? 'fixed' : 'weekly'
     const pricing = offer.pricing || {}
-    const coreEntries = [
-      ['of20', pricing.of20],
-      ['of20rf', pricing.of20rf],
-      ['of40', pricing.of40],
-      ['of40rf', pricing.of40rf],
-      ['thc20', pricing.thc20],
-      ['thc20rf', pricing.thc20rf],
-      ['thc40', pricing.thc40],
-      ['thcRf', pricing.thcRf],
-      ['blFee', pricing.blFee],
-      ['telex', pricing.telex],
-      ['pti', pricing.pti],
-      ['powerDay', pricing.powerDay],
-    ].filter(([, item]) => item?.price != null && item.price !== '')
-    const coreCodes = new Set(coreEntries.map(([code]) => code))
-    const customEntries = Object.entries(pricing).filter(([code, item]) => !coreCodes.has(code) && item?.price != null && item.price !== '')
+    const costRows = Array.isArray(offer.pricing_items) && offer.pricing_items.length
+      ? offer.pricing_items.map((row) => ({
+          key: row.code,
+          label: seaPricingLabel(row.code, t),
+          value: formatLocaleMoney(row.price, row.currency, i18n.language),
+        }))
+      : Object.entries(pricing)
+          .filter(([, item]) => item?.price != null && item.price !== '')
+          .map(([code, item]) => ({
+            key: code,
+            label: seaPricingLabel(code, t),
+            value: formatSeaPriceItem(item, i18n.language),
+          }))
+    const totalLabel = approxTotalCurrencyKeys.length
+      ? approxTotalCurrencyKeys.map((currency) => formatLocaleMoney(approxTotalsByCurrency[currency], currency, i18n.language)).join(' + ')
+      : dash
+    const sailingLabel = weeklySailingDisplay || (sailingFormatted !== dash ? sailingFormatted : dash)
+    const validityLabel = toIso ? formatDate(toIso, { locale: i18n.language }) : dash
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
         <div
-          className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-5xl max-h-[92vh] overflow-hidden flex flex-col border border-gray-100 dark:border-gray-700"
+          className="sea-search-detail-modal"
           role="dialog"
           aria-labelledby="offer-detail-title"
           aria-modal="true"
         >
-          <div className="px-6 py-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-700 shrink-0 gap-3">
-            <h2 id="offer-detail-title" className="text-xl font-bold text-gray-900 dark:text-white">
-              عرض سعر شحن بحري / Sea Freight Rate
-            </h2>
+          <div className="sea-search-detail-topbar">
+            <div>
+              <h2 id="offer-detail-title" className="sea-search-detail-modal-title">
+                عند الضغط على عرض سعر — تفاصيل البنود / Rate detail view
+              </h2>
+            </div>
             <button
               type="button"
               onClick={onClose}
-              className="p-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full transition-colors shrink-0"
+              className="sea-search-detail-close"
               aria-label={t('common.close', 'Close')}
             >
               <X className="h-5 w-5" />
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto">
-            <div className="shipment-fin-panel shipment-fin-panel--enter">
-              <div className="sea-rate-form sea-rate-form--readonly" role="region" aria-label="Sea freight rate details">
-                <div className="sea-rate-section-title">المسار والخط الملاحي / Route &amp; Carrier</div>
-                <div className="sea-rate-grid-4">
-                  <div>
-                    <label className="sea-rate-label">ميناء التحميل / POL</label>
-                    <input className="sea-rate-input" value={offer.pol || dash} readOnly />
+          <div className="sea-search-detail-scroll">
+            <div className="sea-search-detail-card">
+              <div className="sea-search-detail-header">
+                <div>
+                  <div className="sea-search-detail-title">
+                    {offer.shipping_line || dash} — {offer.pol || dash} → {offer.pod || offer.region || dash}
                   </div>
-                  <div>
-                    <label className="sea-rate-label">ميناء الوصول / POD</label>
-                    <input className="sea-rate-input" value={offer.pod || dash} readOnly />
-                  </div>
-                  <div>
-                    <label className="sea-rate-label">المنطقة / Region</label>
-                    <input className="sea-rate-input" value={offer.region || dash} readOnly />
-                  </div>
-                  <div>
-                    <label className="sea-rate-label">الخط الملاحي / Shipping Line</label>
-                    <input className="sea-rate-input" value={offer.shipping_line || dash} readOnly />
+                  <div className="sea-search-detail-subtitle">
+                    {seaContainerSummary(pricing, t)} | Transit: {offer.transit_time || dash} | صالح حتى: {validityLabel}
                   </div>
                 </div>
-                <div className="sea-rate-grid-4 sea-rate-grid-compact">
-                  <div>
-                    <label className="sea-rate-label">نوع الحاوية / Container Type</label>
-                    <input className="sea-rate-input" value={seaContainerSummary(pricing, t)} readOnly />
-                  </div>
-                  <div>
-                    <label className="sea-rate-label">مدة العبور / Transit Time</label>
-                    <input className="sea-rate-input" value={offer.transit_time || dash} readOnly />
-                  </div>
-                </div>
+                <span className="sea-search-carrier-badge">{offer.shipping_line || dash}</span>
+              </div>
 
-                <div className="sea-rate-section-title">أيام الـ Free Time / Free Time Detention &amp; Demurrage</div>
-                <div className="sea-rate-grid-2">
-                  <div className="sea-rate-freetime-box sea-rate-freetime-pol">
-                    <div className="sea-rate-freetime-title">ميناء التحميل / POL Free Time</div>
-                    <div className="sea-rate-field-gap">
-                      <label className="sea-rate-label">Detention (أيام)</label>
-                      <input className="sea-rate-input" value={ft.pol_detention} readOnly />
-                    </div>
-                    <div>
-                      <label className="sea-rate-label">Demurrage (أيام)</label>
-                      <input className="sea-rate-input" value={ft.pol_demurrage} readOnly />
-                    </div>
+              <div className="sea-search-detail-section-title">تفاصيل بنود التكلفة / Cost breakdown</div>
+              <div className="sea-search-cost-table">
+                {costRows.length ? costRows.map((row) => (
+                  <div key={row.key} className="sea-search-cost-row">
+                    <span>{row.label}</span>
+                    <span>{row.value}</span>
                   </div>
-                  <div className="sea-rate-freetime-box sea-rate-freetime-pod">
-                    <div className="sea-rate-freetime-title">ميناء الوصول / POD Free Time</div>
-                    <div className="sea-rate-field-gap">
-                      <label className="sea-rate-label">Detention (أيام)</label>
-                      <input className="sea-rate-input" value={ft.pod_detention} readOnly />
-                    </div>
-                    <div>
-                      <label className="sea-rate-label">Demurrage (أيام)</label>
-                      <input className="sea-rate-input" value={ft.pod_demurrage} readOnly />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="sea-rate-section-title">مواعيد الإبحار / Sailing Schedule</div>
-                <div className="sea-rate-schedule-type">
-                  <label className="sea-rate-label">نوع الجدول / Schedule Type</label>
-                  <div className="sea-rate-toggle-group">
-                    <button type="button" className={`sea-rate-toggle-btn ${scheduleMode === 'fixed' ? 'active' : ''}`}>
-                      تواريخ محددة / Fixed Dates
-                    </button>
-                    <button type="button" className={`sea-rate-toggle-btn ${scheduleMode === 'weekly' ? 'active' : ''}`}>
-                      رحلة أسبوعية / Weekly Schedule
-                    </button>
-                  </div>
-                </div>
-                {scheduleMode === 'fixed' ? (
-                  <div className="sea-rate-sub-section">
-                    <div className="sea-rate-hint">في حالة تواريخ محددة — أضف تواريخ الإبحار:</div>
-                    <div className="sea-rate-tags">
-                      {fixedDates.map((d) => (
-                        <span key={d} className="sea-rate-tag sea-rate-tag-blue">
-                          {formatDate(d, { locale: i18n.language })}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="sea-rate-sub-section sea-rate-weekly-section">
-                    <div className="sea-rate-hint">في حالة رحلة أسبوعية — اختر اليوم:</div>
-                    <div className="sea-rate-day-selector" role="group">
-                      {['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map((day) => (
-                        <button key={day} type="button" className={`sea-rate-day-btn ${weeklyDays.includes(day) ? 'active' : ''}`}>
-                          {day.slice(0, 3)}
-                        </button>
-                      ))}
-                    </div>
+                )) : (
+                  <div className="sea-search-cost-row">
+                    <span>{dash}</span>
+                    <span>{dash}</span>
                   </div>
                 )}
-
-                <div className="sea-rate-section-title">بنود التسعير / Pricing Items</div>
-                <div className="sea-rate-hint">البنود الأساسية (لكل عرض سعر):</div>
-                <div className="sea-rate-grid-4 sea-rate-pricing-grid">
-                  {coreEntries.length ? coreEntries.map(([code, item]) => (
-                    <div key={code}>
-                      <label className="sea-rate-label">{seaPricingLabel(code, t)}</label>
-                      <div className="sea-rate-input-group">
-                        <input className="sea-rate-input" value={item.price ?? '0'} readOnly />
-                        <select className="sea-rate-select" value={item.currency || 'USD'} disabled>
-                          <option>{item.currency || 'USD'}</option>
-                        </select>
-                      </div>
-                    </div>
-                  )) : (
-                    <div>
-                      <label className="sea-rate-label">Ocean freight (OF)</label>
-                      <input className="sea-rate-input" value="0" readOnly />
-                    </div>
-                  )}
-                </div>
-                <div className="sea-rate-custom-charges">
-                  <div className="sea-rate-hint">بنود إضافية (حسب الخط الملاحي) / Custom Charges:</div>
-                  <div className="sea-rate-sub-section">
-                    <div className="sea-rate-tags">
-                      {customEntries.length ? customEntries.map(([code, item]) => (
-                        <span key={code} className="sea-rate-tag sea-rate-tag-amber">
-                          {seaPricingLabel(code, t)}: {formatSeaPriceItem(item, i18n.language)}
-                        </span>
-                      )) : (
-                        <span className="sea-rate-hint">—</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="sea-rate-section-title">الصلاحية والملاحظات / Validity &amp; Notes</div>
-                <div className="sea-rate-validity-grid">
-                  <div>
-                    <label className="sea-rate-label">صالح من / Valid From</label>
-                    <input className="sea-rate-input" value={fromIso || dash} readOnly />
-                  </div>
-                  <div>
-                    <label className="sea-rate-label">صالح حتى / Valid To</label>
-                    <input className="sea-rate-input" value={toIso || dash} readOnly />
-                  </div>
-                </div>
-                <div className="sea-rate-notes">
-                  <label className="sea-rate-label">ملاحظات / Notes</label>
-                  <textarea className="sea-rate-textarea" value={notesText || ''} readOnly />
+                <div className="sea-search-cost-row sea-search-cost-row--total">
+                  <span>الإجمالي / Total</span>
+                  <span>{totalLabel}</span>
                 </div>
               </div>
-            </div>
-          </div>
 
-          <div className="sea-rate-actions shrink-0">
-            <button type="button" onClick={onClose} className="sea-rate-btn sea-rate-btn-footer">
-              إغلاق / Close
-            </button>
+              <div className="sea-search-detail-section-title">أيام الفري / Free time</div>
+              <div className="sea-search-freetime-section">
+                <div className="sea-search-freetime-box sea-search-freetime-pol">
+                  <div className="sea-search-freetime-box-title">ميناء التحميل / POL</div>
+                  <div>
+                    <span>Detention:</span> {ft.pol_detention} يوم
+                  </div>
+                  <div>
+                    <span>Demurrage:</span> {ft.pol_demurrage} أيام
+                  </div>
+                </div>
+                <div className="sea-search-freetime-box sea-search-freetime-pod">
+                  <div className="sea-search-freetime-box-title">ميناء الوصول / POD</div>
+                  <div>
+                    <span>Detention:</span> {ft.pod_detention} يوم
+                  </div>
+                  <div>
+                    <span>Demurrage:</span> {ft.pod_demurrage} أيام
+                  </div>
+                </div>
+              </div>
+
+              <div className="sea-search-detail-section-title">معلومات إضافية</div>
+              <div className="sea-search-detail-info">
+                <div>
+                  <span>تواريخ الإبحار:</span> {sailingLabel}
+                </div>
+                <div>
+                  <span>المنطقة:</span> {offer.region || dash}
+                </div>
+                <div>
+                  <span>نوع الحاوية:</span> {seaContainerSummary(pricing, t)}
+                </div>
+                <div>
+                  <span>رقم العرض:</span> #{offer.id}
+                </div>
+                {offer.other_charges ? (
+                  <div className="sea-search-detail-info-full">
+                    <span>بنود أخرى:</span> {offer.other_charges}
+                  </div>
+                ) : null}
+                {notesText ? (
+                  <div className="sea-search-detail-info-full">
+                    <span>ملاحظات:</span> {notesText}
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="sea-search-detail-actions">
+                {onCreateQuotation ? (
+                  <button type="button" className="sea-search-create-quote-btn" onClick={handleCreateQuotation}>
+                    <FilePlus2 className="h-4 w-4" aria-hidden />
+                    إنشاء عرض سعر للعميل / Create quotation
+                  </button>
+                ) : null}
+                <button type="button" onClick={onClose} className="sea-search-secondary-btn">
+                  إغلاق / Close
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     )
   }
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div

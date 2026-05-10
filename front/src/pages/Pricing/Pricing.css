@@ -337,61 +337,107 @@
   font-weight: 600;
 }
 
-.sea-rates-card {
-  overflow: hidden;
-  padding: 0;
+.sea-search-results {
+  display: grid;
+  gap: 10px;
+}
+
+.sea-search-result-card {
+  padding: 1rem 1.25rem;
   border: 1px solid #e0e0e0;
   border-radius: 12px;
   background: #fff;
-}
-
-.sea-rates-table {
-  width: 100%;
-  border-collapse: collapse;
   color: #1a1a1a;
-  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
-.sea-rates-table th {
-  padding: 10px 12px;
-  border-bottom: 1px solid #e0e0e0;
-  background: #f5f5f5;
-  color: #888;
-  font-size: 11px;
-  font-weight: 500;
-  text-align: right;
+.sea-search-result-card:hover,
+.sea-search-result-card:focus-visible {
+  border-color: #85b7eb;
+  box-shadow: 0 10px 24px rgba(12, 68, 124, 0.08);
+  outline: none;
 }
 
-.sea-rates-table td {
-  padding: 10px 12px;
-  border-bottom: 1px solid #f0f0f0;
-  vertical-align: middle;
+.sea-search-result-card--archived {
+  opacity: 0.7;
 }
 
-.sea-rates-table tr:last-child td {
-  border-bottom: 0;
+.sea-search-result-header,
+.sea-search-result-footer,
+.sea-search-result-left {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
 }
 
-.sea-rate-table-badge {
-  display: inline-block;
-  padding: 2px 8px;
+.sea-search-result-header {
+  justify-content: space-between;
+}
+
+.sea-search-result-footer {
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.sea-search-carrier-badge {
+  padding: 6px 12px;
   border-radius: 8px;
-  background: #e6f1fb;
-  color: #0c447c;
+  background: #f1f1f1;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sea-search-result-route {
+  color: #1a1a1a;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.sea-search-result-meta {
+  margin-top: 2px;
+  color: #888;
   font-size: 12px;
 }
 
-.sea-validity-none {
+.sea-search-result-price {
+  text-align: left;
+}
+
+.sea-search-result-price-value {
+  color: #1a1a1a;
+  font-size: 18px;
+  font-weight: 600;
+  direction: ltr;
+}
+
+.sea-search-result-price-label {
   color: #888;
   font-size: 11px;
 }
 
-.sea-validity-warn {
+.sea-search-result-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sea-search-info-badge,
+.sea-search-warn-badge {
   padding: 2px 8px;
   border-radius: 8px;
+  font-size: 11px;
+}
+
+.sea-search-info-badge {
+  background: #f5f5f5;
+  color: #888;
+}
+
+.sea-search-warn-badge {
   background: #faeeda;
   color: #854f0b;
-  font-size: 11px;
 }
 
 .sea-rates-action-cell {
@@ -402,39 +448,250 @@
   text-align: left;
 }
 
-.sea-rates-action-btn {
-  padding: 3px 10px;
-  border: 1px solid #d0d0d0;
-  border-radius: 8px;
-  background: #fff;
-  color: #1a1a1a;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 12px;
-}
-
-.sea-rates-action-btn--danger {
-  color: #991b1b;
-}
-
-.sea-rates-action-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
-}
-
 .sea-rates-empty {
   padding: 24px 12px;
+  border: 1px dashed #d0d0d0;
+  border-radius: 12px;
+  background: #fff;
   color: #888;
   text-align: center;
 }
 
+.sea-search-detail-modal {
+  display: flex;
+  width: 100%;
+  max-width: 780px;
+  max-height: 92vh;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+  color: #1a1a1a;
+  direction: rtl;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.sea-search-detail-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.sea-search-detail-modal-title {
+  color: #666;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.sea-search-detail-close {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d0d0d0;
+  border-radius: 999px;
+  background: #fff;
+  color: #1a1a1a;
+  cursor: pointer;
+}
+
+.sea-search-detail-scroll {
+  overflow-y: auto;
+  padding: 20px;
+  background: #f5f5f5;
+}
+
+.sea-search-detail-card {
+  padding: 1.5rem;
+  border: 2px solid #85b7eb;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.sea-search-detail-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.sea-search-detail-title {
+  color: #1a1a1a;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.sea-search-detail-subtitle {
+  margin-top: 2px;
+  color: #888;
+  font-size: 13px;
+}
+
+.sea-search-detail-section-title {
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #e0e0e0;
+  color: #666;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sea-search-cost-table {
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.sea-search-cost-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.sea-search-cost-row span:first-child {
+  color: #888;
+}
+
+.sea-search-cost-row span:last-child {
+  font-weight: 500;
+  direction: ltr;
+}
+
+.sea-search-cost-row--total {
+  padding-top: 10px;
+  border-bottom: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.sea-search-freetime-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.sea-search-freetime-box {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #f9f9f9;
+  font-size: 13px;
+}
+
+.sea-search-freetime-box span,
+.sea-search-detail-info span {
+  color: #888;
+}
+
+.sea-search-freetime-box-title {
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sea-search-freetime-pol {
+  border-right: 3px solid #378add;
+}
+
+.sea-search-freetime-pol .sea-search-freetime-box-title {
+  color: #0c447c;
+}
+
+.sea-search-freetime-pod {
+  border-right: 3px solid #d85a30;
+}
+
+.sea-search-freetime-pod .sea-search-freetime-box-title {
+  color: #993c1d;
+}
+
+.sea-search-detail-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+
+.sea-search-detail-info-full {
+  grid-column: 1 / -1;
+}
+
+.sea-search-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.sea-search-create-quote-btn,
+.sea-search-secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sea-search-create-quote-btn {
+  flex: 1 1 220px;
+  border: 0;
+  background: #1d9e75;
+  color: #fff;
+}
+
+.sea-search-secondary-btn {
+  border: 1px solid #d0d0d0;
+  background: #fff;
+  color: #1a1a1a;
+}
+
 @media (max-width: 720px) {
   .sea-rate-grid-2,
-  .sea-rate-validity-grid {
+  .sea-rate-validity-grid,
+  .sea-search-freetime-section,
+  .sea-search-detail-info {
     grid-template-columns: 1fr;
   }
 
   .sea-rate-form {
+    padding: 1rem;
+  }
+
+  .sea-search-result-card {
+    padding: 0.9rem 1rem;
+  }
+
+  .sea-search-result-price {
+    width: 100%;
+    text-align: right;
+  }
+
+  .sea-search-result-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .sea-search-detail-scroll {
+    padding: 12px;
+  }
+
+  .sea-search-detail-card {
     padding: 1rem;
   }
 }
