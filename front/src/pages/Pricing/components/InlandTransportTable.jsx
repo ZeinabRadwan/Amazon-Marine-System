@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Archive, Eye, Pencil, Trash2 } from 'lucide-react'
 import { formatDate, formatLocaleMoney } from '../../../utils/dateUtils'
 import { useMutateOffer } from '../../../hooks/usePricing'
+import { IconActionButton, IconActionButtonGroup } from '../../../components/Table'
 import { INLAND_PRICE_KEYS } from '../utils/pricingDisplay'
 import '../Pricing.css'
 
@@ -156,32 +158,37 @@ export default function InlandTransportTable({
                         )}
                       </td>
                       <td className="inland-rates-action-cell">
-                        <button type="button" className="inland-rates-action-btn" onClick={() => onView?.(offer)}>
-                          عرض
-                        </button>
-                        {canManageOffers ? (
-                          <>
-                            <button type="button" className="inland-rates-action-btn" onClick={() => onEdit?.(offer)}>
-                              تعديل
-                            </button>
-                            <button
-                              type="button"
-                              className="inland-rates-action-btn"
+                        <IconActionButtonGroup aria-label={t('pricing.inlandColActions', 'Actions')}>
+                          <IconActionButton
+                            icon={<Eye className="h-4 w-4" />}
+                            label={t('pricing.actionShow', 'عرض')}
+                            onClick={() => onView?.(offer)}
+                          />
+                          {canManageOffers ? (
+                            <IconActionButton
+                              icon={<Pencil className="h-4 w-4" />}
+                              label={t('pricing.actionEdit', 'تعديل')}
+                              onClick={() => onEdit?.(offer)}
+                            />
+                          ) : null}
+                          {canManageOffers ? (
+                            <IconActionButton
+                              icon={<Archive className="h-4 w-4" />}
+                              label={t('pricing.actionArchive', 'أرشفة')}
                               disabled={archived || isBusy(offer, 'archive')}
                               onClick={() => runAction(offer, 'archive', archive)}
-                            >
-                              أرشفة
-                            </button>
-                            <button
-                              type="button"
-                              className="inland-rates-action-btn inland-rates-action-btn--danger"
+                            />
+                          ) : null}
+                          {canManageOffers ? (
+                            <IconActionButton
+                              icon={<Trash2 className="h-4 w-4" />}
+                              label={t('pricing.actionDelete', 'حذف')}
                               disabled={isBusy(offer, 'delete')}
                               onClick={() => handleDelete(offer)}
-                            >
-                              حذف
-                            </button>
-                          </>
-                        ) : null}
+                              variant="danger"
+                            />
+                          ) : null}
+                        </IconActionButtonGroup>
                       </td>
                     </tr>
                   )

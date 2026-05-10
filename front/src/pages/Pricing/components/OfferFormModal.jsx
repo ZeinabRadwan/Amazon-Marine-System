@@ -1180,10 +1180,6 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                 </div>
               </div>
 
-              <div className="inland-rate-sub-section inland-rate-sub-section-start">
-                لو مفيش تاريخ انتهاء — السعر يفضل سارياً لحد ما يتعدل أو يتحذف يدوياً
-              </div>
-
               <div className="inland-rate-notes">
                 <label htmlFor="offer-inland-notes" className="inland-rate-label">ملاحظات / Notes (اختياري)</label>
                 <textarea
