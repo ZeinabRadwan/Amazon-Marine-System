@@ -2,6 +2,319 @@
   animation: fadeIn 0.4s ease-out;
 }
 
+/* Add Sea Freight Rate modal - mirrors the standalone HTML reference */
+.sea-rate-form {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  color: #1a1a1a;
+  direction: rtl;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.sea-rate-section-title {
+  margin-top: 24px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e0e0e0;
+  color: #666;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.sea-rate-section-title:first-child {
+  margin-top: 0;
+}
+
+.sea-rate-grid-4,
+.sea-rate-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.sea-rate-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.sea-rate-grid-compact {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.sea-rate-label {
+  display: block;
+  margin-bottom: 4px;
+  color: #888;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.sea-rate-input,
+.sea-rate-select,
+.sea-rate-textarea,
+.sea-rate-date-input,
+.sea-rate-form input[type='text'],
+.sea-rate-form input[type='number'],
+.sea-rate-form input[type='date'],
+.sea-rate-form select,
+.sea-rate-form textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  background: #fff;
+  color: #1a1a1a;
+  font-family: inherit;
+  font-size: 14px;
+  direction: ltr;
+}
+
+.sea-rate-textarea {
+  min-height: 60px;
+  resize: vertical;
+  direction: rtl;
+}
+
+.sea-rate-field-gap {
+  margin-bottom: 8px;
+}
+
+.sea-rate-freetime-box {
+  padding: 12px;
+  border-radius: 8px;
+  background: #f9f9f9;
+}
+
+.sea-rate-freetime-pol {
+  border-right: 3px solid #378add;
+}
+
+.sea-rate-freetime-pod {
+  border-right: 3px solid #d85a30;
+}
+
+.sea-rate-freetime-title {
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sea-rate-freetime-pol .sea-rate-freetime-title {
+  color: #0c447c;
+}
+
+.sea-rate-freetime-pod .sea-rate-freetime-title {
+  color: #993c1d;
+}
+
+.sea-rate-schedule-type {
+  margin-bottom: 12px;
+}
+
+.sea-rate-toggle-group {
+  display: flex;
+  gap: 8px;
+  max-width: 400px;
+}
+
+.sea-rate-toggle-btn,
+.sea-rate-btn {
+  padding: 8px 12px;
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  background: #fff;
+  color: #1a1a1a;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  text-align: center;
+}
+
+.sea-rate-toggle-btn {
+  flex: 1;
+}
+
+.sea-rate-toggle-btn.active,
+.sea-rate-day-btn.active {
+  border-color: #85b7eb;
+  background: #e6f1fb;
+  color: #0c447c;
+  font-weight: 600;
+}
+
+.sea-rate-sub-section {
+  margin-bottom: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #f9f9f9;
+}
+
+.sea-rate-weekly-section {
+  margin-bottom: 20px;
+}
+
+.sea-rate-hint {
+  margin-bottom: 8px;
+  color: #888;
+  font-size: 12px;
+}
+
+.sea-rate-date-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.sea-rate-date-row .sea-rate-date-input {
+  width: 160px;
+}
+
+.sea-rate-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+  width: 100%;
+}
+
+.sea-rate-tag {
+  display: inline-block;
+  margin: 2px;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.sea-rate-tag-blue {
+  background: #e6f1fb;
+  color: #0c447c;
+}
+
+.sea-rate-tag-amber {
+  background: #faeeda;
+  color: #854f0b;
+}
+
+.sea-rate-day-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sea-rate-day-btn {
+  padding: 6px 12px;
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  background: #fff;
+  color: #1a1a1a;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.sea-rate-pricing-grid {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.sea-rate-input-group {
+  display: flex;
+  gap: 4px;
+}
+
+.sea-rate-input-group .sea-rate-input {
+  flex: 1;
+}
+
+.sea-rate-input-group .sea-rate-select {
+  width: 70px;
+  font-size: 12px;
+}
+
+.sea-rate-custom-charges {
+  margin-bottom: 16px;
+}
+
+.sea-rate-custom-entry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 8px;
+  width: 100%;
+}
+
+.sea-rate-custom-name {
+  flex: 2;
+  min-width: 120px;
+}
+
+.sea-rate-custom-amount {
+  flex: 1;
+  min-width: 80px;
+}
+
+.sea-rate-custom-currency {
+  width: 70px;
+}
+
+.sea-rate-validity-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.sea-rate-notes {
+  margin-bottom: 16px;
+}
+
+.sea-rate-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-start;
+  padding: 12px 24px;
+  border-top: 1px solid #e0e0e0;
+  background: #fff;
+  direction: rtl;
+}
+
+.sea-rate-btn-footer {
+  padding: 10px 24px;
+}
+
+.sea-rate-btn-primary {
+  border-color: #85b7eb;
+  background: #e6f1fb;
+  color: #0c447c;
+  font-weight: 600;
+}
+
+.sea-rate-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+@media (max-width: 720px) {
+  .sea-rate-grid-2,
+  .sea-rate-validity-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sea-rate-form {
+    padding: 1rem;
+  }
+}
+
 /* Offer detail modal — grouped section pattern (aligned with shipment detail cards) */
 .pricing-offer-detail-card {
   background: var(--card-bg, #fff);
