@@ -166,6 +166,12 @@ function formatMoney(amount, locale) {
   return new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(amount)
 }
 
+/** Single amount with ISO code suffix (e.g. "150.00 EGP"). */
+function formatMoneyWithCurrency(amount, currencyCode, locale) {
+  const code = String(currencyCode ?? 'USD').trim().toUpperCase() || 'USD'
+  return `${formatMoney(Number(amount) || 0, locale)} ${code}`
+}
+
 /** Mixed-currency totals: EGP → USD → EUR → other codes A–Z (matches section badges). */
 const DISPLAY_CURRENCY_ORDER = ['EGP', 'USD', 'EUR']
 
@@ -186,7 +192,7 @@ function orderCurrencyMapEntries(map) {
 
 function formatOrderedCurrencyMap(map, formatMoneyFn, locale) {
   const ordered = orderCurrencyMapEntries(map)
-  return ordered.length ? ordered.map(([c, v]) => `${c} ${formatMoneyFn(Number(v), locale)}`).join(' · ') : '—'
+  return ordered.length ? ordered.map(([c, v]) => `${formatMoneyFn(Number(v), locale)} ${c}`).join(' · ') : '—'
 }
 
 function currencyBadgeClassForCode(code) {
@@ -2342,7 +2348,7 @@ export default function ShipmentFinancialsModal({
         date: p.paid_at || p.created_at,
         title: t('invoices.timeline.paymentAdded', 'Payment Added'),
         details: `${p.method || '—'} • ${p.bank_name || p.bank_account_name || t('payments.bankAccountOptional', 'No bank account')}`,
-        amount: `${String(p.currency_code || 'USD').toUpperCase()} ${formatMoney(Number(p.amount) || 0, numberLocale)}`,
+        amount: formatMoneyWithCurrency(p.amount, p.currency_code, numberLocale),
       })
     })
     if (invoiceFinancialOverview.status === 'partial') {
@@ -2471,7 +2477,7 @@ export default function ShipmentFinancialsModal({
       else if (currency === 'USD') colorClass = 'shipment-fin-currency-badge--green'
       return (
         <span key={`${bucketId}-${currency}`} className={`shipment-fin-currency-badge ${colorClass}`}>
-          {currency} {formatMoney(Number(value) || 0, numberLocale)}
+          {formatMoneyWithCurrency(value, currency, numberLocale)}
         </span>
       )
     }) : <span className="shipment-fin-currency-badge shipment-fin-currency-badge--blue">—</span>
@@ -3663,7 +3669,7 @@ export default function ShipmentFinancialsModal({
                         {handlingRow.include ? (
                           <span className="shipment-fin-card__subtotal shipment-fin-card__subtotal--badges">
                             <span className={`shipment-fin-currency-badge ${currencyBadgeClassForCode(handlingRow.currency)}`}>
-                              {(handlingRow.currency || 'USD').toUpperCase()} {formatMoney(handlingTotal, numberLocale)}
+                              {formatMoneyWithCurrency(handlingTotal, handlingRow.currency, numberLocale)}
                             </span>
                           </span>
                         ) : null}
@@ -3724,7 +3730,7 @@ export default function ShipmentFinancialsModal({
                                   type="text"
                                   readOnly
                                   className="shipment-fin-input shipment-fin-cli-handling-total-ro"
-                                  value={`${(handlingRow.currency || 'USD').toUpperCase()} ${formatMoney(handlingTotal, numberLocale)}`}
+                                  value={formatMoneyWithCurrency(handlingTotal, handlingRow.currency, numberLocale)}
                                 />
                               </div>
                             </div>
@@ -3755,7 +3761,7 @@ export default function ShipmentFinancialsModal({
                             <span className="shipment-fin-draft-sec-total__badges">
                               {handlingRow.include ? (
                                 <span className={`shipment-fin-currency-badge ${currencyBadgeClassForCode(handlingRow.currency)}`}>
-                                  {(handlingRow.currency || 'USD').toUpperCase()} {formatMoney(handlingTotal, numberLocale)}
+                                  {formatMoneyWithCurrency(handlingTotal, handlingRow.currency, numberLocale)}
                                 </span>
                               ) : (
                                 <span className="shipment-fin-currency-badge shipment-fin-currency-badge--blue">—</span>
