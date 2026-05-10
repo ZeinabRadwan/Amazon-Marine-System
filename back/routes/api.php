@@ -513,6 +513,7 @@ Route::prefix('v1')->group(function () {
         Route::get('invoices/summary', [InvoiceController::class, 'summary']);
         Route::get('invoices/{invoice}', [InvoiceController::class, 'show']);
         Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'pdf']);
+        Route::get('invoices/{invoice}/preview-html', [InvoiceController::class, 'previewHtml']);
         Route::post('invoices', [InvoiceController::class, 'store']);
         Route::put('invoices/{invoice}', [InvoiceController::class, 'update']);
         Route::post('invoices/{invoice}/issue', [InvoiceController::class, 'issue']);

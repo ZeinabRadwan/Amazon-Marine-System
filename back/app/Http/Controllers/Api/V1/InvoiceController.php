@@ -22,6 +22,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Mpdf\Mpdf;
 
 class InvoiceController extends Controller
@@ -918,7 +919,7 @@ class InvoiceController extends Controller
                 }
                 BankPaymentCurrencyService::prepareForBank($validated);
 
-                $payment = $invoice->payments()->create([
+                $paymentAttrs = [
                     'type' => 'client_receipt',
                     'client_id' => $invoice->client_id,
                     'amount' => $validated['amount'],
@@ -933,9 +934,13 @@ class InvoiceController extends Controller
                     'reference' => $validated['reference'],
                     'notes' => $validated['notes'] ?? null,
                     'paid_at' => $validated['paid_at'],
-                    'status' => 'posted',
                     'created_by_id' => $user->id,
-                ]);
+                ];
+                if (Schema::hasColumn('payments', 'status')) {
+                    $paymentAttrs['status'] = 'posted';
+                }
+
+                $payment = $invoice->payments()->create($paymentAttrs);
 
                 FinancialService::handlePaymentPosted($payment);
 
@@ -950,7 +955,7 @@ class InvoiceController extends Controller
                 ]);
 
                 // Update status based on balance
-                $totalPaid = $invoice->payments()->where('status', 'posted')->sum('amount');
+                $totalPaid = $this->sumInvoicePaymentsReceived($invoice);
                 if ($totalPaid >= $invoice->net_amount) {
                     $invoice->status = 'paid';
                 } elseif ($totalPaid > 0) {
@@ -960,7 +965,7 @@ class InvoiceController extends Controller
 
                 return $payment;
             });
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return response()->json([
                 'message' => collect($e->errors())->flatten()->first() ?? __('bank.insufficient_balance_currency'),
                 'errors' => $e->errors(),
@@ -973,25 +978,20 @@ class InvoiceController extends Controller
         ]);
     }
 
-    public function pdf(Request $request, Invoice $invoice)
+    /**
+     * Same Blade template as {@see pdf()} — used for HTML preview and PDF rendering.
+     */
+    private function renderInvoicePdfHtml(Request $request, Invoice $invoice): string
     {
-        $user = $request->user();
-        abort_unless(
-            $user && ($user->can('financial.view') || $user->can('accounting.view')),
-            403
-        );
-
         $invoice->load(['client', 'items.item', 'shipment.originPort', 'shipment.destinationPort', 'shipment.shippingLine', 'shipment.costInvoice']);
         $layout = PdfLayout::where('document_type', 'invoice')->first();
-
-        $filename = $invoice->invoice_number.'.pdf';
 
         $locale = strtolower((string) $request->header('X-App-Locale', 'en')) === 'ar' ? 'ar' : 'en';
         $labels = $this->invoicePdfLabels($locale);
 
         $invoiceData = $this->invoicePayload($invoice);
 
-        $html = view('invoices.pdf', [
+        return view('invoices.pdf', [
             'invoice' => $invoice,
             'invoiceData' => $invoiceData,
             'headerHtml' => $layout?->header_html,
@@ -1000,6 +1000,38 @@ class InvoiceController extends Controller
             'labels' => $labels,
             'bankAccount' => BankAccount::query()->where('is_active', true)->orderBy('id')->first(),
         ])->render();
+    }
+
+    /**
+     * Full HTML document identical to the PDF template — for in-app preview (browser cannot load file:// assets).
+     */
+    public function previewHtml(Request $request, Invoice $invoice)
+    {
+        $user = $request->user();
+        abort_unless(
+            $user && ($user->can('financial.view') || $user->can('accounting.view')),
+            403
+        );
+
+        $html = $this->renderInvoicePdfHtml($request, $invoice);
+
+        return response($html, 200, [
+            'Content-Type' => 'text/html; charset=UTF-8',
+            'Cache-Control' => 'private, no-store',
+        ]);
+    }
+
+    public function pdf(Request $request, Invoice $invoice)
+    {
+        $user = $request->user();
+        abort_unless(
+            $user && ($user->can('financial.view') || $user->can('accounting.view')),
+            403
+        );
+
+        $filename = $invoice->invoice_number.'.pdf';
+
+        $html = $this->renderInvoicePdfHtml($request, $invoice);
 
         $mpdf = new Mpdf(MpdfInvoiceFonts::mergeOptions([
             'mode' => 'utf-8',
@@ -1082,5 +1114,21 @@ class InvoiceController extends Controller
             'generated' => 'Generated on',
             'system_credit' => 'Amazon Marine system',
         ];
+    }
+
+    /**
+     * Total payments recorded against this invoice.
+     * When `payments.status` exists: count `posted` and legacy rows (`NULL` status).
+     */
+    private function sumInvoicePaymentsReceived(Invoice $invoice): float
+    {
+        $query = $invoice->payments();
+        if (Schema::hasColumn('payments', 'status')) {
+            $query->where(function ($q): void {
+                $q->where('status', 'posted')->orWhereNull('status');
+            });
+        }
+
+        return (float) $query->sum('amount');
     }
 }

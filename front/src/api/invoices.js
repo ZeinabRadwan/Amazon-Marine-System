@@ -245,6 +245,36 @@ export async function cancelInvoice(token, invoiceId) {
   return json.data ?? json
 }
 
+/**
+ * Same Blade template as PDF (`invoices.pdf`) — use for HTML preview only.
+ * @param {string} token
+ * @param {number|string} invoiceId
+ * @param {{ locale?: string }} [options]
+ */
+export async function fetchInvoicePreviewHtml(token, invoiceId, options = {}) {
+  const locale = options.locale && String(options.locale).toLowerCase().startsWith('ar') ? 'ar' : 'en'
+  const res = await apiFetch(`${getBaseUrl()}/invoices/${invoiceId}/preview-html`, {
+    headers: {
+      ...authHeaders(token, false),
+      Accept: 'text/html',
+      'X-App-Locale': locale,
+    },
+  })
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    try {
+      const json = JSON.parse(text)
+      throw new Error(json.message || json.error || `Failed to load invoice preview (${res.status})`)
+    } catch (e) {
+      if (e instanceof SyntaxError) {
+        throw new Error(text.trim().slice(0, 200) || `Failed to load invoice preview (${res.status})`)
+      }
+      throw e
+    }
+  }
+  return res.text()
+}
+
 export async function downloadInvoicePdf(token, invoiceId) {
   const res = await apiFetch(`${getBaseUrl()}/invoices/${invoiceId}/pdf`, {
     headers: authHeaders(token, false),

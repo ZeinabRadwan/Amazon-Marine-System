@@ -3079,6 +3079,26 @@
   margin: 0.35rem 0 0.65rem;
 }
 
+.shipment-fin-draft-add-row--manual-cli {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.shipment-fin-draft-add-row--manual-cli .shipment-fin-draft-add-row__qty {
+  width: 4.25rem;
+  min-width: 3.75rem;
+}
+
+.shipment-fin-draft-add-row--manual-cli .shipment-fin-draft-add-row__unit {
+  width: 6rem;
+  min-width: 5rem;
+}
+
+.shipment-fin-cli-qty-cell {
+  max-width: 6rem;
+}
+
 .shipment-fin-draft-upload-area {
   position: relative;
   border: 1.5px dashed var(--form-divider, #dde3ed);

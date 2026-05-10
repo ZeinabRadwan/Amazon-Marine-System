@@ -21,6 +21,7 @@ import {
   downloadInvoicePdf,
   listCurrencies,
 } from '../../api/invoices'
+import InvoiceHtmlPreviewModal from '../Invoices/components/InvoiceHtmlPreviewModal'
 import { CurrencyMapBadges } from '../Accountings/CurrencyMapBadges'
 import '../Accountings/CurrencyMapBadges.css'
 import { listActivitiesBySubject } from '../../api/activities'
@@ -905,6 +906,7 @@ export default function ShipmentFinancialsModal({
   const [deletedSellIds, setDeletedSellIds] = useState(() => new Set())
   const [currentInvoiceId, setCurrentInvoiceId] = useState(null)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [invoiceHtmlPreviewOpen, setInvoiceHtmlPreviewOpen] = useState(false)
   const [bankAccounts, setBankAccounts] = useState([])
   const [paymentSaving, setPaymentSaving] = useState(false)
   const [paymentForm, setPaymentForm] = useState({
@@ -2381,6 +2383,7 @@ export default function ShipmentFinancialsModal({
     if (k === 'inland') return 'shipments.fin.secTotalInland'
     if (k === 'customs') return 'shipments.fin.secTotalCustoms'
     if (k === 'insurance') return 'shipments.fin.secTotalInsurance'
+    if (k === 'manual') return 'shipments.fin.secTotalManual'
     if (k === 'other') return 'shipments.fin.secTotalOther'
     return 'shipments.fin.secTotalGeneric'
   }, [])
@@ -3669,7 +3672,9 @@ export default function ShipmentFinancialsModal({
                             ? 'shipment-fin-cost-sec-icon--customs'
                             : sec.id === 'insurance'
                               ? 'shipment-fin-cost-sec-icon--insurance'
-                              : 'shipment-fin-cost-sec-icon--other'
+                              : sec.id === 'manual'
+                                ? 'shipment-fin-cost-sec-icon--other'
+                                : 'shipment-fin-cost-sec-icon--other'
                     const cliEmoji =
                       sec.id === 'shipping'
                         ? '🚢'
@@ -3679,7 +3684,9 @@ export default function ShipmentFinancialsModal({
                             ? '🏛️'
                             : sec.id === 'insurance'
                               ? '🛡️'
-                              : '📦'
+                              : sec.id === 'manual'
+                                ? '📝'
+                                : '📦'
                     const sellCardKey = `sell-${sec.id}`
                     const isOpen = expanded.has(sellCardKey)
                     return (
@@ -3718,8 +3725,10 @@ export default function ShipmentFinancialsModal({
                                 <thead>
                                   <tr>
                                     <th>{t('shipments.fin.cliColFeeName', { defaultValue: 'Fee Name' })}</th>
+                                    <th>{t('shipments.fin.cliColQty', { defaultValue: 'Qty' })}</th>
                                     <th>{t('shipments.fin.cliColOriginalCost', { defaultValue: 'Original Cost' })}</th>
-                                    <th>{t('shipments.fin.cliColClientPrice', { defaultValue: 'Client Price' })}</th>
+                                    <th>{t('shipments.fin.cliColClientPrice', { defaultValue: 'Unit price' })}</th>
+                                    <th>{t('shipments.fin.cliColLineTotal', { defaultValue: 'Line total' })}</th>
                                     <th>{t('shipments.fin.cliColProfitCalculated', { defaultValue: 'Profit' })}</th>
                                     <th>{t('shipments.fin.colCurrency')}</th>
                                     <th className="shipment-fin-th--client-actions">
@@ -3731,10 +3740,11 @@ export default function ShipmentFinancialsModal({
                                   {editableSectionRows(sec.id).map((row) => {
                                     const idx = tabBRows.findIndex((r) => r.expenseId === row.expenseId)
                                     const isEditableRow = idx >= 0
+                                    const isManual = Boolean(row.isManualInvoiceLine || row.bucket_id === 'manual')
                                     const rowCurrency = (row.currency || row.currency_code || 'USD').toUpperCase()
                                     const rowCost = Number(row.cost ?? row.cost_line_total ?? 0) || 0
                                     const sellNum = Number(row.unit_price ?? row.sell ?? 0)
-                                    const rowQty = Number(row.quantity ?? 1) || 1
+                                    const rowQty = invoiceLineQuantityForSell(row)
                                     const originalUnitPrice = rowQty > 0 ? rowCost / rowQty : rowCost
                                     const rowSelling = row.line_total != null ? Number(row.line_total) || 0 : sellNum * rowQty
                                     const profit = rowSelling - rowCost
@@ -3742,13 +3752,46 @@ export default function ShipmentFinancialsModal({
                                     return (
                                       <tr key={row.id || row.expenseId || row.source_key || `${sec.id}-${row.description}`}>
                                         <td>
-                                          <div className="shipment-fin-line-label-wrap shipment-fin-fee-name-readonly">
-                                            <span className="shipment-fin-line-label">
-                                              {resolveCostItemStyleFeeNameFromRow(row, t, Boolean(shipment?.is_reefer))}
-                                            </span>
-                                          </div>
+                                          {isManual && canEditSellingGrid && isEditableRow ? (
+                                            <input
+                                              type="text"
+                                              className="shipment-fin-input"
+                                              value={row.description ?? ''}
+                                              onChange={(e) =>
+                                                patchTabBRow(idx, {
+                                                  description: e.target.value,
+                                                  label: e.target.value,
+                                                })
+                                              }
+                                              placeholder={t('shipments.fin.descPlaceholder')}
+                                            />
+                                          ) : (
+                                            <div className="shipment-fin-line-label-wrap shipment-fin-fee-name-readonly">
+                                              <span className="shipment-fin-line-label">
+                                                {resolveCostItemStyleFeeNameFromRow(row, t, Boolean(shipment?.is_reefer))}
+                                              </span>
+                                            </div>
+                                          )}
                                         </td>
-                                        <td className="shipment-fin-num">{formatMoney(originalUnitPrice, numberLocale)}</td>
+                                        <td className="shipment-fin-num shipment-fin-cli-qty-cell">
+                                          {isManual && canEditSellingGrid && isEditableRow ? (
+                                            <input
+                                              type="number"
+                                              min="0.01"
+                                              step="0.01"
+                                              className="shipment-fin-input shipment-fin-input--num"
+                                              value={row.quantity ?? ''}
+                                              onChange={(e) => patchTabBRow(idx, { quantity: e.target.value })}
+                                            />
+                                          ) : (
+                                            <span className="shipment-fin-num">
+                                              {(row.bucket_id || '') === 'insurance' ? 1 : row.quantity}
+                                            </span>
+                                          )}
+                                        </td>
+                                        <td className="shipment-fin-num">
+                                          {isManual && !rowCost ? '—' : formatMoney(originalUnitPrice, numberLocale)}
+                                        </td>
                                         <td>
                                           {canEditSellingGrid && isEditableRow ? (
                                             <input
@@ -3760,13 +3803,30 @@ export default function ShipmentFinancialsModal({
                                               onChange={(e) => patchTabBRow(idx, { unit_price: e.target.value })}
                                             />
                                           ) : (
-                                            <span className="shipment-fin-num">{formatMoney(rowSelling || 0, numberLocale)}</span>
+                                            <span className="shipment-fin-num">{formatMoney(sellNum || 0, numberLocale)}</span>
                                           )}
                                         </td>
+                                        <td className="shipment-fin-num">{formatMoney(rowSelling || 0, numberLocale)}</td>
                                         <td className={`shipment-fin-num shipment-fin-profit-cell shipment-fin-profit-cell--${profitTone}`}>
                                           {profit > 0 ? `+${formatMoney(profit, numberLocale)}` : formatMoney(profit, numberLocale)}
                                         </td>
-                                        <td className="shipment-fin-cur-cell">{currencyCodePill(rowCurrency)}</td>
+                                        <td className="shipment-fin-cur-cell">
+                                          {isManual && canEditSellingGrid && isEditableRow ? (
+                                            <select
+                                              className="shipment-fin-select"
+                                              value={rowCurrency}
+                                              onChange={(e) => patchTabBRow(idx, { currency: e.target.value })}
+                                            >
+                                              {CURRENCIES.map((c) => (
+                                                <option key={c} value={c}>
+                                                  {c}
+                                                </option>
+                                              ))}
+                                            </select>
+                                          ) : (
+                                            currencyCodePill(rowCurrency)
+                                          )}
+                                        </td>
                                         <td className="shipment-fin-line-del-cell">
                                           {isEditableRow ? (
                                             <button
@@ -3788,6 +3848,55 @@ export default function ShipmentFinancialsModal({
                                 </tbody>
                               </table>
                             </div>
+                            {sec.id === 'manual' && canEditSellingGrid ? (
+                              <div className="shipment-fin-draft-add-row shipment-fin-draft-add-row--manual-cli">
+                                <input
+                                  type="text"
+                                  className="shipment-fin-draft-add-row__input"
+                                  value={manualInvoiceAddDraft.desc}
+                                  onChange={(e) => setManualInvoiceAddDraft((d) => ({ ...d, desc: e.target.value }))}
+                                  placeholder={t('shipments.fin.manualInvoiceAddPlaceholder', {
+                                    defaultValue: 'Item name / اسم البند',
+                                  })}
+                                />
+                                <input
+                                  type="number"
+                                  min="0.01"
+                                  step="0.01"
+                                  className="shipment-fin-input shipment-fin-input--num shipment-fin-draft-add-row__qty"
+                                  value={manualInvoiceAddDraft.quantity}
+                                  onChange={(e) => setManualInvoiceAddDraft((d) => ({ ...d, quantity: e.target.value }))}
+                                  title={t('shipments.fin.cliColQty', { defaultValue: 'Qty' })}
+                                />
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  className="shipment-fin-input shipment-fin-input--num shipment-fin-draft-add-row__unit"
+                                  value={manualInvoiceAddDraft.unit_price}
+                                  onChange={(e) => setManualInvoiceAddDraft((d) => ({ ...d, unit_price: e.target.value }))}
+                                  placeholder={t('shipments.fin.cliColUnitPricePh', { defaultValue: 'Unit price' })}
+                                />
+                                <select
+                                  className="shipment-fin-draft-add-row__select"
+                                  value={manualInvoiceAddDraft.currency}
+                                  onChange={(e) => setManualInvoiceAddDraft((d) => ({ ...d, currency: e.target.value }))}
+                                >
+                                  {CURRENCIES.map((c) => (
+                                    <option key={c} value={c}>
+                                      {c}
+                                    </option>
+                                  ))}
+                                </select>
+                                <button
+                                  type="button"
+                                  className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm shipment-fin-btn--dashed"
+                                  onClick={addManualInvoiceLineFromDraft}
+                                >
+                                  + {t('shipments.fin.addRow')}
+                                </button>
+                              </div>
+                            ) : null}
                             {renderClientInvoiceSecTotal(secTotals, sec.id)}
                             <div className="shipment-fin-client-meta-strip">
                               <span className="shipment-fin-client-meta-strip__lbl">{t('shipments.fin.attachmentsLabel')}</span>
@@ -4063,9 +4172,18 @@ export default function ShipmentFinancialsModal({
                         {notifySending ? t('shipments.saving') : t('shipments.fin.saveSalesInvoice', { defaultValue: 'حفظ فاتورة المبيعات' })}
                       </button>
                       {clientInvoice?.id ? (
-                        <button type="button" className="client-detail-modal__btn client-detail-modal__btn--secondary" onClick={handleDownloadInvoicePdf}>
-                          {t('shipments.fin.downloadSalesInvoicePdf', { defaultValue: 'تحميل PDF' })}
-                        </button>
+                        <>
+                          <button
+                            type="button"
+                            className="client-detail-modal__btn client-detail-modal__btn--secondary"
+                            onClick={() => setInvoiceHtmlPreviewOpen(true)}
+                          >
+                            {t('shipments.fin.previewInvoice', { defaultValue: 'Preview Invoice' })}
+                          </button>
+                          <button type="button" className="client-detail-modal__btn client-detail-modal__btn--secondary" onClick={handleDownloadInvoicePdf}>
+                            {t('shipments.fin.downloadSalesInvoicePdf', { defaultValue: 'تحميل PDF' })}
+                          </button>
+                        </>
                       ) : null}
                     </div>
                   ) : null}
@@ -4446,6 +4564,12 @@ export default function ShipmentFinancialsModal({
           </div>
         </div>
       </div>
+      <InvoiceHtmlPreviewModal
+        isOpen={invoiceHtmlPreviewOpen}
+        onClose={() => setInvoiceHtmlPreviewOpen(false)}
+        token={token}
+        invoiceId={clientInvoice?.id}
+      />
     </div>
   )
 }
