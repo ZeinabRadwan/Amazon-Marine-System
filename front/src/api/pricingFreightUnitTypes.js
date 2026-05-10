@@ -15,7 +15,7 @@ function authHeaders(token) {
   }
 }
 
-/** @param {'ocean_container'|'inland_truck'} dataset */
+/** @param {'ocean_container'|'inland_truck'|'inland_governorate'|'inland_region'} dataset */
 export async function listPricingFreightUnitTypes(token, params = {}) {
   const searchParams = new URLSearchParams()
   if (params.dataset) searchParams.set('dataset', params.dataset)

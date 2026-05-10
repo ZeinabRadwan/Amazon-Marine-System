@@ -107,6 +107,17 @@ export async function archiveOffer(token, id) {
   return data
 }
 
+export async function deleteOffer(token, id) {
+  const url = `${getBaseUrl()}/pricing/offers/${id}`
+  const res = await apiFetch(url, {
+    method: 'DELETE',
+    headers: authHeaders(token),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to delete offer (${res.status})`)
+  return data
+}
+
 export async function listQuotes(token, params = {}) {
   const searchParams = new URLSearchParams()
   if (params.status) searchParams.set('status', params.status)

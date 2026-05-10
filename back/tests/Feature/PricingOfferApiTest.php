@@ -7,6 +7,7 @@ use App\Models\PricingOfferItem;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class PricingOfferApiTest extends TestCase
@@ -174,5 +175,64 @@ class PricingOfferApiTest extends TestCase
             ->getJson('/api/v1/pricing/offers/sea-regions?q='.rawurlencode('الخل'));
         $filtered->assertOk();
         $this->assertContains('الخليج', $filtered->json('data'));
+    }
+
+    public function test_pricing_user_can_archive_and_delete_offer(): void
+    {
+        $user = $this->actingAsPricingUser();
+        $offer = PricingOffer::factory()->create(['status' => 'active']);
+        PricingOfferItem::query()->create([
+            'pricing_offer_id' => $offer->id,
+            'code' => 'of20',
+            'price' => 100,
+            'currency_code' => 'USD',
+        ]);
+
+        $this->actingAs($user, 'sanctum')
+            ->postJson('/api/v1/pricing/offers/'.$offer->id.'/archive')
+            ->assertOk()
+            ->assertJsonPath('data.status', 'archived');
+
+        $this->actingAs($user, 'sanctum')
+            ->deleteJson('/api/v1/pricing/offers/'.$offer->id)
+            ->assertOk();
+
+        $this->assertDatabaseMissing('pricing_offers', ['id' => $offer->id]);
+        $this->assertDatabaseMissing('pricing_offer_items', ['pricing_offer_id' => $offer->id]);
+    }
+
+    public function test_sales_manager_can_only_view_pricing_offers(): void
+    {
+        /** @var User $user */
+        $user = User::factory()->create();
+        $user->assignRole(Role::query()->where('name', 'sales_manager')->firstOrFail());
+        $offer = PricingOffer::factory()->create(['status' => 'active']);
+
+        $this->actingAs($user, 'sanctum')
+            ->getJson('/api/v1/pricing/offers/'.$offer->id)
+            ->assertOk();
+
+        $this->actingAs($user, 'sanctum')
+            ->postJson('/api/v1/pricing/offers', [
+                'pricing_type' => 'sea',
+                'region' => 'Europe',
+                'pod' => 'Rotterdam',
+                'shipping_line' => 'MSC',
+                'pol' => 'Sokhna',
+                'pricing' => ['of20' => ['price' => 100, 'currency' => 'USD']],
+            ])
+            ->assertForbidden();
+
+        $this->actingAs($user, 'sanctum')
+            ->putJson('/api/v1/pricing/offers/'.$offer->id, ['notes' => 'blocked'])
+            ->assertForbidden();
+
+        $this->actingAs($user, 'sanctum')
+            ->postJson('/api/v1/pricing/offers/'.$offer->id.'/archive')
+            ->assertForbidden();
+
+        $this->actingAs($user, 'sanctum')
+            ->deleteJson('/api/v1/pricing/offers/'.$offer->id)
+            ->assertForbidden();
     }
 }

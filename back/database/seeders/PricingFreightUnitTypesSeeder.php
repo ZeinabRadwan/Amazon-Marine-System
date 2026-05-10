@@ -84,5 +84,31 @@ class PricingFreightUnitTypesSeeder extends Seeder
                 ]
             );
         }
+
+        $governorates = [
+            'القاهرة',
+            'الجيزة',
+            'الإسكندرية',
+            'الشرقية',
+            'المنوفية',
+            'البحيرة',
+            'الإسماعيلية',
+            'بورسعيد',
+            'السويس',
+            'القاهرة الكبرى',
+            'الدلتا',
+        ];
+
+        foreach ($governorates as $index => $label) {
+            PricingFreightUnitType::updateOrCreate(
+                ['dataset' => 'inland_governorate', 'slug' => 'gov-'.($index + 1)],
+                [
+                    'label' => $label,
+                    'sort_order' => ($index + 1) * 10,
+                    'active' => true,
+                    'meta' => null,
+                ]
+            );
+        }
     }
 }

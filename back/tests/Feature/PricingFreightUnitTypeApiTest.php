@@ -93,4 +93,27 @@ class PricingFreightUnitTypeApiTest extends TestCase
             $this->assertSame('ocean_container', $item['dataset']);
         }
     }
+
+    public function test_store_inland_governorate_and_region_catalog_values(): void
+    {
+        $user = $this->actingAsPricingUser();
+
+        $this->actingAs($user, 'sanctum')
+            ->postJson('/api/v1/pricing/freight-unit-types', [
+                'dataset' => 'inland_governorate',
+                'label' => 'القليوبية',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.dataset', 'inland_governorate')
+            ->assertJsonPath('data.label', 'القليوبية');
+
+        $this->actingAs($user, 'sanctum')
+            ->postJson('/api/v1/pricing/freight-unit-types', [
+                'dataset' => 'inland_region',
+                'label' => 'العبور',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.dataset', 'inland_region')
+            ->assertJsonPath('data.label', 'العبور');
+    }
 }

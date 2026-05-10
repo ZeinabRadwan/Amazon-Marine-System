@@ -13,6 +13,7 @@ import CreateQuoteModal from './CreateQuoteModal'
 import './OfferCard.css'
 import { useAuthAccess } from '../../../hooks/useAuthAccess'
 import PortNameAsyncSelect from './PortNameAsyncSelect'
+import InlandLocationAsyncSelect from './InlandLocationAsyncSelect'
 import ClientsFilterToolbar from '../../../components/ClientsFilterToolbar'
 import ListingPaginationFooter from '../../../components/ListingPaginationFooter'
 
@@ -154,22 +155,16 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
             </>
           ) : (
             <>
-              <select
+              <InlandLocationAsyncSelect
+                dataset="inland_governorate"
                 value={region}
-                onChange={(e) => {
-                  setRegion(e.target.value)
+                onChange={(v) => {
+                  setRegion(v)
                   setPod('')
                 }}
-                className="clients-select w-full"
+                placeholder={t('pricing.filterAllGovernorates', 'All governorates')}
                 aria-label={t('pricing.governorate', 'Governorate')}
-              >
-                <option value="">{t('pricing.filterAllGovernorates', 'All governorates')}</option>
-                {['القاهرة', 'الجيزة', 'الإسكندرية', 'الشرقية', 'المنوفية', 'البحيرة', 'الإسماعيلية', 'بورسعيد', 'السويس', 'القاهرة الكبرى', 'الدلتا'].map((r) => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </select>
+              />
               <PortNameAsyncSelect
                 value={pod}
                 onChange={setPod}
@@ -204,12 +199,13 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
               <div className="clients-filters__actions">
                 <button
                   type="button"
-                  className="clients-filters__btn-icon clients-filters__btn-icon--primary"
+                  className="clients-filters__btn-icon clients-filters__btn-icon--primary pricing-add-rate-btn"
                   onClick={() => onAddOffer(type)}
-                  aria-label={t('pricing.addPrice', 'Add Price')}
-                  title={t('pricing.addPrice', 'Add Price')}
+                  aria-label={t('pricing.addRateButton', '+ إضافة سعر')}
+                  title={t('pricing.addRateButton', '+ إضافة سعر')}
                 >
-                  <Plus className="clients-filters__btn-icon-svg" aria-hidden />
+                  <Plus className="clients-filters__btn-icon-svg pricing-add-rate-btn__icon" aria-hidden />
+                  <span className="pricing-add-rate-btn__text">{t('pricing.addRateButtonText', 'إضافة سعر')}</span>
                 </button>
               </div>
             ) : null}
@@ -237,6 +233,7 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
                 onEdit={onEdit}
                 canManageOffers={canManagePricingOffers}
                 onView={setDetailOffer}
+                onMutate={refetch}
               />
             ) : (
               <SeaFreightOffersTable
@@ -245,6 +242,7 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
                 onEdit={onEdit}
                 canManageOffers={canManagePricingOffers}
                 onView={setDetailOffer}
+                onMutate={refetch}
               />
             )}
           </div>

@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatDate, formatLocaleMoney } from '../../../utils/dateUtils'
+import { useMutateOffer } from '../../../hooks/usePricing'
 import { INLAND_PRICE_KEYS } from '../utils/pricingDisplay'
 import '../Pricing.css'
 
@@ -44,9 +46,34 @@ export default function InlandTransportTable({
   onView,
   onEdit,
   canManageOffers = true,
+  onMutate,
 }) {
   const { t, i18n } = useTranslation()
   const dash = t('common.dash', '—')
+  const { archive, delete: deleteOffer, loading: mutateLoading } = useMutateOffer()
+  const [actionOfferId, setActionOfferId] = useState(null)
+  const [actionKind, setActionKind] = useState(null)
+
+  const runAction = async (offer, kind, fn) => {
+    setActionOfferId(offer.id)
+    setActionKind(kind)
+    try {
+      await fn(offer.id)
+      onMutate?.()
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setActionOfferId(null)
+      setActionKind(null)
+    }
+  }
+
+  const handleDelete = (offer) => {
+    if (!window.confirm(t('pricing.confirmDeleteRate', 'Delete this pricing rate?'))) return
+    runAction(offer, 'delete', deleteOffer)
+  }
+
+  const isBusy = (offer, kind) => mutateLoading && actionOfferId === offer.id && actionKind === kind
 
   return (
     <div className="inland-rates-list">
@@ -129,15 +156,32 @@ export default function InlandTransportTable({
                         )}
                       </td>
                       <td className="inland-rates-action-cell">
+                        <button type="button" className="inland-rates-action-btn" onClick={() => onView?.(offer)}>
+                          عرض
+                        </button>
                         {canManageOffers ? (
-                          <button type="button" className="inland-rates-action-btn" onClick={() => onEdit?.(offer)}>
-                            تعديل
-                          </button>
-                        ) : (
-                          <button type="button" className="inland-rates-action-btn" onClick={() => onView?.(offer)}>
-                            عرض
-                          </button>
-                        )}
+                          <>
+                            <button type="button" className="inland-rates-action-btn" onClick={() => onEdit?.(offer)}>
+                              تعديل
+                            </button>
+                            <button
+                              type="button"
+                              className="inland-rates-action-btn"
+                              disabled={archived || isBusy(offer, 'archive')}
+                              onClick={() => runAction(offer, 'archive', archive)}
+                            >
+                              أرشفة
+                            </button>
+                            <button
+                              type="button"
+                              className="inland-rates-action-btn inland-rates-action-btn--danger"
+                              disabled={isBusy(offer, 'delete')}
+                              onClick={() => handleDelete(offer)}
+                            >
+                              حذف
+                            </button>
+                          </>
+                        ) : null}
                       </td>
                     </tr>
                   )

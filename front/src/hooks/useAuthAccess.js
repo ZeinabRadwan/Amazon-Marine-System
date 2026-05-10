@@ -31,11 +31,11 @@ export function useAuthAccess() {
   const isAccountant = useMemo(() => roleId === ROLE_ID.ACCOUNTANT, [roleId])
   const isOperations = useMemo(() => roleId === ROLE_ID.OPERATIONS, [roleId])
 
-  /** Sales employee (not Sales Manager): browse / search / view only on pricing UI. */
+  /** Sales and Sales Manager: browse / search / view only on pricing UI. */
   const isSalesRole = useMemo(() => {
-    if (roleId === ROLE_ID.SALES) return true
+    if (roleId === ROLE_ID.SALES || roleId === ROLE_ID.SALES_MANAGER) return true
     const primary = (user?.primary_role ?? user?.roles?.[0]?.name ?? user?.role?.name ?? '').toString().toLowerCase()
-    return primary === 'sales'
+    return primary === 'sales' || primary === 'sales_manager'
   }, [user, roleId])
 
   const isPricingSalesViewOnly = useMemo(() => isSalesRole && !isAdminRole, [isSalesRole, isAdminRole])

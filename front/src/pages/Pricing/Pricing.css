@@ -396,6 +396,7 @@
 
 .sea-rates-action-cell {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   justify-content: flex-start;
   text-align: left;
@@ -410,6 +411,15 @@
   cursor: pointer;
   font-family: inherit;
   font-size: 12px;
+}
+
+.sea-rates-action-btn--danger {
+  color: #991b1b;
+}
+
+.sea-rates-action-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .sea-rates-empty {
@@ -469,6 +479,14 @@
   grid-template-columns: 1fr 1fr;
 }
 
+.inland-rate-vehicle-grid {
+  align-items: start;
+}
+
+.inland-rate-control {
+  min-width: 0;
+}
+
 .inland-rate-label {
   display: block;
   margin-bottom: 4px;
@@ -505,16 +523,33 @@
 
 .inland-rate-input-group {
   display: flex;
+  align-items: stretch;
   gap: 4px;
+  min-height: 38px;
 }
 
 .inland-rate-input-group .inland-rate-input {
   flex: 1;
+  min-width: 0;
+  height: 38px;
 }
 
 .inland-rate-input-group .inland-rate-select {
+  flex: 0 0 70px;
   width: 70px;
+  height: 38px;
   font-size: 12px;
+}
+
+.inland-rate-async-select > .relative > div:first-child {
+  min-height: 38px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  border-color: #d0d0d0;
+  border-radius: 8px;
+  background: #fff;
+  color: #1a1a1a;
+  font-size: 14px;
 }
 
 .inland-rate-hint {
@@ -684,6 +719,10 @@
 }
 
 .inland-rates-action-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-start;
   text-align: left;
 }
 
@@ -696,6 +735,15 @@
   cursor: pointer;
   font-family: inherit;
   font-size: 12px;
+}
+
+.inland-rates-action-btn--danger {
+  color: #991b1b;
+}
+
+.inland-rates-action-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .inland-rates-empty {
@@ -807,6 +855,42 @@
   display: flex;
   flex-direction: column;
   align-items: start;
+}
+
+.pricing-add-rate-btn.clients-filters__btn-icon {
+  width: auto;
+  min-width: 128px;
+  height: 40px;
+  padding: 0 16px;
+  gap: 8px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 0 8px 18px rgba(0, 57, 197, 0.18);
+}
+
+.pricing-add-rate-btn__icon.clients-filters__btn-icon-svg {
+  width: 18px;
+  height: 18px;
+  opacity: 1;
+}
+
+.pricing-add-rate-btn__text {
+  display: inline-flex;
+  align-items: center;
+}
+
+@media (max-width: 520px) {
+  .pricing-add-rate-btn.clients-filters__btn-icon {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .clients-filters__actions:has(.pricing-add-rate-btn) {
+    width: 100%;
+  }
 }
 
 /* Price sheet list: grid vs table view toggle */

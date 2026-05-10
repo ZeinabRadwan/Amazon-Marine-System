@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\PricingOffer;
 use App\Models\PricingOfferItem;
 use App\Models\PricingOfferSailingDate;
+use App\Models\User;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -13,6 +15,7 @@ class PricingOfferController extends Controller
 {
     public function index(Request $request)
     {
+        $this->ensureCanViewOffers($request->user());
         $this->authorize('viewAny', PricingOffer::class);
 
         $query = PricingOffer::query()
@@ -104,6 +107,7 @@ class PricingOfferController extends Controller
      */
     public function seaRegions(Request $request)
     {
+        $this->ensureCanViewOffers($request->user());
         $this->authorize('viewAny', PricingOffer::class);
 
         $validated = $request->validate([
@@ -136,6 +140,7 @@ class PricingOfferController extends Controller
 
     public function show(PricingOffer $offer)
     {
+        $this->ensureCanViewOffers(request()->user());
         $this->authorize('view', $offer);
 
         $offer->load(['items', 'sailingDates']);
@@ -147,6 +152,7 @@ class PricingOfferController extends Controller
 
     public function store(Request $request)
     {
+        $this->ensureCanManageOffers($request->user());
         $this->authorize('create', PricingOffer::class);
 
         $validated = $request->validate([
@@ -210,6 +216,7 @@ class PricingOfferController extends Controller
 
     public function update(Request $request, PricingOffer $offer)
     {
+        $this->ensureCanManageOffers($request->user());
         $this->authorize('update', $offer);
 
         $validated = $request->validate([
@@ -258,6 +265,7 @@ class PricingOfferController extends Controller
 
     public function activate(PricingOffer $offer)
     {
+        $this->ensureCanManageOffers(request()->user());
         $this->authorize('activate', $offer);
 
         $offer->status = 'active';
@@ -270,6 +278,7 @@ class PricingOfferController extends Controller
 
     public function archive(PricingOffer $offer)
     {
+        $this->ensureCanManageOffers(request()->user());
         $this->authorize('archive', $offer);
 
         $offer->status = 'archived';
@@ -278,6 +287,44 @@ class PricingOfferController extends Controller
         return response()->json([
             'data' => $this->transformOffer($offer),
         ]);
+    }
+
+    public function destroy(PricingOffer $offer)
+    {
+        $this->ensureCanManageOffers(request()->user());
+        $this->authorize('delete', $offer);
+
+        $offer->delete();
+
+        return response()->json([
+            'message' => 'Pricing offer deleted.',
+        ]);
+    }
+
+    protected function ensureCanViewOffers(?User $user): void
+    {
+        if (! $user || (! $user->hasRole('admin') && ! $user->hasPermissionTo('pricing.view_offers'))) {
+            throw new AuthorizationException;
+        }
+    }
+
+    protected function ensureCanManageOffers(?User $user): void
+    {
+        if (! $user) {
+            throw new AuthorizationException;
+        }
+
+        if ($user->hasRole('admin')) {
+            return;
+        }
+
+        if ($user->hasAnyRole(['sales', 'sales_manager'])) {
+            throw new AuthorizationException;
+        }
+
+        if (! $user->hasRole('pricing') && ! $user->hasPermissionTo('pricing.manage_offers')) {
+            throw new AuthorizationException;
+        }
     }
 
     /**

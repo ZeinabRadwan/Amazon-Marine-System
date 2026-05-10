@@ -6,6 +6,7 @@ import {
   updateOffer,
   activateOffer,
   archiveOffer,
+  deleteOffer,
   listQuotes,
   getQuote,
   createQuote,
@@ -92,6 +93,7 @@ export function useMutateOffer() {
     update: (id, data) => handleMutation(updateOffer, id, data),
     activate: (id) => handleMutation(activateOffer, id),
     archive: (id) => handleMutation(archiveOffer, id),
+    delete: (id) => handleMutation(deleteOffer, id),
     loading,
     error,
   }

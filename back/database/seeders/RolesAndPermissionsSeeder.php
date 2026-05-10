@@ -96,6 +96,14 @@ class RolesAndPermissionsSeeder extends Seeder
             ]);
         }
 
+        if ($salesManagerRole = $roles['sales_manager'] ?? null) {
+            $salesManagerRole->syncPermissions([
+                $permissions['pricing.view_offers'],
+                $permissions['pricing.view_quotes'],
+                $permissions['pricing.manage_quotes'],
+            ]);
+        }
+
         $this->seedPagePermissions($roles);
     }
 
@@ -129,7 +137,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'admin' => collect($pages)->mapWithKeys(fn (string $page): array => [$page => true])->all(),
             'sales_manager' => [
                 'dashboard' => true, 'clients' => true, 'shipments' => true, 'sd_forms' => true, 'operations' => false,
-                'invoices' => false, 'accounting' => false, 'treasury' => false, 'expenses' => false, 'pricing' => false,
+                'invoices' => false, 'accounting' => false, 'treasury' => false, 'expenses' => false, 'pricing' => true,
                 'partners' => false, 'reports' => true, 'official_documents' => false, 'customer_service' => false,
                 'attendance' => true, 'visits' => true, 'users' => false, 'roles_permissions' => false, 'settings' => true,
             ],

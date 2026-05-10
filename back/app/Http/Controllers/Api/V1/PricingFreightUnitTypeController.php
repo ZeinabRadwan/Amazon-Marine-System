@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\PricingFreightUnitType;
+use App\Models\PricingOffer;
+use App\Models\User;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,6 +17,9 @@ class PricingFreightUnitTypeController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        $this->ensureCanViewOffers($request->user());
+        $this->authorize('viewAny', PricingOffer::class);
+
         if (! $this->freightUnitTypesTableAvailable()) {
             return $this->catalogUnavailableIndexResponse();
         }
@@ -44,12 +50,15 @@ class PricingFreightUnitTypeController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $this->ensureCanManageOffers($request->user());
+        $this->authorize('create', PricingOffer::class);
+
         if (! $this->freightUnitTypesTableAvailable()) {
             return $this->catalogUnavailableMutationResponse();
         }
 
         $validated = $request->validate([
-            'dataset' => ['required', 'string', 'in:ocean_container,inland_truck'],
+            'dataset' => ['required', 'string', 'in:ocean_container,inland_truck,inland_governorate,inland_region'],
             'label' => ['required', 'string', 'max:255'],
             'slug' => [
                 'nullable',
@@ -123,6 +132,9 @@ class PricingFreightUnitTypeController extends Controller
 
     public function update(Request $request, int $id): JsonResponse
     {
+        $this->ensureCanManageOffers($request->user());
+        $this->authorize('create', PricingOffer::class);
+
         if (! $this->freightUnitTypesTableAvailable()) {
             return $this->catalogUnavailableMutationResponse();
         }
@@ -152,6 +164,32 @@ class PricingFreightUnitTypeController extends Controller
             }
 
             throw $e;
+        }
+    }
+
+    protected function ensureCanViewOffers(?User $user): void
+    {
+        if (! $user || (! $user->hasRole('admin') && ! $user->hasPermissionTo('pricing.view_offers'))) {
+            throw new AuthorizationException;
+        }
+    }
+
+    protected function ensureCanManageOffers(?User $user): void
+    {
+        if (! $user) {
+            throw new AuthorizationException;
+        }
+
+        if ($user->hasRole('admin')) {
+            return;
+        }
+
+        if ($user->hasAnyRole(['sales', 'sales_manager'])) {
+            throw new AuthorizationException;
+        }
+
+        if (! $user->hasRole('pricing') && ! $user->hasPermissionTo('pricing.manage_offers')) {
+            throw new AuthorizationException;
         }
     }
 

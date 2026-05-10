@@ -10,13 +10,14 @@ import ShippingLineNameAsyncSelect from './ShippingLineNameAsyncSelect'
 import PricingRegionAsyncSelect from './PricingRegionAsyncSelect'
 import OceanContainerTypeAsyncSelect from './OceanContainerTypeAsyncSelect'
 import InlandTruckTypeAsyncSelect from './InlandTruckTypeAsyncSelect'
+import InlandLocationAsyncSelect from './InlandLocationAsyncSelect'
 import DatePicker from '../../../components/DatePicker'
 import { formatDate, UI_DATE_FORMAT } from '../../../utils/dateUtils'
 
 /** Canonical weekday names stored in API (`weekly_sailing_days` comma-separated); sort order Sat → Fri */
 const WEEK_DAYS = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 
-const CURRENCIES = ['USD', 'EUR', 'EGP']
+const CURRENCIES = ['EGP', 'USD', 'EUR']
 
 /** Default editable charge rows for ocean freight */
 const DEFAULT_SEA_LINE_NAMES = ['Ocean Freight', 'THC', 'B/L Fee', 'Telex Release']
@@ -32,20 +33,6 @@ function formatIsoDateDisplay(iso, locale) {
 
 /** Legacy inland keys when API list is empty */
 const LEGACY_INLAND_ORDER = ['t20d', 't40d', 'p20x2', 't40r']
-
-const INLAND_GOVERNORATES = [
-  'القاهرة',
-  'الجيزة',
-  'الإسكندرية',
-  'الشرقية',
-  'المنوفية',
-  'البحيرة',
-  'الإسماعيلية',
-  'بورسعيد',
-  'السويس',
-  'القاهرة الكبرى',
-  'الدلتا',
-]
 
 const defaultInlandForm = () => ({
   inland_port: '',
@@ -1062,51 +1049,43 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                 </div>
                 <div>
                   <label htmlFor="offer-inland-gov" className="inland-rate-label">المحافظة / Governorate</label>
-                  <select
+                  <InlandLocationAsyncSelect
                     id="offer-inland-gov"
-                    className="inland-rate-select"
+                    dataset="inland_governorate"
                     value={inlandForm.inland_gov}
-                    onChange={(e) => updateInlandForm({ inland_gov: e.target.value })}
-                    required
-                  >
-                    <option value="">اختر المحافظة</option>
-                    {INLAND_GOVERNORATES.map((g) => (
-                      <option key={g} value={g}>
-                        {g}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(v) => updateInlandForm({ inland_gov: v })}
+                    placeholder="اختر المحافظة"
+                    aria-label={t('pricing.governorate', 'Governorate')}
+                  />
                 </div>
                 <div>
                   <label htmlFor="offer-inland-area" className="inland-rate-label">المنطقة / Zone (اختياري)</label>
-                  <input
+                  <InlandLocationAsyncSelect
                     id="offer-inland-area"
-                    type="text"
-                    className="inland-rate-input"
+                    dataset="inland_region"
                     value={inlandForm.inland_area}
-                    onChange={(e) => updateInlandForm({ inland_area: e.target.value })}
+                    onChange={(v) => updateInlandForm({ inland_area: v })}
                     placeholder="مثال: التجمع الخامس، العاشر من رمضان..."
+                    aria-label={t('pricing.inlandAreaEnglishAbbr', 'Area')}
                   />
                 </div>
-              </div>
-
-              <div className="inland-rate-sub-section">
-                <span>المحافظة أو المنطقة مش موجودة؟</span>
-                <button type="button" className="inland-rate-btn inland-rate-btn-small">+ إضافة محافظة / منطقة جديدة</button>
               </div>
 
               <div className="inland-rate-section-title">القسم 2: نوع العربية والسعر / Vehicle Type &amp; Rate</div>
-              <div className="inland-rate-grid inland-rate-grid-2">
-                <div>
+              <div className="inland-rate-grid inland-rate-grid-2 inland-rate-vehicle-grid">
+                <div className="inland-rate-control">
                   <label htmlFor="offer-inland-truck-type" className="inland-rate-label">نوع العربية / Vehicle Type</label>
                   <InlandTruckTypeAsyncSelect
                     id="offer-inland-truck-type"
+                    className="inland-rate-async-select"
+                    types={inlandUnitTypes}
                     value={inlandForm.truck_type}
                     onChange={(v) => updateInlandForm({ truck_type: v })}
+                    onTypesUpdated={loadInlandTypes}
                     placeholder="اختر نوع العربية"
                   />
                 </div>
-                <div>
+                <div className="inland-rate-control">
                   <label htmlFor="offer-inland-price" className="inland-rate-label">السعر / Rate</label>
                   <div className="inland-rate-input-group">
                     <input
@@ -1128,8 +1107,11 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                       value={inlandForm.currency}
                       onChange={(e) => updateInlandForm({ currency: e.target.value })}
                     >
-                      <option value="EGP">EGP</option>
-                      <option value="USD">USD</option>
+                      {CURRENCIES.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -1157,8 +1139,11 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                           value={inlandForm.generator_currency}
                           onChange={(e) => updateInlandForm({ generator_currency: e.target.value })}
                         >
-                          <option value="EGP">EGP</option>
-                          <option value="USD">USD</option>
+                          {CURRENCIES.map((c) => (
+                            <option key={c} value={c}>
+                              {c}
+                            </option>
+                          ))}
                         </select>
                       </div>
                     </div>

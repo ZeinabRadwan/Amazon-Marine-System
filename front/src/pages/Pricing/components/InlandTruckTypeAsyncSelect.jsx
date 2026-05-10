@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import AsyncSelect from '../../../components/AsyncSelect'
 import { getStoredToken } from '../../Login'
@@ -11,6 +11,8 @@ export default function InlandTruckTypeAsyncSelect({
   id,
   value,
   onChange,
+  types = [],
+  onTypesUpdated,
   placeholder,
   disabled = false,
   className = '',
@@ -43,6 +45,7 @@ export default function InlandTruckTypeAsyncSelect({
         label: name,
       })
       const row = res?.data ?? res
+      await onTypesUpdated?.()
       return {
         value: row.slug,
         label: row.label || row.slug,
@@ -53,7 +56,14 @@ export default function InlandTruckTypeAsyncSelect({
     }
   }
 
-  const selected = value ? { value, label: value } : null
+  const selected = useMemo(() => {
+    if (!value) return null
+    const row = types.find((x) => x.slug === value)
+    return {
+      value,
+      label: row?.label || value,
+    }
+  }, [value, types])
 
   return (
     <div id={id || undefined} className={className ? `w-full ${className}` : 'w-full'}>

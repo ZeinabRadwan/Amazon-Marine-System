@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amazon Marine — قسم المصروفات</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0F2340;--navy-mid:#1B3A5C;
+  --orange:#E8790A;--orange-light:#FDF0E0;
+  --green:#0D7A55;--green-light:#E8F7F2;
+  --red:#B91C1C;--red-light:#FEE2E2;
+  --blue:#1D4ED8;--blue-light:#DBEAFE;
+  --purple:#6D28D9;--purple-light:#EDE9FE;
+  --gray-50:#F8FAFC;--gray-100:#F1F5F9;--gray-200:#E2E8F0;
+  --gray-400:#94A3B8;--gray-600:#475569;--gray-700:#334155;
+  --white:#fff;--border:#DDE3ED;
+  --font:'IBM Plex Sans Arabic',sans-serif;
+  --mono:'IBM Plex Mono',monospace;
+}
+body{font-family:var(--font);background:var(--gray-100);color:var(--gray-700);font-size:13px;min-height:100vh}
+
+/* LAYOUT */
+.app{display:flex;min-height:100vh}
+.sidebar{width:220px;background:var(--navy);flex-shrink:0;display:flex;flex-direction:column;position:fixed;top:0;bottom:0;right:0;z-index:100}
+.sb-logo{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:9px}
+.sb-mark{width:32px;height:32px;background:var(--orange);border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;color:#fff;flex-shrink:0}
+.sb-name{font-size:12px;font-weight:700;color:#fff}
+.sb-sub{font-size:9px;color:rgba(255,255,255,.3)}
+.sb-sec{padding:12px 14px 3px;font-size:9px;font-weight:700;color:rgba(255,255,255,.25);text-transform:uppercase;letter-spacing:1.2px}
+.nav{display:flex;align-items:center;gap:8px;padding:8px 12px;margin:1px 7px;border-radius:6px;cursor:pointer;color:rgba(255,255,255,.5);font-size:11px;font-weight:500}
+.nav:hover{background:rgba(255,255,255,.07);color:#fff}
+.nav.active{background:var(--orange);color:#fff}
+.main{margin-right:220px;flex:1;display:flex;flex-direction:column}
+.topbar{background:#fff;border-bottom:1px solid var(--border);padding:0 20px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;gap:10px}
+.topbar h1{font-size:14px;font-weight:700;color:var(--navy)}
+.topbar p{font-size:11px;color:var(--gray-400);margin-top:1px}
+.content{padding:18px 20px}
+
+/* PAGE TABS */
+.page-tabs{display:flex;gap:0;background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px}
+.ptab{flex:1;padding:10px 8px;text-align:center;font-size:12px;font-weight:500;color:var(--gray-400);cursor:pointer;border-bottom:3px solid transparent;transition:all .15s}
+.ptab:hover{background:var(--gray-50)}
+.ptab.active{color:var(--navy);border-bottom-color:var(--navy);font-weight:700}
+
+/* PAGES */
+.page{display:none}.page.active{display:block}
+
+/* STATS */
+.stats4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.stats3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.stat{background:#fff;border:1px solid var(--border);border-radius:10px;padding:13px 15px}
+.stat-lbl{font-size:10px;color:var(--gray-400);margin-bottom:4px;font-weight:500}
+.stat-val{font-size:20px;font-weight:700;font-family:var(--mono);line-height:1;color:var(--navy)}
+.stat-sub{font-size:10px;color:var(--gray-400);margin-top:3px}
+.stat.red{border-top:3px solid var(--red)}.stat.red .stat-val{color:var(--red)}
+.stat.green{border-top:3px solid var(--green)}.stat.green .stat-val{color:var(--green)}
+.stat.orange{border-top:3px solid var(--orange)}.stat.orange .stat-val{color:var(--orange)}
+.stat.blue{border-top:3px solid var(--blue)}.stat.blue .stat-val{color:var(--blue)}
+.stat.purple{border-top:3px solid var(--purple)}.stat.purple .stat-val{color:var(--purple)}
+
+/* CARD */
+.card{background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:14px}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--gray-50);border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px}
+.card-title{font-size:13px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:7px}
+
+/* TABLE */
+table.t{width:100%;border-collapse:collapse}
+table.t th{background:var(--gray-50);padding:8px 12px;font-size:10px;font-weight:600;color:var(--gray-400);text-align:right;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.3px}
+table.t td{padding:9px 12px;border-bottom:1px solid var(--gray-100);font-size:12px;text-align:right;vertical-align:middle}
+table.t tr:last-child td{border-bottom:none}
+table.t tr:hover td{background:var(--gray-50)}
+.mono{font-family:var(--mono)}
+.tx-red{color:var(--red);font-weight:600;font-family:var(--mono)}
+.tx-green{color:var(--green);font-weight:600;font-family:var(--mono)}
+.tx-gray{color:var(--gray-400);font-family:var(--mono)}
+.bold{font-weight:600;color:var(--navy)}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;font-size:9px;font-weight:600;padding:2px 7px;border-radius:10px}
+.badge.red{background:var(--red-light);color:var(--red)}
+.badge.green{background:var(--green-light);color:var(--green)}
+.badge.blue{background:var(--blue-light);color:var(--blue)}
+.badge.orange{background:var(--orange-light);color:var(--orange)}
+.badge.gray{background:var(--gray-200);color:var(--gray-600)}
+.badge.purple{background:var(--purple-light);color:var(--purple)}
+
+/* CATEGORY TREE */
+.cat-tree{padding:14px 16px}
+.cat-main{margin-bottom:12px}
+.cat-main-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--navy);border-radius:8px;cursor:pointer;flex-wrap:wrap;gap:8px;margin-bottom:6px}
+.cat-main-name{font-size:13px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px}
+.cat-main-total{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--orange)}
+.cat-subs{padding:0 0 0 16px;display:flex;flex-direction:column;gap:5px}
+.cat-sub{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--gray-50);border:1px solid var(--border);border-radius:7px;cursor:pointer;flex-wrap:wrap;gap:6px}
+.cat-sub:hover{border-color:var(--blue);background:var(--blue-light)}
+.cat-sub-name{font-size:12px;font-weight:500;color:var(--navy);display:flex;align-items:center;gap:6px}
+.cat-sub-info{display:flex;align-items:center;gap:10px}
+.cat-sub-amount{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--red)}
+.cat-sub-count{font-size:10px;color:var(--gray-400)}
+.cat-progress{height:4px;background:var(--gray-200);border-radius:2px;margin-top:4px;overflow:hidden}
+.cat-progress-fill{height:100%;border-radius:2px;background:var(--orange)}
+
+/* FORM */
+.form-section{background:#fff;border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:14px}
+.form-title{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
+.fg{margin-bottom:10px}
+.fg label{font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:3px}
+.fg input,.fg select,.fg textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:var(--font);color:var(--navy)}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--blue)}
+.req{color:var(--red)}
+.type-toggle{display:flex;background:var(--gray-100);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:14px}
+.type-btn{flex:1;padding:9px 12px;text-align:center;font-size:12px;font-weight:500;color:var(--gray-500);cursor:pointer;transition:all .15s}
+.type-btn.active.fixed{background:var(--blue);color:#fff}
+.type-btn.active.variable{background:var(--orange);color:#fff}
+
+/* SUB-CATEGORY SELECTOR */
+.cat-selector{background:var(--gray-50);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px}
+.cat-selector-title{font-size:11px;font-weight:600;color:var(--gray-600);margin-bottom:8px}
+.cat-selector-grid{display:flex;gap:6px;flex-wrap:wrap}
+.cat-chip{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:#fff;font-size:11px;cursor:pointer;color:var(--gray-600);transition:all .15s}
+.cat-chip:hover{border-color:var(--navy);color:var(--navy)}
+.cat-chip.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.cat-chip.marketing.active{background:var(--purple);border-color:var(--purple)}
+.sub-cat-row{margin-top:8px;padding-top:8px;border-top:1px solid var(--border);display:none}
+.sub-cat-row.show{display:block}
+.sub-cat-chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
+.sub-chip{padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:#fff;font-size:10px;cursor:pointer;color:var(--gray-600)}
+.sub-chip:hover,.sub-chip.active{background:var(--purple);color:#fff;border-color:var(--purple)}
+
+/* FILE ZONE */
+.file-zone{border:1.5px dashed var(--border);border-radius:7px;padding:12px;text-align:center;cursor:pointer;background:var(--gray-50);transition:all .15s}
+.file-zone:hover{border-color:var(--blue);background:var(--blue-light)}
+
+/* CHART BARS */
+.bar-chart{padding:14px 16px}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.bar-label{font-size:11px;color:var(--gray-700);width:130px;text-align:right;flex-shrink:0;font-weight:500}
+.bar-track{flex:1;height:20px;background:var(--gray-100);border-radius:4px;overflow:hidden;position:relative}
+.bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;padding-right:8px;justify-content:flex-end;font-size:9px;font-weight:700;color:#fff;font-family:var(--mono);transition:width .3s}
+.bar-amount{font-size:11px;font-family:var(--mono);font-weight:600;color:var(--gray-700);width:90px;text-align:left;flex-shrink:0}
+
+/* ROI CARD */
+.roi-card{background:linear-gradient(135deg,var(--purple) 0%,var(--navy) 100%);border-radius:10px;padding:16px 18px;margin-bottom:14px;color:#fff}
+.roi-title{font-size:12px;color:rgba(255,255,255,.6);margin-bottom:8px}
+.roi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.roi-item{text-align:center}
+.roi-val{font-size:18px;font-weight:700;font-family:var(--mono)}
+.roi-lbl{font-size:9px;color:rgba(255,255,255,.5);margin-top:2px}
+.roi-divider{width:1px;background:rgba(255,255,255,.15)}
+
+/* MONTH SELECTOR */
+.month-bar{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.month-chip{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:#fff;font-size:11px;cursor:pointer;color:var(--gray-600)}
+.month-chip.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+/* BUTTONS */
+.btn{padding:8px 16px;border-radius:7px;font-size:12px;font-family:var(--font);cursor:pointer;font-weight:500;border:1px solid var(--border);background:#fff;color:var(--gray-600);display:inline-flex;align-items:center;gap:5px}
+.btn:hover{background:var(--gray-50)}
+.btn.navy{background:var(--navy);color:#fff;border-color:var(--navy)}
+.btn.orange{background:var(--orange);color:#fff;border-color:var(--orange)}
+.btn.purple{background:var(--purple);color:#fff;border-color:var(--purple)}
+.btn.sm{padding:4px 10px;font-size:11px}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,35,64,.5);z-index:999;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:12px;padding:20px;width:520px;max-width:95vw;direction:rtl;max-height:90vh;overflow-y:auto}
+.modal-title{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.modal-footer{display:flex;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)}
+</style>
+</head>
+<body>
+
+<!-- ADD EXPENSE MODAL -->
+<div class="modal-overlay" id="addExpenseModal">
+  <div class="modal">
+    <div class="modal-title">➕ إضافة مصروف جديد</div>
+
+    <!-- TYPE TOGGLE -->
+    <div style="font-size:11px;font-weight:600;color:var(--gray-600);margin-bottom:6px">نوع المصروف *</div>
+    <div class="type-toggle">
+      <div class="type-btn active fixed" id="btn-fixed" onclick="setType('fixed')">📌 ثابت / Fixed</div>
+      <div class="type-btn variable" id="btn-variable" onclick="setType('variable')">📊 متغير / Variable</div>
+    </div>
+
+    <!-- CATEGORY SELECTOR -->
+    <div class="cat-selector">
+      <div class="cat-selector-title">الفئة الرئيسية *</div>
+      <div class="cat-selector-grid">
+        <div class="cat-chip active" onclick="selectCat(this,'general')">🏢 إيجارات</div>
+        <div class="cat-chip" onclick="selectCat(this,'salaries')">👥 رواتب</div>
+        <div class="cat-chip" onclick="selectCat(this,'marketing')">📣 تسويق</div>
+        <div class="cat-chip" onclick="selectCat(this,'telecom')">📞 اتصالات</div>
+        <div class="cat-chip" onclick="selectCat(this,'transport')">🚗 مواصلات وسفر</div>
+        <div class="cat-chip" onclick="selectCat(this,'print')">🖨️ طباعة ومستلزمات</div>
+        <div class="cat-chip" onclick="selectCat(this,'shipment')">📦 مصاريف شحنات</div>
+        <div class="cat-chip" onclick="selectCat(this,'other')">➕ متفرقات</div>
+      </div>
+      <!-- MARKETING SUB-CATS -->
+      <div class="sub-cat-row" id="sub-marketing">
+        <div class="cat-selector-title" style="color:var(--purple)">الفئة الفرعية — التسويق</div>
+        <div class="sub-cat-chips">
+          <div class="sub-chip" onclick="selectSub(this)">🎬 مونتاج فيديو</div>
+          <div class="sub-chip" onclick="selectSub(this)">🎨 تصميم جرافيك</div>
+          <div class="sub-chip" onclick="selectSub(this)">📱 إعلانات Meta Ads</div>
+          <div class="sub-chip" onclick="selectSub(this)">🔍 Google Ads</div>
+          <div class="sub-chip" onclick="selectSub(this)">✍️ محتوى وكتابة</div>
+          <div class="sub-chip" onclick="selectSub(this)">📸 تصوير</div>
+          <div class="sub-chip" onclick="selectSub(this)">➕ أخرى</div>
+        </div>
+      </div>
+      <!-- SHIPMENT SUB-CATS -->
+      <div class="sub-cat-row" id="sub-shipment">
+        <div class="cat-selector-title" style="color:var(--orange)">الفئة الفرعية — مصاريف شحنات</div>
+        <div class="sub-cat-chips">
+          <div class="sub-chip" onclick="selectSub(this)">📮 بريد وشحن مستندات</div>
+          <div class="sub-chip" onclick="selectSub(this)">🔏 ختم مستندات</div>
+          <div class="sub-chip" onclick="selectSub(this)">📋 رسوم إدارية</div>
+          <div class="sub-chip" onclick="selectSub(this)">➕ أخرى</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="fg"><label>المبلغ <span class="req">*</span></label><input type="number" placeholder="0.00" style="font-family:var(--mono)"/></div>
+      <div class="fg"><label>العملة <span class="req">*</span></label>
+        <select><option>EGP جنيه</option><option>USD دولار</option><option>EUR يورو</option></select>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="fg"><label>من حساب <span class="req">*</span></label>
+        <select>
+          <option>البنك الأهلي — EGP</option><option>CIB شركة — EGP</option>
+          <option>CIB الكابتن — EGP</option><option>Instapay — EGP</option>
+          <option>Vodafone Cash — EGP</option><option>صندوق كاش — EGP</option>
+        </select>
+      </div>
+      <div class="fg"><label>التاريخ <span class="req">*</span></label><input type="date"/></div>
+    </div>
+    <div class="fg"><label>البيان / الوصف <span class="req">*</span></label>
+      <input type="text" placeholder="مثال: إيجار مكتب أبريل 2025 / فاتورة مونتاج فيديو مارس..."/>
+    </div>
+    <div class="grid2">
+      <div class="fg"><label>ربط بشحنة (اختياري)</label>
+        <select><option value="">— بدون ربط —</option><option>87485-0958321</option><option>55123-0654321</option></select>
+      </div>
+      <div class="fg"><label>ربط بعميل (اختياري)</label>
+        <select><option value="">— بدون ربط —</option><option>شركة الفا للتجارة</option><option>Delta Foods</option></select>
+      </div>
+    </div>
+    <div class="fg"><label>مصدر العميل (لو مصروف تسويقي)</label>
+      <select id="client-source" style="display:none">
+        <option>— اختر المنصة —</option>
+        <option>Meta Ads (Facebook/Instagram)</option>
+        <option>Google Ads</option>
+        <option>LinkedIn</option>
+        <option>توصية / Word of mouth</option>
+      </select>
+      <div style="font-size:10px;color:var(--gray-400);margin-top:3px" id="source-hint">يظهر عند اختيار فئة التسويق — لحساب العائد على الإعلانات</div>
+    </div>
+    <div class="fg"><label>متكرر؟ (للمصاريف الثابتة)</label>
+      <select id="recurring-sel">
+        <option value="">— مرة واحدة —</option>
+        <option>شهرياً</option><option>ربع سنوي</option><option>سنوياً</option>
+      </select>
+    </div>
+    <div class="fg"><label>إيصال / فاتورة (اختياري)</label>
+      <div class="file-zone" onclick="alert('رفع ملف')">
+        <div style="font-size:18px;margin-bottom:3px">📎</div>
+        <div style="font-size:11px;color:var(--gray-500)">ارفع الإيصال أو الفاتورة</div>
+        <div style="font-size:9px;color:var(--gray-400);margin-top:2px">PDF / صورة — حتى 10MB</div>
+      </div>
+    </div>
+    <div class="fg"><label>ملاحظة (اختياري)</label>
+      <textarea style="min-height:50px;resize:vertical" placeholder="أي تفاصيل إضافية..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn navy" onclick="closeModal('addExpenseModal')">حفظ المصروف ✓</button>
+      <button class="btn" onclick="closeModal('addExpenseModal')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+<div class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-mark">AM</div>
+    <div><div class="sb-name">Amazon Marine</div><div class="sb-sub">CRM v1.0</div></div>
+  </div>
+  <div class="sb-sec">الحسابات</div>
+  <div class="nav"><span>🏦</span> الخزينة</div>
+  <div class="nav"><span>📥</span> فواتير التكلفة</div>
+  <div class="nav"><span>📤</span> فواتير العملاء</div>
+  <div class="nav"><span>🤝</span> كشف حساب الشركاء</div>
+  <div class="nav"><span>👤</span> كشف حساب العملاء</div>
+  <div class="nav active"><span>💸</span> المصروفات</div>
+  <div class="nav"><span>📈</span> تقارير الأرباح</div>
+  <div class="sb-sec">الأوبريشن</div>
+  <div class="nav"><span>📦</span> الشحنات</div>
+  <div class="nav"><span>⚓</span> لوحة العمليات</div>
+</div>
+
+<div class="main">
+<div class="topbar">
+  <div>
+    <h1>💸 المصروفات / Expenses</h1>
+    <p>إدارة وتتبع كل مصروفات الشركة</p>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <button class="btn sm" onclick="showPage('list')">قائمة المصروفات</button>
+    <button class="btn sm" onclick="showPage('reports')">التقارير</button>
+    <button class="btn orange sm" onclick="openModal('addExpenseModal')">+ إضافة مصروف</button>
+  </div>
+</div>
+
+<div class="content">
+
+<!-- PAGE: LIST -->
+<div class="page active" id="page-list">
+
+  <!-- MONTH SELECTOR -->
+  <div class="month-bar">
+    <span style="font-size:11px;color:var(--gray-400);font-weight:500">الشهر:</span>
+    <div class="month-chip">يناير</div><div class="month-chip">فبراير</div>
+    <div class="month-chip">مارس</div><div class="month-chip active">أبريل</div>
+    <div class="month-chip">مايو</div>
+    <select style="font-size:11px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;margin-right:auto">
+      <option>2025</option><option>2026</option>
+    </select>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats4">
+    <div class="stat red"><div class="stat-lbl">إجمالي المصروفات</div><div class="stat-val">34,700</div><div class="stat-sub">EGP — أبريل 2025</div></div>
+    <div class="stat blue"><div class="stat-lbl">مصروفات ثابتة</div><div class="stat-val">28,500</div><div class="stat-sub">EGP — 82%</div></div>
+    <div class="stat orange"><div class="stat-lbl">مصروفات متغيرة</div><div class="stat-val">6,200</div><div class="stat-sub">EGP — 18%</div></div>
+    <div class="stat purple"><div class="stat-lbl">مصروفات تسويق</div><div class="stat-val">8,500</div><div class="stat-sub">EGP هذا الشهر</div></div>
+  </div>
+
+  <!-- EXPENSES TABLE -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">📋 قائمة المصروفات — أبريل 2025</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <select style="font-size:11px;padding:4px 8px;border:1px solid var(--border);border-radius:6px">
+          <option>كل الفئات</option><option>إيجارات</option><option>رواتب</option>
+          <option>تسويق</option><option>اتصالات</option><option>مصاريف شحنات</option>
+        </select>
+        <select style="font-size:11px;padding:4px 8px;border:1px solid var(--border);border-radius:6px">
+          <option>الكل</option><option>ثابت</option><option>متغير</option>
+        </select>
+        <button class="btn sm">📄 تصدير</button>
+      </div>
+    </div>
+    <table class="t">
+      <tr>
+        <th>التاريخ</th><th>البيان</th><th>الفئة</th><th>النوع</th>
+        <th>الحساب</th><th>ربط</th><th>المبلغ</th><th>إيصال</th>
+      </tr>
+      <tr>
+        <td class="mono" style="color:var(--gray-400)">1 Apr</td>
+        <td class="bold">إيجار المكتب — أبريل</td>
+        <td><span class="badge blue">🏢 إيجارات</span></td>
+        <td><span class="badge gray">ثابت</span></td>
+        <td style="font-size:10px">CIB EGP</td>
+        <td class="mono" style="color:var(--gray-400);font-size:10px">—</td>
+        <td class="tx-red">8,000 EGP</td>
+        <td><span style="color:var(--green);font-size:12px">📎</span></td>
+      </tr>
+      <tr>
+        <td class="mono" style="color:var(--gray-400)">1 Apr</td>
+        <td class="bold">رواتب الموظفين — أبريل</td>
+        <td><span class="badge navy" style="background:#E0E7FF;color:#3730A3">👥 رواتب</span></td>
+        <td><span class="badge gray">ثابت</span></td>
+        <td style="font-size:10px">أهلي EGP</td>
+        <td class="mono" style="color:var(--gray-400);font-size:10px">—</td>
+        <td class="tx-red">18,500 EGP</td>
+        <td><span style="color:var(--gray-400);font-size:12px">—</span></td>
+      </tr>
+      <tr>
+        <td class="mono" style="color:var(--gray-400)">5 Apr</td>
+        <td class="bold">مونتاج فيديو — محتوى أبريل</td>
+        <td><span class="badge purple">📣 تسويق › مونتاج</span></td>
+        <td><span class="badge orange">متغير</span></td>
+        <td style="font-size:10px">Instapay</td>
+        <td class="mono" style="color:var(--gray-400);font-size:10px">—</td>
+        <td class="tx-red">3,000 EGP</td>
+        <td><span style="color:var(--green);font-size:12px">📎</span></td>
+      </tr>
+      <tr>
+        <td class="mono" style="color:var(--gray-400)">8 Apr</td>
+        <td class="bold">إعلانات Meta Ads — أبريل</td>
+        <td><span class="badge purple">📣 تسويق › Meta Ads</span></td>
+        <td><span class="badge orange">متغير</span></td>
+        <td style="font-size:10px">CIB USD</td>
+        <td class="mono" style="color:var(--gray-400);font-size:10px">—</td>
+        <td class="tx-red">$114 USD</td>
+        <td><span style="color:var(--green);font-size:12px">📎</span></td>
+      </tr>
+      <tr>
+        <td class="mono" style="color:var(--gray-400)">10 Apr</td>
+        <td class="bold">ختم مستندات — شحنة 87485</td>
+        <td><span class="badge orange">📦 مصاريف شحنات</span></td>
+        <td><span class="badge orange">متغير</span></td>
+        <td style="font-size:10px">كاش EGP</td>
+        <td class="mono" style="color:var(--blue);font-size:10px">87485-001</td>
+        <td class="tx-red">150 EGP</td>
+        <td><span style="color:var(--gray-400);font-size:12px">—</span></td>
+      </tr>
+      <tr>
+        <td class="mono" style="color:var(--gray-400)">15 Apr</td>
+        <td class="bold">تصميم جرافيك — بروشور</td>
+        <td><span class="badge purple">📣 تسويق › تصميم</span></td>
+        <td><span class="badge orange">متغير</span></td>
+        <td style="font-size:10px">Vodafone Cash</td>
+        <td class="mono" style="color:var(--gray-400);font-size:10px">—</td>
+        <td class="tx-red">2,000 EGP</td>
+        <td><span style="color:var(--green);font-size:12px">📎</span></td>
+      </tr>
+      <tr>
+        <td class="mono" style="color:var(--gray-400)">20 Apr</td>
+        <td class="bold">فاتورة اتصالات — أبريل</td>
+        <td><span class="badge blue" style="background:#E0F2FE;color:#0369A1">📞 اتصالات</span></td>
+        <td><span class="badge orange">متغير</span></td>
+        <td style="font-size:10px">CIB EGP</td>
+        <td class="mono" style="color:var(--gray-400);font-size:10px">—</td>
+        <td class="tx-red">550 EGP</td>
+        <td><span style="color:var(--gray-400);font-size:12px">—</span></td>
+      </tr>
+      <tr style="background:var(--orange-light)">
+        <td colspan="6" style="font-weight:700;color:var(--navy)">الإجمالي — أبريل 2025</td>
+        <td class="tx-red" style="font-size:13px">34,700 EGP<br><span style="font-size:10px;color:var(--gray-400)">+ $114 USD</span></td>
+        <td></td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- PAGE: REPORTS -->
+<div class="page" id="page-reports">
+
+  <div class="stats3">
+    <div class="stat red"><div class="stat-lbl">مصروفات هذا الشهر</div><div class="stat-val">34,700</div><div class="stat-sub">EGP أبريل 2025</div></div>
+    <div class="stat orange"><div class="stat-lbl">الشهر السابق</div><div class="stat-val">31,200</div><div class="stat-sub">EGP مارس 2025</div></div>
+    <div class="stat red"><div class="stat-lbl">الفرق</div><div class="stat-val">+3,500</div><div class="stat-sub">EGP زيادة 11%</div></div>
+  </div>
+
+  <!-- MONTHLY SUMMARY -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">📊 ملخص شهري — أبريل 2025</div>
+      <button class="btn sm">📄 تصدير PDF</button>
+    </div>
+    <table class="t">
+      <tr><th>الفئة</th><th>النوع</th><th>المبلغ</th><th>% من الإجمالي</th></tr>
+      <tr><td class="bold">🏢 إيجارات</td><td><span class="badge gray">ثابت</span></td><td class="tx-red">8,000 EGP</td><td class="mono">23%</td></tr>
+      <tr><td class="bold">👥 رواتب</td><td><span class="badge gray">ثابت</span></td><td class="tx-red">18,500 EGP</td><td class="mono">53%</td></tr>
+      <tr><td class="bold">📣 تسويق</td><td><span class="badge orange">متغير</span></td><td class="tx-red">8,500 EGP</td><td class="mono">24%</td></tr>
+      <tr><td class="bold">📞 اتصالات</td><td><span class="badge orange">متغير</span></td><td class="tx-red">550 EGP</td><td class="mono">1.6%</td></tr>
+      <tr><td class="bold">📦 مصاريف شحنات</td><td><span class="badge orange">متغير</span></td><td class="tx-red">150 EGP</td><td class="mono">0.4%</td></tr>
+      <tr style="background:var(--orange-light)">
+        <td colspan="2" class="bold">الإجمالي</td>
+        <td class="tx-red" style="font-size:13px;font-weight:700">34,700 EGP</td>
+        <td class="mono bold">100%</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- BAR CHART BY CATEGORY -->
+  <div class="card">
+    <div class="card-header"><div class="card-title">📊 المصروفات حسب الفئة</div></div>
+    <div class="bar-chart">
+      <div class="bar-row">
+        <div class="bar-label">👥 رواتب</div>
+        <div class="bar-track"><div class="bar-fill" style="width:53%;background:#3730A3">53%</div></div>
+        <div class="bar-amount">18,500 EGP</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">📣 تسويق</div>
+        <div class="bar-track"><div class="bar-fill" style="width:24%;background:var(--purple)">24%</div></div>
+        <div class="bar-amount">8,500 EGP</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">🏢 إيجارات</div>
+        <div class="bar-track"><div class="bar-fill" style="width:23%;background:var(--navy)">23%</div></div>
+        <div class="bar-amount">8,000 EGP</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">📞 اتصالات</div>
+        <div class="bar-track"><div class="bar-fill" style="width:2%;background:var(--blue)">2%</div></div>
+        <div class="bar-amount">550 EGP</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">📦 مصاريف شحنات</div>
+        <div class="bar-track"><div class="bar-fill" style="width:1%;background:var(--orange)">1%</div></div>
+        <div class="bar-amount">150 EGP</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SHIPMENT EXPENSES -->
+  <div class="card">
+    <div class="card-header"><div class="card-title">📦 مصروفات مرتبطة بشحنات</div></div>
+    <table class="t">
+      <tr><th>الشحنة</th><th>العميل</th><th>المصروف</th><th>المبلغ</th><th>أثره على ربح الشحنة</th></tr>
+      <tr>
+        <td class="mono" style="color:var(--blue)">87485-0958321</td>
+        <td>شركة الفا للتجارة</td>
+        <td>ختم مستندات</td>
+        <td class="tx-red">150 EGP</td>
+        <td style="font-size:10px;color:var(--orange)">↓ خُصم من ربح الشحنة تلقائياً</td>
+      </tr>
+    </table>
+  </div>
+
+</div>
+
+</div>
+</div>
+</div>
+
+<script>
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+}
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+function setType(type) {
+  document.getElementById('btn-fixed').classList.remove('active','fixed','variable');
+  document.getElementById('btn-variable').classList.remove('active','fixed','variable');
+  var btn = document.getElementById('btn-' + type);
+  btn.classList.add('active', type);
+  var recur = document.getElementById('recurring-sel');
+  if (recur) recur.style.display = type === 'fixed' ? 'block' : 'none';
+}
+function selectCat(el, id) {
+  document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active','marketing'));
+  el.classList.add('active');
+  if (id === 'marketing') el.classList.add('marketing');
+  document.querySelectorAll('.sub-cat-row').forEach(s => s.classList.remove('show'));
+  var sub = document.getElementById('sub-' + id);
+  if (sub) sub.classList.add('show');
+  var src = document.getElementById('client-source');
+  var hint = document.getElementById('source-hint');
+  if (id === 'marketing') {
+    if (src) src.style.display = 'block';
+    if (hint) hint.style.display = 'none';
+  } else {
+    if (src) src.style.display = 'none';
+    if (hint) hint.style.display = 'block';
+  }
+}
+function selectSub(el) {
+  el.closest('.sub-cat-chips').querySelectorAll('.sub-chip').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+}
+function toggleCat(id) {
+  var el = document.getElementById('cat-' + id);
+  if (!el) return;
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+</body>
+</html>

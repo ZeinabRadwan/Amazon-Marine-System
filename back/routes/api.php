@@ -546,6 +546,7 @@ Route::prefix('v1')->group(function () {
         Route::put('pricing/offers/{offer}', [PricingOfferController::class, 'update']);
         Route::post('pricing/offers/{offer}/activate', [PricingOfferController::class, 'activate']);
         Route::post('pricing/offers/{offer}/archive', [PricingOfferController::class, 'archive']);
+        Route::delete('pricing/offers/{offer}', [PricingOfferController::class, 'destroy']);
 
         // Pricing quotes (customer quotations)
         Route::get('pricing/quotes', [PricingQuoteController::class, 'index']);
