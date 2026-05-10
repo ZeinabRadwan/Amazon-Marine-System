@@ -4,13 +4,22 @@ import { useTranslation } from 'react-i18next'
 const DISPLAY_CURRENCY_ORDER = ['EGP', 'USD', 'EUR']
 
 /**
+ * Locale-aware decimals/grouping with digits locked to Latin (0–9). Arabic UI keeps `ar-EG` rules
+ * but avoids Eastern Arabic numerals (Unicode numberingSystem `latn`).
+ */
+const SHIPMENT_MONEY_NUMBER_FORMAT_OPTIONS = Object.freeze({
+  maximumFractionDigits: 2,
+  numberingSystem: 'latn',
+})
+
+/**
  * Formats numeric amount only (no currency). Use in table cells that have a separate currency column.
  */
 export function formatShipmentMoneyDigits(amount, numberLocale) {
   const n = Number(amount)
   if (!Number.isFinite(n)) return '0'
   const loc = numberLocale || 'en-US'
-  return new Intl.NumberFormat(loc, { maximumFractionDigits: 2 }).format(n)
+  return new Intl.NumberFormat(loc, SHIPMENT_MONEY_NUMBER_FORMAT_OPTIONS).format(n)
 }
 
 /** Same ordering as shipment financial badges (EGP → USD → EUR → rest A–Z). */
