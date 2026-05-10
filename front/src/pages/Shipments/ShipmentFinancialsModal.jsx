@@ -313,12 +313,12 @@ function mapInvoiceItemToManualRow(it) {
   const sk = String(it.source_key || '')
   const suffix = sk.startsWith('manual:') ? sk.slice('manual:'.length) : String(it.id ?? '')
   const expenseId = suffix ? `manual-${suffix}` : `manual-${it.id ?? Date.now()}`
-  const qty = Math.max(0.0001, Number(it.quantity) || 1)
+  const importQty = Math.max(0.0001, Number(it.quantity) || 1)
   const cup = Number(it.cost_unit_price ?? it.costUnitPrice)
   const clt = Number(it.cost_line_total ?? it.costLineTotal)
   let costTotal = clt
   if (!Number.isFinite(costTotal) || costTotal <= 0) {
-    costTotal = Number.isFinite(cup) && cup >= 0 ? cup * qty : 0
+    costTotal = Number.isFinite(cup) && cup >= 0 ? cup * importQty : 0
   }
   return {
     expenseId,
@@ -333,7 +333,7 @@ function mapInvoiceItemToManualRow(it) {
     category_name: '—',
     cost: costTotal,
     currency: String(it.currency_code || it.currencyCode || 'USD').toUpperCase(),
-    quantity: qty,
+    quantity: 1,
     unit_price: it.unit_price != null && it.unit_price !== '' ? String(it.unit_price) : '',
     include: true,
   }
@@ -1809,7 +1809,7 @@ export default function ShipmentFinancialsModal({
         (row.bucket_id || 'other') === 'insurance'
           ? 1
           : row.is_manual_invoice_line
-            ? Math.max(0.0001, Number(row.quantity) || 1)
+            ? 1
             : Math.max(1, Number(row.quantity || 1))
       if (Number.isNaN(sell) || sell < 0) continue
       const cost = Number(row.cost) || 0
@@ -2261,7 +2261,7 @@ export default function ShipmentFinancialsModal({
           (r.bucket_id || 'other') === 'insurance'
             ? 1
             : r.is_manual_invoice_line
-              ? Math.max(0.0001, Number(r.quantity) || 1)
+              ? 1
               : Math.max(1, Number(r.quantity || 1))
         const s = (Number(r.unit_price) || 0) * q
         if (c > 0) costRows.push({ amount: c, currency_code: cur })
@@ -2290,7 +2290,7 @@ export default function ShipmentFinancialsModal({
         (r.bucket_id || 'other') === 'insurance'
           ? 1
           : r.is_manual_invoice_line
-            ? Math.max(0.0001, Number(r.quantity) || 1)
+            ? 1
             : Math.max(1, Number(r.quantity || 1))
       const s = (Number(r.unit_price) || 0) * q
       if (c > 0) costRows.push({ amount: c, currency_code: cur })
@@ -2394,7 +2394,8 @@ export default function ShipmentFinancialsModal({
     sellingVisibleRows.forEach((r) => {
       const cur = (r.currency || 'USD').toUpperCase()
       const c = Number(r.cost) || 0
-      const s = (Number(r.unit_price) || 0) * Math.max(1, Number(r.quantity || 1))
+      const qMult = r.is_manual_invoice_line ? 1 : Math.max(1, Number(r.quantity || 1))
+      const s = (Number(r.unit_price) || 0) * qMult
       if (c > 0) totalCost[cur] = (totalCost[cur] || 0) + c
       if (s > 0) totalSell[cur] = (totalSell[cur] || 0) + s
     })
@@ -3693,7 +3694,7 @@ export default function ShipmentFinancialsModal({
                                       (row.bucket_id || 'other') === 'insurance'
                                         ? 1
                                         : isManualInvoiceRow
-                                          ? Math.max(0.0001, Number(row.quantity) || 1)
+                                          ? 1
                                           : Math.max(1, Number(row.quantity ?? 1) || 1)
                                     const originalUnitPrice = rowQty > 0 ? rowCost / rowQty : rowCost
                                     const rowSelling = row.line_total != null ? Number(row.line_total) || 0 : sellNum * rowQty
@@ -3704,7 +3705,7 @@ export default function ShipmentFinancialsModal({
                                       return (
                                         <tr key={rowKey}>
                                           <td>
-                                            <div className="shipment-fin-cli-manual-name-qty">
+                                            <div className="shipment-fin-cli-manual-name-only">
                                               <input
                                                 type="text"
                                                 className="shipment-fin-input shipment-fin-cli-manual-desc"
@@ -3716,15 +3717,6 @@ export default function ShipmentFinancialsModal({
                                                     expense_description: e.target.value,
                                                   })
                                                 }
-                                                disabled={!canEditSellingGrid || !isEditableRow}
-                                              />
-                                              <input
-                                                type="number"
-                                                min="0.0001"
-                                                step="0.01"
-                                                className="shipment-fin-input shipment-fin-input--num shipment-fin-cli-manual-qty"
-                                                value={row.quantity}
-                                                onChange={(e) => patchTabBRow(idx, { quantity: e.target.value })}
                                                 disabled={!canEditSellingGrid || !isEditableRow}
                                               />
                                             </div>

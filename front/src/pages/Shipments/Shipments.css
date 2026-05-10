@@ -1382,20 +1382,13 @@
   font-size: 12px;
 }
 
-.shipment-fin-cli-manual-name-qty {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
+.shipment-fin-cli-manual-name-only {
   min-width: 0;
 }
 
 .shipment-fin-cli-manual-desc {
   width: 100%;
   font-size: 12px;
-}
-
-.shipment-fin-cli-manual-qty {
-  max-width: 8rem;
 }
 
 .shipment-fin-cli-manual-cur {
