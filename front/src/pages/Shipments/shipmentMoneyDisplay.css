@@ -1,0 +1,35 @@
+/* Bidi-safe money: LTR isolate so amounts stay readable in RTL UI (see ShipmentMoneyInner). */
+
+.shipment-fin-money {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0;
+  unicode-bidi: isolate;
+  direction: ltr;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.shipment-fin-money__gap {
+  white-space: pre;
+}
+
+.shipment-fin-money__digits {
+  font-variant-numeric: tabular-nums;
+}
+
+.shipment-fin-money--digits-only {
+  unicode-bidi: isolate;
+  direction: ltr;
+}
+
+.shipment-fin-money-map {
+  display: inline;
+  unicode-bidi: isolate;
+  direction: ltr;
+  white-space: normal;
+}
+
+.shipment-fin-money-map__dot {
+  unicode-bidi: isolate;
+}

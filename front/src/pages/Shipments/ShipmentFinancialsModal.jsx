@@ -40,6 +40,16 @@ import InvoiceDocumentPreviewModal from '../../components/InvoiceDocumentPreview
 import '../SDForms/SDForms.css'
 import { apiFetch } from '../../api/http'
 import { getApiBaseUrl } from '../../api/apiBaseUrl'
+import {
+  formatShipmentMoneyDigits,
+  formatShipmentMoneyPlain,
+  orderShipmentCurrencyMapEntries,
+  ShipmentMoney,
+  ShipmentMoneyDigits,
+  ShipmentMoneyMap,
+  useShipmentMoneyCurrencyAfterAmount,
+} from './shipmentMoneyDisplay'
+import './shipmentMoneyDisplay.css'
 
 // BUCKET_DEFS moved to shipmentFinUtils.js
 
@@ -161,33 +171,6 @@ function sumByCurrency(rows) {
     map[cur] = (map[cur] || 0) + amt
   }
   return map
-}
-
-function formatMoney(amount, locale) {
-  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(amount)
-}
-
-/** Mixed-currency totals: EGP → USD → EUR → other codes A–Z (matches section badges). */
-const DISPLAY_CURRENCY_ORDER = ['EGP', 'USD', 'EUR']
-
-function orderCurrencyMapEntries(map) {
-  const entries = Object.entries(map || {}).filter(([, v]) => Number(v) !== 0)
-  const primary = new Set(DISPLAY_CURRENCY_ORDER)
-  const out = []
-  for (const code of DISPLAY_CURRENCY_ORDER) {
-    const hit = entries.find(([c]) => c === code)
-    if (hit) out.push(hit)
-  }
-  entries
-    .filter(([c]) => !primary.has(c))
-    .sort(([a], [b]) => a.localeCompare(b))
-    .forEach((e) => out.push(e))
-  return out
-}
-
-function formatOrderedCurrencyMap(map, formatMoneyFn, locale) {
-  const ordered = orderCurrencyMapEntries(map)
-  return ordered.length ? ordered.map(([c, v]) => `${c} ${formatMoneyFn(Number(v), locale)}`).join(' · ') : '—'
 }
 
 function currencyBadgeClassForCode(code) {
@@ -566,7 +549,7 @@ function FinSingleExpenseRow({
       <tr key={expense?.id}>
         <td>{showLineLabel ? renderLineLabelCell(tpl) : null}</td>
         <td>{expense?.description?.trim() || '—'}</td>
-        <td className="shipment-fin-num">{formatMoney(Number(expense?.amount) || 0, numberLocale)}</td>
+        <td className="shipment-fin-num">{formatShipmentMoneyDigits(Number(expense?.amount) || 0, numberLocale)}</td>
         <td className="shipment-fin-cur-cell">{currencyCodePill(expense?.currency_code)}</td>
       </tr>
     )
@@ -881,6 +864,7 @@ export default function ShipmentFinancialsModal({
   canNotifySales = false,
 }) {
   const { t, i18n } = useTranslation()
+  const moneyCurrencyAfterAmount = useShipmentMoneyCurrencyAfterAmount()
   const { isAccountant, isAdminRole, isSalesRole, roleId } = useAuthAccess()
   const isAccountingUser = isAdminRole || isAccountant
   const isSalesUser = isAdminRole || isSalesRole || roleId === ROLE_ID.SALES_MANAGER
@@ -1120,11 +1104,6 @@ export default function ShipmentFinancialsModal({
     })
     return map
   }, [groupDraftByKey])
-
-  const netBreakdownStr = useMemo(
-    () => formatOrderedCurrencyMap(totalsByCurrencyAll, formatMoney, numberLocale),
-    [totalsByCurrencyAll, numberLocale]
-  )
 
   const patchGroupDraft = useCallback((rowKey, patch) => {
     setGroupDraftByKey((prev) => ({ ...prev, [rowKey]: { ...(prev[rowKey] || {}), ...patch } }))
@@ -2330,11 +2309,6 @@ export default function ShipmentFinancialsModal({
     return { cost, sell, profit }
   }, [sellingVisibleRows, handlingTotal, handlingRow.currency])
 
-  const formatCurrencyBreakdown = useCallback(
-    (map) => formatOrderedCurrencyMap(map, formatMoney, numberLocale),
-    [numberLocale]
-  )
-
   const formatHumanDate = useCallback(
     (value) => {
       if (!value) return '—'
@@ -2372,22 +2346,22 @@ export default function ShipmentFinancialsModal({
             <span className="shipment-fin-draft-sec-total__badges shipment-fin-draft-sec-total__badges--cli-stack">
               <span className="shipment-fin-currency-badge shipment-fin-currency-badge--blue">
                 {t('shipments.fin.cliBadgeCost', { defaultValue: 'تكلفة:' })}{' '}
-                {formatCurrencyBreakdown(totals.cost)}
+                <ShipmentMoneyMap map={totals.cost} numberLocale={numberLocale} />
               </span>
               <span className="shipment-fin-currency-badge shipment-fin-currency-badge--orange">
                 {t('shipments.fin.cliBadgeSell', { defaultValue: 'سعر:' })}{' '}
-                {formatCurrencyBreakdown(totals.sell)}
+                <ShipmentMoneyMap map={totals.sell} numberLocale={numberLocale} />
               </span>
               <span className={`shipment-fin-currency-badge ${profitBadgeCls}`}>
                 {t('shipments.fin.cliBadgeProfit', { defaultValue: 'ربح:' })}{' '}
-                {formatCurrencyBreakdown(totals.profit)}
+                <ShipmentMoneyMap map={totals.profit} numberLocale={numberLocale} />
               </span>
             </span>
           </span>
         </div>
       )
     },
-    [clientInvoiceSecTotalLabelKey, formatCurrencyBreakdown, t]
+    [clientInvoiceSecTotalLabelKey, numberLocale, t]
   )
 
   const invoiceFinancialOverview = useMemo(() => {
@@ -2499,7 +2473,13 @@ export default function ShipmentFinancialsModal({
         date: p.paid_at || p.created_at,
         title: t('invoices.timeline.paymentAdded', 'Payment Added'),
         details: `${p.method || '—'} • ${p.bank_name || p.bank_account_name || t('payments.bankAccountOptional', 'No bank account')}`,
-        amount: `${String(p.currency_code || 'USD').toUpperCase()} ${formatMoney(Number(p.amount) || 0, numberLocale)}`,
+        amountNode: (
+          <ShipmentMoney
+            amount={Number(p.amount) || 0}
+            currencyCode={String(p.currency_code || 'USD').toUpperCase()}
+            numberLocale={numberLocale}
+          />
+        ),
       })
     })
     if (invoiceFinancialOverview.status === 'partial') {
@@ -2508,7 +2488,7 @@ export default function ShipmentFinancialsModal({
         type: 'partial',
         date: clientInvoice?.updated_at || clientInvoice?.issue_date,
         title: t('invoices.timeline.partialPayment', 'Partial Payment'),
-        details: formatCurrencyBreakdown(invoiceFinancialOverview.remaining),
+        detailsNode: <ShipmentMoneyMap map={invoiceFinancialOverview.remaining} numberLocale={numberLocale} />,
       })
     }
     if (clientInvoice?.status) {
@@ -2521,7 +2501,7 @@ export default function ShipmentFinancialsModal({
       })
     }
     return rows.sort((a, b) => new Date(a.date || 0).getTime() - new Date(b.date || 0).getTime())
-  }, [clientInvoice, formatCurrencyBreakdown, invoiceFinancialOverview.remaining, invoiceFinancialOverview.status, numberLocale, shipment?.id, t])
+  }, [clientInvoice, invoiceFinancialOverview.remaining, invoiceFinancialOverview.status, numberLocale, shipment?.id, t])
 
   const submitInvoicePayment = useCallback(async () => {
     if (!token || !clientInvoice?.id) return
@@ -2621,14 +2601,14 @@ export default function ShipmentFinancialsModal({
     const rows = Array.isArray(byBucket[bucketId]) ? byBucket[bucketId] : []
     const Icon = def?.icon ?? Package
     const liveSums = bucketTotalsLive(bucketId)
-    const orderedSubtotalEntries = orderCurrencyMapEntries(liveSums).filter(([, v]) => Number(v) > 0)
+    const orderedSubtotalEntries = orderShipmentCurrencyMapEntries(liveSums).filter(([, v]) => Number(v) > 0)
     const subtotalBadges = orderedSubtotalEntries.length > 0 ? orderedSubtotalEntries.map(([currency, value]) => {
       let colorClass = 'shipment-fin-currency-badge--blue'
       if (currency === 'EGP') colorClass = 'shipment-fin-currency-badge--orange'
       else if (currency === 'USD') colorClass = 'shipment-fin-currency-badge--green'
       return (
         <span key={`${bucketId}-${currency}`} className={`shipment-fin-currency-badge ${colorClass}`}>
-          {currency} {formatMoney(Number(value) || 0, numberLocale)}
+          <ShipmentMoney amount={Number(value) || 0} currencyCode={currency} numberLocale={numberLocale} />
         </span>
       )
     }) : <span className="shipment-fin-currency-badge shipment-fin-currency-badge--blue">—</span>
@@ -2713,7 +2693,7 @@ export default function ShipmentFinancialsModal({
     const renderExpenseCells = (ex) => (
       <>
         <td>{ex?.title?.trim() || ex?.description?.trim() || 'Custom Item'}</td>
-        <td className="shipment-fin-num">{formatMoney(Number(ex?.amount) || 0, numberLocale)}</td>
+        <td className="shipment-fin-num">{formatShipmentMoneyDigits(Number(ex?.amount) || 0, numberLocale)}</td>
         <td className="shipment-fin-cur-cell">{currencyCodePill(ex?.currency_code)}</td>
       </>
     )
@@ -2748,7 +2728,7 @@ export default function ShipmentFinancialsModal({
                   {rows.map((ex) => (
                     <tr key={ex.id}>
                       <td>{ex.title?.trim() || ex.description?.trim() || ex.invoice_number || '—'}</td>
-                      <td className="shipment-fin-num">{formatMoney(Number(ex.amount) || 0, numberLocale)}</td>
+                      <td className="shipment-fin-num">{formatShipmentMoneyDigits(Number(ex.amount) || 0, numberLocale)}</td>
                       <td className="shipment-fin-cur-cell">{currencyCodePill(ex.currency_code)}</td>
                       {bucketEditing ? (
                         <td className="shipment-fin-actions">
@@ -2999,7 +2979,7 @@ export default function ShipmentFinancialsModal({
               sectionRows.push(
                 <tr key={rowKey}>
                   <td>{ex?.title?.trim() || (idx === 0 ? renderLineLabelCell(tpl) : null)}</td>
-                  <td className="shipment-fin-num">{formatMoney(Number(ex?.amount) || 0, numberLocale)}</td>
+                  <td className="shipment-fin-num">{formatShipmentMoneyDigits(Number(ex?.amount) || 0, numberLocale)}</td>
                   <td className="shipment-fin-cur-cell">{currencyCodePill(ex?.currency_code)}</td>
                 </tr>
               )
@@ -3549,7 +3529,9 @@ export default function ShipmentFinancialsModal({
                         <div className="shipment-fin-draft-grand-gl">
                           {t('shipments.fin.expensesGrandHeading', { defaultValue: 'إجمالي تكاليف الشحنة الكاملة' })}
                         </div>
-                        <div className="shipment-fin-draft-grand-gv">{netBreakdownStr}</div>
+                        <div className="shipment-fin-draft-grand-gv">
+                          <ShipmentMoneyMap map={totalsByCurrencyAll} numberLocale={numberLocale} />
+                        </div>
                       </div>
                       <div className="shipment-fin-draft-grand-breakdown">
                         <div className="shipment-fin-draft-grand-gb-row">
@@ -3557,7 +3539,7 @@ export default function ShipmentFinancialsModal({
                             {grandCardBucketEmoji('shipping')} {t('shipments.fin.breakdown.shipping')}
                           </span>
                           <span className="shipment-fin-draft-grand-gb-val shipment-fin-draft-grand-gb-val--cost">
-                            {formatOrderedCurrencyMap(bucketTotalsLive('shipping'), formatMoney, numberLocale)}
+                            <ShipmentMoneyMap map={bucketTotalsLive('shipping')} numberLocale={numberLocale} />
                           </span>
                         </div>
                         <div className="shipment-fin-draft-grand-gb-row">
@@ -3565,7 +3547,7 @@ export default function ShipmentFinancialsModal({
                             {grandCardBucketEmoji('inland')} {t('shipments.fin.breakdown.inland')}
                           </span>
                           <span className="shipment-fin-draft-grand-gb-val shipment-fin-draft-grand-gb-val--cost">
-                            {formatOrderedCurrencyMap(bucketTotalsLive('inland'), formatMoney, numberLocale)}
+                            <ShipmentMoneyMap map={bucketTotalsLive('inland')} numberLocale={numberLocale} />
                           </span>
                         </div>
                         <div className="shipment-fin-draft-grand-gb-row">
@@ -3573,7 +3555,7 @@ export default function ShipmentFinancialsModal({
                             {grandCardBucketEmoji('customs')} {t('shipments.fin.breakdown.customs')}
                           </span>
                           <span className="shipment-fin-draft-grand-gb-val shipment-fin-draft-grand-gb-val--cost">
-                            {formatOrderedCurrencyMap(bucketTotalsLive('customs'), formatMoney, numberLocale)}
+                            <ShipmentMoneyMap map={bucketTotalsLive('customs')} numberLocale={numberLocale} />
                           </span>
                         </div>
                         <div className="shipment-fin-draft-grand-gb-row">
@@ -3581,7 +3563,7 @@ export default function ShipmentFinancialsModal({
                             {grandCardBucketEmoji('insurance')} {t('shipments.fin.breakdown.insurance')}
                           </span>
                           <span className="shipment-fin-draft-grand-gb-val shipment-fin-draft-grand-gb-val--cost">
-                            {formatOrderedCurrencyMap(bucketTotalsLive('insurance'), formatMoney, numberLocale)}
+                            <ShipmentMoneyMap map={bucketTotalsLive('insurance')} numberLocale={numberLocale} />
                           </span>
                         </div>
                       </div>
@@ -3668,15 +3650,15 @@ export default function ShipmentFinancialsModal({
                             <span className="shipment-fin-card__subtotal shipment-fin-card__subtotal--badges">
                               <span className="shipment-fin-currency-badge shipment-fin-currency-badge--blue">
                                 {t('shipments.fin.cliBadgeCost', { defaultValue: 'تكلفة:' })}{' '}
-                                {formatCurrencyBreakdown(secTotals.cost)}
+                                <ShipmentMoneyMap map={secTotals.cost} numberLocale={numberLocale} />
                               </span>
                               <span className="shipment-fin-currency-badge shipment-fin-currency-badge--orange">
                                 {t('shipments.fin.cliBadgeSell', { defaultValue: 'سعر:' })}{' '}
-                                {formatCurrencyBreakdown(secTotals.sell)}
+                                <ShipmentMoneyMap map={secTotals.sell} numberLocale={numberLocale} />
                               </span>
                               <span className="shipment-fin-currency-badge shipment-fin-currency-badge--green">
                                 {t('shipments.fin.cliBadgeProfit', { defaultValue: 'ربح:' })}{' '}
-                                {formatCurrencyBreakdown(secTotals.profit)}
+                                <ShipmentMoneyMap map={secTotals.profit} numberLocale={numberLocale} />
                               </span>
                             </span>
                             {isOpen ? <ChevronUp className="shipment-fin-chevron" aria-hidden /> : <ChevronDown className="shipment-fin-chevron" aria-hidden />}
@@ -3758,7 +3740,7 @@ export default function ShipmentFinancialsModal({
                                                 onChange={(e) => patchTabBRow(idx, { cost: e.target.value })}
                                               />
                                             ) : (
-                                              formatMoney(rowCost, numberLocale)
+                                              formatShipmentMoneyDigits(rowCost, numberLocale)
                                             )}
                                           </td>
                                           <td>
@@ -3772,11 +3754,15 @@ export default function ShipmentFinancialsModal({
                                                 onChange={(e) => patchTabBRow(idx, { unit_price: e.target.value })}
                                               />
                                             ) : (
-                                              <span className="shipment-fin-num">{formatMoney(rowSelling || 0, numberLocale)}</span>
+                                              <span className="shipment-fin-num">{formatShipmentMoneyDigits(rowSelling || 0, numberLocale)}</span>
                                             )}
                                           </td>
                                           <td className={`shipment-fin-num shipment-fin-profit-cell shipment-fin-profit-cell--${profitTone}`}>
-                                            {profit > 0 ? `+${formatMoney(profit, numberLocale)}` : formatMoney(profit, numberLocale)}
+                                            <ShipmentMoneyDigits
+                                              amount={profit}
+                                              numberLocale={numberLocale}
+                                              sign={profit > 0 ? '+' : undefined}
+                                            />
                                           </td>
                                           <td className="shipment-fin-cur-cell">
                                             {canEditSellingGrid && isEditableRow ? (
@@ -3824,7 +3810,7 @@ export default function ShipmentFinancialsModal({
                                             </span>
                                           </div>
                                         </td>
-                                        <td className="shipment-fin-num">{formatMoney(originalUnitPrice, numberLocale)}</td>
+                                        <td className="shipment-fin-num">{formatShipmentMoneyDigits(originalUnitPrice, numberLocale)}</td>
                                         <td>
                                           {canEditSellingGrid && isEditableRow ? (
                                             <input
@@ -3836,11 +3822,15 @@ export default function ShipmentFinancialsModal({
                                               onChange={(e) => patchTabBRow(idx, { unit_price: e.target.value })}
                                             />
                                           ) : (
-                                            <span className="shipment-fin-num">{formatMoney(rowSelling || 0, numberLocale)}</span>
+                                            <span className="shipment-fin-num">{formatShipmentMoneyDigits(rowSelling || 0, numberLocale)}</span>
                                           )}
                                         </td>
                                         <td className={`shipment-fin-num shipment-fin-profit-cell shipment-fin-profit-cell--${profitTone}`}>
-                                          {profit > 0 ? `+${formatMoney(profit, numberLocale)}` : formatMoney(profit, numberLocale)}
+                                          <ShipmentMoneyDigits
+                                            amount={profit}
+                                            numberLocale={numberLocale}
+                                            sign={profit > 0 ? '+' : undefined}
+                                          />
                                         </td>
                                         <td className="shipment-fin-cur-cell">{currencyCodePill(rowCurrency)}</td>
                                         <td className="shipment-fin-line-del-cell">
@@ -3943,7 +3933,11 @@ export default function ShipmentFinancialsModal({
                         {handlingRow.include ? (
                           <span className="shipment-fin-card__subtotal shipment-fin-card__subtotal--badges">
                             <span className={`shipment-fin-currency-badge ${currencyBadgeClassForCode(handlingRow.currency)}`}>
-                              {(handlingRow.currency || 'USD').toUpperCase()} {formatMoney(handlingTotal, numberLocale)}
+                              <ShipmentMoney
+                                amount={handlingTotal}
+                                currencyCode={(handlingRow.currency || 'USD').toUpperCase()}
+                                numberLocale={numberLocale}
+                              />
                             </span>
                           </span>
                         ) : null}
@@ -4004,7 +3998,12 @@ export default function ShipmentFinancialsModal({
                                   type="text"
                                   readOnly
                                   className="shipment-fin-input shipment-fin-cli-handling-total-ro"
-                                  value={`${(handlingRow.currency || 'USD').toUpperCase()} ${formatMoney(handlingTotal, numberLocale)}`}
+                                  value={formatShipmentMoneyPlain(
+                                    handlingTotal,
+                                    (handlingRow.currency || 'USD').toUpperCase(),
+                                    numberLocale,
+                                    moneyCurrencyAfterAmount
+                                  )}
                                 />
                               </div>
                             </div>
@@ -4035,7 +4034,11 @@ export default function ShipmentFinancialsModal({
                             <span className="shipment-fin-draft-sec-total__badges">
                               {handlingRow.include ? (
                                 <span className={`shipment-fin-currency-badge ${currencyBadgeClassForCode(handlingRow.currency)}`}>
-                                  {(handlingRow.currency || 'USD').toUpperCase()} {formatMoney(handlingTotal, numberLocale)}
+                                  <ShipmentMoney
+                                    amount={handlingTotal}
+                                    currencyCode={(handlingRow.currency || 'USD').toUpperCase()}
+                                    numberLocale={numberLocale}
+                                  />
                                 </span>
                               ) : (
                                 <span className="shipment-fin-currency-badge shipment-fin-currency-badge--blue">—</span>
@@ -4054,7 +4057,7 @@ export default function ShipmentFinancialsModal({
                           {t('shipments.fin.clientInvoiceGrandHeading', { defaultValue: 'ملخص فاتورة البيع للعميل' })}
                         </div>
                         <div className="shipment-fin-draft-grand-gv">
-                          {formatCurrencyBreakdown(invoiceFinancialOverview.totalSell)}
+                          <ShipmentMoneyMap map={invoiceFinancialOverview.totalSell} numberLocale={numberLocale} />
                         </div>
                         <div className="shipment-fin-draft-grand-gs">
                           {t('shipments.fin.clientInvoiceGrandHint')}
@@ -4070,7 +4073,7 @@ export default function ShipmentFinancialsModal({
                                 {grandCardBucketEmoji(sec.id)} {grandCardBreakdownLabel(sec)}
                               </span>
                               <span className="shipment-fin-draft-grand-gb-val shipment-fin-draft-grand-gb-val--sell">
-                                {formatCurrencyBreakdown(st.sell)}
+                                <ShipmentMoneyMap map={st.sell} numberLocale={numberLocale} />
                               </span>
                             </div>
                           )
@@ -4081,9 +4084,12 @@ export default function ShipmentFinancialsModal({
                               💼 {t('shipments.fin.grandCardHandlingLine')}
                             </span>
                             <span className="shipment-fin-draft-grand-gb-val shipment-fin-draft-grand-gb-val--sell">
-                              {formatCurrencyBreakdown({
-                                [(handlingRow.currency || 'USD').toUpperCase()]: handlingTotal,
-                              })}
+                              <ShipmentMoneyMap
+                                map={{
+                                  [(handlingRow.currency || 'USD').toUpperCase()]: handlingTotal,
+                                }}
+                                numberLocale={numberLocale}
+                              />
                             </span>
                           </div>
                         ) : null}
@@ -4094,14 +4100,14 @@ export default function ShipmentFinancialsModal({
                       <div className="shipment-fin-draft-grand-ps-item">
                         <div className="shipment-fin-draft-grand-ps-lbl">{t('shipments.fin.grandCardHiddenCost')}</div>
                         <div className="shipment-fin-draft-grand-ps-val shipment-fin-draft-grand-ps-val--muted">
-                          {formatCurrencyBreakdown(invoiceFinancialOverview.totalCost)}
+                          <ShipmentMoneyMap map={invoiceFinancialOverview.totalCost} numberLocale={numberLocale} />
                         </div>
                       </div>
                       <div className="shipment-fin-draft-grand-ps-sep" aria-hidden />
                       <div className="shipment-fin-draft-grand-ps-item">
                         <div className="shipment-fin-draft-grand-ps-lbl">{t('shipments.fin.grandCardSellingTotal')}</div>
                         <div className="shipment-fin-draft-grand-ps-val shipment-fin-draft-grand-ps-val--orange">
-                          {formatCurrencyBreakdown(invoiceFinancialOverview.totalSell)}
+                          <ShipmentMoneyMap map={invoiceFinancialOverview.totalSell} numberLocale={numberLocale} />
                         </div>
                       </div>
                       <div className="shipment-fin-draft-grand-ps-sep" aria-hidden />
@@ -4116,7 +4122,7 @@ export default function ShipmentFinancialsModal({
                                 : 'shipment-fin-draft-grand-ps-val shipment-fin-draft-grand-ps-val--muted'
                           }
                         >
-                          {formatCurrencyBreakdown(invoiceFinancialOverview.profit)}
+                          <ShipmentMoneyMap map={invoiceFinancialOverview.profit} numberLocale={numberLocale} />
                         </div>
                       </div>
                     </div>
@@ -4127,7 +4133,7 @@ export default function ShipmentFinancialsModal({
                           {t('shipments.fin.paidAmount', { defaultValue: 'Paid Amount' })}
                         </span>
                         <span className="shipment-fin-draft-grand-gb-val shipment-fin-draft-grand-gb-val--sell">
-                          {formatCurrencyBreakdown(invoiceFinancialOverview.paid)}
+                          <ShipmentMoneyMap map={invoiceFinancialOverview.paid} numberLocale={numberLocale} />
                         </span>
                       </div>
                       <div className="shipment-fin-draft-grand-gb-row">
@@ -4135,7 +4141,7 @@ export default function ShipmentFinancialsModal({
                           {t('shipments.fin.remainingAmount', { defaultValue: 'Remaining Balance' })}
                         </span>
                         <span className="shipment-fin-draft-grand-gb-val shipment-fin-draft-grand-gb-val--sell">
-                          {formatCurrencyBreakdown(invoiceFinancialOverview.remaining)}
+                          <ShipmentMoneyMap map={invoiceFinancialOverview.remaining} numberLocale={numberLocale} />
                         </span>
                       </div>
                     </div>
@@ -4346,7 +4352,7 @@ export default function ShipmentFinancialsModal({
                                   : { [(inv.currency_code || 'USD').toUpperCase()]: Number(inv.amount || 0) }
                               }
                               size="sm"
-                              amountFirst
+                              amountFirst={i18n.language?.startsWith('ar')}
                             />
                           </div>
                           <div className="text-xs text-gray-500">{t(`shipments.fin.invoiceStatusValue.${inv.status || 'unpaid'}`, { defaultValue: inv.status || 'unpaid' })}</div>
@@ -4361,35 +4367,35 @@ export default function ShipmentFinancialsModal({
                 <div className="shipment-fin-summary-card">
                   <div className="shipment-fin-summary-card__label">{t('shipments.fin.summary.totalCost', { defaultValue: 'Total Cost' })}</div>
                   <div className="shipment-fin-summary-card__value text-red-600 font-bold text-2xl">
-                    {formatCurrencyBreakdown(invoiceFinancialOverview.totalCost)}
+                    <ShipmentMoneyMap map={invoiceFinancialOverview.totalCost} numberLocale={numberLocale} />
                   </div>
                 </div>
 
                 <div className="shipment-fin-summary-card bg-blue-50/50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-900/40">
                   <div className="shipment-fin-summary-card__label">{t('shipments.fin.summary.totalSelling', { defaultValue: 'Total Selling' })}</div>
                   <div className="shipment-fin-summary-card__value text-blue-600 font-bold text-2xl">
-                    {formatCurrencyBreakdown(invoiceFinancialOverview.totalSell)}
+                    <ShipmentMoneyMap map={invoiceFinancialOverview.totalSell} numberLocale={numberLocale} />
                   </div>
                 </div>
 
                 <div className="shipment-fin-summary-card bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-900/40">
                   <div className="shipment-fin-summary-card__label">{t('shipments.fin.summary.netProfit', { defaultValue: 'Net Profit / Loss' })}</div>
                   <div className="shipment-fin-summary-card__value font-bold text-2xl text-emerald-600">
-                    {formatCurrencyBreakdown(invoiceFinancialOverview.profit)}
+                    <ShipmentMoneyMap map={invoiceFinancialOverview.profit} numberLocale={numberLocale} />
                   </div>
                 </div>
 
                 <div className="shipment-fin-summary-card">
                   <div className="shipment-fin-summary-card__label">{t('shipments.fin.paidAmount', { defaultValue: 'Paid Amount' })}</div>
                   <div className="shipment-fin-summary-card__value font-bold text-2xl">
-                    {formatCurrencyBreakdown(invoiceFinancialOverview.paid)}
+                    <ShipmentMoneyMap map={invoiceFinancialOverview.paid} numberLocale={numberLocale} />
                   </div>
                 </div>
 
                 <div className="shipment-fin-summary-card">
                   <div className="shipment-fin-summary-card__label">{t('shipments.fin.remainingAmount', { defaultValue: 'Remaining Balance' })}</div>
                   <div className="shipment-fin-summary-card__value font-bold text-2xl">
-                    {formatCurrencyBreakdown(invoiceFinancialOverview.remaining)}
+                    <ShipmentMoneyMap map={invoiceFinancialOverview.remaining} numberLocale={numberLocale} />
                   </div>
                 </div>
 
@@ -4413,7 +4419,13 @@ export default function ShipmentFinancialsModal({
                           <div className="font-medium">{p.method || '—'} • {p.bank_name || p.bank_account_name || t('payments.bankAccountOptional', 'No bank account')}</div>
                           <div className="text-gray-500">{formatHumanDate(p.paid_at || p.created_at)} • {p.invoice_reference || clientInvoice?.invoice_number || `INV-${clientInvoice?.id}`}{p.shipment_reference ? ` • ${p.shipment_reference}` : ''}</div>
                         </div>
-                        <div className="font-semibold">{String(p.currency_code || 'USD').toUpperCase()} {formatMoney(Number(p.amount) || 0, numberLocale)}</div>
+                        <div className="font-semibold">
+                          <ShipmentMoney
+                            amount={Number(p.amount) || 0}
+                            currencyCode={String(p.currency_code || 'USD').toUpperCase()}
+                            numberLocale={numberLocale}
+                          />
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -4430,11 +4442,11 @@ export default function ShipmentFinancialsModal({
                       <div key={entry.id} className="flex items-start justify-between border rounded-lg px-3 py-2 text-sm">
                         <div>
                           <div className="font-medium">{entry.title}</div>
-                          <div className="text-gray-500">{entry.details || '—'}</div>
+                          <div className="text-gray-500">{entry.detailsNode ?? entry.details ?? '—'}</div>
                         </div>
                         <div className="text-right">
                           <div>{formatHumanDate(entry.date)}</div>
-                          {entry.amount ? <div className="font-semibold">{entry.amount}</div> : null}
+                          {entry.amountNode != null ? <div className="font-semibold">{entry.amountNode}</div> : null}
                         </div>
                       </div>
                     ))}
