@@ -201,6 +201,37 @@ class PricingOfferApiTest extends TestCase
         $this->assertDatabaseMissing('pricing_offer_items', ['pricing_offer_id' => $offer->id]);
     }
 
+    public function test_pricing_offer_must_be_archived_before_delete(): void
+    {
+        $user = $this->actingAsPricingUser();
+        $offer = PricingOffer::factory()->create(['status' => 'active']);
+
+        $this->actingAs($user, 'sanctum')
+            ->deleteJson('/api/v1/pricing/offers/'.$offer->id)
+            ->assertStatus(409);
+
+        $this->assertDatabaseHas('pricing_offers', [
+            'id' => $offer->id,
+            'status' => 'active',
+        ]);
+    }
+
+    public function test_pricing_user_can_unarchive_offer(): void
+    {
+        $user = $this->actingAsPricingUser();
+        $offer = PricingOffer::factory()->create(['status' => 'archived']);
+
+        $this->actingAs($user, 'sanctum')
+            ->postJson('/api/v1/pricing/offers/'.$offer->id.'/activate')
+            ->assertOk()
+            ->assertJsonPath('data.status', 'active');
+
+        $this->assertDatabaseHas('pricing_offers', [
+            'id' => $offer->id,
+            'status' => 'active',
+        ]);
+    }
+
     public function test_sales_manager_can_only_view_pricing_offers(): void
     {
         /** @var User $user */

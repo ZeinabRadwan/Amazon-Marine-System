@@ -294,6 +294,10 @@ class PricingOfferController extends Controller
         $this->ensureCanManageOffers(request()->user());
         $this->authorize('delete', $offer);
 
+        if ($offer->status !== 'archived') {
+            abort(409, 'Only archived pricing offers can be deleted.');
+        }
+
         $offer->delete();
 
         return response()->json([

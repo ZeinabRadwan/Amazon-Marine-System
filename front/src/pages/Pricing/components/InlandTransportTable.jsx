@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Archive, Eye, Pencil, Trash2 } from 'lucide-react'
+import { Archive, Eye, Pencil, RotateCcw, Trash2 } from 'lucide-react'
 import { formatDate, formatLocaleMoney } from '../../../utils/dateUtils'
 import { useMutateOffer } from '../../../hooks/usePricing'
 import { IconActionButton, IconActionButtonGroup } from '../../../components/Table'
@@ -52,7 +52,7 @@ export default function InlandTransportTable({
 }) {
   const { t, i18n } = useTranslation()
   const dash = t('common.dash', '—')
-  const { archive, delete: deleteOffer, loading: mutateLoading } = useMutateOffer()
+  const { activate, archive, delete: deleteOffer, loading: mutateLoading } = useMutateOffer()
   const [actionOfferId, setActionOfferId] = useState(null)
   const [actionKind, setActionKind] = useState(null)
 
@@ -164,22 +164,31 @@ export default function InlandTransportTable({
                             label={t('pricing.actionShow', 'عرض')}
                             onClick={() => onView?.(offer)}
                           />
-                          {canManageOffers ? (
+                          {canManageOffers && !archived ? (
                             <IconActionButton
                               icon={<Pencil className="h-4 w-4" />}
                               label={t('pricing.actionEdit', 'تعديل')}
                               onClick={() => onEdit?.(offer)}
                             />
                           ) : null}
-                          {canManageOffers ? (
+                          {canManageOffers && !archived ? (
                             <IconActionButton
                               icon={<Archive className="h-4 w-4" />}
                               label={t('pricing.actionArchive', 'أرشفة')}
-                              disabled={archived || isBusy(offer, 'archive')}
+                              disabled={isBusy(offer, 'archive')}
                               onClick={() => runAction(offer, 'archive', archive)}
                             />
                           ) : null}
-                          {canManageOffers ? (
+                          {canManageOffers && archived ? (
+                            <IconActionButton
+                              icon={<RotateCcw className="h-4 w-4" />}
+                              label={t('pricing.actionUnarchive', 'إلغاء الأرشفة')}
+                              disabled={isBusy(offer, 'unarchive')}
+                              onClick={() => runAction(offer, 'unarchive', activate)}
+                              variant="success"
+                            />
+                          ) : null}
+                          {canManageOffers && archived ? (
                             <IconActionButton
                               icon={<Trash2 className="h-4 w-4" />}
                               label={t('pricing.actionDelete', 'حذف')}
