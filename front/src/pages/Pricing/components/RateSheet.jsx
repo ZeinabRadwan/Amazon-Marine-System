@@ -1,14 +1,12 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useDebouncedValue } from '../../../hooks/useDebouncedValue'
 import { useTranslation } from 'react-i18next'
-import { Ship, Truck, AlertCircle, Plus, LayoutGrid, Table2 } from 'lucide-react'
+import { Ship, Truck, AlertCircle, Plus } from 'lucide-react'
 import '../../../components/PageHeader/PageHeader.css'
 import '../../Clients/Clients.css'
 import Tabs from '../../../components/Tabs'
-import PricingCard from './PricingCard'
 import InlandTransportTable from './InlandTransportTable'
 import SeaFreightOffersTable from './SeaFreightOffersTable'
-import OfferSkeleton from './OfferSkeleton'
 import { useOffers } from '../../../hooks/usePricing'
 import OfferDetailModal from './OfferDetailModal'
 import CreateQuoteModal from './CreateQuoteModal'
@@ -20,17 +18,6 @@ import ListingPaginationFooter from '../../../components/ListingPaginationFooter
 
 /** Maps to `pricing_offer_items.code` (ocean freight OF rows — matches seeded/API pricing keys). */
 const OCEAN_CONTAINER_ITEM_CODES = ['of20', 'of20rf', 'of40', 'of40rf']
-
-const OFFER_VIEW_STORAGE_KEY = 'pricing-offer-view-mode'
-
-function readStoredOfferViewMode() {
-  try {
-    const v = localStorage.getItem(OFFER_VIEW_STORAGE_KEY)
-    return v === 'table' ? 'table' : 'grid'
-  } catch {
-    return 'grid'
-  }
-}
 
 export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
   const { t, i18n } = useTranslation()
@@ -47,7 +34,6 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
   const [detailOffer, setDetailOffer] = useState(null)
   const [quoteSourceOffer, setQuoteSourceOffer] = useState(null)
   const [createQuoteOpen, setCreateQuoteOpen] = useState(false)
-  const [offerViewMode, setOfferViewMode] = useState(readStoredOfferViewMode)
 
   const oceanContainerOptions = useMemo(
     () =>
@@ -116,14 +102,6 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
   useEffect(() => {
     if (refreshKey > 0) refetch()
   }, [refreshKey])
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(OFFER_VIEW_STORAGE_KEY, offerViewMode)
-    } catch {
-      /* ignore */
-    }
-  }, [offerViewMode])
 
   const rateModeTabs = [
     { id: 'sea', label: t('pricing.oceanFreight', 'Ocean Freight'), icon: <Ship className="h-4 w-4" /> },
@@ -222,30 +200,6 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
                 {t('common.loading', 'Loading…')}
               </span>
             ) : null}
-            {type === 'sea' ? (
-              <div className="pricing-view-toggle shrink-0" role="group" aria-label={t('pricing.viewModeLabel', 'Layout')}>
-                <button
-                  type="button"
-                  className="pricing-view-toggle__btn"
-                  aria-pressed={offerViewMode === 'grid'}
-                  aria-label={t('pricing.viewAsGrid', 'Grid')}
-                  title={t('pricing.viewAsGrid', 'Grid')}
-                  onClick={() => setOfferViewMode('grid')}
-                >
-                  <LayoutGrid className="h-4 w-4 shrink-0" aria-hidden />
-                </button>
-                <button
-                  type="button"
-                  className="pricing-view-toggle__btn"
-                  aria-pressed={offerViewMode === 'table'}
-                  aria-label={t('pricing.viewAsTable', 'Table')}
-                  title={t('pricing.viewAsTable', 'Table')}
-                  onClick={() => setOfferViewMode('table')}
-                >
-                  <Table2 className="h-4 w-4 shrink-0" aria-hidden />
-                </button>
-              </div>
-            ) : null}
             {typeof onAddOffer === 'function' && canManagePricingOffers ? (
               <div className="clients-filters__actions">
                 <button
@@ -274,11 +228,7 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
       ) : (
         <>
           <div
-            className={
-              type === 'sea' && offerViewMode === 'grid'
-                ? 'pricing-offer-cards offers-grid mb-8'
-                : 'mb-8'
-            }
+            className="mb-8"
           >
             {type === 'inland' ? (
               <InlandTransportTable
@@ -288,42 +238,14 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
                 canManageOffers={canManagePricingOffers}
                 onView={setDetailOffer}
               />
-            ) : !loading && (!offers || offers.length === 0) ? (
-              <div className="offers-grid__empty py-16 text-center text-gray-500 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-700">
-                <p className="text-lg font-medium">{t('pricing.noOffers', 'No offers found matching your filters')}</p>
-              </div>
-            ) : offerViewMode === 'table' ? (
+            ) : (
               <SeaFreightOffersTable
                 offers={offers || []}
                 loading={loading}
-                onMutate={refetch}
                 onEdit={onEdit}
                 canManageOffers={canManagePricingOffers}
-                showCreateQuotation={!isPricingSalesViewOnly}
                 onView={setDetailOffer}
-                onCreateQuotation={(selectedOffer) => {
-                  setQuoteSourceOffer(selectedOffer)
-                  setCreateQuoteOpen(true)
-                }}
               />
-            ) : loading ? (
-              Array.from({ length: 6 }).map((_, i) => <OfferSkeleton key={i} />)
-            ) : (
-              (offers || []).map((offer) => (
-                <PricingCard
-                  key={offer.id}
-                  offer={offer}
-                  onMutate={refetch}
-                  onEdit={onEdit}
-                  canManageOffers={canManagePricingOffers}
-                  showCreateQuotation={!isPricingSalesViewOnly}
-                  onView={setDetailOffer}
-                  onCreateQuotation={(selectedOffer) => {
-                    setQuoteSourceOffer(selectedOffer)
-                    setCreateQuoteOpen(true)
-                  }}
-                />
-              ))
             )}
           </div>
 

@@ -14,6 +14,23 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
+.sea-rate-form--readonly input,
+.sea-rate-form--readonly textarea,
+.sea-rate-form--readonly select,
+.sea-rate-form--readonly button {
+  cursor: default;
+}
+
+.sea-rate-form--readonly input,
+.sea-rate-form--readonly textarea {
+  color: #1a1a1a;
+}
+
+.sea-rate-form--readonly .sea-rate-toggle-btn,
+.sea-rate-form--readonly .sea-rate-day-btn {
+  pointer-events: none;
+}
+
 .sea-rate-section-title {
   margin-top: 24px;
   margin-bottom: 12px;
@@ -301,6 +318,104 @@
 .sea-rate-btn:disabled {
   cursor: not-allowed;
   opacity: 0.55;
+}
+
+.sea-rates-list {
+  direction: rtl;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.sea-rates-list-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: #666;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.sea-rates-card {
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.sea-rates-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #1a1a1a;
+  font-size: 13px;
+}
+
+.sea-rates-table th {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e0e0e0;
+  background: #f5f5f5;
+  color: #888;
+  font-size: 11px;
+  font-weight: 500;
+  text-align: right;
+}
+
+.sea-rates-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+}
+
+.sea-rates-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.sea-rate-table-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: #e6f1fb;
+  color: #0c447c;
+  font-size: 12px;
+}
+
+.sea-validity-none {
+  color: #888;
+  font-size: 11px;
+}
+
+.sea-validity-warn {
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: #faeeda;
+  color: #854f0b;
+  font-size: 11px;
+}
+
+.sea-rates-action-cell {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.sea-rates-action-btn {
+  padding: 3px 10px;
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  background: #fff;
+  color: #1a1a1a;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.sea-rates-empty {
+  padding: 24px 12px;
+  color: #888;
+  text-align: center;
 }
 
 @media (max-width: 720px) {
