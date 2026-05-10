@@ -1382,6 +1382,33 @@
   font-size: 12px;
 }
 
+.shipment-fin-cli-manual-name-qty {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.shipment-fin-cli-manual-desc {
+  width: 100%;
+  font-size: 12px;
+}
+
+.shipment-fin-cli-manual-qty {
+  max-width: 8rem;
+}
+
+.shipment-fin-cli-manual-cur {
+  min-width: 4.5rem;
+  max-width: 100%;
+  font-size: 12px;
+}
+
+.shipment-fin-draft-add-row--client-invoice {
+  margin-top: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
 .shipment-fin-panel--expenses.shipment-fin-panel--client-invoice .shipment-fin-input--table {
   width: 100%;
   box-sizing: border-box;
