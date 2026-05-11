@@ -76,15 +76,23 @@ class ExpenseTreasurySyncService
             ]);
         }
 
-        TreasuryAccountCurrencyService::assertTreasuryEntryCurrencies([
-            'entry_type' => 'out',
-            'account_id' => $accountId,
-            'currency_code' => $currency,
-        ]);
+        $currencyNotSupportedMsg = __('expenses.treasury_currency_not_supported_in_account');
+        TreasuryAccountCurrencyService::assertCurrencyAllowedForAccount(
+            $accountId,
+            $currency,
+            $currencyNotSupportedMsg,
+            $currencyNotSupportedMsg,
+        );
 
         $excludeEntryId = $existing?->id;
 
-        $this->ledgerBalance->ensureDebitDoesNotOverdraft($accountId, $currency, $amount, $excludeEntryId);
+        $this->ledgerBalance->ensureDebitDoesNotOverdraft(
+            $accountId,
+            $currency,
+            $amount,
+            $excludeEntryId,
+            __('expenses.treasury_insufficient_balance_in_account'),
+        );
 
         $expense->loadMissing('category');
         $categoryName = trim((string) ($expense->category?->name ?? ''));

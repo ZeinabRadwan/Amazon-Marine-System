@@ -12,10 +12,17 @@ use Illuminate\Validation\ValidationException;
 class TreasuryAccountCurrencyService
 {
     /**
+     * @param  string|null  $messageWhenNoCurrenciesConfigured  Overrides default validation message.
+     * @param  string|null  $messageWhenCurrencyDisallowed  Overrides default validation message.
+     *
      * @throws ValidationException
      */
-    public static function assertCurrencyAllowedForAccount(?int $accountId, string $currencyCode): void
-    {
+    public static function assertCurrencyAllowedForAccount(
+        ?int $accountId,
+        string $currencyCode,
+        ?string $messageWhenNoCurrenciesConfigured = null,
+        ?string $messageWhenCurrencyDisallowed = null,
+    ): void {
         if ($accountId === null || $accountId <= 0) {
             return;
         }
@@ -33,13 +40,13 @@ class TreasuryAccountCurrencyService
         $allowed = $bank->allowedTreasuryCurrencyCodes();
         if ($allowed === []) {
             throw ValidationException::withMessages([
-                'currency_code' => [__('treasury.account_has_no_allowed_currencies')],
+                'currency_code' => [$messageWhenNoCurrenciesConfigured ?? __('treasury.account_has_no_allowed_currencies')],
             ]);
         }
 
         if (! in_array($cur, $allowed, true)) {
             throw ValidationException::withMessages([
-                'currency_code' => [__('treasury.currency_not_allowed_for_account', ['currency' => $cur])],
+                'currency_code' => [$messageWhenCurrencyDisallowed ?? __('treasury.currency_not_allowed_for_account', ['currency' => $cur])],
             ]);
         }
     }

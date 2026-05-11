@@ -17,6 +17,7 @@ import {
   downloadExpenseReceipt,
 } from '../../api/expenses'
 import { listBankAccounts } from '../../api/accountings'
+import { getTreasuryBankOverview } from '../../api/treasury'
 import { listShipments } from '../../api/shipments'
 import { listClients } from '../../api/clients'
 import LoaderDots from '../../components/LoaderDots'
@@ -412,14 +413,49 @@ async function fetchExpensesForRange(token, start, end, search) {
   return chunks.flat()
 }
 
-/** Treasury bank account label for expense `payment_method`. */
+const ALL_EXPENSE_CURRENCIES = ['USD', 'EUR', 'EGP']
+
+/** Effective treasury ledger currencies for a bank / cash wallet (API adds `allowed_currencies`). */
+function bankAccountAllowedCurrencies(acc) {
+  if (!acc) return []
+  if (Array.isArray(acc.allowed_currencies) && acc.allowed_currencies.length) {
+    return acc.allowed_currencies
+      .map((c) => String(c).toUpperCase().trim())
+      .filter((c) => c.length === 3)
+  }
+  const kind = String(acc.treasury_account_kind || 'bank')
+  if (kind === 'cash_wallet') {
+    const w = acc.cash_wallet_kind
+    if (w === 'nsp' || w === 'vodafone') return ['EGP']
+    if (w === 'physical') return ['EGP', 'USD', 'EUR']
+    return ['EGP']
+  }
+  const raw = acc.supported_currencies
+  if (!Array.isArray(raw)) return []
+  return [...new Set(raw.map((c) => String(c).toUpperCase().trim()).filter((c) => c.length === 3))]
+}
+
+/** Account line for selector / tables: "CIB — Main → EGP, USD". */
 function formatBankAccountLabel(acc) {
   if (!acc) return ''
   const parts = [acc.bank_name, acc.account_name].filter(Boolean)
+  const name = parts.join(' — ') || String(acc.id)
+  const codes = bankAccountAllowedCurrencies(acc)
+  const curStr = codes.length ? codes.join(', ') : '—'
+  return `${name} → ${curStr}`
+}
+
+/** Match legacy `payment_method` strings saved before treasury labels included currencies. */
+function bankAccountLegacyPaymentMethodVariants(acc) {
+  const out = new Set()
+  if (!acc) return []
+  out.add(formatBankAccountLabel(acc))
+  const parts = [acc.bank_name, acc.account_name].filter(Boolean)
   const line = parts.join(' — ')
-  const cur = acc.currency_code ? String(acc.currency_code).trim() : ''
-  if (line && cur) return `${line} (${cur})`
-  return line || cur || ''
+  const legacyCur = acc.currency_code ? String(acc.currency_code).trim() : ''
+  if (line && legacyCur) out.add(`${line} (${legacyCur})`)
+  if (line) out.add(line)
+  return [...out]
 }
 
 export default function Expenses() {
@@ -721,7 +757,7 @@ export default function Expenses() {
     if (!modal || !bankAccounts.length || modal.bank_account_id) return
     const pm = (modal.payment_method || '').trim()
     if (!pm) return
-    const found = bankAccounts.find((a) => formatBankAccountLabel(a) === pm)
+    const found = bankAccounts.find((a) => bankAccountLegacyPaymentMethodVariants(a).includes(pm))
     if (!found) return
     setModal((m) => {
       if (!m || m.bank_account_id) return m
@@ -729,6 +765,20 @@ export default function Expenses() {
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps -- sync legacy payment_method → bank_account_id once accounts load
   }, [bankAccounts, modal?.id, modal?.payment_method, modal?.bank_account_id])
+
+  useEffect(() => {
+    if (!modal || modal.mode === 'view') return
+    const bid = modal.bank_account_id
+    if (!bid || !bankAccounts.length) return
+    const b = bankAccounts.find((a) => String(a.id) === String(bid))
+    if (!b) return
+    const allowed = bankAccountAllowedCurrencies(b)
+    if (!allowed.length) return
+    const cur = String(modal.currency_code || '').toUpperCase()
+    if (!allowed.includes(cur)) {
+      setModal((m) => (m ? { ...m, currency_code: allowed[0] } : null))
+    }
+  }, [modal?.bank_account_id, modal?.mode, bankAccounts])
 
   useEffect(() => {
     if (!token || !canViewAccounting) return
@@ -1145,19 +1195,54 @@ export default function Expenses() {
       window.alert(t('expensesPage.recurrenceRequired'))
       return
     }
+
+    const selectedBank = bankAccounts.find((b) => String(b.id) === String(modal.bank_account_id))
+    if (!selectedBank) {
+      window.alert(t('expensesPage.accountInvalid'))
+      return
+    }
+
+    const allowed = bankAccountAllowedCurrencies(selectedBank)
+    const cur = String(modal.currency_code || '').toUpperCase()
+    if (allowed.length && !allowed.includes(cur)) {
+      window.alert(t('expensesPage.treasuryCurrencyNotSupportedAccount'))
+      return
+    }
+
+    let overview = null
+    try {
+      overview = await getTreasuryBankOverview(token)
+    } catch {
+      overview = null
+    }
+    if (amount > 0 && overview?.banks && Array.isArray(overview.banks)) {
+      const bankRow = overview.banks.find((x) => String(x.id) === String(modal.bank_account_id))
+      const balances = bankRow?.balance_by_currency || {}
+      let avail = Number(balances[cur])
+      if (!Number.isFinite(avail)) avail = 0
+      if (modal.mode === 'edit') {
+        const oldRow = mergedRaw.find((r) => String(r.id) === String(modal.id))
+        if (
+          oldRow &&
+          String(oldRow.bank_account_id ?? '') === String(modal.bank_account_id) &&
+          String(oldRow.currency_code || '').toUpperCase() === cur
+        ) {
+          avail += Number(oldRow.amount) || 0
+        }
+      }
+      if (avail + 1e-6 < amount) {
+        window.alert(t('expensesPage.treasuryInsufficientBalanceAccount'))
+        return
+      }
+    }
+
     setSaving(true)
     try {
       const cat = categories.find((c) => Number(c.id) === catId)
       const marketing = isMarketingCategoryRecord(cat)
       const sid = modal.shipment_id ? Number(modal.shipment_id) : 0
 
-      const selectedBank = bankAccounts.find((b) => String(b.id) === String(modal.bank_account_id))
-      const paymentMethodResolved = selectedBank ? formatBankAccountLabel(selectedBank) : ''
-      if (!paymentMethodResolved) {
-        window.alert(t('expensesPage.accountInvalid'))
-        setSaving(false)
-        return
-      }
+      const paymentMethodResolved = formatBankAccountLabel(selectedBank)
 
       const buildExtEntry = () => {
         const entry = {
@@ -2204,9 +2289,18 @@ export default function Expenses() {
                         value={modal.currency_code}
                         onChange={(e) => setModal((m) => (m ? { ...m, currency_code: e.target.value } : null))}
                       >
-                        <option value="USD">USD</option>
-                        <option value="EUR">EUR</option>
-                        <option value="EGP">EGP</option>
+                        {(() => {
+                          const acc = bankAccounts.find((a) => String(a.id) === String(modal.bank_account_id))
+                          const list =
+                            acc && bankAccountAllowedCurrencies(acc).length > 0
+                              ? bankAccountAllowedCurrencies(acc)
+                              : ALL_EXPENSE_CURRENCIES
+                          return list.map((code) => (
+                            <option key={code} value={code}>
+                              {code}
+                            </option>
+                          ))
+                        })()}
                       </select>
                     </div>
                     <div className="accountings-field">

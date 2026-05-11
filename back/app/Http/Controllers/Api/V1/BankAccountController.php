@@ -23,7 +23,13 @@ class BankAccountController extends Controller
             $query->where('treasury_account_kind', $kind);
         }
 
-        return response()->json(['data' => $query->get()]);
+        $rows = $query->get()->map(static function (BankAccount $b): array {
+            return array_merge($b->toArray(), [
+                'allowed_currencies' => $b->allowedTreasuryCurrencyCodes(),
+            ]);
+        });
+
+        return response()->json(['data' => $rows]);
     }
 
     public function store(Request $request): JsonResponse

@@ -14,6 +14,16 @@ function authHeaders(token) {
   }
 }
 
+/** First Laravel validation message from `errors` object. */
+function firstApiValidationMessage(json) {
+  if (!json?.errors || typeof json.errors !== 'object') return null
+  for (const v of Object.values(json.errors)) {
+    if (Array.isArray(v) && v.length) return String(v[0])
+    if (typeof v === 'string' && v.trim()) return v.trim()
+  }
+  return null
+}
+
 /**
  * @param {string} token
  * @param {{ bl?: string, search?: string, month?: string, category?: string, currency?: string, sort?: string }} params
@@ -169,7 +179,12 @@ export async function createExpense(token, body) {
   })
   const json = await res.json().catch(() => ({}))
   if (!res.ok) {
-    throw new Error(json.message || json.error || `Failed to create expense (${res.status})`)
+    const msg =
+      firstApiValidationMessage(json) ||
+      (json.message && String(json.message)) ||
+      json.error ||
+      `Failed to create expense (${res.status})`
+    throw new Error(msg)
   }
   return json.data ?? json
 }
@@ -187,7 +202,12 @@ export async function updateExpense(token, id, body) {
   })
   const json = await res.json().catch(() => ({}))
   if (!res.ok) {
-    throw new Error(json.message || json.error || `Failed to update expense (${res.status})`)
+    const msg =
+      firstApiValidationMessage(json) ||
+      (json.message && String(json.message)) ||
+      json.error ||
+      `Failed to update expense (${res.status})`
+    throw new Error(msg)
   }
   return json.data ?? json
 }

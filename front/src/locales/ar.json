@@ -2802,6 +2802,8 @@
     "receiptLoadFailed": "تعذّر تحميل الإيصال.",
     "receiptPreview": "معاينة الإيصال",
     "accountRequired": "اختر حساباً من الخزينة.",
+    "treasuryCurrencyNotSupportedAccount": "العملة غير مدعومة في هذا الحساب",
+    "treasuryInsufficientBalanceAccount": "الرصيد غير كافي في هذا الحساب",
     "accountInvalid": "الحساب المحدد لم يعد متاحاً. اختر حساباً آخر.",
     "recurrenceRequired": "اختر دورية التكرار للمصاريف الثابتة.",
     "modalEdit": "تعديل مصروف",

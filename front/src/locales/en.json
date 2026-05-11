@@ -2801,6 +2801,8 @@
     "receiptLoadFailed": "Could not load receipt.",
     "receiptPreview": "Receipt preview",
     "accountRequired": "Select a treasury / bank account.",
+    "treasuryCurrencyNotSupportedAccount": "This currency is not supported for this account.",
+    "treasuryInsufficientBalanceAccount": "Insufficient balance in this account.",
     "accountInvalid": "Selected account is no longer available. Pick another account.",
     "recurrenceRequired": "Select a recurrence for fixed expenses.",
     "modalEdit": "Edit expense",

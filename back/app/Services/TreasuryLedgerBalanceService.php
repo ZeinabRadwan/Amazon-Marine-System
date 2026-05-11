@@ -104,9 +104,11 @@ class TreasuryLedgerBalanceService
     }
 
     /**
+     * @param  string|null  $customAmountErrorMessage  Overrides default insufficient-balance message (e.g. expense + treasury copy).
+     *
      * @throws ValidationException
      */
-    public function ensureDebitDoesNotOverdraft(int $accountId, string $currency, float $amount, ?int $excludeEntryId = null): void
+    public function ensureDebitDoesNotOverdraft(int $accountId, string $currency, float $amount, ?int $excludeEntryId = null, ?string $customAmountErrorMessage = null): void
     {
         if ($accountId <= 0 || $amount <= 0 || ! is_finite($amount)) {
             return;
@@ -117,7 +119,7 @@ class TreasuryLedgerBalanceService
 
         if ($avail + 1e-6 < $amount) {
             throw ValidationException::withMessages([
-                'amount' => [__('bank.insufficient_balance_currency')],
+                'amount' => [$customAmountErrorMessage ?? __('bank.insufficient_balance_currency')],
             ]);
         }
     }
