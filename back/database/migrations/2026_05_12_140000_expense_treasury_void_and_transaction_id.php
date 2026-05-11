@@ -43,16 +43,16 @@ return new class extends Migration
         $this->ensureExpensesTreasuryTransactionForeign();
 
         if (Schema::hasTable('treasury_entries') && Schema::hasColumn('treasury_entries', 'expense_id')) {
-            Schema::table('treasury_entries', function (Blueprint $table) {
-                $table->dropForeign(['expense_id']);
-            });
+            $this->dropForeignKeyOnColumn('treasury_entries', 'expense_id');
 
-            Schema::table('treasury_entries', function (Blueprint $table) {
-                $table->foreign('expense_id')
-                    ->references('id')
-                    ->on('expenses')
-                    ->nullOnDelete();
-            });
+            if (! $this->treasuryEntriesExpenseIdForeignExists()) {
+                Schema::table('treasury_entries', function (Blueprint $table) {
+                    $table->foreign('expense_id')
+                        ->references('id')
+                        ->on('expenses')
+                        ->nullOnDelete();
+                });
+            }
         }
     }
 
@@ -104,19 +104,112 @@ return new class extends Migration
         return count($rows) > 0;
     }
 
+    /**
+     * MySQL stores FK names that may differ from Laravel’s default ({table}_{column}_foreign).
+     */
+    private function mysqlForeignKeyExists(string $table, string $column, string $referencedTable): bool
+    {
+        $connection = Schema::getConnection();
+        if ($connection->getDriverName() !== 'mysql') {
+            return false;
+        }
+
+        $database = $connection->getDatabaseName();
+        $rows = $connection->select(
+            'SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ? AND REFERENCED_TABLE_NAME = ? AND REFERENCED_COLUMN_NAME IS NOT NULL',
+            [$database, $table, $column, $referencedTable]
+        );
+
+        return count($rows) > 0;
+    }
+
+    private function treasuryEntriesExpenseIdForeignExists(): bool
+    {
+        $connection = Schema::getConnection();
+        $driver = $connection->getDriverName();
+
+        if ($driver === 'mysql') {
+            return $this->mysqlForeignKeyExists('treasury_entries', 'expense_id', 'expenses');
+        }
+
+        if ($driver === 'sqlite') {
+            $rows = $connection->select("PRAGMA foreign_key_list('treasury_entries')");
+            foreach ($rows as $row) {
+                if (($row->from ?? '') === 'expense_id' && ($row->table ?? '') === 'expenses') {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        return false;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function mysqlForeignKeyNamesOnColumn(string $table, string $column): array
+    {
+        $connection = Schema::getConnection();
+        if ($connection->getDriverName() !== 'mysql') {
+            return [];
+        }
+
+        $database = $connection->getDatabaseName();
+        $rows = $connection->select(
+            'SELECT DISTINCT CONSTRAINT_NAME AS c FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ? AND REFERENCED_TABLE_NAME IS NOT NULL',
+            [$database, $table, $column]
+        );
+
+        $names = [];
+        foreach ($rows as $row) {
+            $n = $row->c ?? null;
+            if (is_string($n) && $n !== '') {
+                $names[] = $n;
+            }
+        }
+
+        return $names;
+    }
+
+    private function dropForeignKeyOnColumn(string $table, string $column): void
+    {
+        $connection = Schema::getConnection();
+        $driver = $connection->getDriverName();
+
+        if ($driver === 'mysql') {
+            $safeTable = str_replace('`', '``', $table);
+            foreach ($this->mysqlForeignKeyNamesOnColumn($table, $column) as $name) {
+                $safeName = str_replace('`', '``', $name);
+                $connection->statement("ALTER TABLE `{$safeTable}` DROP FOREIGN KEY `{$safeName}`");
+            }
+
+            return;
+        }
+
+        try {
+            Schema::table($table, function (Blueprint $blueprint) use ($column): void {
+                $blueprint->dropForeign([$column]);
+            });
+        } catch (Throwable) {
+            // No FK or non-default name on this driver — ignore.
+        }
+    }
+
     public function down(): void
     {
         if (Schema::hasTable('treasury_entries') && Schema::hasColumn('treasury_entries', 'expense_id')) {
-            Schema::table('treasury_entries', function (Blueprint $table) {
-                $table->dropForeign(['expense_id']);
-            });
+            $this->dropForeignKeyOnColumn('treasury_entries', 'expense_id');
 
-            Schema::table('treasury_entries', function (Blueprint $table) {
-                $table->foreign('expense_id')
-                    ->references('id')
-                    ->on('expenses')
-                    ->cascadeOnDelete();
-            });
+            if (! $this->treasuryEntriesExpenseIdForeignExists()) {
+                Schema::table('treasury_entries', function (Blueprint $table) {
+                    $table->foreign('expense_id')
+                        ->references('id')
+                        ->on('expenses')
+                        ->cascadeOnDelete();
+                });
+            }
         }
 
         if (Schema::hasTable('expenses') && Schema::hasColumn('expenses', 'treasury_transaction_id')) {
