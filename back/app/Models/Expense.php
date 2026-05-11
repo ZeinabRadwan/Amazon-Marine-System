@@ -2,10 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Expense extends Model
 {
@@ -22,6 +21,7 @@ class Expense extends Model
         'expense_date',
         'paid_by_id',
         'bank_account_id',
+        'treasury_transaction_id',
         'shipment_id',
         'vendor_id',
         'payment_method',
@@ -80,12 +80,12 @@ class Expense extends Model
     }
 
     /**
-     * Ledger row created for this expense (treasury_entries.expense_id).
+     * Ledger row for this expense ({@see TreasuryEntry}).
      *
-     * @return HasOne<TreasuryEntry, Expense>
+     * @return BelongsTo<TreasuryEntry, Expense>
      */
-    public function treasuryEntry(): HasOne
+    public function treasuryTransaction(): BelongsTo
     {
-        return $this->hasOne(TreasuryEntry::class, 'expense_id');
+        return $this->belongsTo(TreasuryEntry::class, 'treasury_transaction_id');
     }
 }

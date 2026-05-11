@@ -871,6 +871,23 @@
   background: rgba(148, 163, 184, 0.07);
 }
 
+.treasury-ledger-row--voided {
+  opacity: 0.88;
+}
+
+.dark .treasury-ledger-row--voided,
+[data-theme='dark'] .treasury-ledger-row--voided {
+  opacity: 0.9;
+}
+
+.treasury-ledger-row--voided .treasury-ledger-money {
+  opacity: 1;
+}
+
+.treasury-txn-type--voided {
+  opacity: 0.92;
+}
+
 /* Five headline stats — full-width row, equal columns, equal-height cards */
 .treasury-stats-band .treasury-stats-grid--5.accountings-stats-grid {
   width: 100%;

@@ -25,6 +25,10 @@ class TreasuryLedgerBalanceService
      */
     private function applyEntryToBalances(array &$balances, TreasuryEntry $entry): void
     {
+        if ((bool) ($entry->is_voided ?? false)) {
+            return;
+        }
+
         $type = strtolower((string) $entry->entry_type);
         $amount = (float) $entry->amount;
         $currency = $this->normalizeCurrency((string) $entry->currency_code);

@@ -539,7 +539,9 @@ class TreasuryController extends Controller
                 $flowType = 'customer';
             } elseif ($paymentType === 'vendor_payment') {
                 $flowType = 'partner';
-            } elseif ($entry->expense_id) {
+            } elseif (($entry->source ?? '') === 'expense'
+                || (string) ($entry->journal_kind ?? '') === TreasuryJournalPostingService::KIND_EXPENSE
+                || $entry->expense_id) {
                 $flowType = 'expense';
             } elseif (! $entry->payment_id) {
                 $flowType = $type === 'transfer' ? 'transfer' : 'manual';
@@ -562,16 +564,28 @@ class TreasuryController extends Controller
             if ($refLabel === '' && $entry->reference) {
                 $refLabel = (string) $entry->reference;
             }
-            if ($refLabel === '' && $entry->expense_id) {
+            if ($refLabel === '' && (($entry->source ?? '') === 'expense'
+                || (string) ($entry->journal_kind ?? '') === TreasuryJournalPostingService::KIND_EXPENSE)) {
+                $refFromReference = trim((string) ($entry->reference ?? ''));
+                if ($refFromReference !== '') {
+                    $refLabel = 'Expense #'.$refFromReference;
+                } elseif ($entry->expense_id) {
+                    $refLabel = 'Expense #'.(string) $entry->expense_id;
+                }
+            } elseif ($refLabel === '' && $entry->expense_id) {
                 $refLabel = 'Expense #'.(string) $entry->expense_id;
             }
+
+            $isVoided = (bool) ($entry->is_voided ?? false);
+            $ledgerAmount = $isVoided ? 0.0 : (float) $entry->amount;
 
             return [
                 'id' => $entry->id,
                 'entry_date' => $entry->entry_date?->toDateString(),
                 'description' => $entry->notes ?? $entry->reference ?? '',
                 'entry_type' => $entry->entry_type,
-                'amount' => $sign * (float) $entry->amount,
+                'amount' => $sign * $ledgerAmount,
+                'voided_original_amount' => $isVoided ? $sign * (float) $entry->amount : null,
                 'currency_code' => $entry->currency_code,
                 'source' => $entry->source,
                 'account_id' => $entry->account_id,
@@ -583,6 +597,8 @@ class TreasuryController extends Controller
                 'vendor_bill_id' => $pay?->vendor_bill_id,
                 'payment_type' => $paymentType,
                 'flow_type' => $flowType,
+                'is_voided' => $isVoided,
+                'voided_at' => $entry->voided_at?->toIso8601String(),
                 'reference_label' => $refLabel,
                 'target_currency_code' => $entry->target_currency_code,
                 'exchange_rate' => $entry->exchange_rate,

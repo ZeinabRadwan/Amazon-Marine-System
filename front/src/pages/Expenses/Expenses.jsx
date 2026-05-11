@@ -466,14 +466,10 @@ export default function Expenses() {
   const [exportBusy, setExportBusy] = useState(false)
   const createReceiptInputRef = useRef(null)
   const [receiptDragActive, setReceiptDragActive] = useState(false)
-  /** Reports tab: multi-month analytics (independent from list month scope). */
+  /** Reports tab: preset only drives the monthly line chart range; analytics use a fixed 12‑month window. */
   const [reportPreset, setReportPreset] = useState('last6')
-  /** `month` = one point per calendar month; `year` = totals rolled up by calendar year. */
-  const [reportGroupBy, setReportGroupBy] = useState('month')
-  const [reportCalendarYear, setReportCalendarYear] = useState(dm.year)
-  const [reportCustomStart, setReportCustomStart] = useState(() => shiftYm(dm.year, dm.month, -5))
-  const [reportCustomEnd, setReportCustomEnd] = useState(() => ({ year: dm.year, month: dm.month }))
-  const [reportRawRows, setReportRawRows] = useState([])
+  const [reportLineRawRows, setReportLineRawRows] = useState([])
+  const [reportAnalyticsRawRows, setReportAnalyticsRawRows] = useState([])
   const [reportRangeLoading, setReportRangeLoading] = useState(false)
   /** Jan 1 … selected month of filterYear — same filters/search as list table footer. */
   const [listYtdRaw, setListYtdRaw] = useState([])
@@ -485,34 +481,37 @@ export default function Expenses() {
 
   const filterYm = useMemo(() => ymString(filterYear, filterMonth), [filterYear, filterMonth])
 
-  const reportRangeBounds = useMemo(() => {
-    void mainTab
+  /** Line chart only — controlled by the single preset dropdown. */
+  const reportLineBounds = useMemo(() => {
     const today = new Date()
     const endRolling = { year: today.getFullYear(), month: today.getMonth() + 1 }
+    if (reportPreset === 'last1') {
+      return { start: endRolling, end: endRolling }
+    }
     if (reportPreset === 'last3') {
       return { start: shiftYm(endRolling.year, endRolling.month, -2), end: endRolling }
     }
     if (reportPreset === 'last6') {
       return { start: shiftYm(endRolling.year, endRolling.month, -5), end: endRolling }
     }
-    if (reportPreset === 'fullYear') {
-      const y = reportCalendarYear
-      return { start: { year: y, month: 1 }, end: { year: y, month: 12 } }
-    }
-    let s = reportCustomStart
-    let e = reportCustomEnd
-    if (compareYm(s, e) > 0) {
-      const t = s
-      s = e
-      e = t
-    }
-    return { start: s, end: e }
-  }, [reportPreset, reportCalendarYear, reportCustomStart, reportCustomEnd, mainTab])
+    const y = today.getFullYear()
+    return { start: { year: y, month: 1 }, end: { year: y, month: 12 } }
+  }, [reportPreset])
 
-  const reportRangeFetchKey = useMemo(() => {
-    const { start, end } = reportRangeBounds
-    return `${ymString(start.year, start.month)}_${ymString(end.year, end.month)}`
-  }, [reportRangeBounds])
+  /** Pie, bar, linked tables & compact summary — fixed rolling 12 months (not tied to preset UI). */
+  const reportAnalyticsBounds = useMemo(() => {
+    const today = new Date()
+    const endRolling = { year: today.getFullYear(), month: today.getMonth() + 1 }
+    return { start: shiftYm(endRolling.year, endRolling.month, -11), end: endRolling }
+  }, [])
+
+  const reportChartsFetchKey = useMemo(() => {
+    const ls = reportLineBounds.start
+    const le = reportLineBounds.end
+    const as = reportAnalyticsBounds.start
+    const ae = reportAnalyticsBounds.end
+    return `${reportPreset}_${ymString(ls.year, ls.month)}_${ymString(le.year, le.month)}_${ymString(as.year, as.month)}_${ymString(ae.year, ae.month)}_${debouncedSearch || ''}`
+  }, [reportPreset, reportLineBounds, reportAnalyticsBounds, debouncedSearch])
 
   const patchExtensions = useCallback((updater) => {
     setExtensions((prev) => {
@@ -561,15 +560,29 @@ export default function Expenses() {
     ;(async () => {
       setReportRangeLoading(true)
       try {
-        const main = await fetchExpensesForRange(
-          token,
-          reportRangeBounds.start,
-          reportRangeBounds.end,
-          debouncedSearch,
-        )
-        if (!cancelled) setReportRawRows(main)
+        const [lineRows, analyticsRows] = await Promise.all([
+          fetchExpensesForRange(
+            token,
+            reportLineBounds.start,
+            reportLineBounds.end,
+            debouncedSearch,
+          ),
+          fetchExpensesForRange(
+            token,
+            reportAnalyticsBounds.start,
+            reportAnalyticsBounds.end,
+            debouncedSearch,
+          ),
+        ])
+        if (!cancelled) {
+          setReportLineRawRows(lineRows)
+          setReportAnalyticsRawRows(analyticsRows)
+        }
       } catch {
-        if (!cancelled) setReportRawRows([])
+        if (!cancelled) {
+          setReportLineRawRows([])
+          setReportAnalyticsRawRows([])
+        }
       } finally {
         if (!cancelled) setReportRangeLoading(false)
       }
@@ -581,9 +594,10 @@ export default function Expenses() {
     token,
     canViewAccounting,
     mainTab,
-    reportRangeFetchKey,
+    reportChartsFetchKey,
     mergedRaw,
-    reportRangeBounds,
+    reportLineBounds,
+    reportAnalyticsBounds,
     debouncedSearch,
   ])
 
@@ -918,48 +932,69 @@ export default function Expenses() {
     [rowsWithExt, filterCategory, filterExpenseKind, filterLinked],
   )
 
-  const reportRowsWithExt = useMemo(
-    () => reportRawRows.map((row) => ({ ...row, ext: extensions[row.id] || {} })),
-    [reportRawRows, extensions],
+  const reportLineRowsWithExt = useMemo(
+    () => reportLineRawRows.map((row) => ({ ...row, ext: extensions[row.id] || {} })),
+    [reportLineRawRows, extensions],
   )
 
-  const reportFilteredRows = useMemo(
+  const reportLineFiltered = useMemo(
     () =>
-      applyExpenseTableFilters(reportRowsWithExt, filterCategory, filterExpenseKind, filterLinked),
-    [reportRowsWithExt, filterCategory, filterExpenseKind, filterLinked],
+      applyExpenseTableFilters(reportLineRowsWithExt, filterCategory, filterExpenseKind, filterLinked),
+    [reportLineRowsWithExt, filterCategory, filterExpenseKind, filterLinked],
   )
 
-  /** Tables + charts + linked sections — single aggregate pass over `reportFilteredRows`. */
-  const reportUnified = useMemo(
+  const reportLineUnified = useMemo(
+    () =>
+      computeReportUnified(reportLineFiltered, reportLineBounds, 'month', locale, categories),
+    [reportLineFiltered, reportLineBounds, locale, categories],
+  )
+
+  const reportAnalyticsRowsWithExt = useMemo(
+    () => reportAnalyticsRawRows.map((row) => ({ ...row, ext: extensions[row.id] || {} })),
+    [reportAnalyticsRawRows, extensions],
+  )
+
+  const reportAnalyticsFiltered = useMemo(
+    () =>
+      applyExpenseTableFilters(
+        reportAnalyticsRowsWithExt,
+        filterCategory,
+        filterExpenseKind,
+        filterLinked,
+      ),
+    [reportAnalyticsRowsWithExt, filterCategory, filterExpenseKind, filterLinked],
+  )
+
+  const reportAnalyticsUnified = useMemo(
     () =>
       computeReportUnified(
-        reportFilteredRows,
-        reportRangeBounds,
-        reportGroupBy,
+        reportAnalyticsFiltered,
+        reportAnalyticsBounds,
+        'month',
         locale,
         categories,
       ),
-    [reportFilteredRows, reportRangeBounds, reportGroupBy, locale, categories],
+    [reportAnalyticsFiltered, reportAnalyticsBounds, locale, categories],
   )
 
   const reportLineChartData = useMemo(
     () =>
-      reportUnified.periodSeries.map((p) => ({
+      reportLineUnified.periodSeries.map((p) => ({
         monthLabel: p.periodLabel,
         total: p.total,
       })),
-    [reportUnified.periodSeries],
+    [reportLineUnified.periodSeries],
   )
 
   const reportPieCategoryData = useMemo(
     () =>
-      reportUnified.categoryInsights
+      reportAnalyticsUnified.categoryInsights
         .filter((x) => x.total > 0)
         .map((x) => ({
           name: `${x.label} (${x.pct.toFixed(1)}%)`,
           value: x.total,
         })),
-    [reportUnified.categoryInsights],
+    [reportAnalyticsUnified.categoryInsights],
   )
 
   const reportPieColors = useMemo(
@@ -972,12 +1007,36 @@ export default function Expenses() {
 
   const reportBarLinkedData = useMemo(
     () => [
-      { kind: t('expensesPage.reportingBarShipment'), amount: reportUnified.linkedShipTotal },
-      { kind: t('expensesPage.reportingBarCustomer'), amount: reportUnified.linkedCustTotal },
-      { kind: t('expensesPage.reportingBarGeneral'), amount: reportUnified.linkedGenTotal },
+      { kind: t('expensesPage.reportingBarShipment'), amount: reportAnalyticsUnified.linkedShipTotal },
+      { kind: t('expensesPage.reportingBarCustomer'), amount: reportAnalyticsUnified.linkedCustTotal },
+      { kind: t('expensesPage.reportingBarGeneral'), amount: reportAnalyticsUnified.linkedGenTotal },
     ],
-    [t, reportUnified.linkedShipTotal, reportUnified.linkedCustTotal, reportUnified.linkedGenTotal],
+    [
+      t,
+      reportAnalyticsUnified.linkedShipTotal,
+      reportAnalyticsUnified.linkedCustTotal,
+      reportAnalyticsUnified.linkedGenTotal,
+    ],
   )
+
+  /** Compact summary (no table): top category, 12‑month total, vs previous month in series. */
+  const reportPeriodSummary = useMemo(() => {
+    const u = reportAnalyticsUnified
+    const top = u.categoryInsights[0]
+    const ps = u.periodSeries
+    let changePct = null
+    if (ps.length >= 2) {
+      const last = Number(ps[ps.length - 1]?.total || 0)
+      const prev = Number(ps[ps.length - 2]?.total || 0)
+      if (prev > 0) changePct = ((last - prev) / prev) * 100
+    }
+    return {
+      topCategoryLabel: top?.label ?? '—',
+      topCategoryAmount: top?.total ?? 0,
+      periodTotal: u.grandTotal,
+      changePct,
+    }
+  }, [reportAnalyticsUnified])
 
   /** List tab: stats row + table + footer — derived from current month rows + YTD rows (same filters). */
   const listTabMonthStats = useMemo(
@@ -1646,146 +1705,46 @@ export default function Expenses() {
           aria-labelledby="tab-reports"
           hidden={mainTab !== 'reports'}
         >
-          <div className="clients-filters-card expenses-report-filters mb-6">
-            <div className="clients-filters__row clients-filters__row--main expenses-report-filters__primary">
-              <select
-                className="clients-input min-w-[160px]"
-                value={reportPreset}
-                onChange={(e) => setReportPreset(e.target.value)}
-                aria-label={t('expensesPage.reportPresetLabel')}
-              >
-                <option value="last3">{t('expensesPage.reportPresetLast3')}</option>
-                <option value="last6">{t('expensesPage.reportPresetLast6')}</option>
-                <option value="fullYear">{t('expensesPage.reportPresetFullYear')}</option>
-                <option value="custom">{t('expensesPage.reportPresetCustom')}</option>
-              </select>
-              {reportPreset === 'fullYear' && (
-                <select
-                  className="clients-input min-w-[100px]"
-                  value={reportCalendarYear}
-                  onChange={(e) => setReportCalendarYear(Number(e.target.value))}
-                  aria-label={t('expensesPage.reportFullYearSelect')}
-                >
-                  {yearOptions.map((y) => (
-                    <option key={y} value={y}>
-                      {y}
-                    </option>
-                  ))}
-                </select>
-              )}
-              {reportPreset === 'custom' && (
-                <>
-                  <select
-                    className="clients-input min-w-[130px]"
-                    value={reportCustomStart.month}
-                    onChange={(e) =>
-                      setReportCustomStart((s) => ({ ...s, month: Number(e.target.value) }))
-                    }
-                    aria-label={t('expensesPage.reportCustomStartMonth')}
-                  >
-                    {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                      <option key={m} value={m}>
-                        {monthNameOnly(m, locale)}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    className="clients-input min-w-[100px]"
-                    value={reportCustomStart.year}
-                    onChange={(e) =>
-                      setReportCustomStart((s) => ({ ...s, year: Number(e.target.value) }))
-                    }
-                    aria-label={t('expensesPage.reportCustomStartYear')}
-                  >
-                    {yearOptions.map((y) => (
-                      <option key={y} value={y}>
-                        {y}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="expenses-report-filters__to">{t('expensesPage.reportCustomTo')}</span>
-                  <select
-                    className="clients-input min-w-[130px]"
-                    value={reportCustomEnd.month}
-                    onChange={(e) =>
-                      setReportCustomEnd((s) => ({ ...s, month: Number(e.target.value) }))
-                    }
-                    aria-label={t('expensesPage.reportCustomEndMonth')}
-                  >
-                    {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                      <option key={m} value={m}>
-                        {monthNameOnly(m, locale)}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    className="clients-input min-w-[100px]"
-                    value={reportCustomEnd.year}
-                    onChange={(e) =>
-                      setReportCustomEnd((s) => ({ ...s, year: Number(e.target.value) }))
-                    }
-                    aria-label={t('expensesPage.reportCustomEndYear')}
-                  >
-                    {yearOptions.map((y) => (
-                      <option key={y} value={y}>
-                        {y}
-                      </option>
-                    ))}
-                  </select>
-                </>
-              )}
-              <select
-                className="clients-input min-w-[160px]"
-                value={reportGroupBy}
-                onChange={(e) => setReportGroupBy(e.target.value)}
-                aria-label={t('expensesPage.reportGroupByLabel')}
-              >
-                <option value="month">{t('expensesPage.reportGroupByMonth')}</option>
-                <option value="year">{t('expensesPage.reportGroupByYear')}</option>
-              </select>
-            </div>
-            <p className="expenses-report-filters__hint text-sm text-slate-500 dark:text-slate-400 mt-3 mb-0">
-              {t('expensesPage.reportFiltersHint')}
-            </p>
+          <div className="expenses-report-toolbar mb-3">
+            <select
+              className="clients-input min-w-[180px]"
+              value={reportPreset}
+              onChange={(e) => setReportPreset(e.target.value)}
+              aria-label={t('expensesPage.reportPresetLabel')}
+            >
+              <option value="last1">{t('expensesPage.reportPresetLast1')}</option>
+              <option value="last3">{t('expensesPage.reportPresetLast3')}</option>
+              <option value="last6">{t('expensesPage.reportPresetLast6')}</option>
+              <option value="fullYear">{t('expensesPage.reportPresetFullYear')}</option>
+            </select>
           </div>
 
-          <section className="expenses-reporting-section" aria-labelledby="expenses-reporting-heading">
-            <h3
-              id="expenses-reporting-heading"
-              className="accountings-chart-title mb-5 text-lg font-semibold text-slate-800 dark:text-slate-100"
-            >
-              {t('expensesPage.reportingSectionTitle')}
-            </h3>
+          <div className="clients-chart-wrap expenses-report-line-chart mb-4">
+            {reportRangeLoading ? (
+              <div className="expenses-chart-empty">
+                <LoaderDots />
+              </div>
+            ) : reportLineChartData.length ? (
+              <LineChart
+                data={reportLineChartData}
+                xKey="monthLabel"
+                lines={[
+                  {
+                    dataKey: 'total',
+                    name: t('expensesPage.reportingLinePeriodTotal'),
+                    stroke: '#2563eb',
+                  },
+                ]}
+                title={t('expensesPage.reportingMonthlyTrendTitle')}
+                height={260}
+                allowDecimals
+              />
+            ) : (
+              <div className="expenses-chart-empty">{t('expensesPage.reportingChartEmpty')}</div>
+            )}
+          </div>
 
-          <div className="expenses-charts-grid mb-8">
-            <div className="clients-chart-wrap">
-              {reportRangeLoading ? (
-                <div className="expenses-chart-empty">
-                  <LoaderDots />
-                </div>
-              ) : reportLineChartData.length ? (
-                <LineChart
-                  data={reportLineChartData}
-                  xKey="monthLabel"
-                  lines={[
-                    {
-                      dataKey: 'total',
-                      name: t('expensesPage.reportingLinePeriodTotal'),
-                      stroke: '#2563eb',
-                    },
-                  ]}
-                  title={
-                    reportGroupBy === 'year'
-                      ? t('expensesPage.reportingYearTrendTitle')
-                      : t('expensesPage.reportingMonthlyTrendTitle')
-                  }
-                  height={280}
-                  allowDecimals
-                />
-              ) : (
-                <div className="expenses-chart-empty">{t('expensesPage.reportingChartEmpty')}</div>
-              )}
-            </div>
+          <div className="expenses-charts-grid expenses-report-charts-grid--secondary mb-4">
             <div className="clients-chart-wrap">
               {reportRangeLoading ? (
                 <div className="expenses-chart-empty">
@@ -1799,7 +1758,27 @@ export default function Expenses() {
                   valueLabel={t('expensesPage.seriesTotal')}
                   title={t('expensesPage.reportingPieCategoryTitle')}
                   colors={reportPieColors}
-                  height={280}
+                  height={250}
+                />
+              ) : (
+                <div className="expenses-chart-empty">{t('expensesPage.reportingChartEmpty')}</div>
+              )}
+            </div>
+            <div className="clients-chart-wrap">
+              {reportRangeLoading ? (
+                <div className="expenses-chart-empty">
+                  <LoaderDots />
+                </div>
+              ) : reportBarLinkedData.some((d) => d.amount > 0) ? (
+                <BarChart
+                  data={reportBarLinkedData}
+                  xKey="kind"
+                  yKey="amount"
+                  title={t('expensesPage.reportingBarLinkedSplitTitle')}
+                  yLabel={t('expensesPage.reportingAmountAxis')}
+                  valueLabel={t('expensesPage.seriesTotal')}
+                  height={250}
+                  allowDecimals
                 />
               ) : (
                 <div className="expenses-chart-empty">{t('expensesPage.reportingChartEmpty')}</div>
@@ -1807,183 +1786,102 @@ export default function Expenses() {
             </div>
           </div>
 
-          <div className="clients-chart-wrap mb-8">
+          <section
+            className="expenses-linked-analytics expenses-report-extra-analytics"
+            aria-label={t('expensesPage.reportExtraAnalyticsTitle')}
+          >
+            <h4 className="expenses-linked-analytics__title text-base font-semibold text-slate-800 dark:text-slate-100 mb-3">
+              {t('expensesPage.reportExtraAnalyticsTitle')}
+            </h4>
             {reportRangeLoading ? (
-              <div className="expenses-chart-empty">
+              <div className="expenses-chart-empty py-6">
                 <LoaderDots />
               </div>
-            ) : reportBarLinkedData.some((d) => d.amount > 0) ? (
-              <BarChart
-                data={reportBarLinkedData}
-                xKey="kind"
-                yKey="amount"
-                title={t('expensesPage.reportingBarLinkedSplitTitle')}
-                yLabel={t('expensesPage.reportingAmountAxis')}
-                valueLabel={t('expensesPage.seriesTotal')}
-                height={280}
-                allowDecimals
-              />
             ) : (
-              <div className="expenses-chart-empty">{t('expensesPage.reportingChartEmpty')}</div>
-            )}
-          </div>
-
-            <div className="expenses-category-insights mb-8">
-              <h4 className="expenses-category-insights__title text-base font-semibold text-slate-800 dark:text-slate-100 mb-3">
-                {t('expensesPage.categoryInsightsTitle')}
-              </h4>
-              {reportRangeLoading ? (
-                <div className="expenses-chart-empty py-8">
-                  <LoaderDots />
-                </div>
-              ) : reportUnified.categoryInsights.length ? (
-                <div className="accountings-table-wrap expenses-category-insights-wrap">
-                  <table className="accountings-table expenses-category-insights-table">
-                    <thead>
-                      <tr>
-                        <th>{t('expensesPage.categoryInsightsColCategory')}</th>
-                        <th className="text-end">{t('expensesPage.categoryInsightsColAmount')}</th>
-                        <th className="text-end">{t('expensesPage.categoryInsightsColPct')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {reportUnified.categoryInsights.map((row) => (
-                        <tr key={row.categoryKey}>
-                          <td>{row.label}</td>
-                          <td className="text-end font-medium tabular-nums">
-                            {formatExpenseAmountDigits(row.total)}
-                          </td>
-                          <td className="text-end tabular-nums text-slate-700 dark:text-slate-300">
-                            {row.pct < 1 && row.pct > 0
-                              ? `${row.pct.toFixed(2)}%`
-                              : `${Math.round(row.pct)}%`}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p className="expenses-muted mb-0">{t('expensesPage.reportingChartEmpty')}</p>
-              )}
-            </div>
-
-            <div className="expenses-linked-analytics mb-8">
-              <h4 className="expenses-linked-analytics__title text-base font-semibold text-slate-800 dark:text-slate-100 mb-4">
-                {t('expensesPage.linkedExpensesTitle')}
-              </h4>
-              {reportRangeLoading ? (
-                <div className="expenses-chart-empty py-8">
-                  <LoaderDots />
-                </div>
-              ) : (
-                <>
-                  <div className="expenses-linked-analytics__block mb-8">
-                    <h5 className="expenses-linked-analytics__subtitle text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
-                      {t('expensesPage.linkedShipmentSection')}
-                    </h5>
-                    <div className="expenses-linked-analytics__summary mb-3 flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate-600 dark:text-slate-400">
-                      <span>
-                        <span className="font-medium text-slate-800 dark:text-slate-200">
-                          {t('expensesPage.linkedSummaryTotal')}:
-                        </span>{' '}
-                        {formatExpenseAmountDigits(reportUnified.shipmentAggregate.total)}
-                      </span>
-                      <span>
-                        <span className="font-medium text-slate-800 dark:text-slate-200">
-                          {t('expensesPage.linkedSummaryCount')}:
-                        </span>{' '}
-                        {reportUnified.shipmentAggregate.count}
-                      </span>
-                    </div>
-                    {reportUnified.shipmentGroups.length ? (
-                      <div className="accountings-table-wrap expenses-linked-analytics-wrap">
-                        <table className="accountings-table expenses-linked-analytics-table">
-                          <thead>
-                            <tr>
-                              <th>{t('expensesPage.linkedColShipment')}</th>
-                              <th className="text-end">{t('expensesPage.linkedColAmount')}</th>
-                              <th className="text-end">{t('expensesPage.linkedColExpenseCount')}</th>
-                              <th>{t('expensesPage.linkedColLinkedCustomer')}</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {reportUnified.shipmentGroups.map((row) => (
-                              <tr key={row.shipmentId}>
-                                <td>
-                                  <Link
-                                    className="expenses-linked-analytics__entity-link expenses-linked-analytics__entity-link--shipment"
-                                    to={`/shipments?shipment_id=${row.shipmentId}`}
-                                  >
-                                    <Ship className="inline h-3.5 w-3.5 shrink-0 opacity-80" aria-hidden />
-                                    <span>{row.blLabel}</span>
-                                  </Link>
-                                </td>
-                                <td className="text-end font-medium tabular-nums">
-                                  {formatExpenseAmountDigits(row.total)}
-                                </td>
-                                <td className="text-end tabular-nums">{row.count}</td>
-                                <td>
-                                  {row.clientId ? (
-                                    <Link
-                                      className="expenses-linked-analytics__entity-link expenses-linked-analytics__entity-link--customer"
-                                      to="/clients"
-                                      state={{ focusClientId: row.clientId }}
-                                    >
-                                      <User className="inline h-3.5 w-3.5 shrink-0 opacity-80" aria-hidden />
-                                      <span>
-                                        {clientNameById[row.clientId] || `#${row.clientId}`}
-                                      </span>
-                                    </Link>
-                                  ) : (
-                                    <span className="expenses-muted">—</span>
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <p className="expenses-muted mb-0 text-sm">{t('expensesPage.linkedShipmentEmpty')}</p>
-                    )}
+              <>
+                <div className="expenses-report-summary-strip mb-4">
+                  <div className="expenses-report-summary-strip__item">
+                    <span className="expenses-report-summary-strip__label">
+                      {t('expensesPage.reportSummaryTopCategory')}
+                    </span>
+                    <span className="expenses-report-summary-strip__value">{reportPeriodSummary.topCategoryLabel}</span>
+                    <span className="expenses-report-summary-strip__amount tabular-nums">
+                      {formatExpenseAmountDigits(reportPeriodSummary.topCategoryAmount)}
+                    </span>
                   </div>
+                  <div className="expenses-report-summary-strip__item">
+                    <span className="expenses-report-summary-strip__label">
+                      {t('expensesPage.reportSummaryPeriodTotal')}
+                    </span>
+                    <span className="expenses-report-summary-strip__amount tabular-nums">
+                      {formatExpenseAmountDigits(reportPeriodSummary.periodTotal)}
+                    </span>
+                    <span className="expenses-report-summary-strip__hint">
+                      {t('expensesPage.reportSummaryPeriodFootnote')}
+                    </span>
+                  </div>
+                  <div className="expenses-report-summary-strip__item">
+                    <span className="expenses-report-summary-strip__label">
+                      {t('expensesPage.reportSummaryChange')}
+                    </span>
+                    <span className="expenses-report-summary-strip__amount tabular-nums">
+                      {reportPeriodSummary.changePct == null
+                        ? '—'
+                        : `${reportPeriodSummary.changePct > 0 ? '+' : ''}${reportPeriodSummary.changePct.toFixed(1)}%`}
+                    </span>
+                    <span className="expenses-report-summary-strip__hint">
+                      {t('expensesPage.reportSummaryChangeHint')}
+                    </span>
+                  </div>
+                </div>
 
-                  <div className="expenses-linked-analytics__block">
-                    <h5 className="expenses-linked-analytics__subtitle text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
-                      {t('expensesPage.linkedCustomerSection')}
-                    </h5>
-                    <p className="expenses-linked-analytics__hint text-sm text-slate-500 dark:text-slate-400 mb-3">
-                      {t('expensesPage.linkedCustomerTopHint')}
-                    </p>
-                    <div className="expenses-linked-analytics__summary mb-3 flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate-600 dark:text-slate-400">
-                      <span>
-                        <span className="font-medium text-slate-800 dark:text-slate-200">
-                          {t('expensesPage.linkedSummaryTotal')}:
-                        </span>{' '}
-                        {formatExpenseAmountDigits(reportUnified.customerAggregate.total)}
-                      </span>
-                      <span>
-                        <span className="font-medium text-slate-800 dark:text-slate-200">
-                          {t('expensesPage.linkedSummaryCount')}:
-                        </span>{' '}
-                        {reportUnified.customerAggregate.count}
-                      </span>
-                    </div>
-                    {reportUnified.customerGroups.length ? (
-                      <div className="accountings-table-wrap expenses-linked-analytics-wrap">
-                        <table className="accountings-table expenses-linked-analytics-table">
-                          <thead>
-                            <tr>
-                              <th>{t('expensesPage.linkedColCustomer')}</th>
-                              <th className="text-end">{t('expensesPage.linkedColAmount')}</th>
-                              <th className="text-end">{t('expensesPage.linkedColExpenseCount')}</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {reportUnified.customerGroups.map((row, idx) => (
-                              <tr key={row.clientId} className={idx === 0 ? 'expenses-linked-analytics__top-row' : ''}>
-                                <td>
+                <div className="expenses-linked-analytics__block mb-5">
+                  <h5 className="expenses-linked-analytics__subtitle text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
+                    {t('expensesPage.linkedShipmentSection')}
+                  </h5>
+                  <div className="expenses-linked-analytics__summary mb-3 flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate-600 dark:text-slate-400">
+                    <span>
+                      <span className="font-medium text-slate-800 dark:text-slate-200">
+                        {t('expensesPage.linkedSummaryTotal')}:
+                      </span>{' '}
+                      {formatExpenseAmountDigits(reportAnalyticsUnified.shipmentAggregate.total)}
+                    </span>
+                    <span>
+                      <span className="font-medium text-slate-800 dark:text-slate-200">
+                        {t('expensesPage.linkedSummaryCount')}:
+                      </span>{' '}
+                      {reportAnalyticsUnified.shipmentAggregate.count}
+                    </span>
+                  </div>
+                  {reportAnalyticsUnified.shipmentGroups.length ? (
+                    <div className="accountings-table-wrap expenses-linked-analytics-wrap">
+                      <table className="accountings-table expenses-linked-analytics-table">
+                        <thead>
+                          <tr>
+                            <th>{t('expensesPage.linkedColShipment')}</th>
+                            <th className="text-end">{t('expensesPage.linkedColAmount')}</th>
+                            <th className="text-end">{t('expensesPage.linkedColExpenseCount')}</th>
+                            <th>{t('expensesPage.linkedColLinkedCustomer')}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {reportAnalyticsUnified.shipmentGroups.map((row) => (
+                            <tr key={row.shipmentId}>
+                              <td>
+                                <Link
+                                  className="expenses-linked-analytics__entity-link expenses-linked-analytics__entity-link--shipment"
+                                  to={`/shipments?shipment_id=${row.shipmentId}`}
+                                >
+                                  <Ship className="inline h-3.5 w-3.5 shrink-0 opacity-80" aria-hidden />
+                                  <span>{row.blLabel}</span>
+                                </Link>
+                              </td>
+                              <td className="text-end font-medium tabular-nums">
+                                {formatExpenseAmountDigits(row.total)}
+                              </td>
+                              <td className="text-end tabular-nums">{row.count}</td>
+                              <td>
+                                {row.clientId ? (
                                   <Link
                                     className="expenses-linked-analytics__entity-link expenses-linked-analytics__entity-link--customer"
                                     to="/clients"
@@ -1994,24 +1892,82 @@ export default function Expenses() {
                                       {clientNameById[row.clientId] || `#${row.clientId}`}
                                     </span>
                                   </Link>
-                                </td>
-                                <td className="text-end font-medium tabular-nums">
-                                  {formatExpenseAmountDigits(row.total)}
-                                </td>
-                                <td className="text-end tabular-nums">{row.count}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <p className="expenses-muted mb-0 text-sm">{t('expensesPage.linkedCustomerEmpty')}</p>
-                    )}
+                                ) : (
+                                  <span className="expenses-muted">—</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p className="expenses-muted mb-0 text-sm">{t('expensesPage.linkedShipmentEmpty')}</p>
+                  )}
+                </div>
+
+                <div className="expenses-linked-analytics__block">
+                  <h5 className="expenses-linked-analytics__subtitle text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
+                    {t('expensesPage.linkedCustomerSection')}
+                  </h5>
+                  <p className="expenses-linked-analytics__hint text-sm text-slate-500 dark:text-slate-400 mb-3">
+                    {t('expensesPage.linkedCustomerTopHint')}
+                  </p>
+                  <div className="expenses-linked-analytics__summary mb-3 flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate-600 dark:text-slate-400">
+                    <span>
+                      <span className="font-medium text-slate-800 dark:text-slate-200">
+                        {t('expensesPage.linkedSummaryTotal')}:
+                      </span>{' '}
+                      {formatExpenseAmountDigits(reportAnalyticsUnified.customerAggregate.total)}
+                    </span>
+                    <span>
+                      <span className="font-medium text-slate-800 dark:text-slate-200">
+                        {t('expensesPage.linkedSummaryCount')}:
+                      </span>{' '}
+                      {reportAnalyticsUnified.customerAggregate.count}
+                    </span>
                   </div>
-                </>
-              )}
-            </div>
-        </section>
+                  {reportAnalyticsUnified.customerGroups.length ? (
+                    <div className="accountings-table-wrap expenses-linked-analytics-wrap">
+                      <table className="accountings-table expenses-linked-analytics-table">
+                        <thead>
+                          <tr>
+                            <th>{t('expensesPage.linkedColCustomer')}</th>
+                            <th className="text-end">{t('expensesPage.linkedColAmount')}</th>
+                            <th className="text-end">{t('expensesPage.linkedColExpenseCount')}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {reportAnalyticsUnified.customerGroups.map((row, idx) => (
+                            <tr key={row.clientId} className={idx === 0 ? 'expenses-linked-analytics__top-row' : ''}>
+                              <td>
+                                <Link
+                                  className="expenses-linked-analytics__entity-link expenses-linked-analytics__entity-link--customer"
+                                  to="/clients"
+                                  state={{ focusClientId: row.clientId }}
+                                >
+                                  <User className="inline h-3.5 w-3.5 shrink-0 opacity-80" aria-hidden />
+                                  <span>
+                                    {clientNameById[row.clientId] || `#${row.clientId}`}
+                                  </span>
+                                </Link>
+                              </td>
+                              <td className="text-end font-medium tabular-nums">
+                                {formatExpenseAmountDigits(row.total)}
+                              </td>
+                              <td className="text-end tabular-nums">{row.count}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p className="expenses-muted mb-0 text-sm">{t('expensesPage.linkedCustomerEmpty')}</p>
+                  )}
+                </div>
+              </>
+            )}
+          </section>
         </div>
 
         {modal && (

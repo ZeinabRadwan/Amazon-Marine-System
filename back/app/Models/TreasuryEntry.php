@@ -34,6 +34,8 @@ class TreasuryEntry extends Model
         'notes',
         'entry_date',
         'created_by_id',
+        'is_voided',
+        'voided_at',
     ];
 
     /**
@@ -44,6 +46,8 @@ class TreasuryEntry extends Model
         'exchange_rate' => 'decimal:8',
         'converted_amount' => 'decimal:2',
         'entry_date' => 'date',
+        'is_voided' => 'boolean',
+        'voided_at' => 'datetime',
     ];
 
     /**

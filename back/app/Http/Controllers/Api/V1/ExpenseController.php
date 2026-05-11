@@ -100,7 +100,7 @@ class ExpenseController extends Controller
 
         $query = Expense::query()
             ->whereNotNull('shipment_id')
-            ->with(['category', 'vendor', 'shipment', 'treasuryEntry']);
+            ->with(['category', 'vendor', 'shipment', 'treasuryTransaction']);
 
         if ($search = $request->query('search')) {
             $query->where(function ($q) use ($search): void {
@@ -174,7 +174,7 @@ class ExpenseController extends Controller
                 'receipt_path' => $expense->receipt_path,
                 'receipt_name' => $expense->receipt_path ? basename($expense->receipt_path) : null,
                 'bank_account_id' => $expense->bank_account_id,
-                'treasury_transaction_id' => $expense->treasuryEntry?->id,
+                'treasury_transaction_id' => $expense->treasury_transaction_id ?? $expense->treasuryTransaction?->id,
             ];
         })->values();
 
@@ -191,7 +191,7 @@ class ExpenseController extends Controller
 
         $query = Expense::query()
             ->whereNull('shipment_id')
-            ->with(['category', 'treasuryEntry']);
+            ->with(['category', 'treasuryTransaction']);
 
         if ($search = $request->query('search')) {
             $query->where(function ($q) use ($search): void {
@@ -248,7 +248,7 @@ class ExpenseController extends Controller
                 'has_receipt' => (bool) $expense->has_receipt,
                 'receipt_name' => $expense->receipt_path ? basename($expense->receipt_path) : null,
                 'bank_account_id' => $expense->bank_account_id,
-                'treasury_transaction_id' => $expense->treasuryEntry?->id,
+                'treasury_transaction_id' => $expense->treasury_transaction_id ?? $expense->treasuryTransaction?->id,
             ];
         })->values();
 
@@ -259,7 +259,7 @@ class ExpenseController extends Controller
     {
         $validated = $request->validated();
 
-        $expense = new Expense();
+        $expense = new Expense;
         $expense->expense_category_id = $validated['expense_category_id'];
         $expense->description = $validated['description'];
         $expense->amount = $validated['amount'];
@@ -305,11 +305,11 @@ class ExpenseController extends Controller
             }
         }
 
-        $fresh = $expense->fresh()->load(['category', 'vendor', 'shipment', 'treasuryEntry', 'bankAccount']);
+        $fresh = $expense->fresh()->load(['category', 'vendor', 'shipment', 'treasuryTransaction', 'bankAccount']);
 
         return response()->json([
             'data' => array_merge($fresh->toArray(), [
-                'treasury_transaction_id' => $fresh->treasuryEntry?->id,
+                'treasury_transaction_id' => $fresh->treasury_transaction_id ?? $fresh->treasuryTransaction?->id,
             ]),
         ], 201);
     }
@@ -322,11 +322,11 @@ class ExpenseController extends Controller
             __('You do not have permission to view this expense.')
         );
 
-        $loaded = $expense->load(['category', 'vendor', 'shipment', 'treasuryEntry', 'bankAccount']);
+        $loaded = $expense->load(['category', 'vendor', 'shipment', 'treasuryTransaction', 'bankAccount']);
 
         return response()->json([
             'data' => array_merge($loaded->toArray(), [
-                'treasury_transaction_id' => $loaded->treasuryEntry?->id,
+                'treasury_transaction_id' => $loaded->treasury_transaction_id ?? $loaded->treasuryTransaction?->id,
             ]),
         ]);
     }
@@ -422,11 +422,11 @@ class ExpenseController extends Controller
             }
         }
 
-        $fresh = $expense->fresh(['category', 'vendor', 'shipment', 'treasuryEntry', 'bankAccount']);
+        $fresh = $expense->fresh(['category', 'vendor', 'shipment', 'treasuryTransaction', 'bankAccount']);
 
         return response()->json([
             'data' => array_merge($fresh->toArray(), [
-                'treasury_transaction_id' => $fresh->treasuryEntry?->id,
+                'treasury_transaction_id' => $fresh->treasury_transaction_id ?? $fresh->treasuryTransaction?->id,
             ]),
         ]);
     }
@@ -442,7 +442,10 @@ class ExpenseController extends Controller
 
         $shipmentId = $expense->shipment_id;
 
-        $expense->delete();
+        DB::transaction(function () use ($expense): void {
+            app(ExpenseTreasurySyncService::class)->voidTreasuryEntryForExpense($expense);
+            $expense->delete();
+        });
 
         if ($shipmentId) {
             Shipment::recomputeTotals((int) $shipmentId);

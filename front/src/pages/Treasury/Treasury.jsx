@@ -153,6 +153,8 @@ function treasuryCurrencyBadgeVariant(code) {
 
 /** Maps ledger row to a treasury transaction type label key (see treasury.txnType.*). */
 function deriveTransactionTypeKey(row) {
+  const ft = String(row?.flow_type || '').toLowerCase()
+  if (ft === 'expense') return 'expense'
   const et = String(row?.entry_type || '').toLowerCase()
   if (et === 'exchange') return 'currencyExchange'
   if (et === 'transfer') return 'internalTransfer'
@@ -163,6 +165,9 @@ function deriveTransactionTypeKey(row) {
 }
 
 function transactionTypeLabel(row, t) {
+  if (row?.is_voided && String(row?.flow_type || '').toLowerCase() === 'expense') {
+    return t('treasury.txnType.expenseVoided', 'Expense (voided)')
+  }
   const k = deriveTransactionTypeKey(row)
   const fallbacks = {
     deposit: 'Deposit',
@@ -232,6 +237,7 @@ function computeRunningBalances(rows, clampZero = true) {
     })
     let run = 0
     for (const r of sorted) {
+      if (r.is_voided) continue
       run += Number(r.amount) || 0
       if (run < 0) hasNegative = true
       const displayRun = clampZero ? Math.max(0, run) : run
@@ -997,7 +1003,20 @@ export default function Treasury() {
                 pagedEntries.map((row) => {
                   const rb = runningById.get(row.id)
                   const txnKey = deriveTransactionTypeKey(row)
-                  const desc = [row.description, row.reference_label].filter(Boolean).join(' · ') || '—'
+                  const descParts = [row.description, row.reference_label].filter(Boolean)
+                  if (row.is_voided && row.voided_original_amount != null && Number.isFinite(row.voided_original_amount)) {
+                    const orig = Math.abs(Number(row.voided_original_amount))
+                    descParts.push(
+                      t('treasury.voidedOriginalHint', {
+                        amount: orig.toLocaleString(locale, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        }),
+                        currency: row.currency_code || '',
+                      })
+                    )
+                  }
+                  const desc = descParts.join(' · ') || '—'
                   const amt = Number(row.amount)
                   const debitCell =
                     Number.isFinite(amt) && amt > 0 ? (
@@ -1029,14 +1048,19 @@ export default function Treasury() {
                     row.account_id != null
                       ? accountIdToLabel.get(String(row.account_id)) ?? `#${row.account_id}`
                       : '—'
+                  const txnClassBase = TXN_TYPE_CLASS[txnKey] ?? TXN_TYPE_CLASS.other
+                  const txnClassName = row.is_voided
+                    ? `${txnClassBase} treasury-txn-type--voided`.trim()
+                    : txnClassBase
                   return (
-                    <tr key={row.id} className="treasury-ledger-row">
+                    <tr
+                      key={row.id}
+                      className={`treasury-ledger-row${row.is_voided ? ' treasury-ledger-row--voided' : ''}`}
+                    >
                       <td className="treasury-ledger-cell whitespace-nowrap">{row.entry_date}</td>
                       <td className="treasury-ledger-cell max-w-[min(28rem,55vw)]">{desc}</td>
                       <td className="treasury-ledger-cell">
-                        <span
-                          className={`treasury-txn-type ${TXN_TYPE_CLASS[txnKey] ?? TXN_TYPE_CLASS.other}`}
-                        >
+                        <span className={`treasury-txn-type ${txnClassName}`}>
                           {transactionTypeLabel(row, t)}
                         </span>
                       </td>
