@@ -28,7 +28,14 @@ class ExpenseCategoryController extends Controller
 
     public function store(Request $request)
     {
-        abort_unless($request->user()?->can('financial.manage'), 403);
+        $user = $request->user();
+        abort_unless(
+            $user
+                && ($user->can('financial.manage')
+                    || $user->can('accounting.manage')
+                    || $user->hasRole('admin')),
+            403,
+        );
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -44,7 +51,14 @@ class ExpenseCategoryController extends Controller
 
     public function update(Request $request, ExpenseCategory $expenseCategory)
     {
-        abort_unless($request->user()?->can('financial.manage'), 403);
+        $user = $request->user();
+        abort_unless(
+            $user
+                && ($user->can('financial.manage')
+                    || $user->can('accounting.manage')
+                    || $user->hasRole('admin')),
+            403,
+        );
 
         $validated = $request->validate([
             'name' => ['sometimes', 'string', 'max:255'],
@@ -61,7 +75,14 @@ class ExpenseCategoryController extends Controller
 
     public function destroy(Request $request, ExpenseCategory $expenseCategory)
     {
-        abort_unless($request->user()?->can('financial.manage'), 403);
+        $user = $request->user();
+        abort_unless(
+            $user
+                && ($user->can('financial.manage')
+                    || $user->can('accounting.manage')
+                    || $user->hasRole('admin')),
+            403,
+        );
 
         $expenseCategory->delete();
 

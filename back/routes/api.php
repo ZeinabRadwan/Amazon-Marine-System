@@ -585,6 +585,7 @@ Route::prefix('v1')->group(function () {
 
         // Expense categories (for expense forms & shipment financials)
         Route::get('expense-categories', [ExpenseCategoryController::class, 'index']);
+        Route::post('expense-categories', [ExpenseCategoryController::class, 'store']);
 
         // Expenses (shipment & general)
         Route::get('expenses/summary', [ExpenseController::class, 'summary']);
