@@ -128,6 +128,24 @@ export async function listExpenseCategories(token) {
 }
 
 /**
+ * POST /expense-categories
+ * @param {string} token
+ * @param {{ name: string, code?: string }} body
+ */
+export async function createExpenseCategory(token, body) {
+  const res = await apiFetch(`${getBaseUrl()}/expense-categories`, {
+    method: 'POST',
+    headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(json.message || json.error || `Failed to create expense category (${res.status})`)
+  }
+  return json.data ?? json
+}
+
+/**
  * @param {string} token
  * @param {{
  *   type: 'shipment' | 'general',
@@ -140,6 +158,7 @@ export async function listExpenseCategories(token) {
  *   payment_method?: string,
  *   invoice_number?: string,
  *   vendor_id?: number,
+ *   bank_account_id: number,
  * }} body
  */
 export async function createExpense(token, body) {

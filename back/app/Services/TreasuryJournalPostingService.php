@@ -27,6 +27,9 @@ class TreasuryJournalPostingService
     /** UI / manual treasury rows */
     public const KIND_MANUAL = 'manual';
 
+    /** Operational expense — linked {@see \App\Models\Expense} row */
+    public const KIND_EXPENSE = 'expense';
+
     /** Incoming (to account balance): maps to `entry_type` in */
     public const SIDE_DEBIT = 'debit';
 

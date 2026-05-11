@@ -65,6 +65,35 @@ const OTHER_DESC_PREFIX = {
 /** Matches draft client invoice line used for handling / service fee. */
 const HANDLING_FEE_DESCRIPTION = 'Handling Fee'
 
+/** Treasury posting: pick bank account for expense currency (reuse saved id when valid). */
+function resolveExpenseBankAccountId(bankAccounts, currencyCode, existingBankId) {
+  const list = Array.isArray(bankAccounts) ? bankAccounts.filter((b) => b && b.is_active !== false) : []
+  if (existingBankId != null && existingBankId !== '') {
+    const ex = Number(existingBankId)
+    if (Number.isFinite(ex) && ex > 0 && list.some((b) => Number(b.id) === ex)) {
+      return ex
+    }
+  }
+  const cur = String(currencyCode || 'USD').toUpperCase()
+  const supports = (b) => {
+    const raw = b.allowed_currencies ?? b.supported_currencies
+    if (!Array.isArray(raw) || raw.length === 0) {
+      return true
+    }
+    return raw.some((c) => String(c).toUpperCase() === cur)
+  }
+  const hit = list.find(supports)
+  return hit?.id != null ? Number(hit.id) : list[0]?.id != null ? Number(list[0].id) : null
+}
+
+function paymentMethodLabelFromBank(bankAccounts, bankId) {
+  const b = Array.isArray(bankAccounts) ? bankAccounts.find((x) => Number(x.id) === Number(bankId)) : null
+  if (!b) return ''
+  const bn = String(b.bank_name || '').trim()
+  const an = String(b.account_name || '').trim()
+  return bn && an ? `${bn} — ${an}` : bn || an || ''
+}
+
 /** Build same download URL the SPA uses (when API omits `url` but `id` is valid). */
 function buildShipmentAttachmentDownloadUrl(att, shipmentId) {
   if (!shipmentId || !hasShipmentAttachmentId(att)) return null
@@ -424,6 +453,7 @@ function FinSingleExpenseRow({
   saveRegisterKey,
   onRegisterSave,
   sectionVendorId,
+  bankAccounts = [],
 }) {
   const safeExp = expense || {}
   const descPrefix = tpl ? (LINE_DESC_PREFIX[tpl.id] || tpl.id) : ''
@@ -466,6 +496,12 @@ function FinSingleExpenseRow({
       return
     }
     const dateStr = new Date().toISOString().slice(0, 10)
+    const bankId = resolveExpenseBankAccountId(bankAccounts, currency, safeExp.bank_account_id)
+    if (!bankId) {
+      setRowError(t('shipments.fin.errorNoBankAccount', { defaultValue: 'Select an active bank account for this currency (Treasury).' }))
+      return
+    }
+    const pm = paymentMethodLabelFromBank(bankAccounts, bankId)
     setSaving(true)
     try {
       if (safeExp.id) {
@@ -475,6 +511,8 @@ function FinSingleExpenseRow({
           currency_code: currency,
           expense_date: safeExp.expense_date || dateStr,
           vendor_id: sectionVendorId || safeExp.vendor_id || undefined,
+          bank_account_id: bankId,
+          payment_method: pm || undefined,
         })
       } else {
         await createExpense(token, {
@@ -486,6 +524,8 @@ function FinSingleExpenseRow({
           currency_code: currency,
           expense_date: dateStr,
           vendor_id: sectionVendorId || safeExp.vendor_id || undefined,
+          bank_account_id: bankId,
+          payment_method: pm || undefined,
         })
       }
       onSaved?.()
@@ -628,6 +668,7 @@ function FinPendingOtherChargeRow({
   onSaved,
   onRemove,
   sectionVendorId,
+  bankAccounts = [],
 }) {
   const prefix = OTHER_DESC_PREFIX[bucketId] || 'Other'
   const categoryCode = otherLineCategoryCode(bucketId)
@@ -658,6 +699,12 @@ function FinPendingOtherChargeRow({
     }
     const dateStr = new Date().toISOString().slice(0, 10)
     const fullDesc = (desc || '').trim()
+    const bankId = resolveExpenseBankAccountId(bankAccounts, currency, null)
+    if (!bankId) {
+      setRowError(t('shipments.fin.errorNoBankAccount', { defaultValue: 'Select an active bank account for this currency (Treasury).' }))
+      return
+    }
+    const pm = paymentMethodLabelFromBank(bankAccounts, bankId)
     setSaving(true)
     try {
       await createExpense(token, {
@@ -669,6 +716,8 @@ function FinPendingOtherChargeRow({
         currency_code: currency,
         expense_date: dateStr,
         vendor_id: sectionVendorId ?? undefined,
+        bank_account_id: bankId,
+        payment_method: pm || undefined,
       })
       onSaved?.()
       onRemove?.()
@@ -1168,13 +1217,21 @@ export default function ShipmentFinancialsModal({
             throw new Error(t('shipments.fin.errorInvalidAmount'))
           }
           const builtDescription = descTrimmed
+          const cur = draft.currency || 'USD'
+          const bankId = resolveExpenseBankAccountId(bankAccounts, cur, model.bankAccountId)
+          if (!bankId) {
+            throw new Error(t('shipments.fin.errorNoBankAccount', { defaultValue: 'Select an active bank account for this currency (Treasury).' }))
+          }
+          const pm = paymentMethodLabelFromBank(bankAccounts, bankId)
           if (model.expenseId) {
             await updateExpense(token, model.expenseId, {
               description: builtDescription,
               amount: amt,
-              currency_code: draft.currency || 'USD',
+              currency_code: cur,
               expense_date: model.expenseDate || new Date().toISOString().slice(0, 10),
               vendor_id: model.vendorId || undefined,
+              bank_account_id: bankId,
+              payment_method: pm || undefined,
             })
           } else {
             await createExpense(token, {
@@ -1183,9 +1240,11 @@ export default function ShipmentFinancialsModal({
               expense_category_id: model.categoryId,
               description: builtDescription,
               amount: amt,
-              currency_code: draft.currency || 'USD',
+              currency_code: cur,
               expense_date: new Date().toISOString().slice(0, 10),
               vendor_id: undefined,
+              bank_account_id: bankId,
+              payment_method: pm || undefined,
             })
           }
         }
@@ -1202,15 +1261,23 @@ export default function ShipmentFinancialsModal({
           const categoryCode = otherLineCategoryCode(bucketId)
           const categoryMeta = categoriesByCode[categoryCode]
           if (!categoryMeta?.id) throw new Error(t('shipments.fin.errorNoCategory'))
+          const cur = line.currency || 'USD'
+          const bankId = resolveExpenseBankAccountId(bankAccounts, cur, null)
+          if (!bankId) {
+            throw new Error(t('shipments.fin.errorNoBankAccount', { defaultValue: 'Select an active bank account for this currency (Treasury).' }))
+          }
+          const pm = paymentMethodLabelFromBank(bankAccounts, bankId)
           await createExpense(token, {
             type: 'shipment',
             shipment_id: shipment.id,
             expense_category_id: categoryMeta.id,
             description: desc || t('shipments.fin.descPlaceholder'),
             amount: amountNum,
-            currency_code: line.currency || 'USD',
+            currency_code: cur,
             expense_date: new Date().toISOString().slice(0, 10),
             vendor_id: undefined,
+            bank_account_id: bankId,
+            payment_method: pm || undefined,
           })
         }
         setPendingOtherByBucket((prev) => ({ ...prev, [bucketId]: [] }))
@@ -1225,7 +1292,7 @@ export default function ShipmentFinancialsModal({
         setBatchSavingBucket(null)
       }
     },
-    [deletedIdsByBucket, groupDraftByKey, onExpensesChanged, shipment?.id, t, token, pendingOtherByBucket, categoriesByCode]
+    [deletedIdsByBucket, groupDraftByKey, onExpensesChanged, shipment?.id, t, token, pendingOtherByBucket, categoriesByCode, bankAccounts]
   )
 
   const addPendingOtherLine = useCallback((bucketId, initial = {}) => {
@@ -3025,6 +3092,7 @@ export default function ShipmentFinancialsModal({
             initialCurrency,
             expenseDate: ex?.expense_date,
             vendorId: ex?.vendor_id,
+            bankAccountId: ex?.bank_account_id ?? null,
           })
 
           if (!bucketEditing) {

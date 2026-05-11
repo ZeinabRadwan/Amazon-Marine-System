@@ -59,6 +59,7 @@ export default function LineChart({
               strokeWidth={2.5}
               dot={{ r: 4, strokeWidth: 2 }}
               activeDot={{ r: 6, strokeWidth: 2 }}
+              connectNulls={line.connectNulls ?? false}
             />
           ))}
         </RechartsLineChart>

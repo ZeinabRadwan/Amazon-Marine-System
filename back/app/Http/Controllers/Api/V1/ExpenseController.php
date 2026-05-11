@@ -9,9 +9,12 @@ use App\Models\ExpenseCategory;
 use App\Models\Invoice;
 use App\Models\Shipment;
 use App\Services\ActivityLogger;
+use App\Services\ExpenseTreasurySyncService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ExpenseController extends Controller
@@ -97,7 +100,7 @@ class ExpenseController extends Controller
 
         $query = Expense::query()
             ->whereNotNull('shipment_id')
-            ->with(['category', 'vendor', 'shipment']);
+            ->with(['category', 'vendor', 'shipment', 'treasuryEntry']);
 
         if ($search = $request->query('search')) {
             $query->where(function ($q) use ($search): void {
@@ -170,6 +173,8 @@ class ExpenseController extends Controller
                 'has_receipt' => (bool) $expense->has_receipt,
                 'receipt_path' => $expense->receipt_path,
                 'receipt_name' => $expense->receipt_path ? basename($expense->receipt_path) : null,
+                'bank_account_id' => $expense->bank_account_id,
+                'treasury_transaction_id' => $expense->treasuryEntry?->id,
             ];
         })->values();
 
@@ -186,7 +191,7 @@ class ExpenseController extends Controller
 
         $query = Expense::query()
             ->whereNull('shipment_id')
-            ->with('category');
+            ->with(['category', 'treasuryEntry']);
 
         if ($search = $request->query('search')) {
             $query->where(function ($q) use ($search): void {
@@ -242,6 +247,8 @@ class ExpenseController extends Controller
                 'invoice_number' => $expense->invoice_number,
                 'has_receipt' => (bool) $expense->has_receipt,
                 'receipt_name' => $expense->receipt_path ? basename($expense->receipt_path) : null,
+                'bank_account_id' => $expense->bank_account_id,
+                'treasury_transaction_id' => $expense->treasuryEntry?->id,
             ];
         })->values();
 
@@ -262,6 +269,7 @@ class ExpenseController extends Controller
         $expense->payment_method = $validated['payment_method'] ?? null;
         $expense->invoice_number = $validated['invoice_number'] ?? null;
         $expense->vendor_id = $validated['vendor_id'] ?? null;
+        $expense->bank_account_id = $validated['bank_account_id'];
 
         if (($validated['type'] ?? '') === 'shipment') {
             $expense->shipment_id = $validated['shipment_id'] ?? null;
@@ -269,7 +277,20 @@ class ExpenseController extends Controller
             $expense->shipment_id = null;
         }
 
-        $expense->save();
+        try {
+            DB::transaction(function () use ($expense, $request): void {
+                $expense->save();
+                app(ExpenseTreasurySyncService::class)->syncForExpense(
+                    $expense->fresh(['category']),
+                    (int) $request->user()->id,
+                );
+            });
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => collect($e->errors())->flatten()->first() ?? __('Validation failed.'),
+                'errors' => $e->errors(),
+            ], 422);
+        }
 
         if ($expense->shipment_id) {
             $shipment = Shipment::find($expense->shipment_id);
@@ -284,8 +305,12 @@ class ExpenseController extends Controller
             }
         }
 
+        $fresh = $expense->fresh()->load(['category', 'vendor', 'shipment', 'treasuryEntry', 'bankAccount']);
+
         return response()->json([
-            'data' => $expense->load(['category', 'vendor', 'shipment']),
+            'data' => array_merge($fresh->toArray(), [
+                'treasury_transaction_id' => $fresh->treasuryEntry?->id,
+            ]),
         ], 201);
     }
 
@@ -297,8 +322,12 @@ class ExpenseController extends Controller
             __('You do not have permission to view this expense.')
         );
 
+        $loaded = $expense->load(['category', 'vendor', 'shipment', 'treasuryEntry', 'bankAccount']);
+
         return response()->json([
-            'data' => $expense->load(['category', 'vendor', 'shipment']),
+            'data' => array_merge($loaded->toArray(), [
+                'treasury_transaction_id' => $loaded->treasuryEntry?->id,
+            ]),
         ]);
     }
 
@@ -316,6 +345,7 @@ class ExpenseController extends Controller
             'description' => ['sometimes', 'string', 'max:500'],
             'amount' => ['sometimes', 'numeric', 'min:0'],
             'currency_code' => ['sometimes', 'string', 'size:3'],
+            'bank_account_id' => ['sometimes', 'integer', 'exists:bank_accounts,id'],
             'payment_method' => ['nullable', 'string', 'max:100'],
             'expense_date' => ['sometimes', 'date'],
             'invoice_number' => ['nullable', 'string', 'max:100'],
@@ -350,6 +380,9 @@ class ExpenseController extends Controller
         if (array_key_exists('vendor_id', $validated)) {
             $expense->vendor_id = $validated['vendor_id'];
         }
+        if (array_key_exists('bank_account_id', $validated)) {
+            $expense->bank_account_id = $validated['bank_account_id'];
+        }
         if (isset($validated['type'])) {
             $expense->shipment_id = ($validated['type'] === 'shipment' && ! empty($validated['shipment_id']))
                 ? $validated['shipment_id']
@@ -358,7 +391,20 @@ class ExpenseController extends Controller
             $expense->shipment_id = $validated['shipment_id'];
         }
 
-        $expense->save();
+        try {
+            DB::transaction(function () use ($expense, $request): void {
+                $expense->save();
+                app(ExpenseTreasurySyncService::class)->syncForExpense(
+                    $expense->fresh(['category']),
+                    (int) $request->user()->id,
+                );
+            });
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => collect($e->errors())->flatten()->first() ?? __('Validation failed.'),
+                'errors' => $e->errors(),
+            ], 422);
+        }
 
         if ($oldShipmentId && (int) $oldShipmentId !== (int) $expense->shipment_id) {
             Shipment::recomputeTotals((int) $oldShipmentId);
@@ -376,8 +422,12 @@ class ExpenseController extends Controller
             }
         }
 
+        $fresh = $expense->fresh(['category', 'vendor', 'shipment', 'treasuryEntry', 'bankAccount']);
+
         return response()->json([
-            'data' => $expense->fresh(['category', 'vendor', 'shipment']),
+            'data' => array_merge($fresh->toArray(), [
+                'treasury_transaction_id' => $fresh->treasuryEntry?->id,
+            ]),
         ]);
     }
 

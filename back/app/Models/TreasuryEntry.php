@@ -19,6 +19,7 @@ class TreasuryEntry extends Model
         'account_id',
         'counter_account_id',
         'payment_id',
+        'expense_id',
         'amount',
         'currency_code',
         'exchange_rate',
@@ -51,6 +52,14 @@ class TreasuryEntry extends Model
     public function payment(): BelongsTo
     {
         return $this->belongsTo(Payment::class);
+    }
+
+    /**
+     * @return BelongsTo<Expense, TreasuryEntry>
+     */
+    public function expense(): BelongsTo
+    {
+        return $this->belongsTo(Expense::class);
     }
 
     /**

@@ -21,8 +21,10 @@ const ICON_VARIANTS = {
  *   - trend: 'up' | 'down' – optional trend direction
  *   - variant: 'blue' | 'green' | 'amber' | 'red' | 'default' – icon container color
  *   - className: string – optional root classes
+ *   - titleFirst: boolean – title + icon on first row (inline); value below (e.g. Expenses list stats)
  *
- * Layout: Two-row flex. Row 1: colored icon (top-left), trend pill (top-right). Row 2: number + title stacked.
+ * Layout (default): Row 1: colored icon (top-left), trend pill (top-right). Row 2: number then title.
+ * Layout (titleFirst): Row 1: icon + title inline. Row 2: value only.
  */
 export default function StatsCard({
   title,
@@ -33,6 +35,7 @@ export default function StatsCard({
   variant = 'default',
   color: customColor, // New prop for DB-driven colors
   className = '',
+  titleFirst = false,
 }) {
   const id = useId()
   const titleId = `stats-card-title-${id.replace(/:/g, '')}`
@@ -52,6 +55,48 @@ export default function StatsCard({
         ? `${change > 0 ? '+' : ''}${change}%`
         : String(change)
       : null
+
+  const valueBlock =
+    typeof value === 'number' ? (
+      <p className="text-xl font-bold leading-tight tabular-nums text-gray-900 dark:text-gray-100">
+        {formatValue(value, i18n.language)}
+      </p>
+    ) : typeof value === 'string' ? (
+      <p className="text-xl font-bold leading-tight tabular-nums text-gray-900 dark:text-gray-100">{value}</p>
+    ) : (
+      <div className="accounting-stats-card-value-rich">{value}</div>
+    )
+
+  if (titleFirst) {
+    return (
+      <article
+        className={`
+        flex flex-shrink-0 flex-col rounded-lg border border-gray-200/80 bg-white py-3.5 px-4
+        shadow-sm transition-all duration-200 hover:shadow-md
+        dark:border-gray-700/80 dark:bg-gray-800/80 dark:shadow-none dark:hover:border-gray-600
+        ${className}
+      `.trim()}
+        aria-labelledby={titleId}
+      >
+        <div className="flex min-w-0 items-center gap-2">
+          <div
+            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg p-1 [&>svg]:h-4 [&>svg]:w-4 ${variant === 'custom' ? '' : iconStyles}`}
+            style={customIconStyles}
+            aria-hidden
+          >
+            {icon}
+          </div>
+          <p
+            id={titleId}
+            className="min-w-0 flex-1 text-sm font-semibold leading-snug text-slate-700 dark:text-slate-200"
+          >
+            {title}
+          </p>
+        </div>
+        <div className="mt-3 min-w-0">{valueBlock}</div>
+      </article>
+    )
+  }
 
   return (
     <article
@@ -101,15 +146,7 @@ export default function StatsCard({
 
       {/* Row 2: Number + Title stacked (numbers vs rich currency badges) */}
       <div className="mt-2.5 min-w-0">
-        {typeof value === 'number' ? (
-          <p className="text-xl font-bold leading-tight tabular-nums text-gray-900 dark:text-gray-100">
-            {formatValue(value, i18n.language)}
-          </p>
-        ) : typeof value === 'string' ? (
-          <p className="text-xl font-bold leading-tight tabular-nums text-gray-900 dark:text-gray-100">{value}</p>
-        ) : (
-          <div className="accounting-stats-card-value-rich">{value}</div>
-        )}
+        {valueBlock}
         <p
           id={titleId}
           className="mt-0.5 text-sm font-medium text-slate-600 dark:text-slate-400"

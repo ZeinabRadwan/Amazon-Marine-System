@@ -26,6 +26,7 @@ class StoreExpenseRequest extends FormRequest
             'description' => ['required', 'string', 'max:500'],
             'amount' => ['required', 'numeric', 'min:0'],
             'currency_code' => ['required', 'string', 'size:3'],
+            'bank_account_id' => ['required', 'integer', 'exists:bank_accounts,id'],
             'payment_method' => ['nullable', 'string', 'max:100'],
             'expense_date' => ['required', 'date'],
             'invoice_number' => ['nullable', 'string', 'max:100'],

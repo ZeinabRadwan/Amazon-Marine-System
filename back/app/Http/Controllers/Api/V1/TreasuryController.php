@@ -483,6 +483,7 @@ class TreasuryController extends Controller
             'payment.invoice',
             'payment.shipment',
             'payment.vendorBill',
+            'expense.category',
         ]);
 
         if ($type = $request->query('type')) {
@@ -538,6 +539,8 @@ class TreasuryController extends Controller
                 $flowType = 'customer';
             } elseif ($paymentType === 'vendor_payment') {
                 $flowType = 'partner';
+            } elseif ($entry->expense_id) {
+                $flowType = 'expense';
             } elseif (! $entry->payment_id) {
                 $flowType = $type === 'transfer' ? 'transfer' : 'manual';
             }
@@ -559,6 +562,9 @@ class TreasuryController extends Controller
             if ($refLabel === '' && $entry->reference) {
                 $refLabel = (string) $entry->reference;
             }
+            if ($refLabel === '' && $entry->expense_id) {
+                $refLabel = 'Expense #'.(string) $entry->expense_id;
+            }
 
             return [
                 'id' => $entry->id,
@@ -571,6 +577,7 @@ class TreasuryController extends Controller
                 'account_id' => $entry->account_id,
                 'counter_account_id' => $entry->counter_account_id,
                 'payment_id' => $entry->payment_id,
+                'expense_id' => $entry->expense_id,
                 'invoice_id' => $pay?->invoice_id,
                 'shipment_id' => $pay?->shipment_id,
                 'vendor_bill_id' => $pay?->vendor_bill_id,
