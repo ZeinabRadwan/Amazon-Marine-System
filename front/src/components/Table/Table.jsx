@@ -16,7 +16,19 @@ import './Table.css'
  *   - onSort?: (key: string, direction: 'asc' | 'desc') => void
  *   - className?: string
  *   - renderMobileCard?: (row) => ReactNode — when set, replaces default mobile card layout (desktop table unchanged)
+ *   - onRowClick?: (row, event) => void — entire row becomes clickable (skips clicks on links, buttons, inputs)
+ *   - getRowDataAttrs?: (row) => Record<string, string | number | undefined> — spread onto <tr> / mobile card (e.g. data-shipment-id)
+ *   - rowAriaLabel?: (row) => string — optional accessible name when row is clickable
  */
+function shouldIgnoreRowClickTarget(target) {
+  if (!target || typeof target.closest !== 'function') return false
+  return Boolean(
+    target.closest(
+      'a, button, input, select, textarea, label, [role="button"], [data-table-row-ignore]',
+    ),
+  )
+}
+
 export default function Table({
   columns = [],
   data = [],
@@ -27,10 +39,14 @@ export default function Table({
   onSort,
   className = '',
   renderMobileCard,
+  onRowClick,
+  getRowDataAttrs,
+  rowAriaLabel,
 }) {
   const { t } = useTranslation()
   const defaultEmpty = t('table.empty')
   const visibleColumns = columns.filter((col) => !col.hideOnMobile)
+  const rowClickable = typeof onRowClick === 'function'
 
   const handleSort = (colKey) => {
     if (!onSort) return
@@ -101,22 +117,50 @@ export default function Table({
             </tr>
           </thead>
           <tbody>
-            {data.map((row) => (
-              <tr
-                key={getRowKey(row)}
-                className="responsive-table__tr border-b border-gray-100 transition-colors last:border-b-0 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700/50"
-              >
-                {columns.map((col) => (
-                  <td
-                    key={col.key}
-                    className="responsive-table__td border-b border-gray-100 px-4 py-3 text-gray-800 last:border-b-0 dark:border-gray-700 dark:text-gray-200"
-                    data-label={col.label}
-                  >
-                    {col.render ? col.render(row[col.key], row) : (row[col.key] ?? '—')}
-                  </td>
-                ))}
-              </tr>
-            ))}
+            {data.map((row) => {
+              const dataAttrs = typeof getRowDataAttrs === 'function' ? getRowDataAttrs(row) ?? {} : {}
+              const aria = rowClickable && typeof rowAriaLabel === 'function' ? rowAriaLabel(row) : undefined
+              return (
+                <tr
+                  key={getRowKey(row)}
+                  {...dataAttrs}
+                  tabIndex={rowClickable ? 0 : undefined}
+                  role={rowClickable ? 'link' : undefined}
+                  aria-label={aria || undefined}
+                  className={`responsive-table__tr border-b border-gray-100 transition-colors last:border-b-0 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700/50${
+                    rowClickable ? ' responsive-table__tr--clickable cursor-pointer' : ''
+                  }`.trim()}
+                  onClick={
+                    rowClickable
+                      ? (e) => {
+                          if (shouldIgnoreRowClickTarget(e.target)) return
+                          onRowClick(row, e)
+                        }
+                      : undefined
+                  }
+                  onKeyDown={
+                    rowClickable
+                      ? (e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            onRowClick(row, e)
+                          }
+                        }
+                      : undefined
+                  }
+                >
+                  {columns.map((col) => (
+                    <td
+                      key={col.key}
+                      className="responsive-table__td border-b border-gray-100 px-4 py-3 text-gray-800 last:border-b-0 dark:border-gray-700 dark:text-gray-200"
+                      data-label={col.label}
+                    >
+                      {col.render ? col.render(row[col.key], row) : (row[col.key] ?? '—')}
+                    </td>
+                  ))}
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
@@ -131,7 +175,31 @@ export default function Table({
           ) : (
             <div
               key={getRowKey(row)}
-              className="responsive-table__card rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
+              {...(typeof getRowDataAttrs === 'function' ? getRowDataAttrs(row) ?? {} : {})}
+              tabIndex={rowClickable ? 0 : undefined}
+              role={rowClickable ? 'link' : undefined}
+              aria-label={rowClickable && typeof rowAriaLabel === 'function' ? rowAriaLabel(row) : undefined}
+              className={`responsive-table__card rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800${
+                rowClickable ? ' responsive-table__card--clickable cursor-pointer' : ''
+              }`.trim()}
+              onClick={
+                rowClickable
+                  ? (e) => {
+                      if (shouldIgnoreRowClickTarget(e.target)) return
+                      onRowClick(row, e)
+                    }
+                  : undefined
+              }
+              onKeyDown={
+                rowClickable
+                  ? (e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        onRowClick(row, e)
+                      }
+                    }
+                  : undefined
+              }
             >
               {visibleColumns.map((col) => (
                 <div

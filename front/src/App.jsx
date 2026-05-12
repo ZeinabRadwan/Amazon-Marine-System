@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom'
 import {
   Calendar,
   BarChart3,
@@ -338,8 +338,24 @@ function PricingDashboardBlock({ payload }) {
 
 function OperationsDashboardBlock({ payload }) {
   const { t, i18n } = useTranslation()
+  const navigate = useNavigate()
   const overview = payload?.shipments_overview || {}
   const assigned = Array.isArray(payload?.assigned_shipments) ? payload.assigned_shipments : []
+
+  const assignedShipmentDataAttrs = useCallback((row) => {
+    const n = Number(row.shipment_id)
+    if (!Number.isFinite(n) || n <= 0) return {}
+    return { 'data-shipment-id': String(n) }
+  }, [])
+
+  const onAssignedShipmentRowClick = useCallback(
+    (row) => {
+      const n = Number(row.shipment_id)
+      if (!Number.isFinite(n) || n <= 0) return
+      navigate({ pathname: '/shipments', search: `?shipment_id=${encodeURIComponent(String(n))}` })
+    },
+    [navigate],
+  )
 
   const status = useMemo(() => {
     return normalizeSeries(payload?.charts?.shipments_by_status_pie).map((s) => ({
@@ -441,6 +457,9 @@ function OperationsDashboardBlock({ payload }) {
         data={assigned}
         getRowKey={(r) => `${r.shipment_id}-${r.deadline}`}
         emptyMessage={t('dashboardModule.operationsEmployee.emptyAssigned')}
+        onRowClick={onAssignedShipmentRowClick}
+        getRowDataAttrs={assignedShipmentDataAttrs}
+        rowAriaLabel={() => t('shipments.opsCard.openShipmentAria')}
       />
     </div>
   )

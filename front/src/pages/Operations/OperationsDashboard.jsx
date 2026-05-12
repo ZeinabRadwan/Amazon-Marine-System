@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { AlertTriangle, CalendarClock, CalendarDays, Ship } from 'lucide-react'
 import { getStoredToken } from '../Login'
@@ -9,11 +9,23 @@ import { StatsCard } from '../../components/StatsCard'
 import LoaderDots from '../../components/LoaderDots'
 import { formatDate } from '../../utils/dateUtils'
 import '../Clients/Clients.css'
+import './OperationsDashboard.css'
 import { getTaskDisplayStatus } from '../Shipments/shipmentOperationTaskUi'
 
 const UPCOMING_OPTIONS = ['tomorrow', '3_days', 'week', 'month']
 
 function TaskTable({ title, rows, emptyLabel, t, i18nLanguage }) {
+  const navigate = useNavigate()
+
+  const goToShipment = useCallback(
+    (shipmentId) => {
+      const n = Number(shipmentId)
+      if (!Number.isFinite(n) || n <= 0) return
+      navigate({ pathname: '/shipments', search: `?shipment_id=${encodeURIComponent(String(n))}` })
+    },
+    [navigate],
+  )
+
   return (
     <section className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/80 shadow-sm overflow-hidden mb-8">
       <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-slate-50/90 dark:bg-slate-900/40">
@@ -35,17 +47,46 @@ function TaskTable({ title, rows, emptyLabel, t, i18nLanguage }) {
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
-                <tr key={row.id} className="border-b border-gray-100 dark:border-gray-700/80 hover:bg-gray-50/60 dark:hover:bg-gray-900/30">
-                  <td className="px-3 py-2 align-top text-gray-900 dark:text-gray-100">{row.name}</td>
-                  <td className="px-3 py-2 align-top">
-                    <Link
-                      className="font-medium text-sky-700 dark:text-sky-400 hover:underline"
-                      to={`/shipments?shipment_id=${encodeURIComponent(String(row.shipment_id))}`}
-                    >
-                      {row.shipment_ref}
-                    </Link>
-                  </td>
+              {rows.map((row) => {
+                const sid = Number(row.shipment_id)
+                const canNav = Number.isFinite(sid) && sid > 0
+                return (
+                  <tr
+                    key={row.id}
+                    data-shipment-id={canNav ? String(sid) : undefined}
+                    tabIndex={canNav ? 0 : undefined}
+                    role={canNav ? 'link' : undefined}
+                    aria-label={canNav ? t('shipments.opsCard.openShipmentAria') : undefined}
+                    className={`border-b border-gray-100 dark:border-gray-700/80 hover:bg-gray-50/60 dark:hover:bg-gray-900/30${
+                      canNav ? ' cursor-pointer ops-dash-table__row--nav' : ''
+                    }`}
+                    onClick={(e) => {
+                      if (!canNav) return
+                      if (e.target.closest('button, a, input, select, textarea, label, [role="button"], [data-table-row-ignore]')) {
+                        return
+                      }
+                      goToShipment(sid)
+                    }}
+                    onKeyDown={(e) => {
+                      if (!canNav) return
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        goToShipment(sid)
+                      }
+                    }}
+                  >
+                    <td className="px-3 py-2 align-top text-gray-900 dark:text-gray-100">{row.name}</td>
+                    <td className="px-3 py-2 align-top">
+                      <span
+                        className={
+                          canNav
+                            ? 'font-medium text-sky-700 dark:text-sky-400'
+                            : 'font-medium text-gray-900 dark:text-gray-100'
+                        }
+                      >
+                        {row.shipment_ref}
+                      </span>
+                    </td>
                   <td className="px-3 py-2 align-top whitespace-nowrap text-gray-700 dark:text-gray-300">
                     {row.due_date ? formatDate(row.due_date, { locale: i18nLanguage }) : '—'}
                   </td>
@@ -69,7 +110,8 @@ function TaskTable({ title, rows, emptyLabel, t, i18nLanguage }) {
                       : t('operationsDashboard.notCompleted')}
                   </td>
                 </tr>
-              ))}
+                )
+              })}
             </tbody>
           </table>
         )}

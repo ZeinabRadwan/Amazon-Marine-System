@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Menu } from 'lucide-react'
 import { latinDateTimeFormat, formatShipmentsNumber } from '../../utils/westernNumerals'
@@ -89,6 +90,87 @@ function primaryBookingId(row) {
   if (b) return b
   const bl = String(row.bl_number ?? '').trim()
   return bl || '—'
+}
+
+/**
+ * Operations list card: task counts (API may use several aliases). Missing → 0.
+ * Bar: pct = completed/total*100 when total > 0, else 0.
+ */
+function normalizeOpsListTaskInts(row) {
+  const totalRaw = pickInt(row, [
+    'total_tasks',
+    'operations_tasks_total',
+    'ops_tasks_total',
+    'tasks_total',
+    'shipment_tasks_total',
+  ])
+  const completedRaw = pickInt(row, [
+    'completed_tasks',
+    'completed_tasks_count',
+    'operations_tasks_completed',
+    'operations_tasks_done',
+    'ops_tasks_done',
+    'tasks_done',
+    'tasks_completed',
+    'shipment_tasks_completed',
+  ])
+  const overdueRaw = pickInt(row, [
+    'overdue_tasks_count',
+    'overdue_tasks',
+    'operations_tasks_overdue',
+    'ops_tasks_overdue',
+    'tasks_overdue',
+    'shipment_tasks_overdue',
+  ])
+
+  const total = totalRaw != null && totalRaw >= 0 ? totalRaw : 0
+  const completedUncapped = completedRaw != null ? Math.max(0, completedRaw) : 0
+  const completed = total > 0 ? Math.min(completedUncapped, total) : 0
+  const overdue = overdueRaw != null ? Math.max(0, overdueRaw) : 0
+  const pct = total > 0 ? Math.min(100, Math.round((completed / total) * 100)) : 0
+
+  return { total, completed, overdue, pct }
+}
+
+function opsListBarTone(pct, overdue) {
+  if (overdue > 0) return 'ship-card__bar-fill--overdue'
+  if (pct === 100) return 'ship-card__bar-fill--complete'
+  return 'ship-card__bar-fill--progress'
+}
+
+function routeTextForOpsMeta(row) {
+  const a = row.origin_port?.name
+  const b = row.destination_port?.name
+  if (a || b) return [a, b].filter(Boolean).join(' → ')
+  const r = row.route_text
+  if (r != null && String(r).trim() !== '') return String(r).trim()
+  return null
+}
+
+function compactContainerLineOrNull(row, t, language) {
+  const cnt = pickInt(row, ['container_count'])
+  const szRaw = row.container_size != null ? String(row.container_size).trim() : ''
+  const tp = row.container_type
+  if (cnt == null || !szRaw || !String(tp || '').trim()) return null
+  const typeLabel = displayContainerType(tp, t)
+  const dash = t('common.dash')
+  if (!typeLabel || typeLabel === dash || typeLabel === '—') return null
+  const n = formatShipmentsNumber(cnt, language)
+  return `${n} × ${szRaw}' ${typeLabel}`
+}
+
+function primaryBookingIdOps(row, naLabel) {
+  const b = String(row.booking_number ?? '').trim()
+  if (b) return b
+  const bl = String(row.bl_number ?? '').trim()
+  return bl || naLabel
+}
+
+function clientTextOps(row, naLabel) {
+  if (row.client_name != null && String(row.client_name).trim() !== '') return String(row.client_name).trim()
+  const c = row.client?.company_name ?? row.client?.name
+  if (c != null && String(c).trim() !== '') return String(c).trim()
+  return naLabel
 }
 
 function computeTaskMetrics(row) {
@@ -262,43 +344,40 @@ function LegacyCardLayout({
   )
 }
 
-function OperationsCardLayout({
-  row,
-  t,
-  i18n,
-  cutLabel,
-  total,
-  doneSafe,
-  overdueForLine,
-  hasTaskTotals,
-  completionPct,
-  showOverdueBadge,
-  showCompletionBadge,
-  showCutoffBadge,
-  barPct,
-  barTone,
-  operationalLabel,
-  selectionSlot,
-  actionsMenuItems,
-  menuAlignEnd,
-  onOpen,
-  onKeyActivate,
-}) {
-  const dash = t('common.dash')
-  const progressLine =
-    hasTaskTotals && doneSafe != null && total != null
-      ? t('shipments.opsCard.opsListProgressCount', {
-          done: formatShipmentsNumber(doneSafe, i18n.language),
-          total: formatShipmentsNumber(total, i18n.language),
-        })
-      : t('shipments.opsCard.opsListProgressUnknown', { dash })
+function OperationsCardLayout({ row, t, i18n, actionsMenuItems, menuAlignEnd, onOpen, onKeyActivate }) {
+  const na = t('common.notApplicable')
+  const cutRaw = row.operation?.cut_off_date ?? row.cut_off_date
+  const cutLabel = formatCutoffDayMonth(cutRaw, i18n.language)
+
+  const { total, completed, overdue, pct } = normalizeOpsListTaskInts(row)
+  const barTone = opsListBarTone(pct, overdue)
+
+  const progressLine = t('shipments.opsCard.opsListProgressCount', {
+    done: formatShipmentsNumber(completed, i18n.language),
+    total: formatShipmentsNumber(total, i18n.language),
+  })
 
   const overdueHint =
-    hasTaskTotals && overdueForLine != null && overdueForLine > 0
-      ? t('shipments.opsCard.opsListOverdueHint', { count: formatShipmentsNumber(overdueForLine, i18n.language) })
-      : null
+    overdue > 0 ? t('shipments.opsCard.opsListOverdueHint', { count: formatShipmentsNumber(overdue, i18n.language) }) : null
 
-  const containerLine = compactContainerLine(row, t, i18n.language)
+  const showOverdueBadge = overdue > 0
+  const showCompletionBadge = true
+  const showCutoffBadge = Boolean(cutLabel)
+  const hasBadges = showOverdueBadge || showCompletionBadge || showCutoffBadge
+
+  const metaSegments = []
+  const routeStr = routeTextForOpsMeta(row)
+  if (routeStr) metaSegments.push({ key: 'route', text: routeStr })
+  const lineName = row.shipping_line?.name != null ? String(row.shipping_line.name).trim() : ''
+  if (lineName) metaSegments.push({ key: 'line', text: lineName })
+  const containerStr = compactContainerLineOrNull(row, t, i18n.language)
+  if (containerStr) metaSegments.push({ key: 'container', text: containerStr })
+  if (row.operational_status_code) {
+    const st = t(`shipments.ops.phase.${row.operational_status_code}`, {
+      defaultValue: String(row.operational_status_code),
+    })
+    if (st && String(st).trim()) metaSegments.push({ key: 'status', text: String(st).trim() })
+  }
 
   return (
     <div
@@ -311,17 +390,29 @@ function OperationsCardLayout({
     >
       <div className="ship-card-ops__header">
         <div className="ship-card-ops__header-main">
-          {selectionSlot ? (
-            <div className="ship-card-ops__select" onClick={(e) => e.stopPropagation()}>
-              {selectionSlot}
-            </div>
-          ) : null}
           <div className="ship-card-ops__titles">
-            <div className="ship-card-ops__booking">{primaryBookingId(row)}</div>
-            <div className="ship-card-ops__client">{clientText(row)}</div>
+            <div className="ship-card-ops__booking">{primaryBookingIdOps(row, na)}</div>
+            <div className="ship-card-ops__client">{clientTextOps(row, na)}</div>
           </div>
         </div>
         <div className="ship-card-ops__header-aside">
+          {hasBadges ? (
+            <div className="ship-card-ops__badges">
+              {showOverdueBadge ? (
+                <span className="ship-card-ops__badge ship-card-ops__badge--overdue">
+                  {t('shipments.opsCard.overdueBadge', { count: formatShipmentsNumber(overdue, i18n.language) })}
+                </span>
+              ) : null}
+              {showCompletionBadge ? (
+                <span className="ship-card-ops__badge ship-card-ops__badge--pct">
+                  {t('shipments.opsCard.pctComplete', { pct })}
+                </span>
+              ) : null}
+              {showCutoffBadge ? (
+                <span className="ship-card-ops__badge ship-card-ops__badge--cutoff">{t('shipments.opsCard.cutoff', { date: cutLabel })}</span>
+              ) : null}
+            </div>
+          ) : null}
           {Array.isArray(actionsMenuItems) && actionsMenuItems.length > 0 ? (
             <div className="ship-card-ops__actions" onClick={(e) => e.stopPropagation()}>
               <DropdownMenu
@@ -342,46 +433,38 @@ function OperationsCardLayout({
               />
             </div>
           ) : null}
-          <div className="ship-card-ops__badges">
-            {showOverdueBadge ? (
-              <span className="ship-card-ops__badge ship-card-ops__badge--overdue">
-                {t('shipments.opsCard.overdueBadge', { count: formatShipmentsNumber(overdueForLine, i18n.language) })}
-              </span>
-            ) : null}
-            {showCompletionBadge ? (
-              <span className="ship-card-ops__badge ship-card-ops__badge--pct">
-                {t('shipments.opsCard.pctComplete', { pct: completionPct })}
-              </span>
-            ) : null}
-            {showCutoffBadge && cutLabel ? (
-              <span className="ship-card-ops__badge ship-card-ops__badge--cutoff">{t('shipments.opsCard.cutoff', { date: cutLabel })}</span>
-            ) : null}
-          </div>
         </div>
       </div>
 
-      <div className="ship-card-ops__meta">
-        <span className="ship-card-ops__meta-item">{routeText(row)}</span>
-        <span className="ship-card-ops__meta-sep" aria-hidden>
-          ·
-        </span>
-        <span className="ship-card-ops__meta-item">{row.shipping_line?.name ?? '—'}</span>
-        <span className="ship-card-ops__meta-sep" aria-hidden>
-          ·
-        </span>
-        <span className="ship-card-ops__meta-item">{containerLine}</span>
-        <span className="ship-card-ops__meta-sep" aria-hidden>
-          ·
-        </span>
-        <span className="ship-card-ops__meta-item ship-card-ops__meta-item--status">{operationalLabel}</span>
-      </div>
+      {metaSegments.length > 0 ? (
+        <div className="ship-card-ops__meta">
+          {metaSegments.map((seg, i) => (
+            <Fragment key={seg.key}>
+              {i > 0 ? (
+                <span className="ship-card-ops__meta-sep" aria-hidden>
+                  ·
+                </span>
+              ) : null}
+              <span
+                className={
+                  seg.key === 'status'
+                    ? 'ship-card-ops__meta-item ship-card-ops__meta-item--status'
+                    : 'ship-card-ops__meta-item'
+                }
+              >
+                {seg.text}
+              </span>
+            </Fragment>
+          ))}
+        </div>
+      ) : null}
 
       <div className="ship-card-ops__progress">
         <div className="ship-card-ops__progress-top">
           <span className="ship-card-ops__progress-count">{progressLine}</span>
         </div>
         <div className="ship-card-ops__bar" aria-hidden>
-          <div className={`ship-card__bar-fill ${barTone}`} style={{ width: `${barPct}%` }} />
+          <div className={`ship-card__bar-fill ${barTone}`} style={{ width: `${pct}%` }} />
         </div>
         {overdueHint ? <div className="ship-card-ops__overdue-line">{overdueHint}</div> : null}
       </div>
@@ -458,7 +541,17 @@ export default function ShipmentOpsShipCard({
   }
 
   if (layout === 'operations') {
-    return <OperationsCardLayout {...shared} />
+    return (
+      <OperationsCardLayout
+        row={row}
+        t={t}
+        i18n={i18n}
+        actionsMenuItems={actionsMenuItems}
+        menuAlignEnd={menuAlignEnd}
+        onOpen={onOpen}
+        onKeyActivate={onKeyActivate}
+      />
+    )
   }
   return <LegacyCardLayout {...shared} />
 }

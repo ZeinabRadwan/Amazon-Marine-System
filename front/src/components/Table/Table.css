@@ -18,6 +18,16 @@
   flex-shrink: 0;
 }
 
+.responsive-table__tr.responsive-table__tr--clickable:focus-visible {
+  outline: 2px solid var(--form-primary, #0039c5);
+  outline-offset: 2px;
+}
+
+.responsive-table__card.responsive-table__card--clickable:focus-visible {
+  outline: 2px solid var(--form-primary, #0039c5);
+  outline-offset: 2px;
+}
+
 [dir="rtl"] .responsive-table__sort-btn {
   flex-direction: row-reverse;
 }

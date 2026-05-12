@@ -1235,14 +1235,16 @@ export default function Shipments() {
         }}
         menuAlignEnd={i18n.language !== 'ar'}
         selectionSlot={
-          <div className="ship-card__select" onClick={(e) => e.stopPropagation()}>
-            <input
-              type="checkbox"
-              checked={!!selectedIds[String(row.id)]}
-              onChange={() => toggleSelectRow(row.id)}
-              aria-label={t('shipments.selectRow')}
-            />
-          </div>
+          isOperationsOnlyUser ? null : (
+            <div className="ship-card__select" onClick={(e) => e.stopPropagation()}>
+              <input
+                type="checkbox"
+                checked={!!selectedIds[String(row.id)]}
+                onChange={() => toggleSelectRow(row.id)}
+                aria-label={t('shipments.selectRow')}
+              />
+            </div>
+          )
         }
         actionsMenuItems={getShipmentRowActionsMenuItems(row)}
       />

@@ -1,0 +1,5 @@
+/* Clickable task rows → /shipments?shipment_id= */
+.ops-dash-table tbody tr.ops-dash-table__row--nav:focus-visible {
+  outline: 2px solid var(--form-primary, #0039c5);
+  outline-offset: 2px;
+}

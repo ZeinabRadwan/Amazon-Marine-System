@@ -34,7 +34,7 @@ import { getPipelineStepIndex, PIPELINE_STEP_KEYS } from './shipmentPipeline'
 import { listActivitiesBySubject } from '../../api/activities'
 import { SERVICE_TYPE_IDS, OPERATIONAL_PHASE_ORDER } from './shipmentOpsConstants'
 import ShipmentOperationsTasksPanel from './ShipmentOperationsTasksPanel'
-import { isoToDdMmYyyy, parseDdMmYyyyToIso } from './opsDateDisplay'
+import { isoDatePart } from './opsDateDisplay'
 import { normalizeShipmentOperationTask, serializeShipmentOperationTaskForApi } from './shipmentOperationTaskPayload'
 import { formatShipmentAuditRow } from './shipmentAuditPresentation'
 import { listSDFormBookingConfirmations, downloadSDFormBookingConfirmation } from '../../api/sdForms'
@@ -100,35 +100,22 @@ function shipmentClientDisplayName(shipment) {
   return shipment?.client?.company_name ?? shipment?.client?.name ?? shipment?.client_name ?? '—'
 }
 
-function OpsDateDdMmYyyyField({ label, isoValue, onCommit, disabled }) {
-  const [text, setText] = useState(() => isoToDdMmYyyy(isoValue))
-  useEffect(() => {
-    setText(isoToDdMmYyyy(isoValue))
-  }, [isoValue])
+/** Operations key dates: native `type="date"` (YYYY-MM-DD) for reliable picker + future dates. */
+function OpsBasicDateField({ label, isoValue, onCommit, disabled }) {
+  const { i18n } = useTranslation()
   return (
     <div>
       <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">{label}</label>
       <input
-        type="text"
-        inputMode="numeric"
+        type="date"
+        lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
         autoComplete="off"
-        placeholder="DD/MM/YYYY"
         className="clients-input w-full font-mono text-sm"
-        value={text}
+        value={isoDatePart(isoValue)}
         disabled={disabled}
-        onChange={(e) => setText(e.target.value)}
-        onBlur={() => {
-          const raw = text.trim()
-          if (raw === '') {
-            onCommit(null)
-            return
-          }
-          const parsed = parseDdMmYyyyToIso(raw)
-          if (parsed === null) {
-            setText(isoToDdMmYyyy(isoValue))
-            return
-          }
-          onCommit(parsed)
+        onChange={(e) => {
+          const v = e.target.value
+          onCommit(v === '' ? null : v)
         }}
       />
     </div>
@@ -1409,25 +1396,25 @@ export default function ShipmentDetailModal({
                         <div className="shipment-detail-card mb-6">
                           <h3 className="shipment-detail-card__title">{t('shipments.ops.sectionKeyDates')}</h3>
                           <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                            <OpsDateDdMmYyyyField
+                            <OpsBasicDateField
                               label={t('shipments.ops.cutOffDate')}
                               isoValue={opsData.cut_off_date}
                               disabled={!canEditOps}
                               onCommit={(iso) => setOpsData((prev) => ({ ...prev, cut_off_date: iso }))}
                             />
-                            <OpsDateDdMmYyyyField
+                            <OpsBasicDateField
                               label={t('shipments.ops.eta')}
                               isoValue={opsData.eta}
                               disabled={!canEditOps}
                               onCommit={(iso) => setOpsData((prev) => ({ ...prev, eta: iso }))}
                             />
-                            <OpsDateDdMmYyyyField
+                            <OpsBasicDateField
                               label={t('shipments.ops.etd')}
                               isoValue={opsData.etd}
                               disabled={!canEditOps}
                               onCommit={(iso) => setOpsData((prev) => ({ ...prev, etd: iso }))}
                             />
-                            <OpsDateDdMmYyyyField
+                            <OpsBasicDateField
                               label={t('shipments.ops.loadingDate')}
                               isoValue={opsData.ops_loading_date}
                               disabled={!canEditOps}
