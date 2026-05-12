@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SDFormBookingConfirmation extends Model
 {
+    /** Laravel would guess `s_d_form_booking_confirmations`; migration uses `sd_form_booking_confirmations`. */
+    protected $table = 'sd_form_booking_confirmations';
+
     /**
      * @var list<string>
      */

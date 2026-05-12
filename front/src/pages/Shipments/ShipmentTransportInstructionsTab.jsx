@@ -108,11 +108,16 @@ export function buildTransportInstructionsWhatsAppText(shipment, tip, t) {
   const ti = tip && typeof tip === 'object' ? tip : EMPTY_TRANSPORT_INSTRUCTION_PROFILE
   const booking = shipment?.booking_number ?? '—'
   const line = shipment?.shipping_line?.name ?? shipment?.shippingLine?.name ?? '—'
-  const cnt = shipment?.container_count ?? '—'
-  const ctype = shipment?.container_type ?? '—'
-  const csize = shipment?.container_size ?? '—'
-  const sizeStr = csize !== '—' && ctype !== '—' ? `${csize}' ${ctype}` : csize !== '—' ? `${csize}'` : ctype
-  const combined = cnt !== '—' && sizeStr !== '—' ? `${cnt} × ${sizeStr}` : cnt !== '—' ? String(cnt) : '—'
+  const cnt = shipment?.container_count
+  const ctype = shipment?.container_type
+  const csize = shipment?.container_size
+  const hasC = cnt != null && String(cnt).trim() !== ''
+  const combined =
+    hasC && csize && ctype
+      ? `${cnt} × ${`${String(csize).trim()} ${String(ctype).trim()}`.trim()}`
+      : hasC
+        ? String(cnt)
+        : '—'
   const doc = (() => {
     if (!ti.customs_document_type) return '—'
     const key =
