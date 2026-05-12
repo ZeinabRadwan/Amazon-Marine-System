@@ -4952,6 +4952,28 @@
   flex: 1;
 }
 
+.ship-card-ops__titles--primary .ship-card-ops__booking {
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #020617;
+}
+
+.dark .ship-card-ops__titles--primary .ship-card-ops__booking {
+  color: #f8fafc;
+}
+
+.ship-card-ops__titles--primary .ship-card-ops__client {
+  margin-top: 4px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.dark .ship-card-ops__titles--primary .ship-card-ops__client {
+  color: #94a3b8;
+}
+
 .ship-card-ops__booking {
   font-size: 0.9375rem;
   font-weight: 800;
@@ -5107,6 +5129,84 @@
 
 .dark .ship-card-ops__meta-item--status {
   color: #e2e8f0;
+}
+
+.ship-card-ops__chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.ship-card-ops__chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: min(100%, 16rem);
+  padding: 5px 10px;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.35;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #334155;
+  word-break: break-word;
+}
+
+.dark .ship-card-ops__chip {
+  border-color: #4b5563;
+  background: #1f2937;
+  color: #e2e8f0;
+}
+
+.ship-card-ops__chip--route {
+  border-color: #bae6fd;
+  background: #f0f9ff;
+  color: #0369a1;
+}
+
+.dark .ship-card-ops__chip--route {
+  border-color: rgba(56, 189, 248, 0.35);
+  background: rgba(12, 74, 110, 0.35);
+  color: #7dd3fc;
+}
+
+.ship-card-ops__chip--line {
+  border-color: #e2e8f0;
+  background: #fff;
+  color: #475569;
+}
+
+.dark .ship-card-ops__chip--line {
+  border-color: #4b5563;
+  background: #374151;
+  color: #cbd5e1;
+}
+
+.ship-card-ops__chip--container {
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.dark .ship-card-ops__chip--container {
+  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(120, 53, 15, 0.35);
+  color: #fcd34d;
+}
+
+.ship-card-ops__chip--status {
+  border-color: #c7d2fe;
+  background: #eef2ff;
+  color: #1e1b4b;
+  font-weight: 700;
+}
+
+.dark .ship-card-ops__chip--status {
+  border-color: rgba(129, 140, 248, 0.45);
+  background: rgba(49, 46, 129, 0.45);
+  color: #e0e7ff;
 }
 
 .ship-card-ops__progress {

@@ -1,8 +1,8 @@
-import { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Menu } from 'lucide-react'
 import { latinDateTimeFormat, formatShipmentsNumber } from '../../utils/westernNumerals'
 import { DropdownMenu } from '../../components/DropdownMenu'
+import { countCompletedTasks, countOverdueTasks } from './shipmentOperationTaskUi'
 
 function pickInt(row, keys) {
   for (const k of keys) {
@@ -97,14 +97,14 @@ function primaryBookingId(row) {
  * Bar: pct = completed/total*100 when total > 0, else 0.
  */
 function normalizeOpsListTaskInts(row) {
-  const totalRaw = pickInt(row, [
+  let totalRaw = pickInt(row, [
     'total_tasks',
     'operations_tasks_total',
     'ops_tasks_total',
     'tasks_total',
     'shipment_tasks_total',
   ])
-  const completedRaw = pickInt(row, [
+  let completedRaw = pickInt(row, [
     'completed_tasks',
     'completed_tasks_count',
     'operations_tasks_completed',
@@ -114,7 +114,7 @@ function normalizeOpsListTaskInts(row) {
     'tasks_completed',
     'shipment_tasks_completed',
   ])
-  const overdueRaw = pickInt(row, [
+  let overdueRaw = pickInt(row, [
     'overdue_tasks_count',
     'overdue_tasks',
     'operations_tasks_overdue',
@@ -122,6 +122,16 @@ function normalizeOpsListTaskInts(row) {
     'tasks_overdue',
     'shipment_tasks_overdue',
   ])
+
+  if (
+    (totalRaw == null || completedRaw == null || overdueRaw == null) &&
+    Array.isArray(row.tasks) &&
+    row.tasks.length > 0
+  ) {
+    if (totalRaw == null) totalRaw = row.tasks.length
+    if (completedRaw == null) completedRaw = countCompletedTasks(row.tasks)
+    if (overdueRaw == null) overdueRaw = countOverdueTasks(row.tasks)
+  }
 
   const total = totalRaw != null && totalRaw >= 0 ? totalRaw : 0
   const completedUncapped = completedRaw != null ? Math.max(0, completedRaw) : 0
@@ -390,7 +400,7 @@ function OperationsCardLayout({ row, t, i18n, actionsMenuItems, menuAlignEnd, on
     >
       <div className="ship-card-ops__header">
         <div className="ship-card-ops__header-main">
-          <div className="ship-card-ops__titles">
+          <div className="ship-card-ops__titles ship-card-ops__titles--primary">
             <div className="ship-card-ops__booking">{primaryBookingIdOps(row, na)}</div>
             <div className="ship-card-ops__client">{clientTextOps(row, na)}</div>
           </div>
@@ -437,24 +447,11 @@ function OperationsCardLayout({ row, t, i18n, actionsMenuItems, menuAlignEnd, on
       </div>
 
       {metaSegments.length > 0 ? (
-        <div className="ship-card-ops__meta">
-          {metaSegments.map((seg, i) => (
-            <Fragment key={seg.key}>
-              {i > 0 ? (
-                <span className="ship-card-ops__meta-sep" aria-hidden>
-                  ·
-                </span>
-              ) : null}
-              <span
-                className={
-                  seg.key === 'status'
-                    ? 'ship-card-ops__meta-item ship-card-ops__meta-item--status'
-                    : 'ship-card-ops__meta-item'
-                }
-              >
-                {seg.text}
-              </span>
-            </Fragment>
+        <div className="ship-card-ops__chips">
+          {metaSegments.map((seg) => (
+            <span key={seg.key} className={`ship-card-ops__chip ship-card-ops__chip--${seg.key}`}>
+              {seg.text}
+            </span>
           ))}
         </div>
       ) : null}
