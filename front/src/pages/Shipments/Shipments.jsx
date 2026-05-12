@@ -409,6 +409,21 @@ export default function Shipments() {
     }
   }, [shipmentIdFromUrl])
 
+  /** Keep `?shipment_id=` in sync when opening from the grid (dashboard deep links already set the query). */
+  useEffect(() => {
+    if (!detailId || detailId <= 0) return
+    const idStr = String(detailId)
+    if (shipmentIdFromUrl === idStr) return
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.set('shipment_id', idStr)
+        return next
+      },
+      { replace: true },
+    )
+  }, [detailId, shipmentIdFromUrl, setSearchParams])
+
   const stripShipmentIdFromUrl = useCallback(() => {
     setSearchParams(
       (prev) => {

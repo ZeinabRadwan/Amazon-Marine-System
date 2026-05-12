@@ -7,12 +7,21 @@ use App\Models\User;
 use App\Notifications\ShipmentOperationTaskReminderNotification;
 use App\Services\NotificationService;
 use Carbon\Carbon;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
-class SendShipmentOperationTaskReminder implements ShouldQueue
+class SendShipmentOperationTaskReminder implements ShouldBeUnique, ShouldQueue
 {
     use Queueable;
+
+    /** Seconds: ignore duplicate dispatches for the same task + scheduled instant. */
+    public int $uniqueFor = 86400;
+
+    public function uniqueId(): string
+    {
+        return 'shipment_op_task_reminder:'.$this->shipmentOperationTaskId.':'.$this->expectedReminderAtIso;
+    }
 
     public function __construct(
         public int $shipmentOperationTaskId,
@@ -28,7 +37,8 @@ class SendShipmentOperationTaskReminder implements ShouldQueue
         }
 
         $expected = Carbon::parse($this->expectedReminderAtIso);
-        if (! $task->reminder_at->equalTo($expected)) {
+        // DB vs queued ISO can differ by timezone or sub-second rounding; allow small drift.
+        if (abs($task->reminder_at->getTimestamp() - $expected->getTimestamp()) > 60) {
             return;
         }
 

@@ -1216,6 +1216,90 @@ export default function ShipmentDetailModal({
                           </div>
                         </div>
 
+                        <div className="shipment-detail-card mb-6">
+                          <h3 className="shipment-detail-card__title">{t('shipments.ops.sectionKeyDates')}</h3>
+                          <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div>
+                              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">
+                                {t('shipments.ops.cutOffDate')}
+                              </label>
+                              <input
+                                type="date"
+                                lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
+                                className="clients-input w-full"
+                                value={opsData.cut_off_date || ''}
+                                onChange={(e) => setOpsData((prev) => ({ ...prev, cut_off_date: e.target.value }))}
+                                disabled={!canEditOps}
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">
+                                {t('shipments.ops.eta')}
+                              </label>
+                              <input
+                                type="date"
+                                lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
+                                className="clients-input w-full"
+                                value={opsData.eta || ''}
+                                onChange={(e) => setOpsData((prev) => ({ ...prev, eta: e.target.value }))}
+                                disabled={!canEditOps}
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">
+                                {t('shipments.ops.etd')}
+                              </label>
+                              <input
+                                type="date"
+                                lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
+                                className="clients-input w-full"
+                                value={opsData.etd || ''}
+                                onChange={(e) => setOpsData((prev) => ({ ...prev, etd: e.target.value }))}
+                                disabled={!canEditOps}
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">
+                                {t('shipments.ops.loadingDate')}
+                              </label>
+                              <input
+                                type="date"
+                                lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
+                                className="clients-input w-full"
+                                value={opsData.ops_loading_date || ''}
+                                onChange={(e) =>
+                                  setOpsData((prev) => ({ ...prev, ops_loading_date: e.target.value }))
+                                }
+                                disabled={!canEditOps}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="shipment-detail-card shipment-detail-card--ops-status mb-6">
+                          <h3 className="shipment-detail-card__title">{t('shipments.ops.sectionOperationalStatus')}</h3>
+                          <div className="p-4">
+                            <select
+                              className="clients-input w-full"
+                              value={opsData.operational_status_code || ''}
+                              onChange={(e) =>
+                                setOpsData((prev) => ({
+                                  ...prev,
+                                  operational_status_code: e.target.value || null,
+                                }))
+                              }
+                              disabled={!canEditOps}
+                            >
+                              <option value="">{t('common.select')}</option>
+                              {OPERATIONAL_PHASE_ORDER.map((code) => (
+                                <option key={code} value={code}>
+                                  {t(`shipments.ops.phase.${code}`)}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+
                         {showPartnersBlock ? (
                           <div className="shipment-detail-card mb-6">
                             <h3 className="shipment-detail-card__title">{t('shipments.ops.sectionVendorsPartners')}</h3>
@@ -1311,90 +1395,6 @@ export default function ShipmentDetailModal({
                             </div>
                           </div>
                         ) : null}
-
-                        <div className="shipment-detail-card mb-6">
-                          <h3 className="shipment-detail-card__title">{t('shipments.ops.sectionKeyDates')}</h3>
-                          <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <div>
-                              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">
-                                {t('shipments.ops.cutOffDate')}
-                              </label>
-                              <input
-                                type="date"
-                                lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
-                                className="clients-input w-full"
-                                value={opsData.cut_off_date || ''}
-                                onChange={(e) => setOpsData((prev) => ({ ...prev, cut_off_date: e.target.value }))}
-                                disabled={!canEditOps}
-                              />
-                            </div>
-                            <div>
-                              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">
-                                {t('shipments.ops.eta')}
-                              </label>
-                              <input
-                                type="date"
-                                lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
-                                className="clients-input w-full"
-                                value={opsData.eta || ''}
-                                onChange={(e) => setOpsData((prev) => ({ ...prev, eta: e.target.value }))}
-                                disabled={!canEditOps}
-                              />
-                            </div>
-                            <div>
-                              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">
-                                {t('shipments.ops.etd')}
-                              </label>
-                              <input
-                                type="date"
-                                lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
-                                className="clients-input w-full"
-                                value={opsData.etd || ''}
-                                onChange={(e) => setOpsData((prev) => ({ ...prev, etd: e.target.value }))}
-                                disabled={!canEditOps}
-                              />
-                            </div>
-                            <div>
-                              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">
-                                {t('shipments.ops.loadingDate')}
-                              </label>
-                              <input
-                                type="date"
-                                lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
-                                className="clients-input w-full"
-                                value={opsData.ops_loading_date || ''}
-                                onChange={(e) =>
-                                  setOpsData((prev) => ({ ...prev, ops_loading_date: e.target.value }))
-                                }
-                                disabled={!canEditOps}
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="shipment-detail-card shipment-detail-card--ops-status mb-6">
-                          <h3 className="shipment-detail-card__title">{t('shipments.ops.sectionOperationalStatus')}</h3>
-                          <div className="p-4">
-                            <select
-                              className="clients-input w-full"
-                              value={opsData.operational_status_code || ''}
-                              onChange={(e) =>
-                                setOpsData((prev) => ({
-                                  ...prev,
-                                  operational_status_code: e.target.value || null,
-                                }))
-                              }
-                              disabled={!canEditOps}
-                            >
-                              <option value="">{t('common.select')}</option>
-                              {OPERATIONAL_PHASE_ORDER.map((code) => (
-                                <option key={code} value={code}>
-                                  {t(`shipments.ops.phase.${code}`)}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
 
                         <ShipmentOperationsTasksPanel
                           token={token}

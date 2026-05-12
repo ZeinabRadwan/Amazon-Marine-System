@@ -141,7 +141,6 @@ class ShipmentOperationsController extends Controller
         if (array_key_exists('operational_status_code', $validated)) {
             $originalCode = $shipment->operational_status_code;
             $shipment->operational_status_code = $validated['operational_status_code'] ?: null;
-            $shipment->operations_status = null;
             $shipment->save();
 
             if ($shipment->operational_status_code !== $originalCode) {

@@ -16,6 +16,8 @@ import {
   linkSDFormShipment,
   emailSDFormToOperations,
   getSDFormPdf,
+  listSDFormBookingConfirmations,
+  downloadSDFormBookingConfirmation,
 } from '../../api/sdForms'
 import {
   listShipmentDirections,
@@ -263,6 +265,8 @@ export default function SDForms() {
   const [detailId, setDetailId] = useState(null)
   const [detailRecord, setDetailRecord] = useState(null)
   const [detailLoading, setDetailLoading] = useState(false)
+  const [detailBookingFiles, setDetailBookingFiles] = useState([])
+  const [detailBookingLoading, setDetailBookingLoading] = useState(false)
 
   const [deleteId, setDeleteId] = useState(null)
   const [deleteSubmitting, setDeleteSubmitting] = useState(false)
@@ -1745,7 +1749,64 @@ export default function SDForms() {
     [t, selectedIds, allPageSelected, toggleSelectAllPage, toggleSelectRow, openDetail, openEdit, downloadPdf]
   )
 
+  useEffect(() => {
+    if (!detailId) {
+      setDetailBookingFiles([])
+      setDetailBookingLoading(false)
+      return
+    }
+    if (!token || detailLoading || !detailRecord?.id) return
+
+    let cancelled = false
+    setDetailBookingLoading(true)
+    listSDFormBookingConfirmations(token, detailRecord.id)
+      .then((res) => {
+        if (!cancelled) setDetailBookingFiles(Array.isArray(res.data) ? res.data : [])
+      })
+      .catch(() => {
+        if (!cancelled) setDetailBookingFiles([])
+      })
+      .finally(() => {
+        if (!cancelled) setDetailBookingLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [detailId, token, detailLoading, detailRecord?.id])
+
   const detail = detailRecord
+
+  const downloadBookingBlob = (blob, filename) => {
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename || 'download'
+    a.click()
+    window.URL.revokeObjectURL(url)
+  }
+
+  const handleDetailBookingPreview = async (file) => {
+    if (!token || !detail?.id || !file?.id) return
+    try {
+      const { blob } = await downloadSDFormBookingConfirmation(token, detail.id, file.id)
+      const url = window.URL.createObjectURL(blob)
+      window.open(url, '_blank', 'noopener,noreferrer')
+      setTimeout(() => window.URL.revokeObjectURL(url), 60_000)
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const handleDetailBookingDownload = async (file) => {
+    if (!token || !detail?.id || !file?.id) return
+    try {
+      const { blob, filename } = await downloadSDFormBookingConfirmation(token, detail.id, file.id)
+      downloadBookingBlob(blob, filename || file.name || 'file')
+    } catch {
+      /* ignore */
+    }
+  }
 
   return (
     <Container size="xl">
@@ -2138,6 +2199,45 @@ export default function SDForms() {
                             </div>
                           ))}
                         </dl>
+                        <div className="sd-detail-modal__block mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                          <h4 className="sd-detail-modal__block-title">{t('shipments.filesFromOperations')}</h4>
+                          {detailBookingLoading ? (
+                            <p className="sd-detail-modal__block-text text-sm text-gray-500 dark:text-gray-400">{t('common.loading')}</p>
+                          ) : detailBookingFiles.length === 0 ? (
+                            <p className="sd-detail-modal__block-text text-sm text-gray-500 dark:text-gray-400">
+                              {t('shipments.bookingFilesEmpty')}
+                            </p>
+                          ) : (
+                            <ul className="space-y-2 mt-2">
+                              {detailBookingFiles.map((f) => (
+                                <li
+                                  key={f.id}
+                                  className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-gray-100 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/30 px-3 py-2 text-sm"
+                                >
+                                  <span className="font-medium text-gray-800 dark:text-gray-100 break-all">{f.name}</span>
+                                  <span className="flex items-center gap-1 shrink-0">
+                                    <button
+                                      type="button"
+                                      className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs py-1 px-2"
+                                      onClick={() => handleDetailBookingPreview(f)}
+                                    >
+                                      <Eye className="h-3.5 w-3.5" aria-hidden />
+                                      {t('shipments.viewFile')}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs py-1 px-2"
+                                      onClick={() => handleDetailBookingDownload(f)}
+                                    >
+                                      <FileDown className="h-3.5 w-3.5" aria-hidden />
+                                      {t('shipments.downloadFile')}
+                                    </button>
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
                         {detail.shipper_info ? (
                           <div className="sd-detail-modal__block">
                             <h4 className="sd-detail-modal__block-title">{t('sdForms.form.shipper')}</h4>

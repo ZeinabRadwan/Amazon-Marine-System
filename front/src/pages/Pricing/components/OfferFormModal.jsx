@@ -3,12 +3,10 @@ import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
 import '../../Shipments/Shipments.css'
 import { useMutateOffer } from '../../../hooks/usePricing'
-import { getStoredToken } from '../../Login'
-import { listPricingFreightUnitTypes } from '../../../api/pricingFreightUnitTypes'
 import PortNameAsyncSelect from './PortNameAsyncSelect'
 import ShippingLineNameAsyncSelect from './ShippingLineNameAsyncSelect'
 import PricingRegionAsyncSelect from './PricingRegionAsyncSelect'
-import InlandTruckTypeAsyncSelect from './InlandTruckTypeAsyncSelect'
+import { DEFAULT_INLAND_TRUCK_PRESETS } from './inlandVehiclePresets'
 import InlandLocationAsyncSelect from './InlandLocationAsyncSelect'
 import DatePicker from '../../../components/DatePicker'
 import { formatDate, UI_DATE_FORMAT } from '../../../utils/dateUtils'
@@ -47,11 +45,22 @@ function formatIsoDateDisplay(iso, locale) {
 /** Legacy inland keys when API list is empty */
 const LEGACY_INLAND_ORDER = ['t20d', 't40d', 'p20x2', 't40r']
 
+/** Legacy `pricing` keys that may still appear on saved inland offers */
+const LEGACY_INLAND_TRUCK_KEYS = new Set([
+  ...LEGACY_INLAND_ORDER,
+  'p20x1',
+  'p40hq',
+  'p40rf',
+  't40hq',
+  't20r',
+  'reefer-container-20',
+])
+
 const defaultInlandForm = () => ({
   inland_port: '',
   inland_gov: '',
   inland_area: '',
-  truck_type: 't40d',
+  truck_type: DEFAULT_INLAND_TRUCK_PRESETS[0].slug,
   price: '',
   currency: 'EGP',
   generator_price: '',
@@ -61,17 +70,20 @@ const defaultInlandForm = () => ({
   notes: '',
 })
 
-function inferInlandTruckFromPricing(pricing, inlandUnitTypes = []) {
+function inferInlandTruckFromPricing(pricing, mergedInlandTypes = []) {
   const p = pricing || {}
-  const primaryOrder =
-    inlandUnitTypes.length > 0
-      ? [...inlandUnitTypes].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)).map((x) => x.slug)
-      : LEGACY_INLAND_ORDER
-  for (const code of primaryOrder) {
+  const order = (mergedInlandTypes || []).map((x) => x.slug)
+  for (const slug of order) {
+    const row = p[slug]
+    if (row != null && row.price != null && row.price !== '') return slug
+  }
+  const legacyReefer = p['reefer-container-20']
+  if (legacyReefer != null && legacyReefer.price != null && legacyReefer.price !== '') return 'reefer-container-40'
+  for (const code of LEGACY_INLAND_ORDER) {
     const row = p[code]
     if (row != null && row.price != null && row.price !== '') return code
   }
-  const keys = ['p20x1', 'p40hq', 'p40rf', 't40hq', 'generator', 't20r']
+  const keys = ['p20x1', 'p40hq', 'p40rf', 't40hq', 't20r']
   for (const code of keys) {
     const row = p[code]
     if (row != null && row.price != null && row.price !== '') {
@@ -82,22 +94,34 @@ function inferInlandTruckFromPricing(pricing, inlandUnitTypes = []) {
       return 't40d'
     }
   }
-  return primaryOrder[0] || 't40d'
+  return order[0] || DEFAULT_INLAND_TRUCK_PRESETS[0].slug
 }
 
 function inlandPriceForTruck(pricing, truckId) {
   const p = pricing || {}
   const direct = p[truckId]
   if (direct?.price != null && direct.price !== '') return direct
+  if (truckId === 'reefer-container-40') {
+    const legacy = p['reefer-container-20']
+    if (legacy?.price != null && legacy.price !== '') return legacy
+  }
   if (truckId === 't20d' && p.p20x1?.price != null) return p.p20x1
   if (truckId === 't40d' && (p.t40hq?.price != null || p.p40hq?.price != null)) return p.t40hq || p.p40hq
   if (truckId === 't40r' && p.p40rf?.price != null) return p.p40rf
   return direct
 }
 
-function isInlandReeferTruck(truckId) {
+function isInlandReeferTruck(truckId, inlandTypes = []) {
   const s = String(truckId || '').toLowerCase()
-  return s.includes('reefer') || s.includes('rf') || s.includes('refrigerated') || s === 't40r'
+  if (s === 't40r' || s === 'p40rf' || s === 't20r') return true
+  if (s.includes('reefer') || s.includes('refrigerated')) return true
+  const row = inlandTypes.find((x) => String(x.slug) === String(truckId))
+  if (row) {
+    if (/reefer|refrigerat/i.test(String(row.label || ''))) return true
+    const mt = row.meta?.type != null ? String(row.meta.type).toLowerCase() : ''
+    if (mt === 'reefer' || mt === 'refrigerated') return true
+  }
+  return false
 }
 
 const defaultSeaForm = () => ({
@@ -271,32 +295,18 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
   const [inlandForm, setInlandForm] = useState(defaultInlandForm)
   const [seaCoreLines, setSeaCoreLines] = useState(initialSeaCoreLines)
   const [seaCustomLines, setSeaCustomLines] = useState([])
-  const [inlandUnitTypes, setInlandUnitTypes] = useState([])
   /** Single sailing date pending add (ISO YYYY-MM-DD from DatePicker) */
   const [draftFixedSailingDate, setDraftFixedSailingDate] = useState('')
 
-  const loadInlandTypes = useCallback(async () => {
-    const token = getStoredToken()
-    if (!token) return
-    try {
-      const res = await listPricingFreightUnitTypes(token, { dataset: 'inland_truck' })
-      const data = res?.data ?? res
-      setInlandUnitTypes(Array.isArray(data) ? data : [])
-    } catch (e) {
-      console.error(e)
-    }
-  }, [])
+  const mergedInlandUnitTypes = useMemo(
+    () => DEFAULT_INLAND_TRUCK_PRESETS.map((p) => ({ slug: p.slug, label: p.label, sort_order: 0 })),
+    [],
+  )
 
   const effectiveMode = useMemo(
     () => offerToEdit?.pricing_type ?? pricingMode ?? 'sea',
     [offerToEdit?.pricing_type, pricingMode]
   )
-
-  useEffect(() => {
-    if (!isOpen) return
-    const mode = offerToEdit?.pricing_type ?? pricingMode ?? 'sea'
-    if (mode === 'inland') loadInlandTypes()
-  }, [isOpen, offerToEdit?.pricing_type, pricingMode, loadInlandTypes])
 
   useEffect(() => {
     if (!isOpen) setDraftFixedSailingDate('')
@@ -316,13 +326,17 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
   }, [effectiveMode])
 
   useEffect(() => {
-    if (effectiveMode !== 'inland' || !inlandUnitTypes.length) return
+    if (effectiveMode !== 'inland' || !mergedInlandUnitTypes.length) return
     setInlandForm((f) => {
-      const slugs = new Set(inlandUnitTypes.map((x) => x.slug))
-      if (slugs.has(f.truck_type)) return f
-      return { ...f, truck_type: inlandUnitTypes[0].slug }
+      const tt = f.truck_type === 'reefer-container-20' ? 'reefer-container-40' : f.truck_type
+      const slugs = new Set(mergedInlandUnitTypes.map((x) => x.slug))
+      if (slugs.has(tt) || LEGACY_INLAND_TRUCK_KEYS.has(tt)) {
+        if (tt === f.truck_type) return f
+        return { ...f, truck_type: tt }
+      }
+      return { ...f, truck_type: mergedInlandUnitTypes[0].slug }
     })
-  }, [effectiveMode, inlandUnitTypes])
+  }, [effectiveMode, mergedInlandUnitTypes])
 
   useEffect(() => {
     if (!isOpen) return
@@ -333,7 +347,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
       setInlandForm(defaultInlandForm())
       return
     }
-    const truckId = inferInlandTruckFromPricing(offerToEdit.pricing, inlandUnitTypes)
+    const truckId = inferInlandTruckFromPricing(offerToEdit.pricing, mergedInlandUnitTypes)
     const row = inlandPriceForTruck(offerToEdit.pricing, truckId)
     const generator = offerToEdit.pricing?.generator
     setInlandForm({
@@ -349,7 +363,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
       valid_to: offerToEdit.valid_to ? String(offerToEdit.valid_to).slice(0, 10) : '',
       notes: offerToEdit.notes || '',
     })
-  }, [offerToEdit, isOpen, pricingMode, inlandUnitTypes])
+  }, [offerToEdit, isOpen, pricingMode, mergedInlandUnitTypes])
 
   useEffect(() => {
     if (!isOpen) return
@@ -468,6 +482,13 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
       const amount = Number(inlandForm.price)
       if (!gov || !port || Number.isNaN(amount) || amount < 0) return
 
+      const reefer = isInlandReeferTruck(inlandForm.truck_type, mergedInlandUnitTypes)
+      if (reefer) {
+        const gp = String(inlandForm.generator_price ?? '').trim()
+        const generatorAmount = Number(gp)
+        if (gp === '' || Number.isNaN(generatorAmount) || generatorAmount < 0) return
+      }
+
       const searchPod = [port, inlandForm.inland_area.trim(), gov].filter(Boolean).join(' ')
       const inlandPricing = {
         [inlandForm.truck_type]: {
@@ -475,8 +496,8 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
           currency: inlandForm.currency || 'EGP',
         },
       }
-      const generatorAmount = Number(inlandForm.generator_price)
-      if (isInlandReeferTruck(inlandForm.truck_type) && inlandForm.generator_price !== '' && !Number.isNaN(generatorAmount) && generatorAmount >= 0) {
+      if (reefer) {
+        const generatorAmount = Number(String(inlandForm.generator_price).trim())
         inlandPricing.generator = {
           price: generatorAmount,
           currency: inlandForm.generator_currency || 'EGP',
@@ -1080,15 +1101,29 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
               <div className="inland-rate-grid inland-rate-grid-2 inland-rate-vehicle-grid">
                 <div className="inland-rate-control">
                   <label htmlFor="offer-inland-truck-type" className="inland-rate-label">نوع العربية / Vehicle Type</label>
-                  <InlandTruckTypeAsyncSelect
+                  <select
                     id="offer-inland-truck-type"
-                    className="inland-rate-async-select"
-                    types={inlandUnitTypes}
+                    className="inland-rate-select"
                     value={inlandForm.truck_type}
-                    onChange={(v) => updateInlandForm({ truck_type: v })}
-                    onTypesUpdated={loadInlandTypes}
-                    placeholder="اختر نوع العربية"
-                  />
+                    onChange={(e) => {
+                      const v = e.target.value
+                      setInlandForm((prev) => {
+                        const reefer = isInlandReeferTruck(v, mergedInlandUnitTypes)
+                        return {
+                          ...prev,
+                          truck_type: v,
+                          ...(!reefer ? { generator_price: '', generator_currency: 'EGP' } : {}),
+                        }
+                      })
+                    }}
+                    aria-label={t('pricing.inlandVehicleTypeAria', 'Vehicle type')}
+                  >
+                    {DEFAULT_INLAND_TRUCK_PRESETS.map((opt) => (
+                      <option key={opt.slug} value={opt.slug}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="inland-rate-control">
                   <label htmlFor="offer-inland-price" className="inland-rate-label">السعر / Rate</label>
@@ -1122,27 +1157,34 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                 </div>
               </div>
 
-              {isInlandReeferTruck(inlandForm.truck_type) ? (
+              {isInlandReeferTruck(inlandForm.truck_type, mergedInlandUnitTypes) ? (
                 <div className="inland-rate-reefer-section">
-                  <div className="inland-rate-hint">في حالة عربية 40' Reefer فقط — سعر المولد:</div>
+                  <div className="inland-rate-hint">سعر المولد / Generator Cost (per trip) *</div>
                   <div className="inland-rate-grid inland-rate-grid-2">
-                    <div>
-                      <label htmlFor="offer-inland-generator-price" className="inland-rate-label">سعر المولد / Generator (per trip)</label>
+                    <div className="inland-rate-control">
+                      <label htmlFor="offer-inland-generator-price" className="inland-rate-label">
+                        المبلغ / Amount *
+                      </label>
                       <div className="inland-rate-input-group">
                         <input
                           id="offer-inland-generator-price"
                           type="number"
                           min="0"
                           step="0.01"
+                          inputMode="decimal"
                           className="inland-rate-input"
                           value={inlandForm.generator_price}
                           onChange={(e) => updateInlandForm({ generator_price: e.target.value })}
                           placeholder="0"
+                          required
+                          aria-label={t('pricing.inlandGeneratorAmountAria', 'Generator cost amount')}
                         />
                         <select
+                          id="offer-inland-generator-currency"
                           className="inland-rate-select"
                           value={inlandForm.generator_currency}
                           onChange={(e) => updateInlandForm({ generator_currency: e.target.value })}
+                          aria-label={t('pricing.inlandGeneratorCurrencyAria', 'Generator cost currency')}
                         >
                           {CURRENCIES.map((c) => (
                             <option key={c} value={c}>
@@ -1153,7 +1195,6 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                       </div>
                     </div>
                   </div>
-                  <div className="inland-rate-reefer-note">⚠ يظهر فقط عند اختيار عربية 40' Reefer</div>
                 </div>
               ) : null}
 
