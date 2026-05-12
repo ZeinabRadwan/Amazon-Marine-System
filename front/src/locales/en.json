@@ -22,6 +22,7 @@
     "month": "Month",
     "year": "Year",
     "dash": "—",
+    "notApplicable": "N/A",
     "status": {
       "accepted": "Accepted",
       "pending": "Pending",
@@ -894,7 +895,28 @@
       "reportsPartners": "Reports Partners",
       "reportsPartnersExport": "Reports Partners Export (CSV)",
       "reportsAttendance": "Reports Attendance",
-      "reportsAttendanceExport": "Reports Attendance Export (CSV)"
+      "reportsAttendanceExport": "Reports Attendance Export (CSV)",
+      "dashboardOperationsEmployee": "Operations Employee",
+      "dashboardSupportEmployee": "Support Employee",
+      "dashboardAdminOverview": "Admin Overview",
+      "dashboardSalesManager": "Sales Manager",
+      "dashboardSalesEmployee": "Sales Employee",
+      "dashboardAccountant": "Accountant",
+      "dashboardPricingTeam": "Pricing Team"
+    },
+    "operationsEmployee": {
+      "assignedShipments": "Assigned Shipments",
+      "delayedShipments": "Delayed Shipments",
+      "avgProcessingHours": "Avg Processing (h)",
+      "chartSeriesCompleted": "Completed",
+      "emptyAssigned": "No assigned shipments.",
+      "table": {
+        "shipment": "Shipment",
+        "status": "Status",
+        "priority": "Priority",
+        "deadline": "Deadline",
+        "taskStatus": "Task Status"
+      }
     }
   },
   "signup": {
@@ -3049,10 +3071,14 @@
     "opsCard": {
       "openShipmentAria": "Open shipment",
       "overdue": "{{count}} overdue",
+      "overdueBadge": "⚠ {{count}} overdue",
       "pctComplete": "{{pct}}% complete",
       "cutoff": "CUT-OFF: {{date}}",
       "tasksMetrics": "{{done}} / {{total}} tasks | {{overdue}} overdue",
       "tasksMetricsUnknown": "{{dash}} / {{dash}} tasks | {{dash}} overdue",
+      "opsListProgressCount": "{{done}} / {{total}} tasks",
+      "opsListProgressUnknown": "{{dash}} / {{dash}} tasks",
+      "opsListOverdueHint": "⚠ {{count}} overdue",
       "containerCombined": "{{count}} × {{size}} {{type}}",
       "metaRoute": "Route",
       "metaContainers": "Containers",
@@ -3236,6 +3262,11 @@
       "etd": "ETD (Estimated Departure)",
       "eta": "ETA (Estimated Arrival)",
       "taskManagement": "Task Management",
+      "taskMgmtHeaderProgress": "Completed {{done}} of {{total}} tasks",
+      "taskMgmtHeaderOverdue": "Overdue: {{count}} tasks",
+      "taskMgmtHeaderEmpty": "No tasks yet — add tasks to track progress.",
+      "taskMgmtProgressAria": "{{pct}}% complete",
+      "addTaskToggle": "+ Add Task",
       "taskStatus": "Status",
       "taskProgress": "{{done}} of {{total}} completed",
       "taskProgressSummary": "Completed {{done}} of {{total}}",
@@ -3269,7 +3300,8 @@
         "low": "Low",
         "medium": "Medium",
         "high": "High",
-        "urgent": "Urgent"
+        "urgent": "Urgent",
+        "normal": "Normal"
       },
       "assignTo": "Assign to",
       "assignToSelf": "Me (self)",
@@ -3340,7 +3372,6 @@
       },
       "taskAssignee": "Assigned To",
       "taskDue": "Due Date",
-      "taskStatus": "Status",
       "taskPending": "Pending",
       "taskInProgress": "In Progress",
       "taskDone": "Done",

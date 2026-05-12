@@ -8,6 +8,8 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts'
+import { useTranslation } from 'react-i18next'
+import { formatShipmentsNumber } from '../../utils/westernNumerals'
 
 const DEFAULT_COLORS = ['#3b82f6', '#22c55e', '#eab308', '#f97316', '#8b5cf6', '#ec4899']
 
@@ -32,6 +34,8 @@ export default function LineChart({
   allowDecimals = false,
   className = '',
 }) {
+  const { i18n } = useTranslation()
+  const fmtNum = (v) => formatShipmentsNumber(v, i18n.language)
   if (!data.length) return null
 
   return (
@@ -46,8 +50,13 @@ export default function LineChart({
             tickMargin={10}
             label={xLabel ? { value: xLabel, position: 'insideBottom', offset: -16 } : undefined}
           />
-          <YAxis tick={{ fontSize: 11, fontWeight: 500 }} tickMargin={10} allowDecimals={allowDecimals} />
-          <Tooltip />
+          <YAxis
+            tick={{ fontSize: 11, fontWeight: 500 }}
+            tickMargin={10}
+            allowDecimals={allowDecimals}
+            tickFormatter={fmtNum}
+          />
+          <Tooltip formatter={(value, name) => [fmtNum(value), name]} />
           <Legend layout="horizontal" align="center" verticalAlign="bottom" />
           {lines.map((line, i) => (
             <Line

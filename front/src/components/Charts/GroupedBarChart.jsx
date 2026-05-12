@@ -8,6 +8,8 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts'
+import { useTranslation } from 'react-i18next'
+import { formatShipmentsNumber } from '../../utils/westernNumerals'
 
 /**
  * Grouped bar chart for two series (e.g. receivables vs payables).
@@ -26,6 +28,8 @@ export default function GroupedBarChart({
   allowDecimals = true,
   className = '',
 }) {
+  const { i18n } = useTranslation()
+  const fmtNum = (v) => formatShipmentsNumber(v, i18n.language)
   if (!data.length) return null
 
   return (
@@ -44,11 +48,12 @@ export default function GroupedBarChart({
             tick={{ fontSize: 11, fontWeight: 500 }}
             tickMargin={10}
             allowDecimals={allowDecimals}
+            tickFormatter={fmtNum}
             label={yLabel ? { value: yLabel, angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } } : undefined}
           />
           <Tooltip
             labelFormatter={(label) => label}
-            formatter={(value, name) => [value, name]}
+            formatter={(value, name) => [fmtNum(value), name]}
           />
           <Legend
             verticalAlign="bottom"

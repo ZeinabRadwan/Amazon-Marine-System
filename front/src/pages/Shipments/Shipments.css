@@ -4064,7 +4064,27 @@
   background: color-mix(in srgb, var(--form-primary, #60a5fa) 8%, var(--form-input-bg, #111827));
 }
 
+/* Operations tab: outer section is flat (no nested “modal form” card chrome) */
+.client-detail-modal__body--form .client-detail-modal__section.shipment-ops-tab-section {
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+[data-theme='dark'] .client-detail-modal__body--form .client-detail-modal__section.shipment-ops-tab-section,
+.dark .client-detail-modal__body--form .client-detail-modal__section.shipment-ops-tab-section {
+  border: none;
+  box-shadow: none;
+}
+
 /* Shipment operations — task management (financial-style table + delegate modal) */
+.shipment-detail-card.shipment-op-tasks-section {
+  padding: 0;
+  overflow: hidden;
+}
+
 .shipment-op-tasks-card .shipment-detail-card__title {
   padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--form-divider, #e5e7eb);
@@ -4162,17 +4182,89 @@
   background: #0f2340;
 }
 
-/* Operations tab: task modal above shipment detail (z-index) */
-.shipment-op-tasks-root-modal {
-  z-index: 13060;
+.shipment-op-tasks-section .shipment-op-tasks-inline-body {
+  min-width: 0;
+}
+
+/* Task management — control panel header */
+.shipment-op-task-mgmt-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  flex-wrap: wrap;
+  padding: 0.85rem 1.25rem;
+  border-bottom: 1px solid var(--form-divider, #e5e7eb);
+  background: color-mix(in srgb, var(--form-bg, #fff) 96%, var(--root-bg, #f9fafb));
+}
+
+[data-theme='dark'] .shipment-op-task-mgmt-header,
+.dark .shipment-op-task-mgmt-header {
+  border-bottom-color: color-mix(in srgb, var(--form-divider, #374151) 90%, transparent);
+  background: color-mix(in srgb, var(--form-input-bg, #111827) 92%, #000);
+}
+
+.shipment-op-task-mgmt-header__title {
+  flex: 0 0 auto;
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--navy-700, #1e3a5f);
+}
+
+[data-theme='dark'] .shipment-op-task-mgmt-header__title,
+.dark .shipment-op-task-mgmt-header__title {
+  color: color-mix(in srgb, var(--form-text, #e5e7eb) 88%, transparent);
+}
+
+.shipment-op-task-mgmt-header__center {
+  flex: 1 1 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-width: 0;
+  text-align: center;
+}
+
+.shipment-op-task-mgmt-header__line {
+  display: block;
+  max-width: 100%;
+}
+
+.shipment-op-task-mgmt-header__right {
+  flex: 0 0 auto;
+  margin-inline-start: auto;
+}
+
+.shipment-op-task-mgmt-progress {
+  width: 100%;
+  max-width: 280px;
+}
+
+.shipment-op-task-mgmt-progress__track {
+  height: 6px;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--form-divider, #e5e7eb) 70%, transparent);
+  overflow: hidden;
+}
+
+.shipment-op-task-mgmt-progress__fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #2563eb, #22c55e);
+  transition: width 0.25s ease;
+}
+
+[data-theme='dark'] .shipment-op-task-mgmt-progress__track,
+.dark .shipment-op-task-mgmt-progress__track {
+  background: color-mix(in srgb, var(--form-divider, #4b5563) 55%, transparent);
 }
 
 .shipment-op-nested-modal {
   z-index: 13120;
-}
-
-.shipment-op-tasks-modal-shell {
-  overflow-y: auto;
 }
 
 .shipment-op-task-th--narrow,
@@ -4182,10 +4274,172 @@
   vertical-align: middle;
 }
 
+.shipment-op-task-td--checkbox {
+  width: 2.75rem;
+  text-align: center;
+  vertical-align: middle;
+}
+
 .shipment-op-task-checkbox {
-  width: 1rem;
-  height: 1rem;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1.125rem;
+  height: 1.125rem;
+  margin: 0;
+  border: 2px solid color-mix(in srgb, var(--form-text, #64748b) 45%, var(--form-divider, #cbd5e1));
+  border-radius: 50%;
+  background: var(--form-bg, #fff);
   cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+  position: relative;
+}
+
+.shipment-op-task-checkbox:hover:not(:disabled) {
+  border-color: #2563eb;
+}
+
+.shipment-op-task-checkbox:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.shipment-op-task-checkbox:checked {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+.shipment-op-task-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 4px;
+  height: 7px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: translateY(-1px) rotate(45deg);
+}
+
+.shipment-op-task-checkbox:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+[data-theme='dark'] .shipment-op-task-checkbox,
+.dark .shipment-op-task-checkbox {
+  background: var(--form-input-bg, #111827);
+  border-color: color-mix(in srgb, var(--form-text, #94a3b8) 50%, transparent);
+}
+
+[data-theme='dark'] .shipment-op-task-checkbox:checked,
+.dark .shipment-op-task-checkbox:checked {
+  background: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.shipment-op-task-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-radius: 9999px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.shipment-op-task-badge--pri-low {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.shipment-op-task-badge--pri-medium {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.shipment-op-task-badge--pri-high {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.shipment-op-task-badge--pri-urgent {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.shipment-op-task-badge--status-pending {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.shipment-op-task-badge--status-completed {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.shipment-op-task-badge--status-delegated {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.shipment-op-task-badge--status-overdue {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+[data-theme='dark'] .shipment-op-task-badge--pri-low,
+.dark .shipment-op-task-badge--pri-low {
+  background: #334155;
+  color: #e2e8f0;
+}
+
+[data-theme='dark'] .shipment-op-task-badge--pri-medium,
+.dark .shipment-op-task-badge--pri-medium {
+  background: #713f12;
+  color: #fef08a;
+}
+
+[data-theme='dark'] .shipment-op-task-badge--pri-high,
+.dark .shipment-op-task-badge--pri-high {
+  background: #7c2d12;
+  color: #fed7aa;
+}
+
+[data-theme='dark'] .shipment-op-task-badge--pri-urgent,
+.dark .shipment-op-task-badge--pri-urgent {
+  background: #7f1d1d;
+  color: #fecaca;
+}
+
+[data-theme='dark'] .shipment-op-task-badge--status-pending,
+.dark .shipment-op-task-badge--status-pending {
+  background: #334155;
+  color: #e2e8f0;
+}
+
+[data-theme='dark'] .shipment-op-task-badge--status-completed,
+.dark .shipment-op-task-badge--status-completed {
+  background: #14532d;
+  color: #bbf7d0;
+}
+
+[data-theme='dark'] .shipment-op-task-badge--status-delegated,
+.dark .shipment-op-task-badge--status-delegated {
+  background: #312e81;
+  color: #e0e7ff;
+}
+
+[data-theme='dark'] .shipment-op-task-badge--status-overdue,
+.dark .shipment-op-task-badge--status-overdue {
+  background: #7f1d1d;
+  color: #fecaca;
 }
 
 .shipment-op-task-actions {
@@ -4224,31 +4478,32 @@
   background: rgba(220, 38, 38, 0.08);
 }
 
-.shipment-op-task-tr--pri-urgent td {
-  box-shadow: inset 3px 0 0 #dc2626;
-}
-
-.shipment-op-task-tr--pri-high td {
-  box-shadow: inset 3px 0 0 #ea580c;
-}
-
-.shipment-op-task-tr--pri-medium td {
-  box-shadow: inset 3px 0 0 #ca8a04;
-}
-
-.shipment-op-task-tr--pri-low td {
-  box-shadow: inset 3px 0 0 #16a34a;
-}
-
 .shipment-op-task-table .shipment-op-task-th,
 .shipment-op-task-table .shipment-op-task-td {
   padding: 0.35rem 0.5rem;
   vertical-align: middle;
 }
 
-/* Transport Instructions tab — single compact layout */
-.shipment-ti-single {
-  max-width: 52rem;
+/* Transport Instructions tab — one outer host (no duplicate client-detail-modal__section card) */
+.shipment-ti-tab-host {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.client-detail-modal__body-inner .shipment-ti-tab-host {
+  margin-inline: 0;
+}
+
+/* Transport Instructions — single content container (replaces nested section card) */
+.shipment_key_single {
+  width: 100%;
+  margin-inline: auto;
+  box-sizing: border-box;
 }
 
 .shipment-ti-row--2 {
@@ -4309,12 +4564,28 @@
 }
 
 .shipment-ti-pdf-btn {
-  margin-top: 0.5rem;
+  display: block;
+  width: 100%;
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
   background: #0f2340;
+  color: #fff;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(15, 35, 64, 0.28);
 }
 
 .shipment-ti-pdf-btn:hover:not(:disabled) {
   background: #0c1b32;
+}
+
+.shipment-ti-pdf-btn:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
 }
 
 /* Operations / admin mobile shipment list card (Table renderMobileCard) */
@@ -4630,6 +4901,260 @@
 
 .dark .ship-card__progress-line {
   color: #cbd5e1;
+}
+
+/* Operations-only Shipments list: vertical cards (no table) */
+.shipments-ops-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.shipments-ops-cards-list__item {
+  min-width: 0;
+}
+
+.shipments-ops-cards-list__loading {
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #e5e7eb);
+  background: #fff;
+}
+
+.dark .shipments-ops-cards-list__loading {
+  border-color: #374151;
+  background: #1f2937;
+}
+
+.ship-card.ship-card--ops-list {
+  gap: 6px;
+  padding: 10px 12px;
+}
+
+.ship-card-ops__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ship-card-ops__header-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.ship-card-ops__select {
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.ship-card-ops__select .ship-card__select input[type='checkbox'] {
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}
+
+.ship-card-ops__titles {
+  min-width: 0;
+  flex: 1;
+}
+
+.ship-card-ops__booking {
+  font-size: 0.9375rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.dark .ship-card-ops__booking {
+  color: #f8fafc;
+}
+
+.ship-card-ops__client {
+  margin-top: 2px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #475569;
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.dark .ship-card-ops__client {
+  color: #94a3b8;
+}
+
+.ship-card-ops__header-aside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+[dir='rtl'] .ship-card-ops__header-aside {
+  align-items: flex-start;
+}
+
+.ship-card-ops__actions-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #475569;
+  cursor: pointer;
+}
+
+.ship-card-ops__actions-trigger:hover {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.dark .ship-card-ops__actions-trigger {
+  border-color: #4b5563;
+  background: #374151;
+  color: #e5e7eb;
+}
+
+.ship-card-ops__badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+  max-width: 11rem;
+}
+
+[dir='rtl'] .ship-card-ops__badges {
+  justify-content: flex-start;
+}
+
+.ship-card-ops__badge {
+  font-size: 0.5625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  padding: 3px 6px;
+  border-radius: 9999px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.ship-card-ops__badge--overdue {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.dark .ship-card-ops__badge--overdue {
+  background: rgba(127, 29, 29, 0.35);
+  color: #fecaca;
+}
+
+.ship-card-ops__badge--pct {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.dark .ship-card-ops__badge--pct {
+  background: rgba(30, 64, 175, 0.35);
+  color: #bfdbfe;
+}
+
+.ship-card-ops__badge--cutoff {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.dark .ship-card-ops__badge--cutoff {
+  background: #334155;
+  color: #e2e8f0;
+}
+
+.ship-card-ops__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 6px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #334155;
+  line-height: 1.35;
+}
+
+.dark .ship-card-ops__meta {
+  color: #cbd5e1;
+}
+
+.ship-card-ops__meta-sep {
+  color: #94a3b8;
+  font-weight: 500;
+  user-select: none;
+}
+
+.ship-card-ops__meta-item {
+  min-width: 0;
+}
+
+.ship-card-ops__meta-item--status {
+  color: #0f2340;
+  font-weight: 700;
+}
+
+.dark .ship-card-ops__meta-item--status {
+  color: #e2e8f0;
+}
+
+.ship-card-ops__progress {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 2px;
+}
+
+.ship-card-ops__progress-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ship-card-ops__progress-count {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #475569;
+  font-variant-numeric: tabular-nums;
+}
+
+.dark .ship-card-ops__progress-count {
+  color: #cbd5e1;
+}
+
+.ship-card-ops__bar {
+  height: 5px;
+  border-radius: 9999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.dark .ship-card-ops__bar {
+  background: #374151;
+}
+
+.ship-card-ops__overdue-line {
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: #b91c1c;
+}
+
+.dark .ship-card-ops__overdue-line {
+  color: #fca5a5;
 }
 
 /* Operations-only (non-admin) Shipments page: two task KPI cards */

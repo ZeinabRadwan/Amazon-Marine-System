@@ -1,4 +1,6 @@
 import { PieChart as RechartsPieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { useTranslation } from 'react-i18next'
+import { formatShipmentsNumber } from '../../utils/westernNumerals'
 
 const DEFAULT_COLORS = ['#3b82f6', '#22c55e', '#eab308', '#f97316', '#8b5cf6', '#ec4899']
 
@@ -29,6 +31,8 @@ export default function DonutChart({
   showLabel = true,
   className = '',
 }) {
+  const { i18n } = useTranslation()
+  const fmtNum = (v) => formatShipmentsNumber(v, i18n.language)
   if (!data.length) return null
 
   return (
@@ -45,7 +49,7 @@ export default function DonutChart({
             innerRadius={innerRadius}
             outerRadius={outerRadius}
             paddingAngle={2}
-            label={showLabel ? { offset: 14, formatter: (value, name) => `${name}: ${value}` } : false}
+            label={showLabel ? { offset: 14, formatter: (value, name) => `${name}: ${fmtNum(value)}` } : false}
           >
             {data.map((entry, i) => {
               const c = entry?.color
@@ -58,7 +62,7 @@ export default function DonutChart({
               )
             })}
           </Pie>
-          <Tooltip formatter={(value) => [value, valueLabel]} />
+          <Tooltip formatter={(value) => [fmtNum(value), valueLabel]} />
           <Legend layout="horizontal" align="center" verticalAlign="bottom" />
         </RechartsPieChart>
       </ResponsiveContainer>

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import LoaderDots from '../../components/LoaderDots'
+import i18n from '../../i18n'
+import { latinDateTimeFormat } from '../../utils/westernNumerals'
 
 export const EMPTY_TRANSPORT_INSTRUCTION_PROFILE = {
   customer_arrival_at: '',
@@ -134,7 +136,8 @@ export function buildTransportInstructionsWhatsAppText(shipment, tip, t) {
   const arrivalStr = (() => {
     if (!ti.customer_arrival_at) return '—'
     const d = new Date(ti.customer_arrival_at)
-    return Number.isNaN(d.getTime()) ? String(ti.customer_arrival_at) : d.toLocaleString()
+    if (Number.isNaN(d.getTime())) return String(ti.customer_arrival_at)
+    return latinDateTimeFormat(i18n.language, { dateStyle: 'short', timeStyle: 'short' }).format(d)
   })()
   const lines = [
     t('shipments.transportInstructions.whatsappTitle', { id: shipment?.id ?? '' }),
@@ -224,7 +227,7 @@ export default function ShipmentTransportInstructionsTab({
   const req = (s) => (s ? ` ${s}` : '')
 
   return (
-    <div className="shipment-ti-single rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900/30 p-4 space-y-3">
+    <div className="shipment_key_single rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900/30 p-4 space-y-3">
       {opsError ? (
         <p className="text-sm text-red-600 dark:text-red-400 font-medium" role="alert">
           {opsError}
@@ -526,9 +529,9 @@ export default function ShipmentTransportInstructionsTab({
         type="button"
         onClick={() => onGenerateTiPdf?.()}
         disabled={tiPdfLoading || !shipment?.id || !canEditOps}
-        className="shipment-ti-pdf-btn w-full py-2.5 px-4 text-sm font-semibold text-white rounded-md border-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        className="shipment-ti-pdf-btn disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {tiPdfLoading ? <LoaderDots size={8} /> : t('shipments.transportInstructions.generatePdfBilingual')}
+        {tiPdfLoading ? <LoaderDots size={8} /> : t('shipments.transportInstructions.generatePdf')}
       </button>
     </div>
   )

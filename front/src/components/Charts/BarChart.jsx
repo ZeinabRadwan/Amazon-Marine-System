@@ -7,6 +7,8 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
+import { useTranslation } from 'react-i18next'
+import { formatShipmentsNumber } from '../../utils/westernNumerals'
 
 /**
  * BarChart – reusable bar chart.
@@ -35,6 +37,8 @@ export default function BarChart({
   allowDecimals = false,
   className = '',
 }) {
+  const { i18n } = useTranslation()
+  const fmtNum = (v) => formatShipmentsNumber(v, i18n.language)
   const valueName = valueLabel ?? yLabel
   if (!data.length) return null
 
@@ -54,11 +58,12 @@ export default function BarChart({
             tick={{ fontSize: 11, fontWeight: 500 }}
             tickMargin={10}
             allowDecimals={allowDecimals}
+            tickFormatter={fmtNum}
             label={yLabel ? { value: yLabel, angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } } : undefined}
           />
           <Tooltip
             labelFormatter={(label) => label}
-            formatter={(value) => [value, valueName]}
+            formatter={(value) => [fmtNum(value), valueName]}
           />
           <Bar
             dataKey={yKey}

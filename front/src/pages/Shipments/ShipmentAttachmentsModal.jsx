@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
+import { formatShipmentsNumber } from '../../utils/westernNumerals'
 import {
   X,
   Ship,
@@ -288,8 +289,7 @@ export default function ShipmentAttachmentsModal({ open, shipment, expenses, loa
     if (shipment?.id == null || shipment?.id === '') return '—'
     const numeric = Number(shipment.id)
     if (!Number.isNaN(numeric)) {
-      const locale = i18n.language === 'ar' || String(i18n.language).startsWith('ar') ? 'ar-EG' : 'en-GB'
-      return new Intl.NumberFormat(locale).format(numeric)
+      return formatShipmentsNumber(numeric, i18n.language)
     }
     return String(shipment.id)
   }, [shipment?.id, i18n.language])

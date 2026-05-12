@@ -34,6 +34,7 @@ import {
 import { listBankAccounts } from '../../api/accountings'
 import { useAuthAccess } from '../../hooks/useAuthAccess'
 import { ROLE_ID } from '../../constants/roles'
+import { latinDateTimeFormat } from '../../utils/westernNumerals'
 import { BUCKET_DEFS, expenseBucket, LINE_TEMPLATES, expenseHaystack, partitionBucketRows } from './shipmentFinUtils'
 import Tabs from '../../components/Tabs'
 import InvoiceDocumentPreviewModal from '../../components/InvoiceDocumentPreviewModal'
@@ -2442,7 +2443,7 @@ export default function ShipmentFinancialsModal({
       if (!value) return '—'
       const d = new Date(value)
       if (Number.isNaN(d.getTime())) return String(value)
-      return new Intl.DateTimeFormat(i18n.language || 'en', { day: '2-digit', month: 'short', year: 'numeric' }).format(d)
+      return latinDateTimeFormat(i18n.language || 'en', { day: '2-digit', month: 'short', year: 'numeric' }).format(d)
     },
     [i18n.language]
   )

@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Check, Trash2, UserRound, CornerUpRight } from 'lucide-react'
+import { Check, Trash2, CornerUpRight, Plus } from 'lucide-react'
 import LoaderDots from '../../components/LoaderDots'
 import {
   bulkUpdateShipmentTasks,
@@ -16,7 +16,8 @@ import { isoToDdMmYyyy } from './opsDateDisplay'
 import {
   getTaskDisplayStatus,
   isTaskCompleted,
-  priorityRowClass,
+  priorityBadgeClass,
+  taskStatusBadgeClass,
   countCompletedTasks,
   countOverdueTasks,
 } from './shipmentOperationTaskUi'
@@ -61,6 +62,12 @@ export default function ShipmentOperationsTasksPanel({
   const [delegateSaving, setDelegateSaving] = useState(false)
   const [deleteTaskId, setDeleteTaskId] = useState(null)
   const [deleteSubmitting, setDeleteSubmitting] = useState(false)
+  const [showAddTaskForm, setShowAddTaskForm] = useState(false)
+
+  const completedCount = useMemo(() => countCompletedTasks(tasks), [tasks])
+  const overdueCount = useMemo(() => countOverdueTasks(tasks), [tasks])
+  const totalTasks = tasks.length
+  const progressPct = totalTasks > 0 ? Math.min(100, Math.round((completedCount / totalTasks) * 100)) : 0
 
   const loadAssignees = useCallback(() => {
     if (!token || !shipmentId || !canEditOps) return
@@ -191,7 +198,11 @@ export default function ShipmentOperationsTasksPanel({
     })
     const next = [...tasks, newTask]
     const ok = await persistTasks(next)
-    if (ok) setTaskForm(defaultTaskForm())
+    if (ok) {
+      setTaskForm(defaultTaskForm())
+      setShowAddTaskForm(false)
+      await refreshTasks?.()
+    }
   }
 
   const updateTaskField = async (taskId, updates) => {
@@ -249,43 +260,88 @@ export default function ShipmentOperationsTasksPanel({
     }
   }
 
-  const statusLabel = (task) => {
-    const d = getTaskDisplayStatus(task)
-    return t(`shipments.ops.taskDisplayStatus.${d}`, { defaultValue: d })
-  }
-
   return (
-    <div className="shipment-op-tasks-modal-body">
+    <div className="shipment-op-tasks-inline-body">
       {taskFormError ? (
         <p className="text-sm text-red-600 dark:text-red-400 mb-3" role="alert">
           {taskFormError}
         </p>
       ) : null}
 
-      {canEditOps ? (
-        <>
-          <div className="mb-4">
-            <h4 className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">
-              {t('shipments.ops.quickTaskTemplates')}
-            </h4>
-            <div className="shipment-op-task-templates flex flex-wrap gap-2">
-              {SHIPMENT_TASK_QUICK_TEMPLATE_KEYS.map((key) => (
-                <button
-                  key={key}
-                  type="button"
-                  className="shipment-fin-btn shipment-fin-btn--secondary text-xs py-1.5 px-2"
-                  onClick={() => applyTemplate(key)}
-                >
-                  {t(`shipments.ops.taskTemplates.${key}`)}
-                </button>
-              ))}
-            </div>
+      <header className="shipment-op-task-mgmt-header">
+        <h3 className="shipment-op-task-mgmt-header__title">{t('shipments.ops.taskManagement')}</h3>
+        <div className="shipment-op-task-mgmt-header__center">
+          {totalTasks > 0 ? (
+            <>
+              <span className="shipment-op-task-mgmt-header__line text-sm text-gray-800 dark:text-gray-100">
+                {t('shipments.ops.taskMgmtHeaderProgress', { done: completedCount, total: totalTasks })}
+              </span>
+              <div
+                className="shipment-op-task-mgmt-progress"
+                role="progressbar"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={progressPct}
+                aria-label={t('shipments.ops.taskMgmtProgressAria', { pct: progressPct })}
+              >
+                <div className="shipment-op-task-mgmt-progress__track">
+                  <div className="shipment-op-task-mgmt-progress__fill" style={{ width: `${progressPct}%` }} />
+                </div>
+              </div>
+              <span
+                className={`shipment-op-task-mgmt-header__line text-sm ${overdueCount > 0 ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-gray-600 dark:text-gray-400'}`}
+              >
+                {t('shipments.ops.taskMgmtHeaderOverdue', { count: overdueCount })}
+              </span>
+            </>
+          ) : (
+            <span className="text-xs text-gray-500 dark:text-gray-400">{t('shipments.ops.taskMgmtHeaderEmpty')}</span>
+          )}
+        </div>
+        {canEditOps ? (
+          <div className="shipment-op-task-mgmt-header__right">
+            <button
+              type="button"
+              className="client-detail-modal__btn client-detail-modal__btn--secondary text-sm inline-flex items-center gap-1.5"
+              onClick={() => setShowAddTaskForm((v) => !v)}
+              aria-expanded={showAddTaskForm}
+              aria-controls="shipment-op-task-form"
+            >
+              <Plus className="h-4 w-4 shrink-0" aria-hidden />
+              {t('shipments.ops.addTaskToggle')}
+            </button>
           </div>
+        ) : (
+          <div className="shipment-op-task-mgmt-header__right" aria-hidden />
+        )}
+      </header>
 
-          <form
-            onSubmit={handleAddFromForm}
-            className="shipment-op-task-form rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/30 p-3 space-y-3 mb-4"
-          >
+      <div className="shipment-op-tasks-body px-4 pb-4 pt-3 space-y-4">
+        {canEditOps && showAddTaskForm ? (
+          <>
+            <div className="mb-2">
+              <h4 className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">
+                {t('shipments.ops.quickTaskTemplates')}
+              </h4>
+              <div className="shipment-op-task-templates flex flex-wrap gap-2">
+                {SHIPMENT_TASK_QUICK_TEMPLATE_KEYS.map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    className="shipment-fin-btn shipment-fin-btn--secondary text-xs py-1.5 px-2"
+                    onClick={() => applyTemplate(key)}
+                  >
+                    {t(`shipments.ops.taskTemplates.${key}`)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <form
+              id="shipment-op-task-form"
+              onSubmit={handleAddFromForm}
+              className="shipment-op-task-form rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/30 p-3 space-y-3"
+            >
             <h4 className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
               {t('shipments.ops.newTaskFormTitle')}
             </h4>
@@ -359,7 +415,25 @@ export default function ShipmentOperationsTasksPanel({
               <select
                 className="clients-input w-full max-w-md mb-2"
                 value={taskForm.reminderMode}
-                onChange={(e) => setTaskForm((f) => ({ ...f, reminderMode: e.target.value }))}
+                onChange={(e) => {
+                  const mode = e.target.value
+                  setTaskForm((f) => ({
+                    ...f,
+                    reminderMode: mode,
+                    ...(mode === 'absolute'
+                      ? { reminderBeforeValue: '', reminderBeforeUnit: f.reminderBeforeUnit || 'hours' }
+                      : {}),
+                    ...(mode === 'relative' ? { reminderAtDate: '', reminderAtTime: '' } : {}),
+                    ...(mode === 'none'
+                      ? {
+                          reminderAtDate: '',
+                          reminderAtTime: '',
+                          reminderBeforeValue: '',
+                          reminderBeforeUnit: f.reminderBeforeUnit || 'hours',
+                        }
+                      : {}),
+                  }))
+                }}
               >
                 <option value="none">{t('shipments.ops.reminderMode.none')}</option>
                 <option value="absolute">{t('shipments.ops.reminderMode.absolute')}</option>
@@ -415,8 +489,8 @@ export default function ShipmentOperationsTasksPanel({
               {persisting ? <LoaderDots size={8} /> : t('shipments.ops.addTaskFromForm')}
             </button>
           </form>
-        </>
-      ) : null}
+          </>
+        ) : null}
 
       <div className="shipment-op-task-table-wrap overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
         <table className="shipment-op-task-table min-w-full text-sm">
@@ -424,6 +498,7 @@ export default function ShipmentOperationsTasksPanel({
             <tr>
               <th className="shipment-op-task-th shipment-op-task-th--narrow" aria-label={t('shipments.ops.completeToggle')} />
               <th className="shipment-op-task-th">{t('shipments.ops.taskName')}</th>
+              <th className="shipment-op-task-th">{t('shipments.ops.taskPriorityLabel')}</th>
               <th className="shipment-op-task-th">{t('shipments.ops.executionDateCol')}</th>
               <th className="shipment-op-task-th">{t('shipments.ops.assignedUser')}</th>
               <th className="shipment-op-task-th">{t('shipments.ops.reminder')}</th>
@@ -432,9 +507,12 @@ export default function ShipmentOperationsTasksPanel({
             </tr>
           </thead>
           <tbody>
-            {tasks.map((task) => (
-              <tr key={task.id} className={`shipment-op-task-tr ${priorityRowClass(task.priority)}`}>
-                <td className="shipment-op-task-td shipment-op-task-td--narrow">
+            {tasks.map((task) => {
+              const displayStatus = getTaskDisplayStatus(task)
+              const pri = task.priority || 'medium'
+              return (
+              <tr key={task.id} className="shipment-op-task-tr">
+                <td className="shipment-op-task-td shipment-op-task-td--checkbox">
                   <input
                     type="checkbox"
                     className="shipment-op-task-checkbox"
@@ -445,10 +523,19 @@ export default function ShipmentOperationsTasksPanel({
                   />
                 </td>
                 <td className="shipment-op-task-td font-medium">{task.name}</td>
+                <td className="shipment-op-task-td">
+                  <span className={priorityBadgeClass(pri)}>
+                    {t(`shipments.ops.taskPriority.${pri}`, { defaultValue: pri })}
+                  </span>
+                </td>
                 <td className="shipment-op-task-td whitespace-nowrap">{formatExecutionCell(task)}</td>
                 <td className="shipment-op-task-td">{assigneeLabel(task)}</td>
                 <td className="shipment-op-task-td text-xs">{formatReminderCell(task)}</td>
-                <td className="shipment-op-task-td">{statusLabel(task)}</td>
+                <td className="shipment-op-task-td">
+                  <span className={taskStatusBadgeClass(displayStatus)}>
+                    {t(`shipments.ops.taskDisplayStatus.${displayStatus}`, { defaultValue: displayStatus })}
+                  </span>
+                </td>
                 <td className="shipment-op-task-td shipment-op-task-td--actions">
                   {canEditOps ? (
                     <div className="shipment-op-task-actions">
@@ -487,12 +574,14 @@ export default function ShipmentOperationsTasksPanel({
                   )}
                 </td>
               </tr>
-            ))}
+              )
+            })}
           </tbody>
         </table>
         {tasks.length === 0 ? (
           <p className="p-3 text-sm text-gray-500 dark:text-gray-400">{t('shipments.ops.tasksEmpty')}</p>
         ) : null}
+      </div>
       </div>
 
       {delegateTaskId != null ? (
@@ -552,38 +641,6 @@ export default function ShipmentOperationsTasksPanel({
           </div>
         </div>
       ) : null}
-    </div>
-  )
-}
-
-export function ShipmentOperationsTasksSummaryHeader({ tasks, t, onManage, canEditOps }) {
-  const completed = countCompletedTasks(tasks)
-  const overdue = countOverdueTasks(tasks)
-  const total = tasks.length
-  return (
-    <div className="shipment-detail-card mb-6 shipment-op-tasks-summary-card">
-      <div className="flex flex-wrap items-center justify-between gap-3 p-4">
-        <div className="text-sm text-gray-800 dark:text-gray-100">
-          <span className="font-semibold">{t('shipments.ops.taskManagement')}</span>
-          <span className="mx-2 text-gray-400">|</span>
-          <span>
-            {t('shipments.ops.taskProgressSummary', { done: completed, total })}
-          </span>
-          {overdue > 0 ? (
-            <>
-              <span className="mx-2 text-gray-400">|</span>
-              <span className="text-red-600 dark:text-red-400 font-semibold">
-                {t('shipments.ops.overdueSummary', { count: overdue })}
-              </span>
-            </>
-          ) : null}
-        </div>
-        {canEditOps ? (
-          <button type="button" className="client-detail-modal__btn client-detail-modal__btn--secondary text-sm" onClick={onManage}>
-            {t('shipments.ops.manageTasks')}
-          </button>
-        ) : null}
-      </div>
     </div>
   )
 }

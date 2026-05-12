@@ -30,9 +30,12 @@ export function formatDate(value, options = {}) {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
+      numberingSystem: 'latn',
     }).format(d)
     if (includeTime) {
-      result += divider + new Intl.DateTimeFormat(loc, { hour: '2-digit', minute: '2-digit' }).format(d)
+      result +=
+        divider +
+        new Intl.DateTimeFormat(loc, { hour: '2-digit', minute: '2-digit', numberingSystem: 'latn' }).format(d)
     }
     return result
   }
@@ -48,6 +51,7 @@ export function formatLocaleNumber(value, language, options = {}) {
   return new Intl.NumberFormat(loc, {
     minimumFractionDigits,
     maximumFractionDigits,
+    numberingSystem: 'latn',
   }).format(Number(value))
 }
 

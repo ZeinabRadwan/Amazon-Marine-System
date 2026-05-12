@@ -23,6 +23,7 @@
     "month": "الشهر",
     "year": "السنة",
     "dash": "—",
+    "notApplicable": "غير متوفر",
     "status": {
       "accepted": "مقبول",
       "pending": "قيد الانتظار",
@@ -895,7 +896,28 @@
       "reportsPartners": "تقارير الشركاء",
       "reportsPartnersExport": "تصدير تقارير الشركاء (CSV)",
       "reportsAttendance": "تقارير الحضور",
-      "reportsAttendanceExport": "تصدير تقارير الحضور (CSV)"
+      "reportsAttendanceExport": "تصدير تقارير الحضور (CSV)",
+      "dashboardOperationsEmployee": "موظف العمليات",
+      "dashboardSupportEmployee": "موظف الدعم",
+      "dashboardAdminOverview": "نظرة عامة للمسؤول",
+      "dashboardSalesManager": "مدير المبيعات",
+      "dashboardSalesEmployee": "موظف المبيعات",
+      "dashboardAccountant": "المحاسب",
+      "dashboardPricingTeam": "فريق التسعير"
+    },
+    "operationsEmployee": {
+      "assignedShipments": "الشحنات المعينة",
+      "delayedShipments": "الشحنات المتأخرة",
+      "avgProcessingHours": "متوسط المعالجة (ساعة)",
+      "chartSeriesCompleted": "مكتملة",
+      "emptyAssigned": "لا توجد شحنات معينة.",
+      "table": {
+        "shipment": "الشحنة",
+        "status": "الحالة",
+        "priority": "الأولوية",
+        "deadline": "الموعد النهائي",
+        "taskStatus": "حالة المهمة"
+      }
     }
   },
   "signup": {
@@ -3050,10 +3072,14 @@
     "opsCard": {
       "openShipmentAria": "فتح الشحنة",
       "overdue": "{{count}} متأخرة",
+      "overdueBadge": "⚠ {{count}} متأخرة",
       "pctComplete": "{{pct}}% كامل",
       "cutoff": "CUT-OFF: {{date}}",
       "tasksMetrics": "{{done}} / {{total}} مهام | {{overdue}} متأخرة",
       "tasksMetricsUnknown": "{{dash}} / {{dash}} مهام | {{dash}} متأخرة",
+      "opsListProgressCount": "{{done}} / {{total}} مهام",
+      "opsListProgressUnknown": "{{dash}} / {{dash}} مهام",
+      "opsListOverdueHint": "⚠ {{count}} متأخرة",
       "containerCombined": "{{count}} × {{size}} {{type}}",
       "metaRoute": "المسار",
       "metaContainers": "الحاويات",
@@ -3234,6 +3260,11 @@
       "etd": "تاريخ القيام المتوقع (ETD)",
       "eta": "تاريخ الوصول المتوقع (ETA)",
       "taskManagement": "إدارة المهام",
+      "taskMgmtHeaderProgress": "تم إنجاز {{done}} من {{total}} مهمة",
+      "taskMgmtHeaderOverdue": "متأخرة: {{count}} مهمة",
+      "taskMgmtHeaderEmpty": "لا توجد مهام بعد — أضف مهامًا لتتبع التقدم.",
+      "taskMgmtProgressAria": "مكتمل {{pct}}٪",
+      "addTaskToggle": "+ إضافة مهمة",
       "taskStatus": "الحالة",
       "taskProgress": "تم إنجاز {{done}} من {{total}}",
       "taskProgressSummary": "تم إنجاز {{done}} من {{total}}",
@@ -3267,7 +3298,8 @@
         "low": "منخفضة",
         "medium": "متوسطة",
         "high": "عالية",
-        "urgent": "عاجلة"
+        "urgent": "عاجلة",
+        "normal": "عادية"
       },
       "assignTo": "تعيين إلى",
       "assignToSelf": "أنا",
@@ -3340,7 +3372,6 @@
       },
       "taskAssignee": "المسؤول",
       "taskDue": "تاريخ الاستحقاق",
-      "taskStatus": "الحالة",
       "taskPending": "قيد الانتظار",
       "taskInProgress": "قيد التنفيذ",
       "taskDone": "تم الإنجاز",

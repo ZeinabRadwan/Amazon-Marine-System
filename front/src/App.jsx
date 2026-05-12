@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom'
 import {
@@ -67,6 +67,8 @@ import { useAuthAccess } from './hooks/useAuthAccess'
 import RequirePageAccess from './components/RequirePageAccess'
 import RequireAdmin from './components/RequireAdmin'
 import { formatDate } from './utils/dateUtils'
+import { formatShipmentsNumber, latinDateTimeFormat } from './utils/westernNumerals'
+import { shipmentStatusLegacyLabel } from './utils/shipmentStatusHelpers'
 import './App.css'
 import './pages/Clients/Clients.css'
 
@@ -335,22 +337,111 @@ function PricingDashboardBlock({ payload }) {
 }
 
 function OperationsDashboardBlock({ payload }) {
+  const { t, i18n } = useTranslation()
   const overview = payload?.shipments_overview || {}
-  const status = normalizeSeries(payload?.charts?.shipments_by_status_pie)
-  const completed = Array.isArray(payload?.charts?.monthly_completed_shipments_line) ? payload.charts.monthly_completed_shipments_line : []
   const assigned = Array.isArray(payload?.assigned_shipments) ? payload.assigned_shipments : []
+
+  const status = useMemo(() => {
+    return normalizeSeries(payload?.charts?.shipments_by_status_pie).map((s) => ({
+      ...s,
+      name: shipmentStatusLegacyLabel(s.name, t),
+    }))
+  }, [payload?.charts?.shipments_by_status_pie, t])
+
+  const completed = useMemo(() => {
+    const raw = Array.isArray(payload?.charts?.monthly_completed_shipments_line)
+      ? payload.charts.monthly_completed_shipments_line
+      : []
+    return raw.map((row, i) => ({
+      ...row,
+      monthLabel: formatOpsDashboardMonthKey(row?.month ?? row?.label ?? `#${i + 1}`, i18n.language),
+    }))
+  }, [payload?.charts?.monthly_completed_shipments_line, i18n.language])
+
+  const opsTaskStatusLabel = (raw) => {
+    const slug = String(raw ?? '')
+      .trim()
+      .toLowerCase()
+    if (!slug) return '—'
+    const path = `shipments.ops.taskDisplayStatus.${slug}`
+    const out = t(path)
+    return out === path ? String(raw) : out
+  }
+
+  const opsTaskPriorityLabel = (raw) => {
+    const slug = String(raw ?? '')
+      .trim()
+      .toLowerCase()
+    if (!slug) return '—'
+    const path = `shipments.ops.taskPriority.${slug}`
+    const out = t(path)
+    return out === path ? String(raw) : out
+  }
+
+  const assignedColumns = [
+    { key: 'shipment_ref', label: t('dashboardModule.operationsEmployee.table.shipment') },
+    {
+      key: 'status',
+      label: t('dashboardModule.operationsEmployee.table.status'),
+      render: (v) => shipmentStatusLegacyLabel(v, t),
+    },
+    {
+      key: 'priority',
+      label: t('dashboardModule.operationsEmployee.table.priority'),
+      render: (v) => opsTaskPriorityLabel(v),
+    },
+    {
+      key: 'deadline',
+      label: t('dashboardModule.operationsEmployee.table.deadline'),
+      render: (v) => formatDate(v, { locale: i18n.language }),
+    },
+    {
+      key: 'task_status',
+      label: t('dashboardModule.operationsEmployee.table.taskStatus'),
+      render: (v) => opsTaskStatusLabel(v),
+    },
+  ]
+
   return (
     <div className="space-y-4">
       <div className="clients-stats-grid">
-        <StatsCard title="Assigned Shipments" value={asNumber(overview.total_assigned)} icon={<Truck className="h-6 w-6" />} variant="blue" />
-        <StatsCard title="Delayed Shipments" value={asNumber(overview.delayed_shipments)} icon={<TriangleAlert className="h-6 w-6" />} variant="red" />
-        <StatsCard title="Avg Processing (h)" value={asNumber(overview.avg_processing_time_hours)} icon={<BarChart3 className="h-6 w-6" />} variant="amber" />
+        <StatsCard
+          title={t('dashboardModule.operationsEmployee.assignedShipments')}
+          value={formatShipmentsNumber(overview.total_assigned, i18n.language)}
+          icon={<Truck className="h-6 w-6" />}
+          variant="blue"
+        />
+        <StatsCard
+          title={t('dashboardModule.operationsEmployee.delayedShipments')}
+          value={formatShipmentsNumber(overview.delayed_shipments, i18n.language)}
+          icon={<TriangleAlert className="h-6 w-6" />}
+          variant="red"
+        />
+        <StatsCard
+          title={t('dashboardModule.operationsEmployee.avgProcessingHours')}
+          value={formatShipmentsNumber(overview.avg_processing_time_hours, i18n.language, {
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 1,
+          })}
+          icon={<BarChart3 className="h-6 w-6" />}
+          variant="amber"
+        />
       </div>
       <div className="clients-charts-grid">
         <PieChart data={status} nameKey="name" valueKey="value" showLabel={false} height={260} />
-        <LineChart data={completed} xKey="month" lines={[{ dataKey: 'completed', name: 'Completed' }]} height={260} />
+        <LineChart
+          data={completed}
+          xKey="monthLabel"
+          lines={[{ dataKey: 'completed', name: t('dashboardModule.operationsEmployee.chartSeriesCompleted') }]}
+          height={260}
+        />
       </div>
-      <Table columns={[{ key: 'shipment_ref', label: 'Shipment' }, { key: 'status', label: 'Status' }, { key: 'priority', label: 'Priority' }, { key: 'deadline', label: 'Deadline' }, { key: 'task_status', label: 'Task Status' }]} data={assigned} getRowKey={(r) => `${r.shipment_id}-${r.deadline}`} />
+      <Table
+        columns={assignedColumns}
+        data={assigned}
+        getRowKey={(r) => `${r.shipment_id}-${r.deadline}`}
+        emptyMessage={t('dashboardModule.operationsEmployee.emptyAssigned')}
+      />
     </div>
   )
 }
@@ -593,6 +684,19 @@ function normalizeSeries(source) {
     return Object.entries(source).map(([name, value]) => ({ name, value: asNumber(value) }))
   }
   return []
+}
+
+/** `Y-m` from API → short localized month label (Latin digits). */
+function formatOpsDashboardMonthKey(ym, language) {
+  if (ym == null || ym === '') return ''
+  const s = String(ym).trim()
+  const m = /^(\d{4})-(\d{2})$/.exec(s)
+  if (!m) return s
+  const y = Number(m[1])
+  const mo = Number(m[2]) - 1
+  if (!Number.isFinite(y) || mo < 0 || mo > 11) return s
+  const d = new Date(Date.UTC(y, mo, 1))
+  return latinDateTimeFormat(language, { month: 'short', year: 'numeric', timeZone: 'UTC' }).format(d)
 }
 
 function normalizeRcpByMonth(source) {

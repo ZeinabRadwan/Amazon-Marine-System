@@ -33,7 +33,7 @@ import ShipmentStatusBadge from '../../components/ShipmentStatusBadge'
 import { getPipelineStepIndex, PIPELINE_STEP_KEYS } from './shipmentPipeline'
 import { listActivitiesBySubject } from '../../api/activities'
 import { SERVICE_TYPE_IDS, OPERATIONAL_PHASE_ORDER } from './shipmentOpsConstants'
-import ShipmentOperationsTasksPanel, { ShipmentOperationsTasksSummaryHeader } from './ShipmentOperationsTasksPanel'
+import ShipmentOperationsTasksPanel from './ShipmentOperationsTasksPanel'
 import { isoToDdMmYyyy, parseDdMmYyyyToIso } from './opsDateDisplay'
 import { normalizeShipmentOperationTask, serializeShipmentOperationTaskForApi } from './shipmentOperationTaskPayload'
 import { formatShipmentAuditRow } from './shipmentAuditPresentation'
@@ -52,7 +52,8 @@ import '../Clients/ClientDetailModal.css'
 
 function formatMoney(v, locale) {
   if (v == null || v === '') return '—'
-  return new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en-US', { maximumFractionDigits: 2 }).format(Number(v))
+  const loc = locale === 'ar' ? 'ar-EG' : 'en-US'
+  return new Intl.NumberFormat(loc, { maximumFractionDigits: 2, numberingSystem: 'latn' }).format(Number(v))
 }
 
 function shipmentDisplayMode(mode, t) {
@@ -191,7 +192,6 @@ export default function ShipmentDetailModal({
   const [opsBookingFilesLoading, setOpsBookingFilesLoading] = useState(false)
   const [tiPdfLoading, setTiPdfLoading] = useState(false)
   const [tiBookingDraft, setTiBookingDraft] = useState({ booking_number: '', shipping_line_id: '' })
-  const [opsTasksModalOpen, setOpsTasksModalOpen] = useState(false)
 
   useEffect(() => {
     if (!shipment?.id) return
@@ -332,13 +332,8 @@ export default function ShipmentDetailModal({
       setOpsError(null)
       setOpsBookingFiles([])
       setTiPdfLoading(false)
-      setOpsTasksModalOpen(false)
     }
   }, [open])
-
-  useEffect(() => {
-    if (detailTab !== 'operations') setOpsTasksModalOpen(false)
-  }, [detailTab])
 
   useEffect(() => {
     if (!open || !shipment?.id || !(isOperations || isAdminRole)) return
@@ -1279,7 +1274,7 @@ export default function ShipmentDetailModal({
           )}
 
           {detailTab === 'operations' && (
-            <section className="client-detail-modal__section">
+            <section className="client-detail-modal__section shipment-ops-tab-section">
               {opsLoading || tasksLoading || !opsData ? (
                 <p className="client-detail-modal__empty">{t('shipments.loading')}</p>
               ) : (
@@ -1305,60 +1300,6 @@ export default function ShipmentDetailModal({
                                 <span>{t(`shipments.ops.serviceType.${id}`)}</span>
                               </label>
                             ))}
-                          </div>
-                        </div>
-
-                        <div className="shipment-detail-card mb-6">
-                          <h3 className="shipment-detail-card__title">{t('shipments.ops.sectionKeyDates')}</h3>
-                          <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                            <OpsDateDdMmYyyyField
-                              label={t('shipments.ops.cutOffDate')}
-                              isoValue={opsData.cut_off_date}
-                              disabled={!canEditOps}
-                              onCommit={(iso) => setOpsData((prev) => ({ ...prev, cut_off_date: iso }))}
-                            />
-                            <OpsDateDdMmYyyyField
-                              label={t('shipments.ops.eta')}
-                              isoValue={opsData.eta}
-                              disabled={!canEditOps}
-                              onCommit={(iso) => setOpsData((prev) => ({ ...prev, eta: iso }))}
-                            />
-                            <OpsDateDdMmYyyyField
-                              label={t('shipments.ops.etd')}
-                              isoValue={opsData.etd}
-                              disabled={!canEditOps}
-                              onCommit={(iso) => setOpsData((prev) => ({ ...prev, etd: iso }))}
-                            />
-                            <OpsDateDdMmYyyyField
-                              label={t('shipments.ops.loadingDate')}
-                              isoValue={opsData.ops_loading_date}
-                              disabled={!canEditOps}
-                              onCommit={(iso) => setOpsData((prev) => ({ ...prev, ops_loading_date: iso }))}
-                            />
-                          </div>
-                        </div>
-
-                        <div className="shipment-detail-card shipment-detail-card--ops-status mb-6">
-                          <h3 className="shipment-detail-card__title">{t('shipments.ops.sectionOperationalStatus')}</h3>
-                          <div className="p-4">
-                            <select
-                              className="clients-input w-full"
-                              value={opsData.operational_status_code || ''}
-                              onChange={(e) =>
-                                setOpsData((prev) => ({
-                                  ...prev,
-                                  operational_status_code: e.target.value || null,
-                                }))
-                              }
-                              disabled={!canEditOps}
-                            >
-                              <option value="">{t('common.select')}</option>
-                              {OPERATIONAL_PHASE_ORDER.map((code) => (
-                                <option key={code} value={code}>
-                                  {t(`shipments.ops.phase.${code}`)}
-                                </option>
-                              ))}
-                            </select>
                           </div>
                         </div>
 
@@ -1465,47 +1406,71 @@ export default function ShipmentDetailModal({
                           </div>
                         ) : null}
 
-                        <ShipmentOperationsTasksSummaryHeader
-                          tasks={tasks}
-                          t={t}
-                          canEditOps={canEditOps}
-                          onManage={() => setOpsTasksModalOpen(true)}
-                        />
-
-                        {opsTasksModalOpen && (
-                          <div className="clients-modal shipment-op-tasks-root-modal" role="presentation">
-                            <div className="clients-modal-backdrop" onClick={() => setOpsTasksModalOpen(false)} aria-hidden />
-                            <div
-                              className="clients-modal-content clients-modal-content--wide shipment-op-tasks-modal-shell"
-                              role="dialog"
-                              aria-modal="true"
-                              aria-labelledby="shipment-ops-tasks-modal-title"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <h2 id="shipment-ops-tasks-modal-title" className="mb-2">
-                                {t('shipments.ops.manageTasks')}
-                              </h2>
-                              <ShipmentOperationsTasksPanel
-                                token={token}
-                                shipmentId={shipment.id}
-                                tasks={tasks}
-                                setTasks={setTasks}
-                                canEditOps={canEditOps}
-                                currentUserId={currentUserId}
-                                refreshTasks={loadTasks}
-                              />
-                              <div className="mt-4 flex justify-end">
-                                <button
-                                  type="button"
-                                  className="client-detail-modal__btn client-detail-modal__btn--secondary"
-                                  onClick={() => setOpsTasksModalOpen(false)}
-                                >
-                                  {t('common.close')}
-                                </button>
-                              </div>
-                            </div>
+                        <div className="shipment-detail-card mb-6">
+                          <h3 className="shipment-detail-card__title">{t('shipments.ops.sectionKeyDates')}</h3>
+                          <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                            <OpsDateDdMmYyyyField
+                              label={t('shipments.ops.cutOffDate')}
+                              isoValue={opsData.cut_off_date}
+                              disabled={!canEditOps}
+                              onCommit={(iso) => setOpsData((prev) => ({ ...prev, cut_off_date: iso }))}
+                            />
+                            <OpsDateDdMmYyyyField
+                              label={t('shipments.ops.eta')}
+                              isoValue={opsData.eta}
+                              disabled={!canEditOps}
+                              onCommit={(iso) => setOpsData((prev) => ({ ...prev, eta: iso }))}
+                            />
+                            <OpsDateDdMmYyyyField
+                              label={t('shipments.ops.etd')}
+                              isoValue={opsData.etd}
+                              disabled={!canEditOps}
+                              onCommit={(iso) => setOpsData((prev) => ({ ...prev, etd: iso }))}
+                            />
+                            <OpsDateDdMmYyyyField
+                              label={t('shipments.ops.loadingDate')}
+                              isoValue={opsData.ops_loading_date}
+                              disabled={!canEditOps}
+                              onCommit={(iso) => setOpsData((prev) => ({ ...prev, ops_loading_date: iso }))}
+                            />
                           </div>
-                        )}
+                        </div>
+
+                        <div className="shipment-detail-card shipment-detail-card--ops-status mb-6">
+                          <h3 className="shipment-detail-card__title">{t('shipments.ops.sectionOperationalStatus')}</h3>
+                          <div className="p-4">
+                            <select
+                              className="clients-input w-full"
+                              value={opsData.operational_status_code || ''}
+                              onChange={(e) =>
+                                setOpsData((prev) => ({
+                                  ...prev,
+                                  operational_status_code: e.target.value || null,
+                                }))
+                              }
+                              disabled={!canEditOps}
+                            >
+                              <option value="">{t('common.select')}</option>
+                              {OPERATIONAL_PHASE_ORDER.map((code) => (
+                                <option key={code} value={code}>
+                                  {t(`shipments.ops.phase.${code}`)}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="shipment-detail-card shipment-op-tasks-section mb-6">
+                          <ShipmentOperationsTasksPanel
+                            token={token}
+                            shipmentId={shipment.id}
+                            tasks={tasks}
+                            setTasks={setTasks}
+                            canEditOps={canEditOps}
+                            currentUserId={currentUserId}
+                            refreshTasks={loadTasks}
+                          />
+                        </div>
 
                         {canEditOps ? (
                           <div className="mt-8 flex flex-col items-end gap-3">
@@ -1597,7 +1562,7 @@ export default function ShipmentDetailModal({
           )}
 
           {(isOperations || isAdminRole) && detailTab === 'transport_instructions' && (
-            <section className="client-detail-modal__section">
+            <div className="shipment-ti-tab-host">
               {opsLoading || !opsData ? (
                 <p className="client-detail-modal__empty">{t('shipments.loading')}</p>
               ) : (
@@ -1618,7 +1583,7 @@ export default function ShipmentDetailModal({
                   shipmentDisplayContainerSize={shipmentDisplayContainerSize}
                 />
               )}
-            </section>
+            </div>
           )}
 
           </div>

@@ -53,15 +53,22 @@ export function getTaskDisplayStatus(task) {
   return 'pending'
 }
 
-export function priorityRowClass(priority) {
+/** Badge classes for priority column (no row striping). */
+export function priorityBadgeClass(priority) {
   switch (priority) {
     case 'urgent':
-      return 'shipment-op-task-tr--pri-urgent'
+      return 'shipment-op-task-badge shipment-op-task-badge--pri-urgent'
     case 'high':
-      return 'shipment-op-task-tr--pri-high'
+      return 'shipment-op-task-badge shipment-op-task-badge--pri-high'
     case 'low':
-      return 'shipment-op-task-tr--pri-low'
+      return 'shipment-op-task-badge shipment-op-task-badge--pri-low'
     default:
-      return 'shipment-op-task-tr--pri-medium'
+      return 'shipment-op-task-badge shipment-op-task-badge--pri-medium'
   }
+}
+
+/** Badge classes for display status: pending | completed | delegated | overdue */
+export function taskStatusBadgeClass(displayStatus) {
+  const d = displayStatus === 'overdue' ? 'overdue' : displayStatus
+  return `shipment-op-task-badge shipment-op-task-badge--status-${d}`
 }

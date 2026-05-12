@@ -78,6 +78,7 @@ import {
   shipmentStatusLocalizedLabel,
 } from '../../utils/shipmentStatusHelpers'
 import { ROLE_ID } from '../../constants/roles'
+import { formatShipmentsNumber, latinDateTimeFormat } from '../../utils/westernNumerals'
 
 function costInvoiceItemsToRows(items = []) {
   return (Array.isArray(items) ? items : [])
@@ -110,8 +111,8 @@ function costInvoiceItemsToRows(items = []) {
     })
 }
 
-function getMonthFormat(locale) {
-  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-GB', { month: 'short', year: 'numeric' })
+function getMonthFormat(language) {
+  return latinDateTimeFormat(language, { month: 'short', year: 'numeric' })
 }
 
 /** Shipment modal: container size / type dropdown values (stored as shown in `value`). */
@@ -1227,6 +1228,7 @@ export default function Shipments() {
     (row) => (
       <ShipmentOpsShipCard
         row={row}
+        layout={isOperationsOnlyUser ? 'operations' : 'legacy'}
         onOpen={() => {
           setDetailTab('info')
           setDetailId(row.id)
@@ -1245,7 +1247,7 @@ export default function Shipments() {
         actionsMenuItems={getShipmentRowActionsMenuItems(row)}
       />
     ),
-    [getShipmentRowActionsMenuItems, i18n.language, selectedIds, setDetailId, setDetailTab, t, toggleSelectRow],
+    [getShipmentRowActionsMenuItems, i18n.language, isOperationsOnlyUser, selectedIds, setDetailId, setDetailTab, t, toggleSelectRow],
   )
 
   const renderShipmentForm = (form, setForm, disabled, isEdit = false) => (
@@ -1645,7 +1647,7 @@ export default function Shipments() {
               </h2>
               <div className="shipments-ops-kpi-card__value" aria-live="polite">
                 {opTaskKpis?.today != null
-                  ? new Intl.NumberFormat(numberLocale).format(opTaskKpis.today)
+                  ? formatShipmentsNumber(opTaskKpis.today, i18n.language)
                   : t('common.dash')}
               </div>
               <p className="shipments-ops-kpi-card__hint">{t('shipments.opsPage.todayHint')}</p>
@@ -1662,7 +1664,7 @@ export default function Shipments() {
                 aria-live="polite"
               >
                 {opTaskKpis?.overdue != null
-                  ? new Intl.NumberFormat(numberLocale).format(opTaskKpis.overdue)
+                  ? formatShipmentsNumber(opTaskKpis.overdue, i18n.language)
                   : t('common.dash')}
               </div>
               <p className="shipments-ops-kpi-card__hint">{t('shipments.opsPage.overdueHint')}</p>
@@ -1677,7 +1679,7 @@ export default function Shipments() {
                     <StatsCard
                       key={s.id}
                       title={i18n.language === 'ar' ? s.name_ar : s.name_en}
-                      value={new Intl.NumberFormat(numberLocale).format(s.count ?? 0)}
+                      value={formatShipmentsNumber(s.count ?? 0, i18n.language)}
                       icon={<Package className="h-6 w-6" />}
                       variant="custom"
                       color={s.color}
@@ -1687,25 +1689,25 @@ export default function Shipments() {
                   <>
                     <StatsCard
                       title={t('shipments.stats.booked')}
-                      value={new Intl.NumberFormat(numberLocale).format(stats.booked ?? 0)}
+                      value={formatShipmentsNumber(stats.booked ?? 0, i18n.language)}
                       icon={<Package className="h-6 w-6" />}
                       variant="blue"
                     />
                     <StatsCard
                       title={t('shipments.stats.in_transit')}
-                      value={new Intl.NumberFormat(numberLocale).format(stats.in_transit ?? 0)}
+                      value={formatShipmentsNumber(stats.in_transit ?? 0, i18n.language)}
                       icon={<Package className="h-6 w-6" />}
                       variant="amber"
                     />
                     <StatsCard
                       title={t('shipments.stats.customs_clearance')}
-                      value={new Intl.NumberFormat(numberLocale).format(stats.customs_clearance ?? 0)}
+                      value={formatShipmentsNumber(stats.customs_clearance ?? 0, i18n.language)}
                       icon={<Package className="h-6 w-6" />}
                       variant="green"
                     />
                     <StatsCard
                       title={t('shipments.stats.delivered')}
-                      value={new Intl.NumberFormat(numberLocale).format(stats.delivered ?? 0)}
+                      value={formatShipmentsNumber(stats.delivered ?? 0, i18n.language)}
                       icon={<Package className="h-6 w-6" />}
                       variant="green"
                     />
@@ -1996,6 +1998,20 @@ export default function Shipments() {
 
           {rows.length === 0 && !loading ? (
             <p className="clients-empty">{t('shipments.empty')}</p>
+          ) : isOperationsOnlyUser ? (
+            <div className="shipments-ops-cards-list" role="list">
+              {loading && rows.length === 0 ? (
+                <div className="shipments-ops-cards-list__loading flex justify-center py-10" role="status" aria-live="polite">
+                  <LoaderDots />
+                </div>
+              ) : (
+                rows.map((row) => (
+                  <div key={row.id} className="shipments-ops-cards-list__item" role="listitem">
+                    {renderOpsMobileCard(row)}
+                  </div>
+                ))
+              )}
+            </div>
           ) : (
             <Table
               className="shipments-data-table"
