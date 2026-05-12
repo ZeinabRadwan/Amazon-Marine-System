@@ -38,6 +38,7 @@ use App\Http\Controllers\Api\V1\ItemController;
 use App\Http\Controllers\Api\V1\LeadSourceController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\NotifyPartyModeController;
+use App\Http\Controllers\Api\V1\OperationsDashboardController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\PdfLayoutController;
 use App\Http\Controllers\Api\V1\PortController;
@@ -448,6 +449,7 @@ Route::prefix('v1')->group(function () {
             ->middleware('page_permission:dashboard,view');
         Route::get('dashboard/support-employee', [DashboardController::class, 'supportEmployee'])
             ->middleware('page_permission:dashboard,view');
+        Route::get('operations-dashboard', [OperationsDashboardController::class, 'index']);
         Route::get('reports/shipments', [ReportController::class, 'shipments']);
         Route::get('reports/finance', [ReportController::class, 'finance']);
         Route::get('reports/sales-performance', [ReportController::class, 'salesPerformance']);

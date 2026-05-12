@@ -98,15 +98,18 @@ export function buildTransportInstructionsWhatsAppText(shipment, tip, t) {
   const cnt = shipment?.container_count ?? '—'
   const ctype = shipment?.container_type ?? '—'
   const csize = shipment?.container_size ?? '—'
-  const docKey =
-    ti.customs_document_type === 'certificate'
-      ? 'shipments.transportInstructions.docCertificate'
-      : ti.customs_document_type === 'bill_of_lading'
-        ? 'shipments.transportInstructions.docBl'
-        : ti.customs_document_type === 'manifest'
-          ? 'shipments.transportInstructions.docManifest'
-          : '—'
-  const doc = ti.customs_document_type ? t(docKey) : '—'
+  const doc = (() => {
+    if (!ti.customs_document_type) return '—'
+    const key =
+      ti.customs_document_type === 'certificate'
+        ? 'shipments.transportInstructions.docCertificate'
+        : ti.customs_document_type === 'bill_of_lading'
+          ? 'shipments.transportInstructions.docBl'
+          : ti.customs_document_type === 'manifest'
+            ? 'shipments.transportInstructions.docManifest'
+            : null
+    return key ? t(key) : String(ti.customs_document_type)
+  })()
   const gen = ti.generator === 'yes' ? t('shipments.transportInstructions.genYes') : t('shipments.transportInstructions.genNo')
   const arrivalStr = (() => {
     if (!ti.customer_arrival_at) return '—'

@@ -21,6 +21,7 @@ import { getTreasuryBankOverview } from '../../api/treasury'
 import { listShipments } from '../../api/shipments'
 import { listClients } from '../../api/clients'
 import LoaderDots from '../../components/LoaderDots'
+import DatePicker from '../../components/DatePicker'
 import { Container } from '../../components/Container'
 import Tabs from '../../components/Tabs/Tabs'
 import '../../components/LoaderDots/LoaderDots.css'
@@ -2322,11 +2323,11 @@ export default function Expenses() {
                     </div>
                     <div className="accountings-field">
                       <label>{t('expensesPage.expenseDate')} *</label>
-                      <input
-                        type="date"
+                      <DatePicker
                         className="accountings-input"
+                        locale={i18n.language}
                         value={modal.expense_date}
-                        onChange={(e) => setModal((m) => (m ? { ...m, expense_date: e.target.value } : null))}
+                        onChange={(v) => setModal((m) => (m ? { ...m, expense_date: v } : null))}
                       />
                     </div>
                     <div className="accountings-field accountings-field--full">
