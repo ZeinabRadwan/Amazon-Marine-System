@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ShipmentOperationTask extends Model
@@ -19,6 +19,11 @@ class ShipmentOperationTask extends Model
         'sort_order',
         'assigned_to_id',
         'due_date',
+        'execution_at',
+        'priority',
+        'reminder_at',
+        'reminder_before_value',
+        'reminder_before_unit',
         'status',
         'completed_at',
     ];
@@ -28,8 +33,11 @@ class ShipmentOperationTask extends Model
      */
     protected $casts = [
         'due_date' => 'date',
+        'execution_at' => 'datetime',
+        'reminder_at' => 'datetime',
         'completed_at' => 'datetime',
         'sort_order' => 'int',
+        'reminder_before_value' => 'int',
     ];
 
     /**

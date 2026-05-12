@@ -353,7 +353,9 @@ Route::prefix('v1')->group(function () {
         Route::get('shipments/{shipment}/operations', [ShipmentOperationsController::class, 'show']);
         Route::put('shipments/{shipment}/operations', [ShipmentOperationsController::class, 'update']);
         Route::get('shipments/{shipment}/tasks', [ShipmentTaskController::class, 'index']);
+        Route::get('shipments/{shipment}/tasks/assignees', [ShipmentTaskController::class, 'assignees']);
         Route::put('shipments/{shipment}/tasks', [ShipmentTaskController::class, 'bulkUpdate']);
+        Route::delete('shipments/{shipment}/tasks/{task}', [ShipmentTaskController::class, 'destroy']);
         Route::get('shipments/{shipment}', [ShipmentController::class, 'show']);
         Route::put('shipments/{shipment}', [ShipmentController::class, 'update']);
         Route::delete('shipments/{shipment}', [ShipmentController::class, 'destroy']);

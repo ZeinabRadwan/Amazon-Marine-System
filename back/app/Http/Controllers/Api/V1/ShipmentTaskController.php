@@ -92,20 +92,18 @@ class ShipmentTaskController extends Controller
                 ? Carbon::parse($taskData['execution_at'])
                 : null;
 
+            $rbUnit = ExecutionReminderResolver::normalizeUnit($taskData['reminder_before_unit'] ?? null);
             $reminderInput = [
                 'execution_at' => $taskData['execution_at'] ?? null,
                 'reminder_at' => $taskData['reminder_at'] ?? null,
                 'reminder_before_value' => $taskData['reminder_before_value'] ?? null,
-                'reminder_before_unit' => ExecutionReminderResolver::normalizeUnit($taskData['reminder_before_unit'] ?? null)
-                    ?? ($taskData['reminder_before_unit'] ?? null),
+                'reminder_before_unit' => $rbUnit,
             ];
 
             [$reminderAt, $reminderBeforeValue, $reminderBeforeUnit] = ExecutionReminderResolver::resolve($reminderInput);
 
-            if ($executionAt) {
+            if ($reminderAt && $executionAt) {
                 ExecutionReminderResolver::validateReminderBeforeExecution($reminderAt, $executionAt);
-            } elseif ($reminderAt) {
-                // Absolute reminder without execution is allowed
             }
 
             if (! empty($taskData['id']) && $existing->has($taskData['id'])) {

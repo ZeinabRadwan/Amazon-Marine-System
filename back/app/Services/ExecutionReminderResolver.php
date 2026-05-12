@@ -2,23 +2,25 @@
 
 namespace App\Services;
 
+use App\Http\Controllers\Api\V1\ClientFollowUpController;
 use Carbon\Carbon;
 use Illuminate\Validation\ValidationException;
 
 /**
  * Resolves reminder fire time for shipment operation tasks using the same rules as
- * {@see \App\Http\Controllers\Api\V1\ClientFollowUpController} (absolute vs before-event).
+ * {@see ClientFollowUpController} (absolute vs before-event).
  */
 class ExecutionReminderResolver
 {
     /**
-     * @param  array<string, mixed>  $validated  Must include execution_at when using relative reminder
+     * @param  array<string, mixed>  $validated  Uses execution_at, reminder_at, reminder_before_*
      * @return array{0: ?Carbon, 1: ?int, 2: ?string}
      */
     public static function resolve(array $validated): array
     {
         $hasAbsolute = ! empty($validated['reminder_at']);
-        $hasRelative = ! empty($validated['reminder_before_value']) && ! empty($validated['reminder_before_unit']);
+        $unit = self::normalizeUnit($validated['reminder_before_unit'] ?? null);
+        $hasRelative = ! empty($validated['reminder_before_value']) && $unit !== null;
 
         if ($hasAbsolute && $hasRelative) {
             throw ValidationException::withMessages([
@@ -48,24 +50,16 @@ class ExecutionReminderResolver
             ]);
         }
 
-        $unit = (string) $validated['reminder_before_unit'];
         $reminderAt = match ($unit) {
-            'minute', 'minutes' => $execution->copy()->subMinutes($value),
-            'hour', 'hours' => $execution->copy()->subHours($value),
-            'day', 'days' => $execution->copy()->subDays($value),
+            'minute' => $execution->copy()->subMinutes($value),
+            'hour' => $execution->copy()->subHours($value),
+            'day' => $execution->copy()->subDays($value),
             default => throw ValidationException::withMessages([
                 'reminder_before_unit' => [__('Invalid reminder unit.')],
             ]),
         };
 
-        $normalizedUnit = match ($unit) {
-            'minutes' => 'minute',
-            'hours' => 'hour',
-            'days' => 'day',
-            default => $unit,
-        };
-
-        return [$reminderAt, $value, $normalizedUnit];
+        return [$reminderAt, $value, $unit];
     }
 
     public static function validateReminderBeforeExecution(?Carbon $reminderAt, ?Carbon $executionAt): void
