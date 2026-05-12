@@ -8,6 +8,7 @@ use App\Models\PdfLayout;
 use App\Models\SDForm;
 use App\Models\Shipment;
 use App\Models\ShipmentCostInvoice;
+use App\Models\ShipmentOperation;
 use App\Models\ShipmentStatus;
 use App\Models\User;
 use App\Models\Vendor;
@@ -943,6 +944,76 @@ class ShipmentController extends Controller
     }
 
     /**
+     * PDF for transport instructions (admin / operations). Body uses current form payload.
+     */
+    public function transportInstructionsPdf(Request $request, Shipment $shipment)
+    {
+        abort_unless($request->user()?->hasAnyRole(['admin', 'operations']), 403);
+        $this->authorize('view', $shipment);
+
+        $rules = ShipmentOperation::transportInstructionProfileValidationRules();
+        $rules['transport_instruction_profile'] = ['required', 'array'];
+        $validated = $request->validate($rules);
+
+        $profile = ShipmentOperation::normalizeTransportInstructionProfile($validated['transport_instruction_profile']);
+        $brokerId = $profile['approved_customs_broker_id'] ?? null;
+        if ($brokerId) {
+            $ok = Vendor::query()->whereKey($brokerId)->where('type', 'customs_clearance')->exists();
+            if (! $ok) {
+                abort(422, __('Invalid approved customs broker.'));
+            }
+        }
+
+        $shipment->loadMissing([
+            'client',
+            'salesRep',
+            'lineVendor',
+            'shippingLine',
+            'originPort',
+            'destinationPort',
+            'sdForm',
+        ]);
+
+        $locale = strtolower((string) $request->header('X-App-Locale', 'en')) === 'ar' ? 'ar' : 'en';
+        $baseLabels = $this->shipmentPdfLabels($locale);
+        $labels = array_merge($baseLabels, $this->transportInstructionPdfExtraLabels($locale));
+        $labels['title'] = $locale === 'ar' ? 'تعليمات الشحن' : 'Transport instructions';
+
+        $layout = PdfLayout::where('document_type', 'shipment')->first();
+
+        $tiProfile = is_array($profile) ? $profile : [];
+
+        $html = view('shipments.pdf', [
+            'shipment' => $shipment,
+            'labels' => $labels,
+            'notesColumn' => null,
+            'headerHtml' => $layout?->header_html,
+            'footerHtml' => $layout?->footer_html,
+            'transportInstructionsPdf' => true,
+            'tiProfile' => $tiProfile,
+        ])->render();
+
+        $filename = 'transport-instructions-shipment-'.$shipment->id.'.pdf';
+
+        $mpdf = new Mpdf([
+            'mode' => 'utf-8',
+            'default_font' => 'dejavusans',
+            'format' => 'A4',
+            'margin_top' => 10,
+            'margin_bottom' => 15,
+            'margin_left' => 10,
+            'margin_right' => 10,
+        ]);
+
+        $mpdf->WriteHTML($html);
+
+        return response($mpdf->Output($filename, 'S'), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+        ]);
+    }
+
+    /**
      * Batch-read shipment line vendor + cost-invoice section_meta for accounting Partner Statement (read-only).
      *
      * @return \Illuminate\Http\JsonResponse
@@ -1125,6 +1196,58 @@ class ShipmentController extends Controller
             'sec_ports' => 'Ports & loading',
             'sec_goods' => 'Goods details',
             'footer_contact' => 'Contact information',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function transportInstructionPdfExtraLabels(string $locale): array
+    {
+        if ($locale === 'ar') {
+            return [
+                'sec_ti_summary' => 'ملخص الشحنة (تلقائي)',
+                'sec_ti_form' => 'تعليمات الشحن',
+                'ti_arrival' => 'تاريخ ووقت وصول العميل',
+                'ti_loading_place' => 'اسم مكان التحميل',
+                'ti_loading_address' => 'العنوان التفصيلي',
+                'ti_loading_maps' => 'رابط خرائط جوجل',
+                'ti_contact_name' => 'اسم جهة الاتصال',
+                'ti_contact_phone' => 'هاتف جهة الاتصال',
+                'ti_customs_doc' => 'نوع مستند جمركي',
+                'ti_generator' => 'مولد',
+                'ti_temp' => 'درجة الحرارة',
+                'ti_driver_notes' => 'تعليمات السائق',
+                'ti_broker' => 'مخلص جمركي معتمد',
+                'ti_customs_notes' => 'ملاحظات جمركية',
+                'ti_doc_certificate' => 'شهادة',
+                'ti_doc_bl' => 'بوليصة شحن',
+                'ti_doc_manifest' => 'مانفيست',
+                'ti_gen_yes' => 'نعم',
+                'ti_gen_no' => 'لا',
+            ];
+        }
+
+        return [
+            'sec_ti_summary' => 'Shipment summary (auto-filled)',
+            'sec_ti_form' => 'Transport instructions',
+            'ti_arrival' => 'Customer arrival date & time',
+            'ti_loading_place' => 'Loading place name',
+            'ti_loading_address' => 'Detailed address',
+            'ti_loading_maps' => 'Google Maps link',
+            'ti_contact_name' => 'Contact name',
+            'ti_contact_phone' => 'Contact phone',
+            'ti_customs_doc' => 'Customs document type',
+            'ti_generator' => 'Generator',
+            'ti_temp' => 'Temperature',
+            'ti_driver_notes' => 'Driver instructions',
+            'ti_broker' => 'Approved customs broker',
+            'ti_customs_notes' => 'Customs notes',
+            'ti_doc_certificate' => 'Certificate',
+            'ti_doc_bl' => 'Bill of lading',
+            'ti_doc_manifest' => 'Manifest',
+            'ti_gen_yes' => 'Yes',
+            'ti_gen_no' => 'No',
         ];
     }
 }

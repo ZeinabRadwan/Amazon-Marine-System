@@ -41,7 +41,7 @@ class ShipmentOperationsController extends Controller
     {
         $this->authorize('update', $shipment);
 
-        $validated = $request->validate([
+        $validated = $request->validate(array_merge([
             'service_types' => ['required', 'array', 'min:1'],
             'service_types.*' => ['required', 'string', Rule::in(ShipmentServiceType::values())],
             'transport_contractor_id' => ['nullable', 'integer', 'exists:vendors,id'],
@@ -60,7 +60,7 @@ class ShipmentOperationsController extends Controller
             'reefer_temp' => ['nullable', 'string', 'max:50'],
             'reefer_vent' => ['nullable', 'string', 'max:50'],
             'reefer_hum' => ['nullable', 'string', 'max:50'],
-        ]);
+        ], ShipmentOperation::transportInstructionProfileValidationRules()));
 
         $types = $validated['service_types'];
 
@@ -81,6 +81,14 @@ class ShipmentOperationsController extends Controller
         $this->assertVendorType($validated['insurance_company_id'] ?? null, 'insurance');
         $this->assertOtherPartyVendor($validated['overseas_agent_id'] ?? null);
 
+        $tiBrokerId = null;
+        if ($request->has('transport_instruction_profile')) {
+            $rawTi = $request->input('transport_instruction_profile');
+            $normTi = ShipmentOperation::normalizeTransportInstructionProfile(is_array($rawTi) ? $rawTi : null);
+            $tiBrokerId = $normTi['approved_customs_broker_id'] ?? null;
+            $this->assertVendorType($tiBrokerId, 'customs_clearance');
+        }
+
         $operation = $shipment->operation ?: new ShipmentOperation(['shipment_id' => $shipment->id]);
 
         $scheduleKeys = ['cut_off_date', 'etd', 'eta', 'ops_loading_date'];
@@ -93,6 +101,7 @@ class ShipmentOperationsController extends Controller
             'insurance_company_id',
             'overseas_agent_id',
             'transport_instructions',
+            'transport_instruction_profile',
         ];
         $profileBefore = $operation->exists
             ? Arr::only($operation->getAttributes(), $profileKeys)
@@ -111,6 +120,11 @@ class ShipmentOperationsController extends Controller
             'service_types',
             'transport_instructions',
         ]);
+
+        if ($request->has('transport_instruction_profile')) {
+            $rawTi = $request->input('transport_instruction_profile');
+            $operationFill['transport_instruction_profile'] = ShipmentOperation::normalizeTransportInstructionProfile(is_array($rawTi) ? $rawTi : null);
+        }
 
         if (! in_array(ShipmentServiceType::InlandTransport->value, $types, true)) {
             $operationFill['transport_contractor_id'] = null;
@@ -306,6 +320,13 @@ class ShipmentOperationsController extends Controller
             $lines[] = 'instructions: '.($tiStr !== '' ? $tiStr : '—');
         }
 
+        if (array_key_exists('transport_instruction_profile', $row)) {
+            $tip = $row['transport_instruction_profile'];
+            $hasTip = (is_array($tip) && $tip !== [])
+                || (is_string($tip) && $tip !== '' && $tip !== '[]' && $tip !== 'null');
+            $lines[] = 'transport_instruction_profile: '.($hasTip ? '[form updated]' : '—');
+        }
+
         return $lines === [] ? '—' : implode("\n", $lines);
     }
 
@@ -335,6 +356,16 @@ class ShipmentOperationsController extends Controller
         }
         $ti = $out['transport_instructions'] ?? '';
         $out['transport_instructions'] = is_string($ti) ? trim($ti) : $ti;
+
+        $tip = $out['transport_instruction_profile'] ?? null;
+        if (is_string($tip)) {
+            $decoded = json_decode($tip, true);
+            $tip = is_array($decoded) ? $decoded : [];
+        } elseif (! is_array($tip)) {
+            $tip = [];
+        }
+        ksort($tip);
+        $out['transport_instruction_profile'] = $tip === [] ? null : json_encode($tip, JSON_UNESCAPED_UNICODE);
 
         return $out;
     }

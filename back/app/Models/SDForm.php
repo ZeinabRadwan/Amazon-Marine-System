@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SDForm extends Model
 {
@@ -103,5 +104,13 @@ class SDForm extends Model
     public function linkedShipment(): BelongsTo
     {
         return $this->belongsTo(Shipment::class, 'linked_shipment_id');
+    }
+
+    /**
+     * @return HasMany<SDFormBookingConfirmation, SDForm>
+     */
+    public function bookingConfirmations(): HasMany
+    {
+        return $this->hasMany(SDFormBookingConfirmation::class, 'sd_form_id');
     }
 }

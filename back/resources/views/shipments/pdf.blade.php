@@ -327,6 +327,7 @@
         $genAt = now()->format('d/m/Y H:i');
         $bookingD = optional($shipment->booking_date)->format('d/m/Y') ?? '—';
         $loadingD = optional($shipment->loading_date)->format('d/m/Y') ?? '—';
+        $transportInstructionsPdf = !empty($transportInstructionsPdf);
     @endphp
 
     <div class="wrap">
@@ -381,6 +382,9 @@
         @endif
 
         <div class="body-pad">
+            @if($transportInstructionsPdf)
+                @include('shipments.partials.transport_instructions_pdf_content', ['shipment' => $shipment, 'tiProfile' => $tiProfile ?? [], 'labels' => $labels])
+            @else
             <div class="sec">
                 <p class="sec-h">{{ $labels['sec_shipment'] }}</p>
                 <table class="grid">
@@ -493,6 +497,7 @@
                     @endif
                 </div>
             </div>
+            @endif
         </div>
 
         <div class="footer">

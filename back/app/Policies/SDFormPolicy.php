@@ -12,6 +12,14 @@ class SDFormPolicy
         return $user->can('sd_forms.view');
     }
 
+    /**
+     * Operations / admin: upload booking confirmation from Shipments toolbar (any SD form).
+     */
+    public function uploadBookingConfirmation(User $user, SDForm $form): bool
+    {
+        return $user->hasRole('admin') || $user->hasRole('operations');
+    }
+
     public function view(User $user, SDForm $form): bool
     {
         if ($user->can('sd_forms.view')) {

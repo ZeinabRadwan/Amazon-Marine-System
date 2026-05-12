@@ -166,6 +166,31 @@ export async function downloadShipmentPdf(token, shipmentId) {
   return { blob, filename }
 }
 
+/** POST transport-instructions PDF (admin / operations). Body: { transport_instruction_profile }. */
+export async function postTransportInstructionsPdf(token, shipmentId, transportInstructionProfile) {
+  const res = await apiFetch(
+    `${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}/transport-instructions/pdf`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/pdf',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ transport_instruction_profile: transportInstructionProfile }),
+    }
+  )
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}))
+    throw new Error(json.message || json.error || `Failed to generate PDF (${res.status})`)
+  }
+  const blob = await res.blob()
+  const filename =
+    filenameFromContentDisposition(res.headers.get('Content-Disposition')) ||
+    `transport-instructions-shipment-${shipmentId}.pdf`
+  return { blob, filename }
+}
+
 export async function getShipmentStats(token) {
   const res = await apiFetch(`${getBaseUrl()}/shipments/stats`, { headers: authHeaders(token) })
   const json = await res.json().catch(() => ({}))

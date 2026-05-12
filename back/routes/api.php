@@ -46,6 +46,7 @@ use App\Http\Controllers\Api\V1\PricingFreightUnitTypeController;
 use App\Http\Controllers\Api\V1\PricingOfferController;
 use App\Http\Controllers\Api\V1\PricingQuoteController;
 use App\Http\Controllers\Api\V1\ReportController;
+use App\Http\Controllers\Api\V1\SDFormBookingConfirmationController;
 use App\Http\Controllers\Api\V1\SDFormController;
 use App\Http\Controllers\Api\V1\SessionController;
 use App\Http\Controllers\Api\V1\SettingsController;
@@ -314,11 +315,15 @@ Route::prefix('v1')->group(function () {
             ->middleware('page_permission:clients,delete');
 
         // SD Forms (Shipping Details)
+        Route::get('booking-confirmation/sd-forms', [SDFormBookingConfirmationController::class, 'sdFormOptions']);
         Route::get('sd-forms', [SDFormController::class, 'index']);
         Route::post('sd-forms', [SDFormController::class, 'store']);
         Route::get('sd-forms/stats', [SDFormController::class, 'stats']);
         Route::get('sd-forms/charts', [SDFormController::class, 'charts']);
         Route::get('sd-forms/export', [SDFormController::class, 'export']);
+        Route::get('sd-forms/{sdForm}/booking-confirmations', [SDFormBookingConfirmationController::class, 'index']);
+        Route::post('sd-forms/{sdForm}/booking-confirmations', [SDFormBookingConfirmationController::class, 'store']);
+        Route::get('sd-forms/{sdForm}/booking-confirmations/{confirmation}/download', [SDFormBookingConfirmationController::class, 'download']);
         Route::get('sd-forms/{sdForm}', [SDFormController::class, 'show']);
         Route::put('sd-forms/{sdForm}', [SDFormController::class, 'update']);
         Route::delete('sd-forms/{sdForm}', [SDFormController::class, 'destroy']);
@@ -341,6 +346,7 @@ Route::prefix('v1')->group(function () {
         Route::get('shipments/{shipment}/attachments/{attachment}/download', [ShipmentAttachmentController::class, 'download']);
         Route::delete('shipments/{shipment}/attachments/{attachment}', [ShipmentAttachmentController::class, 'destroy']);
         Route::get('shipments/{shipment}/pdf', [ShipmentController::class, 'pdf']);
+        Route::post('shipments/{shipment}/transport-instructions/pdf', [ShipmentController::class, 'transportInstructionsPdf']);
         Route::get('shipments/{shipment}/cost-invoice', [ShipmentController::class, 'getCostInvoice']);
         Route::put('shipments/{shipment}/cost-invoice', [ShipmentController::class, 'upsertCostInvoice']);
         Route::post('shipments/{shipment}/notify-sales-financials', [ShipmentController::class, 'notifySalesFinancials']);

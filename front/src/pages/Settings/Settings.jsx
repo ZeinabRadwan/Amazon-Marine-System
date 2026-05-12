@@ -1595,6 +1595,9 @@ export default function Settings() {
       case 'sd_form.email_to_operations':
         return v('sd_number') ? `SD #${v('sd_number')}` : '—'
 
+      case 'sd_form.booking_confirmation_uploaded':
+        return v('file_name') || (v('sd_number') ? `SD #${v('sd_number')}` : '—')
+
       // ── Invoice ───────────────────────────────────────────────
       case 'invoice.created':
       case 'invoice.issued':

@@ -7,6 +7,7 @@ import {
   StickyNote,
   FileDown,
   Save,
+  Eye,
 } from 'lucide-react'
 import { getStoredToken } from '../Login'
 import { formatDate } from '../../utils/dateUtils'
@@ -24,6 +25,7 @@ import {
   getShipmentTasks,
   bulkUpdateShipmentTasks,
   downloadShipmentPdf,
+  postTransportInstructionsPdf,
 } from '../../api/shipments'
 import Tabs from '../../components/Tabs'
 import ShipmentStatusBadge from '../../components/ShipmentStatusBadge'
@@ -33,6 +35,12 @@ import { SERVICE_TYPE_IDS, OPERATIONAL_PHASE_ORDER } from './shipmentOpsConstant
 import ShipmentOperationsTasksPanel from './ShipmentOperationsTasksPanel'
 import { normalizeShipmentOperationTask, serializeShipmentOperationTaskForApi } from './shipmentOperationTaskPayload'
 import { formatShipmentAuditRow } from './shipmentAuditPresentation'
+import { listSDFormBookingConfirmations, downloadSDFormBookingConfirmation } from '../../api/sdForms'
+import ShipmentTransportInstructionsTab, {
+  buildTransportInstructionProfilePayload,
+  buildTransportInstructionsWhatsAppText,
+  mergeTransportInstructionProfileFromApi,
+} from './ShipmentTransportInstructionsTab'
 import './Shipments.css'
 import '../SDForms/SDForms.css'
 import '../Clients/Clients.css'
@@ -104,7 +112,6 @@ export default function ShipmentDetailModal({
   isOperations = false,
   isAdminRole = false,
   vendorOptions = [],
-  userOptions = [],
   onOperationsSaved = null,
   currentUserId = null,
   canAddShipmentNote = false,
@@ -141,6 +148,9 @@ export default function ShipmentDetailModal({
   const [auditRows, setAuditRows] = useState([])
   const [auditLoading, setAuditLoading] = useState(false)
   const [auditError, setAuditError] = useState(null)
+  const [opsBookingFiles, setOpsBookingFiles] = useState([])
+  const [opsBookingFilesLoading, setOpsBookingFilesLoading] = useState(false)
+  const [tiPdfLoading, setTiPdfLoading] = useState(false)
 
   const loadNotes = useCallback(() => {
     if (!token || !shipment?.id) return
@@ -178,9 +188,15 @@ export default function ShipmentDetailModal({
         for (const k of ['etd', 'eta', 'ops_loading_date']) {
           if (d[k] && String(d[k]).length > 10) d[k] = String(d[k]).slice(0, 10)
         }
+        d.transport_instruction_profile = mergeTransportInstructionProfileFromApi(d.transport_instruction_profile)
         setOpsData(d)
       })
-      .catch(() => setOpsData({}))
+      .catch(() =>
+        setOpsData({
+          service_types: ['sea_freight'],
+          transport_instruction_profile: mergeTransportInstructionProfileFromApi(null),
+        })
+      )
       .finally(() => setOpsLoading(false))
   }, [token, shipment?.id])
 
@@ -196,6 +212,19 @@ export default function ShipmentDetailModal({
       })
       .finally(() => setAuditLoading(false))
   }, [token, shipment?.id, t])
+
+  const loadOpsBookingFiles = useCallback(() => {
+    const sdId = shipment?.sd_form?.id ?? shipment?.sd_form_id
+    if (!token || !sdId) {
+      setOpsBookingFiles([])
+      return
+    }
+    setOpsBookingFilesLoading(true)
+    listSDFormBookingConfirmations(token, sdId)
+      .then((res) => setOpsBookingFiles(Array.isArray(res.data) ? res.data : []))
+      .catch(() => setOpsBookingFiles([]))
+      .finally(() => setOpsBookingFilesLoading(false))
+  }, [token, shipment?.sd_form?.id, shipment?.sd_form_id])
 
   const loadTasks = useCallback(() => {
     if (!token || !shipment?.id) return Promise.resolve()
@@ -227,15 +256,6 @@ export default function ShipmentDetailModal({
         : [],
     [vendorOptions],
   )
-  const userNameById = useMemo(() => {
-    const map = {}
-    if (Array.isArray(userOptions)) {
-      userOptions.forEach((u) => {
-        map[String(u.id)] = u.name
-      })
-    }
-    return map
-  }, [userOptions])
 
   useEffect(() => {
     if (!open || detailTab !== 'notes' || !shipment?.id) {
@@ -267,6 +287,8 @@ export default function ShipmentDetailModal({
       setTrackingText('')
       setTrackingError(null)
       setOpsError(null)
+      setOpsBookingFiles([])
+      setTiPdfLoading(false)
     }
   }, [open])
 
@@ -289,7 +311,46 @@ export default function ShipmentDetailModal({
     loadAudit()
   }, [open, detailTab, shipment?.id, isOperations, isAdminRole, loadAudit])
 
-  if (!open) return null
+  useEffect(() => {
+    if (!open || detailTab !== 'info' || !shipment?.id) {
+      setOpsBookingFiles([])
+      return
+    }
+    loadOpsBookingFiles()
+  }, [open, detailTab, shipment?.id, shipment?.sd_form?.id, shipment?.sd_form_id, loadOpsBookingFiles])
+
+  const downloadBlobFile = (blob, filename) => {
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename || 'download'
+    a.click()
+    window.URL.revokeObjectURL(url)
+  }
+
+  const handlePreviewOpsBookingFile = async (f) => {
+    const sdId = shipment?.sd_form?.id ?? shipment?.sd_form_id
+    if (!token || !sdId || !f?.id) return
+    try {
+      const { blob } = await downloadSDFormBookingConfirmation(token, sdId, f.id)
+      const url = window.URL.createObjectURL(blob)
+      window.open(url, '_blank', 'noopener,noreferrer')
+      setTimeout(() => window.URL.revokeObjectURL(url), 60_000)
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const handleDownloadOpsBookingFile = async (f) => {
+    const sdId = shipment?.sd_form?.id ?? shipment?.sd_form_id
+    if (!token || !sdId || !f?.id) return
+    try {
+      const { blob, filename } = await downloadSDFormBookingConfirmation(token, sdId, f.id)
+      downloadBlobFile(blob, filename || f.name || 'file')
+    } catch {
+      /* ignore */
+    }
+  }
 
   const tabs = [
     { id: 'info', label: t('shipments.tabs.info') },
@@ -449,6 +510,9 @@ export default function ShipmentDetailModal({
         eta: opsData.eta || null,
         ops_loading_date: opsData.ops_loading_date || null,
         transport_instructions: opsData.transport_instructions ?? null,
+        transport_instruction_profile: buildTransportInstructionProfilePayload(
+          opsData.transport_instruction_profile || {}
+        ),
         operational_status_code: opsData.operational_status_code || null,
       })
 
@@ -471,6 +535,53 @@ export default function ShipmentDetailModal({
       setOpsSaving(false)
     }
   }
+
+  const handleTransportInstructionPdf = async (mode) => {
+    if (!token || !shipment?.id || !opsData) return
+    setTiPdfLoading(true)
+    setOpsError(null)
+    try {
+      const profile = buildTransportInstructionProfilePayload(opsData.transport_instruction_profile || {})
+      const { blob, filename } = await postTransportInstructionsPdf(token, shipment.id, profile)
+      const url = URL.createObjectURL(blob)
+      if (mode === 'download') {
+        const a = document.createElement('a')
+        a.href = url
+        a.download = filename
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+        URL.revokeObjectURL(url)
+      } else if (mode === 'print') {
+        const w = window.open(url, '_blank', 'noopener,noreferrer')
+        if (w) {
+          const tryPrint = () => {
+            try {
+              w.focus()
+              w.print()
+            } catch {
+              /* ignore */
+            }
+          }
+          w.addEventListener('load', tryPrint, { once: true })
+          setTimeout(tryPrint, 500)
+        }
+        setTimeout(() => URL.revokeObjectURL(url), 120_000)
+      }
+    } catch (err) {
+      setOpsError(err?.message || t('shipments.transportInstructions.pdfError'))
+    } finally {
+      setTiPdfLoading(false)
+    }
+  }
+
+  const handleTransportInstructionWhatsApp = () => {
+    if (!shipment) return
+    const text = buildTransportInstructionsWhatsAppText(shipment, opsData?.transport_instruction_profile, t)
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer')
+  }
+
+  if (!open) return null
 
   return (
     <div className="client-detail-modal shipment-detail-modal--sd shipment-detail-modal--navy-header" role="dialog" aria-modal="true" aria-labelledby="shipment-detail-title">
@@ -728,6 +839,47 @@ export default function ShipmentDetailModal({
                           <span className="shipment-detail-card__value">#{shipment.id}</span>
                         </div>
                       </div>
+                      {(shipment.sd_form?.id || shipment.sd_form_id) && (
+                        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                          <h4 className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">
+                            {t('shipments.filesFromOperations')}
+                          </h4>
+                          {opsBookingFilesLoading ? (
+                            <p className="text-xs text-gray-500">{t('shipments.loading')}</p>
+                          ) : opsBookingFiles.length === 0 ? (
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{t('shipments.bookingFilesEmpty')}</p>
+                          ) : (
+                            <ul className="space-y-2">
+                              {opsBookingFiles.map((f) => (
+                                <li
+                                  key={f.id}
+                                  className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-gray-100 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/30 px-3 py-2 text-sm"
+                                >
+                                  <span className="font-medium text-gray-800 dark:text-gray-100 break-all">{f.name}</span>
+                                  <span className="flex items-center gap-1 shrink-0">
+                                    <button
+                                      type="button"
+                                      className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs py-1 px-2"
+                                      onClick={() => handlePreviewOpsBookingFile(f)}
+                                    >
+                                      <Eye className="h-3.5 w-3.5" aria-hidden />
+                                      {t('shipments.viewFile')}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs py-1 px-2"
+                                      onClick={() => handleDownloadOpsBookingFile(f)}
+                                    >
+                                      <FileDown className="h-3.5 w-3.5" aria-hidden />
+                                      {t('shipments.downloadFile')}
+                                    </button>
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {shipment.is_reefer && (
@@ -1285,8 +1437,9 @@ export default function ShipmentDetailModal({
           )}
 
           {(isOperations || isAdminRole) && detailTab === 'audit_log' && (
-            <section className="client-detail-modal__section">
+            <section className="client-detail-modal__section shipment-audit-log-section">
               <h3 className="client-detail-modal__section-title">{t('shipments.ops.auditLogTitle')}</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">{t('shipments.ops.auditLogHint')}</p>
               {auditError ? (
                 <p className="text-sm text-red-600 dark:text-red-400 mb-3" role="alert">
                   {auditError}
@@ -1297,23 +1450,46 @@ export default function ShipmentDetailModal({
               ) : auditRows.length === 0 ? (
                 <p className="client-detail-modal__empty">{t('shipments.ops.auditEmpty')}</p>
               ) : (
-                <ul className="shipment-audit-log space-y-2">
-                  {auditRows.map((row) => (
-                    <li
-                      key={row.id}
-                      className="shipment-audit-log__row rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 p-3 text-sm"
-                    >
-                      <div className="flex flex-wrap justify-between gap-2 text-xs text-gray-500 dark:text-gray-400">
-                        <span className="font-mono">{row.event}</span>
-                        <span>{formatDate(row.created_at, i18n.language)}</span>
-                      </div>
-                      <div className="mt-1 text-xs text-gray-600 dark:text-gray-300">
-                        {t('shipments.ops.auditBy')}:{' '}
-                        {row.causer_id != null ? userNameById[String(row.causer_id)] || `#${row.causer_id}` : '—'}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                <div className="shipment-audit-table-wrap overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                  <table className="shipment-audit-table min-w-full text-sm">
+                    <thead>
+                      <tr>
+                        <th className="shipment-audit-th">{t('shipments.ops.auditColUser')}</th>
+                        <th className="shipment-audit-th">{t('shipments.ops.auditColAction')}</th>
+                        <th className="shipment-audit-th">{t('shipments.ops.auditColOld')}</th>
+                        <th className="shipment-audit-th">{t('shipments.ops.auditColNew')}</th>
+                        <th className="shipment-audit-th shipment-audit-th--time">{t('shipments.ops.auditColTime')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {auditRows.map((row) => {
+                        const line = formatShipmentAuditRow(row, t)
+                        return (
+                          <tr key={row.id} className="shipment-audit-tr">
+                            <td className="shipment-audit-td font-medium">{line.user}</td>
+                            <td className="shipment-audit-td">
+                              <div className="font-medium text-gray-800 dark:text-gray-100">{line.action}</div>
+                              {line.actionDetail ? (
+                                <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 max-w-[280px] break-words">
+                                  {line.actionDetail}
+                                </div>
+                              ) : null}
+                            </td>
+                            <td className="shipment-audit-td shipment-audit-td--mono text-xs break-words max-w-[220px]">
+                              {line.oldValue}
+                            </td>
+                            <td className="shipment-audit-td shipment-audit-td--mono text-xs break-words max-w-[220px]">
+                              {line.newValue}
+                            </td>
+                            <td className="shipment-audit-td text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                              {formatDate(line.time, i18n.language)}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </section>
           )}
@@ -1323,45 +1499,22 @@ export default function ShipmentDetailModal({
               {opsLoading || !opsData ? (
                 <p className="client-detail-modal__empty">{t('shipments.loading')}</p>
               ) : (
-                <div className="shipment-ops-transport-tab">
-                  <h3 className="client-detail-modal__section-title">{t('shipments.ops.transportInstructionsTitle')}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                    {t('shipments.ops.transportInstructionsHint')}
-                  </p>
-                  <textarea
-                    rows={10}
-                    className="clients-input w-full mb-4"
-                    value={opsData.transport_instructions || ''}
-                    onChange={(e) =>
-                      setOpsData((prev) => ({ ...prev, transport_instructions: e.target.value }))
-                    }
-                    disabled={!canEditOps}
-                    placeholder={t('shipments.ops.transportInstructionsPlaceholder')}
-                  />
-                  {canEditOps ? (
-                    <div className="flex flex-col items-end gap-3">
-                      {opsError ? <p className="text-sm text-red-600 font-medium">{opsError}</p> : null}
-                      <button
-                        type="button"
-                        onClick={handleSaveOps}
-                        disabled={opsSaving}
-                        className="client-detail-modal__btn client-detail-modal__btn--primary px-8 inline-flex items-center gap-2"
-                      >
-                        {opsSaving ? (
-                          <>
-                            <LoaderDots className="h-4 w-4" />
-                            {t('shipments.ops.savingOps')}
-                          </>
-                        ) : (
-                          <>
-                            <Save className="h-4 w-4" aria-hidden />
-                            {t('shipments.ops.saveOps')}
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  ) : null}
-                </div>
+                <ShipmentTransportInstructionsTab
+                  shipment={shipment}
+                  opsData={opsData}
+                  setOpsData={setOpsData}
+                  canEditOps={canEditOps}
+                  onSave={handleSaveOps}
+                  opsSaving={opsSaving}
+                  opsError={opsError}
+                  customsVendorOptions={customsVendorOptions}
+                  onGeneratePdf={handleTransportInstructionPdf}
+                  tiPdfLoading={tiPdfLoading}
+                  onWhatsAppShare={handleTransportInstructionWhatsApp}
+                  t={t}
+                  shipmentDisplayContainerType={shipmentDisplayContainerType}
+                  shipmentDisplayContainerSize={shipmentDisplayContainerSize}
+                />
               )}
             </section>
           )}

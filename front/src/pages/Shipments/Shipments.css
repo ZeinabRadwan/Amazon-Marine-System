@@ -4004,6 +4004,66 @@
   word-break: break-word;
 }
 
+.shipment-audit-table-wrap {
+  background: var(--form-bg, #fff);
+}
+
+[data-theme='dark'] .shipment-audit-table-wrap,
+.dark .shipment-audit-table-wrap {
+  background: var(--form-input-bg, #111827);
+}
+
+.shipment-audit-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.shipment-audit-th {
+  text-align: start;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--form-text, #1c2030) 55%, transparent);
+  background: color-mix(in srgb, var(--form-bg, #fff) 88%, var(--root-bg, #f3f4f6));
+  border-bottom: 1px solid var(--form-divider, #e5e7eb);
+  white-space: nowrap;
+}
+
+.shipment-audit-th--time {
+  text-align: end;
+}
+
+.shipment-audit-tr {
+  border-bottom: 1px solid color-mix(in srgb, var(--form-divider, #e5e7eb) 85%, transparent);
+}
+
+.shipment-audit-tr:hover {
+  background: color-mix(in srgb, var(--form-primary, #0039c5) 4%, var(--form-bg, #fff));
+}
+
+.shipment-audit-td {
+  padding: 0.5rem 0.75rem;
+  vertical-align: top;
+  color: var(--form-text, #1c2030);
+}
+
+.shipment-audit-td--mono {
+  font-variant-numeric: tabular-nums;
+}
+
+[data-theme='dark'] .shipment-audit-th,
+.dark .shipment-audit-th {
+  background: color-mix(in srgb, var(--form-input-bg, #111827) 92%, #000);
+  color: color-mix(in srgb, var(--form-text, #e5e7eb) 60%, transparent);
+}
+
+[data-theme='dark'] .shipment-audit-tr:hover,
+.dark .shipment-audit-tr:hover {
+  background: color-mix(in srgb, var(--form-primary, #60a5fa) 8%, var(--form-input-bg, #111827));
+}
+
 /* Shipment operations — task management (financial-style table + delegate modal) */
 .shipment-op-tasks-card .shipment-detail-card__title {
   padding: 0.75rem 1rem;

@@ -40,6 +40,23 @@ export async function listSDForms(token, params = {}) {
 }
 
 /**
+ * GET {{base_url}}/booking-confirmation/sd-forms – SD forms for booking-confirmation upload (admin + operations only).
+ * Query: per_page (max 2000)
+ */
+export async function listSDFormsForBookingConfirmation(token, params = {}) {
+  const searchParams = new URLSearchParams()
+  if (params.per_page != null) searchParams.set('per_page', String(params.per_page))
+  const query = searchParams.toString()
+  const url = `${getBaseUrl()}/booking-confirmation/sd-forms${query ? `?${query}` : ''}`
+  const res = await apiFetch(url, { headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(data.message || data.error || `Failed to load SD forms (${res.status})`)
+  }
+  return data
+}
+
+/**
  * GET {{base_url}}/sd-forms/stats – SD Forms Stats
  */
 export async function getSDFormStats(token) {
@@ -202,4 +219,80 @@ export async function exportSDForms(token, params = {}) {
     throw new Error(data.message || data.error || `Failed to export (${res.status})`)
   }
   return res.blob()
+}
+
+/**
+ * GET /sd-forms/:id/booking-confirmations
+ */
+export async function listSDFormBookingConfirmations(token, sdFormId) {
+  const res = await apiFetch(`${getBaseUrl()}/sd-forms/${encodeURIComponent(sdFormId)}/booking-confirmations`, {
+    headers: authHeaders(token),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to load booking confirmations (${res.status})`)
+  return data
+}
+
+/**
+ * POST /sd-forms/:id/booking-confirmations (multipart: file)
+ */
+export async function uploadSDFormBookingConfirmation(token, sdFormId, file, onUploadProgress) {
+  const formData = new FormData()
+  formData.append('file', file)
+  if (typeof onUploadProgress === 'function') {
+    const url = `${getBaseUrl()}/sd-forms/${encodeURIComponent(sdFormId)}/booking-confirmations`
+    const json = await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest()
+      xhr.open('POST', url)
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+      xhr.setRequestHeader('Accept', 'application/json')
+      xhr.upload.onprogress = onUploadProgress
+      xhr.onerror = () => reject(new Error('Network error during upload'))
+      xhr.onload = () => {
+        let parsed = {}
+        try {
+          parsed = JSON.parse(xhr.responseText || '{}')
+        } catch {
+          parsed = {}
+        }
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(parsed)
+        } else {
+          reject(new Error(parsed.message || parsed.error || `Upload failed (${xhr.status})`))
+        }
+      }
+      xhr.send(formData)
+    })
+    return json
+  }
+  const res = await apiFetch(`${getBaseUrl()}/sd-forms/${encodeURIComponent(sdFormId)}/booking-confirmations`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
+    },
+    body: formData,
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Upload failed (${res.status})`)
+  return data
+}
+
+export async function downloadSDFormBookingConfirmation(token, sdFormId, confirmationId) {
+  const res = await apiFetch(
+    `${getBaseUrl()}/sd-forms/${encodeURIComponent(sdFormId)}/booking-confirmations/${encodeURIComponent(confirmationId)}/download`,
+    { headers: authHeaders(token) }
+  )
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}))
+    throw new Error(json.message || json.error || `Download failed (${res.status})`)
+  }
+  const blob = await res.blob()
+  const contentDisposition = res.headers.get('Content-Disposition')
+  let filename = ''
+  if (contentDisposition) {
+    const match = contentDisposition.match(/filename="?([^"]+)"?/)
+    if (match) filename = match[1]
+  }
+  return { blob, filename }
 }
