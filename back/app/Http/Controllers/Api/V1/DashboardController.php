@@ -16,6 +16,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use App\Models\Vendor;
 use App\Models\VendorBill;
+use App\Support\ShipmentOperationTaskSummary;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -528,14 +529,24 @@ class DashboardController extends Controller
             ->limit(60)
             ->get();
 
-        $assignedShipments = $assignedTasks->map(fn ($t) => [
-            'shipment_id' => $t->shipment_id,
-            'shipment_ref' => $t->shipment?->booking_number ?: $t->shipment?->bl_number,
-            'status' => $t->shipment?->status,
-            'priority' => in_array($t->status, ['pending', 'overdue'], true) ? 'high' : 'normal',
-            'deadline' => $t->due_date?->toDateString(),
-            'task_status' => $t->status,
-        ])->values();
+        $shipIdsForTasks = $assignedTasks->pluck('shipment_id')->unique()->filter()->map(fn ($id) => (int) $id)->values()->all();
+        $taskSummaryByShipment = ShipmentOperationTaskSummary::aggregateForShipmentIds($shipIdsForTasks);
+        $assignedShipments = $assignedTasks->map(function ($t) use ($taskSummaryByShipment) {
+            $sid = (int) $t->shipment_id;
+            $agg = $taskSummaryByShipment[$sid] ?? ['total' => 0, 'completed' => 0, 'overdue' => 0];
+
+            return [
+                'shipment_id' => $t->shipment_id,
+                'shipment_ref' => $t->shipment?->booking_number ?: $t->shipment?->bl_number,
+                'status' => $t->shipment?->status,
+                'priority' => in_array($t->status, ['pending', 'overdue'], true) ? 'high' : 'normal',
+                'deadline' => $t->due_date?->toDateString(),
+                'task_status' => $t->status,
+                'total_tasks' => $agg['total'],
+                'completed_tasks' => $agg['completed'],
+                'overdue_tasks_count' => $agg['overdue'],
+            ];
+        })->values();
 
         $statusPie = Shipment::whereIn('id', $assignedTasks->pluck('shipment_id')->unique())->selectRaw('COALESCE(status, "Unknown") as name, COUNT(*) as value')->groupBy('status')->get();
         $delayed = (int) $assignedTasks->filter(fn ($t) => $t->due_date && $t->due_date->isPast() && $t->status !== 'completed')->count();

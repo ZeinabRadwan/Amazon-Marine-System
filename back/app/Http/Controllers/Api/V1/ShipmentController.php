@@ -15,6 +15,7 @@ use App\Models\Vendor;
 use App\Notifications\ShipmentSalesFinancialsNotification;
 use App\Services\ActivityLogger;
 use App\Services\NotificationService;
+use App\Support\ShipmentOperationTaskSummary;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -61,8 +62,19 @@ class ShipmentController extends Controller
         $perPage = $request->integer('per_page', 15);
         $paginator = $query->paginate($perPage);
 
+        $collection = $paginator->getCollection();
+        $ids = $collection->pluck('id')->filter()->map(fn ($id) => (int) $id)->unique()->values()->all();
+        $taskSummary = ShipmentOperationTaskSummary::aggregateForShipmentIds($ids);
+        $collection->each(function (Shipment $s) use ($taskSummary) {
+            $id = (int) $s->id;
+            $agg = $taskSummary[$id] ?? ['total' => 0, 'completed' => 0, 'overdue' => 0];
+            $s->setAttribute('total_tasks', $agg['total']);
+            $s->setAttribute('completed_tasks', $agg['completed']);
+            $s->setAttribute('overdue_tasks_count', $agg['overdue']);
+        });
+
         return response()->json([
-            'data' => $paginator->getCollection(),
+            'data' => $collection,
             'meta' => [
                 'current_page' => $paginator->currentPage(),
                 'last_page' => $paginator->lastPage(),
