@@ -3047,6 +3047,25 @@
       "success": "تم رفع تأكيد الحجز.",
       "loadSdListError": "تعذر تحميل نماذج SD. تحقق من الاتصال أو الصلاحيات."
     },
+    "opsCard": {
+      "openShipmentAria": "فتح الشحنة",
+      "overdue": "{{count}} متأخرة",
+      "pctComplete": "{{pct}}% كامل",
+      "cutoff": "CUT-OFF: {{date}}",
+      "tasksMetrics": "{{done}} / {{total}} مهام | {{overdue}} متأخرة",
+      "tasksMetricsUnknown": "{{dash}} / {{dash}} مهام | {{dash}} متأخرة",
+      "containerCombined": "{{count}} × {{size}} {{type}}",
+      "metaRoute": "المسار",
+      "metaContainers": "الحاويات",
+      "metaOpsStatus": "الحالة التشغيلية"
+    },
+    "opsPage": {
+      "kpiRegion": "ملخص مهام العمليات",
+      "todayTitle": "Today's Tasks / مهام اليوم",
+      "todayHint": "يجب إكمالها اليوم",
+      "overdueTitle": "Overdue Tasks / المهام المتأخرة",
+      "overdueHint": "تتطلب إجراءً فورياً"
+    },
     "filesFromOperations": "ملفات من العمليات",
     "viewFile": "عرض",
     "downloadFile": "تحميل",

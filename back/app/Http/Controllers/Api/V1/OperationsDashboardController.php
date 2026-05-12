@@ -38,7 +38,8 @@ class OperationsDashboardController extends Controller
 
         $overdueQuery = (clone $taskBase)->whereRaw("$eff < ?", [Carbon::today()->toDateString()]);
         $todayQuery = (clone $taskBase)->whereRaw("$eff = ?", [Carbon::today()->toDateString()]);
-        $upcomingQuery = (clone $taskBase)->whereRaw("$eff > ?", [$today]);
+        $todayStr = Carbon::today()->toDateString();
+        $upcomingQuery = (clone $taskBase)->whereRaw("$eff > ?", [$todayStr]);
         $this->applyUpcomingWindow($upcomingQuery, $eff, $window);
 
         $overdueCount = (clone $overdueQuery)->count();
@@ -72,6 +73,46 @@ class OperationsDashboardController extends Controller
                     'today' => $this->serializeTasks($todayQuery->clone()->orderByRaw("$eff ASC")->limit(150)->get()),
                     'upcoming' => $this->serializeTasks($upcomingQuery->clone()->orderByRaw("$eff ASC")->limit(150)->get()),
                 ],
+            ],
+        ]);
+    }
+
+    /**
+     * Compact KPI counts for the Shipments page (operations role only, not admin).
+     * Uses `shipment_operation_tasks`: effective calendar day = DATE(execution_at) or due_date;
+     * open tasks = status != completed and completed_at is null; visibility = unassigned pool or assigned to current user.
+     */
+    public function shipmentPageKpis(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        abort_unless($user && $user->hasRole('operations') && ! $user->hasRole('admin'), 403);
+
+        $today = Carbon::today()->toDateString();
+        $uid = $user->id;
+
+        $eff = 'COALESCE(DATE(shipment_operation_tasks.execution_at), shipment_operation_tasks.due_date)';
+
+        $base = ShipmentOperationTask::query()
+            ->where(function ($q) {
+                $q->whereNull('shipment_operation_tasks.status')
+                    ->orWhere('shipment_operation_tasks.status', '!=', 'completed');
+            })
+            ->whereNull('shipment_operation_tasks.completed_at')
+            ->whereRaw("{$eff} IS NOT NULL")
+            ->where(function ($q) use ($uid) {
+                $q->whereNull('shipment_operation_tasks.assigned_to_id')
+                    ->orWhere('shipment_operation_tasks.assigned_to_id', $uid);
+            });
+
+        $this->scopeTasksForUser($base, $user);
+
+        $todayCount = (clone $base)->whereRaw("{$eff} = ?", [$today])->count();
+        $overdueCount = (clone $base)->whereRaw("{$eff} < ?", [$today])->count();
+
+        return response()->json([
+            'data' => [
+                'today_tasks' => $todayCount,
+                'overdue_tasks' => $overdueCount,
             ],
         ]);
     }

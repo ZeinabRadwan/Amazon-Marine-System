@@ -3046,6 +3046,25 @@
       "success": "Booking confirmation uploaded.",
       "loadSdListError": "Could not load SD forms. Check your connection or permissions."
     },
+    "opsCard": {
+      "openShipmentAria": "Open shipment",
+      "overdue": "{{count}} overdue",
+      "pctComplete": "{{pct}}% complete",
+      "cutoff": "CUT-OFF: {{date}}",
+      "tasksMetrics": "{{done}} / {{total}} tasks | {{overdue}} overdue",
+      "tasksMetricsUnknown": "{{dash}} / {{dash}} tasks | {{dash}} overdue",
+      "containerCombined": "{{count}} × {{size}} {{type}}",
+      "metaRoute": "Route",
+      "metaContainers": "Containers",
+      "metaOpsStatus": "Operational status"
+    },
+    "opsPage": {
+      "kpiRegion": "Operations task summary",
+      "todayTitle": "Today's Tasks / مهام اليوم",
+      "todayHint": "Must be completed today",
+      "overdueTitle": "Overdue Tasks / المهام المتأخرة",
+      "overdueHint": "Requires immediate action"
+    },
     "filesFromOperations": "Files from Operations",
     "viewFile": "View",
     "downloadFile": "Download",

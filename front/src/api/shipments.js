@@ -210,6 +210,18 @@ export async function getShipmentCharts(token, params = {}) {
   return json
 }
 
+/** GET operations-dashboard/shipment-page-kpis — operations role only (not admin). */
+export async function getShipmentOperationPageKpis(token) {
+  const res = await apiFetch(`${getBaseUrl()}/operations-dashboard/shipment-page-kpis`, {
+    headers: authHeaders(token),
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(json.message || json.error || `Failed to load operation task KPIs (${res.status})`)
+  }
+  return json
+}
+
 /** Same filters as list (optional ids comma-separated). Returns CSV blob. */
 export async function exportShipments(token, params = {}) {
   const searchParams = new URLSearchParams()

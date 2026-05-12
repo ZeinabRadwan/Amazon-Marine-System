@@ -12,6 +12,7 @@ import {
   deleteShipment,
   getShipmentStats,
   getShipmentCharts,
+  getShipmentOperationPageKpis,
   exportShipments,
   postShipmentTrackingUpdate,
   downloadShipmentPdf,
@@ -35,6 +36,7 @@ import Pagination from '../../components/Pagination'
 import { StatsCard } from '../../components/StatsCard'
 import ShipmentStatusBadge from '../../components/ShipmentStatusBadge'
 import ShipmentDetailModal from './ShipmentDetailModal'
+import ShipmentOpsShipCard from './ShipmentOpsShipCard'
 import ShipmentFinancialsModal from './ShipmentFinancialsModal'
 import ShipmentAttachmentsModal from './ShipmentAttachmentsModal'
 import BookingConfirmationUploadModal from './BookingConfirmationUploadModal'
@@ -272,6 +274,8 @@ export default function Shipments() {
   const { t, i18n } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
   const { user, isAdminRole, isAccountant, isOperations, roleId, hasAbility } = useAuthAccess()
+  /** Shipments page task-only dashboard: operations Spatie role, not admin (admin keeps charts/stats). */
+  const isOperationsOnlyUser = isOperations && !isAdminRole
   const isSalesRepresentative = roleId === ROLE_ID.SALES || roleId === ROLE_ID.SALES_MANAGER
   // Operations / logistics: matches ShipmentPolicy create|update|delete (admin, operations role, or shipments.manage_ops).
   const canManageOps = isAdminRole || isOperations || hasAbility('shipments.manage_ops')
@@ -315,6 +319,8 @@ export default function Shipments() {
   const [statsLoading, setStatsLoading] = useState(false)
   const [charts, setCharts] = useState(null)
   const [chartsLoading, setChartsLoading] = useState(false)
+  /** Operations-only (non-admin): today's / overdue task counts from API. */
+  const [opTaskKpis, setOpTaskKpis] = useState(null)
   const [exportLoading, setExportLoading] = useState(false)
   const [pdfExportingId, setPdfExportingId] = useState(null)
   const [selectedIds, setSelectedIds] = useState({})
@@ -501,30 +507,49 @@ export default function Shipments() {
         setRows([])
         setAlert({ type: 'error', message: err.message || t('shipments.errorLoad') })
       })
-      .finally(() => setLoading(false))
-  }, [token, listParams, t])
+      .finally(() => {
+        if (isOperationsOnlyUser) {
+          getShipmentOperationPageKpis(token)
+            .then((json) => {
+              const d = json.data ?? json
+              setOpTaskKpis({
+                today: Number(d.today_tasks ?? 0),
+                overdue: Number(d.overdue_tasks ?? 0),
+              })
+            })
+            .catch(() => {
+              setOpTaskKpis({ today: null, overdue: null })
+            })
+            .finally(() => {
+              setLoading(false)
+            })
+        } else {
+          setLoading(false)
+        }
+      })
+  }, [token, listParams, t, isOperationsOnlyUser])
 
   useEffect(() => {
     loadList()
   }, [loadList])
 
   useEffect(() => {
-    if (!token) return
+    if (!token || isOperationsOnlyUser) return
     setStatsLoading(true)
     getShipmentStats(token)
       .then((data) => setStats(data.data ?? data))
       .catch(() => setStats(null))
       .finally(() => setStatsLoading(false))
-  }, [token])
+  }, [token, isOperationsOnlyUser])
 
   useEffect(() => {
-    if (!token) return
+    if (!token || isOperationsOnlyUser) return
     setChartsLoading(true)
     getShipmentCharts(token, { months: 6 })
       .then((data) => setCharts(data.data ?? data))
       .catch(() => setCharts(null))
       .finally(() => setChartsLoading(false))
-  }, [token])
+  }, [token, isOperationsOnlyUser])
 
   useEffect(() => {
     setSelectedIds({})
@@ -669,8 +694,7 @@ export default function Shipments() {
 
   const pageLoading =
     loading ||
-    statsLoading ||
-    chartsLoading ||
+    (!isOperationsOnlyUser && (statsLoading || chartsLoading)) ||
     exportLoading ||
     createSubmitting ||
     editSubmitting ||
@@ -979,6 +1003,103 @@ export default function Shipments() {
     setFilters((f) => ({ ...f, sort: sortKey, direction, page: 1 }))
   }
 
+  const getShipmentRowActionsMenuItems = useCallback(
+    (row) => {
+      const menuItems = [
+        {
+          id: 'view',
+          label: t('shipments.view'),
+          icon: <Eye className="h-4 w-4" />,
+          onClick: () => {
+            setDetailTab('info')
+            setDetailId(row.id)
+          },
+        },
+        {
+          id: 'track',
+          label: t('shipments.track'),
+          icon: <MapPin className="h-4 w-4" />,
+          onClick: () => {
+            setDetailTab('tracking')
+            setDetailId(row.id)
+          },
+        },
+      ]
+      if (canManageOps) {
+        menuItems.push({
+          id: 'stage',
+          label: t('shipments.stageUpdate'),
+          icon: <ClipboardList className="h-4 w-4" />,
+          onClick: () => {
+            setStageRow(row)
+            setStageForm({
+              statusKey: row.status ?? '',
+              eventDate: new Date().toISOString().slice(0, 10),
+              message: '',
+            })
+          },
+        })
+      }
+      if (canViewShipmentFinancials) {
+        menuItems.push({
+          id: 'financials',
+          label: t('shipments.financials'),
+          icon: <Receipt className="h-4 w-4" />,
+          onClick: () => setFinancialRow(row),
+        })
+      }
+      menuItems.push(
+        {
+          id: 'notes',
+          label: t('shipments.tabs.notes') || 'Notes',
+          icon: <StickyNote className="h-4 w-4" />,
+          onClick: () => {
+            setDetailTab('notes')
+            setDetailId(row.id)
+          },
+        },
+        {
+          id: 'attachments',
+          label: t('shipments.tabs.attachments') || 'Attachments',
+          icon: <Paperclip className="h-4 w-4" />,
+          onClick: () => {
+            setAttachmentsShipment(row)
+          },
+        },
+      )
+      if (canManageOps) {
+        menuItems.push(
+          {
+            id: 'edit',
+            label: t('shipments.edit'),
+            icon: <Pencil className="h-4 w-4" />,
+            onClick: () => openEdit(row),
+          },
+          {
+            id: 'delete',
+            label: t('shipments.delete'),
+            icon: <Trash2 className="h-4 w-4" />,
+            onClick: () => setDeleteId(row.id),
+          },
+        )
+      }
+      return menuItems
+    },
+    [
+      t,
+      canManageOps,
+      canViewShipmentFinancials,
+      setDetailTab,
+      setDetailId,
+      setStageRow,
+      setStageForm,
+      openEdit,
+      setDeleteId,
+      setFinancialRow,
+      setAttachmentsShipment,
+    ],
+  )
+
   const columns = useMemo(() => {
     const base = [
       {
@@ -1064,110 +1185,7 @@ export default function Shipments() {
       label: t('shipments.actions'),
       sortable: false,
       render: (_, row) => {
-        const menuItems = [
-          {
-            id: 'view',
-            label: t('shipments.view'),
-            icon: <Eye className="h-4 w-4" />,
-            onClick: () => {
-              setDetailTab('info')
-              setDetailId(row.id)
-            },
-          },
-          {
-            id: 'track',
-            label: t('shipments.track'),
-            icon: <MapPin className="h-4 w-4" />,
-            onClick: () => {
-              setDetailTab('tracking')
-              setDetailId(row.id)
-            },
-          },
-        ]
-        if (canManageOps) {
-          menuItems.push({
-            id: 'stage',
-            label: t('shipments.stageUpdate'),
-            icon: <ClipboardList className="h-4 w-4" />,
-            onClick: () => {
-              setStageRow(row)
-              setStageForm({
-                statusKey: row.status ?? '',
-                eventDate: new Date().toISOString().slice(0, 10),
-                message: '',
-              })
-            },
-          })
-        }
-        // menuItems.push({
-        //   id: 'exportPdf',
-        //   label: pdfExportingId === row.id ? t('shipments.exportPdfLoading') : t('shipments.exportPdf'),
-        //   icon: <FileDown className="h-4 w-4" />,
-        //   disabled: pdfExportingId === row.id,
-        //   onClick: async () => {
-        //     if (!token) return
-        //     setPdfExportingId(row.id)
-        //     try {
-        //       const { blob, filename } = await downloadShipmentPdf(token, row.id)
-        //       const url = URL.createObjectURL(blob)
-        //       const a = document.createElement('a')
-        //       a.href = url
-        //       a.download = filename
-        //       document.body.appendChild(a)
-        //       a.click()
-        //       a.remove()
-        //       URL.revokeObjectURL(url)
-        //     } catch (e) {
-        //       setAlert({
-        //         type: 'error',
-        //         message: e?.message || t('shipments.exportPdfError'),
-        //       })
-        //     } finally {
-        //       setPdfExportingId(null)
-        //     }
-        //   },
-        // })
-        if (canViewShipmentFinancials) {
-          menuItems.push({
-            id: 'financials',
-            label: t('shipments.financials'),
-            icon: <Receipt className="h-4 w-4" />,
-            onClick: () => setFinancialRow(row),
-          })
-        }
-        menuItems.push({
-          id: 'notes',
-          label: t('shipments.tabs.notes') || 'Notes',
-          icon: <StickyNote className="h-4 w-4" />,
-          onClick: () => {
-            setDetailTab('notes')
-            setDetailId(row.id)
-          },
-        })
-        menuItems.push({
-          id: 'attachments',
-          label: t('shipments.tabs.attachments') || 'Attachments',
-          icon: <Paperclip className="h-4 w-4" />,
-          onClick: () => {
-            setAttachmentsShipment(row)
-          },
-        })
-        if (canManageOps) {
-          menuItems.push(
-            {
-              id: 'edit',
-              label: t('shipments.edit'),
-              icon: <Pencil className="h-4 w-4" />,
-              onClick: () => openEdit(row),
-            },
-            {
-              id: 'delete',
-              label: t('shipments.delete'),
-              icon: <Trash2 className="h-4 w-4" />,
-              onClick: () => setDeleteId(row.id),
-            }
-          )
-        }
+        const menuItems = getShipmentRowActionsMenuItems(row)
         return (
           <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
             <DropdownMenu
@@ -1200,10 +1218,35 @@ export default function Shipments() {
     selectedIds,
     allPageSelected,
     statusOptions,
-    pdfExportingId,
-    token,
-    setAlert,
+    getShipmentRowActionsMenuItems,
   ])
+
+  const showOpsShipmentCards = isAdminRole || isOperations
+
+  const renderOpsMobileCard = useCallback(
+    (row) => (
+      <ShipmentOpsShipCard
+        row={row}
+        onOpen={() => {
+          setDetailTab('info')
+          setDetailId(row.id)
+        }}
+        menuAlignEnd={i18n.language !== 'ar'}
+        selectionSlot={
+          <div className="ship-card__select" onClick={(e) => e.stopPropagation()}>
+            <input
+              type="checkbox"
+              checked={!!selectedIds[String(row.id)]}
+              onChange={() => toggleSelectRow(row.id)}
+              aria-label={t('shipments.selectRow')}
+            />
+          </div>
+        }
+        actionsMenuItems={getShipmentRowActionsMenuItems(row)}
+      />
+    ),
+    [getShipmentRowActionsMenuItems, i18n.language, selectedIds, setDetailId, setDetailTab, t, toggleSelectRow],
+  )
 
   const renderShipmentForm = (form, setForm, disabled, isEdit = false) => (
     <div className="clients-form-sections">
@@ -1594,101 +1637,136 @@ export default function Shipments() {
           </div>
         )}
 
-        {stats && typeof stats === 'object' && (
-          <div className="clients-stats-grid shipments-no-print">
-            {stats.all_statuses && Array.isArray(stats.all_statuses) && stats.all_statuses.length > 0 ? (
-              stats.all_statuses.map(s => (
-                <StatsCard
-                  key={s.id}
-                  title={i18n.language === 'ar' ? s.name_ar : s.name_en}
-                  value={new Intl.NumberFormat(numberLocale).format(s.count ?? 0)}
-                  icon={<Package className="h-6 w-6" />}
-                  variant="custom"
-                  color={s.color}
-                />
-              ))
-            ) : (
-              <>
-                <StatsCard
-                  title={t('shipments.stats.booked')}
-                  value={new Intl.NumberFormat(numberLocale).format(stats.booked ?? 0)}
-                  icon={<Package className="h-6 w-6" />}
-                  variant="blue"
-                />
-                <StatsCard
-                  title={t('shipments.stats.in_transit')}
-                  value={new Intl.NumberFormat(numberLocale).format(stats.in_transit ?? 0)}
-                  icon={<Package className="h-6 w-6" />}
-                  variant="amber"
-                />
-                <StatsCard
-                  title={t('shipments.stats.customs_clearance')}
-                  value={new Intl.NumberFormat(numberLocale).format(stats.customs_clearance ?? 0)}
-                  icon={<Package className="h-6 w-6" />}
-                  variant="green"
-                />
-                <StatsCard
-                  title={t('shipments.stats.delivered')}
-                  value={new Intl.NumberFormat(numberLocale).format(stats.delivered ?? 0)}
-                  icon={<Package className="h-6 w-6" />}
-                  variant="green"
-                />
-              </>
-            )}
+        {isOperationsOnlyUser ? (
+          <div className="shipments-ops-kpi-grid shipments-no-print" role="region" aria-label={t('shipments.opsPage.kpiRegion')}>
+            <section className="shipments-ops-kpi-card" aria-labelledby="shipments-ops-kpi-today">
+              <h2 id="shipments-ops-kpi-today" className="shipments-ops-kpi-card__title">
+                {t('shipments.opsPage.todayTitle')}
+              </h2>
+              <div className="shipments-ops-kpi-card__value" aria-live="polite">
+                {opTaskKpis?.today != null
+                  ? new Intl.NumberFormat(numberLocale).format(opTaskKpis.today)
+                  : t('common.dash')}
+              </div>
+              <p className="shipments-ops-kpi-card__hint">{t('shipments.opsPage.todayHint')}</p>
+            </section>
+            <section
+              className={`shipments-ops-kpi-card${opTaskKpis?.overdue > 0 ? ' shipments-ops-kpi-card--alert' : ''}`}
+              aria-labelledby="shipments-ops-kpi-overdue"
+            >
+              <h2 id="shipments-ops-kpi-overdue" className="shipments-ops-kpi-card__title">
+                {t('shipments.opsPage.overdueTitle')}
+              </h2>
+              <div
+                className={`shipments-ops-kpi-card__value${opTaskKpis?.overdue > 0 ? ' shipments-ops-kpi-card__value--danger' : ''}`}
+                aria-live="polite"
+              >
+                {opTaskKpis?.overdue != null
+                  ? new Intl.NumberFormat(numberLocale).format(opTaskKpis.overdue)
+                  : t('common.dash')}
+              </div>
+              <p className="shipments-ops-kpi-card__hint">{t('shipments.opsPage.overdueHint')}</p>
+            </section>
           </div>
-        )}
+        ) : (
+          <>
+            {stats && typeof stats === 'object' && (
+              <div className="clients-stats-grid shipments-no-print">
+                {stats.all_statuses && Array.isArray(stats.all_statuses) && stats.all_statuses.length > 0 ? (
+                  stats.all_statuses.map((s) => (
+                    <StatsCard
+                      key={s.id}
+                      title={i18n.language === 'ar' ? s.name_ar : s.name_en}
+                      value={new Intl.NumberFormat(numberLocale).format(s.count ?? 0)}
+                      icon={<Package className="h-6 w-6" />}
+                      variant="custom"
+                      color={s.color}
+                    />
+                  ))
+                ) : (
+                  <>
+                    <StatsCard
+                      title={t('shipments.stats.booked')}
+                      value={new Intl.NumberFormat(numberLocale).format(stats.booked ?? 0)}
+                      icon={<Package className="h-6 w-6" />}
+                      variant="blue"
+                    />
+                    <StatsCard
+                      title={t('shipments.stats.in_transit')}
+                      value={new Intl.NumberFormat(numberLocale).format(stats.in_transit ?? 0)}
+                      icon={<Package className="h-6 w-6" />}
+                      variant="amber"
+                    />
+                    <StatsCard
+                      title={t('shipments.stats.customs_clearance')}
+                      value={new Intl.NumberFormat(numberLocale).format(stats.customs_clearance ?? 0)}
+                      icon={<Package className="h-6 w-6" />}
+                      variant="green"
+                    />
+                    <StatsCard
+                      title={t('shipments.stats.delivered')}
+                      value={new Intl.NumberFormat(numberLocale).format(stats.delivered ?? 0)}
+                      icon={<Package className="h-6 w-6" />}
+                      variant="green"
+                    />
+                  </>
+                )}
+              </div>
+            )}
 
-        <div className="clients-extra-panel clients-charts-panel mb-4 shipments-no-print">
-          {charts && (statusDistributionData.length > 0 || monthlyChartData.length > 0) ? (
-            <div className="clients-charts-grid shipments-charts-grid">
-              {statusDistributionData.length > 0 && (
-                <div className="clients-chart-wrap">
-                  <DonutChart
-                    data={statusDistributionData}
-                    nameKey="name"
-                    valueKey="count"
-                    valueLabel={t('shipments.chartsCount')}
-                    title={t('shipments.chartsByStatus')}
-                    height={260}
-                  />
+            <div className="clients-extra-panel clients-charts-panel mb-4 shipments-no-print">
+              {charts && (statusDistributionData.length > 0 || monthlyChartData.length > 0) ? (
+                <div className="clients-charts-grid shipments-charts-grid">
+                  {statusDistributionData.length > 0 && (
+                    <div className="clients-chart-wrap">
+                      <DonutChart
+                        data={statusDistributionData}
+                        nameKey="name"
+                        valueKey="count"
+                        valueLabel={t('shipments.chartsCount')}
+                        title={t('shipments.chartsByStatus')}
+                        height={260}
+                      />
+                    </div>
+                  )}
+                  {monthlyChartData.length > 0 && (
+                    <div className="clients-chart-wrap">
+                      <BarChart
+                        data={monthlyChartData}
+                        xKey="monthLabel"
+                        yKey="revenue"
+                        xLabel={t('shipments.chartsMonth')}
+                        yLabel={t('shipments.chartsRevenue')}
+                        valueLabel={t('shipments.chartsRevenue')}
+                        title={t('shipments.chartsMonthlyRevenue')}
+                        height={260}
+                        allowDecimals
+                      />
+                    </div>
+                  )}
+                  {monthlyChartData.length > 0 && (
+                    <div className="clients-chart-wrap">
+                      <BarChart
+                        data={monthlyChartData}
+                        xKey="monthLabel"
+                        yKey="profit"
+                        xLabel={t('shipments.chartsMonth')}
+                        yLabel={t('shipments.chartsProfit')}
+                        valueLabel={t('shipments.chartsProfit')}
+                        title={t('shipments.chartsMonthlyProfit')}
+                        height={260}
+                        barColor="#22c55e"
+                        allowDecimals
+                      />
+                    </div>
+                  )}
                 </div>
-              )}
-              {monthlyChartData.length > 0 && (
-                <div className="clients-chart-wrap">
-                  <BarChart
-                    data={monthlyChartData}
-                    xKey="monthLabel"
-                    yKey="revenue"
-                    xLabel={t('shipments.chartsMonth')}
-                    yLabel={t('shipments.chartsRevenue')}
-                    valueLabel={t('shipments.chartsRevenue')}
-                    title={t('shipments.chartsMonthlyRevenue')}
-                    height={260}
-                    allowDecimals
-                  />
-                </div>
-              )}
-              {monthlyChartData.length > 0 && (
-                <div className="clients-chart-wrap">
-                  <BarChart
-                    data={monthlyChartData}
-                    xKey="monthLabel"
-                    yKey="profit"
-                    xLabel={t('shipments.chartsMonth')}
-                    yLabel={t('shipments.chartsProfit')}
-                    valueLabel={t('shipments.chartsProfit')}
-                    title={t('shipments.chartsMonthlyProfit')}
-                    height={260}
-                    barColor="#22c55e"
-                    allowDecimals
-                  />
-                </div>
-              )}
+              ) : charts ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t('shipments.chartsNoData')}</p>
+              ) : null}
             </div>
-          ) : charts ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">{t('shipments.chartsNoData')}</p>
-          ) : null}
-        </div>
+          </>
+        )}
 
         <div className="clients-filters-card shipments-no-print">
           <div className="clients-filters__row clients-filters__row--main">
@@ -1928,6 +2006,7 @@ export default function Shipments() {
               sortKey={filters.sort}
               sortDirection={filters.direction}
               onSort={handleTableSort}
+              renderMobileCard={showOpsShipmentCards ? renderOpsMobileCard : undefined}
             />
           )}
 

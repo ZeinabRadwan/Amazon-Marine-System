@@ -450,6 +450,7 @@ Route::prefix('v1')->group(function () {
         Route::get('dashboard/support-employee', [DashboardController::class, 'supportEmployee'])
             ->middleware('page_permission:dashboard,view');
         Route::get('operations-dashboard', [OperationsDashboardController::class, 'index']);
+        Route::get('operations-dashboard/shipment-page-kpis', [OperationsDashboardController::class, 'shipmentPageKpis']);
         Route::get('reports/shipments', [ReportController::class, 'shipments']);
         Route::get('reports/finance', [ReportController::class, 'finance']);
         Route::get('reports/sales-performance', [ReportController::class, 'salesPerformance']);

@@ -4316,3 +4316,399 @@
 .shipment-ti-pdf-btn:hover:not(:disabled) {
   background: #0c1b32;
 }
+
+/* Operations / admin mobile shipment list card (Table renderMobileCard) */
+.ship-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #e5e7eb);
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  cursor: pointer;
+  text-align: start;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.ship-card:hover {
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.ship-card:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--form-primary, #0039c5);
+}
+
+.dark .ship-card {
+  border-color: #374151;
+  background: #1f2937;
+}
+
+.ship-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ship-card__header-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.ship-card__select-slot {
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.ship-card__select {
+  display: flex;
+  align-items: center;
+}
+
+.ship-card__select input[type='checkbox'] {
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}
+
+.ship-card__titles {
+  min-width: 0;
+  flex: 1;
+}
+
+.ship-card__k {
+  font-size: 0.5625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #64748b;
+  line-height: 1.2;
+  margin-bottom: 2px;
+}
+
+.dark .ship-card__k {
+  color: #94a3b8;
+}
+
+.ship-card__ref-block {
+  min-width: 0;
+}
+
+.ship-card__client-block {
+  margin-top: 6px;
+  min-width: 0;
+}
+
+.ship-card__ref {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.dark .ship-card__ref {
+  color: #f1f5f9;
+}
+
+.ship-card__client {
+  font-size: 0.75rem;
+  color: #475569;
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.dark .ship-card__client {
+  color: #94a3b8;
+}
+
+.ship-card__header-right {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 6px;
+  flex-shrink: 0;
+  max-width: 55%;
+  min-width: 0;
+}
+
+.ship-card__actions {
+  flex-shrink: 0;
+}
+
+.ship-card__actions-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #334155;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.ship-card__actions-trigger:hover {
+  background: #f8fafc;
+}
+
+.dark .ship-card__actions-trigger {
+  border-color: #4b5563;
+  background: #374151;
+  color: #e5e7eb;
+}
+
+.dark .ship-card__actions-trigger:hover {
+  background: #4b5563;
+}
+
+.ship-card__actions-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.ship-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+  min-width: 0;
+}
+
+[dir='rtl'] .ship-card__badges {
+  justify-content: flex-start;
+}
+
+.ship-card__badge {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.625rem;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ship-card__badge--overdue {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.dark .ship-card__badge--overdue {
+  background: rgba(127, 29, 29, 0.35);
+  color: #fecaca;
+}
+
+.ship-card__badge--pct {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.dark .ship-card__badge--pct {
+  background: rgba(14, 116, 144, 0.35);
+  color: #bae6fd;
+}
+
+.ship-card__badge--cutoff {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.dark .ship-card__badge--cutoff {
+  background: #334155;
+  color: #e2e8f0;
+}
+
+.ship-card__meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+@media (max-width: 380px) {
+  .ship-card__meta-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ship-card__meta-block {
+  min-width: 0;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.dark .ship-card__meta-block {
+  background: #111827;
+  border-color: #374151;
+}
+
+.ship-card__meta-label {
+  font-size: 0.5625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.dark .ship-card__meta-label {
+  color: #94a3b8;
+}
+
+.ship-card__meta-value {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.dark .ship-card__meta-value {
+  color: #f1f5f9;
+}
+
+.ship-card__progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 2px;
+}
+
+.ship-card__bar {
+  height: 6px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.dark .ship-card__bar {
+  background: #374151;
+}
+
+.ship-card__bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.2s ease;
+}
+
+.ship-card__bar-fill--progress {
+  background: #2563eb;
+}
+
+.ship-card__bar-fill--overdue {
+  background: #dc2626;
+}
+
+.ship-card__bar-fill--complete {
+  background: #059669;
+}
+
+.ship-card__progress-line {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #475569;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.dark .ship-card__progress-line {
+  color: #cbd5e1;
+}
+
+/* Operations-only (non-admin) Shipments page: two task KPI cards */
+.shipments-ops-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 520px) {
+  .shipments-ops-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.shipments-ops-kpi-card {
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #e5e7eb);
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+.dark .shipments-ops-kpi-card {
+  border-color: #374151;
+  background: #1f2937;
+}
+
+.shipments-ops-kpi-card--alert {
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.dark .shipments-ops-kpi-card--alert {
+  border-color: #7f1d1d;
+  background: rgba(127, 29, 29, 0.25);
+}
+
+.shipments-ops-kpi-card__title {
+  margin: 0 0 8px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #334155;
+}
+
+.dark .shipments-ops-kpi-card__title {
+  color: #e2e8f0;
+}
+
+.shipments-ops-kpi-card__value {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+}
+
+.dark .shipments-ops-kpi-card__value {
+  color: #f8fafc;
+}
+
+.shipments-ops-kpi-card__value--danger {
+  color: #b91c1c;
+}
+
+.dark .shipments-ops-kpi-card__value--danger {
+  color: #fecaca;
+}
+
+.shipments-ops-kpi-card__hint {
+  margin: 8px 0 0;
+  font-size: 0.6875rem;
+  line-height: 1.35;
+  color: #64748b;
+}
+
+.dark .shipments-ops-kpi-card__hint {
+  color: #94a3b8;
+}
