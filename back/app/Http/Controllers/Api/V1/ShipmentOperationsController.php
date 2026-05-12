@@ -9,8 +9,10 @@ use App\Models\Shipment;
 use App\Models\ShipmentOperation;
 use App\Models\Vendor;
 use App\Services\ActivityLogger;
+use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 
 class ShipmentOperationsController extends Controller
@@ -81,9 +83,20 @@ class ShipmentOperationsController extends Controller
 
         $operation = $shipment->operation ?: new ShipmentOperation(['shipment_id' => $shipment->id]);
 
-        $scheduleBefore = $operation->exists
-            ? Arr::only($operation->getOriginal(), ['cut_off_date', 'etd', 'eta', 'ops_loading_date'])
-            : [];
+        $scheduleKeys = ['cut_off_date', 'etd', 'eta', 'ops_loading_date'];
+        $scheduleBefore = $operation->exists ? Arr::only($operation->getAttributes(), $scheduleKeys) : [];
+
+        $profileKeys = [
+            'service_types',
+            'transport_contractor_id',
+            'customs_broker_id',
+            'insurance_company_id',
+            'overseas_agent_id',
+            'transport_instructions',
+        ];
+        $profileBefore = $operation->exists
+            ? Arr::only($operation->getAttributes(), $profileKeys)
+            : array_fill_keys($profileKeys, null);
 
         $operationFill = Arr::only($validated, [
             'transport_contractor_id',
@@ -121,6 +134,8 @@ class ShipmentOperationsController extends Controller
                 ActivityLogger::log('shipment.operational_phase_changed', $shipment, [
                     'from' => $originalCode,
                     'to' => $shipment->operational_status_code,
+                    'old_value' => (string) ($originalCode ?? ''),
+                    'new_value' => (string) ($shipment->operational_status_code ?? ''),
                 ]);
             }
         } elseif (array_key_exists('operations_status', $validated)) {
@@ -132,27 +147,42 @@ class ShipmentOperationsController extends Controller
                 ActivityLogger::log('shipment.operations_status_changed', $shipment, [
                     'from' => $originalOpsStatus,
                     'to' => $shipment->operations_status,
+                    'old_value' => (string) ($originalOpsStatus ?? ''),
+                    'new_value' => (string) ($shipment->operations_status ?? ''),
                 ]);
             }
         }
 
-        if ($operation->wasChanged(['cut_off_date', 'etd', 'eta', 'ops_loading_date'])) {
+        $scheduleAfter = Arr::only($operation->getAttributes(), $scheduleKeys);
+        if ($this->encodeSnapshot($scheduleBefore) !== $this->encodeSnapshot($scheduleAfter)) {
             ActivityLogger::log('shipment.schedule_updated', $shipment, [
                 'before' => $scheduleBefore,
-                'after' => Arr::only($operation->getChanges(), ['cut_off_date', 'etd', 'eta', 'ops_loading_date']),
+                'after' => $scheduleAfter,
+                'old_value' => $this->summarizeScheduleRow($scheduleBefore),
+                'new_value' => $this->summarizeScheduleRow($scheduleAfter),
             ]);
         }
 
-        if ($operation->wasChanged([
-            'service_types',
-            'transport_instructions',
-            'transport_contractor_id',
-            'customs_broker_id',
-            'insurance_company_id',
-            'overseas_agent_id',
-        ])) {
+        $profileAfter = Arr::only($operation->getAttributes(), $profileKeys);
+        if ($this->operationProfileChanged($profileBefore, $profileAfter)) {
+            $vendorIds = [];
+            foreach ([$profileBefore, $profileAfter] as $slice) {
+                foreach (['transport_contractor_id', 'customs_broker_id', 'insurance_company_id', 'overseas_agent_id'] as $col) {
+                    if (! empty($slice[$col])) {
+                        $vendorIds[] = (int) $slice[$col];
+                    }
+                }
+            }
+            $vendorIds = array_values(array_unique($vendorIds));
+            $vendorNames = $vendorIds === []
+                ? collect()
+                : Vendor::query()->whereIn('id', $vendorIds)->pluck('name', 'id');
+
             ActivityLogger::log('shipment.operations_profile_updated', $shipment, [
-                'changes' => $operation->getChanges(),
+                'before' => $profileBefore,
+                'after' => $profileAfter,
+                'old_value' => $this->summarizeOperationProfile($profileBefore, $vendorNames),
+                'new_value' => $this->summarizeOperationProfile($profileAfter, $vendorNames),
             ]);
         }
 
@@ -166,6 +196,13 @@ class ShipmentOperationsController extends Controller
             ActivityLogger::log('shipment.reefer_updated', $shipment, [
                 'is_reefer' => $shipment->is_reefer,
                 'reefer_temp' => $shipment->reefer_temp,
+                'old_value' => '',
+                'new_value' => json_encode([
+                    'is_reefer' => $shipment->is_reefer,
+                    'reefer_temp' => $shipment->reefer_temp,
+                    'reefer_vent' => $shipment->reefer_vent,
+                    'reefer_hum' => $shipment->reefer_hum,
+                ]),
             ]);
         }
 
@@ -181,6 +218,125 @@ class ShipmentOperationsController extends Controller
         return response()->json([
             'data' => $data,
         ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     */
+    private function encodeSnapshot(array $row): string
+    {
+        $norm = [];
+        foreach ($row as $k => $v) {
+            $norm[$k] = $this->normalizeScalarForJson($v);
+        }
+
+        return json_encode($norm);
+    }
+
+    private function normalizeScalarForJson(mixed $v): mixed
+    {
+        if ($v instanceof CarbonInterface) {
+            return $v->toIso8601String();
+        }
+
+        return $v;
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     */
+    private function summarizeScheduleRow(array $row): string
+    {
+        $parts = [];
+        foreach (['cut_off_date' => 'CO', 'etd' => 'ETD', 'eta' => 'ETA', 'ops_loading_date' => 'Loading'] as $key => $label) {
+            if (! array_key_exists($key, $row)) {
+                continue;
+            }
+            $parts[] = $label.': '.$this->formatForAuditLine($row[$key] ?? null);
+        }
+
+        return $parts === [] ? '—' : implode(' | ', $parts);
+    }
+
+    private function formatForAuditLine(mixed $v): string
+    {
+        if ($v === null || $v === '') {
+            return '—';
+        }
+        if ($v instanceof CarbonInterface) {
+            return $v->toDateString().($v->format('H:i:s') !== '00:00:00' ? ' '.$v->format('H:i') : '');
+        }
+
+        return (string) $v;
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     * @param  \Illuminate\Support\Collection<int, string>  $vendorNames  id => name
+     */
+    private function summarizeOperationProfile(array $row, $vendorNames): string
+    {
+        $lines = [];
+        $st = $row['service_types'] ?? [];
+        if (is_array($st) && $st !== []) {
+            $lines[] = 'services: '.implode(', ', $st);
+        }
+
+        $map = [
+            'transport_contractor_id' => 'inland_contractor',
+            'customs_broker_id' => 'customs_broker',
+            'insurance_company_id' => 'insurance',
+            'overseas_agent_id' => 'overseas_agent',
+        ];
+        foreach ($map as $col => $label) {
+            if (! array_key_exists($col, $row)) {
+                continue;
+            }
+            $id = $row[$col];
+            $name = $id ? (string) ($vendorNames[$id] ?? '#'.$id) : '—';
+            $lines[] = $label.': '.$name;
+        }
+
+        $ti = $row['transport_instructions'] ?? null;
+        if (array_key_exists('transport_instructions', $row)) {
+            $tiStr = is_string($ti) ? trim($ti) : (string) json_encode($ti);
+            if (strlen($tiStr) > 160) {
+                $tiStr = substr($tiStr, 0, 157).'…';
+            }
+            $lines[] = 'instructions: '.($tiStr !== '' ? $tiStr : '—');
+        }
+
+        return $lines === [] ? '—' : implode("\n", $lines);
+    }
+
+    /**
+     * @param  array<string, mixed>  $a
+     * @param  array<string, mixed>  $b
+     */
+    private function operationProfileChanged(array $a, array $b): bool
+    {
+        return $this->encodeSnapshot($this->normalizeProfile($a)) !== $this->encodeSnapshot($this->normalizeProfile($b));
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     * @return array<string, mixed>
+     */
+    private function normalizeProfile(array $row): array
+    {
+        $out = $row;
+        if (isset($out['service_types']) && is_array($out['service_types'])) {
+            $st = $out['service_types'];
+            sort($st);
+            $out['service_types'] = $st;
+        }
+        foreach (['transport_contractor_id', 'customs_broker_id', 'insurance_company_id', 'overseas_agent_id'] as $k) {
+            $out[$k] = isset($out[$k]) && $out[$k] !== null && $out[$k] !== '' ? (int) $out[$k] : null;
+        }
+        $ti = $out['transport_instructions'] ?? '';
+        $out['transport_instructions'] = is_string($ti) ? trim($ti) : $ti;
+
+        return $out;
     }
 
     private function assertVendorType(?int $vendorId, string $expectedType): void

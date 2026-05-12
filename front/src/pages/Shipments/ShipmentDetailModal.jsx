@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   X,
@@ -6,13 +6,7 @@ import {
   Trash2,
   StickyNote,
   FileDown,
-  CheckCircle2,
-  Circle,
-  Clock,
-  User,
-  Calendar,
   Save,
-  ShieldAlert,
 } from 'lucide-react'
 import { getStoredToken } from '../Login'
 import { formatDate } from '../../utils/dateUtils'
@@ -34,7 +28,11 @@ import {
 import Tabs from '../../components/Tabs'
 import ShipmentStatusBadge from '../../components/ShipmentStatusBadge'
 import { getPipelineStepIndex, PIPELINE_STEP_KEYS } from './shipmentPipeline'
-import { localizedStatusLabel } from '../../utils/localizedStatusLabel'
+import { listActivitiesBySubject } from '../../api/activities'
+import { SERVICE_TYPE_IDS, OPERATIONAL_PHASE_ORDER } from './shipmentOpsConstants'
+import ShipmentOperationsTasksPanel from './ShipmentOperationsTasksPanel'
+import { normalizeShipmentOperationTask, serializeShipmentOperationTaskForApi } from './shipmentOperationTaskPayload'
+import { formatShipmentAuditRow } from './shipmentAuditPresentation'
 import './Shipments.css'
 import '../SDForms/SDForms.css'
 import '../Clients/Clients.css'
@@ -108,7 +106,6 @@ export default function ShipmentDetailModal({
   vendorOptions = [],
   userOptions = [],
   onOperationsSaved = null,
-  opsStatusOptions = [],
   currentUserId = null,
   canAddShipmentNote = false,
   canManageAllShipmentNotes = false,
@@ -141,6 +138,9 @@ export default function ShipmentDetailModal({
   const [tasksLoading, setTasksLoading] = useState(false)
   const [opsSaving, setOpsSaving] = useState(false)
   const [opsError, setOpsError] = useState(null)
+  const [auditRows, setAuditRows] = useState([])
+  const [auditLoading, setAuditLoading] = useState(false)
+  const [auditError, setAuditError] = useState(null)
 
   const loadNotes = useCallback(() => {
     if (!token || !shipment?.id) return
@@ -167,19 +167,75 @@ export default function ShipmentDetailModal({
     if (!token || !shipment?.id) return
     setOpsLoading(true)
     getShipmentOperations(token, shipment.id)
-      .then(res => setOpsData(res.data || {}))
+      .then((res) => {
+        const d = res.data || {}
+        if (!Array.isArray(d.service_types) || d.service_types.length === 0) {
+          d.service_types = ['sea_freight']
+        }
+        if (d.cut_off_date && String(d.cut_off_date).length > 10) {
+          d.cut_off_date = String(d.cut_off_date).slice(0, 10)
+        }
+        for (const k of ['etd', 'eta', 'ops_loading_date']) {
+          if (d[k] && String(d[k]).length > 10) d[k] = String(d[k]).slice(0, 10)
+        }
+        setOpsData(d)
+      })
       .catch(() => setOpsData({}))
       .finally(() => setOpsLoading(false))
   }, [token, shipment?.id])
 
-  const loadTasks = useCallback(() => {
+  const loadAudit = useCallback(() => {
     if (!token || !shipment?.id) return
+    setAuditLoading(true)
+    setAuditError(null)
+    listActivitiesBySubject(token, { subjectType: 'shipment', subjectId: shipment.id, perPage: 100 })
+      .then((r) => setAuditRows(Array.isArray(r.data) ? r.data : []))
+      .catch((err) => {
+        setAuditRows([])
+        setAuditError(err.message || t('shipments.ops.auditLoadError'))
+      })
+      .finally(() => setAuditLoading(false))
+  }, [token, shipment?.id, t])
+
+  const loadTasks = useCallback(() => {
+    if (!token || !shipment?.id) return Promise.resolve()
     setTasksLoading(true)
-    getShipmentTasks(token, shipment.id)
-      .then(res => setTasks(Array.isArray(res.data) ? res.data : []))
+    return getShipmentTasks(token, shipment.id)
+      .then((res) =>
+        setTasks((Array.isArray(res.data) ? res.data : []).map(normalizeShipmentOperationTask))
+      )
       .catch(() => setTasks([]))
       .finally(() => setTasksLoading(false))
   }, [token, shipment?.id])
+
+  const inlandVendorOptions = useMemo(
+    () => (Array.isArray(vendorOptions) ? vendorOptions.filter((v) => v.type === 'inland_transport') : []),
+    [vendorOptions],
+  )
+  const customsVendorOptions = useMemo(
+    () => (Array.isArray(vendorOptions) ? vendorOptions.filter((v) => v.type === 'customs_clearance') : []),
+    [vendorOptions],
+  )
+  const insuranceVendorOptions = useMemo(
+    () => (Array.isArray(vendorOptions) ? vendorOptions.filter((v) => v.type === 'insurance') : []),
+    [vendorOptions],
+  )
+  const otherPartyVendorOptions = useMemo(
+    () =>
+      Array.isArray(vendorOptions)
+        ? vendorOptions.filter((v) => v.type === 'other' || v.type === 'overseas_agent')
+        : [],
+    [vendorOptions],
+  )
+  const userNameById = useMemo(() => {
+    const map = {}
+    if (Array.isArray(userOptions)) {
+      userOptions.forEach((u) => {
+        map[String(u.id)] = u.name
+      })
+    }
+    return map
+  }, [userOptions])
 
   useEffect(() => {
     if (!open || detailTab !== 'notes' || !shipment?.id) {
@@ -215,11 +271,23 @@ export default function ShipmentDetailModal({
   }, [open])
 
   useEffect(() => {
-    if (open && detailTab === 'operations' && shipment?.id) {
-      loadOpsData()
+    if (!open || !shipment?.id || !(isOperations || isAdminRole)) return
+    const opsRelatedTabs = ['operations', 'audit_log', 'transport_instructions']
+    if (!opsRelatedTabs.includes(detailTab)) return
+    loadOpsData()
+    if (detailTab === 'operations') {
       loadTasks()
     }
-  }, [open, detailTab, shipment?.id, loadOpsData, loadTasks])
+  }, [open, detailTab, shipment?.id, isOperations, isAdminRole, loadOpsData, loadTasks])
+
+  useEffect(() => {
+    if (!open || detailTab !== 'audit_log' || !shipment?.id || !(isOperations || isAdminRole)) {
+      setAuditRows([])
+      setAuditError(null)
+      return
+    }
+    loadAudit()
+  }, [open, detailTab, shipment?.id, isOperations, isAdminRole, loadAudit])
 
   if (!open) return null
 
@@ -227,11 +295,16 @@ export default function ShipmentDetailModal({
     { id: 'info', label: t('shipments.tabs.info') },
     { id: 'tracking', label: t('shipments.tabs.tracking') },
     { id: 'notes', label: t('shipments.tabs.notes') },
-    // Only Operations users and Admin can see the Operations tab
     ...(isOperations || isAdminRole
-      ? [{ id: 'operations', label: t('shipments.tabs.operations') }]
+      ? [
+          { id: 'operations', label: t('shipments.tabs.operations') },
+          { id: 'audit_log', label: t('shipments.tabs.auditLog') },
+          { id: 'transport_instructions', label: t('shipments.tabs.transportInstructions') },
+        ]
       : []),
   ]
+
+  const canEditOps = isOperations || isAdminRole
 
   const clientLabel =
     shipment?.client?.company_name ?? shipment?.client?.name ?? shipment?.client_name ?? '—'
@@ -335,12 +408,38 @@ export default function ShipmentDetailModal({
     }
   }
 
+  const toggleServiceType = (typeId) => {
+    setOpsData((prev) => {
+      if (!prev) return prev
+      const cur = Array.isArray(prev.service_types) ? [...prev.service_types] : []
+      const has = cur.includes(typeId)
+      if (has && cur.length <= 1) return prev
+      if (has) return { ...prev, service_types: cur.filter((x) => x !== typeId) }
+      return { ...prev, service_types: [...cur, typeId] }
+    })
+  }
+
   const handleSaveOps = async () => {
     if (!token || !shipment?.id || !opsData) return
     setOpsSaving(true)
     setOpsError(null)
     try {
+      const types = Array.isArray(opsData.service_types) ? opsData.service_types : []
+      if (types.length === 0) {
+        setOpsError(t('shipments.ops.serviceTypeRequired'))
+        return
+      }
+      if (types.includes('inland_transport') && !String(opsData.transport_contractor_id || '').trim()) {
+        setOpsError(t('shipments.ops.inlandContractorRequired'))
+        return
+      }
+      if (types.includes('customs_clearance') && !String(opsData.customs_broker_id || '').trim()) {
+        setOpsError(t('shipments.ops.customsBrokerRequired'))
+        return
+      }
+
       await updateShipmentOperations(token, shipment.id, {
+        service_types: types,
         transport_contractor_id: opsData.transport_contractor_id || null,
         customs_broker_id: opsData.customs_broker_id || null,
         insurance_company_id: opsData.insurance_company_id || null,
@@ -348,16 +447,24 @@ export default function ShipmentDetailModal({
         cut_off_date: opsData.cut_off_date || null,
         etd: opsData.etd || null,
         eta: opsData.eta || null,
-        operations_status: opsData.operations_status || null,
+        ops_loading_date: opsData.ops_loading_date || null,
+        transport_instructions: opsData.transport_instructions ?? null,
+        operational_status_code: opsData.operational_status_code || null,
       })
-      
-      if (tasks.length > 0) {
-        await bulkUpdateShipmentTasks(token, shipment.id, tasks)
+
+      if (detailTab === 'operations' && tasks.length > 0) {
+        await bulkUpdateShipmentTasks(
+          token,
+          shipment.id,
+          tasks.map(serializeShipmentOperationTaskForApi)
+        )
       }
-      
+
       onOperationsSaved?.()
       loadOpsData()
-      loadTasks()
+      if (detailTab === 'operations') {
+        loadTasks()
+      }
     } catch (err) {
       setOpsError(err.message || t('shipments.ops.opsError'))
     } finally {
@@ -365,51 +472,8 @@ export default function ShipmentDetailModal({
     }
   }
 
-  const handleAddTask = async () => {
-    if (!token || !shipment?.id) return
-    try {
-      const newTask = {
-        name: t('shipments.ops.newTask') || 'New Task',
-        status: 'pending',
-        sort_order: tasks.length + 1
-      }
-      const res = await bulkUpdateShipmentTasks(token, shipment.id, [newTask])
-      setTasks(Array.isArray(res.data) ? res.data : [])
-    } catch (err) {
-      console.error('Failed to add task:', err)
-    }
-  }
-
-  const updateTask = async (taskId, field, value) => {
-    // Optimistic update
-    let updatedTaskObj = null
-    setTasks(prev => {
-      const next = prev.map(t => {
-        if (t.id === taskId) {
-          updatedTaskObj = { ...t, [field]: value }
-          return updatedTaskObj
-        }
-        return t
-      })
-      return next
-    })
-
-    // Immediate API call for better UX
-    if (!token || !shipment?.id) return
-    try {
-      // We wait a tick to ensure we have the updatedTaskObj if it was just created/found
-      if (updatedTaskObj) {
-        await bulkUpdateShipmentTasks(token, shipment.id, [updatedTaskObj])
-      }
-    } catch (err) {
-      console.error('Failed to update task:', err)
-      // On error, we might want to refresh from server
-      loadTasks()
-    }
-  }
-
   return (
-    <div className="client-detail-modal shipment-detail-modal--sd" role="dialog" aria-modal="true" aria-labelledby="shipment-detail-title">
+    <div className="client-detail-modal shipment-detail-modal--sd shipment-detail-modal--navy-header" role="dialog" aria-modal="true" aria-labelledby="shipment-detail-title">
       <div className="client-detail-modal__backdrop" onClick={onClose} />
       <div className="client-detail-modal__box client-detail-modal__box--form shipment-detail-modal-box">
         <header className="client-detail-modal__header client-detail-modal__header--form">
@@ -975,226 +1039,313 @@ export default function ShipmentDetailModal({
                 <p className="client-detail-modal__empty">{t('shipments.loading')}</p>
               ) : (
                 <div className="shipment-ops-tab">
-                  {!isOperations && !isAdminRole && (
-                    <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl flex items-center gap-3 text-blue-700 dark:text-blue-300">
-                      <ShieldAlert className="h-5 w-5" />
-                      <span className="text-sm font-medium">{t('shipments.ops.viewOnly')}</span>
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    {/* Operational Status Panel */}
-                    <div className="shipment-detail-card shipment-detail-card--ops-status col-span-1">
-                      <h3 className="shipment-detail-card__title flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-blue-500" />
-                        {t('shipments.ops.opsStatus')}
-                      </h3>
-                      <div className="p-4">
-                        <select
-                          className="clients-input w-full"
-                          value={opsData.operations_status || ''}
-                          onChange={e => setOpsData(prev => ({ ...prev, operations_status: e.target.value }))}
-                          disabled={!isOperations && !isAdminRole}
-                        >
-                          <option value="">{t('common.select')}</option>
-                          {opsStatusOptions.map(opt => (
-                            <option key={opt.id} value={opt.id}>
-                              {localizedStatusLabel(opt, i18n.language)}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Operational Dates Panel */}
-                    <div className="shipment-detail-card shipment-detail-card--dates col-span-2">
-                      <h3 className="shipment-detail-card__title flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-purple-500" />
-                        {t('shipments.ops.operationalDates')}
-                      </h3>
-                      <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div>
-                          <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">{t('shipments.ops.cutOffDate')}</label>
-                          <input
-                            type="date"
-                            lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
-                            className="clients-input w-full"
-                            value={opsData.cut_off_date || ''}
-                            onChange={e => setOpsData(prev => ({ ...prev, cut_off_date: e.target.value }))}
-                            disabled={!isOperations && !isAdminRole}
-                          />
-                        </div>
-                        <div>
-                          <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">{t('shipments.ops.etd')}</label>
-                          <input
-                            type="date"
-                            lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
-                            className="clients-input w-full"
-                            value={opsData.etd || ''}
-                            onChange={e => setOpsData(prev => ({ ...prev, etd: e.target.value }))}
-                            disabled={!isOperations && !isAdminRole}
-                          />
-                        </div>
-                        <div>
-                          <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">{t('shipments.ops.eta')}</label>
-                          <input
-                            type="date"
-                            lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
-                            className="clients-input w-full"
-                            value={opsData.eta || ''}
-                            onChange={e => setOpsData(prev => ({ ...prev, eta: e.target.value }))}
-                            disabled={!isOperations && !isAdminRole}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Vendors & Partners Panel */}
-                  <div className="shipment-detail-card mb-8">
-                    <h3 className="shipment-detail-card__title flex items-center gap-2">
-                      <User className="h-4 w-4 text-orange-500" />
-                      {t('shipments.ops.vendorsPartners')}
-                    </h3>
-                    <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                      {[
-                        { key: 'transport_contractor_id', label: t('shipments.ops.transportContractor') },
-                        { key: 'customs_broker_id', label: t('shipments.ops.customsBroker') },
-                        { key: 'insurance_company_id', label: t('shipments.ops.insuranceCompany') },
-                        { key: 'overseas_agent_id', label: t('shipments.ops.overseasAgent') },
-                      ].map(field => (
-                        <div key={field.key}>
-                          <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">{field.label}</label>
-                          <select
-                            className="clients-input w-full"
-                            value={opsData[field.key] || ''}
-                            onChange={e => setOpsData(prev => ({ ...prev, [field.key]: e.target.value }))}
-                            disabled={!isOperations && !isAdminRole}
-                          >
-                            <option value="">{t('shipments.optional')}</option>
-                            {vendorOptions.map(v => (
-                              <option key={v.id} value={v.id}>{v.name}</option>
-                            ))}
-                          </select>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Task Management Panel */}
-                  <div className="shipment-detail-card">
-                    <div className="shipment-detail-card__title flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                        {t('shipments.ops.taskManagement')}
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-sm font-medium bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-3 py-1 rounded-full">
-                          {t('shipments.ops.taskProgress', { 
-                            done: tasks.filter(t => t.status === 'done').length, 
-                            total: tasks.length 
-                          })}
-                        </div>
-                        {(isOperations || isAdminRole) && (
-                          <button
-                            type="button"
-                            onClick={handleAddTask}
-                            className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 underline flex items-center gap-1"
-                          >
-                            + {t('shipments.ops.addTask')}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm text-left border-collapse">
-                        <thead className="bg-gray-50 dark:bg-gray-800/50 text-gray-500 uppercase text-[10px] font-bold">
-                          <tr>
-                            <th className="px-4 py-3 w-10"></th>
-                            <th className="px-4 py-3">{t('shipments.sections.tasks')}</th>
-                            <th className="px-4 py-3">{t('shipments.ops.taskAssignee')}</th>
-                            <th className="px-4 py-3">{t('shipments.ops.taskDue')}</th>
-                            <th className="px-4 py-3">{t('shipments.ops.taskStatus')}</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                          {tasks.map(task => (
-                            <tr key={task.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
-                              <td className="px-4 py-3">
-                                <button
-                                  type="button"
-                                  disabled={!isOperations && !isAdminRole}
-                                  onClick={() => updateTask(task.id, 'status', task.status === 'done' ? 'pending' : 'done')}
-                                  className={`transition-colors ${task.status === 'done' ? 'text-emerald-500' : 'text-gray-300 dark:text-gray-600'}`}
-                                >
-                                  {task.status === 'done' ? <CheckCircle2 className="h-5 w-5" /> : <Circle className="h-5 w-5" />}
-                                </button>
-                              </td>
-                              <td className="px-4 py-3 font-medium text-gray-700 dark:text-gray-200">
+                  {(() => {
+                    const st = opsData.service_types || []
+                    const showInland = st.includes('inland_transport')
+                    const showCustoms = st.includes('customs_clearance')
+                    const showPartnersBlock = st.length > 0
+                    return (
+                      <>
+                        <div className="shipment-detail-card mb-6">
+                          <h3 className="shipment-detail-card__title">{t('shipments.ops.sectionServiceType')}</h3>
+                          <div className="p-4 shipment-ops-service-type-grid">
+                            {SERVICE_TYPE_IDS.map((id) => (
+                              <label key={id} className="shipment-ops-service-chip">
                                 <input
-                                  type="text"
-                                  className="clients-input py-1 w-full bg-transparent border-none focus:bg-white dark:focus:bg-gray-900"
-                                  value={task.name}
-                                  onChange={e => setTasks(prev => prev.map(t => t.id === task.id ? { ...t, name: e.target.value } : t))}
-                                  onBlur={e => updateTask(task.id, 'name', e.target.value)}
-                                  placeholder={t('shipments.ops.taskNamePlaceholder')}
-                                  disabled={!isOperations && !isAdminRole}
+                                  type="checkbox"
+                                  checked={st.includes(id)}
+                                  onChange={() => toggleServiceType(id)}
+                                  disabled={!canEditOps}
                                 />
-                              </td>
-                              <td className="px-4 py-3">
+                                <span>{t(`shipments.ops.serviceType.${id}`)}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+
+                        {showPartnersBlock ? (
+                          <div className="shipment-detail-card mb-6">
+                            <h3 className="shipment-detail-card__title">{t('shipments.ops.sectionVendorsPartners')}</h3>
+                            <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+                              {showInland ? (
+                                <div>
+                                  <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">
+                                    {t('shipments.ops.inlandTransportContractor')}
+                                    <span className="text-red-600 ms-0.5">*</span>
+                                  </label>
+                                  <select
+                                    className="clients-input w-full"
+                                    value={opsData.transport_contractor_id || ''}
+                                    onChange={(e) =>
+                                      setOpsData((prev) => ({ ...prev, transport_contractor_id: e.target.value }))
+                                    }
+                                    disabled={!canEditOps}
+                                    required={showInland}
+                                  >
+                                    <option value="">{t('common.select')}</option>
+                                    {inlandVendorOptions.map((v) => (
+                                      <option key={v.id} value={v.id}>
+                                        {v.name}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              ) : null}
+                              {showCustoms ? (
+                                <div>
+                                  <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">
+                                    {t('shipments.ops.customsBroker')}
+                                    <span className="text-red-600 ms-0.5">*</span>
+                                  </label>
+                                  <select
+                                    className="clients-input w-full"
+                                    value={opsData.customs_broker_id || ''}
+                                    onChange={(e) =>
+                                      setOpsData((prev) => ({ ...prev, customs_broker_id: e.target.value }))
+                                    }
+                                    disabled={!canEditOps}
+                                    required={showCustoms}
+                                  >
+                                    <option value="">{t('common.select')}</option>
+                                    {customsVendorOptions.map((v) => (
+                                      <option key={v.id} value={v.id}>
+                                        {v.name}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              ) : null}
+                              <div>
+                                <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">
+                                  {t('shipments.ops.insuranceCompany')}
+                                </label>
                                 <select
-                                  className="clients-input py-1 text-xs min-w-[120px]"
-                                  value={task.assigned_to_id || ''}
-                                  onChange={e => updateTask(task.id, 'assigned_to_id', e.target.value)}
-                                  disabled={!isOperations && !isAdminRole}
+                                  className="clients-input w-full"
+                                  value={opsData.insurance_company_id || ''}
+                                  onChange={(e) =>
+                                    setOpsData((prev) => ({ ...prev, insurance_company_id: e.target.value }))
+                                  }
+                                  disabled={!canEditOps}
                                 >
                                   <option value="">{t('shipments.optional')}</option>
-                                  {userOptions.map(u => (
-                                    <option key={u.id} value={u.id}>{u.name}</option>
+                                  {insuranceVendorOptions.map((v) => (
+                                    <option key={v.id} value={v.id}>
+                                      {v.name}
+                                    </option>
                                   ))}
                                 </select>
-                              </td>
-                              <td className="px-4 py-3">
-                                <input
-                                  type="date"
-                                  lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
-                                  className="clients-input py-1 text-xs"
-                                  value={task.due_date || ''}
-                                  onChange={e => updateTask(task.id, 'due_date', e.target.value)}
-                                  disabled={!isOperations && !isAdminRole}
-                                />
-                              </td>
-                              <td className="px-4 py-3">
+                              </div>
+                              <div>
+                                <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">
+                                  {t('shipments.ops.otherParty')}
+                                </label>
                                 <select
-                                  className={`clients-input py-1 text-xs font-semibold rounded-lg ${
-                                    task.status === 'done' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                                    task.status === 'in_progress' ? 'bg-orange-50 text-orange-700 border-orange-100' :
-                                    'bg-gray-50 text-gray-700 border-gray-100'
-                                  }`}
-                                  value={task.status}
-                                  onChange={e => updateTask(task.id, 'status', e.target.value)}
-                                  disabled={!isOperations && !isAdminRole}
+                                  className="clients-input w-full"
+                                  value={opsData.overseas_agent_id || ''}
+                                  onChange={(e) =>
+                                    setOpsData((prev) => ({ ...prev, overseas_agent_id: e.target.value }))
+                                  }
+                                  disabled={!canEditOps}
                                 >
-                                  <option value="pending">{t('shipments.ops.taskPending')}</option>
-                                  <option value="in_progress">{t('shipments.ops.taskInProgress')}</option>
-                                  <option value="done">{t('shipments.ops.taskDone')}</option>
+                                  <option value="">{t('shipments.optional')}</option>
+                                  {otherPartyVendorOptions.map((v) => (
+                                    <option key={v.id} value={v.id}>
+                                      {v.name}
+                                    </option>
+                                  ))}
                                 </select>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
+                              </div>
+                            </div>
+                          </div>
+                        ) : null}
 
-                  {(isOperations || isAdminRole) && (
-                    <div className="mt-8 flex flex-col items-end gap-3">
-                      {opsError && <p className="text-sm text-red-600 font-medium">{opsError}</p>}
+                        <div className="shipment-detail-card mb-6">
+                          <h3 className="shipment-detail-card__title">{t('shipments.ops.sectionKeyDates')}</h3>
+                          <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div>
+                              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">
+                                {t('shipments.ops.cutOffDate')}
+                              </label>
+                              <input
+                                type="date"
+                                lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
+                                className="clients-input w-full"
+                                value={opsData.cut_off_date || ''}
+                                onChange={(e) => setOpsData((prev) => ({ ...prev, cut_off_date: e.target.value }))}
+                                disabled={!canEditOps}
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">
+                                {t('shipments.ops.eta')}
+                              </label>
+                              <input
+                                type="date"
+                                lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
+                                className="clients-input w-full"
+                                value={opsData.eta || ''}
+                                onChange={(e) => setOpsData((prev) => ({ ...prev, eta: e.target.value }))}
+                                disabled={!canEditOps}
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">
+                                {t('shipments.ops.etd')}
+                              </label>
+                              <input
+                                type="date"
+                                lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
+                                className="clients-input w-full"
+                                value={opsData.etd || ''}
+                                onChange={(e) => setOpsData((prev) => ({ ...prev, etd: e.target.value }))}
+                                disabled={!canEditOps}
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">
+                                {t('shipments.ops.loadingDate')}
+                              </label>
+                              <input
+                                type="date"
+                                lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
+                                className="clients-input w-full"
+                                value={opsData.ops_loading_date || ''}
+                                onChange={(e) =>
+                                  setOpsData((prev) => ({ ...prev, ops_loading_date: e.target.value }))
+                                }
+                                disabled={!canEditOps}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="shipment-detail-card shipment-detail-card--ops-status mb-6">
+                          <h3 className="shipment-detail-card__title">{t('shipments.ops.sectionOperationalStatus')}</h3>
+                          <div className="p-4">
+                            <select
+                              className="clients-input w-full"
+                              value={opsData.operational_status_code || ''}
+                              onChange={(e) =>
+                                setOpsData((prev) => ({
+                                  ...prev,
+                                  operational_status_code: e.target.value || null,
+                                }))
+                              }
+                              disabled={!canEditOps}
+                            >
+                              <option value="">{t('common.select')}</option>
+                              {OPERATIONAL_PHASE_ORDER.map((code) => (
+                                <option key={code} value={code}>
+                                  {t(`shipments.ops.phase.${code}`)}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        <ShipmentOperationsTasksPanel
+                          token={token}
+                          shipmentId={shipment.id}
+                          tasks={tasks}
+                          setTasks={setTasks}
+                          canEditOps={canEditOps}
+                          currentUserId={currentUserId}
+                          refreshTasks={loadTasks}
+                        />
+
+                        {canEditOps ? (
+                          <div className="mt-8 flex flex-col items-end gap-3">
+                            {opsError ? <p className="text-sm text-red-600 font-medium">{opsError}</p> : null}
+                            <button
+                              type="button"
+                              onClick={handleSaveOps}
+                              disabled={opsSaving}
+                              className="client-detail-modal__btn client-detail-modal__btn--primary px-8 flex items-center gap-2 shadow-lg shadow-blue-500/20"
+                            >
+                              {opsSaving ? (
+                                <>
+                                  <LoaderDots className="h-4 w-4" />
+                                  {t('shipments.ops.savingOps')}
+                                </>
+                              ) : (
+                                <>
+                                  <Save className="h-4 w-4" aria-hidden />
+                                  {t('shipments.ops.saveOps')}
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        ) : null}
+                      </>
+                    )
+                  })()}
+                </div>
+              )}
+            </section>
+          )}
+
+          {(isOperations || isAdminRole) && detailTab === 'audit_log' && (
+            <section className="client-detail-modal__section">
+              <h3 className="client-detail-modal__section-title">{t('shipments.ops.auditLogTitle')}</h3>
+              {auditError ? (
+                <p className="text-sm text-red-600 dark:text-red-400 mb-3" role="alert">
+                  {auditError}
+                </p>
+              ) : null}
+              {auditLoading ? (
+                <p className="client-detail-modal__empty">{t('shipments.loading')}</p>
+              ) : auditRows.length === 0 ? (
+                <p className="client-detail-modal__empty">{t('shipments.ops.auditEmpty')}</p>
+              ) : (
+                <ul className="shipment-audit-log space-y-2">
+                  {auditRows.map((row) => (
+                    <li
+                      key={row.id}
+                      className="shipment-audit-log__row rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 p-3 text-sm"
+                    >
+                      <div className="flex flex-wrap justify-between gap-2 text-xs text-gray-500 dark:text-gray-400">
+                        <span className="font-mono">{row.event}</span>
+                        <span>{formatDate(row.created_at, i18n.language)}</span>
+                      </div>
+                      <div className="mt-1 text-xs text-gray-600 dark:text-gray-300">
+                        {t('shipments.ops.auditBy')}:{' '}
+                        {row.causer_id != null ? userNameById[String(row.causer_id)] || `#${row.causer_id}` : '—'}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          )}
+
+          {(isOperations || isAdminRole) && detailTab === 'transport_instructions' && (
+            <section className="client-detail-modal__section">
+              {opsLoading || !opsData ? (
+                <p className="client-detail-modal__empty">{t('shipments.loading')}</p>
+              ) : (
+                <div className="shipment-ops-transport-tab">
+                  <h3 className="client-detail-modal__section-title">{t('shipments.ops.transportInstructionsTitle')}</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                    {t('shipments.ops.transportInstructionsHint')}
+                  </p>
+                  <textarea
+                    rows={10}
+                    className="clients-input w-full mb-4"
+                    value={opsData.transport_instructions || ''}
+                    onChange={(e) =>
+                      setOpsData((prev) => ({ ...prev, transport_instructions: e.target.value }))
+                    }
+                    disabled={!canEditOps}
+                    placeholder={t('shipments.ops.transportInstructionsPlaceholder')}
+                  />
+                  {canEditOps ? (
+                    <div className="flex flex-col items-end gap-3">
+                      {opsError ? <p className="text-sm text-red-600 font-medium">{opsError}</p> : null}
                       <button
                         type="button"
                         onClick={handleSaveOps}
                         disabled={opsSaving}
-                        className="client-detail-modal__btn client-detail-modal__btn--primary px-8 flex items-center gap-2 shadow-lg shadow-blue-500/20"
+                        className="client-detail-modal__btn client-detail-modal__btn--primary px-8 inline-flex items-center gap-2"
                       >
                         {opsSaving ? (
                           <>
@@ -1203,17 +1354,18 @@ export default function ShipmentDetailModal({
                           </>
                         ) : (
                           <>
-                            <Save className="h-4 w-4" />
+                            <Save className="h-4 w-4" aria-hidden />
                             {t('shipments.ops.saveOps')}
                           </>
                         )}
                       </button>
                     </div>
-                  )}
+                  ) : null}
                 </div>
               )}
             </section>
           )}
+
           </div>
         </div>
 

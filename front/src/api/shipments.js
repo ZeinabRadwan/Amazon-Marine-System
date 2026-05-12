@@ -355,6 +355,32 @@ export async function getShipmentTasks(token, shipmentId) {
   return json
 }
 
+export async function getShipmentTaskAssignees(token, shipmentId) {
+  const res = await apiFetch(`${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}/tasks/assignees`, {
+    headers: authHeaders(token),
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(json.message || json.error || `Failed to load task assignees (${res.status})`)
+  }
+  return json
+}
+
+export async function deleteShipmentTask(token, shipmentId, taskId) {
+  const res = await apiFetch(
+    `${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}/tasks/${encodeURIComponent(taskId)}`,
+    {
+      method: 'DELETE',
+      headers: authHeaders(token),
+    }
+  )
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(json.message || json.error || `Failed to delete task (${res.status})`)
+  }
+  return json
+}
+
 export async function bulkUpdateShipmentTasks(token, shipmentId, tasks) {
   const res = await apiFetch(`${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}/tasks`, {
     method: 'PUT',

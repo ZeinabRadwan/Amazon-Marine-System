@@ -120,7 +120,7 @@ class ActivityController extends Controller
             $perPage = 100;
         }
 
-        $paginator = $query->paginate($perPage);
+        $paginator = $query->with('causer')->paginate($perPage);
 
         return response()->json([
             'data' => $paginator->getCollection()->map(fn (Activity $a) => [
@@ -131,6 +131,9 @@ class ActivityController extends Controller
                 'subject_type' => $a->subject_type,
                 'subject_id' => $a->subject_id,
                 'causer_id' => $a->causer_id,
+                'causer' => $a->relationLoaded('causer') && $a->causer
+                    ? ['id' => $a->causer->id, 'name' => $a->causer->name]
+                    : null,
                 'properties' => $a->properties,
                 'created_at' => $a->created_at?->toIso8601String(),
             ]),

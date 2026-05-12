@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\ActivityLogger;
 use App\Services\ExecutionReminderResolver;
 use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -48,10 +49,14 @@ class ShipmentTaskController extends Controller
         }
 
         $taskId = $task->id;
+        $taskName = $task->name;
         $task->delete();
 
         ActivityLogger::log('shipment.operation_task_deleted', $shipment, [
             'task_id' => $taskId,
+            'task_name' => $taskName,
+            'old_value' => $taskName,
+            'new_value' => '',
         ]);
 
         return response()->json([
@@ -114,6 +119,9 @@ class ShipmentTaskController extends Controller
                 $task->shipment_id = $shipment->id;
             }
 
+            $isNew = ! $task->exists;
+            $beforeSnapshot = $task->exists ? $this->taskAuditSnapshot($task) : [];
+
             $task->name = $taskData['name'];
             $task->sort_order = (int) $taskData['sort_order'];
             $task->assigned_to_id = $taskData['assigned_to_id'] ?? null;
@@ -136,16 +144,148 @@ class ShipmentTaskController extends Controller
             $task->save();
             $result[] = $task;
 
+            $this->logShipmentOperationTaskLifecycle($shipment, $task, $isNew, $beforeSnapshot);
             $this->dispatchTaskReminderIfNeeded($task->fresh());
         }
-
-        ActivityLogger::log('shipment.tasks_updated', $shipment, [
-            'task_count' => count($result),
-        ]);
 
         return response()->json([
             'data' => $shipment->tasks()->with(['assignedTo:id,name,email'])->get(),
         ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function taskAuditSnapshot(ShipmentOperationTask $task): array
+    {
+        return $task->only([
+            'name',
+            'assigned_to_id',
+            'status',
+            'priority',
+            'due_date',
+            'execution_at',
+            'reminder_at',
+            'reminder_before_value',
+            'reminder_before_unit',
+            'sort_order',
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $before
+     */
+    private function logShipmentOperationTaskLifecycle(Shipment $shipment, ShipmentOperationTask $task, bool $isNew, array $before): void
+    {
+        $after = $this->taskAuditSnapshot($task);
+
+        if ($isNew) {
+            ActivityLogger::log('shipment.operation_task_created', $shipment, [
+                'task_id' => $task->id,
+                'task_name' => $task->name,
+                'old_value' => '',
+                'new_value' => $task->name,
+            ]);
+
+            return;
+        }
+
+        $oldAssignee = $before['assigned_to_id'] ?? null;
+        $newAssignee = $after['assigned_to_id'] ?? null;
+        if ((int) ($oldAssignee ?? 0) !== (int) ($newAssignee ?? 0)) {
+            ActivityLogger::log('shipment.operation_task_delegated', $shipment, [
+                'task_id' => $task->id,
+                'task_name' => $task->name,
+                'old_value' => $this->assigneeDisplayName($oldAssignee !== null ? (int) $oldAssignee : null),
+                'new_value' => $this->assigneeDisplayName($newAssignee !== null ? (int) $newAssignee : null),
+                'assigned_from_id' => $oldAssignee,
+                'assigned_to_id' => $newAssignee,
+            ]);
+        }
+
+        $oldStatus = $before['status'] ?? null;
+        $newStatus = $after['status'] ?? null;
+        if ($oldStatus !== 'done' && $newStatus === 'done') {
+            ActivityLogger::log('shipment.operation_task_completed', $shipment, [
+                'task_id' => $task->id,
+                'task_name' => $task->name,
+                'old_value' => (string) ($oldStatus ?? ''),
+                'new_value' => 'done',
+            ]);
+        } elseif ($oldStatus === 'done' && $newStatus !== 'done') {
+            ActivityLogger::log('shipment.operation_task_reopened', $shipment, [
+                'task_id' => $task->id,
+                'task_name' => $task->name,
+                'old_value' => 'done',
+                'new_value' => (string) ($newStatus ?? ''),
+            ]);
+        }
+
+        $otherKeys = ['name', 'status', 'priority', 'due_date', 'execution_at', 'reminder_at', 'reminder_before_value', 'reminder_before_unit', 'sort_order'];
+        $excludeStatusFromUpdated = ($oldStatus !== 'done' && $newStatus === 'done')
+            || ($oldStatus === 'done' && $newStatus !== 'done');
+
+        $changes = [];
+        foreach ($otherKeys as $key) {
+            if ($key === 'status' && $excludeStatusFromUpdated) {
+                continue;
+            }
+            $v0 = $before[$key] ?? null;
+            $v1 = $after[$key] ?? null;
+            if ($this->scalarForTaskDiff($v0) !== $this->scalarForTaskDiff($v1)) {
+                $changes[$key] = ['from' => $v0, 'to' => $v1];
+            }
+        }
+
+        if ($changes !== []) {
+            ActivityLogger::log('shipment.operation_task_updated', $shipment, [
+                'task_id' => $task->id,
+                'task_name' => $task->name,
+                'changes' => $changes,
+                'old_value' => $this->summarizeTaskChanges($changes, 'from'),
+                'new_value' => $this->summarizeTaskChanges($changes, 'to'),
+            ]);
+        }
+    }
+
+    private function assigneeDisplayName(?int $userId): string
+    {
+        if ($userId === null || $userId === 0) {
+            return '—';
+        }
+
+        $name = User::query()->whereKey($userId)->value('name');
+
+        return $name ?: '#'.$userId;
+    }
+
+    private function scalarForTaskDiff(mixed $v): string
+    {
+        if ($v === null) {
+            return '';
+        }
+        if ($v instanceof CarbonInterface) {
+            return $v->toIso8601String();
+        }
+        if (is_array($v)) {
+            return json_encode($v);
+        }
+
+        return (string) $v;
+    }
+
+    /**
+     * @param  array<string, array{from: mixed, to: mixed}>  $changes
+     */
+    private function summarizeTaskChanges(array $changes, string $side): string
+    {
+        $parts = [];
+        foreach ($changes as $key => $pair) {
+            $val = $pair[$side] ?? null;
+            $parts[] = $key.': '.$this->scalarForTaskDiff($val);
+        }
+
+        return implode('; ', $parts);
     }
 
     private function assertOperationsAssignee(int $userId): void

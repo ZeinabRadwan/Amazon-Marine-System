@@ -3952,3 +3952,152 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Shipment detail modal — operations module (header + service type chips) */
+.shipment-detail-modal--navy-header .client-detail-modal__header.client-detail-modal__header--form {
+  background: #0f2340 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.shipment-detail-modal--navy-header .client-detail-modal__header--form .client-detail-modal__title,
+.shipment-detail-modal--navy-header .client-detail-modal__header--form .client-detail-modal__subtitle {
+  color: #f8fafc;
+}
+
+.shipment-detail-modal--navy-header .client-detail-modal__close {
+  color: rgba(248, 250, 252, 0.85);
+}
+
+.shipment-ops-service-type-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.shipment-ops-service-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--form-divider, #e5e7eb);
+  background: color-mix(in srgb, var(--form-bg, #fff) 96%, var(--app-bg, #f6f8fb));
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+
+[data-theme='dark'] .shipment-ops-service-chip,
+.dark .shipment-ops-service-chip {
+  border-color: var(--form-divider, #374151);
+  background: var(--form-input-bg, #111827);
+}
+
+.shipment-ops-service-chip input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--form-primary, #0039c5);
+}
+
+.shipment-audit-log__row {
+  word-break: break-word;
+}
+
+/* Shipment operations — task management (financial-style table + delegate modal) */
+.shipment-op-tasks-card .shipment-detail-card__title {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--form-divider, #e5e7eb);
+}
+
+.shipment-op-task-table-wrap {
+  background: var(--form-bg, #fff);
+}
+
+[data-theme='dark'] .shipment-op-task-table-wrap,
+.dark .shipment-op-task-table-wrap {
+  background: var(--form-input-bg, #111827);
+}
+
+.shipment-op-task-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.shipment-op-task-th {
+  text-align: start;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--form-text, #1c2030) 55%, transparent);
+  background: color-mix(in srgb, var(--form-bg, #fff) 88%, var(--root-bg, #f3f4f6));
+  border-bottom: 1px solid var(--form-divider, #e5e7eb);
+  white-space: nowrap;
+}
+
+.shipment-op-task-th--actions {
+  text-align: end;
+  min-width: 140px;
+}
+
+.shipment-op-task-tr {
+  border-bottom: 1px solid color-mix(in srgb, var(--form-divider, #e5e7eb) 85%, transparent);
+}
+
+.shipment-op-task-tr:hover {
+  background: color-mix(in srgb, var(--form-primary, #0039c5) 4%, var(--form-bg, #fff));
+}
+
+.shipment-op-task-td {
+  padding: 0.55rem 0.85rem;
+  vertical-align: middle;
+  color: var(--form-text, #1c2030);
+}
+
+[data-theme='dark'] .shipment-op-task-th,
+.dark .shipment-op-task-th {
+  background: color-mix(in srgb, var(--form-input-bg, #111827) 92%, #000);
+  color: color-mix(in srgb, var(--form-text, #e5e7eb) 60%, transparent);
+}
+
+[data-theme='dark'] .shipment-op-task-tr:hover,
+.dark .shipment-op-task-tr:hover {
+  background: color-mix(in srgb, var(--form-primary, #60a5fa) 8%, var(--form-input-bg, #111827));
+}
+
+.shipment-op-delegate-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.shipment-op-delegate-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.shipment-op-delegate-modal {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 420px;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: var(--form-bg, #fff);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.shipment-op-delegate-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: #0f2340;
+}
