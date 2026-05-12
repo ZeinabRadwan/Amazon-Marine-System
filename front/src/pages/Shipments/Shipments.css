@@ -4161,3 +4161,158 @@
   padding: 0.75rem 1rem;
   background: #0f2340;
 }
+
+/* Operations tab: task modal above shipment detail (z-index) */
+.shipment-op-tasks-root-modal {
+  z-index: 13060;
+}
+
+.shipment-op-nested-modal {
+  z-index: 13120;
+}
+
+.shipment-op-tasks-modal-shell {
+  overflow-y: auto;
+}
+
+.shipment-op-task-th--narrow,
+.shipment-op-task-td--narrow {
+  width: 2.25rem;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.shipment-op-task-checkbox {
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}
+
+.shipment-op-task-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.125rem;
+}
+
+.shipment-op-task-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem;
+  margin: 0;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  border-radius: 0.25rem;
+  line-height: 0;
+}
+
+.shipment-op-task-icon-btn:hover:not(:disabled) {
+  color: #2563eb;
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.shipment-op-task-icon-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.shipment-op-task-icon-btn--danger:hover:not(:disabled) {
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.08);
+}
+
+.shipment-op-task-tr--pri-urgent td {
+  box-shadow: inset 3px 0 0 #dc2626;
+}
+
+.shipment-op-task-tr--pri-high td {
+  box-shadow: inset 3px 0 0 #ea580c;
+}
+
+.shipment-op-task-tr--pri-medium td {
+  box-shadow: inset 3px 0 0 #ca8a04;
+}
+
+.shipment-op-task-tr--pri-low td {
+  box-shadow: inset 3px 0 0 #16a34a;
+}
+
+.shipment-op-task-table .shipment-op-task-th,
+.shipment-op-task-table .shipment-op-task-td {
+  padding: 0.35rem 0.5rem;
+  vertical-align: middle;
+}
+
+/* Transport Instructions tab — single compact layout */
+.shipment-ti-single {
+  max-width: 52rem;
+}
+
+.shipment-ti-row--2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+
+@media (max-width: 640px) {
+  .shipment-ti-row--2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.shipment-ti-group {
+  padding-top: 0.45rem;
+  margin-top: 0.45rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.shipment-ti-group-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  margin-bottom: 0.35rem;
+}
+
+.dark .shipment-ti-group-label {
+  color: #94a3b8;
+}
+
+.shipment-ti-combined-value {
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.35rem;
+  background: rgba(241, 245, 249, 0.9);
+}
+
+.dark .shipment-ti-combined-value {
+  background: rgba(30, 41, 59, 0.6);
+}
+
+.shipment-ti-arrival-grid--3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+@media (max-width: 480px) {
+  .shipment-ti-arrival-grid--3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.shipment-ti-generator-block {
+  margin-top: 0.25rem;
+}
+
+.shipment-ti-pdf-btn {
+  margin-top: 0.5rem;
+  background: #0f2340;
+}
+
+.shipment-ti-pdf-btn:hover:not(:disabled) {
+  background: #0c1b32;
+}

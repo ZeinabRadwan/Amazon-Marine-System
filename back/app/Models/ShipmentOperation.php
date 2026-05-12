@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ShipmentOperation extends Model
@@ -20,6 +20,8 @@ class ShipmentOperation extends Model
         'customs_broker_id',
         'insurance_company_id',
         'overseas_agent_id',
+        'other_party_name',
+        'other_party_role',
         'cut_off_date',
         'etd',
         'eta',

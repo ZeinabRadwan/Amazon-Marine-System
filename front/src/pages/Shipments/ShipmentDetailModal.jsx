@@ -21,6 +21,7 @@ import {
   getShipmentTrackingUpdates,
   postShipmentTrackingUpdate,
   getShipmentOperations,
+  updateShipment,
   updateShipmentOperations,
   getShipmentTasks,
   bulkUpdateShipmentTasks,
@@ -32,7 +33,8 @@ import ShipmentStatusBadge from '../../components/ShipmentStatusBadge'
 import { getPipelineStepIndex, PIPELINE_STEP_KEYS } from './shipmentPipeline'
 import { listActivitiesBySubject } from '../../api/activities'
 import { SERVICE_TYPE_IDS, OPERATIONAL_PHASE_ORDER } from './shipmentOpsConstants'
-import ShipmentOperationsTasksPanel from './ShipmentOperationsTasksPanel'
+import ShipmentOperationsTasksPanel, { ShipmentOperationsTasksSummaryHeader } from './ShipmentOperationsTasksPanel'
+import { isoToDdMmYyyy, parseDdMmYyyyToIso } from './opsDateDisplay'
 import { normalizeShipmentOperationTask, serializeShipmentOperationTaskForApi } from './shipmentOperationTaskPayload'
 import { formatShipmentAuditRow } from './shipmentAuditPresentation'
 import { listSDFormBookingConfirmations, downloadSDFormBookingConfirmation } from '../../api/sdForms'
@@ -97,6 +99,41 @@ function shipmentClientDisplayName(shipment) {
   return shipment?.client?.company_name ?? shipment?.client?.name ?? shipment?.client_name ?? '—'
 }
 
+function OpsDateDdMmYyyyField({ label, isoValue, onCommit, disabled }) {
+  const [text, setText] = useState(() => isoToDdMmYyyy(isoValue))
+  useEffect(() => {
+    setText(isoToDdMmYyyy(isoValue))
+  }, [isoValue])
+  return (
+    <div>
+      <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">{label}</label>
+      <input
+        type="text"
+        inputMode="numeric"
+        autoComplete="off"
+        placeholder="DD/MM/YYYY"
+        className="clients-input w-full font-mono text-sm"
+        value={text}
+        disabled={disabled}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={() => {
+          const raw = text.trim()
+          if (raw === '') {
+            onCommit(null)
+            return
+          }
+          const parsed = parseDdMmYyyyToIso(raw)
+          if (parsed === null) {
+            setText(isoToDdMmYyyy(isoValue))
+            return
+          }
+          onCommit(parsed)
+        }}
+      />
+    </div>
+  )
+}
+
 export default function ShipmentDetailModal({
   open,
   shipment,
@@ -117,6 +154,7 @@ export default function ShipmentDetailModal({
   currentUserId = null,
   canAddShipmentNote = false,
   canManageAllShipmentNotes = false,
+  shippingLinesList = [],
 }) {
   const { t, i18n } = useTranslation()
   const token = getStoredToken()
@@ -152,6 +190,16 @@ export default function ShipmentDetailModal({
   const [opsBookingFiles, setOpsBookingFiles] = useState([])
   const [opsBookingFilesLoading, setOpsBookingFilesLoading] = useState(false)
   const [tiPdfLoading, setTiPdfLoading] = useState(false)
+  const [tiBookingDraft, setTiBookingDraft] = useState({ booking_number: '', shipping_line_id: '' })
+  const [opsTasksModalOpen, setOpsTasksModalOpen] = useState(false)
+
+  useEffect(() => {
+    if (!shipment?.id) return
+    setTiBookingDraft({
+      booking_number: shipment.booking_number || '',
+      shipping_line_id: shipment.shipping_line_id != null ? String(shipment.shipping_line_id) : '',
+    })
+  }, [shipment?.id, shipment?.booking_number, shipment?.shipping_line_id])
 
   const loadNotes = useCallback(() => {
     if (!token || !shipment?.id) return
@@ -195,6 +243,8 @@ export default function ShipmentDetailModal({
       .catch(() =>
         setOpsData({
           service_types: ['sea_freight'],
+          other_party_name: '',
+          other_party_role: '',
           transport_instruction_profile: mergeTransportInstructionProfileFromApi(null),
         })
       )
@@ -250,14 +300,6 @@ export default function ShipmentDetailModal({
     () => (Array.isArray(vendorOptions) ? vendorOptions.filter((v) => v.type === 'insurance') : []),
     [vendorOptions],
   )
-  const otherPartyVendorOptions = useMemo(
-    () =>
-      Array.isArray(vendorOptions)
-        ? vendorOptions.filter((v) => v.type === 'other' || v.type === 'overseas_agent')
-        : [],
-    [vendorOptions],
-  )
-
   useEffect(() => {
     if (!open || detailTab !== 'notes' || !shipment?.id) {
       setNotes([])
@@ -290,8 +332,13 @@ export default function ShipmentDetailModal({
       setOpsError(null)
       setOpsBookingFiles([])
       setTiPdfLoading(false)
+      setOpsTasksModalOpen(false)
     }
   }, [open])
+
+  useEffect(() => {
+    if (detailTab !== 'operations') setOpsTasksModalOpen(false)
+  }, [detailTab])
 
   useEffect(() => {
     if (!open || !shipment?.id || !(isOperations || isAdminRole)) return
@@ -481,50 +528,54 @@ export default function ShipmentDetailModal({
     })
   }
 
+  const commitOperationsToApi = useCallback(async () => {
+    if (!token || !shipment?.id || !opsData) {
+      throw new Error(t('shipments.ops.opsError'))
+    }
+    const types = Array.isArray(opsData.service_types) ? opsData.service_types : []
+    if (types.length === 0) {
+      throw new Error(t('shipments.ops.serviceTypeRequired'))
+    }
+    if (types.includes('inland_transport') && !String(opsData.transport_contractor_id || '').trim()) {
+      throw new Error(t('shipments.ops.inlandContractorRequired'))
+    }
+    if (types.includes('customs_clearance') && !String(opsData.customs_broker_id || '').trim()) {
+      throw new Error(t('shipments.ops.customsBrokerRequired'))
+    }
+
+    await updateShipmentOperations(token, shipment.id, {
+      service_types: types,
+      transport_contractor_id: opsData.transport_contractor_id || null,
+      customs_broker_id: opsData.customs_broker_id || null,
+      insurance_company_id: opsData.insurance_company_id || null,
+      other_party_name: opsData.other_party_name?.trim() || null,
+      other_party_role: opsData.other_party_role?.trim() || null,
+      cut_off_date: opsData.cut_off_date || null,
+      etd: opsData.etd || null,
+      eta: opsData.eta || null,
+      ops_loading_date: opsData.ops_loading_date || null,
+      transport_instructions: opsData.transport_instructions ?? null,
+      transport_instruction_profile: buildTransportInstructionProfilePayload(
+        opsData.transport_instruction_profile || {}
+      ),
+      operational_status_code: opsData.operational_status_code || null,
+    })
+
+    if (detailTab === 'operations' && tasks.length > 0) {
+      await bulkUpdateShipmentTasks(
+        token,
+        shipment.id,
+        tasks.map(serializeShipmentOperationTaskForApi)
+      )
+    }
+  }, [token, shipment?.id, opsData, detailTab, tasks, t])
+
   const handleSaveOps = async () => {
     if (!token || !shipment?.id || !opsData) return
     setOpsSaving(true)
     setOpsError(null)
     try {
-      const types = Array.isArray(opsData.service_types) ? opsData.service_types : []
-      if (types.length === 0) {
-        setOpsError(t('shipments.ops.serviceTypeRequired'))
-        return
-      }
-      if (types.includes('inland_transport') && !String(opsData.transport_contractor_id || '').trim()) {
-        setOpsError(t('shipments.ops.inlandContractorRequired'))
-        return
-      }
-      if (types.includes('customs_clearance') && !String(opsData.customs_broker_id || '').trim()) {
-        setOpsError(t('shipments.ops.customsBrokerRequired'))
-        return
-      }
-
-      await updateShipmentOperations(token, shipment.id, {
-        service_types: types,
-        transport_contractor_id: opsData.transport_contractor_id || null,
-        customs_broker_id: opsData.customs_broker_id || null,
-        insurance_company_id: opsData.insurance_company_id || null,
-        overseas_agent_id: opsData.overseas_agent_id || null,
-        cut_off_date: opsData.cut_off_date || null,
-        etd: opsData.etd || null,
-        eta: opsData.eta || null,
-        ops_loading_date: opsData.ops_loading_date || null,
-        transport_instructions: opsData.transport_instructions ?? null,
-        transport_instruction_profile: buildTransportInstructionProfilePayload(
-          opsData.transport_instruction_profile || {}
-        ),
-        operational_status_code: opsData.operational_status_code || null,
-      })
-
-      if (detailTab === 'operations' && tasks.length > 0) {
-        await bulkUpdateShipmentTasks(
-          token,
-          shipment.id,
-          tasks.map(serializeShipmentOperationTaskForApi)
-        )
-      }
-
+      await commitOperationsToApi()
       onOperationsSaved?.()
       loadOpsData()
       if (detailTab === 'operations') {
@@ -537,49 +588,90 @@ export default function ShipmentDetailModal({
     }
   }
 
-  const handleTransportInstructionPdf = async (mode) => {
+  const handleTransportInstructionSaveAndPdf = async () => {
     if (!token || !shipment?.id || !opsData) return
     setTiPdfLoading(true)
     setOpsError(null)
     try {
+      const tip = opsData.transport_instruction_profile || {}
+      if (!String(tiBookingDraft.booking_number || '').trim()) {
+        throw new Error(t('shipments.transportInstructions.validationBooking'))
+      }
+      const sid = Number(tiBookingDraft.shipping_line_id)
+      if (!Number.isFinite(sid) || sid <= 0) {
+        throw new Error(t('shipments.transportInstructions.validationShippingLine'))
+      }
+      if (
+        shipment.container_count == null ||
+        String(shipment.container_count).trim() === '' ||
+        !String(shipment.container_type || '').trim() ||
+        !String(shipment.container_size || '').trim()
+      ) {
+        throw new Error(t('shipments.transportInstructions.validationContainer'))
+      }
+      if (!tip.customer_arrival_at || String(tip.customer_arrival_at).trim() === '') {
+        throw new Error(t('shipments.transportInstructions.validationArrival'))
+      }
+      if (!String(tip.loading_place_name || '').trim()) {
+        throw new Error(t('shipments.transportInstructions.validationPlaceName'))
+      }
+      if (!String(tip.loading_address || '').trim()) {
+        throw new Error(t('shipments.transportInstructions.validationAddress'))
+      }
+      if (!String(tip.loading_contact_name || '').trim()) {
+        throw new Error(t('shipments.transportInstructions.validationContactName'))
+      }
+      if (!String(tip.loading_contact_phone || '').trim()) {
+        throw new Error(t('shipments.transportInstructions.validationContactPhone'))
+      }
+      if (!['certificate', 'bill_of_lading', 'manifest'].includes(tip.customs_document_type)) {
+        throw new Error(t('shipments.transportInstructions.validationDocType'))
+      }
+      if (tip.generator === 'yes' && !String(tip.generator_temperature || '').trim()) {
+        throw new Error(t('shipments.transportInstructions.validationTemperature'))
+      }
+
+      await updateShipment(token, shipment.id, {
+        booking_number: tiBookingDraft.booking_number.trim(),
+        shipping_line_id: sid,
+      })
+
+      await commitOperationsToApi()
+
       const profile = buildTransportInstructionProfilePayload(opsData.transport_instruction_profile || {})
       const { blob, filename } = await postTransportInstructionsPdf(token, shipment.id, profile)
       const url = URL.createObjectURL(blob)
-      if (mode === 'download') {
-        const a = document.createElement('a')
-        a.href = url
-        a.download = filename
-        document.body.appendChild(a)
-        a.click()
-        a.remove()
-        URL.revokeObjectURL(url)
-      } else if (mode === 'print') {
-        const w = window.open(url, '_blank', 'noopener,noreferrer')
-        if (w) {
-          const tryPrint = () => {
-            try {
-              w.focus()
-              w.print()
-            } catch {
-              /* ignore */
-            }
-          }
-          w.addEventListener('load', tryPrint, { once: true })
-          setTimeout(tryPrint, 500)
-        }
-        setTimeout(() => URL.revokeObjectURL(url), 120_000)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+
+      const lineOpt = (shippingLinesList || []).find((x) => String(x.id) === String(tiBookingDraft.shipping_line_id))
+      const shipmentForText = {
+        ...shipment,
+        booking_number: tiBookingDraft.booking_number.trim(),
+        shipping_line: lineOpt ? { name: lineOpt.name } : shipment.shipping_line,
+        shippingLine: lineOpt ? { name: lineOpt.name } : shipment.shippingLine,
       }
+      const waText = buildTransportInstructionsWhatsAppText(shipmentForText, opsData.transport_instruction_profile, t)
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(waText)
+        }
+      } catch {
+        /* ignore clipboard */
+      }
+
+      onOperationsSaved?.()
+      loadOpsData()
     } catch (err) {
       setOpsError(err?.message || t('shipments.transportInstructions.pdfError'))
     } finally {
       setTiPdfLoading(false)
     }
-  }
-
-  const handleTransportInstructionWhatsApp = () => {
-    if (!shipment) return
-    const text = buildTransportInstructionsWhatsAppText(shipment, opsData?.transport_instruction_profile, t)
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer')
   }
 
   if (!open) return null
@@ -1218,61 +1310,31 @@ export default function ShipmentDetailModal({
 
                         <div className="shipment-detail-card mb-6">
                           <h3 className="shipment-detail-card__title">{t('shipments.ops.sectionKeyDates')}</h3>
-                          <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <div>
-                              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">
-                                {t('shipments.ops.cutOffDate')}
-                              </label>
-                              <input
-                                type="date"
-                                lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
-                                className="clients-input w-full"
-                                value={opsData.cut_off_date || ''}
-                                onChange={(e) => setOpsData((prev) => ({ ...prev, cut_off_date: e.target.value }))}
-                                disabled={!canEditOps}
-                              />
-                            </div>
-                            <div>
-                              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">
-                                {t('shipments.ops.eta')}
-                              </label>
-                              <input
-                                type="date"
-                                lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
-                                className="clients-input w-full"
-                                value={opsData.eta || ''}
-                                onChange={(e) => setOpsData((prev) => ({ ...prev, eta: e.target.value }))}
-                                disabled={!canEditOps}
-                              />
-                            </div>
-                            <div>
-                              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">
-                                {t('shipments.ops.etd')}
-                              </label>
-                              <input
-                                type="date"
-                                lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
-                                className="clients-input w-full"
-                                value={opsData.etd || ''}
-                                onChange={(e) => setOpsData((prev) => ({ ...prev, etd: e.target.value }))}
-                                disabled={!canEditOps}
-                              />
-                            </div>
-                            <div>
-                              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">
-                                {t('shipments.ops.loadingDate')}
-                              </label>
-                              <input
-                                type="date"
-                                lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
-                                className="clients-input w-full"
-                                value={opsData.ops_loading_date || ''}
-                                onChange={(e) =>
-                                  setOpsData((prev) => ({ ...prev, ops_loading_date: e.target.value }))
-                                }
-                                disabled={!canEditOps}
-                              />
-                            </div>
+                          <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                            <OpsDateDdMmYyyyField
+                              label={t('shipments.ops.cutOffDate')}
+                              isoValue={opsData.cut_off_date}
+                              disabled={!canEditOps}
+                              onCommit={(iso) => setOpsData((prev) => ({ ...prev, cut_off_date: iso }))}
+                            />
+                            <OpsDateDdMmYyyyField
+                              label={t('shipments.ops.eta')}
+                              isoValue={opsData.eta}
+                              disabled={!canEditOps}
+                              onCommit={(iso) => setOpsData((prev) => ({ ...prev, eta: iso }))}
+                            />
+                            <OpsDateDdMmYyyyField
+                              label={t('shipments.ops.etd')}
+                              isoValue={opsData.etd}
+                              disabled={!canEditOps}
+                              onCommit={(iso) => setOpsData((prev) => ({ ...prev, etd: iso }))}
+                            />
+                            <OpsDateDdMmYyyyField
+                              label={t('shipments.ops.loadingDate')}
+                              isoValue={opsData.ops_loading_date}
+                              disabled={!canEditOps}
+                              onCommit={(iso) => setOpsData((prev) => ({ ...prev, ops_loading_date: iso }))}
+                            />
                           </div>
                         </div>
 
@@ -1354,7 +1416,7 @@ export default function ShipmentDetailModal({
                               ) : null}
                               <div>
                                 <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">
-                                  {t('shipments.ops.insuranceCompany')}
+                                  {t('shipments.ops.insuranceCompanyOptional')}
                                 </label>
                                 <select
                                   className="clients-input w-full"
@@ -1372,39 +1434,78 @@ export default function ShipmentDetailModal({
                                   ))}
                                 </select>
                               </div>
-                              <div>
+                              <div className="sm:col-span-2">
                                 <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">
-                                  {t('shipments.ops.otherParty')}
+                                  {t('shipments.ops.otherPartyOptional')}
                                 </label>
-                                <select
-                                  className="clients-input w-full"
-                                  value={opsData.overseas_agent_id || ''}
-                                  onChange={(e) =>
-                                    setOpsData((prev) => ({ ...prev, overseas_agent_id: e.target.value }))
-                                  }
-                                  disabled={!canEditOps}
-                                >
-                                  <option value="">{t('shipments.optional')}</option>
-                                  {otherPartyVendorOptions.map((v) => (
-                                    <option key={v.id} value={v.id}>
-                                      {v.name}
-                                    </option>
-                                  ))}
-                                </select>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                  <input
+                                    type="text"
+                                    className="clients-input w-full"
+                                    value={opsData.other_party_name ?? ''}
+                                    onChange={(e) =>
+                                      setOpsData((prev) => ({ ...prev, other_party_name: e.target.value }))
+                                    }
+                                    disabled={!canEditOps}
+                                    placeholder={t('shipments.ops.otherPartyNamePlaceholder')}
+                                  />
+                                  <input
+                                    type="text"
+                                    className="clients-input w-full"
+                                    value={opsData.other_party_role ?? ''}
+                                    onChange={(e) =>
+                                      setOpsData((prev) => ({ ...prev, other_party_role: e.target.value }))
+                                    }
+                                    disabled={!canEditOps}
+                                    placeholder={t('shipments.ops.otherPartyRolePlaceholder')}
+                                  />
+                                </div>
                               </div>
                             </div>
                           </div>
                         ) : null}
 
-                        <ShipmentOperationsTasksPanel
-                          token={token}
-                          shipmentId={shipment.id}
+                        <ShipmentOperationsTasksSummaryHeader
                           tasks={tasks}
-                          setTasks={setTasks}
+                          t={t}
                           canEditOps={canEditOps}
-                          currentUserId={currentUserId}
-                          refreshTasks={loadTasks}
+                          onManage={() => setOpsTasksModalOpen(true)}
                         />
+
+                        {opsTasksModalOpen && (
+                          <div className="clients-modal shipment-op-tasks-root-modal" role="presentation">
+                            <div className="clients-modal-backdrop" onClick={() => setOpsTasksModalOpen(false)} aria-hidden />
+                            <div
+                              className="clients-modal-content clients-modal-content--wide shipment-op-tasks-modal-shell"
+                              role="dialog"
+                              aria-modal="true"
+                              aria-labelledby="shipment-ops-tasks-modal-title"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <h2 id="shipment-ops-tasks-modal-title" className="mb-2">
+                                {t('shipments.ops.manageTasks')}
+                              </h2>
+                              <ShipmentOperationsTasksPanel
+                                token={token}
+                                shipmentId={shipment.id}
+                                tasks={tasks}
+                                setTasks={setTasks}
+                                canEditOps={canEditOps}
+                                currentUserId={currentUserId}
+                                refreshTasks={loadTasks}
+                              />
+                              <div className="mt-4 flex justify-end">
+                                <button
+                                  type="button"
+                                  className="client-detail-modal__btn client-detail-modal__btn--secondary"
+                                  onClick={() => setOpsTasksModalOpen(false)}
+                                >
+                                  {t('common.close')}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
                         {canEditOps ? (
                           <div className="mt-8 flex flex-col items-end gap-3">
@@ -1505,13 +1606,13 @@ export default function ShipmentDetailModal({
                   opsData={opsData}
                   setOpsData={setOpsData}
                   canEditOps={canEditOps}
-                  onSave={handleSaveOps}
-                  opsSaving={opsSaving}
                   opsError={opsError}
                   customsVendorOptions={customsVendorOptions}
-                  onGeneratePdf={handleTransportInstructionPdf}
+                  onGenerateTiPdf={handleTransportInstructionSaveAndPdf}
                   tiPdfLoading={tiPdfLoading}
-                  onWhatsAppShare={handleTransportInstructionWhatsApp}
+                  tiBookingDraft={tiBookingDraft}
+                  setTiBookingDraft={setTiBookingDraft}
+                  shippingLineOptions={shippingLinesList}
                   t={t}
                   shipmentDisplayContainerType={shipmentDisplayContainerType}
                   shipmentDisplayContainerSize={shipmentDisplayContainerSize}

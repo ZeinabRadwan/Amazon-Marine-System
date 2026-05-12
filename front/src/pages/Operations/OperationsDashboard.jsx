@@ -9,6 +9,7 @@ import { StatsCard } from '../../components/StatsCard'
 import LoaderDots from '../../components/LoaderDots'
 import { formatDate } from '../../utils/dateUtils'
 import '../Clients/Clients.css'
+import { getTaskDisplayStatus } from '../Shipments/shipmentOperationTaskUi'
 
 const UPCOMING_OPTIONS = ['tomorrow', '3_days', 'week', 'month']
 
@@ -51,7 +52,17 @@ function TaskTable({ title, rows, emptyLabel, t, i18nLanguage }) {
                   <td className="px-3 py-2 align-top">
                     {t(`shipments.ops.taskPriority.${row.priority}`, { defaultValue: row.priority || '—' })}
                   </td>
-                  <td className="px-3 py-2 align-top capitalize text-gray-700 dark:text-gray-300">{row.status || '—'}</td>
+                  <td className="px-3 py-2 align-top text-gray-700 dark:text-gray-300">
+                    {t(
+                      `shipments.ops.taskDisplayStatus.${getTaskDisplayStatus({
+                        status: row.status,
+                        completed_at: row.completed_at,
+                        execution_at: row.execution_at,
+                        due_date: row.due_date,
+                      })}`,
+                      { defaultValue: row.status || '—' }
+                    )}
+                  </td>
                   <td className="px-3 py-2 align-top text-gray-700 dark:text-gray-300">
                     {row.completed_at
                       ? formatDate(row.completed_at, { locale: i18nLanguage, includeTime: true })

@@ -1,4 +1,4 @@
-import { FileDown, MessageCircle, Printer, Save } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import LoaderDots from '../../components/LoaderDots'
 
 export const EMPTY_TRANSPORT_INSTRUCTION_PROFILE = {
@@ -16,17 +16,30 @@ export const EMPTY_TRANSPORT_INSTRUCTION_PROFILE = {
   customs_notes: '',
 }
 
-function toDatetimeLocalValue(isoOrEmpty) {
-  if (!isoOrEmpty || typeof isoOrEmpty !== 'string') return ''
+function arrivalPartsFromIso(isoOrEmpty) {
+  if (!isoOrEmpty || typeof isoOrEmpty !== 'string') {
+    return { day: '', month: '', year: new Date().getFullYear(), hour: '' }
+  }
   const d = new Date(isoOrEmpty)
-  if (Number.isNaN(d.getTime())) return ''
-  const pad = (n) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  if (Number.isNaN(d.getTime())) {
+    return { day: '', month: '', year: new Date().getFullYear(), hour: '' }
+  }
+  return {
+    day: d.getDate(),
+    month: d.getMonth() + 1,
+    year: d.getFullYear(),
+    hour: d.getHours(),
+  }
 }
 
-function fromDatetimeLocalToIso(val) {
-  if (!val || typeof val !== 'string') return ''
-  const d = new Date(val)
+function buildArrivalIso(day, month, year, hour) {
+  if (day === '' || month === '' || year === '' || hour === '') return ''
+  const di = Number(day)
+  const mi = Number(month)
+  const yi = Number(year)
+  const hi = Number(hour)
+  if (!Number.isFinite(di) || !Number.isFinite(mi) || !Number.isFinite(yi) || !Number.isFinite(hi)) return ''
+  const d = new Date(yi, mi - 1, di, hi, 0, 0, 0)
   if (Number.isNaN(d.getTime())) return ''
   return d.toISOString()
 }
@@ -98,6 +111,8 @@ export function buildTransportInstructionsWhatsAppText(shipment, tip, t) {
   const cnt = shipment?.container_count ?? '—'
   const ctype = shipment?.container_type ?? '—'
   const csize = shipment?.container_size ?? '—'
+  const sizeStr = csize !== '—' && ctype !== '—' ? `${csize}' ${ctype}` : csize !== '—' ? `${csize}'` : ctype
+  const combined = cnt !== '—' && sizeStr !== '—' ? `${cnt} × ${sizeStr}` : cnt !== '—' ? String(cnt) : '—'
   const doc = (() => {
     if (!ti.customs_document_type) return '—'
     const key =
@@ -119,18 +134,14 @@ export function buildTransportInstructionsWhatsAppText(shipment, tip, t) {
   const lines = [
     t('shipments.transportInstructions.whatsappTitle', { id: shipment?.id ?? '' }),
     '',
-    `${t('shipments.transportInstructions.summaryBooking')}: ${booking}`,
-    `${t('shipments.transportInstructions.summaryLine')}: ${line}`,
-    `${t('shipments.transportInstructions.summaryCount')}: ${cnt}`,
-    `${t('shipments.transportInstructions.summaryType')}: ${ctype}`,
-    `${t('shipments.transportInstructions.summarySize')}: ${csize}`,
+    `${t('shipments.transportInstructions.bookingLineCombined')}: ${booking} / ${line}`,
+    `${t('shipments.transportInstructions.containerCombinedLabel')}: ${combined}`,
     '',
     `${t('shipments.transportInstructions.arrival')}: ${arrivalStr}`,
-    `${t('shipments.transportInstructions.loadingPlace')}: ${ti.loading_place_name || '—'}`,
+    `${t('shipments.transportInstructions.placeOfLoadingTitle')}: ${ti.loading_place_name || '—'}`,
     `${t('shipments.transportInstructions.loadingAddress')}: ${ti.loading_address || '—'}`,
     `${t('shipments.transportInstructions.mapsUrl')}: ${ti.loading_maps_url || '—'}`,
-    `${t('shipments.transportInstructions.contactName')}: ${ti.loading_contact_name || '—'}`,
-    `${t('shipments.transportInstructions.contactPhone')}: ${ti.loading_contact_phone || '—'}`,
+    `${t('shipments.transportInstructions.loadingContactTitle')}: ${ti.loading_contact_name || '—'} · ${ti.loading_contact_phone || '—'}`,
     `${t('shipments.transportInstructions.customsDoc')}: ${doc}`,
     `${t('shipments.transportInstructions.generator')}: ${gen}`,
     `${t('shipments.transportInstructions.customsNotes')}: ${ti.customs_notes || '—'}`,
@@ -152,104 +163,229 @@ function setTipField(setOpsData, field, value) {
   })
 }
 
+function rangeSelectOptions(from, to) {
+  const o = []
+  for (let i = from; i <= to; i += 1) o.push(i)
+  return o
+}
+
 export default function ShipmentTransportInstructionsTab({
   shipment,
   opsData,
   setOpsData,
   canEditOps,
-  onSave,
-  opsSaving,
   opsError,
   customsVendorOptions,
-  onGeneratePdf,
+  onGenerateTiPdf,
   tiPdfLoading,
-  onWhatsAppShare,
+  tiBookingDraft,
+  setTiBookingDraft,
+  shippingLineOptions,
   t,
   shipmentDisplayContainerType,
   shipmentDisplayContainerSize,
 }) {
   const tip = opsData?.transport_instruction_profile || EMPTY_TRANSPORT_INSTRUCTION_PROFILE
-  const shippingLineName = shipment?.shipping_line?.name ?? shipment?.shippingLine?.name ?? '—'
+
+  const [arrivalDay, setArrivalDay] = useState('')
+  const [arrivalMonth, setArrivalMonth] = useState('')
+  const [arrivalYear, setArrivalYear] = useState(() => new Date().getFullYear())
+  const [arrivalHour, setArrivalHour] = useState('')
+
+  useEffect(() => {
+    const p = arrivalPartsFromIso(tip.customer_arrival_at)
+    setArrivalDay(p.day === '' ? '' : p.day)
+    setArrivalMonth(p.month === '' ? '' : p.month)
+    setArrivalYear(p.year)
+    setArrivalHour(p.hour === '' ? '' : p.hour)
+  }, [tip.customer_arrival_at])
+
+  const commitArrival = (next) => {
+    const { day, month, year, hour } = next
+    const iso = buildArrivalIso(day, month, year, hour)
+    setTipField(setOpsData, 'customer_arrival_at', iso || '')
+  }
+
+  const combinedContainerLabel = useMemo(() => {
+    const cnt = shipment?.container_count
+    const sz = shipment?.container_size
+    const tp = shipment?.container_type
+    if (cnt == null || cnt === '' || !sz || !tp) return '—'
+    const typeStr = shipmentDisplayContainerType(tp, t)
+    const sizeStr = shipmentDisplayContainerSize(sz, t)
+    return `${cnt} × ${`${sizeStr} ${typeStr}`.trim()}`
+  }, [shipment, shipmentDisplayContainerType, shipmentDisplayContainerSize, t])
+
+  const req = (s) => (s ? ` ${s}` : '')
 
   return (
-    <div className="shipment-transport-instructions space-y-6">
-      <div className="rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50/80 dark:bg-slate-800/40 p-4">
-        <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100 mb-3">
-          {t('shipments.transportInstructions.summaryTitle')}
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+    <div className="shipment-ti-single rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900/30 p-4 space-y-3">
+      {opsError ? (
+        <p className="text-sm text-red-600 dark:text-red-400 font-medium" role="alert">
+          {opsError}
+        </p>
+      ) : null}
+
+      {/* Booking + line */}
+      <div className="shipment-ti-row shipment-ti-row--2">
+        <div>
+          <label className="client-detail-modal__label block mb-0.5 text-xs">
+            {t('shipments.transportInstructions.bookingNumberLabel')}
+            <span className="text-red-600">{req(t('shipments.transportInstructions.requiredMark'))}</span>
+          </label>
+          <input
+            type="text"
+            className="clients-input w-full text-sm"
+            value={tiBookingDraft?.booking_number ?? ''}
+            onChange={(e) => setTiBookingDraft((d) => ({ ...d, booking_number: e.target.value }))}
+            disabled={!canEditOps}
+            autoComplete="off"
+          />
+        </div>
+        <div>
+          <label className="client-detail-modal__label block mb-0.5 text-xs">
+            {t('shipments.transportInstructions.shippingLineLabel')}
+            <span className="text-red-600">{req(t('shipments.transportInstructions.requiredMark'))}</span>
+          </label>
+          <select
+            className="clients-input w-full text-sm"
+            value={tiBookingDraft?.shipping_line_id ?? ''}
+            onChange={(e) => setTiBookingDraft((d) => ({ ...d, shipping_line_id: e.target.value }))}
+            disabled={!canEditOps}
+          >
+            <option value="">{t('shipments.transportInstructions.selectPlaceholder')}</option>
+            {(shippingLineOptions || []).map((sl) => (
+              <option key={sl.id} value={String(sl.id)}>
+                {sl.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Combined container */}
+      <div className="shipment-ti-group">
+        <div className="shipment-ti-group-label">
+          {t('shipments.transportInstructions.containerCombinedLabel')}
+          <span className="text-red-600">{req(t('shipments.transportInstructions.requiredMark'))}</span>
+        </div>
+        <div className="shipment-ti-combined-value text-sm font-medium text-slate-900 dark:text-slate-100">
+          {combinedContainerLabel}
+        </div>
+      </div>
+
+      {/* Arrival */}
+      <div className="shipment-ti-group">
+        <div className="shipment-ti-group-label">
+          {t('shipments.transportInstructions.arrival')}
+          <span className="text-red-600">{req(t('shipments.transportInstructions.requiredMark'))}</span>
+        </div>
+        <div className="shipment-ti-arrival-grid shipment-ti-arrival-grid--3">
           <div>
-            <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              {t('shipments.transportInstructions.summaryBooking')}
-            </div>
-            <div className="font-medium text-slate-900 dark:text-slate-100">{shipment?.booking_number ?? '—'}</div>
+            <label className="text-[11px] text-slate-500 dark:text-slate-400 block mb-0.5">{t('common.day')}</label>
+            <select
+              className="clients-input w-full text-sm py-1.5"
+              value={arrivalDay === '' ? '' : String(arrivalDay)}
+              onChange={(e) => {
+                const v = e.target.value === '' ? '' : Number(e.target.value)
+                setArrivalDay(v)
+                commitArrival({ day: v, month: arrivalMonth, year: arrivalYear, hour: arrivalHour })
+              }}
+              disabled={!canEditOps}
+            >
+              <option value="">{t('shipments.transportInstructions.selectPlaceholder')}</option>
+              {rangeSelectOptions(1, 31).map((d) => (
+                <option key={d} value={String(d)}>
+                  {String(d).padStart(2, '0')}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
-            <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              {t('shipments.transportInstructions.summaryLine')}
-            </div>
-            <div className="font-medium text-slate-900 dark:text-slate-100">{shippingLineName}</div>
+            <label className="text-[11px] text-slate-500 dark:text-slate-400 block mb-0.5">{t('common.month')}</label>
+            <select
+              className="clients-input w-full text-sm py-1.5"
+              value={arrivalMonth === '' ? '' : String(arrivalMonth)}
+              onChange={(e) => {
+                const v = e.target.value === '' ? '' : Number(e.target.value)
+                setArrivalMonth(v)
+                commitArrival({ day: arrivalDay, month: v, year: arrivalYear, hour: arrivalHour })
+              }}
+              disabled={!canEditOps}
+            >
+              <option value="">{t('shipments.transportInstructions.selectPlaceholder')}</option>
+              {rangeSelectOptions(1, 12).map((m) => (
+                <option key={m} value={String(m)}>
+                  {String(m).padStart(2, '0')}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
-            <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              {t('shipments.transportInstructions.summaryCount')}
-            </div>
-            <div className="font-medium text-slate-900 dark:text-slate-100">{shipment?.container_count ?? '—'}</div>
-          </div>
-          <div>
-            <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              {t('shipments.transportInstructions.summaryType')}
-            </div>
-            <div className="font-medium text-slate-900 dark:text-slate-100">
-              {shipmentDisplayContainerType(shipment?.container_type, t)}
-            </div>
-          </div>
-          <div>
-            <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              {t('shipments.transportInstructions.summarySize')}
-            </div>
-            <div className="font-medium text-slate-900 dark:text-slate-100">
-              {shipmentDisplayContainerSize(shipment?.container_size, t)}
-            </div>
+            <label className="text-[11px] text-slate-500 dark:text-slate-400 block mb-0.5">
+              {t('shipments.transportInstructions.arrivalHour')}
+            </label>
+            <select
+              className="clients-input w-full text-sm py-1.5"
+              value={arrivalHour === '' ? '' : String(arrivalHour)}
+              onChange={(e) => {
+                const v = e.target.value === '' ? '' : Number(e.target.value)
+                setArrivalHour(v)
+                commitArrival({ day: arrivalDay, month: arrivalMonth, year: arrivalYear, hour: v })
+              }}
+              disabled={!canEditOps}
+            >
+              <option value="">{t('shipments.transportInstructions.selectPlaceholder')}</option>
+              {rangeSelectOptions(0, 23).map((h) => (
+                <option key={h} value={String(h)}>
+                  {String(h).padStart(2, '0')}:00
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-200 dark:border-slate-600 p-4 space-y-4">
-        <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-          {t('shipments.transportInstructions.formTitle')}
-        </h3>
-
-        <div>
-          <label className="client-detail-modal__label block mb-1">{t('shipments.transportInstructions.arrival')}</label>
-          <input
-            type="datetime-local"
-            className="clients-input w-full max-w-md"
-            value={toDatetimeLocalValue(tip.customer_arrival_at)}
-            onChange={(e) => {
-              const iso = fromDatetimeLocalToIso(e.target.value)
-              setTipField(setOpsData, 'customer_arrival_at', iso || '')
-            }}
-            disabled={!canEditOps}
-          />
+      {/* Place of loading */}
+      <div className="shipment-ti-group">
+        <div className="shipment-ti-group-label">
+          {t('shipments.transportInstructions.placeOfLoadingTitle')}
+          <span className="text-red-600">{req(t('shipments.transportInstructions.requiredMark'))}</span>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
           <div>
-            <label className="client-detail-modal__label block mb-1">{t('shipments.transportInstructions.loadingPlace')}</label>
+            <label className="text-[11px] text-slate-500 dark:text-slate-400 block mb-0.5">
+              {t('shipments.transportInstructions.placeNameLabel')}
+              <span className="text-red-600">{req(t('shipments.transportInstructions.requiredMark'))}</span>
+            </label>
             <input
               type="text"
-              className="clients-input w-full"
+              className="clients-input w-full text-sm py-1.5"
               value={tip.loading_place_name}
               onChange={(e) => setTipField(setOpsData, 'loading_place_name', e.target.value)}
               disabled={!canEditOps}
             />
           </div>
           <div>
-            <label className="client-detail-modal__label block mb-1">{t('shipments.transportInstructions.mapsUrl')}</label>
+            <label className="text-[11px] text-slate-500 dark:text-slate-400 block mb-0.5">
+              {t('shipments.transportInstructions.fullAddressLabel')}
+              <span className="text-red-600">{req(t('shipments.transportInstructions.requiredMark'))}</span>
+            </label>
+            <textarea
+              rows={2}
+              className="clients-input w-full text-sm py-1.5"
+              value={tip.loading_address}
+              onChange={(e) => setTipField(setOpsData, 'loading_address', e.target.value)}
+              disabled={!canEditOps}
+            />
+          </div>
+          <div>
+            <label className="text-[11px] text-slate-500 dark:text-slate-400 block mb-0.5">
+              {t('shipments.transportInstructions.mapsUrl')}
+            </label>
             <input
               type="url"
-              className="clients-input w-full"
+              className="clients-input w-full text-sm py-1.5"
               value={tip.loading_maps_url}
               onChange={(e) => setTipField(setOpsData, 'loading_maps_url', e.target.value)}
               disabled={!canEditOps}
@@ -257,190 +393,138 @@ export default function ShipmentTransportInstructionsTab({
             />
           </div>
         </div>
+      </div>
 
-        <div>
-          <label className="client-detail-modal__label block mb-1">{t('shipments.transportInstructions.loadingAddress')}</label>
-          <textarea
-            rows={3}
-            className="clients-input w-full"
-            value={tip.loading_address}
-            onChange={(e) => setTipField(setOpsData, 'loading_address', e.target.value)}
-            disabled={!canEditOps}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Loading contact */}
+      <div className="shipment-ti-group">
+        <div className="shipment-ti-group-label">{t('shipments.transportInstructions.loadingContactTitle')}</div>
+        <div className="shipment-ti-row shipment-ti-row--2">
           <div>
-            <label className="client-detail-modal__label block mb-1">{t('shipments.transportInstructions.contactName')}</label>
+            <label className="text-[11px] text-slate-500 dark:text-slate-400 block mb-0.5">
+              {t('shipments.transportInstructions.contactName')}
+              <span className="text-red-600">{req(t('shipments.transportInstructions.requiredMark'))}</span>
+            </label>
             <input
               type="text"
-              className="clients-input w-full"
+              className="clients-input w-full text-sm py-1.5"
               value={tip.loading_contact_name}
               onChange={(e) => setTipField(setOpsData, 'loading_contact_name', e.target.value)}
               disabled={!canEditOps}
             />
           </div>
           <div>
-            <label className="client-detail-modal__label block mb-1">{t('shipments.transportInstructions.contactPhone')}</label>
+            <label className="text-[11px] text-slate-500 dark:text-slate-400 block mb-0.5">
+              {t('shipments.transportInstructions.contactPhone')}
+              <span className="text-red-600">{req(t('shipments.transportInstructions.requiredMark'))}</span>
+            </label>
             <input
               type="text"
-              className="clients-input w-full"
+              className="clients-input w-full text-sm py-1.5"
               value={tip.loading_contact_phone}
               onChange={(e) => setTipField(setOpsData, 'loading_contact_phone', e.target.value)}
               disabled={!canEditOps}
             />
           </div>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="client-detail-modal__label block mb-1">{t('shipments.transportInstructions.customsDoc')}</label>
-            <select
-              className="clients-input w-full"
-              value={tip.customs_document_type}
-              onChange={(e) => setTipField(setOpsData, 'customs_document_type', e.target.value)}
-              disabled={!canEditOps}
-            >
-              <option value="">{t('shipments.transportInstructions.selectPlaceholder')}</option>
-              <option value="certificate">{t('shipments.transportInstructions.docCertificate')}</option>
-              <option value="bill_of_lading">{t('shipments.transportInstructions.docBl')}</option>
-              <option value="manifest">{t('shipments.transportInstructions.docManifest')}</option>
-            </select>
-          </div>
-          <div>
-            <label className="client-detail-modal__label block mb-1">{t('shipments.transportInstructions.generator')}</label>
-            <select
-              className="clients-input w-full"
-              value={tip.generator}
-              onChange={(e) => setTipField(setOpsData, 'generator', e.target.value)}
-              disabled={!canEditOps}
-            >
-              <option value="no">{t('shipments.transportInstructions.genNo')}</option>
-              <option value="yes">{t('shipments.transportInstructions.genYes')}</option>
-            </select>
-          </div>
-        </div>
-
-        {tip.generator === 'yes' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-200 dark:border-slate-600 pt-4">
-            <div>
-              <label className="client-detail-modal__label block mb-1">{t('shipments.transportInstructions.temperature')}</label>
-              <input
-                type="text"
-                className="clients-input w-full"
-                value={tip.generator_temperature}
-                onChange={(e) => setTipField(setOpsData, 'generator_temperature', e.target.value)}
-                disabled={!canEditOps}
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="client-detail-modal__label block mb-1">{t('shipments.transportInstructions.driverInstructions')}</label>
-              <textarea
-                rows={4}
-                className="clients-input w-full"
-                value={tip.generator_driver_instructions}
-                onChange={(e) => setTipField(setOpsData, 'generator_driver_instructions', e.target.value)}
-                disabled={!canEditOps}
-              />
-            </div>
-          </div>
-        ) : null}
-
+      {/* Customs doc + generator */}
+      <div className="shipment-ti-row shipment-ti-row--2">
         <div>
-          <label className="client-detail-modal__label block mb-1">{t('shipments.transportInstructions.approvedBroker')}</label>
+          <label className="client-detail-modal__label block mb-0.5 text-xs">
+            {t('shipments.transportInstructions.customsDoc')}
+            <span className="text-red-600">{req(t('shipments.transportInstructions.requiredMark'))}</span>
+          </label>
           <select
-            className="clients-input w-full"
-            value={tip.approved_customs_broker_id}
-            onChange={(e) => setTipField(setOpsData, 'approved_customs_broker_id', e.target.value)}
+            className="clients-input w-full text-sm py-1.5"
+            value={tip.customs_document_type}
+            onChange={(e) => setTipField(setOpsData, 'customs_document_type', e.target.value)}
             disabled={!canEditOps}
           >
-            <option value="">{t('shipments.transportInstructions.brokerPlaceholder')}</option>
-            {(customsVendorOptions || []).map((v) => (
-              <option key={v.id} value={String(v.id)}>
-                {v.name}
-              </option>
-            ))}
+            <option value="">{t('shipments.transportInstructions.selectPlaceholder')}</option>
+            <option value="certificate">{t('shipments.transportInstructions.docCertificate')}</option>
+            <option value="bill_of_lading">{t('shipments.transportInstructions.docBl')}</option>
+            <option value="manifest">{t('shipments.transportInstructions.docManifest')}</option>
           </select>
         </div>
-
         <div>
-          <label className="client-detail-modal__label block mb-1">{t('shipments.transportInstructions.customsNotes')}</label>
-          <textarea
-            rows={3}
-            className="clients-input w-full"
-            value={tip.customs_notes}
-            onChange={(e) => setTipField(setOpsData, 'customs_notes', e.target.value)}
+          <label className="client-detail-modal__label block mb-0.5 text-xs">{t('shipments.transportInstructions.generator')}</label>
+          <select
+            className="clients-input w-full text-sm py-1.5"
+            value={tip.generator}
+            onChange={(e) => setTipField(setOpsData, 'generator', e.target.value)}
             disabled={!canEditOps}
-          />
-        </div>
-
-        <div>
-          <label className="client-detail-modal__label block mb-1">{t('shipments.ops.transportInstructionsTitle')}</label>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{t('shipments.ops.transportInstructionsHint')}</p>
-          <textarea
-            rows={4}
-            className="clients-input w-full"
-            value={opsData?.transport_instructions || ''}
-            onChange={(e) => setOpsData((prev) => (prev ? { ...prev, transport_instructions: e.target.value } : prev))}
-            disabled={!canEditOps}
-            placeholder={t('shipments.ops.transportInstructionsPlaceholder')}
-          />
+          >
+            <option value="no">{t('shipments.transportInstructions.genNo')}</option>
+            <option value="yes">{t('shipments.transportInstructions.genYes')}</option>
+          </select>
         </div>
       </div>
 
-      <div className="flex flex-col gap-3">
-        {opsError ? <p className="text-sm text-red-600 font-medium">{opsError}</p> : null}
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => onGeneratePdf?.('download')}
-            disabled={tiPdfLoading || !shipment?.id}
-            className="clients-btn clients-btn--secondary inline-flex items-center gap-2 text-sm"
-          >
-            {tiPdfLoading ? <LoaderDots size={8} /> : <FileDown className="h-4 w-4" aria-hidden />}
-            {t('shipments.transportInstructions.generatePdf')}
-          </button>
-          <button
-            type="button"
-            onClick={() => onGeneratePdf?.('print')}
-            disabled={tiPdfLoading || !shipment?.id}
-            className="clients-btn clients-btn--secondary inline-flex items-center gap-2 text-sm"
-          >
-            <Printer className="h-4 w-4" aria-hidden />
-            {t('shipments.transportInstructions.printPdf')}
-          </button>
-          <button
-            type="button"
-            onClick={() => onWhatsAppShare?.()}
-            className="clients-btn clients-btn--secondary inline-flex items-center gap-2 text-sm"
-          >
-            <MessageCircle className="h-4 w-4" aria-hidden />
-            {t('shipments.transportInstructions.whatsappShare')}
-          </button>
-        </div>
-        {canEditOps ? (
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={onSave}
-              disabled={opsSaving}
-              className="client-detail-modal__btn client-detail-modal__btn--primary px-8 inline-flex items-center gap-2"
-            >
-              {opsSaving ? (
-                <>
-                  <LoaderDots className="h-4 w-4" />
-                  {t('shipments.ops.savingOps')}
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4" aria-hidden />
-                  {t('shipments.ops.saveOps')}
-                </>
-              )}
-            </button>
+      {tip.generator === 'yes' ? (
+        <div className="shipment-ti-generator-block rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50/90 dark:bg-slate-800/40 p-2.5 space-y-2">
+          <div>
+            <label className="text-[11px] text-slate-500 dark:text-slate-400 block mb-0.5">
+              {t('shipments.transportInstructions.temperature')}
+              <span className="text-red-600">{req(t('shipments.transportInstructions.requiredMark'))}</span>
+            </label>
+            <input
+              type="text"
+              className="clients-input w-full text-sm py-1.5"
+              value={tip.generator_temperature}
+              onChange={(e) => setTipField(setOpsData, 'generator_temperature', e.target.value)}
+              disabled={!canEditOps}
+            />
           </div>
-        ) : null}
+          <div>
+            <label className="text-[11px] text-slate-500 dark:text-slate-400 block mb-0.5">{t('shipments.transportInstructions.driverInstructions')}</label>
+            <textarea
+              rows={3}
+              className="clients-input w-full text-sm py-1.5"
+              value={tip.generator_driver_instructions}
+              onChange={(e) => setTipField(setOpsData, 'generator_driver_instructions', e.target.value)}
+              disabled={!canEditOps}
+            />
+          </div>
+        </div>
+      ) : null}
+
+      <div>
+        <label className="client-detail-modal__label block mb-0.5 text-xs">{t('shipments.transportInstructions.approvedBrokerOptional')}</label>
+        <select
+          className="clients-input w-full text-sm py-1.5"
+          value={tip.approved_customs_broker_id}
+          onChange={(e) => setTipField(setOpsData, 'approved_customs_broker_id', e.target.value)}
+          disabled={!canEditOps}
+        >
+          <option value="">{t('shipments.transportInstructions.brokerPlaceholder')}</option>
+          {(customsVendorOptions || []).map((v) => (
+            <option key={v.id} value={String(v.id)}>
+              {v.name}
+            </option>
+          ))}
+        </select>
       </div>
+
+      <div>
+        <label className="client-detail-modal__label block mb-0.5 text-xs">{t('shipments.transportInstructions.customsNotesOptional')}</label>
+        <textarea
+          rows={2}
+          className="clients-input w-full text-sm py-1.5"
+          value={tip.customs_notes}
+          onChange={(e) => setTipField(setOpsData, 'customs_notes', e.target.value)}
+          disabled={!canEditOps}
+        />
+      </div>
+
+      <button
+        type="button"
+        onClick={() => onGenerateTiPdf?.()}
+        disabled={tiPdfLoading || !shipment?.id || !canEditOps}
+        className="shipment-ti-pdf-btn w-full py-2.5 px-4 text-sm font-semibold text-white rounded-md border-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {tiPdfLoading ? <LoaderDots size={8} /> : t('shipments.transportInstructions.generatePdfBilingual')}
+      </button>
     </div>
   )
 }

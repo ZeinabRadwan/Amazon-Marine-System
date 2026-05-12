@@ -2026,6 +2026,7 @@ export default function Shipments() {
           currentUserId={user?.id ?? null}
           canAddShipmentNote={canManageOps}
           canManageAllShipmentNotes={hasAbility('notes.manage')}
+          shippingLinesList={shippingLinesList}
         />
 
         {bookingUploadOpen && canUploadBookingConfirmation && (

@@ -148,6 +148,7 @@ class OperationsDashboardController extends Controller
                 'shipment_id' => $t->shipment_id,
                 'shipment_ref' => $ref,
                 'due_date' => $due,
+                'execution_at' => $t->execution_at?->toIso8601String(),
                 'priority' => $t->priority ?? 'medium',
                 'status' => $t->status ?? 'pending',
                 'completed_at' => $t->completed_at?->toIso8601String(),

@@ -50,6 +50,24 @@ export function formatShipmentAuditRow(row, t) {
   } else if (event === 'shipment.tasks_updated') {
     oldValue = '—'
     newValue = props.task_count != null ? String(props.task_count) : asDisplayString(props)
+  } else if (
+    props.action === 'TASK_DELEGATED' ||
+    event === 'shipment.operation_task_delegated'
+  ) {
+    const performer = props.performed_by?.name || user
+    const fromN =
+      props.previous_assignee?.name ||
+      t('shipments.ops.audit.unassigned', { defaultValue: 'Unassigned' })
+    const toN =
+      props.new_assignee?.name || t('shipments.ops.audit.unassigned', { defaultValue: 'Unassigned' })
+    const taskName = props.task_name || ''
+    oldValue = '—'
+    newValue = t('shipments.ops.audit.taskDelegatedLine', {
+      performer,
+      taskName,
+      fromAssignee: fromN,
+      toAssignee: toN,
+    })
   } else {
     if (oldValue === undefined || oldValue === null) {
       oldValue = props.from !== undefined ? props.from : props.before

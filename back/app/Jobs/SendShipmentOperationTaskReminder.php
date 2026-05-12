@@ -32,7 +32,7 @@ class SendShipmentOperationTaskReminder implements ShouldBeUnique, ShouldQueue
     {
         $task = ShipmentOperationTask::query()->find($this->shipmentOperationTaskId);
 
-        if ($task === null || $task->reminder_at === null || $task->status === 'done') {
+        if ($task === null || $task->reminder_at === null || $task->status === 'completed') {
             return;
         }
 

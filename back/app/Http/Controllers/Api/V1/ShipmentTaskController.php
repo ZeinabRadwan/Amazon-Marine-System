@@ -13,6 +13,8 @@ use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class ShipmentTaskController extends Controller
@@ -22,7 +24,7 @@ class ShipmentTaskController extends Controller
         $this->authorize('update', $shipment);
 
         $users = User::query()
-            ->role('operations')
+            ->whereHas('roles', fn ($q) => $q->whereIn('name', ['operations', 'admin']))
             ->orderBy('name')
             ->get(['id', 'name', 'email']);
 
@@ -36,7 +38,7 @@ class ShipmentTaskController extends Controller
         $this->authorize('update', $shipment);
 
         return response()->json([
-            'data' => $shipment->tasks()->with(['assignedTo:id,name,email'])->get(),
+            'data' => $shipment->tasks()->with(['assignedTo:id,name,email'])->get()->map(fn (ShipmentOperationTask $t) => $this->serializeTaskResponse($t)),
         ]);
     }
 
@@ -50,11 +52,19 @@ class ShipmentTaskController extends Controller
 
         $taskId = $task->id;
         $taskName = $task->name;
+        $performer = Auth::user();
+        $performedBy = $performer instanceof User
+            ? ['id' => $performer->id, 'name' => $performer->name]
+            : ['id' => null, 'name' => '—'];
         $task->delete();
 
         ActivityLogger::log('shipment.operation_task_deleted', $shipment, [
+            'action' => 'TASK_DELETED',
+            'shipment_id' => $shipment->id,
             'task_id' => $taskId,
             'task_name' => $taskName,
+            'performed_by' => $performedBy,
+            'timestamp' => now()->toIso8601String(),
             'old_value' => $taskName,
             'new_value' => '',
         ]);
@@ -80,16 +90,14 @@ class ShipmentTaskController extends Controller
             'tasks.*.reminder_at' => ['nullable', 'date'],
             'tasks.*.reminder_before_value' => ['nullable', 'integer', 'min:1'],
             'tasks.*.reminder_before_unit' => ['nullable', 'string', Rule::in(['minute', 'minutes', 'hour', 'hours', 'day', 'days'])],
-            'tasks.*.status' => ['required', 'string', 'in:pending,in_progress,done'],
+            'tasks.*.status' => ['required', 'string', 'in:pending,completed,delegated'],
             'tasks.*.completed_at' => ['nullable', 'date'],
         ]);
 
         $existing = $shipment->tasks()->get()->keyBy('id');
 
-        $result = [];
-
         foreach ($validated['tasks'] as $taskData) {
-            if (! empty($taskData['assigned_to_id'])) {
+            if (array_key_exists('assigned_to_id', $taskData) && ! empty($taskData['assigned_to_id'])) {
                 $this->assertOperationsAssignee((int) $taskData['assigned_to_id']);
             }
 
@@ -124,7 +132,13 @@ class ShipmentTaskController extends Controller
 
             $task->name = $taskData['name'];
             $task->sort_order = (int) $taskData['sort_order'];
-            $task->assigned_to_id = $taskData['assigned_to_id'] ?? null;
+            if (! $task->exists) {
+                $task->assigned_to_id = array_key_exists('assigned_to_id', $taskData)
+                    ? $taskData['assigned_to_id']
+                    : null;
+            } elseif (array_key_exists('assigned_to_id', $taskData)) {
+                $task->assigned_to_id = $taskData['assigned_to_id'];
+            }
             $task->due_date = $taskData['due_date'] ?? ($executionAt?->toDateString());
             $task->execution_at = $executionAt;
             $task->priority = $taskData['priority'] ?? 'medium';
@@ -133,7 +147,7 @@ class ShipmentTaskController extends Controller
             $task->reminder_before_unit = $reminderBeforeUnit;
             $task->status = $taskData['status'];
 
-            if ($task->status === 'done') {
+            if ($task->status === 'completed') {
                 $task->completed_at = ! empty($taskData['completed_at'])
                     ? Carbon::parse($taskData['completed_at'])
                     : ($task->completed_at ?? now());
@@ -142,15 +156,57 @@ class ShipmentTaskController extends Controller
             }
 
             $task->save();
-            $result[] = $task;
+
+            if (array_key_exists('assigned_to_id', $taskData)) {
+                Log::debug('shipment_operation_task.assignee_persisted', [
+                    'task_id' => $task->id,
+                    'shipment_id' => $shipment->id,
+                    'assigned_to_id' => $task->assigned_to_id,
+                ]);
+            }
 
             $this->logShipmentOperationTaskLifecycle($shipment, $task, $isNew, $beforeSnapshot);
             $this->dispatchTaskReminderIfNeeded($task->fresh());
         }
 
         return response()->json([
-            'data' => $shipment->tasks()->with(['assignedTo:id,name,email'])->get(),
+            'data' => $shipment->tasks()->with(['assignedTo:id,name,email'])->get()->map(fn (ShipmentOperationTask $t) => $this->serializeTaskResponse($t)),
         ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function serializeTaskResponse(ShipmentOperationTask $task): array
+    {
+        $task->loadMissing('assignedTo:id,name,email');
+
+        return [
+            'id' => $task->id,
+            'shipment_id' => $task->shipment_id,
+            'name' => $task->name,
+            'sort_order' => $task->sort_order,
+            'assigned_to_id' => $task->assigned_to_id,
+            'assigned_user' => $task->assignedTo ? [
+                'id' => $task->assignedTo->id,
+                'name' => $task->assignedTo->name,
+            ] : null,
+            'due_date' => $task->due_date?->toDateString(),
+            'execution_at' => $task->execution_at?->toIso8601String(),
+            'priority' => $task->priority ?? 'medium',
+            'reminder_at' => $task->reminder_at?->toIso8601String(),
+            'reminder_before_value' => $task->reminder_before_value,
+            'reminder_before_unit' => $task->reminder_before_unit,
+            'status' => $task->status,
+            'completed_at' => $task->completed_at?->toIso8601String(),
+            'created_at' => $task->created_at?->toIso8601String(),
+            'updated_at' => $task->updated_at?->toIso8601String(),
+            'assigned_to' => $task->assignedTo ? [
+                'id' => $task->assignedTo->id,
+                'name' => $task->assignedTo->name,
+                'email' => $task->assignedTo->email,
+            ] : null,
+        ];
     }
 
     /**
@@ -181,8 +237,11 @@ class ShipmentTaskController extends Controller
 
         if ($isNew) {
             ActivityLogger::log('shipment.operation_task_created', $shipment, [
+                'action' => 'TASK_CREATED',
+                'shipment_id' => $shipment->id,
                 'task_id' => $task->id,
                 'task_name' => $task->name,
+                'timestamp' => now()->toIso8601String(),
                 'old_value' => '',
                 'new_value' => $task->name,
             ]);
@@ -193,9 +252,34 @@ class ShipmentTaskController extends Controller
         $oldAssignee = $before['assigned_to_id'] ?? null;
         $newAssignee = $after['assigned_to_id'] ?? null;
         if ((int) ($oldAssignee ?? 0) !== (int) ($newAssignee ?? 0)) {
+            $performer = Auth::user();
+            $performedBy = $performer instanceof User
+                ? ['id' => $performer->id, 'name' => $performer->name]
+                : ['id' => null, 'name' => '—'];
+
+            $prevUser = $oldAssignee ? User::query()->find((int) $oldAssignee) : null;
+            $newUser = $newAssignee ? User::query()->find((int) $newAssignee) : null;
+
+            $previousAssignee = $oldAssignee
+                ? ($prevUser
+                    ? ['id' => $prevUser->id, 'name' => $prevUser->name]
+                    : ['id' => (int) $oldAssignee, 'name' => $this->assigneeDisplayName((int) $oldAssignee)])
+                : null;
+            $newAssigneePayload = $newAssignee
+                ? ($newUser
+                    ? ['id' => $newUser->id, 'name' => $newUser->name]
+                    : ['id' => (int) $newAssignee, 'name' => $this->assigneeDisplayName((int) $newAssignee)])
+                : null;
+
             ActivityLogger::log('shipment.operation_task_delegated', $shipment, [
+                'action' => 'TASK_DELEGATED',
+                'shipment_id' => $shipment->id,
                 'task_id' => $task->id,
                 'task_name' => $task->name,
+                'performed_by' => $performedBy,
+                'previous_assignee' => $previousAssignee,
+                'new_assignee' => $newAssigneePayload,
+                'timestamp' => now()->toIso8601String(),
                 'old_value' => $this->assigneeDisplayName($oldAssignee !== null ? (int) $oldAssignee : null),
                 'new_value' => $this->assigneeDisplayName($newAssignee !== null ? (int) $newAssignee : null),
                 'assigned_from_id' => $oldAssignee,
@@ -205,25 +289,33 @@ class ShipmentTaskController extends Controller
 
         $oldStatus = $before['status'] ?? null;
         $newStatus = $after['status'] ?? null;
-        if ($oldStatus !== 'done' && $newStatus === 'done') {
+        if ($oldStatus !== 'completed' && $newStatus === 'completed') {
+            $performer = Auth::user();
+            $performedBy = $performer instanceof User
+                ? ['id' => $performer->id, 'name' => $performer->name]
+                : ['id' => null, 'name' => '—'];
             ActivityLogger::log('shipment.operation_task_completed', $shipment, [
+                'action' => 'TASK_COMPLETED',
+                'shipment_id' => $shipment->id,
                 'task_id' => $task->id,
                 'task_name' => $task->name,
+                'performed_by' => $performedBy,
+                'timestamp' => now()->toIso8601String(),
                 'old_value' => (string) ($oldStatus ?? ''),
-                'new_value' => 'done',
+                'new_value' => 'completed',
             ]);
-        } elseif ($oldStatus === 'done' && $newStatus !== 'done') {
+        } elseif ($oldStatus === 'completed' && $newStatus !== 'completed') {
             ActivityLogger::log('shipment.operation_task_reopened', $shipment, [
                 'task_id' => $task->id,
                 'task_name' => $task->name,
-                'old_value' => 'done',
+                'old_value' => 'completed',
                 'new_value' => (string) ($newStatus ?? ''),
             ]);
         }
 
         $otherKeys = ['name', 'status', 'priority', 'due_date', 'execution_at', 'reminder_at', 'reminder_before_value', 'reminder_before_unit', 'sort_order'];
-        $excludeStatusFromUpdated = ($oldStatus !== 'done' && $newStatus === 'done')
-            || ($oldStatus === 'done' && $newStatus !== 'done');
+        $excludeStatusFromUpdated = ($oldStatus !== 'completed' && $newStatus === 'completed')
+            || ($oldStatus === 'completed' && $newStatus !== 'completed');
 
         $changes = [];
         foreach ($otherKeys as $key) {
@@ -291,14 +383,14 @@ class ShipmentTaskController extends Controller
     private function assertOperationsAssignee(int $userId): void
     {
         $user = User::query()->find($userId);
-        if ($user === null || ! $user->hasRole('operations')) {
-            abort(422, __('Tasks can only be assigned to operations staff.'));
+        if ($user === null || ! ($user->hasRole('operations') || $user->hasRole('admin'))) {
+            abort(422, __('Tasks can only be assigned to operations or admin users.'));
         }
     }
 
     private function dispatchTaskReminderIfNeeded(ShipmentOperationTask $task): void
     {
-        if ($task->reminder_at === null || ! $task->reminder_at->isFuture() || $task->status === 'done') {
+        if ($task->reminder_at === null || ! $task->reminder_at->isFuture() || $task->status === 'completed') {
             return;
         }
 

@@ -47,7 +47,8 @@ class ShipmentOperationsController extends Controller
             'transport_contractor_id' => ['nullable', 'integer', 'exists:vendors,id'],
             'customs_broker_id' => ['nullable', 'integer', 'exists:vendors,id'],
             'insurance_company_id' => ['nullable', 'integer', 'exists:vendors,id'],
-            'overseas_agent_id' => ['nullable', 'integer', 'exists:vendors,id'],
+            'other_party_name' => ['nullable', 'string', 'max:255'],
+            'other_party_role' => ['nullable', 'string', 'max:2000'],
             'cut_off_date' => ['nullable', 'date'],
             'etd' => ['nullable', 'date'],
             'eta' => ['nullable', 'date'],
@@ -79,7 +80,6 @@ class ShipmentOperationsController extends Controller
         $this->assertVendorType($validated['transport_contractor_id'] ?? null, 'inland_transport');
         $this->assertVendorType($validated['customs_broker_id'] ?? null, 'customs_clearance');
         $this->assertVendorType($validated['insurance_company_id'] ?? null, 'insurance');
-        $this->assertOtherPartyVendor($validated['overseas_agent_id'] ?? null);
 
         $tiBrokerId = null;
         if ($request->has('transport_instruction_profile')) {
@@ -100,6 +100,8 @@ class ShipmentOperationsController extends Controller
             'customs_broker_id',
             'insurance_company_id',
             'overseas_agent_id',
+            'other_party_name',
+            'other_party_role',
             'transport_instructions',
             'transport_instruction_profile',
         ];
@@ -111,7 +113,6 @@ class ShipmentOperationsController extends Controller
             'transport_contractor_id',
             'customs_broker_id',
             'insurance_company_id',
-            'overseas_agent_id',
             'cut_off_date',
             'etd',
             'eta',
@@ -119,7 +120,10 @@ class ShipmentOperationsController extends Controller
             'notes',
             'service_types',
             'transport_instructions',
+            'other_party_name',
+            'other_party_role',
         ]);
+        $operationFill['overseas_agent_id'] = null;
 
         if ($request->has('transport_instruction_profile')) {
             $rawTi = $request->input('transport_instruction_profile');
@@ -310,6 +314,14 @@ class ShipmentOperationsController extends Controller
             $lines[] = $label.': '.$name;
         }
 
+        if (array_key_exists('other_party_name', $row) || array_key_exists('other_party_role', $row)) {
+            $on = trim((string) ($row['other_party_name'] ?? ''));
+            $or = trim((string) ($row['other_party_role'] ?? ''));
+            if ($on !== '' || $or !== '') {
+                $lines[] = 'other_party: '.$on.($or !== '' ? ' / '.$or : '');
+            }
+        }
+
         $ti = $row['transport_instructions'] ?? null;
         if (array_key_exists('transport_instructions', $row)) {
             $tiStr = is_string($ti) ? trim($ti) : (string) json_encode($ti);
@@ -356,6 +368,11 @@ class ShipmentOperationsController extends Controller
         $ti = $out['transport_instructions'] ?? '';
         $out['transport_instructions'] = is_string($ti) ? trim($ti) : $ti;
 
+        $on = isset($out['other_party_name']) ? trim((string) $out['other_party_name']) : '';
+        $out['other_party_name'] = $on === '' ? null : $on;
+        $orr = isset($out['other_party_role']) ? trim((string) $out['other_party_role']) : '';
+        $out['other_party_role'] = $orr === '' ? null : $orr;
+
         $tip = $out['transport_instruction_profile'] ?? null;
         if (is_string($tip)) {
             $decoded = json_decode($tip, true);
@@ -378,18 +395,6 @@ class ShipmentOperationsController extends Controller
         $ok = Vendor::query()->whereKey($vendorId)->where('type', $expectedType)->exists();
         if (! $ok) {
             abort(422, __('Invalid vendor selection for this role.'));
-        }
-    }
-
-    private function assertOtherPartyVendor(?int $vendorId): void
-    {
-        if ($vendorId === null || $vendorId === 0) {
-            return;
-        }
-
-        $ok = Vendor::query()->whereKey($vendorId)->whereIn('type', ['other', 'overseas_agent'])->exists();
-        if (! $ok) {
-            abort(422, __('Invalid other party vendor selection.'));
         }
     }
 }
