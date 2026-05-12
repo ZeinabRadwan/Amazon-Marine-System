@@ -15,6 +15,7 @@ class ShipmentOperation extends Model
      */
     protected $fillable = [
         'shipment_id',
+        'service_types',
         'transport_contractor_id',
         'customs_broker_id',
         'insurance_company_id',
@@ -22,16 +23,20 @@ class ShipmentOperation extends Model
         'cut_off_date',
         'etd',
         'eta',
+        'ops_loading_date',
         'notes',
+        'transport_instructions',
     ];
 
     /**
      * @var array<string, string>
      */
     protected $casts = [
+        'service_types' => 'array',
         'cut_off_date' => 'date',
         'etd' => 'datetime',
         'eta' => 'datetime',
+        'ops_loading_date' => 'date',
     ];
 
     /**

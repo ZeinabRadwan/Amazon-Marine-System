@@ -42,15 +42,27 @@ class ActivityController extends Controller
             && $subjectIdRaw !== null && $subjectIdRaw !== '';
 
         if ($subjectMode) {
-            abort_unless(
-                $viewer?->can('financial.view') || $viewer?->can('accounting.view'),
-                403,
-                __('You do not have permission to view activities for this subject.')
-            );
-
             $subjectClass = self::resolveSubjectModelClass((string) $subjectTypeRaw);
+            $subjectId = (int) $subjectIdRaw;
+
+            if ($subjectClass === Shipment::class) {
+                $subjectShipment = Shipment::query()->find($subjectId);
+                abort_unless($subjectShipment, 404);
+                abort_unless(
+                    $viewer && $viewer->can('view', $subjectShipment),
+                    403,
+                    __('You do not have permission to view activities for this shipment.')
+                );
+            } else {
+                abort_unless(
+                    $viewer?->can('financial.view') || $viewer?->can('accounting.view'),
+                    403,
+                    __('You do not have permission to view activities for this subject.')
+                );
+            }
+
             $query->where('subject_type', $subjectClass)
-                ->where('subject_id', (int) $subjectIdRaw);
+                ->where('subject_id', $subjectId);
         } else {
             $isAdmin = $viewer?->can('reports.view') ?? false;
             $globalScope = $request->has('global') ? (bool) $request->boolean('global') : $isAdmin;

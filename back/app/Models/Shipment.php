@@ -35,6 +35,7 @@ class Shipment extends Model
         'shipment_type',
         'status',
         'operations_status',
+        'operational_status_code',
         'container_count',
         'container_size',
         'container_type',
