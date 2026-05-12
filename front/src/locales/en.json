@@ -57,6 +57,7 @@
     },
     "menu": {
       "dashboard": "Dashboard",
+      "operationsDashboard": "Operations dashboard",
       "notifications": "Notifications",
       "profile": "Profile (me)",
       "clientsCrm": "Clients",
@@ -94,6 +95,35 @@
     "export": "Export",
     "filter": "Filter",
     "refresh": "Refresh"
+  },
+  "operationsDashboard": {
+    "title": "Operations dashboard",
+    "subtitle": "Task focus and active shipments for the operations team.",
+    "cardOverdueTitle": "Overdue tasks",
+    "cardOverdueCaption": "Requires immediate attention",
+    "cardTodayTitle": "Today's tasks",
+    "cardTodayCaption": "Must be completed today",
+    "cardUpcomingTitle": "Upcoming tasks",
+    "upcomingFilterLabel": "Upcoming date range",
+    "upcomingWindows": {
+      "tomorrow": "Tomorrow",
+      "3_days": "3 days",
+      "week": "Week",
+      "month": "Month"
+    },
+    "cardActiveTitle": "Active shipments",
+    "cardActiveCaption": "In progress",
+    "tableOverdue": "Overdue tasks",
+    "tableToday": "Today's tasks",
+    "tableUpcoming": "Upcoming tasks ({{window}})",
+    "tableEmpty": "No rows to show.",
+    "colTask": "Task",
+    "colShipment": "Shipment",
+    "colDue": "Due date",
+    "colPriority": "Priority",
+    "colStatus": "Status",
+    "colCompletion": "Completion",
+    "notCompleted": "—"
   },
   "partnerLedger": {
     "title": "Partner Ledger",

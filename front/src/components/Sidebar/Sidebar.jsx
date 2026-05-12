@@ -13,6 +13,7 @@ import {
   ShipmentsIcon,
   DocumentIcon,
   InvoiceIcon,
+  OperationsBoardIcon,
   WalletIcon,
   PriceTagIcon,
   FileTextIcon,
@@ -43,6 +44,7 @@ const SIDEBAR_SECTIONS = [
   {
     sectionKey: 'operations',
     items: [
+      { id: 'operationsDashboard', menuKey: 'operationsDashboard', Icon: OperationsBoardIcon },
       { id: 'sdForms', menuKey: 'sdForms', Icon: DocumentIcon, badge: 'sdForms' },
       { id: 'shipments', menuKey: 'shipments', Icon: ShipmentsIcon, badge: 'shipments' },
     ],
@@ -133,7 +135,6 @@ const BADGE_CONFIG = {
 
 export default function Sidebar({
   appName = 'Marketerz',
-  isAdminRole = false,
   activeMenu = 'dashboard',
   onMenuChange,
   allowedPages: allowedPagesProp,
@@ -150,7 +151,7 @@ export default function Sidebar({
 }) {
   const badgeCounts = { crmCount, ticketsCount, alertsCount, shipmentsCount, sdFormsCount }
   const { t, i18n } = useTranslation()
-  const { allowedPages: hookAllowedPages, isAccountant } = useAuthAccess()
+  const { allowedPages: hookAllowedPages, isAccountant, isAdminRole, isOperations } = useAuthAccess()
   const allowedPages = allowedPagesProp ?? hookAllowedPages
   const isRtl = i18n.language === 'ar'
   const [theme, setTheme] = useState(() => getResolvedTheme())
@@ -216,13 +217,17 @@ export default function Sidebar({
 
             const filteredItems = allowedPagesSet
               ? items.filter(({ id }) => {
+                  if (id === 'operationsDashboard') return isAdminRole || isOperations
                   if (id === 'settings' && !isAdminRole) return false
                   if (id === 'reports') return isAdminRole
                   const pageKey = SIDEBAR_ID_TO_PAGE_KEY[id]
                   if (!pageKey) return true
                   return allowedPagesSet.has(pageKey)
                 })
-              : items.filter(({ id }) => id !== 'reports' || isAdminRole)
+              : items.filter(({ id }) => {
+                  if (id === 'operationsDashboard') return isAdminRole || isOperations
+                  return id !== 'reports' || isAdminRole
+                })
             if (!filteredItems.length) return null
 
             return (

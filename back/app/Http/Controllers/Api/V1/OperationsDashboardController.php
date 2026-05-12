@@ -36,11 +36,8 @@ class OperationsDashboardController extends Controller
 
         $eff = 'COALESCE(shipment_operation_tasks.due_date, DATE(shipment_operation_tasks.execution_at))';
 
-        $today = Carbon::today()->toDateString();
-        $tomorrow = Carbon::tomorrow()->toDateString();
-
-        $overdueQuery = (clone $taskBase)->whereRaw("$eff < ?", [$today]);
-        $todayQuery = (clone $taskBase)->whereRaw("$eff = ?", [$today]);
+        $overdueQuery = (clone $taskBase)->whereRaw("$eff < ?", [Carbon::today()->toDateString()]);
+        $todayQuery = (clone $taskBase)->whereRaw("$eff = ?", [Carbon::today()->toDateString()]);
         $upcomingQuery = (clone $taskBase)->whereRaw("$eff > ?", [$today]);
         $this->applyUpcomingWindow($upcomingQuery, $eff, $window);
 

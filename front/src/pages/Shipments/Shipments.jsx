@@ -271,10 +271,12 @@ function buildUpdatePayload(form) {
 export default function Shipments() {
   const { t, i18n } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
-  const { hasPageAccess, user, isAdminRole, isAccountant, isOperations, roleId, hasAbility } = useAuthAccess()
+  const { user, isAdminRole, isAccountant, isOperations, roleId, hasAbility } = useAuthAccess()
   const isSalesRepresentative = roleId === ROLE_ID.SALES || roleId === ROLE_ID.SALES_MANAGER
-  // Operations: can manage operational actions (stage update, edit, delete, operations tab)
-  const canManageOps = isAdminRole || hasPageAccess
+  // Operations / logistics: matches ShipmentPolicy create|update|delete (admin, operations role, or shipments.manage_ops).
+  const canManageOps = isAdminRole || isOperations || hasAbility('shipments.manage_ops')
+  const canPostShipmentTrackingUpdate =
+    canManageOps || hasAbility('customer_service.manage_tracking_updates')
   // Accountant: can see financials (Receipt button → ShipmentFinancialsModal, financial totals card)
   const canViewShipmentFinancials = isAdminRole || isAccountant || isSalesRepresentative
   const canManageExpenses = isAdminRole || isAccountant
@@ -1999,6 +2001,7 @@ export default function Shipments() {
             closeShipmentDetailModal()
           }}
           canManageOps={canManageOps}
+          canPostShipmentTrackingUpdate={canPostShipmentTrackingUpdate}
           canViewFinancialTotals={canViewShipmentFinancials}
           canViewSelling={canViewSelling}
           isOperations={isOperations}

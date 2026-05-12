@@ -36,7 +36,15 @@ class ShipmentPolicy
 
     public function update(User $user, Shipment $shipment): bool
     {
-        return $user->hasRole('admin') || $user->can('shipments.manage_ops');
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if ($user->hasRole('operations')) {
+            return true;
+        }
+
+        return $user->can('shipments.manage_ops');
     }
 
     public function delete(User $user, Shipment $shipment): bool

@@ -49,7 +49,7 @@ class ActivityController extends Controller
                 $subjectShipment = Shipment::query()->find($subjectId);
                 abort_unless($subjectShipment, 404);
                 abort_unless(
-                    $viewer && $viewer->can('view', $subjectShipment),
+                    $viewer && ($viewer->hasRole('admin') || $viewer->hasRole('operations')),
                     403,
                     __('You do not have permission to view activities for this shipment.')
                 );

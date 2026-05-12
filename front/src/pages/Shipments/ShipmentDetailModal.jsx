@@ -106,6 +106,7 @@ export default function ShipmentDetailModal({
   onClose,
   onEdit,
   canManageOps = false,
+  canPostShipmentTrackingUpdate = false,
   canViewFinancialTotals = false,
   canViewSelling = false,
   statusOptions = [],
@@ -990,7 +991,7 @@ export default function ShipmentDetailModal({
 
           {detailTab === 'tracking' && (
             <section className="client-detail-modal__section">
-              {canManageOps && (
+              {canPostShipmentTrackingUpdate && (
                 <form onSubmit={handleAddTracking} className="mb-4">
                   <label htmlFor="shipment-tracking" className="client-detail-modal__label block mb-1">
                     {t('shipments.trackingAddLabel')}

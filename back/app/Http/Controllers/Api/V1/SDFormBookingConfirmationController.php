@@ -131,7 +131,7 @@ class SDFormBookingConfirmationController extends Controller
     private function recipientsForBookingUploadNotification(User $uploader): Collection
     {
         $adminIds = User::role('admin')->pluck('id');
-        $salesIds = User::role('sales')->pluck('id');
+        $salesIds = User::role(['sales', 'sales_manager'])->pluck('id');
         $ids = $adminIds->merge($salesIds)->unique()->values()->filter(fn ($id) => (int) $id !== (int) $uploader->id);
 
         if ($ids->isEmpty()) {

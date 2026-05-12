@@ -35,6 +35,7 @@ import Attendance from './pages/Attendance'
 import SDForms from './pages/SDForms'
 import ShipmentDeclarationForm from './pages/SDForms/ShipmentDeclarationForm'
 import Shipments from './pages/Shipments/Shipments'
+import OperationsDashboard from './pages/Operations/OperationsDashboard'
 import Pricing from './pages/Pricing/Pricing'
 import Invoices from './pages/Invoices/Invoices'
 import PartnerLedger from './pages/PartnerLedger/PartnerLedger'
@@ -81,6 +82,12 @@ function SignupPlaceholder() {
 function RequireAdminOnly({ children }) {
   const { isAdminRole } = useAuthAccess()
   if (!isAdminRole) return <Navigate to="/" replace />
+  return children
+}
+
+function RequireOperationsOrAdmin({ children }) {
+  const { isAdminRole, isOperations } = useAuthAccess()
+  if (!isAdminRole && !isOperations) return <Navigate to="/" replace />
   return children
 }
 
@@ -831,6 +838,14 @@ function App() {
               <RequirePageAccess pageKey="shipments">
                 <Shipments />
               </RequirePageAccess>
+            }
+          />
+          <Route
+            path="/operations-dashboard"
+            element={
+              <RequireOperationsOrAdmin>
+                <OperationsDashboard />
+              </RequireOperationsOrAdmin>
             }
           />
           <Route

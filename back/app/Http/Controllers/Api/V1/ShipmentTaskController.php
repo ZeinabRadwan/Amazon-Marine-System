@@ -33,7 +33,7 @@ class ShipmentTaskController extends Controller
 
     public function index(Shipment $shipment)
     {
-        $this->authorize('view', $shipment);
+        $this->authorize('update', $shipment);
 
         return response()->json([
             'data' => $shipment->tasks()->with(['assignedTo:id,name,email'])->get(),

@@ -44,6 +44,18 @@ export const getDashboardPricingTeam = (token) => getRoleDashboard(token, 'prici
 export const getDashboardOperationsEmployee = (token) => getRoleDashboard(token, 'operations-employee')
 export const getDashboardSupportEmployee = (token) => getRoleDashboard(token, 'support-employee')
 
+export async function getOperationsDashboard(token, params = {}) {
+  const searchParams = new URLSearchParams()
+  if (params.upcoming_window != null && params.upcoming_window !== '') {
+    searchParams.set('upcoming_window', String(params.upcoming_window))
+  }
+  const q = searchParams.toString()
+  const res = await apiFetch(`${getBaseUrl()}/operations-dashboard${q ? `?${q}` : ''}`, { headers: authHeaders(token) })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to load operations dashboard (${res.status})`)
+  return data
+}
+
 export async function getSidebarCounts(token) {
   const res = await apiFetch(`${getBaseUrl()}/dashboard/sidebar-counts`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))

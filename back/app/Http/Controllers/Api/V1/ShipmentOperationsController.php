@@ -12,14 +12,14 @@ use App\Services\ActivityLogger;
 use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 
 class ShipmentOperationsController extends Controller
 {
     public function show(Shipment $shipment)
     {
-        $this->authorize('view', $shipment);
+        $this->authorize('update', $shipment);
 
         $operation = $shipment->operation()->with([
             'transportContractor',
@@ -286,7 +286,7 @@ class ShipmentOperationsController extends Controller
 
     /**
      * @param  array<string, mixed>  $row
-     * @param  \Illuminate\Support\Collection<int, string>  $vendorNames  id => name
+     * @param  Collection<int, string>  $vendorNames  id => name
      */
     private function summarizeOperationProfile(array $row, $vendorNames): string
     {

@@ -58,6 +58,7 @@
     },
     "menu": {
       "dashboard": "لوحة التحكم",
+      "operationsDashboard": "لوحة العمليات",
       "notifications": "إدارة الإشعارات",
       "profile": "الملف الشخصي",
       "clientsCrm": "العملاء",
@@ -95,6 +96,35 @@
     "export": "تصدير",
     "filter": "تصفية",
     "refresh": "تحديث"
+  },
+  "operationsDashboard": {
+    "title": "لوحة عمليات",
+    "subtitle": "تركيز المهام والشحنات الجارية لفريق العمليات.",
+    "cardOverdueTitle": "مهام متأخرة",
+    "cardOverdueCaption": "تتطلب اهتماماً فورياً",
+    "cardTodayTitle": "مهام اليوم",
+    "cardTodayCaption": "يجب إنجازها اليوم",
+    "cardUpcomingTitle": "مهام قادمة",
+    "upcomingFilterLabel": "نطاق التاريخ للمهام القادمة",
+    "upcomingWindows": {
+      "tomorrow": "غداً",
+      "3_days": "3 أيام",
+      "week": "أسبوع",
+      "month": "شهر"
+    },
+    "cardActiveTitle": "شحنات نشطة",
+    "cardActiveCaption": "قيد التنفيذ",
+    "tableOverdue": "مهام متأخرة",
+    "tableToday": "مهام اليوم",
+    "tableUpcoming": "مهام قادمة ({{window}})",
+    "tableEmpty": "لا توجد بيانات.",
+    "colTask": "المهمة",
+    "colShipment": "الشحنة",
+    "colDue": "تاريخ الاستحقاق",
+    "colPriority": "الأولوية",
+    "colStatus": "الحالة",
+    "colCompletion": "الإنجاز",
+    "notCompleted": "—"
   },
   "partnerLedger": {
     "title": "كشف حساب الشركاء",

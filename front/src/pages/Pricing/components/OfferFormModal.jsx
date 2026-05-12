@@ -8,7 +8,6 @@ import { listPricingFreightUnitTypes } from '../../../api/pricingFreightUnitType
 import PortNameAsyncSelect from './PortNameAsyncSelect'
 import ShippingLineNameAsyncSelect from './ShippingLineNameAsyncSelect'
 import PricingRegionAsyncSelect from './PricingRegionAsyncSelect'
-import OceanContainerTypeAsyncSelect from './OceanContainerTypeAsyncSelect'
 import InlandTruckTypeAsyncSelect from './InlandTruckTypeAsyncSelect'
 import InlandLocationAsyncSelect from './InlandLocationAsyncSelect'
 import DatePicker from '../../../components/DatePicker'
@@ -16,6 +15,20 @@ import { formatDate, UI_DATE_FORMAT } from '../../../utils/dateUtils'
 
 /** Canonical weekday names stored in API (`weekly_sailing_days` comma-separated); sort order Sat → Fri */
 const WEEK_DAYS = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+
+/**
+ * Fixed container presets for sea freight offers (slugs align with `resolveOceanMeta` fallbacks
+ * and `inferPresetFromPricing`).
+ */
+const SEA_OCEAN_UNIT_TYPES = Object.freeze([
+  { slug: '20-dry-std', label: "20' Dry" },
+  { slug: '40-dry-std', label: "40' Dry" },
+  { slug: '40-dry-hq', label: "40' High Cube" },
+  { slug: '20-reefer', label: "20' Reefer" },
+  { slug: '40-reefer', label: "40' Reefer" },
+  { slug: 'flat-rack', label: 'Flat Rack' },
+  { slug: 'open-top', label: 'Open Top' },
+])
 
 const CURRENCIES = ['EGP', 'USD', 'EUR']
 
@@ -258,22 +271,9 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
   const [inlandForm, setInlandForm] = useState(defaultInlandForm)
   const [seaCoreLines, setSeaCoreLines] = useState(initialSeaCoreLines)
   const [seaCustomLines, setSeaCustomLines] = useState([])
-  const [oceanUnitTypes, setOceanUnitTypes] = useState([])
   const [inlandUnitTypes, setInlandUnitTypes] = useState([])
   /** Single sailing date pending add (ISO YYYY-MM-DD from DatePicker) */
   const [draftFixedSailingDate, setDraftFixedSailingDate] = useState('')
-
-  const loadOceanTypes = useCallback(async () => {
-    const token = getStoredToken()
-    if (!token) return
-    try {
-      const res = await listPricingFreightUnitTypes(token, { dataset: 'ocean_container' })
-      const data = res?.data ?? res
-      setOceanUnitTypes(Array.isArray(data) ? data : [])
-    } catch (e) {
-      console.error(e)
-    }
-  }, [])
 
   const loadInlandTypes = useCallback(async () => {
     const token = getStoredToken()
@@ -295,9 +295,8 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
   useEffect(() => {
     if (!isOpen) return
     const mode = offerToEdit?.pricing_type ?? pricingMode ?? 'sea'
-    if (mode === 'sea') loadOceanTypes()
-    else loadInlandTypes()
-  }, [isOpen, offerToEdit?.pricing_type, pricingMode, loadOceanTypes, loadInlandTypes])
+    if (mode === 'inland') loadInlandTypes()
+  }, [isOpen, offerToEdit?.pricing_type, pricingMode, loadInlandTypes])
 
   useEffect(() => {
     if (!isOpen) setDraftFixedSailingDate('')
@@ -308,13 +307,13 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
   }, [form.sailing_tab])
 
   useEffect(() => {
-    if (effectiveMode !== 'sea' || !oceanUnitTypes.length) return
+    if (effectiveMode !== 'sea') return
     setForm((f) => {
-      const slugs = new Set(oceanUnitTypes.map((x) => x.slug))
+      const slugs = new Set(SEA_OCEAN_UNIT_TYPES.map((x) => x.slug))
       if (f.container_preset && slugs.has(f.container_preset)) return f
-      return { ...f, container_preset: oceanUnitTypes[0].slug }
+      return { ...f, container_preset: SEA_OCEAN_UNIT_TYPES[0].slug }
     })
-  }, [effectiveMode, oceanUnitTypes])
+  }, [effectiveMode])
 
   useEffect(() => {
     if (effectiveMode !== 'inland' || !inlandUnitTypes.length) return
@@ -394,20 +393,20 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
 
     const { seaCoreLines: loadedCore, seaCustomLines: loadedCustom } = buildSeaPricingStateFromOffer(
       offerToEdit,
-      oceanUnitTypes
+      SEA_OCEAN_UNIT_TYPES
     )
     setSeaCoreLines(loadedCore.length ? loadedCore : initialSeaCoreLines())
     setSeaCustomLines(loadedCustom)
-  }, [offerToEdit, isOpen, pricingMode, oceanUnitTypes])
+  }, [offerToEdit, isOpen, pricingMode])
 
   const oceanMeta = useMemo(
-    () => resolveOceanMeta(form.container_preset, oceanUnitTypes),
-    [form.container_preset, oceanUnitTypes]
+    () => resolveOceanMeta(form.container_preset, SEA_OCEAN_UNIT_TYPES),
+    [form.container_preset]
   )
 
   const syncSeaCoreLinesForPreset = useCallback(
     (presetSlug) => {
-      const meta = resolveOceanMeta(presetSlug, oceanUnitTypes)
+      const meta = resolveOceanMeta(presetSlug, SEA_OCEAN_UNIT_TYPES)
       setSeaCoreLines((prev) => {
         const byName = Object.fromEntries(prev.map((r) => [r.name, r]))
         const base = DEFAULT_SEA_LINE_NAMES.map((name) => ({
@@ -422,7 +421,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
         return base
       })
     },
-    [oceanUnitTypes]
+    []
   )
 
   const updateForm = (patch) => setForm((prev) => ({ ...prev, ...patch }))
@@ -521,7 +520,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
         const amount = Number(row.amount)
         if (Number.isNaN(amount) || amount < 0) return null
         if (row.name === 'Power' && oceanMeta.type !== 'Reefer') return null
-        const code = inferLegacyPricingCode(row.name, form.container_preset, oceanUnitTypes, 0)
+        const code = inferLegacyPricingCode(row.name, form.container_preset, SEA_OCEAN_UNIT_TYPES, 0)
         return {
           code,
           name: row.name,
@@ -539,7 +538,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
         if (Number.isNaN(amount) || amount < 0) return null
         const label = (row.name || '').trim()
         if (!label) return null
-        const code = inferLegacyPricingCode('Other Charges', form.container_preset, oceanUnitTypes, otherIdx)
+        const code = inferLegacyPricingCode('Other Charges', form.container_preset, SEA_OCEAN_UNIT_TYPES, otherIdx)
         otherIdx += 1
         return {
           code,
@@ -684,17 +683,23 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
               <div className="sea-rate-grid-4 sea-rate-grid-compact">
                 <div>
                   <label htmlFor="offer-container-type" className="sea-rate-label">نوع الحاوية / Container Type</label>
-                  <OceanContainerTypeAsyncSelect
+                  <select
                     id="offer-container-type"
-                    types={oceanUnitTypes}
+                    className="sea-rate-input"
                     value={form.container_preset}
-                    onChange={(v) => {
+                    onChange={(e) => {
+                      const v = e.target.value
                       updateForm({ container_preset: v })
                       syncSeaCoreLinesForPreset(v)
                     }}
-                    onTypesUpdated={loadOceanTypes}
-                    placeholder="اختر النوع"
-                  />
+                    aria-label={t('pricing.offerFormContainerType', 'Container type')}
+                  >
+                    {SEA_OCEAN_UNIT_TYPES.map((opt) => (
+                      <option key={opt.slug} value={opt.slug}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label htmlFor="offer-transit-time" className="sea-rate-label">مدة العبور / Transit Time</label>

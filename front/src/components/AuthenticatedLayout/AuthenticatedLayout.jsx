@@ -10,7 +10,6 @@ import { getSidebarCounts } from '../../api/dashboard'
 import AppLayout from '../AppLayout'
 import LoaderDots from '../LoaderDots'
 import '../LoaderDots/LoaderDots.css'
-import { ROLE_ID } from '../../constants/roles'
 
 const PAGE_ACCESS_CACHE_KEY = 'am.pageAccess.v1'
 
@@ -71,6 +70,11 @@ function getPageHeaderForPath(pathname, t) {
       }
     case '/shipments':
       return { title: t('shipments.title'), breadcrumbs: [home, { label: t('shipments.title') }] }
+    case '/operations-dashboard':
+      return {
+        title: t('operationsDashboard.title'),
+        breadcrumbs: [home, { label: t('operationsDashboard.title') }],
+      }
     case '/pricing':
       return { title: t('pricing.title', 'Pricing'), breadcrumbs: [home, { label: t('pricing.title', 'Pricing') }] }
     case '/invoices':
@@ -87,14 +91,14 @@ function getPageHeaderForPath(pathname, t) {
       return { title: t('reports.title', 'Reports'), breadcrumbs: [home, { label: t('reports.title', 'Reports') }] }
     case '/official-documents':
       return { title: t('sidebar.menu.officialDocuments'), breadcrumbs: [home, { label: t('sidebar.menu.officialDocuments') }] }
-    default:
-      return { title: t('pageHeader.dashboard'), breadcrumbs: [home] }
     case '/accountings':
       return { title: t('accountings.title'), breadcrumbs: [home, { label: t('accountings.title') }] }
     case '/treasury':
       return { title: t('treasury.title'), breadcrumbs: [home, { label: t('treasury.title') }] }
     case '/expenses':
       return { title: t('expensesPage.title'), breadcrumbs: [home, { label: t('expensesPage.title') }] }
+    default:
+      return { title: t('pageHeader.dashboard'), breadcrumbs: [home] }
   }
 }
 
@@ -383,6 +387,10 @@ export default function AuthenticatedLayout() {
       navigate('/shipments')
       return
     }
+    if (id === 'operationsDashboard') {
+      navigate('/operations-dashboard')
+      return
+    }
     if (id === 'pricing') {
       navigate('/pricing')
       return
@@ -448,6 +456,7 @@ export default function AuthenticatedLayout() {
     '/sd-forms': 'sdForms',
     '/sd-forms/declaration': 'sdForms',
     '/shipments': 'shipments',
+    '/operations-dashboard': 'operationsDashboard',
     '/pricing': 'pricing',
     '/invoices': 'invoices',
     '/partner-ledger': 'partnerLedger',
@@ -494,12 +503,6 @@ export default function AuthenticatedLayout() {
     () => new Set(Array.isArray(allowedPages) ? allowedPages.filter(Boolean) : []),
     [allowedPages]
   )
-  const isAdminRole = useMemo(() => {
-    const rid = user?.role_id ?? user?.roles?.[0]?.id ?? user?.role?.id
-    if (rid === ROLE_ID.ADMIN) return true
-    const primary = (user?.primary_role ?? user?.roles?.[0]?.name ?? user?.role?.name ?? '').toString().toLowerCase()
-    return primary === 'admin'
-  }, [user])
   const hasPageAccess = useCallback((pageKey) => {
     if (!pageKey) return false
     return allowedPagesSet.has(String(pageKey))
@@ -518,7 +521,6 @@ export default function AuthenticatedLayout() {
   return (
     <AppLayout
       user={sidebarUser}
-      isAdminRole={isAdminRole}
       activeMenu={activeMenu}
       onMenuChange={handleMenuChange}
       allowedPages={allowedPages}
