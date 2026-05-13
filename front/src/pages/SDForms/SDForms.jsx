@@ -201,6 +201,53 @@ function normalizeListResponse(data) {
   return Array.isArray(raw) ? raw : []
 }
 
+const CREATE_DRAFT_LS_KEY = 'sd-forms.create-draft.v1'
+
+function isMeaningfulDraft(form) {
+  if (!form || typeof form !== 'object') return false
+  for (const [key, value] of Object.entries(form)) {
+    if (key === 'status') continue
+    if (key === 'shipment_direction' && value === 'Export') continue
+    if (key === 'num_containers' && (value === '1' || value === 1)) continue
+    if (value !== '' && value != null) return true
+  }
+  return false
+}
+
+function loadLocalCreateDraft() {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = window.localStorage.getItem(CREATE_DRAFT_LS_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === 'object' ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+function saveLocalCreateDraft(form) {
+  if (typeof window === 'undefined') return
+  try {
+    if (!isMeaningfulDraft(form)) {
+      window.localStorage.removeItem(CREATE_DRAFT_LS_KEY)
+      return
+    }
+    window.localStorage.setItem(CREATE_DRAFT_LS_KEY, JSON.stringify(form))
+  } catch {
+    /* ignore quota/serialization errors */
+  }
+}
+
+function clearLocalCreateDraft() {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.removeItem(CREATE_DRAFT_LS_KEY)
+  } catch {
+    /* ignore */
+  }
+}
+
 export default function SDForms() {
   const { t, i18n } = useTranslation()
   const token = getStoredToken()
@@ -213,15 +260,16 @@ export default function SDForms() {
   const canSubmit        = isAdminRole || isAnySales   // "Submit" draft button
   const canSendOps       = isAdminRole || isAnySales   // "Send to Ops" + "Email Ops"
   const canLinkShipment  = isAdminRole || isOperations || isAnySales
-  const canEdit          = isAdminRole || isAnySales
+  const canEdit          = isAdminRole || isAnySales || isOperations
   const canDelete        = isAdminRole || isAnySales
+  const canCreate        = isAdminRole || isAnySales
 
   const [list, setList] = useState([])
   const [loading, setLoading] = useState(true)
   const [alert, setAlert] = useState(null)
   const [filters, setFilters] = useState({
     search: '',
-    status: '',
+    status: isOperations ? 'sent_to_operations' : '',
     client_id: '',
     sales_rep_id: '',
     shipping_line_id: '',
@@ -252,6 +300,7 @@ export default function SDForms() {
   const [showCreate, setShowCreate] = useState(false)
   const [createForm, setCreateForm] = useState(() => initialCreateForm())
   const [createSubmitting, setCreateSubmitting] = useState(false)
+  const [draftRestored, setDraftRestored] = useState(false)
 
   const [editId, setEditId] = useState(null)
   const [editForm, setEditForm] = useState(initialCreateForm)
@@ -317,6 +366,12 @@ export default function SDForms() {
   useEffect(() => {
     setSelectedIds({})
   }, [filters.page])
+
+  useEffect(() => {
+    if (!showCreate) return
+    const handle = setTimeout(() => saveLocalCreateDraft(createForm), 400)
+    return () => clearTimeout(handle)
+  }, [createForm, showCreate])
 
   useEffect(() => {
     if (!token) return
@@ -553,9 +608,40 @@ export default function SDForms() {
     }
   }, [token, t])
 
+  const openCreate = useCallback(() => {
+    const stored = loadLocalCreateDraft()
+    if (stored) {
+      setCreateForm({ ...initialCreateForm(), ...stored })
+      setDraftRestored(true)
+    } else {
+      setCreateForm(initialCreateForm())
+      setDraftRestored(false)
+    }
+    setShowCreate(true)
+  }, [])
+
+  const closeCreate = useCallback(() => {
+    setShowCreate(false)
+  }, [])
+
+  const discardLocalDraft = useCallback(() => {
+    clearLocalCreateDraft()
+    setCreateForm(initialCreateForm())
+    setDraftRestored(false)
+  }, [])
+
   const handleCreateSubmit = async (e) => {
     e.preventDefault()
     await createDraftAndMaybeDownload(false)
+  }
+
+  const finalizeCreateSuccess = (successMessage) => {
+    clearLocalCreateDraft()
+    setDraftRestored(false)
+    setShowCreate(false)
+    setCreateForm(initialCreateForm())
+    loadList()
+    setAlert({ type: 'success', message: successMessage })
   }
 
   const createDraftAndMaybeDownload = async (downloadAfterCreate = false) => {
@@ -581,10 +667,34 @@ export default function SDForms() {
       if (downloadAfterCreate && createdId) {
         await downloadPdf(createdId)
       }
-      setShowCreate(false)
-      setCreateForm(initialCreateForm())
-      loadList()
-      setAlert({ type: 'success', message: t('sdForms.createSuccess') })
+      finalizeCreateSuccess(t('sdForms.createSuccess'))
+      return createdId
+    } catch (err) {
+      setAlert({ type: 'error', message: err.message || t('sdForms.errorCreate') })
+      return null
+    } finally {
+      setCreateSubmitting(false)
+    }
+  }
+
+  const saveDraft = async () => {
+    if (!token) return null
+    if (!String(createForm.shipment_direction || '').trim()) {
+      setAlert({ type: 'error', message: 'Shipment direction is required.' })
+      return null
+    }
+    const payload = buildPayload(createForm)
+    payload.status = 'draft'
+    if (payload.shipment_direction === 'Import' && !payload.acid_number) {
+      setAlert({ type: 'error', message: 'ACID number is required for import shipments.' })
+      return null
+    }
+    setCreateSubmitting(true)
+    setAlert(null)
+    try {
+      const created = await createSDForm(token, payload)
+      const createdId = created?.id ?? created?.data?.id ?? null
+      finalizeCreateSuccess(t('sdForms.draftSavedSuccess', 'Draft saved.'))
       return createdId
     } catch (err) {
       setAlert({ type: 'error', message: err.message || t('sdForms.errorCreate') })
@@ -1453,16 +1563,15 @@ export default function SDForms() {
               >
                 {exportLoading ? <span className="clients-filters__export-spinner" aria-hidden /> : <FileSpreadsheet className="clients-filters__btn-icon-svg" aria-hidden />}
               </button>
-              <button
-                type="button"
-                className="page-header__btn page-header__btn--primary"
-                onClick={() => {
-                  setCreateForm(initialCreateForm())
-                  setShowCreate(true)
-                }}
-              >
-                {t('sdForms.newForm')}
-              </button>
+              {canCreate ? (
+                <button
+                  type="button"
+                  className="page-header__btn page-header__btn--primary"
+                  onClick={openCreate}
+                >
+                  {t('sdForms.newForm')}
+                </button>
+              ) : null}
             </div>
           </div>
           <div
@@ -1547,7 +1656,7 @@ export default function SDForms() {
 
         {showCreate && (
           <div className="client-detail-modal" role="dialog" aria-modal="true" aria-labelledby="sd-create-title">
-            <div className="client-detail-modal__backdrop" onClick={() => !createSubmitting && setShowCreate(false)} />
+            <div className="client-detail-modal__backdrop" onClick={() => !createSubmitting && closeCreate()} />
             <div className="client-detail-modal__box client-detail-modal__box--form">
               <header className="client-detail-modal__header client-detail-modal__header--form">
                 <h2 id="sd-create-title" className="client-detail-modal__title">
@@ -1556,7 +1665,7 @@ export default function SDForms() {
                 <button
                   type="button"
                   className="client-detail-modal__close"
-                  onClick={() => setShowCreate(false)}
+                  onClick={closeCreate}
                   disabled={createSubmitting}
                   aria-label="Close"
                 >
@@ -1566,12 +1675,62 @@ export default function SDForms() {
               <form onSubmit={handleCreateSubmit} className="client-detail-modal__form">
                 <div className="client-detail-modal__body client-detail-modal__body--form">
                   <div className="client-detail-modal__body-inner">
+                    {draftRestored ? (
+                      <div
+                        className="sd-form-draft-banner"
+                        role="status"
+                        style={{
+                          background: '#fef9c3',
+                          border: '1px solid #facc15',
+                          color: '#713f12',
+                          padding: '8px 12px',
+                          borderRadius: 6,
+                          marginBottom: 12,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: 12,
+                          fontSize: 13,
+                        }}
+                      >
+                        <span>
+                          {t(
+                            'sdForms.draftRestored',
+                            'Unsaved draft restored from your last session.',
+                          )}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={discardLocalDraft}
+                          disabled={createSubmitting}
+                          style={{
+                            border: 'none',
+                            background: 'transparent',
+                            color: '#854d0e',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            textDecoration: 'underline',
+                          }}
+                        >
+                          {t('sdForms.discardDraft', 'Discard draft')}
+                        </button>
+                      </div>
+                    ) : null}
                     {renderSdFormFields(createForm, setCreateForm, { disabled: createSubmitting })}
                   </div>
                 </div>
                 <footer className="client-detail-modal__footer client-detail-modal__footer--form">
-                  <button type="button" className="client-detail-modal__btn client-detail-modal__btn--secondary" onClick={() => setShowCreate(false)} disabled={createSubmitting}>
+                  <button type="button" className="client-detail-modal__btn client-detail-modal__btn--secondary" onClick={closeCreate} disabled={createSubmitting}>
                     Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="client-detail-modal__btn client-detail-modal__btn--secondary"
+                    onClick={saveDraft}
+                    disabled={createSubmitting}
+                    title={t('sdForms.saveAsDraftHint', 'Save your progress as a draft without final validation')}
+                  >
+                    {createSubmitting ? 'Saving…' : t('sdForms.saveAsDraft', 'Save as Draft')}
                   </button>
                   <button
                     type="button"

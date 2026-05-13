@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Mail\SdFormMail;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreSDFormRequest;
 use App\Http\Requests\SubmitSDFormRequest;
 use App\Http\Requests\UpdateSDFormRequest;
+use App\Mail\SdFormMail;
 use App\Models\Client;
 use App\Models\PdfLayout;
 use App\Models\SDForm;
@@ -42,10 +42,18 @@ class SDFormController extends Controller
             $query->where('client_id', $clientId);
         }
 
-        if ($request->user() && $request->user()->roles()->where('name', 'sales')->exists()) {
-            $query->where('sales_rep_id', $request->user()->id);
+        $authUser = $request->user();
+        $isOperationsUser = $authUser && $authUser->roles()->where('name', 'operations')->exists()
+            && ! $authUser->roles()->where('name', 'admin')->exists();
+
+        if ($authUser && $authUser->roles()->where('name', 'sales')->exists()) {
+            $query->where('sales_rep_id', $authUser->id);
         } elseif ($salesRepId = $request->query('sales_rep_id')) {
             $query->where('sales_rep_id', $salesRepId);
+        }
+
+        if ($isOperationsUser) {
+            $query->whereIn('status', ['sent_to_operations', 'in_progress', 'completed', 'cancelled']);
         }
 
         if ($shippingLineId = $request->query('shipping_line_id')) {
@@ -256,15 +264,15 @@ class SDFormController extends Controller
     {
         $this->authorize('update', $sdForm);
 
-        if (!in_array($sdForm->status, ['draft', 'submitted'])) {
+        if (! in_array($sdForm->status, ['draft', 'submitted'])) {
             abort(422, __('Only SD forms in Draft or Submitted status can be sent to operations.'));
         }
 
-        if (!$sdForm->shipment_direction) {
+        if (! $sdForm->shipment_direction) {
             abort(422, __('Please select shipment direction before sending to operations.'));
         }
 
-        if ($sdForm->shipment_direction === 'Import' && !$sdForm->acid_number) {
+        if ($sdForm->shipment_direction === 'Import' && ! $sdForm->acid_number) {
             abort(422, __('ACID number is required for Import shipments.'));
         }
 
@@ -604,7 +612,7 @@ class SDFormController extends Controller
         $mpdf->WriteHTML($html);
 
         $pdfBinary = $mpdf->Output($filename, 'S');
-        if (!is_string($pdfBinary) || $pdfBinary === '') {
+        if (! is_string($pdfBinary) || $pdfBinary === '') {
             throw new \RuntimeException('PDF output is empty');
         }
 

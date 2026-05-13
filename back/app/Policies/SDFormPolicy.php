@@ -35,7 +35,15 @@ class SDFormPolicy
 
     public function create(User $user): bool
     {
-        return $user->can('sd_forms.manage');
+        if (! $user->can('sd_forms.manage')) {
+            return false;
+        }
+
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        return ! $user->hasRole('operations');
     }
 
     public function update(User $user, SDForm $form): bool
@@ -53,6 +61,14 @@ class SDFormPolicy
 
     public function delete(User $user, SDForm $form): bool
     {
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if ($user->hasRole('operations')) {
+            return false;
+        }
+
         return $this->update($user, $form);
     }
 }

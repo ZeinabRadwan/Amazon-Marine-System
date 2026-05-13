@@ -104,6 +104,14 @@ class RolesAndPermissionsSeeder extends Seeder
             ]);
         }
 
+        if ($operationsRole = $roles['operations'] ?? null) {
+            $operationsRole->syncPermissions([
+                $permissions['sd_forms.view'],
+                $permissions['sd_forms.manage'],
+                $permissions['sd_forms.manage_any'],
+            ]);
+        }
+
         $this->seedPagePermissions($roles);
     }
 
@@ -160,7 +168,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'attendance' => true, 'visits' => false, 'users' => false, 'roles_permissions' => false, 'settings' => true,
             ],
             'operations' => [
-                'dashboard' => true, 'clients' => false, 'shipments' => true, 'sd_forms' => false, 'operations' => true,
+                'dashboard' => true, 'clients' => false, 'shipments' => true, 'sd_forms' => true, 'operations' => true,
                 'invoices' => false, 'accounting' => false, 'treasury' => false, 'expenses' => false, 'pricing' => false,
                 'partners' => false, 'reports' => false, 'official_documents' => false, 'customer_service' => false,
                 'attendance' => true, 'visits' => false, 'users' => false, 'roles_permissions' => false, 'settings' => true,
