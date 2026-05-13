@@ -299,6 +299,35 @@ export async function confirmSDFormBooking(token, sdFormId, file) {
 }
 
 /**
+ * POST /sd-forms/:id/start-booking
+ * Operations acknowledges they are working on the booking. Updates status to booking_in_progress.
+ */
+export async function startSDFormBooking(token, sdFormId) {
+  const res = await apiFetch(`${getBaseUrl()}/sd-forms/${encodeURIComponent(sdFormId)}/start-booking`, {
+    method: 'POST',
+    headers: authHeaders(token),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to start booking (${res.status})`)
+  return data
+}
+
+/**
+ * POST /sd-forms/:id/request-information
+ * Operations requests additional information from sales/admin. Updates status to information_requested.
+ */
+export async function requestSDFormInformation(token, sdFormId, note) {
+  const res = await apiFetch(`${getBaseUrl()}/sd-forms/${encodeURIComponent(sdFormId)}/request-information`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+    body: JSON.stringify({ note }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to request information (${res.status})`)
+  return data
+}
+
+/**
  * POST /sd-forms/:id/cancel-booking
  * Operations cancels a booking, providing a reason. Updates status to booking_cancelled.
  */

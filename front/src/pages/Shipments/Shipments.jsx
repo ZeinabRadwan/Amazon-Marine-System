@@ -21,7 +21,11 @@ import {
 import { listShipmentExpenses } from '../../api/expenses'
 import { listClients } from '../../api/clients'
 import { listUsers } from '../../api/users'
-import { listSDForms } from '../../api/sdForms'
+import {
+  listSDForms,
+  listSDFormBookingConfirmations,
+  downloadSDFormBookingConfirmation,
+} from '../../api/sdForms'
 import { listVendors } from '../../api/vendors'
 import { listPorts, createPort } from '../../api/ports'
 import { listShippingLines, createShippingLine } from '../../api/shippingLines'
@@ -237,6 +241,21 @@ function sdFormOptionLabel(sd) {
   return `${num} (ID ${sd.id})`
 }
 
+function sdStatusBadgeClass(status) {
+  if (!status) return 'sd-forms-badge--default'
+  const s = String(status).toLowerCase()
+  if (s === 'draft') return 'sd-forms-badge--draft'
+  if (s === 'submitted') return 'sd-forms-badge--submitted'
+  if (s === 'sent_to_operations') return 'sd-forms-badge--sent'
+  if (s === 'in_progress') return 'sd-forms-badge--progress'
+  if (s === 'booking_confirmed') return 'sd-forms-badge--booking-confirmed'
+  if (s === 'booking_cancelled') return 'sd-forms-badge--booking-cancelled'
+  if (s === 'converted_to_shipment') return 'sd-forms-badge--converted'
+  if (s === 'completed') return 'sd-forms-badge--submitted'
+  if (s === 'cancelled') return 'sd-forms-badge--cancelled'
+  return 'sd-forms-badge--default'
+}
+
 function buildUpdatePayload(form) {
   const body = {
     client_id: numOrUndef(form.client_id),
@@ -388,13 +407,80 @@ export default function Shipments() {
     user?.id,
   ])
 
-  const sdFormsSortedForClient = useMemo(
-    () =>
-      [...sdFormsForClient].sort((a, b) =>
-        String(a.sd_number || '').localeCompare(String(b.sd_number || ''), undefined, { numeric: true })
-      ),
-    [sdFormsForClient]
+  // Eligible for shipment creation: only SD forms whose booking has been finalised.
+  // The currently-linked form (if editing) is always kept in the list so an existing
+  // shipment never loses its link, even if its SD form status no longer matches the filter.
+  const ELIGIBLE_SD_FORM_STATUSES = useMemo(
+    () => new Set(['booking_confirmed', 'converted_to_shipment']),
+    [],
   )
+
+  const currentlySelectedSdFormId = showCreate
+    ? createForm.sd_form_id
+    : editId != null
+      ? editForm.sd_form_id
+      : ''
+
+  const sdFormsSortedForClient = useMemo(() => {
+    const filtered = sdFormsForClient.filter((sd) => {
+      if (ELIGIBLE_SD_FORM_STATUSES.has(String(sd.status))) return true
+      // Preserve an already-linked SD form so editing a shipment doesn't drop its link.
+      if (currentlySelectedSdFormId && String(sd.id) === String(currentlySelectedSdFormId)) return true
+      return false
+    })
+    return filtered.sort((a, b) =>
+      String(a.sd_number || '').localeCompare(String(b.sd_number || ''), undefined, { numeric: true }),
+    )
+  }, [sdFormsForClient, ELIGIBLE_SD_FORM_STATUSES, currentlySelectedSdFormId])
+
+  // Currently-selected SD form record (drives the booking confirmation section).
+  const selectedSdFormForShipment = useMemo(() => {
+    if (!currentlySelectedSdFormId) return null
+    return (
+      sdFormsForClient.find((sd) => String(sd.id) === String(currentlySelectedSdFormId)) ?? null
+    )
+  }, [sdFormsForClient, currentlySelectedSdFormId])
+
+  // Load booking confirmation document(s) for the selected SD form.
+  const [selectedSdBookingFiles, setSelectedSdBookingFiles] = useState([])
+  const [selectedSdBookingLoading, setSelectedSdBookingLoading] = useState(false)
+  const [selectedSdBookingError, setSelectedSdBookingError] = useState(null)
+
+  useEffect(() => {
+    if (!token || !selectedSdFormForShipment) {
+      setSelectedSdBookingFiles([])
+      setSelectedSdBookingLoading(false)
+      setSelectedSdBookingError(null)
+      return
+    }
+    const status = String(selectedSdFormForShipment.status || '')
+    if (!ELIGIBLE_SD_FORM_STATUSES.has(status)) {
+      // Only confirmed/converted forms own a confirmation document; skip the fetch otherwise.
+      setSelectedSdBookingFiles([])
+      setSelectedSdBookingLoading(false)
+      setSelectedSdBookingError(null)
+      return
+    }
+    let cancelled = false
+    setSelectedSdBookingLoading(true)
+    setSelectedSdBookingError(null)
+    listSDFormBookingConfirmations(token, selectedSdFormForShipment.id)
+      .then((res) => {
+        if (cancelled) return
+        setSelectedSdBookingFiles(Array.isArray(res?.data) ? res.data : [])
+      })
+      .catch((err) => {
+        if (cancelled) return
+        setSelectedSdBookingFiles([])
+        setSelectedSdBookingError(err?.message || '')
+      })
+      .finally(() => {
+        if (!cancelled) setSelectedSdBookingLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [token, selectedSdFormForShipment, ELIGIBLE_SD_FORM_STATUSES])
 
   const [detailId, setDetailId] = useState(null)
   const [detailShipment, setDetailShipment] = useState(null)
@@ -1247,6 +1333,55 @@ export default function Shipments() {
     [getShipmentRowActionsMenuItems, i18n.language, isOperationsOnlyUser, selectedIds, setDetailId, setDetailTab, t, toggleSelectRow],
   )
 
+  const handleSelectedSdBookingDownload = useCallback(
+    async (file) => {
+      if (!token || !file?.id || !selectedSdFormForShipment?.id) return
+      try {
+        const { blob, filename } = await downloadSDFormBookingConfirmation(
+          token,
+          selectedSdFormForShipment.id,
+          file.id,
+        )
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = filename || file.name || `booking-confirmation-${file.id}`
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+        setTimeout(() => URL.revokeObjectURL(url), 0)
+      } catch (err) {
+        setAlert({
+          type: 'error',
+          message: err?.message || t('shipments.bookingFilesDownloadError', 'Failed to download confirmation document.'),
+        })
+      }
+    },
+    [token, selectedSdFormForShipment, t],
+  )
+
+  const handleSelectedSdBookingPreview = useCallback(
+    async (file) => {
+      if (!token || !file?.id || !selectedSdFormForShipment?.id) return
+      try {
+        const { blob } = await downloadSDFormBookingConfirmation(
+          token,
+          selectedSdFormForShipment.id,
+          file.id,
+        )
+        const url = URL.createObjectURL(blob)
+        window.open(url, '_blank', 'noopener,noreferrer')
+        setTimeout(() => URL.revokeObjectURL(url), 60_000)
+      } catch (err) {
+        setAlert({
+          type: 'error',
+          message: err?.message || t('shipments.bookingFilesPreviewError', 'Failed to preview confirmation document.'),
+        })
+      }
+    },
+    [token, selectedSdFormForShipment, t],
+  )
+
   const renderShipmentForm = (form, setForm, disabled, isEdit = false) => (
     <div className="clients-form-sections">
       <section className="client-detail-modal__section">
@@ -1310,10 +1445,119 @@ export default function Shipments() {
                 : sdFormsForClientLoading
                   ? t('shipments.sdFormsLoadingForClient')
                   : sdFormsSortedForClient.length === 0
-                    ? t('shipments.noSdFormsForClient')
-                    : t('shipments.sdFormLinkHint')}
+                    ? t(
+                        'shipments.noEligibleSdFormsForClient',
+                        'No confirmed SD forms for this client. Only Booking Confirmed or Completed & Converted SD forms can be linked.',
+                      )
+                    : t(
+                        'shipments.sdFormEligibilityHint',
+                        'Only SD forms with a confirmed booking are listed here.',
+                      )}
             </p>
           </div>
+          {selectedSdFormForShipment && (
+            <div className="client-detail-modal__form-field client-detail-modal__form-field--full sh-sd-summary">
+              <div className="sh-sd-summary__head">
+                <h4 className="sh-sd-summary__title">{t('shipments.sdFormSummary.title', 'SD Form Summary')}</h4>
+                <span className={`sd-forms-badge ${sdStatusBadgeClass(selectedSdFormForShipment.status)}`}>
+                  {t(`sdForms.status.${selectedSdFormForShipment.status}`, selectedSdFormForShipment.status)}
+                </span>
+              </div>
+              <dl className="sh-sd-summary__grid">
+                <div className="sh-sd-summary__row">
+                  <dt>{t('shipments.sdFormSummary.sdNumber', 'SD number')}</dt>
+                  <dd>{selectedSdFormForShipment.sd_number || `#${selectedSdFormForShipment.id}`}</dd>
+                </div>
+                {selectedSdFormForShipment.client_name && (
+                  <div className="sh-sd-summary__row">
+                    <dt>{t('shipments.sdFormSummary.client', 'Client')}</dt>
+                    <dd>{selectedSdFormForShipment.client_name}</dd>
+                  </div>
+                )}
+                {selectedSdFormForShipment.shipping_line && (
+                  <div className="sh-sd-summary__row">
+                    <dt>{t('shipments.sdFormSummary.shippingLine', 'Shipping line')}</dt>
+                    <dd>{selectedSdFormForShipment.shipping_line}</dd>
+                  </div>
+                )}
+                {(selectedSdFormForShipment.pol || selectedSdFormForShipment.pod) && (
+                  <div className="sh-sd-summary__row">
+                    <dt>{t('shipments.sdFormSummary.route', 'POL → POD')}</dt>
+                    <dd>
+                      {selectedSdFormForShipment.pol || '—'}
+                      {' → '}
+                      {selectedSdFormForShipment.pod || '—'}
+                    </dd>
+                  </div>
+                )}
+                {selectedSdFormForShipment.booking_confirmed_at && (
+                  <div className="sh-sd-summary__row">
+                    <dt>{t('sdForms.outcome.decisionDate', 'Decision date')}</dt>
+                    <dd>{formatDate(selectedSdFormForShipment.booking_confirmed_at)}</dd>
+                  </div>
+                )}
+                {selectedSdFormForShipment.booking_decided_by?.name && (
+                  <div className="sh-sd-summary__row">
+                    <dt>{t('sdForms.outcome.decidedBy', 'Decided by')}</dt>
+                    <dd>{selectedSdFormForShipment.booking_decided_by.name}</dd>
+                  </div>
+                )}
+              </dl>
+
+              <div className="sh-sd-summary__doc">
+                <h5 className="sh-sd-summary__doc-title">
+                  {t('shipments.sdFormSummary.confirmationDocument', 'Booking Confirmation Document')}
+                </h5>
+                {selectedSdBookingLoading ? (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('common.loading', 'Loading…')}</p>
+                ) : selectedSdBookingError ? (
+                  <p className="text-xs text-red-600 dark:text-red-400">{selectedSdBookingError}</p>
+                ) : selectedSdBookingFiles.length === 0 ? (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {t(
+                      'shipments.sdFormSummary.noConfirmationDocument',
+                      'No booking confirmation document was uploaded for this SD form.',
+                    )}
+                  </p>
+                ) : (
+                  <ul className="sh-sd-summary__files">
+                    {selectedSdBookingFiles.map((f) => (
+                      <li key={f.id} className="sh-sd-summary__file">
+                        <span className="sh-sd-summary__file-name" title={f.name}>
+                          <Paperclip className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                          <span className="truncate">{f.name}</span>
+                        </span>
+                        <span className="sh-sd-summary__file-actions">
+                          <button
+                            type="button"
+                            className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs py-1 px-2"
+                            onClick={() => handleSelectedSdBookingPreview(f)}
+                          >
+                            <Eye className="h-3.5 w-3.5" aria-hidden />
+                            {t('shipments.viewFile', 'View')}
+                          </button>
+                          <button
+                            type="button"
+                            className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs py-1 px-2"
+                            onClick={() => handleSelectedSdBookingDownload(f)}
+                          >
+                            <FileDown className="h-3.5 w-3.5" aria-hidden />
+                            {t('shipments.downloadFile', 'Download')}
+                          </button>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <p className="sh-sd-summary__doc-note">
+                  {t(
+                    'shipments.sdFormSummary.readOnlyNote',
+                    'This document is inherited from the SD form and is read-only inside the shipment.',
+                  )}
+                </p>
+              </div>
+            </div>
+          )}
           <div className="client-detail-modal__form-field">
             <label htmlFor="sh-bdate">{t('shipments.fields.booking_date')}</label>
             <DatePicker

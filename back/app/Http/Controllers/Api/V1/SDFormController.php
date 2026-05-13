@@ -228,6 +228,8 @@ class SDFormController extends Controller
                 ? ['id' => $form->bookingDecidedBy->id, 'name' => $form->bookingDecidedBy->name]
                 : null,
             'sent_to_operations_at' => $form->sent_to_operations_at?->toIso8601String(),
+            'information_request_note' => $form->information_request_note,
+            'information_requested_at' => $form->information_requested_at?->toIso8601String(),
             'created_at' => $form->created_at?->toIso8601String(),
         ];
     }
@@ -402,6 +404,55 @@ class SDFormController extends Controller
 
         ActivityLogger::log('sd_form.booking_cancelled', $sdForm, [
             'reason' => $validated['reason'],
+        ]);
+
+        return response()->json([
+            'data' => $sdForm->fresh(['client', 'salesRep', 'pol', 'pod', 'shippingLine', 'bookingDecidedBy:id,name']),
+        ]);
+    }
+
+    /**
+     * Operations marks a handed-off SD form as "booking in progress" – an intermediate
+     * acknowledgement that sits between sent_to_operations and the final confirm/cancel
+     * decision. No payload required.
+     */
+    public function startBooking(Request $request, SDForm $sdForm)
+    {
+        $user = $request->user();
+        abort_unless($user && $user->can('decideBooking', $sdForm), 403);
+
+        SDFormService::transitionStatus($sdForm, 'booking_in_progress');
+
+        ActivityLogger::log('sd_form.booking_in_progress', $sdForm, [
+            'previous_status' => $sdForm->getOriginal('status'),
+        ]);
+
+        return response()->json([
+            'data' => $sdForm->fresh(['client', 'salesRep', 'pol', 'pod', 'shippingLine', 'bookingDecidedBy:id,name']),
+        ]);
+    }
+
+    /**
+     * Operations asks the sales/admin side to complete missing information on an SD form.
+     * Requires a free-text comment that will be surfaced inside the SD form details view.
+     */
+    public function requestInformation(Request $request, SDForm $sdForm)
+    {
+        $user = $request->user();
+        abort_unless($user && $user->can('decideBooking', $sdForm), 403);
+
+        $validated = $request->validate([
+            'note' => ['required', 'string', 'min:3', 'max:2000'],
+        ]);
+
+        $sdForm->information_request_note = $validated['note'];
+        $sdForm->information_requested_at = now();
+        $sdForm->save();
+
+        SDFormService::transitionStatus($sdForm, 'information_requested');
+
+        ActivityLogger::log('sd_form.information_requested', $sdForm, [
+            'note' => $validated['note'],
         ]);
 
         return response()->json([

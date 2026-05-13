@@ -20,6 +20,8 @@ import {
   downloadSDFormBookingConfirmation,
   confirmSDFormBooking,
   cancelSDFormBooking,
+  startSDFormBooking,
+  requestSDFormInformation,
   convertSDFormToShipment,
   reopenConvertedSDForm,
 } from '../../api/sdForms'
@@ -62,8 +64,9 @@ import {
   XCircle,
   ClipboardCheck,
   Upload,
-  ShipWheel,
-  Undo2,
+  PackageCheck,
+  Hourglass,
+  MessageSquareWarning,
 } from 'lucide-react'
 import '../../components/Charts/Charts.css'
 import '../../components/LoaderDots/LoaderDots.css'
@@ -76,8 +79,10 @@ const SD_FORM_STATUSES = [
   { value: 'draft', labelKey: 'sdForms.statusDraft' },
   { value: 'submitted', labelKey: 'sdForms.statusSubmitted' },
   { value: 'sent_to_operations', labelKey: 'sdForms.statusSentToOperations' },
+  { value: 'booking_in_progress', labelKey: 'sdForms.statusBookingInProgress' },
   { value: 'booking_confirmed', labelKey: 'sdForms.statusBookingConfirmed' },
   { value: 'booking_cancelled', labelKey: 'sdForms.statusBookingCancelled' },
+  { value: 'information_requested', labelKey: 'sdForms.statusInformationRequested' },
   { value: 'in_progress', labelKey: 'sdForms.statusInProgress' },
   { value: 'converted_to_shipment', labelKey: 'sdForms.statusConvertedToShipment' },
   { value: 'completed', labelKey: 'sdForms.statusCompleted' },
@@ -92,9 +97,11 @@ function getStatusBadgeClass(status) {
   if (s === 'draft') return 'sd-forms-badge--draft'
   if (s === 'submitted') return 'sd-forms-badge--submitted'
   if (s === 'sent_to_operations') return 'sd-forms-badge--sent'
+  if (s === 'booking_in_progress') return 'sd-forms-badge--booking-in-progress'
   if (s === 'in_progress') return 'sd-forms-badge--progress'
   if (s === 'booking_confirmed') return 'sd-forms-badge--booking-confirmed'
   if (s === 'booking_cancelled') return 'sd-forms-badge--booking-cancelled'
+  if (s === 'information_requested') return 'sd-forms-badge--info-requested'
   if (s === 'converted_to_shipment') return 'sd-forms-badge--converted'
   if (s === 'completed') return 'sd-forms-badge--submitted'
   if (s === 'cancelled') return 'sd-forms-badge--cancelled'
@@ -349,12 +356,13 @@ export default function SDForms() {
   const [submitSubmitting, setSubmitSubmitting] = useState(false)
   const [emailOpsSendingId, setEmailOpsSendingId] = useState(null)
 
-  // Booking confirmation (operations action: Confirm Booking / Cancel Booking).
+  // Booking action (operations: Start / Confirm / Cancel / Request information).
   const [bookingOpen, setBookingOpen] = useState(false)
   const [bookingRecord, setBookingRecord] = useState(null)
-  const [bookingAction, setBookingAction] = useState(null) // null | 'confirm' | 'cancel'
+  const [bookingAction, setBookingAction] = useState(null) // null | 'start' | 'confirm' | 'cancel' | 'requestInfo'
   const [bookingFile, setBookingFile] = useState(null)
   const [bookingReason, setBookingReason] = useState('')
+  const [bookingInfoNote, setBookingInfoNote] = useState('')
   const [bookingSubmitting, setBookingSubmitting] = useState(false)
   const [bookingError, setBookingError] = useState(null)
 
@@ -849,6 +857,7 @@ export default function SDForms() {
     setBookingAction(null)
     setBookingFile(null)
     setBookingReason('')
+    setBookingInfoNote('')
     setBookingError(null)
     setBookingOpen(true)
   }
@@ -860,7 +869,60 @@ export default function SDForms() {
     setBookingAction(null)
     setBookingFile(null)
     setBookingReason('')
+    setBookingInfoNote('')
     setBookingError(null)
+  }
+
+  const resetBookingActionState = () => {
+    setBookingFile(null)
+    setBookingReason('')
+    setBookingInfoNote('')
+    setBookingError(null)
+  }
+
+  const finalizeBookingSuccess = (successMessage) => {
+    if (bookingRecord && detailId === bookingRecord.id) openDetail(bookingRecord.id)
+    loadList()
+    setAlert({ type: 'success', message: successMessage })
+    setBookingOpen(false)
+    setBookingRecord(null)
+    setBookingAction(null)
+    setBookingFile(null)
+    setBookingReason('')
+    setBookingInfoNote('')
+  }
+
+  const runStartBooking = async () => {
+    if (!token || !bookingRecord) return
+    setBookingSubmitting(true)
+    setBookingError(null)
+    try {
+      await startSDFormBooking(token, bookingRecord.id)
+      finalizeBookingSuccess(t('sdForms.booking.startSuccess', 'Marked as Booking in progress.'))
+    } catch (err) {
+      setBookingError(err.message || t('sdForms.booking.errorStart', 'Failed to update SD form.'))
+    } finally {
+      setBookingSubmitting(false)
+    }
+  }
+
+  const runRequestInformation = async () => {
+    if (!token || !bookingRecord) return
+    const note = String(bookingInfoNote || '').trim()
+    if (note.length < 3) {
+      setBookingError(t('sdForms.booking.errorNoteRequired', 'Please describe what information is missing (at least 3 characters).'))
+      return
+    }
+    setBookingSubmitting(true)
+    setBookingError(null)
+    try {
+      await requestSDFormInformation(token, bookingRecord.id, note)
+      finalizeBookingSuccess(t('sdForms.booking.requestInfoSuccess', 'Information request sent.'))
+    } catch (err) {
+      setBookingError(err.message || t('sdForms.booking.errorRequestInfo', 'Failed to send information request.'))
+    } finally {
+      setBookingSubmitting(false)
+    }
   }
 
   const runConfirmBooking = async () => {
@@ -873,14 +935,7 @@ export default function SDForms() {
     setBookingError(null)
     try {
       await confirmSDFormBooking(token, bookingRecord.id, bookingFile)
-      loadList()
-      if (detailId === bookingRecord.id) openDetail(bookingRecord.id)
-      setAlert({ type: 'success', message: t('sdForms.booking.confirmSuccess', 'Booking confirmed.') })
-      setBookingOpen(false)
-      setBookingRecord(null)
-      setBookingAction(null)
-      setBookingFile(null)
-      setBookingReason('')
+      finalizeBookingSuccess(t('sdForms.booking.confirmSuccess', 'Booking confirmed.'))
     } catch (err) {
       setBookingError(err.message || t('sdForms.booking.errorConfirm', 'Failed to confirm booking.'))
     } finally {
@@ -899,14 +954,7 @@ export default function SDForms() {
     setBookingError(null)
     try {
       await cancelSDFormBooking(token, bookingRecord.id, reason)
-      loadList()
-      if (detailId === bookingRecord.id) openDetail(bookingRecord.id)
-      setAlert({ type: 'success', message: t('sdForms.booking.cancelSuccess', 'Booking cancelled.') })
-      setBookingOpen(false)
-      setBookingRecord(null)
-      setBookingAction(null)
-      setBookingFile(null)
-      setBookingReason('')
+      finalizeBookingSuccess(t('sdForms.booking.cancelSuccess', 'Booking cancelled.'))
     } catch (err) {
       setBookingError(err.message || t('sdForms.booking.errorCancel', 'Failed to cancel booking.'))
     } finally {
@@ -1541,7 +1589,7 @@ export default function SDForms() {
             {canEdit && (r.status !== 'converted_to_shipment' || isAdminRole) && (
               <IconActionButton icon={<Pencil className="h-4 w-4" />} label={t('sdForms.edit')} onClick={() => openEdit(r.id)} />
             )}
-            {canBookingDecide && ['sent_to_operations', 'in_progress', 'booking_confirmed', 'booking_cancelled'].includes(r.status) && (
+            {canBookingDecide && ['sent_to_operations', 'booking_in_progress', 'information_requested', 'in_progress'].includes(r.status) && (
               <IconActionButton
                 icon={<ClipboardCheck className="h-4 w-4" />}
                 label={t('sdForms.booking.action', 'Booking Confirmation')}
@@ -1550,14 +1598,14 @@ export default function SDForms() {
             )}
             {canConvertToShipment && ['booking_confirmed', 'in_progress', 'completed'].includes(r.status) && (
               <IconActionButton
-                icon={<ShipWheel className="h-4 w-4" />}
-                label={t('sdForms.convert.action', 'Convert to Shipment')}
+                icon={<PackageCheck className="h-4 w-4" />}
+                label={t('sdForms.convert.action', 'Complete & Convert to Shipment')}
                 onClick={() => openConvertModal(r, 'convert')}
               />
             )}
             {canReopenConverted && r.status === 'converted_to_shipment' && (
               <IconActionButton
-                icon={<Undo2 className="h-4 w-4" />}
+                icon={<RotateCcw className="h-4 w-4" />}
                 label={t('sdForms.convert.reopenAction', 'Reopen SD form')}
                 onClick={() => openConvertModal(r, 'reopen')}
               />
@@ -2058,8 +2106,8 @@ export default function SDForms() {
                               className="clients-btn clients-btn--primary inline-flex items-center gap-1 text-xs"
                               onClick={() => openConvertModal(detail, 'convert')}
                             >
-                              <ShipWheel className="h-4 w-4" aria-hidden />
-                              {t('sdForms.convert.action', 'Convert to Shipment')}
+                              <PackageCheck className="h-4 w-4" aria-hidden />
+                              {t('sdForms.convert.action', 'Complete & Convert to Shipment')}
                             </button>
                           )}
                           {canReopenConverted && detail.status === 'converted_to_shipment' && (
@@ -2068,7 +2116,7 @@ export default function SDForms() {
                               className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs"
                               onClick={() => openConvertModal(detail, 'reopen')}
                             >
-                              <Undo2 className="h-4 w-4" aria-hidden />
+                              <RotateCcw className="h-4 w-4" aria-hidden />
                               {t('sdForms.convert.reopenAction', 'Reopen SD form')}
                             </button>
                           )}
@@ -2109,10 +2157,12 @@ export default function SDForms() {
                             </div>
                           ))}
                         </dl>
-                        {(['booking_confirmed', 'booking_cancelled', 'converted_to_shipment'].includes(detail.status)
+                        {(['booking_in_progress', 'booking_confirmed', 'booking_cancelled', 'information_requested', 'converted_to_shipment'].includes(detail.status)
                           || detail.booking_confirmed_at
                           || detail.booking_cancelled_at
                           || detail.booking_cancellation_reason
+                          || detail.information_request_note
+                          || detail.information_requested_at
                           || detailBookingFiles.length > 0) && (
                           <div className="sd-detail-modal__block sd-booking-outcome mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                             <h4 className="sd-detail-modal__block-title">{t('sdForms.outcome.title', 'Booking outcome')}</h4>
@@ -2136,6 +2186,20 @@ export default function SDForms() {
                                   <dt className="sd-booking-outcome__dt">{t('sdForms.outcome.decisionDate', 'Decision date')}</dt>
                                   <dd className="sd-booking-outcome__dd">
                                     {formatDate(detail.booking_confirmed_at || detail.booking_cancelled_at)}
+                                  </dd>
+                                </div>
+                              )}
+                              {detail.information_requested_at && (
+                                <div className="sd-booking-outcome__row">
+                                  <dt className="sd-booking-outcome__dt">{t('sdForms.infoRequest.requestedAt', 'Requested at')}</dt>
+                                  <dd className="sd-booking-outcome__dd">{formatDate(detail.information_requested_at)}</dd>
+                                </div>
+                              )}
+                              {detail.information_request_note && (
+                                <div className="sd-booking-outcome__row sd-booking-outcome__row--block sd-booking-outcome__row--info">
+                                  <dt className="sd-booking-outcome__dt">{t('sdForms.infoRequest.noteLabel', 'Operations note')}</dt>
+                                  <dd className="sd-booking-outcome__dd whitespace-pre-wrap break-words">
+                                    {detail.information_request_note}
                                   </dd>
                                 </div>
                               )}
@@ -2340,13 +2404,24 @@ export default function SDForms() {
               {!bookingAction && (
                 <div className="space-y-2">
                   <p className="text-sm">{t('sdForms.booking.choosePrompt', 'Choose an action for this SD form booking:')}</p>
-                  <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <button
                       type="button"
-                      className="clients-btn clients-btn--primary inline-flex items-center justify-center gap-2 flex-1"
+                      className="clients-btn inline-flex items-center justify-center gap-2"
+                      onClick={() => {
+                        setBookingAction('start')
+                        resetBookingActionState()
+                      }}
+                    >
+                      <Hourglass className="h-4 w-4" aria-hidden />
+                      {t('sdForms.booking.start', 'Mark as Booking in progress')}
+                    </button>
+                    <button
+                      type="button"
+                      className="clients-btn clients-btn--primary inline-flex items-center justify-center gap-2"
                       onClick={() => {
                         setBookingAction('confirm')
-                        setBookingError(null)
+                        resetBookingActionState()
                       }}
                     >
                       <CheckCircle2 className="h-4 w-4" aria-hidden />
@@ -2354,17 +2429,109 @@ export default function SDForms() {
                     </button>
                     <button
                       type="button"
-                      className="clients-btn inline-flex items-center justify-center gap-2 flex-1"
+                      className="clients-btn inline-flex items-center justify-center gap-2"
                       onClick={() => {
                         setBookingAction('cancel')
-                        setBookingError(null)
+                        resetBookingActionState()
                       }}
                     >
                       <XCircle className="h-4 w-4" aria-hidden />
-                      {t('sdForms.booking.cancel', 'Cancel Booking')}
+                      {t('sdForms.booking.cancel', 'Mark as Not booked')}
+                    </button>
+                    <button
+                      type="button"
+                      className="clients-btn inline-flex items-center justify-center gap-2"
+                      onClick={() => {
+                        setBookingAction('requestInfo')
+                        resetBookingActionState()
+                      }}
+                    >
+                      <MessageSquareWarning className="h-4 w-4" aria-hidden />
+                      {t('sdForms.booking.requestInfo', 'Request information')}
                     </button>
                   </div>
                 </div>
+              )}
+
+              {bookingAction === 'start' && (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    runStartBooking()
+                  }}
+                  className="space-y-3"
+                >
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {t('sdForms.booking.startHelp', 'Acknowledges that operations is actively working on the booking. Sales and admin will see the status update.')}
+                  </p>
+                  <div className="clients-modal-actions">
+                    <button
+                      type="button"
+                      className="clients-btn"
+                      onClick={() => {
+                        setBookingAction(null)
+                        resetBookingActionState()
+                      }}
+                      disabled={bookingSubmitting}
+                    >
+                      {t('common.back', 'Back')}
+                    </button>
+                    <button
+                      type="submit"
+                      className="clients-btn clients-btn--primary inline-flex items-center gap-2"
+                      disabled={bookingSubmitting}
+                    >
+                      {bookingSubmitting ? <LoaderDots size={8} /> : <Hourglass className="h-4 w-4" aria-hidden />}
+                      {t('sdForms.booking.startSubmit', 'Mark as Booking in progress')}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {bookingAction === 'requestInfo' && (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    runRequestInformation()
+                  }}
+                  className="space-y-3"
+                >
+                  <label className="block text-sm">
+                    {t('sdForms.booking.noteLabel', 'What information is missing?')}
+                    <textarea
+                      className="clients-input w-full mt-1 text-sm"
+                      rows={4}
+                      value={bookingInfoNote}
+                      onChange={(e) => setBookingInfoNote(e.target.value)}
+                      placeholder={t('sdForms.booking.notePlaceholder', 'Describe what the sales/admin team needs to complete…')}
+                      disabled={bookingSubmitting}
+                    />
+                  </label>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {t('sdForms.booking.requestInfoHelp', 'Send the SD form back to the sales/admin team for additional information. Your note will be visible to them.')}
+                  </p>
+                  <div className="clients-modal-actions">
+                    <button
+                      type="button"
+                      className="clients-btn"
+                      onClick={() => {
+                        setBookingAction(null)
+                        resetBookingActionState()
+                      }}
+                      disabled={bookingSubmitting}
+                    >
+                      {t('common.back', 'Back')}
+                    </button>
+                    <button
+                      type="submit"
+                      className="clients-btn clients-btn--primary inline-flex items-center gap-2"
+                      disabled={bookingSubmitting || String(bookingInfoNote || '').trim().length < 3}
+                    >
+                      {bookingSubmitting ? <LoaderDots size={8} /> : <MessageSquareWarning className="h-4 w-4" aria-hidden />}
+                      {t('sdForms.booking.requestInfoSubmit', 'Send information request')}
+                    </button>
+                  </div>
+                </form>
               )}
 
               {bookingAction === 'confirm' && (
@@ -2524,13 +2691,13 @@ export default function SDForms() {
                   {convertSubmitting ? (
                     <LoaderDots size={8} />
                   ) : convertMode === 'reopen' ? (
-                    <Undo2 className="h-4 w-4" aria-hidden />
+                    <RotateCcw className="h-4 w-4" aria-hidden />
                   ) : (
-                    <ShipWheel className="h-4 w-4" aria-hidden />
+                    <PackageCheck className="h-4 w-4" aria-hidden />
                   )}
                   {convertMode === 'reopen'
                     ? t('sdForms.convert.reopenSubmit', 'Reopen SD form')
-                    : t('sdForms.convert.submit', 'Convert to shipment')}
+                    : t('sdForms.convert.submit', 'Complete & Convert to Shipment')}
                 </button>
               </div>
             </div>

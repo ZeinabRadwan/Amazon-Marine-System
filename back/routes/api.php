@@ -330,8 +330,10 @@ Route::prefix('v1')->group(function () {
         Route::delete('sd-forms/{sdForm}', [SDFormController::class, 'destroy']);
         Route::post('sd-forms/{sdForm}/submit', [SDFormController::class, 'submit']);
         Route::post('sd-forms/{sdForm}/send-to-operations', [SDFormController::class, 'sendToOperations']);
+        Route::post('sd-forms/{sdForm}/start-booking', [SDFormController::class, 'startBooking']);
         Route::post('sd-forms/{sdForm}/confirm-booking', [SDFormController::class, 'confirmBooking']);
         Route::post('sd-forms/{sdForm}/cancel-booking', [SDFormController::class, 'cancelBooking']);
+        Route::post('sd-forms/{sdForm}/request-information', [SDFormController::class, 'requestInformation']);
         Route::post('sd-forms/{sdForm}/convert-to-shipment', [SDFormController::class, 'convertToShipment']);
         Route::post('sd-forms/{sdForm}/reopen-converted', [SDFormController::class, 'reopenConverted']);
         Route::post('sd-forms/{sdForm}/link-shipment', [SDFormController::class, 'linkShipment']);

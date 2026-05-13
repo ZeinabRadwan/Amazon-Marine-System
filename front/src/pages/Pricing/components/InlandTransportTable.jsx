@@ -5,7 +5,13 @@ import { formatDate } from '../../../utils/dateUtils'
 import { useMutateOffer } from '../../../hooks/usePricing'
 import { IconActionButton, IconActionButtonGroup } from '../../../components/Table'
 import { CurrencyMapBadges } from '../../Accountings/CurrencyMapBadges'
-import { INLAND_PRICE_KEYS } from '../utils/pricingDisplay'
+import { INLAND_PRICE_KEYS, inlandContainerSummary } from '../utils/pricingDisplay'
+import {
+  getPricingRateValidityKind,
+  PricingRateCardMetricTile,
+  PricingRateCardRouteBlock,
+  PricingRateCardValidityPill,
+} from './PricingRateCardParts'
 import '../Pricing.css'
 
 function formatGovArea(offer, dash = '—') {
@@ -64,10 +70,6 @@ function truckLabelFromKey(key, t) {
   if (key === 'p40rf' || key === 't40r') return t('pricing.inlandChip40rf', `40' Reefer`)
   if (key === 'p40hq' || key === 't40hq' || key === 't40d') return t('pricing.inlandChip40hq', `40' Dry`)
   return key || '—'
-}
-
-function isReeferKey(key) {
-  return key === 'p40rf' || key === 't40r' || String(key || '').toLowerCase().includes('rf')
 }
 
 export default function InlandTransportTable({
@@ -134,6 +136,9 @@ export default function InlandTransportTable({
               const truckOnly = inlandPrimaryOnlyTotals(offer)
               const amountFirst = Boolean(i18n.language?.startsWith('ar'))
               const port = offer.inland_port || dash
+              const validityKind = getPricingRateValidityKind(offer)
+              const dndTrim = offer.dnd?.trim()
+              const containerInland = inlandContainerSummary(p, t)
 
               return (
                 <article
@@ -150,27 +155,38 @@ export default function InlandTransportTable({
                   }}
                 >
                   <div className="pricing-rate-card__header">
-                    <div className="pricing-rate-card__header-main">
-                      <div
-                        className={`pricing-rate-card__pill ${isReeferKey(primary?.key) ? 'pricing-rate-card__pill--reefer' : 'pricing-rate-card__pill--dry'}`}
-                      >
-                        {truckLabel}
+                    <div className="pricing-rate-card__header-main pricing-rate-card__header-main--stack">
+                      <div className="pricing-rate-card__leader">
+                        <span className="pricing-rate-card__pill pricing-rate-card__pill--carrier">{truckLabel}</span>
                       </div>
-                      <div>
-                        <div className="pricing-rate-card__route">
-                          {port} → {govAreaLabel}
-                        </div>
-                        {(() => {
-                          const bits = []
-                          if (offer.transit_time?.trim()) {
-                            bits.push(`${t('pricing.transitTime', 'Transit')}: ${offer.transit_time.trim()}`)
-                          }
-                          if (offer.dnd?.trim()) {
-                            bits.push(offer.dnd.trim())
-                          }
-                          if (!bits.length) return null
-                          return <div className="pricing-rate-card__meta">{bits.join(' | ')}</div>
-                        })()}
+                      <PricingRateCardRouteBlock
+                        title={t('pricing.rateCardRouteSectionTitle', 'Pricing rate card route')}
+                        fromBadge={t('pricing.offerDetailRouteBadgePort', 'Port')}
+                        from={port}
+                        toBadge={t('pricing.offerDetailRouteBadgeDestination', 'Destination')}
+                        to={govAreaLabel}
+                        rtl={amountFirst}
+                      />
+                      <div className="pricing-rate-card__metric-grid" role="list">
+                        <PricingRateCardMetricTile label={t('pricing.containerType')} title={containerInland}>
+                          {containerInland}
+                        </PricingRateCardMetricTile>
+                        <PricingRateCardMetricTile label={t('pricing.transitTime', 'Transit')} title={offer.transit_time || ''}>
+                          {offer.transit_time?.trim() || dash}
+                        </PricingRateCardMetricTile>
+                        {dndTrim ? (
+                          <PricingRateCardMetricTile label={t('pricing.rateCardFreeTimeLabel', 'Free time')} title={dndTrim}>
+                            <span className="line-clamp-3">{dndTrim}</span>
+                          </PricingRateCardMetricTile>
+                        ) : null}
+                        {offer.shipping_line?.trim() ? (
+                          <PricingRateCardMetricTile label={t('pricing.offerDetailShippingLineFieldLabel', 'Carrier')} title={offer.shipping_line}>
+                            {offer.shipping_line.trim()}
+                          </PricingRateCardMetricTile>
+                        ) : null}
+                        <PricingRateCardMetricTile label={t('pricing.rateMetricValidityLabel', 'Validity')}>
+                          <PricingRateCardValidityPill kind={validityKind} validStr={validStr} t={t} />
+                        </PricingRateCardMetricTile>
                       </div>
                     </div>
                     <div className="pricing-rate-card__amounts">
@@ -183,13 +199,6 @@ export default function InlandTransportTable({
 
                   <div className="pricing-rate-card__footer">
                     <div className="pricing-rate-card__tags">
-                      {validStr ? (
-                        <span className="pricing-rate-card__tag pricing-rate-card__tag--muted">
-                          {t('pricing.validTo')}: {validStr}
-                        </span>
-                      ) : (
-                        <span className="pricing-rate-card__tag pricing-rate-card__tag--muted">{t('pricing.validityOpen', 'No end date')}</span>
-                      )}
                       {generator?.price != null && genMap ? (
                         <span className="pricing-rate-card__tag pricing-rate-card__tag--muted pricing-rate-card__tag--currency">
                           {Object.keys(truckOnly).length ? (

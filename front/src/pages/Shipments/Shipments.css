@@ -5341,3 +5341,167 @@
 .dark .shipments-ops-kpi-card__hint {
   color: #94a3b8;
 }
+
+/* SD form summary + booking confirmation document section inside Shipment create/edit modal */
+.sh-sd-summary {
+  background: var(--form-card-bg, #f9fafb);
+  border: 1px solid var(--form-divider, #e5e7eb);
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: grid;
+  gap: 10px;
+}
+
+[data-theme='dark'] .sh-sd-summary,
+.dark .sh-sd-summary {
+  background: rgba(30, 41, 59, 0.35);
+  border-color: rgba(148, 163, 184, 0.25);
+}
+
+.sh-sd-summary__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sh-sd-summary__title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--root-text, #111827);
+}
+
+[data-theme='dark'] .sh-sd-summary__title,
+.dark .sh-sd-summary__title {
+  color: #e5e7eb;
+}
+
+.sh-sd-summary__grid {
+  display: grid;
+  grid-template-columns: minmax(140px, max-content) 1fr;
+  gap: 4px 14px;
+  margin: 0;
+  font-size: 0.8125rem;
+}
+
+.sh-sd-summary__row {
+  display: contents;
+}
+
+.sh-sd-summary__row dt {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6b7280;
+  padding-top: 2px;
+}
+
+.sh-sd-summary__row dd {
+  margin: 0;
+  color: var(--root-text, #111827);
+  word-break: break-word;
+}
+
+[data-theme='dark'] .sh-sd-summary__row dt,
+.dark .sh-sd-summary__row dt {
+  color: #9ca3af;
+}
+
+[data-theme='dark'] .sh-sd-summary__row dd,
+.dark .sh-sd-summary__row dd {
+  color: #e5e7eb;
+}
+
+.sh-sd-summary__doc {
+  border-top: 1px dashed var(--form-divider, #e5e7eb);
+  padding-top: 10px;
+  display: grid;
+  gap: 6px;
+}
+
+[data-theme='dark'] .sh-sd-summary__doc,
+.dark .sh-sd-summary__doc {
+  border-top-color: rgba(148, 163, 184, 0.25);
+}
+
+.sh-sd-summary__doc-title {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--root-text, #111827);
+}
+
+[data-theme='dark'] .sh-sd-summary__doc-title,
+.dark .sh-sd-summary__doc-title {
+  color: #e5e7eb;
+}
+
+.sh-sd-summary__files {
+  list-style: none;
+  padding: 0;
+  margin: 4px 0 0;
+  display: grid;
+  gap: 6px;
+}
+
+.sh-sd-summary__file {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid var(--form-divider, #e5e7eb);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.8125rem;
+}
+
+[data-theme='dark'] .sh-sd-summary__file,
+.dark .sh-sd-summary__file {
+  background: rgba(15, 23, 42, 0.4);
+  border-color: rgba(148, 163, 184, 0.25);
+}
+
+.sh-sd-summary__file-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-weight: 500;
+  color: var(--root-text, #111827);
+}
+
+[data-theme='dark'] .sh-sd-summary__file-name,
+.dark .sh-sd-summary__file-name {
+  color: #e5e7eb;
+}
+
+.sh-sd-summary__file-name .truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.sh-sd-summary__file-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.sh-sd-summary__doc-note {
+  margin: 0;
+  font-size: 0.7rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
+[data-theme='dark'] .sh-sd-summary__doc-note,
+.dark .sh-sd-summary__doc-note {
+  color: #94a3b8;
+}
