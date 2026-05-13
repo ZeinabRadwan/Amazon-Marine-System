@@ -139,6 +139,60 @@
   color: #fda4af;
 }
 
+.sd-forms-badge--converted {
+  background: var(--sd-status-converted-bg, #ecfeff);
+  color: var(--sd-status-converted-text, #0e7490);
+  border: 1px solid rgba(14, 116, 144, 0.25);
+}
+
+.sd-booking-outcome__grid {
+  display: grid;
+  grid-template-columns: minmax(140px, max-content) 1fr;
+  gap: 8px 16px;
+  align-items: start;
+  margin-top: 6px;
+}
+
+.sd-booking-outcome__row {
+  display: contents;
+}
+
+.sd-booking-outcome__row--block {
+  display: contents;
+}
+
+.sd-booking-outcome__dt {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--root-muted, #6b7280);
+  padding-top: 4px;
+}
+
+.sd-booking-outcome__dd {
+  font-size: 0.9rem;
+  color: var(--root-text, #111827);
+  word-break: break-word;
+}
+
+[data-theme="dark"] .sd-booking-outcome__dt,
+.dark .sd-booking-outcome__dt {
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .sd-booking-outcome__dd,
+.dark .sd-booking-outcome__dd {
+  color: #e5e7eb;
+}
+
+[data-theme="dark"] .sd-forms-badge--converted,
+.dark .sd-forms-badge--converted {
+  background: rgba(8, 145, 178, 0.18);
+  color: #67e8f9;
+  border-color: rgba(103, 232, 249, 0.35);
+}
+
 .sd-forms-badge--default {
   background: var(--form-divider, #e5e7eb);
   color: var(--root-text, #374151);

@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   XCircle,
   HelpCircle,
+  ShipWheel,
 } from 'lucide-react'
 import { StatsCard } from '../../../components/StatsCard'
 
@@ -32,6 +33,8 @@ function getStatusStatsConfig(status) {
       return { variant: 'green', Icon: CheckCircle2 }
     case 'booking_cancelled':
       return { variant: 'red', Icon: XCircle }
+    case 'converted_to_shipment':
+      return { variant: 'blue', Icon: ShipWheel }
     case 'completed':
       return { variant: 'blue', Icon: CheckCircle2 }
     case 'cancelled':

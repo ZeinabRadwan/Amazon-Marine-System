@@ -34,7 +34,7 @@ class SDFormController extends Controller
         $this->authorize('viewAny', SDForm::class);
 
         $query = SDForm::query()
-            ->with(['client', 'salesRep', 'pol', 'pod', 'shippingLine']);
+            ->with(['client', 'salesRep', 'pol', 'pod', 'shippingLine', 'bookingDecidedBy:id,name']);
 
         if ($status = $request->query('status')) {
             $query->where('status', $status);
@@ -55,14 +55,11 @@ class SDFormController extends Controller
         }
 
         if ($isOperationsUser) {
-            $query->whereIn('status', [
-                'sent_to_operations',
-                'in_progress',
-                'booking_confirmed',
-                'booking_cancelled',
-                'completed',
-                'cancelled',
-            ]);
+            // Once an SD form has been sent to operations it stays in their workflow forever.
+            // Visibility is now driven by the permanent flag, not the live status — so booking
+            // confirmation, cancellation, or shipment conversion never removes the form from
+            // the operations list.
+            $query->whereNotNull('sent_to_operations_at');
         }
 
         if ($shippingLineId = $request->query('shipping_line_id')) {
@@ -226,6 +223,11 @@ class SDFormController extends Controller
             'booking_confirmed_at' => $form->booking_confirmed_at?->toIso8601String(),
             'booking_cancelled_at' => $form->booking_cancelled_at?->toIso8601String(),
             'booking_cancellation_reason' => $form->booking_cancellation_reason,
+            'booking_decided_by_user_id' => $form->booking_decided_by_user_id,
+            'booking_decided_by' => $form->relationLoaded('bookingDecidedBy') && $form->bookingDecidedBy
+                ? ['id' => $form->bookingDecidedBy->id, 'name' => $form->bookingDecidedBy->name]
+                : null,
+            'sent_to_operations_at' => $form->sent_to_operations_at?->toIso8601String(),
             'created_at' => $form->created_at?->toIso8601String(),
         ];
     }
@@ -298,8 +300,15 @@ class SDFormController extends Controller
 
         SDFormService::transitionStatus($sdForm, 'sent_to_operations');
 
+        // Permanent "is handled by operations" flag — survives later status changes.
+        if (! $sdForm->sent_to_operations_at) {
+            $sdForm->sent_to_operations_at = now();
+            $sdForm->save();
+        }
+
         ActivityLogger::log('sd_form.sent_to_operations', $sdForm, [
             'status' => $sdForm->status,
+            'sent_to_operations_at' => optional($sdForm->sent_to_operations_at)->toIso8601String(),
         ]);
 
         $operationsUsers = User::role('operations')
@@ -397,6 +406,73 @@ class SDFormController extends Controller
 
         return response()->json([
             'data' => $sdForm->fresh(['client', 'salesRep', 'pol', 'pod', 'shippingLine', 'bookingDecidedBy:id,name']),
+        ]);
+    }
+
+    /**
+     * Admin / form owner converts a fully processed SD form into an active shipment
+     * and locks the SD form into its final lifecycle state.
+     */
+    public function convertToShipment(Request $request, SDForm $sdForm)
+    {
+        $user = $request->user();
+        abort_unless($user && $user->can('convertToShipment', $sdForm), 403);
+
+        $allowedFrom = ['booking_confirmed', 'in_progress', 'completed'];
+        if (! in_array($sdForm->status, $allowedFrom, true)) {
+            abort(422, __('Only SD forms with a confirmed booking can be converted to a shipment.'));
+        }
+
+        SDFormService::transitionStatus($sdForm, 'converted_to_shipment');
+
+        ActivityLogger::log('sd_form.converted_to_shipment', $sdForm, [
+            'previous_status' => $sdForm->getOriginal('status'),
+            'linked_shipment_id' => $sdForm->linked_shipment_id,
+        ]);
+
+        return response()->json([
+            'data' => $sdForm->fresh([
+                'client',
+                'salesRep',
+                'pol',
+                'pod',
+                'shippingLine',
+                'linkedShipment',
+                'bookingDecidedBy:id,name',
+            ]),
+        ]);
+    }
+
+    /**
+     * Admin re-opens an already converted SD form for further edits (returns to booking_confirmed).
+     */
+    public function reopenConverted(Request $request, SDForm $sdForm)
+    {
+        $user = $request->user();
+        abort_unless($user && $user->can('reopenFromConverted', $sdForm), 403);
+
+        if ($sdForm->status !== 'converted_to_shipment') {
+            abort(422, __('Only SD forms that were converted to a shipment can be reopened.'));
+        }
+
+        // Re-open back to the latest meaningful operations state.
+        $target = $sdForm->booking_confirmed_at ? 'booking_confirmed' : 'in_progress';
+        SDFormService::transitionStatus($sdForm, $target);
+
+        ActivityLogger::log('sd_form.reopened_from_converted', $sdForm, [
+            'reopened_to' => $target,
+        ]);
+
+        return response()->json([
+            'data' => $sdForm->fresh([
+                'client',
+                'salesRep',
+                'pol',
+                'pod',
+                'shippingLine',
+                'linkedShipment',
+                'bookingDecidedBy:id,name',
+            ]),
         ]);
     }
 

@@ -313,6 +313,34 @@ export async function cancelSDFormBooking(token, sdFormId, reason) {
   return data
 }
 
+/**
+ * POST /sd-forms/:id/convert-to-shipment
+ * Admin / form owner marks the SD form as fully completed and converted to an active shipment.
+ */
+export async function convertSDFormToShipment(token, sdFormId) {
+  const res = await apiFetch(`${getBaseUrl()}/sd-forms/${encodeURIComponent(sdFormId)}/convert-to-shipment`, {
+    method: 'POST',
+    headers: authHeaders(token),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to convert SD form (${res.status})`)
+  return data
+}
+
+/**
+ * POST /sd-forms/:id/reopen-converted
+ * Admin-only. Reopen a converted SD form back to an editable operations state.
+ */
+export async function reopenConvertedSDForm(token, sdFormId) {
+  const res = await apiFetch(`${getBaseUrl()}/sd-forms/${encodeURIComponent(sdFormId)}/reopen-converted`, {
+    method: 'POST',
+    headers: authHeaders(token),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to reopen SD form (${res.status})`)
+  return data
+}
+
 export async function downloadSDFormBookingConfirmation(token, sdFormId, confirmationId) {
   const res = await apiFetch(
     `${getBaseUrl()}/sd-forms/${encodeURIComponent(sdFormId)}/booking-confirmations/${encodeURIComponent(confirmationId)}/download`,

@@ -20,6 +20,8 @@ import {
   downloadSDFormBookingConfirmation,
   confirmSDFormBooking,
   cancelSDFormBooking,
+  convertSDFormToShipment,
+  reopenConvertedSDForm,
 } from '../../api/sdForms'
 import {
   listShipmentDirections,
@@ -60,6 +62,8 @@ import {
   XCircle,
   ClipboardCheck,
   Upload,
+  ShipWheel,
+  Undo2,
 } from 'lucide-react'
 import '../../components/Charts/Charts.css'
 import '../../components/LoaderDots/LoaderDots.css'
@@ -75,6 +79,7 @@ const SD_FORM_STATUSES = [
   { value: 'booking_confirmed', labelKey: 'sdForms.statusBookingConfirmed' },
   { value: 'booking_cancelled', labelKey: 'sdForms.statusBookingCancelled' },
   { value: 'in_progress', labelKey: 'sdForms.statusInProgress' },
+  { value: 'converted_to_shipment', labelKey: 'sdForms.statusConvertedToShipment' },
   { value: 'completed', labelKey: 'sdForms.statusCompleted' },
   { value: 'cancelled', labelKey: 'sdForms.statusCancelled' },
 ]
@@ -90,6 +95,7 @@ function getStatusBadgeClass(status) {
   if (s === 'in_progress') return 'sd-forms-badge--progress'
   if (s === 'booking_confirmed') return 'sd-forms-badge--booking-confirmed'
   if (s === 'booking_cancelled') return 'sd-forms-badge--booking-cancelled'
+  if (s === 'converted_to_shipment') return 'sd-forms-badge--converted'
   if (s === 'completed') return 'sd-forms-badge--submitted'
   if (s === 'cancelled') return 'sd-forms-badge--cancelled'
   return 'sd-forms-badge--default'
@@ -279,7 +285,10 @@ export default function SDForms() {
   const [alert, setAlert] = useState(null)
   const [filters, setFilters] = useState({
     search: '',
-    status: isOperations ? 'sent_to_operations' : '',
+    // Show every SD form the user is allowed to see by default. Operations users
+    // already have a permanent backend gate (sent_to_operations_at IS NOT NULL),
+    // so the form stays visible through booking confirmation, cancellation, etc.
+    status: '',
     client_id: '',
     sales_rep_id: '',
     shipping_line_id: '',
@@ -350,6 +359,16 @@ export default function SDForms() {
   const [bookingError, setBookingError] = useState(null)
 
   const canBookingDecide = isAdminRole || isOperations
+
+  // Convert to Shipment (admin / sales rep) + Reopen (admin only).
+  const [convertOpen, setConvertOpen] = useState(false)
+  const [convertRecord, setConvertRecord] = useState(null)
+  const [convertMode, setConvertMode] = useState('convert') // 'convert' | 'reopen'
+  const [convertSubmitting, setConvertSubmitting] = useState(false)
+  const [convertError, setConvertError] = useState(null)
+
+  const canConvertToShipment = isAdminRole || isAnySales
+  const canReopenConverted = isAdminRole
 
   const loadList = useCallback(() => {
     if (!token) return
@@ -892,6 +911,56 @@ export default function SDForms() {
       setBookingError(err.message || t('sdForms.booking.errorCancel', 'Failed to cancel booking.'))
     } finally {
       setBookingSubmitting(false)
+    }
+  }
+
+  const openConvertModal = (record, mode = 'convert') => {
+    setConvertRecord(record)
+    setConvertMode(mode)
+    setConvertError(null)
+    setConvertOpen(true)
+  }
+
+  const closeConvertModal = () => {
+    if (convertSubmitting) return
+    setConvertOpen(false)
+    setConvertRecord(null)
+    setConvertError(null)
+  }
+
+  const runConvertToShipment = async () => {
+    if (!token || !convertRecord) return
+    setConvertSubmitting(true)
+    setConvertError(null)
+    try {
+      await convertSDFormToShipment(token, convertRecord.id)
+      loadList()
+      if (detailId === convertRecord.id) openDetail(convertRecord.id)
+      setAlert({ type: 'success', message: t('sdForms.convert.successConvert', 'SD form converted to shipment.') })
+      setConvertOpen(false)
+      setConvertRecord(null)
+    } catch (err) {
+      setConvertError(err.message || t('sdForms.convert.errorConvert', 'Failed to convert SD form.'))
+    } finally {
+      setConvertSubmitting(false)
+    }
+  }
+
+  const runReopenConverted = async () => {
+    if (!token || !convertRecord) return
+    setConvertSubmitting(true)
+    setConvertError(null)
+    try {
+      await reopenConvertedSDForm(token, convertRecord.id)
+      loadList()
+      if (detailId === convertRecord.id) openDetail(convertRecord.id)
+      setAlert({ type: 'success', message: t('sdForms.convert.successReopen', 'SD form reopened.') })
+      setConvertOpen(false)
+      setConvertRecord(null)
+    } catch (err) {
+      setConvertError(err.message || t('sdForms.convert.errorReopen', 'Failed to reopen SD form.'))
+    } finally {
+      setConvertSubmitting(false)
     }
   }
 
@@ -1469,7 +1538,9 @@ export default function SDForms() {
               label={t('sdForms.pdf', 'Download PDF')}
               onClick={() => downloadPdf(r.id)}
             />
-            {canEdit && <IconActionButton icon={<Pencil className="h-4 w-4" />} label={t('sdForms.edit')} onClick={() => openEdit(r.id)} />}
+            {canEdit && (r.status !== 'converted_to_shipment' || isAdminRole) && (
+              <IconActionButton icon={<Pencil className="h-4 w-4" />} label={t('sdForms.edit')} onClick={() => openEdit(r.id)} />
+            )}
             {canBookingDecide && ['sent_to_operations', 'in_progress', 'booking_confirmed', 'booking_cancelled'].includes(r.status) && (
               <IconActionButton
                 icon={<ClipboardCheck className="h-4 w-4" />}
@@ -1477,7 +1548,21 @@ export default function SDForms() {
                 onClick={() => openBookingModal(r)}
               />
             )}
-            {canDelete && (
+            {canConvertToShipment && ['booking_confirmed', 'in_progress', 'completed'].includes(r.status) && (
+              <IconActionButton
+                icon={<ShipWheel className="h-4 w-4" />}
+                label={t('sdForms.convert.action', 'Convert to Shipment')}
+                onClick={() => openConvertModal(r, 'convert')}
+              />
+            )}
+            {canReopenConverted && r.status === 'converted_to_shipment' && (
+              <IconActionButton
+                icon={<Undo2 className="h-4 w-4" />}
+                label={t('sdForms.convert.reopenAction', 'Reopen SD form')}
+                onClick={() => openConvertModal(r, 'reopen')}
+              />
+            )}
+            {canDelete && r.status !== 'converted_to_shipment' && (
               <IconActionButton
                 icon={<Trash2 className="h-4 w-4" />}
                 label={t('sdForms.delete')}
@@ -1489,7 +1574,7 @@ export default function SDForms() {
         ),
       },
     ],
-    [t, selectedIds, allPageSelected, toggleSelectAllPage, toggleSelectRow, openDetail, openEdit, downloadPdf, canBookingDecide, canEdit, canDelete]
+    [t, selectedIds, allPageSelected, toggleSelectAllPage, toggleSelectRow, openDetail, openEdit, downloadPdf, canBookingDecide, canEdit, canDelete, canConvertToShipment, canReopenConverted, isAdminRole]
   )
 
   useEffect(() => {
@@ -1961,13 +2046,41 @@ export default function SDForms() {
                               {t('sdForms.linkShipment')}
                             </button>
                           )}
-                          {canEdit && (
+                          {canEdit && (detail.status !== 'converted_to_shipment' || isAdminRole) && (
                             <button type="button" className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs" onClick={() => openEdit(detail.id)}>
                               <Pencil className="h-4 w-4" aria-hidden />
                               {t('sdForms.edit')}
                             </button>
                           )}
+                          {canConvertToShipment && ['booking_confirmed', 'in_progress', 'completed'].includes(detail.status) && (
+                            <button
+                              type="button"
+                              className="clients-btn clients-btn--primary inline-flex items-center gap-1 text-xs"
+                              onClick={() => openConvertModal(detail, 'convert')}
+                            >
+                              <ShipWheel className="h-4 w-4" aria-hidden />
+                              {t('sdForms.convert.action', 'Convert to Shipment')}
+                            </button>
+                          )}
+                          {canReopenConverted && detail.status === 'converted_to_shipment' && (
+                            <button
+                              type="button"
+                              className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs"
+                              onClick={() => openConvertModal(detail, 'reopen')}
+                            >
+                              <Undo2 className="h-4 w-4" aria-hidden />
+                              {t('sdForms.convert.reopenAction', 'Reopen SD form')}
+                            </button>
+                          )}
                         </div>
+                        {detail.status === 'converted_to_shipment' && (
+                          <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-2">
+                            {t(
+                              'sdForms.convert.lockedNotice',
+                              'This SD form has been converted to a shipment and is locked. Only an admin can reopen it.'
+                            )}
+                          </p>
+                        )}
                         <dl className="sd-detail-modal__dl">
                           {[
                             ['sd_number', detail.sd_number],
@@ -1996,45 +2109,88 @@ export default function SDForms() {
                             </div>
                           ))}
                         </dl>
-                        <div className="sd-detail-modal__block mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                          <h4 className="sd-detail-modal__block-title">{t('shipments.filesFromOperations')}</h4>
-                          {detailBookingLoading ? (
-                            <p className="sd-detail-modal__block-text text-sm text-gray-500 dark:text-gray-400">{t('common.loading')}</p>
-                          ) : detailBookingFiles.length === 0 ? (
-                            <p className="sd-detail-modal__block-text text-sm text-gray-500 dark:text-gray-400">
-                              {t('shipments.bookingFilesEmpty')}
-                            </p>
-                          ) : (
-                            <ul className="space-y-2 mt-2">
-                              {detailBookingFiles.map((f) => (
-                                <li
-                                  key={f.id}
-                                  className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-gray-100 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/30 px-3 py-2 text-sm"
-                                >
-                                  <span className="font-medium text-gray-800 dark:text-gray-100 break-all">{f.name}</span>
-                                  <span className="flex items-center gap-1 shrink-0">
-                                    <button
-                                      type="button"
-                                      className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs py-1 px-2"
-                                      onClick={() => handleDetailBookingPreview(f)}
-                                    >
-                                      <Eye className="h-3.5 w-3.5" aria-hidden />
-                                      {t('shipments.viewFile')}
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs py-1 px-2"
-                                      onClick={() => handleDetailBookingDownload(f)}
-                                    >
-                                      <FileDown className="h-3.5 w-3.5" aria-hidden />
-                                      {t('shipments.downloadFile')}
-                                    </button>
+                        {(['booking_confirmed', 'booking_cancelled', 'converted_to_shipment'].includes(detail.status)
+                          || detail.booking_confirmed_at
+                          || detail.booking_cancelled_at
+                          || detail.booking_cancellation_reason
+                          || detailBookingFiles.length > 0) && (
+                          <div className="sd-detail-modal__block sd-booking-outcome mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                            <h4 className="sd-detail-modal__block-title">{t('sdForms.outcome.title', 'Booking outcome')}</h4>
+                            <dl className="sd-booking-outcome__grid">
+                              <div className="sd-booking-outcome__row">
+                                <dt className="sd-booking-outcome__dt">{t('sdForms.outcome.status', 'Booking status')}</dt>
+                                <dd className="sd-booking-outcome__dd">
+                                  <span className={`sd-forms-badge ${getStatusBadgeClass(detail.status)}`}>
+                                    {t(`sdForms.status.${detail.status}`, detail.status)}
                                   </span>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
+                                </dd>
+                              </div>
+                              {detail.booking_decided_by?.name && (
+                                <div className="sd-booking-outcome__row">
+                                  <dt className="sd-booking-outcome__dt">{t('sdForms.outcome.decidedBy', 'Decided by')}</dt>
+                                  <dd className="sd-booking-outcome__dd">{detail.booking_decided_by.name}</dd>
+                                </div>
+                              )}
+                              {(detail.booking_confirmed_at || detail.booking_cancelled_at) && (
+                                <div className="sd-booking-outcome__row">
+                                  <dt className="sd-booking-outcome__dt">{t('sdForms.outcome.decisionDate', 'Decision date')}</dt>
+                                  <dd className="sd-booking-outcome__dd">
+                                    {formatDate(detail.booking_confirmed_at || detail.booking_cancelled_at)}
+                                  </dd>
+                                </div>
+                              )}
+                              {detail.booking_cancellation_reason && (
+                                <div className="sd-booking-outcome__row sd-booking-outcome__row--block">
+                                  <dt className="sd-booking-outcome__dt">{t('sdForms.outcome.cancellationReason', 'Cancellation reason')}</dt>
+                                  <dd className="sd-booking-outcome__dd whitespace-pre-wrap break-words">
+                                    {detail.booking_cancellation_reason}
+                                  </dd>
+                                </div>
+                              )}
+                              <div className="sd-booking-outcome__row sd-booking-outcome__row--block">
+                                <dt className="sd-booking-outcome__dt">{t('sdForms.outcome.confirmationPdf', 'Confirmation document')}</dt>
+                                <dd className="sd-booking-outcome__dd">
+                                  {detailBookingLoading ? (
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('common.loading')}</p>
+                                  ) : detailBookingFiles.length === 0 ? (
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                                      {t('sdForms.outcome.noConfirmationFile', 'No confirmation document uploaded yet.')}
+                                    </p>
+                                  ) : (
+                                    <ul className="space-y-2">
+                                      {detailBookingFiles.map((f) => (
+                                        <li
+                                          key={f.id}
+                                          className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-gray-100 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/30 px-3 py-2 text-sm"
+                                        >
+                                          <span className="font-medium text-gray-800 dark:text-gray-100 break-all">{f.name}</span>
+                                          <span className="flex items-center gap-1 shrink-0">
+                                            <button
+                                              type="button"
+                                              className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs py-1 px-2"
+                                              onClick={() => handleDetailBookingPreview(f)}
+                                            >
+                                              <Eye className="h-3.5 w-3.5" aria-hidden />
+                                              {t('shipments.viewFile')}
+                                            </button>
+                                            <button
+                                              type="button"
+                                              className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs py-1 px-2"
+                                              onClick={() => handleDetailBookingDownload(f)}
+                                            >
+                                              <FileDown className="h-3.5 w-3.5" aria-hidden />
+                                              {t('shipments.downloadFile')}
+                                            </button>
+                                          </span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  )}
+                                </dd>
+                              </div>
+                            </dl>
+                          </div>
+                        )}
                         {detail.shipper_info ? (
                           <div className="sd-detail-modal__block">
                             <h4 className="sd-detail-modal__block-title">{t('sdForms.form.shipper')}</h4>
@@ -2303,6 +2459,80 @@ export default function SDForms() {
                   </div>
                 </form>
               )}
+            </div>
+          </div>
+        )}
+
+        {convertOpen && convertRecord && (
+          <div className="clients-modal" role="dialog" aria-modal="true" aria-labelledby="sd-convert-modal-title">
+            <div className="clients-modal-backdrop" onClick={closeConvertModal} />
+            <div className="clients-modal-content max-w-md">
+              <div className="flex items-start justify-between gap-3 mb-2">
+                <h2 id="sd-convert-modal-title" className="text-lg font-semibold">
+                  {convertMode === 'reopen'
+                    ? t('sdForms.convert.reopenTitle', 'Reopen SD form')
+                    : t('sdForms.convert.title', 'Convert to Shipment')}
+                </h2>
+                <button
+                  type="button"
+                  className="clients-modal-close"
+                  onClick={closeConvertModal}
+                  aria-label={t('common.close', 'Close')}
+                  disabled={convertSubmitting}
+                >
+                  <X className="h-4 w-4" aria-hidden />
+                </button>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                {t('sdForms.booking.for', 'SD form')}: <strong>{convertRecord.sd_number || `#${convertRecord.id}`}</strong>
+                {convertRecord.client_name ? <> — {convertRecord.client_name}</> : null}
+              </p>
+
+              {convertError && (
+                <div className="mb-3 text-sm text-red-600 dark:text-red-400" role="alert">
+                  {convertError}
+                </div>
+              )}
+
+              <p className="text-sm mb-4">
+                {convertMode === 'reopen'
+                  ? t(
+                      'sdForms.convert.reopenConfirm',
+                      'Reopening will return this SD form back to the operations stage so it can be edited again.'
+                    )
+                  : t(
+                      'sdForms.convert.confirm',
+                      'This will mark the SD form as fully completed and converted into an active shipment. The form will become read-only.'
+                    )}
+              </p>
+
+              <div className="clients-modal-actions">
+                <button
+                  type="button"
+                  className="clients-btn"
+                  onClick={closeConvertModal}
+                  disabled={convertSubmitting}
+                >
+                  {t('common.cancel', 'Cancel')}
+                </button>
+                <button
+                  type="button"
+                  className="clients-btn clients-btn--primary inline-flex items-center gap-2"
+                  onClick={convertMode === 'reopen' ? runReopenConverted : runConvertToShipment}
+                  disabled={convertSubmitting}
+                >
+                  {convertSubmitting ? (
+                    <LoaderDots size={8} />
+                  ) : convertMode === 'reopen' ? (
+                    <Undo2 className="h-4 w-4" aria-hidden />
+                  ) : (
+                    <ShipWheel className="h-4 w-4" aria-hidden />
+                  )}
+                  {convertMode === 'reopen'
+                    ? t('sdForms.convert.reopenSubmit', 'Reopen SD form')
+                    : t('sdForms.convert.submit', 'Convert to shipment')}
+                </button>
+              </div>
             </div>
           </div>
         )}

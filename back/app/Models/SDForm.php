@@ -50,6 +50,7 @@ class SDForm extends Model
         'booking_confirmed_at',
         'booking_cancelled_at',
         'booking_decided_by_user_id',
+        'sent_to_operations_at',
     ];
 
     /**
@@ -62,6 +63,7 @@ class SDForm extends Model
         'num_containers' => 'int',
         'booking_confirmed_at' => 'datetime',
         'booking_cancelled_at' => 'datetime',
+        'sent_to_operations_at' => 'datetime',
     ];
 
     /**

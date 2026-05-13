@@ -160,13 +160,17 @@ export default function InlandTransportTable({
                         <div className="pricing-rate-card__route">
                           {port} → {govAreaLabel}
                         </div>
-                        <div className="pricing-rate-card__meta">
-                          <span className="pricing-rate-card__meta-k">{t('pricing.inlandColPort', 'Port')}</span> {port}
-                          <span className="pricing-rate-card__meta-sep" aria-hidden>
-                            {' · '}
-                          </span>
-                          <span className="pricing-rate-card__meta-k">{t('pricing.inlandColGovArea', 'Governorate / area')}</span> {govAreaLabel}
-                        </div>
+                        {(() => {
+                          const bits = []
+                          if (offer.transit_time?.trim()) {
+                            bits.push(`${t('pricing.transitTime', 'Transit')}: ${offer.transit_time.trim()}`)
+                          }
+                          if (offer.dnd?.trim()) {
+                            bits.push(offer.dnd.trim())
+                          }
+                          if (!bits.length) return null
+                          return <div className="pricing-rate-card__meta">{bits.join(' | ')}</div>
+                        })()}
                       </div>
                     </div>
                     <div className="pricing-rate-card__amounts">

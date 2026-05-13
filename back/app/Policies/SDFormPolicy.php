@@ -71,11 +71,47 @@ class SDFormPolicy
             return false;
         }
 
+        // Once an SD form has been converted to an active shipment, only an admin
+        // may make further edits (after explicitly reopening it).
+        if ($form->status === 'converted_to_shipment' && ! $user->hasRole('admin')) {
+            return false;
+        }
+
         if ($user->can('sd_forms.manage_any')) {
             return true;
         }
 
         return $form->sales_rep_id === $user->id;
+    }
+
+    /**
+     * Admin or the original sales rep marks the SD form as fully completed
+     * and converted to an active shipment.
+     */
+    public function convertToShipment(User $user, SDForm $form): bool
+    {
+        if (! $user->can('sd_forms.manage')) {
+            return false;
+        }
+
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        // The owning sales rep (or sales manager with manage_any) may also convert.
+        if ($user->can('sd_forms.manage_any')) {
+            return true;
+        }
+
+        return $form->sales_rep_id === $user->id;
+    }
+
+    /**
+     * Only an admin may reopen an SD form that has already been converted to a shipment.
+     */
+    public function reopenFromConverted(User $user, SDForm $form): bool
+    {
+        return $user->hasRole('admin') && $form->status === 'converted_to_shipment';
     }
 
     public function delete(User $user, SDForm $form): bool

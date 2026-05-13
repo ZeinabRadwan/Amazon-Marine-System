@@ -19,7 +19,7 @@ class UpdateSDFormRequest extends FormRequest
         return [
             'client_id' => ['sometimes', 'nullable', 'integer', 'exists:clients,id'],
             'sales_rep_id' => ['sometimes', 'nullable', 'integer', 'exists:users,id'],
-            'status' => ['sometimes', 'string', 'in:draft,submitted,sent_to_operations,in_progress,booking_confirmed,booking_cancelled,completed,cancelled'],
+            'status' => ['sometimes', 'string', 'in:draft,submitted,sent_to_operations,in_progress,booking_confirmed,booking_cancelled,converted_to_shipment,completed,cancelled'],
             'pol_id' => ['sometimes', 'nullable', 'integer', 'exists:ports,id'],
             'pod_id' => ['sometimes', 'nullable', 'integer', 'exists:ports,id'],
             'shipping_line' => ['sometimes', 'nullable', 'string', 'max:255'],
