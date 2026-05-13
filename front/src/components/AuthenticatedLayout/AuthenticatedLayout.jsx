@@ -7,6 +7,7 @@ import { getApiBaseUrl } from '../../api/apiBaseUrl'
 import { getUnreadCount } from '../../api/notifications'
 import { getPermissionsByRole } from '../../api/roles'
 import { getSidebarCounts } from '../../api/dashboard'
+import { ROLE_ID } from '../../constants/roles'
 import AppLayout from '../AppLayout'
 import LoaderDots from '../LoaderDots'
 import '../LoaderDots/LoaderDots.css'
@@ -32,6 +33,16 @@ function writePageAccessCache(payload) {
   } catch {
     // ignore storage failures (private mode / quota)
   }
+}
+
+/** Matches backend AuthController::pageAccessPayload — admin gets full config page list; do not narrow via page_permissions rows. */
+function userHasAdminRole(user) {
+  if (!user || typeof user !== 'object') return false
+  const roleId = user.role_id ?? user.roles?.[0]?.id ?? user.role?.id
+  if (roleId === ROLE_ID.ADMIN) return true
+  const names = user.roles
+  if (!Array.isArray(names)) return false
+  return names.some((r) => String(r).toLowerCase() === 'admin')
 }
 
 function getPageHeaderForPath(pathname, t) {
@@ -140,10 +151,11 @@ export default function AuthenticatedLayout() {
           const permRes = await getPermissionsByRole(token, roleId)
           if (permRes?.data) {
             finalPermissions = permRes.data
-            // If can_view is true, the user can see the page
-            finalPages = permRes.data
-              .filter(p => p.can_view === true || p.can_view === 1)
-              .map(p => p.page)
+            if (!userHasAdminRole(u)) {
+              finalPages = permRes.data
+                .filter((p) => p.can_view === true || p.can_view === 1)
+                .map((p) => p.page)
+            }
           }
         } catch (err) {
           console.error('Failed to fetch permissions by role:', err)
@@ -190,9 +202,11 @@ export default function AuthenticatedLayout() {
             const permRes = await getPermissionsByRole(token, roleId)
             if (permRes?.data) {
               finalPermissions = permRes.data
-              finalPages = permRes.data
-                .filter(p => p.can_view === true || p.can_view === 1)
-                .map(p => p.page)
+              if (!userHasAdminRole(u)) {
+                finalPages = permRes.data
+                  .filter((p) => p.can_view === true || p.can_view === 1)
+                  .map((p) => p.page)
+              }
             }
           } catch (err) {
             console.error('Failed to fetch permissions by role:', err)
@@ -503,10 +517,21 @@ export default function AuthenticatedLayout() {
     () => new Set(Array.isArray(allowedPages) ? allowedPages.filter(Boolean) : []),
     [allowedPages]
   )
-  const hasPageAccess = useCallback((pageKey) => {
-    if (!pageKey) return false
-    return allowedPagesSet.has(String(pageKey))
-  }, [allowedPagesSet])
+  const sidebarRoleId = useMemo(
+    () => user?.role_id ?? user?.roles?.[0]?.id ?? user?.role?.id,
+    [user]
+  )
+  const isAccountantForSidebar = useMemo(() => sidebarRoleId === ROLE_ID.ACCOUNTANT, [sidebarRoleId])
+  const isOperationsForSidebar = useMemo(() => sidebarRoleId === ROLE_ID.OPERATIONS, [sidebarRoleId])
+  const isAdminFromProfile = useMemo(() => userHasAdminRole(user), [user])
+  const hasPageAccess = useCallback(
+    (pageKey) => {
+      if (!pageKey) return false
+      if (isAdminFromProfile) return true
+      return allowedPagesSet.has(String(pageKey))
+    },
+    [allowedPagesSet, isAdminFromProfile]
+  )
 
   if (!token) return <Navigate to="/login" replace />
 
@@ -521,6 +546,9 @@ export default function AuthenticatedLayout() {
   return (
     <AppLayout
       user={sidebarUser}
+      isAdminRole={isAdminFromProfile}
+      isAccountant={isAccountantForSidebar}
+      isOperations={isOperationsForSidebar}
       activeMenu={activeMenu}
       onMenuChange={handleMenuChange}
       allowedPages={allowedPages}

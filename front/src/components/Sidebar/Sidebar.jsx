@@ -135,6 +135,10 @@ const BADGE_CONFIG = {
 
 export default function Sidebar({
   appName = 'Marketerz',
+  /** From layout (Sidebar is outside `<Outlet />`, so `useAuthAccess` has no user context). */
+  isAdminRole: isAdminRoleFromLayout,
+  isAccountant: isAccountantFromLayout,
+  isOperations: isOperationsFromLayout,
   activeMenu = 'dashboard',
   onMenuChange,
   allowedPages: allowedPagesProp,
@@ -152,6 +156,9 @@ export default function Sidebar({
   const badgeCounts = { crmCount, ticketsCount, alertsCount, shipmentsCount, sdFormsCount }
   const { t, i18n } = useTranslation()
   const { allowedPages: hookAllowedPages, isAccountant, isAdminRole, isOperations } = useAuthAccess()
+  const effectiveIsAdminRole = isAdminRoleFromLayout ?? isAdminRole
+  const effectiveIsAccountant = isAccountantFromLayout ?? isAccountant
+  const effectiveIsOperations = isOperationsFromLayout ?? isOperations
   const allowedPages = allowedPagesProp ?? hookAllowedPages
   const isRtl = i18n.language === 'ar'
   const [theme, setTheme] = useState(() => getResolvedTheme())
@@ -213,20 +220,20 @@ export default function Sidebar({
         <nav className="sidebar-nav" aria-label="Main navigation">
           {SIDEBAR_SECTIONS.map(({ sectionKey, items }) => {
             // Rule: Accountant only sees Finance section
-            if (isAccountant && sectionKey !== 'financial') return null
+            if (effectiveIsAccountant && sectionKey !== 'financial') return null
 
             const filteredItems = allowedPagesSet
               ? items.filter(({ id }) => {
-                  if (id === 'operationsDashboard') return isAdminRole || isOperations
-                  if (id === 'settings' && !isAdminRole) return false
-                  if (id === 'reports') return isAdminRole
+                  if (id === 'operationsDashboard') return effectiveIsAdminRole || effectiveIsOperations
+                  if (id === 'settings' && !effectiveIsAdminRole) return false
+                  if (id === 'reports') return effectiveIsAdminRole
                   const pageKey = SIDEBAR_ID_TO_PAGE_KEY[id]
                   if (!pageKey) return true
                   return allowedPagesSet.has(pageKey)
                 })
               : items.filter(({ id }) => {
-                  if (id === 'operationsDashboard') return isAdminRole || isOperations
-                  return id !== 'reports' || isAdminRole
+                  if (id === 'operationsDashboard') return effectiveIsAdminRole || effectiveIsOperations
+                  return id !== 'reports' || effectiveIsAdminRole
                 })
             if (!filteredItems.length) return null
 

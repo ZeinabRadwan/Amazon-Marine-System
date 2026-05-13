@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X } from 'lucide-react'
+import { X, Snowflake, Zap } from 'lucide-react'
+import '../../Clients/ClientDetailModal.css'
 import '../../Shipments/Shipments.css'
 import { useMutateOffer } from '../../../hooks/usePricing'
 import PortNameAsyncSelect from './PortNameAsyncSelect'
@@ -124,6 +125,16 @@ function isInlandReeferTruck(truckId, inlandTypes = []) {
   return false
 }
 
+/** 40′ Reefer preset — generator add-on is not shown or submitted. */
+function isInland40ReeferContainer(truckId) {
+  return String(truckId || '') === 'reefer-container-40'
+}
+
+/** Legacy / other reefer slugs still use generator fields when applicable. */
+function inlandTruckNeedsGeneratorFields(truckId, inlandTypes) {
+  return isInlandReeferTruck(truckId, inlandTypes) && !isInland40ReeferContainer(truckId)
+}
+
 const defaultSeaForm = () => ({
   pricing_type: 'sea',
   pol: '',
@@ -197,6 +208,7 @@ function inferLegacyPricingCode(itemName, presetSlug, oceanUnitTypes, idx = 0) {
     return 'thc40'
   }
   if (itemName === 'Power') return 'powerDay'
+  if (itemName === 'PTI') return 'pti'
   if (itemName === 'B/L Fee') return 'blFee'
   if (itemName === 'Telex Release') return 'telex'
   return `otherCharge${idx + 1}`
@@ -219,6 +231,29 @@ function encodeFreeTimeDnd({ pol_detention, pol_demurrage, pod_detention, pod_de
     `POD Detention: ${formatFreeTimeDndCell(pod_detention)} | Demurrage: ${formatFreeTimeDndCell(pod_demurrage)}`
   )
   return lines.join('\n')
+}
+
+/** Embedded in offer notes — free power days for reefers (no DB column). */
+
+function stripPowerFreeDaysFromNotes(notes) {
+  let s = String(notes || '')
+  s = s.replace(/\n\n__REEFER_POWER_FREE_DAYS__=\d+__/g, '')
+  s = s.replace(/^__REEFER_POWER_FREE_DAYS__=\d+__(\n\n|\n)?/m, '')
+  return s.trim()
+}
+
+function extractPowerFreeDaysFromNotes(notes) {
+  const m = String(notes || '').match(/__REEFER_POWER_FREE_DAYS__=(\d+)__/)
+  return m ? m[1] : ''
+}
+
+function mergePowerFreeDaysIntoNotes(notes, daysRaw) {
+  const base = stripPowerFreeDaysFromNotes(notes)
+  const d = String(daysRaw ?? '').trim()
+  const n = d === '' ? 0 : Math.max(0, Math.floor(Number(d) || 0))
+  if (!n) return base
+  const marker = `__REEFER_POWER_FREE_DAYS__=${n}__`
+  return base ? `${base}\n\n${marker}` : marker
 }
 
 function parseFreeTimeDigits(raw) {
@@ -275,6 +310,9 @@ function buildSeaPricingStateFromOffer(offer, oceanUnitTypes) {
   const usedCodes = new Set(
     coreNames.map((name) => inferLegacyPricingCode(name, preset, oceanUnitTypes, 0))
   )
+  if (meta.type === 'Reefer') {
+    usedCodes.add('pti')
+  }
   const extras = Object.entries(pricing)
     .filter(([code]) => !usedCodes.has(code))
     .sort(([a], [b]) => a.localeCompare(b))
@@ -288,6 +326,25 @@ function buildSeaPricingStateFromOffer(offer, oceanUnitTypes) {
   return { seaCoreLines, seaCustomLines }
 }
 
+const defaultReeferExtras = () => ({
+  pti_amount: '0',
+  pti_currency: 'USD',
+  power_free_days: '0',
+})
+
+/** Collapsible section — shipment-fin-card parity (details default open). */
+function PricingFinSection({ title, subtitle, children }) {
+  return (
+    <details className="shipment-fin-card pricing-fin-section" open>
+      <summary className="shipment-fin-card__head pricing-fin-section__summary">
+        <div className="shipment-fin-card__title">{title}</div>
+        {subtitle ? <div className="shipment-fin-card__sub">{subtitle}</div> : null}
+      </summary>
+      <div className="shipment-fin-card__body pricing-fin-section__body">{children}</div>
+    </details>
+  )
+}
+
 export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit, pricingMode = 'sea' }) {
   const { t, i18n } = useTranslation()
   const { create, update, loading, error } = useMutateOffer()
@@ -295,6 +352,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
   const [inlandForm, setInlandForm] = useState(defaultInlandForm)
   const [seaCoreLines, setSeaCoreLines] = useState(initialSeaCoreLines)
   const [seaCustomLines, setSeaCustomLines] = useState([])
+  const [reeferExtras, setReeferExtras] = useState(() => defaultReeferExtras())
   /** Single sailing date pending add (ISO YYYY-MM-DD from DatePicker) */
   const [draftFixedSailingDate, setDraftFixedSailingDate] = useState('')
 
@@ -374,6 +432,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
       setForm(defaultSeaForm())
       setSeaCoreLines(initialSeaCoreLines())
       setSeaCustomLines([])
+      setReeferExtras(defaultReeferExtras())
       return
     }
 
@@ -387,6 +446,14 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
     const fixedFromApi = Array.isArray(offerToEdit.sailing_dates) ? [...offerToEdit.sailing_dates] : []
 
     const ft = parseFreeTimeFromDnd(offerToEdit.dnd)
+
+    const rawNotes = offerToEdit.notes || ''
+    const pti = offerToEdit.pricing?.pti
+    setReeferExtras({
+      pti_amount: pti?.price != null && pti.price !== '' ? String(pti.price) : '0',
+      pti_currency: pti?.currency || 'USD',
+      power_free_days: extractPowerFreeDaysFromNotes(rawNotes) || '0',
+    })
 
     setForm({
       ...defaultSeaForm(),
@@ -402,7 +469,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
       fixed_dates: fixedFromApi,
       valid_from: offerToEdit.valid_from ? String(offerToEdit.valid_from).slice(0, 10) : '',
       valid_to: offerToEdit.valid_to ? String(offerToEdit.valid_to).slice(0, 10) : '',
-      notes: offerToEdit.notes || '',
+      notes: stripPowerFreeDaysFromNotes(rawNotes),
     })
 
     const { seaCoreLines: loadedCore, seaCustomLines: loadedCustom } = buildSeaPricingStateFromOffer(
@@ -417,6 +484,8 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
     () => resolveOceanMeta(form.container_preset, SEA_OCEAN_UNIT_TYPES),
     [form.container_preset]
   )
+
+  const seaPowerRow = useMemo(() => seaCoreLines.find((r) => r.name === 'Power'), [seaCoreLines])
 
   const syncSeaCoreLinesForPreset = useCallback(
     (presetSlug) => {
@@ -482,8 +551,8 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
       const amount = Number(inlandForm.price)
       if (!gov || !port || Number.isNaN(amount) || amount < 0) return
 
-      const reefer = isInlandReeferTruck(inlandForm.truck_type, mergedInlandUnitTypes)
-      if (reefer) {
+      const needsGenerator = inlandTruckNeedsGeneratorFields(inlandForm.truck_type, mergedInlandUnitTypes)
+      if (needsGenerator) {
         const gp = String(inlandForm.generator_price ?? '').trim()
         const generatorAmount = Number(gp)
         if (gp === '' || Number.isNaN(generatorAmount) || generatorAmount < 0) return
@@ -496,7 +565,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
           currency: inlandForm.currency || 'EGP',
         },
       }
-      if (reefer) {
+      if (needsGenerator) {
         const generatorAmount = Number(String(inlandForm.generator_price).trim())
         inlandPricing.generator = {
           price: generatorAmount,
@@ -573,6 +642,19 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
 
     const parsedItems = [...parsedCore, ...parsedCustom]
 
+    if (oceanMeta.type === 'Reefer') {
+      const ptiAmt = Number(reeferExtras.pti_amount)
+      if (!Number.isNaN(ptiAmt) && ptiAmt >= 0) {
+        parsedItems.push({
+          code: 'pti',
+          name: 'PTI',
+          description: '',
+          amount: ptiAmt,
+          currency: reeferExtras.pti_currency || 'USD',
+        })
+      }
+    }
+
     if (!parsedItems.length) return
 
     const pricing = {}
@@ -603,7 +685,11 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
       valid_to: form.valid_to || null,
       weekly_sailing_days,
       sailing_dates,
-      notes: form.notes?.trim() || null,
+      notes:
+        mergePowerFreeDaysIntoNotes(
+          form.notes?.trim() || '',
+          oceanMeta.type === 'Reefer' ? reeferExtras.power_free_days : ''
+        ).trim() || null,
       other_charges: parsedItems
         .filter((x) => x.name === 'Other Charges')
         .map((x) => x.description)
@@ -628,28 +714,68 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
 
   if (!isOpen) return null
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-5xl max-h-[92vh] overflow-hidden flex flex-col border border-gray-100 dark:border-gray-700">
-        <div className="px-6 py-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-700 shrink-0">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-            {effectiveMode === 'inland'
-              ? offerToEdit
-                ? 'تعديل سعر نقل داخلي / Edit Inland Rate'
-                : 'إضافة سعر نقل داخلي / Add Inland Rate'
-              : offerToEdit
-                ? 'تعديل عرض سعر شحن بحري / Edit Rate Sea Freight'
-                : 'إضافة عرض سعر جديد شحن بحري / Add New Rate Sea Freight'}
-          </h2>
-          <button type="button" onClick={onClose} className="p-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full transition-colors">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+  const formTitle =
+    effectiveMode === 'inland'
+      ? offerToEdit
+        ? 'تعديل سعر نقل داخلي / Edit Inland Rate'
+        : 'إضافة سعر نقل داخلي / Add Inland Rate'
+      : offerToEdit
+        ? 'تعديل عرض سعر شحن بحري / Edit Rate Sea Freight'
+        : 'إضافة عرض سعر جديد شحن بحري / Add New Rate Sea Freight'
 
-        <div className="flex-1 overflow-y-auto">
-          <div className="shipment-fin-panel shipment-fin-panel--enter">
+  return (
+    <div
+      className="client-detail-modal shipments-no-print shipment-fin-modal-root pricing-fin-modal-root"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="pricing-offer-form-title"
+    >
+      <div className="client-detail-modal__backdrop" onClick={onClose} aria-hidden="true" />
+      <div className="client-detail-modal__box client-detail-modal__box--form shipment-fin-modal__box pricing-fin-form-modal__box">
+        <header className="client-detail-modal__header client-detail-modal__header--form shipment-fin-modal__header">
+          <div className="shipment-fin-modal__header-main">
+            <div className="ship-bar">
+              <div>
+                <div id="pricing-offer-form-title" className="ship-ref pricing-fin-ship-ref--title" role="heading" aria-level={2}>
+                  {formTitle}
+                </div>
+              </div>
+              <div className="ship-metas">
+                {offerToEdit?.id ? (
+                  <>
+                    <div>
+                      <div className="ship-meta-val">#{offerToEdit.id}</div>
+                      <div className="ship-meta-lbl">{t('pricing.finHeaderId', 'ID')}</div>
+                    </div>
+                    <div className="ship-meta-divider" aria-hidden />
+                  </>
+                ) : null}
+                <div>
+                  <div className="ship-meta-val">
+                    {effectiveMode === 'sea'
+                      ? t('pricing.finHeaderModeSea', 'Ocean')
+                      : t('pricing.finHeaderModeInland', 'Inland')}
+                  </div>
+                  <div className="ship-meta-lbl">{t('pricing.finHeaderMode', 'Mode')}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="client-detail-modal__close shipment-fin-modal__header-close"
+            onClick={onClose}
+            aria-label={t('common.close', 'Close')}
+          >
+            <X className="client-detail-modal__close-icon" aria-hidden />
+          </button>
+        </header>
+
+        <div className="client-detail-modal__body client-detail-modal__body--form shipment-fin-modal__body">
+          <div className="client-detail-modal__body-inner">
+            <div className="shipment-fin-panel shipment-fin-panel--enter shipment-fin-panel--expenses">
             {error ? (
-              <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200">
+              <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200 shipment-fin-flash shipment-fin-flash--error">
                 {error}
               </div>
             ) : null}
@@ -657,8 +783,8 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
             <form id="offerForm" onSubmit={handleSubmit}>
             {effectiveMode === 'sea' ? (
             <div className="sea-rate-form" role="region" aria-label="Sea freight rate">
-              <div className="sea-rate-section-title">المسار والخط الملاحي / Route & Carrier</div>
-              <div className="sea-rate-grid-4">
+              <PricingFinSection title="قسم 1: المسار والخط الملاحي / Route & carrier">
+              <div className="sea-rate-grid-4 sea-rate-section1-grid">
                 <div>
                   <label htmlFor="offer-pol" className="sea-rate-label">ميناء التحميل / POL</label>
                   <PortNameAsyncSelect
@@ -737,94 +863,108 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                   />
                 </div>
               </div>
+              </PricingFinSection>
 
-              <div className="sea-rate-section-title">أيام الـ Free Time / Free Time Detention &amp; Demurrage</div>
-              <div className="sea-rate-grid-2">
+              <PricingFinSection title="قسم 2: أيام الفري / Free time (Detention & Demurrage)">
+              <div className="sea-rate-grid-2 sea-rate-freetime-outer-grid">
                 <div className="sea-rate-freetime-box sea-rate-freetime-pol">
                   <div className="sea-rate-freetime-title">ميناء التحميل / POL Free Time</div>
-                  <div className="sea-rate-field-gap">
-                    <label htmlFor="offer-pol-detention" className="sea-rate-label">Detention (أيام)</label>
-                    <input
-                      id="offer-pol-detention"
-                      type="number"
-                      min={0}
-                      step={1}
-                      inputMode="numeric"
-                      className="sea-rate-input"
-                      value={form.pol_detention}
-                      onChange={(e) =>
-                        updateForm({
-                          pol_detention:
-                            e.target.value === '' ? '0' : String(Math.max(0, Math.floor(Number(e.target.value) || 0))),
-                        })
-                      }
-                      placeholder="0"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="offer-pol-demurrage" className="sea-rate-label">Demurrage (أيام)</label>
-                    <input
-                      id="offer-pol-demurrage"
-                      type="number"
-                      min={0}
-                      step={1}
-                      inputMode="numeric"
-                      className="sea-rate-input"
-                      value={form.pol_demurrage}
-                      onChange={(e) =>
-                        updateForm({
-                          pol_demurrage:
-                            e.target.value === '' ? '0' : String(Math.max(0, Math.floor(Number(e.target.value) || 0))),
-                        })
-                      }
-                      placeholder="0"
-                    />
+                  <div className="sea-rate-freetime-field-rows">
+                    <div className="sea-rate-freetime-field-row">
+                      <label htmlFor="offer-pol-detention" className="sea-rate-label sea-rate-label--inline">
+                        Detention (أيام)
+                      </label>
+                      <input
+                        id="offer-pol-detention"
+                        type="number"
+                        min={0}
+                        step={1}
+                        inputMode="numeric"
+                        className="sea-rate-input"
+                        value={form.pol_detention}
+                        onChange={(e) =>
+                          updateForm({
+                            pol_detention:
+                              e.target.value === '' ? '0' : String(Math.max(0, Math.floor(Number(e.target.value) || 0))),
+                          })
+                        }
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="sea-rate-freetime-field-row">
+                      <label htmlFor="offer-pol-demurrage" className="sea-rate-label sea-rate-label--inline">
+                        Demurrage (أيام)
+                      </label>
+                      <input
+                        id="offer-pol-demurrage"
+                        type="number"
+                        min={0}
+                        step={1}
+                        inputMode="numeric"
+                        className="sea-rate-input"
+                        value={form.pol_demurrage}
+                        onChange={(e) =>
+                          updateForm({
+                            pol_demurrage:
+                              e.target.value === '' ? '0' : String(Math.max(0, Math.floor(Number(e.target.value) || 0))),
+                          })
+                        }
+                        placeholder="0"
+                      />
+                    </div>
                   </div>
                 </div>
                 <div className="sea-rate-freetime-box sea-rate-freetime-pod">
                   <div className="sea-rate-freetime-title">ميناء الوصول / POD Free Time</div>
-                  <div className="sea-rate-field-gap">
-                    <label htmlFor="offer-pod-detention" className="sea-rate-label">Detention (أيام)</label>
-                    <input
-                      id="offer-pod-detention"
-                      type="number"
-                      min={0}
-                      step={1}
-                      inputMode="numeric"
-                      className="sea-rate-input"
-                      value={form.pod_detention}
-                      onChange={(e) =>
-                        updateForm({
-                          pod_detention:
-                            e.target.value === '' ? '0' : String(Math.max(0, Math.floor(Number(e.target.value) || 0))),
-                        })
-                      }
-                      placeholder="0"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="offer-pod-demurrage" className="sea-rate-label">Demurrage (أيام)</label>
-                    <input
-                      id="offer-pod-demurrage"
-                      type="number"
-                      min={0}
-                      step={1}
-                      inputMode="numeric"
-                      className="sea-rate-input"
-                      value={form.pod_demurrage}
-                      onChange={(e) =>
-                        updateForm({
-                          pod_demurrage:
-                            e.target.value === '' ? '0' : String(Math.max(0, Math.floor(Number(e.target.value) || 0))),
-                        })
-                      }
-                      placeholder="0"
-                    />
+                  <div className="sea-rate-freetime-field-rows">
+                    <div className="sea-rate-freetime-field-row">
+                      <label htmlFor="offer-pod-detention" className="sea-rate-label sea-rate-label--inline">
+                        Detention (أيام)
+                      </label>
+                      <input
+                        id="offer-pod-detention"
+                        type="number"
+                        min={0}
+                        step={1}
+                        inputMode="numeric"
+                        className="sea-rate-input"
+                        value={form.pod_detention}
+                        onChange={(e) =>
+                          updateForm({
+                            pod_detention:
+                              e.target.value === '' ? '0' : String(Math.max(0, Math.floor(Number(e.target.value) || 0))),
+                          })
+                        }
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="sea-rate-freetime-field-row">
+                      <label htmlFor="offer-pod-demurrage" className="sea-rate-label sea-rate-label--inline">
+                        Demurrage (أيام)
+                      </label>
+                      <input
+                        id="offer-pod-demurrage"
+                        type="number"
+                        min={0}
+                        step={1}
+                        inputMode="numeric"
+                        className="sea-rate-input"
+                        value={form.pod_demurrage}
+                        onChange={(e) =>
+                          updateForm({
+                            pod_demurrage:
+                              e.target.value === '' ? '0' : String(Math.max(0, Math.floor(Number(e.target.value) || 0))),
+                          })
+                        }
+                        placeholder="0"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
+              </PricingFinSection>
 
-              <div className="sea-rate-section-title">مواعيد الإبحار / Sailing Schedule</div>
+              <PricingFinSection title="قسم 3: مواعيد الإبحار / Sailing schedule">
               <div className="sea-rate-schedule-type">
                 <label className="sea-rate-label">نوع الجدول / Schedule Type</label>
                 <div className="sea-rate-toggle-group">
@@ -845,55 +985,65 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                 </div>
               </div>
               {form.sailing_tab === 'fixed' ? (
-                <div className="sea-rate-sub-section">
+                <div className="sea-rate-sub-section sea-rate-sailing-fixed">
                   <div className="sea-rate-hint">في حالة تواريخ محددة — أضف تواريخ الإبحار:</div>
-                  <div className="sea-rate-date-row">
-                    <DatePicker
-                      key={`fixed-sail-${offerToEdit?.id ?? 'new'}-${form.sailing_tab}`}
-                      id="offer-sailing-fixed-draft"
-                      className="sea-rate-date-input"
-                      value={draftFixedSailingDate}
-                      onChange={setDraftFixedSailingDate}
-                      locale={i18n.language}
-                      placeholder={UI_DATE_FORMAT}
-                    />
-                    <button
-                      type="button"
-                      className="sea-rate-btn"
-                      disabled={!canAddDraftFixedSailingDate}
-                      title={
-                        draftFixedSailingDate &&
-                        form.fixed_dates.includes(String(draftFixedSailingDate).trim())
-                          ? t('pricing.sailingDateAlreadyAdded', 'This date is already listed')
-                          : undefined
-                      }
-                      onClick={addDraftFixedSailingDate}
-                    >
-                      + أضف تاريخ
-                    </button>
+                  <div className="sea-rate-sailing-date-picker-row">
+                    <label htmlFor="offer-sailing-fixed-draft" className="sea-rate-label sea-rate-label--inline">
+                      {t('pricing.seaSailingPickDateLabel', 'Pick date / اختر التاريخ')}
+                    </label>
+                    <div className="sea-rate-sailing-date-picker-controls">
+                      <DatePicker
+                        key={`fixed-sail-${offerToEdit?.id ?? 'new'}-${form.sailing_tab}`}
+                        id="offer-sailing-fixed-draft"
+                        className="sea-rate-date-input sea-rate-date-input--sailing"
+                        value={draftFixedSailingDate}
+                        onChange={setDraftFixedSailingDate}
+                        locale={i18n.language}
+                        placeholder={UI_DATE_FORMAT}
+                      />
+                      <button
+                        type="button"
+                        className="sea-rate-btn sea-rate-btn--add-date"
+                        disabled={!canAddDraftFixedSailingDate}
+                        title={
+                          draftFixedSailingDate &&
+                          form.fixed_dates.includes(String(draftFixedSailingDate).trim())
+                            ? t('pricing.sailingDateAlreadyAdded', 'This date is already listed')
+                            : undefined
+                        }
+                        onClick={addDraftFixedSailingDate}
+                      >
+                        + أضف تاريخ
+                      </button>
+                    </div>
                   </div>
                   {form.fixed_dates.length > 0 ? (
-                    <div className="sea-rate-tags">
-                      {form.fixed_dates.map((d) => (
-                        <button
-                          key={d}
-                          type="button"
-                          className="sea-rate-tag sea-rate-tag-blue"
-                          onClick={() => removeFixedDate(d)}
-                          aria-label={t('pricing.removeFixedDateAria', 'Remove {{date}}', {
-                            date: formatIsoDateDisplay(d, i18n.language),
-                          })}
-                        >
-                          {formatIsoDateDisplay(d, i18n.language)} ×
-                        </button>
-                      ))}
+                    <div className="sea-rate-selected-dates-block">
+                      <div className="sea-rate-selected-dates-block__title">
+                        {t('pricing.seaSelectedSailingDatesTitle', 'Selected sailing dates / التواريخ المحددة')}
+                      </div>
+                      <div className="sea-rate-tags sea-rate-tags--in-block">
+                        {form.fixed_dates.map((d) => (
+                          <button
+                            key={d}
+                            type="button"
+                            className="sea-rate-tag sea-rate-tag-blue"
+                            onClick={() => removeFixedDate(d)}
+                            aria-label={t('pricing.removeFixedDateAria', 'Remove {{date}}', {
+                              date: formatIsoDateDisplay(d, i18n.language),
+                            })}
+                          >
+                            {formatIsoDateDisplay(d, i18n.language)} ×
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   ) : null}
                 </div>
               ) : (
                 <div className="sea-rate-sub-section sea-rate-weekly-section">
                   <div className="sea-rate-hint">في حالة رحلة أسبوعية — اختر اليوم:</div>
-                  <div className="sea-rate-day-selector" role="group">
+                  <div className="sea-rate-day-selector sea-rate-day-selector--week-7" role="group">
                     {WEEK_DAYS.map((day) => {
                       const selected = form.weekly_days.includes(day)
                       return (
@@ -911,11 +1061,11 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                   </div>
                 </div>
               )}
+              </PricingFinSection>
 
-              <div className="sea-rate-section-title">بنود التسعير / Pricing Items</div>
-              <div className="sea-rate-hint">البنود الأساسية (لكل عرض سعر):</div>
+              <PricingFinSection title="قسم 4: بنود التسعير / Pricing conditions">
               <div className="sea-rate-grid-4 sea-rate-pricing-grid">
-                {seaCoreLines.map((row) => (
+                {(oceanMeta.type === 'Reefer' ? seaCoreLines.filter((row) => row.name !== 'Power') : seaCoreLines).map((row) => (
                   <div key={row.name}>
                     <label className="sea-rate-label">{row.name === 'Ocean Freight' ? 'Ocean freight (OF)' : row.name === 'B/L Fee' ? 'B/L fee (بوليصة)' : row.name}</label>
                     <div className="sea-rate-input-group">
@@ -943,6 +1093,138 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                   </div>
                 ))}
               </div>
+              {oceanMeta.type === 'Reefer' ? (
+                <div
+                  key={`reefer-${form.container_preset}`}
+                  className="sea-rate-reefer-charges sea-rate-reefer-charges--enter"
+                  aria-live="polite"
+                >
+                  <div className="sea-rate-reefer-charges__head">
+                    <span className="sea-rate-reefer-charges__icon" aria-hidden>
+                      <Snowflake className="h-4 w-4" strokeWidth={2} />
+                    </span>
+                    <div className="sea-rate-reefer-charges__head-text">
+                      <div className="sea-rate-reefer-charges__title">
+                        {t('pricing.seaReeferChargesTitle', "Reefer-only Charges / بنود إضافية للحاويات المبردة فقط")}
+                      </div>
+                      <div className="sea-rate-reefer-charges__subtitle">
+                        {t(
+                          'pricing.seaReeferChargesSubtitle',
+                          "PTI plus port electricity (power) priced per day after free power days — see note below."
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="sea-rate-reefer-charges__pti">
+                    <label htmlFor="offer-sea-reefer-pti" className="sea-rate-label">
+                      {t('pricing.seaReeferPtiLabel', 'PTI')}
+                    </label>
+                    <div className="sea-rate-input-group sea-rate-reefer-charges__pti-input">
+                      <input
+                        id="offer-sea-reefer-pti"
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        className="sea-rate-input"
+                        value={reeferExtras.pti_amount}
+                        onChange={(e) => setReeferExtras((prev) => ({ ...prev, pti_amount: e.target.value }))}
+                        placeholder="0"
+                      />
+                      <select
+                        className="sea-rate-select"
+                        value={reeferExtras.pti_currency}
+                        onChange={(e) => setReeferExtras((prev) => ({ ...prev, pti_currency: e.target.value }))}
+                        aria-label={t('pricing.currencyAria', 'Currency')}
+                      >
+                        {CURRENCIES.map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="sea-rate-reefer-power-card">
+                    <div className="sea-rate-reefer-power-card__head">
+                      <Zap className="sea-rate-reefer-power-card__zap" aria-hidden />
+                      <span>{t('pricing.seaReeferPowerPortElectricity', 'Power (port electricity)')}</span>
+                    </div>
+                    <div className="sea-rate-reefer-power-card__hint">
+                      {t('pricing.seaReeferPowerCardHint', 'Daily rate at the port and how many days are free before billing starts.')}
+                    </div>
+                    <div className="sea-rate-reefer-power-card__grid">
+                      {seaPowerRow ? (
+                        <div>
+                          <label htmlFor="offer-sea-reefer-power" className="sea-rate-label">
+                            {t('pricing.seaReeferPowerPricePerDay', 'Power price / day')}
+                          </label>
+                          <div className="sea-rate-input-group">
+                            <input
+                              id="offer-sea-reefer-power"
+                              type="number"
+                              min={0}
+                              step="0.01"
+                              className="sea-rate-input"
+                              value={seaPowerRow.amount}
+                              onChange={(e) => patchSeaCoreLine('Power', { amount: e.target.value })}
+                              placeholder="0"
+                            />
+                            <select
+                              className="sea-rate-select"
+                              value={seaPowerRow.currency}
+                              onChange={(e) => patchSeaCoreLine('Power', { currency: e.target.value })}
+                              aria-label={t('pricing.currencyAria', 'Currency')}
+                            >
+                              {CURRENCIES.map((c) => (
+                                <option key={c} value={c}>
+                                  {c}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      ) : null}
+                      <div>
+                        <label htmlFor="offer-sea-reefer-power-free" className="sea-rate-label">
+                          {t('pricing.seaReeferPowerFreeDays', 'Free power days')}
+                        </label>
+                        <input
+                          id="offer-sea-reefer-power-free"
+                          type="number"
+                          min={0}
+                          step={1}
+                          inputMode="numeric"
+                          className="sea-rate-input"
+                          value={reeferExtras.power_free_days}
+                          onChange={(e) =>
+                            setReeferExtras((prev) => ({
+                              ...prev,
+                              power_free_days:
+                                e.target.value === ''
+                                  ? '0'
+                                  : String(Math.max(0, Math.floor(Number(e.target.value) || 0))),
+                            }))
+                          }
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                    <div className="sea-rate-reefer-alert" role="note">
+                      <p className="sea-rate-reefer-alert__lead">
+                        {t('pricing.seaReeferSalesNoteLead', 'Note for sales:')}
+                      </p>
+                      <p className="sea-rate-reefer-alert__body">
+                        {t(
+                          'pricing.seaReeferPowerSalesNote',
+                          'Power charges are NOT included in the total quotation price. They are calculated separately based on actual port stay days after deducting free power days. Example: if free power days = 3, daily power price = USD 25, and the container stayed 5 days, then: (5 − 3) × 25 = USD 50.'
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
               <div className="sea-rate-custom-charges">
                 <div className="sea-rate-hint">بنود إضافية (حسب الخط الملاحي) / Custom Charges:</div>
                 <div className="sea-rate-sub-section">
@@ -1021,8 +1303,9 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                   ) : null}
                 </div>
               </div>
+              </PricingFinSection>
 
-              <div className="sea-rate-section-title">الصلاحية والملاحظات / Validity &amp; Notes</div>
+              <PricingFinSection title="قسم 5: الصلاحية والملاحظات / Validity &amp; Notes">
               <div className="sea-rate-validity-grid">
                 <div>
                   <label className="sea-rate-label">صالح من / Valid From</label>
@@ -1059,48 +1342,62 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                   placeholder="أضف أي ملاحظات أو شروط إضافية..."
                 />
               </div>
+              </PricingFinSection>
             </div>
             ) : (
-            <div className="inland-rate-form" role="region" aria-label="Inland transport rate">
-              <div className="inland-rate-section-title">القسم 1: المسار / Route</div>
+            <div className="inland-rate-form inland-rate-form--modal" role="region" aria-label="Inland transport rate">
+              <PricingFinSection title="قسم 1: المسار / Route">
               <div className="inland-rate-grid inland-rate-grid-3">
                 <div>
-                  <label htmlFor="offer-inland-port" className="inland-rate-label">الميناء / Port</label>
+                  <label htmlFor="offer-inland-port" className="inland-rate-label inland-rate-label--sr-only">
+                    {t('pricing.inlandPortField', 'Port / الميناء')}
+                  </label>
                   <PortNameAsyncSelect
                     id="offer-inland-port"
+                    className="inland-rate-async-select"
                     value={inlandForm.inland_port}
                     onChange={(v) => updateInlandForm({ inland_port: v })}
-                    placeholder="اختر الميناء"
+                    placeholder={t('pricing.inlandPortPlaceholder', 'اختر الميناء')}
+                    aria-label={t('pricing.inlandPortField', 'Port / الميناء')}
                   />
                 </div>
                 <div>
-                  <label htmlFor="offer-inland-gov" className="inland-rate-label">المحافظة / Governorate</label>
+                  <label htmlFor="offer-inland-gov" className="inland-rate-label inland-rate-label--sr-only">
+                    {t('pricing.governorate', 'Governorate')}
+                  </label>
                   <InlandLocationAsyncSelect
                     id="offer-inland-gov"
+                    className="inland-rate-async-select"
                     dataset="inland_governorate"
                     value={inlandForm.inland_gov}
                     onChange={(v) => updateInlandForm({ inland_gov: v })}
-                    placeholder="اختر المحافظة"
+                    placeholder={t('pricing.inlandGovPlaceholder', 'اختر المحافظة')}
                     aria-label={t('pricing.governorate', 'Governorate')}
                   />
                 </div>
                 <div>
-                  <label htmlFor="offer-inland-area" className="inland-rate-label">المنطقة / Zone (اختياري)</label>
+                  <label htmlFor="offer-inland-area" className="inland-rate-label inland-rate-label--sr-only">
+                    {t('pricing.inlandAreaField', 'Zone (optional) / المنطقة')}
+                  </label>
                   <InlandLocationAsyncSelect
                     id="offer-inland-area"
+                    className="inland-rate-async-select"
                     dataset="inland_region"
                     value={inlandForm.inland_area}
                     onChange={(v) => updateInlandForm({ inland_area: v })}
-                    placeholder="مثال: التجمع الخامس، العاشر من رمضان..."
+                    placeholder={t('pricing.inlandAreaPlaceholder', 'مثال: التجمع الخامس، العاشر من رمضان...')}
                     aria-label={t('pricing.inlandAreaEnglishAbbr', 'Area')}
                   />
                 </div>
               </div>
+              </PricingFinSection>
 
-              <div className="inland-rate-section-title">القسم 2: نوع العربية والسعر / Vehicle Type &amp; Rate</div>
-              <div className="inland-rate-grid inland-rate-grid-2 inland-rate-vehicle-grid">
+              <PricingFinSection title="قسم 2: نوع العربية والسعر / Vehicle Type &amp; Rate">
+              <div className="inland-rate-grid inland-rate-grid-2 inland-rate-vehicle-grid inland-rate-vehicle-grid--stacked">
                 <div className="inland-rate-control">
-                  <label htmlFor="offer-inland-truck-type" className="inland-rate-label">نوع العربية / Vehicle Type</label>
+                  <label htmlFor="offer-inland-truck-type" className="inland-rate-label inland-rate-label--sr-only">
+                    {t('pricing.inlandVehicleTypeAria', 'Vehicle type')}
+                  </label>
                   <select
                     id="offer-inland-truck-type"
                     className="inland-rate-select"
@@ -1109,10 +1406,11 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                       const v = e.target.value
                       setInlandForm((prev) => {
                         const reefer = isInlandReeferTruck(v, mergedInlandUnitTypes)
+                        const hideGen = !reefer || isInland40ReeferContainer(v)
                         return {
                           ...prev,
                           truck_type: v,
-                          ...(!reefer ? { generator_price: '', generator_currency: 'EGP' } : {}),
+                          ...(hideGen ? { generator_price: '', generator_currency: 'EGP' } : {}),
                         }
                       })
                     }}
@@ -1126,8 +1424,10 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                   </select>
                 </div>
                 <div className="inland-rate-control">
-                  <label htmlFor="offer-inland-price" className="inland-rate-label">السعر / Rate</label>
-                  <div className="inland-rate-input-group">
+                  <label htmlFor="offer-inland-price" className="inland-rate-label inland-rate-label--sr-only">
+                    {t('pricing.inlandRateAmountAria', 'Rate amount')}
+                  </label>
+                  <div className="inland-rate-input-group inland-rate-input-group--full">
                     <input
                       id="offer-inland-price"
                       type="number"
@@ -1137,7 +1437,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                       className="inland-rate-input"
                       value={inlandForm.price}
                       onChange={(e) => updateInlandForm({ price: e.target.value })}
-                      placeholder="0"
+                      placeholder={t('pricing.inlandRatePlaceholder', 'السعر / Rate')}
                       required
                       aria-label={t('pricing.inlandPriceAria', 'Inland transport price or rate')}
                     />
@@ -1146,6 +1446,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                       className="inland-rate-select"
                       value={inlandForm.currency}
                       onChange={(e) => updateInlandForm({ currency: e.target.value })}
+                      aria-label={t('pricing.currencyAria', 'Currency')}
                     >
                       {CURRENCIES.map((c) => (
                         <option key={c} value={c}>
@@ -1157,51 +1458,49 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                 </div>
               </div>
 
-              {isInlandReeferTruck(inlandForm.truck_type, mergedInlandUnitTypes) ? (
-                <div className="inland-rate-reefer-section">
-                  <div className="inland-rate-hint">سعر المولد / Generator Cost (per trip) *</div>
-                  <div className="inland-rate-grid inland-rate-grid-2">
-                    <div className="inland-rate-control">
-                      <label htmlFor="offer-inland-generator-price" className="inland-rate-label">
-                        المبلغ / Amount *
-                      </label>
-                      <div className="inland-rate-input-group">
-                        <input
-                          id="offer-inland-generator-price"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          inputMode="decimal"
-                          className="inland-rate-input"
-                          value={inlandForm.generator_price}
-                          onChange={(e) => updateInlandForm({ generator_price: e.target.value })}
-                          placeholder="0"
-                          required
-                          aria-label={t('pricing.inlandGeneratorAmountAria', 'Generator cost amount')}
-                        />
-                        <select
-                          id="offer-inland-generator-currency"
-                          className="inland-rate-select"
-                          value={inlandForm.generator_currency}
-                          onChange={(e) => updateInlandForm({ generator_currency: e.target.value })}
-                          aria-label={t('pricing.inlandGeneratorCurrencyAria', 'Generator cost currency')}
-                        >
-                          {CURRENCIES.map((c) => (
-                            <option key={c} value={c}>
-                              {c}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
+              {inlandTruckNeedsGeneratorFields(inlandForm.truck_type, mergedInlandUnitTypes) ? (
+                <div className="inland-rate-generator-inline">
+                  <label htmlFor="offer-inland-generator-price" className="inland-rate-label inland-rate-label--sr-only">
+                    {t('pricing.inlandGeneratorAmountAria', 'Generator cost amount')}
+                  </label>
+                  <div className="inland-rate-input-group inland-rate-input-group--full">
+                    <input
+                      id="offer-inland-generator-price"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      inputMode="decimal"
+                      className="inland-rate-input"
+                      value={inlandForm.generator_price}
+                      onChange={(e) => updateInlandForm({ generator_price: e.target.value })}
+                      placeholder={t('pricing.inlandGeneratorPlaceholder', 'سعر المولد / Generator (per trip)')}
+                      required
+                      aria-label={t('pricing.inlandGeneratorAmountAria', 'Generator cost amount')}
+                    />
+                    <select
+                      id="offer-inland-generator-currency"
+                      className="inland-rate-select"
+                      value={inlandForm.generator_currency}
+                      onChange={(e) => updateInlandForm({ generator_currency: e.target.value })}
+                      aria-label={t('pricing.inlandGeneratorCurrencyAria', 'Generator cost currency')}
+                    >
+                      {CURRENCIES.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               ) : null}
+              </PricingFinSection>
 
-              <div className="inland-rate-section-title">القسم 3: الصلاحية / Validity</div>
-              <div className="inland-rate-grid inland-rate-grid-2">
+              <PricingFinSection title="قسم 3: الصلاحية / Validity">
+              <div className="inland-rate-grid inland-rate-grid-2 inland-rate-validity-grid--stacked">
                 <div>
-                  <label className="inland-rate-label">صالح من / Valid From</label>
+                  <label htmlFor="offer-inland-valid-from" className="inland-rate-label inland-rate-label--sr-only">
+                    {t('pricing.inlandValidFromAria', 'Valid from')}
+                  </label>
                   <DatePicker
                     key={`in-vf-${offerToEdit?.id ?? 'new'}`}
                     id="offer-inland-valid-from"
@@ -1209,11 +1508,13 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                     value={inlandForm.valid_from}
                     onChange={(v) => updateInlandForm({ valid_from: v })}
                     locale={i18n.language}
-                    placeholder={UI_DATE_FORMAT}
+                    placeholder={t('pricing.inlandValidFromPlaceholder', 'صالح من / Valid from')}
                   />
                 </div>
                 <div>
-                  <label className="inland-rate-label">صالح حتى / Valid To (اختياري)</label>
+                  <label htmlFor="offer-inland-valid-to" className="inland-rate-label inland-rate-label--sr-only">
+                    {t('pricing.inlandValidToAria', 'Valid to (optional)')}
+                  </label>
                   <DatePicker
                     key={`in-vt-${offerToEdit?.id ?? 'new'}`}
                     id="offer-inland-valid-to"
@@ -1221,28 +1522,33 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                     value={inlandForm.valid_to}
                     onChange={(v) => updateInlandForm({ valid_to: v })}
                     locale={i18n.language}
-                    placeholder={UI_DATE_FORMAT}
+                    placeholder={t('pricing.inlandValidToPlaceholder', 'صالح حتى / Valid to (optional)')}
                   />
                 </div>
               </div>
 
               <div className="inland-rate-notes">
-                <label htmlFor="offer-inland-notes" className="inland-rate-label">ملاحظات / Notes (اختياري)</label>
+                <label htmlFor="offer-inland-notes" className="inland-rate-label inland-rate-label--sr-only">
+                  {t('pricing.notes', 'Notes')}
+                </label>
                 <textarea
                   id="offer-inland-notes"
                   className="inland-rate-textarea"
                   value={inlandForm.notes}
                   onChange={(e) => updateInlandForm({ notes: e.target.value })}
-                  placeholder="أي ملاحظات خاصة بالمسار أو السعر..."
+                  placeholder={t('pricing.inlandNotesPlaceholder', 'ملاحظات (اختياري) / Notes')}
+                  aria-label={t('pricing.notes', 'Notes')}
                 />
               </div>
+              </PricingFinSection>
             </div>
             )}
           </form>
+            </div>
           </div>
         </div>
 
-        <div className={effectiveMode === 'sea' ? 'sea-rate-actions shrink-0' : effectiveMode === 'inland' ? 'inland-rate-actions shrink-0' : 'px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3 shrink-0'}>
+        <div className={`pricing-fin-modal__footer ${effectiveMode === 'sea' ? 'pricing-fin-modal__footer--sea' : effectiveMode === 'inland' ? 'pricing-fin-modal__footer--inland' : ''}`}>
           <button type="button" onClick={onClose} className={effectiveMode === 'sea' ? 'sea-rate-btn sea-rate-btn-footer' : effectiveMode === 'inland' ? 'inland-rate-btn inland-rate-btn-footer' : 'px-5 py-2.5 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-colors'}>
             {effectiveMode === 'sea' || effectiveMode === 'inland' ? 'إلغاء / Cancel' : t('common.cancel', 'Cancel')}
           </button>

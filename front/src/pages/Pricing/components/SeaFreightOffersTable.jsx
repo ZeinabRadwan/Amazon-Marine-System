@@ -6,12 +6,8 @@ import { useMutateOffer } from '../../../hooks/usePricing'
 import { IconActionButton, IconActionButtonGroup } from '../../../components/Table'
 import { CurrencyMapBadges } from '../../Accountings/CurrencyMapBadges'
 import { seaContainerSummary } from '../utils/pricingDisplay'
-import {
-  getPricingRateValidityKind,
-  PricingRateCardMetricTile,
-  PricingRateCardRouteBlock,
-  PricingRateCardValidityPill,
-} from './PricingRateCardParts'
+import PricingValidityBadge from './PricingValidityBadge'
+import PricingRateCardRoute from './PricingRateCardRoute'
 import '../Pricing.css'
 
 function seaTotalByCurrency(offer) {
@@ -148,8 +144,6 @@ export default function SeaFreightOffersTable({
               const totalsMap = seaTotalByCurrency(offer)
               const sailingText = formatSailingSummary(offer, i18n.language, dash, t)
               const amountFirst = Boolean(i18n.language?.startsWith('ar'))
-              const validityKind = getPricingRateValidityKind(offer)
-              const freeSummary = seaFreeTimeSummary(offer.dnd, dash)
               return (
                 <article
                   key={offer.id}
@@ -165,31 +159,18 @@ export default function SeaFreightOffersTable({
                   }}
                 >
                   <div className="pricing-rate-card__header">
-                    <div className="pricing-rate-card__header-main pricing-rate-card__header-main--stack">
-                      <div className="pricing-rate-card__leader">
-                        <span className="pricing-rate-card__pill pricing-rate-card__pill--carrier">{offer.shipping_line || dash}</span>
-                      </div>
-                      <PricingRateCardRouteBlock
-                        title={t('pricing.rateCardRouteSectionTitle', 'Pricing rate card route')}
-                        fromBadge={t('pricing.offerDetailRouteBadgePol', 'POL')}
-                        from={offer.pol || dash}
-                        toBadge={t('pricing.offerDetailRouteBadgePod', 'POD')}
-                        to={offer.pod || offer.region || dash}
-                        rtl={amountFirst}
-                      />
-                      <div className="pricing-rate-card__metric-grid" role="list">
-                        <PricingRateCardMetricTile label={t('pricing.containerType')} title={containerSummary}>
-                          {containerSummary}
-                        </PricingRateCardMetricTile>
-                        <PricingRateCardMetricTile label={t('pricing.transitTime', 'Transit')} title={offer.transit_time || ''}>
-                          {offer.transit_time || dash}
-                        </PricingRateCardMetricTile>
-                        <PricingRateCardMetricTile label={t('pricing.rateCardFreeTimeLabel', 'Free time')} title={freeSummary}>
-                          {freeSummary}
-                        </PricingRateCardMetricTile>
-                        <PricingRateCardMetricTile label={t('pricing.rateMetricValidityLabel', 'Validity')}>
-                          <PricingRateCardValidityPill kind={validityKind} validStr={validStr} t={t} />
-                        </PricingRateCardMetricTile>
+                    <div className="pricing-rate-card__header-main">
+                      <div className="pricing-rate-card__pill pricing-rate-card__pill--carrier">{offer.shipping_line || dash}</div>
+                      <div className="pricing-rate-card__route-wrap">
+                        <PricingRateCardRoute
+                          variant="sea"
+                          origin={offer.pol}
+                          destination={offer.pod || offer.region}
+                          dash={dash}
+                        />
+                        <div className="pricing-rate-card__meta">
+                          {containerSummary} | Transit: {offer.transit_time || dash} | {seaFreeTimeSummary(offer.dnd, dash)}
+                        </div>
                       </div>
                     </div>
                     <div className="pricing-rate-card__amounts">
@@ -202,6 +183,7 @@ export default function SeaFreightOffersTable({
 
                   <div className="pricing-rate-card__footer">
                     <div className="pricing-rate-card__tags">
+                      <PricingValidityBadge validTo={offer.valid_to} formattedDate={validStr} />
                       <span className={validStr ? 'pricing-rate-card__tag pricing-rate-card__tag--muted' : 'pricing-rate-card__tag pricing-rate-card__tag--accent'}>
                         {t('pricing.sailings')}: {sailingText}
                       </span>

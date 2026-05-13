@@ -35,6 +35,23 @@ export function seaContainerSummary(pricing, t) {
   return parts.length ? parts.join(t('pricing.cardContainerSep')) : dash
 }
 
+/**
+ * Compare `valid_to` to today (local calendar) for list badges.
+ * @param {string|Date|null|undefined} validTo
+ * @returns {'open' | 'active' | 'expired'} open = no end date
+ */
+export function getPricingValidityState(validTo) {
+  if (validTo == null || String(validTo).trim() === '') return 'open'
+  const d = validTo instanceof Date ? validTo : new Date(validTo)
+  if (Number.isNaN(d.getTime())) return 'open'
+  const startOfToday = new Date()
+  startOfToday.setHours(0, 0, 0, 0)
+  const endOfValid = new Date(d)
+  endOfValid.setHours(23, 59, 59, 999)
+  if (endOfValid < startOfToday) return 'expired'
+  return 'active'
+}
+
 export function inlandContainerSummary(pricing, t) {
   const dash = t('common.dash')
   if (!pricing) return dash

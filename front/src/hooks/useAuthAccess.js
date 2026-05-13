@@ -42,9 +42,9 @@ export function useAuthAccess() {
 
   const hasPageAccess = useCallback(
     (pageKey) => {
-      if (typeof hasPageAccessFromContext === 'function') return hasPageAccessFromContext(pageKey)
       if (!pageKey) return false
       if (isAdminRole) return true
+      if (typeof hasPageAccessFromContext === 'function') return hasPageAccessFromContext(pageKey)
       return pagesSet.has(String(pageKey))
     },
     [hasPageAccessFromContext, isAdminRole, pagesSet]

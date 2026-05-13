@@ -15,6 +15,9 @@ import './AppLayout.css'
  */
 export default function AppLayout({
   user,
+  isAdminRole,
+  isAccountant,
+  isOperations,
   activeTab = 'personal',
   onTabChange,
   activeMenu = 'dashboard',
@@ -38,6 +41,9 @@ export default function AppLayout({
     <div className="app-layout">
       <Sidebar
         appName={appName}
+        isAdminRole={isAdminRole}
+        isAccountant={isAccountant}
+        isOperations={isOperations}
         activeTab={activeTab}
         onTabChange={onTabChange}
         activeMenu={activeMenu}

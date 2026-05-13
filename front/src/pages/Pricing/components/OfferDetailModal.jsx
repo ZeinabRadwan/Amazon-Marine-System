@@ -1,6 +1,8 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X, Ship, Truck, FilePlus2, ArrowRight, ArrowLeft, MapPin } from 'lucide-react'
+import { ChevronDown, X, Ship, Truck, FilePlus2, ArrowRight, ArrowLeft, MapPin } from 'lucide-react'
+import '../../Clients/ClientDetailModal.css'
+import '../../Shipments/Shipments.css'
 import { formatDate, sortCurrencyCodes, sumAmountsByCurrencyFromItems, sumPricingObjectByCurrency } from '../../../utils/dateUtils'
 import { inlandContainerSummary, seaContainerSummary } from '../utils/pricingDisplay'
 import { CurrencyMapBadges } from '../../Accountings/CurrencyMapBadges'
@@ -153,6 +155,23 @@ function OfferDetailFieldRow({ label, children }) {
   )
 }
 
+function PricingFinSection({ title, subtitle, children }) {
+  return (
+    <details className="shipment-fin-card pricing-fin-section" open>
+      <summary className="shipment-fin-card__head pricing-fin-section__summary">
+        <span className="shipment-fin-card__head-main">
+          <ChevronDown className="pricing-fin-section__chev h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
+          <span className="min-w-0">
+            <span className="shipment-fin-card__title">{title}</span>
+            {subtitle ? <span className="shipment-fin-card__sub">{subtitle}</span> : null}
+          </span>
+        </span>
+      </summary>
+      <div className="shipment-fin-card__body pricing-fin-section__body">{children}</div>
+    </details>
+  )
+}
+
 function OfferDetailRouteSection({ isSea, offer, dash, t, i18n }) {
   const rtl = Boolean(i18n.language?.startsWith('ar'))
   const Arrow = rtl ? ArrowLeft : ArrowRight
@@ -161,8 +180,7 @@ function OfferDetailRouteSection({ isSea, offer, dash, t, i18n }) {
     const pol = offer.pol || dash
     const pod = offer.pod || offer.region || dash
     return (
-      <section className="pricing-offer-detail-card">
-        <h3 className="pricing-offer-detail-card__title">{t('pricing.offerDetailRouteLocationsTitle', 'Route & locations')}</h3>
+      <section className="pricing-offer-detail-card pricing-offer-detail-card--nested">
         <div className="pricing-offer-detail-route pricing-offer-detail-route--sea">
           <div className="pricing-offer-detail-route__col">
             <span className="pricing-offer-detail-route__eyebrow">{t('pricing.offerDetailFromLabel', 'From')}</span>
@@ -208,8 +226,7 @@ function OfferDetailRouteSection({ isSea, offer, dash, t, i18n }) {
   const govArea = formatGovAreaLine(offer)
 
   return (
-    <section className="pricing-offer-detail-card">
-      <h3 className="pricing-offer-detail-card__title">{t('pricing.offerDetailRouteLocationsTitle', 'Route & locations')}</h3>
+    <section className="pricing-offer-detail-card pricing-offer-detail-card--nested">
       <div className="pricing-offer-detail-route pricing-offer-detail-route--inland">
         <div className="pricing-offer-detail-route__col">
           <span className="pricing-offer-detail-route__eyebrow">{t('pricing.offerDetailFromLabel', 'From')}</span>
@@ -368,64 +385,71 @@ export default function OfferDetailModal({ isOpen, offer, onClose, onCreateQuota
     : t('pricing.offerDetailInlandTransportTitle', 'Inland transport rate details')
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div
-        className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl max-h-[92vh] overflow-hidden flex flex-col border border-gray-200/90 dark:border-gray-700"
-        role="dialog"
-        aria-labelledby="offer-detail-title"
-        aria-modal="true"
-      >
-        <div className="px-5 py-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-700 shrink-0 gap-3 bg-gradient-to-l from-slate-50/90 to-white dark:from-gray-900/80 dark:to-gray-800">
-          <div className="flex items-center gap-3 min-w-0 flex-1">
-            {isSea ? (
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300">
-                <Ship className="h-5 w-5" aria-hidden />
-              </span>
-            ) : (
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-800 dark:bg-amber-900/35 dark:text-amber-200">
-                <Truck className="h-5 w-5" aria-hidden />
-              </span>
-            )}
-            <div className="min-w-0">
-              <h2 id="offer-detail-title" className="text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100 leading-snug truncate">
-                {modalTitle}
-              </h2>
-              <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
-                <span className="font-semibold text-gray-600 dark:text-gray-300">{routeLabel}</span>
-                <span className="mx-1.5 text-gray-300 dark:text-gray-600">·</span>#{offer.id}
-              </p>
+    <div
+      className="client-detail-modal shipments-no-print shipment-fin-modal-root pricing-fin-modal-root"
+      role="dialog"
+      aria-labelledby="offer-detail-title"
+      aria-modal="true"
+    >
+      <div className="client-detail-modal__backdrop" onClick={onClose} aria-hidden="true" />
+      <div className="client-detail-modal__box client-detail-modal__box--form shipment-fin-modal__box pricing-fin-detail-modal__box">
+        <header className="client-detail-modal__header client-detail-modal__header--form shipment-fin-modal__header">
+          <div className="shipment-fin-modal__header-main">
+            <div className="ship-bar">
+              <div className="pricing-fin-detail-head__main">
+                <span className="pricing-fin-detail-head__icon" aria-hidden>
+                  {isSea ? <Ship className="h-4 w-4" strokeWidth={2} /> : <Truck className="h-4 w-4" strokeWidth={2} />}
+                </span>
+                <div className="min-w-0">
+                  <div id="offer-detail-title" className="ship-ref pricing-fin-ship-ref--title" role="heading" aria-level={2}>
+                    {modalTitle}
+                  </div>
+                  <div className="ship-client">{routeLabel}</div>
+                </div>
+              </div>
+              <div className="ship-metas">
+                <div>
+                  <div className="ship-meta-val">
+                    {isSea ? t('pricing.finHeaderModeSea', 'Ocean') : t('pricing.finHeaderModeInland', 'Inland')}
+                  </div>
+                  <div className="ship-meta-lbl">{t('pricing.finHeaderMode', 'Mode')}</div>
+                </div>
+                <div className="ship-meta-divider" aria-hidden />
+                <div>
+                  <div className="ship-meta-val">#{offer.id}</div>
+                  <div className="ship-meta-lbl">{t('pricing.finHeaderId', 'ID')}</div>
+                </div>
+                {offer.status ? (
+                  <>
+                    <div className="ship-meta-divider" aria-hidden />
+                    <div>
+                      <div className="ship-meta-val ship-meta-val--sales">{offerStatusLabel}</div>
+                      <div className="ship-meta-lbl">{t('pricing.finHeaderStatus', 'Status')}</div>
+                    </div>
+                  </>
+                ) : null}
+              </div>
             </div>
-            {offer.status ? (
-              <span
-                className={`shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide ${
-                  offer.status === 'active'
-                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
-                    : offer.status === 'archived'
-                      ? 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
-                      : 'bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200'
-                }`}
-              >
-                {offerStatusLabel}
-              </span>
-            ) : null}
           </div>
           <button
             type="button"
+            className="client-detail-modal__close shipment-fin-modal__header-close"
             onClick={onClose}
-            className="p-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full transition-colors shrink-0"
             aria-label={t('common.close', 'Close')}
           >
-            <X className="h-5 w-5" />
+            <X className="client-detail-modal__close-icon" aria-hidden />
           </button>
-        </div>
+        </header>
 
-        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
+        <div className="client-detail-modal__body client-detail-modal__body--form shipment-fin-modal__body">
+          <div className="client-detail-modal__body-inner">
+            <div className="shipment-fin-panel shipment-fin-panel--enter shipment-fin-panel--expenses space-y-3">
+          <PricingFinSection title={t('pricing.offerDetailRouteLocationsTitle', 'Route & locations')}>
           <OfferDetailRouteSection isSea={isSea} offer={offer} dash={dash} t={t} i18n={i18n} />
+          </PricingFinSection>
 
-          <section className="pricing-offer-detail-card">
-            <h3 className="pricing-offer-detail-card__title">
-              {t('pricing.offerDetailEquipmentScheduleTitle', 'Equipment & schedule')}
-            </h3>
+          <PricingFinSection title={t('pricing.offerDetailEquipmentScheduleTitle', 'Equipment & schedule')}>
+          <section className="pricing-offer-detail-card pricing-offer-detail-card--nested">
             <div className="pricing-offer-detail-card__grid">
               {isSea ? (
                 <>
@@ -475,9 +499,9 @@ export default function OfferDetailModal({ isOpen, offer, onClose, onCreateQuota
               )}
             </div>
           </section>
+          </PricingFinSection>
 
-          <section>
-            <h3 className="pricing-offer-detail-section-h">{t('pricing.detailCostBreakdown', 'Cost breakdown')}</h3>
+          <PricingFinSection title={t('pricing.detailCostBreakdown', 'Cost breakdown')}>
             <div className="pricing-offer-detail-breakdown">
               {breakdownRows.length ? (
                 breakdownRows.map((r) => (
@@ -505,11 +529,10 @@ export default function OfferDetailModal({ isOpen, offer, onClose, onCreateQuota
                 </div>
               ) : null}
             </div>
-          </section>
+          </PricingFinSection>
 
           {isSea ? (
-            <section>
-              <h3 className="pricing-offer-detail-section-h">{t('pricing.offerDetailFreeTimeDetDemTitle', 'Detention & demurrage')}</h3>
+            <PricingFinSection title={t('pricing.offerDetailFreeTimeDetDemTitle', 'Detention & demurrage')}>
               <div className="pricing-offer-detail-detdem">
                 <div className="pricing-offer-detail-detdem__box pricing-offer-detail-detdem__box--pol">
                   <div className="pricing-offer-detail-detdem__title">{t('pricing.pol', 'POL')}</div>
@@ -542,11 +565,10 @@ export default function OfferDetailModal({ isOpen, offer, onClose, onCreateQuota
                   </div>
                 </div>
               </div>
-            </section>
+            </PricingFinSection>
           ) : null}
 
-          <section>
-            <h3 className="pricing-offer-detail-section-h">{t('pricing.detailFreeTimePolPod', 'Free time (POL / POD)')}</h3>
+          <PricingFinSection title={t('pricing.detailFreeTimePolPod', 'Free time (POL / POD)')}>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 p-4 shadow-sm">
                 <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-1.5">
@@ -570,19 +592,17 @@ export default function OfferDetailModal({ isOpen, offer, onClose, onCreateQuota
             {!offer.dnd?.trim() ? (
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{t('pricing.detailNoFreeTime', 'No free time notes on file.')}</p>
             ) : null}
-          </section>
+          </PricingFinSection>
 
           {hasNotes ? (
-            <section>
-              <h3 className="pricing-offer-detail-section-h">{t('pricing.notes', 'Notes')}</h3>
+            <PricingFinSection title={t('pricing.notes', 'Notes')}>
               <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-slate-50/90 dark:bg-gray-900/40 px-4 py-4 shadow-sm">
                 <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap leading-relaxed">{notesText}</p>
               </div>
-            </section>
+            </PricingFinSection>
           ) : null}
 
-          <section>
-            <h3 className="pricing-offer-detail-section-h">{t('pricing.detailAdditionalInfo', 'Additional info')}</h3>
+          <PricingFinSection title={t('pricing.detailAdditionalInfo', 'Additional info')}>
             {hasAdditionalInfo ? (
               <div className="rounded-2xl border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700 overflow-hidden shadow-sm bg-white dark:bg-gray-800/30">
                 {!isSea && offer.transit_time ? (
@@ -607,10 +627,12 @@ export default function OfferDetailModal({ isOpen, offer, onClose, onCreateQuota
             ) : (
               <p className="text-sm text-gray-500 dark:text-gray-400 py-3 px-1">{t('pricing.detailNoExtra', 'No additional information.')}</p>
             )}
-          </section>
+          </PricingFinSection>
+            </div>
+          </div>
         </div>
 
-        <div className="px-5 py-4 bg-gray-50/95 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex flex-col-reverse sm:flex-row gap-3 sm:justify-end shrink-0">
+        <div className="pricing-fin-modal__footer pricing-fin-modal__footer--detail flex flex-col-reverse sm:flex-row gap-3 sm:justify-end">
           <button
             type="button"
             onClick={onClose}
