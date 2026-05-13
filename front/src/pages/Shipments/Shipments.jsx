@@ -39,7 +39,6 @@ import ShipmentDetailModal from './ShipmentDetailModal'
 import ShipmentOpsShipCard from './ShipmentOpsShipCard'
 import ShipmentFinancialsModal from './ShipmentFinancialsModal'
 import ShipmentAttachmentsModal from './ShipmentAttachmentsModal'
-import BookingConfirmationUploadModal from './BookingConfirmationUploadModal'
 import LoaderDots from '../../components/LoaderDots'
 import Alert from '../../components/Alert'
 import {
@@ -62,7 +61,6 @@ import {
   Menu,
   ListFilter,
   Paperclip,
-  Upload,
 } from 'lucide-react'
 import { BarChart, DonutChart } from '../../components/Charts'
 import '../../components/Charts/Charts.css'
@@ -288,8 +286,6 @@ export default function Shipments() {
   const canManageFinancial = isAdminRole || isSalesRepresentative
   const canViewSelling = isAdminRole || isSalesRepresentative
   const canNotifySalesFinancials = isAdminRole || isAccountant
-  const canUploadBookingConfirmation = isAdminRole || isOperations
-
   const token = getStoredToken()
   const numberLocale = i18n.language === 'ar' ? 'ar-EG' : 'en-US'
   const monthFormat = getMonthFormat(i18n.language)
@@ -336,7 +332,6 @@ export default function Shipments() {
   const [sdFormsForClientLoading, setSdFormsForClientLoading] = useState(false)
 
   const [showCreate, setShowCreate] = useState(false)
-  const [bookingUploadOpen, setBookingUploadOpen] = useState(false)
   const [createForm, setCreateForm] = useState(defaultCreateForm())
   const [createSubmitting, setCreateSubmitting] = useState(false)
 
@@ -1860,16 +1855,6 @@ export default function Shipments() {
                   <FileSpreadsheet className="clients-filters__btn-icon-svg" aria-hidden />
                 )}
               </button>
-              {canUploadBookingConfirmation && (
-                <button
-                  type="button"
-                  className="page-header__btn page-header__btn--secondary inline-flex items-center gap-1.5"
-                  onClick={() => setBookingUploadOpen(true)}
-                >
-                  <Upload className="h-4 w-4 shrink-0" aria-hidden />
-                  {t('shipments.uploadBookingConfirmation')}
-                </button>
-              )}
               {canManageOps && (
                 <button type="button" className="page-header__btn page-header__btn--primary" onClick={() => setShowCreate(true)}>
                   {t('shipments.create')}
@@ -2125,18 +2110,6 @@ export default function Shipments() {
           canManageAllShipmentNotes={hasAbility('notes.manage')}
           shippingLinesList={shippingLinesList}
         />
-
-        {bookingUploadOpen && canUploadBookingConfirmation && (
-          <BookingConfirmationUploadModal
-            open={bookingUploadOpen}
-            onClose={() => setBookingUploadOpen(false)}
-            token={token}
-            onSuccess={() => {
-              setAlert({ type: 'success', message: t('shipments.bookingUpload.success') })
-              refreshShipmentDetail()
-            }}
-          />
-        )}
 
         {stageRow && canManageOps && (
           <div className="client-detail-modal shipments-no-print" role="dialog" aria-modal="true" aria-labelledby="shipment-stage-title">

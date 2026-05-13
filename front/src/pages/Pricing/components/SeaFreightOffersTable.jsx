@@ -1,15 +1,12 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Archive, Eye, Pencil, RotateCcw, Trash2 } from 'lucide-react'
-import { formatDate, formatLocaleMoney, sortCurrencyCodes } from '../../../utils/dateUtils'
+import { formatDate } from '../../../utils/dateUtils'
 import { useMutateOffer } from '../../../hooks/usePricing'
 import { IconActionButton, IconActionButtonGroup } from '../../../components/Table'
+import { CurrencyMapBadges } from '../../Accountings/CurrencyMapBadges'
 import { seaContainerSummary } from '../utils/pricingDisplay'
 import '../Pricing.css'
-
-function fmt(price, currency, language) {
-  return formatLocaleMoney(price, currency, language)
-}
 
 function seaTotalByCurrency(offer) {
   const totals = {}
@@ -20,18 +17,11 @@ function seaTotalByCurrency(offer) {
   rows.forEach((row) => {
     const amount = Number(row?.price)
     if (!Number.isFinite(amount)) return
-    const currency = row?.currency || 'USD'
+    const currency = String(row?.currency || 'USD').toUpperCase().trim() || 'USD'
     totals[currency] = (totals[currency] || 0) + amount
   })
 
   return totals
-}
-
-function formatTotals(offer, language, dash) {
-  const totals = seaTotalByCurrency(offer)
-  const currencies = sortCurrencyCodes(Object.keys(totals).filter((c) => Math.abs(totals[c] || 0) > 1e-9))
-  if (!currencies.length) return dash
-  return currencies.map((currency) => formatLocaleMoney(totals[currency], currency, language)).join(' + ')
 }
 
 function parseFreeTimeDigits(raw) {
@@ -127,17 +117,20 @@ export default function SeaFreightOffersTable({
 
   const isBusy = (offer, kind) => mutateLoading && actionOfferId === offer.id && actionKind === kind
 
+  const count = offers?.length || 0
+
   return (
-    <div className="sea-rates-list">
-      <div className="sea-rates-list-title">
-        <span>أسعار الشحن البحري المحفوظة — {offers?.length || 0} عروض / Saved sea freight rates — {offers?.length || 0} found</span>
+    <div className="pricing-saved-rates">
+      <div className="pricing-saved-rates__title">
+        <span className="pricing-saved-rates__title-main">{t('pricing.savedSeaFreightRatesHeading', 'Saved sea freight rates')}</span>
+        <span className="pricing-saved-rates__title-count">{t('pricing.savedRatesCountSuffix', { count, defaultValue: '{{count}} offers' })}</span>
       </div>
-      <div className="sea-search-results">
+      <div className="pricing-saved-rates__grid">
         {loading
           ? Array.from({ length: 4 }).map((_, i) => (
-              <div key={`sk-${i}`} className="sea-search-result-card animate-pulse">
-                <div className="h-5 w-2/3 rounded bg-gray-200" />
-                <div className="mt-3 h-4 w-1/2 rounded bg-gray-200" />
+              <div key={`sk-${i}`} className="pricing-rate-card pricing-rate-card--skeleton animate-pulse">
+                <div className="h-5 w-2/3 rounded bg-gray-200 dark:bg-gray-600" />
+                <div className="mt-3 h-4 w-1/2 rounded bg-gray-200 dark:bg-gray-600" />
               </div>
             ))
           : offers.map((offer) => {
@@ -146,12 +139,13 @@ export default function SeaFreightOffersTable({
               const validStr = offer.valid_to ? formatDate(offer.valid_to, { locale: i18n.language }) : ''
               const oceanFreight = primarySeaPrice(p)
               const containerSummary = seaContainerSummary(p, t)
-              const totalText = formatTotals(offer, i18n.language, dash)
+              const totalsMap = seaTotalByCurrency(offer)
               const sailingText = formatSailingSummary(offer, i18n.language, dash, t)
+              const amountFirst = Boolean(i18n.language?.startsWith('ar'))
               return (
                 <article
                   key={offer.id}
-                  className={`sea-search-result-card ${archived ? 'sea-search-result-card--archived' : ''}`}
+                  className={`pricing-rate-card ${archived ? 'pricing-rate-card--archived' : ''}`}
                   onClick={() => onView?.(offer)}
                   role="button"
                   tabIndex={0}
@@ -162,39 +156,48 @@ export default function SeaFreightOffersTable({
                     }
                   }}
                 >
-                  <div className="sea-search-result-header">
-                    <div className="sea-search-result-left">
-                      <div className="sea-search-carrier-badge">{offer.shipping_line || dash}</div>
+                  <div className="pricing-rate-card__header">
+                    <div className="pricing-rate-card__header-main">
+                      <div className="pricing-rate-card__pill pricing-rate-card__pill--carrier">{offer.shipping_line || dash}</div>
                       <div>
-                        <div className="sea-search-result-route">{offer.pol || dash} → {offer.pod || offer.region || dash}</div>
-                        <div className="sea-search-result-meta">
+                        <div className="pricing-rate-card__route">{offer.pol || dash} → {offer.pod || offer.region || dash}</div>
+                        <div className="pricing-rate-card__meta">
                           {containerSummary} | Transit: {offer.transit_time || dash} | {seaFreeTimeSummary(offer.dnd, dash)}
                         </div>
                       </div>
                     </div>
-                    <div className="sea-search-result-price">
-                      <div className="sea-search-result-price-value">{totalText}</div>
-                      <div className="sea-search-result-price-label">Total cost</div>
+                    <div className="pricing-rate-card__amounts">
+                      <div className="pricing-rate-card__amounts-value">
+                        <CurrencyMapBadges value={totalsMap} size="sm" amountFirst={amountFirst} emptyLabel={dash} />
+                      </div>
+                      <div className="pricing-rate-card__amounts-label">{t('pricing.totalCostLabel', 'Total cost')}</div>
                     </div>
                   </div>
 
-                  <div className="sea-search-result-footer">
-                    <div className="sea-search-result-tags">
+                  <div className="pricing-rate-card__footer">
+                    <div className="pricing-rate-card__tags">
                       {validStr ? (
-                        <span className="sea-search-info-badge">صالح حتى: {validStr}</span>
+                        <span className="pricing-rate-card__tag pricing-rate-card__tag--muted">{t('pricing.validTo')}: {validStr}</span>
                       ) : (
-                        <span className="sea-search-info-badge">بدون تاريخ انتهاء</span>
+                        <span className="pricing-rate-card__tag pricing-rate-card__tag--muted">{t('pricing.validityOpen', 'No end date')}</span>
                       )}
-                      <span className={validStr ? 'sea-search-info-badge' : 'sea-search-warn-badge'}>
-                        إبحار: {sailingText}
+                      <span className={validStr ? 'pricing-rate-card__tag pricing-rate-card__tag--muted' : 'pricing-rate-card__tag pricing-rate-card__tag--accent'}>
+                        {t('pricing.sailings')}: {sailingText}
                       </span>
                       {oceanFreight ? (
-                        <span className="sea-search-info-badge">
-                          OF: {fmt(oceanFreight.price, oceanFreight.currency || 'USD', i18n.language)}
+                        <span className="pricing-rate-card__tag pricing-rate-card__tag--muted pricing-rate-card__tag--currency">
+                          <span className="pricing-rate-card__tag-k">{t('pricing.oceanFreightAbbr', 'Ocean freight (OF)')}</span>
+                          <CurrencyMapBadges
+                            value={{
+                              [String(oceanFreight.currency || 'USD').toUpperCase().trim() || 'USD']: Number(oceanFreight.price),
+                            }}
+                            size="sm"
+                            amountFirst={amountFirst}
+                          />
                         </span>
                       ) : null}
                     </div>
-                    <div className="sea-rates-action-cell" onClick={(e) => e.stopPropagation()}>
+                    <div className="pricing-rate-card__actions" onClick={(e) => e.stopPropagation()}>
                         <IconActionButtonGroup aria-label={t('pricing.inlandColActions', 'Actions')}>
                           <IconActionButton
                             icon={<Eye className="h-4 w-4" />}
@@ -241,7 +244,7 @@ export default function SeaFreightOffersTable({
               )
             })}
         {!loading && (!offers || offers.length === 0) ? (
-          <div className="sea-rates-empty">
+          <div className="pricing-saved-rates__empty">
             {t('pricing.noOffers', 'No offers found matching your filters')}
           </div>
         ) : null}

@@ -320,141 +320,330 @@
   opacity: 0.55;
 }
 
-.sea-rates-list {
-  direction: rtl;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+/* Unified “saved rates” list — Sea Freight & Inland Transport (aligned with finance / CurrencyMapBadges) */
+.pricing-saved-rates {
+  direction: inherit;
+  font-family: inherit;
 }
 
-.sea-rates-list-title {
+.pricing-saved-rates__title {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 12px;
-  color: #666;
-  font-size: 14px;
+  gap: 0.35rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.pricing-saved-rates__title-main {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--form-text, #0f172a);
+}
+
+.pricing-saved-rates__title-count {
+  font-size: 0.8125rem;
   font-weight: 600;
+  color: var(--form-text-muted, #64748b);
 }
 
-.sea-search-results {
+[data-theme='dark'] .pricing-saved-rates__title-main,
+.dark .pricing-saved-rates__title-main {
+  color: var(--form-text, #f1f5f9);
+}
+
+[data-theme='dark'] .pricing-saved-rates__title-count,
+.dark .pricing-saved-rates__title-count {
+  color: #94a3b8;
+}
+
+.pricing-saved-rates__grid {
   display: grid;
-  gap: 10px;
+  gap: 0.75rem;
 }
 
-.sea-search-result-card {
-  padding: 1rem 1.25rem;
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
-  background: #fff;
-  color: #1a1a1a;
+.pricing-saved-rates__empty {
+  padding: 2rem 1rem;
+  border: 1px dashed var(--form-divider, #cbd5e1);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--form-bg, #fff) 92%, #f8fafc);
+  color: var(--form-text-muted, #64748b);
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+[data-theme='dark'] .pricing-saved-rates__empty,
+.dark .pricing-saved-rates__empty {
+  background: rgba(30, 41, 59, 0.35);
+  border-color: #475569;
+  color: #94a3b8;
+}
+
+.pricing-rate-card {
+  padding: 1rem 1.2rem;
+  border: 1px solid var(--form-divider, #e2e8f0);
+  border-radius: 1rem;
+  background: linear-gradient(165deg, color-mix(in srgb, var(--form-bg, #fff) 96%, #eff6ff) 0%, var(--form-bg, #fff) 42%);
+  color: var(--form-text, #0f172a);
+  box-shadow: 0 8px 22px rgba(2, 6, 23, 0.04);
   cursor: pointer;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.18s ease;
 }
 
-.sea-search-result-card:hover,
-.sea-search-result-card:focus-visible {
-  border-color: #85b7eb;
-  box-shadow: 0 10px 24px rgba(12, 68, 124, 0.08);
+[data-theme='dark'] .pricing-rate-card,
+.dark .pricing-rate-card {
+  background: linear-gradient(165deg, rgba(30, 41, 59, 0.55) 0%, var(--form-bg, #1e293b) 40%);
+  border-color: var(--form-divider, #334155);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  color: #f1f5f9;
+}
+
+.pricing-rate-card:hover,
+.pricing-rate-card:focus-visible {
+  border-color: color-mix(in srgb, var(--form-primary, #0039c5) 35%, var(--form-divider, #e2e8f0));
+  box-shadow: 0 12px 28px rgba(0, 57, 197, 0.1);
   outline: none;
 }
 
-.sea-search-result-card--archived {
+[data-theme='dark'] .pricing-rate-card:hover,
+[data-theme='dark'] .pricing-rate-card:focus-visible,
+.dark .pricing-rate-card:hover,
+.dark .pricing-rate-card:focus-visible {
+  border-color: rgba(96, 165, 250, 0.45);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.35);
+}
+
+.pricing-rate-card--archived {
+  opacity: 0.72;
+}
+
+.pricing-rate-card--skeleton {
+  cursor: default;
+  pointer-events: none;
+}
+
+.pricing-rate-card__header,
+.pricing-rate-card__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.pricing-rate-card__header {
+  justify-content: space-between;
+}
+
+.pricing-rate-card__header-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.65rem;
+  min-width: 0;
+  flex: 1 1 12rem;
+}
+
+.pricing-rate-card__pill {
+  flex-shrink: 0;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.25;
+  border: 1px solid transparent;
+}
+
+.pricing-rate-card__pill--carrier {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.18), rgba(99, 102, 241, 0.2));
+  color: #0369a1;
+  border-color: rgba(14, 165, 233, 0.35);
+}
+
+[data-theme='dark'] .pricing-rate-card__pill--carrier,
+.dark .pricing-rate-card__pill--carrier {
+  color: #7dd3fc;
+  border-color: rgba(34, 211, 238, 0.35);
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.22), rgba(99, 102, 241, 0.22));
+}
+
+.pricing-rate-card__pill--dry {
+  background: rgba(241, 245, 249, 0.95);
+  color: #475569;
+  border-color: rgba(148, 163, 184, 0.45);
+}
+
+.pricing-rate-card__pill--reefer {
+  background: rgba(220, 252, 231, 0.85);
+  color: #166534;
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+[data-theme='dark'] .pricing-rate-card__pill--dry,
+.dark .pricing-rate-card__pill--dry {
+  background: rgba(51, 65, 85, 0.55);
+  color: #e2e8f0;
+  border-color: #64748b;
+}
+
+[data-theme='dark'] .pricing-rate-card__pill--reefer,
+.dark .pricing-rate-card__pill--reefer {
+  background: rgba(6, 78, 59, 0.45);
+  color: #86efac;
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+.pricing-rate-card__route {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--form-text, #0f172a);
+  word-break: break-word;
+}
+
+.pricing-rate-card__meta {
+  margin-top: 0.2rem;
+  font-size: 0.75rem;
+  color: var(--form-text-muted, #64748b);
+  line-height: 1.45;
+}
+
+.pricing-rate-card__meta-k {
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.pricing-rate-card__meta-sep {
   opacity: 0.7;
 }
 
-.sea-search-result-header,
-.sea-search-result-footer,
-.sea-search-result-left {
+.pricing-rate-card__amounts {
+  flex-shrink: 0;
+  text-align: end;
+  min-width: 0;
+}
+
+.pricing-rate-card__amounts-value {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-}
-
-.sea-search-result-header {
-  justify-content: space-between;
-}
-
-.sea-search-result-footer {
-  justify-content: space-between;
-  margin-top: 8px;
-}
-
-.sea-search-carrier-badge {
-  padding: 6px 12px;
-  border-radius: 8px;
-  background: #f1f1f1;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.sea-search-result-route {
-  color: #1a1a1a;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.sea-search-result-meta {
-  margin-top: 2px;
-  color: #888;
-  font-size: 12px;
-}
-
-.sea-search-result-price {
-  text-align: left;
-}
-
-.sea-search-result-price-value {
-  color: #1a1a1a;
-  font-size: 18px;
-  font-weight: 600;
+  justify-content: flex-end;
   direction: ltr;
 }
 
-.sea-search-result-price-label {
-  color: #888;
-  font-size: 11px;
+.pricing-rate-card__amounts-value .accounting-currency-stack {
+  justify-content: flex-end;
 }
 
-.sea-search-result-tags {
+.pricing-rate-card__amounts-label {
+  margin-top: 0.2rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--form-text-muted, #94a3b8);
+}
+
+.pricing-rate-card__footer {
+  justify-content: space-between;
+  margin-top: 0.75rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid color-mix(in srgb, var(--form-divider, #e2e8f0) 85%, transparent);
+}
+
+[data-theme='dark'] .pricing-rate-card__footer,
+.dark .pricing-rate-card__footer {
+  border-top-color: rgba(71, 85, 105, 0.65);
+}
+
+.pricing-rate-card__tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 0.4rem;
+  align-items: center;
+  min-width: 0;
+  flex: 1 1 10rem;
 }
 
-.sea-search-info-badge,
-.sea-search-warn-badge {
-  padding: 2px 8px;
-  border-radius: 8px;
-  font-size: 11px;
+.pricing-rate-card__tag {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.35;
+  max-width: 100%;
 }
 
-.sea-search-info-badge {
-  background: #f5f5f5;
-  color: #888;
+.pricing-rate-card__tag--muted {
+  background: rgba(241, 245, 249, 0.9);
+  color: #64748b;
+  border: 1px solid rgba(226, 232, 240, 0.95);
 }
 
-.sea-search-warn-badge {
-  background: #faeeda;
-  color: #854f0b;
+[data-theme='dark'] .pricing-rate-card__tag--muted,
+.dark .pricing-rate-card__tag--muted {
+  background: rgba(51, 65, 85, 0.45);
+  color: #cbd5e1;
+  border-color: rgba(71, 85, 105, 0.65);
 }
 
-.sea-rates-action-cell {
+.pricing-rate-card__tag--accent {
+  background: rgba(255, 237, 213, 0.85);
+  color: #9a3412;
+  border: 1px solid rgba(251, 191, 36, 0.45);
+}
+
+[data-theme='dark'] .pricing-rate-card__tag--accent,
+.dark .pricing-rate-card__tag--accent {
+  background: rgba(124, 45, 18, 0.35);
+  color: #fdba74;
+  border-color: rgba(251, 146, 60, 0.35);
+}
+
+.pricing-rate-card__tag--currency .pricing-rate-card__tag-k {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.pricing-rate-card__tag-k--suffix {
+  margin-inline-start: 0.25rem;
+}
+
+.pricing-rate-card__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  justify-content: flex-start;
-  text-align: left;
+  gap: 0.35rem;
+  justify-content: flex-end;
+  text-align: end;
+  flex-shrink: 0;
 }
 
-.sea-rates-empty {
-  padding: 24px 12px;
-  border: 1px dashed #d0d0d0;
-  border-radius: 12px;
-  background: #fff;
-  color: #888;
-  text-align: center;
+@media (max-width: 720px) {
+  .pricing-rate-card {
+    padding: 0.9rem 1rem;
+  }
+
+  .pricing-rate-card__amounts {
+    width: 100%;
+    text-align: start;
+  }
+
+  .pricing-rate-card__amounts-value {
+    justify-content: flex-start;
+  }
+
+  .pricing-rate-card__amounts-value .accounting-currency-stack {
+    justify-content: flex-start;
+  }
+
+  .pricing-rate-card__footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 
 .sea-search-detail-modal {

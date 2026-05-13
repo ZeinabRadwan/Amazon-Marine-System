@@ -10,6 +10,7 @@ import RateSheet from './components/RateSheet'
 import QuotationTable from './components/QuotationTable'
 import OfferFormModal from './components/OfferFormModal'
 import './Pricing.css'
+import '../Accountings/CurrencyMapBadges.css'
 
 export default function Pricing() {
   const { t } = useTranslation()

@@ -28,6 +28,10 @@ function getStatusStatsConfig(status) {
       return { variant: 'amber', Icon: Share2 }
     case 'in_progress':
       return { variant: 'green', Icon: ListChecks }
+    case 'booking_confirmed':
+      return { variant: 'green', Icon: CheckCircle2 }
+    case 'booking_cancelled':
+      return { variant: 'red', Icon: XCircle }
     case 'completed':
       return { variant: 'blue', Icon: CheckCircle2 }
     case 'cancelled':

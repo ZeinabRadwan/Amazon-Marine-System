@@ -1,15 +1,12 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Archive, Eye, Pencil, RotateCcw, Trash2 } from 'lucide-react'
-import { formatDate, formatLocaleMoney } from '../../../utils/dateUtils'
+import { formatDate } from '../../../utils/dateUtils'
 import { useMutateOffer } from '../../../hooks/usePricing'
 import { IconActionButton, IconActionButtonGroup } from '../../../components/Table'
+import { CurrencyMapBadges } from '../../Accountings/CurrencyMapBadges'
 import { INLAND_PRICE_KEYS } from '../utils/pricingDisplay'
 import '../Pricing.css'
-
-function fmt(price, currency, language) {
-  return formatLocaleMoney(price, currency, language)
-}
 
 function formatGovArea(offer, dash = '—') {
   const gov = (offer.inland_gov || offer.region || '').trim()
@@ -28,6 +25,37 @@ function primaryInlandPrice(pricing) {
     if (row?.price != null && row.price !== '') return { key, row }
   }
   return null
+}
+
+function inlandPrimaryOnlyTotals(offer) {
+  const p = offer.pricing || {}
+  const primary = primaryInlandPrice(p)
+  if (!primary?.row || primary.row.price == null || primary.row.price === '') return {}
+  const n = Number(primary.row.price)
+  if (!Number.isFinite(n)) return {}
+  const c = String(primary.row.currency || 'EGP').toUpperCase().trim() || 'EGP'
+  return { [c]: n }
+}
+
+function inlandGeneratorTotals(offer) {
+  const p = offer.pricing || {}
+  const gen = p.generator
+  if (gen?.price == null || gen.price === '') return null
+  const n = Number(gen.price)
+  if (!Number.isFinite(n)) return null
+  const primary = primaryInlandPrice(p)
+  const c = String(gen.currency || primary?.row?.currency || 'EGP').toUpperCase().trim() || 'EGP'
+  return { [c]: n }
+}
+
+function inlandMergedTotals(offer) {
+  const out = { ...inlandPrimaryOnlyTotals(offer) }
+  const g = inlandGeneratorTotals(offer)
+  if (!g) return out
+  for (const [c, v] of Object.entries(g)) {
+    out[c] = (Number(out[c]) || 0) + v
+  }
+  return out
 }
 
 function truckLabelFromKey(key, t) {
@@ -77,141 +105,151 @@ export default function InlandTransportTable({
 
   const isBusy = (offer, kind) => mutateLoading && actionOfferId === offer.id && actionKind === kind
 
+  const count = offers?.length || 0
+
   return (
-    <div className="inland-rates-list">
-      <div className="inland-rates-list-title">
-        <span>الأسعار المحفوظة / Saved Rates</span>
+    <div className="pricing-saved-rates">
+      <div className="pricing-saved-rates__title">
+        <span className="pricing-saved-rates__title-main">{t('pricing.savedInlandTransportRatesHeading', 'Saved inland transport rates')}</span>
+        <span className="pricing-saved-rates__title-count">{t('pricing.savedRatesCountSuffix', { count, defaultValue: '{{count}} offers' })}</span>
       </div>
-      <div className="inland-rates-card">
-        <div className="overflow-x-auto">
-        <table className="inland-rates-table">
-          <thead>
-            <tr>
-              <th scope="col">
-                الميناء / Port
-              </th>
-              <th scope="col">
-                المحافظة / المنطقة
-              </th>
-              <th scope="col">
-                نوع العربية
-              </th>
-              <th scope="col">
-                السعر
-              </th>
-              <th scope="col">
-                الصلاحية
-              </th>
-              <th scope="col" aria-label={t('pricing.inlandColActions', 'Actions')}>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading
-              ? Array.from({ length: 6 }).map((_, i) => (
-                  <tr key={`sk-${i}`} className="animate-pulse">
-                    {Array.from({ length: 6 }).map((__, j) => (
-                      <td key={j}>
-                        <div className="h-4 w-3/4 rounded bg-gray-200" />
-                      </td>
-                    ))}
-                  </tr>
-                ))
-              : offers.map((offer) => {
-                  const p = offer.pricing || {}
-                  const archived = offer.status === 'archived'
-                  const primary = primaryInlandPrice(p)
-                  const generator = p.generator
-                  const validStr = offer.valid_to ? formatDate(offer.valid_to, { locale: i18n.language }) : ''
-                  const truckLabel = primary ? truckLabelFromKey(primary.key, t) : dash
-                  const govAreaLabel = formatGovArea(offer, dash)
-                  const priceText = primary ? fmt(primary.row.price, primary.row.currency || 'EGP', i18n.language) : dash
-                  return (
-                    <tr
-                      key={offer.id}
-                      className={archived ? 'opacity-70' : ''}
-                    >
-                      <td>
-                        {offer.inland_port || dash}
-                      </td>
-                      <td>
-                        {govAreaLabel}
-                      </td>
-                      <td>
-                        <span className={`inland-vehicle-badge ${isReeferKey(primary?.key) ? 'inland-vehicle-badge--reefer' : 'inland-vehicle-badge--dry'}`}>
-                          {truckLabel}
-                        </span>
-                      </td>
-                      <td style={{ fontWeight: 500 }}>
-                        {priceText}
-                        {generator?.price != null ? (
-                          <span className="ms-1 text-[11px] text-gray-500">
-                            + {fmt(generator.price, generator.currency || primary?.row?.currency || 'EGP', i18n.language)} مولد
+      <div className="pricing-saved-rates__grid">
+        {loading
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <div key={`sk-${i}`} className="pricing-rate-card pricing-rate-card--skeleton animate-pulse">
+                <div className="h-5 w-2/3 rounded bg-gray-200 dark:bg-gray-600" />
+                <div className="mt-3 h-4 w-1/2 rounded bg-gray-200 dark:bg-gray-600" />
+              </div>
+            ))
+          : offers.map((offer) => {
+              const p = offer.pricing || {}
+              const archived = offer.status === 'archived'
+              const primary = primaryInlandPrice(p)
+              const generator = p.generator
+              const validStr = offer.valid_to ? formatDate(offer.valid_to, { locale: i18n.language }) : ''
+              const truckLabel = primary ? truckLabelFromKey(primary.key, t) : dash
+              const govAreaLabel = formatGovArea(offer, dash)
+              const merged = inlandMergedTotals(offer)
+              const genMap = inlandGeneratorTotals(offer)
+              const truckOnly = inlandPrimaryOnlyTotals(offer)
+              const amountFirst = Boolean(i18n.language?.startsWith('ar'))
+              const port = offer.inland_port || dash
+
+              return (
+                <article
+                  key={offer.id}
+                  className={`pricing-rate-card ${archived ? 'pricing-rate-card--archived' : ''}`}
+                  onClick={() => onView?.(offer)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      onView?.(offer)
+                    }
+                  }}
+                >
+                  <div className="pricing-rate-card__header">
+                    <div className="pricing-rate-card__header-main">
+                      <div
+                        className={`pricing-rate-card__pill ${isReeferKey(primary?.key) ? 'pricing-rate-card__pill--reefer' : 'pricing-rate-card__pill--dry'}`}
+                      >
+                        {truckLabel}
+                      </div>
+                      <div>
+                        <div className="pricing-rate-card__route">
+                          {port} → {govAreaLabel}
+                        </div>
+                        <div className="pricing-rate-card__meta">
+                          <span className="pricing-rate-card__meta-k">{t('pricing.inlandColPort', 'Port')}</span> {port}
+                          <span className="pricing-rate-card__meta-sep" aria-hidden>
+                            {' · '}
                           </span>
-                        ) : null}
-                      </td>
-                      <td>
-                        {validStr ? (
-                          <span className="inland-validity-warn">ينتهي {validStr}</span>
-                        ) : (
-                          <span className="inland-validity-none">بدون انتهاء</span>
-                        )}
-                      </td>
-                      <td className="inland-rates-action-cell">
-                        <IconActionButtonGroup aria-label={t('pricing.inlandColActions', 'Actions')}>
+                          <span className="pricing-rate-card__meta-k">{t('pricing.inlandColGovArea', 'Governorate / area')}</span> {govAreaLabel}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="pricing-rate-card__amounts">
+                      <div className="pricing-rate-card__amounts-value">
+                        <CurrencyMapBadges value={merged} size="sm" amountFirst={amountFirst} emptyLabel={dash} />
+                      </div>
+                      <div className="pricing-rate-card__amounts-label">{t('pricing.totalCostLabel', 'Total cost')}</div>
+                    </div>
+                  </div>
+
+                  <div className="pricing-rate-card__footer">
+                    <div className="pricing-rate-card__tags">
+                      {validStr ? (
+                        <span className="pricing-rate-card__tag pricing-rate-card__tag--muted">
+                          {t('pricing.validTo')}: {validStr}
+                        </span>
+                      ) : (
+                        <span className="pricing-rate-card__tag pricing-rate-card__tag--muted">{t('pricing.validityOpen', 'No end date')}</span>
+                      )}
+                      {generator?.price != null && genMap ? (
+                        <span className="pricing-rate-card__tag pricing-rate-card__tag--muted pricing-rate-card__tag--currency">
+                          {Object.keys(truckOnly).length ? (
+                            <>
+                              <span className="pricing-rate-card__tag-k">{t('pricing.inlandTruckRate', 'Truck')}</span>
+                              <CurrencyMapBadges value={truckOnly} size="sm" amountFirst={amountFirst} emptyLabel={dash} />
+                            </>
+                          ) : null}
+                          <span className="pricing-rate-card__tag-k pricing-rate-card__tag-k--suffix">
+                            {t('pricing.inlandGeneratorAddon', 'Generator add-on')}
+                          </span>
+                          <CurrencyMapBadges value={genMap} size="sm" amountFirst={amountFirst} />
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="pricing-rate-card__actions" onClick={(e) => e.stopPropagation()}>
+                      <IconActionButtonGroup aria-label={t('pricing.inlandColActions', 'Actions')}>
+                        <IconActionButton
+                          icon={<Eye className="h-4 w-4" />}
+                          label={t('pricing.actionShow', 'عرض')}
+                          onClick={() => onView?.(offer)}
+                        />
+                        {canManageOffers && !archived ? (
                           <IconActionButton
-                            icon={<Eye className="h-4 w-4" />}
-                            label={t('pricing.actionShow', 'عرض')}
-                            onClick={() => onView?.(offer)}
+                            icon={<Pencil className="h-4 w-4" />}
+                            label={t('pricing.actionEdit', 'تعديل')}
+                            onClick={() => onEdit?.(offer)}
                           />
-                          {canManageOffers && !archived ? (
-                            <IconActionButton
-                              icon={<Pencil className="h-4 w-4" />}
-                              label={t('pricing.actionEdit', 'تعديل')}
-                              onClick={() => onEdit?.(offer)}
-                            />
-                          ) : null}
-                          {canManageOffers && !archived ? (
-                            <IconActionButton
-                              icon={<Archive className="h-4 w-4" />}
-                              label={t('pricing.actionArchive', 'أرشفة')}
-                              disabled={isBusy(offer, 'archive')}
-                              onClick={() => runAction(offer, 'archive', archive)}
-                            />
-                          ) : null}
-                          {canManageOffers && archived ? (
-                            <IconActionButton
-                              icon={<RotateCcw className="h-4 w-4" />}
-                              label={t('pricing.actionUnarchive', 'إلغاء الأرشفة')}
-                              disabled={isBusy(offer, 'unarchive')}
-                              onClick={() => runAction(offer, 'unarchive', activate)}
-                              variant="success"
-                            />
-                          ) : null}
-                          {canManageOffers && archived ? (
-                            <IconActionButton
-                              icon={<Trash2 className="h-4 w-4" />}
-                              label={t('pricing.actionDelete', 'حذف')}
-                              disabled={isBusy(offer, 'delete')}
-                              onClick={() => handleDelete(offer)}
-                              variant="danger"
-                            />
-                          ) : null}
-                        </IconActionButtonGroup>
-                      </td>
-                    </tr>
-                  )
-                })}
-            {!loading && (!offers || offers.length === 0) ? (
-              <tr>
-                <td colSpan={6} className="inland-rates-empty">
-                  {t('pricing.noOffers', 'No offers found matching your filters')}
-                </td>
-              </tr>
-            ) : null}
-          </tbody>
-        </table>
-        </div>
+                        ) : null}
+                        {canManageOffers && !archived ? (
+                          <IconActionButton
+                            icon={<Archive className="h-4 w-4" />}
+                            label={t('pricing.actionArchive', 'أرشفة')}
+                            disabled={isBusy(offer, 'archive')}
+                            onClick={() => runAction(offer, 'archive', archive)}
+                          />
+                        ) : null}
+                        {canManageOffers && archived ? (
+                          <IconActionButton
+                            icon={<RotateCcw className="h-4 w-4" />}
+                            label={t('pricing.actionUnarchive', 'إلغاء الأرشفة')}
+                            disabled={isBusy(offer, 'unarchive')}
+                            onClick={() => runAction(offer, 'unarchive', activate)}
+                            variant="success"
+                          />
+                        ) : null}
+                        {canManageOffers && archived ? (
+                          <IconActionButton
+                            icon={<Trash2 className="h-4 w-4" />}
+                            label={t('pricing.actionDelete', 'حذف')}
+                            disabled={isBusy(offer, 'delete')}
+                            onClick={() => handleDelete(offer)}
+                            variant="danger"
+                          />
+                        ) : null}
+                      </IconActionButtonGroup>
+                    </div>
+                  </div>
+                </article>
+              )
+            })}
+        {!loading && (!offers || offers.length === 0) ? (
+          <div className="pricing-saved-rates__empty">{t('pricing.noOffers', 'No offers found matching your filters')}</div>
+        ) : null}
       </div>
     </div>
   )

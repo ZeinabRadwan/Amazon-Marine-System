@@ -255,7 +255,7 @@ const LINE_DESC_PREFIX = {
   genset: 'Genset Cost - تكلفة المولد الكهربائي (للريفير)',
   overnight: 'Overnight Stay Cost (Truck Layover) - تكلفة المبيت (انتظار الشاحنة)',
   receipts: 'Official Receipts Cost - تكلفة الإيصالات الرسمية',
-  inlandFreight: 'Inland Transportation Freight Cost - تكلفة نولون النقل البري',
+  inlandFreight: 'Inland Transportation Freight Cost - تكلفة نولون النقل الداخلي',
   decl: 'Customs Declaration Opening Fee - رسوم فتح الشهادة الجمركية',
   custReceipts: 'Official Receipts Fees - رسوم الإيصالات الرسمية',
   premium: 'Insurance Premium',
@@ -2301,7 +2301,7 @@ export default function ShipmentFinancialsModal({
   const sellingSections = useMemo(() => {
     const sectionLabels = {
       shipping: t('shipments.fin.sellingSection.shipping', { defaultValue: 'Shipment Line Cost / تكلفة الشحن البحري' }),
-      inland: t('shipments.fin.sellingSection.inland', { defaultValue: 'Inland Transport / النقل البري' }),
+      inland: t('shipments.fin.sellingSection.inland', { defaultValue: 'Inland Transport / النقل الداخلي' }),
       customs: t('shipments.fin.sellingSection.customs', { defaultValue: 'Customs Clearance / التخليص الجمركي' }),
       insurance: t('shipments.fin.sellingSection.insurance', { defaultValue: 'Insurance / التأمين' }),
       handling: t('shipments.fin.sellingSection.handling', { defaultValue: 'Handling Fees / رسوم الخدمة والمتابعة' }),
@@ -2350,7 +2350,7 @@ export default function ShipmentFinancialsModal({
 
     const defs = [
       { id: 'shipping', label: t('shipments.fin.sellingSection.shipping', { defaultValue: 'Shipment Line Cost / تكلفة الشحن البحري' }) },
-      { id: 'inland', label: t('shipments.fin.sellingSection.inland', { defaultValue: 'Inland Transport / النقل البري' }) },
+      { id: 'inland', label: t('shipments.fin.sellingSection.inland', { defaultValue: 'Inland Transport / النقل الداخلي' }) },
       { id: 'customs', label: t('shipments.fin.sellingSection.customs', { defaultValue: 'Customs Clearance / التخليص الجمركي' }) },
       { id: 'insurance', label: t('shipments.fin.sellingSection.insurance', { defaultValue: 'Insurance / التأمين' }) },
     ]

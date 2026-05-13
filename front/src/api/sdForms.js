@@ -278,6 +278,41 @@ export async function uploadSDFormBookingConfirmation(token, sdFormId, file, onU
   return data
 }
 
+/**
+ * POST /sd-forms/:id/confirm-booking (multipart: file)
+ * Operations confirms a booking, uploading a confirmation document. Updates status to booking_confirmed.
+ */
+export async function confirmSDFormBooking(token, sdFormId, file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  const res = await apiFetch(`${getBaseUrl()}/sd-forms/${encodeURIComponent(sdFormId)}/confirm-booking`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
+    },
+    body: formData,
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to confirm booking (${res.status})`)
+  return data
+}
+
+/**
+ * POST /sd-forms/:id/cancel-booking
+ * Operations cancels a booking, providing a reason. Updates status to booking_cancelled.
+ */
+export async function cancelSDFormBooking(token, sdFormId, reason) {
+  const res = await apiFetch(`${getBaseUrl()}/sd-forms/${encodeURIComponent(sdFormId)}/cancel-booking`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+    body: JSON.stringify({ reason }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to cancel booking (${res.status})`)
+  return data
+}
+
 export async function downloadSDFormBookingConfirmation(token, sdFormId, confirmationId) {
   const res = await apiFetch(
     `${getBaseUrl()}/sd-forms/${encodeURIComponent(sdFormId)}/booking-confirmations/${encodeURIComponent(confirmationId)}/download`,
