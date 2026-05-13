@@ -21,8 +21,6 @@ import {
 } from '../../api/sdForms'
 import {
   listShipmentDirections,
-  listNotifyPartyModes,
-  listFreightTerms,
   listContainerTypes,
   listContainerSizes,
 } from '../../api/sdFormLookups'
@@ -242,8 +240,6 @@ export default function SDForms() {
 
   const [refsLoading, setRefsLoading] = useState(true)
   const [shipmentDirections, setShipmentDirections] = useState([])
-  const [notifyPartyModes, setNotifyPartyModes] = useState([])
-  const [freightTerms, setFreightTerms] = useState([])
   const [containerTypesList, setContainerTypesList] = useState([])
   const [containerSizesList, setContainerSizesList] = useState([])
   const [portsList, setPortsList] = useState([])
@@ -345,8 +341,6 @@ export default function SDForms() {
     setRefsLoading(true)
     Promise.all([
       listShipmentDirections(token).catch(() => ({ data: [] })),
-      listNotifyPartyModes(token).catch(() => ({ data: [] })),
-      listFreightTerms(token).catch(() => ({ data: [] })),
       listContainerTypes(token).catch(() => ({ data: [] })),
       listContainerSizes(token).catch(() => ({ data: [] })),
       listPorts(token).catch(() => ({ data: [] })),
@@ -354,10 +348,8 @@ export default function SDForms() {
       listClients(token, { per_page: 100, page: 1 }).catch(() => ({ data: [] })),
       listUsers(token, { per_page: 200 }).catch(() => ({ data: [] })),
     ])
-      .then(([dirs, npm, ft, ct, cs, ports, shippingLines, clients, users]) => {
+      .then(([dirs, ct, cs, ports, shippingLines, clients, users]) => {
         setShipmentDirections(normalizeListResponse(dirs))
-        setNotifyPartyModes(normalizeListResponse(npm))
-        setFreightTerms(normalizeListResponse(ft))
         setContainerTypesList(normalizeListResponse(ct))
         setContainerSizesList(normalizeListResponse(cs))
         setPortsList(normalizeListResponse(ports))
@@ -746,35 +738,6 @@ export default function SDForms() {
     () => shipmentDirections.map((d) => ({ value: d.name, label: d.name })),
     [shipmentDirections],
   )
-
-  const notifyPartyOptions = useMemo(() => {
-    const optional = { value: '', label: t('sdForms.form.optional') }
-    const labelByKey = {
-      same: t('sdForms.form.notifySame'),
-      different: t('sdForms.form.notifyDifferent'),
-    }
-    const fromApi = notifyPartyModes
-      .map((m) => {
-        const key = String(m.name || '').trim().toLowerCase()
-        if (key !== 'same' && key !== 'different') return null
-        return { value: key, label: labelByKey[key] }
-      })
-      .filter(Boolean)
-    return [optional, ...fromApi]
-  }, [notifyPartyModes, t])
-
-  const freightOptions = useMemo(() => {
-    const unset = { value: '', label: t('sdForms.form.freightUnset') }
-    const allowed = new Set(['Prepaid', 'Collect'])
-    const fromApi = freightTerms
-      .map((f) => {
-        const n = String(f.name || '').trim()
-        if (!allowed.has(n)) return null
-        return { value: n, label: n }
-      })
-      .filter(Boolean)
-    return [unset, ...fromApi]
-  }, [freightTerms, t])
 
   const renderSdFormFields = (form, setForm, options = {}) => {
     const { disabled = false, sdNumber = null } = options
