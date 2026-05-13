@@ -13,11 +13,30 @@ class SDFormPolicy
     }
 
     /**
-     * Operations / admin: upload booking confirmation from Shipments toolbar (any SD form).
+     * Operations / admin: upload booking confirmation files attached to any SD form.
      */
     public function uploadBookingConfirmation(User $user, SDForm $form): bool
     {
         return $user->hasRole('admin') || $user->hasRole('operations');
+    }
+
+    /**
+     * Operations / admin: confirm or cancel the booking from an SD form row action.
+     *
+     * Confirm/cancel is allowed once a form has reached the operations stage.
+     */
+    public function decideBooking(User $user, SDForm $form): bool
+    {
+        if (! ($user->hasRole('admin') || $user->hasRole('operations'))) {
+            return false;
+        }
+
+        return in_array($form->status, [
+            'sent_to_operations',
+            'in_progress',
+            'booking_confirmed',
+            'booking_cancelled',
+        ], true);
     }
 
     public function view(User $user, SDForm $form): bool

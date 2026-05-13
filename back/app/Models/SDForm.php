@@ -46,6 +46,10 @@ class SDForm extends Model
         'total_net_weight',
         'linked_shipment_id',
         'notes',
+        'booking_cancellation_reason',
+        'booking_confirmed_at',
+        'booking_cancelled_at',
+        'booking_decided_by_user_id',
     ];
 
     /**
@@ -56,6 +60,8 @@ class SDForm extends Model
         'total_gross_weight' => 'decimal:2',
         'total_net_weight' => 'decimal:2',
         'num_containers' => 'int',
+        'booking_confirmed_at' => 'datetime',
+        'booking_cancelled_at' => 'datetime',
     ];
 
     /**
@@ -112,5 +118,13 @@ class SDForm extends Model
     public function bookingConfirmations(): HasMany
     {
         return $this->hasMany(SDFormBookingConfirmation::class, 'sd_form_id');
+    }
+
+    /**
+     * @return BelongsTo<User, SDForm>
+     */
+    public function bookingDecidedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'booking_decided_by_user_id');
     }
 }

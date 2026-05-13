@@ -13,10 +13,12 @@ use App\Models\SDForm;
 use App\Models\Shipment;
 use App\Models\User;
 use App\Notifications\OperationSDFormNotification;
+use App\Notifications\SdFormBookingConfirmationUploadedNotification;
 use App\Services\ActivityLogger;
 use App\Services\NotificationService;
 use App\Services\SDFormService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Mpdf\Mpdf;
@@ -53,7 +55,14 @@ class SDFormController extends Controller
         }
 
         if ($isOperationsUser) {
-            $query->whereIn('status', ['sent_to_operations', 'in_progress', 'completed', 'cancelled']);
+            $query->whereIn('status', [
+                'sent_to_operations',
+                'in_progress',
+                'booking_confirmed',
+                'booking_cancelled',
+                'completed',
+                'cancelled',
+            ]);
         }
 
         if ($shippingLineId = $request->query('shipping_line_id')) {
@@ -139,7 +148,15 @@ class SDFormController extends Controller
         $this->authorize('view', $sdForm);
 
         return response()->json([
-            'data' => $sdForm->load(['client', 'salesRep', 'pol', 'pod', 'linkedShipment', 'shippingLine']),
+            'data' => $sdForm->load([
+                'client',
+                'salesRep',
+                'pol',
+                'pod',
+                'linkedShipment',
+                'shippingLine',
+                'bookingDecidedBy:id,name',
+            ]),
         ]);
     }
 
@@ -206,6 +223,9 @@ class SDFormController extends Controller
             'container_size' => $form->container_size,
             'requested_vessel_date' => $form->requested_vessel_date?->toDateString(),
             'notes' => $form->notes,
+            'booking_confirmed_at' => $form->booking_confirmed_at?->toIso8601String(),
+            'booking_cancelled_at' => $form->booking_cancelled_at?->toIso8601String(),
+            'booking_cancellation_reason' => $form->booking_cancellation_reason,
             'created_at' => $form->created_at?->toIso8601String(),
         ];
     }
@@ -296,6 +316,104 @@ class SDFormController extends Controller
         return response()->json([
             'data' => $sdForm->fresh(['client', 'salesRep', 'pol', 'pod', 'shippingLine']),
         ]);
+    }
+
+    /**
+     * Operations confirms a booking against an SD form: uploads a confirmation file
+     * and transitions the form to the booking_confirmed status.
+     */
+    public function confirmBooking(Request $request, SDForm $sdForm)
+    {
+        $user = $request->user();
+        abort_unless($user && $user->can('decideBooking', $sdForm), 403);
+
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp,doc,docx,xls,xlsx,csv,txt,zip,rar,ppt,pptx', 'max:10240'],
+        ]);
+
+        $file = $request->file('file');
+        $path = $file->store('sd-form-booking-confirmations/'.$sdForm->id, 'local');
+
+        $confirmation = $sdForm->bookingConfirmations()->create([
+            'uploaded_by_user_id' => $user->id,
+            'name' => $file->getClientOriginalName(),
+            'path' => $path,
+            'mime_type' => $file->getMimeType(),
+            'size' => $file->getSize(),
+        ]);
+
+        $sdForm->booking_cancellation_reason = null;
+        $sdForm->booking_cancelled_at = null;
+        $sdForm->booking_confirmed_at = now();
+        $sdForm->booking_decided_by_user_id = $user->id;
+        $sdForm->save();
+
+        SDFormService::transitionStatus($sdForm, 'booking_confirmed');
+
+        ActivityLogger::log('sd_form.booking_confirmed', $sdForm, [
+            'sd_form_booking_confirmation_id' => $confirmation->id,
+            'file_name' => $confirmation->name,
+        ]);
+
+        $recipients = $this->recipientsForBookingDecisionNotification($user);
+        if ($recipients->isNotEmpty()) {
+            $this->notificationService->sendDatabaseNotification(
+                'sd_form.booking_confirmation_uploaded',
+                $sdForm,
+                $recipients,
+                new SdFormBookingConfirmationUploadedNotification($sdForm, $confirmation)
+            );
+        }
+
+        return response()->json([
+            'data' => $sdForm->fresh(['client', 'salesRep', 'pol', 'pod', 'shippingLine', 'bookingDecidedBy:id,name']),
+        ]);
+    }
+
+    /**
+     * Operations cancels a booking against an SD form: records the cancellation reason
+     * and transitions the form to booking_cancelled.
+     */
+    public function cancelBooking(Request $request, SDForm $sdForm)
+    {
+        $user = $request->user();
+        abort_unless($user && $user->can('decideBooking', $sdForm), 403);
+
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'min:3', 'max:2000'],
+        ]);
+
+        $sdForm->booking_cancellation_reason = $validated['reason'];
+        $sdForm->booking_cancelled_at = now();
+        $sdForm->booking_confirmed_at = null;
+        $sdForm->booking_decided_by_user_id = $user->id;
+        $sdForm->save();
+
+        SDFormService::transitionStatus($sdForm, 'booking_cancelled');
+
+        ActivityLogger::log('sd_form.booking_cancelled', $sdForm, [
+            'reason' => $validated['reason'],
+        ]);
+
+        return response()->json([
+            'data' => $sdForm->fresh(['client', 'salesRep', 'pol', 'pod', 'shippingLine', 'bookingDecidedBy:id,name']),
+        ]);
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
+    private function recipientsForBookingDecisionNotification(User $actor): Collection
+    {
+        $adminIds = User::role('admin')->pluck('id');
+        $salesIds = User::role(['sales', 'sales_manager'])->pluck('id');
+        $ids = $adminIds->merge($salesIds)->unique()->values()->filter(fn ($id) => (int) $id !== (int) $actor->id);
+
+        if ($ids->isEmpty()) {
+            return collect();
+        }
+
+        return User::query()->whereIn('id', $ids->all())->get();
     }
 
     public function export(Request $request)

@@ -39,8 +39,10 @@ class SDFormService
         $allowedTransitions = [
             'draft' => ['submitted', 'sent_to_operations', 'cancelled'],
             'submitted' => ['sent_to_operations', 'cancelled'],
-            'sent_to_operations' => ['in_progress', 'cancelled'],
-            'in_progress' => ['completed', 'cancelled'],
+            'sent_to_operations' => ['in_progress', 'booking_confirmed', 'booking_cancelled', 'cancelled'],
+            'in_progress' => ['completed', 'booking_confirmed', 'booking_cancelled', 'cancelled'],
+            'booking_confirmed' => ['in_progress', 'completed', 'booking_cancelled', 'cancelled'],
+            'booking_cancelled' => ['sent_to_operations', 'cancelled'],
             'completed' => [],
             'cancelled' => [],
         ];
