@@ -13,12 +13,20 @@ class ShipmentPolicy
             return true;
         }
 
+        if ($user->hasRole('operations')) {
+            return true;
+        }
+
         return $user->can('shipments.view') || $user->can('shipments.view_own');
     }
 
     public function view(User $user, Shipment $shipment): bool
     {
         if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if ($user->hasRole('operations')) {
             return true;
         }
 

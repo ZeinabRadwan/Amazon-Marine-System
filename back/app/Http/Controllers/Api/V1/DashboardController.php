@@ -70,11 +70,6 @@ class DashboardController extends Controller
         if ($role === 'sales' && $userId) {
             $query->where('sales_rep_id', $userId);
         }
-        if ($role === 'operations') {
-            $query->whereHas('sdForm', function ($q) {
-                $q->where('status', 'sent_to_operations');
-            });
-        }
 
         return $query;
     }

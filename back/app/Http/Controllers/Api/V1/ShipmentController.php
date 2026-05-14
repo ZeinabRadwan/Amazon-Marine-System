@@ -271,12 +271,6 @@ class ShipmentController extends Controller
             $query->where('sales_rep_id', $user->id);
         }
 
-        if ($user->hasRole('operations') && ! $user->hasRole('admin')) {
-            $query->whereHas('sdForm', function ($q) {
-                $q->where('status', 'sent_to_operations');
-            });
-        }
-
         // Fetch counts for ALL statuses currently in the DB
         $counts = $query->clone()->selectRaw('status, COUNT(*) as count')
             ->groupBy('status')
@@ -397,12 +391,6 @@ class ShipmentController extends Controller
             $query->where('sales_rep_id', $user->id);
         }
 
-        if ($user->hasRole('operations') && ! $user->hasRole('admin')) {
-            $query->whereHas('sdForm', function ($q) {
-                $q->where('status', 'sent_to_operations');
-            });
-        }
-
         // Fetch status name map for ID resolution
         $statusMap = ShipmentStatus::pluck('name_en', 'id')->toArray();
 
@@ -502,13 +490,6 @@ class ShipmentController extends Controller
         $query = Shipment::query()
             ->with(['client', 'salesRep', 'lineVendor', 'shippingLine'])
             ->select('shipments.*');
-
-        $user = $request->user();
-        if ($user && $user->hasRole('operations') && ! $user->hasRole('admin')) {
-            $query->whereHas('sdForm', function ($q) {
-                $q->where('status', 'sent_to_operations');
-            });
-        }
 
         if ($status = $request->query('status')) {
             $query->where('shipments.status', $status);

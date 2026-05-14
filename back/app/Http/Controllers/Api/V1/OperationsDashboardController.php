@@ -24,15 +24,12 @@ class OperationsDashboardController extends Controller
         ]);
 
         $window = $validated['upcoming_window'] ?? 'week';
-        $user = $request->user();
 
         $taskBase = ShipmentOperationTask::query()
             ->whereNull('completed_at')
             ->where(function ($q) {
                 $q->whereNotNull('due_date')->orWhereNotNull('execution_at');
             });
-
-        $this->scopeTasksForUser($taskBase, $user);
 
         $eff = 'COALESCE(shipment_operation_tasks.due_date, DATE(shipment_operation_tasks.execution_at))';
 
@@ -47,7 +44,6 @@ class OperationsDashboardController extends Controller
         $upcomingCount = (clone $upcomingQuery)->count();
 
         $shipmentBase = Shipment::query();
-        $this->scopeShipmentsForUser($shipmentBase, $user);
         $activeShipments = (clone $shipmentBase)
             ->where(function ($q) {
                 $q->whereNull('status')
@@ -104,8 +100,6 @@ class OperationsDashboardController extends Controller
                     ->orWhere('shipment_operation_tasks.assigned_to_id', $uid);
             });
 
-        $this->scopeTasksForUser($base, $user);
-
         $todayCount = (clone $base)->whereRaw("{$eff} = ?", [$today])->count();
         $overdueCount = (clone $base)->whereRaw("{$eff} < ?", [$today])->count();
 
@@ -115,32 +109,6 @@ class OperationsDashboardController extends Controller
                 'overdue_tasks' => $overdueCount,
             ],
         ]);
-    }
-
-    /**
-     * @param  Builder<ShipmentOperationTask>  $query
-     */
-    private function scopeTasksForUser($query, User $user): void
-    {
-        if ($user->hasRole('operations') && ! $user->hasRole('admin')) {
-            $query->whereHas('shipment', function ($q) {
-                $q->whereHas('sdForm', function ($s) {
-                    $s->where('status', 'sent_to_operations');
-                });
-            });
-        }
-    }
-
-    /**
-     * @param  Builder<Shipment>  $query
-     */
-    private function scopeShipmentsForUser($query, User $user): void
-    {
-        if ($user->hasRole('operations') && ! $user->hasRole('admin')) {
-            $query->whereHas('sdForm', function ($s) {
-                $s->where('status', 'sent_to_operations');
-            });
-        }
     }
 
     /**
