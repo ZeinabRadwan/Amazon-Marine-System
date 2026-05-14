@@ -10,8 +10,9 @@ import {
   Eye,
 } from 'lucide-react'
 import { getStoredToken } from '../Login'
-import { formatDate } from '../../utils/dateUtils'
+import { formatDate, UI_DATE_FORMAT } from '../../utils/dateUtils'
 import LoaderDots from '../../components/LoaderDots'
+import DatePicker from '../../components/DatePicker'
 import '../../components/LoaderDots/LoaderDots.css'
 import {
   listShipmentNotes,
@@ -123,24 +124,25 @@ function shipmentClientDisplayName(shipment) {
   return shipment?.client?.company_name ?? shipment?.client?.name ?? shipment?.client_name ?? '—'
 }
 
-/** Operations key dates: native `type="date"` (YYYY-MM-DD) for reliable picker + future dates. */
-function OpsBasicDateField({ label, isoValue, onCommit, disabled }) {
-  const { i18n } = useTranslation()
+/** Operations key dates — same DatePicker as Create Shipment (`Shipments.jsx` booking/loading dates). */
+function OpsBasicDateField({ id, label, isoValue, onCommit, disabled }) {
+  const { t, i18n } = useTranslation()
+  const value = isoDatePart(isoValue)
   return (
     <div>
-      <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">{label}</label>
-      <input
-        type="date"
-        lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
-        autoComplete="off"
-        className="clients-input w-full font-mono text-sm"
-        value={isoDatePart(isoValue)}
+      <label htmlFor={id} className="text-xs font-semibold text-gray-500 uppercase block mb-1">
+        {label}
+      </label>
+      <DatePicker
+        id={id}
+        locale={i18n.language}
+        className="clients-input w-full"
+        value={value}
+        onChange={(v) => onCommit(v === '' || v == null ? null : v)}
         disabled={disabled}
-        onChange={(e) => {
-          const v = e.target.value
-          onCommit(v === '' ? null : v)
-        }}
+        placeholder={UI_DATE_FORMAT}
       />
+      <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">{t('shipments.dateInputHint')}</span>
     </div>
   )
 }
@@ -1511,24 +1513,28 @@ export default function ShipmentDetailModal({
                           <h3 className="shipment-detail-card__title">{t('shipments.ops.sectionKeyDates')}</h3>
                           <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                             <OpsBasicDateField
+                              id="sh-ops-cut-off"
                               label={t('shipments.ops.cutOffDate')}
                               isoValue={opsData.cut_off_date}
                               disabled={!canEditOps}
                               onCommit={(iso) => setOpsData((prev) => ({ ...prev, cut_off_date: iso }))}
                             />
                             <OpsBasicDateField
+                              id="sh-ops-eta"
                               label={t('shipments.ops.eta')}
                               isoValue={opsData.eta}
                               disabled={!canEditOps}
                               onCommit={(iso) => setOpsData((prev) => ({ ...prev, eta: iso }))}
                             />
                             <OpsBasicDateField
+                              id="sh-ops-etd"
                               label={t('shipments.ops.etd')}
                               isoValue={opsData.etd}
                               disabled={!canEditOps}
                               onCommit={(iso) => setOpsData((prev) => ({ ...prev, etd: iso }))}
                             />
                             <OpsBasicDateField
+                              id="sh-ops-loading"
                               label={t('shipments.ops.loadingDate')}
                               isoValue={opsData.ops_loading_date}
                               disabled={!canEditOps}
