@@ -1561,7 +1561,9 @@ export default function SDForms() {
               ? `${t('sdForms.booking.reasonLabel', 'Cancellation reason')}: ${r.booking_cancellation_reason}`
               : r.status === 'booking_confirmed' && r.booking_confirmed_at
                 ? `${t('sdForms.booking.confirmedAt', 'Confirmed at')}: ${formatDate(r.booking_confirmed_at)}`
-                : undefined
+                : r.status === 'information_requested' && r.information_request_note
+                  ? `${t('sdForms.infoRequest.noteLabel', 'Data completion note')}: ${r.information_request_note}`
+                  : undefined
           return (
             <span
               className={`sd-forms-badge ${getStatusBadgeClass(r.status)}`}

@@ -9,6 +9,7 @@ use App\Models\Shipment;
 use App\Models\ShipmentOperation;
 use App\Models\Vendor;
 use App\Services\ActivityLogger;
+use App\Support\VendorTypeAliases;
 use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -392,8 +393,12 @@ class ShipmentOperationsController extends Controller
             return;
         }
 
-        $ok = Vendor::query()->whereKey($vendorId)->where('type', $expectedType)->exists();
-        if (! $ok) {
+        $vendor = Vendor::query()->find($vendorId);
+        if ($vendor === null) {
+            abort(422, __('Invalid vendor selection for this role.'));
+        }
+
+        if (! VendorTypeAliases::vendorMatchesCanonical($vendor->type, $expectedType)) {
             abort(422, __('Invalid vendor selection for this role.'));
         }
     }

@@ -247,6 +247,8 @@ function sdStatusBadgeClass(status) {
   if (s === 'draft') return 'sd-forms-badge--draft'
   if (s === 'submitted') return 'sd-forms-badge--submitted'
   if (s === 'sent_to_operations') return 'sd-forms-badge--sent'
+  if (s === 'booking_in_progress') return 'sd-forms-badge--booking-in-progress'
+  if (s === 'information_requested') return 'sd-forms-badge--info-requested'
   if (s === 'in_progress') return 'sd-forms-badge--progress'
   if (s === 'booking_confirmed') return 'sd-forms-badge--booking-confirmed'
   if (s === 'booking_cancelled') return 'sd-forms-badge--booking-cancelled'
@@ -1502,6 +1504,15 @@ export default function Shipments() {
                     <dd>{selectedSdFormForShipment.booking_decided_by.name}</dd>
                   </div>
                 )}
+                {selectedSdFormForShipment.status === 'information_requested' &&
+                  selectedSdFormForShipment.information_request_note && (
+                    <div className="sh-sd-summary__row sh-sd-summary__row--block">
+                      <dt>{t('sdForms.infoRequest.noteLabel', 'Data completion note')}</dt>
+                      <dd className="whitespace-pre-wrap break-words text-sm">
+                        {selectedSdFormForShipment.information_request_note}
+                      </dd>
+                    </div>
+                  )}
               </dl>
 
               <div className="sh-sd-summary__doc">

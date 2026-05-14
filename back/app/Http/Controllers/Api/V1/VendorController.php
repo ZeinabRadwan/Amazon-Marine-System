@@ -7,6 +7,7 @@ use App\Http\Requests\StoreVendorRequest;
 use App\Http\Requests\UpdateVendorRequest;
 use App\Models\Vendor;
 use App\Models\VendorBill;
+use App\Support\VendorTypeAliases;
 use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,8 +19,34 @@ class VendorController extends Controller
     {
         $query = Vendor::query();
 
-        if ($type = $request->query('type')) {
-            $query->where('type', $type);
+        $typesParam = $request->query('types');
+        if (is_string($typesParam) && trim($typesParam) !== '') {
+            $parts = array_filter(array_map('trim', explode(',', $typesParam)));
+            $query->where(function ($q) use ($parts) {
+                foreach ($parts as $part) {
+                    $aliases = VendorTypeAliases::aliasesForCanonical($part);
+                    $q->orWhere(function ($q2) use ($aliases) {
+                        foreach ($aliases as $alias) {
+                            $norm = VendorTypeAliases::normalize($alias);
+                            if ($norm === '') {
+                                continue;
+                            }
+                            $q2->orWhereRaw('LOWER(REPLACE(REPLACE(TRIM(COALESCE(type, "")), " ", "_"), "-", "_")) = ?', [$norm]);
+                        }
+                    });
+                }
+            });
+        } elseif ($type = $request->query('type')) {
+            $aliases = VendorTypeAliases::aliasesForCanonical((string) $type);
+            $query->where(function ($q) use ($aliases) {
+                foreach ($aliases as $alias) {
+                    $norm = VendorTypeAliases::normalize($alias);
+                    if ($norm === '') {
+                        continue;
+                    }
+                    $q->orWhereRaw('LOWER(REPLACE(REPLACE(TRIM(COALESCE(type, "")), " ", "_"), "-", "_")) = ?', [$norm]);
+                }
+            });
         }
 
         if ($search = $request->query('search')) {
@@ -76,7 +103,16 @@ class VendorController extends Controller
         $query = Vendor::query();
 
         if ($type = $request->query('type')) {
-            $query->where('type', $type);
+            $aliases = VendorTypeAliases::aliasesForCanonical((string) $type);
+            $query->where(function ($q) use ($aliases) {
+                foreach ($aliases as $alias) {
+                    $norm = VendorTypeAliases::normalize($alias);
+                    if ($norm === '') {
+                        continue;
+                    }
+                    $q->orWhereRaw('LOWER(REPLACE(REPLACE(TRIM(COALESCE(type, "")), " ", "_"), "-", "_")) = ?', [$norm]);
+                }
+            });
         }
 
         $vendorIds = $query->pluck('id');
@@ -140,7 +176,16 @@ class VendorController extends Controller
         $query = Vendor::query();
 
         if ($type = $request->query('type')) {
-            $query->where('type', $type);
+            $aliases = VendorTypeAliases::aliasesForCanonical((string) $type);
+            $query->where(function ($q) use ($aliases) {
+                foreach ($aliases as $alias) {
+                    $norm = VendorTypeAliases::normalize($alias);
+                    if ($norm === '') {
+                        continue;
+                    }
+                    $q->orWhereRaw('LOWER(REPLACE(REPLACE(TRIM(COALESCE(type, "")), " ", "_"), "-", "_")) = ?', [$norm]);
+                }
+            });
         }
 
         $byType = (clone $query)->selectRaw('type, COUNT(*) as count')
@@ -185,7 +230,16 @@ class VendorController extends Controller
         $query = Vendor::query();
 
         if ($type = $request->query('type')) {
-            $query->where('type', $type);
+            $aliases = VendorTypeAliases::aliasesForCanonical((string) $type);
+            $query->where(function ($q) use ($aliases) {
+                foreach ($aliases as $alias) {
+                    $norm = VendorTypeAliases::normalize($alias);
+                    if ($norm === '') {
+                        continue;
+                    }
+                    $q->orWhereRaw('LOWER(REPLACE(REPLACE(TRIM(COALESCE(type, "")), " ", "_"), "-", "_")) = ?', [$norm]);
+                }
+            });
         }
 
         if ($search = $request->query('search')) {
