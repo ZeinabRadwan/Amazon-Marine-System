@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Amazon Marine CRM - Standard Quotation</title>
+<title>Amazon Marine CRM - Quick Quotation</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
@@ -31,6 +31,18 @@ body {
 }
 .page-title { font-size: 20px; font-weight: 600; color: #1a1a1a; }
 .ref { font-size: 13px; color: #888; margin-top: 4px; font-family: monospace; }
+.quick-badge {
+  background: #BA7517;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
 .section-title {
   font-size: 14px;
   font-weight: 600;
@@ -61,20 +73,6 @@ select, input[type="text"], input[type="number"], input[type="date"], textarea {
   direction: ltr;
 }
 textarea { min-height: 60px; resize: vertical; direction: rtl; }
-.tags-row {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 20px;
-}
-.tag {
-  background: #f1f1f1;
-  padding: 6px 14px;
-  border-radius: 8px;
-  font-size: 13px;
-  color: #444;
-}
-.tag span { color: #888; margin-left: 6px; }
 table {
   width: 100%;
   border-collapse: collapse;
@@ -97,7 +95,19 @@ td input[type="number"] {
 }
 .profit-positive { color: #1D9E75; font-weight: 500; }
 .muted { color: #aaa; }
-.strikethrough { text-decoration: line-through; color: #bbb; }
+.quick-section {
+  background: #FFF8EE;
+  border: 1px solid #EF9F27;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 20px;
+}
+.quick-section-label {
+  font-size: 11px;
+  color: #854F0B;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
 .handling-box {
   background: #f5f5f5;
   border-right: 3px solid #378ADD;
@@ -136,8 +146,6 @@ td input[type="number"] {
   justify-content: space-between;
   font-size: 12px;
 }
-
-/* ⚠ PRICING CONFIRMATION ALERT */
 .confirm-alert {
   background: #FAEEDA;
   border: 1.5px solid #EF9F27;
@@ -184,7 +192,6 @@ td input[type="number"] {
   cursor: pointer;
   margin: 0;
 }
-
 .actions {
   display: flex;
   gap: 12px;
@@ -234,9 +241,15 @@ td input[type="number"] {
 
   <div class="page-header">
     <div>
-      <div class="page-title">إنشاء عرض سعر — Standard / Create Standard Quotation</div>
-      <div class="ref">Ref: AM-Q-2025-00147</div>
+      <div class="page-title">إنشاء عرض سعر — Quick / Create Quick Quotation</div>
+      <div class="ref">Ref: AM-Q-2025-00148</div>
     </div>
+    <div class="quick-badge">⚡ Quick Mode</div>
+  </div>
+
+  <!-- Info banner -->
+  <div style="background:#FFF8EE; border:1px solid #EF9F27; border-radius:10px; padding:10px 16px; margin-bottom:20px; font-size:12px; color:#854F0B; line-height:1.6;">
+    <strong>Quick Quotation:</strong> السعر مش مدرج في الـ CRM — أدخل جميع الأرقام يدوياً. هذه الصفحة مخصصة لعروض السعر السريعة فقط.
   </div>
 
   <div class="section-title">بيانات العميل / Client info</div>
@@ -258,25 +271,64 @@ td input[type="number"] {
     </div>
   </div>
 
-  <div class="section-title">ملخص المسار / Route summary</div>
-
-  <!-- Standard Mode: Auto-filled from rate -->
-  <div class="tags-row">
-    <div class="tag"><span>المسار:</span> الإسكندرية → Hamburg</div>
-    <div class="tag" id="line-tag" style="display:flex; align-items:center; gap:8px;">
-      <span>الخط:</span> MSC
-      <div onclick="toggleLineVisibility()" id="line-toggle" style="width:36px; height:18px; background:#1D9E75; border-radius:9px; cursor:pointer; position:relative; display:inline-block;">
-        <div id="line-thumb" style="width:14px; height:14px; background:#fff; border-radius:50%; position:absolute; top:2px; right:2px; transition:right 0.2s; box-shadow:0 1px 2px rgba(0,0,0,0.2);"></div>
+  <div class="section-title">ملخص المسار / Route summary — إدخال يدوي</div>
+  <div class="quick-section">
+    <div class="quick-section-label">⚡ أدخل بيانات المسار يدوياً:</div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px;">
+      <div>
+        <label>ميناء التحميل / POL</label>
+        <select>
+          <option>الإسكندرية</option>
+          <option>الدخيلة</option>
+          <option>دمياط</option>
+          <option>بورسعيد غرب</option>
+          <option>بورسعيد شرق</option>
+          <option>السخنة</option>
+          <option>الأدبية</option>
+        </select>
       </div>
-      <span id="line-vis-label" style="font-size:11px; color:#1D9E75;">ظاهر للعميل</span>
+      <div>
+        <label>ميناء الوصول / POD</label>
+        <input type="text" placeholder="اسم الميناء..." />
+      </div>
+      <div>
+        <label>الخط الملاحي / Line</label>
+        <select>
+          <option>MSC</option>
+          <option>Hapag-Lloyd</option>
+          <option>Maersk</option>
+          <option>CMA CGM</option>
+          <option>ONE</option>
+          <option>Evergreen</option>
+          <option>ZIM</option>
+          <option>COSCO</option>
+        </select>
+      </div>
+      <div>
+        <label>نوع الحاوية / Container</label>
+        <select id="container-type" onchange="toggleGeneratorRow(this)">
+          <option>20' Dry</option>
+          <option>40' Dry</option>
+          <option>40' High Cube</option>
+          <option>20' Reefer</option>
+          <option>40' Reefer</option>
+          <option>Flat Rack</option>
+          <option>Open Top</option>
+        </select>
+      </div>
+      <div>
+        <label>Transit time (أيام)</label>
+        <input type="number" placeholder="0" />
+      </div>
+      <div>
+        <label>تاريخ الإبحار / Sailing date</label>
+        <input type="date" />
+      </div>
     </div>
-    <div class="tag"><span>الحاوية:</span> 40' Dry</div>
-    <div class="tag"><span>Transit:</span> 12 يوم</div>
-    <div class="tag"><span>الإبحار:</span> 15 Apr 2025</div>
   </div>
 
   <div class="section-title">القسم 1: الشحن البحري / Ocean freight</div>
-  <div style="font-size: 11px; color: #888; margin-bottom: 12px;">التكلفة الأصلية من الخط + سعر البيع للعميل — الفرق = Profit (مخفي عن العميل)</div>
+  <div style="font-size:11px; color:#854F0B; margin-bottom:12px; background:#FFF8EE; padding:6px 10px; border-radius:6px;">⚡ أدخل التكلفة والسعر للعميل يدوياً لكل بند</div>
 
   <table>
     <thead>
@@ -290,48 +342,79 @@ td input[type="number"] {
       </tr>
     </thead>
     <tbody>
-      <tr>
+      <tr id="row-of">
         <td><input type="checkbox" checked /></td>
         <td style="font-weight:500;">Ocean freight (OF)</td>
-        <td><span>$1,200</span></td>
-        <td><input type="number" id="sel-of" value="1350" style="width:90px;" /></td>
-        <td id="profit-of" class="profit-positive">+$150</td>
-        <td><select style="width:60px; font-size:12px; padding:2px 4px;"><option>USD</option><option>EGP</option><option>EUR</option></select></td>
+        <td><input type="number" id="cost-of" placeholder="0" style="width:80px;" oninput="recalcRow('of')" /></td>
+        <td><input type="number" id="sel-of" placeholder="0" style="width:80px;" oninput="recalcRow('of')" /></td>
+        <td id="profit-of" class="muted">—</td>
+        <td><select id="curr-of" style="width:60px; font-size:12px; padding:2px 4px;"><option>USD</option><option>EGP</option><option>EUR</option></select></td>
       </tr>
-      <tr>
+      <tr id="row-thc">
         <td><input type="checkbox" checked /></td>
         <td style="font-weight:500;">THC</td>
-        <td><span>$150</span></td>
-        <td><input type="number" id="sel-thc" value="150" style="width:90px;" /></td>
-        <td id="profit-thc" class="muted">$0</td>
+        <td><input type="number" id="cost-thc" placeholder="0" style="width:80px;" oninput="recalcRow('thc')" /></td>
+        <td><input type="number" id="sel-thc" placeholder="0" style="width:80px;" oninput="recalcRow('thc')" /></td>
+        <td id="profit-thc" class="muted">—</td>
         <td><select style="width:60px; font-size:12px; padding:2px 4px;"><option>USD</option><option>EGP</option><option>EUR</option></select></td>
       </tr>
-      <tr>
+      <tr id="row-bl">
         <td><input type="checkbox" checked /></td>
         <td style="font-weight:500;">B/L fee</td>
-        <td><span>$50</span></td>
-        <td><input type="number" id="sel-bl" value="50" style="width:90px;" /></td>
-        <td id="profit-bl" class="muted">$0</td>
+        <td><input type="number" id="cost-bl" placeholder="0" style="width:80px;" oninput="recalcRow('bl')" /></td>
+        <td><input type="number" id="sel-bl" placeholder="0" style="width:80px;" oninput="recalcRow('bl')" /></td>
+        <td id="profit-bl" class="muted">—</td>
         <td><select style="width:60px; font-size:12px; padding:2px 4px;"><option>USD</option><option>EGP</option><option>EUR</option></select></td>
       </tr>
-      <tr>
+      <tr id="row-telex">
         <td><input type="checkbox" checked /></td>
         <td style="font-weight:500;">Telex release</td>
-        <td><span>$25</span></td>
-        <td><input type="number" id="sel-telex" value="25" style="width:90px;" /></td>
-        <td id="profit-telex" class="muted">$0</td>
+        <td><input type="number" id="cost-telex" placeholder="0" style="width:80px;" oninput="recalcRow('telex')" /></td>
+        <td><input type="number" id="sel-telex" placeholder="0" style="width:80px;" oninput="recalcRow('telex')" /></td>
+        <td id="profit-telex" class="muted">—</td>
         <td><select style="width:60px; font-size:12px; padding:2px 4px;"><option>USD</option><option>EGP</option><option>EUR</option></select></td>
       </tr>
-      <tr>
+      <tr id="row-isps">
         <td><input type="checkbox" /></td>
-        <td class="strikethrough">ISPS</td>
-        <td><span class="strikethrough muted">$25</span></td>
-        <td><input type="number" value="25" disabled style="opacity:0.35; width:90px;" /></td>
-        <td class="muted">—</td>
-        <td class="muted" style="font-size:12px;">USD</td>
+        <td style="font-weight:500;">ISPS</td>
+        <td><input type="number" id="cost-isps" placeholder="0" style="width:80px;" oninput="recalcRow('isps')" /></td>
+        <td><input type="number" id="sel-isps" placeholder="0" style="width:80px;" oninput="recalcRow('isps')" /></td>
+        <td id="profit-isps" class="muted">—</td>
+        <td><select style="width:60px; font-size:12px; padding:2px 4px;"><option>USD</option><option>EGP</option><option>EUR</option></select></td>
       </tr>
     </tbody>
   </table>
+
+  <!-- Add custom charge -->
+  <div style="margin-bottom:16px;">
+    <div style="background:#FFF8EE; border:1px solid #EF9F27; border-radius:8px; padding:10px 12px;">
+      <div style="font-size:11px; color:#854F0B; margin-bottom:8px; font-weight:500;">⚡ إضافة بند إضافي / Add charge</div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end;">
+        <div style="flex:2; min-width:120px;">
+          <label>اسم البند</label>
+          <input type="text" id="ocean-extra-name" placeholder="مثال: BAF, ISPS, EBS..." style="width:100%;" />
+        </div>
+        <div style="flex:1; min-width:80px;">
+          <label>التكلفة / Cost</label>
+          <input type="number" id="ocean-extra-cost" placeholder="0" style="width:100%;" oninput="calcOceanExtraProfit()" />
+        </div>
+        <div style="flex:1; min-width:80px;">
+          <label>سعر العميل / Selling</label>
+          <input type="number" id="ocean-extra-selling" placeholder="0" style="width:100%;" oninput="calcOceanExtraProfit()" />
+        </div>
+        <div style="width:70px;">
+          <label>العملة</label>
+          <select id="ocean-extra-currency" style="width:100%; font-size:12px;"><option>USD</option><option>EGP</option><option>EUR</option></select>
+        </div>
+        <button class="btn" onclick="addOceanExtra()" style="font-size:13px; white-space:nowrap; padding:6px 14px;">+ أضف</button>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px; margin-top:8px;">
+        <span style="font-size:12px; color:#854F0B;">Profit:</span>
+        <span id="ocean-extra-profit-preview" style="font-size:12px; font-weight:600; color:#1D9E75;">$0</span>
+      </div>
+    </div>
+    <div id="ocean-extra-list" style="margin-top:8px;"></div>
+  </div>
 
   <div class="handling-box">
     <label>Handling fees (عمولة الشركة) — بند أساسي:</label>
@@ -341,81 +424,66 @@ td input[type="number"] {
     </div>
   </div>
 
-  <div class="section-title">القسم 2: النقل الداخلي / Inland transport</div>
+  <div class="section-title">القسم 2: النقل الداخلي / Inland transport — إدخال يدوي</div>
 
   <!-- State A: Empty -->
   <div id="inland-empty" style="margin-bottom: 20px;">
     <div style="background: #f9f9f9; border: 1.5px dashed #d0d0d0; border-radius: 10px; padding: 20px; text-align: center;">
       <div style="font-size: 13px; color: #888; margin-bottom: 12px;">لا يوجد نقل داخلي مضاف لهذا العرض</div>
-      <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
-        <button class="btn" onclick="openInlandSearch()" style="font-size:13px; padding:8px 20px;">+ اختر من القائمة</button>
-      </div>
+      <button class="btn" onclick="openInlandQuick()" style="font-size:13px; padding:8px 20px; background:#FFF8EE; border-color:#EF9F27; color:#854F0B;">⚡ إدخال يدوي</button>
     </div>
   </div>
 
-  <!-- State B: Search Panel -->
-  <div id="inland-search" style="display: none; margin-bottom: 20px;">
-    <div style="background: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 10px; padding: 1rem;">
-      <div style="font-size: 13px; font-weight: 600; color: #444; margin-bottom: 12px;">اختر سعر نقل داخلي / Select inland rate</div>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px;">
-        <div><label>الميناء / Port</label><select><option>كل الموانئ</option><option>الإسكندرية</option><option>السخنة</option><option>دمياط</option></select></div>
-        <div><label>المحافظة / Governorate</label><select><option>كل المحافظات</option><option>القاهرة</option><option>الشرقية</option><option>الإسماعيلية</option></select></div>
-        <div><label>نوع العربية / Vehicle</label><select><option>كل الأنواع</option><option>20' Dry</option><option>40' Dry</option><option>Twin 20'</option><option>40' Reefer</option></select></div>
-      </div>
-      <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px;">
-        <div onclick="selectInland('الإسكندرية ← → القاهرة (التجمع الخامس)', '20\' Dry', 4500, 'EGP', 0, '')" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:#fff; border:1px solid #e0e0e0; border-radius:8px; cursor:pointer;">
-          <div><div style="font-size:13px; font-weight:500;">الإسكندرية ← → القاهرة (التجمع الخامس)</div><div style="font-size:12px; color:#888; margin-top:2px;">20' Dry</div></div>
-          <div style="text-align:left;"><div style="font-size:14px; font-weight:600;">4,500 EGP</div><div style="font-size:11px; color:#aaa;">بدون انتهاء</div></div>
-        </div>
-        <div onclick="selectInland('الإسكندرية ← → القاهرة (التجمع الخامس)', '40\' Dry', 6500, 'EGP', 0, '')" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:#fff; border:1px solid #e0e0e0; border-radius:8px; cursor:pointer;">
-          <div><div style="font-size:13px; font-weight:500;">الإسكندرية ← → القاهرة (التجمع الخامس)</div><div style="font-size:12px; color:#888; margin-top:2px;">40' Dry</div></div>
-          <div style="text-align:left;"><div style="font-size:14px; font-weight:600;">6,500 EGP</div><div style="font-size:11px; color:#aaa;">بدون انتهاء</div></div>
-        </div>
-        <div onclick="selectInland('الإسكندرية ← → القاهرة (التجمع الخامس)', '40\' Reefer', 8000, 'EGP', 500, 'EGP')" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:#fff; border:1px solid #e0e0e0; border-radius:8px; cursor:pointer;">
-          <div><div style="font-size:13px; font-weight:500;">الإسكندرية ← → القاهرة (التجمع الخامس)</div><div style="font-size:12px; color:#1D9E75; margin-top:2px;">40' Reefer + مولد</div></div>
-          <div style="text-align:left;"><div style="font-size:14px; font-weight:600;">8,000 EGP</div><div style="font-size:11px; color:#888;">+ 500 EGP مولد</div></div>
-        </div>
-        <div onclick="selectInland('السخنة ← → الشرقية (العاشر من رمضان)', '40\' Dry', 5000, 'EGP', 0, '')" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:#fff; border:1px solid #e0e0e0; border-radius:8px; cursor:pointer;">
-          <div><div style="font-size:13px; font-weight:500;">السخنة ← → الشرقية (العاشر من رمضان)</div><div style="font-size:12px; color:#888; margin-top:2px;">40' Dry</div></div>
-          <div style="text-align:left;"><div style="font-size:14px; font-weight:600;">5,000 EGP</div><div style="font-size:11px; color:#e8a000;">ينتهي 30 Apr</div></div>
-        </div>
-      </div>
-      <button class="btn" onclick="closeInlandSearch()" style="font-size:13px;">إلغاء / Cancel</button>
-    </div>
-  </div>
-
-  <!-- State C: Selected & Editable -->
-  <div id="inland-selected" style="display: none; margin-bottom: 20px;">
-    <div style="background:#fff; border:1px solid #e0e0e0; border-radius:10px; padding:1rem;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+  <!-- State Quick: Manual Inland Entry -->
+  <div id="inland-quick-manual" style="display:none; margin-bottom:20px;">
+    <div class="quick-section">
+      <div style="font-size:13px; font-weight:600; color:#854F0B; margin-bottom:12px;">⚡ إدخال يدوي — نقل داخلي</div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; margin-bottom:12px;">
         <div>
-          <span id="inland-route-label" style="font-size:14px; font-weight:600;"></span>
-          <span id="inland-vehicle-label" style="font-size:12px; color:#888; margin-right:10px;"></span>
+          <label>الميناء / Port</label>
+          <select style="width:100%;">
+            <option>الإسكندرية</option>
+            <option>الدخيلة</option>
+            <option>دمياط</option>
+            <option>بورسعيد غرب</option>
+            <option>بورسعيد شرق</option>
+            <option>السخنة</option>
+            <option>الأدبية</option>
+          </select>
         </div>
-        <button onclick="openInlandSearch()" style="font-size:12px; padding:4px 12px; border:1px solid #d0d0d0; border-radius:6px; background:#fff; cursor:pointer; color:#444;">تغيير / Change</button>
+        <div><label>المحافظة / Governorate</label><input type="text" placeholder="القاهرة، الشرقية..." style="width:100%;" /></div>
+        <div><label>المنطقة / Zone (اختياري)</label><input type="text" placeholder="التجمع، العاشر..." style="width:100%;" /></div>
+        <div>
+          <label>نوع العربية / Vehicle</label>
+          <select style="width:100%;" onchange="toggleIQGenerator(this)">
+            <option>20' Dry</option>
+            <option>40' Dry</option>
+            <option>Twin 20'</option>
+            <option>40' Reefer</option>
+          </select>
+        </div>
       </div>
-      <div style="font-size:11px; color:#888; margin-bottom:10px;">التكلفة الأصلية + سعر البيع للعميل — الفرق = Profit (مخفي عن العميل)</div>
-      <table style="margin-bottom:0;">
-        <thead><tr><th>ظاهر؟</th><th>البند</th><th>التكلفة / Cost</th><th>سعر العميل / Selling</th><th>Profit</th><th>العملة</th></tr></thead>
+      <div style="font-size:11px; color:#888; margin-bottom:8px;">التكلفة + سعر البيع للعميل:</div>
+      <table style="margin-bottom:10px;">
+        <thead><tr><th>البند</th><th>التكلفة / Cost</th><th>سعر العميل / Selling</th><th>Profit</th><th>العملة</th></tr></thead>
         <tbody>
           <tr>
-            <td><input type="checkbox" checked /></td>
-            <td style="font-weight:500;">نقل داخلي / Inland rate</td>
-            <td class="muted" id="inland-cost-display"></td>
-            <td><input type="number" id="inland-selling" style="width:100px; padding:4px 6px; font-size:13px;" oninput="calcInlandProfit()" /></td>
-            <td id="inland-profit-display" class="profit-positive"></td>
-            <td class="muted" id="inland-currency-display" style="font-size:12px;"></td>
+            <td style="font-weight:500;">نقل داخلي</td>
+            <td><input type="number" id="iq-cost" placeholder="0" style="width:90px; padding:4px 6px; font-size:13px;" oninput="calcIQProfit()" /></td>
+            <td><input type="number" id="iq-selling" placeholder="0" style="width:90px; padding:4px 6px; font-size:13px;" oninput="calcIQProfit()" /></td>
+            <td id="iq-profit" class="profit-positive"></td>
+            <td><select id="iq-currency" style="width:60px; font-size:12px; padding:2px 4px;"><option>EGP</option><option>USD</option><option>EUR</option></select></td>
           </tr>
-          <tr id="inland-gen-row" style="display:none;">
-            <td><input type="checkbox" checked /></td>
-            <td style="font-weight:500;">سعر المولد / Generator</td>
-            <td class="muted" id="inland-gen-cost-display"></td>
-            <td><input type="number" id="inland-gen-selling" style="width:100px; padding:4px 6px; font-size:13px;" oninput="calcInlandProfit()" /></td>
-            <td id="inland-gen-profit-display" class="profit-positive"></td>
-            <td class="muted" id="inland-gen-currency-display" style="font-size:12px;"></td>
+          <tr id="iq-gen-row" style="display:none;">
+            <td style="font-weight:500;">مولد / Generator</td>
+            <td><input type="number" id="iq-gen-cost" placeholder="0" style="width:90px; padding:4px 6px; font-size:13px;" oninput="calcIQProfit()" /></td>
+            <td><input type="number" id="iq-gen-selling" placeholder="0" style="width:90px; padding:4px 6px; font-size:13px;" oninput="calcIQProfit()" /></td>
+            <td id="iq-gen-profit" class="profit-positive"></td>
+            <td><select id="iq-gen-currency" style="width:60px; font-size:12px; padding:2px 4px;"><option>EGP</option><option>USD</option><option>EUR</option></select></td>
           </tr>
         </tbody>
       </table>
+      <button class="btn" onclick="closeInlandQuick()" style="font-size:12px;">إلغاء / Cancel</button>
     </div>
   </div>
 
@@ -432,12 +500,9 @@ td input[type="number"] {
   <!-- State B: Added -->
   <div id="customs-selected" style="display: none; margin-bottom: 20px;">
     <div style="background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 1rem;">
-
       <div style="font-size: 11px; color: #888; margin-bottom: 10px;">البنود الأساسية للتخليص الجمركي — رسوم فتح الشهادة ثابتة ومحددة من Pricing Team</div>
       <table style="margin-bottom: 12px;">
-        <thead>
-          <tr><th>البند</th><th>التكلفة / Cost</th><th>ملاحظة</th></tr>
-        </thead>
+        <thead><tr><th>البند</th><th>التكلفة / Cost</th><th>ملاحظة</th></tr></thead>
         <tbody>
           <tr style="background: #f9f9f9;">
             <td style="font-weight: 500;">رسوم فتح الشهادة</td>
@@ -488,14 +553,14 @@ td input[type="number"] {
 
   <div class="section-title">ملخص / Summary</div>
   <div class="summary-card">
-    <div class="summary-row"><span class="muted">شحن بحري / Ocean freight</span><span style="font-weight: 500;">$1,575 USD</span></div>
-    <div class="summary-row"><span class="muted">Handling fees</span><span style="font-weight: 500;">$100 USD</span></div>
+    <div class="summary-row"><span class="muted">شحن بحري / Ocean freight</span><span style="font-weight: 500;" id="summary-ocean">—</span></div>
+    <div class="summary-row"><span class="muted">Handling fees</span><span style="font-weight: 500;">—</span></div>
     <div class="summary-row"><span class="muted">نقل داخلي / Inland</span><span class="muted">—</span></div>
     <div class="summary-row"><span class="muted">تخليص جمركي / Customs</span><span class="muted">—</span></div>
-    <div class="summary-row total"><span>الإجمالي / Grand total</span><span>$1,675 USD</span></div>
+    <div class="summary-row total"><span>الإجمالي / Grand total</span><span>—</span></div>
     <div class="profit-row">
       <span class="muted">إجمالي الربح / Total profit (مخفي عن العميل)</span>
-      <span class="profit-positive">+$150 USD</span>
+      <span class="profit-positive">—</span>
     </div>
   </div>
 
@@ -532,26 +597,92 @@ td input[type="number"] {
 </div>
 
 <script>
-var lineVisible = true;
-function toggleLineVisibility() {
-  lineVisible = !lineVisible;
-  var toggle = document.getElementById('line-toggle');
-  var thumb = document.getElementById('line-thumb');
-  var label = document.getElementById('line-vis-label');
-  if (lineVisible) {
-    toggle.style.background = '#1D9E75';
-    thumb.style.right = '2px';
-    label.textContent = 'ظاهر للعميل';
-    label.style.color = '#1D9E75';
-  } else {
-    toggle.style.background = '#d0d0d0';
-    thumb.style.right = '20px';
-    label.textContent = 'مخفي عن العميل';
-    label.style.color = '#A32D2D';
-  }
+/* ── Ocean freight row profit ── */
+function recalcRow(key) {
+  var cost = parseFloat(document.getElementById('cost-' + key).value) || 0;
+  var selling = parseFloat(document.getElementById('sel-' + key).value) || 0;
+  var profit = selling - cost;
+  var el = document.getElementById('profit-' + key);
+  el.textContent = (profit >= 0 ? '+' : '') + profit.toLocaleString();
+  el.style.color = profit >= 0 ? '#1D9E75' : '#E24B4A';
+  el.className = '';
 }
 
-var customsExtras = [];
+/* ── Ocean extra charges ── */
+var oceanExtras = [];
+function calcOceanExtraProfit() {
+  var cost = parseFloat(document.getElementById('ocean-extra-cost').value) || 0;
+  var selling = parseFloat(document.getElementById('ocean-extra-selling').value) || 0;
+  var profit = selling - cost;
+  var el = document.getElementById('ocean-extra-profit-preview');
+  var curr = document.getElementById('ocean-extra-currency').value;
+  el.textContent = (profit >= 0 ? '+' : '') + profit.toLocaleString() + ' ' + curr;
+  el.style.color = profit >= 0 ? '#1D9E75' : '#E24B4A';
+}
+function addOceanExtra() {
+  var name = document.getElementById('ocean-extra-name').value.trim();
+  var cost = parseFloat(document.getElementById('ocean-extra-cost').value) || 0;
+  var selling = parseFloat(document.getElementById('ocean-extra-selling').value) || 0;
+  var curr = document.getElementById('ocean-extra-currency').value;
+  if (!name) return;
+  var profit = selling - cost;
+  oceanExtras.push({name, cost, selling, profit, curr});
+  renderOceanExtras();
+  document.getElementById('ocean-extra-name').value = '';
+  document.getElementById('ocean-extra-cost').value = '';
+  document.getElementById('ocean-extra-selling').value = '';
+  document.getElementById('ocean-extra-profit-preview').textContent = '$0';
+}
+function removeOceanExtra(idx) {
+  oceanExtras.splice(idx, 1);
+  renderOceanExtras();
+}
+function renderOceanExtras() {
+  var list = document.getElementById('ocean-extra-list');
+  if (!list || oceanExtras.length === 0) { if(list) list.innerHTML = ''; return; }
+  list.innerHTML = oceanExtras.map(function(e, i) {
+    var profColor = e.profit >= 0 ? '#1D9E75' : '#E24B4A';
+    return '<div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:#fff; border:1px solid #e8e8e8; border-radius:8px; margin-bottom:6px; font-size:13px; flex-wrap:wrap; gap:6px;">'
+      + '<span style="font-weight:600;">' + e.name + '</span>'
+      + '<div style="display:flex; align-items:center; gap:16px;">'
+      + '<span style="color:#888;">Cost: ' + e.cost.toLocaleString() + ' ' + e.curr + '</span>'
+      + '<span>Selling: ' + e.selling.toLocaleString() + ' ' + e.curr + '</span>'
+      + '<span style="font-weight:600; color:' + profColor + ';">' + (e.profit >= 0 ? '+' : '') + e.profit.toLocaleString() + ' ' + e.curr + '</span>'
+      + '<button onclick="removeOceanExtra(' + i + ')" style="font-size:11px; padding:2px 8px; border:1px solid #f0c0c0; border-radius:5px; background:#fff; cursor:pointer; color:#A32D2D;">حذف</button>'
+      + '</div></div>';
+  }).join('');
+}
+
+/* ── Inland manual entry ── */
+function openInlandQuick() {
+  document.getElementById('inland-empty').style.display = 'none';
+  document.getElementById('inland-quick-manual').style.display = 'block';
+}
+function closeInlandQuick() {
+  document.getElementById('inland-quick-manual').style.display = 'none';
+  document.getElementById('inland-empty').style.display = 'block';
+}
+function toggleIQGenerator(sel) {
+  var row = document.getElementById('iq-gen-row');
+  if (!row) return;
+  row.style.display = (sel.value === "40' Reefer") ? '' : 'none';
+}
+function calcIQProfit() {
+  var cost = parseFloat(document.getElementById('iq-cost').value) || 0;
+  var selling = parseFloat(document.getElementById('iq-selling').value) || 0;
+  var profit = selling - cost;
+  var el = document.getElementById('iq-profit');
+  el.textContent = (profit >= 0 ? '+' : '') + profit.toLocaleString();
+  el.style.color = profit >= 0 ? '#1D9E75' : '#E24B4A';
+  var genCost = parseFloat(document.getElementById('iq-gen-cost').value) || 0;
+  var genSelling = parseFloat(document.getElementById('iq-gen-selling').value) || 0;
+  var genProfit = genSelling - genCost;
+  var genEl = document.getElementById('iq-gen-profit');
+  genEl.textContent = (genProfit >= 0 ? '+' : '') + genProfit.toLocaleString();
+  genEl.style.color = genProfit >= 0 ? '#1D9E75' : '#E24B4A';
+}
+
+/* ── Customs ── */
 function addCustoms() {
   document.getElementById('customs-empty').style.display = 'none';
   document.getElementById('customs-selected').style.display = 'block';
@@ -560,6 +691,7 @@ function removeCustoms() {
   document.getElementById('customs-selected').style.display = 'none';
   document.getElementById('customs-empty').style.display = 'block';
 }
+var customsExtras = [];
 function addCustomsExtra() {
   var name = document.getElementById('customs-extra-name').value.trim();
   var amount = parseFloat(document.getElementById('customs-extra-amount').value);
@@ -587,61 +719,7 @@ function renderCustomsExtras() {
   }).join('');
 }
 
-function openInlandSearch() {
-  document.getElementById('inland-empty').style.display = 'none';
-  document.getElementById('inland-selected').style.display = 'none';
-  document.getElementById('inland-search').style.display = 'block';
-}
-function closeInlandSearch() {
-  document.getElementById('inland-search').style.display = 'none';
-  var sel = document.getElementById('inland-selected');
-  if (sel.style.display === 'none' || sel.style.display === '') {
-    document.getElementById('inland-empty').style.display = 'block';
-  } else {
-    sel.style.display = 'block';
-  }
-}
-var inlandCost = 0, inlandCurrency = '', inlandGenCost = 0, inlandGenCurrency = '';
-function selectInland(route, vehicle, cost, currency, genCost, genCurrency) {
-  inlandCost = cost; inlandCurrency = currency;
-  inlandGenCost = genCost; inlandGenCurrency = genCurrency;
-  document.getElementById('inland-route-label').textContent = route;
-  document.getElementById('inland-vehicle-label').textContent = vehicle;
-  document.getElementById('inland-cost-display').textContent = cost.toLocaleString() + ' ' + currency;
-  document.getElementById('inland-currency-display').textContent = currency;
-  var selling = document.getElementById('inland-selling');
-  selling.value = cost;
-  document.getElementById('inland-profit-display').textContent = '0';
-  var genRow = document.getElementById('inland-gen-row');
-  if (genCost > 0) {
-    genRow.style.display = '';
-    document.getElementById('inland-gen-cost-display').textContent = genCost.toLocaleString() + ' ' + genCurrency;
-    document.getElementById('inland-gen-currency-display').textContent = genCurrency;
-    document.getElementById('inland-gen-selling').value = genCost;
-    document.getElementById('inland-gen-profit-display').textContent = '0';
-    inlandGenCurrency = genCurrency;
-  } else {
-    genRow.style.display = 'none';
-  }
-  document.getElementById('inland-search').style.display = 'none';
-  document.getElementById('inland-empty').style.display = 'none';
-  document.getElementById('inland-selected').style.display = 'block';
-}
-function calcInlandProfit() {
-  var selling = parseFloat(document.getElementById('inland-selling').value) || 0;
-  var profit = selling - inlandCost;
-  var profitEl = document.getElementById('inland-profit-display');
-  profitEl.textContent = (profit >= 0 ? '+' : '') + profit.toLocaleString() + ' ' + inlandCurrency;
-  profitEl.style.color = profit >= 0 ? '#1D9E75' : '#E24B4A';
-  if (inlandGenCost > 0) {
-    var genSelling = parseFloat(document.getElementById('inland-gen-selling').value) || 0;
-    var genProfit = genSelling - inlandGenCost;
-    var genProfitEl = document.getElementById('inland-gen-profit-display');
-    genProfitEl.textContent = (genProfit >= 0 ? '+' : '') + genProfit.toLocaleString() + ' ' + inlandGenCurrency;
-    genProfitEl.style.color = genProfit >= 0 ? '#1D9E75' : '#E24B4A';
-  }
-}
-
+/* ── Send button gate ── */
 function toggleSendBtns(checkbox) {
   const btns = document.querySelectorAll('.btn-send');
   btns.forEach(btn => {

@@ -237,27 +237,31 @@ export default function QuotationTable({ refreshKey }) {
         endActions={
           <>
             {!isPricingSalesViewOnly ? (
-              <div className="clients-filters__actions">
-                <div className="clients-filters-toolbar__icon-cluster">
-                  <button
-                    type="button"
-                    className="clients-filters__btn-icon clients-filters__btn-icon--primary"
-                    onClick={openCreateQuotation}
-                    aria-label={t('pricing.createQuotation', 'Create Quotation')}
-                    title={t('pricing.createQuotation', 'Create Quotation')}
-                  >
-                    <Plus className="clients-filters__btn-icon-svg" aria-hidden />
-                  </button>
-                  <button
-                    type="button"
-                    className="clients-filters__btn-icon"
-                    onClick={openQuickQuotation}
-                    aria-label={t('pricing.quickQuotationMode', 'Quick Quotation Mode')}
-                    title={t('pricing.quickQuotationMode', 'Quick Quotation Mode')}
-                  >
-                    <Zap className="clients-filters__btn-icon-svg" aria-hidden />
-                  </button>
-                </div>
+              <div className="clients-filters__actions quotation-toolbar-actions">
+                <button
+                  type="button"
+                  className="clients-filters__btn-icon clients-filters__btn-icon--primary quotation-toolbar-actions__btn quotation-toolbar-actions__btn--primary"
+                  onClick={openCreateQuotation}
+                  aria-label={t('pricing.createQuotation', 'إنشاء عرض سعر')}
+                  title={t('pricing.createQuotation', 'إنشاء عرض سعر')}
+                >
+                  <Plus className="clients-filters__btn-icon-svg quotation-toolbar-actions__icon" aria-hidden />
+                  <span className="quotation-toolbar-actions__label">
+                    {t('pricing.createQuotation', 'إنشاء عرض سعر')}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="clients-filters__btn-icon quotation-toolbar-actions__btn quotation-toolbar-actions__btn--secondary"
+                  onClick={openQuickQuotation}
+                  aria-label={t('pricing.createQuickQuotation', 'إنشاء عرض سريع')}
+                  title={t('pricing.createQuickQuotation', 'إنشاء عرض سريع')}
+                >
+                  <Zap className="clients-filters__btn-icon-svg quotation-toolbar-actions__icon" aria-hidden />
+                  <span className="quotation-toolbar-actions__label">
+                    {t('pricing.createQuickQuotation', 'إنشاء عرض سريع')}
+                  </span>
+                </button>
               </div>
             ) : null}
           </>

@@ -291,4 +291,77 @@ class PricingQuoteApiTest extends TestCase
         $create->assertJsonPath('data.quick_mode', true);
         $create->assertJsonPath('data.is_quick_quotation', true);
     }
+
+    public function test_quick_quotation_strips_offer_and_snapshot_even_if_offer_id_sent(): void
+    {
+        $user = $this->actingAsPricingUser();
+        $client = Client::factory()->create();
+        $offer = PricingOffer::factory()->create([
+            'pol' => 'Sokhna',
+            'pod' => 'Jeddah',
+            'shipping_line' => 'MSC',
+        ]);
+
+        $create = $this->actingAs($user, 'sanctum')->postJson('/api/v1/pricing/quotes', [
+            'client_id' => $client->id,
+            'quick_mode' => true,
+            'pricing_offer_id' => $offer->id,
+            'origin_rate_snapshot_id' => null,
+            'pol' => 'Sokhna',
+            'pod' => 'Jeddah',
+            'shipping_line' => 'MSC',
+            'container_type' => '40HQ Dry',
+            'items' => [
+                ['code' => 'OF', 'name' => 'Ocean Freight', 'amount' => 900, 'currency' => 'USD'],
+            ],
+        ]);
+
+        $create->assertCreated();
+        $id = (int) $create->json('data.id');
+        $row = PricingQuote::query()->find($id);
+        $this->assertNotNull($row);
+        $this->assertTrue($row->quick_mode);
+        $this->assertNull($row->pricing_offer_id);
+        $this->assertNull($row->origin_rate_snapshot_id);
+    }
+
+    public function test_standard_quote_stores_cost_visibility_and_pricing_team_flag(): void
+    {
+        $user = $this->actingAsPricingUser();
+        $client = Client::factory()->create();
+        $offer = PricingOffer::factory()->create([
+            'pol' => 'Alexandria',
+            'pod' => 'Hamburg',
+            'shipping_line' => 'MSC',
+        ]);
+
+        $create = $this->actingAs($user, 'sanctum')->postJson('/api/v1/pricing/quotes', [
+            'client_id' => $client->id,
+            'pricing_offer_id' => $offer->id,
+            'pol' => 'Alexandria',
+            'pod' => 'Hamburg',
+            'shipping_line' => 'MSC',
+            'container_type' => '40HQ Dry',
+            'qty' => 1,
+            'quick_mode' => false,
+            'pricing_team_confirmed' => true,
+            'items' => [
+                [
+                    'code' => 'OF',
+                    'name' => 'Ocean Freight',
+                    'description' => null,
+                    'amount' => 1350,
+                    'currency' => 'USD',
+                    'cost_amount' => 1200,
+                    'visible_to_client' => true,
+                ],
+            ],
+        ]);
+
+        $create->assertCreated();
+        $create->assertJsonPath('data.pricing_team_confirmed', true);
+        $create->assertJsonPath('data.items.0.amount', 1350);
+        $create->assertJsonPath('data.items.0.cost_amount', 1200);
+        $create->assertJsonPath('data.items.0.visible_to_client', true);
+    }
 }

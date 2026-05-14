@@ -38,6 +38,7 @@ class PricingQuote extends Model
         'valid_to',
         'notes',
         'official_receipts_note',
+        'pricing_team_confirmed',
         'status',
     ];
 
@@ -48,6 +49,7 @@ class PricingQuote extends Model
         'valid_from' => 'date',
         'valid_to' => 'date',
         'quick_mode' => 'boolean',
+        'pricing_team_confirmed' => 'boolean',
         'show_carrier_on_pdf' => 'boolean',
         'container_spec' => 'array',
         'free_time_data' => 'array',

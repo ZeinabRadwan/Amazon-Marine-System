@@ -96,13 +96,20 @@ function formatOfferValidity(offer) {
 
 function primaryInlandCostFromOffer(offer) {
   const p = offer?.pricing || {}
+  let truck = { amount: 0, currency: 'EGP', key: null }
   for (const k of INLAND_OFFER_KEYS) {
     const row = p[k]
     if (row != null && row.price != null && row.price !== '') {
-      return { amount: Number(row.price) || 0, currency: row.currency || 'EGP', key: k }
+      truck = { amount: Number(row.price) || 0, currency: row.currency || 'EGP', key: k }
+      break
     }
   }
-  return { amount: 0, currency: 'EGP', key: null }
+  const gen = p.generator
+  const generator =
+    gen && gen.price != null && gen.price !== ''
+      ? { amount: Number(gen.price) || 0, currency: gen.currency || truck.currency || 'EGP' }
+      : null
+  return { ...truck, generator }
 }
 
 function parseNum(v) {
@@ -240,6 +247,28 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
     ]
   }, [quoteCodeLabel])
 
+  const makeQuickOceanLines = useCallback(() => {
+    const ts = Date.now()
+    const row = (code, name, included = true) => ({
+      sourceKey: `q-${ts}-${code}`,
+      code,
+      name,
+      description: '',
+      cost_amount: '',
+      selling_amount: '',
+      currency: 'USD',
+      included,
+      quickCore: true,
+    })
+    return [
+      row('OF', t('pricing.quickOceanOF', 'Ocean freight (OF)'), true),
+      row('THC', quoteCodeLabel('THC'), true),
+      row('BL', t('pricing.quickOceanBL', 'B/L fee'), true),
+      row('TELEX', quoteCodeLabel('TELEX'), true),
+      row('ISPS', quoteCodeLabel('ISPS'), false),
+    ]
+  }, [t, quoteCodeLabel])
+
   const { user } = useAuthAccess()
   const { create, loading, error } = useMutateQuote()
 
@@ -269,7 +298,15 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
   const [inlandSelling, setInlandSelling] = useState('')
   const [inlandCurrency, setInlandCurrency] = useState('EGP')
 
+  const [inlandGenCost, setInlandGenCost] = useState('')
+  const [inlandGenSelling, setInlandGenSelling] = useState('')
+  const [inlandGenCurrency, setInlandGenCurrency] = useState('EGP')
+
   const [customsEnabled, setCustomsEnabled] = useState(false)
+  const [customsExtras, setCustomsExtras] = useState([])
+  const [customsExtraName, setCustomsExtraName] = useState('')
+  const [customsExtraAmount, setCustomsExtraAmount] = useState('')
+  const [customsExtraCurrency, setCustomsExtraCurrency] = useState('EGP')
   const [customsCertSelling, setCustomsCertSelling] = useState(String(ADMIN_CUSTOMS_CERT_AMOUNT))
   const [customsCertCurrency, setCustomsCertCurrency] = useState('USD')
   const [officialReceiptsNote, setOfficialReceiptsNote] = useState('')
@@ -279,6 +316,12 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
 
   const [showCarrierOnPdf, setShowCarrierOnPdf] = useState(true)
   const [quickModeReason, setQuickModeReason] = useState('')
+  const [pricingTeamConfirmed, setPricingTeamConfirmed] = useState(false)
+
+  const [quickInlandPort, setQuickInlandPort] = useState('')
+  const [quickInlandGov, setQuickInlandGov] = useState('')
+  const [quickInlandZone, setQuickInlandZone] = useState('')
+  const [quickInlandVehicle, setQuickInlandVehicle] = useState('')
 
   const [clients, setClients] = useState([])
   const [clientQuery, setClientQuery] = useState('')
@@ -335,15 +378,27 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
     if (!isOpen) return
     setOfficialReceiptsNote('')
     setQuickModeReason('')
+    setPricingTeamConfirmed(false)
     setInlandEnabled(false)
     setInlandOfferId('')
     setInlandCost('')
     setInlandSelling('')
     setInlandCurrency('EGP')
+    setInlandGenCost('')
+    setInlandGenSelling('')
+    setInlandGenCurrency('EGP')
     setCustomsEnabled(false)
+    setCustomsExtras([])
+    setCustomsExtraName('')
+    setCustomsExtraAmount('')
+    setCustomsExtraCurrency('EGP')
     setCustomsCertSelling(String(ADMIN_CUSTOMS_CERT_AMOUNT))
     setCustomsCertCurrency('USD')
     setShowCarrierOnPdf(true)
+    setQuickInlandPort('')
+    setQuickInlandGov('')
+    setQuickInlandZone('')
+    setQuickInlandVehicle('')
     const mode = initialOffer ? 'pricing' : initialQuickMode ? 'quick' : 'manual'
     if (mode === 'pricing' && initialOffer) {
       setHandlingFees('')
@@ -367,9 +422,9 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
         notes: '',
         sailing_dates: [],
       })
-      setOceanLines(makeStarterOceanLines())
+      setOceanLines(mode === 'quick' ? makeQuickOceanLines() : makeStarterOceanLines())
     }
-  }, [isOpen, initialOffer, initialQuickMode, makeStarterOceanLines, applySeaOffer])
+  }, [isOpen, initialOffer, initialQuickMode, makeStarterOceanLines, makeQuickOceanLines, applySeaOffer])
 
   const selectedSeaOffer = useMemo(() => {
     if (!form.pricing_offer_id) return null
@@ -386,10 +441,19 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
 
   useEffect(() => {
     if (!inlandEnabled || !selectedInlandOffer) return
-    const { amount, currency } = primaryInlandCostFromOffer(selectedInlandOffer)
-    setInlandCost(String(amount))
-    setInlandSelling(String(amount))
-    setInlandCurrency(currency)
+    const row = primaryInlandCostFromOffer(selectedInlandOffer)
+    setInlandCost(String(row.amount))
+    setInlandSelling(String(row.amount))
+    setInlandCurrency(row.currency)
+    if (row.generator && row.generator.amount > 0) {
+      setInlandGenCost(String(row.generator.amount))
+      setInlandGenSelling(String(row.generator.amount))
+      setInlandGenCurrency(row.generator.currency || row.currency)
+    } else {
+      setInlandGenCost('')
+      setInlandGenSelling('')
+      setInlandGenCurrency(row.currency || 'EGP')
+    }
   }, [inlandEnabled, selectedInlandOffer])
 
   const setField = (k, v) => setForm((p) => ({ ...p, [k]: v }))
@@ -414,32 +478,57 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
         selling_amount: '',
         currency: 'USD',
         included: true,
+        quickCore: false,
       },
     ])
   }
 
   const removeOceanLine = (idx) => {
-    setOceanLines((prev) => (prev.length <= 1 ? prev : prev.filter((_, i) => i !== idx)))
+    setOceanLines((prev) => {
+      if (prev[idx]?.quickCore) return prev
+      return prev.length <= 1 ? prev : prev.filter((_, i) => i !== idx)
+    })
   }
 
   const isPricing = entryMode === 'pricing'
+  const isQuick = entryMode === 'quick'
   const isRouteLocked = isPricing && Boolean(form.pricing_offer_id && (selectedSeaOffer || initialOffer))
   const routeDisplayOffer = selectedSeaOffer || (initialOffer && String(initialOffer.id) === String(form.pricing_offer_id) ? initialOffer : null)
 
   const oceanSellingByCurrency = useMemo(() => sumLineSellingByCurrency(oceanLines), [oceanLines])
 
+  const customsExtrasByCurrency = useMemo(() => {
+    const m = {}
+    if (!customsEnabled) return m
+    ;(customsExtras || []).forEach((row) => {
+      const n = parseNum(row.amount)
+      if (n <= 0) return
+      const c = row.currency || 'EGP'
+      m[c] = (m[c] || 0) + n
+    })
+    return m
+  }, [customsEnabled, customsExtras])
+
   const customsSellingByCurrency = useMemo(() => {
     if (!customsEnabled) return {}
-    if (isPricing) {
-      return { [ADMIN_CUSTOMS_CERT_CURRENCY]: ADMIN_CUSTOMS_CERT_AMOUNT }
-    }
-    const n = parseNum(customsCertSelling)
-    if (!n) return {}
-    const c = customsCertCurrency || 'USD'
-    return { [c]: n }
-  }, [customsEnabled, isPricing, customsCertSelling, customsCertCurrency])
+    const base =
+      isPricing
+        ? { [ADMIN_CUSTOMS_CERT_CURRENCY]: ADMIN_CUSTOMS_CERT_AMOUNT }
+        : (() => {
+            const n = parseNum(customsCertSelling)
+            if (!n) return {}
+            const c = customsCertCurrency || 'USD'
+            return { [c]: n }
+          })()
+    return mergeCurrencyAmountMaps(base, customsExtrasByCurrency)
+  }, [customsEnabled, isPricing, customsCertSelling, customsCertCurrency, customsExtrasByCurrency])
 
   const inlandProfit = useMemo(() => parseNum(inlandSelling) - parseNum(inlandCost), [inlandSelling, inlandCost])
+
+  const inlandGenProfit = useMemo(
+    () => parseNum(inlandGenSelling) - parseNum(inlandGenCost),
+    [inlandGenSelling, inlandGenCost]
+  )
 
   const pricingLinesProfitByCurrency = useMemo(() => sumProfitsByCurrency(oceanLines), [oceanLines])
 
@@ -449,8 +538,32 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
       const c = inlandCurrency || 'EGP'
       map[c] = (map[c] || 0) + inlandProfit
     }
+    if (inlandEnabled && parseNum(inlandGenSelling) > 0) {
+      const c = inlandGenCurrency || inlandCurrency || 'EGP'
+      map[c] = (map[c] || 0) + inlandGenProfit
+    }
+    if (customsEnabled && customsExtras.length) {
+      customsExtras.forEach((row) => {
+        const n = parseNum(row.amount)
+        if (n <= 0) return
+        const c = row.currency || 'EGP'
+        map[c] = (map[c] || 0) + n
+      })
+    }
     return map
-  }, [pricingLinesProfitByCurrency, inlandEnabled, inlandCurrency, inlandProfit, inlandSelling])
+  }, [
+    pricingLinesProfitByCurrency,
+    inlandEnabled,
+    inlandCurrency,
+    inlandProfit,
+    inlandSelling,
+    inlandGenSelling,
+    inlandGenCost,
+    inlandGenCurrency,
+    inlandGenProfit,
+    customsEnabled,
+    customsExtras,
+  ])
 
   const handlingTotal = useMemo(() => {
     if (isPricing) return ADMIN_HANDLING_FEE_AMOUNT
@@ -459,24 +572,31 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
 
   const handlingCurrencyResolved = isPricing ? ADMIN_HANDLING_FEE_CURRENCY : handlingCurrency || 'USD'
 
-  const inlandSellingTotal = useMemo(() => {
-    if (!inlandEnabled) return 0
-    return parseNum(inlandSelling)
-  }, [inlandEnabled, inlandSelling])
-
   const grandSellingByCurrency = useMemo(() => {
     const inlandPart =
       !inlandEnabled || parseNum(inlandSelling) === 0
         ? {}
         : { [inlandCurrency || 'EGP']: parseNum(inlandSelling) }
+    const inlandGenPart =
+      !inlandEnabled || parseNum(inlandGenSelling) <= 0
+        ? {}
+        : { [inlandGenCurrency || inlandCurrency || 'EGP']: parseNum(inlandGenSelling) }
     const handlingPart = handlingTotal > 0 ? { [handlingCurrencyResolved]: handlingTotal } : {}
-    return mergeCurrencyAmountMaps(oceanSellingByCurrency, customsSellingByCurrency, inlandPart, handlingPart)
+    return mergeCurrencyAmountMaps(
+      oceanSellingByCurrency,
+      customsSellingByCurrency,
+      inlandPart,
+      inlandGenPart,
+      handlingPart
+    )
   }, [
     oceanSellingByCurrency,
     customsSellingByCurrency,
     inlandEnabled,
     inlandSelling,
     inlandCurrency,
+    inlandGenSelling,
+    inlandGenCurrency,
     handlingTotal,
     handlingCurrencyResolved,
   ])
@@ -489,25 +609,40 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
   const handleSubmit = async (e) => {
     e.preventDefault()
     const salesUserId = user?.id ? Number(user.id) : null
-    if (inlandEnabled && !inlandOfferId) return
-    if ((entryMode === 'quick' || entryMode === 'manual') && !String(form.valid_to || '').trim()) return
+    const isQuickSubmit = entryMode === 'quick'
+    if (inlandEnabled && !isQuickSubmit && !inlandOfferId) return
+    if (entryMode === 'manual' && !String(form.valid_to || '').trim()) return
+    if (isQuickSubmit && !pricingTeamConfirmed) return
 
     const items = []
+
+    const costAmountForLine = (line) => {
+      const c = parseNum(line.cost_amount)
+      return c > 0 ? c : null
+    }
+
+    const quickInlandDescription = () => {
+      const parts = ['quick_inland_manual']
+      if (quickInlandPort.trim()) parts.push(`port=${quickInlandPort.trim()}`)
+      if (quickInlandGov.trim()) parts.push(`gov=${quickInlandGov.trim()}`)
+      if (quickInlandZone.trim()) parts.push(`zone=${quickInlandZone.trim()}`)
+      if (quickInlandVehicle.trim()) parts.push(`vehicle=${quickInlandVehicle.trim()}`)
+      return parts.length > 1 ? parts.join('|') : null
+    }
 
     oceanLines.forEach((line) => {
       if (line.included === false) return
       const sell = parseNum(line.selling_amount)
       if (sell <= 0 || !line.code) return
-      const costPart =
-        !isPricing && parseNum(line.cost_amount) > 0
-          ? `Cost: ${line.cost_amount} ${line.currency || 'USD'}`
-          : line.description || null
+      const descTrim = (line.description || '').trim()
       items.push({
         code: line.code,
         name: line.code === 'OTHER' ? (line.name || '').trim() || quoteCodeLabel('OTHER') : line.name || quoteCodeLabel(line.code),
-        description: isPricing ? line.description || null : costPart,
+        description: descTrim || null,
         amount: sell,
         currency: line.currency || 'USD',
+        cost_amount: costAmountForLine(line),
+        visible_to_client: true,
       })
     })
 
@@ -515,9 +650,24 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
       items.push({
         code: 'INLAND',
         name: t('pricing.inlandTransport', 'Inland Transport'),
-        description: inlandOfferId ? `Ref inland offer #${inlandOfferId}; cost ${inlandCost} ${inlandCurrency}` : null,
+        description: isQuickSubmit ? quickInlandDescription() : inlandOfferId ? `inland_offer_id=${inlandOfferId}` : null,
         amount: parseNum(inlandSelling),
         currency: inlandCurrency || 'EGP',
+        cost_amount: parseNum(inlandCost) > 0 ? parseNum(inlandCost) : null,
+        visible_to_client: true,
+      })
+    }
+
+    if (inlandEnabled && parseNum(inlandGenSelling) > 0) {
+      const baseDesc = isQuickSubmit ? quickInlandDescription() : inlandOfferId ? `inland_offer_id=${inlandOfferId}` : null
+      items.push({
+        code: 'INLAND',
+        name: t('pricing.inlandGeneratorLine', 'Generator (inland)'),
+        description: baseDesc ? `${baseDesc};generator` : 'generator',
+        amount: parseNum(inlandGenSelling),
+        currency: inlandGenCurrency || inlandCurrency || 'EGP',
+        cost_amount: parseNum(inlandGenCost) > 0 ? parseNum(inlandGenCost) : null,
+        visible_to_client: true,
       })
     }
 
@@ -531,9 +681,26 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
           description: null,
           amount: amt,
           currency: cur,
+          cost_amount: isPricing ? amt : null,
+          visible_to_client: true,
         })
       }
     }
+
+    customsExtras.forEach((row) => {
+      const amt = parseNum(row.amount)
+      const label = (row.name || '').trim()
+      if (!customsEnabled || amt <= 0 || !label) return
+      items.push({
+        code: 'OTHER',
+        name: label,
+        description: null,
+        amount: amt,
+        currency: row.currency || 'EGP',
+        cost_amount: null,
+        visible_to_client: true,
+      })
+    })
 
     if (handlingTotal > 0) {
       items.push({
@@ -542,6 +709,8 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
         description: null,
         amount: handlingTotal,
         currency: handlingCurrencyResolved,
+        cost_amount: null,
+        visible_to_client: true,
       })
     }
 
@@ -551,10 +720,10 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
       ...form,
       client_id: form.client_id ? Number(form.client_id) : null,
       sales_user_id: salesUserId,
-      pricing_offer_id: form.pricing_offer_id ? Number(form.pricing_offer_id) : null,
-      quick_mode: entryMode === 'quick',
-      is_quick_quotation: entryMode === 'quick',
-      quick_mode_reason: entryMode === 'quick' ? (quickModeReason.trim() || 'Quick Quotation') : null,
+      pricing_offer_id: isQuickSubmit ? null : form.pricing_offer_id ? Number(form.pricing_offer_id) : null,
+      quick_mode: isQuickSubmit,
+      is_quick_quotation: isQuickSubmit,
+      quick_mode_reason: isQuickSubmit ? (quickModeReason.trim() || 'Quick Quotation') : null,
       qty: form.qty ? Number(form.qty) : null,
       sailing_dates: (form.sailing_dates || []).filter(Boolean),
       schedule_type: 'fixed',
@@ -566,6 +735,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
       free_time_data: null,
       show_carrier_on_pdf: showCarrierOnPdf,
       official_receipts_note: officialReceiptsNote.trim() || null,
+      pricing_team_confirmed: pricingTeamConfirmed,
       items,
     }
 
@@ -580,11 +750,17 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
 
   if (!isOpen) return null
 
+  const showQuickInlandGenerator =
+    isQuick && inlandEnabled && String(form.container_type || '').toLowerCase().includes('reefer')
+
   const headerSub =
     entryMode === 'pricing'
       ? t('pricing.createQuoteFromPricingSub', 'Linked price sheet — route read-only; choose charges to include.')
       : entryMode === 'quick'
-        ? t('pricing.createQuoteQuickSub', 'Quick entry — fill route, validity, and lines.')
+        ? t(
+            'pricing.createQuoteQuickSub',
+            'Manual numbers only — confirm with Pricing Team before saving. Valid-to date is optional.'
+          )
         : t('pricing.createQuoteManualSub', 'Manual entry — optional price sheet; full route and pricing control.')
 
   const seaSheetSubtitle = t('pricing.quoteSourceSeaOfferSubUnified', 'Optional unless opened from a price sheet.')
@@ -593,14 +769,21 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-5xl max-h-[92vh] overflow-hidden flex flex-col">
         <div className="px-6 py-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-700 shrink-0">
-          <div>
-            <h2 className="text-xl font-bold">{t('pricing.createQuote', 'Create Quotation')}</h2>
+          <div className="min-w-0 flex-1 pr-3">
+            <div className="flex flex-wrap items-center gap-2 gap-y-1">
+              <h2 className="text-xl font-bold">
+                {isQuick ? t('pricing.createQuickQuotation', 'Quick quotation') : t('pricing.createQuote', 'Create Quotation')}
+              </h2>
+              {isQuick ? (
+                <span className="pricing-quick-badge shrink-0">{t('pricing.quickModeBadgeShort', 'Quick Mode')}</span>
+              ) : null}
+            </div>
             <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{headerSub}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded-full transition-colors"
+            className="p-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded-full transition-colors shrink-0"
           >
             <X className="h-5 w-5" />
           </button>
@@ -612,6 +795,15 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
           ) : null}
 
           <form id="quoteForm" onSubmit={handleSubmit} className="shipment-fin-panel shipment-fin-panel--enter space-y-6">
+            {isQuick ? (
+              <div className="pricing-quick-banner" role="status">
+                <strong>{t('pricing.quickQuotation', 'Quick Quotation')}:</strong>{' '}
+                {t(
+                  'pricing.quickQuotationBanner',
+                  'Rates are not linked to a CRM price sheet — enter all figures manually. This quotation is stored as a Quick Quotation only.'
+                )}
+              </div>
+            ) : null}
             <QuoteFinCard
               icon={User}
               title={t('pricing.quoteSectionClient', 'Client info')}
@@ -649,43 +841,45 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
               </div>
             </QuoteFinCard>
 
-            <QuoteFinCard
-              icon={Ship}
-              title={t('pricing.quoteSourceSeaOffer', 'Sea price sheet')}
-              subtitle={isPricing ? t('pricing.quoteSourceLockedSub', 'Locked to this price sheet.') : seaSheetSubtitle}
-            >
-              <label className="text-sm font-bold text-gray-700 dark:text-gray-300 block mb-2">{t('pricing.offerSeaRate')}</label>
-              <select
-                value={form.pricing_offer_id}
-                disabled={isPricing}
-                onChange={(e) => {
-                  const id = e.target.value
-                  setField('pricing_offer_id', id)
-                  if (!id) {
-                    setOceanLines(makeStarterOceanLines())
-                    return
-                  }
-                  const offer = seaOffers.find((o) => String(o.id) === String(id))
-                  if (offer) applySeaOffer(offer)
-                }}
-                className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none disabled:opacity-70"
+            {!isQuick ? (
+              <QuoteFinCard
+                icon={Ship}
+                title={t('pricing.quoteSourceSeaOffer', 'Sea price sheet')}
+                subtitle={isPricing ? t('pricing.quoteSourceLockedSub', 'Locked to this price sheet.') : seaSheetSubtitle}
               >
-                {!isPricing ? <option value="">{t('pricing.quoteSeaSheetNone', 'None (manual route & pricing)')}</option> : null}
-                {initialOffer &&
-                isPricing &&
-                !seaOffers.some((o) => String(o.id) === String(initialOffer.id)) ? (
-                  <option value={initialOffer.id}>
-                    {initialOffer.pol || '—'} → {initialOffer.pod || initialOffer.region || '—'} · {initialOffer.shipping_line || '—'} (
-                    {inferContainerFromOffer(initialOffer)})
-                  </option>
-                ) : null}
-                {seaOffers.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.pol || '—'} → {o.pod || o.region || '—'} · {o.shipping_line || '—'} ({inferContainerFromOffer(o)})
-                  </option>
-                ))}
-              </select>
-            </QuoteFinCard>
+                <label className="text-sm font-bold text-gray-700 dark:text-gray-300 block mb-2">{t('pricing.offerSeaRate')}</label>
+                <select
+                  value={form.pricing_offer_id}
+                  disabled={isPricing}
+                  onChange={(e) => {
+                    const id = e.target.value
+                    setField('pricing_offer_id', id)
+                    if (!id) {
+                      setOceanLines(makeStarterOceanLines())
+                      return
+                    }
+                    const offer = seaOffers.find((o) => String(o.id) === String(id))
+                    if (offer) applySeaOffer(offer)
+                  }}
+                  className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none disabled:opacity-70"
+                >
+                  {!isPricing ? <option value="">{t('pricing.quoteSeaSheetNone', 'None (manual route & pricing)')}</option> : null}
+                  {initialOffer &&
+                  isPricing &&
+                  !seaOffers.some((o) => String(o.id) === String(initialOffer.id)) ? (
+                    <option value={initialOffer.id}>
+                      {initialOffer.pol || '—'} → {initialOffer.pod || initialOffer.region || '—'} · {initialOffer.shipping_line || '—'} (
+                      {inferContainerFromOffer(initialOffer)})
+                    </option>
+                  ) : null}
+                  {seaOffers.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.pol || '—'} → {o.pod || o.region || '—'} · {o.shipping_line || '—'} ({inferContainerFromOffer(o)})
+                    </option>
+                  ))}
+                </select>
+              </QuoteFinCard>
+            ) : null}
 
             <QuoteFinCard
               icon={MapPin}
@@ -693,7 +887,9 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
               subtitle={
                 isRouteLocked
                   ? t('pricing.quoteRouteReadOnly', 'Read-only from price sheet.')
-                  : t('pricing.quoteRouteEditable', 'Edit shipment route details.')
+                  : isQuick
+                    ? t('pricing.quickRouteManualLabel', 'Enter route details manually')
+                    : t('pricing.quoteRouteEditable', 'Edit shipment route details.')
               }
               headMeta={
                 <div className="flex items-center gap-2">
@@ -734,47 +930,65 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.pol', 'POL')}</label>
-                    <PortNameAsyncSelect
-                      value={form.pol}
-                      onChange={(v) => setField('pol', v)}
-                      placeholder={t('pricing.filterAllPol', 'POL')}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.podShort', 'POD')}</label>
-                    <PortNameAsyncSelect
-                      value={form.pod}
-                      onChange={(v) => setField('pod', v)}
-                      placeholder={t('pricing.filterAllPod', 'POD')}
-                    />
-                  </div>
-                  <div className="space-y-1 md:col-span-2">
-                    <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.shippingLine', 'Carrier')}</label>
-                    <ShippingLineNameAsyncSelect
-                      serviceScope="ocean"
-                      value={form.shipping_line}
-                      onChange={(v) => setField('shipping_line', v)}
-                      placeholder={t('pricing.filterAllShippingLines', 'Carrier')}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.containerType', 'Container')}</label>
-                    <input
-                      value={form.container_type}
-                      onChange={(e) => setField('container_type', e.target.value)}
-                      className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.transitTime', 'Transit')}</label>
-                    <input
-                      value={form.transit_time}
-                      onChange={(e) => setField('transit_time', e.target.value)}
-                      className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
-                    />
+                <div className={isQuick ? 'pricing-quick-section' : ''}>
+                  {isQuick ? (
+                    <div className="pricing-quick-section-label">{t('pricing.quickRouteManualLabel', 'Enter route details manually')}</div>
+                  ) : null}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.pol', 'POL')}</label>
+                      <PortNameAsyncSelect
+                        value={form.pol}
+                        onChange={(v) => setField('pol', v)}
+                        placeholder={t('pricing.filterAllPol', 'POL')}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.podShort', 'POD')}</label>
+                      <PortNameAsyncSelect
+                        value={form.pod}
+                        onChange={(v) => setField('pod', v)}
+                        placeholder={t('pricing.filterAllPod', 'POD')}
+                      />
+                    </div>
+                    <div className="space-y-1 md:col-span-2">
+                      <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.shippingLine', 'Carrier')}</label>
+                      <ShippingLineNameAsyncSelect
+                        serviceScope="ocean"
+                        value={form.shipping_line}
+                        onChange={(v) => setField('shipping_line', v)}
+                        placeholder={t('pricing.filterAllShippingLines', 'Carrier')}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.containerType', 'Container')}</label>
+                      <input
+                        value={form.container_type}
+                        onChange={(e) => setField('container_type', e.target.value)}
+                        className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.transitTime', 'Transit')}</label>
+                      <input
+                        value={form.transit_time}
+                        onChange={(e) => setField('transit_time', e.target.value)}
+                        className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+                      />
+                    </div>
+                    {isQuick ? (
+                      <div className="space-y-1 md:col-span-2">
+                        <label className="text-sm font-bold text-gray-700 dark:text-gray-300">
+                          {t('pricing.quickSailingDate', 'Sailing date')}
+                        </label>
+                        <input
+                          type="date"
+                          className="w-full max-w-xs px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+                          value={form.sailing_dates?.[0] || ''}
+                          onChange={(e) => setField('sailing_dates', e.target.value ? [e.target.value] : [])}
+                        />
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               )}
@@ -786,7 +1000,9 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
               subtitle={
                 isPricing
                   ? t('pricing.quotePricingSelectableSub', 'Include or exclude each charge; adjust selling where needed.')
-                  : t('pricing.quotePricingEditableSub', 'Add lines, set cost and selling, and include or exclude each charge.')
+                  : isQuick
+                    ? t('pricing.quickOceanManualHint', 'Enter cost and selling for each line manually.')
+                    : t('pricing.quotePricingEditableSub', 'Add lines, set cost and selling, and include or exclude each charge.')
               }
             >
               {oceanLines.length === 0 ? (
@@ -795,6 +1011,11 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                 </p>
               ) : (
                 <div className="space-y-3">
+                  {isQuick ? (
+                    <div className="pricing-quick-ocean-hint text-[11px] font-semibold text-amber-900/90 dark:text-amber-100/95 rounded-lg px-3 py-2 border border-amber-200/90 dark:border-amber-800/60 bg-amber-50/95 dark:bg-amber-950/40">
+                      {t('pricing.quickOceanManualHint', 'Enter cost and selling for each line manually.')}
+                    </div>
+                  ) : null}
                   <div className="hidden md:grid md:grid-cols-12 gap-2 text-xs font-bold uppercase text-gray-500 px-1">
                     <span className="md:col-span-1">{t('pricing.include', 'Incl.')}</span>
                     <span className="md:col-span-2">{t('pricing.item', 'Item')}</span>
@@ -901,7 +1122,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                         <div className="md:col-span-2 flex justify-end pt-1">
                           <button
                             type="button"
-                            disabled={isPricing}
+                            disabled={isPricing || (isQuick && line.quickCore)}
                             onClick={() => removeOceanLine(idx)}
                             className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 disabled:opacity-40"
                             aria-label={t('common.remove', 'Remove')}
@@ -943,9 +1164,14 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                     type="button"
                     disabled={isPricing}
                     onClick={addOceanLine}
-                    className="inline-flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-lg border border-gray-200 dark:border-gray-700 disabled:opacity-40"
+                    className={`inline-flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-lg border disabled:opacity-40 ${
+                      isQuick
+                        ? 'pricing-quick-ocean-add border-amber-200/90 dark:border-amber-800/50 bg-amber-50/90 dark:bg-amber-950/35 text-amber-950 dark:text-amber-100'
+                        : 'border-gray-200 dark:border-gray-700'
+                    }`}
                   >
-                    <Plus className="h-4 w-4" /> {t('common.add', 'Add line')}
+                    <Plus className="h-4 w-4" />{' '}
+                    {isQuick ? t('pricing.quickOceanAddChargeTitle', 'Add extra ocean charge') : t('common.add', 'Add line')}
                   </button>
                 </div>
               )}
@@ -962,7 +1188,147 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                 </div>
               }
             >
-              {inlandEnabled ? (
+              {!inlandEnabled ? (
+                isQuick ? (
+                  <div className="pricing-quick-inland-empty rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-600 bg-gray-50/80 dark:bg-gray-900/30 px-6 py-8 text-center">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 m-0">
+                      {t('pricing.quickInlandEmpty', 'No inland transport added for this quotation.')}
+                    </p>
+                    <button
+                      type="button"
+                      className="px-4 py-2 text-sm font-bold rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/50 text-amber-950 dark:text-amber-100"
+                      onClick={() => {
+                        setInlandOfferId('')
+                        setInlandEnabled(true)
+                      }}
+                    >
+                      {t('pricing.quickInlandManualBtn', 'Manual entry')}
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 m-0">{t('pricing.quoteInlandOff', 'Inland transport is not included.')}</p>
+                )
+              ) : isQuick ? (
+                <div className="pricing-quick-section space-y-3">
+                  <div className="text-sm font-bold text-amber-950 dark:text-amber-100">
+                    {t('pricing.quickInlandManualHeading', 'Manual inland entry')}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.port', 'Port')}</label>
+                      <input
+                        value={quickInlandPort}
+                        onChange={(e) => setQuickInlandPort(e.target.value)}
+                        className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+                        placeholder={t('pricing.inlandPortPlaceholder', 'Port')}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.governorate', 'Governorate')}</label>
+                      <input
+                        value={quickInlandGov}
+                        onChange={(e) => setQuickInlandGov(e.target.value)}
+                        className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+                        placeholder={t('pricing.inlandGovPlaceholder', 'Governorate')}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.inlandAreaField', 'Zone')}</label>
+                      <input
+                        value={quickInlandZone}
+                        onChange={(e) => setQuickInlandZone(e.target.value)}
+                        className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+                        placeholder={t('pricing.inlandAreaPlaceholder', 'Zone')}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.inlandVehicleTypeAria', 'Vehicle')}</label>
+                      <input
+                        value={quickInlandVehicle}
+                        onChange={(e) => setQuickInlandVehicle(e.target.value)}
+                        className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+                        placeholder={t('pricing.inlandTruckRate', 'Truck')}
+                      />
+                    </div>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+                      placeholder={t('pricing.cost', 'Cost')}
+                      value={inlandCost}
+                      onChange={(e) => setInlandCost(e.target.value)}
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+                      placeholder={t('pricing.sellingPrice', 'Selling')}
+                      value={inlandSelling}
+                      onChange={(e) => setInlandSelling(e.target.value)}
+                    />
+                    <select
+                      value={inlandCurrency}
+                      onChange={(e) => setInlandCurrency(e.target.value)}
+                      className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 md:col-span-2 max-w-xs"
+                    >
+                      <option value="EGP">EGP</option>
+                      <option value="USD">USD</option>
+                      <option value="EUR">EUR</option>
+                    </select>
+                    <div
+                      className={`px-3 py-2 rounded-lg bg-emerald-50/80 dark:bg-emerald-950/30 text-sm font-semibold md:col-span-2 ${
+                        inlandProfit >= 0 ? 'text-emerald-800 dark:text-emerald-200' : 'text-red-600 dark:text-red-400'
+                      }`}
+                    >
+                      {t('pricing.profit', 'Profit')}: {moneySymbol(inlandCurrency)} {formatPricingDecimal(inlandProfit)}
+                    </div>
+                  </div>
+                  {showQuickInlandGenerator ? (
+                    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 mt-1 border-t border-amber-200/70 dark:border-amber-800/50">
+                      <div className="md:col-span-2 text-xs font-bold uppercase tracking-wide text-amber-900 dark:text-amber-200">
+                        {t('pricing.inlandGeneratorLine', 'Generator (inland)')}
+                      </div>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+                        placeholder={t('pricing.cost', 'Cost')}
+                        value={inlandGenCost}
+                        onChange={(e) => setInlandGenCost(e.target.value)}
+                        aria-label={t('pricing.inlandGeneratorCost', 'Generator cost')}
+                      />
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+                        placeholder={t('pricing.sellingPrice', 'Selling')}
+                        value={inlandGenSelling}
+                        onChange={(e) => setInlandGenSelling(e.target.value)}
+                      />
+                      <select
+                        value={inlandGenCurrency}
+                        onChange={(e) => setInlandGenCurrency(e.target.value)}
+                        className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+                      >
+                        <option value="EGP">EGP</option>
+                        <option value="USD">USD</option>
+                        <option value="EUR">EUR</option>
+                      </select>
+                      <div
+                        className={`px-3 py-2 rounded-lg bg-emerald-50/80 dark:bg-emerald-950/30 text-sm font-semibold ${
+                          inlandGenProfit >= 0 ? 'text-emerald-800 dark:text-emerald-200' : 'text-red-600 dark:text-red-400'
+                        }`}
+                      >
+                        {t('pricing.profit', 'Profit')}: {moneySymbol(inlandGenCurrency)} {formatPricingDecimal(inlandGenProfit)}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <select
                     value={inlandOfferId}
@@ -1009,9 +1375,47 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                   >
                     {t('pricing.profit', 'Profit')}: {moneySymbol(inlandCurrency)} {formatPricingDecimal(inlandProfit)}
                   </div>
+                  {parseNum(inlandGenCost) > 0 ? (
+                    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 mt-1 border-t border-gray-200 dark:border-gray-600">
+                      <div className="md:col-span-2 text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                        {t('pricing.inlandGeneratorLine', 'Generator (inland)')}
+                      </div>
+                      <input
+                        type="number"
+                        readOnly
+                        className="px-3 py-2 rounded-lg border bg-gray-100 dark:bg-gray-800"
+                        placeholder={t('pricing.cost', 'Cost')}
+                        value={inlandGenCost}
+                        aria-label={t('pricing.inlandGeneratorCost', 'Generator cost')}
+                      />
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+                        placeholder={t('pricing.sellingPrice', 'Selling')}
+                        value={inlandGenSelling}
+                        onChange={(e) => setInlandGenSelling(e.target.value)}
+                      />
+                      <select
+                        value={inlandGenCurrency}
+                        onChange={(e) => setInlandGenCurrency(e.target.value)}
+                        className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+                      >
+                        <option value="EGP">EGP</option>
+                        <option value="USD">USD</option>
+                        <option value="EUR">EUR</option>
+                      </select>
+                      <div
+                        className={`px-3 py-2 rounded-lg bg-emerald-50/80 dark:bg-emerald-950/30 text-sm font-semibold ${
+                          inlandGenProfit >= 0 ? 'text-emerald-800 dark:text-emerald-200' : 'text-red-600 dark:text-red-400'
+                        }`}
+                      >
+                        {t('pricing.profit', 'Profit')}: {moneySymbol(inlandGenCurrency)} {formatPricingDecimal(inlandGenProfit)}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
-              ) : (
-                <p className="text-sm text-gray-500 dark:text-gray-400 m-0">{t('pricing.quoteInlandOff', 'Inland transport is not included.')}</p>
               )}
             </QuoteFinCard>
 
@@ -1069,6 +1473,93 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                       value={officialReceiptsNote}
                       onChange={(e) => setOfficialReceiptsNote(e.target.value)}
                     />
+                  </div>
+                  <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 space-y-3">
+                    <div className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      {t('pricing.customsExtrasTitle', 'Additional customs charges')}
+                    </div>
+                    {customsExtras.length > 0 ? (
+                      <ul className="space-y-2 list-none m-0 p-0">
+                        {customsExtras.map((row, idx) => (
+                          <li
+                            key={row.id}
+                            className="flex flex-wrap justify-between gap-2 items-center rounded-md border border-gray-100 dark:border-gray-700 px-2 py-2"
+                          >
+                            <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{row.name}</span>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-sm font-bold tabular-nums">
+                                {formatLocaleMoney(parseNum(row.amount), row.currency, i18n.language)}
+                              </span>
+                              <button
+                                type="button"
+                                className="text-xs font-bold text-red-600 hover:underline"
+                                onClick={() => setCustomsExtras((prev) => prev.filter((_, i) => i !== idx))}
+                              >
+                                {t('common.remove', 'Remove')}
+                              </button>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                    <div className="flex flex-wrap gap-2 items-end">
+                      <div className="flex-1 min-w-[140px] space-y-1">
+                        <label className="text-xs font-semibold text-gray-600 dark:text-gray-400">
+                          {t('pricing.customsExtraName', 'Charge name')}
+                        </label>
+                        <input
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm"
+                          value={customsExtraName}
+                          onChange={(e) => setCustomsExtraName(e.target.value)}
+                          placeholder={t('pricing.customsExtraNamePh', 'e.g. inspection fee')}
+                        />
+                      </div>
+                      <div className="w-28 space-y-1">
+                        <label className="text-xs font-semibold text-gray-600 dark:text-gray-400">
+                          {t('pricing.customsExtraAmount', 'Amount')}
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm"
+                          value={customsExtraAmount}
+                          onChange={(e) => setCustomsExtraAmount(e.target.value)}
+                        />
+                      </div>
+                      <div className="w-24 space-y-1">
+                        <label className="text-xs font-semibold text-gray-600 dark:text-gray-400">
+                          {t('pricing.currency', 'Cur.')}
+                        </label>
+                        <select
+                          className="w-full px-2 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm"
+                          value={customsExtraCurrency}
+                          onChange={(e) => setCustomsExtraCurrency(e.target.value)}
+                        >
+                          <option value="EGP">EGP</option>
+                          <option value="USD">USD</option>
+                          <option value="EUR">EUR</option>
+                        </select>
+                      </div>
+                      <button
+                        type="button"
+                        className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-bold bg-white dark:bg-gray-900 shrink-0"
+                        onClick={() => {
+                          const name = customsExtraName.trim()
+                          const amt = parseNum(customsExtraAmount)
+                          if (!name || amt <= 0) return
+                          setCustomsExtras((prev) => [
+                            ...prev,
+                            { id: `ce-${Date.now()}`, name, amount: String(amt), currency: customsExtraCurrency || 'EGP' },
+                          ])
+                          setCustomsExtraName('')
+                          setCustomsExtraAmount('')
+                          setCustomsExtraCurrency('EGP')
+                        }}
+                      >
+                        {t('common.add', 'Add')}
+                      </button>
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -1137,19 +1628,40 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                 </div>
                 <div className="flex justify-between gap-3 text-sm border-b border-gray-100 dark:border-gray-700 pb-2">
                   <span className="text-gray-600 dark:text-gray-400 shrink-0">{t('pricing.summaryInland', 'Inland transport total')}</span>
-                  <span className="font-bold tabular-nums text-right">
-                    {!inlandEnabled ? t('common.dash') : formatLocaleMoney(inlandSellingTotal, inlandCurrency, i18n.language)}
-                  </span>
+                  <div className="flex flex-col items-end gap-0.5 font-bold tabular-nums text-right">
+                    {!inlandEnabled ? (
+                      <span>{t('common.dash')}</span>
+                    ) : (
+                      <>
+                        {parseNum(inlandSelling) > 0 ? (
+                          <span>{formatLocaleMoney(parseNum(inlandSelling), inlandCurrency, i18n.language)}</span>
+                        ) : null}
+                        {parseNum(inlandGenSelling) > 0 ? (
+                          <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
+                            + {t('pricing.inlandGeneratorLine', 'Generator')}:{' '}
+                            {formatLocaleMoney(parseNum(inlandGenSelling), inlandGenCurrency || inlandCurrency, i18n.language)}
+                          </span>
+                        ) : null}
+                        {!parseNum(inlandSelling) && !parseNum(inlandGenSelling) ? <span>{t('common.dash')}</span> : null}
+                      </>
+                    )}
+                  </div>
                 </div>
                 <div className="flex justify-between gap-3 text-sm border-b border-gray-100 dark:border-gray-700 pb-2">
                   <span className="text-gray-600 dark:text-gray-400 shrink-0">{t('pricing.summaryCustoms', 'Customs total')}</span>
                   <div className="flex flex-col items-end gap-0.5 font-bold tabular-nums text-right">
                     {!customsEnabled ? (
                       <span>{t('common.dash')}</span>
-                    ) : isPricing ? (
-                      <span>{formatLocaleMoney(ADMIN_CUSTOMS_CERT_AMOUNT, ADMIN_CUSTOMS_CERT_CURRENCY, i18n.language)}</span>
                     ) : (
-                      <span>{formatLocaleMoney(parseNum(customsCertSelling), customsCertCurrency, i18n.language)}</span>
+                      (() => {
+                        const keys = sortCurrencyCodes(
+                          Object.keys(customsSellingByCurrency).filter((c) => Math.abs(customsSellingByCurrency[c] || 0) > 1e-9)
+                        )
+                        if (!keys.length) return <span>{t('common.dash')}</span>
+                        return keys.map((cur) => (
+                          <span key={cur}>{formatLocaleMoney(customsSellingByCurrency[cur], cur, i18n.language)}</span>
+                        ))
+                      })()
                     )}
                   </div>
                 </div>
@@ -1214,6 +1726,33 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
               </div>
             </QuoteFinCard>
 
+            <div
+              className="rounded-xl border border-amber-300/90 bg-amber-50/95 dark:bg-amber-950/35 dark:border-amber-700/60 p-4 space-y-3"
+              role="region"
+              aria-label={t('pricing.pricingTeamConfirmTitle', 'Pricing team confirmation')}
+            >
+              <div className="text-sm font-bold text-amber-950 dark:text-amber-100">
+                {t('pricing.pricingTeamConfirmTitle', 'Confirm with Pricing Team before sending')}
+              </div>
+              <p className="text-xs text-amber-900/90 dark:text-amber-200/90 leading-relaxed m-0">
+                {t(
+                  'pricing.pricingTeamConfirmBody',
+                  'Make sure Pricing Team confirms the underlying rates are still valid before you send this quotation to the client.'
+                )}
+              </p>
+              <label className="flex items-start gap-2 cursor-pointer border-t border-amber-300/70 dark:border-amber-800/60 pt-3">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 rounded border-amber-600 text-amber-700 focus:ring-amber-500"
+                  checked={pricingTeamConfirmed}
+                  onChange={(e) => setPricingTeamConfirmed(e.target.checked)}
+                />
+                <span className="text-sm font-semibold text-amber-950 dark:text-amber-100">
+                  {t('pricing.pricingTeamConfirmCheckbox', 'I confirmed with Pricing Team — this quotation is ready to send')}
+                </span>
+              </label>
+            </div>
+
             <QuoteFinCard
               icon={Calendar}
               title={t('pricing.quoteSectionValidityNotes', 'Validity & notes')}
@@ -1238,7 +1777,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                     value={form.valid_to || ''}
                     onChange={(e) => setField('valid_to', e.target.value)}
                     disabled={isRouteLocked}
-                    required={entryMode === 'quick' || entryMode === 'manual'}
+                    required={entryMode === 'manual'}
                   />
                 </div>
                 <div className="space-y-1 md:col-span-2">
@@ -1287,8 +1826,9 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
             form="quoteForm"
             disabled={
               loading ||
-              (inlandEnabled && !inlandOfferId) ||
-              ((entryMode === 'quick' || entryMode === 'manual') && !String(form.valid_to || '').trim())
+              (!isQuick && inlandEnabled && !inlandOfferId) ||
+              (entryMode === 'manual' && !String(form.valid_to || '').trim()) ||
+              (isQuick && !pricingTeamConfirmed)
             }
             className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors flex items-center gap-2 disabled:opacity-50"
           >

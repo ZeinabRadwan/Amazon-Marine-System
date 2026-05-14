@@ -13,6 +13,7 @@ use App\Support\PdfLogo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
 use Mpdf\Mpdf;
 
@@ -112,12 +113,14 @@ class PricingQuoteController extends Controller
     {
         $this->authorize('create', PricingQuote::class);
 
+        $isQuick = $request->boolean('quick_mode') || $request->boolean('is_quick_quotation');
+
         $validated = $request->validate([
             'quote_no' => ['nullable', 'string', 'max:40'],
             'client_id' => ['nullable', 'integer', 'exists:clients,id'],
             'sales_user_id' => ['nullable', 'integer', 'exists:users,id'],
-            'pricing_offer_id' => ['nullable', 'integer', 'exists:pricing_offers,id'],
-            'origin_rate_snapshot_id' => ['nullable', 'integer', 'exists:pricing_offer_snapshots,id'],
+            'pricing_offer_id' => [Rule::excludeIf($isQuick), 'nullable', 'integer', 'exists:pricing_offers,id'],
+            'origin_rate_snapshot_id' => [Rule::excludeIf($isQuick), 'nullable', 'integer', 'exists:pricing_offer_snapshots,id'],
             'quick_mode' => ['sometimes', 'boolean'],
             'is_quick_quotation' => ['sometimes', 'boolean'],
             'quick_mode_reason' => ['nullable', 'string', 'max:255'],
@@ -145,6 +148,7 @@ class PricingQuoteController extends Controller
             'valid_to' => ['nullable', 'date'],
             'notes' => ['nullable', 'string'],
             'official_receipts_note' => ['nullable', 'string', 'max:5000'],
+            'pricing_team_confirmed' => ['sometimes', 'boolean'],
             'status' => ['sometimes', 'string', 'in:pending,accepted,rejected'],
             'sailing_dates' => ['sometimes', 'array'],
             'sailing_dates.*' => ['date'],
@@ -154,6 +158,8 @@ class PricingQuoteController extends Controller
             'items.*.code' => ['required', 'string', 'in:OF,THC,BL,TELEX,ISPS,PTI,POWER,INLAND,HANDLING,OTHER'],
             'items.*.name' => ['required', 'string', 'max:120'],
             'items.*.description' => ['nullable', 'string', 'max:255'],
+            'items.*.cost_amount' => ['nullable', 'numeric', 'min:0'],
+            'items.*.visible_to_client' => ['sometimes', 'boolean'],
             'items.*.amount' => ['required', 'numeric', 'min:0'],
             'items.*.currency' => ['nullable', 'string', 'max:10'],
         ]);
@@ -172,13 +178,13 @@ class PricingQuoteController extends Controller
             }
 
             $originSnapshotId = $validated['origin_rate_snapshot_id'] ?? null;
-            if (! $originSnapshotId && ! empty($validated['pricing_offer_id'])) {
+            if (! $quickMode && ! $originSnapshotId && ! empty($validated['pricing_offer_id'])) {
                 $offer = PricingOffer::query()->with(['items', 'sailingDates'])->find((int) $validated['pricing_offer_id']);
                 if ($offer) {
                     $originSnapshotId = $this->createOriginRateSnapshot($offer)->id;
                 }
             }
-            if (! empty($validated['pricing_offer_id']) && ! empty($originSnapshotId)) {
+            if (! $quickMode && ! empty($validated['pricing_offer_id']) && ! empty($originSnapshotId)) {
                 $originSnapshot = PricingOfferSnapshot::query()->find((int) $originSnapshotId);
                 if (! $originSnapshot || (int) $originSnapshot->pricing_offer_id !== (int) $validated['pricing_offer_id']) {
                     abort(422, 'origin_rate_snapshot_id must belong to the same pricing_offer_id.');
@@ -195,8 +201,8 @@ class PricingQuoteController extends Controller
             $quote->quote_no = $validated['quote_no'] ?? $this->generateQuoteNo();
             $quote->client_id = $validated['client_id'] ?? null;
             $quote->sales_user_id = $validated['sales_user_id'] ?? null;
-            $quote->pricing_offer_id = $validated['pricing_offer_id'] ?? null;
-            $quote->origin_rate_snapshot_id = $originSnapshotId;
+            $quote->pricing_offer_id = $quickMode ? null : ($validated['pricing_offer_id'] ?? null);
+            $quote->origin_rate_snapshot_id = $quickMode ? null : $originSnapshotId;
             $quote->quick_mode = $quickMode;
             $quote->quick_mode_reason = $quickModeReason;
             $quote->pol = $validated['pol'] ?? null;
@@ -217,6 +223,7 @@ class PricingQuoteController extends Controller
             $quote->official_receipts_note = isset($validated['official_receipts_note'])
                 ? (trim((string) $validated['official_receipts_note']) !== '' ? trim((string) $validated['official_receipts_note']) : null)
                 : null;
+            $quote->pricing_team_confirmed = (bool) ($validated['pricing_team_confirmed'] ?? false);
             $quote->status = $validated['status'] ?? 'pending';
             $quote->save();
 
@@ -237,11 +244,13 @@ class PricingQuoteController extends Controller
     {
         $this->authorize('update', $quote);
 
+        $isQuick = $request->boolean('quick_mode') || $request->boolean('is_quick_quotation') || $quote->quick_mode;
+
         $validated = $request->validate([
             'client_id' => ['sometimes', 'nullable', 'integer', 'exists:clients,id'],
             'sales_user_id' => ['sometimes', 'nullable', 'integer', 'exists:users,id'],
-            'pricing_offer_id' => ['sometimes', 'nullable', 'integer', 'exists:pricing_offers,id'],
-            'origin_rate_snapshot_id' => ['sometimes', 'nullable', 'integer', 'exists:pricing_offer_snapshots,id'],
+            'pricing_offer_id' => [Rule::excludeIf($isQuick), 'sometimes', 'nullable', 'integer', 'exists:pricing_offers,id'],
+            'origin_rate_snapshot_id' => [Rule::excludeIf($isQuick), 'sometimes', 'nullable', 'integer', 'exists:pricing_offer_snapshots,id'],
             'quick_mode' => ['sometimes', 'boolean'],
             'is_quick_quotation' => ['sometimes', 'boolean'],
             'quick_mode_reason' => ['sometimes', 'nullable', 'string', 'max:255'],
@@ -269,6 +278,7 @@ class PricingQuoteController extends Controller
             'valid_to' => ['sometimes', 'nullable', 'date'],
             'notes' => ['sometimes', 'nullable', 'string'],
             'official_receipts_note' => ['sometimes', 'nullable', 'string', 'max:5000'],
+            'pricing_team_confirmed' => ['sometimes', 'boolean'],
             'status' => ['sometimes', 'string', 'in:pending,accepted,rejected'],
             'sailing_dates' => ['sometimes', 'array'],
             'sailing_dates.*' => ['date'],
@@ -278,11 +288,15 @@ class PricingQuoteController extends Controller
             'items.*.code' => ['required_with:items', 'string', 'in:OF,THC,BL,TELEX,ISPS,PTI,POWER,INLAND,HANDLING,OTHER'],
             'items.*.name' => ['required_with:items', 'string', 'max:120'],
             'items.*.description' => ['nullable', 'string', 'max:255'],
+            'items.*.cost_amount' => ['nullable', 'numeric', 'min:0'],
+            'items.*.visible_to_client' => ['sometimes', 'boolean'],
             'items.*.amount' => ['required_with:items', 'numeric', 'min:0'],
             'items.*.currency' => ['nullable', 'string', 'max:10'],
         ]);
 
         $validated = $this->mergeQuickQuotationFlag($validated);
+
+        $quickMode = (bool) ($quote->quick_mode || ($validated['quick_mode'] ?? false));
 
         if (array_key_exists('official_receipts_note', $validated)) {
             $trimmed = trim((string) ($validated['official_receipts_note'] ?? ''));
@@ -295,7 +309,7 @@ class PricingQuoteController extends Controller
         if ((($validated['schedule_type'] ?? $quote->schedule_type) === 'weekly') && ! empty($validated['sailing_dates'] ?? [])) {
             abort(422, 'sailing_dates are not allowed for weekly schedule.');
         }
-        if (! empty($validated['pricing_offer_id'] ?? $quote->pricing_offer_id) && ! empty($validated['origin_rate_snapshot_id'] ?? $quote->origin_rate_snapshot_id)) {
+        if (! $quickMode && ! empty($validated['pricing_offer_id'] ?? $quote->pricing_offer_id) && ! empty($validated['origin_rate_snapshot_id'] ?? $quote->origin_rate_snapshot_id)) {
             $offerId = (int) ($validated['pricing_offer_id'] ?? $quote->pricing_offer_id);
             $snapshotId = (int) ($validated['origin_rate_snapshot_id'] ?? $quote->origin_rate_snapshot_id);
             $snapshot = PricingOfferSnapshot::query()->find($snapshotId);
@@ -304,13 +318,19 @@ class PricingQuoteController extends Controller
             }
         }
 
-        DB::transaction(function () use ($quote, $validated): void {
+        DB::transaction(function () use ($quote, $validated, $quickMode): void {
             $quote->fill($validated);
+            if ($quickMode) {
+                $quote->quick_mode = true;
+                $quote->pricing_offer_id = null;
+                $quote->origin_rate_snapshot_id = null;
+            }
             if ($quote->quick_mode && ($quote->quick_mode_reason === null || trim((string) $quote->quick_mode_reason) === '')) {
                 $quote->quick_mode_reason = 'Quick Quotation';
             }
             if (
-                (array_key_exists('pricing_offer_id', $validated) && ! array_key_exists('origin_rate_snapshot_id', $validated))
+                ! $quote->quick_mode
+                && (array_key_exists('pricing_offer_id', $validated) && ! array_key_exists('origin_rate_snapshot_id', $validated))
                 && ! empty($validated['pricing_offer_id'])
             ) {
                 $offer = PricingOffer::query()->with(['items', 'sailingDates'])->find((int) $validated['pricing_offer_id']);
@@ -688,12 +708,20 @@ class PricingQuoteController extends Controller
                 continue;
             }
 
+            $costRaw = $item['cost_amount'] ?? null;
+            $costAmount = null;
+            if ($costRaw !== null && $costRaw !== '' && is_numeric($costRaw)) {
+                $costAmount = (float) $costRaw;
+            }
+
             PricingQuoteItem::create([
                 'pricing_quote_id' => $quote->id,
                 'code' => array_key_exists('code', $item) ? (string) ($item['code'] ?? '') : null,
                 'name' => $name,
                 'description' => array_key_exists('description', $item) ? (string) ($item['description'] ?? '') : null,
+                'cost_amount' => $costAmount,
                 'amount' => (float) $amount,
+                'visible_to_client' => (bool) ($item['visible_to_client'] ?? true),
                 'currency_code' => (string) ($item['currency'] ?? 'USD'),
                 'sort_order' => $i++,
             ]);
@@ -762,8 +790,10 @@ class PricingQuoteController extends Controller
             'code' => $i->code,
             'name' => $i->name,
             'description' => $i->description,
+            'cost_amount' => $i->cost_amount !== null ? (float) $i->cost_amount : null,
             'amount' => (float) $i->amount,
             'currency' => $i->currency_code,
+            'visible_to_client' => (bool) ($i->visible_to_client ?? true),
         ]);
 
         return [
@@ -794,6 +824,7 @@ class PricingQuoteController extends Controller
             'valid_to' => $quote->valid_to?->toDateString(),
             'notes' => $quote->notes,
             'official_receipts_note' => $quote->official_receipts_note,
+            'pricing_team_confirmed' => (bool) ($quote->pricing_team_confirmed ?? false),
             'sailing_dates' => $quote->sailingDates->pluck('sailing_date')->map(
                 static fn ($d) => $d?->toDateString()
             )->filter()->values(),
