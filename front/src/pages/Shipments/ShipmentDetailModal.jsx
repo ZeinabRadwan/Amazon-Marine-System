@@ -38,6 +38,7 @@ import { isoDatePart } from './opsDateDisplay'
 import { normalizeShipmentOperationTask, serializeShipmentOperationTaskForApi } from './shipmentOperationTaskPayload'
 import { formatShipmentAuditRow } from './shipmentAuditPresentation'
 import { listSDFormBookingConfirmations, downloadSDFormBookingConfirmation } from '../../api/sdForms'
+import { listVendors } from '../../api/vendors'
 import ShipmentTransportInstructionsTab, {
   buildTransportInstructionProfilePayload,
   buildTransportInstructionsWhatsAppText,
@@ -47,8 +48,30 @@ import './Shipments.css'
 import '../SDForms/SDForms.css'
 import '../Clients/Clients.css'
 import '../Clients/ClientDetailModal.css'
+import { vendorsForCanonical } from './vendorOperationOptions'
 
+function normalizeOpsVendorIdsFromApi(d) {
+  if (!d || typeof d !== 'object') return d
+  const out = { ...d }
+  for (const k of ['transport_contractor_id', 'customs_broker_id', 'insurance_company_id', 'overseas_agent_id']) {
+    if (out[k] != null && out[k] !== '') {
+      out[k] = String(out[k])
+    } else {
+      out[k] = ''
+    }
+  }
+  return out
+}
 
+function ensureVendorInOptions(vendors, id, relation) {
+  const list = Array.isArray(vendors) ? vendors : []
+  const vid = id != null && String(id).trim() !== '' ? Number(id) : NaN
+  if (!Number.isFinite(vid) || vid <= 0) return list
+  if (list.some((x) => Number(x?.id) === vid)) return list
+  const name = relation?.name ? String(relation.name) : `#${vid}`
+  const row = { id: vid, name, type: relation?.type ?? '' }
+  return [row, ...list]
+}
 
 function formatMoney(v, locale) {
   if (v == null || v === '') return '—'
@@ -179,6 +202,9 @@ export default function ShipmentDetailModal({
   const [opsBookingFilesLoading, setOpsBookingFilesLoading] = useState(false)
   const [tiPdfLoading, setTiPdfLoading] = useState(false)
   const [tiBookingDraft, setTiBookingDraft] = useState({ booking_number: '', shipping_line_id: '' })
+  const [opsTabVendors, setOpsTabVendors] = useState([])
+  const [opsTabVendorsLoading, setOpsTabVendorsLoading] = useState(false)
+  const [opsTabVendorsError, setOpsTabVendorsError] = useState(null)
 
   useEffect(() => {
     if (!shipment?.id) return
@@ -225,15 +251,17 @@ export default function ShipmentDetailModal({
           if (d[k] && String(d[k]).length > 10) d[k] = String(d[k]).slice(0, 10)
         }
         d.transport_instruction_profile = mergeTransportInstructionProfileFromApi(d.transport_instruction_profile)
-        setOpsData(d)
+        setOpsData(normalizeOpsVendorIdsFromApi(d))
       })
       .catch(() =>
-        setOpsData({
-          service_types: ['sea_freight'],
-          other_party_name: '',
-          other_party_role: '',
-          transport_instruction_profile: mergeTransportInstructionProfileFromApi(null),
-        })
+        setOpsData(
+          normalizeOpsVendorIdsFromApi({
+            service_types: ['sea_freight'],
+            other_party_name: '',
+            other_party_role: '',
+            transport_instruction_profile: mergeTransportInstructionProfileFromApi(null),
+          }),
+        ),
       )
       .finally(() => setOpsLoading(false))
   }, [token, shipment?.id])
@@ -275,18 +303,65 @@ export default function ShipmentDetailModal({
       .finally(() => setTasksLoading(false))
   }, [token, shipment?.id])
 
-  const inlandVendorOptions = useMemo(
-    () => (Array.isArray(vendorOptions) ? vendorOptions.filter((v) => v.type === 'inland_transport') : []),
-    [vendorOptions],
-  )
-  const customsVendorOptions = useMemo(
-    () => (Array.isArray(vendorOptions) ? vendorOptions.filter((v) => v.type === 'customs_clearance') : []),
-    [vendorOptions],
-  )
-  const insuranceVendorOptions = useMemo(
-    () => (Array.isArray(vendorOptions) ? vendorOptions.filter((v) => v.type === 'insurance') : []),
-    [vendorOptions],
-  )
+  useEffect(() => {
+    if (!open || detailTab !== 'operations' || !token || !(isOperations || isAdminRole)) {
+      return
+    }
+    let cancelled = false
+    setOpsTabVendorsLoading(true)
+    setOpsTabVendorsError(null)
+    const types = 'inland_transport,customs_clearance,insurance,overseas_agent'
+    listVendors(token, { types })
+      .then((res) => {
+        const data = res?.data
+        const arr = Array.isArray(data) ? data : []
+        if (!cancelled) {
+          setOpsTabVendors(arr)
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setOpsTabVendors([])
+          setOpsTabVendorsError(err?.message || t('shipments.ops.vendorsLoadError'))
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setOpsTabVendorsLoading(false)
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [open, detailTab, token, isOperations, isAdminRole, t])
+
+  const mergedVendorList = useMemo(() => {
+    const fromApi = Array.isArray(opsTabVendors) ? opsTabVendors : []
+    const fromParent = Array.isArray(vendorOptions) ? vendorOptions : []
+    if (fromApi.length > 0) {
+      return fromApi
+    }
+
+    return fromParent
+  }, [opsTabVendors, vendorOptions])
+
+  const inlandVendorOptions = useMemo(() => {
+    const base = vendorsForCanonical(mergedVendorList, 'inland_transport')
+    const rel = opsData?.transport_contractor ?? opsData?.transportContractor
+    return ensureVendorInOptions(base, opsData?.transport_contractor_id, rel)
+  }, [mergedVendorList, opsData?.transport_contractor_id, opsData?.transport_contractor, opsData?.transportContractor])
+
+  const customsVendorOptions = useMemo(() => {
+    const base = vendorsForCanonical(mergedVendorList, 'customs_clearance')
+    const rel = opsData?.customs_broker ?? opsData?.customsBroker
+    return ensureVendorInOptions(base, opsData?.customs_broker_id, rel)
+  }, [mergedVendorList, opsData?.customs_broker_id, opsData?.customs_broker, opsData?.customsBroker])
+
+  const insuranceVendorOptions = useMemo(() => {
+    const base = vendorsForCanonical(mergedVendorList, 'insurance')
+    const rel = opsData?.insurance_company ?? opsData?.insuranceCompany
+    return ensureVendorInOptions(base, opsData?.insurance_company_id, rel)
+  }, [mergedVendorList, opsData?.insurance_company_id, opsData?.insurance_company, opsData?.insuranceCompany])
   useEffect(() => {
     if (!open || detailTab !== 'notes' || !shipment?.id) {
       setNotes([])
@@ -318,6 +393,9 @@ export default function ShipmentDetailModal({
       setTrackingError(null)
       setOpsError(null)
       setOpsBookingFiles([])
+      setOpsTabVendors([])
+      setOpsTabVendorsLoading(false)
+      setOpsTabVendorsError(null)
       setTiPdfLoading(false)
     }
   }, [open])
@@ -514,6 +592,10 @@ export default function ShipmentDetailModal({
     if (!token || !shipment?.id || !opsData) {
       throw new Error(t('shipments.ops.opsError'))
     }
+    const vendorIdOrNull = (raw) => {
+      const n = Number(raw)
+      return Number.isFinite(n) && n > 0 ? n : null
+    }
     const types = Array.isArray(opsData.service_types) ? opsData.service_types : []
     if (types.length === 0) {
       throw new Error(t('shipments.ops.serviceTypeRequired'))
@@ -527,9 +609,9 @@ export default function ShipmentDetailModal({
 
     await updateShipmentOperations(token, shipment.id, {
       service_types: types,
-      transport_contractor_id: opsData.transport_contractor_id || null,
-      customs_broker_id: opsData.customs_broker_id || null,
-      insurance_company_id: opsData.insurance_company_id || null,
+      transport_contractor_id: vendorIdOrNull(opsData.transport_contractor_id),
+      customs_broker_id: vendorIdOrNull(opsData.customs_broker_id),
+      insurance_company_id: vendorIdOrNull(opsData.insurance_company_id),
       other_party_name: opsData.other_party_name?.trim() || null,
       other_party_role: opsData.other_party_role?.trim() || null,
       cut_off_date: opsData.cut_off_date || null,
@@ -1293,6 +1375,20 @@ export default function ShipmentDetailModal({
                         {showPartnersBlock ? (
                           <div className="shipment-detail-card mb-6">
                             <h3 className="shipment-detail-card__title">{t('shipments.ops.sectionVendorsPartners')}</h3>
+                            {opsTabVendorsError ? (
+                              <p className="text-sm text-red-600 dark:text-red-400 px-4 pt-2">{opsTabVendorsError}</p>
+                            ) : null}
+                            {opsTabVendorsLoading && mergedVendorList.length === 0 ? (
+                              <p className="text-sm text-gray-500 dark:text-gray-400 px-4 pt-2 flex items-center gap-2">
+                                <LoaderDots />
+                                {t('shipments.ops.vendorsLoading')}
+                              </p>
+                            ) : null}
+                            {!opsTabVendorsLoading && mergedVendorList.length === 0 && !opsTabVendorsError ? (
+                              <p className="text-xs text-amber-800 dark:text-amber-200/90 px-4 pt-2">
+                                {t('shipments.ops.vendorsNoneLoaded')}
+                              </p>
+                            ) : null}
                             <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
                               {showInland ? (
                                 <div>
@@ -1302,20 +1398,28 @@ export default function ShipmentDetailModal({
                                   </label>
                                   <select
                                     className="clients-input w-full"
-                                    value={opsData.transport_contractor_id || ''}
+                                    value={String(opsData.transport_contractor_id ?? '')}
                                     onChange={(e) =>
-                                      setOpsData((prev) => ({ ...prev, transport_contractor_id: e.target.value }))
+                                      setOpsData((prev) => ({
+                                        ...prev,
+                                        transport_contractor_id: e.target.value,
+                                      }))
                                     }
                                     disabled={!canEditOps}
                                     required={showInland}
                                   >
                                     <option value="">{t('common.select')}</option>
                                     {inlandVendorOptions.map((v) => (
-                                      <option key={v.id} value={v.id}>
+                                      <option key={v.id} value={String(v.id)}>
                                         {v.name}
                                       </option>
                                     ))}
                                   </select>
+                                  {!opsTabVendorsLoading && showInland && inlandVendorOptions.length === 0 ? (
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                      {t('shipments.ops.vendorsEmptyCategory')}
+                                    </p>
+                                  ) : null}
                                 </div>
                               ) : null}
                               {showCustoms ? (
@@ -1326,7 +1430,7 @@ export default function ShipmentDetailModal({
                                   </label>
                                   <select
                                     className="clients-input w-full"
-                                    value={opsData.customs_broker_id || ''}
+                                    value={String(opsData.customs_broker_id ?? '')}
                                     onChange={(e) =>
                                       setOpsData((prev) => ({ ...prev, customs_broker_id: e.target.value }))
                                     }
@@ -1335,11 +1439,16 @@ export default function ShipmentDetailModal({
                                   >
                                     <option value="">{t('common.select')}</option>
                                     {customsVendorOptions.map((v) => (
-                                      <option key={v.id} value={v.id}>
+                                      <option key={v.id} value={String(v.id)}>
                                         {v.name}
                                       </option>
                                     ))}
                                   </select>
+                                  {!opsTabVendorsLoading && showCustoms && customsVendorOptions.length === 0 ? (
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                      {t('shipments.ops.vendorsEmptyCategory')}
+                                    </p>
+                                  ) : null}
                                 </div>
                               ) : null}
                               <div>
@@ -1348,7 +1457,7 @@ export default function ShipmentDetailModal({
                                 </label>
                                 <select
                                   className="clients-input w-full"
-                                  value={opsData.insurance_company_id || ''}
+                                  value={String(opsData.insurance_company_id ?? '')}
                                   onChange={(e) =>
                                     setOpsData((prev) => ({ ...prev, insurance_company_id: e.target.value }))
                                   }
@@ -1356,11 +1465,16 @@ export default function ShipmentDetailModal({
                                 >
                                   <option value="">{t('shipments.optional')}</option>
                                   {insuranceVendorOptions.map((v) => (
-                                    <option key={v.id} value={v.id}>
+                                    <option key={v.id} value={String(v.id)}>
                                       {v.name}
                                     </option>
                                   ))}
                                 </select>
+                                {!opsTabVendorsLoading && insuranceVendorOptions.length === 0 ? (
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                    {t('shipments.ops.vendorsEmptyCategoryOptional')}
+                                  </p>
+                                ) : null}
                               </div>
                               <div className="sm:col-span-2">
                                 <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">

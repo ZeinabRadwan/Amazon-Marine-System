@@ -17,6 +17,7 @@ function authHeaders(token) {
 export async function listVendors(token, params = {}) {
   const searchParams = new URLSearchParams()
   if (params.type != null && params.type !== '') searchParams.set('type', String(params.type))
+  if (params.types != null && params.types !== '') searchParams.set('types', String(params.types))
   if (params.search != null && params.search !== '') searchParams.set('search', String(params.search))
   const query = searchParams.toString()
   const url = `${getBaseUrl()}/vendors${query ? `?${query}` : ''}`
@@ -29,6 +30,7 @@ export async function listVendors(token, params = {}) {
 export async function getVendorStats(token, params = {}) {
   const searchParams = new URLSearchParams()
   if (params.type != null && params.type !== '') searchParams.set('type', String(params.type))
+  if (params.types != null && params.types !== '') searchParams.set('types', String(params.types))
   if (params.currency != null && params.currency !== '') searchParams.set('currency', String(params.currency))
   const query = searchParams.toString()
   const res = await apiFetch(`${getBaseUrl()}/vendors/stats${query ? `?${query}` : ''}`, {
@@ -42,6 +44,7 @@ export async function getVendorStats(token, params = {}) {
 export async function getVendorCharts(token, params = {}) {
   const searchParams = new URLSearchParams()
   if (params.type != null && params.type !== '') searchParams.set('type', String(params.type))
+  if (params.types != null && params.types !== '') searchParams.set('types', String(params.types))
   if (params.months != null) searchParams.set('months', String(params.months))
   const query = searchParams.toString()
   const res = await apiFetch(`${getBaseUrl()}/vendors/charts${query ? `?${query}` : ''}`, {
@@ -55,6 +58,7 @@ export async function getVendorCharts(token, params = {}) {
 export async function exportVendors(token, params = {}) {
   const searchParams = new URLSearchParams()
   if (params.type != null && params.type !== '') searchParams.set('type', String(params.type))
+  if (params.types != null && params.types !== '') searchParams.set('types', String(params.types))
   if (params.search != null && params.search !== '') searchParams.set('search', String(params.search))
   if (params.has_balance != null && params.has_balance !== '') searchParams.set('has_balance', String(params.has_balance))
   const query = searchParams.toString()
