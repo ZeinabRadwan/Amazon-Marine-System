@@ -5,6 +5,7 @@ import { getStoredToken, clearToken } from '../../pages/Login'
 import { getProfile, logout as logoutApi } from '../../api/auth'
 import { getApiBaseUrl } from '../../api/apiBaseUrl'
 import { getUnreadCount } from '../../api/notifications'
+import { extractUnreadCountFromResponse } from '../../utils/notificationsDisplay'
 import { getPermissionsByRole } from '../../api/roles'
 import { getSidebarCounts } from '../../api/dashboard'
 import { ROLE_ID } from '../../constants/roles'
@@ -247,8 +248,7 @@ export default function AuthenticatedLayout() {
       try {
         const res = await getUnreadCount(token)
         if (cancelled) return
-        const count = res.unread_count ?? res.count ?? res.data?.unread_count ?? res.data?.count ?? 0
-        setUnreadNotifications(Number(count))
+        setUnreadNotifications(extractUnreadCountFromResponse(res))
       } catch {
         if (!cancelled) setUnreadNotifications(0)
       }

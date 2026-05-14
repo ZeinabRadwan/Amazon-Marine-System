@@ -1529,13 +1529,50 @@
     "unread": "غير مقروء",
     "markRead": "تعليم كمقروء",
     "markAllRead": "تعليم الكل كمقروء",
+    "markAllReadShort": "تعليم الكل",
     "markAllSuccess": "تم تعليم جميع الإشعارات كمقروءة.",
     "saving": "جاري الحفظ…",
     "empty": "لا توجد إشعارات بعد.",
+    "emptyTitle": "لا توجد إشعارات جديدة",
     "noTitle": "إشعار",
     "previous": "السابق",
     "next": "التالي",
-    "pageOf": "صفحة {{current}} من {{total}}"
+    "pageOf": "صفحة {{current}} من {{total}}",
+    "direction": {
+      "export": "صادر",
+      "import": "وارد",
+      "transit": "ترانزيت",
+      "cabotage": "كابوتاج",
+      "other": "أخرى"
+    },
+    "statusValue": {
+      "approved": "مقبول",
+      "rejected": "مرفوض",
+      "pending": "قيد الانتظار"
+    },
+    "types": {
+      "_fallback": {
+        "withType": "{{type}}"
+      },
+      "sd_form_sent_to_operations": {
+        "title": "تم إرسال نموذج SD للعمليات"
+      },
+      "sd_form_booking_confirmation_uploaded": {
+        "title": "تأكيد حجز جديد"
+      },
+      "shipment_notify_sales_financials": {
+        "title": "تحديث مالي للشحنة"
+      },
+      "shipment_operation_task_reminder": {
+        "title": "تذكير مهمة شحنة"
+      },
+      "client_follow_up_reminder": {
+        "title": "تذكير متابعة عميل"
+      },
+      "excuse_decision": {
+        "title": "قرار عذر حضور"
+      }
+    }
   },
   "notificationsAdmin": {
     "from": "من",

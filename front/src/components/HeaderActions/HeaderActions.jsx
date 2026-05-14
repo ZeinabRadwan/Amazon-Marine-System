@@ -4,32 +4,17 @@ import { useTranslation } from 'react-i18next'
 import { Globe, BellRing, ChevronDown } from 'lucide-react'
 import { setLanguage } from '../../i18n'
 import { getStoredToken } from '../../pages/Login'
-import { listNotifications, getUnreadCount, markNotificationRead } from '../../api/notifications'
+import { listNotifications, getUnreadCount, markNotificationRead, markAllNotificationsRead } from '../../api/notifications'
 import ThemeToggle from '../ThemeToggle'
 import { DropdownMenu } from '../DropdownMenu'
-import { formatDate } from '../../utils/dateUtils'
+import NotificationRichCard from '../Notifications/NotificationRichCard'
+import {
+  extractUnreadCountFromResponse,
+  getNotificationNavigationPath,
+} from '../../utils/notificationsDisplay'
 import './HeaderActions.css'
 
-const RECENT_NOTIF_LIMIT = 5
-
-function formatNotificationTime(iso) {
-  if (!iso) return ''
-  try {
-    const d = new Date(iso)
-    const now = new Date()
-    const diffMs = now - d
-    const diffMins = Math.floor(diffMs / 60000)
-    const diffHours = Math.floor(diffMs / 3600000)
-    const diffDays = Math.floor(diffMs / 86400000)
-    if (diffMins < 1) return 'Just now'
-    if (diffMins < 60) return `${diffMins}m ago`
-    if (diffHours < 24) return `${diffHours}h ago`
-    if (diffDays < 7) return `${diffDays}d ago`
-    return formatDate(d)
-  } catch {
-    return iso
-  }
-}
+const RECENT_NOTIF_LIMIT = 8
 
 /**
  * Notifications + theme toggle + language dropdown.
@@ -45,6 +30,7 @@ export default function HeaderActions({ variant = 'navbar', className = '', aler
   const [recentNotifications, setRecentNotifications] = useState([])
   const [notifLoading, setNotifLoading] = useState(false)
   const [unreadCount, setUnreadCount] = useState(null)
+  const [markAllBusy, setMarkAllBusy] = useState(false)
 
   const loadNotifications = useCallback(() => {
     if (!token) return
@@ -63,8 +49,7 @@ export default function HeaderActions({ variant = 'navbar', className = '', aler
     if (!token) return
     getUnreadCount(token)
       .then((res) => {
-        const count = res.unread_count ?? res.count ?? res.data?.unread_count ?? res.data?.count ?? 0
-        setUnreadCount(Number(count))
+        setUnreadCount(extractUnreadCountFromResponse(res))
       })
       .catch(() => setUnreadCount(0))
   }, [token])
@@ -89,18 +74,31 @@ export default function HeaderActions({ variant = 'navbar', className = '', aler
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  const handleMarkAllInDropdown = () => {
+    if (!token || markAllBusy) return
+    setMarkAllBusy(true)
+    markAllNotificationsRead(token)
+      .then(() => {
+        setRecentNotifications((prev) => prev.map((item) => ({ ...item, read_at: item.read_at || new Date().toISOString() })))
+        setUnreadCount(0)
+      })
+      .catch(() => {})
+      .finally(() => setMarkAllBusy(false))
+  }
+
   const handleNotificationClick = (n) => {
     const read = !!(n.read_at)
     if (!read && n.id && token) {
       markNotificationRead(token, n.id).then(() => {
         setRecentNotifications((prev) =>
-          prev.map((item) => (item.id === n.id ? { ...item, read_at: item.read_at || new Date().toISOString() } : item))
+          prev.map((item) => (String(item.id) === String(n.id) ? { ...item, read_at: item.read_at || new Date().toISOString() } : item))
         )
         loadUnreadCount()
       })
     }
     setNotifOpen(false)
-    navigate('/notifications')
+    const path = getNotificationNavigationPath(n)
+    navigate(path || '/notifications')
   }
 
   const badgeCount = unreadCount !== null ? unreadCount : alertsCount
@@ -134,19 +132,35 @@ export default function HeaderActions({ variant = 'navbar', className = '', aler
             >
               <div className="header-actions__dropdown-header">
                 <h3 className="header-actions__dropdown-title">{t('topNav.recentNotifications')}</h3>
-                <Link
-                  to="/notifications"
-                  className="header-actions__dropdown-view-all"
-                  onClick={() => setNotifOpen(false)}
-                >
-                  {t('topNav.viewAllNotifications')}
-                </Link>
+                <div className="header-actions__dropdown-header-actions">
+                  {(unreadCount ?? 0) > 0 ? (
+                    <button
+                      type="button"
+                      className="header-actions__dropdown-mark-all"
+                      onClick={handleMarkAllInDropdown}
+                      disabled={markAllBusy}
+                    >
+                      {markAllBusy ? t('notifications.saving') : t('notifications.markAllReadShort', 'Mark all read')}
+                    </button>
+                  ) : null}
+                  <Link
+                    to="/notifications"
+                    className="header-actions__dropdown-view-all"
+                    onClick={() => setNotifOpen(false)}
+                  >
+                    {t('topNav.viewAllNotifications')}
+                  </Link>
+                </div>
               </div>
               <div className="header-actions__dropdown-body">
                 {notifLoading ? (
                   <p className="header-actions__dropdown-empty">{t('notifications.loading')}</p>
                 ) : recentNotifications.length === 0 ? (
-                  <p className="header-actions__dropdown-empty">{t('topNav.noNotifications')}</p>
+                  <div className="header-actions__dropdown-empty-block" role="status">
+                    <BellRing className="header-actions__dropdown-empty-icon" aria-hidden />
+                    <p className="header-actions__dropdown-empty-title">{t('notifications.emptyTitle', 'You are all caught up')}</p>
+                    <p className="header-actions__dropdown-empty">{t('topNav.noNotifications')}</p>
+                  </div>
                 ) : (
                   <ul className="header-actions__dropdown-list">
                     {recentNotifications.map((n) => (
@@ -156,17 +170,12 @@ export default function HeaderActions({ variant = 'navbar', className = '', aler
                           className={`header-actions__dropdown-item ${!(n.read_at) ? 'header-actions__dropdown-item--unread' : ''}`}
                           onClick={() => handleNotificationClick(n)}
                         >
-                          <span className="header-actions__dropdown-item-title">
-                            {n.title ?? n.message ?? t('notifications.noTitle')}
-                          </span>
-                          {(n.body ?? n.message) && (n.body !== (n.title ?? n.message)) && (
-                            <span className="header-actions__dropdown-item-body">
-                              {typeof n.body === 'string' && n.body.length > 80 ? `${n.body.slice(0, 80)}…` : n.body}
-                            </span>
-                          )}
-                          <span className="header-actions__dropdown-item-time">
-                            {formatNotificationTime(n.created_at)}
-                          </span>
+                          <NotificationRichCard
+                            notification={n}
+                            variant="dropdown"
+                            compact
+                            unread={!n.read_at}
+                          />
                         </button>
                       </li>
                     ))}

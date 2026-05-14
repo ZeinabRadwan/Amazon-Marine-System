@@ -1,0 +1,299 @@
+/* Rich notification card — shared by full page + header dropdown */
+
+.notif-rich-card {
+  position: relative;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  text-align: start;
+  border-radius: 14px;
+  border: 1px solid var(--form-divider, #e5e7eb);
+  background: var(--form-bg, #fff);
+  padding: 16px 18px;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.notif-rich-card:hover {
+  border-color: rgba(59, 130, 246, 0.35);
+  box-shadow: 0 8px 28px -18px rgba(15, 23, 42, 0.25);
+}
+
+[data-theme='dark'] .notif-rich-card,
+.dark .notif-rich-card {
+  border-color: var(--form-divider);
+  background: var(--form-bg);
+}
+
+[data-theme='dark'] .notif-rich-card:hover,
+.dark .notif-rich-card:hover {
+  border-color: rgba(96, 165, 250, 0.35);
+  box-shadow: 0 10px 32px -20px rgba(0, 0, 0, 0.45);
+}
+
+.notif-rich-card--dropdown {
+  padding: 12px 14px;
+  gap: 12px;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
+}
+
+.notif-rich-card--dropdown:hover {
+  background: var(--notif-dd-hover, rgba(243, 244, 246, 0.95));
+  box-shadow: none;
+}
+
+[data-theme='dark'] .notif-rich-card--dropdown:hover,
+.dark .notif-rich-card--dropdown:hover {
+  background: rgba(31, 41, 55, 0.65);
+}
+
+.notif-rich-card--compact {
+  padding: 12px 14px;
+}
+
+.notif-rich-card--unread {
+  border-inline-start: 3px solid var(--form-primary, #0039c5);
+  background: linear-gradient(
+    90deg,
+    rgba(59, 130, 246, 0.07) 0%,
+    rgba(59, 130, 246, 0.02) 48%,
+    transparent 100%
+  );
+}
+
+[data-theme='dark'] .notif-rich-card--unread,
+.dark .notif-rich-card--unread {
+  background: linear-gradient(
+    90deg,
+    rgba(96, 165, 250, 0.12) 0%,
+    rgba(96, 165, 250, 0.04) 50%,
+    transparent 100%
+  );
+}
+
+.notif-rich-card--dropdown.notif-rich-card--unread {
+  border-inline-start: none;
+  background: rgba(59, 130, 246, 0.08);
+}
+
+[data-theme='dark'] .notif-rich-card--dropdown.notif-rich-card--unread,
+.dark .notif-rich-card--dropdown.notif-rich-card--unread {
+  background: rgba(96, 165, 250, 0.12);
+}
+
+.notif-rich-card__unread-dot {
+  position: absolute;
+  top: 18px;
+  inset-inline-start: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--form-primary, #2563eb);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
+}
+
+.notif-rich-card--dropdown .notif-rich-card__unread-dot {
+  top: 14px;
+  inset-inline-start: 6px;
+}
+
+[data-theme='dark'] .notif-rich-card__unread-dot,
+.dark .notif-rich-card__unread-dot {
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.95);
+}
+
+.notif-rich-card__icon-wrap {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--form-primary, #1d4ed8);
+}
+
+[data-theme='dark'] .notif-rich-card__icon-wrap,
+.dark .notif-rich-card__icon-wrap {
+  background: rgba(96, 165, 250, 0.15);
+  color: #93c5fd;
+}
+
+.notif-rich-card--dropdown .notif-rich-card__icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+}
+
+.notif-rich-card__icon {
+  width: 22px;
+  height: 22px;
+}
+
+.notif-rich-card--dropdown .notif-rich-card__icon {
+  width: 18px;
+  height: 18px;
+}
+
+.notif-rich-card__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.notif-rich-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.notif-rich-card__title {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--root-text, #0f172a);
+}
+
+[data-theme='dark'] .notif-rich-card__title,
+.dark .notif-rich-card__title {
+  color: var(--root-text, #f8fafc);
+}
+
+.notif-rich-card__time {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--form-text, #64748b);
+  white-space: nowrap;
+}
+
+.notif-rich-card__ref {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--form-text, #475569);
+}
+
+.notif-rich-card__route {
+  font-size: 0.8125rem;
+  color: var(--form-text, #64748b);
+}
+
+.notif-rich-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.notif-rich-card__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  border-radius: 9999px;
+  line-height: 1.2;
+}
+
+.notif-rich-card__badge--export {
+  background: rgba(16, 185, 129, 0.15);
+  color: #047857;
+}
+
+.notif-rich-card__badge--import {
+  background: rgba(59, 130, 246, 0.15);
+  color: #1d4ed8;
+}
+
+.notif-rich-card__badge--neutral {
+  background: rgba(100, 116, 139, 0.15);
+  color: #475569;
+}
+
+.notif-rich-card__badge--status {
+  background: rgba(245, 158, 11, 0.18);
+  color: #b45309;
+}
+
+.notif-rich-card__badge--status-ok {
+  background: rgba(16, 185, 129, 0.18);
+  color: #047857;
+}
+
+.notif-rich-card__badge--status-danger {
+  background: rgba(239, 68, 68, 0.16);
+  color: #b91c1c;
+}
+
+[data-theme='dark'] .notif-rich-card__badge--status,
+.dark .notif-rich-card__badge--status {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fcd34d;
+}
+
+[data-theme='dark'] .notif-rich-card__badge--status-ok,
+.dark .notif-rich-card__badge--status-ok {
+  background: rgba(52, 211, 153, 0.18);
+  color: #6ee7b7;
+}
+
+[data-theme='dark'] .notif-rich-card__badge--status-danger,
+.dark .notif-rich-card__badge--status-danger {
+  background: rgba(248, 113, 113, 0.15);
+  color: #fecaca;
+}
+
+.notif-rich-card__message {
+  margin: 4px 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--form-text, #64748b);
+}
+
+.notif-rich-card__footer {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.notif-rich-card__mark-read {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--form-primary, #2563eb);
+  color: var(--form-primary, #1d4ed8);
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.notif-rich-card__mark-read:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.notif-rich-card__mark-read:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+@media (max-width: 480px) {
+  .notif-rich-card__head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .notif-rich-card__time {
+    white-space: normal;
+  }
+}

@@ -1528,13 +1528,50 @@
     "unread": "unread",
     "markRead": "Mark as read",
     "markAllRead": "Mark all as read",
+    "markAllReadShort": "Mark all read",
     "markAllSuccess": "All notifications marked as read.",
     "saving": "Saving…",
     "empty": "No notifications yet.",
+    "emptyTitle": "You're all caught up",
     "noTitle": "Notification",
     "previous": "Previous",
     "next": "Next",
-    "pageOf": "Page {{current}} of {{total}}"
+    "pageOf": "Page {{current}} of {{total}}",
+    "direction": {
+      "export": "Export",
+      "import": "Import",
+      "transit": "Transit",
+      "cabotage": "Cabotage",
+      "other": "Other"
+    },
+    "statusValue": {
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "pending": "Pending"
+    },
+    "types": {
+      "_fallback": {
+        "withType": "{{type}}"
+      },
+      "sd_form_sent_to_operations": {
+        "title": "SD sent to operations"
+      },
+      "sd_form_booking_confirmation_uploaded": {
+        "title": "Booking confirmation uploaded"
+      },
+      "shipment_notify_sales_financials": {
+        "title": "Cost invoice update"
+      },
+      "shipment_operation_task_reminder": {
+        "title": "Shipment task reminder"
+      },
+      "client_follow_up_reminder": {
+        "title": "Client follow-up reminder"
+      },
+      "excuse_decision": {
+        "title": "Attendance excuse update"
+      }
+    }
   },
   "notificationsAdmin": {
     "from": "From",

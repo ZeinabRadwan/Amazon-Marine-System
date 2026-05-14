@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { getStoredToken } from '../Login'
 import {
   listNotifications,
@@ -11,18 +12,19 @@ import { Container } from '../../components/Container'
 import '../../components/PageHeader/PageHeader.css'
 import LoaderDots from '../../components/LoaderDots'
 import Alert from '../../components/Alert'
-import { Bell, Check, CheckCheck, RefreshCw } from 'lucide-react'
+import { Bell, CheckCheck, RefreshCw } from 'lucide-react'
 import '../../components/LoaderDots/LoaderDots.css'
 import '../Clients/Clients.css'
 import './Notifications.css'
-import { formatDateTime } from '../../utils/dateUtils'
-
-function formatDate(iso) {
-  return formatDateTime(iso)
-}
+import NotificationRichCard from '../../components/Notifications/NotificationRichCard'
+import {
+  extractUnreadCountFromResponse,
+  getNotificationNavigationPath,
+} from '../../utils/notificationsDisplay'
 
 export default function Notifications() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const token = getStoredToken()
 
   const [list, setList] = useState([])
@@ -48,8 +50,9 @@ export default function Notifications() {
         const raw = res.data ?? res.notifications ?? res
         const arr = Array.isArray(raw) ? raw : (res.data && Array.isArray(res.data) ? res.data : [])
         setList(arr)
-        const total = res.total ?? res.meta?.total ?? arr.length
-        const lastPage = res.last_page ?? res.meta?.last_page ?? Math.max(1, Math.ceil(total / pagination.per_page))
+        const meta = res.meta ?? {}
+        const total = Number(meta.total ?? res.total ?? arr.length) || 0
+        const lastPage = Math.max(1, Number(meta.last_page ?? res.last_page) || 1)
         setPagination((p) => ({
           ...p,
           total,
@@ -65,8 +68,7 @@ export default function Notifications() {
     setUnreadLoading(true)
     getUnreadCount(token)
       .then((res) => {
-        const count = res.unread_count ?? res.count ?? res.data?.unread_count ?? res.data?.count ?? 0
-        setUnreadCount(Number(count))
+        setUnreadCount(extractUnreadCountFromResponse(res))
       })
       .catch(() => setUnreadCount(0))
       .finally(() => setUnreadLoading(false))
@@ -119,6 +121,22 @@ export default function Notifications() {
   }
 
   const isRead = (n) => !!n.read_at
+
+  const handleRowActivate = (n) => {
+    const read = isRead(n)
+    const path = getNotificationNavigationPath(n)
+    if (!read && n.id && token) {
+      markNotificationRead(token, n.id)
+        .then(() => {
+          setList((prev) =>
+            prev.map((x) => (String(x.id) === String(n.id) ? { ...x, read_at: x.read_at || new Date().toISOString() } : x))
+          )
+          loadUnreadCount()
+        })
+        .catch(() => {})
+    }
+    if (path) navigate(path)
+  }
 
   return (
     <Container size="xl">
@@ -179,6 +197,7 @@ export default function Notifications() {
         {list.length === 0 && !loading ? (
           <div className="notifications-empty clients-filters-card">
             <Bell className="notifications-empty-icon" aria-hidden />
+            <p className="notifications-empty-title">{t('notifications.emptyTitle', 'You are all caught up')}</p>
             <p className="notifications-empty-text">{t('notifications.empty')}</p>
           </div>
         ) : (
@@ -187,42 +206,26 @@ export default function Notifications() {
               const read = isRead(n)
               const marking = markingId === n.id
               return (
-                <li
-                  key={n.id}
-                  className={`notifications-item ${read ? 'notifications-item--read' : 'notifications-item--unread'}`}
-                  role="listitem"
-                >
-                  <div className="notifications-item__content">
-                    <div className="notifications-item__body">
-                      <span className="notifications-item__title">{n.title ?? n.message ?? t('notifications.noTitle')}</span>
-                      {(n.body ?? n.message) && n.body !== (n.title ?? n.message) && (
-                        <p className="notifications-item__text">{n.body}</p>
-                      )}
-                    </div>
-                    <div className="notifications-item__meta">
-                      <time dateTime={n.created_at} className="notifications-item__date">
-                        {formatDate(n.created_at)}
-                      </time>
-                      {!read && (
-                        <button
-                          type="button"
-                          className="notifications-item__btn-read"
-                          onClick={() => handleMarkRead(n.id)}
-                          disabled={marking}
-                          aria-label={t('notifications.markRead')}
-                          title={t('notifications.markRead')}
-                        >
-                          {marking ? (
-                            <span className="notifications-item__btn-text">{t('notifications.saving')}</span>
-                          ) : (
-                            <>
-                              <Check size={14} aria-hidden />
-                              <span className="notifications-item__btn-text">{t('notifications.markRead')}</span>
-                            </>
-                          )}
-                        </button>
-                      )}
-                    </div>
+                <li key={n.id} className="notifications-item-wrap" role="listitem">
+                  <div
+                    className={`notifications-item ${read ? 'notifications-item--read' : 'notifications-item--unread'}`}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleRowActivate(n)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        handleRowActivate(n)
+                      }
+                    }}
+                  >
+                    <NotificationRichCard
+                      notification={n}
+                      variant="page"
+                      unread={!read}
+                      onMarkRead={() => handleMarkRead(n.id)}
+                      markingRead={marking}
+                    />
                   </div>
                 </li>
               )
