@@ -321,6 +321,9 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
   const [inlandCost, setInlandCost] = useState('')
   const [inlandSelling, setInlandSelling] = useState('')
   const [inlandCurrency, setInlandCurrency] = useState('EGP')
+  const [inlandGenCost, setInlandGenCost] = useState('')
+  const [inlandGenSelling, setInlandGenSelling] = useState('')
+  const [inlandGenCurrency, setInlandGenCurrency] = useState('EGP')
 
   const [inlandLineRows, setInlandLineRows] = useState([])
 
@@ -717,11 +720,6 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
     })
     return m
   }, [inlandEnabled, entryMode, inlandLineRows])
-
-  const selectedClient = useMemo(() => {
-    if (!clientAsync?.value) return null
-    return { id: clientAsync.value, name: clientAsync.label }
-  }, [clientAsync])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -1721,7 +1719,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                   <thead>
                     <tr>
                       <th>{t('pricing.item', 'Item')}</th>
-                      <th className="shipment-fin-num">{t('pricing.amount', 'Amount')}</th>
+                      <th className="shipment-fin-num">{t('shipments.expColAmount', 'Amount')}</th>
                       <th className="shipment-fin-cur-cell">{t('pricing.currency', 'Cur.')}</th>
                       <th className="shipment-fin-actions">{t('pricing.rowActions', 'Actions')}</th>
                     </tr>
@@ -1824,10 +1822,10 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                 </div>
                 <div className="flex justify-between gap-3 text-sm border-b border-gray-100 dark:border-gray-700 pb-2">
                   <span className="text-gray-600 dark:text-gray-400 shrink-0">{t('pricing.summaryInland', 'Inland transport total')}</span>
-                  <div className="flex flex-col items-end gap-0.5 font-bold tabular-nums text-right">
+                  <div className="flex flex-col items-end gap-1 font-bold tabular-nums text-right">
                     {!inlandEnabled ? (
                       <span>{t('common.dash')}</span>
-                    ) : (
+                    ) : entryMode === 'quick' ? (
                       <>
                         {parseNum(inlandSelling) > 0 ? (
                           <span>{formatLocaleMoney(parseNum(inlandSelling), inlandCurrency, i18n.language)}</span>
@@ -1839,6 +1837,21 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                           </span>
                         ) : null}
                         {!parseNum(inlandSelling) && !parseNum(inlandGenSelling) ? <span>{t('common.dash')}</span> : null}
+                      </>
+                    ) : (
+                      <>
+                        {sortCurrencyCodes(
+                          Object.keys(inlandNonQuickSellingByCurrency).filter((c) => Math.abs(inlandNonQuickSellingByCurrency[c] || 0) > 1e-9)
+                        ).map((cur) => (
+                          <span key={cur} className="inline-flex items-center gap-2">
+                            {currencyCodePill(cur)}
+                            {formatLocaleMoney(inlandNonQuickSellingByCurrency[cur], cur, i18n.language)}
+                          </span>
+                        ))}
+                        {Object.keys(inlandNonQuickSellingByCurrency).filter((c) => Math.abs(inlandNonQuickSellingByCurrency[c] || 0) > 1e-9)
+                          .length === 0 ? (
+                          <span>{t('common.dash')}</span>
+                        ) : null}
                       </>
                     )}
                   </div>
@@ -1868,11 +1881,24 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                     {officialReceiptsNote.trim()}
                   </div>
                 ) : null}
-                <div className="flex justify-between gap-3 text-sm border-b border-gray-100 dark:border-gray-700 pb-2">
-                  <span className="text-gray-600 dark:text-gray-400 shrink-0">{t('pricing.summaryHandling', 'Handling fees')}</span>
-                  <span className="font-bold tabular-nums text-right">
-                    {formatLocaleMoney(handlingTotal, handlingCurrencyResolved, i18n.language)}
-                  </span>
+                <div className="flex justify-between gap-3 items-start text-sm border-b border-gray-100 dark:border-gray-700 pb-2">
+                  <span className="text-gray-600 dark:text-gray-400 shrink-0 pt-0.5">{t('pricing.summaryHandling', 'Handling fees')}</span>
+                  <div className="flex flex-col items-end gap-1 font-bold tabular-nums text-right">
+                    {sortCurrencyCodes(
+                      Object.keys(handlingSellingByCurrency).filter((c) => Math.abs(handlingSellingByCurrency[c] || 0) > 1e-9)
+                    ).length === 0 ? (
+                      <span>{t('common.dash')}</span>
+                    ) : (
+                      sortCurrencyCodes(
+                        Object.keys(handlingSellingByCurrency).filter((c) => Math.abs(handlingSellingByCurrency[c] || 0) > 1e-9)
+                      ).map((cur) => (
+                        <span key={cur} className="inline-flex items-center gap-2">
+                          {currencyCodePill(cur)}
+                          {formatLocaleMoney(handlingSellingByCurrency[cur], cur, i18n.language)}
+                        </span>
+                      ))
+                    )}
+                  </div>
                 </div>
                 <div className="rounded-lg border border-emerald-200 dark:border-emerald-900/45 bg-emerald-50/85 dark:bg-emerald-950/30 p-4 space-y-2">
                   <div className="text-xs font-bold uppercase tracking-wider text-emerald-900 dark:text-emerald-200">
@@ -1922,38 +1948,65 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
               </div>
             </QuoteFinCard>
 
-            <div
-              className="rounded-xl border border-amber-300/90 bg-amber-50/95 dark:bg-amber-950/35 dark:border-amber-700/60 p-4 space-y-3"
-              role="region"
-              aria-label={t('pricing.pricingTeamConfirmTitle', 'Pricing team confirmation')}
-            >
-              <div className="text-sm font-bold text-amber-950 dark:text-amber-100">
-                {t('pricing.pricingTeamConfirmTitle', 'Confirm with Pricing Team before sending')}
-              </div>
-              <p className="text-xs text-amber-900/90 dark:text-amber-200/90 leading-relaxed m-0">
-                {t(
-                  'pricing.pricingTeamConfirmBody',
-                  'Make sure Pricing Team confirms the underlying rates are still valid before you send this quotation to the client.'
-                )}
-              </p>
-              <label className="flex items-start gap-2 cursor-pointer border-t border-amber-300/70 dark:border-amber-800/60 pt-3">
+            <div className="space-y-4">
+              <div className="rounded-xl border border-slate-200/95 dark:border-slate-700 bg-white dark:bg-slate-900/50 p-4 shadow-sm">
+                <label className="text-sm font-bold text-gray-800 dark:text-gray-100 block mb-2">
+                  {t('pricing.municipality', 'Municipality')}
+                </label>
                 <input
-                  type="checkbox"
-                  className="mt-0.5 rounded border-amber-600 text-amber-700 focus:ring-amber-500"
-                  checked={pricingTeamConfirmed}
-                  onChange={(e) => setPricingTeamConfirmed(e.target.checked)}
+                  type="text"
+                  value={municipality}
+                  onChange={(e) => setMunicipality(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-950 text-sm"
+                  placeholder={t('pricing.municipalityPlaceholder', 'Enter municipality (if applicable)')}
+                  autoComplete="address-level2"
                 />
-                <span className="text-sm font-semibold text-amber-950 dark:text-amber-100">
-                  {t('pricing.pricingTeamConfirmCheckbox', 'I confirmed with Pricing Team — this quotation is ready to send')}
-                </span>
-              </label>
+              </div>
+
+              <div
+                className={`rounded-xl border p-4 space-y-3 transition-colors ${
+                  pricingTeamConfirmed
+                    ? 'border-emerald-400/80 bg-emerald-50/90 dark:border-emerald-700/60 dark:bg-emerald-950/30'
+                    : 'border-amber-300/90 bg-amber-50/95 dark:border-amber-700/60 dark:bg-amber-950/35'
+                }`}
+                role="region"
+                aria-label={t('pricing.pricingTeamConfirmTitle', 'Pricing team confirmation')}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2 gap-y-1">
+                  <div className="text-sm font-bold text-amber-950 dark:text-gray-100">
+                    {t('pricing.pricingTeamConfirmTitle', 'Confirm with Pricing Team before sending')}
+                  </div>
+                  <span
+                    className={`text-xs font-bold uppercase tracking-wide rounded-full px-2.5 py-1 ${
+                      pricingTeamConfirmed
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200'
+                    }`}
+                  >
+                    {pricingTeamConfirmed ? t('pricing.confirmStateYes', 'Confirmed') : t('pricing.confirmStateNo', 'Not confirmed')}
+                  </span>
+                </div>
+                <p className="text-xs text-amber-900/90 dark:text-amber-200/90 leading-relaxed m-0">
+                  {t(
+                    'pricing.pricingTeamConfirmBody',
+                    'Make sure Pricing Team confirms the underlying rates are still valid before you send this quotation to the client.'
+                  )}
+                </p>
+                <label className="flex items-start gap-2 cursor-pointer border-t border-amber-300/70 dark:border-amber-800/60 pt-3">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 rounded border-amber-600 text-amber-700 focus:ring-amber-500"
+                    checked={pricingTeamConfirmed}
+                    onChange={(e) => setPricingTeamConfirmed(e.target.checked)}
+                  />
+                  <span className="text-sm font-semibold text-amber-950 dark:text-amber-100">
+                    {t('pricing.pricingTeamConfirmCheckbox', 'I confirmed with Pricing Team — this quotation is ready to send')}
+                  </span>
+                </label>
+              </div>
             </div>
 
-            <QuoteFinCard
-              icon={Calendar}
-              title={t('pricing.quoteSectionValidityNotes', 'Validity & notes')}
-              subtitle={t('pricing.quoteValidityNotesSub', 'Quote validity and internal or client-facing notes.')}
-            >
+            <QuoteFinCard icon={Calendar} title={t('pricing.quoteSectionValidityNotes', 'Validity & notes')}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.validFrom', 'Valid from')}</label>
@@ -2001,11 +2054,6 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
               </div>
             </QuoteFinCard>
 
-            {selectedClient ? (
-              <p className="text-xs text-gray-500">
-                {t('pricing.selectedClient', 'Selected client')}: {selectedClient.name || selectedClient.company_name}
-              </p>
-            ) : null}
           </form>
             </div>
           </div>
@@ -2024,6 +2072,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
             form="quoteForm"
             disabled={
               loading ||
+              (!isQuick && !clientAsync?.value) ||
               (!isQuick && inlandEnabled && !inlandOfferId) ||
               (entryMode === 'manual' && !String(form.valid_to || '').trim()) ||
               (isQuick && !pricingTeamConfirmed)
