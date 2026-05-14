@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Menu } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Menu } from 'lucide-react'
 import { latinDateTimeFormat, formatShipmentsNumber } from '../../utils/westernNumerals'
 import { DropdownMenu } from '../../components/DropdownMenu'
 import { countCompletedTasks, countOverdueTasks } from './shipmentOperationTaskUi'
@@ -84,14 +84,6 @@ function bookingRef(row) {
   return bl || '—'
 }
 
-/** Primary display: booking_number, else B/L */
-function primaryBookingId(row) {
-  const b = String(row.booking_number ?? '').trim()
-  if (b) return b
-  const bl = String(row.bl_number ?? '').trim()
-  return bl || '—'
-}
-
 /**
  * Operations list card: task counts (API may use several aliases). Missing → 0.
  * Bar: pct = completed/total*100 when total > 0, else 0.
@@ -146,6 +138,252 @@ function opsListBarTone(pct, overdue) {
   if (overdue > 0) return 'ship-card__bar-fill--overdue'
   if (pct === 100) return 'ship-card__bar-fill--complete'
   return 'ship-card__bar-fill--progress'
+}
+
+function toLocalDay(value) {
+  if (value == null || value === '') return null
+  const d = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(d.getTime())) return null
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
+}
+
+function startOfToday() {
+  const n = new Date()
+  return new Date(n.getFullYear(), n.getMonth(), n.getDate())
+}
+
+/** Days from today: negative = past, 0 = today, positive = future */
+function calendarOffsetDays(day) {
+  if (!day) return null
+  return Math.round((day.getTime() - startOfToday().getTime()) / 86400000)
+}
+
+/** 'red' | 'amber' | 'green' for known calendar day */
+function toneForCalendarDay(day) {
+  const off = calendarOffsetDays(day)
+  if (off == null) return 'gray'
+  if (off < 0) return 'red'
+  if (off === 0) return 'red'
+  if (off <= 3) return 'amber'
+  return 'green'
+}
+
+function serviceChipLabel(row, t) {
+  const mode = row.mode ? t(`shipments.modeOptions.${row.mode}`, { defaultValue: row.mode }) : ''
+  const st = row.shipment_type
+    ? t(`shipments.shipmentTypeOptions.${row.shipment_type}`, { defaultValue: row.shipment_type })
+    : ''
+  const parts = [mode, st].filter((x) => x && String(x).trim())
+  if (parts.length === 0) return t('common.dash')
+  return parts.join(' · ')
+}
+
+function operationalBadgeStyle(code) {
+  const c = String(code || '')
+  if (c.includes('custom') || c.includes('clearance')) {
+    return { background: 'var(--ops-amber-light, #fef3c7)', color: 'var(--ops-amber, #d97706)' }
+  }
+  if (c.includes('transit') || c.includes('sailed') || c.includes('vessel')) {
+    return { background: 'var(--ops-blue-light, #dbeafe)', color: 'var(--ops-blue, #1d4ed8)' }
+  }
+  if (c.includes('doc') || c.includes('review')) {
+    return { background: 'var(--ops-green-light, #e8f7f2)', color: 'var(--ops-green, #0d7a55)' }
+  }
+  if (c.includes('complete')) {
+    return { background: 'var(--ops-green-light, #e8f7f2)', color: 'var(--ops-green, #0d7a55)' }
+  }
+  return { background: 'var(--ops-gray-100, #f1f5f9)', color: 'var(--ops-gray-600, #475569)' }
+}
+
+function DashboardRowLayout({ row, t, i18n, actionsMenuItems, menuAlignEnd, onOpen, onKeyActivate }) {
+  const cutRaw = row.operation?.cut_off_date ?? row.cut_off_date
+  const loadRaw = row.loading_date
+  const cutDay = toLocalDay(cutRaw)
+  const loadDay = toLocalDay(loadRaw)
+  const cutTone = cutDay ? toneForCalendarDay(cutDay) : 'gray'
+  const loadTone = loadDay ? toneForCalendarDay(loadDay) : 'gray'
+
+  const cutLabel = formatCutoffDayMonth(cutRaw, i18n.language)
+  const loadLabel = formatCutoffDayMonth(loadRaw, i18n.language)
+
+  const cutOff = calendarOffsetDays(cutDay)
+  const loadOff = calendarOffsetDays(loadDay)
+  const cutRel =
+    cutOff === 0
+      ? t('shipments.opsDash.dateRelToday')
+      : cutOff === 1
+        ? t('shipments.opsDash.dateRelTomorrow')
+        : cutOff != null && cutOff > 1 && cutOff <= 3
+          ? t('shipments.opsDash.dateRelDays', { count: formatShipmentsNumber(cutOff, i18n.language) })
+          : ''
+  const loadMissed = loadOff != null && loadOff < 0
+  const loadRel =
+    loadOff === 0
+      ? t('shipments.opsDash.dateRelToday')
+      : loadOff === 1
+        ? t('shipments.opsDash.dateRelTomorrow')
+        : loadOff != null && loadOff > 1 && loadOff <= 3
+          ? t('shipments.opsDash.dateRelDays', { count: formatShipmentsNumber(loadOff, i18n.language) })
+          : loadMissed
+            ? t('shipments.opsDash.dateRelMissed')
+            : ''
+
+  const cutDisplay = cutLabel ? (cutRel ? `${cutRel} — ${cutLabel}` : cutLabel) : t('shipments.opsDash.dateNotSet')
+  const loadDisplay = loadLabel
+    ? loadRel
+      ? `${loadLabel} (${loadRel})`
+      : loadLabel
+    : t('shipments.opsDash.dateNotSet')
+
+  const cutClass =
+    cutTone === 'red' ? 'ops-dash__date-val--red' : cutTone === 'amber' ? 'ops-dash__date-val--amber' : cutTone === 'green' ? 'ops-dash__date-val--green' : 'ops-dash__date-val--gray'
+  const loadClass = !loadDay
+    ? 'ops-dash__date-val--gray'
+    : loadMissed || loadTone === 'red'
+      ? 'ops-dash__date-val--red'
+      : loadTone === 'amber'
+        ? 'ops-dash__date-val--amber'
+        : loadTone === 'green'
+          ? 'ops-dash__date-val--green'
+          : 'ops-dash__date-val--gray'
+
+  const { total, completed, overdue, pct } = normalizeOpsListTaskInts(row)
+  let barFill = 'ops-dash__prog-fill--green'
+  if (overdue > 0) barFill = 'ops-dash__prog-fill--red'
+  else if (pct > 0 && pct < 100) barFill = 'ops-dash__prog-fill--amber'
+
+  const urgent = overdue > 0 || cutTone === 'red' || loadMissed
+  const warning = !urgent && (cutTone === 'amber' || loadTone === 'amber')
+  const rowClass = urgent ? 'ops-dash__ship-row--urgent' : warning ? 'ops-dash__ship-row--warning' : ''
+  const accentClass = urgent ? 'ops-dash__row-accent--red' : warning ? 'ops-dash__row-accent--amber' : 'ops-dash__row-accent--green'
+
+  const bl = String(row.bl_number ?? '').trim()
+  const bk = String(row.booking_number ?? '').trim()
+  const hasBl = Boolean(bl)
+
+  const opLabel = row.operational_status_code
+    ? t(`shipments.ops.phase.${row.operational_status_code}`, { defaultValue: row.operational_status_code })
+    : '—'
+  const badgeStyle = operationalBadgeStyle(row.operational_status_code)
+
+  const svc = serviceChipLabel(row, t)
+  const svcTone = svc === t('common.dash') ? 'ops-dash__svc-chip--gray' : 'ops-dash__svc-chip--blue'
+
+  const vesselLine =
+    row.shipping_line?.name != null && String(row.shipping_line.name).trim() !== ''
+      ? String(row.shipping_line.name).trim()
+      : '—'
+
+  const overdueLine =
+    overdue > 0
+      ? t('shipments.opsDash.tasksOverdueLine', { count: formatShipmentsNumber(overdue, i18n.language) })
+      : null
+  const trackLine = overdue > 0 ? null : t('shipments.opsDash.onTrack')
+
+  const OpenIcon = i18n.dir() === 'rtl' ? ChevronLeft : ChevronRight
+
+  return (
+    <div
+      className={`ops-dash__ship-row ${rowClass}`.trim()}
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpen?.()}
+      onKeyDown={onKeyActivate}
+      aria-label={t('shipments.opsCard.openShipmentAria')}
+    >
+      <div className={`ops-dash__row-accent ${accentClass}`} aria-hidden />
+      <div className="ops-dash__row-inner">
+        <div className="ops-dash__col">
+          <div className="ops-dash__client-name">{clientText(row)}</div>
+          {hasBl ? (
+            <>
+              <div className="ops-dash__bl-ref">{t('shipments.opsDash.blPrefix', { ref: bl })}</div>
+              {bk ? <div className="ops-dash__bl-ref">{t('shipments.opsDash.bkPrefix', { ref: bk })}</div> : null}
+            </>
+          ) : (
+            <>
+              {bk ? <div className="ops-dash__bl-ref">{t('shipments.opsDash.bkPrefix', { ref: bk })}</div> : null}
+              <div className="ops-dash__bl-ref ops-dash__bl-pending">{t('shipments.opsDash.blPending')}</div>
+            </>
+          )}
+        </div>
+        <div className="ops-dash__col ops-dash__col--route">
+          <div className="ops-dash__route">{routeText(row)}</div>
+        </div>
+        <div className="ops-dash__col">
+          <div className="ops-dash__cnt-val">{compactContainerLine(row, t, i18n.language)}</div>
+          <span className={`ops-dash__svc-chip ${svcTone}`}>{svc}</span>
+        </div>
+        <div className="ops-dash__col ops-dash__col--vessel">
+          <div className="ops-dash__vessel">{vesselLine}</div>
+        </div>
+        <div className="ops-dash__col ops-dash__col--dates">
+          <div className="ops-dash__dates-inner">
+            <div className="ops-dash__date-item">
+              <span className="ops-dash__date-label">{t('shipments.opsDash.cutoffLabel')}</span>
+              <span className={`ops-dash__date-val ${cutClass}`}>{cutDisplay}</span>
+            </div>
+            <div className="ops-dash__date-item">
+              <span className="ops-dash__date-label">{t('shipments.opsDash.loadingLabel')}</span>
+              <span className={`ops-dash__date-val ${loadClass}`}>{loadDisplay}</span>
+            </div>
+          </div>
+        </div>
+        <div className="ops-dash__col">
+          <span className="ops-dash__status-badge" style={badgeStyle}>
+            {opLabel}
+          </span>
+          {overdueLine ? (
+            <span className="ops-dash__status-line ops-dash__status-line--danger">{overdueLine}</span>
+          ) : trackLine ? (
+            <span className="ops-dash__status-line ops-dash__status-line--ok">{trackLine}</span>
+          ) : (
+            <span className="ops-dash__status-line ops-dash__status-line--muted">—</span>
+          )}
+        </div>
+        <div className="ops-dash__col ops-dash__col--planning">
+          <div className="ops-dash__tasks-label">{t('shipments.opsDash.tasksTitle')}</div>
+          <div className="ops-dash__prog-info">
+            {t('shipments.opsDash.progressCount', {
+              done: formatShipmentsNumber(completed, i18n.language),
+              total: formatShipmentsNumber(total, i18n.language),
+            })}
+          </div>
+          <div className="ops-dash__prog-bar">
+            <div className={`ops-dash__prog-fill ${barFill}`} style={{ width: `${pct}%` }} />
+          </div>
+        </div>
+        <div className="ops-dash__col ops-dash__col--actions" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+          {Array.isArray(actionsMenuItems) && actionsMenuItems.length > 0 ? (
+            <DropdownMenu
+              portaled
+              align={menuAlignEnd ? 'end' : 'start'}
+              className="shipments-row-actions-menu"
+              trigger={
+                <button type="button" className="ops-dash__menu-btn" title={t('shipments.actions')} aria-label={t('shipments.actions')}>
+                  <Menu className="h-4 w-4 shrink-0" aria-hidden />
+                </button>
+              }
+              items={actionsMenuItems}
+            />
+          ) : (
+            <span className="ops-dash__bl-ref"> </span>
+          )}
+        </div>
+        <div className="ops-dash__col ops-dash__col--open" onClick={(e) => e.stopPropagation()}>
+          <button
+            type="button"
+            className="ops-dash__open-btn"
+            title={t('shipments.opsCard.openShipmentAria')}
+            aria-label={t('shipments.opsCard.openShipmentAria')}
+            onClick={() => onOpen?.()}
+          >
+            <OpenIcon className="h-4 w-4" aria-hidden />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function routeTextForOpsMeta(row) {
@@ -244,10 +482,7 @@ function LegacyCardLayout({
   t,
   i18n,
   cutLabel,
-  total,
-  doneSafe,
   overdueForLine,
-  hasTaskTotals,
   completionPct,
   showOverdueBadge,
   showCompletionBadge,
@@ -471,7 +706,8 @@ function OperationsCardLayout({ row, t, i18n, actionsMenuItems, menuAlignEnd, on
 
 /**
  * Operations shipment row card. `layout="legacy"` = previous grid meta + combined progress line (admin mobile).
- * `layout="operations"` = compact ops monitoring card (operations-only list).
+ * `layout="operations"` = compact ops monitoring card (operations-only list, legacy card).
+ * `layout="dashboard"` = horizontal ops dashboard row (operations-only Shipments page redesign).
  */
 export default function ShipmentOpsShipCard({
   row,
@@ -518,10 +754,7 @@ export default function ShipmentOpsShipCard({
     t,
     i18n,
     cutLabel,
-    total,
-    doneSafe,
     overdueForLine,
-    hasTaskTotals,
     completionPct,
     showOverdueBadge,
     showCompletionBadge,
@@ -540,6 +773,19 @@ export default function ShipmentOpsShipCard({
   if (layout === 'operations') {
     return (
       <OperationsCardLayout
+        row={row}
+        t={t}
+        i18n={i18n}
+        actionsMenuItems={actionsMenuItems}
+        menuAlignEnd={menuAlignEnd}
+        onOpen={onOpen}
+        onKeyActivate={onKeyActivate}
+      />
+    )
+  }
+  if (layout === 'dashboard') {
+    return (
+      <DashboardRowLayout
         row={row}
         t={t}
         i18n={i18n}

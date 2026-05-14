@@ -20,6 +20,9 @@ class AppSettings
 
     public const KEY_ATTENDANCE_POLICY = 'attendance.policy';
 
+    /** Default fees shown on quotation forms (e.g. customs certificate). */
+    public const KEY_QUOTATION_DEFAULTS = 'quotation.defaults';
+
     /**
      * @return array<string, mixed>|null
      */

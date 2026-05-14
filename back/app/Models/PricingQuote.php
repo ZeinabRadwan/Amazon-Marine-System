@@ -37,6 +37,7 @@ class PricingQuote extends Model
         'valid_from',
         'valid_to',
         'notes',
+        'municipality',
         'official_receipts_note',
         'pricing_team_confirmed',
         'status',

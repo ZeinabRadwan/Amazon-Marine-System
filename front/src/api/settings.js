@@ -118,6 +118,21 @@ export async function updateSessionSettings(token, body) {
   return data
 }
 
+/** Admin: default fees shown on quotation forms (e.g. customs certificate). */
+export async function updateQuotationDefaults(token, body) {
+  const res = await apiFetch(`${getBaseUrl()}/settings/quotation/defaults`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...authHeaders(token),
+    },
+    body: JSON.stringify(body),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to update quotation defaults (${res.status})`)
+  return data
+}
+
 export async function getTodaySession(token, params = {}) {
   const searchParams = new URLSearchParams()
   if (params.user_id != null && params.user_id !== '') searchParams.set('user_id', String(params.user_id))

@@ -102,6 +102,7 @@ Route::prefix('v1')->group(function () {
             Route::put('settings/system/preferences', [SettingsController::class, 'updateSystemPreferences']);
             Route::put('settings/notifications/preferences', [SettingsController::class, 'updateNotificationPreferences']);
             Route::put('settings/sessions', [SettingsController::class, 'updateSessionSettings']);
+            Route::put('settings/quotation/defaults', [SettingsController::class, 'updateQuotationDefaults']);
         });
 
         // Sessions (daily combined)

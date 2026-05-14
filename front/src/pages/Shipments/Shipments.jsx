@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getStoredToken } from '../Login'
 import { useAuthAccess } from '../../hooks/useAuthAccess'
-import { formatDate, toApiDate } from '../../utils/dateUtils'
+import { formatDate, toApiDate, getDateLocale } from '../../utils/dateUtils'
 import {
   listShipments,
   getShipment,
@@ -29,6 +29,7 @@ import {
 import { listVendors } from '../../api/vendors'
 import { listPorts, createPort } from '../../api/ports'
 import { listShippingLines, createShippingLine } from '../../api/shippingLines'
+import { getOperationsDashboard } from '../../api/dashboard'
 import { listShipmentStatuses } from '../../api/settings'
 import AsyncSelect from '../../components/AsyncSelect'
 import DatePicker from '../../components/DatePicker'
@@ -65,6 +66,9 @@ import {
   Menu,
   ListFilter,
   Paperclip,
+  CalendarDays,
+  CalendarClock,
+  AlertTriangle,
 } from 'lucide-react'
 import { BarChart, DonutChart } from '../../components/Charts'
 import '../../components/Charts/Charts.css'
@@ -72,6 +76,7 @@ import '../../components/LoaderDots/LoaderDots.css'
 import '../Clients/Clients.css'
 import '../Clients/ClientDetailModal.css'
 import './Shipments.css'
+import './ShipmentsOperationsDashboard.css'
 import '../SDForms/SDForms.css'
 import {
   findShipmentStatusOption,
@@ -296,6 +301,25 @@ export default function Shipments() {
   const { user, isAdminRole, isAccountant, isOperations, roleId, hasAbility } = useAuthAccess()
   /** Shipments page task-only dashboard: operations Spatie role, not admin (admin keeps charts/stats). */
   const isOperationsOnlyUser = isOperations && !isAdminRole
+  const opsDashboardHeadlineDate = useMemo(() => {
+    if (!isOperationsOnlyUser) return ''
+    try {
+      return new Intl.DateTimeFormat(getDateLocale(i18n.language), {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        numberingSystem: 'latn',
+      }).format(new Date())
+    } catch {
+      return ''
+    }
+  }, [i18n.language, isOperationsOnlyUser])
+  const opsUserSubtitle = useMemo(() => {
+    const name = user?.name || user?.email || ''
+    if (!opsDashboardHeadlineDate) return name
+    return name ? `${opsDashboardHeadlineDate} — ${name}` : opsDashboardHeadlineDate
+  }, [user, opsDashboardHeadlineDate])
   const isSalesRepresentative = roleId === ROLE_ID.SALES || roleId === ROLE_ID.SALES_MANAGER
   // Operations / logistics: matches ShipmentPolicy create|update|delete (admin, operations role, or shipments.manage_ops).
   const canManageOps = isAdminRole || isOperations || hasAbility('shipments.manage_ops')
@@ -339,6 +363,8 @@ export default function Shipments() {
   const [chartsLoading, setChartsLoading] = useState(false)
   /** Operations-only (non-admin): today's / overdue task counts from API. */
   const [opTaskKpis, setOpTaskKpis] = useState(null)
+  const [opsDashStats, setOpsDashStats] = useState(null)
+  const [opsDashUpcomingWindow, setOpsDashUpcomingWindow] = useState('week')
   const [exportLoading, setExportLoading] = useState(false)
   const [pdfExportingId, setPdfExportingId] = useState(null)
   const [selectedIds, setSelectedIds] = useState({})
@@ -616,6 +642,23 @@ export default function Shipments() {
   useEffect(() => {
     loadList()
   }, [loadList])
+
+  useEffect(() => {
+    if (!token || !isOperationsOnlyUser) return
+    let cancelled = false
+    getOperationsDashboard(token, { upcoming_window: opsDashUpcomingWindow })
+      .then((res) => {
+        if (cancelled) return
+        const d = res?.data ?? res
+        setOpsDashStats(d?.stats ?? null)
+      })
+      .catch(() => {
+        if (!cancelled) setOpsDashStats(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [token, isOperationsOnlyUser, opsDashUpcomingWindow])
 
   useEffect(() => {
     if (!token || isOperationsOnlyUser) return
@@ -1311,7 +1354,7 @@ export default function Shipments() {
     (row) => (
       <ShipmentOpsShipCard
         row={row}
-        layout={isOperationsOnlyUser ? 'operations' : 'legacy'}
+        layout={isOperationsOnlyUser ? 'dashboard' : 'legacy'}
         onOpen={() => {
           setDetailTab('info')
           setDetailId(row.id)
@@ -1884,7 +1927,8 @@ export default function Shipments() {
 
   return (
     <Container size="xl">
-      <div className="clients-page">
+      <div className={isOperationsOnlyUser ? 'shipments-ops-dash' : undefined}>
+        <div className="clients-page">
         {pageLoading && (
           <div className="clients-page-loader shipments-no-print" aria-live="polite" aria-busy="true">
             <LoaderDots />
@@ -1892,35 +1936,96 @@ export default function Shipments() {
         )}
 
         {isOperationsOnlyUser ? (
-          <div className="shipments-ops-kpi-grid shipments-no-print" role="region" aria-label={t('shipments.opsPage.kpiRegion')}>
-            <section className="shipments-ops-kpi-card" aria-labelledby="shipments-ops-kpi-today">
-              <h2 id="shipments-ops-kpi-today" className="shipments-ops-kpi-card__title">
-                {t('shipments.opsPage.todayTitle')}
-              </h2>
-              <div className="shipments-ops-kpi-card__value" aria-live="polite">
-                {opTaskKpis?.today != null
-                  ? formatShipmentsNumber(opTaskKpis.today, i18n.language)
-                  : t('common.dash')}
-              </div>
-              <p className="shipments-ops-kpi-card__hint">{t('shipments.opsPage.todayHint')}</p>
-            </section>
-            <section
-              className={`shipments-ops-kpi-card${opTaskKpis?.overdue > 0 ? ' shipments-ops-kpi-card--alert' : ''}`}
-              aria-labelledby="shipments-ops-kpi-overdue"
-            >
-              <h2 id="shipments-ops-kpi-overdue" className="shipments-ops-kpi-card__title">
-                {t('shipments.opsPage.overdueTitle')}
-              </h2>
-              <div
-                className={`shipments-ops-kpi-card__value${opTaskKpis?.overdue > 0 ? ' shipments-ops-kpi-card__value--danger' : ''}`}
-                aria-live="polite"
-              >
-                {opTaskKpis?.overdue != null
-                  ? formatShipmentsNumber(opTaskKpis.overdue, i18n.language)
-                  : t('common.dash')}
-              </div>
-              <p className="shipments-ops-kpi-card__hint">{t('shipments.opsPage.overdueHint')}</p>
-            </section>
+          <div className="clients-stats-grid shipments-no-print mb-6" role="region" aria-label={t('shipments.opsPage.kpiRegion')}>
+            <StatsCard
+              variant="blue"
+              icon={<Package className="h-6 w-6" aria-hidden />}
+              value={
+                opsDashStats?.active_shipments != null
+                  ? formatShipmentsNumber(opsDashStats.active_shipments, i18n.language)
+                  : t('common.dash')
+              }
+              title={
+                <span className="block">
+                  <span className="block font-semibold text-slate-700 dark:text-slate-200">
+                    {t('shipments.opsDash.statActiveTitle')}
+                  </span>
+                  <span className="mt-0.5 block text-xs font-normal text-slate-500 dark:text-slate-400">
+                    {t('shipments.opsDash.statActiveSub')}
+                  </span>
+                </span>
+              }
+            />
+            <StatsCard
+              className="ops-dash__upcoming-stat-card"
+              variant="default"
+              icon={<CalendarDays className="h-6 w-6" aria-hidden />}
+              value={
+                <div className="w-full min-w-0">
+                  <div className="ops-dash__upcoming-stat-row">
+                    <div className="ops-dash__upcoming-stat-select-wrap min-w-0 shrink">
+                      <label htmlFor="shipments-ops-dash-upcoming-window" className="sr-only">
+                        {t('shipments.opsDash.upcomingWindowLabel')}
+                      </label>
+                      <select
+                        id="shipments-ops-dash-upcoming-window"
+                        className="clients-select ops-dash__upcoming-select w-full max-w-[9.5rem] sm:max-w-[11rem]"
+                        value={opsDashUpcomingWindow}
+                        onChange={(e) => setOpsDashUpcomingWindow(e.target.value)}
+                      >
+                        <option value="week">{t('operationsDashboard.upcomingWindows.week')}</option>
+                        <option value="3_days">{t('operationsDashboard.upcomingWindows.3_days')}</option>
+                        <option value="tomorrow">{t('operationsDashboard.upcomingWindows.tomorrow')}</option>
+                        <option value="month">{t('operationsDashboard.upcomingWindows.month')}</option>
+                      </select>
+                    </div>
+                    <p
+                      className="ops-dash__upcoming-stat-value text-end text-xl font-bold tabular-nums leading-tight text-gray-900 dark:text-gray-100"
+                      aria-live="polite"
+                    >
+                      {opsDashStats?.upcoming_tasks != null
+                        ? formatShipmentsNumber(opsDashStats.upcoming_tasks, i18n.language)
+                        : t('common.dash')}
+                    </p>
+                  </div>
+                </div>
+              }
+              title={t('shipments.opsDash.statUpcomingTitle')}
+            />
+            <StatsCard
+              variant="amber"
+              icon={<CalendarClock className="h-6 w-6" aria-hidden />}
+              value={
+                opTaskKpis?.today != null ? formatShipmentsNumber(opTaskKpis.today, i18n.language) : t('common.dash')
+              }
+              title={
+                <span className="block">
+                  <span className="block font-semibold text-slate-700 dark:text-slate-200">
+                    {t('shipments.opsDash.statTodayTitle')}
+                  </span>
+                  <span className="mt-0.5 block text-xs font-normal text-slate-500 dark:text-slate-400">
+                    {t('shipments.opsDash.statTodaySub')}
+                  </span>
+                </span>
+              }
+            />
+            <StatsCard
+              variant={opTaskKpis?.overdue > 0 ? 'red' : 'default'}
+              icon={<AlertTriangle className="h-6 w-6" aria-hidden />}
+              value={
+                opTaskKpis?.overdue != null ? formatShipmentsNumber(opTaskKpis.overdue, i18n.language) : t('common.dash')
+              }
+              title={
+                <span className="block">
+                  <span className="block font-semibold text-slate-700 dark:text-slate-200">
+                    {t('shipments.opsDash.statOverdueTitle')}
+                  </span>
+                  <span className="mt-0.5 block text-xs font-normal text-slate-500 dark:text-slate-400">
+                    {t('shipments.opsDash.statOverdueSub')}
+                  </span>
+                </span>
+              }
+            />
           </div>
         ) : (
           <>
@@ -2241,18 +2346,42 @@ export default function Shipments() {
           {rows.length === 0 && !loading ? (
             <p className="clients-empty">{t('shipments.empty')}</p>
           ) : isOperationsOnlyUser ? (
-            <div className="shipments-ops-cards-list" role="list">
-              {loading && rows.length === 0 ? (
-                <div className="shipments-ops-cards-list__loading flex justify-center py-10" role="status" aria-live="polite">
-                  <LoaderDots />
+            <div className="shipments-no-print">
+              <div className="ops-dash__sec-hdr">
+                <div className="ops-dash__sec-title">
+                  {t('shipments.opsDash.sectionTitle')}
+                  <span className="ops-dash__badge ops-dash__badge--blue">
+                    {t('shipments.opsDash.sectionBadge', { count: formatShipmentsNumber(meta.total ?? 0, i18n.language) })}
+                  </span>
                 </div>
-              ) : (
-                rows.map((row) => (
-                  <div key={row.id} className="shipments-ops-cards-list__item" role="listitem">
-                    {renderOpsMobileCard(row)}
+              </div>
+              <div className="ops-dash__tbl-header-wrap">
+                <div className="ops-dash__tbl-header" role="row">
+                  <div className="ops-dash__th-spacer" aria-hidden />
+                  <div className="ops-dash__th">{t('shipments.opsDash.colClientShipment')}</div>
+                  <div className="ops-dash__th">{t('shipments.opsDash.colRoute')}</div>
+                  <div className="ops-dash__th">{t('shipments.opsDash.colContainers')}</div>
+                  <div className="ops-dash__th">{t('shipments.opsDash.colVessel')}</div>
+                  <div className="ops-dash__th">{t('shipments.opsDash.colDates')}</div>
+                  <div className="ops-dash__th">{t('shipments.opsDash.colStatus')}</div>
+                  <div className="ops-dash__th">{t('shipments.opsDash.colPlanningProcedures')}</div>
+                  <div className="ops-dash__th ops-dash__th--narrow" aria-hidden />
+                  <div className="ops-dash__th ops-dash__th--narrow" aria-hidden />
+                </div>
+              </div>
+              <div className="ops-dash__ship-rows" role="list">
+                {loading && rows.length === 0 ? (
+                  <div className="ops-dash__list-loading" role="status" aria-live="polite">
+                    <LoaderDots />
                   </div>
-                ))
-              )}
+                ) : (
+                  rows.map((row) => (
+                    <div key={row.id} role="listitem">
+                      {renderOpsMobileCard(row)}
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           ) : (
             <Table
@@ -2525,6 +2654,7 @@ export default function Shipments() {
             </div>
           </div>
         )}
+      </div>
       </div>
     </Container>
   )

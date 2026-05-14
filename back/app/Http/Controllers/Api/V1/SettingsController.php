@@ -38,6 +38,8 @@ class SettingsController extends Controller
             $this->settings->getArray(AppSettings::KEY_ATTENDANCE_POLICY) ?? []
         );
 
+        $quotationDefaults = $this->resolveQuotationDefaults();
+
         return response()->json([
             'data' => [
                 'company' => [
@@ -68,8 +70,52 @@ class SettingsController extends Controller
                 'attendance' => [
                     'policy' => $attendancePolicy,
                 ],
+                'quotation' => $quotationDefaults,
             ],
         ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function resolveQuotationDefaults(): array
+    {
+        $stored = $this->settings->getArray(AppSettings::KEY_QUOTATION_DEFAULTS) ?? [];
+        $fee = is_array($stored['customs_certificate_fee'] ?? null) ? $stored['customs_certificate_fee'] : [];
+        $cur = strtoupper((string) ($fee['currency'] ?? 'EGP'));
+
+        return [
+            'customs_certificate_fee' => [
+                'amount' => isset($fee['amount']) ? (float) $fee['amount'] : 250.0,
+                'currency' => in_array($cur, ['EGP', 'USD', 'EUR'], true) ? $cur : 'EGP',
+            ],
+        ];
+    }
+
+    public function updateQuotationDefaults(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'customs_certificate_fee' => ['required', 'array'],
+            'customs_certificate_fee.amount' => ['required', 'numeric', 'min:0'],
+            'customs_certificate_fee.currency' => ['required', 'string', 'in:EGP,USD,EUR'],
+        ]);
+
+        $existing = $this->settings->getArray(AppSettings::KEY_QUOTATION_DEFAULTS) ?? [];
+        $updated = array_merge($existing, [
+            'customs_certificate_fee' => [
+                'amount' => (float) $validated['customs_certificate_fee']['amount'],
+                'currency' => strtoupper((string) $validated['customs_certificate_fee']['currency']),
+            ],
+        ]);
+        $this->settings->setArray(AppSettings::KEY_QUOTATION_DEFAULTS, $updated);
+
+        ActivityLogger::log('settings.quotation_defaults_updated', null, [
+            'customs_certificate_fee' => $updated['customs_certificate_fee'],
+        ]);
+
+        return ApiResponse::success([
+            'quotation' => $this->resolveQuotationDefaults(),
+        ], 'Quotation defaults saved.');
     }
 
     public function officeLocationShow(): JsonResponse

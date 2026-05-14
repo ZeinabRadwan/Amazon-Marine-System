@@ -1,0 +1,538 @@
+/* Operations-only Shipments view — visual match to amazon_marine_ops_dashboard reference (scoped) */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+.shipments-ops-dash {
+  --ops-navy: #0f2340;
+  --ops-orange: #e8790a;
+  --ops-orange-light: #fdf0e0;
+  --ops-green: #0d7a55;
+  --ops-green-light: #e8f7f2;
+  --ops-red: #b91c1c;
+  --ops-red-light: #fee2e2;
+  --ops-blue: #1d4ed8;
+  --ops-blue-light: #dbeafe;
+  --ops-amber: #d97706;
+  --ops-amber-light: #fef3c7;
+  --ops-gray-50: #f8fafc;
+  --ops-gray-100: #f1f5f9;
+  --ops-gray-200: #e2e8f0;
+  --ops-gray-400: #94a3b8;
+  --ops-gray-600: #475569;
+  --ops-gray-700: #334155;
+  --ops-white: #fff;
+  --ops-border: #dde3ed;
+  --ops-font: 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  --ops-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--ops-font);
+  margin-inline: auto;
+}
+
+.shipments-ops-dash .clients-page {
+  background: var(--ops-gray-100);
+  color: var(--ops-gray-700);
+  font-size: 13px;
+}
+
+.dark .shipments-ops-dash {
+  --ops-gray-50: #1e293b;
+  --ops-gray-100: #0f172a;
+  --ops-gray-200: #334155;
+  --ops-gray-400: #94a3b8;
+  --ops-gray-600: #cbd5e1;
+  --ops-gray-700: #e2e8f0;
+  --ops-white: #1e293b;
+  --ops-border: #334155;
+  --ops-navy: #e2e8f0;
+}
+
+.ops-dash__topbar {
+  background: var(--ops-white);
+  border: 1px solid var(--ops-border);
+  border-radius: 0 0 10px 10px;
+  border-top: none;
+  padding: 0 24px;
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 0;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.ops-dash__topbar-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ops-navy);
+}
+
+.ops-dash__topbar-sub {
+  font-size: 11px;
+  color: var(--ops-gray-400);
+  margin-top: 1px;
+}
+
+.ops-dash__main-pad {
+  padding: 20px;
+}
+
+/* Stats row uses shared `clients-stats-grid` + `StatsCard` in Shipments.jsx */
+.ops-dash__upcoming-stat-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.ops-dash__upcoming-stat-select-wrap {
+  flex: 0 1 auto;
+}
+
+.ops-dash__upcoming-stat-value {
+  min-width: 0;
+}
+
+.ops-dash__upcoming-select {
+  font-size: 0.75rem;
+  line-height: 1.25;
+  border-radius: 0.5rem;
+}
+
+.ops-dash__upcoming-stat-card p.text-sm.font-medium {
+  text-align: end;
+}
+
+.ops-dash__sec-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ops-dash__sec-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ops-navy);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ops-dash__badge {
+  display: inline-flex;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.ops-dash__badge--blue {
+  background: var(--ops-blue-light);
+  color: var(--ops-blue);
+}
+
+.ops-dash__tbl-header-wrap {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid var(--form-divider, #e5e7eb);
+  background: var(--form-bg, #fff);
+  margin-bottom: 10px;
+}
+
+.dark .ops-dash__tbl-header-wrap {
+  border-color: #374151;
+  background: rgb(31 41 55 / 0.5);
+}
+
+.ops-dash__tbl-header {
+  display: grid;
+  grid-template-columns:
+    4px minmax(120px, 1.15fr) minmax(88px, 0.92fr) minmax(72px, 0.68fr) minmax(76px, 0.62fr) minmax(104px, 1.05fr) minmax(96px, 0.82fr)
+    minmax(100px, 0.95fr) 36px 40px;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  min-width: min(100%, 1120px);
+}
+
+@media (max-width: 1024px) {
+  .ops-dash__tbl-header-wrap {
+    display: none;
+  }
+}
+
+.ops-dash__th-spacer {
+  width: 4px;
+  flex-shrink: 0;
+  background: transparent;
+}
+
+.ops-dash__th {
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--root-text, #1c2030);
+  background: var(--root-bg, #f6f8fb);
+  border-bottom: 1px solid var(--form-divider, #e5e7eb);
+  text-align: start;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.dark .ops-dash__th {
+  color: #e5e7eb;
+  background: rgb(15 23 42 / 0.85);
+  border-bottom-color: #374151;
+}
+
+.ops-dash__th--narrow {
+  text-align: center;
+}
+
+.ops-dash__ship-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ops-dash__ship-row {
+  background: var(--ops-white);
+  border: 1px solid var(--ops-border);
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: box-shadow 0.15s, border-color 0.15s;
+  display: flex;
+  align-items: stretch;
+}
+
+.ops-dash__ship-row:hover {
+  box-shadow: 0 2px 10px rgba(15, 35, 64, 0.08);
+  border-color: var(--ops-gray-400);
+}
+
+.ops-dash__ship-row--urgent {
+  border-inline-end: 3px solid var(--ops-red);
+}
+
+.ops-dash__ship-row--warning {
+  border-inline-end: 3px solid var(--ops-orange);
+}
+
+.ops-dash__row-accent {
+  width: 4px;
+  flex-shrink: 0;
+}
+
+.ops-dash__row-accent--red {
+  background: var(--ops-red);
+}
+
+.ops-dash__row-accent--amber {
+  background: var(--ops-orange);
+}
+
+.ops-dash__row-accent--green {
+  background: var(--ops-green);
+}
+
+.ops-dash__row-accent--gray {
+  background: var(--ops-gray-200);
+}
+
+.ops-dash__row-inner {
+  display: grid;
+  grid-template-columns:
+    minmax(120px, 1.15fr) minmax(88px, 0.92fr) minmax(72px, 0.68fr) minmax(76px, 0.62fr) minmax(104px, 1.05fr) minmax(96px, 0.82fr)
+    minmax(100px, 0.95fr) 36px 40px;
+  align-items: center;
+  gap: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 1024px) {
+  .ops-dash__row-inner {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .ops-dash__col {
+    border-inline-end: none;
+    border-bottom: 1px solid var(--ops-gray-100);
+  }
+
+  .ops-dash__col:last-child {
+    border-bottom: none;
+  }
+}
+
+.ops-dash__col {
+  padding: 12px 10px;
+  border-inline-end: 1px solid var(--ops-gray-100);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.ops-dash__col:last-child,
+.ops-dash__col--open {
+  border-inline-end: none;
+}
+
+.ops-dash__client-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ops-navy);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+  line-height: 1.35;
+}
+
+.ops-dash__bl-ref {
+  font-size: 10px;
+  color: var(--ops-gray-400);
+  font-family: var(--ops-mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ops-dash__bl-pending {
+  color: var(--ops-amber);
+  font-weight: 600;
+}
+
+.ops-dash__col--route {
+  padding-block: 14px;
+}
+
+.ops-dash__route {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ops-navy);
+  line-height: 1.45;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ops-dash__vessel {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ops-gray-600);
+  line-height: 1.45;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dark .ops-dash__vessel {
+  color: var(--ops-gray-400);
+}
+
+.ops-dash__col--vessel {
+  justify-content: center;
+}
+
+.ops-dash__col--dates {
+  justify-content: center;
+}
+
+.ops-dash__cnt-val {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ops-navy);
+  margin-bottom: 3px;
+}
+
+.ops-dash__svc-chip {
+  font-size: 9px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 5px;
+  display: inline-block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ops-dash__svc-chip--blue {
+  background: var(--ops-blue-light);
+  color: var(--ops-blue);
+}
+
+.ops-dash__svc-chip--gray {
+  background: var(--ops-gray-100);
+  color: var(--ops-gray-600);
+}
+
+.ops-dash__dates-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ops-dash__date-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ops-dash__date-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.35px;
+  color: var(--ops-gray-400);
+  width: 72px;
+  flex-shrink: 0;
+}
+
+.ops-dash__date-val {
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--ops-mono);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ops-dash__date-val--red {
+  color: var(--ops-red);
+}
+
+.ops-dash__date-val--amber {
+  color: var(--ops-amber);
+}
+
+.ops-dash__date-val--green {
+  color: var(--ops-green);
+}
+
+.ops-dash__date-val--gray {
+  color: var(--ops-gray-400);
+  font-weight: 400;
+}
+
+.ops-dash__status-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 10px;
+  margin-bottom: 5px;
+  max-width: 100%;
+}
+
+.ops-dash__status-line {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.ops-dash__status-line--danger {
+  color: var(--ops-red);
+  font-weight: 700;
+}
+
+.ops-dash__status-line--ok {
+  color: var(--ops-green);
+}
+
+.ops-dash__status-line--muted {
+  color: var(--ops-gray-400);
+}
+
+.ops-dash__tasks-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.35px;
+  color: var(--ops-gray-400);
+  margin-bottom: 4px;
+}
+
+.ops-dash__col--planning {
+  align-items: stretch;
+}
+
+.ops-dash__prog-info {
+  font-size: 11px;
+  color: var(--ops-gray-600);
+  margin-bottom: 6px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.ops-dash__prog-bar {
+  height: 4px;
+  background: var(--ops-gray-200);
+  border-radius: 2px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.ops-dash__prog-fill {
+  height: 100%;
+  border-radius: 2px;
+}
+
+.ops-dash__prog-fill--red {
+  background: var(--ops-red);
+}
+
+.ops-dash__prog-fill--amber {
+  background: var(--ops-orange);
+}
+
+.ops-dash__prog-fill--green {
+  background: var(--ops-green);
+}
+
+.ops-dash__col--actions {
+  align-items: center;
+}
+
+.ops-dash__col--open {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ops-dash__menu-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  border: 1px solid var(--ops-border);
+  background: var(--ops-white);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ops-gray-600);
+  padding: 0;
+}
+
+.ops-dash__menu-btn:hover {
+  background: var(--ops-gray-100);
+  border-color: var(--ops-gray-400);
+}
+
+.ops-dash__list-loading {
+  display: flex;
+  justify-content: center;
+  padding: 2.5rem 0;
+}

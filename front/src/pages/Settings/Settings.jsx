@@ -16,6 +16,7 @@ import {
   updateNotificationPreferences,
   updateSessionSettings,
   updateAttendancePolicy,
+  updateQuotationDefaults,
   getTodaySession,
   listSessionsHistory,
   logoutOtherSessions,
@@ -405,10 +406,19 @@ export default function Settings() {
   const [contentMgmtSection, setContentMgmtSection] = useState('ports')
   const [companySection, setCompanySection] = useState('profile')
 
+  const [quotationCustomsAmount, setQuotationCustomsAmount] = useState('250')
+  const [quotationCustomsCurrency, setQuotationCustomsCurrency] = useState('EGP')
+  const [quotationDefaultsSaving, setQuotationDefaultsSaving] = useState(false)
+
   const isAdminLike = useMemo(() => {
     const primaryRole = user?.primary_role ?? user?.roles?.[0]
     const name = (primaryRole || '').toString().toLowerCase()
     return name === 'admin' || name === 'sales_manager'
+  }, [user])
+
+  const isUserAdmin = useMemo(() => {
+    const r = (user?.primary_role ?? user?.roles?.[0] ?? '').toString().toLowerCase()
+    return r === 'admin'
   }, [user])
 
   const canSeeTicketStatuses = useMemo(() => hasPageAccess('settings'), [hasPageAccess])
@@ -422,6 +432,7 @@ export default function Settings() {
 
   const contentMgmtNavItems = useMemo(() => {
     const items = [
+      { id: 'quotationDefaults', label: t('settings.quotationDefaults.navTitle') },
       { id: 'ports', label: t('settings.ports.cardTitle') },
       { id: 'shipmentStatuses', label: t('settings.shipmentStatuses.cardTitle') },
       { id: 'clientStatuses', label: t('settings.clientStatuses.cardTitle') },
@@ -449,6 +460,27 @@ export default function Settings() {
       setContentMgmtSection(ids[0])
     }
   }, [activeTab, isAdminLike, contentMgmtNavItems, contentMgmtSection])
+
+  useEffect(() => {
+    if (activeTab !== 'statuses' || contentMgmtSection !== 'quotationDefaults') return
+    const tok = getStoredToken()
+    if (!tok) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await getSettings(tok)
+        const fee = res?.data?.quotation?.customs_certificate_fee
+        if (cancelled || !fee) return
+        setQuotationCustomsAmount(String(fee.amount ?? 250))
+        setQuotationCustomsCurrency(fee.currency || 'EGP')
+      } catch {
+        /* keep local defaults */
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [activeTab, contentMgmtSection])
 
   const companyNavItems = useMemo(() => {
     const items = [
@@ -2532,6 +2564,73 @@ export default function Settings() {
                           </nav>
                         </aside>
                         <div className="settings-content-mgmt__main settings-tab-content--animate">
+                          {contentMgmtSection === 'quotationDefaults' ? (
+                            <SectionCard
+                              title={t('settings.quotationDefaults.cardTitle')}
+                              subtitle={t('settings.quotationDefaults.cardHint')}
+                              actions={
+                                isUserAdmin ? (
+                                  <button
+                                    type="button"
+                                    className="page-header__btn page-header__btn--primary"
+                                    disabled={quotationDefaultsSaving}
+                                    onClick={async () => {
+                                      const tok = getStoredToken()
+                                      if (!tok) return
+                                      setQuotationDefaultsSaving(true)
+                                      setError('')
+                                      try {
+                                        await updateQuotationDefaults(tok, {
+                                          customs_certificate_fee: {
+                                            amount: Number(quotationCustomsAmount) || 0,
+                                            currency: quotationCustomsCurrency,
+                                          },
+                                        })
+                                      } catch (e) {
+                                        setError(e?.message || String(e))
+                                      } finally {
+                                        setQuotationDefaultsSaving(false)
+                                      }
+                                    }}
+                                  >
+                                    {quotationDefaultsSaving ? t('common.loading') : t('settings.quotationDefaults.save')}
+                                  </button>
+                                ) : null
+                              }
+                            >
+                              {!isUserAdmin ? (
+                                <p className="settings-muted-note">{t('settings.quotationDefaults.adminOnly')}</p>
+                              ) : null}
+                              <div className="settings-form settings-form--stacked" style={{ maxWidth: 420 }}>
+                                <div className="settings-form-group">
+                                  <label className="settings-form-label">{t('settings.quotationDefaults.customsCertLabel')}</label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    className="settings-form-input"
+                                    value={quotationCustomsAmount}
+                                    onChange={(e) => setQuotationCustomsAmount(e.target.value)}
+                                    disabled={!isUserAdmin}
+                                  />
+                                </div>
+                                <div className="settings-form-group">
+                                  <label className="settings-form-label">{t('settings.quotationDefaults.currency')}</label>
+                                  <select
+                                    className="settings-form-input"
+                                    value={quotationCustomsCurrency}
+                                    onChange={(e) => setQuotationCustomsCurrency(e.target.value)}
+                                    disabled={!isUserAdmin}
+                                  >
+                                    <option value="EGP">EGP</option>
+                                    <option value="USD">USD</option>
+                                    <option value="EUR">EUR</option>
+                                  </select>
+                                </div>
+                              </div>
+                            </SectionCard>
+                          ) : null}
+
                           {contentMgmtSection === 'ports' ? (
                             <SectionCard
                               title={t('settings.ports.cardTitle')}

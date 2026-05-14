@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   X,
@@ -50,6 +50,12 @@ import '../SDForms/SDForms.css'
 import '../Clients/Clients.css'
 import '../Clients/ClientDetailModal.css'
 import { vendorsForCanonical } from './vendorOperationOptions'
+import {
+  readShipmentOperationsDraft,
+  writeShipmentOperationsDraft,
+  clearShipmentOperationsDraft,
+  mergeOpsDraftIntoLoadedState,
+} from './shipmentOperationsDraftStorage'
 
 function normalizeOpsVendorIdsFromApi(d) {
   if (!d || typeof d !== 'object') return d
@@ -126,7 +132,7 @@ function shipmentClientDisplayName(shipment) {
 
 /** Operations key dates — same DatePicker as Create Shipment (`Shipments.jsx` booking/loading dates). */
 function OpsBasicDateField({ id, label, isoValue, onCommit, disabled }) {
-  const { t, i18n } = useTranslation()
+  const { i18n } = useTranslation()
   const value = isoDatePart(isoValue)
   return (
     <div>
@@ -142,7 +148,6 @@ function OpsBasicDateField({ id, label, isoValue, onCommit, disabled }) {
         disabled={disabled}
         placeholder={UI_DATE_FORMAT}
       />
-      <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">{t('shipments.dateInputHint')}</span>
     </div>
   )
 }
@@ -197,6 +202,10 @@ export default function ShipmentDetailModal({
   const [tasksLoading, setTasksLoading] = useState(false)
   const [opsSaving, setOpsSaving] = useState(false)
   const [opsError, setOpsError] = useState(null)
+  const [opsDraftNotice, setOpsDraftNotice] = useState(null)
+  const opsDraftHydratedForRef = useRef(null)
+  const opsDraftCanPersistRef = useRef(false)
+  const opsDraftBannerTimerRef = useRef(null)
   const [auditRows, setAuditRows] = useState([])
   const [auditLoading, setAuditLoading] = useState(false)
   const [auditError, setAuditError] = useState(null)
@@ -306,6 +315,42 @@ export default function ShipmentDetailModal({
   }, [token, shipment?.id])
 
   useEffect(() => {
+    if (!open || detailTab !== 'operations') return
+    if (opsLoading || tasksLoading) {
+      opsDraftHydratedForRef.current = null
+      opsDraftCanPersistRef.current = false
+    }
+  }, [open, detailTab, opsLoading, tasksLoading])
+
+  const opsHydrationGate =
+    open && detailTab === 'operations' && !!shipment?.id && !opsLoading && !tasksLoading && !!opsData
+
+  useEffect(() => {
+    if (!opsHydrationGate || !shipment?.id) return
+    const sid = String(shipment.id)
+    if (opsDraftHydratedForRef.current === sid) return
+
+    const draft = readShipmentOperationsDraft(sid)
+    if (draft?.opsData) {
+      setOpsData((prev) => normalizeOpsVendorIdsFromApi(mergeOpsDraftIntoLoadedState(prev, draft.opsData)))
+    }
+    if (draft && Array.isArray(draft.tasks)) {
+      setTasks(draft.tasks.map(normalizeShipmentOperationTask))
+    }
+    opsDraftHydratedForRef.current = sid
+    opsDraftCanPersistRef.current = false
+    window.setTimeout(() => {
+      opsDraftCanPersistRef.current = true
+    }, 450)
+  }, [opsHydrationGate, shipment?.id])
+
+  useEffect(() => {
+    return () => {
+      if (opsDraftBannerTimerRef.current) window.clearTimeout(opsDraftBannerTimerRef.current)
+    }
+  }, [])
+
+  useEffect(() => {
     if (!open || detailTab !== 'operations' || !token || !(isOperations || isAdminRole)) {
       return
     }
@@ -399,6 +444,11 @@ export default function ShipmentDetailModal({
       setOpsTabVendorsLoading(false)
       setOpsTabVendorsError(null)
       setTiPdfLoading(false)
+      if (opsDraftBannerTimerRef.current) window.clearTimeout(opsDraftBannerTimerRef.current)
+      opsDraftBannerTimerRef.current = null
+      setOpsDraftNotice(null)
+      opsDraftHydratedForRef.current = null
+      opsDraftCanPersistRef.current = false
     }
   }, [open])
 
@@ -476,6 +526,25 @@ export default function ShipmentDetailModal({
   ]
 
   const canEditOps = isOperations || isAdminRole
+
+  useEffect(() => {
+    if (!open || detailTab !== 'operations' || !shipment?.id || !canEditOps || !opsData) return
+    if (!opsDraftCanPersistRef.current) return
+    const sid = String(shipment.id)
+    const tid = window.setTimeout(() => {
+      try {
+        writeShipmentOperationsDraft(sid, { opsData, tasks })
+        setOpsDraftNotice(t('shipments.ops.draftSaved'))
+        if (opsDraftBannerTimerRef.current) window.clearTimeout(opsDraftBannerTimerRef.current)
+        opsDraftBannerTimerRef.current = window.setTimeout(() => setOpsDraftNotice(null), 5000)
+      } catch {
+        setOpsDraftNotice(t('shipments.ops.draftSaveFailed'))
+        if (opsDraftBannerTimerRef.current) window.clearTimeout(opsDraftBannerTimerRef.current)
+        opsDraftBannerTimerRef.current = window.setTimeout(() => setOpsDraftNotice(null), 6000)
+      }
+    }, 650)
+    return () => window.clearTimeout(tid)
+  }, [open, detailTab, shipment?.id, canEditOps, opsData, tasks, t])
 
   const clientLabel =
     shipment?.client?.company_name ?? shipment?.client?.name ?? shipment?.client_name ?? '—'
@@ -642,6 +711,10 @@ export default function ShipmentDetailModal({
     setOpsError(null)
     try {
       await commitOperationsToApi()
+      clearShipmentOperationsDraft(shipment.id)
+      if (opsDraftBannerTimerRef.current) window.clearTimeout(opsDraftBannerTimerRef.current)
+      opsDraftBannerTimerRef.current = null
+      setOpsDraftNotice(null)
       onOperationsSaved?.()
       loadOpsData()
       if (detailTab === 'operations') {
@@ -732,6 +805,10 @@ export default function ShipmentDetailModal({
       }
 
       onOperationsSaved?.()
+      clearShipmentOperationsDraft(shipment.id)
+      if (opsDraftBannerTimerRef.current) window.clearTimeout(opsDraftBannerTimerRef.current)
+      opsDraftBannerTimerRef.current = null
+      setOpsDraftNotice(null)
       loadOpsData()
     } catch (err) {
       setOpsError(err?.message || t('shipments.transportInstructions.pdfError'))
@@ -1350,6 +1427,15 @@ export default function ShipmentDetailModal({
                 <p className="client-detail-modal__empty">{t('shipments.loading')}</p>
               ) : (
                 <div className="shipment-ops-tab">
+                  {opsDraftNotice && canEditOps ? (
+                    <p
+                      className="text-xs text-emerald-800 dark:text-emerald-200 bg-emerald-50 dark:bg-emerald-900/35 border border-emerald-100 dark:border-emerald-800 rounded-md px-3 py-2 mb-4"
+                      role="status"
+                      aria-live="polite"
+                    >
+                      {opsDraftNotice}
+                    </p>
+                  ) : null}
                   {(() => {
                     const st = opsData.service_types || []
                     const showInland = st.includes('inland_transport')

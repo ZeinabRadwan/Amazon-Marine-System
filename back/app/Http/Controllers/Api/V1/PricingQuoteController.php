@@ -147,6 +147,7 @@ class PricingQuoteController extends Controller
             'valid_from' => ['nullable', 'date'],
             'valid_to' => ['nullable', 'date'],
             'notes' => ['nullable', 'string'],
+            'municipality' => ['nullable', 'string', 'max:255'],
             'official_receipts_note' => ['nullable', 'string', 'max:5000'],
             'pricing_team_confirmed' => ['sometimes', 'boolean'],
             'status' => ['sometimes', 'string', 'in:pending,accepted,rejected'],
@@ -220,6 +221,9 @@ class PricingQuoteController extends Controller
             $quote->valid_from = $validated['valid_from'] ?? null;
             $quote->valid_to = $validated['valid_to'] ?? null;
             $quote->notes = $validated['notes'] ?? null;
+            $quote->municipality = isset($validated['municipality'])
+                ? (trim((string) $validated['municipality']) !== '' ? trim((string) $validated['municipality']) : null)
+                : null;
             $quote->official_receipts_note = isset($validated['official_receipts_note'])
                 ? (trim((string) $validated['official_receipts_note']) !== '' ? trim((string) $validated['official_receipts_note']) : null)
                 : null;
@@ -277,6 +281,7 @@ class PricingQuoteController extends Controller
             'valid_from' => ['sometimes', 'nullable', 'date'],
             'valid_to' => ['sometimes', 'nullable', 'date'],
             'notes' => ['sometimes', 'nullable', 'string'],
+            'municipality' => ['sometimes', 'nullable', 'string', 'max:255'],
             'official_receipts_note' => ['sometimes', 'nullable', 'string', 'max:5000'],
             'pricing_team_confirmed' => ['sometimes', 'boolean'],
             'status' => ['sometimes', 'string', 'in:pending,accepted,rejected'],
@@ -823,6 +828,7 @@ class PricingQuoteController extends Controller
             'valid_from' => $quote->valid_from?->toDateString(),
             'valid_to' => $quote->valid_to?->toDateString(),
             'notes' => $quote->notes,
+            'municipality' => $quote->municipality,
             'official_receipts_note' => $quote->official_receipts_note,
             'pricing_team_confirmed' => (bool) ($quote->pricing_team_confirmed ?? false),
             'sailing_dates' => $quote->sailingDates->pluck('sailing_date')->map(

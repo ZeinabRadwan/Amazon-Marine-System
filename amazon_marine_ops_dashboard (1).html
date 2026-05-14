@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amazon Marine — لوحة العمليات</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0F2340;--orange:#E8790A;--orange-light:#FDF0E0;
+  --green:#0D7A55;--green-light:#E8F7F2;
+  --red:#B91C1C;--red-light:#FEE2E2;
+  --blue:#1D4ED8;--blue-light:#DBEAFE;
+  --amber:#D97706;--amber-light:#FEF3C7;
+  --gray-50:#F8FAFC;--gray-100:#F1F5F9;--gray-200:#E2E8F0;
+  --gray-400:#94A3B8;--gray-600:#475569;--gray-700:#334155;
+  --white:#fff;--border:#DDE3ED;
+  --font:'IBM Plex Sans Arabic',sans-serif;
+  --mono:'IBM Plex Mono',monospace;
+}
+body{font-family:var(--font);background:var(--gray-100);color:var(--gray-700);font-size:13px;min-height:100vh}
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.topbar-title{font-size:15px;font-weight:700;color:var(--navy)}
+.topbar-sub{font-size:11px;color:var(--gray-400);margin-top:1px}
+.main{max-width:1200px;margin:0 auto;padding:20px}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.stat-val{font-size:24px;font-weight:700;color:var(--navy);line-height:1;margin-bottom:4px}
+.stat-lbl{font-size:12px;color:var(--gray-400)}
+.stat-sub{font-size:11px;color:var(--gray-400);margin-top:2px}
+.stat.red .stat-val{color:var(--red)}
+
+/* SECTION HEADER */
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px}
+.sec-title{font-size:14px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:8px}
+
+/* SHIP ROWS — vertical list */
+.ship-rows{display:flex;flex-direction:column;gap:8px}
+
+/* EACH SHIP ROW — horizontal layout inside */
+.ship-row{background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;transition:all .15s;display:flex;align-items:stretch}
+.ship-row:hover{box-shadow:0 2px 10px rgba(15,35,64,.08);border-color:var(--gray-400)}
+.ship-row.urgent{border-right:3px solid var(--red)}
+.ship-row.warning{border-right:3px solid var(--orange)}
+
+/* LEFT ACCENT BAR */
+.row-accent{width:4px;flex-shrink:0}
+.row-accent.red{background:var(--red)}
+.row-accent.amber{background:var(--orange)}
+.row-accent.green{background:var(--green)}
+.row-accent.gray{background:var(--gray-200)}
+
+/* ROW INNER — all columns horizontal */
+.row-inner{display:grid;grid-template-columns:220px 180px 140px 220px 160px 120px 44px;align-items:center;gap:0;flex:1;min-width:0}
+
+/* EACH COLUMN */
+.col{padding:12px 14px;border-right:1px solid var(--gray-100);display:flex;flex-direction:column;justify-content:center;min-width:0}
+.col:last-child{border-right:none}
+
+/* CLIENT COL */
+.client-name{font-size:13px;font-weight:700;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.bl-ref{font-size:10px;color:var(--gray-400);font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ROUTE COL */
+.route{font-size:12px;font-weight:600;color:var(--navy);margin-bottom:2px}
+.line{font-size:11px;color:var(--gray-400)}
+
+/* CONTAINERS COL */
+.cnt-val{font-size:12px;font-weight:600;color:var(--navy);margin-bottom:3px}
+
+/* DATES COL — the most important */
+.dates-inner{display:flex;flex-direction:column;gap:5px}
+.date-item{display:flex;align-items:center;gap:6px}
+.date-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--gray-400);width:68px;flex-shrink:0}
+.date-value{font-size:12px;font-weight:700;font-family:var(--mono)}
+.date-value.red{color:var(--red)}
+.date-value.amber{color:var(--amber)}
+.date-value.green{color:var(--green)}
+.date-value.gray{color:var(--gray-400);font-weight:400}
+
+/* STATUS COL */
+.status-badge{display:inline-flex;align-items:center;font-size:10px;font-weight:600;padding:3px 9px;border-radius:10px;margin-bottom:5px}
+
+/* PROGRESS COL */
+.prog-info{font-size:11px;color:var(--gray-400);margin-bottom:4px;text-align:center}
+.prog-bar{height:4px;background:var(--gray-200);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;border-radius:2px}
+
+/* OPEN COL */
+.open-btn{width:36px;height:36px;border-radius:7px;border:1px solid var(--border);background:var(--white);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--blue);font-size:16px;transition:all .15s;margin:auto}
+.open-btn:hover{background:var(--blue-light);border-color:var(--blue)}
+
+/* BADGE */
+.badge{display:inline-flex;font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px}
+.badge.blue{background:var(--blue-light);color:var(--blue)}
+.badge.gray{background:var(--gray-200);color:var(--gray-600)}
+
+/* LEGEND */
+.legend{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray-400);margin-top:12px}
+.ld{width:8px;height:8px;border-radius:50%;display:inline-block;margin-left:4px}
+
+/* TABLE HEADER */
+.tbl-header{display:grid;grid-template-columns:4px 220px 180px 140px 220px 160px 120px 44px;align-items:center;gap:0;padding:6px 0;margin-bottom:4px;border-bottom:1px solid var(--border)}
+.th{padding:4px 14px;font-size:9px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.5px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="topbar-title">لوحة العمليات / Operations Dashboard</div>
+    <div class="topbar-sub">الاربعاء، 14 مايو 2026 — Amr Suleiman</div>
+  </div>
+  <div style="display:flex;gap:8px">
+    <select style="font-size:11px;padding:5px 9px;border:1px solid var(--border);border-radius:6px;font-family:var(--font)"><option>My Tasks</option><option>All Team</option></select>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- STATS -->
+<div class="stats-grid">
+  <div class="stat">
+    <div class="stat-val">7</div>
+    <div class="stat-lbl">شحنات نشطة</div>
+    <div class="stat-sub">قيد التنفيذ</div>
+  </div>
+  <div class="stat">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <div class="stat-val">5</div>
+      <select style="font-size:11px;padding:2px 6px;border:1px solid var(--border);border-radius:5px;font-family:var(--font)"><option>أسبوع</option><option>اليوم</option><option>3 أيام</option></select>
+    </div>
+    <div class="stat-lbl">مهام قادمة</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val">5</div>
+    <div class="stat-lbl">مهام اليوم</div>
+    <div class="stat-sub">يجب إنجازها اليوم</div>
+  </div>
+  <div class="stat red">
+    <div class="stat-val">3</div>
+    <div class="stat-lbl">مهام متأخرة</div>
+    <div class="stat-sub">تتطلب اهتماماً فورياً</div>
+  </div>
+</div>
+
+<!-- SHIPMENTS SECTION -->
+<div class="sec-hdr">
+  <div class="sec-title">
+    الشحنات الجارية
+    <span class="badge blue">7 شحنات</span>
+  </div>
+  <a href="#" style="font-size:12px;color:var(--blue);text-decoration:none">عرض الكل &larr;</a>
+</div>
+
+<!-- TABLE HEADER -->
+<div class="tbl-header">
+  <div></div>
+  <div class="th">العميل / الشحنة</div>
+  <div class="th">المسار</div>
+  <div class="th">الحاويات</div>
+  <div class="th">CUT-OFF &amp; موعد التحميل</div>
+  <div class="th">الحالة</div>
+  <div class="th">Tasks</div>
+  <div class="th"></div>
+</div>
+
+<!-- SHIP ROWS -->
+<div class="ship-rows">
+
+  <!-- ROW 1: URGENT -->
+  <div class="ship-row urgent">
+    <div class="row-accent red"></div>
+    <div class="row-inner">
+      <div class="col">
+        <div class="client-name">النخبة للاستيراد والتصدير</div>
+        <div class="bl-ref">BL: 87485-0958321</div>
+        <div class="bl-ref" style="margin-top:1px">BK: MSCU123456</div>
+      </div>
+      <div class="col">
+        <div class="route">Alexandria &rarr; Hamburg</div>
+        <div class="line">MSC</div>
+      </div>
+      <div class="col">
+        <div class="cnt-val">1 x 40' Dry</div>
+        <span style="font-size:9px;font-weight:600;padding:1px 6px;border-radius:5px;background:var(--blue-light);color:var(--blue)">شحن+نقل+تخليص</span>
+      </div>
+      <div class="col">
+        <div class="dates-inner">
+          <div class="date-item">
+            <span class="date-label">CUT-OFF</span>
+            <span class="date-value red">اليوم ! — 14 May</span>
+          </div>
+          <div class="date-item">
+            <span class="date-label">التحميل</span>
+            <span class="date-value red">13 May (فات!)</span>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <span class="status-badge" style="background:var(--amber-light);color:var(--amber)">جاري التخليص الجمركي</span>
+        <span style="font-size:10px;color:var(--red);font-weight:700">2 tasks متأخرة !</span>
+      </div>
+      <div class="col" style="align-items:center">
+        <div class="prog-info">4 / 11</div>
+        <div class="prog-bar" style="width:100%"><div class="prog-fill" style="width:36%;background:var(--red)"></div></div>
+      </div>
+      <div class="col" style="border-right:none">
+        <button class="open-btn">&larr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 2: WARNING -->
+  <div class="ship-row warning">
+    <div class="row-accent amber"></div>
+    <div class="row-inner">
+      <div class="col">
+        <div class="client-name">Green Valley Exports</div>
+        <div class="bl-ref">BL: 55123-0654321</div>
+        <div class="bl-ref" style="margin-top:1px">BK: CMAU654321</div>
+      </div>
+      <div class="col">
+        <div class="route">Damietta &rarr; Barcelona</div>
+        <div class="line">CMA CGM</div>
+      </div>
+      <div class="col">
+        <div class="cnt-val">1 x 40' Reefer</div>
+        <span style="font-size:9px;font-weight:600;padding:1px 6px;border-radius:5px;background:var(--blue-light);color:var(--blue)">شحن+نقل+تخليص</span>
+      </div>
+      <div class="col">
+        <div class="dates-inner">
+          <div class="date-item">
+            <span class="date-label">CUT-OFF</span>
+            <span class="date-value amber">16 May (يومان)</span>
+          </div>
+          <div class="date-item">
+            <span class="date-label">التحميل</span>
+            <span class="date-value amber">15 May (غداً)</span>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <span class="status-badge" style="background:var(--blue-light);color:var(--blue)">المركب سافرت</span>
+        <span style="font-size:10px;color:var(--green);font-weight:600">على المسار</span>
+      </div>
+      <div class="col" style="align-items:center">
+        <div class="prog-info">7 / 11</div>
+        <div class="prog-bar" style="width:100%"><div class="prog-fill" style="width:63%;background:var(--orange)"></div></div>
+      </div>
+      <div class="col" style="border-right:none">
+        <button class="open-btn">&larr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 3: OK -->
+  <div class="ship-row">
+    <div class="row-accent green"></div>
+    <div class="row-inner">
+      <div class="col">
+        <div class="client-name">Delta Foods International</div>
+        <div class="bl-ref">BL: 66789-0123456</div>
+        <div class="bl-ref" style="margin-top:1px">BK: ADMU112233</div>
+      </div>
+      <div class="col">
+        <div class="route">Port Said &rarr; Jeddah</div>
+        <div class="line">ADMIRAL</div>
+      </div>
+      <div class="col">
+        <div class="cnt-val">2 x 20' Dry</div>
+        <span style="font-size:9px;font-weight:600;padding:1px 6px;border-radius:5px;background:var(--gray-100);color:var(--gray-600)">شحن فقط</span>
+      </div>
+      <div class="col">
+        <div class="dates-inner">
+          <div class="date-item">
+            <span class="date-label">CUT-OFF</span>
+            <span class="date-value green">22 May</span>
+          </div>
+          <div class="date-item">
+            <span class="date-label">التحميل</span>
+            <span class="date-value green">20 May</span>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <span class="status-badge" style="background:var(--green-light);color:var(--green)">مراجعة المستندات</span>
+        <span style="font-size:10px;color:var(--green);font-weight:600">على المسار</span>
+      </div>
+      <div class="col" style="align-items:center">
+        <div class="prog-info">2 / 8</div>
+        <div class="prog-bar" style="width:100%"><div class="prog-fill" style="width:25%;background:var(--green)"></div></div>
+      </div>
+      <div class="col" style="border-right:none">
+        <button class="open-btn">&larr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 4: OK -->
+  <div class="ship-row">
+    <div class="row-accent green"></div>
+    <div class="row-inner">
+      <div class="col">
+        <div class="client-name">منصور وشركاه للتجارة</div>
+        <div class="bl-ref">BK: BL-2026-0248</div>
+        <div class="bl-ref" style="margin-top:1px;color:var(--amber)">BL لم يصدر بعد</div>
+      </div>
+      <div class="col">
+        <div class="route">Alexandria &rarr; Jeddah</div>
+        <div class="line">ADMIRAL</div>
+      </div>
+      <div class="col">
+        <div class="cnt-val">1 x 40' Dry</div>
+        <span style="font-size:9px;font-weight:600;padding:1px 6px;border-radius:5px;background:var(--blue-light);color:var(--blue)">نقل + تخليص</span>
+      </div>
+      <div class="col">
+        <div class="dates-inner">
+          <div class="date-item">
+            <span class="date-label">CUT-OFF</span>
+            <span class="date-value green">25 May</span>
+          </div>
+          <div class="date-item">
+            <span class="date-label">التحميل</span>
+            <span class="date-value green">24 May</span>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <span class="status-badge" style="background:var(--gray-100);color:var(--gray-600)">سحب الحاويات</span>
+        <span style="font-size:10px;color:var(--green);font-weight:600">على المسار</span>
+      </div>
+      <div class="col" style="align-items:center">
+        <div class="prog-info">1 / 6</div>
+        <div class="prog-bar" style="width:100%"><div class="prog-fill" style="width:16%;background:var(--green)"></div></div>
+      </div>
+      <div class="col" style="border-right:none">
+        <button class="open-btn">&larr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 5: NO LOADING DATE -->
+  <div class="ship-row">
+    <div class="row-accent green"></div>
+    <div class="row-inner">
+      <div class="col">
+        <div class="client-name">الأفق للشحن الدولي</div>
+        <div class="bl-ref">BL: 12340-0871234</div>
+        <div class="bl-ref" style="margin-top:1px">BK: MSCU998877</div>
+      </div>
+      <div class="col">
+        <div class="route">Sokhna &rarr; Rotterdam</div>
+        <div class="line">MSC</div>
+      </div>
+      <div class="col">
+        <div class="cnt-val">3 x 40' Dry</div>
+        <span style="font-size:9px;font-weight:600;padding:1px 6px;border-radius:5px;background:var(--blue-light);color:var(--blue)">شحن+نقل+تخليص</span>
+      </div>
+      <div class="col">
+        <div class="dates-inner">
+          <div class="date-item">
+            <span class="date-label">CUT-OFF</span>
+            <span class="date-value green">28 May</span>
+          </div>
+          <div class="date-item">
+            <span class="date-label">التحميل</span>
+            <span class="date-value gray">لم يُحدد بعد</span>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <span class="status-badge" style="background:var(--green-light);color:var(--green)">تخصيص الحجز</span>
+        <span style="font-size:10px;color:var(--gray-400)">جديدة</span>
+      </div>
+      <div class="col" style="align-items:center">
+        <div class="prog-info">0 / 11</div>
+        <div class="prog-bar" style="width:100%"><div class="prog-fill" style="width:0%;background:var(--green)"></div></div>
+      </div>
+      <div class="col" style="border-right:none">
+        <button class="open-btn">&larr;</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- LEGEND -->
+<div class="legend">
+  <span>مفتاح الألوان:</span>
+  <span><span class="ld" style="background:var(--red)"></span>أحمر = اليوم / فات</span>
+  <span><span class="ld" style="background:var(--orange)"></span>برتقالي = خلال 3 أيام</span>
+  <span><span class="ld" style="background:var(--green)"></span>أخضر = بعيد</span>
+  <span><span class="ld" style="background:var(--gray-400)"></span>رمادي = لم يُحدد</span>
+</div>
+
+</div>
+</body>
+</html>
