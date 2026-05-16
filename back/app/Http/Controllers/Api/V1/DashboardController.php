@@ -16,6 +16,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use App\Models\Vendor;
 use App\Models\VendorBill;
+use App\Services\AdminDashboardService;
 use App\Support\ShipmentOperationTaskSummary;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -164,133 +165,11 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function adminOverview(Request $request)
+    public function adminOverview(Request $request, AdminDashboardService $adminDashboard)
     {
         abort_unless($request->user() !== null, 401);
 
-        $roleCounts = ['sales' => 0, 'operations' => 0, 'support' => 0, 'accountants' => 0];
-        $rawRoles = DB::table('model_has_roles as mhr')
-            ->join('roles as r', 'r.id', '=', 'mhr.role_id')
-            ->selectRaw('LOWER(r.name) as role_name, COUNT(*) as total')
-            ->groupByRaw('LOWER(r.name)')
-            ->get();
-        foreach ($rawRoles as $r) {
-            $n = (string) $r->role_name;
-            if (str_contains($n, 'sales')) {
-                $roleCounts['sales'] += (int) $r->total;
-            } elseif (str_contains($n, 'operation')) {
-                $roleCounts['operations'] += (int) $r->total;
-            } elseif (str_contains($n, 'support')) {
-                $roleCounts['support'] += (int) $r->total;
-            } elseif (str_contains($n, 'finance') || str_contains($n, 'account')) {
-                $roleCounts['accountants'] += (int) $r->total;
-            }
-        }
-
-        $totalClients = (int) Client::count();
-        $newClients = (int) Client::whereDate('created_at', '>=', now()->subDays(30))->count();
-        $sdForms = (int) SDForm::count();
-        $linkedForms = (int) SDForm::whereNotNull('linked_shipment_id')->count();
-        $conversionRate = $sdForms > 0 ? round(($linkedForms / $sdForms) * 100, 1) : 0;
-
-        $shipmentsByStatus = Shipment::selectRaw('COALESCE(status, "Unknown") as name, COUNT(*) as value')
-            ->groupBy('status')->orderByDesc('value')->get();
-        $totalShipments = (int) Shipment::count();
-
-        $months = $this->months(12);
-        $invoiceMonthExpression = $this->monthExpression('issue_date', '%Y-%m');
-        $billMonthExpression = $this->monthExpression('bill_date', '%Y-%m');
-        $revenueRows = Invoice::query()
-            ->whereDate('issue_date', '>=', $months[0]->toDateString())
-            ->whereNotIn('status', ['cancelled'])
-            ->selectRaw("{$invoiceMonthExpression} as ym, SUM(COALESCE(net_amount,0)) as total")
-            ->groupBy('ym')
-            ->pluck('total', 'ym');
-        $costRows = VendorBill::query()
-            ->whereDate('bill_date', '>=', $months[0]->toDateString())
-            ->whereNotIn('status', ['cancelled'])
-            ->selectRaw("{$billMonthExpression} as ym, SUM(COALESCE(net_amount,0)) as total")
-            ->groupBy('ym')
-            ->pluck('total', 'ym');
-        $financial = collect($months)->values()->map(function (Carbon $m, int $i) use ($revenueRows, $costRows) {
-            $k = $m->format('Y-m');
-            $revenue = (float) $revenueRows->get($k, 0);
-            $cost = (float) $costRows->get($k, 0);
-            $revenue = $this->valueOrFloor($revenue, 20000 + $this->metricFloor('admin', 'rev', $i) * 1200);
-            $cost = $this->valueOrFloor($cost, 12000 + $this->metricFloor('admin', 'cost', $i) * 900);
-
-            return [
-                'month' => $m->format('Y-m'),
-                'revenue' => $revenue,
-                'cost' => $cost,
-                'profit' => round($revenue - $cost, 2),
-            ];
-        });
-
-        $attendanceAvg = (float) AttendanceRecord::whereDate('date', '>=', now()->subDays(30))->whereNotNull('check_in_at')->count();
-        $employees = max(1, (int) User::where('status', 'active')->count());
-        $attendanceAvgPct = round(min(100, ($attendanceAvg / max(1, ($employees * 30))) * 100), 1);
-        $late = (int) AttendanceRecord::whereDate('date', '>=', now()->subDays(30))->where(function ($q) {
-            $q->where('status', AttendanceRecord::STATUS_LATE)->orWhere('is_late', true);
-        })->count();
-        $absent = max(0, $employees * 30 - (int) AttendanceRecord::whereDate('date', '>=', now()->subDays(30))->whereNotNull('check_in_at')->count());
-
-        $partnerRows = Vendor::query()->select('vendors.id', 'vendors.name')
-            ->leftJoin('vendor_bills as vb', 'vb.vendor_id', '=', 'vendors.id')
-            ->leftJoin('payments as p', 'p.vendor_id', '=', 'vendors.id')
-            ->groupBy('vendors.id', 'vendors.name')
-            ->selectRaw('COALESCE(SUM(vb.total_amount),0) as total_due, COALESCE(SUM(p.amount),0) as paid')
-            ->orderByDesc(DB::raw('COALESCE(SUM(vb.total_amount),0) - COALESCE(SUM(p.amount),0)'))
-            ->limit(6)
-            ->get()
-            ->map(fn ($r) => [
-                'partner_id' => (int) $r->id,
-                'partner_name' => $r->name,
-                'total_due' => round((float) $r->total_due, 2),
-                'paid' => round((float) $r->paid, 2),
-                'balance' => round((float) $r->total_due - (float) $r->paid, 2),
-            ])->values();
-
-        $logsCount = Schema::hasTable('activity_logs') ? (int) DB::table('activity_logs')->count() : 0;
-        $errorsCount = Schema::hasTable('failed_jobs') ? (int) DB::table('failed_jobs')->count() : 0;
-
-        $employeePerf = Shipment::whereNotNull('sales_rep_id')
-            ->selectRaw('sales_rep_id, COUNT(*) as shipments, COALESCE(SUM(selling_price_total),0) as revenue')
-            ->groupBy('sales_rep_id')->orderByDesc('revenue')->limit(8)->get();
-        $users = User::whereIn('id', $employeePerf->pluck('sales_rep_id'))->pluck('name', 'id');
-
-        return response()->json([
-            'users_by_role' => $roleCounts,
-            'clients' => [
-                'total_clients' => max($totalClients, 50),
-                'new_clients' => max($newClients, 8),
-                'conversion_rate_pct' => max($conversionRate, 32.5),
-            ],
-            'shipments' => [
-                'total_shipments' => max($totalShipments, 120),
-                'shipments_by_status' => $shipmentsByStatus,
-            ],
-            'financial' => $financial,
-            'attendance' => [
-                'avg_attendance_pct' => max($attendanceAvgPct, 87.5),
-                'absents' => max($absent, 9),
-                'late' => max($late, 14),
-            ],
-            'top_partners' => $partnerRows,
-            'system' => [
-                'logs_count' => max($logsCount, 2450),
-                'errors_count' => max($errorsCount, 11),
-            ],
-            'charts' => [
-                'shipments_status_pie' => $shipmentsByStatus,
-                'revenue_cost_profit_line' => $financial,
-                'employee_performance_bar' => $employeePerf->map(fn ($r) => [
-                    'employee' => $users[$r->sales_rep_id] ?? ('#'.$r->sales_rep_id),
-                    'shipments' => (int) $r->shipments,
-                    'revenue' => round((float) $r->revenue, 2),
-                ])->values(),
-            ],
-        ]);
+        return response()->json($adminDashboard->buildOverview());
     }
 
     public function salesManager(Request $request)
