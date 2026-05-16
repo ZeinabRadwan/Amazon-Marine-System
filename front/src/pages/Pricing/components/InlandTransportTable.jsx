@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { Archive, Eye, Pencil, RotateCcw, Trash2 } from 'lucide-react'
 import { formatDate } from '../../../utils/dateUtils'
 import { useMutateOffer } from '../../../hooks/usePricing'
-import { IconActionButton, IconActionButtonGroup } from '../../../components/Table'
+import { IconActionButton } from '../../../components/Table'
+import PricingInlineActions from './PricingInlineActions'
 import { CurrencyMapBadges } from '../../Accountings/CurrencyMapBadges'
 import { INLAND_PRICE_KEYS } from '../utils/pricingDisplay'
 import PricingValidityBadge from './PricingValidityBadge'
@@ -201,48 +202,50 @@ export default function InlandTransportTable({
                         </span>
                       ) : null}
                     </div>
-                    <div className="pricing-rate-card__actions" onClick={(e) => e.stopPropagation()}>
-                      <IconActionButtonGroup aria-label={t('pricing.inlandColActions', 'Actions')}>
+                    <PricingInlineActions
+                      className="pricing-rate-card__actions"
+                      label={t('pricing.inlandColActions', 'Actions')}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <IconActionButton
+                        icon={<Eye className="h-4 w-4" />}
+                        label={t('common.view', 'View')}
+                        onClick={() => onView?.(offer)}
+                      />
+                      {canManageOffers && !archived ? (
                         <IconActionButton
-                          icon={<Eye className="h-4 w-4" />}
-                          label={t('pricing.actionShow', 'عرض')}
-                          onClick={() => onView?.(offer)}
+                          icon={<Pencil className="h-4 w-4" />}
+                          label={t('common.edit', 'Edit')}
+                          onClick={() => onEdit?.(offer)}
                         />
-                        {canManageOffers && !archived ? (
-                          <IconActionButton
-                            icon={<Pencil className="h-4 w-4" />}
-                            label={t('pricing.actionEdit', 'تعديل')}
-                            onClick={() => onEdit?.(offer)}
-                          />
-                        ) : null}
-                        {canManageOffers && !archived ? (
-                          <IconActionButton
-                            icon={<Archive className="h-4 w-4" />}
-                            label={t('pricing.actionArchive', 'أرشفة')}
-                            disabled={isBusy(offer, 'archive')}
-                            onClick={() => runAction(offer, 'archive', archive)}
-                          />
-                        ) : null}
-                        {canManageOffers && archived ? (
-                          <IconActionButton
-                            icon={<RotateCcw className="h-4 w-4" />}
-                            label={t('pricing.actionUnarchive', 'إلغاء الأرشفة')}
-                            disabled={isBusy(offer, 'unarchive')}
-                            onClick={() => runAction(offer, 'unarchive', activate)}
-                            variant="success"
-                          />
-                        ) : null}
-                        {canManageOffers && archived ? (
-                          <IconActionButton
-                            icon={<Trash2 className="h-4 w-4" />}
-                            label={t('pricing.actionDelete', 'حذف')}
-                            disabled={isBusy(offer, 'delete')}
-                            onClick={() => handleDelete(offer)}
-                            variant="danger"
-                          />
-                        ) : null}
-                      </IconActionButtonGroup>
-                    </div>
+                      ) : null}
+                      {canManageOffers && archived ? (
+                        <IconActionButton
+                          icon={<Trash2 className="h-4 w-4" />}
+                          label={t('pricing.actionDelete', 'Delete')}
+                          disabled={isBusy(offer, 'delete')}
+                          onClick={() => handleDelete(offer)}
+                          variant="danger"
+                        />
+                      ) : null}
+                      {canManageOffers && !archived ? (
+                        <IconActionButton
+                          icon={<Archive className="h-4 w-4" />}
+                          label={t('pricing.actionArchive', 'Archive')}
+                          disabled={isBusy(offer, 'archive')}
+                          onClick={() => runAction(offer, 'archive', archive)}
+                        />
+                      ) : null}
+                      {canManageOffers && archived ? (
+                        <IconActionButton
+                          icon={<RotateCcw className="h-4 w-4" />}
+                          label={t('pricing.actionUnarchive', 'Unarchive')}
+                          disabled={isBusy(offer, 'unarchive')}
+                          onClick={() => runAction(offer, 'unarchive', activate)}
+                          variant="success"
+                        />
+                      ) : null}
+                    </PricingInlineActions>
                   </div>
                 </article>
               )

@@ -2,15 +2,19 @@ import { useEffect, useMemo, useState } from 'react'
 import { useDebouncedValue } from '../../../hooks/useDebouncedValue'
 import { useTranslation } from 'react-i18next'
 import {
+  Check,
+  CheckCircle2,
+  Clock,
   Eye,
-  MoreHorizontal,
   Plus,
   Trash2,
+  X,
+  XCircle,
   Zap,
 } from 'lucide-react'
 import Table from '../../../components/Table/Table'
-import { IconActionButton, IconActionButtonGroup } from '../../../components/Table'
-import { DropdownMenu } from '../../../components/DropdownMenu'
+import { IconActionButton } from '../../../components/Table'
+import PricingInlineActions from './PricingInlineActions'
 import { useQuotes, useMutateQuote } from '../../../hooks/usePricing'
 import { useAuthAccess } from '../../../hooks/useAuthAccess'
 import CreateQuoteModal from './CreateQuoteModal'
@@ -102,6 +106,34 @@ export default function QuotationTable({ refreshKey }) {
     }
   }
 
+  const getStatusBadge = (status) => {
+    const key = String(status || 'pending').toLowerCase()
+    switch (key) {
+      case 'accepted':
+        return (
+          <span className="quotation-table__status quotation-table__status--accepted">
+            <CheckCircle2 className="h-3 w-3 shrink-0" aria-hidden />
+            {t('common.status.accepted', 'Accepted')}
+          </span>
+        )
+      case 'rejected':
+        return (
+          <span className="quotation-table__status quotation-table__status--rejected">
+            <XCircle className="h-3 w-3 shrink-0" aria-hidden />
+            {t('common.status.rejected', 'Rejected')}
+          </span>
+        )
+      case 'pending':
+      default:
+        return (
+          <span className="quotation-table__status quotation-table__status--pending">
+            <Clock className="h-3 w-3 shrink-0" aria-hidden />
+            {t('common.status.pending', 'Pending')}
+          </span>
+        )
+    }
+  }
+
   const handleDeleteConfirm = async () => {
     if (!deleteTarget?.id) return
     const id = deleteTarget.id
@@ -116,17 +148,6 @@ export default function QuotationTable({ refreshKey }) {
     } finally {
       setDeleteRowLoading(null)
     }
-  }
-
-  const rowMenuItems = (row) => {
-    const items = [{ label: t('common.view', 'View Details'), icon: <Eye className="h-4 w-4" />, onClick: () => handleView(row) }]
-    if (!isPricingSalesViewOnly) {
-      items.push(
-        { label: t('pricing.accept', 'Accept'), onClick: () => handleAccept(row) },
-        { label: t('pricing.reject', 'Reject'), onClick: () => handleReject(row) }
-      )
-    }
-    return items
   }
 
   const columns = [
@@ -163,6 +184,11 @@ export default function QuotationTable({ refreshKey }) {
       },
     },
     {
+      key: 'status',
+      label: t('pricing.status', 'Status'),
+      render: (val) => getStatusBadge(val),
+    },
+    {
       key: 'price',
       label: t('pricing.price'),
       render: (_, row) => (
@@ -181,43 +207,36 @@ export default function QuotationTable({ refreshKey }) {
       key: 'actions',
       label: '',
       render: (_, row) => (
-        <div className="flex justify-end items-center gap-1">
-          <IconActionButtonGroup aria-label={t('pricing.rowActions', 'Row actions')}>
-            <IconActionButton
-              icon={<Eye className="h-4 w-4" />}
-              label={t('common.view', 'View Details')}
-              onClick={() => handleView(row)}
-              segment={!isPricingSalesViewOnly ? 'first' : 'single'}
-            />
-            {!isPricingSalesViewOnly ? (
+        <PricingInlineActions
+          className="quotation-table__actions"
+          label={t('pricing.rowActions', 'Row actions')}
+        >
+          <IconActionButton
+            icon={<Eye className="h-4 w-4" />}
+            label={t('common.view', 'View Details')}
+            onClick={() => handleView(row)}
+          />
+          {!isPricingSalesViewOnly ? (
+            <>
+              <IconActionButton
+                icon={<Check className="h-4 w-4" />}
+                label={t('pricing.accept', 'Accept')}
+                onClick={() => handleAccept(row)}
+              />
+              <IconActionButton
+                icon={<X className="h-4 w-4" />}
+                label={t('pricing.reject', 'Reject')}
+                onClick={() => handleReject(row)}
+              />
               <IconActionButton
                 icon={<Trash2 className="h-4 w-4" />}
                 label={t('pricing.quotationOptionDelete')}
-                variant="danger"
                 onClick={() => setDeleteTarget(row)}
                 disabled={deleteRowLoading === row.id}
-                segment="last"
               />
-            ) : null}
-          </IconActionButtonGroup>
-          {!isPricingSalesViewOnly ? (
-            <DropdownMenu
-              portaled
-              align="end"
-              trigger={
-                <button
-                  type="button"
-                  className="clients-filters__btn-icon h-8 w-8 min-w-0 min-h-0"
-                  aria-label={t('pricing.rowActions', 'Row actions')}
-                  title={t('pricing.rowActions', 'Row actions')}
-                >
-                  <MoreHorizontal className="clients-filters__btn-icon-svg" aria-hidden />
-                </button>
-              }
-              items={rowMenuItems(row)}
-            />
+            </>
           ) : null}
-        </div>
+        </PricingInlineActions>
       ),
     },
   ]
@@ -325,11 +344,7 @@ export default function QuotationTable({ refreshKey }) {
         <div className="clients-modal" role="dialog" aria-modal="true" aria-labelledby="quotation-delete-title">
           <div className="clients-modal-backdrop" onClick={() => !deleteRowLoading && setDeleteTarget(null)} />
           <div className="clients-modal-content">
-            <h2 id="quotation-delete-title">{t('pricing.quotationOptionDeleteTitle')}</h2>
-            <p>{t('pricing.quotationOptionDeleteConfirm')}</p>
-            <p className="text-sm text-gray-600 dark:text-gray-400" dir="rtl">
-              {t('pricing.quotationOptionDeleteConfirmAr')}
-            </p>
+            <h2 id="quotation-delete-title">{t('pricing.quotationOptionDeleteConfirm')}</h2>
             <div className="clients-modal-actions">
               <button
                 type="button"
