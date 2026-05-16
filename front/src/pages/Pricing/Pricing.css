@@ -2692,7 +2692,13 @@
 }
 
 .pricing-quote-sailing-field {
-  padding: 0.75rem;
+  padding: 0.5rem 0;
+  border: none;
+  background: transparent;
+}
+
+.pricing-quote-sailing-field.is-editing {
+  padding: 0.65rem 0.75rem;
   border-radius: 0.75rem;
   border: 1px solid rgba(59, 130, 246, 0.22);
   background: rgba(59, 130, 246, 0.04);
@@ -2943,9 +2949,177 @@
   margin-bottom: 0.5rem;
 }
 
+/* Inline layout system — Create Standard Quotation */
+.pricing-quote-inline-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.65rem;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+
+.pricing-quote-inline-item {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.35rem;
+  max-width: 100%;
+}
+
+.pricing-quote-inline-item__label {
+  color: rgb(100, 116, 139);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pricing-quote-inline-item__sep {
+  color: rgb(148, 163, 184);
+  font-weight: 600;
+}
+
+.pricing-quote-inline-item__value {
+  font-weight: 700;
+  color: rgb(15, 23, 42);
+}
+
+[data-theme='dark'] .pricing-quote-inline-item__value,
+.dark .pricing-quote-inline-item__value {
+  color: rgb(241, 245, 249);
+}
+
+.pricing-quote-inline-divider {
+  color: rgba(148, 163, 184, 0.75);
+  font-weight: 300;
+  user-select: none;
+  padding-inline: 0.1rem;
+}
+
+.pricing-quote-meta-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.pricing-quote-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(241, 245, 249, 0.95);
+  font-size: 0.75rem;
+}
+
+.pricing-quote-meta-chip__label {
+  color: rgb(100, 116, 139);
+  font-weight: 600;
+}
+
+.pricing-quote-meta-chip__value {
+  font-weight: 700;
+  color: rgb(15, 23, 42);
+}
+
+[data-theme='dark'] .pricing-quote-meta-chip,
+.dark .pricing-quote-meta-chip {
+  background: rgba(30, 41, 59, 0.65);
+  border-color: rgba(148, 163, 184, 0.28);
+}
+
+[data-theme='dark'] .pricing-quote-meta-chip__value,
+.dark .pricing-quote-meta-chip__value {
+  color: rgb(248, 250, 252);
+}
+
+.pricing-quote-pill-toggle {
+  position: relative;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 1.125rem;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: rgb(203, 213, 225);
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+
+.pricing-quote-pill-toggle.is-on {
+  background: rgb(16, 185, 129);
+}
+
+.pricing-quote-pill-toggle__knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 0.875rem;
+  height: 0.875rem;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.22);
+  transition: transform 0.18s ease;
+}
+
+.pricing-quote-pill-toggle.is-on .pricing-quote-pill-toggle__knob {
+  transform: translateX(0.875rem);
+}
+
+.pricing-quote-shipping-visibility-inline {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+.pricing-quote-shipping-visibility-inline__label {
+  font-weight: 600;
+  color: rgb(71, 85, 105);
+  white-space: nowrap;
+}
+
+.pricing-quote-shipping-visibility-inline__state {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.pricing-quote-shipping-visibility-inline__state.is-on {
+  color: rgb(4, 120, 87);
+  background: rgba(16, 185, 129, 0.15);
+}
+
+.pricing-quote-shipping-visibility-inline__state.is-off {
+  color: rgb(100, 116, 139);
+  background: rgba(148, 163, 184, 0.2);
+}
+
+.pricing-quote-client-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pricing-quote-client-search-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.5rem;
+}
+
+.pricing-quote-client-search-line .pricing-quote-client-row {
+  flex: 1;
+  min-width: min(100%, 12rem);
+}
+
 .pricing-quote-client-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.5rem;
 }
 
@@ -2954,19 +3128,300 @@
   min-width: 0;
 }
 
+.pricing-quote-modal-root .pricing-quote-client-row .pricing-quote-async-select [class*='-control'] {
+  min-height: 38px !important;
+  height: 38px;
+}
+
 .pricing-quote-add-client-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 2.625rem;
-  height: 2.625rem;
+  width: 38px;
+  height: 38px;
+  min-height: 38px;
   padding: 0;
   border-radius: 0.75rem;
   border: 1px solid rgba(37, 99, 235, 0.45);
   background: rgba(59, 130, 246, 0.08);
   color: rgb(37, 99, 235);
   transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+.pricing-quote-shipment-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.pricing-quote-shipment-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.pricing-quote-shipment-badges--edit {
+  margin-bottom: 0.35rem;
+}
+
+.pricing-quote-summary-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  max-width: 100%;
+  padding: 0.28rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  background: rgba(241, 245, 249, 0.98);
+  font-size: 0.75rem;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.pricing-quote-summary-badge__label {
+  font-weight: 600;
+  color: rgb(100, 116, 139);
+}
+
+.pricing-quote-summary-badge__value {
+  font-weight: 700;
+  color: rgb(15, 23, 42);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pricing-quote-summary-badge__value--muted {
+  color: rgb(148, 163, 184);
+  font-style: italic;
+  font-weight: 600;
+}
+
+[data-theme='dark'] .pricing-quote-summary-badge,
+.dark .pricing-quote-summary-badge {
+  background: rgba(30, 41, 59, 0.72);
+  border-color: rgba(148, 163, 184, 0.26);
+}
+
+[data-theme='dark'] .pricing-quote-summary-badge__value,
+.dark .pricing-quote-summary-badge__value {
+  color: rgb(248, 250, 252);
+}
+
+.pricing-quote-visibility-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.45rem 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+[data-theme='dark'] .pricing-quote-visibility-badge,
+.dark .pricing-quote-visibility-badge {
+  background: rgba(30, 41, 59, 0.72);
+  border-color: rgba(148, 163, 184, 0.26);
+}
+
+.pricing-quote-visibility-badge__state {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.pricing-quote-visibility-badge__state.is-on {
+  color: rgb(4, 120, 87);
+  background: rgba(16, 185, 129, 0.14);
+}
+
+.pricing-quote-visibility-badge__state.is-off {
+  color: rgb(100, 116, 139);
+  background: rgba(148, 163, 184, 0.18);
+}
+
+.pricing-quote-sailing-row {
+  padding-top: 0.15rem;
+  border-top: 1px dashed rgba(148, 163, 184, 0.35);
+}
+
+.pricing-quote-summary-badge--sailing .pricing-quote-summary-badge__value {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: normal;
+}
+
+.pricing-quote-route-summary {
+  padding: 0.15rem 0;
+}
+
+.pricing-quote-carrier-edit-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pricing-quote-carrier-edit-row__head {
+  margin-bottom: 0;
+}
+
+.pricing-quote-field-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.pricing-quote-field-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1 1 10rem;
+  min-width: 0;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.pricing-quote-field-chip__label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: rgb(100, 116, 139);
+  white-space: nowrap;
+}
+
+.pricing-quote-field-chip__input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 0.15rem 0;
+  outline: none;
+}
+
+.pricing-quote-summary-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.pricing-quote-summary-line {
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+[data-theme='dark'] .pricing-quote-summary-line,
+.dark .pricing-quote-summary-line {
+  border-bottom-color: rgba(51, 65, 85, 0.65);
+}
+
+.pricing-quote-summary-line--grand {
+  border-bottom: none;
+  padding-top: 0.25rem;
+}
+
+.pricing-quote-summary-profit-values {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+  align-items: center;
+}
+
+.pricing-quote-inline-money__sep {
+  color: rgb(148, 163, 184);
+  font-weight: 400;
+}
+
+.pricing-quote-sailing-selected {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+}
+
+.pricing-quote-sailing-selected--inline {
+  max-width: 100%;
+}
+
+.pricing-quote-sailing-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  border: 1px solid rgba(37, 99, 235, 0.35);
+  background: rgba(59, 130, 246, 0.1);
+  color: rgb(30, 64, 175);
+}
+
+.pricing-quote-sailing-change-btn {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: rgb(37, 99, 235);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.pricing-quote-sailing-change-btn--cancel {
+  margin-inline-start: 0.35rem;
+  color: rgb(100, 116, 139);
+}
+
+.pricing-quote-sailing-pick-hint {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgb(180, 83, 9);
+}
+
+.pricing-quote-sailing-inline {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  max-width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.pricing-quote-sailing-inline.is-editing {
+  width: 100%;
+}
+
+.pricing-quote-sailing-inline-label {
+  display: none;
+}
+
+.pricing-quote-sailing-datepicker {
+  width: 100%;
+  max-width: 11rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 0.65rem;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 640px) {
+  .pricing-quote-field-chips-row {
+    flex-direction: column;
+  }
+
+  .pricing-quote-field-chip {
+    flex: 1 1 auto;
+    width: 100%;
+  }
 }
 
 .pricing-quote-add-client-btn:hover {

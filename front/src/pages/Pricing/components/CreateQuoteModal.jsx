@@ -43,6 +43,13 @@ import {
 } from '../utils/sailingSchedule'
 import { QuickAddClientModal } from '../../Clients/QuickAddClientModal'
 import QuoteSailingDateSelector from './QuoteSailingDateSelector'
+import {
+  QuoteInlineDivider,
+  QuoteInlineItem,
+  QuoteInlineStrip,
+  QuotePillToggle,
+  QuoteSummaryBadge,
+} from './quoteFormLayout'
 import QuotePricingLinesTable from './QuotePricingLinesTable'
 import {
   isOtherChargePricingCode,
@@ -88,6 +95,24 @@ function currencyCodePill(code) {
   else if (display === 'EUR') variant = 'eur'
   else if (display === '—') variant = 'muted'
   return <span className={`shipment-fin-cur-pill shipment-fin-cur-pill--${variant}`}>{display}</span>
+}
+
+function QuoteSummaryMoney({ amounts, i18n, t, withPills = false }) {
+  const keys = sortCurrencyCodes(Object.keys(amounts).filter((c) => Math.abs(amounts[c] || 0) > 1e-9))
+  if (!keys.length) return <span>{t('common.dash')}</span>
+  return keys.map((cur, i) => (
+    <span key={cur} className="pricing-quote-inline-money-part">
+      {i > 0 ? <span className="pricing-quote-inline-money__sep"> · </span> : null}
+      {withPills ? (
+        <span className="inline-flex items-center gap-1">
+          {currencyCodePill(cur)}
+          {formatLocaleMoney(amounts[cur], cur, i18n.language)}
+        </span>
+      ) : (
+        formatLocaleMoney(amounts[cur], cur, i18n.language)
+      )}
+    </span>
+  ))
 }
 
 function inlandPricingKeyLabel(key) {
@@ -246,7 +271,7 @@ function sortedProfitKeys(map) {
 
 function QuoteFinCard({ icon: Icon, title, subtitle: _subtitleIgnored, headMeta = null, children }) {
   return (
-    <details className="shipment-fin-card pricing-fin-section pricing-quote-collapsible" open>
+    <details className="shipment-fin-card pricing-fin-section pricing-quote-collapsible">
       <summary className="shipment-fin-card__head pricing-fin-section__summary pricing-quote-collapsible__summary">
         <div className="shipment-fin-card__head-main">
           {Icon ? <Icon className="shipment-fin-card__icon" aria-hidden /> : null}
@@ -284,19 +309,19 @@ function carrierToggleButton(enabled, onClick, ariaLabel) {
 }
 
 function ShippingLineCustomerToggle({ enabled, onToggle, t }) {
-  const label = t('pricing.showShippingLineToCustomer', 'إظهار الخط الملاحي للعميل / Show shipping line to customer')
+  const stateLabel = enabled
+    ? t('pricing.shippingLineShowToClientBadge', 'إظهار للعميل')
+    : t('pricing.shippingLineHideFromClientBadge', 'غير ظاهر للعميل')
   return (
-    <div className="pricing-quote-shipping-line-visibility" role="group" aria-label={label}>
-      <span className="pricing-quote-shipping-line-visibility__label">{label}</span>
-      <span className="pricing-quote-shipping-line-visibility__colon">:</span>
+    <span className="pricing-quote-visibility-badge" role="group" aria-label={stateLabel}>
       <span
-        className={`pricing-quote-shipping-line-visibility__state ${enabled ? 'is-on' : 'is-off'}`}
+        className={`pricing-quote-visibility-badge__state ${enabled ? 'is-on' : 'is-off'}`}
         aria-live="polite"
       >
-        {enabled ? t('pricing.toggleOn', 'ON') : t('pricing.toggleOff', 'OFF')}
+        {stateLabel}
       </span>
-      {carrierToggleButton(enabled, onToggle, label)}
-    </div>
+      <QuotePillToggle enabled={enabled} onToggle={onToggle} ariaLabel={stateLabel} />
+    </span>
   )
 }
 
@@ -1212,88 +1237,84 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
               </div>
             ) : null}
             <QuoteFinCard icon={User} title={t('pricing.quoteSectionClient', 'بيانات العميل / Client Info')}>
-              <div className="space-y-2">
-                <label className="shipment-fin-field-label text-sm font-bold text-gray-700 dark:text-gray-300">
-                  {t('pricing.client', 'Client')}
-                </label>
-                <div className="pricing-quote-client-row">
-                  <AsyncSelect
-                    loadOptions={loadClientOptions}
-                    value={clientAsync}
-                    onChange={(opt) => setClientAsync(opt || null)}
-                    placeholder={t('pricing.searchClient', 'Search client...')}
-                    isClearable
-                    className="pricing-quote-async-select"
-                    disabled={isQuick}
-                  />
-                  <button
-                    type="button"
-                    className="pricing-quote-add-client-btn"
-                    onClick={() => setShowAddClientModal(true)}
-                    aria-label={t('pricing.addClient', 'إضافة عميل / Add Client')}
-                    title={t('pricing.addClient', 'إضافة عميل / Add Client')}
-                  >
-                    <Plus className="h-5 w-5" aria-hidden />
-                  </button>
+              <div className="pricing-quote-client-block">
+                <div className="pricing-quote-client-search-line">
+                  <span className="pricing-quote-inline-item__label">{t('pricing.client', 'Client')}</span>
+                  <span className="pricing-quote-inline-item__sep" aria-hidden>
+                    :
+                  </span>
+                  <div className="pricing-quote-client-row">
+                    <AsyncSelect
+                      loadOptions={loadClientOptions}
+                      value={clientAsync}
+                      onChange={(opt) => setClientAsync(opt || null)}
+                      placeholder={t('pricing.searchClient', 'Search client...')}
+                      isClearable
+                      className="pricing-quote-async-select"
+                      disabled={isQuick}
+                    />
+                    <button
+                      type="button"
+                      className="pricing-quote-add-client-btn"
+                      onClick={() => setShowAddClientModal(true)}
+                      aria-label={t('pricing.addClient', 'إضافة عميل / Add Client')}
+                      title={t('pricing.addClient', 'إضافة عميل / Add Client')}
+                    >
+                      <Plus className="h-4 w-4" aria-hidden />
+                    </button>
+                  </div>
                 </div>
                 {isQuick ? (
-                  <p className="text-xs text-amber-800/90 dark:text-amber-200/90 m-0">
+                  <p className="pricing-quote-client-note text-xs text-amber-800/90 dark:text-amber-200/90 m-0">
                     {t('pricing.quickClientOptionalNote', 'Client is optional for quick quotations.')}
                   </p>
                 ) : null}
                 {user?.name ? (
-                  <p className="text-xs text-gray-500 dark:text-gray-400 m-0">
-                    {t('pricing.salespersonAuto', 'Salesperson')}:{' '}
-                    <span className="font-semibold text-gray-700 dark:text-gray-300">{user.name}</span>
-                  </p>
+                  <QuoteInlineStrip className="pricing-quote-client-meta">
+                    <QuoteInlineItem label={t('pricing.salespersonAuto', 'Salesperson')}>
+                      {user.name}
+                    </QuoteInlineItem>
+                  </QuoteInlineStrip>
                 ) : null}
               </div>
             </QuoteFinCard>
 
             <QuoteFinCard icon={MapPin} title={t('pricing.quoteSectionRoute', 'ملخص المسار / Route summary')}>
               {isRouteLocked ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <span className="text-gray-500 dark:text-gray-400">{t('pricing.detailRoute', 'Route')}</span>
-                    <p className="font-semibold text-gray-900 dark:text-white">
-                      {routeDisplayOffer?.pol || form.pol || '—'} → {routeDisplayOffer?.pod || routeDisplayOffer?.region || form.pod || '—'}
-                    </p>
-                  </div>
-                  <div className="sm:col-span-2 pricing-quote-shipping-line-field">
-                    <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
-                      <span className="text-gray-500 dark:text-gray-400">
-                        {t('pricing.detailCarrier', 'الخط الملاحي / Shipping Line')}
+                <div className="pricing-quote-shipment-summary">
+                  <div className="pricing-quote-shipment-badges">
+                    <QuoteSummaryBadge label={t('pricing.quoteBadgeRoute', 'المسار')}>
+                      {routeDisplayOffer?.pol || form.pol || '—'} →{' '}
+                      {routeDisplayOffer?.pod || routeDisplayOffer?.region || form.pod || '—'}
+                    </QuoteSummaryBadge>
+                    <QuoteSummaryBadge label={t('pricing.quoteBadgeShippingLine', 'الخط الملاحي')}>
+                      <span className={showCarrierOnPdf ? '' : 'pricing-quote-summary-badge__value--muted'}>
+                        {showCarrierOnPdf
+                          ? routeDisplayOffer?.shipping_line || form.shipping_line || '—'
+                          : '—'}
                       </span>
-                      <ShippingLineCustomerToggle
-                        enabled={showCarrierOnPdf}
-                        onToggle={() => setShowCarrierOnPdf((v) => !v)}
-                        t={t}
-                      />
-                    </div>
-                    <p
-                      className={`font-semibold m-0 ${showCarrierOnPdf ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500 italic'}`}
-                    >
-                      {showCarrierOnPdf
-                        ? routeDisplayOffer?.shipping_line || form.shipping_line || '—'
-                        : t('pricing.shippingLineHiddenPreview', 'Hidden from client')}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-gray-500 dark:text-gray-400">{t('pricing.filterContainerType', 'Container')}</span>
-                    <p className="font-semibold text-gray-900 dark:text-white">
+                    </QuoteSummaryBadge>
+                    <ShippingLineCustomerToggle
+                      enabled={showCarrierOnPdf}
+                      onToggle={() => setShowCarrierOnPdf((v) => !v)}
+                      t={t}
+                    />
+                    <QuoteSummaryBadge label={t('pricing.quoteBadgeContainer', 'نوع الحاوية')}>
                       {routeDisplayOffer ? inferContainerFromOffer(routeDisplayOffer) : form.container_type || '—'}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-gray-500 dark:text-gray-400">{t('pricing.transitTime', 'Transit')}</span>
-                    <p className="font-semibold text-gray-900 dark:text-white">{routeDisplayOffer?.transit_time || form.transit_time || '—'}</p>
+                    </QuoteSummaryBadge>
+                    <QuoteSummaryBadge label={t('pricing.quoteBadgeTransit', 'مدة العبور')}>
+                      {routeDisplayOffer?.transit_time || form.transit_time || '—'}
+                    </QuoteSummaryBadge>
                   </div>
                   {sailingSchedule ? (
-                    <QuoteSailingDateSelector
-                      schedule={sailingSchedule}
-                      value={selectedSailingDate}
-                      onChange={setSelectedSailingDate}
-                    />
+                    <div className="pricing-quote-sailing-row">
+                      <QuoteSailingDateSelector
+                        inline
+                        schedule={sailingSchedule}
+                        value={selectedSailingDate}
+                        onChange={setSelectedSailingDate}
+                      />
+                    </div>
                   ) : null}
                 </div>
               ) : (
@@ -1318,11 +1339,8 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                         placeholder={t('pricing.filterAllPod', 'POD')}
                       />
                     </div>
-                    <div className="space-y-2 md:col-span-2 pricing-quote-shipping-line-field">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <label className="text-sm font-bold text-gray-700 dark:text-gray-300 m-0">
-                          {t('pricing.shippingLine', 'الخط الملاحي / Shipping Line')}
-                        </label>
+                    <div className="md:col-span-2 pricing-quote-carrier-edit-row">
+                      <div className="pricing-quote-shipment-badges pricing-quote-shipment-badges--edit">
                         <ShippingLineCustomerToggle
                           enabled={showCarrierOnPdf}
                           onToggle={() => setShowCarrierOnPdf((v) => !v)}
@@ -1336,24 +1354,27 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                         placeholder={t('pricing.filterAllShippingLines', 'All shipping lines')}
                       />
                     </div>
-                    <div className="space-y-1">
-                      <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.containerType', 'Container')}</label>
-                      <input
-                        value={form.container_type}
-                        onChange={(e) => setField('container_type', e.target.value)}
-                        className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.transitTime', 'Transit')}</label>
-                      <input
-                        value={form.transit_time}
-                        onChange={(e) => setField('transit_time', e.target.value)}
-                        className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
-                      />
+                    <div className="md:col-span-2 pricing-quote-field-chips-row">
+                      <label className="pricing-quote-field-chip">
+                        <span className="pricing-quote-field-chip__label">{t('pricing.containerType', 'Container')}</span>
+                        <input
+                          value={form.container_type}
+                          onChange={(e) => setField('container_type', e.target.value)}
+                          className="pricing-quote-field-chip__input"
+                        />
+                      </label>
+                      <label className="pricing-quote-field-chip">
+                        <span className="pricing-quote-field-chip__label">{t('pricing.transitTime', 'Transit')}</span>
+                        <input
+                          value={form.transit_time}
+                          onChange={(e) => setField('transit_time', e.target.value)}
+                          className="pricing-quote-field-chip__input"
+                        />
+                      </label>
                     </div>
                     {sailingSchedule && !isQuick ? (
                       <QuoteSailingDateSelector
+                        inline
                         schedule={sailingSchedule}
                         value={selectedSailingDate}
                         onChange={setSelectedSailingDate}
@@ -1910,106 +1931,82 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
             </QuoteFinCard>
 
             <QuoteFinCard icon={Receipt} title={t('pricing.quoteSectionSummary', 'ملخص / Summary')} subtitle={null}>
-              <div className="space-y-3">
-                <div className="flex justify-between gap-3 text-sm border-b border-gray-100 dark:border-gray-700 pb-2">
-                  <span className="text-gray-600 dark:text-gray-400 shrink-0">{t('pricing.summaryOcean', 'Ocean freight total')}</span>
-                  <div className="flex flex-col items-end gap-0.5 font-bold tabular-nums text-right">
-                    {(() => {
-                      const keys = sortCurrencyCodes(
-                        Object.keys(oceanSellingByCurrency).filter((c) => Math.abs(oceanSellingByCurrency[c] || 0) > 1e-9)
-                      )
-                      if (!keys.length) return <span>{t('common.dash')}</span>
-                      return keys.map((cur) => (
-                        <span key={cur}>{formatLocaleMoney(oceanSellingByCurrency[cur], cur, i18n.language)}</span>
-                      ))
-                    })()}
-                  </div>
-                </div>
-                <div className="flex justify-between gap-3 text-sm border-b border-gray-100 dark:border-gray-700 pb-2">
-                  <span className="text-gray-600 dark:text-gray-400 shrink-0">{t('pricing.summaryInland', 'Inland transport total')}</span>
-                  <div className="flex flex-col items-end gap-1 font-bold tabular-nums text-right">
-                    {!inlandEnabled ? (
-                      <span>{t('common.dash')}</span>
-                    ) : entryMode === 'quick' ? (
-                      <>
-                        {parseNum(inlandSelling) > 0 ? (
-                          <span>{formatLocaleMoney(parseNum(inlandSelling), inlandCurrency, i18n.language)}</span>
-                        ) : null}
-                        {parseNum(inlandGenSelling) > 0 ? (
-                          <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
-                            + {t('pricing.inlandGeneratorLine', 'Generator')}:{' '}
-                            {formatLocaleMoney(parseNum(inlandGenSelling), inlandGenCurrency || inlandCurrency, i18n.language)}
-                          </span>
-                        ) : null}
-                        {!parseNum(inlandSelling) && !parseNum(inlandGenSelling) ? <span>{t('common.dash')}</span> : null}
-                      </>
-                    ) : (
-                      <>
-                        {sortCurrencyCodes(
-                          Object.keys(inlandNonQuickSellingByCurrency).filter((c) => Math.abs(inlandNonQuickSellingByCurrency[c] || 0) > 1e-9)
-                        ).map((cur) => (
-                          <span key={cur} className="inline-flex items-center gap-2">
-                            {currencyCodePill(cur)}
-                            {formatLocaleMoney(inlandNonQuickSellingByCurrency[cur], cur, i18n.language)}
-                          </span>
-                        ))}
-                        {Object.keys(inlandNonQuickSellingByCurrency).filter((c) => Math.abs(inlandNonQuickSellingByCurrency[c] || 0) > 1e-9)
-                          .length === 0 ? (
-                          <span>{t('common.dash')}</span>
-                        ) : null}
-                      </>
-                    )}
-                  </div>
-                </div>
-                <div className="flex justify-between gap-3 text-sm border-b border-gray-100 dark:border-gray-700 pb-2">
-                  <span className="text-gray-600 dark:text-gray-400 shrink-0">{t('pricing.summaryCustoms', 'Customs total')}</span>
-                  <div className="flex flex-col items-end gap-0.5 font-bold tabular-nums text-right">
-                    {!customsEnabled ? (
-                      <span>{t('common.dash')}</span>
-                    ) : (
-                      (() => {
-                        const keys = sortCurrencyCodes(
-                          Object.keys(customsSellingByCurrency).filter((c) => Math.abs(customsSellingByCurrency[c] || 0) > 1e-9)
-                        )
-                        if (!keys.length) return <span>{t('common.dash')}</span>
-                        return keys.map((cur) => (
-                          <span key={cur}>{formatLocaleMoney(customsSellingByCurrency[cur], cur, i18n.language)}</span>
-                        ))
-                      })()
-                    )}
-                  </div>
-                </div>
+              <div className="pricing-quote-summary-block">
+                <QuoteInlineStrip className="pricing-quote-summary-line">
+                  <QuoteInlineItem label={t('pricing.summaryOcean', 'Ocean freight total')}>
+                    <span className="font-bold tabular-nums">
+                      <QuoteSummaryMoney amounts={oceanSellingByCurrency} i18n={i18n} t={t} />
+                    </span>
+                  </QuoteInlineItem>
+                </QuoteInlineStrip>
+                <QuoteInlineStrip className="pricing-quote-summary-line">
+                  <QuoteInlineItem label={t('pricing.summaryInland', 'Inland transport total')}>
+                    <span className="font-bold tabular-nums">
+                      {!inlandEnabled ? (
+                        <span>{t('common.dash')}</span>
+                      ) : entryMode === 'quick' ? (
+                        <>
+                          {parseNum(inlandSelling) > 0 ? (
+                            <span>{formatLocaleMoney(parseNum(inlandSelling), inlandCurrency, i18n.language)}</span>
+                          ) : null}
+                          {parseNum(inlandGenSelling) > 0 ? (
+                            <>
+                              {parseNum(inlandSelling) > 0 ? (
+                                <span className="pricing-quote-inline-money__sep"> · </span>
+                              ) : null}
+                              <span>
+                                {t('pricing.inlandGeneratorLine', 'Generator')}:{' '}
+                                {formatLocaleMoney(
+                                  parseNum(inlandGenSelling),
+                                  inlandGenCurrency || inlandCurrency,
+                                  i18n.language
+                                )}
+                              </span>
+                            </>
+                          ) : null}
+                          {!parseNum(inlandSelling) && !parseNum(inlandGenSelling) ? (
+                            <span>{t('common.dash')}</span>
+                          ) : null}
+                        </>
+                      ) : (
+                        <QuoteSummaryMoney
+                          amounts={inlandNonQuickSellingByCurrency}
+                          i18n={i18n}
+                          t={t}
+                          withPills
+                        />
+                      )}
+                    </span>
+                  </QuoteInlineItem>
+                </QuoteInlineStrip>
+                <QuoteInlineStrip className="pricing-quote-summary-line">
+                  <QuoteInlineItem label={t('pricing.summaryCustoms', 'Customs total')}>
+                    <span className="font-bold tabular-nums">
+                      {!customsEnabled ? (
+                        <span>{t('common.dash')}</span>
+                      ) : (
+                        <QuoteSummaryMoney amounts={customsSellingByCurrency} i18n={i18n} t={t} />
+                      )}
+                    </span>
+                  </QuoteInlineItem>
+                </QuoteInlineStrip>
                 {officialReceiptsNote.trim() ? (
-                  <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/90 dark:bg-slate-900/40 px-3 py-2 text-xs text-slate-600 dark:text-slate-300">
-                    <span className="font-bold text-slate-800 dark:text-slate-200">{t('pricing.officialReceipts', 'Official Receipts')}</span>
-                    <span className="mx-1">·</span>
-                    {officialReceiptsNote.trim()}
-                  </div>
+                  <QuoteInlineStrip className="pricing-quote-summary-line">
+                    <QuoteInlineItem label={t('pricing.officialReceipts', 'Official Receipts')}>
+                      {officialReceiptsNote.trim()}
+                    </QuoteInlineItem>
+                  </QuoteInlineStrip>
                 ) : null}
-                <div className="flex justify-between gap-3 items-start text-sm border-b border-gray-100 dark:border-gray-700 pb-2">
-                  <span className="text-gray-600 dark:text-gray-400 shrink-0 pt-0.5">{t('pricing.summaryHandling', 'Handling fees')}</span>
-                  <div className="flex flex-col items-end gap-1 font-bold tabular-nums text-right">
-                    {sortCurrencyCodes(
-                      Object.keys(handlingSellingByCurrency).filter((c) => Math.abs(handlingSellingByCurrency[c] || 0) > 1e-9)
-                    ).length === 0 ? (
-                      <span>{t('common.dash')}</span>
-                    ) : (
-                      sortCurrencyCodes(
-                        Object.keys(handlingSellingByCurrency).filter((c) => Math.abs(handlingSellingByCurrency[c] || 0) > 1e-9)
-                      ).map((cur) => (
-                        <span key={cur} className="inline-flex items-center gap-2">
-                          {currencyCodePill(cur)}
-                          {formatLocaleMoney(handlingSellingByCurrency[cur], cur, i18n.language)}
-                        </span>
-                      ))
-                    )}
-                  </div>
-                </div>
-                <div className="rounded-lg border border-emerald-200 dark:border-emerald-900/45 bg-emerald-50/85 dark:bg-emerald-950/30 p-4 space-y-2">
-                  <div className="text-xs font-bold uppercase tracking-wider text-emerald-900 dark:text-emerald-200">
-                    {t('pricing.totalProfitQuote', 'Total profit (selling − cost)')}
-                  </div>
-                  <div className="flex flex-wrap gap-x-6 gap-y-2 pt-1">
+                <QuoteInlineStrip className="pricing-quote-summary-line">
+                  <QuoteInlineItem label={t('pricing.summaryHandling', 'Handling fees')}>
+                    <span className="font-bold tabular-nums">
+                      <QuoteSummaryMoney amounts={handlingSellingByCurrency} i18n={i18n} t={t} withPills />
+                    </span>
+                  </QuoteInlineItem>
+                </QuoteInlineStrip>
+                <QuoteInlineStrip className="pricing-quote-summary-line pricing-quote-summary-line--profit">
+                  <QuoteInlineItem label={t('pricing.totalProfitQuote', 'Total profit (selling − cost)')}>
+                    <span className="pricing-quote-summary-profit-values">
                     {sortedProfitKeys(quoteProfitByCurrency).every((k) => Math.abs(quoteProfitByCurrency[k]) <= 1e-9) ? (
                       <span className="text-sm text-gray-500 dark:text-gray-400">—</span>
                     ) : (
@@ -2030,26 +2027,16 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                           )
                         })
                     )}
-                  </div>
-                </div>
-                <div className="flex justify-between items-start gap-4 pt-2 text-base">
-                  <span className="font-bold text-gray-900 dark:text-white shrink-0">{t('pricing.grandTotal', 'Grand total')}</span>
-                  <div className="flex flex-col items-end gap-1 font-extrabold text-blue-600 dark:text-blue-400 tabular-nums text-right">
-                    {(() => {
-                      const keys = sortCurrencyCodes(
-                        Object.keys(grandSellingByCurrency).filter((c) => Math.abs(grandSellingByCurrency[c] || 0) > 1e-9)
-                      )
-                      if (!keys.length) {
-                        return <span className="text-gray-500 dark:text-gray-400 font-bold">{t('common.dash')}</span>
-                      }
-                      return keys.map((cur) => (
-                        <span key={cur} className="text-xl tabular-nums">
-                          {formatLocaleMoney(grandSellingByCurrency[cur], cur, i18n.language)}
-                        </span>
-                      ))
-                    })()}
-                  </div>
-                </div>
+                    </span>
+                  </QuoteInlineItem>
+                </QuoteInlineStrip>
+                <QuoteInlineStrip className="pricing-quote-summary-line pricing-quote-summary-line--grand">
+                  <QuoteInlineItem label={t('pricing.grandTotal', 'Grand total')}>
+                    <span className="font-extrabold text-blue-600 dark:text-blue-400 tabular-nums text-base">
+                      <QuoteSummaryMoney amounts={grandSellingByCurrency} i18n={i18n} t={t} />
+                    </span>
+                  </QuoteInlineItem>
+                </QuoteInlineStrip>
               </div>
             </QuoteFinCard>
 
