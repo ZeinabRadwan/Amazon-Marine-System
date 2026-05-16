@@ -53,6 +53,24 @@ export function QuotePillToggle({ enabled, onToggle, ariaLabel }) {
   )
 }
 
+/** Shipping line badge for read-only quote details (no toggle). */
+export function ShippingLineSummaryBadgeReadOnly({ line, visible, t }) {
+  const stateLabel = visible
+    ? t('pricing.shippingLineShowToClientBadge', 'إظهار للعميل')
+    : t('pricing.shippingLineHideFromClientBadge', 'غير ظاهر للعميل')
+  const displayLine = visible ? line || '—' : '—'
+  return (
+    <QuoteSummaryBadge
+      label={t('pricing.quoteBadgeShippingLine', 'الخط الملاحي')}
+      className="pricing-quote-summary-badge--carrier"
+    >
+      <span className={visible ? '' : 'pricing-quote-summary-badge__value--muted'}>{displayLine}</span>
+      <span className="pricing-quote-summary-badge__pipe" aria-hidden />
+      <span className={`pricing-quote-summary-badge__visibility ${visible ? 'is-on' : 'is-off'}`}>{stateLabel}</span>
+    </QuoteSummaryBadge>
+  )
+}
+
 /** Shipping line value + client visibility toggle in one badge */
 export function ShippingLineSummaryBadge({ line, visible, onToggle, t }) {
   const stateLabel = visible

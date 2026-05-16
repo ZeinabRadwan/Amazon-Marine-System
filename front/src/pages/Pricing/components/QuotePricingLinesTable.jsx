@@ -130,6 +130,7 @@ function useMeasuredColumnWidths(tableRef, measureKey, useCompactLayout) {
  * @param {boolean} [props.allowOceanCodeEdit]
  * @param {(code: string) => string} [props.quoteCodeLabel]
  * @param {string[]} [props.quickSelectCodes]
+ * @param {boolean} [props.readOnly] — disable all inputs (quote details view)
  */
 export default function QuotePricingLinesTable({
   lines,
@@ -137,6 +138,7 @@ export default function QuotePricingLinesTable({
   readOnlyCost = true,
   readOnlyCurrency = true,
   readOnlyName = true,
+  readOnly = false,
   variant = 'ocean',
   allowOceanCodeEdit = false,
   quoteCodeLabel,
@@ -147,6 +149,8 @@ export default function QuotePricingLinesTable({
   const isOcean = variant === 'ocean'
   const isInland = variant === 'inland'
   const useCompactLayout = isOcean || isInland
+  const readOnlySelling = readOnly
+  const readOnlyCheck = readOnly
   const variantClass = isOcean ? 'ocean' : isInland ? 'inland' : ''
   const measureKey = `${variant}-${lines.length}-${lines.map((l) => `${l.name}|${l.cost_amount}|${l.selling_amount}|${l.currency}|${l.included}`).join(';')}`
 
@@ -209,7 +213,12 @@ export default function QuotePricingLinesTable({
                     type="checkbox"
                     className="pricing-quote-line-check"
                     checked={included}
-                    onChange={(e) => onUpdateLine(idx, { included: e.target.checked })}
+                    disabled={readOnlyCheck}
+                    readOnly={readOnlyCheck}
+                    onChange={(e) => {
+                      if (readOnlyCheck) return
+                      onUpdateLine(idx, { included: e.target.checked })
+                    }}
                     aria-label={t('pricing.includeInQuotationTooltip', 'Include in quotation')}
                   />
                 </td>
@@ -299,16 +308,20 @@ export default function QuotePricingLinesTable({
                   )}
                 </td>
                 <td className="pricing-quote-line-col-selling shipment-fin-num" data-col="selling">
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    disabled={rowDisabled}
-                    className="pricing-quote-line-input pricing-quote-line-input--editable tabular-nums disabled:opacity-50"
-                    value={displayNumericInputValue(line.selling_amount)}
-                    onChange={(e) => onUpdateLine(idx, { selling_amount: e.target.value })}
-                    placeholder="0"
-                  />
+                  {readOnlySelling ? (
+                    <CostAmountLabel amount={line.selling_amount} currency={line.currency} />
+                  ) : (
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      disabled={rowDisabled}
+                      className="pricing-quote-line-input pricing-quote-line-input--editable tabular-nums disabled:opacity-50"
+                      value={displayNumericInputValue(line.selling_amount)}
+                      onChange={(e) => onUpdateLine(idx, { selling_amount: e.target.value })}
+                      placeholder="0"
+                    />
+                  )}
                 </td>
                 <td
                   className={`pricing-quote-line-col-profit shipment-fin-num pricing-quote-line-profit ${

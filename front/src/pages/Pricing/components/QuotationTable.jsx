@@ -195,7 +195,7 @@ export default function QuotationTable({ refreshKey }) {
             trigger={
               <button
                 type="button"
-                className="clients-filters__btn-icon h-8 w-8 min-w-0 min-h-0 border-gray-200 dark:border-gray-600"
+                className="clients-filters__btn-icon h-8 w-8 min-w-0 min-h-0"
                 aria-label={t('pricing.rowActions', 'Row actions')}
                 title={t('pricing.rowActions', 'Row actions')}
               >
@@ -268,7 +268,7 @@ export default function QuotationTable({ refreshKey }) {
         }
       />
 
-      <div className="glass-panel rounded-2xl overflow-hidden shadow-sm">
+      <div className="glass-panel rounded-2xl overflow-hidden">
         {error ? (
           <div className="p-6 text-sm text-red-700">{error}</div>
         ) : (

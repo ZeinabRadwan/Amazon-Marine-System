@@ -1,0 +1,280 @@
+{{-- Quotation PDF layout (aligned with invoice document structure) --}}
+.pdf-quote-doc.pdf-inv-html {
+    direction: ltr;
+    text-align: left;
+}
+.pdf-quote-doc .pdf-inv-header-title-en {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    color: #ec7f00;
+}
+.pdf-quote-doc .pdf-inv-header-title-ar {
+    display: block;
+    margin-top: 3px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #0f2d4a;
+    direction: rtl;
+    text-align: right;
+}
+.pdf-quote-header-meta {
+    margin-top: 6px;
+    text-align: right;
+}
+.pdf-quote-header-meta__row {
+    margin-bottom: 3px;
+    font-size: 9px;
+    line-height: 1.35;
+}
+.pdf-quote-header-meta__label {
+    color: #64748b;
+    font-weight: 600;
+    margin-right: 6px;
+}
+.pdf-quote-header-meta__val {
+    color: #0f2d4a;
+    font-weight: 700;
+}
+.pdf-inv-meta-row--quote .pdf-inv-meta-cell {
+    width: 33%;
+}
+.pdf-inv-panel-wrap {
+    border: 1px solid #dde3ed;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 0 0 12px;
+    background: #ffffff;
+}
+.pdf-inv-meta-row {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+.pdf-inv-meta-row tr td.pdf-inv-meta-cell {
+    vertical-align: middle;
+    padding: 8px 6px;
+    text-align: center;
+}
+.pdf-inv-meta-row tr td.pdf-inv-meta-sep {
+    width: 1px;
+    background: #cbd5e1;
+    padding: 0;
+}
+.pdf-inv-meta-en {
+    font-size: 7.5px;
+    font-weight: 700;
+    color: #ec7f00;
+    text-transform: uppercase;
+}
+.pdf-inv-meta-ar {
+    font-size: 7px;
+    color: #64748b;
+    direction: rtl;
+}
+.pdf-inv-meta-val {
+    font-size: 9.5px;
+    font-weight: 700;
+    color: #0f2d4a;
+}
+.pdf-inv-meta-val-mono {
+    font-family: DejaVu Sans Mono, monospace;
+}
+.pdf-inv-parties {
+    width: 100%;
+    border-collapse: collapse;
+}
+.pdf-inv-parties td {
+    vertical-align: top;
+    padding: 16px 18px;
+}
+.pdf-inv-party-div {
+    width: 1px;
+    background: #e2e8f0;
+    padding: 0;
+}
+.pdf-inv-party-role {
+    font-size: 10px;
+    font-weight: 700;
+    color: #ec7f00;
+}
+.pdf-inv-party-role-ar {
+    font-size: 7.5px;
+    color: #94a3b8;
+    direction: rtl;
+}
+.pdf-inv-party-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f2d4a;
+    margin: 6px 0;
+}
+.pdf-inv-party-right {
+    text-align: right;
+}
+.pdf-inv-route-tpl-bar {
+    width: 100%;
+    border-collapse: collapse;
+    background: #0f2d4a;
+}
+.pdf-inv-route-tpl-ports-cell {
+    width: 52%;
+    padding: 10px 10px 10px 18px;
+}
+.pdf-inv-route-tpl-metas-cell {
+    width: 48%;
+    padding: 10px 18px 10px 10px;
+    text-align: right;
+}
+.pdf-inv-route-tpl-port-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #ffffff;
+}
+.pdf-inv-route-tpl-port-lbl {
+    font-size: 8px;
+    color: rgba(255, 255, 255, 0.4);
+}
+.pdf-inv-route-tpl-arrow {
+    color: #ec7f00;
+    font-size: 16px;
+    font-weight: 700;
+    text-align: center;
+}
+.pdf-inv-route-tpl-rmeta-val {
+    font-size: 11px;
+    font-weight: 700;
+    color: #ffffff;
+}
+.pdf-inv-route-tpl-rmeta-lbl {
+    font-size: 8px;
+    color: rgba(255, 255, 255, 0.4);
+}
+.pdf-inv-route-tpl-rmeta--split {
+    border-left: 1px solid #cbd5e1;
+}
+.pdf-quote-sailing-banner {
+    background: #fff7ed;
+    border: 1px solid #f5c77a;
+    border-radius: 8px;
+    padding: 10px 16px;
+    margin-bottom: 14px;
+}
+.pdf-quote-sailing-banner__titles {
+    margin-bottom: 6px;
+}
+.pdf-quote-sailing-banner__title-en {
+    font-size: 11px;
+    font-weight: 700;
+    color: #ec7f00;
+    margin-right: 8px;
+}
+.pdf-quote-sailing-banner__title-ar {
+    font-size: 10px;
+    font-weight: 600;
+    color: #9a6200;
+    direction: rtl;
+}
+.pdf-quote-sailing-banner__value {
+    font-size: 11px;
+    font-weight: 700;
+    color: #0f2d4a;
+    line-height: 1.45;
+}
+.pdf-inv-section-card {
+    border: 1px solid #dde3ed;
+    border-radius: 8px;
+    margin-bottom: 14px;
+    overflow: hidden;
+}
+.pdf-inv-sec-head {
+    width: 100%;
+    border-collapse: collapse;
+    background: #0f2d4a;
+}
+.pdf-inv-sec-head td {
+    padding: 8px 12px;
+    background: #0f2d4a;
+}
+.pdf-inv-sec-title-en {
+    font-size: 11px;
+    font-weight: 700;
+    color: #ffffff;
+}
+.pdf-inv-sec-title-ar {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.5);
+    direction: rtl;
+}
+.pdf-inv-sec-total {
+    text-align: right;
+    font-size: 11px;
+    font-weight: 700;
+    color: #ec7f00;
+    font-family: DejaVu Sans Mono, monospace;
+}
+.pdf-inv-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.pdf-inv-table thead th {
+    padding: 8px;
+    font-size: 8.5px;
+    font-weight: 700;
+    color: #64748b;
+    border-bottom: 1px solid #dde3ed;
+    text-transform: uppercase;
+}
+.pdf-inv-table tbody td {
+    padding: 8px;
+    font-size: 10px;
+    border-bottom: 1px solid #f1f5f9;
+}
+.pdf-inv-col-amt,
+.pdf-inv-col-cur {
+    text-align: center;
+}
+.pdf-inv-grand-wrap {
+    background: #0f2d4a;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 14px;
+}
+.pdf-inv-grand-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #ffffff;
+}
+.pdf-inv-grand-title-ar {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    direction: rtl;
+}
+.pdf-inv-grand-breakdown td {
+    color: #ffffff;
+    font-size: 10px;
+    padding: 2px 0;
+}
+.pdf-inv-grand-cur .pdf-inv-gtr-val {
+    text-align: right;
+    font-weight: 700;
+}
+.pdf-inv-notes {
+    border: 1px solid #dde3ed;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    font-size: 10px;
+}
+.pdf-inv-terms-wrap {
+    background: #f8fafc;
+    border: 1px solid #dde3ed;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+}
+.pdf-quote-terms p {
+    margin: 0 0 6px;
+    font-size: 10px;
+    line-height: 1.45;
+}

@@ -645,6 +645,8 @@
     "handlingSectionTotal": "Total handling fees",
     "handlingDefaultRowTag": "Default",
     "handlingRemoveRow": "Remove item",
+    "colActions": "Actions",
+    "addedItemsColName": "Item name",
     "quoteSectionValidityNotes": "الصلاحية والملاحظات / Validity & notes",
     "quoteHandlingLineDefault": "Handling Fees",
     "summaryOcean": "Ocean freight total",

@@ -646,6 +646,8 @@
     "handlingSectionTotal": "إجمالي رسوم المناولة",
     "handlingDefaultRowTag": "افتراضي",
     "handlingRemoveRow": "إزالة البند",
+    "colActions": "إجراءات",
+    "addedItemsColName": "اسم البند",
     "quoteSectionValidityNotes": "الصلاحية والملاحظات / Validity & notes",
     "quoteHandlingLineDefault": "Handling Fees",
     "summaryOcean": "إجمالي الشحن البحري",

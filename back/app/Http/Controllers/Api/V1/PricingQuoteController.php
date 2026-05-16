@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\Currency;
 use App\Models\PricingOffer;
 use App\Models\PricingOfferSnapshot;
 use App\Models\PricingQuote;
@@ -403,8 +404,11 @@ class PricingQuoteController extends Controller
             ? (string) (($companyProfile['name_ar'] ?? '') !== '' ? $companyProfile['name_ar'] : ($companyProfile['name_en'] ?? ''))
             : (string) (($companyProfile['name_en'] ?? '') !== '' ? $companyProfile['name_en'] : ($companyProfile['name_ar'] ?? ''));
 
-        $partition = $this->partitionQuoteItemsForPdf($quote);
-        $grandTotalsByCurrency = $this->sumQuoteItemsByCurrency($quote->items);
+        $clientVisibleItems = $quote->items->filter(
+            fn (PricingQuoteItem $i): bool => (bool) ($i->visible_to_client ?? true)
+        );
+        $partition = $this->partitionQuoteItemsForPdf($quote, $clientVisibleItems);
+        $grandTotalsByCurrency = $this->sumQuoteItemsByCurrency($clientVisibleItems);
 
         $filename = ($quote->quote_no ?: 'Quote-'.$quote->id).'.pdf';
 
@@ -412,6 +416,12 @@ class PricingQuoteController extends Controller
         $labels['brand'] = $companyDisplayName !== '' ? $companyDisplayName : 'Amazon Marine System';
         $labels['brand_tag'] = $locale === 'ar' ? 'الشحن الدولي والملاحة' : 'International Freight Forwarding';
         $labels['brand_contact'] = $this->quotePdfBrandContactLine($companyProfile, $locale);
+
+        $pdfFmtDate = static function ($dt) use ($locale): ?string {
+            return $dt
+                ? $dt->copy()->timezone(config('app.timezone'))->locale($locale)->isoFormat('L')
+                : null;
+        };
 
         $html = view('pricing.quote_pdf', [
             'quote' => $quote,
@@ -430,6 +440,12 @@ class PricingQuoteController extends Controller
             'customsTotalsByCurrency' => $this->sumCollectionByCurrency($partition['customs']),
             'handlingTotalsByCurrency' => $this->sumCollectionByCurrency($partition['handling']),
             'grandTotalsByCurrency' => $grandTotalsByCurrency,
+            'sailingDisplay' => $this->sailingScheduleDisplayForPdf($quote),
+            'exchangeRateLabel' => $this->quotePdfExchangeRateLabel(),
+            'issueDateFormatted' => $quote->created_at ? $pdfFmtDate($quote->created_at) : '—',
+            'validUntilFormatted' => $quote->valid_to ? $pdfFmtDate($quote->valid_to) : '—',
+            'containerDisplay' => $this->quotePdfContainerDisplay($quote),
+            'formatBreakdown' => fn (array $map): string => $this->formatCurrencyBreakdown($map),
         ])->render();
 
         $mpdf = new Mpdf([
@@ -478,9 +494,28 @@ class PricingQuoteController extends Controller
         if ($locale === 'ar') {
             return [
                 'doc_title' => 'عرض سعر',
+                'doc_title_en' => 'Price Quotation',
+                'doc_title_ar' => 'عرض سعر',
+                'exchange_rate' => 'سعر الصرف',
+                'exchange_rate_ar' => 'سعر الصرف',
+                'quotation_id' => 'رقم عرض السعر',
+                'quotation_id_ar' => 'رقم عرض السعر',
+                'valid_until' => 'صالح حتى',
+                'valid_until_ar' => 'صالح حتى',
+                'issued_by' => 'صادر من',
+                'issued_by_ar' => 'صادر من',
+                'billed_to' => 'فاتورة إلى',
+                'billed_to_ar' => 'فاتورة إلى',
+                'available_sailing' => 'مواعيد الإبحار المتاحة',
+                'available_sailing_en' => 'Available Sailing',
+                'section_shipping' => 'تفاصيل الشحن',
+                'section_shipping_en' => 'Shipping details',
+                'containers' => 'الحاويات',
+                'containers_ar' => 'الحاويات',
                 'quote_no' => 'رقم العرض',
                 'date' => 'التاريخ',
-                'issued_date' => 'تاريخ الإصدار',
+                'issued_date' => 'Issue Date',
+                'issued_date_ar' => 'تاريخ الإصدار',
                 'client' => 'العميل',
                 'section_client_company' => '١. العميل / الشركة',
                 'company_label' => 'شركتنا',
@@ -496,7 +531,9 @@ class PricingQuoteController extends Controller
                 'section_ocean_freight' => '٣. الشحن البحري',
                 'section_inland_transport' => '٤. النقل الداخلي',
                 'section_customs' => '٥. الجمارك والرسوم الأخرى',
-                'section_handling_fees' => '٦. رسوم المناولة',
+                'section_handling_fees' => 'رسوم الخدمة والمتابعة',
+                'section_handling_fees_en' => 'Handling Fees',
+                'section_handling_fees_ar' => 'رسوم الخدمة والمتابعة',
                 'section_totals' => '٧. الإجماليات',
                 'section_notes' => '٨. ملاحظات',
                 'section_terms' => '٩. الشروط والأحكام',
@@ -525,9 +562,30 @@ class PricingQuoteController extends Controller
 
         return [
             'doc_title' => 'Quotation',
+            'doc_title_en' => 'Price Quotation',
+            'doc_title_ar' => 'عرض سعر',
+            'exchange_rate' => 'Exchange Rate',
+            'exchange_rate_ar' => 'سعر الصرف',
+            'quotation_id' => 'Quotation ID',
+            'quotation_id_ar' => 'رقم عرض السعر',
+            'valid_until' => 'Valid Until',
+            'valid_until_ar' => 'صالح حتى',
+            'issued_by' => 'Issued By',
+            'issued_by_ar' => 'صادر من',
+            'billed_to' => 'Billed To',
+            'billed_to_ar' => 'فاتورة إلى',
+            'available_sailing' => 'Available Sailing',
+            'available_sailing_en' => 'Available Sailing',
+            'available_sailing_ar' => 'مواعيد الإبحار المتاحة',
+            'section_shipping' => 'Shipping details',
+            'section_shipping_en' => 'Shipping details',
+            'section_shipping_ar' => 'تفاصيل الشحن',
+            'containers' => 'Containers',
+            'containers_ar' => 'الحاويات',
             'quote_no' => 'Quote No.',
             'date' => 'Date',
-            'issued_date' => 'Issued date',
+            'issued_date' => 'Issue Date',
+            'issued_date_ar' => 'تاريخ الإصدار',
             'client' => 'Client',
             'section_client_company' => '1. Client / Company',
             'company_label' => 'Our company',
@@ -543,7 +601,9 @@ class PricingQuoteController extends Controller
             'section_ocean_freight' => '3. Ocean freight',
             'section_inland_transport' => '4. Inland transport',
             'section_customs' => '5. Customs & other charges',
-            'section_handling_fees' => '6. Handling fees',
+            'section_handling_fees' => 'Handling Fees',
+            'section_handling_fees_en' => 'Handling Fees',
+            'section_handling_fees_ar' => 'رسوم الخدمة والمتابعة',
             'section_totals' => '7. Totals',
             'section_notes' => '8. Notes',
             'section_terms' => '9. Terms & conditions',
@@ -621,10 +681,90 @@ class PricingQuoteController extends Controller
     /**
      * @return array{ocean: Collection<int, PricingQuoteItem>, inland: Collection<int, PricingQuoteItem>, customs: Collection<int, PricingQuoteItem>, handling: Collection<int, PricingQuoteItem>}
      */
-    protected function partitionQuoteItemsForPdf(PricingQuote $quote): array
+    /**
+     * Sailing schedule text for PDF — stored values only (ISO dates or weekday names).
+     */
+    protected function sailingScheduleDisplayForPdf(PricingQuote $quote): string
+    {
+        if ($quote->sailingDates->isNotEmpty()) {
+            return $quote->sailingDates
+                ->map(static fn ($row) => $row->sailing_date?->format('Y-m-d') ?? '')
+                ->filter()
+                ->implode(', ');
+        }
+
+        if ($quote->schedule_type === 'weekly' && is_array($quote->sailing_weekdays) && count($quote->sailing_weekdays)) {
+            return implode(', ', $quote->sailing_weekdays);
+        }
+
+        return '—';
+    }
+
+    protected function quotePdfExchangeRateLabel(): string
+    {
+        $usd = Currency::query()->where('code', 'USD')->where('is_active', true)->first();
+        $egp = Currency::query()->where('code', 'EGP')->where('is_active', true)->first();
+        if ($usd && $egp && (float) ($egp->exchange_rate ?? 0) > 0) {
+            return '1 USD = '.number_format((float) $egp->exchange_rate, 2).' EGP';
+        }
+
+        return '—';
+    }
+
+    protected function quotePdfContainerDisplay(PricingQuote $quote): string
+    {
+        if (filled($quote->container_type)) {
+            $type = trim((string) $quote->container_type);
+            $qty = $quote->qty;
+            if ($qty !== null && $qty !== '') {
+                return trim((string) $qty.' × '.$type);
+            }
+
+            return $type;
+        }
+
+        $spec = $quote->container_spec;
+        if (! is_array($spec)) {
+            return '—';
+        }
+
+        $size = (string) ($spec['size'] ?? '40');
+        $height = ($spec['height'] ?? '') === 'hq' ? 'HQ ' : '';
+        $type = ($spec['type'] ?? '') === 'reefer' ? 'Reefer' : 'Dry';
+        $label = trim($size.$height.$type);
+        $qty = $quote->qty;
+        if ($qty !== null && $qty !== '' && $label !== '') {
+            return trim((string) $qty.' × '.$label);
+        }
+
+        return $label !== '' ? $label : '—';
+    }
+
+    /**
+     * @param  array<string, float>  $map
+     */
+    protected function formatCurrencyBreakdown(array $map): string
+    {
+        if ($map === []) {
+            return '—';
+        }
+        ksort($map);
+        $parts = [];
+        foreach ($map as $cur => $amt) {
+            $parts[] = number_format((float) $amt, 2).' '.strtoupper((string) $cur);
+        }
+
+        return implode(' · ', $parts);
+    }
+
+    /**
+     * @param  Collection<int, PricingQuoteItem>|null  $itemsSubset  Client-visible items only; defaults to all quote items.
+     * @return array{ocean: Collection<int, PricingQuoteItem>, inland: Collection<int, PricingQuoteItem>, customs: Collection<int, PricingQuoteItem>, handling: Collection<int, PricingQuoteItem>}
+     */
+    protected function partitionQuoteItemsForPdf(PricingQuote $quote, ?Collection $itemsSubset = null): array
     {
         /** @var Collection<int, PricingQuoteItem> $sorted */
-        $sorted = $quote->items->sortBy('sort_order')->values();
+        $sorted = ($itemsSubset ?? $quote->items)->sortBy('sort_order')->values();
 
         $inland = $sorted->filter(function (PricingQuoteItem $i): bool {
             return strtoupper(trim((string) ($i->code ?? ''))) === 'INLAND';

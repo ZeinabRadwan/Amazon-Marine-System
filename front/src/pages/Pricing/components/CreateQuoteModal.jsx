@@ -37,11 +37,13 @@ import {
 } from '../utils/pricingQuoteDraftStorage'
 import {
   buildSailingScheduleFromOffer,
-  parseWeeklySailingDays,
-  sanitizeSelectedSailingDate,
+  formatSailingScheduleFromForm,
+  formatSailingScheduleFromOffer,
+  sailingFieldsFromOffer,
 } from '../utils/sailingSchedule'
 import { QuickAddClientModal } from '../../Clients/QuickAddClientModal'
-import QuoteSailingDateSelector from './QuoteSailingDateSelector'
+import QuoteSailingScheduleDisplay from './QuoteSailingScheduleDisplay'
+import QuoteFinCard from './quoteFinCard'
 import {
   QuoteInlineDivider,
   QuoteInlineItem,
@@ -274,26 +276,6 @@ function sortedProfitKeys(map) {
   })
 }
 
-function QuoteFinCard({ icon: Icon, title, subtitle: _subtitleIgnored, headMeta = null, children, fixed = false }) {
-  if (fixed) {
-    return <div className="pricing-quote-fin-section--fixed">{children}</div>
-  }
-  return (
-    <details className="shipment-fin-card pricing-fin-section pricing-quote-collapsible">
-      <summary className="shipment-fin-card__head pricing-fin-section__summary pricing-quote-collapsible__summary">
-        <div className="shipment-fin-card__head-main">
-          {Icon ? <Icon className="shipment-fin-card__icon" aria-hidden /> : null}
-          <div className="shipment-fin-card__title">{title}</div>
-        </div>
-        {headMeta != null && headMeta !== false ? (
-          <div className="shipment-fin-card__head-meta">{headMeta}</div>
-        ) : null}
-        <span className="pricing-fin-section__chev pricing-quote-collapsible__chev" aria-hidden />
-      </summary>
-      <div className="shipment-fin-card__body pricing-fin-section__body">{children}</div>
-    </details>
-  )
-}
 
 function carrierToggleButton(enabled, onClick, ariaLabel) {
   return (
@@ -420,9 +402,14 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
   const [customsClearanceFee, setCustomsClearanceFee] = useState({ amount: 2500, currency: 'EGP' })
   const [customsExtraItems, setCustomsExtraItems] = useState([])
 
-  const [handlingCurrency, setHandlingCurrency] = useState(ADMIN_HANDLING_FEE_CURRENCY)
   const [handlingLines, setHandlingLines] = useState([
-    { id: 'h-default', name: 'Handling Fees', amount: String(ADMIN_HANDLING_FEE_AMOUNT), isDefault: true },
+    {
+      id: 'h-default',
+      name: 'Handling Fees',
+      amount: String(ADMIN_HANDLING_FEE_AMOUNT),
+      currency: ADMIN_HANDLING_FEE_CURRENCY,
+      isDefault: true,
+    },
   ])
 
   const [showCarrierOnPdf, setShowCarrierOnPdf] = useState(true)
@@ -452,7 +439,6 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
       inlandLineRows,
       customsEnabled,
       customsExtraItems,
-      handlingCurrency,
       handlingLines,
       showCarrierOnPdf,
       quickModeReason,
@@ -480,7 +466,6 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
       inlandLineRows,
       customsEnabled,
       customsExtraItems,
-      handlingCurrency,
       handlingLines,
       showCarrierOnPdf,
       quickModeReason,
@@ -527,27 +512,21 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
       if (!offer) return
       const lines = mapOfferPricingToOceanLines(offer, quoteCodeLabel, t)
       setOceanLines(lines.length ? lines : [])
-      const schedule = buildSailingScheduleFromOffer(offer)
-      const mode = schedule?.mode || null
-      setForm((prev) => {
-        const kept = sanitizeSelectedSailingDate(prev.sailing_dates?.[0], schedule)
-        return {
-          ...prev,
-          pricing_offer_id: String(offer.id || ''),
-          pol: offer.pol || '',
-          pod: offer.pod || '',
-          shipping_line: offer.shipping_line || '',
-          container_type: inferContainerFromOffer(offer),
-          transit_time: offer.transit_time || '',
-          free_time: offer.dnd || '',
-          valid_from: offer.valid_from ? String(offer.valid_from).slice(0, 10) : '',
-          valid_to: offer.valid_to ? String(offer.valid_to).slice(0, 10) : '',
-          sailing_dates: kept ? [kept] : [],
-          schedule_type: mode,
-          sailing_weekdays: mode === 'weekly' ? parseWeeklySailingDays(offer) : [],
-          notes: offer.notes || '',
-        }
-      })
+      const sailingFields = sailingFieldsFromOffer(offer)
+      setForm((prev) => ({
+        ...prev,
+        pricing_offer_id: String(offer.id || ''),
+        pol: offer.pol || '',
+        pod: offer.pod || '',
+        shipping_line: offer.shipping_line || '',
+        container_type: inferContainerFromOffer(offer),
+        transit_time: offer.transit_time || '',
+        free_time: offer.dnd || '',
+        valid_from: offer.valid_from ? String(offer.valid_from).slice(0, 10) : '',
+        valid_to: offer.valid_to ? String(offer.valid_to).slice(0, 10) : '',
+        ...sailingFields,
+        notes: offer.notes || '',
+      }))
     },
     [quoteCodeLabel, t]
   )
@@ -605,14 +584,22 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
         setInlandLineRows(Array.isArray(saved.inlandLineRows) ? saved.inlandLineRows : [])
         setCustomsEnabled(Boolean(saved.customsEnabled))
         setCustomsExtraItems(Array.isArray(saved.customsExtraItems) ? saved.customsExtraItems : [])
-        setHandlingCurrency(saved.handlingCurrency || ADMIN_HANDLING_FEE_CURRENCY)
         setHandlingLines(
           Array.isArray(saved.handlingLines) && saved.handlingLines.length
             ? saved.handlingLines.map((row, i) => ({
                 ...row,
+                currency: row.currency || ADMIN_HANDLING_FEE_CURRENCY,
                 isDefault: row.isDefault ?? i === 0,
               }))
-            : [{ id: 'h-default', name: 'Handling Fees', amount: String(ADMIN_HANDLING_FEE_AMOUNT), isDefault: true }]
+            : [
+                {
+                  id: 'h-default',
+                  name: 'Handling Fees',
+                  amount: String(ADMIN_HANDLING_FEE_AMOUNT),
+                  currency: ADMIN_HANDLING_FEE_CURRENCY,
+                  isDefault: true,
+                },
+              ]
         )
         setShowCarrierOnPdf(saved.showCarrierOnPdf !== false)
         setQuickModeReason(saved.quickModeReason ?? '')
@@ -646,14 +633,26 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
       setQuickInlandVehicle('')
       const mode = initialOffer ? 'pricing' : initialQuickMode ? 'quick' : 'manual'
       if (mode === 'pricing' && initialOffer) {
-        setHandlingCurrency(ADMIN_HANDLING_FEE_CURRENCY)
         setHandlingLines([
-          { id: 'h-default', name: 'Handling Fees', amount: String(ADMIN_HANDLING_FEE_AMOUNT), isDefault: true },
+          {
+            id: 'h-default',
+            name: 'Handling Fees',
+            amount: String(ADMIN_HANDLING_FEE_AMOUNT),
+            currency: ADMIN_HANDLING_FEE_CURRENCY,
+            isDefault: true,
+          },
         ])
         applySeaOffer(initialOffer)
       } else {
-        setHandlingCurrency(ADMIN_HANDLING_FEE_CURRENCY)
-        setHandlingLines([{ id: 'h-default', name: 'Handling Fees', amount: String(ADMIN_HANDLING_FEE_AMOUNT), isDefault: true }])
+        setHandlingLines([
+          {
+            id: 'h-default',
+            name: 'Handling Fees',
+            amount: String(ADMIN_HANDLING_FEE_AMOUNT),
+            currency: ADMIN_HANDLING_FEE_CURRENCY,
+            isDefault: true,
+          },
+        ])
         setForm(defaultQuoteForm())
         setOceanLines(mode === 'quick' ? makeQuickOceanLines() : makeStarterOceanLines())
       }
@@ -735,11 +734,6 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
     setHandlingLines((prev) => prev.map((row) => (row.id === id ? { ...row, ...patch } : row)))
   }
 
-  const setHandlingSectionCurrency = (cur) => {
-    const code = String(cur || ADMIN_HANDLING_FEE_CURRENCY).toUpperCase()
-    setHandlingCurrency(code)
-  }
-
   const addHandlingItem = (item) => {
     setHandlingLines((prev) => [...prev, { ...item, isDefault: false }])
   }
@@ -772,20 +766,10 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
 
   const sailingSchedule = useMemo(() => buildSailingScheduleFromOffer(routeDisplayOffer), [routeDisplayOffer])
 
-  const selectedSailingDate = String(form.sailing_dates?.[0] || '').trim().slice(0, 10)
-
-  const setSelectedSailingDate = useCallback((iso) => {
-    const d = String(iso || '').trim().slice(0, 10)
-    setForm((p) => ({ ...p, sailing_dates: d ? [d] : [] }))
-  }, [])
-
-  useEffect(() => {
-    if (!sailingSchedule) return
-    const clean = sanitizeSelectedSailingDate(selectedSailingDate, sailingSchedule)
-    if (clean !== selectedSailingDate) {
-      setForm((p) => ({ ...p, sailing_dates: clean ? [clean] : [] }))
-    }
-  }, [sailingSchedule, selectedSailingDate, form.pricing_offer_id])
+  const sailingScheduleDisplayText = useMemo(() => {
+    if (routeDisplayOffer) return formatSailingScheduleFromOffer(routeDisplayOffer, t('common.dash', '—'))
+    return formatSailingScheduleFromForm(form, t('common.dash', '—'))
+  }, [routeDisplayOffer, form, t])
 
   const oceanSellingByCurrency = useMemo(() => sumLineSellingByCurrency(oceanLines), [oceanLines])
   const oceanCostByCurrency = useMemo(() => sumLineCostByCurrency(oceanLines), [oceanLines])
@@ -867,15 +851,15 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
   }, [pricingLinesProfitByCurrency, inlandSectionProfitByCurrency])
 
   const handlingSellingByCurrency = useMemo(() => {
-    let total = 0
+    const m = {}
     for (const row of handlingLines || []) {
       const n = parseNum(row.amount)
-      if (n > 0) total += n
+      if (n <= 0) continue
+      const c = String(row.currency || ADMIN_HANDLING_FEE_CURRENCY).toUpperCase()
+      m[c] = (m[c] || 0) + n
     }
-    if (total <= 0) return {}
-    const c = String(handlingCurrency || ADMIN_HANDLING_FEE_CURRENCY).toUpperCase()
-    return { [c]: total }
-  }, [handlingLines, handlingCurrency])
+    return m
+  }, [handlingLines])
 
   const quoteHasBillableItems = useMemo(() => {
     const hasOcean = oceanLines.some(
@@ -905,16 +889,8 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
   const canSaveQuote = useMemo(() => {
     if (!pricingTeamConfirmed || !quoteHasBillableItems) return false
     if (!isQuick && !clientAsync?.value) return false
-    if (!isQuick && sailingSchedule && !selectedSailingDate) return false
     return true
-  }, [
-    pricingTeamConfirmed,
-    quoteHasBillableItems,
-    isQuick,
-    clientAsync,
-    sailingSchedule,
-    selectedSailingDate,
-  ])
+  }, [pricingTeamConfirmed, quoteHasBillableItems, isQuick, clientAsync])
 
   const grandSellingByCurrency = useMemo(() => {
     return mergeCurrencyAmountMaps(
@@ -934,7 +910,6 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
     e.preventDefault()
     const salesUserId = user?.id ? Number(user.id) : null
     const isQuickSubmit = entryMode === 'quick'
-    if (!isQuickSubmit && sailingSchedule && !selectedSailingDate) return
     if (!pricingTeamConfirmed) return
     if (!isQuickSubmit && !clientAsync?.value) return
 
@@ -1033,7 +1008,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
         items.push({
           code: 'OTHER',
           name: nm,
-          description: (row.notes || '').trim() || null,
+          description: null,
           amount: amt,
           currency: String(row.currency || 'EGP').toUpperCase(),
           cost_amount: amt,
@@ -1051,7 +1026,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
         name: nm,
         description: null,
         amount: amt,
-        currency: handlingCurrency || ADMIN_HANDLING_FEE_CURRENCY,
+        currency: String(row.currency || ADMIN_HANDLING_FEE_CURRENCY).toUpperCase(),
         cost_amount: null,
         visible_to_client: true,
       })
@@ -1067,13 +1042,12 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
       quick_mode: isQuickSubmit,
       is_quick_quotation: isQuickSubmit,
       quick_mode_reason: isQuickSubmit ? (quickModeReason.trim() || 'Quick Quotation') : null,
+      valid_from: String(form.valid_from || '').trim() || null,
+      valid_to: String(form.valid_to || '').trim() || null,
       qty: form.qty ? Number(form.qty) : null,
-      sailing_dates: selectedSailingDate ? [selectedSailingDate] : [],
-      schedule_type: sailingSchedule?.mode || (selectedSailingDate ? 'fixed' : null),
-      sailing_weekdays:
-        sailingSchedule?.mode === 'weekly' && sailingSchedule.weeklyWeekdays?.length
-          ? sailingSchedule.weeklyWeekdays
-          : null,
+      sailing_dates: Array.isArray(form.sailing_dates) ? form.sailing_dates : [],
+      schedule_type: form.schedule_type || null,
+      sailing_weekdays: Array.isArray(form.sailing_weekdays) ? form.sailing_weekdays : [],
       container_spec: {
         type: String(form.container_type || '').toLowerCase().includes('reefer') ? 'reefer' : 'dry',
         size: String(form.container_type || '').includes('20') ? '20' : '40',
@@ -1224,13 +1198,6 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                     {t('pricing.quickClientOptionalNote', 'Client is optional for quick quotations.')}
                   </p>
                 ) : null}
-                {user?.name ? (
-                  <QuoteInlineStrip className="pricing-quote-client-meta">
-                    <QuoteInlineItem label={t('pricing.salespersonAuto', 'Salesperson')}>
-                      {user.name}
-                    </QuoteInlineItem>
-                  </QuoteInlineStrip>
-                ) : null}
               </div>
             </QuoteFinCard>
 
@@ -1253,13 +1220,8 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                   <QuoteSummaryBadge label={t('pricing.quoteBadgeTransit', 'مدة العبور')}>
                     {routeDisplayOffer?.transit_time || form.transit_time || '—'}
                   </QuoteSummaryBadge>
-                  {sailingSchedule ? (
-                    <QuoteSailingDateSelector
-                      badgeGroup
-                      schedule={sailingSchedule}
-                      value={selectedSailingDate}
-                      onChange={setSelectedSailingDate}
-                    />
+                  {sailingSchedule || sailingScheduleDisplayText !== t('common.dash', '—') ? (
+                    <QuoteSailingScheduleDisplay text={sailingScheduleDisplayText} />
                   ) : null}
                 </div>
               ) : (
@@ -1318,25 +1280,14 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                         />
                       </label>
                     </div>
-                    {sailingSchedule && !isQuick ? (
-                      <QuoteSailingDateSelector
-                        inline
-                        schedule={sailingSchedule}
-                        value={selectedSailingDate}
-                        onChange={setSelectedSailingDate}
-                      />
+                    {!isQuick && (sailingSchedule || sailingScheduleDisplayText !== t('common.dash', '—')) ? (
+                      <div className="md:col-span-2">
+                        <QuoteSailingScheduleDisplay text={sailingScheduleDisplayText} asBadge={false} />
+                      </div>
                     ) : null}
-                    {isQuick ? (
-                      <div className="space-y-1 md:col-span-2">
-                        <label className="text-sm font-bold text-gray-700 dark:text-gray-300">
-                          {t('pricing.quickSailingDate', 'Sailing date')}
-                        </label>
-                        <input
-                          type="date"
-                          className="w-full max-w-xs px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
-                          value={form.sailing_dates?.[0] || ''}
-                          onChange={(e) => setField('sailing_dates', e.target.value ? [e.target.value] : [])}
-                        />
+                    {isQuick && sailingScheduleDisplayText !== t('common.dash', '—') ? (
+                      <div className="md:col-span-2">
+                        <QuoteSailingScheduleDisplay text={sailingScheduleDisplayText} asBadge={false} />
                       </div>
                     ) : null}
                   </div>
@@ -1466,8 +1417,6 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
             <QuoteFinCard icon={DollarSign} title={t('pricing.quoteSectionHandling', 'Section 4: Handling fees')}>
               <QuoteHandlingFeesSection
                 lines={handlingLines}
-                currency={handlingCurrency}
-                onCurrencyChange={setHandlingSectionCurrency}
                 onAddItem={addHandlingItem}
                 onUpdateItem={updateHandlingLine}
                 onRemoveItem={removeHandlingItem}
@@ -1514,54 +1463,53 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
               </QuoteSummaryRow>
             </QuoteGrandSummaryPanel>
 
-            <div className="space-y-4">
-              <div
-                className={`rounded-xl border p-4 space-y-3 transition-colors ${
-                  pricingTeamConfirmed
-                    ? 'border-emerald-400/80 bg-emerald-50/90 dark:border-emerald-700/60 dark:bg-emerald-950/30'
-                    : 'border-amber-300/90 bg-amber-50/95 dark:border-amber-700/60 dark:bg-amber-950/35'
-                }`}
-                role="region"
-                aria-label={t('pricing.pricingTeamConfirmTitle', 'Pricing team confirmation')}
-              >
-                <div className="text-sm font-bold text-amber-950 dark:text-gray-100">
+            <section
+              className={`pricing-quote-confirmation-card ${
+                pricingTeamConfirmed ? 'pricing-quote-confirmation-card--confirmed' : 'pricing-quote-confirmation-card--pending'
+              }`}
+              role="region"
+              aria-label={t('pricing.pricingTeamConfirmTitle', 'Pricing team confirmation')}
+            >
+              <div className="pricing-quote-confirmation-card__head">
+                <h4 className="pricing-quote-confirmation-card__title">
                   {t('pricing.pricingTeamConfirmTitle', 'Confirm with Pricing Team before sending')}
-                </div>
-                <div className="pricing-quote-confirm-status-row">
-                  <span className="pricing-quote-confirm-status-row__label">
-                    {t('pricing.quoteConfirmStatusLabel', 'Status')}
-                  </span>
-                  <span
-                    className={`pricing-quote-confirm-status-row__value ${
-                      pricingTeamConfirmed
-                        ? 'pricing-quote-confirm-status-row__value--yes'
-                        : 'pricing-quote-confirm-status-row__value--no'
-                    }`}
-                  >
-                    {pricingTeamConfirmed
+                </h4>
+                <span
+                  className={`pricing-quote-confirm-status-badge ${
+                    pricingTeamConfirmed
+                      ? 'pricing-quote-confirm-status-badge--yes'
+                      : 'pricing-quote-confirm-status-badge--no'
+                  }`}
+                  role="status"
+                  aria-label={`${t('pricing.quoteConfirmStatusLabel', 'Status')}: ${
+                    pricingTeamConfirmed
                       ? t('pricing.confirmStateYes', 'Confirmed')
-                      : t('pricing.confirmStateNo', 'Not confirmed')}
-                  </span>
-                </div>
-                <p className="text-xs text-amber-900/90 dark:text-amber-200/90 leading-relaxed m-0">
-                  {t(
-                    'pricing.pricingTeamConfirmBody',
-                    'Make sure Pricing Team confirms the underlying rates are still valid before you send this quotation to the client.'
-                  )}
-                </p>
-                <label className="flex items-start gap-2 cursor-pointer border-t border-amber-300/70 dark:border-amber-800/60 pt-3">
-                  <input
-                    type="checkbox"
-                    className="mt-0.5 rounded border-amber-600 text-amber-700 focus:ring-amber-500"
-                    checked={pricingTeamConfirmed}
-                    onChange={(e) => setPricingTeamConfirmed(e.target.checked)}
-                  />
-                  <span className="text-sm font-semibold text-amber-950 dark:text-amber-100">
-                    {t('pricing.pricingTeamConfirmCheckbox', 'I confirmed with Pricing Team — this quotation is ready to send')}
-                  </span>
-                </label>
+                      : t('pricing.confirmStateNo', 'Not confirmed')
+                  }`}
+                >
+                  {pricingTeamConfirmed
+                    ? t('pricing.confirmStateYes', 'Confirmed')
+                    : t('pricing.confirmStateNo', 'Not confirmed')}
+                </span>
               </div>
-            </div>
+              <p className="pricing-quote-confirmation-card__body">
+                {t(
+                  'pricing.pricingTeamConfirmBody',
+                  'Make sure Pricing Team confirms the underlying rates are still valid before you send this quotation to the client.'
+                )}
+              </p>
+              <label className="pricing-quote-confirmation-card__check">
+                <input
+                  type="checkbox"
+                  className="pricing-quote-confirmation-card__checkbox"
+                  checked={pricingTeamConfirmed}
+                  onChange={(e) => setPricingTeamConfirmed(e.target.checked)}
+                />
+                <span className="pricing-quote-confirmation-card__check-label">
+                  {t('pricing.pricingTeamConfirmCheckbox', 'I confirmed with Pricing Team — this quotation is ready to send')}
+                </span>
+              </label>
+            </section>
 
           </form>
             </div>

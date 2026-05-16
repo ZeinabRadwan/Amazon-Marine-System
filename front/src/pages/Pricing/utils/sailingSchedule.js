@@ -84,3 +84,51 @@ export function sanitizeSelectedSailingDate(isoDate, schedule) {
   if (!d || !schedule) return ''
   return isDateAllowedForSchedule(d, schedule) ? d : ''
 }
+
+/** Read-only display: fixed ISO dates or weekly_sailing_days string from a price offer (no filtering). */
+export function formatSailingScheduleFromOffer(offer, dash = '—') {
+  if (!offer) return dash
+  const dates = normalizeOfferSailingDates(offer)
+  if (dates.length) return dates.join(', ')
+  const weekly = offer.weekly_sailing_days
+  if (weekly != null && String(weekly).trim()) return String(weekly).trim()
+  return dash
+}
+
+/** Read-only display: sailing data stored on a quotation (no transformation). */
+export function formatSailingScheduleFromQuote(quote, dash = '—') {
+  if (!quote) return dash
+  const dates = (quote.sailing_dates || [])
+    .map((d) => String(d || '').trim().slice(0, 10))
+    .filter(Boolean)
+  if (dates.length) return dates.join(', ')
+  const weekdays = Array.isArray(quote.sailing_weekdays) ? quote.sailing_weekdays.filter(Boolean) : []
+  if (weekdays.length) return weekdays.join(', ')
+  return dash
+}
+
+/** Form snapshot (schedule_type + sailing_dates + sailing_weekdays) for create payload display. */
+export function formatSailingScheduleFromForm(form, dash = '—') {
+  if (!form) return dash
+  const dates = (form.sailing_dates || [])
+    .map((d) => String(d || '').trim().slice(0, 10))
+    .filter(Boolean)
+  if (dates.length) return dates.join(', ')
+  const weekdays = Array.isArray(form.sailing_weekdays) ? form.sailing_weekdays.filter(Boolean) : []
+  if (weekdays.length) return weekdays.join(', ')
+  return dash
+}
+
+/** Sync sailing fields on the quote form from a linked sea offer (system-driven, not user-selected). */
+export function sailingFieldsFromOffer(offer) {
+  if (!offer) {
+    return { sailing_dates: [], schedule_type: null, sailing_weekdays: [] }
+  }
+  const schedule = buildSailingScheduleFromOffer(offer)
+  const mode = schedule?.mode || null
+  return {
+    sailing_dates: mode === 'fixed' ? normalizeOfferSailingDates(offer) : [],
+    schedule_type: mode,
+    sailing_weekdays: mode === 'weekly' ? parseWeeklySailingDays(offer) : [],
+  }
+}

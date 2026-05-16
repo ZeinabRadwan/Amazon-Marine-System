@@ -1,7 +1,26 @@
 import { useTranslation } from 'react-i18next'
+import { formatPricingDecimal } from '../../../utils/dateUtils'
 import { displayNumericInputValue } from '../utils/pricingFormNumeric'
 import QuotePricingLinesTable from './QuotePricingLinesTable'
 import QuoteOceanLinesSummary from './QuoteOceanLinesSummary'
+
+function ReadOnlyField({ label, value }) {
+  return (
+    <div className="space-y-1">
+      <div className="text-sm font-bold text-gray-700 dark:text-gray-300">{label}</div>
+      <div className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/60 text-sm">
+        {value || '—'}
+      </div>
+    </div>
+  )
+}
+
+function ReadOnlyAmountField({ label, amount, currency }) {
+  const cur = String(currency || 'EGP').toUpperCase()
+  const n = Number(amount)
+  const display = Number.isFinite(n) ? formatPricingDecimal(n) : '0'
+  return <ReadOnlyField label={label} value={`${display} ${cur}`} />
+}
 
 /**
  * Inland transport block for Create Quote (pricing sheet select + table, or quick manual entry).
@@ -37,11 +56,56 @@ export default function QuoteInlandTransportSection({
   onInlandGenSellingChange,
   inlandGenCurrency,
   onInlandGenCurrencyChange,
+  readOnly = false,
+  inlandOfferLabel = '',
 }) {
   const { t } = useTranslation()
+  const noop = () => {}
 
   const hasQuickInlandAmount =
     Number(inlandSelling) > 0 || Number(inlandGenSelling) > 0
+
+  if (isQuick && readOnly) {
+    return (
+      <div className="pricing-quote-inland-block space-y-4">
+        <div className="pricing-quick-section space-y-3">
+          <div className="text-sm font-bold text-amber-950 dark:text-amber-100">
+            {t('pricing.quickInlandManualHeading', 'Manual inland entry')}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <ReadOnlyField label={t('pricing.port', 'Port')} value={quickInlandPort} />
+            <ReadOnlyField label={t('pricing.governorate', 'Governorate')} value={quickInlandGov} />
+            <ReadOnlyField label={t('pricing.inlandAreaField', 'Zone')} value={quickInlandZone} />
+            <ReadOnlyField label={t('pricing.inlandVehicleTypeAria', 'Vehicle')} value={quickInlandVehicle} />
+            <ReadOnlyAmountField label={t('pricing.inlandCost', 'Cost')} amount={inlandCost} currency={inlandCurrency} />
+            <ReadOnlyAmountField label={t('pricing.inlandSelling', 'Selling')} amount={inlandSelling} currency={inlandCurrency} />
+          </div>
+          {showQuickInlandGenerator ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 mt-1 border-t border-amber-200/70 dark:border-amber-800/50">
+              <div className="md:col-span-2 text-xs font-bold uppercase tracking-wide text-amber-900 dark:text-amber-200">
+                {t('pricing.inlandGeneratorLine', 'Generator (inland)')}
+              </div>
+              <ReadOnlyAmountField
+                label={t('pricing.inlandGeneratorCost', 'Generator cost')}
+                amount={inlandGenCost}
+                currency={inlandGenCurrency}
+              />
+              <ReadOnlyAmountField label={t('pricing.inlandSelling', 'Selling')} amount={inlandGenSelling} currency={inlandGenCurrency} />
+            </div>
+          ) : null}
+        </div>
+        {hasQuickInlandAmount ? (
+          <QuoteOceanLinesSummary
+            costByCurrency={costByCurrency}
+            profitByCurrency={profitByCurrency}
+            sellingByCurrency={sellingByCurrency}
+            summaryClassName="pricing-quote-module-summary"
+            ariaLabelKey="pricing.inlandLinesSummaryTitle"
+          />
+        ) : null}
+      </div>
+    )
+  }
 
   if (isQuick) {
     return (
@@ -171,37 +235,49 @@ export default function QuoteInlandTransportSection({
 
   const hasSheet = Boolean(inlandOfferId)
   const hasLines = inlandLineRows.length > 0
-  const showPricingContent = hasSheet && hasLines
+  const showPricingContent = readOnly ? hasLines : hasSheet && hasLines
 
   return (
     <div className="pricing-quote-inland-block space-y-4">
-      <div className="space-y-2">
-        <label className="text-sm font-bold text-gray-700 dark:text-gray-300">
-          {t('pricing.inlandPriceSheet', 'Inland price sheet')}
-        </label>
-        <select
-          value={inlandOfferId}
-          onChange={(e) => onInlandOfferIdChange(e.target.value)}
-          className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
-        >
-          <option value="">{t('pricing.selectInlandOffer', 'Select an inland price sheet…')}</option>
-          {inlandOffers.map((o) => (
-            <option key={o.id} value={o.id}>
-              {o.inland_port || '—'} → {o.destination || o.region || '—'}
-            </option>
-          ))}
-        </select>
-      </div>
+      {hasSheet || (readOnly && inlandOfferLabel) ? (
+        <div className="space-y-2">
+          {readOnly ? (
+            <ReadOnlyField
+              label={t('pricing.inlandPriceSheet', 'Inland price sheet')}
+              value={inlandOfferLabel || inlandOfferId || '—'}
+            />
+          ) : (
+            <>
+              <label className="text-sm font-bold text-gray-700 dark:text-gray-300">
+                {t('pricing.inlandPriceSheet', 'Inland price sheet')}
+              </label>
+              <select
+                value={inlandOfferId}
+                onChange={(e) => onInlandOfferIdChange(e.target.value)}
+                className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+              >
+                <option value="">{t('pricing.selectInlandOffer', 'Select an inland price sheet…')}</option>
+                {inlandOffers.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.inland_port || '—'} → {o.destination || o.region || '—'}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
+        </div>
+      ) : null}
 
       {showPricingContent ? (
         <>
           <div className="pricing-quote-inland-table-block">
             <QuotePricingLinesTable
               lines={inlandLineRows}
-              onUpdateLine={onUpdateInlandRow}
+              onUpdateLine={readOnly ? noop : onUpdateInlandRow}
               readOnlyCost
               readOnlyCurrency
               readOnlyName
+              readOnly={readOnly}
               variant="inland"
             />
           </div>

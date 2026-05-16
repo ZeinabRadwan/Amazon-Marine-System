@@ -13,6 +13,7 @@ import {
   updateQuote,
   acceptQuote,
   rejectQuote,
+  downloadQuotePdf,
 } from '../api/pricing'
 
 export function useOffers(params) {
@@ -171,6 +172,7 @@ export function useMutateQuote() {
     update: (id, data) => handleMutation(updateQuote, id, data),
     accept: (id) => handleMutation(acceptQuote, id),
     reject: (id) => handleMutation(rejectQuote, id),
+    downloadPdf: (id, options) => handleMutation(downloadQuotePdf, id, options),
     loading,
     error,
   }

@@ -1,151 +1,173 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Plus, Trash2 } from 'lucide-react'
+import { formatPricingDecimal } from '../../../utils/dateUtils'
 import { displayNumericInputValue } from '../utils/pricingFormNumeric'
 import { QuoteSummaryCurrencyText, QuoteSummaryRow } from './quoteSummaryUi'
-
-const CURRENCY_OPTIONS = ['USD', 'EUR', 'EGP']
-
-function parseAmount(v) {
-  const n = Number(v)
-  return Number.isFinite(n) ? n : 0
-}
+import {
+  QuoteAmountCurrencyField,
+  QUOTE_ADD_CURRENCY_OPTIONS,
+  parseQuoteAddAmount,
+} from './quoteAddItemsUi'
 
 /**
- * Handling fees block — single section currency, dynamic line items, total summary.
+ * Handling fees — single table for default + added rows; per-row currency.
  */
 export default function QuoteHandlingFeesSection({
   lines = [],
-  currency = 'USD',
-  onCurrencyChange,
   onAddItem,
   onUpdateItem,
   onRemoveItem,
   totalByCurrency = {},
+  readOnly = false,
 }) {
   const { t } = useTranslation()
   const [draftName, setDraftName] = useState('')
   const [draftAmount, setDraftAmount] = useState('')
+  const [draftCurrency, setDraftCurrency] = useState('USD')
 
-  const handleAddItem = () => {
+  const formatAmountCurrency = (amount, currency) => {
+    const cur = String(currency || 'USD').toUpperCase()
+    const n = Number(amount)
+    const display = Number.isFinite(n) ? formatPricingDecimal(n) : '0'
+    return `${display} ${cur}`
+  }
+
+  const handleAdd = () => {
     const name = draftName.trim()
-    const amt = parseAmount(draftAmount)
+    const amt = parseQuoteAddAmount(draftAmount)
     if (!name || amt <= 0) return
     onAddItem({
       id: `handling-${Date.now()}`,
       name,
       amount: String(amt),
+      currency: draftCurrency,
     })
     setDraftName('')
     setDraftAmount('')
+    setDraftCurrency('USD')
   }
 
   return (
     <div className="pricing-quote-handling-block space-y-4">
-      <div className="pricing-quote-handling-currency-row">
-        <label className="pricing-quote-handling-currency-row__label" htmlFor="quote-handling-currency">
-          {t('pricing.handlingSectionCurrency', 'Currency')}
-        </label>
-        <select
-          id="quote-handling-currency"
-          value={currency}
-          onChange={(e) => onCurrencyChange(e.target.value)}
-          className="pricing-quote-customs-input pricing-quote-customs-input--currency"
-          aria-label={t('pricing.currency', 'Currency')}
-        >
-          {CURRENCY_OPTIONS.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="pricing-quote-customs-table-block">
+      <div className="pricing-quote-customs-table-block pricing-quote-handling-table-block">
         <table className="pricing-quote-customs-table pricing-quote-handling-table">
           <thead>
             <tr>
               <th>{t('pricing.item', 'Item')}</th>
-              <th className="pricing-quote-customs-table__col-cost">{t('shipments.expColAmount', 'Amount')}</th>
-              <th className="pricing-quote-handling-table__col-actions">{t('pricing.rowActions', 'Actions')}</th>
+              <th className="pricing-quote-customs-table__col-amount">{t('shipments.expColAmount', 'Amount')}</th>
+              <th className="pricing-quote-customs-table__col-currency">{t('pricing.currency', 'Currency')}</th>
+              {!readOnly ? (
+                <th className="pricing-quote-added-items-table__col-actions">{t('pricing.colActions', 'Actions')}</th>
+              ) : null}
             </tr>
           </thead>
           <tbody>
             {lines.map((row) => (
-              <tr key={row.id} className={row.isDefault ? 'pricing-quote-handling-table__row--default' : ''}>
+              <tr
+                key={row.id}
+                className={row.isDefault ? 'pricing-quote-handling-table__row--default' : undefined}
+              >
                 <td className="pricing-quote-customs-table__item">
-                  <input
-                    type="text"
-                    className="pricing-quote-customs-input"
-                    value={row.name}
-                    onChange={(e) => onUpdateItem(row.id, { name: e.target.value })}
-                    placeholder={t('pricing.quoteHandlingLineDefault', 'Handling Fees')}
-                  />
-                </td>
-                <td className="pricing-quote-customs-table__col-cost">
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    className="pricing-quote-customs-input pricing-quote-customs-input--amount tabular-nums"
-                    value={displayNumericInputValue(row.amount)}
-                    onChange={(e) => onUpdateItem(row.id, { amount: e.target.value })}
-                    placeholder="0"
-                    aria-label={t('shipments.expColAmount', 'Amount')}
-                  />
-                </td>
-                <td className="pricing-quote-handling-table__col-actions">
-                  {row.isDefault ? (
-                    <span className="pricing-quote-handling-default-tag text-xs text-gray-500 dark:text-gray-400">
-                      {t('pricing.handlingDefaultRowTag', 'Default')}
+                  {readOnly ? (
+                    <span className="pricing-quote-line-name">
+                      {row.name || t('pricing.quoteHandlingLineDefault', 'Handling Fees')}
                     </span>
                   ) : (
-                    <button
-                      type="button"
-                      className="pricing-quote-customs-row-remove"
-                      onClick={() => onRemoveItem(row.id)}
-                      aria-label={t('pricing.handlingRemoveRow', 'Remove item')}
-                    >
-                      <Trash2 size={14} aria-hidden />
-                    </button>
+                    <input
+                      type="text"
+                      className="pricing-quote-customs-input"
+                      value={row.name}
+                      onChange={(e) => onUpdateItem(row.id, { name: e.target.value })}
+                      placeholder={t('pricing.quoteHandlingLineDefault', 'Handling Fees')}
+                    />
                   )}
                 </td>
+                <td className="pricing-quote-customs-table__col-amount">
+                  {readOnly ? (
+                    <span className="tabular-nums">{formatAmountCurrency(row.amount, row.currency)}</span>
+                  ) : (
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      className="pricing-quote-customs-input pricing-quote-customs-input--amount-wide tabular-nums"
+                      dir="ltr"
+                      value={displayNumericInputValue(row.amount)}
+                      onChange={(e) => onUpdateItem(row.id, { amount: e.target.value })}
+                      placeholder="0"
+                      aria-label={t('shipments.expColAmount', 'Amount')}
+                    />
+                  )}
+                </td>
+                <td className="pricing-quote-customs-table__col-currency">
+                  {readOnly ? (
+                    <span className="pricing-quote-customs-currency-readonly">
+                      {String(row.currency || 'USD').toUpperCase()}
+                    </span>
+                  ) : (
+                    <select
+                      value={row.currency || 'USD'}
+                      onChange={(e) => onUpdateItem(row.id, { currency: e.target.value })}
+                      className="pricing-quote-customs-input pricing-quote-customs-input--currency"
+                      aria-label={t('pricing.currency', 'Currency')}
+                    >
+                      {QUOTE_ADD_CURRENCY_OPTIONS.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </td>
+                {!readOnly ? (
+                  <td className="pricing-quote-added-items-table__col-actions">
+                    {row.isDefault ? null : (
+                      <button
+                        type="button"
+                        className="pricing-quote-customs-row-remove"
+                        onClick={() => onRemoveItem(row.id)}
+                        aria-label={t('pricing.customsRemoveRow', 'Remove item')}
+                      >
+                        <Trash2 size={14} aria-hidden />
+                      </button>
+                    )}
+                  </td>
+                ) : null}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      <div className="pricing-quote-customs-add-form">
-        <div className="pricing-quote-customs-add-form__fields">
-          <input
-            type="text"
-            className="pricing-quote-customs-input"
-            value={draftName}
-            onChange={(e) => setDraftName(e.target.value)}
-            placeholder={t('pricing.customsAddItemName', 'Item name')}
-          />
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            className="pricing-quote-customs-input pricing-quote-customs-input--amount tabular-nums"
-            value={displayNumericInputValue(draftAmount)}
-            onChange={(e) => setDraftAmount(e.target.value)}
-            placeholder="0"
-            aria-label={t('shipments.expColAmount', 'Amount')}
-          />
+      {!readOnly ? (
+        <div className="pricing-quote-customs-add-form pricing-quote-add-item-form">
+          <div className="pricing-quote-add-item-form__fields">
+            <input
+              type="text"
+              className="pricing-quote-customs-input pricing-quote-add-item-form__name"
+              value={draftName}
+              onChange={(e) => setDraftName(e.target.value)}
+              placeholder={t('pricing.customsAddItemName', 'Item name')}
+            />
+            <QuoteAmountCurrencyField
+              amount={draftAmount}
+              currency={draftCurrency}
+              onAmountChange={setDraftAmount}
+              onCurrencyChange={setDraftCurrency}
+            />
+          </div>
+          <button
+            type="button"
+            className="pricing-quote-customs-add-btn"
+            onClick={handleAdd}
+            disabled={!draftName.trim() || parseQuoteAddAmount(draftAmount) <= 0}
+          >
+            <Plus size={16} aria-hidden />
+            {t('pricing.customsAddItem', 'Add Item')}
+          </button>
         </div>
-        <button
-          type="button"
-          className="pricing-quote-customs-add-btn"
-          onClick={handleAddItem}
-          disabled={!draftName.trim() || parseAmount(draftAmount) <= 0}
-        >
-          <Plus size={16} aria-hidden />
-          {t('pricing.customsAddItem', 'Add Item')}
-        </button>
-      </div>
+      ) : null}
 
       <div className="pricing-quote-module-summary pricing-quote-module-summary--handling">
         <QuoteSummaryRow label={t('pricing.handlingSectionTotal', 'Total handling fees')}>

@@ -3693,6 +3693,256 @@
   margin-bottom: 0;
 }
 
+.pricing-quote-modal-root .pricing-quote-customs-info-note + .pricing-quote-add-item-panel {
+  margin-top: 1.25rem;
+}
+
+.pricing-quote-modal-root .pricing-quote-add-item-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.pricing-quote-modal-root .pricing-quote-added-items-block {
+  margin-top: 0.15rem;
+}
+
+.pricing-quote-modal-root .pricing-quote-added-items-table__col-actions {
+  width: 4.5rem;
+  text-align: center;
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-table__col-amount {
+  width: 9.5rem;
+  min-width: 8rem;
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-table__col-currency {
+  width: 5.5rem;
+  min-width: 4.75rem;
+}
+
+.pricing-quote-modal-root .pricing-quote-amount-currency-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1 1 11rem;
+  min-width: min(100%, 10rem);
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-input--amount-wide {
+  flex: 1 1 6.5rem;
+  min-width: 5.5rem;
+  max-width: none;
+  width: auto;
+}
+
+.pricing-quote-modal-root .pricing-quote-add-item-form__fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: min(100%, 14rem);
+}
+
+.pricing-quote-modal-root .pricing-quote-add-item-form__name {
+  flex: 1 1 9rem;
+  min-width: 7rem;
+}
+
+.pricing-quote-modal-root .pricing-quote-handling-table-block,
+.pricing-quote-modal-root .pricing-quote-handling-table-block--base {
+  margin-bottom: 0.15rem;
+}
+
+/* Handling fees — per-row currency, aligned amount/currency columns */
+.pricing-quote-modal-root .pricing-quote-handling-block .pricing-quote-handling-table th.pricing-quote-customs-table__col-amount,
+.pricing-quote-modal-root .pricing-quote-handling-block .pricing-quote-handling-table td.pricing-quote-customs-table__col-amount {
+  text-align: end;
+  vertical-align: middle;
+}
+
+.pricing-quote-modal-root .pricing-quote-handling-block .pricing-quote-handling-table th.pricing-quote-customs-table__col-currency,
+.pricing-quote-modal-root .pricing-quote-handling-block .pricing-quote-handling-table td.pricing-quote-customs-table__col-currency {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.pricing-quote-modal-root .pricing-quote-handling-block .pricing-quote-handling-table th.pricing-quote-added-items-table__col-actions,
+.pricing-quote-modal-root .pricing-quote-handling-block .pricing-quote-handling-table td.pricing-quote-added-items-table__col-actions {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.pricing-quote-modal-root .pricing-quote-handling-block .pricing-quote-customs-table__col-amount .pricing-quote-customs-input--amount-wide {
+  width: 100%;
+  max-width: 7.75rem;
+  margin-inline-start: auto;
+  margin-inline-end: 0;
+  display: block;
+}
+
+.pricing-quote-modal-root .pricing-quote-handling-block .pricing-quote-customs-table__col-currency .pricing-quote-customs-input--currency {
+  width: 4.35rem;
+  min-width: 4.35rem;
+  margin-inline: auto;
+  display: block;
+}
+
+.pricing-quote-modal-root .pricing-quote-handling-block .pricing-quote-added-items-table__col-actions .pricing-quote-customs-row-remove {
+  margin-inline: auto;
+}
+
+.pricing-quote-modal-root .pricing-quote-handling-block .pricing-quote-module-summary--handling {
+  margin-top: 0.35rem;
+}
+
+/* Confirmation card (bottom of quote form) */
+.pricing-quote-modal-root .pricing-quote-confirmation-card {
+  margin-top: 1rem;
+  padding: 1rem 1.1rem;
+  border-radius: 0.65rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(248, 250, 252, 0.9);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.pricing-quote-modal-root .pricing-quote-confirmation-card--pending {
+  border-color: rgba(245, 158, 11, 0.45);
+  background: rgba(255, 251, 235, 0.95);
+}
+
+.pricing-quote-modal-root .pricing-quote-confirmation-card--confirmed {
+  border-color: rgba(16, 185, 129, 0.45);
+  background: rgba(236, 253, 245, 0.95);
+}
+
+[data-theme='dark'] .pricing-quote-modal-root .pricing-quote-confirmation-card,
+.dark .pricing-quote-modal-root .pricing-quote-confirmation-card {
+  background: rgba(15, 23, 42, 0.65);
+  border-color: rgba(71, 85, 105, 0.75);
+}
+
+[data-theme='dark'] .pricing-quote-modal-root .pricing-quote-confirmation-card--pending,
+.dark .pricing-quote-modal-root .pricing-quote-confirmation-card--pending {
+  background: rgba(69, 45, 8, 0.35);
+  border-color: rgba(180, 120, 20, 0.5);
+}
+
+[data-theme='dark'] .pricing-quote-modal-root .pricing-quote-confirmation-card--confirmed,
+.dark .pricing-quote-modal-root .pricing-quote-confirmation-card--confirmed {
+  background: rgba(6, 50, 36, 0.35);
+  border-color: rgba(16, 120, 80, 0.55);
+}
+
+.pricing-quote-modal-root .pricing-quote-confirmation-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+}
+
+.pricing-quote-modal-root .pricing-quote-confirm-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.pricing-quote-modal-root .pricing-quote-confirm-status-badge--yes {
+  color: rgb(255, 255, 255);
+  background: rgb(22, 163, 74);
+  border: 1px solid rgb(21, 128, 61);
+}
+
+.pricing-quote-modal-root .pricing-quote-confirm-status-badge--no {
+  color: rgb(127, 29, 29);
+  background: rgb(254, 226, 226);
+  border: 1px solid rgb(252, 165, 165);
+}
+
+[data-theme='dark'] .pricing-quote-modal-root .pricing-quote-confirm-status-badge--yes,
+.dark .pricing-quote-modal-root .pricing-quote-confirm-status-badge--yes {
+  color: rgb(220, 252, 231);
+  background: rgb(21, 128, 61);
+  border-color: rgb(34, 197, 94);
+}
+
+[data-theme='dark'] .pricing-quote-modal-root .pricing-quote-confirm-status-badge--no,
+.dark .pricing-quote-modal-root .pricing-quote-confirm-status-badge--no {
+  color: rgb(254, 202, 202);
+  background: rgba(127, 29, 29, 0.55);
+  border-color: rgba(248, 113, 113, 0.55);
+}
+
+.pricing-quote-modal-root .pricing-quote-confirmation-card__title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: rgb(30, 41, 59);
+  line-height: 1.4;
+  flex: 1;
+  min-width: 0;
+}
+
+[data-theme='dark'] .pricing-quote-modal-root .pricing-quote-confirmation-card__title,
+.dark .pricing-quote-modal-root .pricing-quote-confirmation-card__title {
+  color: rgb(241, 245, 249);
+}
+
+.pricing-quote-modal-root .pricing-quote-confirmation-card__body {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.55;
+  color: rgb(71, 85, 105);
+}
+
+[data-theme='dark'] .pricing-quote-modal-root .pricing-quote-confirmation-card__body,
+.dark .pricing-quote-modal-root .pricing-quote-confirmation-card__body {
+  color: rgb(148, 163, 184);
+}
+
+.pricing-quote-modal-root .pricing-quote-confirmation-card__check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  cursor: pointer;
+  padding-top: 0.65rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.28);
+  margin: 0;
+}
+
+.pricing-quote-modal-root .pricing-quote-confirmation-card__checkbox {
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  accent-color: rgb(37, 99, 235);
+}
+
+.pricing-quote-modal-root .pricing-quote-confirmation-card__check-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: rgb(30, 41, 59);
+  line-height: 1.45;
+}
+
+[data-theme='dark'] .pricing-quote-modal-root .pricing-quote-confirmation-card__check-label,
+.dark .pricing-quote-modal-root .pricing-quote-confirmation-card__check-label {
+  color: rgb(226, 232, 240);
+}
+
 [data-theme='dark'] .pricing-quote-modal-root .pricing-quote-customs-info-note,
 .dark .pricing-quote-modal-root .pricing-quote-customs-info-note {
   background: rgba(34, 84, 20, 0.18);
@@ -4401,6 +4651,23 @@
 
 .pricing-quote-sailing-inline-label {
   display: none;
+}
+
+.pricing-quote-sailing-readonly {
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(248, 250, 252, 0.85);
+}
+
+[data-theme='dark'] .pricing-quote-sailing-readonly,
+.dark .pricing-quote-sailing-readonly {
+  border-color: rgba(71, 85, 105, 0.6);
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.pricing-quote-sailing-readonly__value {
+  word-break: break-word;
 }
 
 .pricing-quote-sailing-datepicker {

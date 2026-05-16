@@ -1,16 +1,7 @@
-import { useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import { Plus, Trash2 } from 'lucide-react'
 import { formatPricingDecimal } from '../../../utils/dateUtils'
-import { displayNumericInputValue } from '../utils/pricingFormNumeric'
 import { QuoteSummaryCurrencyText, QuoteSummaryRow } from './quoteSummaryUi'
-
-const CURRENCY_OPTIONS = ['USD', 'EUR', 'EGP']
-
-function parseAmount(v) {
-  const n = Number(v)
-  return Number.isFinite(n) ? n : 0
-}
+import { QuoteAddItemPanel } from './quoteAddItemsUi'
 
 function CostAmountLabel({ amount, currency }) {
   const cur = String(currency ?? '')
@@ -45,7 +36,7 @@ export function buildCustomsOfficialReceiptsNote(t) {
 }
 
 /**
- * Customs clearance block for Create Quote — enable/remove, fixed fee row, optional extra rows, total cost.
+ * Customs clearance block for Create Quote — fixed fee table, separate added-items table, total cost.
  */
 export default function QuoteCustomsClearanceSection({
   customsActive,
@@ -57,46 +48,29 @@ export default function QuoteCustomsClearanceSection({
   onUpdateItem,
   onRemoveItem,
   totalCostByCurrency = {},
+  readOnly = false,
 }) {
   const { t } = useTranslation()
   const amount = Number(clearanceFee?.amount) || 0
   const currency = String(clearanceFee?.currency || 'EGP').toUpperCase()
   const fixedNote = t('pricing.customsFeeFixedNote', 'Fixed by pricing team, not editable')
 
-  const [draftName, setDraftName] = useState('')
-  const [draftAmount, setDraftAmount] = useState('')
-  const [draftCurrency, setDraftCurrency] = useState('EGP')
-
-  const handleAddItem = () => {
-    const name = draftName.trim()
-    const amt = parseAmount(draftAmount)
-    if (!name || amt <= 0) return
-    onAddItem({
-      id: `customs-${Date.now()}`,
-      name,
-      amount: String(amt),
-      currency: draftCurrency,
-      notes: '',
-    })
-    setDraftName('')
-    setDraftAmount('')
-    setDraftCurrency('EGP')
-  }
-
   return (
     <div className="pricing-quote-customs-block">
       {!customsActive ? (
-        <div className="pricing-quote-customs-empty space-y-4">
-          <p className="text-sm text-gray-500 dark:text-gray-400 m-0">
-            {t('pricing.customsNoneAdded', 'No customs clearance has been added to this quotation')}
-          </p>
-          <button type="button" className="pricing-quote-customs-enable-btn" onClick={onEnable}>
-            {t('pricing.customsEnableBtn', 'Enable Customs Clearance')}
-          </button>
-        </div>
+        readOnly ? null : (
+          <div className="pricing-quote-customs-empty space-y-4">
+            <p className="text-sm text-gray-500 dark:text-gray-400 m-0">
+              {t('pricing.customsNoneAdded', 'No customs clearance has been added to this quotation')}
+            </p>
+            <button type="button" className="pricing-quote-customs-enable-btn" onClick={onEnable}>
+              {t('pricing.customsEnableBtn', 'Enable Customs Clearance')}
+            </button>
+          </div>
+        )
       ) : (
         <div className="pricing-quote-customs-active space-y-4">
-          <div className="pricing-quote-customs-table-block">
+          <div className="pricing-quote-customs-table-block pricing-quote-customs-table-block--base">
             <table className="pricing-quote-customs-table">
               <thead>
                 <tr>
@@ -117,64 +91,6 @@ export default function QuoteCustomsClearanceSection({
                     {fixedNote}
                   </td>
                 </tr>
-                {extraItems.map((row) => (
-                  <tr key={row.id} className="pricing-quote-customs-table__row--extra">
-                    <td className="pricing-quote-customs-table__item">
-                      <input
-                        type="text"
-                        className="pricing-quote-customs-input"
-                        value={row.name}
-                        onChange={(e) => onUpdateItem(row.id, { name: e.target.value })}
-                        placeholder={t('pricing.customsAddItemName', 'Item name')}
-                      />
-                    </td>
-                    <td className="pricing-quote-customs-table__col-cost">
-                      <div className="pricing-quote-customs-cost-inputs">
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          className="pricing-quote-customs-input pricing-quote-customs-input--amount tabular-nums"
-                          value={displayNumericInputValue(row.amount)}
-                          onChange={(e) => onUpdateItem(row.id, { amount: e.target.value })}
-                          placeholder="0"
-                          aria-label={t('pricing.customsColCost', 'Cost')}
-                        />
-                        <select
-                          value={row.currency || 'EGP'}
-                          onChange={(e) => onUpdateItem(row.id, { currency: e.target.value })}
-                          className="pricing-quote-customs-input pricing-quote-customs-input--currency"
-                          aria-label={t('pricing.currency', 'Currency')}
-                        >
-                          {CURRENCY_OPTIONS.map((c) => (
-                            <option key={c} value={c}>
-                              {c}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </td>
-                    <td className="pricing-quote-customs-table__notes">
-                      <div className="pricing-quote-customs-notes-cell">
-                        <input
-                          type="text"
-                          className="pricing-quote-customs-input"
-                          value={row.notes ?? ''}
-                          onChange={(e) => onUpdateItem(row.id, { notes: e.target.value })}
-                          placeholder={t('pricing.customsExtraNotePlaceholder', 'Notes (optional)')}
-                        />
-                        <button
-                          type="button"
-                          className="pricing-quote-customs-row-remove"
-                          onClick={() => onRemoveItem(row.id)}
-                          aria-label={t('pricing.customsRemoveRow', 'Remove item')}
-                        >
-                          <Trash2 size={14} aria-hidden />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
               </tbody>
             </table>
           </div>
@@ -202,48 +118,13 @@ export default function QuoteCustomsClearanceSection({
             </div>
           </div>
 
-          <div className="pricing-quote-customs-add-form">
-            <div className="pricing-quote-customs-add-form__fields">
-              <input
-                type="text"
-                className="pricing-quote-customs-input"
-                value={draftName}
-                onChange={(e) => setDraftName(e.target.value)}
-                placeholder={t('pricing.customsAddItemName', 'Item name')}
-              />
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                className="pricing-quote-customs-input pricing-quote-customs-input--amount tabular-nums"
-                value={displayNumericInputValue(draftAmount)}
-                onChange={(e) => setDraftAmount(e.target.value)}
-                placeholder="0"
-                aria-label={t('pricing.customsColCost', 'Cost')}
-              />
-              <select
-                value={draftCurrency}
-                onChange={(e) => setDraftCurrency(e.target.value)}
-                className="pricing-quote-customs-input pricing-quote-customs-input--currency"
-                aria-label={t('pricing.currency', 'Currency')}
-              >
-                {CURRENCY_OPTIONS.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <button
-              type="button"
-              className="pricing-quote-customs-add-btn"
-              onClick={handleAddItem}
-              disabled={!draftName.trim() || parseAmount(draftAmount) <= 0}
-            >
-              <Plus size={16} aria-hidden />
-              {t('pricing.customsAddItem', 'Add Item')}
-            </button>
-          </div>
+          <QuoteAddItemPanel
+            items={extraItems}
+            onAddItem={onAddItem}
+            onUpdateItem={onUpdateItem}
+            onRemoveItem={onRemoveItem}
+            readOnly={readOnly}
+          />
 
           <div className="pricing-quote-module-summary pricing-quote-module-summary--customs">
             <QuoteSummaryRow label={t('pricing.customsSectionTotalCost', 'Total customs clearance cost')}>
@@ -251,15 +132,17 @@ export default function QuoteCustomsClearanceSection({
             </QuoteSummaryRow>
           </div>
 
-          <div className="flex justify-end pt-1">
-            <button
-              type="button"
-              className="text-sm font-bold text-red-600 dark:text-red-400 hover:underline"
-              onClick={onRemove}
-            >
-              {t('pricing.customsRemoveBtn', 'Remove Customs Clearance')}
-            </button>
-          </div>
+          {!readOnly ? (
+            <div className="flex justify-end pt-1">
+              <button
+                type="button"
+                className="text-sm font-bold text-red-600 dark:text-red-400 hover:underline"
+                onClick={onRemove}
+              >
+                {t('pricing.customsRemoveBtn', 'Remove Customs Clearance')}
+              </button>
+            </div>
+          ) : null}
         </div>
       )}
     </div>

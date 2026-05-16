@@ -1,323 +1,261 @@
 @extends('pdf.layouts.master')
 
 @section('pdf_title')
-    {{ $labels['doc_title'] }} · {{ $quote->quote_no }}
+    {{ $labels['doc_title_en'] }} · {{ $quote->quote_no }}
 @endsection
 
 @push('pdf_head')
     <style>
         @include('pdf.partials.sd_branded_document_skin')
-
-        .pdf-sd-doc .pdf-party-grid td.pdf-party-card {
-            background: #ffffff;
-            border-color: #e2e8f0;
-        }
-
-        .pdf-sd-doc .pdf-sd-badge--quote {
-            background: #ec7f00;
-            color: #ffffff;
-        }
-
-        .pdf-sd-doc .pdf-amount-cell {
-            direction: ltr;
-            unicode-bidi: isolate;
-            text-align: right;
-        }
-
-        html[dir="rtl"] .pdf-sd-doc .pdf-amount-cell {
-            text-align: left;
-        }
-
-        .pdf-sd-doc .pdf-quote-terms p {
-            margin: 0 0 6px 0;
-            line-height: 1.45;
-        }
+        @include('pdf.partials.quotation_pdf_skin')
     </style>
 @endpush
 
 @section('content')
     @php
         $client = $quote->client;
-        $pdfFmtDate = static function ($dt) use ($lang) {
-            return $dt
-                ? $dt->copy()->timezone(config('app.timezone'))->locale($lang)->isoFormat('L')
-                : null;
-        };
-        $sailingDisplay = '—';
-        if ($quote->sailingDates->isNotEmpty()) {
-            $sailingDisplay = $quote->sailingDates->pluck('sailing_date')->map(fn ($d) => $pdfFmtDate($d))->filter()->implode(', ');
-        } elseif ($quote->schedule_type === 'weekly' && is_array($quote->sailing_weekdays) && count($quote->sailing_weekdays)) {
-            $sailingDisplay = implode(', ', $quote->sailing_weekdays);
-        }
-        $validityStr = '—';
-        if ($quote->valid_from && $quote->valid_to) {
-            $validityStr = $pdfFmtDate($quote->valid_from).' – '.$pdfFmtDate($quote->valid_to);
-        } elseif ($quote->valid_to) {
-            $validityStr = $pdfFmtDate($quote->valid_to);
-        } elseif ($quote->valid_from) {
-            $validityStr = $pdfFmtDate($quote->valid_from);
-        }
         $companyPhone = (string) ($companyProfile['phone'] ?? '');
         $companyEmail = (string) ($companyProfile['email'] ?? '');
         $companyAddr = (string) ($companyProfile['address'] ?? '');
-        $pdfSectionCount =
-            ($oceanItems->isNotEmpty() ? 1 : 0)
-            + ($inlandItems->isNotEmpty() ? 1 : 0)
-            + ($customsItems->isNotEmpty() ? 1 : 0)
-            + ($handlingItems->isNotEmpty() ? 1 : 0);
-        $pdfShowSectionBreakdown = $pdfSectionCount > 1;
+        $formatBreakdown = $formatBreakdown ?? static fn (array $m): string => '—';
+        $currencyOrder = ['USD', 'EGP', 'EUR'];
+        $routeMetas = [];
+        if ($showCarrier) {
+            $routeMetas[] = ['val' => $quote->shipping_line ?: '—', 'lbl' => $labels['carrier']];
+        }
+        $routeMetas[] = ['val' => $quote->transit_time ?: '—', 'lbl' => $labels['transit_time']];
+        $routeMetas[] = ['val' => $containerDisplay, 'lbl' => $labels['containers']];
     @endphp
 
-    <div class="pdf-sd-doc">
+    <div class="pdf-wrapper pdf-inv-html pdf-sd-doc pdf-quote-doc" dir="ltr" lang="{{ $lang }}">
         <header class="pdf-header pdf-header--branded pdf-header--sd">
-            <table class="pdf-header__table">
+            <table class="pdf-header__table" width="100%">
                 <tr>
-                    <td class="pdf-header__logo">
+                    <td class="pdf-header__logo" width="18%">
                         @if (! empty($pdfLogoSrc))
                             <img class="pdf-header__logo-img" src="{{ $pdfLogoSrc }}" alt="">
                         @else
                             <div class="pdf-header__logo-fallback">AMS</div>
                         @endif
                     </td>
-                    <td class="pdf-header__brand-cell">
+                    <td class="pdf-header__brand-cell" width="42%">
                         <div class="pdf-header__brand-stack">
                             <div class="pdf-header__brand-line"><strong>{{ $labels['brand'] }}</strong></div>
                             <div class="pdf-header__brand-tag">{{ $labels['brand_tag'] }}</div>
                             <span class="pdf-header__brand-contact">{{ $labels['brand_contact'] }}</span>
                         </div>
                     </td>
-                    <td class="pdf-header__doc">
-                        <p class="pdf-header__title">{{ $labels['doc_title'] }}</p>
-                        <div class="pdf-header__sd-big">{{ $quote->quote_no }}</div>
-                        <div class="pdf-header__meta-list">
-                            <div class="pdf-header__date-page-row">
-                                <span class="pdf-header__meta-label">{{ $labels['issued_date'] }}</span>
-                                <span class="pdf-header__meta-val">{{ $quote->created_at ? $pdfFmtDate($quote->created_at) : '—' }}</span>
+                    <td class="pdf-header__doc" width="40%">
+                        <p class="pdf-header__title pdf-inv-header-title">
+                            <span class="pdf-inv-header-title-en">{{ $labels['doc_title_en'] }}</span>
+                            <span class="pdf-inv-header-title-ar">{{ $labels['doc_title_ar'] }}</span>
+                        </p>
+                        <div class="pdf-quote-header-meta">
+                            <div class="pdf-quote-header-meta__row">
+                                <span class="pdf-quote-header-meta__label">{{ $labels['exchange_rate'] }}</span>
+                                <span class="pdf-quote-header-meta__val">{{ $exchangeRateLabel }}</span>
                             </div>
-                            @if ($quote->salesUser)
-                                <div class="pdf-header__date-page-row">
-                                    <span class="pdf-header__meta-label">{{ $labels['sales'] }}</span>
-                                    <span class="pdf-header__meta-val pdf-cell-dir-auto">{{ $quote->salesUser->name }}</span>
-                                </div>
-                            @endif
-                            @if ($quote->quick_mode)
-                                <div class="pdf-sd-header-badges">
-                                    <span class="pdf-sd-badge pdf-sd-badge--quote">{{ $labels['quick_quotation_badge'] }}</span>
-                                </div>
-                            @endif
+                            <div class="pdf-quote-header-meta__row">
+                                <span class="pdf-quote-header-meta__label">{{ $labels['quotation_id'] }}</span>
+                                <span class="pdf-quote-header-meta__val pdf-inv-meta-val-mono">{{ $quote->quote_no }}</span>
+                            </div>
                         </div>
+                        @if ($quote->quick_mode)
+                            <div class="pdf-sd-header-badges">
+                                <span class="pdf-sd-badge pdf-sd-badge--quote">{{ $labels['quick_quotation_badge'] }}</span>
+                            </div>
+                        @endif
                     </td>
                 </tr>
             </table>
         </header>
 
-        {{-- 1. Client / company (same two-column party layout as quotation UI) --}}
-        <div class="pdf-section">
-            <p class="pdf-section__heading">{{ $labels['section_client_company'] }}</p>
-            <table class="pdf-party-grid" style="width:100%; border-collapse:collapse;">
+        {{-- Metadata: Issue Date | Valid Until | Quotation Number --}}
+        <div class="pdf-inv-panel-wrap">
+            <table class="pdf-inv-meta-row pdf-inv-meta-row--quote" width="100%" cellspacing="0" cellpadding="0" border="0">
                 <tr>
-                    <td class="pdf-party-card" style="width: 48%;">
-                        <div class="pdf-party-card__label">{{ $labels['client'] }}</div>
-                        <div class="pdf-party-card__name pdf-cell-dir-auto">{{ $client?->name ?? '—' }}</div>
+                    <td class="pdf-inv-meta-cell" width="33%">
+                        <div class="pdf-inv-meta-en">{{ $labels['issued_date'] }}</div>
+                        <div class="pdf-inv-meta-ar">{{ $labels['issued_date_ar'] ?? $labels['issued_date'] }}</div>
+                        <div class="pdf-inv-meta-val">{{ $issueDateFormatted }}</div>
+                    </td>
+                    <td class="pdf-inv-meta-sep"></td>
+                    <td class="pdf-inv-meta-cell" width="33%">
+                        <div class="pdf-inv-meta-en">{{ $labels['valid_until'] }}</div>
+                        <div class="pdf-inv-meta-ar">{{ $labels['valid_until_ar'] }}</div>
+                        <div class="pdf-inv-meta-val">{{ $validUntilFormatted }}</div>
+                    </td>
+                    <td class="pdf-inv-meta-sep"></td>
+                    <td class="pdf-inv-meta-cell" width="33%">
+                        <div class="pdf-inv-meta-en">{{ $labels['quotation_id'] }}</div>
+                        <div class="pdf-inv-meta-ar">{{ $labels['quotation_id_ar'] }}</div>
+                        <div class="pdf-inv-meta-val pdf-inv-meta-val-mono">{{ $quote->quote_no }}</div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        {{-- From / Billed To --}}
+        <div class="pdf-inv-panel-wrap">
+            <table class="pdf-inv-parties" width="100%" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                    <td width="49%">
+                        <div class="pdf-inv-party-role">{{ $labels['issued_by'] }}</div>
+                        <div class="pdf-inv-party-role-ar">{{ $labels['issued_by_ar'] }}</div>
+                        <div class="pdf-inv-party-name">{{ $companyDisplayName !== '' ? $companyDisplayName : '—' }}</div>
+                        <div class="pdf-inv-party-detail">
+                            @if ($companyAddr !== '')
+                                <span>{!! nl2br(e($companyAddr)) !!}</span><br>
+                            @endif
+                            @if ($companyPhone !== '')
+                                <strong>{{ $labels['phone'] }}:</strong> {{ $companyPhone }}<br>
+                            @endif
+                            @if ($companyEmail !== '')
+                                <strong>{{ $labels['email'] }}:</strong> {{ $companyEmail }}
+                            @endif
+                        </div>
+                    </td>
+                    <td class="pdf-inv-party-div"></td>
+                    <td width="49%" class="pdf-inv-party-right">
+                        <div class="pdf-inv-party-role">{{ $labels['billed_to'] }}</div>
+                        <div class="pdf-inv-party-role-ar">{{ $labels['billed_to_ar'] }}</div>
+                        <div class="pdf-inv-party-name">{{ $client?->name ?? '—' }}</div>
                         @if ($client?->company_name)
-                            <div class="pdf-mt-sm pdf-cell-dir-auto">{{ $client->company_name }}</div>
+                            <div class="pdf-inv-party-company">{{ $client->company_name }}</div>
                         @endif
-                        @if ($client?->address)
-                            <div class="pdf-mt-sm pdf-text-muted">{!! nl2br(e($client->address)) !!}</div>
-                        @endif
-                        @if ($client?->phone)
-                            <div class="pdf-mt-sm"><span class="pdf-label-strong">{{ $labels['phone'] }}:</span> <span class="pdf-cell-dir-auto">{{ $client->phone }}</span></div>
-                        @endif
-                        @if ($client?->email)
-                            <div class="pdf-mt-sm"><span class="pdf-label-strong">{{ $labels['email'] }}:</span> <span class="pdf-cell-dir-auto">{{ $client->email }}</span></div>
-                        @endif
-                    </td>
-                    <td class="pdf-party-grid__gap"></td>
-                    <td class="pdf-party-card" style="width: 48%;">
-                        <div class="pdf-party-card__label">{{ $labels['company_label'] }}</div>
-                        <div class="pdf-party-card__name pdf-cell-dir-auto">{{ $companyDisplayName !== '' ? $companyDisplayName : '—' }}</div>
-                        @if ($companyAddr !== '')
-                            <div class="pdf-mt-sm pdf-text-muted">{!! nl2br(e($companyAddr)) !!}</div>
-                        @endif
-                        @if ($companyPhone !== '')
-                            <div class="pdf-mt-sm"><span class="pdf-label-strong">{{ $labels['phone'] }}:</span> <span class="pdf-cell-dir-auto">{{ $companyPhone }}</span></div>
-                        @endif
-                        @if ($companyEmail !== '')
-                            <div class="pdf-mt-sm"><span class="pdf-label-strong">{{ $labels['email'] }}:</span> <span class="pdf-cell-dir-auto">{{ $companyEmail }}</span></div>
-                        @endif
+                        <div class="pdf-inv-party-detail">
+                            @if ($client?->address)
+                                <span>{!! nl2br(e($client->address)) !!}</span><br>
+                            @endif
+                            @if ($client?->phone)
+                                <span>{{ $client->phone }}</span>
+                            @endif
+                            @if ($client?->email)
+                                @if ($client?->phone)<br>@endif
+                                <span>{{ $client->email }}</span>
+                            @endif
+                        </div>
                     </td>
                 </tr>
             </table>
         </div>
 
-        {{-- 2. Route & schedule --}}
-        <div class="pdf-section">
-            <p class="pdf-section__heading">{{ $labels['section_route'] }}</p>
-            <table class="pdf-table pdf-table--flush-top">
+        {{-- Shipping details: POL / POD + metas --}}
+        <div class="pdf-inv-panel-wrap">
+            <table class="pdf-inv-route-tpl-bar" width="100%" cellspacing="0" cellpadding="0" border="0">
                 <tr>
-                    <th class="pdf-w-25">{{ $labels['pol'] }}</th>
-                    <th class="pdf-w-25">{{ $labels['pod'] }}</th>
-                    <th class="pdf-w-25">{{ $labels['container'] }}</th>
-                    <th class="pdf-w-25">{{ $labels['qty'] }}</th>
-                </tr>
-                <tr>
-                    <td class="pdf-cell-dir-auto">{{ $quote->pol ?: '—' }}</td>
-                    <td class="pdf-cell-dir-auto">{{ $quote->pod ?: '—' }}</td>
-                    <td class="pdf-cell-dir-auto">{{ $quote->container_type ?? '—' }}</td>
-                    <td class="pdf-amount-cell">{{ $quote->qty ?? '—' }}</td>
-                </tr>
-                <tr>
-                    @if ($showCarrier)
-                        <th>{{ $labels['carrier'] }}</th>
-                        <th>{{ $labels['transit_time'] }}</th>
-                        <th>{{ $labels['free_time'] }}</th>
-                        <th>{{ $labels['validity'] }}</th>
-                    @else
-                        <th colspan="2">{{ $labels['transit_time'] }}</th>
-                        <th>{{ $labels['free_time'] }}</th>
-                        <th>{{ $labels['validity'] }}</th>
-                    @endif
-                </tr>
-                <tr>
-                    @if ($showCarrier)
-                        <td class="pdf-cell-dir-auto">{{ $quote->shipping_line ?: '—' }}</td>
-                        <td class="pdf-cell-dir-auto">{{ $quote->transit_time ?: '—' }}</td>
-                        <td class="pdf-cell-dir-auto">{{ $quote->free_time ?: '—' }}</td>
-                        <td class="pdf-cell-dir-auto">{{ $validityStr }}</td>
-                    @else
-                        <td colspan="2" class="pdf-cell-dir-auto">{{ $quote->transit_time ?: '—' }}</td>
-                        <td class="pdf-cell-dir-auto">{{ $quote->free_time ?: '—' }}</td>
-                        <td class="pdf-cell-dir-auto">{{ $validityStr }}</td>
-                    @endif
-                </tr>
-                <tr>
-                    <th colspan="4">{{ $labels['schedule'] }}</th>
-                </tr>
-                <tr>
-                    <td colspan="4" class="pdf-cell-dir-auto">{{ $sailingDisplay }}</td>
+                    <td class="pdf-inv-route-tpl-ports-cell" valign="middle">
+                        <table class="pdf-inv-route-tpl-ports" width="100%">
+                            <tr>
+                                <td class="pdf-inv-route-tpl-port" valign="middle">
+                                    <div class="pdf-inv-route-tpl-port-name">{{ $quote->pol ?: '—' }}</div>
+                                    <div class="pdf-inv-route-tpl-port-lbl">{{ $labels['pol'] }}</div>
+                                </td>
+                                <td class="pdf-inv-route-tpl-arrow" valign="middle">→</td>
+                                <td class="pdf-inv-route-tpl-port pdf-inv-route-tpl-port--end" valign="middle">
+                                    <div class="pdf-inv-route-tpl-port-name">{{ $quote->pod ?: '—' }}</div>
+                                    <div class="pdf-inv-route-tpl-port-lbl">{{ $labels['pod'] }}</div>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                    <td class="pdf-inv-route-tpl-metas-cell" valign="middle">
+                        <table class="pdf-inv-route-tpl-metas" width="100%">
+                            <tr>
+                                @foreach ($routeMetas as $idx => $meta)
+                                    <td class="pdf-inv-route-tpl-rmeta{{ $idx > 0 ? ' pdf-inv-route-tpl-rmeta--split' : '' }}" valign="middle">
+                                        <div class="pdf-inv-route-tpl-rmeta-val">{{ $meta['val'] }}</div>
+                                        <div class="pdf-inv-route-tpl-rmeta-lbl">{{ $meta['lbl'] }}</div>
+                                    </td>
+                                @endforeach
+                            </tr>
+                        </table>
+                    </td>
                 </tr>
             </table>
         </div>
 
-        {{-- 3. Ocean freight --}}
-        <div class="pdf-section">
-            <p class="pdf-section__heading">{{ $labels['section_ocean_freight'] }}</p>
-            <table class="pdf-table pdf-table--flush-top">
-                <thead>
-                    <tr>
-                        <th class="pdf-w-60">{{ $labels['description'] }}</th>
-                        <th class="pdf-w-20 pdf-text-end">{{ $labels['amount'] }}</th>
-                        <th class="pdf-w-20 pdf-text-end">{{ $labels['currency'] }}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($oceanItems as $item)
+        {{-- Available Sailing (orange highlight) --}}
+        @if ($sailingDisplay !== '—')
+            <div class="pdf-quote-sailing-banner">
+                <div class="pdf-quote-sailing-banner__titles">
+                    <span class="pdf-quote-sailing-banner__title-en">{{ $labels['available_sailing_en'] }}</span>
+                    <span class="pdf-quote-sailing-banner__title-ar">{{ $labels['available_sailing_ar'] }}</span>
+                </div>
+                <div class="pdf-quote-sailing-banner__value">{{ $sailingDisplay }}</div>
+            </div>
+        @endif
+
+        @php
+            $sections = [
+                ['key' => 'ocean', 'items' => $oceanItems, 'totals' => $oceanTotalsByCurrency, 'en' => $labels['section_ocean_freight'], 'ar' => 'الشحن البحري'],
+                ['key' => 'inland', 'items' => $inlandItems, 'totals' => $inlandTotalsByCurrency, 'en' => $labels['section_inland_transport'], 'ar' => 'النقل الداخلي'],
+                ['key' => 'customs', 'items' => $customsItems, 'totals' => $customsTotalsByCurrency, 'en' => $labels['section_customs'], 'ar' => 'التخليص الجمركي'],
+            ];
+        @endphp
+
+        @foreach ($sections as $section)
+            @if ($section['items']->isNotEmpty())
+                <div class="pdf-inv-section-card">
+                    <table class="pdf-inv-sec-head" width="100%">
                         <tr>
-                            <td>
-                                <span class="pdf-cell-dir-auto">{{ $item->name }}</span>
-                                @if ($item->description)
-                                    <br><span class="pdf-text-muted pdf-cell-dir-auto">{{ $item->description }}</span>
-                                @endif
+                            <td class="pdf-inv-sec-title-stack">
+                                <div class="pdf-inv-sec-title-en">{{ $section['en'] }}</div>
+                                <div class="pdf-inv-sec-title-ar">{{ $section['ar'] }}</div>
                             </td>
-                            <td class="pdf-text-end pdf-amount-cell">{{ number_format((float) $item->amount, 2) }}</td>
-                            <td class="pdf-text-end pdf-cell-dir-auto">{{ $item->currency_code ?: 'USD' }}</td>
+                            <td class="pdf-inv-sec-total" style="width:38%;">{{ $formatBreakdown($section['totals']) }}</td>
                         </tr>
-                    @empty
-                        <tr>
-                            <td colspan="3" class="pdf-text-muted">—</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+                    </table>
+                    <table class="pdf-inv-table" width="100%">
+                        <thead>
+                            <tr>
+                                <th class="pdf-inv-col-item">{{ $labels['description'] }}</th>
+                                <th class="pdf-inv-col-amt pdf-inv-th-center">{{ $labels['amount'] }}</th>
+                                <th class="pdf-inv-col-cur pdf-inv-th-center">{{ $labels['currency'] }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($section['items'] as $item)
+                                <tr>
+                                    <td class="pdf-inv-col-item">
+                                        <span>{{ $item->name }}</span>
+                                    </td>
+                                    <td class="pdf-inv-col-amt pdf-inv-td-center">{{ number_format((float) $item->amount, 2) }}</td>
+                                    <td class="pdf-inv-col-cur pdf-inv-td-center">{{ strtoupper($item->currency_code ?: 'USD') }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+        @endforeach
 
-        {{-- 4. Inland transport --}}
-        <div class="pdf-section">
-            <p class="pdf-section__heading">{{ $labels['section_inland_transport'] }}</p>
-            <table class="pdf-table pdf-table--flush-top">
-                <thead>
-                    <tr>
-                        <th class="pdf-w-60">{{ $labels['description'] }}</th>
-                        <th class="pdf-w-20 pdf-text-end">{{ $labels['amount'] }}</th>
-                        <th class="pdf-w-20 pdf-text-end">{{ $labels['currency'] }}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($inlandItems as $item)
-                        <tr>
-                            <td>
-                                <span class="pdf-cell-dir-auto">{{ $item->name }}</span>
-                                @if ($item->description)
-                                    <br><span class="pdf-text-muted pdf-cell-dir-auto">{{ $item->description }}</span>
-                                @endif
-                            </td>
-                            <td class="pdf-text-end pdf-amount-cell">{{ number_format((float) $item->amount, 2) }}</td>
-                            <td class="pdf-text-end pdf-cell-dir-auto">{{ $item->currency_code ?: 'USD' }}</td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="3" class="pdf-text-muted">—</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-
-        {{-- 5. Customs & other charges --}}
-        <div class="pdf-section">
-            <p class="pdf-section__heading">{{ $labels['section_customs'] }}</p>
-            <table class="pdf-table pdf-table--flush-top">
-                <thead>
-                    <tr>
-                        <th class="pdf-w-60">{{ $labels['description'] }}</th>
-                        <th class="pdf-w-20 pdf-text-end">{{ $labels['amount'] }}</th>
-                        <th class="pdf-w-20 pdf-text-end">{{ $labels['currency'] }}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($customsItems as $item)
-                        <tr>
-                            <td>
-                                <span class="pdf-cell-dir-auto">{{ $item->name }}</span>
-                                @if ($item->description)
-                                    <br><span class="pdf-text-muted pdf-cell-dir-auto">{{ $item->description }}</span>
-                                @endif
-                            </td>
-                            <td class="pdf-text-end pdf-amount-cell">{{ number_format((float) $item->amount, 2) }}</td>
-                            <td class="pdf-text-end pdf-cell-dir-auto">{{ $item->currency_code ?: 'USD' }}</td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="3" class="pdf-text-muted">—</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-
-        {{-- 6. Handling fees --}}
+        {{-- Handling fees (final pricing section before grand total) --}}
         @if ($handlingItems->isNotEmpty())
-            <div class="pdf-section">
-                <p class="pdf-section__heading">{{ $labels['section_handling_fees'] }}</p>
-                <table class="pdf-table pdf-table--flush-top">
+            <div class="pdf-inv-section-card pdf-inv-section-card--handling">
+                <table class="pdf-inv-sec-head" width="100%">
+                    <tr>
+                        <td class="pdf-inv-sec-title-stack">
+                            <div class="pdf-inv-sec-title-en">{{ $labels['section_handling_fees_en'] }}</div>
+                            <div class="pdf-inv-sec-title-ar">{{ $labels['section_handling_fees_ar'] }}</div>
+                        </td>
+                        <td class="pdf-inv-sec-total" style="width:38%;">{{ $formatBreakdown($handlingTotalsByCurrency) }}</td>
+                    </tr>
+                </table>
+                <table class="pdf-inv-table" width="100%">
                     <thead>
                         <tr>
-                            <th class="pdf-w-60">{{ $labels['description'] }}</th>
-                            <th class="pdf-w-20 pdf-text-end">{{ $labels['amount'] }}</th>
-                            <th class="pdf-w-20 pdf-text-end">{{ $labels['currency'] }}</th>
+                            <th class="pdf-inv-col-item">{{ $labels['description'] }}</th>
+                            <th class="pdf-inv-col-amt pdf-inv-th-center">{{ $labels['amount'] }}</th>
+                            <th class="pdf-inv-col-cur pdf-inv-th-center">{{ $labels['currency'] }}</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach ($handlingItems as $item)
                             <tr>
-                                <td>
-                                    <span class="pdf-cell-dir-auto">{{ $item->name }}</span>
-                                    @if ($item->description)
-                                        <br><span class="pdf-text-muted pdf-cell-dir-auto">{{ $item->description }}</span>
-                                    @endif
-                                </td>
-                                <td class="pdf-text-end pdf-amount-cell">{{ number_format((float) $item->amount, 2) }}</td>
-                                <td class="pdf-text-end pdf-cell-dir-auto">{{ $item->currency_code ?: 'USD' }}</td>
+                                <td class="pdf-inv-col-item">{{ $item->name }}</td>
+                                <td class="pdf-inv-col-amt pdf-inv-td-center">{{ number_format((float) $item->amount, 2) }}</td>
+                                <td class="pdf-inv-col-cur pdf-inv-td-center">{{ strtoupper($item->currency_code ?: 'USD') }}</td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -325,99 +263,60 @@
             </div>
         @endif
 
-        {{-- 7. Totals --}}
-        <div class="pdf-section">
-            <p class="pdf-section__heading">{{ $labels['section_totals'] }}</p>
-            <table class="pdf-table pdf-table--flush-top">
-                <thead>
-                    <tr>
-                        <th class="pdf-w-60">{{ $labels['description'] }}</th>
-                        <th class="pdf-w-40 pdf-text-end">{{ $labels['amount'] }}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if ($pdfShowSectionBreakdown)
-                        @if ($oceanItems->isNotEmpty())
-                            @foreach ($oceanTotalsByCurrency as $cur => $amt)
-                                <tr>
-                                    <td>{{ $labels['section_ocean_freight'] }} ({{ $cur }})</td>
-                                    <td class="pdf-text-end pdf-amount-cell">{{ number_format($amt, 2) }} {{ $cur }}</td>
-                                </tr>
+        {{-- Grand total --}}
+        <div class="pdf-inv-grand-wrap">
+            <table class="pdf-inv-grand" width="100%">
+                <tr>
+                    <td width="34%">
+                        <div class="pdf-inv-grand-title">{{ $labels['grand_total'] }}</div>
+                        <div class="pdf-inv-grand-title-ar">الإجمالي الكلي</div>
+                    </td>
+                    <td width="66%">
+                        <table class="pdf-inv-grand-breakdown" width="100%">
+                            @foreach ($currencyOrder as $curCode)
+                                @php $amt = (float) ($grandTotalsByCurrency[$curCode] ?? 0); @endphp
+                                @if (abs($amt) > 1e-9)
+                                    <tr class="pdf-inv-grand-cur">
+                                        <td>{{ $labels['total'] }} {{ $curCode }}</td>
+                                        <td class="pdf-inv-gtr-val">{{ number_format($amt, 2) }} {{ $curCode }}</td>
+                                    </tr>
+                                @endif
                             @endforeach
-                        @endif
-                        @if ($inlandItems->isNotEmpty())
-                            @foreach ($inlandTotalsByCurrency as $cur => $amt)
-                                <tr>
-                                    <td>{{ $labels['section_inland_transport'] }} ({{ $cur }})</td>
-                                    <td class="pdf-text-end pdf-amount-cell">{{ number_format($amt, 2) }} {{ $cur }}</td>
-                                </tr>
-                            @endforeach
-                        @endif
-                        @if ($customsItems->isNotEmpty())
-                            @foreach ($customsTotalsByCurrency as $cur => $amt)
-                                <tr>
-                                    <td>{{ $labels['section_customs'] }} ({{ $cur }})</td>
-                                    <td class="pdf-text-end pdf-amount-cell">{{ number_format($amt, 2) }} {{ $cur }}</td>
-                                </tr>
-                            @endforeach
-                        @endif
-                        @if ($handlingItems->isNotEmpty())
-                            @foreach ($handlingTotalsByCurrency as $cur => $amt)
-                                <tr>
-                                    <td>{{ $labels['section_handling_fees'] }} ({{ $cur }})</td>
-                                    <td class="pdf-text-end pdf-amount-cell">{{ number_format($amt, 2) }} {{ $cur }}</td>
-                                </tr>
-                            @endforeach
-                        @endif
-                    @endif
-                    @foreach ($grandTotalsByCurrency as $cur => $amt)
-                        <tr>
-                            <td class="pdf-label-strong">{{ $labels['grand_total'] }} ({{ $cur }})</td>
-                            <td class="pdf-text-end pdf-label-strong pdf-amount-cell">{{ number_format($amt, 2) }} {{ $cur }}</td>
-                        </tr>
-                    @endforeach
-                    @if (count($grandTotalsByCurrency) === 0)
-                        <tr>
-                            <td colspan="2" class="pdf-text-muted">—</td>
-                        </tr>
-                    @endif
-                </tbody>
+                            @if (count($grandTotalsByCurrency) === 0)
+                                <tr><td colspan="2">—</td></tr>
+                            @endif
+                        </table>
+                    </td>
+                </tr>
             </table>
         </div>
 
-        {{-- 8. Notes --}}
-        <div class="pdf-section">
-            <p class="pdf-section__heading">{{ $labels['section_notes'] }}</p>
-            <div class="pdf-notes">
+        @if (filled($quote->official_receipts_note) || filled($quote->notes))
+            <div class="pdf-inv-notes">
+                <div class="pdf-inv-notes__title">{{ $labels['section_notes'] }}</div>
                 @if (filled($quote->official_receipts_note))
                     <div class="pdf-notes-block__title">{{ $labels['official_receipts_title'] }}</div>
-                    <div class="pdf-text-muted pdf-cell-dir-auto" style="margin-bottom:10px;">{!! nl2br(e($quote->official_receipts_note)) !!}</div>
+                    <div style="margin-bottom:8px;">{!! nl2br(e($quote->official_receipts_note)) !!}</div>
                 @endif
                 @if (filled($quote->notes))
-                    <div class="pdf-cell-dir-auto">{!! nl2br(e($quote->notes)) !!}</div>
-                @elseif (! filled($quote->official_receipts_note))
-                    <span class="pdf-text-muted">—</span>
+                    <div>{!! nl2br(e($quote->notes)) !!}</div>
                 @endif
             </div>
+        @endif
+
+        <div class="pdf-inv-terms-wrap">
+            <div class="pdf-inv-terms-title">{{ $labels['section_terms'] }}</div>
+            <div class="pdf-quote-terms">{!! $labels['terms_html'] !!}</div>
         </div>
 
-        {{-- 9. Terms & conditions --}}
-        <div class="pdf-section">
-            <p class="pdf-section__heading">{{ $labels['section_terms'] }}</p>
-            <div class="pdf-notes pdf-quote-terms">{!! $labels['terms_html'] !!}</div>
-        </div>
-
-        {{-- 10. Prepared by --}}
-        <div class="pdf-section">
-            <p class="pdf-section__heading">{{ $labels['section_prepared_by'] }}</p>
-            <div class="pdf-notes">
-                @if ($quote->salesUser)
-                    <div><span class="pdf-label-strong">{{ $labels['sales'] }}:</span> <span class="pdf-cell-dir-auto">{{ $quote->salesUser->name }}</span></div>
-                @else
-                    <span class="pdf-text-muted">—</span>
-                @endif
-                <div class="pdf-mt-sm"><span class="pdf-label-strong">{{ $labels['date'] }}:</span> {{ $quote->created_at ? $pdfFmtDate($quote->created_at) : '—' }}</div>
+        @if ($quote->salesUser)
+            <div class="pdf-inv-notes pdf-mt-sm">
+                <span class="pdf-label-strong">{{ $labels['sales'] }}:</span>
+                {{ $quote->salesUser->name }}
+                ·
+                <span class="pdf-label-strong">{{ $labels['date'] }}:</span>
+                {{ $issueDateFormatted }}
             </div>
-        </div>
+        @endif
     </div>
 @endsection
