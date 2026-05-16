@@ -48,18 +48,13 @@ export function isQuoteDraftMeaningful(snapshot) {
 
   if (Array.isArray(snapshot.oceanLines) && snapshot.oceanLines.some(lineHasAmount)) return true
 
-  if (snapshot.inlandEnabled) return true
   if (snapshot.inlandOfferId?.trim()) return true
   if (String(snapshot.inlandCost ?? '').trim() || String(snapshot.inlandSelling ?? '').trim()) return true
   if (String(snapshot.inlandGenCost ?? '').trim() || String(snapshot.inlandGenSelling ?? '').trim()) return true
   if (Array.isArray(snapshot.inlandLineRows) && snapshot.inlandLineRows.some(lineHasAmount)) return true
 
   if (snapshot.customsEnabled) return true
-  if (Array.isArray(snapshot.customsExtras) && snapshot.customsExtras.length > 0) return true
-  if (snapshot.customsExtraName?.trim() || String(snapshot.customsExtraAmount ?? '').trim()) return true
-  if (snapshot.officialReceiptsNote?.trim()) return true
   if (snapshot.quickModeReason?.trim()) return true
-  if (snapshot.municipality?.trim()) return true
   if (snapshot.pricingTeamConfirmed) return true
   if (snapshot.showCarrierOnPdf === false) return true
 

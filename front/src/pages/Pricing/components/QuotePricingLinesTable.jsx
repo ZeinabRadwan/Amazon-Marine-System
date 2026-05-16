@@ -66,7 +66,7 @@ function IncludeHeader({ t }) {
   )
 }
 
-function measureTableColumns(table, { isOcean }) {
+function measureTableColumns(table, { useCompactLayout }) {
   if (!table) return null
 
   const prevLayout = table.style.tableLayout
@@ -78,11 +78,11 @@ function measureTableColumns(table, { isOcean }) {
     table.querySelectorAll(`thead th:nth-child(${index + 1}), tbody td:nth-child(${index + 1})`).forEach((cell) => {
       maxW = Math.max(maxW, Math.ceil(cell.getBoundingClientRect().width))
     })
-    const floor = isOcean ? OCEAN_COLUMN_FLOOR_PX[col.id] ?? 48 : 48
+    const floor = useCompactLayout ? OCEAN_COLUMN_FLOOR_PX[col.id] ?? 48 : 48
     measured[col.id] = Math.max(floor, maxW)
   })
 
-  if (isOcean) {
+  if (useCompactLayout) {
     const tableW = Math.ceil(table.getBoundingClientRect().width)
     const others =
       (measured.check || 0) + (measured.cost || 0) + (measured.selling || 0) + (measured.profit || 0)
@@ -94,14 +94,14 @@ function measureTableColumns(table, { isOcean }) {
   return measured
 }
 
-function useMeasuredColumnWidths(tableRef, measureKey, isOcean) {
+function useMeasuredColumnWidths(tableRef, measureKey, useCompactLayout) {
   const [columnWidths, setColumnWidths] = useState(null)
 
   const measure = useCallback(() => {
     const table = tableRef.current
     if (!table) return
-    setColumnWidths(measureTableColumns(table, { isOcean }))
-  }, [tableRef, isOcean])
+    setColumnWidths(measureTableColumns(table, { useCompactLayout }))
+  }, [tableRef, useCompactLayout])
 
   useLayoutEffect(() => {
     measure()
@@ -145,19 +145,22 @@ export default function QuotePricingLinesTable({
   const { t } = useTranslation()
   const tableRef = useRef(null)
   const isOcean = variant === 'ocean'
+  const isInland = variant === 'inland'
+  const useCompactLayout = isOcean || isInland
+  const variantClass = isOcean ? 'ocean' : isInland ? 'inland' : ''
   const measureKey = `${variant}-${lines.length}-${lines.map((l) => `${l.name}|${l.cost_amount}|${l.selling_amount}|${l.currency}|${l.included}`).join(';')}`
 
-  const columnWidths = useMeasuredColumnWidths(tableRef, measureKey, isOcean)
+  const columnWidths = useMeasuredColumnWidths(tableRef, measureKey, useCompactLayout)
 
   if (!lines?.length) return null
 
   return (
     <div
-      className={`shipment-fin-table-wrap pricing-quote-line-table-wrap${isOcean ? ' pricing-quote-line-table-wrap--ocean' : ''}`}
+      className={`shipment-fin-table-wrap pricing-quote-line-table-wrap${variantClass ? ` pricing-quote-line-table-wrap--${variantClass}` : ''}`}
     >
       <table
         ref={tableRef}
-        className={`shipment-fin-line-table pricing-quote-line-table${isOcean ? ' pricing-quote-line-table--ocean' : ''}`}
+        className={`shipment-fin-line-table pricing-quote-line-table${variantClass ? ` pricing-quote-line-table--${variantClass}` : ''}`}
       >
         {columnWidths ? (
           <colgroup>

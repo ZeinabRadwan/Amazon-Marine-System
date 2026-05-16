@@ -3272,6 +3272,561 @@
   color: rgb(248, 250, 252);
 }
 
+/* Inland transport section only — table layout mirrors ocean freight */
+.pricing-quote-modal-root .pricing-quote-inland-block .pricing-quote-inland-table-block {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.pricing-quote-modal-root .pricing-quote-inland-block .shipment-fin-panel--expenses .pricing-quote-line-table-wrap--inland {
+  overflow-x: auto;
+  overflow-y: visible;
+  width: 100%;
+  max-width: 100%;
+  margin-bottom: 0.5rem;
+  padding: 0;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 0.65rem;
+}
+
+.pricing-quote-modal-root .pricing-quote-inland-block .shipment-fin-panel--expenses .pricing-quote-line-table--inland {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+  font-size: 0.8125rem;
+}
+
+.pricing-quote-modal-root .pricing-quote-inland-block .shipment-fin-panel--expenses .pricing-quote-line-table--inland th,
+.pricing-quote-modal-root .pricing-quote-inland-block .shipment-fin-panel--expenses .pricing-quote-line-table--inland td {
+  width: auto;
+  border: none;
+  border-bottom: 1px solid rgba(241, 245, 249, 0.95);
+  padding: 0.5rem 0.5rem;
+}
+
+.pricing-quote-modal-root .pricing-quote-inland-block .shipment-fin-panel--expenses .pricing-quote-line-table--inland th {
+  background: rgb(248, 250, 252);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: rgb(100, 116, 139);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  position: static;
+}
+
+[data-theme='dark'] .pricing-quote-modal-root .pricing-quote-inland-block .shipment-fin-panel--expenses .pricing-quote-line-table--inland th,
+.dark .pricing-quote-modal-root .pricing-quote-inland-block .shipment-fin-panel--expenses .pricing-quote-line-table--inland th {
+  background: rgba(30, 41, 59, 0.85);
+  color: rgb(148, 163, 184);
+  border-bottom-color: rgba(51, 65, 85, 0.8);
+}
+
+.pricing-quote-modal-root .pricing-quote-inland-block .shipment-fin-panel--expenses .pricing-quote-line-table--inland .pricing-quote-line-col-check {
+  width: 3.25rem;
+  min-width: 3.25rem;
+  max-width: 3.25rem;
+}
+
+.pricing-quote-modal-root .pricing-quote-inland-block .shipment-fin-panel--expenses .pricing-quote-line-table--inland .pricing-quote-line-col-name {
+  width: auto;
+  min-width: 0;
+}
+
+.pricing-quote-modal-root .pricing-quote-inland-block .shipment-fin-panel--expenses .pricing-quote-line-table--inland .pricing-quote-line-col-cost,
+.pricing-quote-modal-root .pricing-quote-inland-block .shipment-fin-panel--expenses .pricing-quote-line-table--inland .pricing-quote-line-col-selling,
+.pricing-quote-modal-root .pricing-quote-inland-block .shipment-fin-panel--expenses .pricing-quote-line-table--inland .pricing-quote-line-col-profit {
+  width: 7.25rem;
+  min-width: 6.5rem;
+}
+
+.pricing-quote-modal-root .pricing-quote-inland-block .shipment-fin-panel--expenses .pricing-quote-line-table--inland th:nth-child(1),
+.pricing-quote-modal-root .pricing-quote-inland-block .shipment-fin-panel--expenses .pricing-quote-line-table--inland td:nth-child(1) {
+  width: 3.25rem;
+}
+
+.pricing-quote-modal-root .pricing-quote-inland-block .shipment-fin-panel--expenses .pricing-quote-line-table--inland th:nth-child(2),
+.pricing-quote-modal-root .pricing-quote-inland-block .shipment-fin-panel--expenses .pricing-quote-line-table--inland td:nth-child(2) {
+  width: auto;
+}
+
+.pricing-quote-modal-root .pricing-quote-inland-block .shipment-fin-panel--expenses .pricing-quote-line-table--inland th:nth-child(3),
+.pricing-quote-modal-root .pricing-quote-inland-block .shipment-fin-panel--expenses .pricing-quote-line-table--inland td:nth-child(3),
+.pricing-quote-modal-root .pricing-quote-inland-block .shipment-fin-panel--expenses .pricing-quote-line-table--inland th:nth-child(4),
+.pricing-quote-modal-root .pricing-quote-inland-block .shipment-fin-panel--expenses .pricing-quote-line-table--inland td:nth-child(4),
+.pricing-quote-modal-root .pricing-quote-inland-block .shipment-fin-panel--expenses .pricing-quote-line-table--inland th:nth-child(5),
+.pricing-quote-modal-root .pricing-quote-inland-block .shipment-fin-panel--expenses .pricing-quote-line-table--inland td:nth-child(5) {
+  width: 7.25rem;
+}
+
+@media (max-width: 720px) {
+  .pricing-quote-modal-root .pricing-quote-inland-block .shipment-fin-panel--expenses .pricing-quote-line-table-wrap--inland {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .pricing-quote-modal-root .pricing-quote-inland-block .shipment-fin-panel--expenses .pricing-quote-line-table--inland {
+    min-width: 34rem;
+  }
+}
+
+/* Inland transport lines summary */
+.pricing-quote-modal-root .pricing-quote-inland-summary {
+  display: flex;
+  flex-direction: column;
+  margin-top: 0.35rem;
+  margin-bottom: 0;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 0.65rem;
+  overflow: hidden;
+  background: rgba(248, 250, 252, 0.75);
+}
+
+[data-theme='dark'] .pricing-quote-modal-root .pricing-quote-inland-summary,
+.dark .pricing-quote-modal-root .pricing-quote-inland-summary {
+  background: rgba(15, 23, 42, 0.45);
+  border-color: rgba(71, 85, 105, 0.65);
+}
+
+.pricing-quote-modal-root .pricing-quote-inland-summary .shipment-fin-draft-sec-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 0;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.95);
+  background: transparent;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgb(51, 65, 85);
+}
+
+.pricing-quote-modal-root .pricing-quote-inland-summary .pricing-quote-inland-summary__row:last-child {
+  border-bottom: none;
+}
+
+[data-theme='dark'] .pricing-quote-modal-root .pricing-quote-inland-summary .shipment-fin-draft-sec-total,
+.dark .pricing-quote-modal-root .pricing-quote-inland-summary .shipment-fin-draft-sec-total {
+  color: rgb(226, 232, 240);
+  border-bottom-color: rgba(51, 65, 85, 0.85);
+}
+
+.pricing-quote-modal-root .pricing-quote-inland-summary .shipment-fin-draft-sec-total__label {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.pricing-quote-modal-root .pricing-quote-inland-summary .shipment-fin-draft-sec-total__tv {
+  flex-shrink: 0;
+  text-align: end;
+}
+
+.pricing-quote-modal-root .pricing-quote-inland-summary .shipment-fin-draft-sec-total__badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+
+.pricing-quote-modal-root .pricing-quote-inland-summary .shipment-fin-currency-badge--red {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+[data-theme='dark'] .pricing-quote-modal-root .pricing-quote-inland-summary .shipment-fin-currency-badge--red,
+.dark .pricing-quote-modal-root .pricing-quote-inland-summary .shipment-fin-currency-badge--red {
+  background: rgba(185, 28, 28, 0.22);
+  color: #fca5a5;
+}
+
+.pricing-quote-modal-root .pricing-quote-inland-summary__row--grand {
+  background: rgba(241, 245, 249, 0.95);
+}
+
+.pricing-quote-modal-root .pricing-quote-inland-summary__row--grand .shipment-fin-draft-sec-total__label {
+  font-weight: 700;
+  color: rgb(30, 41, 59);
+}
+
+[data-theme='dark'] .pricing-quote-modal-root .pricing-quote-inland-summary__row--grand,
+.dark .pricing-quote-modal-root .pricing-quote-inland-summary__row--grand {
+  background: rgba(30, 41, 59, 0.72);
+}
+
+[data-theme='dark'] .pricing-quote-modal-root .pricing-quote-inland-summary__row--grand .shipment-fin-draft-sec-total__label,
+.dark .pricing-quote-modal-root .pricing-quote-inland-summary__row--grand .shipment-fin-draft-sec-total__label {
+  color: rgb(248, 250, 252);
+}
+
+/* Customs clearance section (Create Quote) */
+.pricing-quote-modal-root .pricing-quote-customs-block {
+  width: 100%;
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-empty {
+  padding: 0.25rem 0;
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-enable-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 1.2rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  border: 1px solid rgba(234, 88, 12, 0.9);
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 10px rgba(249, 115, 22, 0.38);
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-enable-btn:hover {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+  box-shadow: 0 3px 14px rgba(249, 115, 22, 0.48);
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-enable-btn:active {
+  transform: translateY(1px);
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-add-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.65rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px dashed rgba(249, 115, 22, 0.45);
+  border-radius: 0.55rem;
+  background: rgba(249, 115, 22, 0.06);
+}
+
+[data-theme='dark'] .pricing-quote-modal-root .pricing-quote-customs-add-form,
+.dark .pricing-quote-modal-root .pricing-quote-customs-add-form {
+  background: rgba(249, 115, 22, 0.1);
+  border-color: rgba(251, 146, 60, 0.4);
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-add-form__fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: min(100%, 14rem);
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-input {
+  width: 100%;
+  min-width: 0;
+  padding: 0.4rem 0.55rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: 0.4rem;
+  background: #ffffff;
+  color: rgb(30, 41, 59);
+}
+
+[data-theme='dark'] .pricing-quote-modal-root .pricing-quote-customs-input,
+.dark .pricing-quote-modal-root .pricing-quote-customs-input {
+  background: rgba(15, 23, 42, 0.85);
+  border-color: rgba(71, 85, 105, 0.75);
+  color: rgb(226, 232, 240);
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-input--amount {
+  max-width: 6.5rem;
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-input--currency {
+  width: auto;
+  min-width: 4.25rem;
+  flex-shrink: 0;
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-cost-inputs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-notes-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-notes-cell .pricing-quote-customs-input {
+  flex: 1;
+  min-width: 5rem;
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-row-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: none;
+  border-radius: 0.35rem;
+  background: transparent;
+  color: rgb(220, 38, 38);
+  cursor: pointer;
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-row-remove:hover {
+  background: rgba(220, 38, 38, 0.1);
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: #f97316;
+  border: 1px solid #ea580c;
+  border-radius: 0.45rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-add-btn:hover:not(:disabled) {
+  background: #fb923c;
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-add-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-add-form__fields .pricing-quote-customs-input:first-child {
+  flex: 1 1 8rem;
+  min-width: 6rem;
+}
+
+/* Handling fees section (Create Quote) */
+.pricing-quote-modal-root .pricing-quote-handling-currency-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.pricing-quote-modal-root .pricing-quote-handling-currency-row__label {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: rgb(51, 65, 85);
+}
+
+[data-theme='dark'] .pricing-quote-modal-root .pricing-quote-handling-currency-row__label,
+.dark .pricing-quote-modal-root .pricing-quote-handling-currency-row__label {
+  color: rgb(226, 232, 240);
+}
+
+.pricing-quote-modal-root .pricing-quote-handling-table__col-actions {
+  width: 4.5rem;
+  text-align: center;
+}
+
+.pricing-quote-modal-root .pricing-quote-handling-default-tag {
+  display: inline-block;
+}
+
+/* Quotation confirmation status */
+.pricing-quote-modal-root .pricing-quote-confirm-status-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+[data-theme='dark'] .pricing-quote-modal-root .pricing-quote-confirm-status-row,
+.dark .pricing-quote-modal-root .pricing-quote-confirm-status-row {
+  background: rgba(15, 23, 42, 0.45);
+  border-color: rgba(71, 85, 105, 0.65);
+}
+
+.pricing-quote-modal-root .pricing-quote-confirm-status-row__label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgb(100, 116, 139);
+}
+
+.pricing-quote-modal-root .pricing-quote-confirm-status-row__value {
+  font-size: 0.875rem;
+  font-weight: 800;
+}
+
+.pricing-quote-modal-root .pricing-quote-confirm-status-row__value--yes {
+  color: rgb(22, 163, 74);
+}
+
+.pricing-quote-modal-root .pricing-quote-confirm-status-row__value--no {
+  color: rgb(220, 38, 38);
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-info-note {
+  background: #eaf3de;
+  border: 1px solid #c0dd97;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 0;
+}
+
+[data-theme='dark'] .pricing-quote-modal-root .pricing-quote-customs-info-note,
+.dark .pricing-quote-modal-root .pricing-quote-customs-info-note {
+  background: rgba(34, 84, 20, 0.18);
+  border-color: rgba(96, 153, 34, 0.45);
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-info-note__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #3b6d11;
+  margin-bottom: 4px;
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-info-note__body {
+  font-size: 12px;
+  color: #3b6d11;
+  line-height: 1.7;
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-info-note__body strong {
+  font-weight: 700;
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-info-note__footnote {
+  font-size: 11px;
+  color: #639922;
+  margin-top: 6px;
+}
+
+[data-theme='dark'] .pricing-quote-modal-root .pricing-quote-customs-info-note__title,
+[data-theme='dark'] .pricing-quote-modal-root .pricing-quote-customs-info-note__body,
+.dark .pricing-quote-modal-root .pricing-quote-customs-info-note__title,
+.dark .pricing-quote-modal-root .pricing-quote-customs-info-note__body {
+  color: #a3d977;
+}
+
+[data-theme='dark'] .pricing-quote-modal-root .pricing-quote-customs-info-note__footnote,
+.dark .pricing-quote-modal-root .pricing-quote-customs-info-note__footnote {
+  color: #7cb342;
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-table-block {
+  overflow-x: auto;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 0.65rem;
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-table th {
+  background: rgb(248, 250, 252);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: rgb(100, 116, 139);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.5rem 0.65rem;
+  text-align: start;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.95);
+}
+
+[data-theme='dark'] .pricing-quote-modal-root .pricing-quote-customs-table th,
+.dark .pricing-quote-modal-root .pricing-quote-customs-table th {
+  background: rgba(30, 41, 59, 0.85);
+  color: rgb(148, 163, 184);
+  border-bottom-color: rgba(51, 65, 85, 0.8);
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-table td {
+  padding: 0.55rem 0.65rem;
+  border-bottom: 1px solid rgba(241, 245, 249, 0.95);
+  vertical-align: middle;
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-table__item {
+  font-weight: 600;
+  color: rgb(30, 41, 59);
+}
+
+[data-theme='dark'] .pricing-quote-modal-root .pricing-quote-customs-table__item,
+.dark .pricing-quote-modal-root .pricing-quote-customs-table__item {
+  color: rgb(226, 232, 240);
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-table__col-cost {
+  width: 11rem;
+  min-width: 9rem;
+  white-space: nowrap;
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-table__notes {
+  font-size: 0.75rem;
+  line-height: 1.45;
+  max-width: 16rem;
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-summary {
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 0.65rem;
+  overflow: hidden;
+  background: rgba(248, 250, 252, 0.75);
+}
+
+[data-theme='dark'] .pricing-quote-modal-root .pricing-quote-customs-summary,
+.dark .pricing-quote-modal-root .pricing-quote-customs-summary {
+  background: rgba(15, 23, 42, 0.45);
+  border-color: rgba(71, 85, 105, 0.65);
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-summary .shipment-fin-draft-sec-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgb(51, 65, 85);
+}
+
+[data-theme='dark'] .pricing-quote-modal-root .pricing-quote-customs-summary .shipment-fin-draft-sec-total,
+.dark .pricing-quote-modal-root .pricing-quote-customs-summary .shipment-fin-draft-sec-total {
+  color: rgb(226, 232, 240);
+}
+
 .pricing-quote-line-weekly-days {
   display: flex;
   flex-wrap: wrap;
@@ -3654,6 +4209,100 @@
   font-weight: 600;
   padding: 0.15rem 0;
   outline: none;
+}
+
+/* Unified quote summary — module blocks + grand total panel */
+.pricing-quote-modal-root .pricing-quote-module-summary,
+.pricing-quote-modal-root .pricing-quote-grand-summary {
+  background: #0f2340;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 0.65rem;
+  padding: 0.65rem 0.85rem;
+  margin-top: 0.35rem;
+}
+
+.pricing-quote-modal-root .pricing-quote-grand-summary {
+  padding: 0.85rem 1rem 0.95rem;
+}
+
+.pricing-quote-modal-root .pricing-quote-grand-summary__title {
+  margin: 0 0 0.65rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.01em;
+}
+
+.pricing-quote-modal-root .pricing-quote-grand-summary__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.pricing-quote-modal-root .pricing-quote-summary-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+/* Values left, labels right — same physical layout in RTL */
+[dir='rtl'] .pricing-quote-modal-root .pricing-quote-summary-row,
+.pricing-quote-modal-root[dir='rtl'] .pricing-quote-summary-row {
+  flex-direction: row-reverse;
+}
+
+.pricing-quote-modal-root .pricing-quote-module-summary .pricing-quote-summary-row:last-child,
+.pricing-quote-modal-root .pricing-quote-grand-summary__body .pricing-quote-summary-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.pricing-quote-modal-root .pricing-quote-summary-row__label {
+  flex-shrink: 0;
+  text-align: end;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1.35;
+}
+
+.pricing-quote-modal-root .pricing-quote-summary-row__value {
+  flex: 1;
+  min-width: 0;
+  text-align: start;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #fb923c;
+  line-height: 1.35;
+}
+
+.pricing-quote-modal-root .pricing-quote-summary-currency {
+  display: inline;
+  font-weight: 700;
+  color: #fb923c;
+}
+
+.pricing-quote-modal-root .pricing-quote-summary-currency__sep {
+  color: rgba(251, 146, 60, 0.65);
+  font-weight: 500;
+}
+
+.pricing-quote-modal-root .pricing-quote-summary-row--grand .pricing-quote-summary-row__label,
+.pricing-quote-modal-root .pricing-quote-summary-row--grand .pricing-quote-summary-row__value {
+  font-size: 0.875rem;
+  font-weight: 800;
+}
+
+.pricing-quote-modal-root .pricing-quote-summary-row--profit .pricing-quote-summary-currency {
+  color: #fb923c;
+}
+
+.pricing-quote-modal-root .pricing-quote-fin-section--fixed {
+  margin-top: 0.5rem;
 }
 
 .pricing-quote-summary-block {

@@ -86,7 +86,7 @@ class SettingsController extends Controller
 
         return [
             'customs_certificate_fee' => [
-                'amount' => isset($fee['amount']) ? (float) $fee['amount'] : 250.0,
+                'amount' => isset($fee['amount']) ? (float) $fee['amount'] : 2500.0,
                 'currency' => in_array($cur, ['EGP', 'USD', 'EUR'], true) ? $cur : 'EGP',
             ],
         ];
@@ -94,6 +94,10 @@ class SettingsController extends Controller
 
     public function updateQuotationDefaults(Request $request): JsonResponse
     {
+        if (! $this->userCanManageQuotationCustomsFee($request->user())) {
+            return ApiResponse::failure('Forbidden.', null, 403);
+        }
+
         $validated = $request->validate([
             'customs_certificate_fee' => ['required', 'array'],
             'customs_certificate_fee.amount' => ['required', 'numeric', 'min:0'],
@@ -116,6 +120,28 @@ class SettingsController extends Controller
         return ApiResponse::success([
             'quotation' => $this->resolveQuotationDefaults(),
         ], 'Quotation defaults saved.');
+    }
+
+    private function userCanManageQuotationCustomsFee(?\Illuminate\Contracts\Auth\Authenticatable $user): bool
+    {
+        if ($user === null) {
+            return false;
+        }
+
+        if (method_exists($user, 'hasRole')) {
+            if ($user->hasRole('admin') || $user->hasRole('pricing')) {
+                return true;
+            }
+        }
+
+        $roleId = (int) ($user->role_id ?? 0);
+        if (in_array($roleId, [1, 5], true)) {
+            return true;
+        }
+
+        $primary = strtolower((string) ($user->primary_role ?? $user->role?->name ?? ''));
+
+        return in_array($primary, ['admin', 'pricing'], true);
     }
 
     public function officeLocationShow(): JsonResponse

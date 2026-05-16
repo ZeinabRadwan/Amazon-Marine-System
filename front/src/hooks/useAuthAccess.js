@@ -84,6 +84,16 @@ export function useAuthAccess() {
     return primary === 'pricing'
   }, [isAdminRole, isPricingSalesViewOnly, abilityNames, user])
 
+  /** Quotation defaults: customs clearance fee (settings). Admin + pricing team only. */
+  const canManageQuotationCustomsFee = useMemo(() => {
+    if (isAdminRole) return true
+    if (roleId === ROLE_ID.PRICING) return true
+    const primary = (user?.primary_role ?? user?.roles?.[0]?.name ?? user?.role?.name ?? '')
+      .toString()
+      .toLowerCase()
+    return primary === 'pricing'
+  }, [isAdminRole, roleId, user])
+
   return {
     hasPageAccess,
     hasPermission,
@@ -99,5 +109,6 @@ export function useAuthAccess() {
     isPricingSalesViewOnly,
     roleId,
     canManagePricingOffers,
+    canManageQuotationCustomsFee,
   }
 }

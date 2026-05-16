@@ -10,7 +10,6 @@ import {
   Package,
   Receipt,
   Ship,
-  Calendar,
   Plus,
   Trash2,
   CheckCircle2,
@@ -50,8 +49,16 @@ import {
   QuoteSummaryBadge,
   ShippingLineSummaryBadge,
 } from './quoteFormLayout'
+import {
+  QuoteGrandSummaryPanel,
+  QuoteSummaryCurrencyText,
+  QuoteSummaryRow,
+} from './quoteSummaryUi'
 import QuotePricingLinesTable from './QuotePricingLinesTable'
 import QuoteOceanLinesSummary from './QuoteOceanLinesSummary'
+import QuoteInlandTransportSection from './QuoteInlandTransportSection'
+import QuoteCustomsClearanceSection, { buildCustomsOfficialReceiptsNote } from './QuoteCustomsClearanceSection'
+import QuoteHandlingFeesSection from './QuoteHandlingFeesSection'
 import {
   isOtherChargePricingCode,
   parseOtherChargeLabels,
@@ -83,37 +90,6 @@ function defaultQuoteForm() {
     schedule_type: null,
     sailing_weekdays: [],
   }
-}
-
-function currencyCodePill(code) {
-  const raw = String(code ?? '')
-    .trim()
-    .toUpperCase()
-  const display = raw || '—'
-  let variant = 'alt'
-  if (display === 'EGP') variant = 'egp'
-  else if (display === 'USD') variant = 'usd'
-  else if (display === 'EUR') variant = 'eur'
-  else if (display === '—') variant = 'muted'
-  return <span className={`shipment-fin-cur-pill shipment-fin-cur-pill--${variant}`}>{display}</span>
-}
-
-function QuoteSummaryMoney({ amounts, i18n, t, withPills = false }) {
-  const keys = sortCurrencyCodes(Object.keys(amounts).filter((c) => Math.abs(amounts[c] || 0) > 1e-9))
-  if (!keys.length) return <span>{t('common.dash')}</span>
-  return keys.map((cur, i) => (
-    <span key={cur} className="pricing-quote-inline-money-part">
-      {i > 0 ? <span className="pricing-quote-inline-money__sep"> · </span> : null}
-      {withPills ? (
-        <span className="inline-flex items-center gap-1">
-          {currencyCodePill(cur)}
-          {formatLocaleMoney(amounts[cur], cur, i18n.language)}
-        </span>
-      ) : (
-        formatLocaleMoney(amounts[cur], cur, i18n.language)
-      )}
-    </span>
-  ))
 }
 
 function inlandPricingKeyLabel(key) {
@@ -272,6 +248,21 @@ function sumProfitsByCurrency(lines) {
   return map
 }
 
+function sumCustomsCostByCurrency(clearanceFee, extraItems, enabled) {
+  if (!enabled) return {}
+  const m = {}
+  const baseAmt = Number(clearanceFee?.amount) || 0
+  const baseCur = String(clearanceFee?.currency || 'EGP').toUpperCase()
+  if (baseAmt > 0) m[baseCur] = (m[baseCur] || 0) + baseAmt
+  for (const row of extraItems || []) {
+    const amt = parseNum(row.amount)
+    if (amt <= 0) continue
+    const cur = String(row.currency || 'EGP').toUpperCase()
+    m[cur] = (m[cur] || 0) + amt
+  }
+  return m
+}
+
 const PROFIT_CUR_ORDER = ['USD', 'EUR', 'EGP']
 
 function sortedProfitKeys(map) {
@@ -283,7 +274,10 @@ function sortedProfitKeys(map) {
   })
 }
 
-function QuoteFinCard({ icon: Icon, title, subtitle: _subtitleIgnored, headMeta = null, children }) {
+function QuoteFinCard({ icon: Icon, title, subtitle: _subtitleIgnored, headMeta = null, children, fixed = false }) {
+  if (fixed) {
+    return <div className="pricing-quote-fin-section--fixed">{children}</div>
+  }
   return (
     <details className="shipment-fin-card pricing-fin-section pricing-quote-collapsible">
       <summary className="shipment-fin-card__head pricing-fin-section__summary pricing-quote-collapsible__summary">
@@ -412,7 +406,6 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
   const [seaOffers, setSeaOffers] = useState([])
   const [inlandOffers, setInlandOffers] = useState([])
 
-  const [inlandEnabled, setInlandEnabled] = useState(false)
   const [inlandOfferId, setInlandOfferId] = useState('')
   const [inlandCost, setInlandCost] = useState('')
   const [inlandSelling, setInlandSelling] = useState('')
@@ -424,20 +417,17 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
   const [inlandLineRows, setInlandLineRows] = useState([])
 
   const [customsEnabled, setCustomsEnabled] = useState(false)
-  const [customsExtras, setCustomsExtras] = useState([])
-  const [customsExtraName, setCustomsExtraName] = useState('')
-  const [customsExtraAmount, setCustomsExtraAmount] = useState('')
-  const [customsExtraCurrency, setCustomsExtraCurrency] = useState('EGP')
-  const [customsCertSelling, setCustomsCertSelling] = useState('250')
-  const [customsCertCurrency, setCustomsCertCurrency] = useState('EGP')
-  const [officialReceiptsNote, setOfficialReceiptsNote] = useState('')
+  const [customsClearanceFee, setCustomsClearanceFee] = useState({ amount: 2500, currency: 'EGP' })
+  const [customsExtraItems, setCustomsExtraItems] = useState([])
 
-  const [handlingLines, setHandlingLines] = useState([{ id: 'h-init', name: 'Handling Fees', amount: String(ADMIN_HANDLING_FEE_AMOUNT), currency: 'USD' }])
+  const [handlingCurrency, setHandlingCurrency] = useState(ADMIN_HANDLING_FEE_CURRENCY)
+  const [handlingLines, setHandlingLines] = useState([
+    { id: 'h-default', name: 'Handling Fees', amount: String(ADMIN_HANDLING_FEE_AMOUNT), isDefault: true },
+  ])
 
   const [showCarrierOnPdf, setShowCarrierOnPdf] = useState(true)
   const [quickModeReason, setQuickModeReason] = useState('')
   const [pricingTeamConfirmed, setPricingTeamConfirmed] = useState(false)
-  const [municipality, setMunicipality] = useState('')
   const [clientAsync, setClientAsync] = useState(null)
   const [showAddClientModal, setShowAddClientModal] = useState(false)
 
@@ -452,7 +442,6 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
       pricingOfferId: initialOffer?.id != null ? String(initialOffer.id) : '',
       form,
       oceanLines,
-      inlandEnabled,
       inlandOfferId,
       inlandCost,
       inlandSelling,
@@ -462,18 +451,12 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
       inlandGenCurrency,
       inlandLineRows,
       customsEnabled,
-      customsExtras,
-      customsExtraName,
-      customsExtraAmount,
-      customsExtraCurrency,
-      customsCertSelling,
-      customsCertCurrency,
-      officialReceiptsNote,
+      customsExtraItems,
+      handlingCurrency,
       handlingLines,
       showCarrierOnPdf,
       quickModeReason,
       pricingTeamConfirmed,
-      municipality,
       clientAsync: clientAsync
         ? { value: clientAsync.value, label: clientAsync.label }
         : null,
@@ -487,7 +470,6 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
       initialOffer?.id,
       form,
       oceanLines,
-      inlandEnabled,
       inlandOfferId,
       inlandCost,
       inlandSelling,
@@ -497,18 +479,12 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
       inlandGenCurrency,
       inlandLineRows,
       customsEnabled,
-      customsExtras,
-      customsExtraName,
-      customsExtraAmount,
-      customsExtraCurrency,
-      customsCertSelling,
-      customsCertCurrency,
-      officialReceiptsNote,
+      customsExtraItems,
+      handlingCurrency,
       handlingLines,
       showCarrierOnPdf,
       quickModeReason,
       pricingTeamConfirmed,
-      municipality,
       clientAsync,
       quickInlandPort,
       quickInlandGov,
@@ -596,7 +572,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
     if (!isOpen) return
     let cancelled = false
     ;(async () => {
-      let certAmt = 250
+      let certAmt = 2500
       let certCur = 'EGP'
       try {
         const token = getStoredToken()
@@ -604,7 +580,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
           const res = await getSettings(token)
           const fee = res?.data?.quotation?.customs_certificate_fee
           if (fee) {
-            certAmt = Number(fee.amount) || 250
+            certAmt = Number(fee.amount) || 2500
             certCur = fee.currency || 'EGP'
           }
         }
@@ -613,11 +589,12 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
       }
       if (cancelled) return
 
+      setCustomsClearanceFee({ amount: certAmt, currency: certCur })
+
       const saved = readPricingQuoteDraft(draftScope)
       if (saved && isQuoteDraftMeaningful(saved)) {
         setForm({ ...defaultQuoteForm(), ...(saved.form || {}) })
         setOceanLines(Array.isArray(saved.oceanLines) ? saved.oceanLines : [])
-        setInlandEnabled(Boolean(saved.inlandEnabled))
         setInlandOfferId(saved.inlandOfferId || '')
         setInlandCost(saved.inlandCost ?? '')
         setInlandSelling(saved.inlandSelling ?? '')
@@ -627,22 +604,19 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
         setInlandGenCurrency(saved.inlandGenCurrency || 'EGP')
         setInlandLineRows(Array.isArray(saved.inlandLineRows) ? saved.inlandLineRows : [])
         setCustomsEnabled(Boolean(saved.customsEnabled))
-        setCustomsExtras(Array.isArray(saved.customsExtras) ? saved.customsExtras : [])
-        setCustomsExtraName(saved.customsExtraName ?? '')
-        setCustomsExtraAmount(saved.customsExtraAmount ?? '')
-        setCustomsExtraCurrency(saved.customsExtraCurrency || 'EGP')
-        setCustomsCertSelling(saved.customsCertSelling != null ? String(saved.customsCertSelling) : String(certAmt))
-        setCustomsCertCurrency(saved.customsCertCurrency || certCur)
-        setOfficialReceiptsNote(saved.officialReceiptsNote ?? '')
+        setCustomsExtraItems(Array.isArray(saved.customsExtraItems) ? saved.customsExtraItems : [])
+        setHandlingCurrency(saved.handlingCurrency || ADMIN_HANDLING_FEE_CURRENCY)
         setHandlingLines(
           Array.isArray(saved.handlingLines) && saved.handlingLines.length
-            ? saved.handlingLines
-            : [{ id: `h-${Date.now()}`, name: 'Handling Fees', amount: String(ADMIN_HANDLING_FEE_AMOUNT), currency: 'USD' }]
+            ? saved.handlingLines.map((row, i) => ({
+                ...row,
+                isDefault: row.isDefault ?? i === 0,
+              }))
+            : [{ id: 'h-default', name: 'Handling Fees', amount: String(ADMIN_HANDLING_FEE_AMOUNT), isDefault: true }]
         )
         setShowCarrierOnPdf(saved.showCarrierOnPdf !== false)
         setQuickModeReason(saved.quickModeReason ?? '')
         setPricingTeamConfirmed(Boolean(saved.pricingTeamConfirmed))
-        setMunicipality(saved.municipality ?? '')
         setClientAsync(saved.clientAsync?.value ? saved.clientAsync : null)
         setQuickInlandPort(saved.quickInlandPort ?? '')
         setQuickInlandGov(saved.quickInlandGov ?? '')
@@ -652,12 +626,9 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
         return
       }
 
-      setOfficialReceiptsNote('')
       setQuickModeReason('')
       setPricingTeamConfirmed(false)
-      setMunicipality('')
       setClientAsync(null)
-      setInlandEnabled(false)
       setInlandOfferId('')
       setInlandLineRows([])
       setInlandCost('')
@@ -667,12 +638,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
       setInlandGenSelling('')
       setInlandGenCurrency('EGP')
       setCustomsEnabled(false)
-      setCustomsExtras([])
-      setCustomsExtraName('')
-      setCustomsExtraAmount('')
-      setCustomsExtraCurrency('EGP')
-      setCustomsCertSelling(String(certAmt))
-      setCustomsCertCurrency(certCur)
+      setCustomsExtraItems([])
       setShowCarrierOnPdf(true)
       setQuickInlandPort('')
       setQuickInlandGov('')
@@ -680,12 +646,14 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
       setQuickInlandVehicle('')
       const mode = initialOffer ? 'pricing' : initialQuickMode ? 'quick' : 'manual'
       if (mode === 'pricing' && initialOffer) {
+        setHandlingCurrency(ADMIN_HANDLING_FEE_CURRENCY)
         setHandlingLines([
-          { id: `h-${Date.now()}`, name: 'Handling Fees', amount: String(ADMIN_HANDLING_FEE_AMOUNT), currency: ADMIN_HANDLING_FEE_CURRENCY },
+          { id: 'h-default', name: 'Handling Fees', amount: String(ADMIN_HANDLING_FEE_AMOUNT), isDefault: true },
         ])
         applySeaOffer(initialOffer)
       } else {
-        setHandlingLines([{ id: `h-${Date.now()}`, name: 'Handling Fees', amount: String(ADMIN_HANDLING_FEE_AMOUNT), currency: 'USD' }])
+        setHandlingCurrency(ADMIN_HANDLING_FEE_CURRENCY)
+        setHandlingLines([{ id: 'h-default', name: 'Handling Fees', amount: String(ADMIN_HANDLING_FEE_AMOUNT), isDefault: true }])
         setForm(defaultQuoteForm())
         setOceanLines(mode === 'quick' ? makeQuickOceanLines() : makeStarterOceanLines())
       }
@@ -709,13 +677,13 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
   }, [inlandOffers, inlandOfferId])
 
   useEffect(() => {
-    if (!inlandEnabled || entryMode === 'quick') return
+    if (entryMode === 'quick') return
     if (!selectedInlandOffer) {
       setInlandLineRows([])
       return
     }
     setInlandLineRows(buildInlandRowsFromOffer(selectedInlandOffer, t))
-  }, [inlandEnabled, entryMode, selectedInlandOffer, t])
+  }, [entryMode, selectedInlandOffer, t])
 
   const setField = (k, v) => setForm((p) => ({ ...p, [k]: v }))
 
@@ -767,12 +735,34 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
     setHandlingLines((prev) => prev.map((row) => (row.id === id ? { ...row, ...patch } : row)))
   }
 
-  const addHandlingLine = () => {
-    setHandlingLines((prev) => [...prev, { id: `h-${Date.now()}`, name: 'Handling Fees', amount: '', currency: 'USD' }])
+  const setHandlingSectionCurrency = (cur) => {
+    const code = String(cur || ADMIN_HANDLING_FEE_CURRENCY).toUpperCase()
+    setHandlingCurrency(code)
   }
 
-  const removeHandlingLine = (id) => {
-    setHandlingLines((prev) => (prev.length <= 1 ? prev : prev.filter((r) => r.id !== id)))
+  const addHandlingItem = (item) => {
+    setHandlingLines((prev) => [...prev, { ...item, isDefault: false }])
+  }
+
+  const removeHandlingItem = (id) => {
+    setHandlingLines((prev) => prev.filter((r) => r.isDefault || r.id !== id))
+  }
+
+  const addCustomsExtraItem = (item) => {
+    setCustomsExtraItems((prev) => [...prev, item])
+  }
+
+  const updateCustomsExtraItem = (id, patch) => {
+    setCustomsExtraItems((prev) => prev.map((row) => (row.id === id ? { ...row, ...patch } : row)))
+  }
+
+  const removeCustomsExtraItem = (id) => {
+    setCustomsExtraItems((prev) => prev.filter((row) => row.id !== id))
+  }
+
+  const handleRemoveCustoms = () => {
+    setCustomsEnabled(false)
+    setCustomsExtraItems([])
   }
 
   const isPricing = entryMode === 'pricing'
@@ -800,168 +790,152 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
   const oceanSellingByCurrency = useMemo(() => sumLineSellingByCurrency(oceanLines), [oceanLines])
   const oceanCostByCurrency = useMemo(() => sumLineCostByCurrency(oceanLines), [oceanLines])
 
-  const customsExtrasByCurrency = useMemo(() => {
-    const m = {}
-    if (!customsEnabled) return m
-    ;(customsExtras || []).forEach((row) => {
-      const n = parseNum(row.amount)
-      if (n <= 0) return
-      const c = row.currency || 'EGP'
-      m[c] = (m[c] || 0) + n
-    })
-    return m
-  }, [customsEnabled, customsExtras])
-
-  const customsSellingByCurrency = useMemo(() => {
-    if (!customsEnabled) return {}
-    const n = parseNum(customsCertSelling)
-    if (!n) return mergeCurrencyAmountMaps({}, customsExtrasByCurrency)
-    const c = customsCertCurrency || 'EGP'
-    const base = { [c]: n }
-    return mergeCurrencyAmountMaps(base, customsExtrasByCurrency)
-  }, [customsEnabled, customsCertSelling, customsCertCurrency, customsExtrasByCurrency])
-
-  const inlandProfit = useMemo(() => parseNum(inlandSelling) - parseNum(inlandCost), [inlandSelling, inlandCost])
-
-  const inlandGenProfit = useMemo(
-    () => parseNum(inlandGenSelling) - parseNum(inlandGenCost),
-    [inlandGenSelling, inlandGenCost]
+  const customsSellingByCurrency = useMemo(
+    () => sumCustomsCostByCurrency(customsClearanceFee, customsExtraItems, customsEnabled),
+    [customsEnabled, customsClearanceFee, customsExtraItems]
   )
-
-  const inlandLinesProfitByCurrency = useMemo(() => {
-    const map = {}
-    if (!inlandEnabled || entryMode === 'quick' || !inlandLineRows.length) return map
-    inlandLineRows.forEach((row) => {
-      if (row.included === false) return
-      const cur = row.currency || 'EGP'
-      const p = parseNum(row.selling_amount) - parseNum(row.cost_amount)
-      map[cur] = (map[cur] || 0) + p
-    })
-    return map
-  }, [inlandEnabled, entryMode, inlandLineRows])
 
   const pricingLinesProfitByCurrency = useMemo(() => sumProfitsByCurrency(oceanLines), [oceanLines])
 
-  const quoteProfitByCurrency = useMemo(() => {
-    const map = { ...pricingLinesProfitByCurrency }
-    if (inlandEnabled && entryMode === 'quick' && parseNum(inlandSelling) > 0) {
-      const c = inlandCurrency || 'EGP'
-      map[c] = (map[c] || 0) + inlandProfit
-    }
-    if (inlandEnabled && entryMode === 'quick' && parseNum(inlandGenSelling) > 0) {
-      const c = inlandGenCurrency || inlandCurrency || 'EGP'
-      map[c] = (map[c] || 0) + inlandGenProfit
-    }
-    if (inlandEnabled && entryMode !== 'quick') {
-      Object.entries(inlandLinesProfitByCurrency).forEach(([c, v]) => {
-        map[c] = (map[c] || 0) + v
-      })
-    }
-    if (customsEnabled) {
-      const cert = parseNum(customsCertSelling)
-      if (cert > 0) {
-        const c = customsCertCurrency || 'EGP'
-        if (!isPricing) map[c] = (map[c] || 0) + cert
+  const inlandSectionCostByCurrency = useMemo(() => {
+    if (isQuick) {
+      const m = {}
+      const cost = parseNum(inlandCost)
+      if (cost > 0) {
+        const cur = inlandCurrency || 'EGP'
+        m[cur] = (m[cur] || 0) + cost
       }
+      const genCost = parseNum(inlandGenCost)
+      if (genCost > 0) {
+        const cur = inlandGenCurrency || inlandCurrency || 'EGP'
+        m[cur] = (m[cur] || 0) + genCost
+      }
+      return m
     }
-    if (customsEnabled && customsExtras.length) {
-      customsExtras.forEach((row) => {
-        const n = parseNum(row.amount)
-        if (n <= 0) return
-        const c = row.currency || 'EGP'
-        map[c] = (map[c] || 0) + n
-      })
+    return sumLineCostByCurrency(inlandLineRows)
+  }, [isQuick, inlandCost, inlandCurrency, inlandGenCost, inlandGenCurrency, inlandLineRows])
+
+  const inlandSectionProfitByCurrency = useMemo(() => {
+    if (isQuick) {
+      const m = {}
+      if (parseNum(inlandSelling) > 0 || parseNum(inlandCost) > 0) {
+        const cur = inlandCurrency || 'EGP'
+        m[cur] = (m[cur] || 0) + (parseNum(inlandSelling) - parseNum(inlandCost))
+      }
+      if (parseNum(inlandGenSelling) > 0 || parseNum(inlandGenCost) > 0) {
+        const cur = inlandGenCurrency || inlandCurrency || 'EGP'
+        m[cur] = (m[cur] || 0) + (parseNum(inlandGenSelling) - parseNum(inlandGenCost))
+      }
+      return m
     }
-    return map
+    return sumProfitsByCurrency(inlandLineRows)
   }, [
-    pricingLinesProfitByCurrency,
-    inlandEnabled,
-    entryMode,
-    inlandCurrency,
-    inlandProfit,
+    isQuick,
     inlandSelling,
+    inlandCost,
+    inlandCurrency,
     inlandGenSelling,
     inlandGenCost,
     inlandGenCurrency,
-    inlandGenProfit,
-    inlandLinesProfitByCurrency,
-    customsEnabled,
-    customsExtras,
-    customsCertSelling,
-    customsCertCurrency,
-    isPricing,
+    inlandLineRows,
   ])
 
-  const handlingSellingByCurrency = useMemo(() => {
-    const m = {}
-    ;(handlingLines || []).forEach((row) => {
-      const n = parseNum(row.amount)
-      if (n <= 0) return
-      const c = row.currency || 'USD'
-      m[c] = (m[c] || 0) + n
+  const inlandSectionSellingByCurrency = useMemo(() => {
+    if (isQuick) {
+      const m = {}
+      const sell = parseNum(inlandSelling)
+      if (sell > 0) {
+        const cur = inlandCurrency || 'EGP'
+        m[cur] = (m[cur] || 0) + sell
+      }
+      const genSell = parseNum(inlandGenSelling)
+      if (genSell > 0) {
+        const cur = inlandGenCurrency || inlandCurrency || 'EGP'
+        m[cur] = (m[cur] || 0) + genSell
+      }
+      return m
+    }
+    return sumLineSellingByCurrency(inlandLineRows)
+  }, [isQuick, inlandSelling, inlandCurrency, inlandGenSelling, inlandGenCurrency, inlandLineRows])
+
+  const quoteProfitByCurrency = useMemo(() => {
+    const map = { ...pricingLinesProfitByCurrency }
+    Object.entries(inlandSectionProfitByCurrency).forEach(([c, v]) => {
+      map[c] = (map[c] || 0) + v
     })
-    return m
-  }, [handlingLines])
+    return map
+  }, [pricingLinesProfitByCurrency, inlandSectionProfitByCurrency])
+
+  const handlingSellingByCurrency = useMemo(() => {
+    let total = 0
+    for (const row of handlingLines || []) {
+      const n = parseNum(row.amount)
+      if (n > 0) total += n
+    }
+    if (total <= 0) return {}
+    const c = String(handlingCurrency || ADMIN_HANDLING_FEE_CURRENCY).toUpperCase()
+    return { [c]: total }
+  }, [handlingLines, handlingCurrency])
+
+  const quoteHasBillableItems = useMemo(() => {
+    const hasOcean = oceanLines.some(
+      (line) => line.included !== false && parseNum(line.selling_amount) > 0 && line.code
+    )
+    const hasInland = isQuick
+      ? parseNum(inlandSelling) > 0 || parseNum(inlandGenSelling) > 0
+      : inlandLineRows.some((row) => row.included !== false && parseNum(row.selling_amount) > 0)
+    const hasCustoms =
+      customsEnabled &&
+      (Object.values(customsSellingByCurrency).some((v) => Math.abs(Number(v) || 0) > 1e-9) ||
+        (Number(customsClearanceFee?.amount) || 0) > 0)
+    const hasHandling = handlingLines.some((row) => parseNum(row.amount) > 0)
+    return hasOcean || hasInland || hasCustoms || hasHandling
+  }, [
+    oceanLines,
+    isQuick,
+    inlandSelling,
+    inlandGenSelling,
+    inlandLineRows,
+    customsEnabled,
+    customsSellingByCurrency,
+    customsClearanceFee,
+    handlingLines,
+  ])
+
+  const canSaveQuote = useMemo(() => {
+    if (!pricingTeamConfirmed || !quoteHasBillableItems) return false
+    if (!isQuick && !clientAsync?.value) return false
+    if (!isQuick && sailingSchedule && !selectedSailingDate) return false
+    return true
+  }, [
+    pricingTeamConfirmed,
+    quoteHasBillableItems,
+    isQuick,
+    clientAsync,
+    sailingSchedule,
+    selectedSailingDate,
+  ])
 
   const grandSellingByCurrency = useMemo(() => {
-    const inlandPart = {}
-    if (inlandEnabled && entryMode !== 'quick') {
-      inlandLineRows.forEach((row) => {
-        if (row.included === false) return
-        const n = parseNum(row.selling_amount)
-        if (n <= 0) return
-        const c = row.currency || 'EGP'
-        inlandPart[c] = (inlandPart[c] || 0) + n
-      })
-    } else if (inlandEnabled && entryMode === 'quick') {
-      if (parseNum(inlandSelling) > 0) {
-        const c = inlandCurrency || 'EGP'
-        inlandPart[c] = (inlandPart[c] || 0) + parseNum(inlandSelling)
-      }
-      if (parseNum(inlandGenSelling) > 0) {
-        const c = inlandGenCurrency || inlandCurrency || 'EGP'
-        inlandPart[c] = (inlandPart[c] || 0) + parseNum(inlandGenSelling)
-      }
-    }
     return mergeCurrencyAmountMaps(
       oceanSellingByCurrency,
       customsSellingByCurrency,
-      inlandPart,
+      inlandSectionSellingByCurrency,
       handlingSellingByCurrency
     )
-  }, [
-    oceanSellingByCurrency,
-    customsSellingByCurrency,
-    inlandEnabled,
-    entryMode,
-    inlandLineRows,
-    inlandSelling,
-    inlandGenSelling,
-    inlandCurrency,
-    inlandGenCurrency,
-    handlingSellingByCurrency,
-  ])
+  }, [oceanSellingByCurrency, customsSellingByCurrency, inlandSectionSellingByCurrency, handlingSellingByCurrency])
 
-  const inlandNonQuickSellingByCurrency = useMemo(() => {
-    const m = {}
-    if (!inlandEnabled || entryMode === 'quick') return m
-    inlandLineRows.forEach((row) => {
-      const n = parseNum(row.selling_amount)
-      if (n <= 0) return
-      const c = row.currency || 'EGP'
-      m[c] = (m[c] || 0) + n
-    })
-    return m
-  }, [inlandEnabled, entryMode, inlandLineRows])
+  const hasInlandQuoteData = useMemo(() => {
+    if (isQuick) return parseNum(inlandSelling) > 0 || parseNum(inlandGenSelling) > 0
+    return inlandLineRows.some((row) => row.included !== false && parseNum(row.selling_amount) > 0)
+  }, [isQuick, inlandSelling, inlandGenSelling, inlandLineRows])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     const salesUserId = user?.id ? Number(user.id) : null
     const isQuickSubmit = entryMode === 'quick'
-    if (inlandEnabled && !isQuickSubmit && !inlandOfferId) return
-    if (entryMode === 'manual' && !String(form.valid_to || '').trim()) return
     if (!isQuickSubmit && sailingSchedule && !selectedSailingDate) return
-    if (isQuickSubmit && !pricingTeamConfirmed) return
+    if (!pricingTeamConfirmed) return
     if (!isQuickSubmit && !clientAsync?.value) return
 
     const items = []
@@ -996,7 +970,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
       })
     })
 
-    if (inlandEnabled && !isQuickSubmit && inlandLineRows.length) {
+    if (!isQuickSubmit && inlandLineRows.length) {
       inlandLineRows.forEach((row) => {
         if (row.included === false) return
         if (parseNum(row.selling_amount) <= 0) return
@@ -1012,7 +986,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
       })
     }
 
-    if (inlandEnabled && isQuickSubmit && parseNum(inlandSelling) > 0) {
+    if (isQuickSubmit && parseNum(inlandSelling) > 0) {
       items.push({
         code: 'INLAND',
         name: t('pricing.inlandTransport', 'Inland Transport'),
@@ -1024,7 +998,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
       })
     }
 
-    if (inlandEnabled && isQuickSubmit && parseNum(inlandGenSelling) > 0) {
+    if (isQuickSubmit && parseNum(inlandGenSelling) > 0) {
       const baseDesc = quickInlandDescription()
       items.push({
         code: 'INLAND',
@@ -1038,35 +1012,35 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
     }
 
     if (customsEnabled) {
-      const amt = parseNum(customsCertSelling)
-      const cur = customsCertCurrency || 'EGP'
-      if (amt > 0) {
+      const baseAmt = Number(customsClearanceFee?.amount) || 0
+      const baseCur = String(customsClearanceFee?.currency || 'EGP').toUpperCase()
+      if (baseAmt > 0) {
         items.push({
           code: 'OTHER',
-          name: t('pricing.customsCertFee', 'Customs Certificate Fee'),
+          name: t('pricing.customsClearanceFeeRow', 'Customs clearance fee'),
           description: null,
-          amount: amt,
-          currency: cur,
-          cost_amount: isPricing ? amt : null,
+          amount: baseAmt,
+          currency: baseCur,
+          cost_amount: baseAmt,
           visible_to_client: true,
         })
       }
-    }
-
-    customsExtras.forEach((row) => {
-      const amt = parseNum(row.amount)
-      const label = (row.name || '').trim()
-      if (!customsEnabled || amt <= 0 || !label) return
-      items.push({
-        code: 'OTHER',
-        name: label,
-        description: null,
-        amount: amt,
-        currency: row.currency || 'EGP',
-        cost_amount: null,
-        visible_to_client: true,
+      ;(customsExtraItems || []).forEach((row) => {
+        const amt = parseNum(row.amount)
+        if (amt <= 0) return
+        const nm = (row.name || '').trim()
+        if (!nm) return
+        items.push({
+          code: 'OTHER',
+          name: nm,
+          description: (row.notes || '').trim() || null,
+          amount: amt,
+          currency: String(row.currency || 'EGP').toUpperCase(),
+          cost_amount: amt,
+          visible_to_client: true,
+        })
       })
-    })
+    }
 
     ;(handlingLines || []).forEach((row) => {
       const amt = parseNum(row.amount)
@@ -1077,7 +1051,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
         name: nm,
         description: null,
         amount: amt,
-        currency: row.currency || 'USD',
+        currency: handlingCurrency || ADMIN_HANDLING_FEE_CURRENCY,
         cost_amount: null,
         visible_to_client: true,
       })
@@ -1107,8 +1081,8 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
       },
       free_time_data: null,
       show_carrier_on_pdf: showCarrierOnPdf,
-      official_receipts_note: officialReceiptsNote.trim() || null,
-      municipality: municipality.trim() || null,
+      official_receipts_note: customsEnabled ? buildCustomsOfficialReceiptsNote(t) : null,
+      municipality: null,
       pricing_team_confirmed: pricingTeamConfirmed,
       items,
     }
@@ -1126,7 +1100,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
   if (!isOpen) return null
 
   const showQuickInlandGenerator =
-    isQuick && inlandEnabled && String(form.container_type || '').toLowerCase().includes('reefer')
+    isQuick && String(form.container_type || '').toLowerCase().includes('reefer')
 
   const headerTitle = isQuick
     ? t('pricing.createQuickQuotation', 'Quick quotation')
@@ -1440,559 +1414,107 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
               )}
             </QuoteFinCard>
 
-            <QuoteFinCard
-              icon={Truck}
-              title={t('pricing.quoteSectionInland', 'القسم 2: النقل الداخلي / Inland transport')}
-              headMeta={
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-400">{t('common.enable', 'Enable')}</span>
-                  {carrierToggleButton(inlandEnabled, () => setInlandEnabled((v) => !v), t('pricing.quoteInlandToggle', 'Inland transport'))}
-                </div>
-              }
-            >
-              {!inlandEnabled ? (
-                isQuick ? (
-                  <div className="pricing-quick-inland-empty rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-600 bg-gray-50/80 dark:bg-gray-900/30 px-6 py-8 text-center">
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 m-0">
-                      {t('pricing.quickInlandEmpty', 'No inland transport added for this quotation.')}
-                    </p>
-                    <button
-                      type="button"
-                      className="px-4 py-2 text-sm font-bold rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/50 text-amber-950 dark:text-amber-100"
-                      onClick={() => {
-                        setInlandOfferId('')
-                        setInlandEnabled(true)
-                      }}
-                    >
-                      {t('pricing.quickInlandManualBtn', 'Manual entry')}
-                    </button>
-                  </div>
+            <QuoteFinCard icon={Truck} title={t('pricing.quoteSectionInland', 'Section 2: Inland transport')}>
+              <QuoteInlandTransportSection
+                isQuick={isQuick}
+                inlandOffers={inlandOffers}
+                inlandOfferId={inlandOfferId}
+                onInlandOfferIdChange={setInlandOfferId}
+                inlandLineRows={inlandLineRows}
+                onUpdateInlandRow={updateInlandRow}
+                costByCurrency={inlandSectionCostByCurrency}
+                profitByCurrency={inlandSectionProfitByCurrency}
+                sellingByCurrency={inlandSectionSellingByCurrency}
+                quickInlandPort={quickInlandPort}
+                onQuickInlandPortChange={setQuickInlandPort}
+                quickInlandGov={quickInlandGov}
+                onQuickInlandGovChange={setQuickInlandGov}
+                quickInlandZone={quickInlandZone}
+                onQuickInlandZoneChange={setQuickInlandZone}
+                quickInlandVehicle={quickInlandVehicle}
+                onQuickInlandVehicleChange={setQuickInlandVehicle}
+                inlandCost={inlandCost}
+                onInlandCostChange={setInlandCost}
+                inlandSelling={inlandSelling}
+                onInlandSellingChange={setInlandSelling}
+                inlandCurrency={inlandCurrency}
+                onInlandCurrencyChange={setInlandCurrency}
+                showQuickInlandGenerator={showQuickInlandGenerator}
+                inlandGenCost={inlandGenCost}
+                onInlandGenCostChange={setInlandGenCost}
+                inlandGenSelling={inlandGenSelling}
+                onInlandGenSellingChange={setInlandGenSelling}
+                inlandGenCurrency={inlandGenCurrency}
+                onInlandGenCurrencyChange={setInlandGenCurrency}
+              />
+            </QuoteFinCard>
+
+            <QuoteFinCard icon={Package} title={t('pricing.quoteSectionCustoms', 'Section 3: Customs clearance')}>
+              <QuoteCustomsClearanceSection
+                customsActive={customsEnabled}
+                onEnable={() => setCustomsEnabled(true)}
+                onRemove={handleRemoveCustoms}
+                clearanceFee={customsClearanceFee}
+                extraItems={customsExtraItems}
+                onAddItem={addCustomsExtraItem}
+                onUpdateItem={updateCustomsExtraItem}
+                onRemoveItem={removeCustomsExtraItem}
+                totalCostByCurrency={customsSellingByCurrency}
+              />
+            </QuoteFinCard>
+
+            <QuoteFinCard icon={DollarSign} title={t('pricing.quoteSectionHandling', 'Section 4: Handling fees')}>
+              <QuoteHandlingFeesSection
+                lines={handlingLines}
+                currency={handlingCurrency}
+                onCurrencyChange={setHandlingSectionCurrency}
+                onAddItem={addHandlingItem}
+                onUpdateItem={updateHandlingLine}
+                onRemoveItem={removeHandlingItem}
+                totalByCurrency={handlingSellingByCurrency}
+              />
+            </QuoteFinCard>
+
+            <QuoteGrandSummaryPanel title={t('pricing.quoteSectionSummary', 'Summary')}>
+              <QuoteSummaryRow label={t('pricing.summaryOcean', 'Ocean freight total')}>
+                <QuoteSummaryCurrencyText amounts={oceanSellingByCurrency} dash={t('common.dash', '—')} />
+              </QuoteSummaryRow>
+              <QuoteSummaryRow label={t('pricing.summaryInland', 'Inland transport total')}>
+                {hasInlandQuoteData ? (
+                  <QuoteSummaryCurrencyText amounts={inlandSectionSellingByCurrency} dash={t('common.dash', '—')} />
                 ) : (
-                  <p className="text-sm text-gray-500 dark:text-gray-400 m-0">{t('pricing.quoteInlandOff', 'Inland transport is not included.')}</p>
-                )
-              ) : isQuick ? (
-                <div className="pricing-quick-section space-y-3">
-                  <div className="text-sm font-bold text-amber-950 dark:text-amber-100">
-                    {t('pricing.quickInlandManualHeading', 'Manual inland entry')}
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.port', 'Port')}</label>
-                      <input
-                        value={quickInlandPort}
-                        onChange={(e) => setQuickInlandPort(e.target.value)}
-                        className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
-                        placeholder={t('pricing.inlandPortPlaceholder', 'Port')}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.governorate', 'Governorate')}</label>
-                      <input
-                        value={quickInlandGov}
-                        onChange={(e) => setQuickInlandGov(e.target.value)}
-                        className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
-                        placeholder={t('pricing.inlandGovPlaceholder', 'Governorate')}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.inlandAreaField', 'Zone')}</label>
-                      <input
-                        value={quickInlandZone}
-                        onChange={(e) => setQuickInlandZone(e.target.value)}
-                        className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
-                        placeholder={t('pricing.inlandAreaPlaceholder', 'Zone')}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.inlandVehicleTypeAria', 'Vehicle')}</label>
-                      <input
-                        value={quickInlandVehicle}
-                        onChange={(e) => setQuickInlandVehicle(e.target.value)}
-                        className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
-                        placeholder={t('pricing.inlandTruckRate', 'Truck')}
-                      />
-                    </div>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
-                      placeholder="0"
-                      value={displayNumericInputValue(inlandCost)}
-                      onChange={(e) => setInlandCost(e.target.value)}
-                    />
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
-                      placeholder="0"
-                      value={displayNumericInputValue(inlandSelling)}
-                      onChange={(e) => setInlandSelling(e.target.value)}
-                    />
-                    <select
-                      value={inlandCurrency}
-                      onChange={(e) => setInlandCurrency(e.target.value)}
-                      className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 md:col-span-2 max-w-xs"
-                    >
-                      <option value="EGP">EGP</option>
-                      <option value="USD">USD</option>
-                      <option value="EUR">EUR</option>
-                    </select>
-                    <div
-                      className={`px-3 py-2 rounded-lg bg-emerald-50/80 dark:bg-emerald-950/30 text-sm font-semibold md:col-span-2 ${
-                        inlandProfit >= 0 ? 'text-emerald-800 dark:text-emerald-200' : 'text-red-600 dark:text-red-400'
-                      }`}
-                    >
-                      {t('pricing.profit', 'Profit')}: {moneySymbol(inlandCurrency)} {formatPricingDecimal(inlandProfit)}
-                    </div>
-                  </div>
-                  {showQuickInlandGenerator ? (
-                    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 mt-1 border-t border-amber-200/70 dark:border-amber-800/50">
-                      <div className="md:col-span-2 text-xs font-bold uppercase tracking-wide text-amber-900 dark:text-amber-200">
-                        {t('pricing.inlandGeneratorLine', 'Generator (inland)')}
-                      </div>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
-                        placeholder="0"
-                        value={displayNumericInputValue(inlandGenCost)}
-                        onChange={(e) => setInlandGenCost(e.target.value)}
-                        aria-label={t('pricing.inlandGeneratorCost', 'Generator cost')}
-                      />
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
-                        placeholder="0"
-                        value={displayNumericInputValue(inlandGenSelling)}
-                        onChange={(e) => setInlandGenSelling(e.target.value)}
-                      />
-                      <select
-                        value={inlandGenCurrency}
-                        onChange={(e) => setInlandGenCurrency(e.target.value)}
-                        className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
-                      >
-                        <option value="EGP">EGP</option>
-                        <option value="USD">USD</option>
-                        <option value="EUR">EUR</option>
-                      </select>
-                      <div
-                        className={`px-3 py-2 rounded-lg bg-emerald-50/80 dark:bg-emerald-950/30 text-sm font-semibold ${
-                          inlandGenProfit >= 0 ? 'text-emerald-800 dark:text-emerald-200' : 'text-red-600 dark:text-red-400'
-                        }`}
-                      >
-                        {t('pricing.profit', 'Profit')}: {moneySymbol(inlandGenCurrency)} {formatPricingDecimal(inlandGenProfit)}
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700 dark:text-gray-300">
-                      {t('pricing.inlandPriceSheet', 'Inland price sheet')}
-                    </label>
-                    <select
-                      value={inlandOfferId}
-                      onChange={(e) => setInlandOfferId(e.target.value)}
-                      className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
-                      required={inlandEnabled}
-                    >
-                      <option value="">{t('pricing.selectInlandOffer', 'Select inland rate…')}</option>
-                      {inlandOffers.map((o) => (
-                        <option key={o.id} value={o.id}>
-                          {o.inland_port || '—'} → {o.destination || o.region || '—'}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  {!inlandLineRows.length ? (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 m-0">
-                      {t('pricing.inlandRowsEmpty', 'Select an inland price sheet to load pricing lines.')}
-                    </p>
-                  ) : (
-                    <QuotePricingLinesTable
-                      lines={inlandLineRows}
-                      onUpdateLine={updateInlandRow}
-                      readOnlyCost
-                      readOnlyCurrency
-                      readOnlyName
-                      variant="inland"
-                    />
-                  )}
-                </div>
-              )}
-            </QuoteFinCard>
-
-            <QuoteFinCard
-              icon={Package}
-              title={t('pricing.quoteSectionCustoms', 'القسم 3: التخليص الجمركي / Customs clearance')}
-              headMeta={
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-400">{t('common.enable', 'Enable')}</span>
-                  {carrierToggleButton(customsEnabled, () => setCustomsEnabled((v) => !v), t('pricing.quoteCustomsToggle', 'Customs clearance'))}
-                </div>
-              }
-            >
-              {customsEnabled ? (
-                <div className="space-y-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/30 px-3 py-2">
-                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                      {t('pricing.customsCertFee', 'Customs Certificate Fee')}
-                    </span>
-                    {isPricing ? (
-                      <span className="text-sm font-bold tabular-nums text-gray-900 dark:text-white">
-                        {formatLocaleMoney(parseNum(customsCertSelling), customsCertCurrency || 'EGP', i18n.language)}
-                      </span>
-                    ) : (
-                      <div className="flex flex-wrap gap-2 items-center">
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          className="w-28 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm font-semibold"
-                          value={customsCertSelling}
-                          onChange={(e) => setCustomsCertSelling(e.target.value)}
-                        />
-                        <select
-                          value={customsCertCurrency}
-                          onChange={(e) => setCustomsCertCurrency(e.target.value)}
-                          className="px-2 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm"
-                        >
-                          <option value="USD">USD</option>
-                          <option value="EGP">EGP</option>
-                          <option value="EUR">EUR</option>
-                        </select>
-                      </div>
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      {t('pricing.officialReceipts', 'Official Receipts')}
-                    </label>
-                    <textarea
-                      rows={2}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm"
-                      placeholder={t('pricing.officialReceiptsPlaceholder', 'Note for the client (no charge)')}
-                      value={officialReceiptsNote}
-                      onChange={(e) => setOfficialReceiptsNote(e.target.value)}
-                    />
-                  </div>
-                  <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 space-y-3">
-                    <div className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                      {t('pricing.customsExtrasTitle', 'Additional customs charges')}
-                    </div>
-                    {customsExtras.length > 0 ? (
-                      <ul className="space-y-2 list-none m-0 p-0">
-                        {customsExtras.map((row, idx) => (
-                          <li
-                            key={row.id}
-                            className="flex flex-wrap justify-between gap-2 items-center rounded-md border border-gray-100 dark:border-gray-700 px-2 py-2"
-                          >
-                            <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{row.name}</span>
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="text-sm font-bold tabular-nums">
-                                {formatLocaleMoney(parseNum(row.amount), row.currency, i18n.language)}
-                              </span>
-                              <button
-                                type="button"
-                                className="text-xs font-bold text-red-600 hover:underline"
-                                onClick={() => setCustomsExtras((prev) => prev.filter((_, i) => i !== idx))}
-                              >
-                                {t('common.remove', 'Remove')}
-                              </button>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : null}
-                    <div className="flex flex-wrap gap-2 items-end">
-                      <div className="flex-1 min-w-[140px] space-y-1">
-                        <label className="text-xs font-semibold text-gray-600 dark:text-gray-400">
-                          {t('pricing.customsExtraName', 'Charge name')}
-                        </label>
-                        <input
-                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm"
-                          value={customsExtraName}
-                          onChange={(e) => setCustomsExtraName(e.target.value)}
-                          placeholder={t('pricing.customsExtraNamePh', 'e.g. inspection fee')}
-                        />
-                      </div>
-                      <div className="w-28 space-y-1">
-                        <label className="text-xs font-semibold text-gray-600 dark:text-gray-400">
-                          {t('pricing.customsExtraAmount', 'Amount')}
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm"
-                          value={displayNumericInputValue(customsExtraAmount)}
-                          onChange={(e) => setCustomsExtraAmount(e.target.value)}
-                          placeholder="0"
-                        />
-                      </div>
-                      <div className="w-24 space-y-1">
-                        <label className="text-xs font-semibold text-gray-600 dark:text-gray-400">
-                          {t('pricing.currency', 'Cur.')}
-                        </label>
-                        <select
-                          className="w-full px-2 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm"
-                          value={customsExtraCurrency}
-                          onChange={(e) => setCustomsExtraCurrency(e.target.value)}
-                        >
-                          <option value="EGP">EGP</option>
-                          <option value="USD">USD</option>
-                          <option value="EUR">EUR</option>
-                        </select>
-                      </div>
-                      <button
-                        type="button"
-                        className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-bold bg-white dark:bg-gray-900 shrink-0"
-                        onClick={() => {
-                          const name = customsExtraName.trim()
-                          const amt = parseNum(customsExtraAmount)
-                          if (!name || amt <= 0) return
-                          setCustomsExtras((prev) => [
-                            ...prev,
-                            { id: `ce-${Date.now()}`, name, amount: String(amt), currency: customsExtraCurrency || 'EGP' },
-                          ])
-                          setCustomsExtraName('')
-                          setCustomsExtraAmount('')
-                          setCustomsExtraCurrency('EGP')
-                        }}
-                      >
-                        {t('common.add', 'Add')}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500 dark:text-gray-400 m-0">{t('pricing.quoteCustomsOff', 'Customs clearance fees are not included.')}</p>
-              )}
-            </QuoteFinCard>
-
-            <QuoteFinCard icon={DollarSign} title={t('pricing.quoteSectionHandling', 'القسم 4: Handling Fees')}>
-              <div className="shipment-fin-table-wrap">
-                <table className="shipment-fin-line-table shipment-fin-line-table--client-invoice">
-                  <thead>
-                    <tr>
-                      <th>{t('pricing.item', 'Item')}</th>
-                      <th className="shipment-fin-num">{t('shipments.expColAmount', 'Amount')}</th>
-                      <th className="shipment-fin-cur-cell">{t('pricing.currency', 'Cur.')}</th>
-                      <th className="shipment-fin-actions">{t('pricing.rowActions', 'Actions')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {handlingLines.map((row) => (
-                      <tr key={row.id}>
-                        <td>
-                          <input
-                            type="text"
-                            className="w-full min-w-0 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm"
-                            value={row.name}
-                            onChange={(e) => updateHandlingLine(row.id, { name: e.target.value })}
-                            placeholder={t('pricing.quoteHandlingLineDefault', 'Handling Fees')}
-                          />
-                        </td>
-                        <td className="shipment-fin-num">
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            className="w-full min-w-0 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm tabular-nums"
-                            value={displayNumericInputValue(row.amount)}
-                            onChange={(e) => updateHandlingLine(row.id, { amount: e.target.value })}
-                            placeholder="0"
-                          />
-                        </td>
-                        <td className="shipment-fin-cur-cell">
-                          <div className="flex flex-wrap items-center gap-2">
-                            {currencyCodePill(row.currency)}
-                            <select
-                              value={row.currency}
-                              onChange={(e) => updateHandlingLine(row.id, { currency: e.target.value })}
-                              className="text-xs font-semibold rounded-md border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-1.5 py-0.5"
-                              aria-label={t('pricing.currency', 'Currency')}
-                            >
-                              {CURRENCY_OPTIONS.map((c) => (
-                                <option key={c} value={c}>
-                                  {c}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        </td>
-                        <td className="shipment-fin-actions">
-                          <button
-                            type="button"
-                            className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm"
-                            onClick={() => removeHandlingLine(row.id)}
-                            aria-label={t('common.remove', 'Remove')}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="mt-3 flex flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  onClick={addHandlingLine}
-                  className="inline-flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-lg border border-gray-200 dark:border-gray-700"
-                >
-                  <Plus className="h-4 w-4" /> {t('common.add', 'Add line')}
-                </button>
-                <div className="flex flex-wrap gap-2 ml-auto">
-                  {sortCurrencyCodes(
-                    Object.keys(handlingSellingByCurrency).filter((c) => Math.abs(handlingSellingByCurrency[c] || 0) > 1e-9)
-                  ).map((cur) => (
-                    <span
-                      key={cur}
-                      className="inline-flex items-center gap-2 rounded-lg border border-blue-100 dark:border-blue-900/50 bg-blue-50/70 dark:bg-blue-950/30 px-2 py-1"
-                    >
-                      {currencyCodePill(cur)}
-                      <span className="text-sm font-bold tabular-nums text-blue-900 dark:text-blue-100">
-                        {formatLocaleMoney(handlingSellingByCurrency[cur], cur, i18n.language)}
-                      </span>
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </QuoteFinCard>
-
-            <QuoteFinCard icon={Receipt} title={t('pricing.quoteSectionSummary', 'ملخص / Summary')} subtitle={null}>
-              <div className="pricing-quote-summary-block">
-                <QuoteInlineStrip className="pricing-quote-summary-line">
-                  <QuoteInlineItem label={t('pricing.summaryOcean', 'Ocean freight total')}>
-                    <span className="font-bold tabular-nums">
-                      <QuoteSummaryMoney amounts={oceanSellingByCurrency} i18n={i18n} t={t} />
-                    </span>
-                  </QuoteInlineItem>
-                </QuoteInlineStrip>
-                <QuoteInlineStrip className="pricing-quote-summary-line">
-                  <QuoteInlineItem label={t('pricing.summaryInland', 'Inland transport total')}>
-                    <span className="font-bold tabular-nums">
-                      {!inlandEnabled ? (
-                        <span>{t('common.dash')}</span>
-                      ) : entryMode === 'quick' ? (
-                        <>
-                          {parseNum(inlandSelling) > 0 ? (
-                            <span>{formatLocaleMoney(parseNum(inlandSelling), inlandCurrency, i18n.language)}</span>
-                          ) : null}
-                          {parseNum(inlandGenSelling) > 0 ? (
-                            <>
-                              {parseNum(inlandSelling) > 0 ? (
-                                <span className="pricing-quote-inline-money__sep"> · </span>
-                              ) : null}
-                              <span>
-                                {t('pricing.inlandGeneratorLine', 'Generator')}:{' '}
-                                {formatLocaleMoney(
-                                  parseNum(inlandGenSelling),
-                                  inlandGenCurrency || inlandCurrency,
-                                  i18n.language
-                                )}
-                              </span>
-                            </>
-                          ) : null}
-                          {!parseNum(inlandSelling) && !parseNum(inlandGenSelling) ? (
-                            <span>{t('common.dash')}</span>
-                          ) : null}
-                        </>
-                      ) : (
-                        <QuoteSummaryMoney
-                          amounts={inlandNonQuickSellingByCurrency}
-                          i18n={i18n}
-                          t={t}
-                          withPills
-                        />
-                      )}
-                    </span>
-                  </QuoteInlineItem>
-                </QuoteInlineStrip>
-                <QuoteInlineStrip className="pricing-quote-summary-line">
-                  <QuoteInlineItem label={t('pricing.summaryCustoms', 'Customs total')}>
-                    <span className="font-bold tabular-nums">
-                      {!customsEnabled ? (
-                        <span>{t('common.dash')}</span>
-                      ) : (
-                        <QuoteSummaryMoney amounts={customsSellingByCurrency} i18n={i18n} t={t} />
-                      )}
-                    </span>
-                  </QuoteInlineItem>
-                </QuoteInlineStrip>
-                {officialReceiptsNote.trim() ? (
-                  <QuoteInlineStrip className="pricing-quote-summary-line">
-                    <QuoteInlineItem label={t('pricing.officialReceipts', 'Official Receipts')}>
-                      {officialReceiptsNote.trim()}
-                    </QuoteInlineItem>
-                  </QuoteInlineStrip>
-                ) : null}
-                <QuoteInlineStrip className="pricing-quote-summary-line">
-                  <QuoteInlineItem label={t('pricing.summaryHandling', 'Handling fees')}>
-                    <span className="font-bold tabular-nums">
-                      <QuoteSummaryMoney amounts={handlingSellingByCurrency} i18n={i18n} t={t} withPills />
-                    </span>
-                  </QuoteInlineItem>
-                </QuoteInlineStrip>
-                <QuoteInlineStrip className="pricing-quote-summary-line pricing-quote-summary-line--profit">
-                  <QuoteInlineItem label={t('pricing.totalProfitQuote', 'Total profit (selling − cost)')}>
-                    <span className="pricing-quote-summary-profit-values">
-                    {sortedProfitKeys(quoteProfitByCurrency).every((k) => Math.abs(quoteProfitByCurrency[k]) <= 1e-9) ? (
-                      <span className="text-sm text-gray-500 dark:text-gray-400">—</span>
-                    ) : (
-                      sortedProfitKeys(quoteProfitByCurrency)
-                        .filter((k) => Math.abs(quoteProfitByCurrency[k]) > 1e-9)
-                        .map((cur) => {
-                          const amt = quoteProfitByCurrency[cur]
-                          return (
-                            <span
-                              key={cur}
-                              className={`text-base font-extrabold tabular-nums ${
-                                amt >= 0 ? 'text-emerald-900 dark:text-emerald-100' : 'text-red-600 dark:text-red-400'
-                              }`}
-                            >
-                              {moneySymbol(cur)} {formatPricingDecimal(amt)}{' '}
-                              <span className="text-sm font-semibold opacity-85">{cur}</span>
-                            </span>
-                          )
-                        })
-                    )}
-                    </span>
-                  </QuoteInlineItem>
-                </QuoteInlineStrip>
-                <QuoteInlineStrip className="pricing-quote-summary-line pricing-quote-summary-line--grand">
-                  <QuoteInlineItem label={t('pricing.grandTotal', 'Grand total')}>
-                    <span className="font-extrabold text-blue-600 dark:text-blue-400 tabular-nums text-base">
-                      <QuoteSummaryMoney amounts={grandSellingByCurrency} i18n={i18n} t={t} />
-                    </span>
-                  </QuoteInlineItem>
-                </QuoteInlineStrip>
-              </div>
-            </QuoteFinCard>
+                  <span className="pricing-quote-summary-currency">{t('common.dash', '—')}</span>
+                )}
+              </QuoteSummaryRow>
+              <QuoteSummaryRow label={t('pricing.summaryCustoms', 'Customs total')}>
+                {customsEnabled ? (
+                  <QuoteSummaryCurrencyText amounts={customsSellingByCurrency} dash={t('common.dash', '—')} />
+                ) : (
+                  <span className="pricing-quote-summary-currency">{t('common.dash', '—')}</span>
+                )}
+              </QuoteSummaryRow>
+              <QuoteSummaryRow label={t('pricing.summaryHandling', 'Handling fees')}>
+                <QuoteSummaryCurrencyText amounts={handlingSellingByCurrency} dash={t('common.dash', '—')} />
+              </QuoteSummaryRow>
+              <QuoteSummaryRow
+                label={t('pricing.totalProfitQuote', 'Total profit (selling − cost)')}
+                rowClass="pricing-quote-summary-row--profit"
+              >
+                <QuoteSummaryCurrencyText
+                  amounts={quoteProfitByCurrency}
+                  dash={t('common.dash', '—')}
+                  allowNegative
+                />
+              </QuoteSummaryRow>
+              <QuoteSummaryRow
+                label={t('pricing.grandTotal', 'Grand total')}
+                rowClass="pricing-quote-summary-row--grand"
+              >
+                <QuoteSummaryCurrencyText amounts={grandSellingByCurrency} dash={t('common.dash', '—')} />
+              </QuoteSummaryRow>
+            </QuoteGrandSummaryPanel>
 
             <div className="space-y-4">
-              <div className="rounded-xl border border-slate-200/95 dark:border-slate-700 bg-white dark:bg-slate-900/50 p-4 shadow-sm">
-                <label className="text-sm font-bold text-gray-800 dark:text-gray-100 block mb-2">
-                  {t('pricing.municipality', 'Municipality')}
-                </label>
-                <input
-                  type="text"
-                  value={municipality}
-                  onChange={(e) => setMunicipality(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-950 text-sm"
-                  placeholder={t('pricing.municipalityPlaceholder', 'Enter municipality (if applicable)')}
-                  autoComplete="address-level2"
-                />
-              </div>
-
               <div
                 className={`rounded-xl border p-4 space-y-3 transition-colors ${
                   pricingTeamConfirmed
@@ -2002,18 +1524,23 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                 role="region"
                 aria-label={t('pricing.pricingTeamConfirmTitle', 'Pricing team confirmation')}
               >
-                <div className="flex flex-wrap items-center justify-between gap-2 gap-y-1">
-                  <div className="text-sm font-bold text-amber-950 dark:text-gray-100">
-                    {t('pricing.pricingTeamConfirmTitle', 'Confirm with Pricing Team before sending')}
-                  </div>
+                <div className="text-sm font-bold text-amber-950 dark:text-gray-100">
+                  {t('pricing.pricingTeamConfirmTitle', 'Confirm with Pricing Team before sending')}
+                </div>
+                <div className="pricing-quote-confirm-status-row">
+                  <span className="pricing-quote-confirm-status-row__label">
+                    {t('pricing.quoteConfirmStatusLabel', 'Status')}
+                  </span>
                   <span
-                    className={`text-xs font-bold uppercase tracking-wide rounded-full px-2.5 py-1 ${
+                    className={`pricing-quote-confirm-status-row__value ${
                       pricingTeamConfirmed
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200'
+                        ? 'pricing-quote-confirm-status-row__value--yes'
+                        : 'pricing-quote-confirm-status-row__value--no'
                     }`}
                   >
-                    {pricingTeamConfirmed ? t('pricing.confirmStateYes', 'Confirmed') : t('pricing.confirmStateNo', 'Not confirmed')}
+                    {pricingTeamConfirmed
+                      ? t('pricing.confirmStateYes', 'Confirmed')
+                      : t('pricing.confirmStateNo', 'Not confirmed')}
                   </span>
                 </div>
                 <p className="text-xs text-amber-900/90 dark:text-amber-200/90 leading-relaxed m-0">
@@ -2036,54 +1563,6 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
               </div>
             </div>
 
-            <QuoteFinCard icon={Calendar} title={t('pricing.quoteSectionValidityNotes', 'الصلاحية والملاحظات / Validity & notes')}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.validFrom', 'Valid from')}</label>
-                  <input
-                    type="date"
-                    className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 disabled:opacity-70"
-                    value={form.valid_from || ''}
-                    onChange={(e) => setField('valid_from', e.target.value)}
-                    disabled={isRouteLocked}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.validTo', 'Valid to')}</label>
-                  <input
-                    type="date"
-                    className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 disabled:opacity-70"
-                    value={form.valid_to || ''}
-                    onChange={(e) => setField('valid_to', e.target.value)}
-                    disabled={isRouteLocked}
-                    required={entryMode === 'manual'}
-                  />
-                </div>
-                <div className="space-y-1 md:col-span-2">
-                  <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.notes', 'Notes')}</label>
-                  <textarea
-                    rows={3}
-                    value={form.notes}
-                    onChange={(e) => setField('notes', e.target.value)}
-                    className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none"
-                  />
-                </div>
-                {entryMode === 'quick' ? (
-                  <div className="space-y-1 md:col-span-2">
-                    <label className="text-sm font-bold text-gray-700 dark:text-gray-300">
-                      {t('pricing.quickQuotationNoteOptional', 'Optional note')}
-                    </label>
-                    <input
-                      value={quickModeReason}
-                      onChange={(e) => setQuickModeReason(e.target.value)}
-                      className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm"
-                      placeholder={t('pricing.quickQuotationNotePlaceholder', 'Recorded on the quotation (defaults if empty)')}
-                    />
-                  </div>
-                ) : null}
-              </div>
-            </QuoteFinCard>
-
           </form>
             </div>
           </div>
@@ -2100,14 +1579,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
           <button
             type="submit"
             form="quoteForm"
-            disabled={
-              loading ||
-              (!isQuick && !clientAsync?.value) ||
-              (!isQuick && inlandEnabled && !inlandOfferId) ||
-              (!isQuick && sailingSchedule && !selectedSailingDate) ||
-              (entryMode === 'manual' && !String(form.valid_to || '').trim()) ||
-              (isQuick && !pricingTeamConfirmed)
-            }
+            disabled={loading || !canSaveQuote}
             className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors flex items-center gap-2 disabled:opacity-50"
           >
             <Save className="h-4 w-4" />

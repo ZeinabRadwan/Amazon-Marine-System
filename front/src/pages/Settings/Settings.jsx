@@ -241,7 +241,7 @@ const SETTINGS_TABS = [
 ]
 
 export default function Settings() {
-  const { user, hasPageAccess } = useAuthAccess()
+  const { user, hasPageAccess, canManageQuotationCustomsFee } = useAuthAccess()
   const token = getStoredToken()
   const { t, i18n } = useTranslation()
   const dir = i18n.language === 'ar' ? 'rtl' : 'ltr'
@@ -471,7 +471,7 @@ export default function Settings() {
         const res = await getSettings(tok)
         const fee = res?.data?.quotation?.customs_certificate_fee
         if (cancelled || !fee) return
-        setQuotationCustomsAmount(String(fee.amount ?? 250))
+        setQuotationCustomsAmount(String(fee.amount ?? 2500))
         setQuotationCustomsCurrency(fee.currency || 'EGP')
       } catch {
         /* keep local defaults */
@@ -2569,7 +2569,7 @@ export default function Settings() {
                               title={t('settings.quotationDefaults.cardTitle')}
                               subtitle={t('settings.quotationDefaults.cardHint')}
                               actions={
-                                isUserAdmin ? (
+                                canManageQuotationCustomsFee ? (
                                   <button
                                     type="button"
                                     className="page-header__btn page-header__btn--primary"
@@ -2598,7 +2598,7 @@ export default function Settings() {
                                 ) : null
                               }
                             >
-                              {!isUserAdmin ? (
+                              {!canManageQuotationCustomsFee ? (
                                 <p className="settings-muted-note">{t('settings.quotationDefaults.adminOnly')}</p>
                               ) : null}
                               <div className="settings-form settings-form--stacked" style={{ maxWidth: 420 }}>
@@ -2611,7 +2611,7 @@ export default function Settings() {
                                     className="settings-form-input"
                                     value={quotationCustomsAmount}
                                     onChange={(e) => setQuotationCustomsAmount(e.target.value)}
-                                    disabled={!isUserAdmin}
+                                    disabled={!canManageQuotationCustomsFee}
                                   />
                                 </div>
                                 <div className="settings-form-group">
@@ -2620,7 +2620,7 @@ export default function Settings() {
                                     className="settings-form-input"
                                     value={quotationCustomsCurrency}
                                     onChange={(e) => setQuotationCustomsCurrency(e.target.value)}
-                                    disabled={!isUserAdmin}
+                                    disabled={!canManageQuotationCustomsFee}
                                   >
                                     <option value="EGP">EGP</option>
                                     <option value="USD">USD</option>
