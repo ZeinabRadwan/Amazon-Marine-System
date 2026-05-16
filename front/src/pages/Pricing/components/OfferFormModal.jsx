@@ -860,7 +860,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
               >
                 <CheckCircle2 className="pricing-offer-draft-banner__icon" aria-hidden />
                 <span className="pricing-offer-draft-banner__text">
-                  {t('pricing.draftRestored', 'Unsaved changes were restored from your last session.')}
+                  {t('pricing.draftRestored')}
                 </span>
                 <button
                   type="button"

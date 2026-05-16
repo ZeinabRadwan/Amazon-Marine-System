@@ -345,6 +345,7 @@
     "quotations": "Quotations",
     "addPrice": "Add Price",
     "addRate": "Add Rate",
+    "draftRestored": "Unsaved changes were restored from your last session.",
     "filtersHeading": "Filters",
     "fixedDatesMultiHint": "Pick one sailing date at a time, then tap Add date. You can add several dates; remove any chip below if needed.",
     "sailingFixedFromDate": "From date",
