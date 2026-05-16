@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import AsyncSelect from '../../../components/AsyncSelect'
 import { getStoredToken } from '../../Login'
 import { listPorts, createPort } from '../../../api/ports'
+import { PRICING_ACTIONS, runPricingAction } from '../utils/pricingFeedback'
 
 /**
  * POL/POD/inland port by name (matches pricing offer string fields).
@@ -40,12 +41,13 @@ export default function PortNameAsyncSelect({
     const token = getStoredToken()
     if (!token) return null
     try {
-      const res = await createPort(token, { name, active: true })
+      const res = await runPricingAction(PRICING_ACTIONS.PORT_CREATE, () =>
+        createPort(token, { name, active: true }),
+      )
       const newPort = res?.data ?? res
       const label = newPort?.name ?? name
       return { value: label, label }
-    } catch (e) {
-      console.error(e)
+    } catch {
       return null
     }
   }

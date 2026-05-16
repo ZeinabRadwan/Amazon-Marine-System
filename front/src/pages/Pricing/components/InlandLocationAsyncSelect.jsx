@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import AsyncSelect from '../../../components/AsyncSelect'
 import { getStoredToken } from '../../Login'
 import { createPricingFreightUnitType, listPricingFreightUnitTypes } from '../../../api/pricingFreightUnitTypes'
+import { PRICING_ACTIONS, runPricingAction } from '../utils/pricingFeedback'
 
 const DEFAULT_GOVERNORATES = [
   'القاهرة',
@@ -76,15 +77,16 @@ export default function InlandLocationAsyncSelect({
     const token = getStoredToken()
     if (!token) return null
     try {
-      const res = await createPricingFreightUnitType(token, {
-        dataset,
-        label: name,
-      })
+      const res = await runPricingAction(PRICING_ACTIONS.FREIGHT_UNIT_CREATE, () =>
+        createPricingFreightUnitType(token, {
+          dataset,
+          label: name,
+        }),
+      )
       const row = res?.data ?? res
       const label = row?.label || name
       return { value: label, label }
-    } catch (e) {
-      console.error(e)
+    } catch {
       return null
     }
   }

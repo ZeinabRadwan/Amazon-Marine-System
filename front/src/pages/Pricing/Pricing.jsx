@@ -9,6 +9,7 @@ import '../Invoices/Invoices.css'
 import RateSheet from './components/RateSheet'
 import QuotationTable from './components/QuotationTable'
 import OfferFormModal from './components/OfferFormModal'
+import PricingToastHost from './components/PricingToastHost'
 import './Pricing.css'
 import '../Accountings/CurrencyMapBadges.css'
 
@@ -53,6 +54,8 @@ export default function Pricing() {
           onClose={() => setModalConfig({ isOpen: false, offer: null, pricingMode: 'sea' })}
           onSuccess={() => setRefreshKey((k) => k + 1)}
         />
+
+        <PricingToastHost />
       </div>
     </Container>
   )

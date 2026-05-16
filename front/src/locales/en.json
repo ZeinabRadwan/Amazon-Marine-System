@@ -346,6 +346,37 @@
     "addPrice": "Add Price",
     "addRate": "Add Rate",
     "draftRestored": "Unsaved changes were restored from your last session.",
+    "feedback": {
+      "successDefault": "Action completed successfully",
+      "errorDefault": "Something went wrong",
+      "actions": {
+        "offer": {
+          "create": { "success": "Price sheet created successfully", "error": "Failed to create price sheet" },
+          "update": { "success": "Price sheet updated successfully", "error": "Failed to update price sheet" },
+          "activate": { "success": "Price sheet activated", "error": "Failed to activate price sheet" },
+          "archive": { "success": "Price sheet archived", "error": "Failed to archive price sheet" },
+          "delete": { "success": "Price sheet deleted", "error": "Failed to delete price sheet" },
+          "list": { "success": "Price sheets loaded", "error": "Failed to load price sheets" }
+        },
+        "quote": {
+          "create": { "success": "Quotation created successfully", "error": "Failed to create quotation" },
+          "update": { "success": "Quotation updated successfully", "error": "Failed to update quotation" },
+          "get": { "success": "Quotation loaded", "error": "Failed to load quotation details" },
+          "accept": { "success": "Quotation accepted", "error": "Failed to accept quotation" },
+          "reject": { "success": "Quotation rejected", "error": "Failed to reject quotation" },
+          "pdf": { "success": "PDF downloaded successfully", "error": "Failed to download PDF" }
+        },
+        "port": {
+          "create": { "success": "Port added successfully", "error": "Failed to add port" }
+        },
+        "shippingLine": {
+          "create": { "success": "Shipping line added successfully", "error": "Failed to add shipping line" }
+        },
+        "freightUnit": {
+          "create": { "success": "Vehicle type added successfully", "error": "Failed to add vehicle type" }
+        }
+      }
+    },
     "filtersHeading": "Filters",
     "fixedDatesMultiHint": "Pick one sailing date at a time, then tap Add date. You can add several dates; remove any chip below if needed.",
     "sailingFixedFromDate": "From date",

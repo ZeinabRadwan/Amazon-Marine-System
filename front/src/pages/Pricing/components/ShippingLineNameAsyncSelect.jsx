@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import AsyncSelect from '../../../components/AsyncSelect'
 import { getStoredToken } from '../../Login'
 import { listShippingLines, createShippingLine } from '../../../api/shippingLines'
+import { PRICING_ACTIONS, runPricingAction } from '../utils/pricingFeedback'
 
 /**
  * Carrier / transport provider by name. Filtered by service_scope on the API.
@@ -52,16 +53,17 @@ export default function ShippingLineNameAsyncSelect({
     const scope =
       serviceScope === 'ocean' ? 'ocean' : serviceScope === 'inland' ? 'inland' : 'both'
     try {
-      const res = await createShippingLine(token, {
-        name,
-        active: true,
-        service_scope: scope,
-      })
+      const res = await runPricingAction(PRICING_ACTIONS.SHIPPING_LINE_CREATE, () =>
+        createShippingLine(token, {
+          name,
+          active: true,
+          service_scope: scope,
+        }),
+      )
       const line = res?.data ?? res
       const label = line?.name ?? name
       return { value: label, label }
-    } catch (e) {
-      console.error(e)
+    } catch {
       return null
     }
   }

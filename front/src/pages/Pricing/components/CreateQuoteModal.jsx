@@ -19,6 +19,7 @@ import { useAuthAccess } from '../../../hooks/useAuthAccess'
 import { getStoredToken } from '../../Login'
 import { listClients } from '../../../api/clients'
 import { listOffers } from '../../../api/pricing'
+import { notifyPricingError, PRICING_ACTIONS } from '../utils/pricingFeedback'
 import { getSettings } from '../../../api/settings'
 import AsyncSelect from '../../../components/AsyncSelect'
 import '../../Clients/ClientDetailModal.css'
@@ -541,9 +542,10 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
         setSeaOffers(rows.filter((o) => o.pricing_type === 'sea'))
         setInlandOffers(rows.filter((o) => o.pricing_type === 'inland'))
       })
-      .catch(() => {
+      .catch((err) => {
         setSeaOffers([])
         setInlandOffers([])
+        notifyPricingError(PRICING_ACTIONS.OFFER_LIST, err)
       })
   }, [isOpen])
 
