@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X, ChevronDown, ChevronUp, FileText, DollarSign, History, Ship, Car, ShieldCheck, Shield, Package, Upload, Trash2, Paperclip, Eye, Pencil, FileDown, Bell } from 'lucide-react'
+import { X, ChevronDown, ChevronUp, FileText, DollarSign, History, Ship, Car, ShieldCheck, Shield, Package, Upload, Trash2, Paperclip, Eye, Pencil, FileDown, Bell, Wallet, Sparkles, Receipt, TrendingDown, TrendingUp, Banknote, Scale } from 'lucide-react'
 import {
   createExpense,
   updateExpense,
@@ -31,7 +31,7 @@ import {
   downloadShipmentAttachment,
   uploadShipmentAttachment,
 } from '../../api/shipments'
-import { listBankAccounts } from '../../api/accountings'
+import { listBankAccounts, listPayments, recordPayment } from '../../api/accountings'
 import { useAuthAccess } from '../../hooks/useAuthAccess'
 import { ROLE_ID } from '../../constants/roles'
 import { latinDateTimeFormat } from '../../utils/westernNumerals'
@@ -987,6 +987,7 @@ export default function ShipmentFinancialsModal({
     paid_at: new Date().toISOString().slice(0, 10),
     reference: '',
   })
+  const [shipmentClientPayments, setShipmentClientPayments] = useState([])
 
   const [activityRows, setActivityRows] = useState([])
   const [activityLoading, setActivityLoading] = useState(false)
@@ -1756,6 +1757,49 @@ export default function ShipmentFinancialsModal({
 
   const canAccessInvoices = Boolean(token && (canManageFinancial || canViewSelling))
 
+  const loadShipmentClientPayments = useCallback(async () => {
+    if (!token || !shipment?.client_id || !shipment?.id) {
+      setShipmentClientPayments([])
+      return
+    }
+    try {
+      const { data } = await listPayments(token, {
+        type: 'client_receipt',
+        client_id: shipment.client_id,
+        shipment_id: shipment.id,
+      })
+      setShipmentClientPayments(Array.isArray(data) ? data : [])
+    } catch {
+      setShipmentClientPayments([])
+    }
+  }, [token, shipment?.client_id, shipment?.id])
+
+  const summaryClientPayments = useMemo(() => {
+    const byId = new Map()
+    const add = (p) => {
+      if (!p) return
+      const id = p.id ?? `${p.paid_at}-${p.amount}-${p.currency_code}`
+      if (!byId.has(id)) byId.set(id, p)
+    }
+    shipmentClientPayments.forEach(add)
+    ;(clientInvoice?.payments || []).forEach(add)
+    return Array.from(byId.values()).sort(
+      (a, b) => new Date(b.paid_at || b.created_at || 0).getTime() - new Date(a.paid_at || a.created_at || 0).getTime(),
+    )
+  }, [shipmentClientPayments, clientInvoice?.payments])
+
+  const prepaidByCurrency = useMemo(() => {
+    const map = {}
+    summaryClientPayments
+      .filter((p) => !p.invoice_id)
+      .forEach((p) => {
+        const cur = String(p.currency_code || 'USD').toUpperCase()
+        const amt = Number(p.amount) || 0
+        if (amt > 0) map[cur] = (map[cur] || 0) + amt
+      })
+    return map
+  }, [summaryClientPayments])
+
   useEffect(() => {
     if (!open || !shipment?.id || !token || !canAccessInvoices) return undefined
     if (tab !== 'selling' && tab !== 'summary') return undefined
@@ -1794,6 +1838,15 @@ export default function ShipmentFinancialsModal({
       cancelled = true
     }
   }, [open, shipment?.id, token, tab, canAccessInvoices])
+
+  useEffect(() => {
+    if (!open || tab !== 'summary' || !shipment?.client_id) {
+      setShipmentClientPayments([])
+      return undefined
+    }
+    loadShipmentClientPayments()
+    return undefined
+  }, [open, tab, shipment?.client_id, shipment?.id, loadShipmentClientPayments])
 
   useEffect(() => {
     if (!open) return
@@ -2499,7 +2552,7 @@ export default function ShipmentFinancialsModal({
     const apiProfit = fromApi?.profit_by_currency || {}
     if (Object.keys(apiTotalSell).length || Object.keys(apiTotalCost).length || Object.keys(apiProfit).length) {
       const paid = {}
-      ;(clientInvoice?.payments || []).forEach((p) => {
+      summaryClientPayments.forEach((p) => {
         const cur = String(p?.currency_code || clientInvoice?.currency_code || 'USD').toUpperCase()
         const amt = Number(p?.amount) || 0
         if (amt > 0) paid[cur] = (paid[cur] || 0) + amt
@@ -2557,7 +2610,7 @@ export default function ShipmentFinancialsModal({
     else if (paidSum > 0) status = 'partial'
 
     return { totalCost, totalSell, profit, paid, remaining, status }
-  }, [sellingVisibleRows, handlingRow.include, handlingRow.currency, handlingTotal, clientInvoice])
+  }, [sellingVisibleRows, handlingRow.include, handlingRow.currency, handlingTotal, clientInvoice, summaryClientPayments])
 
   const invoiceGrandProfitNet = useMemo(
     () => Object.values(invoiceFinancialOverview.profit || {}).reduce((a, b) => a + (Number(b) || 0), 0),
@@ -2595,12 +2648,14 @@ export default function ShipmentFinancialsModal({
         details: clientInvoice.invoice_number || `INV-${clientInvoice.id}`,
       })
     }
-    ;(clientInvoice?.payments || []).forEach((p, idx) => {
+    summaryClientPayments.forEach((p, idx) => {
       rows.push({
         id: p.id || `payment-${idx}`,
         type: 'payment_added',
         date: p.paid_at || p.created_at,
-        title: t('invoices.timeline.paymentAdded', 'Payment Added'),
+        title: p.invoice_id
+          ? t('invoices.timeline.paymentAdded', 'Payment Added')
+          : t('shipments.fin.advancePayment', { defaultValue: 'Advance payment' }),
         details: `${p.method || '—'} • ${p.bank_name || p.bank_account_name || t('payments.bankAccountOptional', 'No bank account')}`,
         amountNode: (
           <ShipmentMoney
@@ -2630,10 +2685,10 @@ export default function ShipmentFinancialsModal({
       })
     }
     return rows.sort((a, b) => new Date(a.date || 0).getTime() - new Date(b.date || 0).getTime())
-  }, [clientInvoice, invoiceFinancialOverview.remaining, invoiceFinancialOverview.status, numberLocale, shipment?.id, t])
+  }, [clientInvoice, invoiceFinancialOverview.remaining, invoiceFinancialOverview.status, numberLocale, shipment?.id, summaryClientPayments, t])
 
-  const submitInvoicePayment = useCallback(async () => {
-    if (!token || !clientInvoice?.id) return
+  const submitClientPayment = useCallback(async () => {
+    if (!token || !shipment?.client_id) return
     const amount = Number(paymentForm.amount)
     if (!Number.isFinite(amount) || amount <= 0) {
       setFinBanner({ type: 'error', message: t('shipments.fin.paymentInvalidAmount') })
@@ -2641,30 +2696,46 @@ export default function ShipmentFinancialsModal({
     }
     setPaymentSaving(true)
     try {
-      await recordInvoicePayment(token, clientInvoice.id, {
-        amount,
-        currency_code: paymentForm.currency,
-        method: paymentForm.method,
-        source_account_id: paymentForm.bank_account_id ? Number(paymentForm.bank_account_id) : null,
-        shipment_id: shipment?.id ?? null,
-        reference: paymentForm.reference || null,
-        paid_at: paymentForm.paid_at,
-      })
-      const refreshed = await getInvoice(token, clientInvoice.id)
-      setClientInvoice(refreshed)
-      setClientInvoicesList((prev) => {
-        const filtered = (Array.isArray(prev) ? prev : []).filter((r) => r.id !== refreshed.id)
-        return [refreshed, ...filtered]
-      })
+      if (clientInvoice?.id) {
+        await recordInvoicePayment(token, clientInvoice.id, {
+          amount,
+          currency_code: paymentForm.currency,
+          method: paymentForm.method,
+          source_account_id: paymentForm.bank_account_id ? Number(paymentForm.bank_account_id) : null,
+          shipment_id: shipment?.id ?? null,
+          reference: paymentForm.reference || null,
+          paid_at: paymentForm.paid_at,
+        })
+        const refreshed = await getInvoice(token, clientInvoice.id)
+        setClientInvoice(refreshed)
+        setClientInvoicesList((prev) => {
+          const filtered = (Array.isArray(prev) ? prev : []).filter((r) => r.id !== refreshed.id)
+          return [refreshed, ...filtered]
+        })
+      } else {
+        await recordPayment(token, {
+          type: 'client_receipt',
+          client_id: shipment.client_id,
+          shipment_id: shipment?.id ?? null,
+          amount,
+          currency_code: paymentForm.currency,
+          method: paymentForm.method,
+          source_account_id: paymentForm.bank_account_id ? Number(paymentForm.bank_account_id) : null,
+          reference: paymentForm.reference || null,
+          paid_at: paymentForm.paid_at,
+        })
+      }
+      await loadShipmentClientPayments()
       setShowPaymentModal(false)
       setPaymentForm((p) => ({ ...p, amount: '', reference: '' }))
       setFinBanner({ type: 'success', message: t('shipments.fin.paymentRecorded') })
+      onShipmentTotalsRefresh?.()
     } catch (e) {
       setFinBanner({ type: 'error', message: e?.message || t('shipments.fin.paymentFailed') })
     } finally {
       setPaymentSaving(false)
     }
-  }, [token, clientInvoice?.id, paymentForm, t])
+  }, [token, clientInvoice?.id, shipment?.client_id, shipment?.id, paymentForm, t, loadShipmentClientPayments, onShipmentTotalsRefresh])
 
   const bucketTotalsLive = useCallback((bucketId) => {
     const rows = byBucket[bucketId] || []
@@ -4556,138 +4627,220 @@ export default function ShipmentFinancialsModal({
           )}
 
           {tab === 'summary' && (
-            <div key="summary" className="shipment-fin-panel shipment-fin-panel--enter">
-              <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-4 mb-4">
-                <div className="font-semibold mb-2">{t('shipments.fin.linkedInvoices', { defaultValue: 'Linked Invoices' })}</div>
+            <div key="summary" className="shipment-fin-panel shipment-fin-panel--enter shipment-fin-summary-tab">
+              <header className="shipment-fin-summary-tab__hero">
+                <span className="shipment-fin-summary-tab__hero-icon" aria-hidden>
+                  <Scale />
+                </span>
+                <div>
+                  <h3 className="shipment-fin-summary-tab__hero-title">{t('shipments.financialsTab.summary')}</h3>
+                  <p className="shipment-fin-summary-tab__hero-sub">
+                    {t('shipments.fin.summaryTabHint', { defaultValue: 'Client invoice, payments, and prepaid balance for this shipment.' })}
+                  </p>
+                </div>
+              </header>
+
+              <section className="shipment-fin-summary-section">
+                <div className="shipment-fin-summary-section__head">
+                  <Receipt className="shipment-fin-summary-section__icon" aria-hidden />
+                  <h4>{t('shipments.fin.linkedInvoices', { defaultValue: 'Linked Invoices' })}</h4>
+                </div>
                 {clientInvoicesList.length === 0 ? (
-                  <div className="text-sm text-gray-500">{t('shipments.fin.noLinkedInvoices', { defaultValue: 'No linked invoices yet.' })}</div>
+                  <p className="shipment-fin-summary-empty">{t('shipments.fin.noLinkedInvoices', { defaultValue: 'No linked invoices yet.' })}</p>
                 ) : (
-                  <div className="space-y-2">
+                  <ul className="shipment-fin-summary-invoice-list">
                     {clientInvoicesList.map((inv) => (
-                      <div key={inv.id} className="flex items-center justify-between text-sm border rounded-lg px-3 py-2">
-                        <div>
-                          <div className="font-medium">{inv.invoice_number || `INV-${inv.id}`}</div>
-                          <div className="text-gray-500">{formatHumanDate(inv.issue_date)}</div>
+                      <li key={inv.id} className="shipment-fin-summary-invoice-item">
+                        <div className="shipment-fin-summary-invoice-item__main">
+                          <span className="shipment-fin-summary-invoice-item__ref">{inv.invoice_number || `INV-${inv.id}`}</span>
+                          <span className="shipment-fin-summary-invoice-item__date">{formatHumanDate(inv.issue_date)}</span>
                         </div>
-                        <div className="text-right space-y-0.5">
-                          <div className="flex justify-end">
-                            <CurrencyMapBadges
-                              value={
-                                inv.totalsByCurrency && Object.keys(inv.totalsByCurrency).length
-                                  ? inv.totalsByCurrency
-                                  : { [(inv.currency_code || 'USD').toUpperCase()]: Number(inv.amount || 0) }
-                              }
-                              size="sm"
-                              amountFirst={i18n.language?.startsWith('ar')}
-                            />
-                          </div>
-                          <div className="text-xs text-gray-500">{t(`shipments.fin.invoiceStatusValue.${inv.status || 'unpaid'}`, { defaultValue: inv.status || 'unpaid' })}</div>
+                        <div className="shipment-fin-summary-invoice-item__end">
+                          <CurrencyMapBadges
+                            value={
+                              inv.totalsByCurrency && Object.keys(inv.totalsByCurrency).length
+                                ? inv.totalsByCurrency
+                                : { [(inv.currency_code || 'USD').toUpperCase()]: Number(inv.amount || 0) }
+                            }
+                            size="sm"
+                            amountFirst={i18n.language?.startsWith('ar')}
+                          />
+                          <span className={`shipment-fin-summary-status-pill shipment-fin-summary-status-pill--${String(inv.status || 'unpaid').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>
+                            {t(`shipments.fin.invoiceStatusValue.${inv.status || 'unpaid'}`, { defaultValue: inv.status || 'unpaid' })}
+                          </span>
                         </div>
-                      </div>
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 )}
-              </div>
+              </section>
 
-              <div className="shipment-fin-summary-grid">
-                <div className="shipment-fin-summary-card">
-                  <div className="shipment-fin-summary-card__label">{t('shipments.fin.summary.totalCost', { defaultValue: 'Total Cost' })}</div>
-                  <div className="shipment-fin-summary-card__value text-red-600 font-bold text-2xl">
-                    <ShipmentMoneyMap map={invoiceFinancialOverview.totalCost} numberLocale={numberLocale} />
-                  </div>
+              <section className="shipment-fin-summary-section shipment-fin-summary-section--kpis">
+                <div className="shipment-fin-summary-section__head">
+                  <Banknote className="shipment-fin-summary-section__icon" aria-hidden />
+                  <h4>{t('shipments.fin.summaryKpisTitle', { defaultValue: 'Financial overview' })}</h4>
                 </div>
-
-                <div className="shipment-fin-summary-card bg-blue-50/50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-900/40">
-                  <div className="shipment-fin-summary-card__label">{t('shipments.fin.summary.totalSelling', { defaultValue: 'Total Selling' })}</div>
-                  <div className="shipment-fin-summary-card__value text-blue-600 font-bold text-2xl">
-                    <ShipmentMoneyMap map={invoiceFinancialOverview.totalSell} numberLocale={numberLocale} />
+                <div className="shipment-fin-summary-grid">
+                  <div className="shipment-fin-summary-card shipment-fin-summary-card--cost">
+                    <div className="shipment-fin-summary-card__top">
+                      <span className="shipment-fin-summary-card__icon" aria-hidden><TrendingDown /></span>
+                      <span className="shipment-fin-summary-card__label">{t('shipments.fin.summary.totalCost', { defaultValue: 'Total Cost' })}</span>
+                    </div>
+                    <div className="shipment-fin-summary-card__value">
+                      <ShipmentMoneyMap map={invoiceFinancialOverview.totalCost} numberLocale={numberLocale} />
+                    </div>
                   </div>
-                </div>
 
-                <div className="shipment-fin-summary-card bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-900/40">
-                  <div className="shipment-fin-summary-card__label">{t('shipments.fin.summary.netProfit', { defaultValue: 'Net Profit / Loss' })}</div>
-                  <div className="shipment-fin-summary-card__value font-bold text-2xl text-emerald-600">
-                    <ShipmentMoneyMap map={invoiceFinancialOverview.profit} numberLocale={numberLocale} />
+                  <div className="shipment-fin-summary-card shipment-fin-summary-card--sell">
+                    <div className="shipment-fin-summary-card__top">
+                      <span className="shipment-fin-summary-card__icon" aria-hidden><TrendingUp /></span>
+                      <span className="shipment-fin-summary-card__label">{t('shipments.fin.summary.totalSelling', { defaultValue: 'Total Selling' })}</span>
+                    </div>
+                    <div className="shipment-fin-summary-card__value">
+                      <ShipmentMoneyMap map={invoiceFinancialOverview.totalSell} numberLocale={numberLocale} />
+                    </div>
                   </div>
-                </div>
 
-                <div className="shipment-fin-summary-card">
-                  <div className="shipment-fin-summary-card__label">{t('shipments.fin.paidAmount', { defaultValue: 'Paid Amount' })}</div>
-                  <div className="shipment-fin-summary-card__value font-bold text-2xl">
-                    <ShipmentMoneyMap map={invoiceFinancialOverview.paid} numberLocale={numberLocale} />
+                  <div className={`shipment-fin-summary-card shipment-fin-summary-card--profit${Object.values(invoiceFinancialOverview.profit || {}).some((v) => Number(v) < 0) ? ' shipment-fin-summary-card--loss' : ''}`}>
+                    <div className="shipment-fin-summary-card__top">
+                      <span className="shipment-fin-summary-card__icon" aria-hidden><Scale /></span>
+                      <span className="shipment-fin-summary-card__label">{t('shipments.fin.summary.netProfit', { defaultValue: 'Net Profit / Loss' })}</span>
+                    </div>
+                    <div className="shipment-fin-summary-card__value">
+                      <ShipmentMoneyMap map={invoiceFinancialOverview.profit} numberLocale={numberLocale} />
+                    </div>
                   </div>
-                </div>
 
-                <div className="shipment-fin-summary-card">
-                  <div className="shipment-fin-summary-card__label">{t('shipments.fin.remainingAmount', { defaultValue: 'Remaining Balance' })}</div>
-                  <div className="shipment-fin-summary-card__value font-bold text-2xl">
-                    <ShipmentMoneyMap map={invoiceFinancialOverview.remaining} numberLocale={numberLocale} />
+                  <div className="shipment-fin-summary-card shipment-fin-summary-card--paid">
+                    <div className="shipment-fin-summary-card__top">
+                      <span className="shipment-fin-summary-card__icon" aria-hidden><DollarSign /></span>
+                      <span className="shipment-fin-summary-card__label">{t('shipments.fin.paidAmount', { defaultValue: 'Paid Amount' })}</span>
+                    </div>
+                    <div className="shipment-fin-summary-card__value">
+                      <ShipmentMoneyMap map={invoiceFinancialOverview.paid} numberLocale={numberLocale} />
+                    </div>
                   </div>
-                </div>
 
-                <div className="shipment-fin-summary-card">
-                  <div className="shipment-fin-summary-card__label">{t('shipments.fin.invoiceStatus', { defaultValue: 'Invoice Status' })}</div>
-                  <div className="shipment-fin-summary-card__value font-bold text-2xl">
-                    {t(`shipments.fin.invoiceStatusValue.${invoiceFinancialOverview.status}`, { defaultValue: invoiceFinancialOverview.status })}
+                  <div className="shipment-fin-summary-card shipment-fin-summary-card--remaining">
+                    <div className="shipment-fin-summary-card__top">
+                      <span className="shipment-fin-summary-card__icon" aria-hidden><Receipt /></span>
+                      <span className="shipment-fin-summary-card__label">{t('shipments.fin.remainingAmount', { defaultValue: 'Remaining Balance' })}</span>
+                    </div>
+                    <div className="shipment-fin-summary-card__value">
+                      <ShipmentMoneyMap map={invoiceFinancialOverview.remaining} numberLocale={numberLocale} />
+                    </div>
                   </div>
-                </div>
-              </div>
 
-              <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-4 mt-6">
-                <div className="font-semibold mb-2">{t('invoices.payments', 'Payments')}</div>
-                {(clientInvoice?.payments || []).length === 0 ? (
-                  <div className="text-sm text-gray-500">{t('invoices.noPayments', 'No payments yet')}</div>
+                  <div className={`shipment-fin-summary-card shipment-fin-summary-card--status shipment-fin-summary-card--status-${String(invoiceFinancialOverview.status || 'unpaid').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>
+                    <div className="shipment-fin-summary-card__top">
+                      <span className="shipment-fin-summary-card__icon" aria-hidden><FileText /></span>
+                      <span className="shipment-fin-summary-card__label">{t('shipments.fin.invoiceStatus', { defaultValue: 'Invoice Status' })}</span>
+                    </div>
+                    <div className="shipment-fin-summary-card__value shipment-fin-summary-card__value--status">
+                      <span className={`shipment-fin-summary-status-pill shipment-fin-summary-status-pill--lg shipment-fin-summary-status-pill--${String(invoiceFinancialOverview.status || 'unpaid').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>
+                        {t(`shipments.fin.invoiceStatusValue.${invoiceFinancialOverview.status}`, { defaultValue: invoiceFinancialOverview.status })}
+                      </span>
+                    </div>
+                  </div>
+
+                  {Object.keys(prepaidByCurrency).length > 0 ? (
+                    <div className="shipment-fin-summary-card shipment-fin-summary-card--prepaid">
+                      <div className="shipment-fin-summary-card__top">
+                        <span className="shipment-fin-summary-card__icon" aria-hidden><Wallet /></span>
+                        <span className="shipment-fin-summary-card__label">{t('shipments.fin.prepaidCredit', { defaultValue: 'Prepaid credit' })}</span>
+                      </div>
+                      <div className="shipment-fin-summary-card__value">
+                        <ShipmentMoneyMap map={prepaidByCurrency} numberLocale={numberLocale} />
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              </section>
+
+              <section className="shipment-fin-summary-section">
+                <div className="shipment-fin-summary-section__head">
+                  <Wallet className="shipment-fin-summary-section__icon" aria-hidden />
+                  <h4>{t('invoices.payments', 'Payments')}</h4>
+                </div>
+                {summaryClientPayments.length === 0 ? (
+                  <p className="shipment-fin-summary-empty">{t('invoices.noPayments', 'No payments yet')}</p>
                 ) : (
-                  <div className="space-y-2">
-                    {(clientInvoice?.payments || []).map((p) => (
-                      <div key={p.id} className="flex items-center justify-between text-sm border rounded-lg px-3 py-2">
-                        <div>
-                          <div className="font-medium">{p.method || '—'} • {p.bank_name || p.bank_account_name || t('payments.bankAccountOptional', 'No bank account')}</div>
-                          <div className="text-gray-500">{formatHumanDate(p.paid_at || p.created_at)} • {p.invoice_reference || clientInvoice?.invoice_number || `INV-${clientInvoice?.id}`}{p.shipment_reference ? ` • ${p.shipment_reference}` : ''}</div>
+                  <ul className="shipment-fin-summary-payment-list">
+                    {summaryClientPayments.map((p) => (
+                      <li key={p.id} className={`shipment-fin-summary-payment-item${!p.invoice_id ? ' shipment-fin-summary-payment-item--advance' : ''}`}>
+                        <div className="shipment-fin-summary-payment-item__main">
+                          <div className="shipment-fin-summary-payment-item__title">
+                            {p.method || '—'}
+                            <span className="shipment-fin-summary-payment-item__sep">•</span>
+                            {p.bank_name || p.bank_account_name || t('payments.bankAccountOptional', 'No bank account')}
+                            {!p.invoice_id ? (
+                              <span className="shipment-fin-summary-advance-badge">
+                                {t('shipments.fin.advanceBadge', { defaultValue: 'Advance' })}
+                              </span>
+                            ) : null}
+                          </div>
+                          <p className="shipment-fin-summary-payment-item__meta">
+                            {formatHumanDate(p.paid_at || p.created_at)}
+                            {p.invoice_id
+                              ? ` • ${p.invoice_reference || clientInvoice?.invoice_number || `INV-${p.invoice_id}`}`
+                              : ` • ${t('shipments.fin.advancePaymentNote', { defaultValue: 'Prepaid — not yet applied to invoice' })}`}
+                            {p.shipment_reference ? ` • ${p.shipment_reference}` : ''}
+                          </p>
                         </div>
-                        <div className="font-semibold">
+                        <div className="shipment-fin-summary-payment-item__amount">
                           <ShipmentMoney
                             amount={Number(p.amount) || 0}
                             currencyCode={String(p.currency_code || 'USD').toUpperCase()}
                             numberLocale={numberLocale}
                           />
                         </div>
-                      </div>
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 )}
-              </div>
+              </section>
 
-              <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-4 mt-6">
-                <div className="font-semibold mb-2">{t('invoices.timeline.title', 'Financial Timeline')}</div>
+              <section className="shipment-fin-summary-section">
+                <div className="shipment-fin-summary-section__head">
+                  <History className="shipment-fin-summary-section__icon" aria-hidden />
+                  <h4>{t('invoices.timeline.title', 'Financial Timeline')}</h4>
+                </div>
                 {financialTimelineRows.length === 0 ? (
-                  <div className="text-sm text-gray-500">{t('shipments.fin.auditEmpty')}</div>
+                  <p className="shipment-fin-summary-empty">{t('shipments.fin.auditEmpty')}</p>
                 ) : (
-                  <div className="space-y-2">
+                  <ol className="shipment-fin-summary-timeline">
                     {financialTimelineRows.map((entry) => (
-                      <div key={entry.id} className="flex items-start justify-between border rounded-lg px-3 py-2 text-sm">
-                        <div>
-                          <div className="font-medium">{entry.title}</div>
-                          <div className="text-gray-500">{entry.detailsNode ?? entry.details ?? '—'}</div>
+                      <li key={entry.id} className="shipment-fin-summary-timeline__item">
+                        <span className="shipment-fin-summary-timeline__dot" aria-hidden />
+                        <div className="shipment-fin-summary-timeline__body">
+                          <div className="shipment-fin-summary-timeline__row">
+                            <span className="shipment-fin-summary-timeline__title">{entry.title}</span>
+                            <span className="shipment-fin-summary-timeline__date">{formatHumanDate(entry.date)}</span>
+                          </div>
+                          <div className="shipment-fin-summary-timeline__details">
+                            {entry.detailsNode ?? entry.details ?? '—'}
+                          </div>
+                          {entry.amountNode != null ? (
+                            <div className="shipment-fin-summary-timeline__amount">{entry.amountNode}</div>
+                          ) : null}
                         </div>
-                        <div className="text-right">
-                          <div>{formatHumanDate(entry.date)}</div>
-                          {entry.amountNode != null ? <div className="font-semibold">{entry.amountNode}</div> : null}
-                        </div>
-                      </div>
+                      </li>
                     ))}
-                  </div>
+                  </ol>
                 )}
-              </div>
+              </section>
 
-              <div className="mt-6 flex items-center gap-3">
+              <div className="shipment-fin-summary-actions">
                 <button
                   type="button"
-                  className="client-detail-modal__btn client-detail-modal__btn--primary"
-                  disabled={!clientInvoice?.id}
+                  className="client-detail-modal__btn client-detail-modal__btn--primary shipment-fin-summary-actions__primary"
+                  disabled={!shipment?.client_id}
                   onClick={() => setShowPaymentModal(true)}
                 >
-                  {t('shipments.fin.recordPayment', { defaultValue: 'Record Payment' })}
+                  <Wallet className="h-4 w-4" aria-hidden />
+                  {clientInvoice?.id
+                    ? t('shipments.fin.recordPayment', { defaultValue: 'Record Payment' })
+                    : t('shipments.fin.recordAdvancePayment', { defaultValue: 'Record advance payment' })}
                 </button>
                 <button
                   type="button"
@@ -4695,10 +4848,10 @@ export default function ShipmentFinancialsModal({
                   disabled={!clientInvoice?.id}
                   onClick={handleDownloadInvoicePdf}
                 >
+                  <FileDown className="h-4 w-4" aria-hidden />
                   {t('shipments.fin.printPdf', { defaultValue: 'Print Statement' })}
                 </button>
               </div>
-
               {!isAccountingUser && (
                 <div className="mt-8 p-6 bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-100 dark:border-blue-800 text-center">
                   <button
@@ -4743,31 +4896,175 @@ export default function ShipmentFinancialsModal({
             </div>
           )}
           {showPaymentModal ? (
-            <div className="shipment-fin-payment-modal-backdrop">
-              <div className="shipment-fin-payment-modal">
-                <h4>{t('shipments.fin.recordPayment', { defaultValue: 'Record Payment' })}</h4>
-                <div className="shipment-fin-payment-grid">
-                  <input type="number" min="0.01" step="0.01" placeholder={t('shipments.expColAmount')} value={paymentForm.amount} onChange={(e) => setPaymentForm((p) => ({ ...p, amount: e.target.value }))} />
-                  <select value={paymentForm.currency} onChange={(e) => setPaymentForm((p) => ({ ...p, currency: e.target.value }))}>
-                    {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                  <select value={paymentForm.method} onChange={(e) => setPaymentForm((p) => ({ ...p, method: e.target.value }))}>
-                    <option value="bank_transfer">Bank transfer</option>
-                    <option value="cash">Cash</option>
-                    <option value="cheque">Cheque</option>
-                    <option value="internal_transfer">Internal transfer</option>
-                  </select>
-                  <select value={paymentForm.bank_account_id} onChange={(e) => setPaymentForm((p) => ({ ...p, bank_account_id: e.target.value }))}>
-                    <option value="">{t('partnerLedger.payment.sourceAccount', { defaultValue: 'Bank Account' })}</option>
-                    {bankAccounts.map((b) => <option key={b.id} value={b.id}>{b.bank_name} - {b.account_name}</option>)}
-                  </select>
-                  <input type="date" value={paymentForm.paid_at} onChange={(e) => setPaymentForm((p) => ({ ...p, paid_at: e.target.value }))} />
-                  <input placeholder={t('shipments.fin.paymentReference')} value={paymentForm.reference} onChange={(e) => setPaymentForm((p) => ({ ...p, reference: e.target.value }))} />
+            <div
+              className="shipment-fin-payment-modal-backdrop"
+              role="presentation"
+              onClick={() => {
+                if (!paymentSaving) setShowPaymentModal(false)
+              }}
+            >
+              <div
+                className={`shipment-fin-payment-modal${clientInvoice?.id ? '' : ' shipment-fin-payment-modal--advance'}`}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="shipment-fin-payment-modal-title"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <header className="shipment-fin-payment-modal__header">
+                  <div className="shipment-fin-payment-modal__header-main">
+                    <span className="shipment-fin-payment-modal__icon" aria-hidden>
+                      {clientInvoice?.id ? <DollarSign /> : <Wallet />}
+                    </span>
+                    <div className="shipment-fin-payment-modal__titles">
+                      <h4 id="shipment-fin-payment-modal-title">
+                        {clientInvoice?.id
+                          ? t('shipments.fin.recordPayment', { defaultValue: 'Record Payment' })
+                          : t('shipments.fin.recordAdvancePayment', { defaultValue: 'Record advance payment' })}
+                      </h4>
+                      <p className="shipment-fin-payment-modal__subtitle">
+                        {clientInvoice?.id
+                          ? t('shipments.fin.recordPaymentSubtitle', { defaultValue: 'Apply payment to the client invoice' })
+                          : t('shipments.fin.recordAdvancePaymentSubtitle', { defaultValue: 'Prepaid credit before invoice issuance' })}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="shipment-fin-payment-modal__close"
+                    disabled={paymentSaving}
+                    onClick={() => setShowPaymentModal(false)}
+                    aria-label={t('common.close', { defaultValue: 'Close' })}
+                  >
+                    <X className="h-4 w-4" aria-hidden />
+                  </button>
+                </header>
+
+                {!clientInvoice?.id ? (
+                  <div className="shipment-fin-payment-modal__notice">
+                    <Sparkles className="shipment-fin-payment-modal__notice-icon" aria-hidden />
+                    <p>
+                      {t('shipments.fin.advancePaymentHint', {
+                        defaultValue: 'Payment is saved as customer prepaid credit and can be applied when the invoice is issued.',
+                      })}
+                    </p>
+                  </div>
+                ) : null}
+
+                {!clientInvoice?.id && Object.keys(prepaidByCurrency).length > 0 ? (
+                  <div className="shipment-fin-payment-modal__prepaid">
+                    <span className="shipment-fin-payment-modal__prepaid-label">
+                      {t('shipments.fin.prepaidCredit', { defaultValue: 'Prepaid credit' })}
+                    </span>
+                    <span className="shipment-fin-payment-modal__prepaid-value">
+                      <ShipmentMoneyMap map={prepaidByCurrency} numberLocale={numberLocale} />
+                    </span>
+                  </div>
+                ) : null}
+
+                <div className="shipment-fin-payment-modal__body">
+                  <div className="shipment-fin-payment-form">
+                    <div className="shipment-fin-payment-row shipment-fin-payment-row--amount-currency">
+                      <label className="shipment-fin-payment-field shipment-fin-payment-field--amount">
+                        <span className="shipment-fin-payment-field__label">
+                          {t('shipments.expColAmount', { defaultValue: 'Amount' })}
+                          <span className="shipment-fin-payment-field__required" aria-hidden>*</span>
+                        </span>
+                        <input
+                          type="number"
+                          min="0.01"
+                          step="0.01"
+                          className="shipment-fin-payment-field__input"
+                          placeholder="0.00"
+                          value={paymentForm.amount}
+                          onChange={(e) => setPaymentForm((p) => ({ ...p, amount: e.target.value }))}
+                        />
+                      </label>
+                      <label className="shipment-fin-payment-field shipment-fin-payment-field--currency">
+                        <span className="shipment-fin-payment-field__label">{t('shipments.fin.paymentCurrency', { defaultValue: 'Currency' })}</span>
+                        <select
+                          className="shipment-fin-payment-field__input"
+                          value={paymentForm.currency}
+                          onChange={(e) => setPaymentForm((p) => ({ ...p, currency: e.target.value }))}
+                        >
+                          {CURRENCIES.map((c) => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                    <div className="shipment-fin-payment-grid">
+                    <label className="shipment-fin-payment-field">
+                      <span className="shipment-fin-payment-field__label">{t('shipments.fin.paymentMethod', { defaultValue: 'Method' })}</span>
+                      <select
+                        className="shipment-fin-payment-field__input"
+                        value={paymentForm.method}
+                        onChange={(e) => setPaymentForm((p) => ({ ...p, method: e.target.value }))}
+                      >
+                        <option value="bank_transfer">{t('shipments.fin.paymentMethodBank', { defaultValue: 'Bank transfer' })}</option>
+                        <option value="cash">{t('shipments.fin.paymentMethodCash', { defaultValue: 'Cash' })}</option>
+                        <option value="cheque">{t('shipments.fin.paymentMethodCheque', { defaultValue: 'Cheque' })}</option>
+                        <option value="internal_transfer">{t('shipments.fin.paymentMethodInternal', { defaultValue: 'Internal transfer' })}</option>
+                      </select>
+                    </label>
+                    <label className="shipment-fin-payment-field">
+                      <span className="shipment-fin-payment-field__label">{t('partnerLedger.payment.sourceAccount', { defaultValue: 'Bank account' })}</span>
+                      <select
+                        className="shipment-fin-payment-field__input"
+                        value={paymentForm.bank_account_id}
+                        onChange={(e) => setPaymentForm((p) => ({ ...p, bank_account_id: e.target.value }))}
+                      >
+                        <option value="">{t('payments.bankAccountOptional', { defaultValue: 'Bank account (optional)' })}</option>
+                        {bankAccounts.map((b) => (
+                          <option key={b.id} value={b.id}>{b.bank_name} — {b.account_name}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="shipment-fin-payment-field">
+                      <span className="shipment-fin-payment-field__label">{t('shipments.fin.paymentDate', { defaultValue: 'Paid date' })}</span>
+                      <input
+                        type="date"
+                        className="shipment-fin-payment-field__input"
+                        value={paymentForm.paid_at}
+                        onChange={(e) => setPaymentForm((p) => ({ ...p, paid_at: e.target.value }))}
+                      />
+                    </label>
+                    <label className="shipment-fin-payment-field">
+                      <span className="shipment-fin-payment-field__label">{t('shipments.fin.paymentReference', { defaultValue: 'Reference' })}</span>
+                      <input
+                        type="text"
+                        className="shipment-fin-payment-field__input"
+                        placeholder={t('shipments.fin.paymentReferencePlaceholder', { defaultValue: 'Transfer ref., receipt no., …' })}
+                        value={paymentForm.reference}
+                        onChange={(e) => setPaymentForm((p) => ({ ...p, reference: e.target.value }))}
+                      />
+                    </label>
+                    </div>
+                  </div>
                 </div>
-                <div className="shipment-fin-pricing-actions mt-3">
-                  <button type="button" className="client-detail-modal__btn client-detail-modal__btn--secondary" onClick={() => setShowPaymentModal(false)}>{t('common.cancel')}</button>
-                  <button type="button" className="client-detail-modal__btn client-detail-modal__btn--primary" disabled={paymentSaving} onClick={submitInvoicePayment}>{paymentSaving ? t('shipments.saving') : t('shipments.fin.recordPayment')}</button>
-                </div>
+
+                <footer className="shipment-fin-payment-modal__footer">
+                  <button
+                    type="button"
+                    className="client-detail-modal__btn client-detail-modal__btn--secondary"
+                    disabled={paymentSaving}
+                    onClick={() => setShowPaymentModal(false)}
+                  >
+                    {t('common.cancel')}
+                  </button>
+                  <button
+                    type="button"
+                    className={`client-detail-modal__btn client-detail-modal__btn--primary${clientInvoice?.id ? '' : ' shipment-fin-payment-modal__submit--advance'}`}
+                    disabled={paymentSaving}
+                    onClick={submitClientPayment}
+                  >
+                    {paymentSaving
+                      ? t('shipments.saving')
+                      : clientInvoice?.id
+                        ? t('shipments.fin.recordPayment', { defaultValue: 'Record Payment' })
+                        : t('shipments.fin.recordAdvancePayment', { defaultValue: 'Record advance payment' })}
+                  </button>
+                </footer>
+
               </div>
             </div>
           ) : null}

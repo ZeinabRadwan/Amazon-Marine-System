@@ -234,6 +234,8 @@ export async function listPayments(token, params = {}) {
   const searchParams = new URLSearchParams()
   if (params.type) searchParams.set('type', params.type)
   if (params.client_id) searchParams.set('client_id', String(params.client_id))
+  if (params.shipment_id) searchParams.set('shipment_id', String(params.shipment_id))
+  if (params.unallocated) searchParams.set('unallocated', '1')
   if (params.vendor_id) searchParams.set('vendor_id', String(params.vendor_id))
   if (params.from) searchParams.set('from', params.from)
   if (params.to) searchParams.set('to', params.to)

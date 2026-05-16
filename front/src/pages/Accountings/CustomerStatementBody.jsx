@@ -121,6 +121,16 @@ export default function CustomerStatementBody({
               <CurrencyMapBadges value={customerStatementDetailTotals.remainingMap} size="sm" amountFirst />
             </div>
           </div>
+          {Object.keys(customerStatementDetailTotals.prepaidMap || {}).length > 0 ? (
+            <div className="shipment-fin-summary-card rounded-xl border p-4 shadow-sm bg-violet-50/50 dark:bg-violet-900/10 border-violet-100 dark:border-violet-900/40">
+              <div className="shipment-fin-summary-card__label text-sm font-medium text-gray-600 dark:text-violet-100/90">
+                {t('accountings.prepaidBalance', 'Prepaid balance (credit)')}
+              </div>
+              <div className="shipment-fin-summary-card__value font-bold text-xl text-violet-700 dark:text-violet-300">
+                <CurrencyMapBadges value={customerStatementDetailTotals.prepaidMap} size="sm" amountFirst />
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <section className="accountings-wire-section" aria-labelledby="cust-statement-invoices-heading">
