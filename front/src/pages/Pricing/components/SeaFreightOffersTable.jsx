@@ -160,14 +160,16 @@ export default function SeaFreightOffersTable({
                 >
                   <div className="pricing-rate-card__header">
                     <div className="pricing-rate-card__header-main">
-                      <div className="pricing-rate-card__pill pricing-rate-card__pill--carrier">{offer.shipping_line || dash}</div>
-                      <div className="pricing-rate-card__route-wrap">
-                        <PricingRateCardRoute
-                          variant="sea"
-                          origin={offer.pol}
-                          destination={offer.pod || offer.region}
-                          dash={dash}
-                        />
+                      <div className="pricing-rate-card__header-identity">
+                        <div className="pricing-rate-card__pill pricing-rate-card__pill--carrier">{offer.shipping_line || dash}</div>
+                        <div className="pricing-rate-card__route-wrap">
+                          <PricingRateCardRoute
+                            variant="sea"
+                            origin={offer.pol}
+                            destination={offer.pod || offer.region}
+                            dash={dash}
+                          />
+                        </div>
                         <div className="pricing-rate-card__meta">
                           {containerSummary} | Transit: {offer.transit_time || dash} | {seaFreeTimeSummary(offer.dnd, dash)}
                         </div>

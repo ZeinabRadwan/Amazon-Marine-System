@@ -153,15 +153,18 @@ export default function InlandTransportTable({
                 >
                   <div className="pricing-rate-card__header">
                     <div className="pricing-rate-card__header-main">
-                      <div
-                        className={`pricing-rate-card__pill ${isReeferKey(primary?.key) ? 'pricing-rate-card__pill--reefer' : 'pricing-rate-card__pill--dry'}`}
-                      >
-                        {truckLabel}
+                      <div className="pricing-rate-card__header-identity">
+                        <div
+                          className={`pricing-rate-card__pill ${isReeferKey(primary?.key) ? 'pricing-rate-card__pill--reefer' : 'pricing-rate-card__pill--dry'}`}
+                        >
+                          {truckLabel}
+                        </div>
+                        <div className="pricing-rate-card__route-wrap">
+                          <PricingRateCardRoute variant="inland" origin={port} destination={govAreaLabel} dash={dash} />
+                        </div>
                       </div>
-                      <div className="pricing-rate-card__route-wrap">
-                        <PricingRateCardRoute variant="inland" origin={port} destination={govAreaLabel} dash={dash} />
-                        {(() => {
-                          const bits = []
+                      {(() => {
+                        const bits = []
                           if (offer.transit_time?.trim()) {
                             bits.push(`${t('pricing.transitTime', 'Transit')}: ${offer.transit_time.trim()}`)
                           }
@@ -171,7 +174,6 @@ export default function InlandTransportTable({
                           if (!bits.length) return null
                           return <div className="pricing-rate-card__meta">{bits.join(' | ')}</div>
                         })()}
-                      </div>
                     </div>
                     <div className="pricing-rate-card__amounts">
                       <div className="pricing-rate-card__amounts-value">

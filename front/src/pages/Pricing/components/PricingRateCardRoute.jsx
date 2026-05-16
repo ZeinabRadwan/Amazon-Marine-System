@@ -29,7 +29,7 @@ export default function PricingRateCardRoute({ variant, origin, destination, das
       <div className="pricing-rate-card__route-end pricing-rate-card__route-end--origin">
         <div className="pricing-rate-card__route-end-head">
           <span className="pricing-rate-card__route-end-icon" aria-hidden>
-            <OriginIcon className="pricing-rate-card__route-svg" strokeWidth={2.25} />
+            <OriginIcon className="pricing-rate-card__route-svg" strokeWidth={2} />
           </span>
           <span className="pricing-rate-card__route-end-eyebrow">{originLabel}</span>
         </div>
@@ -41,16 +41,16 @@ export default function PricingRateCardRoute({ variant, origin, destination, das
       <div className="pricing-rate-card__route-flow" aria-hidden>
         <span className="pricing-rate-card__route-flow-line" />
         <span className="pricing-rate-card__route-flow-node">
-          <AccentIcon className="pricing-rate-card__route-flow-accent" strokeWidth={2} />
+          <AccentIcon className="pricing-rate-card__route-flow-accent" strokeWidth={1.75} />
         </span>
-        <ChevronRight className="pricing-rate-card__route-flow-chev" strokeWidth={2.5} />
+        <ChevronRight className="pricing-rate-card__route-flow-chev" strokeWidth={2.25} />
         <span className="pricing-rate-card__route-flow-line" />
       </div>
 
       <div className="pricing-rate-card__route-end pricing-rate-card__route-end--dest">
         <div className="pricing-rate-card__route-end-head">
           <span className="pricing-rate-card__route-end-icon" aria-hidden>
-            <DestIcon className="pricing-rate-card__route-svg" strokeWidth={2.25} />
+            <DestIcon className="pricing-rate-card__route-svg" strokeWidth={2} />
           </span>
           <span className="pricing-rate-card__route-end-eyebrow">{destLabel}</span>
         </div>

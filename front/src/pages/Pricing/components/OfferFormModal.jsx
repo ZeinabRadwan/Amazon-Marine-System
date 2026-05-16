@@ -177,6 +177,12 @@ const makeCustomChargeItem = () => ({
   currency: 'USD',
 })
 
+const defaultCustomChargeDraft = () => ({
+  name: '',
+  amount: '',
+  currency: 'USD',
+})
+
 function inferPresetFromPricing(offer) {
   const p = offer?.pricing || {}
   if (p.of20rf?.price != null || p.thc20rf?.price != null) return '20-reefer'
@@ -363,6 +369,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
   const [inlandForm, setInlandForm] = useState(defaultInlandForm)
   const [seaCoreLines, setSeaCoreLines] = useState(initialSeaCoreLines)
   const [seaCustomLines, setSeaCustomLines] = useState([])
+  const [customChargeDraft, setCustomChargeDraft] = useState(defaultCustomChargeDraft)
   const [reeferExtras, setReeferExtras] = useState(() => defaultReeferExtras())
   /** Single sailing date pending add (ISO YYYY-MM-DD from DatePicker) */
   const [draftFixedSailingDate, setDraftFixedSailingDate] = useState('')
@@ -465,6 +472,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
             : initialSeaCoreLines()
         )
         setSeaCustomLines(Array.isArray(saved.seaCustomLines) ? saved.seaCustomLines : [])
+        setCustomChargeDraft({ ...defaultCustomChargeDraft(), ...(saved.customChargeDraft || {}) })
         setReeferExtras({ ...defaultReeferExtras(), ...(saved.reeferExtras || {}) })
         setDraftFixedSailingDate(saved.draftFixedSailingDate || '')
         setDraftRestoredBanner(true)
@@ -473,6 +481,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
       setForm(defaultSeaForm())
       setSeaCoreLines(initialSeaCoreLines())
       setSeaCustomLines([])
+      setCustomChargeDraft(defaultCustomChargeDraft())
       setReeferExtras(defaultReeferExtras())
       return
     }
@@ -519,6 +528,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
     )
     setSeaCoreLines(loadedCore.length ? loadedCore : initialSeaCoreLines())
     setSeaCustomLines(loadedCustom)
+    setCustomChargeDraft(defaultCustomChargeDraft())
   }, [offerToEdit, isOpen, pricingMode])
 
   const oceanMeta = useMemo(
@@ -580,7 +590,26 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
 
   const patchSeaCoreLine = (name, patch) =>
     setSeaCoreLines((prev) => prev.map((row) => (row.name === name ? { ...row, ...patch } : row)))
-  const addCustomCharge = () => setSeaCustomLines((prev) => [...prev, makeCustomChargeItem()])
+  const patchSeaCustomLine = (id, patch) =>
+    setSeaCustomLines((prev) => prev.map((row) => (row.id === id ? { ...row, ...patch } : row)))
+  const addCustomCharge = () => {
+    const draftName = customChargeDraft.name.trim()
+    const draftAmount = String(customChargeDraft.amount ?? '').trim()
+    if (draftName || draftAmount) {
+      setSeaCustomLines((prev) => [
+        ...prev,
+        {
+          ...makeCustomChargeItem(),
+          name: customChargeDraft.name,
+          amount: customChargeDraft.amount,
+          currency: customChargeDraft.currency || 'USD',
+        },
+      ])
+      setCustomChargeDraft(defaultCustomChargeDraft())
+      return
+    }
+    setSeaCustomLines((prev) => [...prev, makeCustomChargeItem()])
+  }
   const removeCustomCharge = (id) => setSeaCustomLines((prev) => prev.filter((x) => x.id !== id))
 
   const draftPayload = useMemo(() => {
@@ -591,10 +620,11 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
       form,
       seaCoreLines,
       seaCustomLines,
+      customChargeDraft,
       reeferExtras,
       draftFixedSailingDate,
     }
-  }, [effectiveMode, form, inlandForm, seaCoreLines, seaCustomLines, reeferExtras, draftFixedSailingDate])
+  }, [effectiveMode, form, inlandForm, seaCoreLines, seaCustomLines, customChargeDraft, reeferExtras, draftFixedSailingDate])
 
   useEffect(() => {
     if (!isOpen || offerToEdit) return
@@ -1181,6 +1211,53 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                     </div>
                   </div>
                 ))}
+                {seaCustomLines.map((row) => (
+                  <div key={row.id} className="sea-rate-grid-custom-cell">
+                    <div className="sea-rate-grid-custom-cell__name-row">
+                      <input
+                        type="text"
+                        className="sea-rate-input"
+                        placeholder={t('pricing.customChargeNamePlaceholder', 'e.g. ISPS, EBS, BAF...')}
+                        value={row.name}
+                        onChange={(e) => patchSeaCustomLine(row.id, { name: e.target.value })}
+                        aria-label={t('pricing.customChargeName', 'Charge name')}
+                      />
+                      <button
+                        type="button"
+                        className="sea-rate-custom-remove"
+                        onClick={() => removeCustomCharge(row.id)}
+                        aria-label={t('common.remove', 'Remove')}
+                        title={t('common.remove', 'Remove')}
+                      >
+                        ×
+                      </button>
+                    </div>
+                    <div className="sea-rate-input-group">
+                      <input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        className="sea-rate-input"
+                        value={displayNumericInputValue(row.amount)}
+                        onChange={(e) => patchSeaCustomLine(row.id, { amount: e.target.value })}
+                        placeholder="0"
+                        aria-label={t('pricing.amount', 'Amount')}
+                      />
+                      <select
+                        className="sea-rate-select"
+                        value={row.currency}
+                        onChange={(e) => patchSeaCustomLine(row.id, { currency: e.target.value })}
+                        aria-label={t('pricing.currencyAria', 'Currency')}
+                      >
+                        {CURRENCIES.map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                ))}
               </div>
               {oceanMeta.type === 'Reefer' ? (
                 <div
@@ -1321,14 +1398,8 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                         type="text"
                         className="sea-rate-input"
                         placeholder="e.g. ISPS, EBS, BAF..."
-                        value={seaCustomLines[0]?.name || ''}
-                        onChange={(e) => {
-                          if (!seaCustomLines[0]) addCustomCharge()
-                          setSeaCustomLines((prev) => {
-                            const first = prev[0] || makeCustomChargeItem()
-                            return [{ ...first, name: e.target.value }, ...prev.slice(1)]
-                          })
-                        }}
+                        value={customChargeDraft.name}
+                        onChange={(e) => setCustomChargeDraft((prev) => ({ ...prev, name: e.target.value }))}
                       />
                     </div>
                     <div className="sea-rate-custom-amount">
@@ -1339,28 +1410,16 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                         step="0.01"
                         className="sea-rate-input"
                         placeholder="0"
-                        value={displayNumericInputValue(seaCustomLines[0]?.amount)}
-                        onChange={(e) => {
-                          if (!seaCustomLines[0]) addCustomCharge()
-                          setSeaCustomLines((prev) => {
-                            const first = prev[0] || makeCustomChargeItem()
-                            return [{ ...first, amount: e.target.value }, ...prev.slice(1)]
-                          })
-                        }}
+                        value={displayNumericInputValue(customChargeDraft.amount)}
+                        onChange={(e) => setCustomChargeDraft((prev) => ({ ...prev, amount: e.target.value }))}
                       />
                     </div>
                     <div className="sea-rate-custom-currency">
                       <label className="sea-rate-label">العملة</label>
                       <select
                         className="sea-rate-select"
-                        value={seaCustomLines[0]?.currency || 'USD'}
-                        onChange={(e) => {
-                          if (!seaCustomLines[0]) addCustomCharge()
-                          setSeaCustomLines((prev) => {
-                            const first = prev[0] || makeCustomChargeItem()
-                            return [{ ...first, currency: e.target.value }, ...prev.slice(1)]
-                          })
-                        }}
+                        value={customChargeDraft.currency || 'USD'}
+                        onChange={(e) => setCustomChargeDraft((prev) => ({ ...prev, currency: e.target.value }))}
                       >
                         {CURRENCIES.map((c) => (
                           <option key={c} value={c}>
@@ -1373,20 +1432,6 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                       + أضف بند
                     </button>
                   </div>
-                  {seaCustomLines.length > 0 ? (
-                    <div className="sea-rate-tags">
-                      {seaCustomLines.map((row) => (
-                        <button
-                          key={row.id}
-                          type="button"
-                          className="sea-rate-tag sea-rate-tag-amber"
-                          onClick={() => removeCustomCharge(row.id)}
-                        >
-                          {(row.name || 'Charge')}: {row.amount !== '' && row.amount != null ? row.amount : '—'} {row.currency || 'USD'} ×
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
                 </div>
               </div>
               </PricingFinSection>

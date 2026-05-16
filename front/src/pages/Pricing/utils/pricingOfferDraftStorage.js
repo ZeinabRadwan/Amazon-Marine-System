@@ -31,6 +31,8 @@ export function isSeaOfferDraftMeaningful(snapshot) {
   if (Array.isArray(f.fixed_dates) && f.fixed_dates.length > 0) return true
   if (f.sailing_tab && f.sailing_tab !== 'weekly') return true
   if (Array.isArray(snapshot.seaCustomLines) && snapshot.seaCustomLines.length > 0) return true
+  const draft = snapshot.customChargeDraft || {}
+  if (draft.name?.trim() || String(draft.amount ?? '').trim()) return true
   if (Array.isArray(snapshot.seaCoreLines) && snapshot.seaCoreLines.some((r) => String(r?.amount ?? '').trim() !== '')) {
     return true
   }
