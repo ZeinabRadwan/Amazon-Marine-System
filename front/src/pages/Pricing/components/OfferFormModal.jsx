@@ -22,6 +22,7 @@ import {
   readPricingOfferDraft,
   writePricingOfferDraft,
 } from '../utils/pricingOfferDraftStorage'
+import SeaCustomChargeEntry, { SEA_PRICING_CURRENCIES } from './SeaCustomChargeEntry'
 
 /** Canonical weekday names stored in API (`weekly_sailing_days` comma-separated); sort order Sat → Fri */
 const WEEK_DAYS = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
@@ -40,7 +41,7 @@ const SEA_OCEAN_UNIT_TYPES = Object.freeze([
   { slug: 'open-top', label: 'Open Top' },
 ])
 
-const CURRENCIES = ['EGP', 'USD', 'EUR']
+const CURRENCIES = SEA_PRICING_CURRENCIES
 
 /** Default editable charge rows for ocean freight */
 const DEFAULT_SEA_LINE_NAMES = ['Ocean Freight', 'THC', 'B/L Fee', 'Telex Release']
@@ -1213,51 +1214,43 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                 ))}
                 {seaCustomLines.map((row) => (
                   <div key={row.id} className="sea-rate-grid-custom-cell">
-                    <div className="sea-rate-grid-custom-cell__name-row">
-                      <input
-                        type="text"
-                        className="sea-rate-input"
-                        placeholder={t('pricing.customChargeNamePlaceholder', 'e.g. ISPS, EBS, BAF...')}
-                        value={row.name}
-                        onChange={(e) => patchSeaCustomLine(row.id, { name: e.target.value })}
-                        aria-label={t('pricing.customChargeName', 'Charge name')}
-                      />
-                      <button
-                        type="button"
-                        className="sea-rate-custom-remove"
-                        onClick={() => removeCustomCharge(row.id)}
-                        aria-label={t('common.remove', 'Remove')}
-                        title={t('common.remove', 'Remove')}
-                      >
-                        ×
-                      </button>
-                    </div>
-                    <div className="sea-rate-input-group">
-                      <input
-                        type="number"
-                        min={0}
-                        step="0.01"
-                        className="sea-rate-input"
-                        value={displayNumericInputValue(row.amount)}
-                        onChange={(e) => patchSeaCustomLine(row.id, { amount: e.target.value })}
-                        placeholder="0"
-                        aria-label={t('pricing.amount', 'Amount')}
-                      />
-                      <select
-                        className="sea-rate-select"
-                        value={row.currency}
-                        onChange={(e) => patchSeaCustomLine(row.id, { currency: e.target.value })}
-                        aria-label={t('pricing.currencyAria', 'Currency')}
-                      >
-                        {CURRENCIES.map((c) => (
-                          <option key={c} value={c}>
-                            {c}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    <SeaCustomChargeEntry
+                      name={row.name}
+                      amount={row.amount}
+                      currency={row.currency}
+                      currencies={CURRENCIES}
+                      nameLabel={t('pricing.customChargeName', 'اسم البند / Charge Name')}
+                      amountLabel={t('pricing.amount', 'المبلغ / Amount')}
+                      currencyLabel={t('pricing.currencyAria', 'العملة')}
+                      namePlaceholder={t('pricing.customChargeNamePlaceholder', 'e.g. ISPS, EBS, BAF...')}
+                      onNameChange={(v) => patchSeaCustomLine(row.id, { name: v })}
+                      onAmountChange={(v) => patchSeaCustomLine(row.id, { amount: v })}
+                      onCurrencyChange={(v) => patchSeaCustomLine(row.id, { currency: v })}
+                      onAction={() => removeCustomCharge(row.id)}
+                      actionLabel="×"
+                      actionAriaLabel={t('common.remove', 'Remove')}
+                      actionVariant="remove"
+                    />
                   </div>
                 ))}
+              </div>
+              <div className="sea-rate-custom-charges">
+                <div className="sea-rate-hint">بنود إضافية (حسب الخط الملاحي) / Custom Charges:</div>
+                <div className="sea-rate-sub-section">
+                  <SeaCustomChargeEntry
+                    name={customChargeDraft.name}
+                    amount={customChargeDraft.amount}
+                    currency={customChargeDraft.currency}
+                    currencies={CURRENCIES}
+                    onNameChange={(v) => setCustomChargeDraft((prev) => ({ ...prev, name: v }))}
+                    onAmountChange={(v) => setCustomChargeDraft((prev) => ({ ...prev, amount: v }))}
+                    onCurrencyChange={(v) => setCustomChargeDraft((prev) => ({ ...prev, currency: v }))}
+                    onAction={addCustomCharge}
+                    actionLabel="+ أضف بند"
+                    actionAriaLabel={t('pricing.addCustomCharge', 'Add charge line')}
+                    actionVariant="add"
+                  />
+                </div>
               </div>
               {oceanMeta.type === 'Reefer' ? (
                 <div
@@ -1388,52 +1381,6 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                   </div>
                 </div>
               ) : null}
-              <div className="sea-rate-custom-charges">
-                <div className="sea-rate-hint">بنود إضافية (حسب الخط الملاحي) / Custom Charges:</div>
-                <div className="sea-rate-sub-section">
-                  <div className="sea-rate-custom-entry">
-                    <div className="sea-rate-custom-name">
-                      <label className="sea-rate-label">اسم البند / Charge Name</label>
-                      <input
-                        type="text"
-                        className="sea-rate-input"
-                        placeholder="e.g. ISPS, EBS, BAF..."
-                        value={customChargeDraft.name}
-                        onChange={(e) => setCustomChargeDraft((prev) => ({ ...prev, name: e.target.value }))}
-                      />
-                    </div>
-                    <div className="sea-rate-custom-amount">
-                      <label className="sea-rate-label">المبلغ / Amount</label>
-                      <input
-                        type="number"
-                        min={0}
-                        step="0.01"
-                        className="sea-rate-input"
-                        placeholder="0"
-                        value={displayNumericInputValue(customChargeDraft.amount)}
-                        onChange={(e) => setCustomChargeDraft((prev) => ({ ...prev, amount: e.target.value }))}
-                      />
-                    </div>
-                    <div className="sea-rate-custom-currency">
-                      <label className="sea-rate-label">العملة</label>
-                      <select
-                        className="sea-rate-select"
-                        value={customChargeDraft.currency || 'USD'}
-                        onChange={(e) => setCustomChargeDraft((prev) => ({ ...prev, currency: e.target.value }))}
-                      >
-                        {CURRENCIES.map((c) => (
-                          <option key={c} value={c}>
-                            {c}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <button type="button" className="sea-rate-btn" onClick={addCustomCharge}>
-                      + أضف بند
-                    </button>
-                  </div>
-                </div>
-              </div>
               </PricingFinSection>
 
               <PricingFinSection title="قسم 5: الصلاحية والملاحظات / Validity &amp; Notes">

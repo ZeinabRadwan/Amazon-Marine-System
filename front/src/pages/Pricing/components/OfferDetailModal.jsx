@@ -4,7 +4,12 @@ import { ChevronDown, X, Ship, Truck, FilePlus2, ArrowRight, ArrowLeft, MapPin }
 import '../../Clients/ClientDetailModal.css'
 import '../../Shipments/Shipments.css'
 import { formatDate, sortCurrencyCodes, sumAmountsByCurrencyFromItems, sumPricingObjectByCurrency } from '../../../utils/dateUtils'
-import { inlandContainerSummary, seaContainerSummary } from '../utils/pricingDisplay'
+import {
+  inlandContainerSummary,
+  parseOtherChargeLabels,
+  resolvePricingBreakdownLabel,
+  seaContainerSummary,
+} from '../utils/pricingDisplay'
 import { CurrencyMapBadges } from '../../Accountings/CurrencyMapBadges'
 import '../../../components/PageHeader/PageHeader.css'
 import '../Pricing.css'
@@ -33,10 +38,6 @@ const INLAND_ITEMS = [
   { key: 't40r', optional: true },
   { key: 'generator', optional: true },
 ]
-
-function breakdownLineLabel(code, t) {
-  return t(`pricing.breakdown.${code}`, { defaultValue: code })
-}
 
 /** Split combined D&D string into POL / POD columns when possible. */
 function splitFreeTimePolPod(dnd) {
@@ -93,7 +94,9 @@ function parseFreeTimeFromDnd(dnd) {
   return result
 }
 
-function seaPricingLabel(code, t) {
+function seaPricingLabel(code, t, otherChargeLabels = []) {
+  const custom = resolvePricingBreakdownLabel(code, t, otherChargeLabels)
+  if (/^otherCharge\d+$/i.test(String(code || ''))) return custom
   const labels = {
     of20: 'Ocean freight (OF)',
     of20rf: 'Ocean freight (OF)',
@@ -108,7 +111,7 @@ function seaPricingLabel(code, t) {
     pti: 'PTI',
     powerDay: 'Power',
   }
-  return labels[code] || t(`pricing.breakdown.${code}`, { defaultValue: code })
+  return labels[code] || custom
 }
 
 const SEA_KEYS = SEA_ITEMS.map((x) => x.key)
@@ -270,6 +273,11 @@ export default function OfferDetailModal({ isOpen, offer, onClose, onCreateQuota
   const isSea = offer?.pricing_type === 'sea'
   const amountFirst = Boolean(i18n.language?.startsWith('ar'))
 
+  const otherChargeLabels = useMemo(
+    () => parseOtherChargeLabels(offer?.other_charges),
+    [offer?.other_charges]
+  )
+
   const breakdownRows = useMemo(() => {
     if (!offer) return []
     const dash = t('common.dash')
@@ -281,19 +289,25 @@ export default function OfferDetailModal({ isOpen, offer, onClose, onCreateQuota
         const has = Number.isFinite(n)
         const cur = String(row.currency || 'USD').toUpperCase().trim() || 'USD'
         const code = row.code || row.item_code || row.pricing_item_code || `line-${idx}`
+        const label = seaMode
+          ? seaPricingLabel(code, t, otherChargeLabels)
+          : resolvePricingBreakdownLabel(code, t, otherChargeLabels)
         return {
           key: code,
-          label: breakdownLineLabel(code, t),
+          label,
           money: has ? { [cur]: n } : null,
         }
       })
     }
     const items = seaMode ? SEA_ITEMS : INLAND_ITEMS
     const fallbackCur = seaMode ? 'USD' : 'EGP'
-    return items
+    const knownKeys = new Set(items.map((it) => it.key))
+    const rows = items
       .map((it) => {
         const item = offer.pricing?.[it.key]
-        const label = seaMode ? seaPricingLabel(it.key, t) : breakdownLineLabel(it.key, t)
+        const label = seaMode
+          ? seaPricingLabel(it.key, t, otherChargeLabels)
+          : resolvePricingBreakdownLabel(it.key, t, otherChargeLabels)
         if (it.optional && (!item || item.price == null || item.price === '')) return null
         if (!item || item.price == null || item.price === '') {
           return it.optional ? null : { key: it.key, label, money: null }
@@ -304,7 +318,27 @@ export default function OfferDetailModal({ isOpen, offer, onClose, onCreateQuota
         return { key: it.key, label, money: { [cur]: n } }
       })
       .filter(Boolean)
-  }, [offer, t])
+
+    if (offer.pricing && typeof offer.pricing === 'object') {
+      Object.entries(offer.pricing).forEach(([code, item]) => {
+        if (knownKeys.has(code)) return
+        if (!/^otherCharge\d+$/i.test(code)) return
+        if (item?.price == null || item.price === '') return
+        const n = Number(item.price)
+        if (!Number.isFinite(n)) return
+        const cur = String(item?.currency || fallbackCur).toUpperCase().trim() || fallbackCur
+        rows.push({
+          key: code,
+          label: seaMode
+            ? seaPricingLabel(code, t, otherChargeLabels)
+            : resolvePricingBreakdownLabel(code, t, otherChargeLabels),
+          money: { [cur]: n },
+        })
+      })
+    }
+
+    return rows
+  }, [offer, t, otherChargeLabels])
 
   const approxTotalsByCurrency = useMemo(() => {
     if (!offer) return {}
@@ -371,9 +405,6 @@ export default function OfferDetailModal({ isOpen, offer, onClose, onCreateQuota
     onCreateQuotation?.(offer)
     onClose?.()
   }
-
-  const hasAdditionalInfo =
-    Boolean(offer.other_charges?.trim()) || (!isSea && (offer.transit_time || offer.region))
 
   const notesText = typeof offer.notes === 'string' ? offer.notes.trim() : ''
   const hasNotes = Boolean(notesText)
@@ -601,33 +632,6 @@ export default function OfferDetailModal({ isOpen, offer, onClose, onCreateQuota
               </div>
             </PricingFinSection>
           ) : null}
-
-          <PricingFinSection title={t('pricing.detailAdditionalInfo', 'Additional info')}>
-            {hasAdditionalInfo ? (
-              <div className="rounded-2xl border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700 overflow-hidden shadow-sm bg-white dark:bg-gray-800/30">
-                {!isSea && offer.transit_time ? (
-                  <div className="px-4 py-3 flex flex-col sm:flex-row sm:justify-between gap-1">
-                    <span className="text-xs font-bold uppercase text-gray-500 dark:text-gray-400">{t('pricing.transitTimeLabel', 'Transit')}</span>
-                    <span className="text-sm text-gray-800 dark:text-gray-200">{offer.transit_time || dash}</span>
-                  </div>
-                ) : null}
-                {!isSea && offer.region ? (
-                  <div className="px-4 py-3 flex flex-col sm:flex-row sm:justify-between gap-1">
-                    <span className="text-xs font-bold uppercase text-gray-500 dark:text-gray-400">{t('pricing.region', 'Region')}</span>
-                    <span className="text-sm text-gray-800 dark:text-gray-200">{offer.region}</span>
-                  </div>
-                ) : null}
-                {offer.other_charges ? (
-                  <div className="px-4 py-3 flex flex-col gap-1">
-                    <span className="text-xs font-bold uppercase text-gray-500 dark:text-gray-400">{t('pricing.otherCharges', 'Other charges')}</span>
-                    <span className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap leading-relaxed">{offer.other_charges}</span>
-                  </div>
-                ) : null}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500 dark:text-gray-400 py-3 px-1">{t('pricing.detailNoExtra', 'No additional information.')}</p>
-            )}
-          </PricingFinSection>
             </div>
           </div>
         </div>

@@ -63,3 +63,29 @@ export function inlandContainerSummary(pricing, t) {
   if (pricing.p40rf?.price != null) parts.push(t('pricing.detailContainerRf'))
   return parts.length ? parts.join(t('pricing.cardContainerSep')) : dash
 }
+
+/** User-entered custom charge names stored on the offer (`other_charges`, pipe-separated). */
+export function parseOtherChargeLabels(otherCharges) {
+  if (!otherCharges?.trim()) return []
+  return String(otherCharges)
+    .split(/\s*\|\s*/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+}
+
+const OTHER_CHARGE_CODE_RE = /^otherCharge(\d+)$/i
+
+/** Resolve display label for a pricing line code (incl. custom `otherChargeN` rows). */
+export function resolvePricingBreakdownLabel(code, t, otherChargeLabels = []) {
+  const key = String(code || '')
+  const match = OTHER_CHARGE_CODE_RE.exec(key)
+  if (match) {
+    const idx = parseInt(match[1], 10) - 1
+    if (idx >= 0 && otherChargeLabels[idx]) return otherChargeLabels[idx]
+  }
+  return t(`pricing.breakdown.${key}`, { defaultValue: key })
+}
+
+export function isOtherChargePricingCode(code) {
+  return OTHER_CHARGE_CODE_RE.test(String(code || ''))
+}

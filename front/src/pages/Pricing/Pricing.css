@@ -734,40 +734,25 @@
 
 .sea-rate-grid-custom-cell {
   position: relative;
+  grid-column: 1 / -1;
   min-width: 0;
   width: 100%;
-  align-self: stretch;
 }
 
-.sea-rate-grid-custom-cell__name-row {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-bottom: 4px;
+.sea-rate-grid-custom-cell .sea-rate-custom-entry {
+  width: 100%;
 }
 
-.sea-rate-grid-custom-cell__name-row .sea-rate-input {
-  flex: 1;
-  min-width: 0;
-  font-size: 12px;
-}
-
-.sea-rate-custom-remove {
+.sea-rate-btn--row-remove {
   flex-shrink: 0;
-  width: 26px;
-  height: 26px;
-  padding: 0;
-  border: 1px solid #d0d0d0;
-  border-radius: 6px;
-  background: #fff;
-  color: #888;
-  font-family: inherit;
-  font-size: 16px;
+  min-width: 2.25rem;
+  padding-inline: 10px;
+  font-size: 18px;
   line-height: 1;
-  cursor: pointer;
+  color: #888;
 }
 
-.sea-rate-custom-remove:hover {
+.sea-rate-btn--row-remove:hover {
   background: #fef2f2;
   border-color: #fca5a5;
   color: #b91c1c;
@@ -775,6 +760,10 @@
 
 .sea-rate-custom-charges {
   margin-bottom: 16px;
+}
+
+.sea-rate-custom-charges + .sea-rate-reefer-charges {
+  margin-top: 4px;
 }
 
 .sea-rate-custom-entry {
@@ -1637,6 +1626,7 @@
   .sea-rate-pricing-grid {
     grid-template-columns: 1fr;
   }
+
 }
 
 @media (max-width: 720px) {
