@@ -16,17 +16,26 @@
         $client = $quote->client;
         $formatBreakdown = $formatBreakdown ?? static fn (array $m): string => '—';
         $currencyOrder = ['USD', 'EGP', 'EUR'];
+        $isSeaQuote = $isSeaQuote ?? true;
+        $isInlandQuote = $isInlandQuote ?? false;
         $routeMetas = [];
-        if ($showCarrier) {
-            $routeMetas[] = ['val' => $quote->shipping_line ?: '—', 'lbl' => $labels['carrier']];
+        if ($isSeaQuote) {
+            if ($showCarrier) {
+                $routeMetas[] = ['val' => $quote->shipping_line ?: '—', 'lbl' => $labels['carrier']];
+            }
+            $routeMetas[] = ['val' => $quote->transit_time ?: '—', 'lbl' => $labels['transit_time']];
+            $routeMetas[] = ['val' => $containerDisplay, 'lbl' => $labels['containers']];
         }
-        $routeMetas[] = ['val' => $quote->transit_time ?: '—', 'lbl' => $labels['transit_time']];
-        $routeMetas[] = ['val' => $containerDisplay, 'lbl' => $labels['containers']];
-        $sections = [
-            ['key' => 'ocean', 'items' => $oceanItems, 'totals' => $oceanTotalsByCurrency, 'en' => 'Ocean Freight', 'ar' => 'الشحن البحري'],
-            ['key' => 'inland', 'items' => $inlandItems, 'totals' => $inlandTotalsByCurrency, 'en' => 'Inland Transport', 'ar' => 'النقل الداخلي'],
-            ['key' => 'customs', 'items' => $customsItems, 'totals' => $customsTotalsByCurrency, 'en' => 'Customs Clearance', 'ar' => 'التخليص الجمركي'],
-        ];
+        $sections = [];
+        if ($isSeaQuote) {
+            $sections[] = ['key' => 'ocean', 'items' => $oceanItems, 'totals' => $oceanTotalsByCurrency, 'en' => 'Ocean Freight', 'ar' => 'الشحن البحري'];
+            if ($customsItems->isNotEmpty()) {
+                $sections[] = ['key' => 'customs', 'items' => $customsItems, 'totals' => $customsTotalsByCurrency, 'en' => 'Customs Clearance', 'ar' => 'التخليص الجمركي'];
+            }
+        }
+        if ($isInlandQuote) {
+            $sections[] = ['key' => 'inland', 'items' => $inlandItems, 'totals' => $inlandTotalsByCurrency, 'en' => 'Inland Transport', 'ar' => 'النقل الداخلي'];
+        }
     @endphp
 
     <div class="pdf-wrapper pdf-inv-html pdf-sd-doc pdf-quote-doc" dir="ltr" lang="{{ $lang }}">
@@ -137,15 +146,27 @@
                     <td class="pdf-inv-route-tpl-ports-cell" valign="middle">
                         <table class="pdf-inv-route-tpl-ports" width="100%">
                             <tr>
-                                <td class="pdf-inv-route-tpl-port" valign="middle">
-                                    <div class="pdf-inv-route-tpl-port-name">{{ $quote->pol ?: '—' }}</div>
-                                    <div class="pdf-inv-route-tpl-port-lbl">{{ $labels['pol'] }}</div>
-                                </td>
-                                <td class="pdf-inv-route-tpl-arrow" valign="middle">→</td>
-                                <td class="pdf-inv-route-tpl-port pdf-inv-route-tpl-port--end" valign="middle">
-                                    <div class="pdf-inv-route-tpl-port-name">{{ $quote->pod ?: '—' }}</div>
-                                    <div class="pdf-inv-route-tpl-port-lbl">{{ $labels['pod'] }}</div>
-                                </td>
+                                @if ($isInlandQuote)
+                                    <td class="pdf-inv-route-tpl-port" valign="middle">
+                                        <div class="pdf-inv-route-tpl-port-name">{{ $quote->municipality ?: '—' }}</div>
+                                        <div class="pdf-inv-route-tpl-port-lbl">{{ $labels['governorate'] ?? 'Governorate' }}</div>
+                                    </td>
+                                    <td class="pdf-inv-route-tpl-arrow" valign="middle">→</td>
+                                    <td class="pdf-inv-route-tpl-port pdf-inv-route-tpl-port--end" valign="middle">
+                                        <div class="pdf-inv-route-tpl-port-name">{{ $quote->inland_address ?: '—' }}</div>
+                                        <div class="pdf-inv-route-tpl-port-lbl">{{ $labels['address'] ?? 'Address' }}</div>
+                                    </td>
+                                @else
+                                    <td class="pdf-inv-route-tpl-port" valign="middle">
+                                        <div class="pdf-inv-route-tpl-port-name">{{ $quote->pol ?: '—' }}</div>
+                                        <div class="pdf-inv-route-tpl-port-lbl">{{ $labels['pol'] }}</div>
+                                    </td>
+                                    <td class="pdf-inv-route-tpl-arrow" valign="middle">→</td>
+                                    <td class="pdf-inv-route-tpl-port pdf-inv-route-tpl-port--end" valign="middle">
+                                        <div class="pdf-inv-route-tpl-port-name">{{ $quote->pod ?: '—' }}</div>
+                                        <div class="pdf-inv-route-tpl-port-lbl">{{ $labels['pod'] }}</div>
+                                    </td>
+                                @endif
                             </tr>
                         </table>
                     </td>
@@ -165,7 +186,7 @@
             </table>
         </div>
 
-        @if ($sailingDisplay !== '—')
+        @if ($isSeaQuote && $sailingDisplay !== '—')
             <div class="pdf-quote-sailing-banner">
                 <div class="pdf-quote-sailing-banner__titles">
                     <span class="pdf-quote-sailing-banner__title-en">{{ $labels['available_sailing_en'] }}</span>

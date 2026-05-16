@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { User, MapPin, Ship, Truck, Package, DollarSign } from 'lucide-react'
 import { formatSailingScheduleFromQuote } from '../utils/sailingSchedule'
 import { buildQuoteDetailViewModel } from '../utils/quoteDetailViewModel'
+import { buildQuoteRouteSummary } from '../utils/quotePricingType'
 import QuoteSailingScheduleDisplay from './QuoteSailingScheduleDisplay'
 import QuoteFinCard from './quoteFinCard'
 import { QuoteSummaryBadge, ShippingLineSummaryBadgeReadOnly } from './quoteFormLayout'
@@ -21,6 +22,9 @@ export default function QuoteDetailViewContent({ quote }) {
 
   const {
     isQuick,
+    isSeaQuote,
+    isInlandQuote,
+    routeSummary,
     oceanLines,
     inlandLineRows,
     inlandOfferId,
@@ -83,21 +87,29 @@ export default function QuoteDetailViewContent({ quote }) {
       <QuoteFinCard defaultOpen icon={MapPin} title={t('pricing.quoteSectionRoute', 'ملخص المسار / Route summary')}>
         <div className="pricing-quote-shipment-badges">
           <QuoteSummaryBadge label={t('pricing.quoteBadgeRoute', 'المسار')}>
-            {quote?.pol || '—'} → {quote?.pod || '—'}
+            {routeSummary || buildQuoteRouteSummary(quote, dash)}
           </QuoteSummaryBadge>
-          <ShippingLineSummaryBadgeReadOnly
-            line={quote?.shipping_line || '—'}
-            visible={showCarrierOnPdf}
-            t={t}
-          />
-          <QuoteSummaryBadge label={t('pricing.quoteBadgeContainer', 'نوع الحاوية')}>{containerLabel}</QuoteSummaryBadge>
-          <QuoteSummaryBadge label={t('pricing.quoteBadgeTransit', 'مدة العبور')}>
-            {quote?.transit_time || dash}
-          </QuoteSummaryBadge>
-          <QuoteSailingScheduleDisplay text={sailingScheduleDisplayText} />
+          {isSeaQuote ? (
+            <>
+              <ShippingLineSummaryBadgeReadOnly
+                line={quote?.shipping_line || dash}
+                visible={showCarrierOnPdf}
+                t={t}
+              />
+              <QuoteSummaryBadge label={t('pricing.quoteBadgeContainer', 'نوع الحاوية')}>{containerLabel}</QuoteSummaryBadge>
+              <QuoteSummaryBadge label={t('pricing.quoteBadgeTransit', 'مدة العبور')}>
+                {quote?.transit_time || dash}
+              </QuoteSummaryBadge>
+              <QuoteSailingScheduleDisplay text={sailingScheduleDisplayText} />
+            </>
+          ) : null}
+          {isInlandQuote && quote?.inland_port ? (
+            <QuoteSummaryBadge label={t('pricing.port', 'Port')}>{quote.inland_port}</QuoteSummaryBadge>
+          ) : null}
         </div>
       </QuoteFinCard>
 
+      {isSeaQuote ? (
       <QuoteFinCard defaultOpen icon={Ship} title={t('pricing.quoteSectionOcean', 'القسم 1: الشحن البحري / Ocean freight')}>
         {oceanLines.length === 0 ? (
           <p className="text-sm text-gray-500 dark:text-gray-400 m-0">
@@ -124,7 +136,9 @@ export default function QuoteDetailViewContent({ quote }) {
           </div>
         )}
       </QuoteFinCard>
+      ) : null}
 
+      {isInlandQuote ? (
       <QuoteFinCard defaultOpen icon={Truck} title={t('pricing.quoteSectionInland', 'Section 2: Inland transport')}>
         <QuoteInlandTransportSection
           readOnly
@@ -161,7 +175,9 @@ export default function QuoteDetailViewContent({ quote }) {
           onInlandGenCurrencyChange={noop}
         />
       </QuoteFinCard>
+      ) : null}
 
+      {isSeaQuote ? (
       <QuoteFinCard defaultOpen icon={Package} title={t('pricing.quoteSectionCustoms', 'Section 3: Customs clearance')}>
         <QuoteCustomsClearanceSection
           readOnly
@@ -176,6 +192,7 @@ export default function QuoteDetailViewContent({ quote }) {
           totalCostByCurrency={customsSellingByCurrency}
         />
       </QuoteFinCard>
+      ) : null}
 
       <QuoteFinCard defaultOpen icon={DollarSign} title={t('pricing.quoteSectionHandling', 'Section 4: Handling fees')}>
         <QuoteHandlingFeesSection
@@ -189,23 +206,29 @@ export default function QuoteDetailViewContent({ quote }) {
       </QuoteFinCard>
 
       <QuoteGrandSummaryPanel title={t('pricing.quoteSectionSummary', 'Summary')}>
-        <QuoteSummaryRow label={t('pricing.summaryOcean', 'Ocean freight total')}>
-          <QuoteSummaryCurrencyText amounts={oceanSellingByCurrency} dash={dash} />
-        </QuoteSummaryRow>
-        <QuoteSummaryRow label={t('pricing.summaryInland', 'Inland transport total')}>
-          {hasInlandQuoteData ? (
-            <QuoteSummaryCurrencyText amounts={inlandSectionSellingByCurrency} dash={dash} />
-          ) : (
-            <span className="pricing-quote-summary-currency">{dash}</span>
-          )}
-        </QuoteSummaryRow>
-        <QuoteSummaryRow label={t('pricing.summaryCustoms', 'Customs total')}>
-          {customsEnabled ? (
-            <QuoteSummaryCurrencyText amounts={customsSellingByCurrency} dash={dash} />
-          ) : (
-            <span className="pricing-quote-summary-currency">{dash}</span>
-          )}
-        </QuoteSummaryRow>
+        {isSeaQuote ? (
+          <QuoteSummaryRow label={t('pricing.summaryOcean', 'Ocean freight total')}>
+            <QuoteSummaryCurrencyText amounts={oceanSellingByCurrency} dash={dash} />
+          </QuoteSummaryRow>
+        ) : null}
+        {isInlandQuote ? (
+          <QuoteSummaryRow label={t('pricing.summaryInland', 'Inland transport total')}>
+            {hasInlandQuoteData ? (
+              <QuoteSummaryCurrencyText amounts={inlandSectionSellingByCurrency} dash={dash} />
+            ) : (
+              <span className="pricing-quote-summary-currency">{dash}</span>
+            )}
+          </QuoteSummaryRow>
+        ) : null}
+        {isSeaQuote ? (
+          <QuoteSummaryRow label={t('pricing.summaryCustoms', 'Customs total')}>
+            {customsEnabled ? (
+              <QuoteSummaryCurrencyText amounts={customsSellingByCurrency} dash={dash} />
+            ) : (
+              <span className="pricing-quote-summary-currency">{dash}</span>
+            )}
+          </QuoteSummaryRow>
+        ) : null}
         <QuoteSummaryRow label={t('pricing.summaryHandling', 'Handling fees')}>
           <QuoteSummaryCurrencyText amounts={handlingSellingByCurrency} dash={dash} />
         </QuoteSummaryRow>

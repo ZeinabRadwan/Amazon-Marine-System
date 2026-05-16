@@ -75,8 +75,11 @@ class PricingQuoteController extends Controller
                 'quick_mode_reason' => $quote->quick_mode_reason,
                 'client' => $quote->client ? ['id' => $quote->client->id, 'name' => $quote->client->name] : null,
                 'sales_user' => $quote->salesUser ? ['id' => $quote->salesUser->id, 'name' => $quote->salesUser->name] : null,
+                'pricing_type' => $this->resolveQuotePricingType($quote),
                 'pol' => $quote->pol,
                 'pod' => $quote->pod,
+                'inland_port' => $quote->inland_port,
+                'inland_address' => $quote->inland_address,
                 'shipping_line' => $quote->shipping_line,
                 'container_type' => $quote->container_type,
                 'qty' => $quote->qty,
@@ -121,6 +124,9 @@ class PricingQuoteController extends Controller
             'client_id' => ['nullable', 'integer', 'exists:clients,id'],
             'sales_user_id' => ['nullable', 'integer', 'exists:users,id'],
             'pricing_offer_id' => [Rule::excludeIf($isQuick), 'nullable', 'integer', 'exists:pricing_offers,id'],
+            'pricing_type' => ['sometimes', 'string', 'in:sea,inland'],
+            'inland_port' => ['nullable', 'string', 'max:255'],
+            'inland_address' => ['nullable', 'string', 'max:500'],
             'origin_rate_snapshot_id' => [Rule::excludeIf($isQuick), 'nullable', 'integer', 'exists:pricing_offer_snapshots,id'],
             'quick_mode' => ['sometimes', 'boolean'],
             'is_quick_quotation' => ['sometimes', 'boolean'],
@@ -199,26 +205,36 @@ class PricingQuoteController extends Controller
                 abort(422, 'At most one sailing date is allowed for weekly schedule.');
             }
 
+            $pricingType = $this->resolveQuotePricingTypeFromPayload($validated, $quickMode);
+
             $quote = new PricingQuote;
             $quote->quote_no = $validated['quote_no'] ?? $this->generateQuoteNo();
             $quote->client_id = $validated['client_id'] ?? null;
             $quote->sales_user_id = $validated['sales_user_id'] ?? null;
             $quote->pricing_offer_id = $quickMode ? null : ($validated['pricing_offer_id'] ?? null);
+            $quote->pricing_type = $pricingType;
             $quote->origin_rate_snapshot_id = $quickMode ? null : $originSnapshotId;
             $quote->quick_mode = $quickMode;
             $quote->quick_mode_reason = $quickModeReason;
-            $quote->pol = $validated['pol'] ?? null;
-            $quote->pod = $validated['pod'] ?? null;
-            $quote->shipping_line = $validated['shipping_line'] ?? null;
-            $quote->show_carrier_on_pdf = (bool) ($validated['show_carrier_on_pdf'] ?? true);
-            $quote->container_type = $validated['container_type'] ?? null;
-            $quote->container_spec = $validated['container_spec'] ?? null;
-            $quote->qty = $validated['qty'] ?? null;
-            $quote->transit_time = $validated['transit_time'] ?? null;
-            $quote->free_time = $validated['free_time'] ?? null;
-            $quote->free_time_data = $validated['free_time_data'] ?? null;
-            $quote->schedule_type = $validated['schedule_type'] ?? null;
-            $quote->sailing_weekdays = $validated['sailing_weekdays'] ?? null;
+            $this->applyQuoteRouteFields($quote, $validated, $pricingType);
+            $quote->shipping_line = $pricingType === 'inland' ? null : ($validated['shipping_line'] ?? null);
+            $quote->show_carrier_on_pdf = $pricingType === 'inland'
+                ? false
+                : (bool) ($validated['show_carrier_on_pdf'] ?? true);
+            if ($pricingType === 'sea') {
+                $quote->container_type = $validated['container_type'] ?? null;
+                $quote->container_spec = $validated['container_spec'] ?? null;
+                $quote->qty = $validated['qty'] ?? null;
+                $quote->transit_time = $validated['transit_time'] ?? null;
+                $quote->free_time = $validated['free_time'] ?? null;
+                $quote->free_time_data = $validated['free_time_data'] ?? null;
+                $quote->schedule_type = $validated['schedule_type'] ?? null;
+                $quote->sailing_weekdays = $validated['sailing_weekdays'] ?? null;
+            } else {
+                $quote->container_type = null;
+                $quote->container_spec = null;
+                $quote->qty = null;
+            }
             $quote->valid_from = $validated['valid_from'] ?? null;
             $quote->valid_to = $validated['valid_to'] ?? null;
             $quote->notes = $validated['notes'] ?? null;
@@ -233,7 +249,10 @@ class PricingQuoteController extends Controller
             $quote->save();
 
             $this->syncQuoteItems($quote, $validated['items'] ?? []);
-            $this->syncQuoteSailingDates($quote, $validated['sailing_dates'] ?? []);
+            $this->syncQuoteSailingDates(
+                $quote,
+                $pricingType === 'sea' ? ($validated['sailing_dates'] ?? []) : []
+            );
 
             return $quote;
         });
@@ -255,6 +274,9 @@ class PricingQuoteController extends Controller
             'client_id' => ['sometimes', 'nullable', 'integer', 'exists:clients,id'],
             'sales_user_id' => ['sometimes', 'nullable', 'integer', 'exists:users,id'],
             'pricing_offer_id' => [Rule::excludeIf($isQuick), 'sometimes', 'nullable', 'integer', 'exists:pricing_offers,id'],
+            'pricing_type' => ['sometimes', 'string', 'in:sea,inland'],
+            'inland_port' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'inland_address' => ['sometimes', 'nullable', 'string', 'max:500'],
             'origin_rate_snapshot_id' => [Rule::excludeIf($isQuick), 'sometimes', 'nullable', 'integer', 'exists:pricing_offer_snapshots,id'],
             'quick_mode' => ['sometimes', 'boolean'],
             'is_quick_quotation' => ['sometimes', 'boolean'],
@@ -325,7 +347,26 @@ class PricingQuoteController extends Controller
         }
 
         DB::transaction(function () use ($quote, $validated, $quickMode): void {
+            $payloadForType = array_merge(
+                [
+                    'pricing_type' => $quote->pricing_type,
+                    'pricing_offer_id' => $quote->pricing_offer_id,
+                    'pol' => $quote->pol,
+                    'pod' => $quote->pod,
+                    'inland_port' => $quote->inland_port,
+                    'inland_address' => $quote->inland_address,
+                    'municipality' => $quote->municipality,
+                ],
+                $validated
+            );
+            if (array_key_exists('items', $validated)) {
+                $payloadForType['items'] = $validated['items'];
+            }
+
+            $pricingType = $this->resolveQuotePricingTypeFromPayload($payloadForType, $quickMode);
+
             $quote->fill($validated);
+            $quote->pricing_type = $pricingType;
             if ($quickMode) {
                 $quote->quick_mode = true;
                 $quote->pricing_offer_id = null;
@@ -344,6 +385,39 @@ class PricingQuoteController extends Controller
                     $quote->origin_rate_snapshot_id = $this->createOriginRateSnapshot($offer)->id;
                 }
             }
+
+            $this->applyQuoteRouteFields($quote, $payloadForType, $pricingType);
+
+            if (array_key_exists('shipping_line', $validated) || $pricingType === 'inland') {
+                $quote->shipping_line = $pricingType === 'inland' ? null : ($validated['shipping_line'] ?? $quote->shipping_line);
+            }
+            if ($pricingType === 'inland') {
+                $quote->show_carrier_on_pdf = false;
+                $quote->container_type = null;
+                $quote->container_spec = null;
+                $quote->qty = null;
+                $quote->transit_time = null;
+                $quote->free_time = null;
+                $quote->free_time_data = null;
+                $quote->schedule_type = null;
+                $quote->sailing_weekdays = null;
+            } elseif (array_key_exists('container_type', $validated) || array_key_exists('qty', $validated)) {
+                $quote->container_type = $validated['container_type'] ?? $quote->container_type;
+                $quote->container_spec = $validated['container_spec'] ?? $quote->container_spec;
+                $quote->qty = $validated['qty'] ?? $quote->qty;
+                $quote->transit_time = $validated['transit_time'] ?? $quote->transit_time;
+                $quote->free_time = $validated['free_time'] ?? $quote->free_time;
+                $quote->free_time_data = $validated['free_time_data'] ?? $quote->free_time_data;
+                $quote->schedule_type = $validated['schedule_type'] ?? $quote->schedule_type;
+                $quote->sailing_weekdays = $validated['sailing_weekdays'] ?? $quote->sailing_weekdays;
+            }
+
+            if (array_key_exists('municipality', $validated)) {
+                $quote->municipality = trim((string) ($validated['municipality'] ?? '')) !== ''
+                    ? trim((string) $validated['municipality'])
+                    : null;
+            }
+
             $quote->save();
 
             if (array_key_exists('items', $validated)) {
@@ -351,7 +425,12 @@ class PricingQuoteController extends Controller
             }
 
             if (array_key_exists('sailing_dates', $validated)) {
-                $this->syncQuoteSailingDates($quote, $validated['sailing_dates'] ?? []);
+                $this->syncQuoteSailingDates(
+                    $quote,
+                    $pricingType === 'sea' ? ($validated['sailing_dates'] ?? []) : []
+                );
+            } elseif ($pricingType === 'inland') {
+                $this->syncQuoteSailingDates($quote, []);
             }
         });
 
@@ -434,11 +513,18 @@ class PricingQuoteController extends Controller
                 : null;
         };
 
+        $quotePricingType = $this->resolveQuotePricingType($quote);
+        $isSeaQuote = $quotePricingType === 'sea';
+        $isInlandQuote = $quotePricingType === 'inland';
+
         $html = view('pricing.quote_pdf', [
             'quote' => $quote,
             'lang' => $locale,
             'labels' => $labels,
-            'showCarrier' => (bool) ($quote->show_carrier_on_pdf ?? true),
+            'quotePricingType' => $quotePricingType,
+            'isSeaQuote' => $isSeaQuote,
+            'isInlandQuote' => $isInlandQuote,
+            'showCarrier' => $isSeaQuote && (bool) ($quote->show_carrier_on_pdf ?? true),
             'companyProfile' => $companyProfile,
             'companyDisplayName' => $companyDisplayName,
             'pdfLogoSrc' => PdfLogo::imgSrc(),
@@ -955,6 +1041,9 @@ class PricingQuoteController extends Controller
             'client' => $quote->client ? ['id' => $quote->client->id, 'name' => $quote->client->name] : null,
             'sales_user' => $quote->salesUser ? ['id' => $quote->salesUser->id, 'name' => $quote->salesUser->name] : null,
             'pricing_offer_id' => $quote->pricing_offer_id,
+            'pricing_type' => $this->resolveQuotePricingType($quote),
+            'inland_port' => $quote->inland_port,
+            'inland_address' => $quote->inland_address,
             'origin_rate_snapshot_id' => $quote->origin_rate_snapshot_id,
             'origin_rate_snapshot' => $quote->originRateSnapshot?->snapshot_data,
             'quick_mode' => (bool) $quote->quick_mode,
@@ -985,5 +1074,102 @@ class PricingQuoteController extends Controller
             'totals_by_currency' => $this->sumQuoteItemsByCurrency($quote->items),
             'created_at' => $quote->created_at?->toISOString(),
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     */
+    protected function resolveQuotePricingTypeFromPayload(array $validated, bool $quickMode): string
+    {
+        $explicit = strtolower((string) ($validated['pricing_type'] ?? ''));
+        if (in_array($explicit, ['sea', 'inland'], true)) {
+            return $explicit;
+        }
+
+        if (! $quickMode && ! empty($validated['pricing_offer_id'])) {
+            $offer = PricingOffer::query()->find((int) $validated['pricing_offer_id']);
+            if ($offer && $offer->pricing_type === 'inland') {
+                return 'inland';
+            }
+        }
+
+        $items = $validated['items'] ?? [];
+        $hasInland = false;
+        $hasOcean = false;
+        foreach ($items as $item) {
+            $code = strtoupper((string) ($item['code'] ?? ''));
+            if ($code === 'INLAND') {
+                $hasInland = true;
+            } elseif ($code !== '' && $code !== 'HANDLING') {
+                $hasOcean = true;
+            }
+        }
+        if ($hasInland && ! $hasOcean) {
+            return 'inland';
+        }
+
+        return 'sea';
+    }
+
+    protected function resolveQuotePricingType(PricingQuote $quote): string
+    {
+        $stored = strtolower((string) ($quote->pricing_type ?? ''));
+        if (in_array($stored, ['sea', 'inland'], true)) {
+            return $stored;
+        }
+
+        $quote->loadMissing('items', 'offer');
+        $hasInland = $quote->items->contains(fn (PricingQuoteItem $i): bool => strtoupper((string) $i->code) === 'INLAND');
+        $hasOcean = $quote->items->contains(function (PricingQuoteItem $i) use ($quote): bool {
+            $code = strtoupper((string) $i->code);
+            if ($code === '' || $code === 'INLAND' || $code === 'HANDLING') {
+                return false;
+            }
+            if ($code === 'OTHER' && $quote->official_receipts_note) {
+                return false;
+            }
+
+            return true;
+        });
+
+        if ($hasInland && ! $hasOcean) {
+            return 'inland';
+        }
+        if ($quote->offer && $quote->offer->pricing_type === 'inland') {
+            return 'inland';
+        }
+
+        return 'sea';
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     */
+    protected function applyQuoteRouteFields(PricingQuote $quote, array $validated, string $pricingType): void
+    {
+        if ($pricingType === 'inland') {
+            $quote->pol = null;
+            $quote->pod = null;
+            $quote->transit_time = null;
+            $quote->free_time = null;
+            $quote->free_time_data = null;
+            $quote->schedule_type = null;
+            $quote->sailing_weekdays = null;
+            $quote->show_carrier_on_pdf = false;
+            $quote->inland_port = isset($validated['inland_port'])
+                ? (trim((string) $validated['inland_port']) !== '' ? trim((string) $validated['inland_port']) : null)
+                : null;
+            $quote->inland_address = isset($validated['inland_address'])
+                ? (trim((string) $validated['inland_address']) !== '' ? trim((string) $validated['inland_address']) : null)
+                : null;
+
+            return;
+        }
+
+        $quote->inland_port = null;
+        $quote->inland_address = null;
+        $quote->pol = $validated['pol'] ?? null;
+        $quote->pod = $validated['pod'] ?? null;
+        $quote->transit_time = $validated['transit_time'] ?? null;
     }
 }

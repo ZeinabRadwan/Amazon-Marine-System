@@ -365,6 +365,46 @@ class PricingQuoteApiTest extends TestCase
         $create->assertJsonPath('data.items.0.visible_to_client', true);
     }
 
+    public function test_can_create_inland_quote_with_pricing_type(): void
+    {
+        $user = $this->actingAsPricingUser();
+        $client = Client::factory()->create();
+
+        $offer = PricingOffer::factory()->create([
+            'pricing_type' => 'inland',
+            'pol' => null,
+            'pod' => null,
+            'shipping_line' => null,
+            'region' => 'Cairo',
+            'inland_port' => 'Alexandria',
+        ]);
+
+        $create = $this->actingAs($user, 'sanctum')->postJson('/api/v1/pricing/quotes', [
+            'client_id' => $client->id,
+            'pricing_offer_id' => $offer->id,
+            'pricing_type' => 'inland',
+            'inland_port' => 'Alexandria',
+            'municipality' => 'Cairo',
+            'inland_address' => '6th October City',
+            'items' => [
+                ['code' => 'INLAND', 'name' => 'Inland transport', 'amount' => 450, 'currency' => 'EGP'],
+            ],
+        ]);
+
+        $create->assertCreated()
+            ->assertJsonPath('data.pricing_type', 'inland')
+            ->assertJsonPath('data.inland_port', 'Alexandria')
+            ->assertJsonPath('data.inland_address', '6th October City')
+            ->assertJsonPath('data.pol', null)
+            ->assertJsonPath('data.pod', null);
+
+        $id = (int) $create->json('data.id');
+        $row = PricingQuote::query()->find($id);
+        $this->assertSame('inland', $row?->pricing_type);
+        $this->assertNull($row?->pol);
+        $this->assertNull($row?->pod);
+    }
+
     public function test_can_delete_quote(): void
     {
         $user = $this->actingAsPricingUser();

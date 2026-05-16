@@ -62,6 +62,7 @@ import QuoteOceanLinesSummary from './QuoteOceanLinesSummary'
 import QuoteInlandTransportSection from './QuoteInlandTransportSection'
 import QuoteCustomsClearanceSection, { buildCustomsOfficialReceiptsNote } from './QuoteCustomsClearanceSection'
 import QuoteHandlingFeesSection from './QuoteHandlingFeesSection'
+import { inlandRouteFromOffer } from '../utils/quotePricingType'
 import {
   isOtherChargePricingCode,
   parseOtherChargeLabels,
@@ -532,15 +533,27 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
     [quoteCodeLabel, t]
   )
 
+  const handleInlandOfferIdChange = useCallback((id) => {
+    setInlandOfferId(String(id || ''))
+    if (!id) {
+      setInlandLineRows([])
+      setQuickInlandPort('')
+      setQuickInlandGov('')
+      setQuickInlandZone('')
+    }
+  }, [])
+
   useEffect(() => {
     if (!isOpen) return
     const token = getStoredToken()
     if (!token) return
-    listOffers(token, { per_page: 300, page: 1 })
-      .then((res) => {
-        const rows = Array.isArray(res?.data) ? res.data : []
-        setSeaOffers(rows.filter((o) => o.pricing_type === 'sea'))
-        setInlandOffers(rows.filter((o) => o.pricing_type === 'inland'))
+    Promise.all([
+      listOffers(token, { pricing_type: 'sea', per_page: 300, page: 1 }),
+      listOffers(token, { pricing_type: 'inland', per_page: 300, page: 1 }),
+    ])
+      .then(([seaRes, inlandRes]) => {
+        setSeaOffers(Array.isArray(seaRes?.data) ? seaRes.data : [])
+        setInlandOffers(Array.isArray(inlandRes?.data) ? inlandRes.data : [])
       })
       .catch((err) => {
         setSeaOffers([])
@@ -633,36 +646,43 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
       setQuickInlandGov('')
       setQuickInlandZone('')
       setQuickInlandVehicle('')
-      const mode = initialOffer ? 'pricing' : initialQuickMode ? 'quick' : 'manual'
-      if (mode === 'pricing' && initialOffer) {
-        setHandlingLines([
-          {
-            id: 'h-default',
-            name: 'Handling Fees',
-            amount: String(ADMIN_HANDLING_FEE_AMOUNT),
-            currency: ADMIN_HANDLING_FEE_CURRENCY,
-            isDefault: true,
-          },
-        ])
-        applySeaOffer(initialOffer)
-      } else {
-        setHandlingLines([
-          {
-            id: 'h-default',
-            name: 'Handling Fees',
-            amount: String(ADMIN_HANDLING_FEE_AMOUNT),
-            currency: ADMIN_HANDLING_FEE_CURRENCY,
-            isDefault: true,
-          },
-        ])
-        setForm(defaultQuoteForm())
-        setOceanLines(mode === 'quick' ? makeQuickOceanLines() : makeStarterOceanLines())
+      setHandlingLines([
+        {
+          id: 'h-default',
+          name: 'Handling Fees',
+          amount: String(ADMIN_HANDLING_FEE_AMOUNT),
+          currency: ADMIN_HANDLING_FEE_CURRENCY,
+          isDefault: true,
+        },
+      ])
+      setForm(defaultQuoteForm())
+      setOceanLines([])
+
+      if (initialOffer && !initialQuickMode) {
+        const inlandSheet = initialOffer.pricing_type === 'inland'
+        if (inlandSheet) {
+          setInlandOfferId(String(initialOffer.id || ''))
+          const route = inlandRouteFromOffer(initialOffer)
+          setQuickInlandPort(route.port)
+          setQuickInlandGov(route.governorate)
+          setQuickInlandZone(route.address)
+          setInlandLineRows(buildInlandRowsFromOffer(initialOffer, t))
+        } else {
+          applySeaOffer(initialOffer)
+        }
       }
     })()
     return () => {
       cancelled = true
     }
-  }, [isOpen, draftScope, initialOffer, initialQuickMode, makeStarterOceanLines, makeQuickOceanLines, applySeaOffer])
+  }, [
+    isOpen,
+    draftScope,
+    initialOffer,
+    initialQuickMode,
+    applySeaOffer,
+    t,
+  ])
 
   const selectedSeaOffer = useMemo(() => {
     if (!form.pricing_offer_id) return null
@@ -674,8 +694,16 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
 
   const selectedInlandOffer = useMemo(() => {
     if (!inlandOfferId) return null
-    return inlandOffers.find((o) => String(o.id) === String(inlandOfferId)) || null
-  }, [inlandOffers, inlandOfferId])
+    const fromList = inlandOffers.find((o) => String(o.id) === String(inlandOfferId))
+    if (fromList) return fromList
+    if (
+      initialOffer?.pricing_type === 'inland' &&
+      String(initialOffer.id) === String(inlandOfferId)
+    ) {
+      return initialOffer
+    }
+    return null
+  }, [inlandOffers, inlandOfferId, initialOffer])
 
   useEffect(() => {
     if (entryMode === 'quick') return
@@ -683,6 +711,10 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
       setInlandLineRows([])
       return
     }
+    const route = inlandRouteFromOffer(selectedInlandOffer)
+    setQuickInlandPort(route.port)
+    setQuickInlandGov(route.governorate)
+    setQuickInlandZone(route.address)
     setInlandLineRows(buildInlandRowsFromOffer(selectedInlandOffer, t))
   }, [entryMode, selectedInlandOffer, t])
 
@@ -763,9 +795,30 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
 
   const isPricing = entryMode === 'pricing'
   const isQuick = entryMode === 'quick'
-  const isRouteLocked = isPricing && Boolean(form.pricing_offer_id && (selectedSeaOffer || initialOffer))
-  const routeDisplayOffer = selectedSeaOffer || (initialOffer && String(initialOffer.id) === String(form.pricing_offer_id) ? initialOffer : null)
+  const routeDisplayOffer = selectedSeaOffer
+  const routeDisplayInlandOffer = selectedInlandOffer
+  const isRouteLocked = Boolean(form.pricing_offer_id && routeDisplayOffer)
+  const derivedRouteSummary = useMemo(() => {
+    if (isRouteLocked && routeDisplayOffer) {
+      return `${routeDisplayOffer.pol || form.pol || '—'} → ${routeDisplayOffer.pod || routeDisplayOffer.region || form.pod || '—'}`
+    }
+    if (form.pol || form.pod) return `${form.pol || '—'} → ${form.pod || '—'}`
+    return t('common.dash', '—')
+  }, [isRouteLocked, routeDisplayOffer, form.pol, form.pod, t])
 
+  const hasOceanLineData = useMemo(
+    () => oceanLines.some((line) => line.included !== false && parseNum(line.selling_amount) > 0 && line.code),
+    [oceanLines]
+  )
+  const showOceanPricing = oceanLines.length > 0
+  const hasInlandLineData = useMemo(
+    () =>
+      isQuick
+        ? parseNum(inlandSelling) > 0 || parseNum(inlandGenSelling) > 0
+        : inlandLineRows.some((row) => row.included !== false && parseNum(row.selling_amount) > 0),
+    [isQuick, inlandSelling, inlandGenSelling, inlandLineRows]
+  )
+  const showInlandPricing = isQuick ? hasInlandLineData : Boolean(inlandOfferId) && inlandLineRows.length > 0
   const sailingSchedule = useMemo(() => buildSailingScheduleFromOffer(routeDisplayOffer), [routeDisplayOffer])
 
   const sailingScheduleDisplayText = useMemo(() => {
@@ -780,6 +833,15 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
     () => sumCustomsCostByCurrency(customsClearanceFee, customsExtraItems, customsEnabled),
     [customsEnabled, customsClearanceFee, customsExtraItems]
   )
+
+  const hasCustomsPricing = useMemo(
+    () =>
+      customsEnabled &&
+      (Object.values(customsSellingByCurrency).some((v) => Math.abs(Number(v) || 0) > 1e-9) ||
+        (Number(customsClearanceFee?.amount) || 0) > 0),
+    [customsEnabled, customsSellingByCurrency, customsClearanceFee]
+  )
+  const hasAnySectionPricing = hasOceanLineData || hasInlandLineData || hasCustomsPricing
 
   const pricingLinesProfitByCurrency = useMemo(() => sumProfitsByCurrency(oceanLines), [oceanLines])
 
@@ -864,29 +926,9 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
   }, [handlingLines])
 
   const quoteHasBillableItems = useMemo(() => {
-    const hasOcean = oceanLines.some(
-      (line) => line.included !== false && parseNum(line.selling_amount) > 0 && line.code
-    )
-    const hasInland = isQuick
-      ? parseNum(inlandSelling) > 0 || parseNum(inlandGenSelling) > 0
-      : inlandLineRows.some((row) => row.included !== false && parseNum(row.selling_amount) > 0)
-    const hasCustoms =
-      customsEnabled &&
-      (Object.values(customsSellingByCurrency).some((v) => Math.abs(Number(v) || 0) > 1e-9) ||
-        (Number(customsClearanceFee?.amount) || 0) > 0)
     const hasHandling = handlingLines.some((row) => parseNum(row.amount) > 0)
-    return hasOcean || hasInland || hasCustoms || hasHandling
-  }, [
-    oceanLines,
-    isQuick,
-    inlandSelling,
-    inlandGenSelling,
-    inlandLineRows,
-    customsEnabled,
-    customsSellingByCurrency,
-    customsClearanceFee,
-    handlingLines,
-  ])
+    return hasOceanLineData || hasInlandLineData || hasCustomsPricing || hasHandling
+  }, [hasOceanLineData, hasInlandLineData, hasCustomsPricing, handlingLines])
 
   const canSaveQuote = useMemo(() => {
     if (!pricingTeamConfirmed || !quoteHasBillableItems) return false
@@ -895,18 +937,30 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
   }, [pricingTeamConfirmed, quoteHasBillableItems, isQuick, clientAsync])
 
   const grandSellingByCurrency = useMemo(() => {
-    return mergeCurrencyAmountMaps(
-      oceanSellingByCurrency,
-      customsSellingByCurrency,
-      inlandSectionSellingByCurrency,
-      handlingSellingByCurrency
-    )
-  }, [oceanSellingByCurrency, customsSellingByCurrency, inlandSectionSellingByCurrency, handlingSellingByCurrency])
+    const maps = [handlingSellingByCurrency]
+    if (hasOceanLineData) maps.unshift(oceanSellingByCurrency)
+    if (hasInlandLineData) maps.unshift(inlandSectionSellingByCurrency)
+    if (hasCustomsPricing) maps.unshift(customsSellingByCurrency)
+    return mergeCurrencyAmountMaps(...maps)
+  }, [
+    hasOceanLineData,
+    hasInlandLineData,
+    hasCustomsPricing,
+    oceanSellingByCurrency,
+    customsSellingByCurrency,
+    inlandSectionSellingByCurrency,
+    handlingSellingByCurrency,
+  ])
 
-  const hasInlandQuoteData = useMemo(() => {
-    if (isQuick) return parseNum(inlandSelling) > 0 || parseNum(inlandGenSelling) > 0
-    return inlandLineRows.some((row) => row.included !== false && parseNum(row.selling_amount) > 0)
-  }, [isQuick, inlandSelling, inlandGenSelling, inlandLineRows])
+  const inferSubmitPricingType = (billableItems) => {
+    const hasInland = billableItems.some((i) => i.code === 'INLAND')
+    const hasOcean = billableItems.some((i) => {
+      const code = String(i.code || '').toUpperCase()
+      return code && code !== 'INLAND' && code !== 'HANDLING'
+    })
+    if (hasInland && !hasOcean) return 'inland'
+    return 'sea'
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -1036,29 +1090,59 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
 
     if (!items.length) return
 
+    const submitPricingType = inferSubmitPricingType(items)
+    const hasOceanRoute = Boolean(form.pol || form.pod || form.pricing_offer_id)
+    const hasInlandRoute = Boolean(
+      inlandOfferId || quickInlandPort.trim() || quickInlandGov.trim() || quickInlandZone.trim()
+    )
+
+    const linkedOfferId = isQuickSubmit
+      ? null
+      : form.pricing_offer_id
+        ? Number(form.pricing_offer_id)
+        : inlandOfferId
+          ? Number(inlandOfferId)
+          : null
+
     const payload = {
       ...form,
+      pricing_type: submitPricingType,
       client_id: clientAsync?.value ? Number(clientAsync.value) : null,
       sales_user_id: salesUserId,
-      pricing_offer_id: isQuickSubmit ? null : form.pricing_offer_id ? Number(form.pricing_offer_id) : null,
+      pricing_offer_id: linkedOfferId,
+      inland_port: hasInlandRoute
+        ? quickInlandPort.trim() || routeDisplayInlandOffer?.inland_port || null
+        : null,
+      inland_address: hasInlandRoute
+        ? quickInlandZone.trim() || routeDisplayInlandOffer?.destination || null
+        : null,
+      municipality: hasInlandRoute
+        ? quickInlandGov.trim() || routeDisplayInlandOffer?.region || routeDisplayInlandOffer?.inland_gov || null
+        : null,
+      pol: hasOceanRoute ? form.pol || null : null,
+      pod: hasOceanRoute ? form.pod || null : null,
+      shipping_line: hasOceanRoute ? form.shipping_line || null : null,
+      transit_time: hasOceanRoute ? form.transit_time || null : null,
       quick_mode: isQuickSubmit,
       is_quick_quotation: isQuickSubmit,
       quick_mode_reason: isQuickSubmit ? (quickModeReason.trim() || 'Quick Quotation') : null,
       valid_from: String(form.valid_from || '').trim() || null,
       valid_to: String(form.valid_to || '').trim() || null,
-      qty: form.qty ? Number(form.qty) : null,
-      sailing_dates: Array.isArray(form.sailing_dates) ? form.sailing_dates : [],
-      schedule_type: form.schedule_type || null,
-      sailing_weekdays: Array.isArray(form.sailing_weekdays) ? form.sailing_weekdays : [],
-      container_spec: {
-        type: String(form.container_type || '').toLowerCase().includes('reefer') ? 'reefer' : 'dry',
-        size: String(form.container_type || '').includes('20') ? '20' : '40',
-        height: String(form.container_type || '').toLowerCase().includes('hq') ? 'hq' : 'standard',
-      },
+      sailing_dates: hasOceanRoute && Array.isArray(form.sailing_dates) ? form.sailing_dates : [],
+      schedule_type: hasOceanRoute ? form.schedule_type || null : null,
+      sailing_weekdays: hasOceanRoute && Array.isArray(form.sailing_weekdays) ? form.sailing_weekdays : [],
+      container_spec: hasOceanRoute
+        ? {
+            type: String(form.container_type || '').toLowerCase().includes('reefer') ? 'reefer' : 'dry',
+            size: String(form.container_type || '').includes('20') ? '20' : '40',
+            height: String(form.container_type || '').toLowerCase().includes('hq') ? 'hq' : 'standard',
+          }
+        : null,
+      container_type: hasOceanRoute ? form.container_type : null,
+      qty: hasOceanRoute ? (form.qty ? Number(form.qty) : null) : null,
       free_time_data: null,
-      show_carrier_on_pdf: showCarrierOnPdf,
+      show_carrier_on_pdf: hasOceanRoute ? showCarrierOnPdf : false,
       official_receipts_note: customsEnabled ? buildCustomsOfficialReceiptsNote(t) : null,
-      municipality: null,
       pricing_team_confirmed: pricingTeamConfirmed,
       items,
     }
@@ -1111,11 +1195,9 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                 ) : null}
                 <div>
                   <div className="ship-meta-val">
-                    {entryMode === 'pricing'
-                      ? t('pricing.finHeaderModeSea', 'Ocean')
-                      : entryMode === 'quick'
-                        ? t('pricing.quickQuotation', 'Quick')
-                        : t('pricing.quoteManualModeShort', 'Manual')}
+                    {entryMode === 'quick'
+                      ? t('pricing.quickQuotation', 'Quick')
+                      : t('pricing.createStandardQuotationShort', 'Standard')}
                   </div>
                   <div className="ship-meta-lbl">{t('pricing.finHeaderMode', 'Mode')}</div>
                 </div>
@@ -1167,6 +1249,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                 )}
               </div>
             ) : null}
+
             <QuoteFinCard icon={User} title={t('pricing.quoteSectionClient', 'بيانات العميل / Client Info')}>
               <div className="pricing-quote-client-block">
                 <div className="pricing-quote-client-search-line">
@@ -1207,23 +1290,26 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
               {isRouteLocked ? (
                 <div className="pricing-quote-shipment-badges">
                   <QuoteSummaryBadge label={t('pricing.quoteBadgeRoute', 'المسار')}>
-                    {routeDisplayOffer?.pol || form.pol || '—'} →{' '}
-                    {routeDisplayOffer?.pod || routeDisplayOffer?.region || form.pod || '—'}
+                    {derivedRouteSummary}
                   </QuoteSummaryBadge>
-                  <ShippingLineSummaryBadge
-                    line={routeDisplayOffer?.shipping_line || form.shipping_line || '—'}
-                    visible={showCarrierOnPdf}
-                    onToggle={() => setShowCarrierOnPdf((v) => !v)}
-                    t={t}
-                  />
-                  <QuoteSummaryBadge label={t('pricing.quoteBadgeContainer', 'نوع الحاوية')}>
-                    {routeDisplayOffer ? inferContainerFromOffer(routeDisplayOffer) : form.container_type || '—'}
-                  </QuoteSummaryBadge>
-                  <QuoteSummaryBadge label={t('pricing.quoteBadgeTransit', 'مدة العبور')}>
-                    {routeDisplayOffer?.transit_time || form.transit_time || '—'}
-                  </QuoteSummaryBadge>
-                  {sailingSchedule || sailingScheduleDisplayText !== t('common.dash', '—') ? (
-                    <QuoteSailingScheduleDisplay text={sailingScheduleDisplayText} />
+                  {isRouteLocked ? (
+                    <>
+                      <ShippingLineSummaryBadge
+                        line={routeDisplayOffer?.shipping_line || form.shipping_line || '—'}
+                        visible={showCarrierOnPdf}
+                        onToggle={() => setShowCarrierOnPdf((v) => !v)}
+                        t={t}
+                      />
+                      <QuoteSummaryBadge label={t('pricing.quoteBadgeContainer', 'نوع الحاوية')}>
+                        {routeDisplayOffer ? inferContainerFromOffer(routeDisplayOffer) : form.container_type || '—'}
+                      </QuoteSummaryBadge>
+                      <QuoteSummaryBadge label={t('pricing.quoteBadgeTransit', 'مدة العبور')}>
+                        {routeDisplayOffer?.transit_time || form.transit_time || '—'}
+                      </QuoteSummaryBadge>
+                      {sailingSchedule || sailingScheduleDisplayText !== t('common.dash', '—') ? (
+                        <QuoteSailingScheduleDisplay text={sailingScheduleDisplayText} />
+                      ) : null}
+                    </>
                   ) : null}
                 </div>
               ) : (
@@ -1303,20 +1389,31 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                   <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('pricing.offerSeaRate')}</label>
                   <select
                     value={form.pricing_offer_id}
-                    disabled={isPricing}
                     onChange={(e) => {
                       const id = e.target.value
                       setField('pricing_offer_id', id)
                       if (!id) {
-                        setOceanLines(makeStarterOceanLines())
+                        setOceanLines([])
+                        setForm((prev) => ({
+                          ...prev,
+                          pricing_offer_id: '',
+                          pol: '',
+                          pod: '',
+                          shipping_line: '',
+                          transit_time: '',
+                          container_type: defaultQuoteForm().container_type,
+                          sailing_dates: [],
+                          schedule_type: null,
+                          sailing_weekdays: [],
+                        }))
                         return
                       }
                       const offer = seaOffers.find((o) => String(o.id) === String(id))
                       if (offer) applySeaOffer(offer)
                     }}
-                    className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none disabled:opacity-70"
+                    className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none"
                   >
-                    {!isPricing ? <option value="">{t('pricing.quoteSeaSheetNone', 'None (manual route & pricing)')}</option> : null}
+                    <option value="">{t('pricing.quoteNoneSelected', 'None selected / لا يوجد اختيار')}</option>
                     {initialOffer &&
                     isPricing &&
                     !seaOffers.some((o) => String(o.id) === String(initialOffer.id)) ? (
@@ -1334,11 +1431,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                 </div>
               ) : null}
 
-              {oceanLines.length === 0 ? (
-                <p className="text-sm text-gray-500 dark:text-gray-400 m-0">
-                  {t('pricing.quoteNoPricedLines', 'No line items yet. Add a row or link a sea price sheet.')}
-                </p>
-              ) : (
+              {showOceanPricing ? (
                 <div className="space-y-4">
                   {isQuick ? (
                     <div className="pricing-quick-ocean-hint text-[11px] font-semibold text-amber-900/90 dark:text-amber-100/95 rounded-lg px-3 py-2 border border-amber-200/90 dark:border-amber-800/60 bg-amber-50/95 dark:bg-amber-950/40">
@@ -1350,21 +1443,33 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                       lines={oceanLines}
                       onUpdateLine={updateOceanLine}
                       readOnlyCost={!isQuick}
-                      readOnlyCurrency={isPricing}
-                      readOnlyName={isPricing}
-                      allowOceanCodeEdit={!isPricing}
+                      readOnlyCurrency={isPricing && Boolean(form.pricing_offer_id)}
+                      readOnlyName={isPricing && Boolean(form.pricing_offer_id)}
+                      allowOceanCodeEdit={!isPricing || !form.pricing_offer_id}
                       quoteCodeLabel={quoteCodeLabel}
                       quickSelectCodes={QUICK_SELECT_CODES}
                       variant="ocean"
                     />
                   </div>
-                  <QuoteOceanLinesSummary
-                    costByCurrency={oceanCostByCurrency}
-                    profitByCurrency={pricingLinesProfitByCurrency}
-                    sellingByCurrency={oceanSellingByCurrency}
-                  />
+                  {hasOceanLineData ? (
+                    <QuoteOceanLinesSummary
+                      costByCurrency={oceanCostByCurrency}
+                      profitByCurrency={pricingLinesProfitByCurrency}
+                      sellingByCurrency={oceanSellingByCurrency}
+                    />
+                  ) : null}
                 </div>
-              )}
+              ) : isQuick ? (
+                <div className="pricing-quote-section-empty">
+                  <button
+                    type="button"
+                    className="pricing-quote-section-empty__action"
+                    onClick={() => setOceanLines(makeQuickOceanLines())}
+                  >
+                    {t('pricing.quickStartOceanEntry', 'Enter ocean charges manually')}
+                  </button>
+                </div>
+              ) : null}
             </QuoteFinCard>
 
             <QuoteFinCard icon={Truck} title={t('pricing.quoteSectionInland', 'Section 2: Inland transport')}>
@@ -1372,7 +1477,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                 isQuick={isQuick}
                 inlandOffers={inlandOffers}
                 inlandOfferId={inlandOfferId}
-                onInlandOfferIdChange={setInlandOfferId}
+                onInlandOfferIdChange={handleInlandOfferIdChange}
                 inlandLineRows={inlandLineRows}
                 onUpdateInlandRow={updateInlandRow}
                 costByCurrency={inlandSectionCostByCurrency}
@@ -1399,6 +1504,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                 onInlandGenSellingChange={setInlandGenSelling}
                 inlandGenCurrency={inlandGenCurrency}
                 onInlandGenCurrencyChange={setInlandGenCurrency}
+                initialOffer={initialOffer}
               />
             </QuoteFinCard>
 
@@ -1426,44 +1532,44 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
               />
             </QuoteFinCard>
 
-            <QuoteGrandSummaryPanel title={t('pricing.quoteSectionSummary', 'Summary')}>
-              <QuoteSummaryRow label={t('pricing.summaryOcean', 'Ocean freight total')}>
-                <QuoteSummaryCurrencyText amounts={oceanSellingByCurrency} dash={t('common.dash', '—')} />
-              </QuoteSummaryRow>
-              <QuoteSummaryRow label={t('pricing.summaryInland', 'Inland transport total')}>
-                {hasInlandQuoteData ? (
-                  <QuoteSummaryCurrencyText amounts={inlandSectionSellingByCurrency} dash={t('common.dash', '—')} />
-                ) : (
-                  <span className="pricing-quote-summary-currency">{t('common.dash', '—')}</span>
-                )}
-              </QuoteSummaryRow>
-              <QuoteSummaryRow label={t('pricing.summaryCustoms', 'Customs total')}>
-                {customsEnabled ? (
-                  <QuoteSummaryCurrencyText amounts={customsSellingByCurrency} dash={t('common.dash', '—')} />
-                ) : (
-                  <span className="pricing-quote-summary-currency">{t('common.dash', '—')}</span>
-                )}
-              </QuoteSummaryRow>
-              <QuoteSummaryRow label={t('pricing.summaryHandling', 'Handling fees')}>
-                <QuoteSummaryCurrencyText amounts={handlingSellingByCurrency} dash={t('common.dash', '—')} />
-              </QuoteSummaryRow>
-              <QuoteSummaryRow
-                label={t('pricing.totalProfitQuote', 'Total profit (selling − cost)')}
-                rowClass="pricing-quote-summary-row--profit"
-              >
-                <QuoteSummaryCurrencyText
-                  amounts={quoteProfitByCurrency}
-                  dash={t('common.dash', '—')}
-                  allowNegative
-                />
-              </QuoteSummaryRow>
-              <QuoteSummaryRow
-                label={t('pricing.grandTotal', 'Grand total')}
-                rowClass="pricing-quote-summary-row--grand"
-              >
-                <QuoteSummaryCurrencyText amounts={grandSellingByCurrency} dash={t('common.dash', '—')} />
-              </QuoteSummaryRow>
-            </QuoteGrandSummaryPanel>
+            {hasAnySectionPricing ? (
+              <QuoteGrandSummaryPanel title={t('pricing.quoteSectionSummary', 'Summary')}>
+                {hasOceanLineData ? (
+                  <QuoteSummaryRow label={t('pricing.summaryOcean', 'Ocean freight total')}>
+                    <QuoteSummaryCurrencyText amounts={oceanSellingByCurrency} dash={t('common.dash', '—')} />
+                  </QuoteSummaryRow>
+                ) : null}
+                {hasInlandLineData ? (
+                  <QuoteSummaryRow label={t('pricing.summaryInland', 'Inland transport total')}>
+                    <QuoteSummaryCurrencyText amounts={inlandSectionSellingByCurrency} dash={t('common.dash', '—')} />
+                  </QuoteSummaryRow>
+                ) : null}
+                {hasCustomsPricing ? (
+                  <QuoteSummaryRow label={t('pricing.summaryCustoms', 'Customs total')}>
+                    <QuoteSummaryCurrencyText amounts={customsSellingByCurrency} dash={t('common.dash', '—')} />
+                  </QuoteSummaryRow>
+                ) : null}
+                <QuoteSummaryRow label={t('pricing.summaryHandling', 'Handling fees')}>
+                  <QuoteSummaryCurrencyText amounts={handlingSellingByCurrency} dash={t('common.dash', '—')} />
+                </QuoteSummaryRow>
+                <QuoteSummaryRow
+                  label={t('pricing.totalProfitQuote', 'Total profit (selling − cost)')}
+                  rowClass="pricing-quote-summary-row--profit"
+                >
+                  <QuoteSummaryCurrencyText
+                    amounts={quoteProfitByCurrency}
+                    dash={t('common.dash', '—')}
+                    allowNegative
+                  />
+                </QuoteSummaryRow>
+                <QuoteSummaryRow
+                  label={t('pricing.grandTotal', 'Grand total')}
+                  rowClass="pricing-quote-summary-row--grand"
+                >
+                  <QuoteSummaryCurrencyText amounts={grandSellingByCurrency} dash={t('common.dash', '—')} />
+                </QuoteSummaryRow>
+              </QuoteGrandSummaryPanel>
+            ) : null}
 
             <section
               className={`pricing-quote-confirmation-card ${

@@ -58,6 +58,7 @@ export default function QuoteInlandTransportSection({
   onInlandGenCurrencyChange,
   readOnly = false,
   inlandOfferLabel = '',
+  initialOffer = null,
 }) {
   const { t } = useTranslation()
   const noop = () => {}
@@ -257,7 +258,14 @@ export default function QuoteInlandTransportSection({
               onChange={(e) => onInlandOfferIdChange(e.target.value)}
               className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
             >
-              <option value="">{t('pricing.selectInlandOffer', 'Select an inland price sheet…')}</option>
+              <option value="">{t('pricing.quoteNoneSelected', 'None selected / لا يوجد اختيار')}</option>
+              {initialOffer &&
+              initialOffer.pricing_type === 'inland' &&
+              !inlandOffers.some((o) => String(o.id) === String(initialOffer.id)) ? (
+                <option value={initialOffer.id}>
+                  {initialOffer.inland_port || '—'} → {initialOffer.destination || initialOffer.region || '—'}
+                </option>
+              ) : null}
               {inlandOffers.map((o) => (
                 <option key={o.id} value={o.id}>
                   {o.inland_port || '—'} → {o.destination || o.region || '—'}
@@ -281,13 +289,15 @@ export default function QuoteInlandTransportSection({
               variant="inland"
             />
           </div>
-          <QuoteOceanLinesSummary
-            costByCurrency={costByCurrency}
-            profitByCurrency={profitByCurrency}
-            sellingByCurrency={sellingByCurrency}
-            summaryClassName="pricing-quote-module-summary"
-            ariaLabelKey="pricing.inlandLinesSummaryTitle"
-          />
+          {Object.values(sellingByCurrency || {}).some((v) => Math.abs(Number(v) || 0) > 1e-9) ? (
+            <QuoteOceanLinesSummary
+              costByCurrency={costByCurrency}
+              profitByCurrency={profitByCurrency}
+              sellingByCurrency={sellingByCurrency}
+              summaryClassName="pricing-quote-module-summary"
+              ariaLabelKey="pricing.inlandLinesSummaryTitle"
+            />
+          ) : null}
         </>
       ) : null}
     </div>

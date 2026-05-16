@@ -5025,3 +5025,28 @@
 .dark .pricing-quote-modal-root .pricing-quote-collapsible__summary:hover {
   background-color: rgba(30, 41, 59, 0.45);
 }
+
+.pricing-quote-section-empty__action {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: #fff;
+  color: #0f172a;
+  cursor: pointer;
+}
+
+.pricing-quote-section-empty__action:hover {
+  background: #f8fafc;
+}
+
+.pricing-quote-empty-summary {
+  padding: 1rem 1.25rem;
+  border-radius: 0.875rem;
+  border: 1px dashed rgba(148, 163, 184, 0.45);
+  background: rgba(248, 250, 252, 0.7);
+  text-align: center;
+}

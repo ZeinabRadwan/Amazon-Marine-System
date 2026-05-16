@@ -1,4 +1,10 @@
 import { mergeCurrencyAmountMaps } from '../../../utils/dateUtils'
+import {
+  buildQuoteRouteSummary,
+  isInlandQuote as checkInlandQuote,
+  isSeaQuote as checkSeaQuote,
+  resolveQuotePricingType,
+} from './quotePricingType'
 
 const OCEAN_CODES = new Set(['OF', 'THC', 'BL', 'TELEX', 'ISPS', 'PTI', 'POWER'])
 
@@ -296,9 +302,16 @@ export function buildQuoteDetailViewModel(quote) {
 
   const selectedSailingDate = String(quote?.sailing_dates?.[0] || '').trim().slice(0, 10)
   const sailingSchedule = buildSailingScheduleFromQuote(quote)
+  const pricingType = resolveQuotePricingType(quote)
+  const isSeaQuote = checkSeaQuote(quote)
+  const isInlandQuote = checkInlandQuote(quote)
 
   return {
     isQuick,
+    pricingType,
+    isSeaQuote,
+    isInlandQuote,
+    routeSummary: buildQuoteRouteSummary(quote),
     oceanLines,
     inlandLineRows,
     inlandOfferId,
