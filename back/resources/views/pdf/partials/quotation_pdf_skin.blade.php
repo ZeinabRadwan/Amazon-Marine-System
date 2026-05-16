@@ -230,9 +230,67 @@
     font-size: 10px;
     border-bottom: 1px solid #f1f5f9;
 }
+.pdf-inv-table .pdf-inv-col-item {
+    width: 42%;
+}
+.pdf-inv-table .pdf-inv-col-amt {
+    width: 24%;
+}
+.pdf-inv-table .pdf-inv-col-cur {
+    width: 13%;
+}
+.pdf-inv-table .pdf-inv-subtotal-row td {
+    background: #fef3e8 !important;
+    border-top: 3px solid #ec7f00;
+    font-weight: 800;
+    font-size: 11px;
+    color: #0f2d4a;
+    padding: 10px 10px !important;
+    vertical-align: middle;
+}
+.pdf-inv-table .pdf-inv-subtotal-row td.pdf-inv-sub-amt {
+    text-align: center;
+    font-family: DejaVu Sans Mono, monospace;
+    font-weight: 800;
+    font-size: 12px;
+    color: #ec7f00;
+    letter-spacing: 0.02em;
+}
+.pdf-inv-table .pdf-inv-subtotal-row .pdf-inv-sub-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    color: #0f2d4a;
+}
 .pdf-inv-col-amt,
 .pdf-inv-col-cur {
     text-align: center;
+}
+.notes-box {
+    background: #fffbeb;
+    border: 1px solid #f5c77a;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin: 0 0 14px;
+    font-size: 10px;
+    line-height: 1.55;
+    color: #334155;
+}
+.notes-box .notes-title {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #9a6200;
+    margin-bottom: 6px;
+}
+.notes-box__ar {
+    font-family: DejaVu Sans, Cairo, sans-serif;
+    font-size: 9px;
+    color: #9a6200;
+    direction: rtl;
+    display: block;
+    margin-top: 4px;
+    text-align: right;
+    line-height: 1.55;
 }
 .pdf-inv-grand-wrap {
     background: #0f2d4a;
@@ -270,11 +328,44 @@
     background: #f8fafc;
     border: 1px solid #dde3ed;
     border-radius: 8px;
-    padding: 10px 14px;
-    margin-bottom: 12px;
+    padding: 10px 14px 12px;
+    margin-bottom: 8px;
 }
-.pdf-quote-terms p {
-    margin: 0 0 6px;
-    font-size: 10px;
+.pdf-inv-terms-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #0f2d4a;
+    margin-bottom: 10px;
+    text-align: left;
+    letter-spacing: 0.02em;
     line-height: 1.45;
+}
+.pdf-inv-terms-list {
+    margin: 0;
+    padding: 0;
+}
+.pdf-inv-term-line {
+    margin: 0 0 10px;
+    padding: 0;
+    font-size: 10px;
+    line-height: 1.6;
+    color: #475569;
+    text-align: left;
+    page-break-inside: avoid;
+}
+.pdf-inv-term-line:last-child {
+    margin-bottom: 0;
+}
+.pdf-inv-term-num-plain {
+    font-weight: 700;
+    color: #0f2d4a;
+    margin-right: 6px;
+}
+.pdf-inv-term-ar {
+    font-size: 9px;
+    color: #94a3b8;
+    direction: rtl;
+    text-align: right;
+    margin-top: 4px;
+    line-height: 1.55;
 }

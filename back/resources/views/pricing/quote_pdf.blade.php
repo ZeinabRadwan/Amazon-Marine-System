@@ -27,7 +27,6 @@
             ['key' => 'inland', 'items' => $inlandItems, 'totals' => $inlandTotalsByCurrency, 'en' => 'Inland Transport', 'ar' => 'النقل الداخلي'],
             ['key' => 'customs', 'items' => $customsItems, 'totals' => $customsTotalsByCurrency, 'en' => 'Customs Clearance', 'ar' => 'التخليص الجمركي'],
         ];
-        $hasCustomsSection = $customsItems->isNotEmpty();
     @endphp
 
     <div class="pdf-wrapper pdf-inv-html pdf-sd-doc pdf-quote-doc" dir="ltr" lang="{{ $lang }}">
@@ -43,10 +42,10 @@
                     </td>
                     <td class="pdf-header__brand-cell" width="42%">
                         <div class="pdf-header__brand-stack">
-                            <motionlessWrapper class="pdf-header__brand-line"><strong>{{ $labels['brand'] }}</strong></motionlessWrapper>
+                            <div class="pdf-header__brand-line"><strong>{{ $labels['brand'] }}</strong></div>
                             <div class="pdf-header__brand-tag">{{ $labels['brand_tag'] }}</div>
                             <span class="pdf-header__brand-contact">{{ $labels['brand_contact'] }}</span>
-                        </motionlessWrapper>
+                        </div>
                     </td>
                     <td class="pdf-header__doc" width="40%">
                         <p class="pdf-header__title pdf-inv-header-title">
@@ -58,18 +57,17 @@
                                 <span class="pdf-quote-header-meta__label">{{ $labels['quotation_id'] }}</span>
                                 <span class="pdf-quote-header-meta__val pdf-inv-meta-val-mono">{{ $quote->quote_no }}</span>
                             </div>
-                        </motionlessWrapper>
+                        </div>
                         @if ($quote->quick_mode)
                             <div class="pdf-sd-header-badges">
                                 <span class="pdf-sd-badge pdf-sd-badge--quote">{{ $labels['quick_quotation_badge'] }}</span>
-                            </motionlessWrapper>
+                            </div>
                         @endif
                     </td>
                 </tr>
             </table>
         </header>
 
-        {{-- Metadata: Issue Date | Valid Until | Quotation Number --}}
         <div class="pdf-inv-panel-wrap">
             <table class="pdf-inv-meta-row pdf-inv-meta-row--quote" width="100%" cellspacing="0" cellpadding="0" border="0">
                 <tr>
@@ -81,7 +79,7 @@
                     <td class="pdf-inv-meta-sep"></td>
                     <td class="pdf-inv-meta-cell" width="33%">
                         <div class="pdf-inv-meta-en">{{ $labels['valid_until'] }}</div>
-                        <div class="pdf-inv-meta-ar">{{ $labels['valid_until_ar'] }}</motionlessWrapper>
+                        <div class="pdf-inv-meta-ar">{{ $labels['valid_until_ar'] }}</div>
                         <div class="pdf-inv-meta-val">{{ $validUntilFormatted }}</div>
                     </td>
                     <td class="pdf-inv-meta-sep"></td>
@@ -92,9 +90,8 @@
                     </td>
                 </tr>
             </table>
-        </motionlessWrapper>
+        </div>
 
-        {{-- From issue by / Billed To --}}
         <div class="pdf-inv-panel-wrap">
             <table class="pdf-inv-parties" width="100%" cellspacing="0" cellpadding="0" border="0">
                 <tr>
@@ -107,12 +104,12 @@
                             <strong>{{ $labels['email'] }}:</strong> cs@amazonmarine.ltd<br>
                             <strong>Website:</strong> www.amazonmarine.ltd<br>
                             <strong>{{ $labels['phone'] }}:</strong> +20225601776
-                        </motionlessWrapper>
+                        </div>
                     </td>
                     <td class="pdf-inv-party-div"></td>
                     <td width="49%" class="pdf-inv-party-right">
                         <div class="pdf-inv-party-role">{{ $labels['billed_to'] }}</div>
-                        <motionlessWrapper class="pdf-inv-party-role-ar">{{ $labels['billed_to_ar'] }}</motionlessWrapper>
+                        <div class="pdf-inv-party-role-ar">{{ $labels['billed_to_ar'] }}</div>
                         <div class="pdf-inv-party-name">{{ $client?->name ?? '—' }}</div>
                         @if ($client?->company_name)
                             <div class="pdf-inv-party-company">{{ $client->company_name }}</div>
@@ -128,13 +125,12 @@
                                 @if ($client?->phone)<br>@endif
                                 <span>{{ $client->email }}</span>
                             @endif
-                        </motionlessWrapper>
+                        </div>
                     </td>
                 </tr>
             </table>
-        </motionlessWrapper>
+        </div>
 
-        {{-- Shipping details: POL / POD + metas --}}
         <div class="pdf-inv-panel-wrap">
             <table class="pdf-inv-route-tpl-bar" width="100%" cellspacing="0" cellpadding="0" border="0">
                 <tr>
@@ -158,7 +154,7 @@
                             <tr>
                                 @foreach ($routeMetas as $idx => $meta)
                                     <td class="pdf-inv-route-tpl-rmeta{{ $idx > 0 ? ' pdf-inv-route-tpl-rmeta--split' : '' }}" valign="middle">
-                                        <div class="pdf-inv-route-tpl-rmeta-val">{{ $meta['val'] }}</motionlessWrapper>
+                                        <div class="pdf-inv-route-tpl-rmeta-val">{{ $meta['val'] }}</div>
                                         <div class="pdf-inv-route-tpl-rmeta-lbl">{{ $meta['lbl'] }}</div>
                                     </td>
                                 @endforeach
@@ -167,16 +163,16 @@
                     </td>
                 </tr>
             </table>
-        </motionlessWrapper>
+        </div>
 
         @if ($sailingDisplay !== '—')
             <div class="pdf-quote-sailing-banner">
                 <div class="pdf-quote-sailing-banner__titles">
                     <span class="pdf-quote-sailing-banner__title-en">{{ $labels['available_sailing_en'] }}</span>
                     <span class="pdf-quote-sailing-banner__title-ar">{{ $labels['available_sailing_ar'] }}</span>
-                </motionlessWrapper>
+                </div>
                 <div class="pdf-quote-sailing-banner__value">{{ $sailingDisplay }}</div>
-            </motionlessWrapper>
+            </div>
         @endif
 
         @foreach ($sections as $section)
@@ -197,7 +193,7 @@
                         'totals' => $section['totals'],
                         'formatBreakdown' => $formatBreakdown,
                     ])
-                </motionlessWrapper>
+                </div>
                 @if ($section['key'] === 'customs')
                     @include('pricing.partials.quote_pdf_customs_note')
                 @endif
@@ -221,7 +217,7 @@
                     'totals' => $handlingTotalsByCurrency,
                     'formatBreakdown' => $formatBreakdown,
                 ])
-            </motionlessWrapper>
+            </div>
         @endif
 
         <div class="pdf-inv-grand-wrap">
@@ -229,7 +225,7 @@
                 <tr>
                     <td width="34%">
                         <div class="pdf-inv-grand-title">Grand total</div>
-                        <div class="pdf-inv-grand-title-ar">الإجمالي الكلي</motionlessWrapper>
+                        <div class="pdf-inv-grand-title-ar">الإجمالي الكلي</div>
                     </td>
                     <td width="66%">
                         <table class="pdf-inv-grand-breakdown" width="100%">
@@ -249,23 +245,23 @@
                     </td>
                 </tr>
             </table>
-        </motionlessWrapper>
+        </div>
 
         @if (filled($quote->notes))
             <div class="pdf-inv-notes">
                 <div class="pdf-inv-notes__title">{{ $labels['section_notes'] }}</div>
-                <motionlessWrapper>{!! nl2br(e($quote->notes)) !!}</motionlessWrapper>
-            </motionlessWrapper>
+                <div>{!! nl2br(e($quote->notes)) !!}</div>
+            </div>
         @endif
 
         <div class="pdf-inv-terms-wrap">
             <div class="pdf-inv-terms-title">Terms &amp; Conditions / الشروط والأحكام</div>
             <div class="pdf-inv-terms-list">
-                <div class="pdf-inv-term-line"><span class="pdf-inv-term-num-plain">1.</span><strong>Payment Due:</strong> Payment is due by the date specified above. Late payments may be subject to additional charges.<motionlessWrapper class="pdf-inv-term-ar">الدفع مستحق في التاريخ المحدد — التأخر قد يترتب عليه رسوم إضافية.</motionlessWrapper></div>
+                <div class="pdf-inv-term-line"><span class="pdf-inv-term-num-plain">1.</span><strong>Payment Due:</strong> Payment is due by the date specified above. Late payments may be subject to additional charges.<div class="pdf-inv-term-ar">الدفع مستحق في التاريخ المحدد — التأخر قد يترتب عليه رسوم إضافية.</div></div>
                 <div class="pdf-inv-term-line"><span class="pdf-inv-term-num-plain">2.</span><strong>Official Receipts:</strong> Government official receipts are not included in this invoice and will be charged at actual cost with original receipts provided.<div class="pdf-inv-term-ar">الإيصالات الرسمية الحكومية غير شاملة في هذه الفاتورة — تُحتسب بقيمتها الفعلية مع تقديم الأصول للعميل.</div></div>
-                <motionlessWrapper class="pdf-inv-term-line"><span class="pdf-inv-term-num-plain">3.</span><strong>Currency:</strong> Payments must be made in the currency specified per charge. Exchange rate conversions are subject to the agreed rate on the day of payment.<div class="pdf-inv-term-ar">يتم الدفع بالعملة المحددة لكل بند — تحويل العملات يخضع للسعر المتفق عليه يوم الدفع.</div></motionlessWrapper>
+                <div class="pdf-inv-term-line"><span class="pdf-inv-term-num-plain">3.</span><strong>Currency:</strong> Payments must be made in the currency specified per charge. Exchange rate conversions are subject to the agreed rate on the day of payment.<div class="pdf-inv-term-ar">يتم الدفع بالعملة المحددة لكل بند — تحويل العملات يخضع للسعر المتفق عليه يوم الدفع.</div></div>
                 <div class="pdf-inv-term-line"><span class="pdf-inv-term-num-plain">4.</span><strong>Validity:</strong> This invoice is valid for 30 days from the issue date. Any disputes must be raised within 7 days of receipt.<div class="pdf-inv-term-ar">هذه الفاتورة سارية لمدة 30 يوماً من تاريخ الإصدار — أي اعتراض يجب رفعه خلال 7 أيام من الاستلام.</div></div>
-            </motionlessWrapper>
-        </motionlessWrapper>
-    </motionlessWrapper>
+            </div>
+        </div>
+    </div>
 @endsection
