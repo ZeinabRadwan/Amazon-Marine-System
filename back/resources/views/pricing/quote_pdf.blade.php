@@ -44,10 +44,10 @@
                 : null;
         };
         $sailingDisplay = '—';
-        if ($quote->schedule_type === 'weekly' && is_array($quote->sailing_weekdays) && count($quote->sailing_weekdays)) {
-            $sailingDisplay = implode(', ', $quote->sailing_weekdays);
-        } elseif ($quote->sailingDates->isNotEmpty()) {
+        if ($quote->sailingDates->isNotEmpty()) {
             $sailingDisplay = $quote->sailingDates->pluck('sailing_date')->map(fn ($d) => $pdfFmtDate($d))->filter()->implode(', ');
+        } elseif ($quote->schedule_type === 'weekly' && is_array($quote->sailing_weekdays) && count($quote->sailing_weekdays)) {
+            $sailingDisplay = implode(', ', $quote->sailing_weekdays);
         }
         $validityStr = '—';
         if ($quote->valid_from && $quote->valid_to) {

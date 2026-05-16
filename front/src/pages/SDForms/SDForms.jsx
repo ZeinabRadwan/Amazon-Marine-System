@@ -1574,7 +1574,6 @@ export default function SDForms() {
           )
         },
       },
-      { key: 'sales_rep_name', label: t('sdForms.salesRep'), render: (_, r) => r.sales_rep_name ?? '—' },
       { key: 'created_at', label: t('sdForms.createdAt'), sortKey: 'date', render: (_, r) => formatDate(r.created_at) },
       {
         key: 'actions',

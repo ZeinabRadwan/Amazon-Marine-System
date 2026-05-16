@@ -194,8 +194,8 @@ class PricingQuoteController extends Controller
             if (($validated['schedule_type'] ?? null) === 'fixed' && ! empty($validated['sailing_weekdays'])) {
                 abort(422, 'sailing_weekdays are not allowed for fixed schedule.');
             }
-            if (($validated['schedule_type'] ?? null) === 'weekly' && ! empty($validated['sailing_dates'])) {
-                abort(422, 'sailing_dates are not allowed for weekly schedule.');
+            if (($validated['schedule_type'] ?? null) === 'weekly' && count($validated['sailing_dates'] ?? []) > 1) {
+                abort(422, 'At most one sailing date is allowed for weekly schedule.');
             }
 
             $quote = new PricingQuote;
@@ -311,8 +311,8 @@ class PricingQuoteController extends Controller
         if ((($validated['schedule_type'] ?? $quote->schedule_type) === 'fixed') && ! empty($validated['sailing_weekdays'] ?? [])) {
             abort(422, 'sailing_weekdays are not allowed for fixed schedule.');
         }
-        if ((($validated['schedule_type'] ?? $quote->schedule_type) === 'weekly') && ! empty($validated['sailing_dates'] ?? [])) {
-            abort(422, 'sailing_dates are not allowed for weekly schedule.');
+        if ((($validated['schedule_type'] ?? $quote->schedule_type) === 'weekly') && count($validated['sailing_dates'] ?? []) > 1) {
+            abort(422, 'At most one sailing date is allowed for weekly schedule.');
         }
         if (! $quickMode && ! empty($validated['pricing_offer_id'] ?? $quote->pricing_offer_id) && ! empty($validated['origin_rate_snapshot_id'] ?? $quote->origin_rate_snapshot_id)) {
             $offerId = (int) ($validated['pricing_offer_id'] ?? $quote->pricing_offer_id);

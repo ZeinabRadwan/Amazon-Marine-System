@@ -22,6 +22,8 @@ function formatLocalDate(d) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
+const JS_DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
 export default function DatePicker({
   id,
   value,
@@ -30,6 +32,9 @@ export default function DatePicker({
   locale = 'en',
   className = '',
   placeholder = UI_DATE_FORMAT,
+  allowedWeekdays = null,
+  minDate = null,
+  maxDate = null,
 }) {
   const inputRef = useRef(null)
   const fpRef = useRef(null)
@@ -39,8 +44,33 @@ export default function DatePicker({
   valueRef.current = value
   const disabledRef = useRef(disabled)
   disabledRef.current = disabled
+  const allowedWeekdaysRef = useRef(allowedWeekdays)
+  allowedWeekdaysRef.current = allowedWeekdays
+  const minDateRef = useRef(minDate)
+  minDateRef.current = minDate
+  const maxDateRef = useRef(maxDate)
+  maxDateRef.current = maxDate
 
   const isAr = locale === 'ar' || String(locale).startsWith('ar')
+
+  const applyConstraints = (fp) => {
+    if (!fp) return
+    const weekdays = allowedWeekdaysRef.current
+    if (Array.isArray(weekdays) && weekdays.length > 0) {
+      fp.set('disable', [
+        (date) => {
+          const name = JS_DAY_NAMES[date.getDay()]
+          return !weekdays.includes(name)
+        },
+      ])
+    } else {
+      fp.set('disable', [])
+    }
+    const min = parseToDate(minDateRef.current)
+    const max = parseToDate(maxDateRef.current)
+    fp.set('minDate', min || undefined)
+    fp.set('maxDate', max || undefined)
+  }
 
   const hidePrimaryForAlt = () => {
     const el = inputRef.current
@@ -71,6 +101,7 @@ export default function DatePicker({
       },
     })
     fpRef.current = fp
+    applyConstraints(fp)
     hidePrimaryForAlt()
 
     const initial = parseToDate(valueRef.current)
@@ -99,6 +130,10 @@ export default function DatePicker({
     const fp = fpRef.current
     if (fp) fp.set('clickOpens', !disabled)
   }, [disabled])
+
+  useEffect(() => {
+    applyConstraints(fpRef.current)
+  }, [allowedWeekdays, minDate, maxDate])
 
   return (
     <input

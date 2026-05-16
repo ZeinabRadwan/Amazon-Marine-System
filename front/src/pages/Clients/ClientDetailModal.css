@@ -465,6 +465,15 @@ body .flatpickr-calendar {
 }
 
 /* Client detail modal – overlay and box */
+.client-detail-modal--stacked {
+  z-index: 1100;
+}
+
+.client-detail-modal--quote-create-client .client-detail-modal__box--form {
+  max-width: min(92vw, 780px);
+  max-height: 92vh;
+}
+
 .client-detail-modal {
   position: fixed;
   inset: 0;

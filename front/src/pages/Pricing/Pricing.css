@@ -2622,6 +2622,365 @@
   background: rgba(255, 255, 255, 0.1);
 }
 
+.pricing-quote-shipping-line-field {
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(59, 130, 246, 0.22);
+  background: rgba(59, 130, 246, 0.05);
+}
+
+[data-theme='dark'] .pricing-quote-shipping-line-field,
+.dark .pricing-quote-shipping-line-field {
+  border-color: rgba(96, 165, 250, 0.28);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.pricing-quote-shipping-line-visibility {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+[data-theme='dark'] .pricing-quote-shipping-line-visibility,
+.dark .pricing-quote-shipping-line-visibility {
+  background: rgba(15, 23, 42, 0.55);
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+.pricing-quote-shipping-line-visibility__label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: rgb(51, 65, 85);
+  line-height: 1.25;
+  max-width: 14rem;
+}
+
+[data-theme='dark'] .pricing-quote-shipping-line-visibility__label,
+.dark .pricing-quote-shipping-line-visibility__label {
+  color: rgb(226, 232, 240);
+}
+
+.pricing-quote-shipping-line-visibility__colon {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: rgb(100, 116, 139);
+}
+
+.pricing-quote-shipping-line-visibility__state {
+  min-width: 2rem;
+  text-align: center;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.35rem;
+}
+
+.pricing-quote-shipping-line-visibility__state.is-on {
+  color: rgb(4, 120, 87);
+  background: rgba(16, 185, 129, 0.15);
+}
+
+.pricing-quote-shipping-line-visibility__state.is-off {
+  color: rgb(185, 28, 28);
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.pricing-quote-sailing-field {
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(59, 130, 246, 0.22);
+  background: rgba(59, 130, 246, 0.04);
+}
+
+[data-theme='dark'] .pricing-quote-sailing-field,
+.dark .pricing-quote-sailing-field {
+  border-color: rgba(96, 165, 250, 0.28);
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.pricing-quote-sailing-hint {
+  font-size: 0.75rem;
+  color: rgb(100, 116, 139);
+}
+
+.pricing-quote-sailing-required-hint {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgb(180, 83, 9);
+}
+
+.pricing-quote-sailing-error {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgb(185, 28, 28);
+}
+
+.pricing-quote-sailing-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.pricing-quote-sailing-chip {
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: #fff;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: rgb(51, 65, 85);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.pricing-quote-sailing-chip:hover:not(:disabled) {
+  border-color: rgba(37, 99, 235, 0.55);
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.pricing-quote-sailing-chip--active {
+  border-color: rgba(37, 99, 235, 0.65);
+  background: rgba(59, 130, 246, 0.14);
+  color: rgb(29, 78, 216);
+}
+
+.pricing-quote-sailing-chip:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+[data-theme='dark'] .pricing-quote-sailing-chip,
+.dark .pricing-quote-sailing-chip {
+  background: rgba(15, 23, 42, 0.6);
+  color: rgb(226, 232, 240);
+  border-color: rgba(148, 163, 184, 0.35);
+}
+
+.pricing-quote-sailing-weekly-days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+.pricing-quote-sailing-weekday-pill {
+  min-width: 2.25rem;
+  text-align: center;
+  padding: 0.2rem 0.35rem;
+  border-radius: 0.35rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+
+.pricing-quote-sailing-weekday-pill.is-allowed {
+  color: rgb(4, 120, 87);
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+.pricing-quote-sailing-weekday-pill.is-disabled {
+  color: rgb(148, 163, 184);
+  background: rgba(148, 163, 184, 0.12);
+  text-decoration: line-through;
+  opacity: 0.65;
+}
+
+/* Quotation pricing line table (sea + inland) */
+.pricing-quote-line-table-wrap {
+  margin-top: 0.25rem;
+}
+
+.pricing-quote-line-table {
+  table-layout: fixed;
+  width: 100%;
+  font-size: 0.8125rem;
+}
+
+.pricing-quote-line-table th,
+.pricing-quote-line-table td {
+  padding: 0.4rem 0.35rem;
+  vertical-align: middle;
+}
+
+.pricing-quote-line-col-check {
+  width: 2.25rem;
+  text-align: center;
+}
+
+.pricing-quote-line-include-head {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pricing-quote-line-include-help {
+  display: inline-flex;
+  color: rgb(100, 116, 139);
+  cursor: help;
+}
+
+.pricing-quote-line-col-name {
+  width: 38%;
+  min-width: 10rem;
+}
+
+.pricing-quote-line-name {
+  display: block;
+  font-weight: 600;
+  font-size: 0.875rem;
+  line-height: 1.35;
+  color: rgb(15, 23, 42);
+  word-break: break-word;
+}
+
+[data-theme='dark'] .pricing-quote-line-name,
+.dark .pricing-quote-line-name {
+  color: rgb(248, 250, 252);
+}
+
+.pricing-quote-line-col-cost {
+  width: 5.5rem;
+}
+
+.pricing-quote-line-col-cur {
+  width: 4.25rem;
+  text-align: center;
+}
+
+.pricing-quote-line-col-selling {
+  width: 6.5rem;
+}
+
+.pricing-quote-line-col-profit {
+  width: 4.5rem;
+  min-width: 4.5rem;
+}
+
+.pricing-quote-line-input {
+  width: 100%;
+  min-width: 0;
+  padding: 0.35rem 0.45rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgb(226, 232, 240);
+  font-size: 0.8125rem;
+}
+
+.pricing-quote-line-input--readonly {
+  border-color: rgb(203, 213, 225);
+  background: rgb(241, 245, 249);
+  color: rgb(51, 65, 85);
+}
+
+[data-theme='dark'] .pricing-quote-line-input--readonly,
+.dark .pricing-quote-line-input--readonly {
+  border-color: rgb(71, 85, 105);
+  background: rgb(30, 41, 59);
+  color: rgb(226, 232, 240);
+}
+
+.pricing-quote-line-input--editable {
+  background: #fff;
+}
+
+[data-theme='dark'] .pricing-quote-line-input--editable,
+.dark .pricing-quote-line-input--editable {
+  background: rgb(15, 23, 42);
+  border-color: rgb(71, 85, 105);
+  color: rgb(248, 250, 252);
+}
+
+.pricing-quote-line-cur-select {
+  width: 100%;
+  max-width: 4rem;
+  padding: 0.3rem 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 0.4rem;
+  border: 1px solid rgb(226, 232, 240);
+  background: #fff;
+}
+
+.pricing-quote-line-profit {
+  font-weight: 700;
+  font-size: 0.875rem;
+  text-align: right;
+}
+
+.pricing-quote-line-profit.is-positive {
+  color: rgb(4, 120, 87);
+}
+
+.pricing-quote-line-profit.is-negative {
+  color: rgb(220, 38, 38);
+}
+
+.pricing-quote-line-row--excluded {
+  opacity: 0.45;
+}
+
+.pricing-quote-line-row--excluded .pricing-quote-line-input,
+.pricing-quote-line-row--excluded .pricing-quote-line-cur-select {
+  pointer-events: none;
+}
+
+.pricing-quote-line-row--excluded .pricing-quote-line-check {
+  pointer-events: auto;
+  opacity: 1;
+}
+
+.pricing-quote-line-weekly-days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+.pricing-quote-client-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.pricing-quote-client-row .pricing-quote-async-select {
+  flex: 1;
+  min-width: 0;
+}
+
+.pricing-quote-add-client-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.625rem;
+  height: 2.625rem;
+  padding: 0;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(37, 99, 235, 0.45);
+  background: rgba(59, 130, 246, 0.08);
+  color: rgb(37, 99, 235);
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+.pricing-quote-add-client-btn:hover {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(37, 99, 235, 0.65);
+}
+
+[data-theme='dark'] .pricing-quote-add-client-btn,
+.dark .pricing-quote-add-client-btn {
+  border-color: rgba(96, 165, 250, 0.45);
+  background: rgba(59, 130, 246, 0.12);
+  color: rgb(147, 197, 253);
+}
+
 .pricing-quote-modal__body {
   background: linear-gradient(180deg, rgba(59, 130, 246, 0.04) 0%, rgba(59, 130, 246, 0) 30%);
 }
