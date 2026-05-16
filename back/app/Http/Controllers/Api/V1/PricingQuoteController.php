@@ -487,36 +487,51 @@ class PricingQuoteController extends Controller
     }
 
     /**
+     * Bilingual PDF chrome: EN line + AR line (always the same regardless of request locale).
+     *
+     * @return array<string, string>
+     */
+    private function quotePdfBilingualLabels(): array
+    {
+        return [
+            'doc_title_en' => 'Price Quotation',
+            'doc_title_ar' => 'عرض سعر',
+            'quotation_id' => 'Quotation ID',
+            'quotation_id_ar' => 'رقم عرض السعر',
+            'valid_until' => 'Valid Until',
+            'valid_until_ar' => 'صالح حتى',
+            'issued_date' => 'Issue Date',
+            'issued_date_ar' => 'تاريخ الإصدار',
+            'issued_by' => 'From issue by',
+            'issued_by_ar' => 'صادر من',
+            'billed_to' => 'Sent To',
+            'billed_to_ar' => 'مرسلة إلى',
+            'available_sailing_en' => 'Available Sailing',
+            'available_sailing_ar' => 'مواعيد الإبحار المتاحة',
+            'section_handling_fees_en' => 'Handling Fees',
+            'section_handling_fees_ar' => 'رسوم الخدمة والمتابعة',
+            'containers' => 'Containers',
+            'containers_ar' => 'الحاويات',
+        ];
+    }
+
+    /**
      * @return array<string, string>
      */
     private function quotePdfLabels(string $locale): array
     {
+        $bilingual = $this->quotePdfBilingualLabels();
+
         if ($locale === 'ar') {
-            return [
+            return array_merge($bilingual, [
                 'doc_title' => 'عرض سعر',
-                'doc_title_en' => 'Price Quotation',
-                'doc_title_ar' => 'عرض سعر',
                 'exchange_rate' => 'سعر الصرف',
                 'exchange_rate_ar' => 'سعر الصرف',
-                'quotation_id' => 'رقم عرض السعر',
-                'quotation_id_ar' => 'رقم عرض السعر',
-                'valid_until' => 'صالح حتى',
-                'valid_until_ar' => 'صالح حتى',
-                'issued_by' => 'From issue by',
-                'issued_by_ar' => 'صادر من',
-                'billed_to' => 'فاتورة إلى',
-                'billed_to_ar' => 'فاتورة إلى',
                 'available_sailing' => 'مواعيد الإبحار المتاحة',
-                'available_sailing_en' => 'Available Sailing',
-                'available_sailing_ar' => 'مواعيد الإبحار المتاحة',
                 'section_shipping' => 'تفاصيل الشحن',
                 'section_shipping_en' => 'Shipping details',
-                'containers' => 'الحاويات',
-                'containers_ar' => 'الحاويات',
                 'quote_no' => 'رقم العرض',
                 'date' => 'التاريخ',
-                'issued_date' => 'Issue Date',
-                'issued_date_ar' => 'تاريخ الإصدار',
                 'client' => 'العميل',
                 'section_client_company' => '١. العميل / الشركة',
                 'company_label' => 'شركتنا',
@@ -533,8 +548,6 @@ class PricingQuoteController extends Controller
                 'section_inland_transport' => '٤. النقل الداخلي',
                 'section_customs' => '٥. الجمارك والرسوم الأخرى',
                 'section_handling_fees' => 'رسوم الخدمة والمتابعة',
-                'section_handling_fees_en' => 'Handling Fees',
-                'section_handling_fees_ar' => 'رسوم الخدمة والمتابعة',
                 'section_totals' => '٧. الإجماليات',
                 'section_notes' => '٨. ملاحظات',
                 'section_terms' => '٩. الشروط والأحكام',
@@ -558,35 +571,19 @@ class PricingQuoteController extends Controller
                     .'<p>هذا العرض لا يُعتبر تأكيدًا للحجز حتى يتم إصداره تأكيدًا خطيًا من الشركة.</p>',
                 'quick_quotation_badge' => 'عرض سعر سريع',
                 'official_receipts_title' => 'الإيصالات الرسمية (معلوماتي — لا يُحتسب في الإجمالي)',
-            ];
+            ]);
         }
 
-        return [
+        return array_merge($bilingual, [
             'doc_title' => 'Quotation',
-            'doc_title_en' => 'Price Quotation',
-            'doc_title_ar' => 'عرض سعر',
             'exchange_rate' => 'Exchange Rate',
             'exchange_rate_ar' => 'سعر الصرف',
-            'quotation_id' => 'Quotation ID',
-            'quotation_id_ar' => 'رقم عرض السعر',
-            'valid_until' => 'Valid Until',
-            'valid_until_ar' => 'صالح حتى',
-            'issued_by' => 'From issue by',
-            'issued_by_ar' => 'صادر من',
-            'billed_to' => 'Billed To',
-            'billed_to_ar' => 'فاتورة إلى',
             'available_sailing' => 'Available Sailing',
-            'available_sailing_en' => 'Available Sailing',
-            'available_sailing_ar' => 'مواعيد الإبحار المتاحة',
             'section_shipping' => 'Shipping details',
             'section_shipping_en' => 'Shipping details',
             'section_shipping_ar' => 'تفاصيل الشحن',
-            'containers' => 'Containers',
-            'containers_ar' => 'الحاويات',
             'quote_no' => 'Quote No.',
             'date' => 'Date',
-            'issued_date' => 'Issue Date',
-            'issued_date_ar' => 'تاريخ الإصدار',
             'client' => 'Client',
             'section_client_company' => '1. Client / Company',
             'company_label' => 'Our company',
@@ -603,8 +600,6 @@ class PricingQuoteController extends Controller
             'section_inland_transport' => '4. Inland transport',
             'section_customs' => '5. Customs & other charges',
             'section_handling_fees' => 'Handling Fees',
-            'section_handling_fees_en' => 'Handling Fees',
-            'section_handling_fees_ar' => 'رسوم الخدمة والمتابعة',
             'section_totals' => '7. Totals',
             'section_notes' => '8. Notes',
             'section_terms' => '9. Terms & conditions',
@@ -628,7 +623,7 @@ class PricingQuoteController extends Controller
                 .'<p>Validity and surcharges apply as stated in this offer.</p>',
             'quick_quotation_badge' => 'Quick quotation',
             'official_receipts_title' => 'Official receipts (informational — not included in totals)',
-        ];
+        ]);
     }
 
     /**

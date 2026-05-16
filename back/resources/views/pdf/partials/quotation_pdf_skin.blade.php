@@ -49,67 +49,136 @@
 .pdf-inv-meta-row {
     width: 100%;
     border-collapse: collapse;
+    background: #ffffff;
+    border: none;
+    margin: 0;
     table-layout: fixed;
 }
 .pdf-inv-meta-row tr td.pdf-inv-meta-cell {
     vertical-align: middle;
     padding: 8px 6px;
+    border: none;
     text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
 }
 .pdf-inv-meta-row tr td.pdf-inv-meta-sep {
     width: 1px;
+    min-width: 1px;
+    max-width: 1px;
+    padding: 0 !important;
     background: #cbd5e1;
-    padding: 0;
+    vertical-align: middle;
+    border: none;
+    font-size: 0;
+    line-height: 0;
 }
 .pdf-inv-meta-en {
     font-size: 7.5px;
     font-weight: 700;
     color: #ec7f00;
     text-transform: uppercase;
+    letter-spacing: 0.05em;
+    line-height: 1.1;
+    margin: 0;
 }
 .pdf-inv-meta-ar {
     font-size: 7px;
     color: #64748b;
+    line-height: 1.1;
+    margin: 0 0 2px;
     direction: rtl;
+    unicode-bidi: embed;
+    text-align: center;
 }
 .pdf-inv-meta-val {
     font-size: 9.5px;
     font-weight: 700;
     color: #0f2d4a;
+    line-height: 1.15;
+    white-space: nowrap;
 }
 .pdf-inv-meta-val-mono {
     font-family: DejaVu Sans Mono, monospace;
+    font-size: 9.5px;
 }
 .pdf-inv-parties {
     width: 100%;
     border-collapse: collapse;
+    border-spacing: 0;
+    border: none;
+    margin: 0;
+    background: #ffffff;
 }
 .pdf-inv-parties td {
     vertical-align: top;
     padding: 16px 18px;
+    border: none;
+    background: #ffffff;
 }
 .pdf-inv-party-div {
     width: 1px;
+    min-width: 1px;
+    max-width: 1px;
+    padding: 0 !important;
     background: #e2e8f0;
-    padding: 0;
+    vertical-align: stretch;
+    border: none;
+    font-size: 0;
+    line-height: 0;
 }
 .pdf-inv-party-role {
     font-size: 10px;
     font-weight: 700;
     color: #ec7f00;
+    text-transform: none;
+    letter-spacing: 0.02em;
+    margin: 0 0 3px;
+    line-height: 1.25;
 }
 .pdf-inv-party-role-ar {
     font-size: 7.5px;
+    font-weight: 500;
     color: #94a3b8;
+    margin: 0 0 10px;
+    line-height: 1.35;
     direction: rtl;
+    unicode-bidi: embed;
+}
+.pdf-inv-party-right .pdf-inv-party-role-ar {
+    text-align: right;
 }
 .pdf-inv-party-name {
     font-size: 13px;
     font-weight: 700;
     color: #0f2d4a;
-    margin: 6px 0;
+    margin: 0 0 8px;
+    line-height: 1.25;
+}
+.pdf-inv-party-company {
+    margin: -4px 0 8px;
+    font-weight: 700;
+    font-size: 11px;
+    color: #0f2d4a;
+    line-height: 1.35;
+}
+.pdf-inv-party-detail {
+    font-size: 9px;
+    font-weight: 400;
+    color: #64748b;
+    line-height: 1.55;
+}
+.pdf-inv-party-detail strong {
+    font-weight: 600;
+    color: #64748b;
 }
 .pdf-inv-party-right {
+    text-align: right;
+}
+.pdf-inv-party-right .pdf-inv-party-role,
+.pdf-inv-party-right .pdf-inv-party-name,
+.pdf-inv-party-right .pdf-inv-party-company,
+.pdf-inv-party-right .pdf-inv-party-detail {
     text-align: right;
 }
 .pdf-inv-route-tpl-bar {

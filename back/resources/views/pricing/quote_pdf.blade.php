@@ -93,17 +93,17 @@
         </div>
 
         <div class="pdf-inv-panel-wrap">
-            <table class="pdf-inv-parties" width="100%" cellspacing="0" cellpadding="0" border="0">
+            <table class="pdf-inv-parties" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
                 <tr>
                     <td width="49%">
                         <div class="pdf-inv-party-role">{{ $labels['issued_by'] }}</div>
                         <div class="pdf-inv-party-role-ar">{{ $labels['issued_by_ar'] }}</div>
                         <div class="pdf-inv-party-name">Amazon Marine</div>
                         <div class="pdf-inv-party-detail">
-                            <strong>{{ $labels['address'] }}:</strong> 5th Settlement, New Cairo<br>
-                            <strong>{{ $labels['email'] }}:</strong> cs@amazonmarine.ltd<br>
+                            <strong>Address:</strong> 5th Settlement, New Cairo<br>
+                            <strong>Email:</strong> cs@amazonmarine.ltd<br>
                             <strong>Website:</strong> www.amazonmarine.ltd<br>
-                            <strong>{{ $labels['phone'] }}:</strong> +20225601776
+                            <strong>Phone:</strong> +20 2 25601776
                         </div>
                     </td>
                     <td class="pdf-inv-party-div"></td>
