@@ -14,8 +14,8 @@ use App\Support\PdfLogo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Mpdf\Mpdf;
 
 class PricingQuoteController extends Controller
@@ -39,6 +39,13 @@ class PricingQuoteController extends Controller
 
         if ($clientId = $request->query('client_id')) {
             $query->where('client_id', (int) $clientId);
+        }
+
+        $user = $request->user();
+        if ($user && $user->hasRole('sales') && ! $user->hasRole('admin')) {
+            $query->where('sales_user_id', $user->id);
+        } elseif ($salesUserId = $request->query('sales_user_id')) {
+            $query->where('sales_user_id', (int) $salesUserId);
         }
 
         if ($from = $request->query('valid_from')) {
@@ -666,7 +673,7 @@ class PricingQuoteController extends Controller
                 'terms_html' => '<p>يجب تأكيد الحجز قبل موعد الشحن بوقت كافٍ. الأسعار المعروضة خاضعة للتوفر وتعديل أسعار الناقل دون إشعار مسبق.</p>'
                     .'<p>أيام السريان والغرامات وفقًا لإعلان الخط الملاحي والمحطة.</p>'
                     .'<p>هذا العرض لا يُعتبر تأكيدًا للحجز حتى يتم إصداره تأكيدًا خطيًا من الشركة.</p>',
-                'quick_quotation_badge' => 'عرض سعر سريع',
+                'quick_quotation_badge' => 'عرض سريع',
                 'official_receipts_title' => 'الإيصالات الرسمية (معلوماتي — لا يُحتسب في الإجمالي)',
             ]);
         }
@@ -718,7 +725,7 @@ class PricingQuoteController extends Controller
             'terms_html' => '<p>Rates are subject to carrier and terminal changes without prior notice. Space and equipment must be confirmed at time of booking.</p>'
                 .'<p>Detention/demurrage per carrier and terminal announcements. This quotation does not constitute a firm booking until confirmed in writing.</p>'
                 .'<p>Validity and surcharges apply as stated in this offer.</p>',
-            'quick_quotation_badge' => 'Quick quotation',
+            'quick_quotation_badge' => 'Quick',
             'official_receipts_title' => 'Official receipts (informational — not included in totals)',
         ]);
     }

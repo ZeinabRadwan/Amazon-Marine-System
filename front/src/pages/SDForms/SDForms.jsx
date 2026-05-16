@@ -22,6 +22,7 @@ import {
   cancelSDFormBooking,
   startSDFormBooking,
   requestSDFormInformation,
+  completeSDFormInformation,
   convertSDFormToShipment,
   reopenConvertedSDForm,
 } from '../../api/sdForms'
@@ -367,6 +368,13 @@ export default function SDForms() {
   const [bookingError, setBookingError] = useState(null)
 
   const canBookingDecide = isAdminRole || isOperations
+  const canCompleteInformation = isAnySales
+
+  // Sales: mark data completion and return SD to operations (booking required).
+  const [infoCompleteOpen, setInfoCompleteOpen] = useState(false)
+  const [infoCompleteRecord, setInfoCompleteRecord] = useState(null)
+  const [infoCompleteSubmitting, setInfoCompleteSubmitting] = useState(false)
+  const [infoCompleteError, setInfoCompleteError] = useState(null)
 
   // Convert to Shipment (admin / sales rep) + Reopen (admin only).
   const [convertOpen, setConvertOpen] = useState(false)
@@ -890,6 +898,38 @@ export default function SDForms() {
     setBookingFile(null)
     setBookingReason('')
     setBookingInfoNote('')
+  }
+
+  const openInfoCompleteModal = (record) => {
+    setInfoCompleteRecord(record)
+    setInfoCompleteError(null)
+    setInfoCompleteOpen(true)
+  }
+
+  const closeInfoCompleteModal = () => {
+    if (infoCompleteSubmitting) return
+    setInfoCompleteOpen(false)
+    setInfoCompleteRecord(null)
+    setInfoCompleteError(null)
+  }
+
+  const runCompleteInformation = async () => {
+    if (!token || !infoCompleteRecord) return
+    setInfoCompleteSubmitting(true)
+    setInfoCompleteError(null)
+    try {
+      await completeSDFormInformation(token, infoCompleteRecord.id)
+      if (detailId === infoCompleteRecord.id) openDetail(infoCompleteRecord.id)
+      loadList()
+      setAlert({ type: 'success', message: t('sdForms.infoRequest.completeSuccess') })
+      setInfoCompleteOpen(false)
+      setInfoCompleteRecord(null)
+      setInfoCompleteError(null)
+    } catch (err) {
+      setInfoCompleteError(err.message || t('sdForms.infoRequest.errorComplete'))
+    } finally {
+      setInfoCompleteSubmitting(false)
+    }
   }
 
   const runStartBooking = async () => {
@@ -1590,6 +1630,20 @@ export default function SDForms() {
             {canEdit && (r.status !== 'converted_to_shipment' || isAdminRole) && (
               <IconActionButton icon={<Pencil className="h-4 w-4" />} label={t('sdForms.edit')} onClick={() => openEdit(r.id)} />
             )}
+            {canCompleteInformation && r.status === 'information_requested' && (
+              <>
+                <IconActionButton
+                  icon={<CheckCircle2 className="h-4 w-4" />}
+                  label={t('sdForms.infoRequest.completeAction')}
+                  onClick={() => openInfoCompleteModal(r)}
+                />
+                <IconActionButton
+                  icon={<Send className="h-4 w-4" />}
+                  label={t('sdForms.infoRequest.returnToBookingAction')}
+                  onClick={() => openInfoCompleteModal(r)}
+                />
+              </>
+            )}
             {canBookingDecide && ['sent_to_operations', 'booking_in_progress', 'information_requested', 'in_progress'].includes(r.status) && (
               <IconActionButton
                 icon={<ClipboardCheck className="h-4 w-4" />}
@@ -1623,7 +1677,7 @@ export default function SDForms() {
         ),
       },
     ],
-    [t, selectedIds, allPageSelected, toggleSelectAllPage, toggleSelectRow, openDetail, openEdit, downloadPdf, canBookingDecide, canEdit, canDelete, canConvertToShipment, canReopenConverted, isAdminRole]
+    [t, selectedIds, allPageSelected, toggleSelectAllPage, toggleSelectRow, openDetail, openEdit, downloadPdf, canBookingDecide, canCompleteInformation, openInfoCompleteModal, canEdit, canDelete, canConvertToShipment, canReopenConverted, isAdminRole]
   )
 
   useEffect(() => {
@@ -2100,6 +2154,26 @@ export default function SDForms() {
                               <Pencil className="h-4 w-4" aria-hidden />
                               {t('sdForms.edit')}
                             </button>
+                          )}
+                          {canCompleteInformation && detail.status === 'information_requested' && (
+                            <>
+                              <button
+                                type="button"
+                                className="clients-btn clients-btn--primary inline-flex items-center gap-1 text-xs"
+                                onClick={() => openInfoCompleteModal(detail)}
+                              >
+                                <CheckCircle2 className="h-4 w-4" aria-hidden />
+                                {t('sdForms.infoRequest.completeAction')}
+                              </button>
+                              <button
+                                type="button"
+                                className="clients-btn clients-btn--secondary inline-flex items-center gap-1 text-xs"
+                                onClick={() => openInfoCompleteModal(detail)}
+                              >
+                                <Send className="h-4 w-4" aria-hidden />
+                                {t('sdForms.infoRequest.returnToBookingAction')}
+                              </button>
+                            </>
                           )}
                           {canConvertToShipment && ['booking_confirmed', 'in_progress', 'completed'].includes(detail.status) && (
                             <button
@@ -2627,6 +2701,63 @@ export default function SDForms() {
                   </div>
                 </form>
               )}
+            </div>
+          </div>
+        )}
+
+        {infoCompleteOpen && infoCompleteRecord && (
+          <div className="clients-modal" role="dialog" aria-modal="true" aria-labelledby="sd-info-complete-modal-title">
+            <div className="clients-modal-backdrop" onClick={closeInfoCompleteModal} />
+            <div className="clients-modal-content max-w-md">
+              <div className="flex items-start justify-between gap-3 mb-2">
+                <h2 id="sd-info-complete-modal-title" className="text-lg font-semibold">
+                  {t('sdForms.infoRequest.completeTitle')}
+                </h2>
+                <button
+                  type="button"
+                  className="clients-modal-close"
+                  onClick={closeInfoCompleteModal}
+                  aria-label={t('common.close', 'Close')}
+                  disabled={infoCompleteSubmitting}
+                >
+                  <X className="h-4 w-4" aria-hidden />
+                </button>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                {t('sdForms.booking.for', 'SD form')}: <strong>{infoCompleteRecord.sd_number || `#${infoCompleteRecord.id}`}</strong>
+                {infoCompleteRecord.client_name ? <> — {infoCompleteRecord.client_name}</> : null}
+              </p>
+              {infoCompleteRecord.information_request_note && (
+                <div className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">
+                  <p className="font-medium text-xs uppercase tracking-wide mb-1">{t('sdForms.infoRequest.noteLabel')}</p>
+                  <p className="whitespace-pre-wrap break-words">{infoCompleteRecord.information_request_note}</p>
+                </div>
+              )}
+              {infoCompleteError && (
+                <div className="mb-3 text-sm text-red-600 dark:text-red-400" role="alert">
+                  {infoCompleteError}
+                </div>
+              )}
+              <p className="text-sm mb-4">{t('sdForms.infoRequest.completeConfirm')}</p>
+              <div className="clients-modal-actions">
+                <button
+                  type="button"
+                  className="clients-btn"
+                  onClick={closeInfoCompleteModal}
+                  disabled={infoCompleteSubmitting}
+                >
+                  {t('common.cancel', 'Cancel')}
+                </button>
+                <button
+                  type="button"
+                  className="clients-btn clients-btn--primary inline-flex items-center gap-2"
+                  onClick={runCompleteInformation}
+                  disabled={infoCompleteSubmitting}
+                >
+                  {infoCompleteSubmitting ? <LoaderDots size={8} /> : <CheckCircle2 className="h-4 w-4" aria-hidden />}
+                  {t('sdForms.infoRequest.completeAction')}
+                </button>
+              </div>
             </div>
           </div>
         )}

@@ -45,6 +45,8 @@ function humanizeTypeKey(type) {
 const LARAVEL_TYPE_HINTS = {
   OperationSDFormNotification: 'sd_form.sent_to_operations',
   SdFormBookingConfirmationUploadedNotification: 'sd_form.booking_confirmation_uploaded',
+  SdFormInformationRequestedNotification: 'sd_form.information_requested',
+  SdFormInformationCompletedNotification: 'sd_form.information_completed',
   ShipmentSalesFinancialsNotification: 'shipment.notify_sales_financials',
   ShipmentOperationTaskReminderNotification: 'shipment.operation_task_reminder',
   ClientFollowUpReminderNotification: 'client_follow_up.reminder',

@@ -217,18 +217,22 @@ export default function Sidebar({
 
         <nav className="sidebar-nav" aria-label="Main navigation">
           {SIDEBAR_SECTIONS.map(({ sectionKey, items }) => {
-            // Rule: Accountant only sees Finance section
-            if (effectiveIsAccountant && sectionKey !== 'financial') return null
+            // Accountant: finance section + shipments list (read/financial context), not full operations/CRM.
+            if (effectiveIsAccountant && sectionKey !== 'financial' && sectionKey !== 'operations') return null
 
             const filteredItems = allowedPagesSet
               ? items.filter(({ id }) => {
+                  if (effectiveIsAccountant && sectionKey === 'operations' && id !== 'shipments') return false
                   if (id === 'settings' && !effectiveIsAdminRole) return false
                   if (id === 'reports') return effectiveIsAdminRole
                   const pageKey = SIDEBAR_ID_TO_PAGE_KEY[id]
                   if (!pageKey) return true
                   return allowedPagesSet.has(pageKey)
                 })
-              : items.filter(({ id }) => id !== 'reports' || effectiveIsAdminRole)
+              : items.filter(({ id }) => {
+                  if (effectiveIsAccountant && sectionKey === 'operations' && id !== 'shipments') return false
+                  return id !== 'reports' || effectiveIsAdminRole
+                })
             if (!filteredItems.length) return null
 
             return (

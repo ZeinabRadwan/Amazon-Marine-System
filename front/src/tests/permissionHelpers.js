@@ -54,7 +54,7 @@ export function computeHasPermission(user, permissions, page, key) {
 export function getVisibleSidebarSections(user, allSectionKeys, allowedPages) {
   const isAccountant = computeIsAccountant(user)
   return allSectionKeys.filter((sectionKey) => {
-    if (isAccountant && sectionKey !== 'financial') return false
+    if (isAccountant && sectionKey !== 'financial' && sectionKey !== 'operations') return false
     return true
   })
 }

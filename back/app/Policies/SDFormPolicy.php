@@ -33,10 +33,41 @@ class SDFormPolicy
 
         return in_array($form->status, [
             'sent_to_operations',
+            'booking_in_progress',
+            'information_requested',
             'in_progress',
             'booking_confirmed',
             'booking_cancelled',
         ], true);
+    }
+
+    /**
+     * Sales rep (or manager/admin) marks missing SD data as completed and returns
+     * the form to the operations booking queue.
+     */
+    public function completeInformation(User $user, SDForm $form): bool
+    {
+        if ($form->status !== 'information_requested') {
+            return false;
+        }
+
+        if ($user->hasRole('operations')) {
+            return false;
+        }
+
+        if (! $user->can('sd_forms.manage')) {
+            return false;
+        }
+
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if ($user->can('sd_forms.manage_any')) {
+            return true;
+        }
+
+        return $user->hasRole('sales') && (int) $form->sales_rep_id === (int) $user->id;
     }
 
     public function view(User $user, SDForm $form): bool

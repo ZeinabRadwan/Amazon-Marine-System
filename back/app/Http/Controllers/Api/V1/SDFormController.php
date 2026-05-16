@@ -14,6 +14,8 @@ use App\Models\Shipment;
 use App\Models\User;
 use App\Notifications\OperationSDFormNotification;
 use App\Notifications\SdFormBookingConfirmationUploadedNotification;
+use App\Notifications\SdFormInformationCompletedNotification;
+use App\Notifications\SdFormInformationRequestedNotification;
 use App\Services\ActivityLogger;
 use App\Services\NotificationService;
 use App\Services\SDFormService;
@@ -455,6 +457,52 @@ class SDFormController extends Controller
             'note' => $validated['note'],
         ]);
 
+        $salesRecipients = $this->recipientsForSdFormSalesNotification($sdForm, $user);
+        if ($salesRecipients->isNotEmpty()) {
+            $this->notificationService->sendDatabaseNotification(
+                'sd_form.information_requested',
+                $sdForm,
+                $salesRecipients,
+                new SdFormInformationRequestedNotification($sdForm, $validated['note'])
+            );
+        }
+
+        return response()->json([
+            'data' => $sdForm->fresh(['client', 'salesRep', 'pol', 'pod', 'shippingLine', 'bookingDecidedBy:id,name']),
+        ]);
+    }
+
+    /**
+     * Sales marks data completion on an SD form and returns it to operations (booking required).
+     */
+    public function completeInformation(Request $request, SDForm $sdForm)
+    {
+        $user = $request->user();
+        abort_unless($user && $user->can('completeInformation', $sdForm), 403);
+
+        if ($sdForm->status !== 'information_requested') {
+            abort(422, __('Only SD forms awaiting data completion can be marked as completed.'));
+        }
+
+        SDFormService::transitionStatus($sdForm, 'sent_to_operations');
+
+        ActivityLogger::log('sd_form.information_completed', $sdForm, [
+            'completed_by_user_id' => $user->id,
+        ]);
+
+        $operationsUsers = User::role('operations')
+            ->where('status', 'active')
+            ->get();
+
+        if ($operationsUsers->isNotEmpty()) {
+            $this->notificationService->sendDatabaseNotification(
+                'sd_form.information_completed',
+                $sdForm,
+                $operationsUsers,
+                new SdFormInformationCompletedNotification($sdForm, $user)
+            );
+        }
+
         return response()->json([
             'data' => $sdForm->fresh(['client', 'salesRep', 'pol', 'pod', 'shippingLine', 'bookingDecidedBy:id,name']),
         ]);
@@ -541,6 +589,30 @@ class SDFormController extends Controller
         }
 
         return User::query()->whereIn('id', $ids->all())->get();
+    }
+
+    /**
+     * Notify the owning sales rep (or sales managers when unassigned).
+     *
+     * @return Collection<int, User>
+     */
+    private function recipientsForSdFormSalesNotification(SDForm $form, User $actor): Collection
+    {
+        if ($form->sales_rep_id) {
+            $rep = User::query()
+                ->where('id', $form->sales_rep_id)
+                ->where('status', 'active')
+                ->first();
+
+            if ($rep) {
+                return collect([(int) $rep->id === (int) $actor->id ? null : $rep])->filter();
+            }
+        }
+
+        return User::role(['sales_manager', 'admin'])
+            ->where('status', 'active')
+            ->where('id', '!=', $actor->id)
+            ->get();
     }
 
     public function export(Request $request)

@@ -23,6 +23,8 @@ class Shipment extends Model
         'booking_date',
         'acid_number',
         'sd_form_id',
+        'pricing_quote_id',
+        'quotation_reference',
         'client_id',
         'sales_rep_id',
         'line_vendor_id',
@@ -120,6 +122,14 @@ class Shipment extends Model
     public function sdForm(): BelongsTo
     {
         return $this->belongsTo(SDForm::class);
+    }
+
+    /**
+     * @return BelongsTo<PricingQuote, Shipment>
+     */
+    public function pricingQuote(): BelongsTo
+    {
+        return $this->belongsTo(PricingQuote::class, 'pricing_quote_id');
     }
 
     /**

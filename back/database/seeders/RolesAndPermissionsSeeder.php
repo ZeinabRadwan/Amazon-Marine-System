@@ -112,6 +112,17 @@ class RolesAndPermissionsSeeder extends Seeder
             ]);
         }
 
+        if ($accountingRole = $roles['accounting'] ?? null) {
+            $accountingRole->syncPermissions([
+                $permissions['shipments.view'],
+                $permissions['accounting.view'],
+                $permissions['accounting.manage'],
+                $permissions['financial.view'],
+                $permissions['financial.manage'],
+                $permissions['clients.view'],
+            ]);
+        }
+
         $this->seedPagePermissions($roles);
     }
 

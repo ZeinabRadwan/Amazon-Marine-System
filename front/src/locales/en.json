@@ -613,6 +613,7 @@
     "createStandardQuotationTitle": "إنشاء عرض سعر / Create Standard Quotation",
     "createQuickQuotation": "Quick quotation",
     "createQuoteQuickSub": "Manual numbers only — confirm with Pricing Team before saving. Valid-to date is optional.",
+    "quickQuotationTitle": "Create Quick Quotation",
     "quickQuotationMode": "Quick quotation",
     "quickQuotation": "Quick Quotation",
     "quickQuotationBadge": "Quick Quotation · no price sheet",
@@ -620,16 +621,33 @@
     "quickQuotationNoteOptional": "Optional note",
     "quickQuotationNotePlaceholder": "Added to the quotation record (defaults to “Quick Quotation” if empty)",
     "quickQuotationBanner": "Rates are not linked to a CRM price sheet — enter all figures manually. This quotation is stored as a Quick Quotation only.",
+    "quickRouteSectionTitle": "Route summary — Manual Entry",
+    "quickRouteManualHint": "⚡ Enter route details manually:",
     "quickRouteManualLabel": "Enter route details manually",
+    "quickPolLabel": "POL / Port of loading",
+    "quickPodLabel": "POD / Port of discharge",
+    "quickLineLabel": "Shipping line",
+    "quickContainerLabel": "Container type",
+    "quickSailingDateLabel": "Sailing date",
     "quickOceanManualHint": "Enter cost and selling for each line manually.",
+    "quickOceanTableHint": "⚡ Enter cost and selling price manually for each line",
     "quickOceanAddChargeTitle": "Add extra ocean charge",
+    "quickAddAdditionalItem": "Add Additional Item",
     "quickOceanBL": "B/L fee",
-    "quickOceanOF": "Ocean freight (OF)",
+    "quickOceanOF": "Ocean Freight (OF)",
     "quickSailingDate": "Sailing date",
+    "quickInlandSectionTitle": "Section 2: Inland transport",
+    "quickInlandNotAdded": "No inland transport added to this quotation",
     "quickInlandEmpty": "No inland transport added for this quotation.",
-    "quickInlandManualBtn": "Manual entry",
+    "quickInlandManualBtn": "Manual Entry",
+    "quickInlandManualEntry": "Manual Entry",
     "quickInlandManualHeading": "Manual inland entry",
-    "quickModeBadgeShort": "Quick Mode",
+    "quickInlandPortLabel": "Port",
+    "quickInlandGovLabel": "Governorate",
+    "quickInlandZoneLabel": "Zone (optional)",
+    "quickInlandVehicleLabel": "Vehicle type",
+    "quickInlandPricingHint": "Cost + selling price for client:",
+    "quickModeBadgeShort": "Quick",
     "inlandTruck20dc": "1×20′ DC",
     "inlandTruck40hq": "40′ HQ / Dry",
     "inlandTruck40rf": "40′ Reefer",
@@ -995,6 +1013,41 @@
   "theme": {
     "lightMode": "Switch to light mode",
     "darkMode": "Switch to dark mode"
+  },
+  "salesDashboard": {
+    "greeting": "Sales overview — {{name}}",
+    "subtitle": "Your performance, quotations, shipments, and follow-ups at a glance.",
+    "kpi": {
+      "activeCustomers": "Active customers",
+      "openShipments": "Open shipments",
+      "quotationsMonth": "Quotations sent (month)",
+      "conversionRate": "Quotation conversion",
+      "conversionHint": "{{converted}} / {{quotes}} in period",
+      "totalRevenue": "Shipment revenue",
+      "netProfit": "Net profit"
+    },
+    "completed": {
+      "title": "Completed shipments",
+      "period": "Period",
+      "currentMonth": "Current month",
+      "last2Months": "Last 2 months",
+      "custom": "Custom range",
+      "from": "From date",
+      "to": "To date",
+      "apply": "Apply",
+      "shipments": "completed in selected period"
+    },
+    "charts": {
+      "revenueProfit": "Revenue & profit (12 months)",
+      "revenue": "Revenue",
+      "profit": "Profit",
+      "quotations": "Quotations sent",
+      "conversionTrend": "Conversion rate trend",
+      "conversionPct": "Conversion %"
+    },
+    "followUps": {
+      "title": "Follow-ups & reminders"
+    }
   },
   "home": {
     "signedInAs": "You are signed in as {{name}}.",
@@ -1703,6 +1756,12 @@
       "sd_form_booking_confirmation_uploaded": {
         "title": "Booking confirmation uploaded"
       },
+      "sd_form_information_requested": {
+        "title": "SD data completion required"
+      },
+      "sd_form_information_completed": {
+        "title": "SD data completed — booking can continue"
+      },
       "shipment_notify_sales_financials": {
         "title": "Cost invoice update"
       },
@@ -1787,7 +1846,13 @@
     },
     "infoRequest": {
       "requestedAt": "Data request date",
-      "noteLabel": "Data completion note"
+      "noteLabel": "Data completion note",
+      "completeAction": "Data completed",
+      "returnToBookingAction": "Return to booking required",
+      "completeTitle": "Confirm data completion",
+      "completeConfirm": "Mark this SD form as data completed and return it to operations as «Booking required» so the booking process can continue.",
+      "completeSuccess": "Data marked as completed. Operations have been notified.",
+      "errorComplete": "Failed to mark data as completed."
     },
     "outcome": {
       "title": "Booking outcome",
@@ -2332,6 +2397,11 @@
     "followUpWidgetToday": "Due today",
     "followUpWidgetUpcoming": "Upcoming follow-ups",
     "followUpWidgetEmpty": "None",
+    "followUpPriority": {
+      "high": "High",
+      "medium": "Medium",
+      "normal": "Normal"
+    },
     "followUpOutcomePending": "Outcome pending",
     "followUpChannel": {
       "phone": "Phone",
@@ -3456,6 +3526,14 @@
       "clientName": "Client name",
       "clientLinkHint": "The shipment is linked to the client automatically via booking or B/L number (simulation)."
     },
+    "quotationLink": {
+      "select": "Linked quotation",
+      "none": "No quotation selected",
+      "loading": "Loading quotations…",
+      "hint": "Link this shipment to a pricing quote to track conversion on your dashboard.",
+      "reference": "Quotation reference",
+      "referencePlaceholder": "Quote number or external reference"
+    },
     "placeholders": {
       "bookingNumber": "Enter booking number",
       "blNumber": "BL-2026-XXXX",
@@ -4467,6 +4545,8 @@
         "sd_form.submitted": "SD form submitted",
         "sd_form.linked_shipment": "SD form linked to shipment",
         "sd_form.sent_to_operations": "SD form set to booking required",
+        "sd_form.information_requested": "SD form requires data completion",
+        "sd_form.information_completed": "SD form data completed — booking can continue",
         "sd_form.email_to_operations": "SD form emailed to operations",
         "invoice.created": "Invoice created",
         "invoice.issued": "Invoice issued",

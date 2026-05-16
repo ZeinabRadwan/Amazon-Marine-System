@@ -328,6 +328,20 @@ export async function requestSDFormInformation(token, sdFormId, note) {
 }
 
 /**
+ * POST /sd-forms/:id/complete-information
+ * Sales marks missing data as completed. Returns status to sent_to_operations (booking required).
+ */
+export async function completeSDFormInformation(token, sdFormId) {
+  const res = await apiFetch(`${getBaseUrl()}/sd-forms/${encodeURIComponent(sdFormId)}/complete-information`, {
+    method: 'POST',
+    headers: authHeaders(token),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to complete information (${res.status})`)
+  return data
+}
+
+/**
  * POST /sd-forms/:id/cancel-booking
  * Operations cancels a booking, providing a reason. Updates status to booking_cancelled.
  */

@@ -101,4 +101,9 @@ class PricingQuote extends Model
     {
         return $this->hasMany(PricingQuoteSailingDate::class);
     }
+
+    public function shipments(): HasMany
+    {
+        return $this->hasMany(Shipment::class, 'pricing_quote_id');
+    }
 }

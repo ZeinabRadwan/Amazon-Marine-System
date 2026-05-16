@@ -28,6 +28,8 @@ const ICON_MAP = {
 const TYPE_ICON = {
   'sd_form.sent_to_operations': 'fileText',
   'sd_form.booking_confirmation_uploaded': 'fileText',
+  'sd_form.information_requested': 'clipboard',
+  'sd_form.information_completed': 'fileText',
   'shipment.notify_sales_financials': 'ship',
   'shipment.operation_task_reminder': 'clipboard',
   'client_follow_up.reminder': 'user',

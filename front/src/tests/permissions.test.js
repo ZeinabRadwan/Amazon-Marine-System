@@ -207,9 +207,9 @@ describe('computeHasPermission()', () => {
 // ─── 7. Sidebar Section Visibility ───────────────────────────────────────────
 
 describe('getVisibleSidebarSections() — Accountant Rule', () => {
-  it('Accountant sees ONLY the financial section', () => {
+  it('Accountant sees financial section and operations (shipments menu only at item level)', () => {
     const visible = getVisibleSidebarSections(accountantUser, ALL_SECTIONS, [])
-    expect(visible).toEqual(['financial'])
+    expect(visible).toEqual(['financial', 'operations'])
     expect(visible).not.toContain('clients')
     expect(visible).not.toContain('hr')
     expect(visible).not.toContain('management')

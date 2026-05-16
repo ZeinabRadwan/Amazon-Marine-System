@@ -38,7 +38,19 @@ async function getRoleDashboard(token, path) {
 
 export const getDashboardAdminOverview = (token) => getRoleDashboard(token, 'admin-overview')
 export const getDashboardSalesManager = (token) => getRoleDashboard(token, 'sales-manager')
-export const getDashboardSalesEmployee = (token) => getRoleDashboard(token, 'sales-employee')
+export async function getDashboardSalesEmployee(token, params = {}) {
+  const searchParams = new URLSearchParams()
+  if (params.completed_period) searchParams.set('completed_period', String(params.completed_period))
+  if (params.completed_from) searchParams.set('completed_from', String(params.completed_from))
+  if (params.completed_to) searchParams.set('completed_to', String(params.completed_to))
+  const q = searchParams.toString()
+  const res = await apiFetch(`${getBaseUrl()}/dashboard/sales-employee${q ? `?${q}` : ''}`, {
+    headers: authHeaders(token),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to load sales dashboard (${res.status})`)
+  return data
+}
 export const getDashboardAccountant = (token) => getRoleDashboard(token, 'accountant')
 export const getDashboardPricingTeam = (token) => getRoleDashboard(token, 'pricing-team')
 export const getDashboardOperationsEmployee = (token) => getRoleDashboard(token, 'operations-employee')

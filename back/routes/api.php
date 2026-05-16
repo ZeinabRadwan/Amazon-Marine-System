@@ -337,6 +337,7 @@ Route::prefix('v1')->group(function () {
         Route::post('sd-forms/{sdForm}/confirm-booking', [SDFormController::class, 'confirmBooking']);
         Route::post('sd-forms/{sdForm}/cancel-booking', [SDFormController::class, 'cancelBooking']);
         Route::post('sd-forms/{sdForm}/request-information', [SDFormController::class, 'requestInformation']);
+        Route::post('sd-forms/{sdForm}/complete-information', [SDFormController::class, 'completeInformation']);
         Route::post('sd-forms/{sdForm}/convert-to-shipment', [SDFormController::class, 'convertToShipment']);
         Route::post('sd-forms/{sdForm}/reopen-converted', [SDFormController::class, 'reopenConverted']);
         Route::post('sd-forms/{sdForm}/link-shipment', [SDFormController::class, 'linkShipment']);

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\PdfLayout;
+use App\Models\PricingQuote;
 use App\Models\SDForm;
 use App\Models\Shipment;
 use App\Models\ShipmentCostInvoice;
@@ -96,6 +97,8 @@ class ShipmentController extends Controller
 
         $validated = $request->validate([
             'sd_form_id' => ['nullable', 'integer', 'exists:s_d_forms,id'],
+            'pricing_quote_id' => ['nullable', 'integer', 'exists:pricing_quotes,id'],
+            'quotation_reference' => ['nullable', 'string', 'max:120'],
             'client_id' => ['nullable', 'integer', 'exists:clients,id'],
             'line_vendor_id' => ['nullable', 'integer', 'exists:vendors,id'],
             'shipping_line_id' => ['nullable', 'integer', 'exists:shipping_lines,id'],
@@ -143,6 +146,8 @@ class ShipmentController extends Controller
             $shipment->sales_rep_id = $request->user()->id;
         }
 
+        $this->applyQuotationLink($request, $shipment, $validated);
+
         $shipment->status = $shipment->status ?? 'جديد';
         $shipment->mode = $shipment->mode ?? 'Sea';
         $shipment->shipment_type = $shipment->shipment_type ?? 'FCL';
@@ -163,7 +168,7 @@ class ShipmentController extends Controller
         ]);
 
         return response()->json([
-            'data' => $shipment->fresh(['client', 'salesRep', 'lineVendor', 'shippingLine', 'originPort', 'destinationPort', 'sdForm']),
+            'data' => $shipment->fresh(['client', 'salesRep', 'lineVendor', 'shippingLine', 'originPort', 'destinationPort', 'sdForm', 'pricingQuote:id,quote_no']),
         ], 201);
     }
 
@@ -179,6 +184,7 @@ class ShipmentController extends Controller
             'originPort',
             'destinationPort',
             'sdForm',
+            'pricingQuote:id,quote_no,status,client_id',
             'operation',
             'tasks',
         ]);
@@ -231,9 +237,13 @@ class ShipmentController extends Controller
             'reefer_temp' => ['sometimes', 'nullable', 'string', 'max:50'],
             'reefer_vent' => ['sometimes', 'nullable', 'string', 'max:50'],
             'reefer_hum' => ['sometimes', 'nullable', 'string', 'max:50'],
+            'pricing_quote_id' => ['sometimes', 'nullable', 'integer', 'exists:pricing_quotes,id'],
+            'quotation_reference' => ['sometimes', 'nullable', 'string', 'max:120'],
         ]);
 
         $originalStatus = $shipment->status;
+
+        $this->applyQuotationLink($request, $shipment, $validated);
 
         $shipment->fill($validated);
         $shipment->save();
@@ -923,7 +933,7 @@ class ShipmentController extends Controller
         return app(InvoiceController::class)->invoicePayloadResponse($invoice);
     }
 
-    private function authorizeShipmentClientInvoiceDraft(?\App\Models\User $user): void
+    private function authorizeShipmentClientInvoiceDraft(?User $user): void
     {
         abort_unless($user, 403);
         abort_unless(
@@ -1339,5 +1349,36 @@ class ShipmentController extends Controller
             'ti_gen_yes' => 'Yes',
             'ti_gen_no' => 'No',
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     */
+    private function applyQuotationLink(Request $request, Shipment $shipment, array $validated): void
+    {
+        $quoteId = isset($validated['pricing_quote_id']) ? (int) $validated['pricing_quote_id'] : 0;
+        if ($quoteId > 0) {
+            $quote = PricingQuote::query()->find($quoteId);
+            if (! $quote) {
+                return;
+            }
+            $user = $request->user();
+            if (
+                $user
+                && $user->hasRole('sales')
+                && ! $user->hasRole('admin')
+                && (int) $quote->sales_user_id !== (int) $user->id
+            ) {
+                abort(422, __('Selected quotation does not belong to your portfolio.'));
+            }
+            $shipment->pricing_quote_id = $quote->id;
+            if (empty($validated['quotation_reference']) && $quote->quote_no) {
+                $shipment->quotation_reference = $quote->quote_no;
+            }
+        }
+
+        if (! empty($validated['quotation_reference'])) {
+            $shipment->quotation_reference = trim((string) $validated['quotation_reference']);
+        }
     }
 }

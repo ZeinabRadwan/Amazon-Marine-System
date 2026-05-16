@@ -51,16 +51,26 @@ export default function FollowUpWorkloadWidgets({
               ) : (
                 <ul className="followup-workload-widget__list">
                   {rows.map((row) => {
+                    const priority = row.priority && row.priority !== 'normal' ? row.priority : null
+                    const dueAt = row.next_follow_up_at || row.reminder_at
                     const inner = (
                       <>
-                        <span className="followup-workload-widget__client">{row.client_name ?? '—'}</span>
+                        <span className="followup-workload-widget__row-head">
+                          <span className="followup-workload-widget__client">{row.client_name ?? '—'}</span>
+                          {priority ? (
+                            <span className={`followup-workload-widget__priority followup-workload-widget__priority--${priority}`}>
+                              {t(`clients.followUpPriority.${priority}`, priority)}
+                            </span>
+                          ) : null}
+                        </span>
+                        {row.summary ? (
+                          <span className="followup-workload-widget__summary">{row.summary}</span>
+                        ) : null}
                         <span className="followup-workload-widget__meta">
                           {row.followup_type
                             ? t(`clients.followUpKind.${row.followup_type}`, row.followup_type)
                             : ''}
-                          {row.next_follow_up_at
-                            ? ` · ${formatWhen(row.next_follow_up_at, i18n.language)}`
-                            : ''}
+                          {dueAt ? ` · ${formatWhen(dueAt, i18n.language)}` : ''}
                         </span>
                       </>
                     )

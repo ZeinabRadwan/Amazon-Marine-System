@@ -79,6 +79,41 @@
   background: rgba(255, 255, 255, 0.7);
 }
 
+.followup-workload-widget__row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.followup-workload-widget__priority {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  border-radius: 999px;
+}
+
+.followup-workload-widget__priority--high {
+  color: #b91c1c;
+  background: rgba(254, 226, 226, 0.9);
+}
+
+.followup-workload-widget__priority--medium {
+  color: #b45309;
+  background: rgba(254, 243, 199, 0.9);
+}
+
+.followup-workload-widget__summary {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--form-text, #4b5563);
+  line-height: 1.35;
+}
+
 .followup-workload-widget__static {
   padding: 8px 10px;
 }

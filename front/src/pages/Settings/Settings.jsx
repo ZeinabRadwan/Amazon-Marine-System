@@ -1625,6 +1625,8 @@ export default function Settings() {
 
       case 'sd_form.sent_to_operations':
       case 'sd_form.email_to_operations':
+      case 'sd_form.information_requested':
+      case 'sd_form.information_completed':
         return v('sd_number') ? `SD #${v('sd_number')}` : '—'
 
       case 'sd_form.booking_confirmation_uploaded':

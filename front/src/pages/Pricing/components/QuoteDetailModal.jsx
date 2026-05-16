@@ -55,7 +55,7 @@ export default function QuoteDetailModal({ isOpen, quote, onClose }) {
                 {isQuick ? (
                   <>
                     <div>
-                      <div className="ship-meta-val">{t('pricing.quickModeBadgeShort', 'Quick Mode')}</div>
+                      <div className="ship-meta-val">{t('pricing.quickModeBadgeShort', 'Quick')}</div>
                       <div className="ship-meta-lbl">{t('pricing.finHeaderMode', 'Mode')}</div>
                     </div>
                     <div className="ship-meta-divider" aria-hidden />
@@ -63,7 +63,7 @@ export default function QuoteDetailModal({ isOpen, quote, onClose }) {
                 ) : null}
                 <div>
                   <div className="ship-meta-val">
-                    {isQuick ? t('pricing.quickQuotation', 'Quick') : t('pricing.finHeaderModeSea', 'Ocean')}
+                    {isQuick ? t('pricing.quickModeBadgeShort', 'Quick') : t('pricing.finHeaderModeSea', 'Ocean')}
                   </div>
                   <div className="ship-meta-lbl">{t('pricing.finHeaderMode', 'Mode')}</div>
                 </div>

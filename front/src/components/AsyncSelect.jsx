@@ -28,6 +28,7 @@ const AsyncSelect = ({
   disabled = false,
   onCreate,
   portaled = true,
+  defaultOptions = [],
 }) => {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
@@ -177,9 +178,12 @@ const AsyncSelect = ({
           zIndex: MENU_Z_INDEX,
         });
       }
+      if (defaultOptions?.length) {
+        setOptions(defaultOptions);
+      }
       return next;
     });
-  }, [disabled, portaled]);
+  }, [disabled, portaled, defaultOptions]);
 
   const menuPanelClassName =
     'async-select-menu bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl animate-in fade-in zoom-in duration-150';

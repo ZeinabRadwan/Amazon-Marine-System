@@ -28,6 +28,7 @@ import {
 } from '../../api/sdForms'
 import { listVendors } from '../../api/vendors'
 import { listPorts, createPort } from '../../api/ports'
+import { listQuotes } from '../../api/pricing'
 import { listShippingLines, createShippingLine } from '../../api/shippingLines'
 import { getOperationsDashboard } from '../../api/dashboard'
 import { listShipmentStatuses } from '../../api/settings'
@@ -160,6 +161,8 @@ const defaultCreateForm = () => ({
   reefer_temp: '',
   reefer_vent: '',
   reefer_hum: '',
+  pricing_quote_id: '',
+  quotation_reference: '',
 })
 
 function numOrUndef(v) {
@@ -209,6 +212,9 @@ function buildCreatePayload(form) {
     if (form.reefer_vent?.trim()) body.reefer_vent = form.reefer_vent.trim()
     if (form.reefer_hum?.trim()) body.reefer_hum = form.reefer_hum.trim()
   }
+  const quoteId = numOrUndef(form.pricing_quote_id)
+  if (quoteId != null) body.pricing_quote_id = quoteId
+  if (form.quotation_reference?.trim()) body.quotation_reference = form.quotation_reference.trim()
   return body
 }
 
@@ -292,6 +298,9 @@ function buildUpdatePayload(form) {
   body.reefer_temp = form.reefer_temp?.trim() || null;
   body.reefer_vent = form.reefer_vent?.trim() || null;
   body.reefer_hum = form.reefer_hum?.trim() || null;
+  const quoteId = numOrUndef(form.pricing_quote_id)
+  body.pricing_quote_id = quoteId ?? null
+  body.quotation_reference = form.quotation_reference?.trim() || null
   return body;
 }
 
@@ -321,8 +330,11 @@ export default function Shipments() {
     return name ? `${opsDashboardHeadlineDate} — ${name}` : opsDashboardHeadlineDate
   }, [user, opsDashboardHeadlineDate])
   const isSalesRepresentative = roleId === ROLE_ID.SALES || roleId === ROLE_ID.SALES_MANAGER
-  // Operations / logistics: matches ShipmentPolicy create|update|delete (admin, operations role, or shipments.manage_ops).
+  const isSalesUser = roleId === ROLE_ID.SALES
+  // Operations / logistics: matches ShipmentPolicy update|delete (admin, operations role, or shipments.manage_ops).
   const canManageOps = isAdminRole || isOperations || hasAbility('shipments.manage_ops')
+  // Create shipment: admin/ops (canManageOps) + sales role — same button/modal/API as admin (ShipmentPolicy::create).
+  const canCreateShipment = canManageOps || isSalesUser
   const canPostShipmentTrackingUpdate =
     canManageOps || hasAbility('customer_service.manage_tracking_updates')
   // Accountant: can see financials (Receipt button → ShipmentFinancialsModal, financial totals card)
@@ -377,6 +389,8 @@ export default function Shipments() {
   const [statusOptions, setStatusOptions] = useState([])
   const [sdFormsForClient, setSdFormsForClient] = useState([])
   const [sdFormsForClientLoading, setSdFormsForClientLoading] = useState(false)
+  const [quoteOptions, setQuoteOptions] = useState([])
+  const [quoteOptionsLoading, setQuoteOptionsLoading] = useState(false)
 
   const [showCreate, setShowCreate] = useState(false)
   const [createForm, setCreateForm] = useState(defaultCreateForm())
@@ -434,6 +448,37 @@ export default function Shipments() {
     isOperations,
     user?.id,
   ])
+
+  useEffect(() => {
+    if (!token || !canCreateShipment) return
+    const modalOpen = showCreate || editId != null
+    if (!modalOpen) {
+      setQuoteOptions([])
+      setQuoteOptionsLoading(false)
+      return
+    }
+    const rawClientId = showCreate ? createForm.client_id : editForm.client_id
+    const clientId = numOrUndef(rawClientId)
+    let cancelled = false
+    setQuoteOptionsLoading(true)
+    const params = { per_page: 200, sort: 'created_at', direction: 'desc' }
+    if (clientId != null) params.client_id = clientId
+    listQuotes(token, params)
+      .then((res) => {
+        if (cancelled) return
+        const rows = Array.isArray(res?.data) ? res.data : []
+        setQuoteOptions(rows)
+      })
+      .catch(() => {
+        if (!cancelled) setQuoteOptions([])
+      })
+      .finally(() => {
+        if (!cancelled) setQuoteOptionsLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [token, canCreateShipment, showCreate, editId, createForm.client_id, editForm.client_id])
 
   // Eligible for shipment creation: only SD forms whose booking has been finalised.
   // The currently-linked form (if editing) is always kept in the list so an existing
@@ -855,12 +900,14 @@ export default function Shipments() {
       reefer_temp: row.reefer_temp ?? '',
       reefer_vent: row.reefer_vent ?? '',
       reefer_hum: row.reefer_hum ?? '',
+      pricing_quote_id: row.pricing_quote_id != null ? String(row.pricing_quote_id) : '',
+      quotation_reference: row.quotation_reference ?? row.pricing_quote?.quote_no ?? '',
     })
   }
 
   const handleCreateSubmit = async (e) => {
     e.preventDefault()
-    if (!canManageOps) return
+    if (!canCreateShipment) return
     if (!numOrUndef(createForm.client_id)) {
       setAlert({ type: 'error', message: t('shipments.errorClientOrSdRequired') })
       return
@@ -1500,6 +1547,56 @@ export default function Shipments() {
                       )}
             </p>
           </div>
+          {canCreateShipment && (
+            <>
+              <div className="client-detail-modal__form-field">
+                <label htmlFor={isEdit ? 'sh-quote-edit' : 'sh-quote-create'}>
+                  {t('shipments.quotationLink.select')}
+                </label>
+                <select
+                  id={isEdit ? 'sh-quote-edit' : 'sh-quote-create'}
+                  value={form.pricing_quote_id}
+                  onChange={(e) => {
+                    const v = e.target.value
+                    const quote = quoteOptions.find((q) => String(q.id) === String(v))
+                    setForm((f) => ({
+                      ...f,
+                      pricing_quote_id: v,
+                      quotation_reference: quote?.quote_no ? String(quote.quote_no) : f.quotation_reference,
+                    }))
+                  }}
+                  disabled={disabled || quoteOptionsLoading}
+                >
+                  <option value="">
+                    {quoteOptionsLoading
+                      ? t('shipments.quotationLink.loading')
+                      : t('shipments.quotationLink.none')}
+                  </option>
+                  {quoteOptions.map((q) => (
+                    <option key={q.id} value={q.id}>
+                      {q.quote_no || `#${q.id}`}
+                      {q.client?.company_name || q.client?.name ? ` — ${q.client.company_name || q.client.name}` : ''}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t('shipments.quotationLink.hint')}</p>
+              </div>
+              <div className="client-detail-modal__form-field">
+                <label htmlFor={isEdit ? 'sh-quote-ref-edit' : 'sh-quote-ref-create'}>
+                  {t('shipments.quotationLink.reference')}
+                </label>
+                <input
+                  id={isEdit ? 'sh-quote-ref-edit' : 'sh-quote-ref-create'}
+                  type="text"
+                  className="clients-input"
+                  value={form.quotation_reference}
+                  onChange={(e) => setForm((f) => ({ ...f, quotation_reference: e.target.value }))}
+                  disabled={disabled}
+                  placeholder={t('shipments.quotationLink.referencePlaceholder')}
+                />
+              </div>
+            </>
+          )}
           {selectedSdFormForShipment && (
             <div className="client-detail-modal__form-field client-detail-modal__form-field--full sh-sd-summary">
               <div className="sh-sd-summary__head">
@@ -2215,7 +2312,7 @@ export default function Shipments() {
                   <FileSpreadsheet className="clients-filters__btn-icon-svg" aria-hidden />
                 )}
               </button>
-              {canManageOps && (
+              {canCreateShipment && (
                 <button type="button" className="page-header__btn page-header__btn--primary" onClick={() => setShowCreate(true)}>
                   {t('shipments.create')}
                 </button>
@@ -2427,7 +2524,7 @@ export default function Shipments() {
           )}
         </div>
 
-        {showCreate && canManageOps && (
+        {showCreate && canCreateShipment && (
           <div className="client-detail-modal" role="dialog" aria-modal="true" aria-labelledby="shipment-create-title">
             <div className="client-detail-modal__backdrop" onClick={() => setShowCreate(false)} />
             <div className="client-detail-modal__box client-detail-modal__box--form">

@@ -17,6 +17,10 @@ class ShipmentPolicy
             return true;
         }
 
+        if ($user->hasRole('accounting')) {
+            return true;
+        }
+
         return $user->can('shipments.view') || $user->can('shipments.view_own');
     }
 
@@ -30,6 +34,10 @@ class ShipmentPolicy
             return true;
         }
 
+        if ($user->hasRole('accounting')) {
+            return true;
+        }
+
         if ($user->can('shipments.view')) {
             return true;
         }
@@ -39,7 +47,9 @@ class ShipmentPolicy
 
     public function create(User $user): bool
     {
-        return $user->hasRole('admin') || $user->can('shipments.manage_ops');
+        return $user->hasRole('admin')
+            || $user->hasRole('sales')
+            || $user->can('shipments.manage_ops');
     }
 
     public function update(User $user, Shipment $shipment): bool

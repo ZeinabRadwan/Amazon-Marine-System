@@ -159,7 +159,7 @@ export default function QuotationTable({ refreshKey }) {
           <span className="font-bold text-gray-900 dark:text-white">{val || dash}</span>
           {row.is_quick_quotation ?? row.quick_mode ? (
             <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100">
-              {t('pricing.quickQuotation', 'Quick Quotation')}
+              {t('pricing.quickModeBadgeShort', 'Quick')}
             </span>
           ) : null}
         </span>

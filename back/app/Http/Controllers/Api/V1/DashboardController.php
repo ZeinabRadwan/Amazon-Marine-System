@@ -3,9 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Models\AttendanceRecord;
 use App\Models\Client;
-use App\Models\ClientFollowUp;
 use App\Models\Invoice;
 use App\Models\LeadSource;
 use App\Models\PricingQuote;
@@ -14,14 +12,13 @@ use App\Models\Shipment;
 use App\Models\ShipmentOperationTask;
 use App\Models\Ticket;
 use App\Models\User;
-use App\Models\Vendor;
 use App\Models\VendorBill;
 use App\Services\AdminDashboardService;
+use App\Services\SalesDashboardService;
 use App\Support\ShipmentOperationTaskSummary;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 class DashboardController extends Controller
 {
@@ -236,60 +233,25 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function salesEmployee(Request $request)
+    public function salesEmployee(Request $request, SalesDashboardService $salesDashboard)
     {
         abort_unless($request->user() !== null, 401);
         $userId = (int) $request->user()->id;
-        $months = $this->months(12);
 
-        $clientsCount = (int) Client::where('assigned_sales_id', $userId)->count();
-        $shipmentsCount = (int) Shipment::where('sales_rep_id', $userId)->count();
-        $revenue = (float) Shipment::where('sales_rep_id', $userId)->sum('selling_price_total');
-        $forms = (int) SDForm::where('sales_rep_id', $userId)->count();
-        $linked = (int) SDForm::where('sales_rep_id', $userId)->whereNotNull('linked_shipment_id')->count();
-
-        $followUps = ClientFollowUp::with('client')
-            ->forSalespersonPortfolio($userId)
-            ->whereNotNull('next_follow_up_at')
-            ->where('next_follow_up_at', '<=', now()->addDays(7))
-            ->orderBy('next_follow_up_at')
-            ->limit(12)
-            ->get()
-            ->map(fn ($f) => [
-                'client' => $f->client?->company_name ?: $f->client?->name,
-                'next_follow_up_at' => $f->next_follow_up_at?->toDateTimeString(),
-                'summary' => $f->summary,
-            ])->values();
-
-        $pendingForms = SDForm::where('sales_rep_id', $userId)->whereNull('linked_shipment_id')->latest()->limit(15)->get(['id', 'sd_number', 'status', 'created_at']);
-        $campaign = collect($months)->values()->map(function (Carbon $m, int $i) {
-            return [
-                'month' => $m->format('Y-m'),
-                'leads' => 18 + $this->metricFloor('sales_employee', 'lead', $i),
-                'qualified' => 11 + $this->metricFloor('sales_employee', 'qualified', $i),
-                'converted' => 6 + (int) floor($this->metricFloor('sales_employee', 'conv', $i) / 2),
-            ];
-        });
-
-        $clientStatuses = Client::where('assigned_sales_id', $userId)->selectRaw('COALESCE(status_id,0) as sid, COUNT(*) as value')->groupBy('sid')->get()
-            ->map(fn ($r) => ['name' => 'Status '.$r->sid, 'value' => (int) $r->value])->values();
-
-        return response()->json([
-            'personal_performance' => [
-                'clients' => max($clientsCount, 20),
-                'shipments' => max($shipmentsCount, 26),
-                'revenue' => $this->valueOrFloor($revenue, 145000),
-                'sd_forms' => max($forms, 30),
-                'conversion_rate_pct' => max($forms > 0 ? round($linked / $forms * 100, 1) : 0, 33.0),
-            ],
-            'customers_needing_follow_up' => $followUps,
-            'pending_sd_forms' => $pendingForms,
-            'marketing_campaign_performance' => $campaign,
-            'charts' => [
-                'clients_by_status_pie' => $clientStatuses,
-                'monthly_performance_line' => $campaign->map(fn ($r) => ['month' => $r['month'], 'converted' => $r['converted'], 'qualified' => $r['qualified']])->values(),
-            ],
+        $validated = $request->validate([
+            'completed_period' => ['sometimes', 'string', 'in:current_month,last_2_months,custom'],
+            'completed_from' => ['sometimes', 'nullable', 'date'],
+            'completed_to' => ['sometimes', 'nullable', 'date', 'after_or_equal:completed_from'],
         ]);
+
+        $dashboard = $salesDashboard->buildForSalesUser(
+            $userId,
+            $validated['completed_period'] ?? 'current_month',
+            $validated['completed_from'] ?? null,
+            $validated['completed_to'] ?? null,
+        );
+
+        return response()->json($dashboard);
     }
 
     public function accountant(Request $request)
@@ -512,6 +474,7 @@ class DashboardController extends Controller
             ],
         ]);
     }
+
     public function sidebarCounts(Request $request)
     {
         abort_unless($request->user() !== null, 401);
@@ -519,7 +482,7 @@ class DashboardController extends Controller
         $role = $this->roleName($request);
 
         // CRM Count (Clients)
-        $crmQuery = \App\Models\Client::query();
+        $crmQuery = Client::query();
         if ($role === 'sales') {
             $crmQuery->where('assigned_sales_id', $user->id);
         }
@@ -530,14 +493,14 @@ class DashboardController extends Controller
         $shipmentsCount = $shipmentsQuery->count();
 
         // SD Forms Count
-        $sdFormsQuery = \App\Models\SDForm::query();
+        $sdFormsQuery = SDForm::query();
         if ($role === 'sales') {
             $sdFormsQuery->where('sales_rep_id', $user->id);
         }
         $sdFormsCount = $sdFormsQuery->count();
 
         // Tickets Count (Open ones)
-        $ticketsCount = \App\Models\Ticket::where('status', 'open')->count();
+        $ticketsCount = Ticket::where('status', 'open')->count();
 
         return response()->json([
             'data' => [

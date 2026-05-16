@@ -45,8 +45,9 @@ import Settings from './pages/Settings'
 import Reports from './pages/Reports/Reports'
 import Documents from './pages/Documents/Documents'
 import { getStoredToken } from './pages/Login'
-import FollowUpWorkloadWidgets from './components/FollowUpWorkloadWidgets'
 import AdminDashboardBlock from './components/AdminDashboard/AdminDashboardBlock'
+import SalesEmployeeDashboard from './components/SalesDashboard/SalesEmployeeDashboard'
+import './components/SalesDashboard/SalesEmployeeDashboard.css'
 
 /** Old edit URLs open invoice detail (read-only); editing was removed from the UI. */
 function InvoiceEditRouteRedirect() {
@@ -104,6 +105,12 @@ function Home() {
     let cancelled = false
     if (roleKey === 'operations') {
       setDashboardState({ loading: false, error: null, data: null, roleKey: 'operations' })
+      return () => {
+        cancelled = true
+      }
+    }
+    if (roleKey === 'sales') {
+      setDashboardState({ loading: false, error: null, data: null, roleKey: 'sales' })
       return () => {
         cancelled = true
       }
@@ -180,6 +187,20 @@ function Home() {
     )
   }
 
+  if (roleKey === 'sales') {
+    return (
+      <Container size="xl">
+        <div className="clients-page home-page home-page--sales">
+          <SalesEmployeeDashboard
+            user={user}
+            followUpSummaryState={salesFollowUpSummary}
+            refreshKey={dashboardRefreshKey}
+          />
+        </div>
+      </Container>
+    )
+  }
+
   return (
     <Container size="xl">
       <div className="clients-page home-page">
@@ -222,7 +243,7 @@ function RoleDashboardSection({ state, roleKey, salesFollowUpSummary }) {
 function RoleDashboardContent({ roleKey, payload, salesFollowUpSummary }) {
   if (roleKey === 'admin') return <AdminDashboardBlock payload={payload} />
   if (roleKey === 'sales_manager') return <SalesManagerDashboardBlock payload={payload} />
-  if (roleKey === 'sales') return <SalesEmployeeDashboardBlock payload={payload} followUpSummaryState={salesFollowUpSummary} />
+  if (roleKey === 'sales') return null
   if (roleKey === 'accountant') return <AccountantDashboardBlock payload={payload} />
   if (roleKey === 'pricing') return <PricingDashboardBlock payload={payload} />
   if (roleKey === 'support') return <SupportDashboardBlock payload={payload} />
@@ -247,38 +268,6 @@ function SalesManagerDashboardBlock({ payload }) {
         <LineChart data={monthlyRevenue} xKey="month" lines={[{ dataKey: 'revenue', name: 'Revenue' }]} height={260} />
       </div>
       <Table columns={[{ key: 'employee', label: 'Employee' }, { key: 'clients_count', label: 'Clients' }, { key: 'sd_forms_count', label: 'SD Forms' }, { key: 'shipments_count', label: 'Shipments' }, { key: 'revenue', label: 'Revenue' }, { key: 'conversion_rate_pct', label: 'Conversion %' }]} data={team} getRowKey={(r) => r.employee_id ?? r.employee} />
-    </div>
-  )
-}
-
-function SalesEmployeeDashboardBlock({ payload, followUpSummaryState }) {
-  const perf = payload?.personal_performance || {}
-  const followUps = Array.isArray(payload?.customers_needing_follow_up) ? payload.customers_needing_follow_up : []
-  const pending = Array.isArray(payload?.pending_sd_forms) ? payload.pending_sd_forms : []
-  const monthly = Array.isArray(payload?.charts?.monthly_performance_line) ? payload.charts.monthly_performance_line : []
-  const statusPie = normalizeSeries(payload?.charts?.clients_by_status_pie)
-  return (
-    <div className="space-y-4">
-      <div className="clients-stats-grid">
-        <StatsCard title="Clients" value={asNumber(perf.clients)} icon={<UsersIcon className="h-6 w-6" />} variant="blue" />
-        <StatsCard title="Shipments" value={asNumber(perf.shipments)} icon={<Truck className="h-6 w-6" />} variant="green" />
-        <StatsCard title="Revenue" value={asNumber(perf.revenue)} icon={<DollarSign className="h-6 w-6" />} variant="amber" />
-        <StatsCard title="Conversion %" value={asNumber(perf.conversion_rate_pct)} icon={<BarChart3 className="h-6 w-6" />} variant="red" />
-      </div>
-      <div className="clients-charts-grid">
-        <PieChart data={statusPie} nameKey="name" valueKey="value" showLabel={false} height={260} />
-        <LineChart data={monthly} xKey="month" lines={[{ dataKey: 'qualified', name: 'Qualified' }, { dataKey: 'converted', name: 'Converted' }]} height={260} />
-      </div>
-      <div className="clients-extra-panel">
-        <p className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">My follow-up summary</p>
-        <FollowUpWorkloadWidgets
-          summary={followUpSummaryState?.data}
-          loading={!!followUpSummaryState?.loading}
-          error={followUpSummaryState?.error}
-        />
-      </div>
-      <Table columns={[{ key: 'client', label: 'Client' }, { key: 'next_follow_up_at', label: 'Next Follow-up' }, { key: 'summary', label: 'Summary' }]} data={followUps} getRowKey={(r) => `${r.client}-${r.next_follow_up_at}`} emptyMessage="No follow-ups." />
-      <Table columns={[{ key: 'sd_number', label: 'SD Number' }, { key: 'status', label: 'Status' }, { key: 'created_at', label: 'Created At' }]} data={pending} getRowKey={(r) => r.id ?? r.sd_number} emptyMessage="No pending SD forms." />
     </div>
   )
 }

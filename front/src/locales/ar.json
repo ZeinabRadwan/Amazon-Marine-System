@@ -614,6 +614,7 @@
     "createStandardQuotationTitle": "إنشاء عرض سعر / Create Standard Quotation",
     "createQuickQuotation": "إنشاء عرض سريع",
     "createQuoteQuickSub": "أرقام يدوية فقط — أكّد مع فريق التسعير قبل الحفظ. تاريخ «صالح حتى» اختياري.",
+    "quickQuotationTitle": "انشاء عرض سعر سريع",
     "quickQuotationMode": "إنشاء عرض سريع",
     "quickQuotation": "عرض سعر سريع",
     "quickQuotationBadge": "عرض سعر سريع · بدون جدول أسعار",
@@ -621,16 +622,33 @@
     "quickQuotationNoteOptional": "ملاحظة اختيارية",
     "quickQuotationNotePlaceholder": "تُضاف إلى سجل عرض السعر (الافتراضي «عرض سعر سريع» إذا كانت فارغة)",
     "quickQuotationBanner": "السعر غير مرتبط بجدول أسعار في الـ CRM — أدخل جميع الأرقام يدوياً. يُحفظ هذا العرض كعرض سعر سريع فقط.",
+    "quickRouteSectionTitle": "ملخص المسار — إدخال يدوي",
+    "quickRouteManualHint": "⚡ أدخل بيانات المسار يدوياً:",
     "quickRouteManualLabel": "أدخل بيانات المسار يدوياً",
+    "quickPolLabel": "ميناء التحميل / POL",
+    "quickPodLabel": "ميناء الوصول / POD",
+    "quickLineLabel": "الخط الملاحي / Line",
+    "quickContainerLabel": "نوع الحاوية / Container",
+    "quickSailingDateLabel": "تاريخ الإبحار / Sailing date",
     "quickOceanManualHint": "أدخل التكلفة وسعر البيع لكل بند يدوياً.",
+    "quickOceanTableHint": "⚡ أدخل التكلفة والسعر للعميل يدوياً لكل بند",
     "quickOceanAddChargeTitle": "إضافة بند بحري إضافي",
-    "quickOceanBL": "رسوم B/L",
-    "quickOceanOF": "الشحن البحري (OF)",
+    "quickAddAdditionalItem": "إضافة بند إضافي",
+    "quickOceanBL": "B/L fee",
+    "quickOceanOF": "Ocean Freight (OF)",
     "quickSailingDate": "تاريخ الإبحار",
+    "quickInlandSectionTitle": "القسم 2: النقل الداخلي",
+    "quickInlandNotAdded": "لم يُضف نقل داخلي لهذا العرض",
     "quickInlandEmpty": "لا يوجد نقل داخلي مضاف لهذا العرض.",
     "quickInlandManualBtn": "إدخال يدوي",
+    "quickInlandManualEntry": "إدخال يدوي",
     "quickInlandManualHeading": "إدخال يدوي — نقل داخلي",
-    "quickModeBadgeShort": "وضع سريع",
+    "quickInlandPortLabel": "الميناء / Port",
+    "quickInlandGovLabel": "المحافظة / Governorate",
+    "quickInlandZoneLabel": "المنطقة / Zone (اختياري)",
+    "quickInlandVehicleLabel": "نوع العربية / Vehicle",
+    "quickInlandPricingHint": "التكلفة + سعر البيع للعميل:",
+    "quickModeBadgeShort": "عرض سريع",
     "inlandTruck20dc": "١×٢٠′ جاف",
     "inlandTruck40hq": "٤٠′ هاي كيوب / جاف",
     "inlandTruck40rf": "٤٠′ مبرد",
@@ -996,6 +1014,41 @@
   "theme": {
     "lightMode": "التبديل إلى الوضع الفاتح",
     "darkMode": "التبديل إلى الوضع الداكن"
+  },
+  "salesDashboard": {
+    "greeting": "لوحة المبيعات — {{name}}",
+    "subtitle": "أداؤك وعروض الأسعار والشحنات والمتابعات في مكان واحد.",
+    "kpi": {
+      "activeCustomers": "العملاء النشطون",
+      "openShipments": "الشحنات الجارية",
+      "quotationsMonth": "عروض الأسعار المرسلة (الشهر)",
+      "conversionRate": "معدل تحويل العروض",
+      "conversionHint": "{{converted}} / {{quotes}} في الفترة",
+      "totalRevenue": "إيراد الشحنات",
+      "netProfit": "صافي الربح"
+    },
+    "completed": {
+      "title": "الشحنات المكتملة",
+      "period": "الفترة",
+      "currentMonth": "الشهر الحالي",
+      "last2Months": "آخر شهرين",
+      "custom": "فترة مخصصة",
+      "from": "من تاريخ",
+      "to": "إلى تاريخ",
+      "apply": "تطبيق",
+      "shipments": "مكتملة في الفترة المحددة"
+    },
+    "charts": {
+      "revenueProfit": "الإيراد والربح (12 شهراً)",
+      "revenue": "الإيراد",
+      "profit": "الربح",
+      "quotations": "عروض الأسعار المرسلة",
+      "conversionTrend": "اتجاه معدل التحويل",
+      "conversionPct": "نسبة التحويل %"
+    },
+    "followUps": {
+      "title": "المتابعات والتذكيرات"
+    }
   },
   "home": {
     "signedInAs": "أنت مسجل الدخول كـ {{name}}.",
@@ -1704,6 +1757,12 @@
       "sd_form_booking_confirmation_uploaded": {
         "title": "تأكيد حجز جديد"
       },
+      "sd_form_information_requested": {
+        "title": "مطلوب استكمال بيانات نموذج SD"
+      },
+      "sd_form_information_completed": {
+        "title": "تم استكمال البيانات — يمكن متابعة الحجز"
+      },
       "shipment_notify_sales_financials": {
         "title": "تحديث مالي للشحنة"
       },
@@ -1788,7 +1847,13 @@
     },
     "infoRequest": {
       "requestedAt": "تاريخ طلب الاستكمال",
-      "noteLabel": "تعليق استكمال البيانات"
+      "noteLabel": "تعليق استكمال البيانات",
+      "completeAction": "تم استكمال البيانات",
+      "returnToBookingAction": "مطلوب للحجز",
+      "completeTitle": "تأكيد استكمال البيانات",
+      "completeConfirm": "سيتم اعتبار بيانات نموذج SD مكتملة وإعادته للعمليات بحالة «مطلوب للحجز» لمتابعة عملية الحجز.",
+      "completeSuccess": "تم تأكيد استكمال البيانات وإشعار فريق العمليات.",
+      "errorComplete": "تعذر تأكيد استكمال البيانات."
     },
     "outcome": {
       "title": "نتيجة الحجز",
@@ -2333,6 +2398,11 @@
     "followUpWidgetToday": "مطلوبة اليوم",
     "followUpWidgetUpcoming": "متابعات قادمة",
     "followUpWidgetEmpty": "لا يوجد",
+    "followUpPriority": {
+      "high": "عالية",
+      "medium": "متوسطة",
+      "normal": "عادية"
+    },
     "followUpOutcomePending": "بانتظار النتيجة",
     "followUpChannel": {
       "phone": "هاتف",
@@ -3457,6 +3527,14 @@
       "clientName": "اسم العميل",
       "clientLinkHint": "يتم ربط الشحنة بالعميل تلقائياً عبر رقم الحجز أو رقم البوليصة (محاكاة)."
     },
+    "quotationLink": {
+      "select": "عرض السعر المرتبط",
+      "none": "بدون عرض سعر",
+      "loading": "جاري تحميل العروض…",
+      "hint": "اربط الشحنة بعرض سعر لتتبع معدل التحويل في لوحة المبيعات.",
+      "reference": "مرجع عرض السعر",
+      "referencePlaceholder": "رقم العرض أو مرجع خارجي"
+    },
     "placeholders": {
       "bookingNumber": "أدخل رقم الحجز",
       "blNumber": "BL-2026-XXXX",
@@ -4489,6 +4567,8 @@
         "sd_form.submitted": "تم تقديم نموذج SD",
         "sd_form.linked_shipment": "تم ربط نموذج SD بشحنة",
         "sd_form.sent_to_operations": "أصبح نموذج SD في حالة «مطلوب للحجز»",
+        "sd_form.information_requested": "نموذج SD يحتاج استكمال بيانات",
+        "sd_form.information_completed": "تم استكمال بيانات نموذج SD — يمكن متابعة الحجز",
         "sd_form.email_to_operations": "تم إرسال نموذج SD بالبريد للتشغيل",
         "invoice.created": "تم إنشاء فاتورة",
         "invoice.issued": "تم إصدار فاتورة",

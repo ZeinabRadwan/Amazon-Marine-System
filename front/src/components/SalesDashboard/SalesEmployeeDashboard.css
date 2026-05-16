@@ -1,0 +1,140 @@
+.sales-dash {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.sales-dash__hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: 14px;
+  border: 1px solid var(--form-divider, #e5e7eb);
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(16, 185, 129, 0.06));
+}
+
+.sales-dash__eyebrow {
+  margin: 0 0 0.25rem;
+  font-size: 0.8125rem;
+  color: var(--form-text, #6b7280);
+}
+
+.sales-dash__title {
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--root-text, #111827);
+}
+
+.sales-dash__subtitle {
+  margin: 0.35rem 0 0;
+  font-size: 0.875rem;
+  color: var(--form-text, #6b7280);
+}
+
+.sales-dash__hero-icon {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  color: #2563eb;
+  opacity: 0.85;
+}
+
+.sales-dash__error {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--form-error-text, #b91c1c);
+}
+
+.sales-dash__kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+@media (min-width: 900px) {
+  .sales-dash__kpi-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1200px) {
+  .sales-dash__kpi-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+.sales-dash__panel {
+  border-radius: 12px;
+  border: 1px solid var(--form-divider, #e5e7eb);
+  background: var(--root-surface, #fff);
+  padding: 1rem 1.25rem;
+}
+
+.sales-dash__panel--completed {
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+.sales-dash__panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.sales-dash__panel-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--root-text, #111827);
+}
+
+.sales-dash__period-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sales-dash__period-select {
+  min-width: 10rem;
+}
+
+.sales-dash__date-input {
+  max-width: 11rem;
+}
+
+.sales-dash__completed-value {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--root-text, #111827);
+}
+
+.sales-dash__completed-label {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--form-text, #6b7280);
+}
+
+.sales-dash__charts {
+  margin-top: 0.25rem;
+}
+
+.sales-dash__followups {
+  margin-top: 0.5rem;
+}
+
+.home-page--sales {
+  padding-top: 0.5rem;
+}

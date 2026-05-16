@@ -71,10 +71,24 @@ class ClientFollowUpSummaryController extends Controller
             'client_name' => $c ? ($c->company_name ?: $c->name) : null,
             'channel' => $f->channel,
             'followup_type' => $f->followup_type,
+            'priority' => $this->priorityForFollowUp($f),
             'outcome' => $f->outcome,
+            'summary' => $f->summary,
             'occurred_at' => $f->occurred_at?->toIso8601String(),
             'next_follow_up_at' => $f->next_follow_up_at?->toIso8601String(),
             'reminder_at' => $f->reminder_at?->toIso8601String(),
         ];
+    }
+
+    protected function priorityForFollowUp(ClientFollowUp $f): string
+    {
+        if ($f->next_follow_up_at && $f->next_follow_up_at->isPast()) {
+            return 'high';
+        }
+        if ($f->reminder_at && $f->reminder_at->isToday()) {
+            return 'medium';
+        }
+
+        return 'normal';
     }
 }

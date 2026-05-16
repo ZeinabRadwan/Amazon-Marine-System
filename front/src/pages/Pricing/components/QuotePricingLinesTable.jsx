@@ -1,5 +1,5 @@
 import { HelpCircle } from 'lucide-react'
-import { useCallback, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { displayNumericInputValue } from '../utils/pricingFormNumeric'
 import { formatPricingDecimal } from '../../../utils/dateUtils'
@@ -18,9 +18,18 @@ const TABLE_COLUMNS = [
 const OCEAN_COLUMN_FLOOR_PX = {
   check: 52,
   name: 140,
-  cost: 96,
-  selling: 96,
+  cost: 108,
+  selling: 108,
   profit: 80,
+  currency: 76,
+}
+
+function buildTableColumns(separateCurrencyColumn) {
+  const cols = [...TABLE_COLUMNS]
+  if (separateCurrencyColumn) {
+    cols.push({ id: 'currency', className: 'pricing-quote-line-col-currency' })
+  }
+  return cols
 }
 
 function parseNum(v) {
@@ -66,14 +75,14 @@ function IncludeHeader({ t }) {
   )
 }
 
-function measureTableColumns(table, { useCompactLayout }) {
+function measureTableColumns(table, { useCompactLayout, tableColumns }) {
   if (!table) return null
 
   const prevLayout = table.style.tableLayout
   table.style.tableLayout = 'auto'
 
   const measured = {}
-  TABLE_COLUMNS.forEach((col, index) => {
+  tableColumns.forEach((col, index) => {
     let maxW = 0
     table.querySelectorAll(`thead th:nth-child(${index + 1}), tbody td:nth-child(${index + 1})`).forEach((cell) => {
       maxW = Math.max(maxW, Math.ceil(cell.getBoundingClientRect().width))
@@ -84,8 +93,10 @@ function measureTableColumns(table, { useCompactLayout }) {
 
   if (useCompactLayout) {
     const tableW = Math.ceil(table.getBoundingClientRect().width)
-    const others =
-      (measured.check || 0) + (measured.cost || 0) + (measured.selling || 0) + (measured.profit || 0)
+    const others = tableColumns.reduce((sum, col) => {
+      if (col.id === 'name') return sum
+      return sum + (measured[col.id] || 0)
+    }, 0)
     const nameSpace = tableW - others - 8
     measured.name = Math.max(OCEAN_COLUMN_FLOOR_PX.name, nameSpace)
   }
@@ -94,14 +105,25 @@ function measureTableColumns(table, { useCompactLayout }) {
   return measured
 }
 
-function useMeasuredColumnWidths(tableRef, measureKey, useCompactLayout) {
+function columnWidthsEqual(a, b) {
+  if (a === b) return true
+  if (!a || !b) return false
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)])
+  for (const key of keys) {
+    if (Math.abs((a[key] || 0) - (b[key] || 0)) > 1) return false
+  }
+  return true
+}
+
+function useMeasuredColumnWidths(tableRef, measureKey, useCompactLayout, tableColumns) {
   const [columnWidths, setColumnWidths] = useState(null)
 
   const measure = useCallback(() => {
     const table = tableRef.current
     if (!table) return
-    setColumnWidths(measureTableColumns(table, { useCompactLayout }))
-  }, [tableRef, useCompactLayout])
+    const next = measureTableColumns(table, { useCompactLayout, tableColumns })
+    setColumnWidths((prev) => (columnWidthsEqual(prev, next) ? prev : next))
+  }, [useCompactLayout, tableColumns])
 
   useLayoutEffect(() => {
     measure()
@@ -143,6 +165,8 @@ export default function QuotePricingLinesTable({
   allowOceanCodeEdit = false,
   quoteCodeLabel,
   quickSelectCodes = [],
+  separateCurrencyColumn = false,
+  fixedItemNames = false,
 }) {
   const { t } = useTranslation()
   const tableRef = useRef(null)
@@ -152,9 +176,10 @@ export default function QuotePricingLinesTable({
   const readOnlySelling = readOnly
   const readOnlyCheck = readOnly
   const variantClass = isOcean ? 'ocean' : isInland ? 'inland' : ''
-  const measureKey = `${variant}-${lines.length}-${lines.map((l) => `${l.name}|${l.cost_amount}|${l.selling_amount}|${l.currency}|${l.included}`).join(';')}`
+  const tableColumns = useMemo(() => buildTableColumns(separateCurrencyColumn), [separateCurrencyColumn])
+  const measureKey = `${variant}-${separateCurrencyColumn}-${lines.length}-${lines.map((l) => `${l.name}|${l.cost_amount}|${l.selling_amount}|${l.currency}|${l.included}`).join(';')}`
 
-  const columnWidths = useMeasuredColumnWidths(tableRef, measureKey, useCompactLayout)
+  const columnWidths = useMeasuredColumnWidths(tableRef, measureKey, useCompactLayout, tableColumns)
 
   if (!lines?.length) return null
 
@@ -168,20 +193,21 @@ export default function QuotePricingLinesTable({
       >
         {columnWidths ? (
           <colgroup>
-            {TABLE_COLUMNS.map((col) => (
+            {tableColumns.map((col) => (
               <col key={col.id} style={{ width: `${columnWidths[col.id]}px` }} />
             ))}
           </colgroup>
         ) : null}
         <thead>
           <tr>
-            {TABLE_COLUMNS.map((col) => {
+            {tableColumns.map((col) => {
               const labels = {
                 check: null,
                 name: t('pricing.itemNameColumn', 'Item Name'),
                 cost: t('pricing.costColumn', 'Cost'),
                 selling: t('pricing.salePriceColumn', 'Sale Price'),
                 profit: t('pricing.profit', 'Profit'),
+                currency: t('pricing.currency', 'Currency'),
               }
               const widthPx = columnWidths?.[col.id]
               return (
@@ -223,7 +249,7 @@ export default function QuotePricingLinesTable({
                   />
                 </td>
                 <td className="pricing-quote-line-col-name" data-col="name">
-                  {readOnlyName ? (
+                  {readOnlyName || (fixedItemNames && line.quickCore) ? (
                     <span className="pricing-quote-line-name" title={line.name}>
                       {line.name || '—'}
                     </span>
@@ -268,7 +294,7 @@ export default function QuotePricingLinesTable({
                   )}
                 </td>
                 <td className="pricing-quote-line-col-cost shipment-fin-num" data-col="cost">
-                  {readOnlyCost && readOnlyCurrency ? (
+                  {readOnlyCost && (readOnlyCurrency || separateCurrencyColumn) ? (
                     <CostAmountLabel amount={line.cost_amount} currency={line.currency} />
                   ) : (
                     <div className="pricing-quote-line-cost-cell">
@@ -289,7 +315,7 @@ export default function QuotePricingLinesTable({
                           placeholder="0"
                         />
                       )}
-                      {!readOnlyCurrency ? (
+                      {!readOnlyCurrency && !separateCurrencyColumn ? (
                         <select
                           value={line.currency}
                           disabled={rowDisabled}
@@ -331,6 +357,27 @@ export default function QuotePricingLinesTable({
                 >
                   {formatPricingDecimal(profit)}
                 </td>
+                {separateCurrencyColumn ? (
+                  <td className="pricing-quote-line-col-currency" data-col="currency">
+                    {readOnly || readOnlyCurrency ? (
+                      <span className="text-sm font-semibold">{line.currency || 'USD'}</span>
+                    ) : (
+                      <select
+                        value={line.currency}
+                        disabled={rowDisabled}
+                        onChange={(e) => onUpdateLine(idx, { currency: e.target.value })}
+                        className="pricing-quote-line-cur-select w-full"
+                        aria-label={t('pricing.currency', 'Currency')}
+                      >
+                        {CURRENCY_OPTIONS.map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </td>
+                ) : null}
               </tr>
             )
           })}
