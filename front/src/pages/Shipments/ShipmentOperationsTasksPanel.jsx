@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Check, Trash2, CornerUpRight, Plus } from 'lucide-react'
 import LoaderDots from '../../components/LoaderDots'
+import DatePicker from '../../components/DatePicker'
+import { UI_DATE_FORMAT } from '../../utils/dateUtils'
 import {
   bulkUpdateShipmentTasks,
   deleteShipmentTask,
@@ -356,13 +358,16 @@ export default function ShipmentOperationsTasksPanel({
                 />
               </div>
               <div>
-                <label className="client-detail-modal__label text-xs">{t('shipments.ops.executionDate')}</label>
-                <input
-                  type="date"
-                  lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
+                <label className="client-detail-modal__label text-xs" htmlFor="shipment-op-task-execution-date">
+                  {t('shipments.ops.executionDate')}
+                </label>
+                <DatePicker
+                  id="shipment-op-task-execution-date"
+                  locale={i18n.language}
                   className="clients-input w-full"
                   value={taskForm.executionDate}
-                  onChange={(e) => setTaskForm((f) => ({ ...f, executionDate: e.target.value }))}
+                  onChange={(v) => setTaskForm((f) => ({ ...f, executionDate: v || '' }))}
+                  placeholder={UI_DATE_FORMAT}
                 />
               </div>
               <div>
@@ -441,12 +446,13 @@ export default function ShipmentOperationsTasksPanel({
               </select>
               {taskForm.reminderMode === 'absolute' ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <input
-                    type="date"
-                    lang={i18n.language === 'ar' ? 'ar-EG' : 'en-GB'}
+                  <DatePicker
+                    id="shipment-op-task-reminder-date"
+                    locale={i18n.language}
                     className="clients-input w-full"
                     value={taskForm.reminderAtDate}
-                    onChange={(e) => setTaskForm((f) => ({ ...f, reminderAtDate: e.target.value }))}
+                    onChange={(v) => setTaskForm((f) => ({ ...f, reminderAtDate: v || '' }))}
+                    placeholder={UI_DATE_FORMAT}
                   />
                   <input
                     type="time"
