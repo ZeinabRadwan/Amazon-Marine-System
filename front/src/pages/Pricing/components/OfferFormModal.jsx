@@ -11,6 +11,12 @@ import { DEFAULT_INLAND_TRUCK_PRESETS } from './inlandVehiclePresets'
 import InlandLocationAsyncSelect from './InlandLocationAsyncSelect'
 import DatePicker from '../../../components/DatePicker'
 import { formatDate, UI_DATE_FORMAT } from '../../../utils/dateUtils'
+import {
+  displayNumericInputValue,
+  formatOptionalNonNegativeInt,
+  parseOptionalAmount,
+  priceToFormString,
+} from '../utils/pricingFormNumeric'
 
 /** Canonical weekday names stored in API (`weekly_sailing_days` comma-separated); sort order Sat → Fri */
 const WEEK_DAYS = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
@@ -143,10 +149,10 @@ const defaultSeaForm = () => ({
   shipping_line: '',
   container_preset: '',
   transit_time_days: '',
-  pol_detention: '0',
-  pol_demurrage: '0',
-  pod_detention: '0',
-  pod_demurrage: '0',
+  pol_detention: '',
+  pol_demurrage: '',
+  pod_detention: '',
+  pod_demurrage: '',
   sailing_tab: 'fixed',
   weekly_days: [],
   fixed_dates: [],
@@ -155,14 +161,14 @@ const defaultSeaForm = () => ({
   notes: '',
 })
 
-const makeSeaCoreRow = (name) => ({ name, amount: '0', currency: 'USD' })
+const makeSeaCoreRow = (name) => ({ name, amount: '', currency: 'USD' })
 
 const initialSeaCoreLines = () => DEFAULT_SEA_LINE_NAMES.map((name) => makeSeaCoreRow(name))
 
 const makeCustomChargeItem = () => ({
   id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
   name: '',
-  amount: '0',
+  amount: '',
   currency: 'USD',
 })
 
@@ -260,17 +266,17 @@ function parseFreeTimeDigits(raw) {
   const s = String(raw ?? '')
     .trim()
     .replace(/^—$/, '')
-  if (!s) return '0'
+  if (!s) return ''
   const m = s.match(/(\d+(?:\.\d+)?)/)
-  return m ? String(Number(m[1])) : '0'
+  return m ? String(Number(m[1])) : ''
 }
 
 function parseFreeTimeFromDnd(dnd) {
   const empty = {
-    pol_detention: '0',
-    pol_demurrage: '0',
-    pod_detention: '0',
-    pod_demurrage: '0',
+    pol_detention: '',
+    pol_demurrage: '',
+    pod_detention: '',
+    pod_demurrage: '',
   }
   if (!dnd?.trim()) return empty
   const lines = String(dnd).split('\n').filter(Boolean)
@@ -303,7 +309,7 @@ function buildSeaPricingStateFromOffer(offer, oceanUnitTypes) {
     const item = pricing[code]
     return {
       name,
-      amount: item?.price != null && item.price !== '' ? String(item.price) : '0',
+      amount: priceToFormString(item?.price),
       currency: item?.currency || 'USD',
     }
   })
@@ -320,16 +326,16 @@ function buildSeaPricingStateFromOffer(offer, oceanUnitTypes) {
   const seaCustomLines = extras.map(([code, item], idx) => ({
     id: `loaded-${code}-${idx}`,
     name: (descParts[idx] && descParts[idx].trim()) || '',
-    amount: item?.price != null && item.price !== '' ? String(item.price) : '0',
+    amount: priceToFormString(item?.price),
     currency: item?.currency || 'USD',
   }))
   return { seaCoreLines, seaCustomLines }
 }
 
 const defaultReeferExtras = () => ({
-  pti_amount: '0',
+  pti_amount: '',
   pti_currency: 'USD',
-  power_free_days: '0',
+  power_free_days: '',
 })
 
 /** Collapsible section — shipment-fin-card parity (details default open). */
@@ -450,9 +456,9 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
     const rawNotes = offerToEdit.notes || ''
     const pti = offerToEdit.pricing?.pti
     setReeferExtras({
-      pti_amount: pti?.price != null && pti.price !== '' ? String(pti.price) : '0',
+      pti_amount: priceToFormString(pti?.price),
       pti_currency: pti?.currency || 'USD',
-      power_free_days: extractPowerFreeDaysFromNotes(rawNotes) || '0',
+      power_free_days: extractPowerFreeDaysFromNotes(rawNotes) || '',
     })
 
     setForm({
@@ -494,11 +500,11 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
         const byName = Object.fromEntries(prev.map((r) => [r.name, r]))
         const base = DEFAULT_SEA_LINE_NAMES.map((name) => ({
           name,
-          amount: byName[name]?.amount ?? '0',
+          amount: byName[name]?.amount ?? '',
           currency: byName[name]?.currency ?? 'USD',
         }))
         if (meta.type === 'Reefer') {
-          const p = byName.Power || { amount: '0', currency: 'USD' }
+          const p = byName.Power || { amount: '', currency: 'USD' }
           return [...base, { name: 'Power', amount: p.amount, currency: p.currency }]
         }
         return base
@@ -548,14 +554,13 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
     if (effectiveMode === 'inland') {
       const gov = inlandForm.inland_gov.trim()
       const port = inlandForm.inland_port.trim()
-      const amount = Number(inlandForm.price)
-      if (!gov || !port || Number.isNaN(amount) || amount < 0) return
+      const amount = parseOptionalAmount(inlandForm.price)
+      if (!gov || !port || amount == null || amount < 0) return
 
       const needsGenerator = inlandTruckNeedsGeneratorFields(inlandForm.truck_type, mergedInlandUnitTypes)
       if (needsGenerator) {
-        const gp = String(inlandForm.generator_price ?? '').trim()
-        const generatorAmount = Number(gp)
-        if (gp === '' || Number.isNaN(generatorAmount) || generatorAmount < 0) return
+        const generatorAmount = parseOptionalAmount(inlandForm.generator_price)
+        if (generatorAmount == null || generatorAmount < 0) return
       }
 
       const searchPod = [port, inlandForm.inland_area.trim(), gov].filter(Boolean).join(' ')
@@ -566,7 +571,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
         },
       }
       if (needsGenerator) {
-        const generatorAmount = Number(String(inlandForm.generator_price).trim())
+        const generatorAmount = parseOptionalAmount(inlandForm.generator_price)
         inlandPricing.generator = {
           price: generatorAmount,
           currency: inlandForm.generator_currency || 'EGP',
@@ -607,8 +612,8 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
 
     const parsedCore = seaCoreLines
       .map((row) => {
-        const amount = Number(row.amount)
-        if (Number.isNaN(amount) || amount < 0) return null
+        const amount = parseOptionalAmount(row.amount)
+        if (amount == null || amount < 0) return null
         if (row.name === 'Power' && oceanMeta.type !== 'Reefer') return null
         const code = inferLegacyPricingCode(row.name, form.container_preset, SEA_OCEAN_UNIT_TYPES, 0)
         return {
@@ -624,8 +629,8 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
     let otherIdx = 0
     const parsedCustom = seaCustomLines
       .map((row) => {
-        const amount = Number(row.amount)
-        if (Number.isNaN(amount) || amount < 0) return null
+        const amount = parseOptionalAmount(row.amount)
+        if (amount == null || amount < 0) return null
         const label = (row.name || '').trim()
         if (!label) return null
         const code = inferLegacyPricingCode('Other Charges', form.container_preset, SEA_OCEAN_UNIT_TYPES, otherIdx)
@@ -643,8 +648,8 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
     const parsedItems = [...parsedCore, ...parsedCustom]
 
     if (oceanMeta.type === 'Reefer') {
-      const ptiAmt = Number(reeferExtras.pti_amount)
-      if (!Number.isNaN(ptiAmt) && ptiAmt >= 0) {
+      const ptiAmt = parseOptionalAmount(reeferExtras.pti_amount)
+      if (ptiAmt != null && ptiAmt >= 0) {
         parsedItems.push({
           code: 'pti',
           name: 'PTI',
@@ -856,7 +861,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                     min="0"
                     step="1"
                     className="sea-rate-input"
-                    value={form.transit_time_days}
+                    value={displayNumericInputValue(form.transit_time_days)}
                     onChange={(e) => updateForm({ transit_time_days: e.target.value })}
                     placeholder="0"
                     aria-label={t('pricing.oceanRouteTransitTimeAria', 'Transit time (days)')}
@@ -881,11 +886,10 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                         step={1}
                         inputMode="numeric"
                         className="sea-rate-input"
-                        value={form.pol_detention}
+                        value={displayNumericInputValue(form.pol_detention)}
                         onChange={(e) =>
                           updateForm({
-                            pol_detention:
-                              e.target.value === '' ? '0' : String(Math.max(0, Math.floor(Number(e.target.value) || 0))),
+                            pol_detention: formatOptionalNonNegativeInt(e.target.value),
                           })
                         }
                         placeholder="0"
@@ -902,11 +906,10 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                         step={1}
                         inputMode="numeric"
                         className="sea-rate-input"
-                        value={form.pol_demurrage}
+                        value={displayNumericInputValue(form.pol_demurrage)}
                         onChange={(e) =>
                           updateForm({
-                            pol_demurrage:
-                              e.target.value === '' ? '0' : String(Math.max(0, Math.floor(Number(e.target.value) || 0))),
+                            pol_demurrage: formatOptionalNonNegativeInt(e.target.value),
                           })
                         }
                         placeholder="0"
@@ -928,11 +931,10 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                         step={1}
                         inputMode="numeric"
                         className="sea-rate-input"
-                        value={form.pod_detention}
+                        value={displayNumericInputValue(form.pod_detention)}
                         onChange={(e) =>
                           updateForm({
-                            pod_detention:
-                              e.target.value === '' ? '0' : String(Math.max(0, Math.floor(Number(e.target.value) || 0))),
+                            pod_detention: formatOptionalNonNegativeInt(e.target.value),
                           })
                         }
                         placeholder="0"
@@ -949,11 +951,10 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                         step={1}
                         inputMode="numeric"
                         className="sea-rate-input"
-                        value={form.pod_demurrage}
+                        value={displayNumericInputValue(form.pod_demurrage)}
                         onChange={(e) =>
                           updateForm({
-                            pod_demurrage:
-                              e.target.value === '' ? '0' : String(Math.max(0, Math.floor(Number(e.target.value) || 0))),
+                            pod_demurrage: formatOptionalNonNegativeInt(e.target.value),
                           })
                         }
                         placeholder="0"
@@ -1074,7 +1075,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                         min={0}
                         step="0.01"
                         className="sea-rate-input"
-                        value={row.amount}
+                        value={displayNumericInputValue(row.amount)}
                         onChange={(e) => patchSeaCoreLine(row.name, { amount: e.target.value })}
                         placeholder="0"
                       />
@@ -1127,7 +1128,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                         min={0}
                         step="0.01"
                         className="sea-rate-input"
-                        value={reeferExtras.pti_amount}
+                        value={displayNumericInputValue(reeferExtras.pti_amount)}
                         onChange={(e) => setReeferExtras((prev) => ({ ...prev, pti_amount: e.target.value }))}
                         placeholder="0"
                       />
@@ -1167,7 +1168,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                               min={0}
                               step="0.01"
                               className="sea-rate-input"
-                              value={seaPowerRow.amount}
+                              value={displayNumericInputValue(seaPowerRow.amount)}
                               onChange={(e) => patchSeaCoreLine('Power', { amount: e.target.value })}
                               placeholder="0"
                             />
@@ -1197,14 +1198,11 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                           step={1}
                           inputMode="numeric"
                           className="sea-rate-input"
-                          value={reeferExtras.power_free_days}
+                          value={displayNumericInputValue(reeferExtras.power_free_days)}
                           onChange={(e) =>
                             setReeferExtras((prev) => ({
                               ...prev,
-                              power_free_days:
-                                e.target.value === ''
-                                  ? '0'
-                                  : String(Math.max(0, Math.floor(Number(e.target.value) || 0))),
+                              power_free_days: formatOptionalNonNegativeInt(e.target.value),
                             }))
                           }
                           placeholder="0"
@@ -1253,7 +1251,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                         step="0.01"
                         className="sea-rate-input"
                         placeholder="0"
-                        value={seaCustomLines[0]?.amount || '0'}
+                        value={displayNumericInputValue(seaCustomLines[0]?.amount)}
                         onChange={(e) => {
                           if (!seaCustomLines[0]) addCustomCharge()
                           setSeaCustomLines((prev) => {
@@ -1296,7 +1294,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                           className="sea-rate-tag sea-rate-tag-amber"
                           onClick={() => removeCustomCharge(row.id)}
                         >
-                          {(row.name || 'Charge')}: {row.amount || 0} {row.currency || 'USD'} ×
+                          {(row.name || 'Charge')}: {row.amount !== '' && row.amount != null ? row.amount : '—'} {row.currency || 'USD'} ×
                         </button>
                       ))}
                     </div>
@@ -1435,9 +1433,9 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                       step="0.01"
                       inputMode="decimal"
                       className="inland-rate-input"
-                      value={inlandForm.price}
+                      value={displayNumericInputValue(inlandForm.price)}
                       onChange={(e) => updateInlandForm({ price: e.target.value })}
-                      placeholder={t('pricing.inlandRatePlaceholder', 'السعر / Rate')}
+                      placeholder="0"
                       required
                       aria-label={t('pricing.inlandPriceAria', 'Inland transport price or rate')}
                     />
@@ -1471,9 +1469,9 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                       step="0.01"
                       inputMode="decimal"
                       className="inland-rate-input"
-                      value={inlandForm.generator_price}
+                      value={displayNumericInputValue(inlandForm.generator_price)}
                       onChange={(e) => updateInlandForm({ generator_price: e.target.value })}
-                      placeholder={t('pricing.inlandGeneratorPlaceholder', 'سعر المولد / Generator (per trip)')}
+                      placeholder="0"
                       required
                       aria-label={t('pricing.inlandGeneratorAmountAria', 'Generator cost amount')}
                     />

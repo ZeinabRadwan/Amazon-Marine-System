@@ -27,6 +27,7 @@ import ShippingLineNameAsyncSelect from './ShippingLineNameAsyncSelect'
 import '../../Shipments/Shipments.css'
 import '../Pricing.css'
 import { formatLocaleMoney, formatPricingDecimal, mergeCurrencyAmountMaps, sortCurrencyCodes } from '../../../utils/dateUtils'
+import { displayNumericInputValue, priceToFormString } from '../utils/pricingFormNumeric'
 
 const QUICK_SELECT_CODES = ['OF', 'THC', 'BL', 'TELEX', 'ISPS', 'PTI', 'POWER']
 
@@ -65,12 +66,12 @@ function buildInlandRowsFromOffer(offer) {
   const rows = []
   Object.entries(p).forEach(([sourceKey, item]) => {
     if (item == null || item.price == null || item.price === '') return
-    const cost = Number(item.price) || 0
+    const costStr = priceToFormString(item.price)
     rows.push({
       sourceKey,
       name: inlandPricingKeyLabel(sourceKey),
-      cost_amount: cost,
-      selling_amount: cost ? String(cost) : '',
+      cost_amount: costStr,
+      selling_amount: costStr,
       currency: item.currency || 'EGP',
     })
   })
@@ -103,15 +104,15 @@ function mapOfferPricingToOceanLines(offer, resolveQuoteName) {
     const price = item?.price
     if (price == null || price === '') return
     const qCode = normalizeOfferCodeToQuoteCode(sourceCode)
-    const cost = Number(price) || 0
+    const costStr = priceToFormString(price)
     const currency = item?.currency || 'USD'
     rows.push({
       sourceKey: sourceCode,
       code: qCode,
       name: resolveQuoteName(qCode),
       description: '',
-      cost_amount: cost,
-      selling_amount: cost ? String(cost) : '',
+      cost_amount: costStr,
+      selling_amount: costStr,
       currency,
       included: true,
     })
@@ -1217,11 +1218,12 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                                       ? 'border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-800'
                                       : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
                                   }`}
-                                  value={line.cost_amount}
+                                  value={displayNumericInputValue(line.cost_amount)}
                                   onChange={(e) => {
                                     if (!isQuick) return
                                     updateOceanLine(idx, { cost_amount: e.target.value })
                                   }}
+                                  placeholder="0"
                                   aria-readonly={!isQuick}
                                 />
                               </td>
@@ -1232,8 +1234,9 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                                   step="0.01"
                                   disabled={!included}
                                   className="w-full min-w-0 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm tabular-nums disabled:opacity-50"
-                                  value={line.selling_amount}
+                                  value={displayNumericInputValue(line.selling_amount)}
                                   onChange={(e) => updateOceanLine(idx, { selling_amount: e.target.value })}
+                                  placeholder="0"
                                 />
                               </td>
                               <td
@@ -1401,8 +1404,8 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                       min="0"
                       step="0.01"
                       className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
-                      placeholder={t('pricing.cost', 'Cost')}
-                      value={inlandCost}
+                      placeholder="0"
+                      value={displayNumericInputValue(inlandCost)}
                       onChange={(e) => setInlandCost(e.target.value)}
                     />
                     <input
@@ -1410,8 +1413,8 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                       min="0"
                       step="0.01"
                       className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
-                      placeholder={t('pricing.sellingPrice', 'Selling')}
-                      value={inlandSelling}
+                      placeholder="0"
+                      value={displayNumericInputValue(inlandSelling)}
                       onChange={(e) => setInlandSelling(e.target.value)}
                     />
                     <select
@@ -1441,8 +1444,8 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                         min="0"
                         step="0.01"
                         className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
-                        placeholder={t('pricing.cost', 'Cost')}
-                        value={inlandGenCost}
+                        placeholder="0"
+                        value={displayNumericInputValue(inlandGenCost)}
                         onChange={(e) => setInlandGenCost(e.target.value)}
                         aria-label={t('pricing.inlandGeneratorCost', 'Generator cost')}
                       />
@@ -1451,8 +1454,8 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                         min="0"
                         step="0.01"
                         className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
-                        placeholder={t('pricing.sellingPrice', 'Selling')}
-                        value={inlandGenSelling}
+                        placeholder="0"
+                        value={displayNumericInputValue(inlandGenSelling)}
                         onChange={(e) => setInlandGenSelling(e.target.value)}
                       />
                       <select
@@ -1524,7 +1527,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                                     readOnly
                                     tabIndex={-1}
                                     className="w-full min-w-0 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-sm tabular-nums"
-                                    value={row.cost_amount}
+                                    value={displayNumericInputValue(row.cost_amount)}
                                   />
                                 </td>
                                 <td className="shipment-fin-num">
@@ -1533,8 +1536,9 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                                     min="0"
                                     step="0.01"
                                     className="w-full min-w-0 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm tabular-nums"
-                                    value={row.selling_amount}
+                                    value={displayNumericInputValue(row.selling_amount)}
                                     onChange={(e) => updateInlandRow(idx, { selling_amount: e.target.value })}
+                                    placeholder="0"
                                   />
                                 </td>
                                 <td
@@ -1669,8 +1673,9 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                           min="0"
                           step="0.01"
                           className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm"
-                          value={customsExtraAmount}
+                          value={displayNumericInputValue(customsExtraAmount)}
                           onChange={(e) => setCustomsExtraAmount(e.target.value)}
+                          placeholder="0"
                         />
                       </div>
                       <div className="w-24 space-y-1">
@@ -1742,8 +1747,9 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                             min="0"
                             step="0.01"
                             className="w-full min-w-0 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm tabular-nums"
-                            value={row.amount}
+                            value={displayNumericInputValue(row.amount)}
                             onChange={(e) => updateHandlingLine(row.id, { amount: e.target.value })}
+                            placeholder="0"
                           />
                         </td>
                         <td className="shipment-fin-cur-cell">
