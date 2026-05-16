@@ -508,6 +508,7 @@ class PricingQuoteController extends Controller
                 'billed_to_ar' => 'فاتورة إلى',
                 'available_sailing' => 'مواعيد الإبحار المتاحة',
                 'available_sailing_en' => 'Available Sailing',
+                'available_sailing_ar' => 'مواعيد الإبحار المتاحة',
                 'section_shipping' => 'تفاصيل الشحن',
                 'section_shipping_en' => 'Shipping details',
                 'containers' => 'الحاويات',

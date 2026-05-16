@@ -239,34 +239,34 @@ export default function QuoteInlandTransportSection({
 
   return (
     <div className="pricing-quote-inland-block space-y-4">
-      {hasSheet || (readOnly && inlandOfferLabel) ? (
-        <div className="space-y-2">
-          {readOnly ? (
+      <div className="space-y-2">
+        {readOnly ? (
+          hasSheet || inlandOfferLabel ? (
             <ReadOnlyField
               label={t('pricing.inlandPriceSheet', 'Inland price sheet')}
               value={inlandOfferLabel || inlandOfferId || '—'}
             />
-          ) : (
-            <>
-              <label className="text-sm font-bold text-gray-700 dark:text-gray-300">
-                {t('pricing.inlandPriceSheet', 'Inland price sheet')}
-              </label>
-              <select
-                value={inlandOfferId}
-                onChange={(e) => onInlandOfferIdChange(e.target.value)}
-                className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
-              >
-                <option value="">{t('pricing.selectInlandOffer', 'Select an inland price sheet…')}</option>
-                {inlandOffers.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.inland_port || '—'} → {o.destination || o.region || '—'}
-                  </option>
-                ))}
-              </select>
-            </>
-          )}
-        </div>
-      ) : null}
+          ) : null
+        ) : (
+          <>
+            <label className="text-sm font-bold text-gray-700 dark:text-gray-300">
+              {t('pricing.inlandPriceSheet', 'Inland price sheet')}
+            </label>
+            <select
+              value={inlandOfferId}
+              onChange={(e) => onInlandOfferIdChange(e.target.value)}
+              className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+            >
+              <option value="">{t('pricing.selectInlandOffer', 'Select an inland price sheet…')}</option>
+              {inlandOffers.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.inland_port || '—'} → {o.destination || o.region || '—'}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
+      </div>
 
       {showPricingContent ? (
         <>
