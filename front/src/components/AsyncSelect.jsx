@@ -1,10 +1,14 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, ChevronDown, X, Loader2, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
+const MENU_Z_INDEX = 20000;
+const MENU_GAP_PX = 4;
+
 /**
  * A lightweight AsyncSelect component for searching and selecting items.
- * 
+ *
  * @param {Object} props
  * @param {Function} props.loadOptions - function(query) => Promise<Array<{value, label}>>
  * @param {Object} props.value - {value, label} or null
@@ -12,6 +16,7 @@ import { useTranslation } from 'react-i18next';
  * @param {string} props.placeholder - placeholder text
  * @param {boolean} props.isClearable - if true, shows X button
  * @param {string} props.className - additional classes
+ * @param {boolean} props.portaled - render menu in document.body with fixed position (default true; avoids clipping in overflow containers)
  */
 const AsyncSelect = ({
   loadOptions,
@@ -21,7 +26,8 @@ const AsyncSelect = ({
   isClearable = true,
   className = '',
   disabled = false,
-  onCreate, // New: function(name) => Promise<{value, label}>
+  onCreate,
+  portaled = true,
 }) => {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
@@ -29,19 +35,66 @@ const AsyncSelect = ({
   const [options, setOptions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-  const dropdownRef = useRef(null);
+  const [fixedStyle, setFixedStyle] = useState(null);
+  const wrapperRef = useRef(null);
+  const menuRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Handle outside clicks to close dropdown
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
+  const close = useCallback(() => {
+    setIsOpen(false);
+    setFixedStyle(null);
+  }, []);
+
+  const updateFixedPosition = useCallback(() => {
+    if (!portaled || !wrapperRef.current) return;
+    const wrap = wrapperRef.current.getBoundingClientRect();
+    const menuEl = menuRef.current;
+    const gap = MENU_GAP_PX;
+    const menuHeight = menuEl?.offsetHeight || Math.min(window.innerHeight * 0.6, 320);
+    let top = wrap.bottom + gap;
+    if (top + menuHeight > window.innerHeight - 8 && wrap.top > menuHeight + gap) {
+      top = wrap.top - menuHeight - gap;
+    }
+    top = Math.max(8, Math.min(top, window.innerHeight - 8));
+
+    setFixedStyle({
+      position: 'fixed',
+      top,
+      left: wrap.left,
+      width: wrap.width,
+      zIndex: MENU_Z_INDEX,
+    });
+  }, [portaled]);
+
+  useLayoutEffect(() => {
+    if (!isOpen || !portaled) return;
+    updateFixedPosition();
+    const raf = requestAnimationFrame(() => updateFixedPosition());
+    window.addEventListener('scroll', updateFixedPosition, true);
+    window.addEventListener('resize', updateFixedPosition);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('scroll', updateFixedPosition, true);
+      window.removeEventListener('resize', updateFixedPosition);
     };
+  }, [isOpen, portaled, updateFixedPosition, options.length, isLoading, inputValue]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    function handleClickOutside(event) {
+      if (wrapperRef.current?.contains(event.target)) return;
+      if (menuRef.current?.contains(event.target)) return;
+      close();
+    }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [isOpen, close]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const timer = requestAnimationFrame(() => inputRef.current?.focus());
+    return () => cancelAnimationFrame(timer);
+  }, [isOpen]);
 
   const fetchOptions = useCallback(async (query) => {
     setIsLoading(true);
@@ -56,7 +109,6 @@ const AsyncSelect = ({
     }
   }, [loadOptions]);
 
-  // Debounced search
   useEffect(() => {
     if (!isOpen) return;
 
@@ -69,7 +121,7 @@ const AsyncSelect = ({
 
   const handleSelect = (option) => {
     onChange(option);
-    setIsOpen(false);
+    close();
     setInputValue('');
   };
 
@@ -107,13 +159,58 @@ const AsyncSelect = ({
     setInputValue('');
   };
 
+  const toggleOpen = useCallback(() => {
+    if (disabled) return;
+    setIsOpen((open) => {
+      const next = !open;
+      if (!next) {
+        setFixedStyle(null);
+        return next;
+      }
+      if (portaled && wrapperRef.current) {
+        const wrap = wrapperRef.current.getBoundingClientRect();
+        setFixedStyle({
+          position: 'fixed',
+          top: wrap.bottom + MENU_GAP_PX,
+          left: wrap.left,
+          width: wrap.width,
+          zIndex: MENU_Z_INDEX,
+        });
+      }
+      return next;
+    });
+  }, [disabled, portaled]);
+
+  const menuPanelClassName =
+    'async-select-menu bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl animate-in fade-in zoom-in duration-150';
+
+  const menuPanel = isOpen ? (
+    <AsyncSelectMenu
+      className={portaled ? menuPanelClassName : `absolute z-50 w-full mt-1 ${menuPanelClassName}`}
+      style={portaled ? fixedStyle : undefined}
+      menuRef={menuRef}
+      inputRef={inputRef}
+      inputValue={inputValue}
+      setInputValue={setInputValue}
+      isLoading={isLoading}
+      options={options}
+      value={value}
+      onSelect={handleSelect}
+      canCreateNew={canCreateNew}
+      onCreateOption={handleCreate}
+      isCreating={isCreating}
+      createLabel={t('common.create') || 'Create'}
+      noResultsLabel={t('common.noResults') || 'No results found'}
+    />
+  ) : null;
+
   return (
-    <div className={`relative w-full ${className}`} ref={dropdownRef}>
+    <div className={`relative w-full ${className}`} ref={wrapperRef}>
       <div
         className={`flex items-center justify-between px-3 py-2 border rounded-lg cursor-pointer ${
           disabled ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed' : 'bg-white dark:bg-gray-900 hover:border-blue-400'
         } ${isOpen ? 'border-blue-500 ring-2 ring-blue-100 dark:ring-blue-900/20' : 'border-gray-300 dark:border-gray-700'}`}
-        onClick={() => !disabled && setIsOpen(!isOpen)}
+        onClick={toggleOpen}
       >
         <div className="flex-1 truncate text-start">
           {value ? (
@@ -132,86 +229,108 @@ const AsyncSelect = ({
               <X className="h-3 w-3" />
             </button>
           )}
-          {(isLoading || isCreating) && (
-            <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
-          )}
+          {(isLoading || isCreating) && <Loader2 className="h-4 w-4 animate-spin text-blue-500" />}
           <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
         </div>
       </div>
 
-      {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl animate-in fade-in zoom-in duration-150">
-          <div className="p-2 border-b border-gray-100 dark:border-gray-800">
-            <div className="relative">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400 dark:text-gray-500" />
-              <input
-                ref={inputRef}
-                autoFocus
-                type="text"
-                dir="rtl"
-                style={{ direction: 'rtl', textAlign: 'right' }}
-                className="w-full pl-10 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-750 bg-white dark:bg-gray-900 rounded-md focus:outline-none focus:border-blue-500 text-right text-gray-900 dark:text-gray-100"
-                placeholder="Search..."
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-                onKeyDown={(e) => {
-                  if (e.key !== 'Enter') return;
-                  if (!canCreateNew || isCreating) return;
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleCreate(e);
-                }}
-              />
-            </div>
-          </div>
-
-          <div className="max-h-60 overflow-y-auto py-1">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-4">
-                <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
-              </div>
-            ) : (
-              <>
-                {options.map((option) => (
-                  <div
-                    key={option.value}
-                    className={`px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/30 text-start ${
-                      String(value?.value) === String(option.value) ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-medium' : 'text-gray-700 dark:text-gray-300'
-                    }`}
-                    onClick={() => handleSelect(option)}
-                  >
-                    {option.label}
-                    {option.sublabel && (
-                      <div className="text-xs text-gray-400 dark:text-gray-500">{option.sublabel}</div>
-                    )}
-                  </div>
-                ))}
-                
-                {canCreateNew && (
-                  <div
-                    className="px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium border-t border-gray-100 dark:border-gray-800"
-                    onClick={handleCreate}
-                  >
-                    <div className="flex items-center">
-                      <Plus className="h-4 w-4 me-2" />
-                      {t('common.create') || 'Create'}: "{inputValue}"
-                    </div>
-                  </div>
-                )}
-
-                {options.length === 0 && !canCreateNew && (
-                  <div className="px-3 py-4 text-sm text-center text-gray-500">
-                    {t('common.noResults') || 'No results found'}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      )}
+      {portaled
+        ? isOpen && fixedStyle && typeof document !== 'undefined'
+          ? createPortal(menuPanel, document.body)
+          : null
+        : menuPanel}
     </div>
   );
 };
+
+function AsyncSelectMenu({
+  className,
+  style,
+  menuRef,
+  inputRef,
+  inputValue,
+  setInputValue,
+  isLoading,
+  options,
+  value,
+  onSelect,
+  canCreateNew,
+  onCreateOption,
+  isCreating,
+  createLabel,
+  noResultsLabel,
+}) {
+  return (
+    <div ref={menuRef} className={className} style={style}>
+      <div className="p-2 border-b border-gray-100 dark:border-gray-800">
+        <div className="relative">
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400 dark:text-gray-500" />
+          <input
+            ref={inputRef}
+            autoFocus
+            type="text"
+            dir="rtl"
+            style={{ direction: 'rtl', textAlign: 'right' }}
+            className="w-full pl-10 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-750 bg-white dark:bg-gray-900 rounded-md focus:outline-none focus:border-blue-500 text-right text-gray-900 dark:text-gray-100"
+            placeholder="Search..."
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => {
+              if (e.key !== 'Enter') return;
+              if (!canCreateNew || isCreating) return;
+              e.preventDefault();
+              e.stopPropagation();
+              onCreateOption(e);
+            }}
+          />
+        </div>
+      </div>
+
+      <div className="max-h-60 overflow-y-auto py-1">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-4">
+            <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
+          </div>
+        ) : (
+          <>
+            {options.map((option) => (
+              <div
+                key={option.value}
+                className={`px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/30 text-start ${
+                  String(value?.value) === String(option.value)
+                    ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-medium'
+                    : 'text-gray-700 dark:text-gray-300'
+                }`}
+                onClick={() => onSelect(option)}
+              >
+                {option.label}
+                {option.sublabel && (
+                  <div className="text-xs text-gray-400 dark:text-gray-500">{option.sublabel}</div>
+                )}
+              </div>
+            ))}
+
+            {canCreateNew && (
+              <div
+                className="px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium border-t border-gray-100 dark:border-gray-800"
+                onClick={onCreateOption}
+              >
+                <div className="flex items-center">
+                  <Plus className="h-4 w-4 me-2" />
+                  {createLabel}: "{inputValue}"
+                </div>
+              </div>
+            )}
+
+            {options.length === 0 && !canCreateNew && (
+              <div className="px-3 py-4 text-sm text-center text-gray-500">{noResultsLabel}</div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default AsyncSelect;

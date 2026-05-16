@@ -109,6 +109,16 @@
   padding-top: 2px;
 }
 
+/* AsyncSelect menus are portaled; keep field wrappers positioned for trigger alignment */
+.pricing-fin-modal-root .sea-rate-grid-4 > div,
+.pricing-fin-modal-root .sea-rate-grid-3 > div,
+.pricing-fin-modal-root .sea-rate-grid-2 > div,
+.pricing-fin-modal-root .inland-rate-grid > div,
+.pricing-fin-modal-root .inland-rate-async-select,
+.pricing-fin-modal-root .inland-rate-control {
+  position: relative;
+}
+
 .pricing-fin-modal__footer {
   display: flex;
   flex-wrap: wrap;
