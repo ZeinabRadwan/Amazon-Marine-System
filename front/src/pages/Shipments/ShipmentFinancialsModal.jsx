@@ -1008,8 +1008,8 @@ export default function ShipmentFinancialsModal({
     const normalize = (v) => String(v || '').trim().toLowerCase().replace(/[\s-]+/g, '_')
     const sectionTypeMap = {
       shipping: ['shipping_line', 'shipping', 'line', 'shippingline'],
-      inland: ['inland_transport', 'inland', 'transport', 'contractor', 'trucker'],
-      customs: ['customs_clearance', 'customs', 'broker', 'customs_broker'],
+      inland: ['inland_transport', 'inland', 'transport', 'contractor', 'trucker', 'domestic_transport', 'domestic', 'haulage', 'trucking'],
+      customs: ['customs_clearance', 'customs', 'broker', 'customs_broker', 'customsbroker', 'clearance', 'custom_broker'],
       insurance: ['insurance', 'insurer', 'insurance_company'],
     }
     return Object.fromEntries(

@@ -16,6 +16,8 @@ use App\Notifications\ShipmentSalesFinancialsNotification;
 use App\Services\ActivityLogger;
 use App\Services\NotificationService;
 use App\Support\ShipmentOperationTaskSummary;
+use App\Support\VendorTypeAliases;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -766,15 +768,15 @@ class ShipmentController extends Controller
                 $vendorIdsToCheck[] = $vid;
             }
         }
-        $vendorTypeById = Vendor::query()
+        $vendorsById = Vendor::query()
             ->whereIn('id', array_values(array_unique($vendorIdsToCheck)))
-            ->pluck('type', 'id')
-            ->map(fn ($t) => strtolower(trim((string) $t)));
+            ->get()
+            ->keyBy('id');
         foreach ($requiredTypeByBucket as $bucket => $requiredType) {
             $metaVendorId = (int) ($sectionVendorByBucket[$bucket] ?? 0);
             if ($metaVendorId > 0) {
-                $actualType = (string) ($vendorTypeById[$metaVendorId] ?? '');
-                if ($actualType !== $requiredType) {
+                $vendor = $vendorsById->get($metaVendorId);
+                if (! $vendor || ! VendorTypeAliases::vendorMatchesCanonical($vendor->type, $requiredType)) {
                     return response()->json([
                         'message' => __('Selected vendor type is invalid for :section section.', ['section' => $bucket]),
                     ], 422);
@@ -791,8 +793,8 @@ class ShipmentController extends Controller
             if ($vid <= 0) {
                 continue;
             }
-            $actualType = (string) ($vendorTypeById[$vid] ?? '');
-            if ($actualType !== $requiredType) {
+            $vendor = $vendorsById->get($vid);
+            if (! $vendor || ! VendorTypeAliases::vendorMatchesCanonical($vendor->type, $requiredType)) {
                 return response()->json([
                     'message' => __('Line item vendor type is invalid for :section section.', ['section' => $bucket]),
                 ], 422);
@@ -1009,7 +1011,7 @@ class ShipmentController extends Controller
     /**
      * Batch-read shipment line vendor + cost-invoice section_meta for accounting Partner Statement (read-only).
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
     public function accountingPartnerContext(Request $request)
     {
