@@ -115,7 +115,7 @@ class AdminDashboardService
             ->join('invoices', 'invoices.id', '=', 'invoice_items.invoice_id')
             ->whereBetween('invoices.issue_date', [$from->toDateString(), $to->toDateString()])
             ->whereNotIn('invoices.status', ['cancelled'])
-            ->selectRaw('UPPER(COALESCE(invoice_items.currency_code, invoices.currency_code, 'USD')) as currency_code')
+            ->selectRaw("UPPER(COALESCE(invoice_items.currency_code, invoices.currency_code, 'USD')) as currency_code")
             ->selectRaw('SUM(COALESCE(invoice_items.line_total, 0)) as total')
             ->groupBy('currency_code')
             ->get();
@@ -144,7 +144,7 @@ class AdminDashboardService
             ->whereNotNull('invoices.shipment_id')
             ->whereBetween('invoices.issue_date', [$from->toDateString(), $to->toDateString()])
             ->whereNotIn('invoices.status', ['cancelled'])
-            ->selectRaw('UPPER(COALESCE(invoice_items.currency_code, invoices.currency_code, 'USD')) as currency_code')
+            ->selectRaw("UPPER(COALESCE(invoice_items.currency_code, invoices.currency_code, 'USD')) as currency_code")
             ->selectRaw('SUM(COALESCE(invoice_items.line_total, 0)) as total')
             ->groupBy('currency_code')
             ->get();
@@ -169,7 +169,7 @@ class AdminDashboardService
         $rows = Expense::query()
             ->whereNotNull('shipment_id')
             ->whereBetween('expense_date', [$from->toDateString(), $to->toDateString()])
-            ->selectRaw('UPPER(COALESCE(currency_code, 'USD')) as currency_code')
+            ->selectRaw("UPPER(COALESCE(currency_code, 'USD')) as currency_code")
             ->selectRaw('SUM(COALESCE(amount, 0)) as total')
             ->groupBy('currency_code')
             ->get();
@@ -205,7 +205,7 @@ class AdminDashboardService
         $rows = Expense::query()
             ->whereNull('shipment_id')
             ->whereBetween('expense_date', [$from->toDateString(), $to->toDateString()])
-            ->selectRaw('UPPER(COALESCE(currency_code, 'USD')) as currency_code')
+            ->selectRaw("UPPER(COALESCE(currency_code, 'USD')) as currency_code")
             ->selectRaw('SUM(COALESCE(amount, 0)) as total')
             ->groupBy('currency_code')
             ->get();
@@ -289,7 +289,7 @@ class AdminDashboardService
     {
         $rows = Payment::query()
             ->where('type', 'vendor_payment')
-            ->selectRaw('UPPER(COALESCE(currency_code, 'USD')) as currency_code')
+            ->selectRaw("UPPER(COALESCE(currency_code, 'USD')) as currency_code")
             ->selectRaw('SUM(COALESCE(amount, 0)) as total')
             ->groupBy('currency_code')
             ->get();
@@ -451,7 +451,7 @@ class AdminDashboardService
             ->whereBetween('invoices.issue_date', [$from->toDateString(), $to->toDateString()])
             ->whereNotIn('invoices.status', ['cancelled'])
             ->selectRaw('invoices.shipment_id as shipment_id')
-            ->selectRaw('UPPER(COALESCE(invoice_items.currency_code, invoices.currency_code, 'USD')) as currency_code')
+            ->selectRaw("UPPER(COALESCE(invoice_items.currency_code, invoices.currency_code, 'USD')) as currency_code")
             ->selectRaw('SUM(COALESCE(invoice_items.line_total, 0)) as total')
             ->groupBy('shipment_id', 'currency_code')
             ->get();
@@ -466,7 +466,7 @@ class AdminDashboardService
             ->whereIn('shipment_id', $shipmentIds)
             ->whereBetween('expense_date', [$from->toDateString(), $to->toDateString()])
             ->selectRaw('shipment_id')
-            ->selectRaw('UPPER(COALESCE(currency_code, 'USD')) as currency_code')
+            ->selectRaw("UPPER(COALESCE(currency_code, 'USD')) as currency_code")
             ->selectRaw('SUM(COALESCE(amount, 0)) as total')
             ->groupBy('shipment_id', 'currency_code')
             ->get();
