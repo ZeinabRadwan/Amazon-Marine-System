@@ -1,6 +1,6 @@
-﻿import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BrowserRouter, Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom'
 import {
   Calendar,
   BarChart3,
@@ -60,7 +60,6 @@ import {
   getDashboardSalesEmployee,
   getDashboardAccountant,
   getDashboardPricingTeam,
-  getDashboardOperationsEmployee,
   getDashboardSupportEmployee,
 } from './api/dashboard'
 import { getFollowUpMySummary } from './api/clients'
@@ -68,10 +67,10 @@ import { useAuthAccess } from './hooks/useAuthAccess'
 import RequirePageAccess from './components/RequirePageAccess'
 import RequireAdmin from './components/RequireAdmin'
 import { formatDate } from './utils/dateUtils'
-import { formatShipmentsNumber, latinDateTimeFormat } from './utils/westernNumerals'
-import { shipmentStatusLegacyLabel } from './utils/shipmentStatusHelpers'
+import { formatShipmentsNumber } from './utils/westernNumerals'
 import './App.css'
 import './pages/Clients/Clients.css'
+import './pages/Operations/OperationsDashboard.css'
 
 function SignupPlaceholder() {
   const { t } = useTranslation()
@@ -170,6 +169,17 @@ function Home() {
   }, [])
 
   const dateOnly = formatDate(new Date())
+
+  if (roleKey === 'operations') {
+    return (
+      <Container size="xl">
+        <div className="clients-page home-page home-page--operations">
+          <OperationsDashboardPanel showHeader />
+        </div>
+      </Container>
+    )
+  }
+
   return (
     <Container size="xl">
       <div className="clients-page home-page">
@@ -215,7 +225,6 @@ function RoleDashboardContent({ roleKey, payload, salesFollowUpSummary }) {
   if (roleKey === 'sales') return <SalesEmployeeDashboardBlock payload={payload} followUpSummaryState={salesFollowUpSummary} />
   if (roleKey === 'accountant') return <AccountantDashboardBlock payload={payload} />
   if (roleKey === 'pricing') return <PricingDashboardBlock payload={payload} />
-  if (roleKey === 'operations') return <OperationsDashboardBlock payload={payload} />
   if (roleKey === 'support') return <SupportDashboardBlock payload={payload} />
   return <div className="text-sm text-gray-600 dark:text-gray-400">â€”</div>
 }
@@ -310,135 +319,6 @@ function PricingDashboardBlock({ payload }) {
         <PieChart data={open} nameKey="name" valueKey="value" showLabel={false} height={260} />
       </div>
       <Table columns={[{ key: 'quote_no', label: 'Request' }, { key: 'client', label: 'Client' }, { key: 'status', label: 'Status' }, { key: 'expected_profit', label: 'Expected Profit' }, { key: 'priority', label: 'Priority' }]} data={priority} getRowKey={(r) => r.quote_no} />
-    </div>
-  )
-}
-
-function OperationsDashboardBlock({ payload }) {
-  const { t, i18n } = useTranslation()
-  const navigate = useNavigate()
-  const overview = payload?.shipments_overview || {}
-  const assigned = Array.isArray(payload?.assigned_shipments) ? payload.assigned_shipments : []
-
-  const assignedShipmentDataAttrs = useCallback((row) => {
-    const n = Number(row.shipment_id)
-    if (!Number.isFinite(n) || n <= 0) return {}
-    return { 'data-shipment-id': String(n) }
-  }, [])
-
-  const onAssignedShipmentRowClick = useCallback(
-    (row) => {
-      const n = Number(row.shipment_id)
-      if (!Number.isFinite(n) || n <= 0) return
-      navigate({ pathname: '/shipments', search: `?shipment_id=${encodeURIComponent(String(n))}` })
-    },
-    [navigate],
-  )
-
-  const status = useMemo(() => {
-    return normalizeSeries(payload?.charts?.shipments_by_status_pie).map((s) => ({
-      ...s,
-      name: shipmentStatusLegacyLabel(s.name, t),
-    }))
-  }, [payload?.charts?.shipments_by_status_pie, t])
-
-  const completed = useMemo(() => {
-    const raw = Array.isArray(payload?.charts?.monthly_completed_shipments_line)
-      ? payload.charts.monthly_completed_shipments_line
-      : []
-    return raw.map((row, i) => ({
-      ...row,
-      monthLabel: formatOpsDashboardMonthKey(row?.month ?? row?.label ?? `#${i + 1}`, i18n.language),
-    }))
-  }, [payload?.charts?.monthly_completed_shipments_line, i18n.language])
-
-  const opsTaskStatusLabel = (raw) => {
-    const slug = String(raw ?? '')
-      .trim()
-      .toLowerCase()
-    if (!slug) return 'â€”'
-    const path = `shipments.ops.taskDisplayStatus.${slug}`
-    const out = t(path)
-    return out === path ? String(raw) : out
-  }
-
-  const opsTaskPriorityLabel = (raw) => {
-    const slug = String(raw ?? '')
-      .trim()
-      .toLowerCase()
-    if (!slug) return 'â€”'
-    const path = `shipments.ops.taskPriority.${slug}`
-    const out = t(path)
-    return out === path ? String(raw) : out
-  }
-
-  const assignedColumns = [
-    { key: 'shipment_ref', label: t('dashboardModule.operationsEmployee.table.shipment') },
-    {
-      key: 'status',
-      label: t('dashboardModule.operationsEmployee.table.status'),
-      render: (v) => shipmentStatusLegacyLabel(v, t),
-    },
-    {
-      key: 'priority',
-      label: t('dashboardModule.operationsEmployee.table.priority'),
-      render: (v) => opsTaskPriorityLabel(v),
-    },
-    {
-      key: 'deadline',
-      label: t('dashboardModule.operationsEmployee.table.deadline'),
-      render: (v) => formatDate(v, { locale: i18n.language }),
-    },
-    {
-      key: 'task_status',
-      label: t('dashboardModule.operationsEmployee.table.taskStatus'),
-      render: (v) => opsTaskStatusLabel(v),
-    },
-  ]
-
-  return (
-    <div className="space-y-4">
-      <div className="clients-stats-grid">
-        <StatsCard
-          title={t('dashboardModule.operationsEmployee.assignedShipments')}
-          value={formatShipmentsNumber(overview.total_assigned, i18n.language)}
-          icon={<Truck className="h-6 w-6" />}
-          variant="blue"
-        />
-        <StatsCard
-          title={t('dashboardModule.operationsEmployee.delayedShipments')}
-          value={formatShipmentsNumber(overview.delayed_shipments, i18n.language)}
-          icon={<TriangleAlert className="h-6 w-6" />}
-          variant="red"
-        />
-        <StatsCard
-          title={t('dashboardModule.operationsEmployee.avgProcessingHours')}
-          value={formatShipmentsNumber(overview.avg_processing_time_hours, i18n.language, {
-            minimumFractionDigits: 1,
-            maximumFractionDigits: 1,
-          })}
-          icon={<BarChart3 className="h-6 w-6" />}
-          variant="amber"
-        />
-      </div>
-      <div className="clients-charts-grid">
-        <PieChart data={status} nameKey="name" valueKey="value" showLabel={false} height={260} />
-        <LineChart
-          data={completed}
-          xKey="monthLabel"
-          lines={[{ dataKey: 'completed', name: t('dashboardModule.operationsEmployee.chartSeriesCompleted') }]}
-          height={260}
-        />
-      </div>
-      <Table
-        columns={assignedColumns}
-        data={assigned}
-        getRowKey={(r) => `${r.shipment_id}-${r.deadline}`}
-        emptyMessage={t('dashboardModule.operationsEmployee.emptyAssigned')}
-        onRowClick={onAssignedShipmentRowClick}
-        getRowDataAttrs={assignedShipmentDataAttrs}
-        rowAriaLabel={() => t('shipments.opsCard.openShipmentAria')}
-      />
     </div>
   )
 }
@@ -684,18 +564,6 @@ function normalizeSeries(source) {
 }
 
 /** `Y-m` from API â†’ short localized month label (Latin digits). */
-function formatOpsDashboardMonthKey(ym, language) {
-  if (ym == null || ym === '') return ''
-  const s = String(ym).trim()
-  const m = /^(\d{4})-(\d{2})$/.exec(s)
-  if (!m) return s
-  const y = Number(m[1])
-  const mo = Number(m[2]) - 1
-  if (!Number.isFinite(y) || mo < 0 || mo > 11) return s
-  const d = new Date(Date.UTC(y, mo, 1))
-  return latinDateTimeFormat(language, { month: 'short', year: 'numeric', timeZone: 'UTC' }).format(d)
-}
-
 function normalizeRcpByMonth(source) {
   const arr = Array.isArray(source) ? source : []
   return arr.map((item, i) => ({
@@ -765,7 +633,6 @@ function dashboardFetcherForRole(roleKey) {
   if (roleKey === 'sales') return getDashboardSalesEmployee
   if (roleKey === 'accountant') return getDashboardAccountant
   if (roleKey === 'pricing') return getDashboardPricingTeam
-  if (roleKey === 'operations') return getDashboardOperationsEmployee
   if (roleKey === 'support') return getDashboardSupportEmployee
   return getDashboardAdminOverview
 }
@@ -941,14 +808,7 @@ function App() {
               </RequirePageAccess>
             }
           />
-          <Route
-            path="/operations-dashboard"
-            element={
-              <RequireOperationsOrAdmin>
-                <OperationsDashboard />
-              </RequireOperationsOrAdmin>
-            }
-          />
+          <Route path="/operations-dashboard" element={<Navigate to="/" replace />} />
           <Route
             path="/pricing"
             element={

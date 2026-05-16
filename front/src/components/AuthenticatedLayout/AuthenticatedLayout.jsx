@@ -82,11 +82,6 @@ function getPageHeaderForPath(pathname, t) {
       }
     case '/shipments':
       return { title: t('shipments.title'), breadcrumbs: [home, { label: t('shipments.title') }] }
-    case '/operations-dashboard':
-      return {
-        title: t('operationsDashboard.title'),
-        breadcrumbs: [home, { label: t('operationsDashboard.title') }],
-      }
     case '/pricing':
       return { title: t('pricing.title', 'Pricing'), breadcrumbs: [home, { label: t('pricing.title', 'Pricing') }] }
     case '/invoices':
@@ -401,10 +396,6 @@ export default function AuthenticatedLayout() {
       navigate('/shipments')
       return
     }
-    if (id === 'operationsDashboard') {
-      navigate('/operations-dashboard')
-      return
-    }
     if (id === 'pricing') {
       navigate('/pricing')
       return
@@ -470,7 +461,6 @@ export default function AuthenticatedLayout() {
     '/sd-forms': 'sdForms',
     '/sd-forms/declaration': 'sdForms',
     '/shipments': 'shipments',
-    '/operations-dashboard': 'operationsDashboard',
     '/pricing': 'pricing',
     '/invoices': 'invoices',
     '/partner-ledger': 'partnerLedger',

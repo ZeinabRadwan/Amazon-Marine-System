@@ -8,6 +8,14 @@
   position: relative;
 }
 
+.home-page--operations {
+  padding-top: 0.25rem;
+}
+
+.home-page--operations .ops-dashboard-panel__header {
+  margin-bottom: 1.25rem;
+}
+
 /* Welcome Banner – greeting, date, role-based quote */
 .welcome-banner {
   --welcome-bg-start: var(--root-deco-blue, #1e3a5f);

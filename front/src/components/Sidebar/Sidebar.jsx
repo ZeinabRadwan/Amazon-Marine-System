@@ -13,7 +13,6 @@ import {
   ShipmentsIcon,
   DocumentIcon,
   InvoiceIcon,
-  OperationsBoardIcon,
   WalletIcon,
   PriceTagIcon,
   FileTextIcon,
@@ -44,7 +43,6 @@ const SIDEBAR_SECTIONS = [
   {
     sectionKey: 'operations',
     items: [
-      { id: 'operationsDashboard', menuKey: 'operationsDashboard', Icon: OperationsBoardIcon },
       { id: 'sdForms', menuKey: 'sdForms', Icon: DocumentIcon, badge: 'sdForms' },
       { id: 'shipments', menuKey: 'shipments', Icon: ShipmentsIcon, badge: 'shipments' },
     ],
@@ -224,17 +222,13 @@ export default function Sidebar({
 
             const filteredItems = allowedPagesSet
               ? items.filter(({ id }) => {
-                  if (id === 'operationsDashboard') return effectiveIsAdminRole || effectiveIsOperations
                   if (id === 'settings' && !effectiveIsAdminRole) return false
                   if (id === 'reports') return effectiveIsAdminRole
                   const pageKey = SIDEBAR_ID_TO_PAGE_KEY[id]
                   if (!pageKey) return true
                   return allowedPagesSet.has(pageKey)
                 })
-              : items.filter(({ id }) => {
-                  if (id === 'operationsDashboard') return effectiveIsAdminRole || effectiveIsOperations
-                  return id !== 'reports' || effectiveIsAdminRole
-                })
+              : items.filter(({ id }) => id !== 'reports' || effectiveIsAdminRole)
             if (!filteredItems.length) return null
 
             return (
