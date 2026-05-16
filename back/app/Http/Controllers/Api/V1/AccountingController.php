@@ -14,6 +14,7 @@ use App\Models\Vendor;
 use App\Models\TreasuryEntry;
 use App\Models\VendorBill;
 use App\Services\AccountingAggregationService;
+use App\Services\PrepaidPaymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -745,12 +746,17 @@ class AccountingController extends Controller
             ];
         })->values();
 
+        $advancePayments = PrepaidPaymentService::serializeAdvancePayments((int) $client->id);
+        $prepaidBalance = PrepaidPaymentService::prepaidBalanceByCurrency((int) $client->id);
+
         return response()->json([
             'data' => [
                 'customer_id' => $client->id,
                 'customer_name' => $client->name,
                 'phone' => $client->phone,
                 'invoices' => $rows,
+                'advance_payments' => $advancePayments,
+                'prepaid_balance_by_currency' => $prepaidBalance,
             ],
         ]);
     }

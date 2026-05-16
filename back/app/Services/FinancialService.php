@@ -150,6 +150,11 @@ class FinancialService
                 if ($shipment) {
                     ShipmentService::recalculateTotals($shipment);
                 }
+            } elseif ($payment->shipment_id) {
+                $shipment = Shipment::find($payment->shipment_id);
+                if ($shipment) {
+                    ShipmentService::recalculateTotals($shipment);
+                }
             }
 
             if ($payment->vendorBill && $payment->vendorBill->shipment_id) {

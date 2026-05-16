@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
+use App\Models\Shipment;
 use App\Services\ActivityLogger;
 use App\Services\BankPaymentCurrencyService;
 use App\Services\FinancialService;
+use App\Services\PrepaidPaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -60,6 +62,14 @@ class PaymentController extends Controller
             $query->whereDate('paid_at', '<=', $to);
         }
 
+        if ($shipmentId = $request->query('shipment_id')) {
+            $query->where('shipment_id', (int) $shipmentId);
+        }
+
+        if ($request->query('unallocated') === '1' || $request->query('unallocated') === 'true') {
+            $query->whereNull('invoice_id');
+        }
+
         $payments = $query->orderByDesc('paid_at')->get();
 
         $data = $payments->map(static function (Payment $p): array {
@@ -101,7 +111,22 @@ class PaymentController extends Controller
             'paid_at' => ['nullable', 'date'],
         ]);
 
-        if (!empty($validated['invoice_id']) && empty($validated['client_id'])) {
+        if ($validated['type'] === 'client_receipt' && empty($validated['invoice_id']) && empty($validated['client_id'])) {
+            if (! empty($validated['shipment_id'])) {
+                $shipment = Shipment::query()->find($validated['shipment_id']);
+                if ($shipment?->client_id) {
+                    $validated['client_id'] = $shipment->client_id;
+                }
+            }
+        }
+
+        if ($validated['type'] === 'client_receipt' && empty($validated['invoice_id']) && empty($validated['client_id'])) {
+            throw ValidationException::withMessages([
+                'client_id' => [__('Client is required for advance payments.')],
+            ]);
+        }
+
+        if (! empty($validated['invoice_id']) && empty($validated['client_id'])) {
             $invoice = \App\Models\Invoice::query()->find($validated['invoice_id']);
             if ($invoice) {
                 $validated['client_id'] = $invoice->client_id;
@@ -131,6 +156,14 @@ class PaymentController extends Controller
                 $payment->paid_at = $validated['paid_at'] ?? now();
                 $payment->created_by_id = $user->id;
                 $payment->save();
+
+                if ($payment->type === 'client_receipt' && ! $payment->invoice_id) {
+                    if (empty($payment->notes)) {
+                        $payment->notes = __('Advance payment (prepaid)');
+                        $payment->save();
+                    }
+                    PrepaidPaymentService::recordPrepaidCredit($payment);
+                }
 
                 FinancialService::handlePaymentPosted($payment);
 

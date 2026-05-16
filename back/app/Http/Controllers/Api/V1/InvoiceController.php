@@ -16,6 +16,7 @@ use App\Notifications\ShipmentFinancialsCompleted;
 use App\Services\ActivityLogger;
 use App\Services\BankPaymentCurrencyService;
 use App\Services\FinancialService;
+use App\Services\PrepaidPaymentService;
 use App\Services\NotificationService;
 use App\Support\MpdfInvoiceFonts;
 use Illuminate\Http\Request;
@@ -828,6 +829,8 @@ class InvoiceController extends Controller
 
         $invoice->status = 'issued';
         $invoice->save();
+
+        PrepaidPaymentService::allocateUnallocatedToInvoice($invoice->fresh(['items', 'payments']));
 
         ActivityLogger::log('invoice.issued', $invoice, [
             'invoice_id' => $invoice->id,
