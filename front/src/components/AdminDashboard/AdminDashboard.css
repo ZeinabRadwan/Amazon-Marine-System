@@ -1,0 +1,112 @@
+.admin-dashboard-kpi-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .admin-dashboard-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .admin-dashboard-kpi-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.admin-dashboard-kpi-card .accounting-stats-card-value-rich,
+.admin-dashboard-kpi-card .accounting-currency-stack {
+  margin-top: 0.125rem;
+}
+
+.admin-dashboard-section__title {
+  margin: 0 0 0.75rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-primary, #111827);
+}
+
+[data-theme='dark'] .admin-dashboard-section__title {
+  color: #f3f4f6;
+}
+
+.admin-dashboard-banks-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .admin-dashboard-banks-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .admin-dashboard-banks-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.admin-dashboard-bank-card {
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--form-divider, #e5e7eb);
+  border-radius: 0.75rem;
+  background: var(--form-bg, #fff);
+}
+
+[data-theme='dark'] .admin-dashboard-bank-card {
+  background: rgba(31, 41, 55, 0.6);
+  border-color: #374151;
+}
+
+.admin-dashboard-bank-card__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.625rem;
+}
+
+.admin-dashboard-bank-card__name {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #1f2937;
+}
+
+[data-theme='dark'] .admin-dashboard-bank-card__name {
+  color: #f9fafb;
+}
+
+.admin-dashboard-bank-card__meta {
+  margin: 0.125rem 0 0;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.admin-dashboard-ops-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .admin-dashboard-ops-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .admin-dashboard-ops-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .admin-dashboard-ops-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}

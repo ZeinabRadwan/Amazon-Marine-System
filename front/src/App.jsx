@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+﻿import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BrowserRouter, Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom'
 import {
@@ -46,6 +46,7 @@ import Reports from './pages/Reports/Reports'
 import Documents from './pages/Documents/Documents'
 import { getStoredToken } from './pages/Login'
 import FollowUpWorkloadWidgets from './components/FollowUpWorkloadWidgets'
+import AdminDashboardBlock from './components/AdminDashboard/AdminDashboardBlock'
 
 /** Old edit URLs open invoice detail (read-only); editing was removed from the UI. */
 function InvoiceEditRouteRedirect() {
@@ -100,6 +101,7 @@ function Home() {
   const [dashboardState, setDashboardState] = useState({ loading: true, error: null, data: null, roleKey: 'admin' })
   const [salesFollowUpSummary, setSalesFollowUpSummary] = useState({ loading: false, error: null, data: null })
   const [salesSummaryRefreshKey, setSalesSummaryRefreshKey] = useState(0)
+  const [dashboardRefreshKey, setDashboardRefreshKey] = useState(0)
   const displayName = user?.name || t('common.user', 'User')
   const role = String(user?.primary_role ?? user?.roles?.[0]?.name ?? user?.roles?.[0] ?? t('common.user', 'user'))
   const roleKey = resolveDashboardRole(user)
@@ -125,7 +127,22 @@ function Home() {
     return () => {
       cancelled = true
     }
-  }, [token, roleKey, roleFetcher, t])
+  }, [token, roleKey, roleFetcher, t, dashboardRefreshKey])
+
+  useEffect(() => {
+    const bump = () => setDashboardRefreshKey((k) => k + 1)
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') bump()
+    }
+    window.addEventListener('am:dashboard:refresh', bump)
+    document.addEventListener('visibilitychange', onVisible)
+    const interval = window.setInterval(bump, 45000)
+    return () => {
+      window.removeEventListener('am:dashboard:refresh', bump)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.clearInterval(interval)
+    }
+  }, [])
 
   useEffect(() => {
     if (roleKey !== 'sales' || !token) {
@@ -200,48 +217,9 @@ function RoleDashboardContent({ roleKey, payload, salesFollowUpSummary }) {
   if (roleKey === 'pricing') return <PricingDashboardBlock payload={payload} />
   if (roleKey === 'operations') return <OperationsDashboardBlock payload={payload} />
   if (roleKey === 'support') return <SupportDashboardBlock payload={payload} />
-  return <div className="text-sm text-gray-600 dark:text-gray-400">—</div>
+  return <div className="text-sm text-gray-600 dark:text-gray-400">â€”</div>
 }
 
-function AdminDashboardBlock({ payload }) {
-  const { t } = useTranslation()
-  const usersByRole = payload?.users_by_role || {}
-  const clients = payload?.clients || {}
-  const attendance = payload?.attendance || {}
-  const system = payload?.system || {}
-  const financial = Array.isArray(payload?.financial) ? payload.financial : []
-  const shipments = normalizeSeries(payload?.shipments?.shipments_by_status)
-  const employeePerf = Array.isArray(payload?.charts?.employee_performance_bar) ? payload.charts.employee_performance_bar : []
-
-  return (
-    <div className="space-y-4">
-      <div className="clients-stats-grid">
-        <StatsCard title={t('dashboardModule.labels.totalUsersSales', 'Sales Users')} value={asNumber(usersByRole.sales)} icon={<UsersIcon className="h-6 w-6" />} variant="blue" />
-        <StatsCard title={t('dashboardModule.labels.totalUsersOperations', 'Operations Users')} value={asNumber(usersByRole.operations)} icon={<UsersIcon className="h-6 w-6" />} variant="amber" />
-        <StatsCard title={t('dashboardModule.labels.totalUsersSupport', 'Support Users')} value={asNumber(usersByRole.support)} icon={<UsersIcon className="h-6 w-6" />} variant="green" />
-        <StatsCard title={t('dashboardModule.labels.totalUsersAccountants', 'Accountants')} value={asNumber(usersByRole.accountants)} icon={<UsersIcon className="h-6 w-6" />} variant="red" />
-      </div>
-      <div className="clients-stats-grid">
-        <StatsCard title={t('dashboardModule.labels.totalClients')} value={asNumber(clients.total_clients)} icon={<UsersIcon className="h-6 w-6" />} variant="blue" />
-        <StatsCard title={t('dashboardModule.labels.newClientsPeriod')} value={asNumber(clients.new_clients)} icon={<UsersIcon className="h-6 w-6" />} variant="green" />
-        <StatsCard title={t('dashboardModule.labels.conversionRate')} value={asNumber(clients.conversion_rate_pct)} icon={<BarChart3 className="h-6 w-6" />} variant="amber" />
-        <StatsCard title={t('dashboardModule.labels.totalShipments')} value={asNumber(payload?.shipments?.total_shipments)} icon={<Truck className="h-6 w-6" />} variant="red" />
-      </div>
-      <div className="clients-stats-grid">
-        <StatsCard title={t('dashboardModule.labels.avgAttendance')} value={asNumber(attendance.avg_attendance_pct)} icon={<ClipboardCheck className="h-6 w-6" />} variant="green" />
-        <StatsCard title={t('dashboardModule.labels.absentCount')} value={asNumber(attendance.absents)} icon={<UserSquare2 className="h-6 w-6" />} variant="amber" />
-        <StatsCard title={t('dashboardModule.labels.lateCount')} value={asNumber(attendance.late)} icon={<TriangleAlert className="h-6 w-6" />} variant="red" />
-        <StatsCard title={t('dashboardModule.labels.systemErrors', 'System Errors')} value={asNumber(system.errors_count)} icon={<TriangleAlert className="h-6 w-6" />} variant="red" />
-      </div>
-      <div className="clients-charts-grid">
-        <PieChart data={shipments} nameKey="name" valueKey="value" showLabel={false} height={260} />
-        <LineChart data={financial} xKey="month" lines={[{ dataKey: 'revenue', name: t('dashboardModule.labels.totalRevenue') }, { dataKey: 'cost', name: t('dashboardModule.labels.totalCost') }, { dataKey: 'profit', name: t('dashboardModule.labels.totalProfit') }]} height={260} />
-        <BarChart data={employeePerf.map((r) => ({ name: r.employee, value: asNumber(r.revenue) }))} xKey="name" yKey="value" height={260} />
-      </div>
-      <PartnersReportBlock payload={{ rows: payload?.top_partners || [] }} />
-    </div>
-  )
-}
 
 function SalesManagerDashboardBlock({ payload }) {
   const team = Array.isArray(payload?.team_performance) ? payload.team_performance : []
@@ -378,7 +356,7 @@ function OperationsDashboardBlock({ payload }) {
     const slug = String(raw ?? '')
       .trim()
       .toLowerCase()
-    if (!slug) return '—'
+    if (!slug) return 'â€”'
     const path = `shipments.ops.taskDisplayStatus.${slug}`
     const out = t(path)
     return out === path ? String(raw) : out
@@ -388,7 +366,7 @@ function OperationsDashboardBlock({ payload }) {
     const slug = String(raw ?? '')
       .trim()
       .toLowerCase()
-    if (!slug) return '—'
+    if (!slug) return 'â€”'
     const path = `shipments.ops.taskPriority.${slug}`
     const out = t(path)
     return out === path ? String(raw) : out
@@ -492,7 +470,7 @@ function DashboardOverviewBlock({ payload }) {
   const shipments = normalizeSeries(payload?.shipments_by_status)
   const sdForms = normalizeSeries(payload?.sd_forms_by_status)
   const monthly = normalizeRcpByMonth(payload?.revenue_cost_profit_by_month)
-  const latest = monthly[monthly.length - 1] || { month: '—', revenue: 0, cost: 0, profit: 0 }
+  const latest = monthly[monthly.length - 1] || { month: 'â€”', revenue: 0, cost: 0, profit: 0 }
   const cards = [
     {
       title: t('dashboardModule.labels.totalShipments'),
@@ -705,7 +683,7 @@ function normalizeSeries(source) {
   return []
 }
 
-/** `Y-m` from API → short localized month label (Latin digits). */
+/** `Y-m` from API â†’ short localized month label (Latin digits). */
 function formatOpsDashboardMonthKey(ym, language) {
   if (ym == null || ym === '') return ''
   const s = String(ym).trim()

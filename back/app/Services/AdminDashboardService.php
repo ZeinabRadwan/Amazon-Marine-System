@@ -117,7 +117,7 @@ class AdminDashboardService
             ->whereNotIn('invoices.status', ['cancelled'])
             ->selectRaw("UPPER(COALESCE(invoice_items.currency_code, invoices.currency_code, 'USD')) as currency_code")
             ->selectRaw('SUM(COALESCE(invoice_items.line_total, 0)) as total')
-            ->groupBy('currency_code')
+            ->groupByRaw("UPPER(COALESCE(invoice_items.currency_code, invoices.currency_code, 'USD'))")
             ->get();
 
         $map = [];
@@ -146,7 +146,7 @@ class AdminDashboardService
             ->whereNotIn('invoices.status', ['cancelled'])
             ->selectRaw("UPPER(COALESCE(invoice_items.currency_code, invoices.currency_code, 'USD')) as currency_code")
             ->selectRaw('SUM(COALESCE(invoice_items.line_total, 0)) as total')
-            ->groupBy('currency_code')
+            ->groupByRaw("UPPER(COALESCE(invoice_items.currency_code, invoices.currency_code, 'USD'))")
             ->get();
 
         $map = [];
@@ -453,7 +453,8 @@ class AdminDashboardService
             ->selectRaw('invoices.shipment_id as shipment_id')
             ->selectRaw("UPPER(COALESCE(invoice_items.currency_code, invoices.currency_code, 'USD')) as currency_code")
             ->selectRaw('SUM(COALESCE(invoice_items.line_total, 0)) as total')
-            ->groupBy('shipment_id', 'currency_code')
+            ->groupBy('invoices.shipment_id')
+            ->groupByRaw("UPPER(COALESCE(invoice_items.currency_code, invoices.currency_code, 'USD'))")
             ->get();
 
         foreach ($invoiceAgg as $row) {
