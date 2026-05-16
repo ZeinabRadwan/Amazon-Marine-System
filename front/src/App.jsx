@@ -35,7 +35,7 @@ import Attendance from './pages/Attendance'
 import SDForms from './pages/SDForms'
 import ShipmentDeclarationForm from './pages/SDForms/ShipmentDeclarationForm'
 import Shipments from './pages/Shipments/Shipments'
-import OperationsDashboard from './pages/Operations/OperationsDashboard'
+import { OperationsDashboardPanel } from './pages/Operations/OperationsDashboard'
 import Pricing from './pages/Pricing/Pricing'
 import Invoices from './pages/Invoices/Invoices'
 import PartnerLedger from './pages/PartnerLedger/PartnerLedger'
@@ -88,12 +88,6 @@ function RequireAdminOnly({ children }) {
   return children
 }
 
-function RequireOperationsOrAdmin({ children }) {
-  const { isAdminRole, isOperations } = useAuthAccess()
-  if (!isAdminRole && !isOperations) return <Navigate to="/" replace />
-  return children
-}
-
 function Home() {
   const { t, i18n } = useTranslation()
   const { user } = useAuthAccess()
@@ -109,6 +103,12 @@ function Home() {
 
   useEffect(() => {
     let cancelled = false
+    if (roleKey === 'operations') {
+      setDashboardState({ loading: false, error: null, data: null, roleKey: 'operations' })
+      return () => {
+        cancelled = true
+      }
+    }
     if (!token) {
       setDashboardState({ loading: false, error: t('common.error', 'Something went wrong'), data: null, roleKey })
       return () => {

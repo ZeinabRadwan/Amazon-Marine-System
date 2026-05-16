@@ -28,9 +28,13 @@ import {
   notifyShipmentSalesFinancials,
   updateShipmentCostInvoice,
   getShipmentCostInvoice,
+  getShipmentClientInvoiceDraft,
+  upsertShipmentClientInvoiceDraft,
   downloadShipmentAttachment,
   uploadShipmentAttachment,
 } from '../../api/shipments'
+import { buildClientInvoiceItemsFromRows } from './clientInvoiceDraft'
+import { resolveCostItemStyleFeeNameFromExpense, resolveCostItemStyleFeeNameFromRow } from './shipmentFinFeeNames'
 import { listBankAccounts, listPayments, recordPayment } from '../../api/accountings'
 import { useAuthAccess } from '../../hooks/useAuthAccess'
 import { ROLE_ID } from '../../constants/roles'
@@ -292,48 +296,6 @@ function normalizeTemplateEditableDescription(stored, bucketId, tplId) {
   return raw
 }
 
-/** Non-template lines (orphans / “Other”) — title same rules as cost-items display fallback. */
-function orphanOrCustomFeeTitle(ex, bucket, t) {
-  const base = OTHER_DESC_PREFIX[bucket] || 'Other'
-  const fromDesc = extractUserDescription(ex.description || '', base)
-  const title = String(ex.title || '').trim()
-  return (
-    title ||
-    fromDesc ||
-    String(ex.description || '').trim() ||
-    t('shipments.fin.customItemFallback', { defaultValue: 'Custom Item' })
-  )
-}
-
-/**
- * Fee title shown on Selling tab must match Shipment Cost Items:
- * template label keys first, then matchers (same order as partitionBucketRows), then orphan/custom title.
- */
-function resolveCostItemStyleFeeNameFromExpense(ex, t, isReefer) {
-  const bucket = ex.bucket_id || expenseBucket(ex)
-  const tid = String(ex.template_id || '').trim().toLowerCase()
-  const templates = LINE_TEMPLATES[bucket] || []
-
-  if (tid && tid !== 'other') {
-    const tpl = templates.find((x) => x.id === tid)
-    if (tpl) return t(tpl.labelKey)
-  }
-
-  const hay = expenseHaystack(ex)
-  for (const tpl of templates) {
-    if (tpl.reeferOnly && !isReefer) continue
-    if (tpl.matchers.some((re) => re.test(hay))) {
-      return t(tpl.labelKey)
-    }
-  }
-
-  if (tid === 'other') {
-    return orphanOrCustomFeeTitle(ex, bucket, t)
-  }
-
-  return orphanOrCustomFeeTitle(ex, bucket, t)
-}
-
 /** Legacy DB `section_key` for manual lines before per-section buckets (grouped under shipping). */
 const LEGACY_MANUAL_EXTRA_BUCKET = 'manual_extra'
 
@@ -413,29 +375,6 @@ function createEmptyManualInvoiceRow(invCurrency = 'USD', sectionBucketId = 'shi
     unit_price: '',
     include: true,
   }
-}
-
-function resolveCostItemStyleFeeNameFromRow(row, t, isReefer) {
-  if (isManualInvoiceLineRow(row)) {
-    const name = String(row.description || row.label || row.expense_title || '').trim()
-
-    return name || t('shipments.fin.customItemFallback', { defaultValue: 'Custom Item' })
-  }
-  if (String(row.expenseId || '').startsWith('tmp-')) {
-    return t('shipments.fin.customItemFallback', { defaultValue: 'Custom Item' })
-  }
-  const syntheticEx = {
-    template_id: row.template_id,
-    bucket_id: row.bucket_id,
-    title: row.expense_title,
-    description:
-      row.expense_description != null && row.expense_description !== ''
-        ? row.expense_description
-        : row.description,
-    category_name: row.category_name,
-    invoice_number: row.invoice_number,
-  }
-  return resolveCostItemStyleFeeNameFromExpense(syntheticEx, t, isReefer)
 }
 
 function FinSingleExpenseRow({
@@ -899,6 +838,21 @@ function ShipmentFinLoadingSkeleton({ variant }) {
   return null
 }
 
+function ClientInvoiceSectionStatusBadge({ status, t }) {
+  if (!status || status === 'idle') return null
+  const tone =
+    status === 'saving' ? 'saving' : status === 'error' ? 'error' : status === 'draft-saved' ? 'draft' : 'saved'
+  const label =
+    status === 'saving'
+      ? t('shipments.saving')
+      : status === 'error'
+        ? t('shipments.fin.clientInvoiceSaveFailed', { defaultValue: 'Save failed' })
+        : status === 'draft-saved'
+          ? t('shipments.fin.draftSaved')
+          : t('shipments.fin.sectionSaved', { defaultValue: 'Saved' })
+  return <span className={`shipment-fin-client-sec-status shipment-fin-client-sec-status--${tone}`}>{label}</span>
+}
+
 /**
  * @param {{
  *   open: boolean,
@@ -1001,6 +955,13 @@ export default function ShipmentFinancialsModal({
   const finModalRootRef = useRef(null)
   const [savingAllDraft, setSavingAllDraft] = useState(false)
   const [savingSectionId, setSavingSectionId] = useState(null)
+  const [savingClientInvoiceSectionId, setSavingClientInvoiceSectionId] = useState(null)
+  const [clientInvoiceSectionStatus, setClientInvoiceSectionStatus] = useState({})
+  const [invoiceIssueDateDraft, setInvoiceIssueDateDraft] = useState('')
+  const [invoiceDueDateDraft, setInvoiceDueDateDraft] = useState('')
+  const clientDraftHydratedRef = useRef(false)
+  const clientDraftAutoSaveTimerRef = useRef(null)
+  const clientDraftAutoSaveInFlightRef = useRef(false)
   const [categoriesByCode, setCategoriesByCode] = useState({})
   const editMode = Boolean(token && canManageExpenses && shipment?.bl_number?.trim() && shipment?.id)
   const vendorsBySection = useMemo(() => {
@@ -1800,42 +1761,266 @@ export default function ShipmentFinancialsModal({
     return map
   }, [summaryClientPayments])
 
+  const applyClientInvoiceResponse = useCallback((inv) => {
+    if (!inv?.id) return
+    setClientInvoice(inv)
+    setCurrentInvoiceId(inv.id)
+    setClientInvoicesList((prev) => {
+      const filtered = (Array.isArray(prev) ? prev : []).filter((r) => r.id !== inv.id)
+      return [inv, ...filtered]
+    })
+    onShipmentTotalsRefresh?.()
+  }, [onShipmentTotalsRefresh])
+
+  const resolveClientInvoiceCurrencyId = useCallback(() => {
+    const curCode = (clientInvoice?.currency_code || expenses[0]?.currency_code || tabBRows[0]?.currency || 'USD').toUpperCase()
+    const found = currencies.find((c) => c.code === curCode)
+    return found?.id || 1
+  }, [clientInvoice?.currency_code, expenses, tabBRows, currencies])
+
+  const markClientInvoiceSectionsSaved = useCallback((sectionIds, tone = 'saved') => {
+    setClientInvoiceSectionStatus((prev) => {
+      const next = { ...prev }
+      sectionIds.forEach((id) => {
+        next[id] = tone
+      })
+      return next
+    })
+    window.setTimeout(() => {
+      setClientInvoiceSectionStatus((prev) => {
+        const next = { ...prev }
+        sectionIds.forEach((id) => {
+          if (next[id] === tone) next[id] = 'idle'
+        })
+        return next
+      })
+    }, 3200)
+  }, [])
+
+  const persistClientInvoiceSection = useCallback(
+    async (sectionId, opts = {}) => {
+      const { auto = false } = opts
+      if (!token || !shipment?.id || !shipment.client_id || !canEditClientInvoiceLines) return false
+      if (clientInvoice?.id && invoiceStatusBlocksEditing(clientInvoice.status)) return false
+
+      setClientInvoiceSectionStatus((prev) => ({ ...prev, [sectionId]: 'saving' }))
+      if (!auto) setSavingClientInvoiceSectionId(sectionId)
+
+      try {
+        const currencyId = resolveClientInvoiceCurrencyId()
+        const payload = { currency_id: currencyId }
+
+        if (sectionId === 'meta' || sectionId === 'notes' || sectionId === 'details') {
+          payload.notes = String(invoiceNotesDraft ?? '')
+          payload.issue_date = invoiceIssueDateDraft || new Date().toISOString().slice(0, 10)
+          payload.due_date = invoiceDueDateDraft || null
+        } else if (sectionId === 'handling') {
+          payload.merge_section_keys = ['handling']
+          payload.items = buildClientInvoiceItemsFromRows({
+            tabBRows,
+            handlingRow,
+            shipment,
+            deletedSellIds,
+            sectionKeys: new Set(['handling']),
+            t,
+          })
+        } else {
+          payload.merge_section_keys = [sectionId]
+          payload.items = buildClientInvoiceItemsFromRows({
+            tabBRows,
+            handlingRow,
+            shipment,
+            deletedSellIds,
+            sectionKeys: new Set([sectionId]),
+            t,
+          })
+        }
+
+        const inv = await upsertShipmentClientInvoiceDraft(token, shipment.id, payload)
+        applyClientInvoiceResponse(inv)
+        markClientInvoiceSectionsSaved([sectionId], auto ? 'draft-saved' : 'saved')
+        if (!auto) {
+          setFinBanner({ type: 'success', message: t('shipments.fin.sectionSaved', { defaultValue: 'Section saved.' }) })
+        }
+        return true
+      } catch (e) {
+        setClientInvoiceSectionStatus((prev) => ({ ...prev, [sectionId]: 'error' }))
+        if (!auto) {
+          setFinBanner({ type: 'error', message: e?.message || t('shipments.fin.errorSaveLine') })
+        }
+        return false
+      } finally {
+        if (!auto) setSavingClientInvoiceSectionId(null)
+      }
+    },
+    [
+      token,
+      shipment,
+      canEditClientInvoiceLines,
+      clientInvoice?.id,
+      clientInvoice?.status,
+      resolveClientInvoiceCurrencyId,
+      invoiceNotesDraft,
+      invoiceIssueDateDraft,
+      invoiceDueDateDraft,
+      tabBRows,
+      handlingRow,
+      deletedSellIds,
+      applyClientInvoiceResponse,
+      markClientInvoiceSectionsSaved,
+      t,
+    ],
+  )
+
+  const flushClientInvoiceDraftAutoSave = useCallback(async () => {
+    if (!token || !shipment?.id || !shipment.client_id || !canEditClientInvoiceLines) return
+    if (!clientDraftHydratedRef.current) return
+    if (clientInvoice?.id && invoiceStatusBlocksEditing(clientInvoice.status)) return
+    if (clientDraftAutoSaveInFlightRef.current) return
+
+    clientDraftAutoSaveInFlightRef.current = true
+    const sectionIds = ['meta', 'handling', 'shipping', 'inland', 'customs', 'insurance', 'other']
+    setClientInvoiceSectionStatus((prev) => {
+      const next = { ...prev }
+      sectionIds.forEach((id) => {
+        next[id] = 'saving'
+      })
+      return next
+    })
+
+    try {
+      const items = buildClientInvoiceItemsFromRows({
+        tabBRows,
+        handlingRow,
+        shipment,
+        deletedSellIds,
+        sectionKeys: null,
+        t,
+      })
+      const inv = await upsertShipmentClientInvoiceDraft(token, shipment.id, {
+        currency_id: resolveClientInvoiceCurrencyId(),
+        notes: String(invoiceNotesDraft ?? ''),
+        issue_date: invoiceIssueDateDraft || new Date().toISOString().slice(0, 10),
+        due_date: invoiceDueDateDraft || null,
+        items,
+      })
+      applyClientInvoiceResponse(inv)
+      markClientInvoiceSectionsSaved(sectionIds, 'draft-saved')
+    } catch {
+      setClientInvoiceSectionStatus((prev) => {
+        const next = { ...prev }
+        sectionIds.forEach((id) => {
+          next[id] = 'error'
+        })
+        return next
+      })
+    } finally {
+      clientDraftAutoSaveInFlightRef.current = false
+    }
+  }, [
+    token,
+    shipment,
+    canEditClientInvoiceLines,
+    clientInvoice?.id,
+    clientInvoice?.status,
+    tabBRows,
+    handlingRow,
+    deletedSellIds,
+    invoiceNotesDraft,
+    invoiceIssueDateDraft,
+    invoiceDueDateDraft,
+    resolveClientInvoiceCurrencyId,
+    applyClientInvoiceResponse,
+    markClientInvoiceSectionsSaved,
+    t,
+  ])
+
+  const scheduleClientDraftAutoSave = useCallback(() => {
+    if (!clientDraftHydratedRef.current || !canEditClientInvoiceLines) return
+    if (clientDraftAutoSaveTimerRef.current) {
+      window.clearTimeout(clientDraftAutoSaveTimerRef.current)
+    }
+    clientDraftAutoSaveTimerRef.current = window.setTimeout(() => {
+      clientDraftAutoSaveTimerRef.current = null
+      flushClientInvoiceDraftAutoSave()
+    }, 900)
+  }, [canEditClientInvoiceLines, flushClientInvoiceDraftAutoSave])
+
+  const handleSaveAllClientInvoiceDraft = useCallback(async () => {
+    if (!token || !shipment?.id || pricingSaving) return
+    setPricingSaving(true)
+    try {
+      await flushClientInvoiceDraftAutoSave()
+      setFinBanner({
+        type: 'success',
+        message: t('shipments.fin.clientInvoiceAllSaved', { defaultValue: 'All invoice sections saved as draft.' }),
+      })
+    } catch (e) {
+      setFinBanner({ type: 'error', message: e?.message || t('shipments.fin.errorSaveLine') })
+    } finally {
+      setPricingSaving(false)
+    }
+  }, [token, shipment?.id, pricingSaving, flushClientInvoiceDraftAutoSave, t])
+
   useEffect(() => {
     if (!open || !shipment?.id || !token || !canAccessInvoices) return undefined
     if (tab !== 'selling' && tab !== 'summary') return undefined
     let cancelled = false
+    clientDraftHydratedRef.current = false
     setInvoiceLoading(true)
-    listInvoices(token, { shipment_id: shipment.id, invoice_type: 'client' })
-      .then(({ data }) => {
-        if (cancelled) return undefined
-        const list = Array.isArray(data) ? data : []
+
+    const load = async () => {
+      try {
+        const [listRes, draftRes] = await Promise.all([
+          listInvoices(token, { shipment_id: shipment.id, invoice_type: 'client' }),
+          getShipmentClientInvoiceDraft(token, shipment.id).catch(() => null),
+        ])
+        if (cancelled) return
+        const list = Array.isArray(listRes?.data) ? listRes.data : []
         setClientInvoicesList(list)
-        const draft = list.find((i) => i.status === 'draft')
-        const pick = draft || list[0]
+
+        const draftFromApi = draftRes
+        const listDraft = list.find((i) => i.status === 'draft')
+        const pick =
+          draftFromApi?.id && String(draftFromApi.status || '').toLowerCase() === 'draft'
+            ? draftFromApi
+            : listDraft || list[0]
+
         if (!pick?.id) {
           setClientInvoice(null)
           setCurrentInvoiceId(null)
-          return undefined
+          return
         }
-        return getInvoice(token, pick.id).then((full) => {
-          if (!cancelled) {
-            setClientInvoice(full)
-            setCurrentInvoiceId(full?.id || pick.id || null)
-          }
-        })
-      })
-      .catch(() => {
-        if (!cancelled) setClientInvoicesList([])
+
+        if (draftFromApi?.id === pick.id && Array.isArray(draftFromApi.items)) {
+          setClientInvoice(draftFromApi)
+          setCurrentInvoiceId(draftFromApi.id)
+          return
+        }
+
+        const full = await getInvoice(token, pick.id)
         if (!cancelled) {
+          setClientInvoice(full)
+          setCurrentInvoiceId(full?.id || pick.id || null)
+        }
+      } catch {
+        if (!cancelled) {
+          setClientInvoicesList([])
           setClientInvoice(null)
           setCurrentInvoiceId(null)
         }
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setInvoiceLoading(false)
-      })
+      }
+    }
+
+    load()
     return () => {
       cancelled = true
+      if (clientDraftAutoSaveTimerRef.current) {
+        window.clearTimeout(clientDraftAutoSaveTimerRef.current)
+        clientDraftAutoSaveTimerRef.current = null
+      }
     }
   }, [open, shipment?.id, token, tab, canAccessInvoices])
 
@@ -1851,7 +2036,35 @@ export default function ShipmentFinancialsModal({
   useEffect(() => {
     if (!open) return
     setInvoiceNotesDraft(clientInvoice?.notes != null ? String(clientInvoice.notes) : '')
-  }, [open, clientInvoice?.id, clientInvoice?.notes])
+    setInvoiceIssueDateDraft(
+      clientInvoice?.issue_date
+        ? String(clientInvoice.issue_date).slice(0, 10)
+        : new Date().toISOString().slice(0, 10),
+    )
+    setInvoiceDueDateDraft(clientInvoice?.due_date ? String(clientInvoice.due_date).slice(0, 10) : '')
+    clientDraftHydratedRef.current = false
+    const hydrateTimer = window.setTimeout(() => {
+      clientDraftHydratedRef.current = true
+    }, 400)
+    return () => window.clearTimeout(hydrateTimer)
+  }, [open, clientInvoice?.id, clientInvoice?.notes, clientInvoice?.issue_date, clientInvoice?.due_date])
+
+  useEffect(() => {
+    if (!open || tab !== 'selling' || !canEditClientInvoiceLines) return undefined
+    scheduleClientDraftAutoSave()
+    return undefined
+  }, [
+    open,
+    tab,
+    canEditClientInvoiceLines,
+    invoiceNotesDraft,
+    invoiceIssueDateDraft,
+    invoiceDueDateDraft,
+    tabBRows,
+    handlingRow,
+    deletedSellIds,
+    scheduleClientDraftAutoSave,
+  ])
 
   useEffect(() => {
     if (!open || !shipment?.id || !token || tab !== 'history') return undefined
@@ -1951,95 +2164,49 @@ export default function ShipmentFinancialsModal({
       setFinBanner({ type: 'error', message: t('shipments.fin.invoiceNoClient') })
       return
     }
-    const curCode = (clientInvoice?.currency_code || expenses[0]?.currency_code || tabBRows[0]?.currency || 'USD').toUpperCase()
-    const foundCurrency = currencies.find(c => c.code === curCode)
-    const currencyId = foundCurrency?.id || 1
-    const items = []
-    const isReefer = Boolean(shipment?.is_reefer)
-    for (const [idx, row] of tabBRows.entries()) {
-      if (String(row.expenseId || '').startsWith('tmp-')) continue
-      if (deletedSellIds.has(row.expenseId)) continue
-      if (!row.include) continue
-      if (row.is_manual_invoice_line && !String(row.description || '').trim()) continue
-      const sell = Number(row.unit_price)
-      const qty =
-        (row.bucket_id || 'other') === 'insurance'
-          ? 1
-          : row.is_manual_invoice_line
-            ? 1
-            : Math.max(1, Number(row.quantity || 1))
-      if (Number.isNaN(sell) || sell < 0) continue
-      const cost = Number(row.cost) || 0
-      const feeName = resolveCostItemStyleFeeNameFromRow(row, t, isReefer)
-      items.push({
-        description: feeName,
-        title: feeName,
-        quantity: qty,
-        unit_price: sell,
-        currency_code: (row.currency || 'USD').toUpperCase(),
-        section_key: row.bucket_id || 'other',
-        order_index: idx,
-        source_key: row.source_key || `expense:${row.expenseId}`,
-        cost_unit_price: qty > 0 ? cost / qty : cost,
-        cost_line_total: cost,
-      })
-    }
-    if (handlingRow.include) {
-      const qty = Math.max(1, Number(handlingRow.number_of_containers) || 1)
-      const h = Number(handlingRow.handling_fee_per_container)
-      if (!Number.isNaN(h) && h >= 0) {
-        items.push({
-          description: HANDLING_FEE_DESCRIPTION,
-          title: HANDLING_FEE_DESCRIPTION,
-          quantity: qty,
-          unit_price: h,
-          currency_code: (handlingRow.currency || 'USD').toUpperCase(),
-          section_key: 'handling',
-          order_index: tabBRows.length + 1,
-          source_key: 'handling-fee',
-          cost_unit_price: 0,
-          cost_line_total: 0,
-        })
-      }
-    }
+    const items = buildClientInvoiceItemsFromRows({
+      tabBRows,
+      handlingRow,
+      shipment,
+      deletedSellIds,
+      sectionKeys: null,
+      t,
+    })
     if (items.length === 0) {
       setFinBanner({ type: 'error', message: t('shipments.fin.pricingNoLines') })
       return
     }
     const notesTrim = String(invoiceNotesDraft ?? '').trim()
+    const currencyId = resolveClientInvoiceCurrencyId()
     setPricingSaving(true)
     try {
-      let inv = clientInvoice
       const existingInvoice = currentInvoiceId
         ? { id: currentInvoiceId, status: (clientInvoice?.status || 'draft') }
-        : (inv?.id
-          ? inv
-          : (clientInvoicesList.find((i) => i.status === 'draft') || clientInvoicesList[0] || null))
+        : clientInvoice?.id
+          ? clientInvoice
+          : clientInvoicesList.find((i) => i.status === 'draft') || clientInvoicesList[0] || null
 
-      if (!existingInvoice?.id) {
-        inv = await createInvoice(token, {
-          invoice_type_id: 0,
-          shipment_id: shipment.id,
-          client_id: shipment.client_id,
-          issue_date: new Date().toISOString().slice(0, 10),
+      let refreshed
+      const useDraftApi =
+        !existingInvoice?.id || String(existingInvoice.status || '').toLowerCase() === 'draft'
+
+      if (useDraftApi) {
+        refreshed = await upsertShipmentClientInvoiceDraft(token, shipment.id, {
           currency_id: currencyId,
           notes: notesTrim || null,
+          issue_date: invoiceIssueDateDraft || new Date().toISOString().slice(0, 10),
+          due_date: invoiceDueDateDraft || null,
           items,
         })
       } else if (!invoiceStatusBlocksEditing(existingInvoice.status)) {
-        inv = await updateInvoice(token, existingInvoice.id, { items, notes: notesTrim || null })
+        const inv = await updateInvoice(token, existingInvoice.id, { items, notes: notesTrim || null })
+        refreshed = await getInvoice(token, inv.id)
       } else {
         setFinBanner({ type: 'error', message: t('shipments.fin.pricingInvoiceLocked') })
-        return
+        return null
       }
-      const refreshed = await getInvoice(token, inv.id)
-      setClientInvoice(refreshed)
-      setCurrentInvoiceId(refreshed?.id || inv.id)
-      setClientInvoicesList((prev) => {
-        const filtered = (Array.isArray(prev) ? prev : []).filter((r) => r.id !== refreshed.id)
-        return [refreshed, ...filtered]
-      })
-      onShipmentTotalsRefresh?.()
+
+      applyClientInvoiceResponse(refreshed)
       setFinBanner({ type: 'success', message: t('shipments.fin.pricingSaved') })
       return refreshed
     } catch (e) {
@@ -2051,7 +2218,6 @@ export default function ShipmentFinancialsModal({
   }, [
     token,
     shipment,
-    expenses,
     tabBRows,
     handlingRow,
     deletedSellIds,
@@ -2059,9 +2225,11 @@ export default function ShipmentFinancialsModal({
     clientInvoicesList,
     currentInvoiceId,
     invoiceNotesDraft,
+    invoiceIssueDateDraft,
+    invoiceDueDateDraft,
+    resolveClientInvoiceCurrencyId,
+    applyClientInvoiceResponse,
     t,
-    onShipmentTotalsRefresh,
-    currencies,
   ])
 
   const handleSaveSalesInvoice = useCallback(async () => {
@@ -3806,21 +3974,69 @@ export default function ShipmentFinancialsModal({
                 <p className="client-detail-modal__empty">{t('shipments.fin.tabBEmpty')}</p>
               ) : (
                 <>
-                  <div className="shipment-fin-invoice-notes mb-3">
-                    <label htmlFor="fin-inv-notes" className="shipment-fin-invoice-notes__label">
-                      {t('shipments.fin.invoiceNotesLabel', { defaultValue: 'Invoice notes' })}
-                    </label>
-                    <textarea
-                      id="fin-inv-notes"
-                      rows={2}
-                      className="shipment-fin-input shipment-fin-invoice-notes__textarea"
-                      value={invoiceNotesDraft}
-                      onChange={(e) => setInvoiceNotesDraft(e.target.value)}
-                      disabled={!canEditClientInvoiceLines}
-                      placeholder={t('shipments.fin.invoiceNotesPlaceholder', {
-                        defaultValue: 'Optional notes shown on the invoice document…',
-                      })}
-                    />
+                  <div className="shipment-fin-client-draft-blocks mb-3">
+                    <div className="shipment-fin-card shipment-fin-client-draft-block">
+                      <div className="shipment-fin-card__head shipment-fin-card__head--static">
+                        <div className="shipment-fin-card__title">
+                          {t('shipments.fin.invoiceDetailsLabel', { defaultValue: 'Invoice details' })}
+                        </div>
+                        <ClientInvoiceSectionStatusBadge status={clientInvoiceSectionStatus.meta} t={t} />
+                      </div>
+                      <div className="shipment-fin-card__body shipment-fin-client-meta-card__body">
+                        <div className="fin-cli-hf-grid fin-cli-hf-grid--meta">
+                          <div className="fin-cli-fg">
+                            <label htmlFor="fin-inv-issue-date">{t('shipments.fin.issueDateLabel', { defaultValue: 'Issue date' })}</label>
+                            <input
+                              id="fin-inv-issue-date"
+                              type="date"
+                              className="shipment-fin-input"
+                              value={invoiceIssueDateDraft}
+                              onChange={(e) => setInvoiceIssueDateDraft(e.target.value)}
+                              disabled={!canEditClientInvoiceLines}
+                            />
+                          </div>
+                          <div className="fin-cli-fg">
+                            <label htmlFor="fin-inv-due-date">{t('shipments.fin.paymentTermsLabel', { defaultValue: 'Payment terms (due date)' })}</label>
+                            <input
+                              id="fin-inv-due-date"
+                              type="date"
+                              className="shipment-fin-input"
+                              value={invoiceDueDateDraft}
+                              onChange={(e) => setInvoiceDueDateDraft(e.target.value)}
+                              disabled={!canEditClientInvoiceLines}
+                            />
+                          </div>
+                        </div>
+                        <div className="shipment-fin-invoice-notes-in-meta">
+                          <label htmlFor="fin-inv-notes" className="shipment-fin-invoice-notes__label">
+                            {t('shipments.fin.invoiceNotesLabel', { defaultValue: 'Invoice notes' })}
+                          </label>
+                          <textarea
+                            id="fin-inv-notes"
+                            rows={2}
+                            className="shipment-fin-input shipment-fin-invoice-notes__textarea"
+                            value={invoiceNotesDraft}
+                            onChange={(e) => setInvoiceNotesDraft(e.target.value)}
+                            disabled={!canEditClientInvoiceLines}
+                            placeholder={t('shipments.fin.invoiceNotesPlaceholder', {
+                              defaultValue: 'Optional notes shown on the invoice document…',
+                            })}
+                          />
+                        </div>
+                        {canEditClientInvoiceLines ? (
+                          <div className="shipment-fin-section-save-row shipment-fin-client-section-save-row">
+                            <button
+                              type="button"
+                              className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm"
+                              disabled={pricingSaving || savingClientInvoiceSectionId != null}
+                              onClick={() => persistClientInvoiceSection('meta')}
+                            >
+                              {savingClientInvoiceSectionId === 'meta' ? t('shipments.saving') : t('shipments.fin.saveSection')}
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
                   </div>
                   {sellingSections.map((sec) => {
                     const liveRows = editableSectionRows(sec.id)
@@ -3874,6 +4090,7 @@ export default function ShipmentFinancialsModal({
                                 <ShipmentMoneyMap map={secTotals.profit} numberLocale={numberLocale} />
                               </span>
                             </span>
+                            <ClientInvoiceSectionStatusBadge status={clientInvoiceSectionStatus[sec.id]} t={t} />
                             {isOpen ? <ChevronUp className="shipment-fin-chevron" aria-hidden /> : <ChevronDown className="shipment-fin-chevron" aria-hidden />}
                           </div>
                         </button>
@@ -4201,6 +4418,18 @@ export default function ShipmentFinancialsModal({
                                 )}
                               </div>
                             </div>
+                            {canEditClientInvoiceLines ? (
+                              <div className="shipment-fin-section-save-row shipment-fin-client-section-save-row">
+                                <button
+                                  type="button"
+                                  className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm"
+                                  disabled={pricingSaving || savingClientInvoiceSectionId != null}
+                                  onClick={() => persistClientInvoiceSection(sec.id)}
+                                >
+                                  {savingClientInvoiceSectionId === sec.id ? t('shipments.saving') : t('shipments.fin.saveSection')}
+                                </button>
+                              </div>
+                            ) : null}
                           </div>
                         ) : null}
                       </div>
@@ -4231,6 +4460,7 @@ export default function ShipmentFinancialsModal({
                             </span>
                           </span>
                         ) : null}
+                        <ClientInvoiceSectionStatusBadge status={clientInvoiceSectionStatus.handling} t={t} />
                         {expanded.has('sell-handling') ? (
                           <ChevronUp className="shipment-fin-chevron" aria-hidden />
                         ) : (
@@ -4341,6 +4571,18 @@ export default function ShipmentFinancialsModal({
                             </span>
                           </span>
                         </div>
+                        {canEditClientInvoiceLines ? (
+                          <div className="shipment-fin-section-save-row shipment-fin-client-section-save-row">
+                            <button
+                              type="button"
+                              className="shipment-fin-btn shipment-fin-btn--secondary shipment-fin-btn--sm"
+                              disabled={pricingSaving || savingClientInvoiceSectionId != null}
+                              onClick={() => persistClientInvoiceSection('handling')}
+                            >
+                              {savingClientInvoiceSectionId === 'handling' ? t('shipments.saving') : t('shipments.fin.saveSection')}
+                            </button>
+                          </div>
+                        ) : null}
                       </div>
                     ) : null}
                   </div>
@@ -4445,14 +4687,24 @@ export default function ShipmentFinancialsModal({
                   {canEditSellingGrid && (canEditClientInvoiceLines || clientInvoice?.id) ? (
                     <div className="shipment-fin-draft-actions-footer">
                       {canEditClientInvoiceLines ? (
-                        <button
-                          type="button"
-                          className="client-detail-modal__btn client-detail-modal__btn--primary"
-                          disabled={notifySending || pricingSaving}
-                          onClick={handleSaveSalesInvoice}
-                        >
-                          {notifySending ? t('shipments.saving') : t('shipments.fin.saveSalesInvoice', { defaultValue: 'حفظ فاتورة المبيعات' })}
-                        </button>
+                        <>
+                          <button
+                            type="button"
+                            className="client-detail-modal__btn client-detail-modal__btn--secondary"
+                            disabled={notifySending || pricingSaving || savingClientInvoiceSectionId != null}
+                            onClick={handleSaveAllClientInvoiceDraft}
+                          >
+                            {pricingSaving ? t('shipments.saving') : t('shipments.fin.saveAllClientDraft', { defaultValue: 'Save all (draft)' })}
+                          </button>
+                          <button
+                            type="button"
+                            className="client-detail-modal__btn client-detail-modal__btn--primary"
+                            disabled={notifySending || pricingSaving || savingClientInvoiceSectionId != null}
+                            onClick={handleSaveSalesInvoice}
+                          >
+                            {notifySending ? t('shipments.saving') : t('shipments.fin.saveSalesInvoice', { defaultValue: 'حفظ فاتورة المبيعات' })}
+                          </button>
+                        </>
                       ) : null}
                       {clientInvoice?.id ? (
                         <>

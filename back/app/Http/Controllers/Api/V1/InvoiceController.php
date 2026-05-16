@@ -711,6 +711,14 @@ class InvoiceController extends Controller
             403
         );
 
+        return $this->invoicePayloadResponse($invoice);
+    }
+
+    /**
+     * Full invoice JSON for shipment client-invoice draft routes (caller enforces access).
+     */
+    public function invoicePayloadResponse(Invoice $invoice): \Illuminate\Http\JsonResponse
+    {
         return response()->json([
             'data' => $this->invoicePayload($invoice->load(['client', 'shipment', 'items', 'payments'])),
         ]);

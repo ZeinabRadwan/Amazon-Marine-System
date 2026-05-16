@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Client;
+use App\Models\Invoice;
 use App\Models\PdfLayout;
 use App\Models\SDForm;
 use App\Models\Shipment;
@@ -14,6 +15,7 @@ use App\Models\User;
 use App\Models\Vendor;
 use App\Notifications\ShipmentSalesFinancialsNotification;
 use App\Services\ActivityLogger;
+use App\Services\ClientInvoiceDraftService;
 use App\Services\NotificationService;
 use App\Support\ShipmentOperationTaskSummary;
 use App\Support\VendorTypeAliases;
@@ -854,6 +856,85 @@ class ShipmentController extends Controller
         return response()->json([
             'data' => $this->formatCostInvoice($invoice->fresh()),
         ]);
+    }
+
+    public function getClientInvoiceDraft(Request $request, Shipment $shipment)
+    {
+        $this->authorize('view', $shipment);
+        $this->authorizeShipmentClientInvoiceDraft($request->user());
+
+        if (! $shipment->client_id) {
+            return response()->json(['data' => null]);
+        }
+
+        $invoice = Invoice::query()
+            ->where('shipment_id', $shipment->id)
+            ->where('client_id', $shipment->client_id)
+            ->where('invoice_type', 'client')
+            ->where('status', 'draft')
+            ->orderByDesc('id')
+            ->first();
+
+        if (! $invoice) {
+            return response()->json(['data' => null]);
+        }
+
+        return app(InvoiceController::class)->invoicePayloadResponse($invoice);
+    }
+
+    public function upsertClientInvoiceDraft(Request $request, Shipment $shipment, ClientInvoiceDraftService $draftService)
+    {
+        $this->authorize('view', $shipment);
+        $this->authorizeShipmentClientInvoiceDraft($request->user());
+
+        if (! $shipment->client_id) {
+            return response()->json([
+                'message' => __('Shipment has no client.'),
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'currency_id' => ['nullable', 'integer', 'min:1'],
+            'notes' => ['sometimes', 'nullable', 'string'],
+            'due_date' => ['sometimes', 'nullable', 'date'],
+            'issue_date' => ['sometimes', 'nullable', 'date'],
+            'items' => ['sometimes', 'array'],
+            'merge_section_keys' => ['sometimes', 'array'],
+            'merge_section_keys.*' => ['string', 'max:60'],
+            'items.*.item_id' => ['nullable', 'integer', 'exists:items,id'],
+            'items.*.description' => ['nullable', 'string', 'max:255'],
+            'items.*.title' => ['nullable', 'string', 'max:255'],
+            'items.*.quantity' => ['nullable', 'numeric', 'min:0'],
+            'items.*.unit_price' => ['nullable', 'numeric', 'min:0'],
+            'items.*.currency_code' => ['nullable', 'string', 'size:3'],
+            'items.*.section_key' => ['nullable', 'string', 'max:60'],
+            'items.*.order_index' => ['nullable', 'integer', 'min:0'],
+            'items.*.source_key' => ['nullable', 'string', 'max:150'],
+            'items.*.cost_unit_price' => ['nullable', 'numeric', 'min:0'],
+            'items.*.cost_line_total' => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        try {
+            $invoice = $draftService->upsertDraft($shipment, $validated, isset($validated['currency_id']) ? (int) $validated['currency_id'] : null);
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        return app(InvoiceController::class)->invoicePayloadResponse($invoice);
+    }
+
+    private function authorizeShipmentClientInvoiceDraft(?\App\Models\User $user): void
+    {
+        abort_unless($user, 403);
+        abort_unless(
+            $user->hasRole('admin')
+            || $user->can('financial.manage')
+            || $user->can('financial.view')
+            || $user->can('accounting.manage')
+            || $user->can('accounting.view')
+            || $user->hasRole(['sales', 'sales_manager']),
+            403
+        );
     }
 
     /**

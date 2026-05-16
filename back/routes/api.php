@@ -357,6 +357,8 @@ Route::prefix('v1')->group(function () {
         Route::post('shipments/{shipment}/transport-instructions/pdf', [ShipmentController::class, 'transportInstructionsPdf']);
         Route::get('shipments/{shipment}/cost-invoice', [ShipmentController::class, 'getCostInvoice']);
         Route::put('shipments/{shipment}/cost-invoice', [ShipmentController::class, 'upsertCostInvoice']);
+        Route::get('shipments/{shipment}/client-invoice-draft', [ShipmentController::class, 'getClientInvoiceDraft']);
+        Route::put('shipments/{shipment}/client-invoice-draft', [ShipmentController::class, 'upsertClientInvoiceDraft']);
         Route::post('shipments/{shipment}/notify-sales-financials', [ShipmentController::class, 'notifySalesFinancials']);
         Route::get('shipments/{shipment}/tracking-updates', [ShipmentTrackingUpdateController::class, 'index']);
         Route::post('shipments/{shipment}/tracking-updates', [ShipmentTrackingUpdateController::class, 'store']);

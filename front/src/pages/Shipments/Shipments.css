@@ -3671,6 +3671,85 @@
   margin-bottom: 4px;
 }
 
+.shipment-fin-client-draft-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.shipment-fin-client-draft-block .shipment-fin-card__head--static {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.shipment-fin-client-draft-block .shipment-fin-card__body {
+  padding: 10px 12px 12px;
+}
+
+.fin-cli-hf-grid--meta {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.shipment-fin-client-meta-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.shipment-fin-invoice-notes-in-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.shipment-fin-invoice-notes-in-meta .shipment-fin-invoice-notes__label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #475569;
+  margin: 0;
+}
+
+.shipment-fin-client-section-save-row {
+  align-items: center;
+  gap: 10px;
+}
+
+.shipment-fin-client-sec-status {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.shipment-fin-client-sec-status--saving {
+  color: #64748b;
+  background: #f1f5f9;
+}
+
+.shipment-fin-client-sec-status--saved {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.shipment-fin-client-sec-status--draft {
+  color: #1d4ed8;
+  background: #dbeafe;
+}
+
+.shipment-fin-client-sec-status--error {
+  color: #b91c1c;
+  background: #fee2e2;
+}
+
+.shipment-fin-card__head-meta .shipment-fin-client-sec-status {
+  margin-inline-end: 6px;
+}
+
 .shipment-fin-draft-sec-total {
   display: flex;
   justify-content: space-between;

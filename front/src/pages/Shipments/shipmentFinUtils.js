@@ -2,6 +2,9 @@
  * Shared logic and definitions for Shipment Financials and Attachments
  */
 
+/** Matches draft client invoice line used for handling / service fee. */
+export const HANDLING_FEE_DESCRIPTION = 'Handling Fee'
+
 export const BUCKET_DEFS = [
   {
     id: 'shipping',

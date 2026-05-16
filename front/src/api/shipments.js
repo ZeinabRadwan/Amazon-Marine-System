@@ -4,6 +4,7 @@
 
 import { getApiBaseUrl } from './apiBaseUrl'
 import { apiFetch } from './http'
+import { mapInvoiceResponse } from '../utils/invoiceResponse'
 
 const getBaseUrl = getApiBaseUrl
 
@@ -355,6 +356,32 @@ export async function updateShipmentCostInvoice(token, shipmentId, body) {
     throw new Error(json.message || json.error || `Failed to save shipment cost invoice (${res.status})`)
   }
   return json
+}
+
+export async function getShipmentClientInvoiceDraft(token, shipmentId) {
+  const res = await apiFetch(`${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}/client-invoice-draft`, {
+    headers: authHeaders(token),
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(json.message || json.error || `Failed to load client invoice draft (${res.status})`)
+  }
+  const payload = json.data ?? null
+  return payload ? mapInvoiceResponse(payload) : null
+}
+
+export async function upsertShipmentClientInvoiceDraft(token, shipmentId, body) {
+  const res = await apiFetch(`${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}/client-invoice-draft`, {
+    method: 'PUT',
+    headers: authHeaders(token),
+    body: JSON.stringify(body),
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(json.message || json.error || `Failed to save client invoice draft (${res.status})`)
+  }
+  const payload = json.data ?? json
+  return mapInvoiceResponse(payload)
 }
 
 export async function getShipmentOperations(token, shipmentId) {
