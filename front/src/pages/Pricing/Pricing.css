@@ -2812,30 +2812,88 @@
 
 .pricing-quote-line-table th,
 .pricing-quote-line-table td {
-  padding: 0.4rem 0.35rem;
+  padding: 0.5rem 0.45rem;
   vertical-align: middle;
 }
 
 .pricing-quote-line-col-check {
-  width: 2.25rem;
+  width: 4.5rem;
   text-align: center;
 }
 
-.pricing-quote-line-include-head {
+.pricing-quote-line-visible-head {
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 0.15rem;
+  line-height: 1.15;
+}
+
+.pricing-quote-line-visible-head__label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: rgb(100, 116, 139);
 }
 
 .pricing-quote-line-include-help {
   display: inline-flex;
-  color: rgb(100, 116, 139);
+  color: rgb(148, 163, 184);
   cursor: help;
 }
 
+.pricing-quote-line-check {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  border-radius: 0.3rem;
+  border: 2px solid rgb(148, 163, 184);
+  background: #fff;
+  cursor: pointer;
+  vertical-align: middle;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.pricing-quote-line-check:hover:not(:disabled) {
+  border-color: rgb(59, 130, 246);
+}
+
+.pricing-quote-line-check:checked {
+  border-color: rgb(37, 99, 235);
+  background: rgb(37, 99, 235);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='white'%3E%3Cpath d='M12.207 4.793a1 1 0 0 1 0 1.414l-5 5a1 1 0 0 1-1.414 0l-2.5-2.5a1 1 0 0 1 1.414-1.414L6.5 9.086l4.293-4.293a1 1 0 0 1 1.414 0z'/%3E%3C/svg%3E");
+  background-size: 0.7rem;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.pricing-quote-line-check:focus-visible {
+  outline: 2px solid rgba(59, 130, 246, 0.55);
+  outline-offset: 2px;
+}
+
+[data-theme='dark'] .pricing-quote-line-check,
+.dark .pricing-quote-line-check {
+  background: rgb(15, 23, 42);
+  border-color: rgb(100, 116, 139);
+}
+
+[data-theme='dark'] .pricing-quote-line-check:checked,
+.dark .pricing-quote-line-check:checked {
+  border-color: rgb(96, 165, 250);
+  background-color: rgb(59, 130, 246);
+}
+
 .pricing-quote-line-col-name {
-  width: 38%;
-  min-width: 10rem;
+  width: 46%;
+  min-width: 11rem;
 }
 
 .pricing-quote-line-name {
@@ -2852,22 +2910,87 @@
   color: rgb(248, 250, 252);
 }
 
-.pricing-quote-line-col-cost {
-  width: 5.5rem;
-}
-
-.pricing-quote-line-col-cur {
-  width: 4.25rem;
-  text-align: center;
-}
-
-.pricing-quote-line-col-selling {
-  width: 6.5rem;
-}
-
+.pricing-quote-line-col-cost,
+.pricing-quote-line-col-selling,
 .pricing-quote-line-col-profit {
-  width: 4.5rem;
-  min-width: 4.5rem;
+  width: 14%;
+}
+
+.pricing-quote-line-cost-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.pricing-quote-line-cost-input {
+  flex: 1;
+  min-width: 3.5rem;
+}
+
+.pricing-quote-cost-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.pricing-quote-cost-label--usd {
+  background: rgba(16, 185, 129, 0.14);
+  color: rgb(4, 120, 87);
+}
+
+.pricing-quote-cost-label--eur {
+  background: rgba(59, 130, 246, 0.14);
+  color: rgb(29, 78, 216);
+}
+
+.pricing-quote-cost-label--egp {
+  background: rgba(249, 115, 22, 0.14);
+  color: rgb(194, 65, 12);
+}
+
+.pricing-quote-cost-label--alt {
+  background: rgba(241, 245, 249, 0.95);
+  color: rgb(71, 85, 105);
+}
+
+.pricing-quote-cost-label--muted {
+  background: rgba(241, 245, 249, 0.95);
+  color: rgb(148, 163, 184);
+}
+
+[data-theme='dark'] .pricing-quote-cost-label--usd,
+.dark .pricing-quote-cost-label--usd {
+  background: rgba(16, 185, 129, 0.2);
+  color: rgb(110, 231, 183);
+}
+
+[data-theme='dark'] .pricing-quote-cost-label--eur,
+.dark .pricing-quote-cost-label--eur {
+  background: rgba(59, 130, 246, 0.22);
+  color: rgb(147, 197, 253);
+}
+
+[data-theme='dark'] .pricing-quote-cost-label--egp,
+.dark .pricing-quote-cost-label--egp {
+  background: rgba(249, 115, 22, 0.2);
+  color: rgb(253, 186, 116);
+}
+
+[data-theme='dark'] .pricing-quote-cost-label--alt,
+.dark .pricing-quote-cost-label--alt,
+[data-theme='dark'] .pricing-quote-cost-label--muted,
+.dark .pricing-quote-cost-label--muted {
+  background: rgba(51, 65, 85, 0.65);
+  color: rgb(203, 213, 225);
 }
 
 .pricing-quote-line-input {
@@ -2940,6 +3063,213 @@
 .pricing-quote-line-row--excluded .pricing-quote-line-check {
   pointer-events: auto;
   opacity: 1;
+}
+
+/* Ocean freight section only — override shipment-fin-panel--expenses 4-col table widths */
+.pricing-quote-modal-root .pricing-quote-ocean-table-block {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.pricing-quote-modal-root .shipment-fin-panel--expenses .pricing-quote-line-table-wrap--ocean {
+  overflow-x: auto;
+  overflow-y: visible;
+  width: 100%;
+  max-width: 100%;
+  margin-bottom: 0.5rem;
+  padding: 0;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 0.65rem;
+}
+
+.pricing-quote-modal-root .shipment-fin-panel--expenses .pricing-quote-line-table--ocean {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+  font-size: 0.8125rem;
+}
+
+.pricing-quote-line-table--ocean col[data-col],
+.pricing-quote-line-table colgroup col {
+  /* widths set inline from measured px */
+}
+
+.pricing-quote-modal-root .shipment-fin-panel--expenses .pricing-quote-line-table--ocean th,
+.pricing-quote-modal-root .shipment-fin-panel--expenses .pricing-quote-line-table--ocean td {
+  width: auto;
+  border: none;
+  border-bottom: 1px solid rgba(241, 245, 249, 0.95);
+  padding: 0.5rem 0.5rem;
+}
+
+.pricing-quote-modal-root .shipment-fin-panel--expenses .pricing-quote-line-table--ocean th {
+  background: rgb(248, 250, 252);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: rgb(100, 116, 139);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  position: static;
+}
+
+[data-theme='dark'] .pricing-quote-modal-root .shipment-fin-panel--expenses .pricing-quote-line-table--ocean th,
+.dark .pricing-quote-modal-root .shipment-fin-panel--expenses .pricing-quote-line-table--ocean th {
+  background: rgba(30, 41, 59, 0.85);
+  color: rgb(148, 163, 184);
+  border-bottom-color: rgba(51, 65, 85, 0.8);
+}
+
+.pricing-quote-modal-root .shipment-fin-panel--expenses .pricing-quote-line-table--ocean .pricing-quote-line-col-check {
+  width: 3.25rem;
+  min-width: 3.25rem;
+  max-width: 3.25rem;
+}
+
+.pricing-quote-modal-root .shipment-fin-panel--expenses .pricing-quote-line-table--ocean .pricing-quote-line-col-name {
+  width: auto;
+  min-width: 0;
+}
+
+.pricing-quote-modal-root .shipment-fin-panel--expenses .pricing-quote-line-table--ocean .pricing-quote-line-col-cost,
+.pricing-quote-modal-root .shipment-fin-panel--expenses .pricing-quote-line-table--ocean .pricing-quote-line-col-selling,
+.pricing-quote-modal-root .shipment-fin-panel--expenses .pricing-quote-line-table--ocean .pricing-quote-line-col-profit {
+  width: 7.25rem;
+  min-width: 6.5rem;
+}
+
+.pricing-quote-modal-root .shipment-fin-panel--expenses .pricing-quote-line-table--ocean th:nth-child(1),
+.pricing-quote-modal-root .shipment-fin-panel--expenses .pricing-quote-line-table--ocean td:nth-child(1) {
+  width: 3.25rem;
+}
+
+.pricing-quote-modal-root .shipment-fin-panel--expenses .pricing-quote-line-table--ocean th:nth-child(2),
+.pricing-quote-modal-root .shipment-fin-panel--expenses .pricing-quote-line-table--ocean td:nth-child(2) {
+  width: auto;
+}
+
+.pricing-quote-modal-root .shipment-fin-panel--expenses .pricing-quote-line-table--ocean th:nth-child(3),
+.pricing-quote-modal-root .shipment-fin-panel--expenses .pricing-quote-line-table--ocean td:nth-child(3),
+.pricing-quote-modal-root .shipment-fin-panel--expenses .pricing-quote-line-table--ocean th:nth-child(4),
+.pricing-quote-modal-root .shipment-fin-panel--expenses .pricing-quote-line-table--ocean td:nth-child(4),
+.pricing-quote-modal-root .shipment-fin-panel--expenses .pricing-quote-line-table--ocean th:nth-child(5),
+.pricing-quote-modal-root .shipment-fin-panel--expenses .pricing-quote-line-table--ocean td:nth-child(5) {
+  width: 7.25rem;
+}
+
+.pricing-quote-modal-root .shipment-fin-panel--expenses .pricing-quote-line-table--ocean .pricing-quote-cost-label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pricing-quote-modal-root .shipment-fin-panel--expenses .pricing-quote-line-table--ocean .pricing-quote-line-input {
+  max-width: 100%;
+}
+
+@media (max-width: 720px) {
+  .pricing-quote-modal-root .shipment-fin-panel--expenses .pricing-quote-line-table-wrap--ocean {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .pricing-quote-modal-root .shipment-fin-panel--expenses .pricing-quote-line-table--ocean {
+    min-width: 34rem;
+  }
+}
+
+/* Ocean freight lines summary (after pricing table) */
+.pricing-quote-modal-root .pricing-quote-ocean-summary {
+  display: flex;
+  flex-direction: column;
+  margin-top: 0.35rem;
+  margin-bottom: 0;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 0.65rem;
+  overflow: hidden;
+  background: rgba(248, 250, 252, 0.75);
+}
+
+[data-theme='dark'] .pricing-quote-modal-root .pricing-quote-ocean-summary,
+.dark .pricing-quote-modal-root .pricing-quote-ocean-summary {
+  background: rgba(15, 23, 42, 0.45);
+  border-color: rgba(71, 85, 105, 0.65);
+}
+
+.pricing-quote-modal-root .pricing-quote-ocean-summary .shipment-fin-draft-sec-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 0;
+  border-top: none;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.95);
+  background: transparent;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgb(51, 65, 85);
+}
+
+.pricing-quote-modal-root .pricing-quote-ocean-summary .pricing-quote-ocean-summary__row:last-child {
+  border-bottom: none;
+}
+
+[data-theme='dark'] .pricing-quote-modal-root .pricing-quote-ocean-summary .shipment-fin-draft-sec-total,
+.dark .pricing-quote-modal-root .pricing-quote-ocean-summary .shipment-fin-draft-sec-total {
+  color: rgb(226, 232, 240);
+  border-bottom-color: rgba(51, 65, 85, 0.85);
+}
+
+.pricing-quote-modal-root .pricing-quote-ocean-summary .shipment-fin-draft-sec-total__label {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  color: rgb(100, 116, 139);
+}
+
+.pricing-quote-modal-root .pricing-quote-ocean-summary .shipment-fin-draft-sec-total__tv {
+  flex-shrink: 0;
+  text-align: end;
+}
+
+.pricing-quote-modal-root .pricing-quote-ocean-summary .shipment-fin-draft-sec-total__badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+
+.pricing-quote-modal-root .pricing-quote-ocean-summary .shipment-fin-currency-badge--red {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+[data-theme='dark'] .pricing-quote-modal-root .pricing-quote-ocean-summary .shipment-fin-currency-badge--red,
+.dark .pricing-quote-modal-root .pricing-quote-ocean-summary .shipment-fin-currency-badge--red {
+  background: rgba(185, 28, 28, 0.22);
+  color: #fca5a5;
+}
+
+.pricing-quote-modal-root .pricing-quote-ocean-summary__row--grand {
+  background: rgba(241, 245, 249, 0.95);
+}
+
+.pricing-quote-modal-root .pricing-quote-ocean-summary__row--grand .shipment-fin-draft-sec-total__label {
+  font-weight: 700;
+  color: rgb(30, 41, 59);
+}
+
+[data-theme='dark'] .pricing-quote-modal-root .pricing-quote-ocean-summary__row--grand,
+.dark .pricing-quote-modal-root .pricing-quote-ocean-summary__row--grand {
+  background: rgba(30, 41, 59, 0.72);
+}
+
+[data-theme='dark'] .pricing-quote-modal-root .pricing-quote-ocean-summary__row--grand .shipment-fin-draft-sec-total__label,
+.dark .pricing-quote-modal-root .pricing-quote-ocean-summary__row--grand .shipment-fin-draft-sec-total__label {
+  color: rgb(248, 250, 252);
 }
 
 .pricing-quote-line-weekly-days {
@@ -3149,12 +3479,6 @@
   transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
 }
 
-.pricing-quote-shipment-summary {
-  display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
-}
-
 .pricing-quote-shipment-badges {
   display: flex;
   flex-wrap: wrap;
@@ -3186,10 +3510,13 @@
 }
 
 .pricing-quote-summary-badge__value {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
   font-weight: 700;
   color: rgb(15, 23, 42);
-  overflow: hidden;
-  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .pricing-quote-summary-badge__value--muted {
@@ -3209,50 +3536,73 @@
   color: rgb(248, 250, 252);
 }
 
-.pricing-quote-visibility-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.2rem 0.45rem 0.2rem 0.55rem;
-  border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.32);
-  background: rgba(255, 255, 255, 0.95);
+.pricing-quote-summary-badge--carrier .pricing-quote-summary-badge__value {
+  white-space: nowrap;
 }
 
-[data-theme='dark'] .pricing-quote-visibility-badge,
-.dark .pricing-quote-visibility-badge {
-  background: rgba(30, 41, 59, 0.72);
-  border-color: rgba(148, 163, 184, 0.26);
+.pricing-quote-summary-badge__pipe {
+  width: 1px;
+  height: 0.85rem;
+  background: rgba(148, 163, 184, 0.45);
+  flex-shrink: 0;
 }
 
-.pricing-quote-visibility-badge__state {
-  font-size: 0.7rem;
+.pricing-quote-summary-badge__visibility {
+  font-size: 0.68rem;
   font-weight: 700;
-  padding: 0.1rem 0.4rem;
+  padding: 0.08rem 0.38rem;
   border-radius: 999px;
   white-space: nowrap;
 }
 
-.pricing-quote-visibility-badge__state.is-on {
+.pricing-quote-summary-badge__visibility.is-on {
   color: rgb(4, 120, 87);
   background: rgba(16, 185, 129, 0.14);
 }
 
-.pricing-quote-visibility-badge__state.is-off {
+.pricing-quote-summary-badge__visibility.is-off {
   color: rgb(100, 116, 139);
   background: rgba(148, 163, 184, 0.18);
 }
 
-.pricing-quote-sailing-row {
-  padding-top: 0.15rem;
-  border-top: 1px dashed rgba(148, 163, 184, 0.35);
+.pricing-quote-summary-badge--sailing .pricing-quote-summary-badge__value {
+  white-space: normal;
 }
 
-.pricing-quote-summary-badge--sailing .pricing-quote-summary-badge__value {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
+.pricing-quote-summary-badge--sailing.is-picker-open {
   white-space: normal;
+  align-items: flex-start;
+}
+
+.pricing-quote-summary-badge__pick-hint {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgb(180, 83, 9);
+}
+
+.pricing-quote-sailing-chips--in-badge {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.pricing-quote-sailing-chips--in-badge .pricing-quote-sailing-chip {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.68rem;
+}
+
+.pricing-quote-sailing-datepicker--in-badge {
+  max-width: 9.5rem;
+  min-height: 1.65rem;
+  padding: 0.2rem 0.45rem;
+  font-size: 0.75rem;
+}
+
+.pricing-quote-summary-badge--sailing .pricing-quote-sailing-error {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: rgb(185, 28, 28);
+  width: 100%;
 }
 
 .pricing-quote-route-summary {

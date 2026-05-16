@@ -30,6 +30,7 @@ export default function QuoteSailingDateSelector({
   onChange,
   disabled = false,
   inline = false,
+  badgeGroup = false,
 }) {
   const { t, i18n } = useTranslation()
   const selected = String(value || '').trim().slice(0, 10)
@@ -65,22 +66,87 @@ export default function QuoteSailingDateSelector({
     if (iso) setEditing(false)
   }
 
+  const useBadgeGroup = badgeGroup || inline
+
+  if (useBadgeGroup && !showPicker && valid) {
+    return (
+      <QuoteSummaryBadge label={label} className="pricing-quote-summary-badge--sailing">
+        {formatDate(selected, { locale: i18n.language })}
+        <button
+          type="button"
+          className="pricing-quote-sailing-change-btn"
+          onClick={() => setEditing(true)}
+          disabled={disabled}
+        >
+          {t('common.change', 'Change')}
+        </button>
+      </QuoteSummaryBadge>
+    )
+  }
+
+  if (useBadgeGroup && showPicker) {
+    return (
+      <QuoteSummaryBadge label={label} className="pricing-quote-summary-badge--sailing is-picker-open">
+        {!selected ? (
+          <span className="pricing-quote-summary-badge__pick-hint">{pickHint}</span>
+        ) : null}
+        {schedule.mode === 'fixed' ? (
+          <span className="pricing-quote-sailing-chips pricing-quote-sailing-chips--in-badge" role="listbox" aria-label={labelLong}>
+            {schedule.fixedDates.map((iso) => {
+              const active = selected === iso
+              return (
+                <button
+                  key={iso}
+                  type="button"
+                  role="option"
+                  aria-selected={active}
+                  disabled={disabled}
+                  className={`pricing-quote-sailing-chip${active ? ' pricing-quote-sailing-chip--active' : ''}`}
+                  onClick={() => handleSelectFixed(iso)}
+                >
+                  {formatDate(iso, { locale: i18n.language })}
+                </button>
+              )
+            })}
+          </span>
+        ) : (
+          <>
+            <span className="sr-only">
+              {t('pricing.quoteSailingWeeklyHint', 'Weekly schedule')}: {weeklyHint}
+            </span>
+            <DatePicker
+              id="quote-sailing-weekly-date"
+              className="pricing-quote-sailing-datepicker pricing-quote-sailing-datepicker--in-badge"
+              value={selected}
+              onChange={handleWeeklyChange}
+              disabled={disabled}
+              locale={i18n.language}
+              allowedWeekdays={schedule.weeklyWeekdays}
+              minDate={schedule.validFrom || undefined}
+              maxDate={schedule.validTo || undefined}
+            />
+            {valid && editing ? (
+              <button
+                type="button"
+                className="pricing-quote-sailing-change-btn pricing-quote-sailing-change-btn--cancel"
+                onClick={() => setEditing(false)}
+                disabled={disabled}
+              >
+                {t('common.cancel', 'Cancel')}
+              </button>
+            ) : null}
+          </>
+        )}
+        {selected && !isDateAllowedForSchedule(selected, schedule) ? (
+          <span className="pricing-quote-sailing-error" role="alert">
+            {t('pricing.quoteSailingInvalidSelection', 'Selected date is not valid for this rate.')}
+          </span>
+        ) : null}
+      </QuoteSummaryBadge>
+    )
+  }
+
   if (!showPicker && valid) {
-    if (inline) {
-      return (
-        <QuoteSummaryBadge label={label} className="pricing-quote-summary-badge--sailing">
-          {formatDate(selected, { locale: i18n.language })}
-          <button
-            type="button"
-            className="pricing-quote-sailing-change-btn"
-            onClick={() => setEditing(true)}
-            disabled={disabled}
-          >
-            {t('common.change', 'Change')}
-          </button>
-        </QuoteSummaryBadge>
-      )
-    }
     return (
       <span className="pricing-quote-sailing-selected">
         <span className="pricing-quote-inline-item__label">{labelLong}</span>

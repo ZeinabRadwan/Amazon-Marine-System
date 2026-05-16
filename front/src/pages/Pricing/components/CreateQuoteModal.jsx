@@ -47,10 +47,11 @@ import {
   QuoteInlineDivider,
   QuoteInlineItem,
   QuoteInlineStrip,
-  QuotePillToggle,
   QuoteSummaryBadge,
+  ShippingLineSummaryBadge,
 } from './quoteFormLayout'
 import QuotePricingLinesTable from './QuotePricingLinesTable'
+import QuoteOceanLinesSummary from './QuoteOceanLinesSummary'
 import {
   isOtherChargePricingCode,
   parseOtherChargeLabels,
@@ -246,6 +247,19 @@ function sumLineSellingByCurrency(lines) {
   return m
 }
 
+function sumLineCostByCurrency(lines) {
+  const m = {}
+  if (!Array.isArray(lines)) return m
+  for (const line of lines) {
+    if (line.included === false) continue
+    const cur = line.currency || 'USD'
+    const n = parseNum(line.cost_amount)
+    if (n === 0) continue
+    m[cur] = (m[cur] || 0) + n
+  }
+  return m
+}
+
 function sumProfitsByCurrency(lines) {
   const map = {}
   if (!Array.isArray(lines)) return map
@@ -305,23 +319,6 @@ function carrierToggleButton(enabled, onClick, ariaLabel) {
         }`}
       />
     </button>
-  )
-}
-
-function ShippingLineCustomerToggle({ enabled, onToggle, t }) {
-  const stateLabel = enabled
-    ? t('pricing.shippingLineShowToClientBadge', 'إظهار للعميل')
-    : t('pricing.shippingLineHideFromClientBadge', 'غير ظاهر للعميل')
-  return (
-    <span className="pricing-quote-visibility-badge" role="group" aria-label={stateLabel}>
-      <span
-        className={`pricing-quote-visibility-badge__state ${enabled ? 'is-on' : 'is-off'}`}
-        aria-live="polite"
-      >
-        {stateLabel}
-      </span>
-      <QuotePillToggle enabled={enabled} onToggle={onToggle} ariaLabel={stateLabel} />
-    </span>
   )
 }
 
@@ -746,23 +743,6 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
     })
   }
 
-  const addOceanLine = () => {
-    setOceanLines((prev) => [
-      ...prev,
-      {
-        sourceKey: `m-${Date.now()}`,
-        code: 'OTHER',
-        name: '',
-        description: '',
-        cost_amount: '',
-        selling_amount: '',
-        currency: 'USD',
-        included: true,
-        quickCore: false,
-      },
-    ])
-  }
-
   const removeOceanLine = (idx) => {
     setOceanLines((prev) => {
       if (prev[idx]?.quickCore) return prev
@@ -818,6 +798,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
   }, [sailingSchedule, selectedSailingDate, form.pricing_offer_id])
 
   const oceanSellingByCurrency = useMemo(() => sumLineSellingByCurrency(oceanLines), [oceanLines])
+  const oceanCostByCurrency = useMemo(() => sumLineCostByCurrency(oceanLines), [oceanLines])
 
   const customsExtrasByCurrency = useMemo(() => {
     const m = {}
@@ -1281,40 +1262,30 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
 
             <QuoteFinCard icon={MapPin} title={t('pricing.quoteSectionRoute', 'ملخص المسار / Route summary')}>
               {isRouteLocked ? (
-                <div className="pricing-quote-shipment-summary">
-                  <div className="pricing-quote-shipment-badges">
-                    <QuoteSummaryBadge label={t('pricing.quoteBadgeRoute', 'المسار')}>
-                      {routeDisplayOffer?.pol || form.pol || '—'} →{' '}
-                      {routeDisplayOffer?.pod || routeDisplayOffer?.region || form.pod || '—'}
-                    </QuoteSummaryBadge>
-                    <QuoteSummaryBadge label={t('pricing.quoteBadgeShippingLine', 'الخط الملاحي')}>
-                      <span className={showCarrierOnPdf ? '' : 'pricing-quote-summary-badge__value--muted'}>
-                        {showCarrierOnPdf
-                          ? routeDisplayOffer?.shipping_line || form.shipping_line || '—'
-                          : '—'}
-                      </span>
-                    </QuoteSummaryBadge>
-                    <ShippingLineCustomerToggle
-                      enabled={showCarrierOnPdf}
-                      onToggle={() => setShowCarrierOnPdf((v) => !v)}
-                      t={t}
-                    />
-                    <QuoteSummaryBadge label={t('pricing.quoteBadgeContainer', 'نوع الحاوية')}>
-                      {routeDisplayOffer ? inferContainerFromOffer(routeDisplayOffer) : form.container_type || '—'}
-                    </QuoteSummaryBadge>
-                    <QuoteSummaryBadge label={t('pricing.quoteBadgeTransit', 'مدة العبور')}>
-                      {routeDisplayOffer?.transit_time || form.transit_time || '—'}
-                    </QuoteSummaryBadge>
-                  </div>
+                <div className="pricing-quote-shipment-badges">
+                  <QuoteSummaryBadge label={t('pricing.quoteBadgeRoute', 'المسار')}>
+                    {routeDisplayOffer?.pol || form.pol || '—'} →{' '}
+                    {routeDisplayOffer?.pod || routeDisplayOffer?.region || form.pod || '—'}
+                  </QuoteSummaryBadge>
+                  <ShippingLineSummaryBadge
+                    line={routeDisplayOffer?.shipping_line || form.shipping_line || '—'}
+                    visible={showCarrierOnPdf}
+                    onToggle={() => setShowCarrierOnPdf((v) => !v)}
+                    t={t}
+                  />
+                  <QuoteSummaryBadge label={t('pricing.quoteBadgeContainer', 'نوع الحاوية')}>
+                    {routeDisplayOffer ? inferContainerFromOffer(routeDisplayOffer) : form.container_type || '—'}
+                  </QuoteSummaryBadge>
+                  <QuoteSummaryBadge label={t('pricing.quoteBadgeTransit', 'مدة العبور')}>
+                    {routeDisplayOffer?.transit_time || form.transit_time || '—'}
+                  </QuoteSummaryBadge>
                   {sailingSchedule ? (
-                    <div className="pricing-quote-sailing-row">
-                      <QuoteSailingDateSelector
-                        inline
-                        schedule={sailingSchedule}
-                        value={selectedSailingDate}
-                        onChange={setSelectedSailingDate}
-                      />
-                    </div>
+                    <QuoteSailingDateSelector
+                      badgeGroup
+                      schedule={sailingSchedule}
+                      value={selectedSailingDate}
+                      onChange={setSelectedSailingDate}
+                    />
                   ) : null}
                 </div>
               ) : (
@@ -1341,8 +1312,9 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                     </div>
                     <div className="md:col-span-2 pricing-quote-carrier-edit-row">
                       <div className="pricing-quote-shipment-badges pricing-quote-shipment-badges--edit">
-                        <ShippingLineCustomerToggle
-                          enabled={showCarrierOnPdf}
+                        <ShippingLineSummaryBadge
+                          line={form.shipping_line || '—'}
+                          visible={showCarrierOnPdf}
                           onToggle={() => setShowCarrierOnPdf((v) => !v)}
                           t={t}
                         />
@@ -1446,58 +1418,24 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                       {t('pricing.quickOceanManualHint', 'Enter cost and selling for each line manually.')}
                     </div>
                   ) : null}
-                  <QuotePricingLinesTable
-                    lines={oceanLines}
-                    onUpdateLine={updateOceanLine}
-                    readOnlyCost={!isQuick}
-                    readOnlyCurrency={isPricing}
-                    readOnlyName={isPricing}
-                    allowOceanCodeEdit={!isPricing}
-                    quoteCodeLabel={quoteCodeLabel}
-                    quickSelectCodes={QUICK_SELECT_CODES}
-                    variant="ocean"
-                  />
-                  <div className="rounded-xl border border-emerald-200/80 dark:border-emerald-900/50 bg-emerald-50/90 dark:bg-emerald-950/40 px-4 py-3">
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-900 dark:text-emerald-200 mb-2">
-                      {t('pricing.totalLineProfit', 'Total profit (pricing lines)')}
-                    </div>
-                    <div className="flex flex-wrap gap-x-4 gap-y-2 items-center">
-                      {sortedProfitKeys(pricingLinesProfitByCurrency).every((k) => Math.abs(pricingLinesProfitByCurrency[k]) <= 1e-9) ? (
-                        <span className="text-sm text-gray-500 dark:text-gray-400">—</span>
-                      ) : (
-                        sortedProfitKeys(pricingLinesProfitByCurrency)
-                          .filter((k) => Math.abs(pricingLinesProfitByCurrency[k]) > 1e-9)
-                          .map((cur) => {
-                            const amt = pricingLinesProfitByCurrency[cur]
-                            return (
-                              <span key={cur} className="inline-flex items-center gap-2">
-                                {currencyCodePill(cur)}
-                                <span
-                                  className={`text-sm font-bold tabular-nums ${
-                                    amt >= 0 ? 'text-emerald-800 dark:text-emerald-200' : 'text-red-600 dark:text-red-400'
-                                  }`}
-                                >
-                                  {formatPricingDecimal(amt)}
-                                </span>
-                              </span>
-                            )
-                          })
-                      )}
-                    </div>
+                  <div className="pricing-quote-ocean-table-block">
+                    <QuotePricingLinesTable
+                      lines={oceanLines}
+                      onUpdateLine={updateOceanLine}
+                      readOnlyCost={!isQuick}
+                      readOnlyCurrency={isPricing}
+                      readOnlyName={isPricing}
+                      allowOceanCodeEdit={!isPricing}
+                      quoteCodeLabel={quoteCodeLabel}
+                      quickSelectCodes={QUICK_SELECT_CODES}
+                      variant="ocean"
+                    />
                   </div>
-                  <button
-                    type="button"
-                    disabled={isPricing}
-                    onClick={addOceanLine}
-                    className={`inline-flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-lg border disabled:opacity-40 ${
-                      isQuick
-                        ? 'pricing-quick-ocean-add border-amber-200/90 dark:border-amber-800/50 bg-amber-50/90 dark:bg-amber-950/35 text-amber-950 dark:text-amber-100'
-                        : 'border-gray-200 dark:border-gray-700'
-                    }`}
-                  >
-                    <Plus className="h-4 w-4" />{' '}
-                    {isQuick ? t('pricing.quickOceanAddChargeTitle', 'Add extra ocean charge') : t('common.add', 'Add line')}
-                  </button>
+                  <QuoteOceanLinesSummary
+                    costByCurrency={oceanCostByCurrency}
+                    profitByCurrency={pricingLinesProfitByCurrency}
+                    sellingByCurrency={oceanSellingByCurrency}
+                  />
                 </div>
               )}
             </QuoteFinCard>

@@ -1,43 +1,122 @@
 import { HelpCircle } from 'lucide-react'
+import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { displayNumericInputValue } from '../utils/pricingFormNumeric'
 import { formatPricingDecimal } from '../../../utils/dateUtils'
 
 const CURRENCY_OPTIONS = ['EGP', 'USD', 'EUR']
 
+/** Column order must match <thead> / <tbody> cell order */
+const TABLE_COLUMNS = [
+  { id: 'check', className: 'pricing-quote-line-col-check' },
+  { id: 'name', className: 'pricing-quote-line-col-name' },
+  { id: 'cost', className: 'pricing-quote-line-col-cost shipment-fin-num' },
+  { id: 'selling', className: 'pricing-quote-line-col-selling shipment-fin-num' },
+  { id: 'profit', className: 'pricing-quote-line-col-profit shipment-fin-num' },
+]
+
+const OCEAN_COLUMN_FLOOR_PX = {
+  check: 52,
+  name: 140,
+  cost: 96,
+  selling: 96,
+  profit: 80,
+}
+
 function parseNum(v) {
   const n = parseFloat(String(v ?? '').replace(/,/g, ''))
   return Number.isFinite(n) ? n : 0
 }
 
-function currencyCodePill(code) {
+function currencyVariant(code) {
   const raw = String(code ?? '')
     .trim()
     .toUpperCase()
-  const display = raw || '—'
-  let variant = 'alt'
-  if (display === 'EGP') variant = 'egp'
-  else if (display === 'USD') variant = 'usd'
-  else if (display === 'EUR') variant = 'eur'
-  else if (display === '—') variant = 'muted'
-  return <span className={`shipment-fin-cur-pill shipment-fin-cur-pill--${variant}`}>{display}</span>
+  if (raw === 'EGP') return 'egp'
+  if (raw === 'USD') return 'usd'
+  if (raw === 'EUR') return 'eur'
+  if (!raw || raw === '—') return 'muted'
+  return 'alt'
+}
+
+function CostAmountLabel({ amount, currency }) {
+  const cur = String(currency ?? '')
+    .trim()
+    .toUpperCase() || '—'
+  const variant = currencyVariant(cur)
+  const num = parseNum(amount)
+  const displayAmount = num !== 0 || String(amount ?? '').trim() !== '' ? formatPricingDecimal(num) : '0'
+  return (
+    <span className={`pricing-quote-cost-label pricing-quote-cost-label--${variant}`}>
+      {displayAmount} {cur}
+    </span>
+  )
 }
 
 function IncludeHeader({ t }) {
-  const tip = t('pricing.includeInQuotationTooltip', 'Include in quotation / تضمين في عرض السعر')
+  const label = t('pricing.visibleColumn', 'Visible')
+  const tip = t('pricing.includeInQuotationTooltip', 'Include in quotation')
   return (
-    <span className="pricing-quote-line-include-head">
-      <span className="sr-only">{tip}</span>
-      <span
-        className="pricing-quote-line-include-help"
-        title={tip}
-        aria-label={tip}
-        role="img"
-      >
-        <HelpCircle size={14} aria-hidden />
+    <span className="pricing-quote-line-visible-head">
+      <span className="pricing-quote-line-visible-head__label">{label}</span>
+      <span className="pricing-quote-line-include-help" title={tip} aria-label={tip} role="img">
+        <HelpCircle size={13} aria-hidden />
       </span>
     </span>
   )
+}
+
+function measureTableColumns(table, { isOcean }) {
+  if (!table) return null
+
+  const prevLayout = table.style.tableLayout
+  table.style.tableLayout = 'auto'
+
+  const measured = {}
+  TABLE_COLUMNS.forEach((col, index) => {
+    let maxW = 0
+    table.querySelectorAll(`thead th:nth-child(${index + 1}), tbody td:nth-child(${index + 1})`).forEach((cell) => {
+      maxW = Math.max(maxW, Math.ceil(cell.getBoundingClientRect().width))
+    })
+    const floor = isOcean ? OCEAN_COLUMN_FLOOR_PX[col.id] ?? 48 : 48
+    measured[col.id] = Math.max(floor, maxW)
+  })
+
+  if (isOcean) {
+    const tableW = Math.ceil(table.getBoundingClientRect().width)
+    const others =
+      (measured.check || 0) + (measured.cost || 0) + (measured.selling || 0) + (measured.profit || 0)
+    const nameSpace = tableW - others - 8
+    measured.name = Math.max(OCEAN_COLUMN_FLOOR_PX.name, nameSpace)
+  }
+
+  table.style.tableLayout = prevLayout
+  return measured
+}
+
+function useMeasuredColumnWidths(tableRef, measureKey, isOcean) {
+  const [columnWidths, setColumnWidths] = useState(null)
+
+  const measure = useCallback(() => {
+    const table = tableRef.current
+    if (!table) return
+    setColumnWidths(measureTableColumns(table, { isOcean }))
+  }, [tableRef, isOcean])
+
+  useLayoutEffect(() => {
+    measure()
+    const table = tableRef.current
+    if (!table) return undefined
+
+    const ro = new ResizeObserver(() => measure())
+    ro.observe(table)
+    const wrap = table.closest('.pricing-quote-line-table-wrap')
+    if (wrap && wrap !== table) ro.observe(wrap)
+
+    return () => ro.disconnect()
+  }, [measure, measureKey])
+
+  return columnWidths
 }
 
 /**
@@ -64,24 +143,51 @@ export default function QuotePricingLinesTable({
   quickSelectCodes = [],
 }) {
   const { t } = useTranslation()
+  const tableRef = useRef(null)
+  const isOcean = variant === 'ocean'
+  const measureKey = `${variant}-${lines.length}-${lines.map((l) => `${l.name}|${l.cost_amount}|${l.selling_amount}|${l.currency}|${l.included}`).join(';')}`
+
+  const columnWidths = useMeasuredColumnWidths(tableRef, measureKey, isOcean)
 
   if (!lines?.length) return null
 
   return (
-    <div className="shipment-fin-table-wrap pricing-quote-line-table-wrap">
-      <table className="shipment-fin-line-table pricing-quote-line-table">
+    <div
+      className={`shipment-fin-table-wrap pricing-quote-line-table-wrap${isOcean ? ' pricing-quote-line-table-wrap--ocean' : ''}`}
+    >
+      <table
+        ref={tableRef}
+        className={`shipment-fin-line-table pricing-quote-line-table${isOcean ? ' pricing-quote-line-table--ocean' : ''}`}
+      >
+        {columnWidths ? (
+          <colgroup>
+            {TABLE_COLUMNS.map((col) => (
+              <col key={col.id} style={{ width: `${columnWidths[col.id]}px` }} />
+            ))}
+          </colgroup>
+        ) : null}
         <thead>
           <tr>
-            <th className="pricing-quote-line-col-check">
-              <IncludeHeader t={t} />
-            </th>
-            <th className="pricing-quote-line-col-name">{t('pricing.itemNameColumn', 'Item Name / اسم البند')}</th>
-            <th className="pricing-quote-line-col-cost shipment-fin-num">{t('pricing.cost', 'Cost')}</th>
-            <th className="pricing-quote-line-col-cur">{t('pricing.currency', 'Currency')}</th>
-            <th className="pricing-quote-line-col-selling shipment-fin-num">
-              {t('pricing.sellingPrice', 'Selling')}
-            </th>
-            <th className="pricing-quote-line-col-profit shipment-fin-num">{t('pricing.profit', 'Profit')}</th>
+            {TABLE_COLUMNS.map((col) => {
+              const labels = {
+                check: null,
+                name: t('pricing.itemNameColumn', 'Item Name'),
+                cost: t('pricing.costColumn', 'Cost'),
+                selling: t('pricing.salePriceColumn', 'Sale Price'),
+                profit: t('pricing.profit', 'Profit'),
+              }
+              const widthPx = columnWidths?.[col.id]
+              return (
+                <th
+                  key={col.id}
+                  className={col.className}
+                  data-col={col.id}
+                  data-col-width-px={widthPx != null ? String(widthPx) : undefined}
+                >
+                  {col.id === 'check' ? <IncludeHeader t={t} /> : labels[col.id]}
+                </th>
+              )
+            })}
           </tr>
         </thead>
         <tbody>
@@ -95,16 +201,16 @@ export default function QuotePricingLinesTable({
                 key={line.sourceKey || `${variant}-${idx}`}
                 className={rowDisabled ? 'pricing-quote-line-row--excluded' : undefined}
               >
-                <td className="pricing-quote-line-col-check">
+                <td className="pricing-quote-line-col-check" data-col="check">
                   <input
                     type="checkbox"
-                    className="pricing-quote-line-check rounded border-gray-300 dark:border-gray-600"
+                    className="pricing-quote-line-check"
                     checked={included}
                     onChange={(e) => onUpdateLine(idx, { included: e.target.checked })}
-                    aria-label={t('pricing.includeInQuotationTooltip', 'Include in quotation / تضمين في عرض السعر')}
+                    aria-label={t('pricing.includeInQuotationTooltip', 'Include in quotation')}
                   />
                 </td>
-                <td className="pricing-quote-line-col-name">
+                <td className="pricing-quote-line-col-name" data-col="name">
                   {readOnlyName ? (
                     <span className="pricing-quote-line-name" title={line.name}>
                       {line.name || '—'}
@@ -149,46 +255,47 @@ export default function QuotePricingLinesTable({
                     />
                   )}
                 </td>
-                <td className="pricing-quote-line-col-cost shipment-fin-num">
-                  <input
-                    type="number"
-                    readOnly={readOnlyCost || rowDisabled}
-                    tabIndex={readOnlyCost || rowDisabled ? -1 : undefined}
-                    disabled={rowDisabled}
-                    className={`pricing-quote-line-input tabular-nums ${
-                      readOnlyCost || rowDisabled
-                        ? 'pricing-quote-line-input--readonly'
-                        : 'pricing-quote-line-input--editable'
-                    }`}
-                    value={displayNumericInputValue(line.cost_amount)}
-                    onChange={(e) => {
-                      if (readOnlyCost || rowDisabled) return
-                      onUpdateLine(idx, { cost_amount: e.target.value })
-                    }}
-                    placeholder="0"
-                    aria-readonly={readOnlyCost || rowDisabled}
-                  />
-                </td>
-                <td className="pricing-quote-line-col-cur">
-                  {readOnlyCurrency ? (
-                    currencyCodePill(line.currency)
+                <td className="pricing-quote-line-col-cost shipment-fin-num" data-col="cost">
+                  {readOnlyCost && readOnlyCurrency ? (
+                    <CostAmountLabel amount={line.cost_amount} currency={line.currency} />
                   ) : (
-                    <select
-                      value={line.currency}
-                      disabled={rowDisabled}
-                      onChange={(e) => onUpdateLine(idx, { currency: e.target.value })}
-                      className="pricing-quote-line-cur-select"
-                      aria-label={t('pricing.currency', 'Currency')}
-                    >
-                      {CURRENCY_OPTIONS.map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="pricing-quote-line-cost-cell">
+                      {readOnlyCost ? (
+                        <CostAmountLabel amount={line.cost_amount} currency={line.currency} />
+                      ) : (
+                        <input
+                          type="number"
+                          readOnly={rowDisabled}
+                          tabIndex={rowDisabled ? -1 : undefined}
+                          disabled={rowDisabled}
+                          className="pricing-quote-line-input pricing-quote-line-input--editable tabular-nums pricing-quote-line-cost-input"
+                          value={displayNumericInputValue(line.cost_amount)}
+                          onChange={(e) => {
+                            if (rowDisabled) return
+                            onUpdateLine(idx, { cost_amount: e.target.value })
+                          }}
+                          placeholder="0"
+                        />
+                      )}
+                      {!readOnlyCurrency ? (
+                        <select
+                          value={line.currency}
+                          disabled={rowDisabled}
+                          onChange={(e) => onUpdateLine(idx, { currency: e.target.value })}
+                          className="pricing-quote-line-cur-select"
+                          aria-label={t('pricing.currency', 'Currency')}
+                        >
+                          {CURRENCY_OPTIONS.map((c) => (
+                            <option key={c} value={c}>
+                              {c}
+                            </option>
+                          ))}
+                        </select>
+                      ) : null}
+                    </div>
                   )}
                 </td>
-                <td className="pricing-quote-line-col-selling shipment-fin-num">
+                <td className="pricing-quote-line-col-selling shipment-fin-num" data-col="selling">
                   <input
                     type="number"
                     min="0"
@@ -204,6 +311,7 @@ export default function QuotePricingLinesTable({
                   className={`pricing-quote-line-col-profit shipment-fin-num pricing-quote-line-profit ${
                     profit >= 0 ? 'is-positive' : 'is-negative'
                   }`}
+                  data-col="profit"
                 >
                   {formatPricingDecimal(profit)}
                 </td>
