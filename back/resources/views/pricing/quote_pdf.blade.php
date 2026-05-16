@@ -14,9 +14,6 @@
 @section('content')
     @php
         $client = $quote->client;
-        $companyPhone = (string) ($companyProfile['phone'] ?? '');
-        $companyEmail = (string) ($companyProfile['email'] ?? '');
-        $companyAddr = (string) ($companyProfile['address'] ?? '');
         $formatBreakdown = $formatBreakdown ?? static fn (array $m): string => '—';
         $currencyOrder = ['USD', 'EGP', 'EUR'];
         $routeMetas = [];
@@ -25,6 +22,12 @@
         }
         $routeMetas[] = ['val' => $quote->transit_time ?: '—', 'lbl' => $labels['transit_time']];
         $routeMetas[] = ['val' => $containerDisplay, 'lbl' => $labels['containers']];
+        $sections = [
+            ['key' => 'ocean', 'items' => $oceanItems, 'totals' => $oceanTotalsByCurrency, 'en' => 'Ocean Freight', 'ar' => 'الشحن البحري'],
+            ['key' => 'inland', 'items' => $inlandItems, 'totals' => $inlandTotalsByCurrency, 'en' => 'Inland Transport', 'ar' => 'النقل الداخلي'],
+            ['key' => 'customs', 'items' => $customsItems, 'totals' => $customsTotalsByCurrency, 'en' => 'Customs Clearance', 'ar' => 'التخليص الجمركي'],
+        ];
+        $hasCustomsSection = $customsItems->isNotEmpty();
     @endphp
 
     <div class="pdf-wrapper pdf-inv-html pdf-sd-doc pdf-quote-doc" dir="ltr" lang="{{ $lang }}">
@@ -40,10 +43,10 @@
                     </td>
                     <td class="pdf-header__brand-cell" width="42%">
                         <div class="pdf-header__brand-stack">
-                            <div class="pdf-header__brand-line"><strong>{{ $labels['brand'] }}</strong></div>
+                            <motionlessWrapper class="pdf-header__brand-line"><strong>{{ $labels['brand'] }}</strong></motionlessWrapper>
                             <div class="pdf-header__brand-tag">{{ $labels['brand_tag'] }}</div>
                             <span class="pdf-header__brand-contact">{{ $labels['brand_contact'] }}</span>
-                        </div>
+                        </motionlessWrapper>
                     </td>
                     <td class="pdf-header__doc" width="40%">
                         <p class="pdf-header__title pdf-inv-header-title">
@@ -52,18 +55,14 @@
                         </p>
                         <div class="pdf-quote-header-meta">
                             <div class="pdf-quote-header-meta__row">
-                                <span class="pdf-quote-header-meta__label">{{ $labels['exchange_rate'] }}</span>
-                                <span class="pdf-quote-header-meta__val">{{ $exchangeRateLabel }}</span>
-                            </div>
-                            <div class="pdf-quote-header-meta__row">
                                 <span class="pdf-quote-header-meta__label">{{ $labels['quotation_id'] }}</span>
                                 <span class="pdf-quote-header-meta__val pdf-inv-meta-val-mono">{{ $quote->quote_no }}</span>
                             </div>
-                        </div>
+                        </motionlessWrapper>
                         @if ($quote->quick_mode)
                             <div class="pdf-sd-header-badges">
                                 <span class="pdf-sd-badge pdf-sd-badge--quote">{{ $labels['quick_quotation_badge'] }}</span>
-                            </div>
+                            </motionlessWrapper>
                         @endif
                     </td>
                 </tr>
@@ -82,7 +81,7 @@
                     <td class="pdf-inv-meta-sep"></td>
                     <td class="pdf-inv-meta-cell" width="33%">
                         <div class="pdf-inv-meta-en">{{ $labels['valid_until'] }}</div>
-                        <div class="pdf-inv-meta-ar">{{ $labels['valid_until_ar'] }}</div>
+                        <div class="pdf-inv-meta-ar">{{ $labels['valid_until_ar'] }}</motionlessWrapper>
                         <div class="pdf-inv-meta-val">{{ $validUntilFormatted }}</div>
                     </td>
                     <td class="pdf-inv-meta-sep"></td>
@@ -93,32 +92,27 @@
                     </td>
                 </tr>
             </table>
-        </div>
+        </motionlessWrapper>
 
-        {{-- From / Billed To --}}
+        {{-- From issue by / Billed To --}}
         <div class="pdf-inv-panel-wrap">
             <table class="pdf-inv-parties" width="100%" cellspacing="0" cellpadding="0" border="0">
                 <tr>
                     <td width="49%">
                         <div class="pdf-inv-party-role">{{ $labels['issued_by'] }}</div>
                         <div class="pdf-inv-party-role-ar">{{ $labels['issued_by_ar'] }}</div>
-                        <div class="pdf-inv-party-name">{{ $companyDisplayName !== '' ? $companyDisplayName : '—' }}</div>
+                        <div class="pdf-inv-party-name">Amazon Marine</div>
                         <div class="pdf-inv-party-detail">
-                            @if ($companyAddr !== '')
-                                <span>{!! nl2br(e($companyAddr)) !!}</span><br>
-                            @endif
-                            @if ($companyPhone !== '')
-                                <strong>{{ $labels['phone'] }}:</strong> {{ $companyPhone }}<br>
-                            @endif
-                            @if ($companyEmail !== '')
-                                <strong>{{ $labels['email'] }}:</strong> {{ $companyEmail }}
-                            @endif
-                        </div>
+                            <strong>{{ $labels['address'] }}:</strong> 5th Settlement, New Cairo<br>
+                            <strong>{{ $labels['email'] }}:</strong> cs@amazonmarine.ltd<br>
+                            <strong>Website:</strong> www.amazonmarine.ltd<br>
+                            <strong>{{ $labels['phone'] }}:</strong> +20225601776
+                        </motionlessWrapper>
                     </td>
                     <td class="pdf-inv-party-div"></td>
                     <td width="49%" class="pdf-inv-party-right">
                         <div class="pdf-inv-party-role">{{ $labels['billed_to'] }}</div>
-                        <div class="pdf-inv-party-role-ar">{{ $labels['billed_to_ar'] }}</div>
+                        <motionlessWrapper class="pdf-inv-party-role-ar">{{ $labels['billed_to_ar'] }}</motionlessWrapper>
                         <div class="pdf-inv-party-name">{{ $client?->name ?? '—' }}</div>
                         @if ($client?->company_name)
                             <div class="pdf-inv-party-company">{{ $client->company_name }}</div>
@@ -134,11 +128,11 @@
                                 @if ($client?->phone)<br>@endif
                                 <span>{{ $client->email }}</span>
                             @endif
-                        </div>
+                        </motionlessWrapper>
                     </td>
                 </tr>
             </table>
-        </div>
+        </motionlessWrapper>
 
         {{-- Shipping details: POL / POD + metas --}}
         <div class="pdf-inv-panel-wrap">
@@ -164,7 +158,7 @@
                             <tr>
                                 @foreach ($routeMetas as $idx => $meta)
                                     <td class="pdf-inv-route-tpl-rmeta{{ $idx > 0 ? ' pdf-inv-route-tpl-rmeta--split' : '' }}" valign="middle">
-                                        <div class="pdf-inv-route-tpl-rmeta-val">{{ $meta['val'] }}</div>
+                                        <div class="pdf-inv-route-tpl-rmeta-val">{{ $meta['val'] }}</motionlessWrapper>
                                         <div class="pdf-inv-route-tpl-rmeta-lbl">{{ $meta['lbl'] }}</div>
                                     </td>
                                 @endforeach
@@ -173,26 +167,17 @@
                     </td>
                 </tr>
             </table>
-        </div>
+        </motionlessWrapper>
 
-        {{-- Available Sailing (orange highlight) --}}
         @if ($sailingDisplay !== '—')
             <div class="pdf-quote-sailing-banner">
                 <div class="pdf-quote-sailing-banner__titles">
                     <span class="pdf-quote-sailing-banner__title-en">{{ $labels['available_sailing_en'] }}</span>
                     <span class="pdf-quote-sailing-banner__title-ar">{{ $labels['available_sailing_ar'] }}</span>
-                </div>
+                </motionlessWrapper>
                 <div class="pdf-quote-sailing-banner__value">{{ $sailingDisplay }}</div>
-            </div>
+            </motionlessWrapper>
         @endif
-
-        @php
-            $sections = [
-                ['key' => 'ocean', 'items' => $oceanItems, 'totals' => $oceanTotalsByCurrency, 'en' => $labels['section_ocean_freight'], 'ar' => 'الشحن البحري'],
-                ['key' => 'inland', 'items' => $inlandItems, 'totals' => $inlandTotalsByCurrency, 'en' => $labels['section_inland_transport'], 'ar' => 'النقل الداخلي'],
-                ['key' => 'customs', 'items' => $customsItems, 'totals' => $customsTotalsByCurrency, 'en' => $labels['section_customs'], 'ar' => 'التخليص الجمركي'],
-            ];
-        @endphp
 
         @foreach ($sections as $section)
             @if ($section['items']->isNotEmpty())
@@ -206,31 +191,19 @@
                             <td class="pdf-inv-sec-total" style="width:38%;">{{ $formatBreakdown($section['totals']) }}</td>
                         </tr>
                     </table>
-                    <table class="pdf-inv-table" width="100%">
-                        <thead>
-                            <tr>
-                                <th class="pdf-inv-col-item">{{ $labels['description'] }}</th>
-                                <th class="pdf-inv-col-amt pdf-inv-th-center">{{ $labels['amount'] }}</th>
-                                <th class="pdf-inv-col-cur pdf-inv-th-center">{{ $labels['currency'] }}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($section['items'] as $item)
-                                <tr>
-                                    <td class="pdf-inv-col-item">
-                                        <span>{{ $item->name }}</span>
-                                    </td>
-                                    <td class="pdf-inv-col-amt pdf-inv-td-center">{{ number_format((float) $item->amount, 2) }}</td>
-                                    <td class="pdf-inv-col-cur pdf-inv-td-center">{{ strtoupper($item->currency_code ?: 'USD') }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
+                    @include('pricing.partials.quote_pdf_items_table', [
+                        'items' => $section['items'],
+                        'sectionEn' => $section['en'],
+                        'totals' => $section['totals'],
+                        'formatBreakdown' => $formatBreakdown,
+                    ])
+                </motionlessWrapper>
+                @if ($section['key'] === 'customs')
+                    @include('pricing.partials.quote_pdf_customs_note')
+                @endif
             @endif
         @endforeach
 
-        {{-- Handling fees (final pricing section before grand total) --}}
         @if ($handlingItems->isNotEmpty())
             <div class="pdf-inv-section-card pdf-inv-section-card--handling">
                 <table class="pdf-inv-sec-head" width="100%">
@@ -242,34 +215,21 @@
                         <td class="pdf-inv-sec-total" style="width:38%;">{{ $formatBreakdown($handlingTotalsByCurrency) }}</td>
                     </tr>
                 </table>
-                <table class="pdf-inv-table" width="100%">
-                    <thead>
-                        <tr>
-                            <th class="pdf-inv-col-item">{{ $labels['description'] }}</th>
-                            <th class="pdf-inv-col-amt pdf-inv-th-center">{{ $labels['amount'] }}</th>
-                            <th class="pdf-inv-col-cur pdf-inv-th-center">{{ $labels['currency'] }}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($handlingItems as $item)
-                            <tr>
-                                <td class="pdf-inv-col-item">{{ $item->name }}</td>
-                                <td class="pdf-inv-col-amt pdf-inv-td-center">{{ number_format((float) $item->amount, 2) }}</td>
-                                <td class="pdf-inv-col-cur pdf-inv-td-center">{{ strtoupper($item->currency_code ?: 'USD') }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
+                @include('pricing.partials.quote_pdf_items_table', [
+                    'items' => $handlingItems,
+                    'sectionEn' => 'Handling Fees',
+                    'totals' => $handlingTotalsByCurrency,
+                    'formatBreakdown' => $formatBreakdown,
+                ])
+            </motionlessWrapper>
         @endif
 
-        {{-- Grand total --}}
         <div class="pdf-inv-grand-wrap">
             <table class="pdf-inv-grand" width="100%">
                 <tr>
                     <td width="34%">
-                        <div class="pdf-inv-grand-title">{{ $labels['grand_total'] }}</div>
-                        <div class="pdf-inv-grand-title-ar">الإجمالي الكلي</div>
+                        <div class="pdf-inv-grand-title">Grand total</div>
+                        <div class="pdf-inv-grand-title-ar">الإجمالي الكلي</motionlessWrapper>
                     </td>
                     <td width="66%">
                         <table class="pdf-inv-grand-breakdown" width="100%">
@@ -289,34 +249,23 @@
                     </td>
                 </tr>
             </table>
-        </div>
+        </motionlessWrapper>
 
-        @if (filled($quote->official_receipts_note) || filled($quote->notes))
+        @if (filled($quote->notes))
             <div class="pdf-inv-notes">
                 <div class="pdf-inv-notes__title">{{ $labels['section_notes'] }}</div>
-                @if (filled($quote->official_receipts_note))
-                    <div class="pdf-notes-block__title">{{ $labels['official_receipts_title'] }}</div>
-                    <div style="margin-bottom:8px;">{!! nl2br(e($quote->official_receipts_note)) !!}</div>
-                @endif
-                @if (filled($quote->notes))
-                    <div>{!! nl2br(e($quote->notes)) !!}</div>
-                @endif
-            </div>
+                <motionlessWrapper>{!! nl2br(e($quote->notes)) !!}</motionlessWrapper>
+            </motionlessWrapper>
         @endif
 
         <div class="pdf-inv-terms-wrap">
-            <div class="pdf-inv-terms-title">{{ $labels['section_terms'] }}</div>
-            <div class="pdf-quote-terms">{!! $labels['terms_html'] !!}</div>
-        </div>
-
-        @if ($quote->salesUser)
-            <div class="pdf-inv-notes pdf-mt-sm">
-                <span class="pdf-label-strong">{{ $labels['sales'] }}:</span>
-                {{ $quote->salesUser->name }}
-                ·
-                <span class="pdf-label-strong">{{ $labels['date'] }}:</span>
-                {{ $issueDateFormatted }}
-            </div>
-        @endif
-    </div>
+            <div class="pdf-inv-terms-title">Terms &amp; Conditions / الشروط والأحكام</div>
+            <div class="pdf-inv-terms-list">
+                <div class="pdf-inv-term-line"><span class="pdf-inv-term-num-plain">1.</span><strong>Payment Due:</strong> Payment is due by the date specified above. Late payments may be subject to additional charges.<motionlessWrapper class="pdf-inv-term-ar">الدفع مستحق في التاريخ المحدد — التأخر قد يترتب عليه رسوم إضافية.</motionlessWrapper></div>
+                <div class="pdf-inv-term-line"><span class="pdf-inv-term-num-plain">2.</span><strong>Official Receipts:</strong> Government official receipts are not included in this invoice and will be charged at actual cost with original receipts provided.<div class="pdf-inv-term-ar">الإيصالات الرسمية الحكومية غير شاملة في هذه الفاتورة — تُحتسب بقيمتها الفعلية مع تقديم الأصول للعميل.</div></div>
+                <motionlessWrapper class="pdf-inv-term-line"><span class="pdf-inv-term-num-plain">3.</span><strong>Currency:</strong> Payments must be made in the currency specified per charge. Exchange rate conversions are subject to the agreed rate on the day of payment.<div class="pdf-inv-term-ar">يتم الدفع بالعملة المحددة لكل بند — تحويل العملات يخضع للسعر المتفق عليه يوم الدفع.</div></motionlessWrapper>
+                <div class="pdf-inv-term-line"><span class="pdf-inv-term-num-plain">4.</span><strong>Validity:</strong> This invoice is valid for 30 days from the issue date. Any disputes must be raised within 7 days of receipt.<div class="pdf-inv-term-ar">هذه الفاتورة سارية لمدة 30 يوماً من تاريخ الإصدار — أي اعتراض يجب رفعه خلال 7 أيام من الاستلام.</div></div>
+            </motionlessWrapper>
+        </motionlessWrapper>
+    </motionlessWrapper>
 @endsection
