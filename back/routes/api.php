@@ -576,6 +576,7 @@ Route::prefix('v1')->group(function () {
         Route::get('pricing/quotes/{quote}', [PricingQuoteController::class, 'show']);
         Route::post('pricing/quotes', [PricingQuoteController::class, 'store']);
         Route::put('pricing/quotes/{quote}', [PricingQuoteController::class, 'update']);
+        Route::delete('pricing/quotes/{quote}', [PricingQuoteController::class, 'destroy']);
         Route::post('pricing/quotes/{quote}/accept', [PricingQuoteController::class, 'accept']);
         Route::post('pricing/quotes/{quote}/reject', [PricingQuoteController::class, 'reject']);
 

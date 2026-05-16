@@ -24,7 +24,7 @@ export default function QuoteDetailModal({ isOpen, quote, onClose }) {
       a.click()
       URL.revokeObjectURL(url)
     } catch (err) {
-      setPdfError(err?.message || t('pricing.quotePdfFailed', 'Failed to download PDF'))
+      setPdfError(err?.message || t('pricing.quotePdfFailed'))
     }
   }
 
@@ -86,28 +86,28 @@ export default function QuoteDetailModal({ isOpen, quote, onClose }) {
           </div>
         </div>
 
-        <div className="px-6 py-4 shrink-0 border-t border-slate-200/90 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex flex-col items-end gap-2">
+        <div className="pricing-fin-modal__footer pricing-fin-modal__footer--detail flex flex-col items-end gap-2">
           {pdfError ? (
-            <p className="text-sm text-red-600 dark:text-red-400 m-0 w-full text-right" role="alert">
+            <p className="text-sm text-red-600 dark:text-red-400 m-0 w-full text-end" role="alert">
               {pdfError}
             </p>
           ) : null}
-          <div className="flex justify-end gap-3 flex-wrap">
+          <div className="flex justify-end gap-3 flex-wrap w-full">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2.5 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200/80 dark:hover:bg-gray-700 rounded-xl transition-colors"
+            >
+              {t('common.close', 'Close')}
+            </button>
             <button
               type="button"
               onClick={handleDownloadPdf}
               disabled={pdfLoading}
-              className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-bold rounded-xl transition-colors inline-flex items-center gap-2"
+              className="page-header__btn page-header__btn--primary inline-flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              <Download className="h-4 w-4" aria-hidden />
-              {pdfLoading ? t('common.loading', 'Loading…') : t('pricing.downloadQuotePdf', 'Download PDF')}
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-5 py-2.5 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-colors"
-            >
-              {t('common.close', 'Close')}
+              <Download className="h-4 w-4 shrink-0" aria-hidden />
+              {pdfLoading ? t('common.loading', 'Loading…') : t('pricing.downloadQuotePdf')}
             </button>
           </div>
         </div>

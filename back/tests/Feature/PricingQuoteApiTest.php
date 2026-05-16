@@ -364,4 +364,33 @@ class PricingQuoteApiTest extends TestCase
         $create->assertJsonPath('data.items.0.cost_amount', 1200);
         $create->assertJsonPath('data.items.0.visible_to_client', true);
     }
+
+    public function test_can_delete_quote(): void
+    {
+        $user = $this->actingAsPricingUser();
+        $client = Client::factory()->create();
+        $offer = PricingOffer::factory()->create();
+
+        $create = $this->actingAs($user, 'sanctum')->postJson('/api/v1/pricing/quotes', [
+            'client_id' => $client->id,
+            'pricing_offer_id' => $offer->id,
+            'pol' => $offer->pol,
+            'pod' => $offer->pod,
+            'shipping_line' => $offer->shipping_line,
+            'container_type' => '40HQ Dry',
+            'qty' => 1,
+            'items' => [
+                ['code' => 'OF', 'name' => 'Ocean Freight', 'description' => '', 'amount' => 500, 'currency' => 'USD'],
+            ],
+        ]);
+        $create->assertCreated();
+        $id = $create->json('data.id');
+
+        $this->actingAs($user, 'sanctum')
+            ->deleteJson('/api/v1/pricing/quotes/'.$id)
+            ->assertOk()
+            ->assertJsonPath('message', 'Quotation deleted.');
+
+        $this->assertDatabaseMissing('pricing_quotes', ['id' => $id]);
+    }
 }

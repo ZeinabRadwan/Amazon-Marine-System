@@ -36,4 +36,9 @@ class PricingQuotePolicy
     {
         return $user->hasRole('admin') || $user->can('pricing.manage_quotes');
     }
+
+    public function delete(User $user, PricingQuote $quote): bool
+    {
+        return $user->hasRole('admin') || $user->can('pricing.manage_quotes');
+    }
 }

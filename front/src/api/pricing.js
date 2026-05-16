@@ -183,6 +183,17 @@ export async function rejectQuote(token, id) {
   return data
 }
 
+export async function deleteQuote(token, id) {
+  const url = `${getBaseUrl()}/pricing/quotes/${id}`
+  const res = await apiFetch(url, {
+    method: 'DELETE',
+    headers: authHeaders(token),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to delete quote (${res.status})`)
+  return data
+}
+
 /** GET quotation PDF (Bearer auth; blob — open via object URL). */
 export async function downloadQuotePdf(token, quoteId, options = {}) {
   const locale = options.locale && String(options.locale).toLowerCase().startsWith('ar') ? 'ar' : 'en'

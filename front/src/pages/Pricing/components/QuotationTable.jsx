@@ -4,22 +4,42 @@ import { useTranslation } from 'react-i18next'
 import {
   Eye,
   MoreHorizontal,
-  CheckCircle2,
-  Clock,
-  XCircle,
   Plus,
+  Trash2,
   Zap,
 } from 'lucide-react'
 import Table from '../../../components/Table/Table'
+import { IconActionButton, IconActionButtonGroup } from '../../../components/Table'
 import { DropdownMenu } from '../../../components/DropdownMenu'
 import { useQuotes, useMutateQuote } from '../../../hooks/usePricing'
 import { useAuthAccess } from '../../../hooks/useAuthAccess'
 import CreateQuoteModal from './CreateQuoteModal'
 import QuoteDetailModal from './QuoteDetailModal'
-import { formatDate, formatLocaleMoney, sortCurrencyCodes, sumAmountsByCurrencyFromItems } from '../../../utils/dateUtils'
+import { sumAmountsByCurrencyFromItems } from '../../../utils/dateUtils'
+import { CurrencyMapBadges } from '../../Accountings/CurrencyMapBadges'
+import '../../Accountings/CurrencyMapBadges.css'
 import ClientsFilterToolbar from '../../../components/ClientsFilterToolbar'
 import ListingPaginationFooter from '../../../components/ListingPaginationFooter'
+import '../../Clients/Clients.css'
 import '../Pricing.css'
+
+function quoteTotalsByCurrency(row) {
+  const raw = row.totals_by_currency
+  if (raw && typeof raw === 'object' && Object.keys(raw).length) {
+    return raw
+  }
+  if (row.total_amount != null && row.total_amount !== '') {
+    return { USD: Number(row.total_amount) }
+  }
+  return sumAmountsByCurrencyFromItems(row.items)
+}
+
+function quotePortLabel(row, dash) {
+  const pod = String(row.pod || '').trim()
+  const pol = String(row.pol || '').trim()
+  if (pod && pol && pod !== pol) return `${pol} → ${pod}`
+  return pod || pol || dash
+}
 
 export default function QuotationTable({ refreshKey }) {
   const { t, i18n } = useTranslation()
@@ -31,7 +51,9 @@ export default function QuotationTable({ refreshKey }) {
   const [createOpen, setCreateOpen] = useState(false)
   const [createInitialQuickMode, setCreateInitialQuickMode] = useState(false)
   const [detail, setDetail] = useState(null)
-  const { accept, reject, get, loading: mutateLoading } = useMutateQuote()
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleteRowLoading, setDeleteRowLoading] = useState(null)
+  const { accept, reject, get, delete: deleteQuote } = useMutateQuote()
 
   const { data: quotes, meta, loading, error, refetch } = useQuotes({
     q: debouncedSearch || undefined,
@@ -50,6 +72,8 @@ export default function QuotationTable({ refreshKey }) {
   useEffect(() => {
     if (refreshKey > 0) refetch()
   }, [refreshKey])
+
+  const dash = t('common.dash', '—')
 
   const handleView = async (row) => {
     try {
@@ -78,16 +102,19 @@ export default function QuotationTable({ refreshKey }) {
     }
   }
 
-  const getStatusBadge = (status) => {
-    switch (status.toLowerCase()) {
-      case 'accepted':
-        return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"><CheckCircle2 className="h-3 w-3" /> {t('common.status.accepted', 'Accepted')}</span>
-      case 'pending':
-        return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"><Clock className="h-3 w-3" /> {t('common.status.pending', 'Pending')}</span>
-      case 'rejected':
-        return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"><XCircle className="h-3 w-3" /> {t('common.status.rejected', 'Rejected')}</span>
-      default:
-        return status
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget?.id) return
+    const id = deleteTarget.id
+    setDeleteRowLoading(id)
+    try {
+      await deleteQuote(id)
+      setDeleteTarget(null)
+      if (detail?.id === id) setDetail(null)
+      refetch()
+    } catch {
+      // Error toast handled by pricing feedback service
+    } finally {
+      setDeleteRowLoading(null)
     }
   }
 
@@ -105,10 +132,10 @@ export default function QuotationTable({ refreshKey }) {
   const columns = [
     {
       key: 'quote_no',
-      label: t('pricing.quoteId', 'ID'),
+      label: t('pricing.quotationColCustomerNo'),
       render: (val, row) => (
         <span className="inline-flex flex-wrap items-center gap-2">
-          <span className="font-bold text-blue-600 dark:text-blue-400">{val}</span>
+          <span className="font-bold text-gray-900 dark:text-white">{val || dash}</span>
           {row.is_quick_quotation ?? row.quick_mode ? (
             <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100">
               {t('pricing.quickQuotation', 'Quick Quotation')}
@@ -118,92 +145,78 @@ export default function QuotationTable({ refreshKey }) {
       ),
     },
     {
-      key: 'client',
-      label: t('pricing.client'),
-      render: (val) => <span className="font-semibold">{val?.name || t('common.dash')}</span>,
+      key: 'port',
+      label: t('pricing.quotationColPort'),
+      render: (_, row) => {
+        const label = quotePortLabel(row, dash)
+        if (label === dash) return dash
+        return <span className="pricing-table-badge pricing-table-badge--muted">{label}</span>
+      },
     },
     {
-      key: 'route',
-      label: t('pricing.route'),
-      render: (_, row) => (
-        <span>
-          {row.pol
-            ? `${row.pol} → ${row.pod || ''}`
-            : row.pod || t('common.dash')}
-        </span>
-      ),
-    },
-    {
-      key: 'container_type',
-      label: t('pricing.containerType'),
-      render: (val) =>
-        val ? (
-          <span className="pricing-table-badge pricing-table-badge--muted">{val}</span>
-        ) : (
-          t('common.dash')
-        ),
+      key: 'shipping_line',
+      label: t('pricing.quotationColShippingLine'),
+      render: (_, row) => {
+        const line = String(row.shipping_line || '').trim()
+        if (!line) return dash
+        return <span className="pricing-table-badge pricing-table-badge--carrier">{line}</span>
+      },
     },
     {
       key: 'price',
       label: t('pricing.price'),
-      render: (_, row) => {
-        const raw = row.totals_by_currency
-        const map =
-          raw && typeof raw === 'object' && Object.keys(raw).length
-            ? raw
-            : row.total_amount != null && row.total_amount !== ''
-              ? { USD: Number(row.total_amount) }
-              : sumAmountsByCurrencyFromItems(row.items)
-        const keys = sortCurrencyCodes(Object.keys(map).filter((c) => Math.abs(Number(map[c]) || 0) > 1e-9))
-        if (!keys.length) {
-          return (
-            <span className="pricing-money-total text-gray-900 dark:text-white">{formatLocaleMoney(0, 'USD', i18n.language)}</span>
-          )
-        }
-        return (
-          <div className="flex flex-col gap-0.5 items-end">
-            {keys.map((cur) => (
-              <span key={cur} className="pricing-money-total text-gray-900 dark:text-white">
-                {formatLocaleMoney(map[cur], cur, i18n.language)}
-              </span>
-            ))}
-          </div>
-        )
-      },
-    },
-    { key: 'status', label: t('pricing.status', 'Status'), render: (val) => getStatusBadge(val) },
-    {
-      key: 'sales',
-      label: t('pricing.sales'),
-      hideOnMobile: true,
-      render: (_, row) => row.sales_user?.name || t('common.dash'),
-    },
-    {
-      key: 'date',
-      label: t('pricing.date'),
-      hideOnMobile: true,
-      render: (_, row) => formatDate(row.created_at, { locale: i18n.language }),
+      render: (_, row) => (
+        <div className="quotation-table__price-cell">
+          <CurrencyMapBadges
+            value={quoteTotalsByCurrency(row)}
+            size="sm"
+            numberLocale={i18n.language}
+            emptyLabel={dash}
+            zeroFallbackCurrencies={['USD']}
+          />
+        </div>
+      ),
     },
     {
       key: 'actions',
       label: '',
       render: (_, row) => (
-        <div className="flex justify-end">
-          <DropdownMenu
-            portaled
-            align="end"
-            trigger={
-              <button
-                type="button"
-                className="clients-filters__btn-icon h-8 w-8 min-w-0 min-h-0"
-                aria-label={t('pricing.rowActions', 'Row actions')}
-                title={t('pricing.rowActions', 'Row actions')}
-              >
-                <MoreHorizontal className="clients-filters__btn-icon-svg" aria-hidden />
-              </button>
-            }
-            items={rowMenuItems(row)}
-          />
+        <div className="flex justify-end items-center gap-1">
+          <IconActionButtonGroup aria-label={t('pricing.rowActions', 'Row actions')}>
+            <IconActionButton
+              icon={<Eye className="h-4 w-4" />}
+              label={t('common.view', 'View Details')}
+              onClick={() => handleView(row)}
+              segment={!isPricingSalesViewOnly ? 'first' : 'single'}
+            />
+            {!isPricingSalesViewOnly ? (
+              <IconActionButton
+                icon={<Trash2 className="h-4 w-4" />}
+                label={t('pricing.quotationOptionDelete')}
+                variant="danger"
+                onClick={() => setDeleteTarget(row)}
+                disabled={deleteRowLoading === row.id}
+                segment="last"
+              />
+            ) : null}
+          </IconActionButtonGroup>
+          {!isPricingSalesViewOnly ? (
+            <DropdownMenu
+              portaled
+              align="end"
+              trigger={
+                <button
+                  type="button"
+                  className="clients-filters__btn-icon h-8 w-8 min-w-0 min-h-0"
+                  aria-label={t('pricing.rowActions', 'Row actions')}
+                  title={t('pricing.rowActions', 'Row actions')}
+                >
+                  <MoreHorizontal className="clients-filters__btn-icon-svg" aria-hidden />
+                </button>
+              }
+              items={rowMenuItems(row)}
+            />
+          ) : null}
         </div>
       ),
     },
@@ -307,6 +320,37 @@ export default function QuotationTable({ refreshKey }) {
         quote={detail}
         onClose={() => setDetail(null)}
       />
+
+      {deleteTarget ? (
+        <div className="clients-modal" role="dialog" aria-modal="true" aria-labelledby="quotation-delete-title">
+          <div className="clients-modal-backdrop" onClick={() => !deleteRowLoading && setDeleteTarget(null)} />
+          <div className="clients-modal-content">
+            <h2 id="quotation-delete-title">{t('pricing.quotationOptionDeleteTitle')}</h2>
+            <p>{t('pricing.quotationOptionDeleteConfirm')}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400" dir="rtl">
+              {t('pricing.quotationOptionDeleteConfirmAr')}
+            </p>
+            <div className="clients-modal-actions">
+              <button
+                type="button"
+                className="clients-btn"
+                onClick={() => setDeleteTarget(null)}
+                disabled={Boolean(deleteRowLoading)}
+              >
+                {t('common.cancel', 'Cancel')}
+              </button>
+              <button
+                type="button"
+                className="clients-btn clients-btn--danger"
+                onClick={handleDeleteConfirm}
+                disabled={Boolean(deleteRowLoading)}
+              >
+                {deleteRowLoading ? t('common.deleting', 'Deleting…') : t('pricing.quotationOptionDelete')}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

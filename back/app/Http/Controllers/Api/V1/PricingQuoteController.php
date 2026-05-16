@@ -390,6 +390,17 @@ class PricingQuoteController extends Controller
         ]);
     }
 
+    public function destroy(PricingQuote $quote)
+    {
+        $this->authorize('delete', $quote);
+
+        $quote->delete();
+
+        return response()->json([
+            'message' => 'Quotation deleted.',
+        ]);
+    }
+
     public function pdf(Request $request, PricingQuote $quote)
     {
         $this->authorize('view', $quote);

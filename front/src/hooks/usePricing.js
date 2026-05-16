@@ -13,6 +13,7 @@ import {
   updateQuote,
   acceptQuote,
   rejectQuote,
+  deleteQuote,
   downloadQuotePdf,
 } from '../api/pricing'
 import { notifyPricingError, PRICING_ACTIONS, runPricingAction } from '../pages/Pricing/utils/pricingFeedback'
@@ -184,6 +185,7 @@ export function useMutateQuote() {
     update: (id, data) => handleMutation(PRICING_ACTIONS.QUOTE_UPDATE, updateQuote, [id, data]),
     accept: (id) => handleMutation(PRICING_ACTIONS.QUOTE_ACCEPT, acceptQuote, [id]),
     reject: (id) => handleMutation(PRICING_ACTIONS.QUOTE_REJECT, rejectQuote, [id]),
+    delete: (id) => handleMutation(PRICING_ACTIONS.QUOTE_DELETE, deleteQuote, [id]),
     downloadPdf: (id, options) =>
       handleMutation(PRICING_ACTIONS.QUOTE_PDF, downloadQuotePdf, [id, options]),
     loading,

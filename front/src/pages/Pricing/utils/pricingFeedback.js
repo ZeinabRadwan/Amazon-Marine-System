@@ -30,6 +30,7 @@ export const PRICING_ACTIONS = {
   QUOTE_GET: 'quote.get',
   QUOTE_ACCEPT: 'quote.accept',
   QUOTE_REJECT: 'quote.reject',
+  QUOTE_DELETE: 'quote.delete',
   QUOTE_PDF: 'quote.pdf',
   PORT_CREATE: 'port.create',
   SHIPPING_LINE_CREATE: 'shippingLine.create',

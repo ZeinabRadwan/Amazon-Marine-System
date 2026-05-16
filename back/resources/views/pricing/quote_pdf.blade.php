@@ -247,12 +247,6 @@
             </table>
         </div>
 
-        @if (filled($quote->notes))
-            <div class="pdf-inv-notes">
-                <div class="pdf-inv-notes__title">{{ $labels['section_notes'] }}</div>
-                <div>{!! nl2br(e($quote->notes)) !!}</div>
-            </div>
-        @endif
 
         <div class="pdf-inv-terms-wrap">
             <div class="pdf-inv-terms-title">Terms &amp; Conditions / الشروط والأحكام</div>
