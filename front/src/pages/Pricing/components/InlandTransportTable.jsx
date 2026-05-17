@@ -5,6 +5,7 @@ import { IconActionButton } from '../../../components/Table'
 import PricingInlineActions from './PricingInlineActions'
 import { CurrencyMapBadges } from '../../Accountings/CurrencyMapBadges'
 import { INLAND_PRICE_KEYS } from '../utils/pricingDisplay'
+import { DEFAULT_INLAND_TRUCK_PRESETS } from './inlandVehiclePresets'
 import PricingValidityBadge from './PricingValidityBadge'
 import PricingOfferStatusBadge from './PricingOfferStatusBadge'
 import PricingRateCardRoute from './PricingRateCardRoute'
@@ -62,6 +63,8 @@ function inlandMergedTotals(offer) {
 }
 
 function truckLabelFromKey(key, t) {
+  const preset = DEFAULT_INLAND_TRUCK_PRESETS.find((p) => p.slug === key)
+  if (preset) return preset.label
   if (key === 't20d' || key === 'p20x1' || key === 't20r') return t('pricing.inlandChip20dc', `20' Dry`)
   if (key === 'p20x2') return t('pricing.inlandChipTwin20', `Twin 20'`)
   if (key === 'p40rf' || key === 't40r') return t('pricing.inlandChip40rf', `40' Reefer`)
@@ -70,7 +73,8 @@ function truckLabelFromKey(key, t) {
 }
 
 function isReeferKey(key) {
-  return key === 'p40rf' || key === 't40r' || String(key || '').toLowerCase().includes('rf')
+  const s = String(key || '').toLowerCase()
+  return key === 'p40rf' || key === 't40r' || s.includes('rf') || s.includes('reefer')
 }
 
 export default function InlandTransportTable({
@@ -173,7 +177,7 @@ export default function InlandTransportTable({
                             </>
                           ) : null}
                           <span className="pricing-rate-card__tag-k pricing-rate-card__tag-k--suffix">
-                            {t('pricing.inlandGeneratorAddon', 'Generator add-on')}
+                            {t('pricing.inlandGensetLabel', 'Genset')}
                           </span>
                           <CurrencyMapBadges value={genMap} size="sm" amountFirst={amountFirst} />
                         </span>

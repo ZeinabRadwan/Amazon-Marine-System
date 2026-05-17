@@ -98,9 +98,9 @@ function defaultQuoteForm() {
   }
 }
 
-function inlandPricingKeyLabel(key) {
+function inlandPricingKeyLabel(key, t) {
   const k = String(key || '')
-  if (k === 'generator') return 'Generator'
+  if (k === 'generator') return t('pricing.inlandGensetLabel', 'Genset')
   if (k === 'powerDay') return 'Power (day)'
   if (k === 't20d') return "20' Dry truck"
   if (k === 't40d') return "40' Dry truck"
@@ -118,7 +118,7 @@ function resolveInlandLineName(sourceKey, offer, t) {
     const idx = parseInt(String(sourceKey).replace(/\D/g, ''), 10) - 1
     if (idx >= 0 && labels[idx]) return labels[idx]
   }
-  return inlandPricingKeyLabel(sourceKey)
+  return inlandPricingKeyLabel(sourceKey, t)
 }
 
 function buildInlandRowsFromOffer(offer, t) {

@@ -128,9 +128,23 @@
   width: 100%;
 }
 
-.inland-rate-generator-inline {
+.inland-rate-generator-inline,
+.inland-rate-genset-block {
   margin-top: 14px;
   width: 100%;
+}
+
+.inland-rate-genset-block .inland-rate-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+}
+
+[data-theme='dark'] .inland-rate-genset-block .inland-rate-label,
+.dark .inland-rate-genset-block .inland-rate-label {
+  color: #e2e8f0;
 }
 
 .pricing-fin-modal-root .inland-rate-form--modal .inland-rate-notes {

@@ -132,14 +132,9 @@ function isInlandReeferTruck(truckId, inlandTypes = []) {
   return false
 }
 
-/** 40′ Reefer preset — generator add-on is not shown or submitted. */
-function isInland40ReeferContainer(truckId) {
-  return String(truckId || '') === 'reefer-container-40'
-}
-
-/** Legacy / other reefer slugs still use generator fields when applicable. */
+/** Reefer inland vehicles require Genset amount + currency. */
 function inlandTruckNeedsGeneratorFields(truckId, inlandTypes) {
-  return isInlandReeferTruck(truckId, inlandTypes) && !isInland40ReeferContainer(truckId)
+  return isInlandReeferTruck(truckId, inlandTypes)
 }
 
 const defaultSeaForm = () => ({
@@ -1416,11 +1411,10 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                       const v = e.target.value
                       setInlandForm((prev) => {
                         const reefer = isInlandReeferTruck(v, mergedInlandUnitTypes)
-                        const hideGen = !reefer || isInland40ReeferContainer(v)
                         return {
                           ...prev,
                           truck_type: v,
-                          ...(hideGen ? { generator_price: '', generator_currency: 'EGP' } : {}),
+                          ...(!reefer ? { generator_price: '', generator_currency: 'EGP' } : {}),
                         }
                       })
                     }}
@@ -1469,9 +1463,9 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
               </div>
 
               {inlandTruckNeedsGeneratorFields(inlandForm.truck_type, mergedInlandUnitTypes) ? (
-                <div className="inland-rate-generator-inline">
-                  <label htmlFor="offer-inland-generator-price" className="inland-rate-label inland-rate-label--sr-only">
-                    {t('pricing.inlandGeneratorAmountAria', 'Generator cost amount')}
+                <div className="inland-rate-genset-block">
+                  <label htmlFor="offer-inland-generator-price" className="inland-rate-label">
+                    {t('pricing.inlandGensetLabel', 'Genset')}
                   </label>
                   <div className="inland-rate-input-group inland-rate-input-group--full">
                     <input
@@ -1485,14 +1479,14 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                       onChange={(e) => updateInlandForm({ generator_price: e.target.value })}
                       placeholder="0"
                       required
-                      aria-label={t('pricing.inlandGeneratorAmountAria', 'Generator cost amount')}
+                      aria-label={t('pricing.inlandGensetAmountAria', 'Genset amount')}
                     />
                     <select
                       id="offer-inland-generator-currency"
                       className="inland-rate-select"
                       value={inlandForm.generator_currency}
                       onChange={(e) => updateInlandForm({ generator_currency: e.target.value })}
-                      aria-label={t('pricing.inlandGeneratorCurrencyAria', 'Generator cost currency')}
+                      aria-label={t('pricing.inlandGensetCurrencyAria', 'Genset currency')}
                     >
                       {CURRENCIES.map((c) => (
                         <option key={c} value={c}>

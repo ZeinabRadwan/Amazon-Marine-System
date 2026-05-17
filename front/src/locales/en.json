@@ -482,6 +482,10 @@
     "inlandGeneratorAmountAria": "Generator cost amount",
     "inlandGeneratorCurrencyAria": "Generator cost currency",
     "inlandGeneratorAddon": "Generator add-on",
+    "inlandGensetLabel": "Genset",
+    "inlandGensetAmountAria": "Genset amount",
+    "inlandGensetCurrencyAria": "Genset currency",
+    "inlandReeferContainer40": "Reefer Container 40",
     "inlandTruckRate": "Truck",
     "resultsFound": "{{count}} results found",
     "pagingSummary": "{{count}} results · Page {{page}} of {{pages}}",
@@ -973,7 +977,14 @@
       "t40hq": "40′ HQ",
       "t20r": "20′ Reefer",
       "t40r": "40′ Reefer Truck",
-      "generator": "Generator"
+      "generator": "Genset",
+      "reefer-container-40": "Reefer Container 40",
+      "reefer-container-20": "Reefer Container 40",
+      "standard-dry-20": "Standard Dry 20",
+      "standard-dry-40": "Standard Dry 40",
+      "dual-dry-20-twin": "Dual Dry 20 (Twin)",
+      "high-cube-premium-40": "High Cube Premium 40",
+      "specialized-marble-20": "Specialized Marble 20"
     },
     "containerSpec": {
       "20 Dry": "20 Dry",

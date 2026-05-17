@@ -1,6 +1,24 @@
 /** Shared keys for approx. totals (must match PricingCard). */
 export const SEA_PRICE_KEYS = ['of20', 'of20rf', 'of40', 'thc20', 'thc20rf', 'thc40', 'of40rf', 'thcRf', 'powerDay', 'pti']
-export const INLAND_PRICE_KEYS = ['p20x1', 'p20x2', 'p40hq', 'p40rf', 'generator', 't20d', 't40hq', 't40d', 't40r', 't20r']
+export const INLAND_PRICE_KEYS = [
+  'reefer-container-40',
+  'reefer-container-20',
+  'standard-dry-20',
+  'standard-dry-40',
+  'dual-dry-20-twin',
+  'high-cube-premium-40',
+  'specialized-marble-20',
+  'p20x1',
+  'p20x2',
+  'p40hq',
+  'p40rf',
+  'generator',
+  't20d',
+  't40hq',
+  't40d',
+  't40r',
+  't20r',
+]
 
 /** Outer shell + table classes — Ocean and Inland rate tables use the same layout rules. */
 export const PRICING_RATES_TABLE_WRAP_CLASS =
@@ -61,6 +79,9 @@ export function inlandContainerSummary(pricing, t) {
     parts.push(t('pricing.detailContainer40'))
   }
   if (pricing.p40rf?.price != null) parts.push(t('pricing.detailContainerRf'))
+  if (pricing['reefer-container-40']?.price != null || pricing['reefer-container-20']?.price != null) {
+    parts.push(t('pricing.inlandReeferContainer40', 'Reefer Container 40'))
+  }
   return parts.length ? parts.join(t('pricing.cardContainerSep')) : dash
 }
 
