@@ -1020,17 +1020,26 @@
   align-items: center;
 }
 
+[dir='rtl'] .pricing-rate-card__route-wrap,
+.pricing-rate-card__route-wrap:has(.pricing-rate-card__route-block--rtl) {
+  direction: rtl;
+}
+
 /* Compact route badge (sea + inland list cards) */
 .pricing-rate-card__route-block {
   display: inline-flex;
+  flex-direction: row;
   align-items: center;
   gap: 0.2rem;
   width: fit-content;
   max-width: 100%;
   margin: 0;
   min-height: 0;
-  direction: ltr;
   unicode-bidi: isolate;
+}
+
+.pricing-rate-card__route-block--rtl {
+  direction: rtl;
 }
 
 .pricing-rate-card__route-end {
@@ -1045,6 +1054,7 @@
   flex-direction: column;
   gap: 0.2rem;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  text-align: start;
 }
 
 [data-theme='dark'] .pricing-rate-card__route-end,
@@ -1170,6 +1180,10 @@
   height: 1px;
   border-radius: 99px;
   background: linear-gradient(90deg, rgba(148, 163, 184, 0.15), rgba(100, 116, 139, 0.5));
+}
+
+.pricing-rate-card__route-block--rtl .pricing-rate-card__route-flow-line {
+  background: linear-gradient(270deg, rgba(148, 163, 184, 0.15), rgba(100, 116, 139, 0.5));
 }
 
 .pricing-rate-card__route-flow-node {
@@ -2092,6 +2106,7 @@
 /* Offer detail modal — unified route strip + breakdown (matches pricing list / finance badges) */
 .pricing-offer-detail-route {
   display: flex;
+  flex-direction: row;
   flex-wrap: wrap;
   align-items: stretch;
   justify-content: space-between;
@@ -2121,9 +2136,21 @@
   align-items: flex-end;
 }
 
-[dir='rtl'] .pricing-offer-detail-route__col--end {
+[dir='rtl'] .pricing-offer-detail-route,
+.pricing-offer-detail-route--rtl {
+  flex-direction: row-reverse;
+}
+
+[dir='rtl'] .pricing-offer-detail-route__col--end,
+.pricing-offer-detail-route--rtl .pricing-offer-detail-route__col--end {
   text-align: start;
   align-items: flex-start;
+}
+
+[dir='rtl'] .pricing-offer-detail-route__col:not(.pricing-offer-detail-route__col--end),
+.pricing-offer-detail-route--rtl .pricing-offer-detail-route__col:not(.pricing-offer-detail-route__col--end) {
+  text-align: end;
+  align-items: flex-end;
 }
 
 .pricing-offer-detail-route__eyebrow {

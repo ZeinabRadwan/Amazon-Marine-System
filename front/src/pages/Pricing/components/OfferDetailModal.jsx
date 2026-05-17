@@ -185,7 +185,7 @@ function OfferDetailRouteSection({ isSea, offer, dash, t, i18n }) {
     const pod = offer.pod || offer.region || dash
     return (
       <section className="pricing-offer-detail-card pricing-offer-detail-card--nested">
-        <div className="pricing-offer-detail-route pricing-offer-detail-route--sea">
+        <div className={`pricing-offer-detail-route pricing-offer-detail-route--sea${rtl ? ' pricing-offer-detail-route--rtl' : ''}`}>
           <div className="pricing-offer-detail-route__col">
             <span className="pricing-offer-detail-route__eyebrow">{t('pricing.offerDetailFromLabel', 'From')}</span>
             <span className="pricing-offer-detail-route__pill pricing-offer-detail-route__pill--pol">
@@ -231,7 +231,7 @@ function OfferDetailRouteSection({ isSea, offer, dash, t, i18n }) {
 
   return (
     <section className="pricing-offer-detail-card pricing-offer-detail-card--nested">
-      <div className="pricing-offer-detail-route pricing-offer-detail-route--inland">
+      <div className={`pricing-offer-detail-route pricing-offer-detail-route--inland${rtl ? ' pricing-offer-detail-route--rtl' : ''}`}>
         <div className="pricing-offer-detail-route__col">
           <span className="pricing-offer-detail-route__eyebrow">{t('pricing.offerDetailFromLabel', 'From')}</span>
           <span className="pricing-offer-detail-route__pill pricing-offer-detail-route__pill--port">
