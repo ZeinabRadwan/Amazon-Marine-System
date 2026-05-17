@@ -620,7 +620,7 @@ export default function OfferDetailModal({
           </PricingFinSection>
 
           {isSea ? (
-            <PricingFinSection title={t('pricing.offerDetailFreeTimeDetDemTitle', 'Detention & demurrage')}>
+            <PricingFinSection title={t('pricing.offerDetailFreeTimeDetDemTitle', 'Detention & Demurrage')}>
               <div className="pricing-offer-detail-detdem">
                 <div className="pricing-offer-detail-detdem__box pricing-offer-detail-detdem__box--pol">
                   <div className="pricing-offer-detail-detdem__title">{t('pricing.pol', 'POL')}</div>

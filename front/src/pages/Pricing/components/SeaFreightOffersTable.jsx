@@ -74,14 +74,14 @@ function SeaRateCardFreeTimeMetaItem({ variant, detention, demurrage, t }) {
       <span className="pricing-rate-card__meta-item-label">{label}</span>
       <span className="pricing-rate-card__meta-item-value pricing-rate-card__meta-item-value--ft">
         <span className="pricing-rate-card__meta-ft-pair">
-          <span className="pricing-rate-card__meta-ft-k">{t('pricing.offerDetailDetentionShort', 'Det')}</span>
+          <span className="pricing-rate-card__meta-ft-k">{t('pricing.offerDetailDetentionShort', 'Detention')}</span>
           <span className="pricing-rate-card__meta-ft-v">{formatRateCardFreeTimeDays(detention, dayUnit, daysUnit)}</span>
         </span>
         <span className="pricing-rate-card__meta-ft-sep" aria-hidden>
           ·
         </span>
         <span className="pricing-rate-card__meta-ft-pair">
-          <span className="pricing-rate-card__meta-ft-k">{t('pricing.offerDetailDemurrageShort', 'Dem')}</span>
+          <span className="pricing-rate-card__meta-ft-k">{t('pricing.offerDetailDemurrageShort', 'Demurrage')}</span>
           <span className="pricing-rate-card__meta-ft-v">{formatRateCardFreeTimeDays(demurrage, dayUnit, daysUnit)}</span>
         </span>
       </span>

@@ -71,7 +71,7 @@ import {
   resolvePricingBreakdownLabel,
 } from '../utils/pricingDisplay'
 
-const QUICK_SELECT_CODES = ['OF', 'THC', 'BL', 'TELEX', 'ISPS', 'PTI', 'POWER']
+const QUICK_SELECT_CODES = ['OF', 'THC', 'BL', 'TELEX', 'PTI', 'POWER']
 
 const ADMIN_HANDLING_FEE_AMOUNT = 50
 const ADMIN_HANDLING_FEE_CURRENCY = 'USD'

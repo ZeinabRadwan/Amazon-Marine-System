@@ -991,14 +991,14 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
               </div>
               </PricingFinSection>
 
-              <PricingFinSection title="قسم 2: أيام الفري / Free time (Detention & Demurrage)">
+              <PricingFinSection title={t('pricing.offerDetailFreeTimeDetDemTitle', 'Detention & Demurrage')}>
               <div className="sea-rate-grid-2 sea-rate-freetime-outer-grid">
                 <div className="sea-rate-freetime-box sea-rate-freetime-pol">
                   <div className="sea-rate-freetime-title">{t('pricing.seaRateFreeTimePolTitle', 'POL')}</div>
                   <div className="sea-rate-freetime-field-rows">
                     <div className="sea-rate-freetime-field-row">
                       <label htmlFor="offer-pol-detention" className="sea-rate-label sea-rate-label--inline">
-                        Detention (أيام)
+                        {t('pricing.detention', 'Detention')} ({t('pricing.days', 'days')})
                       </label>
                       <input
                         id="offer-pol-detention"
@@ -1018,7 +1018,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                     </div>
                     <div className="sea-rate-freetime-field-row">
                       <label htmlFor="offer-pol-demurrage" className="sea-rate-label sea-rate-label--inline">
-                        Demurrage (أيام)
+                        {t('pricing.demurrage', 'Demurrage')} ({t('pricing.days', 'days')})
                       </label>
                       <input
                         id="offer-pol-demurrage"
@@ -1043,7 +1043,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                   <div className="sea-rate-freetime-field-rows">
                     <div className="sea-rate-freetime-field-row">
                       <label htmlFor="offer-pod-detention" className="sea-rate-label sea-rate-label--inline">
-                        Detention (أيام)
+                        {t('pricing.detention', 'Detention')} ({t('pricing.days', 'days')})
                       </label>
                       <input
                         id="offer-pod-detention"
@@ -1063,7 +1063,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                     </div>
                     <div className="sea-rate-freetime-field-row">
                       <label htmlFor="offer-pod-demurrage" className="sea-rate-label sea-rate-label--inline">
-                        Demurrage (أيام)
+                        {t('pricing.demurrage', 'Demurrage')} ({t('pricing.days', 'days')})
                       </label>
                       <input
                         id="offer-pod-demurrage"

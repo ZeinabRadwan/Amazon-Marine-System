@@ -37,7 +37,6 @@ export function createQuickOceanCoreRows(t, quoteCodeLabel) {
     row('THC', quoteCodeLabel('THC'), true),
     row('BL', t('pricing.quickOceanBL', 'B/L fee'), true),
     row('TELEX', quoteCodeLabel('TELEX'), true),
-    row('ISPS', quoteCodeLabel('ISPS'), false),
   ]
 }
 
