@@ -62,65 +62,32 @@
             $grossW !== null && (string) $grossW !== '' ? rtrim(rtrim((string) $grossW, '0'), '.') . ' KG' : '—';
         $netDisplay = $netW !== null && (string) $netW !== '' ? rtrim(rtrim((string) $netW, '0'), '.') . ' KG' : '—';
 
-        $reeferBits = [];
-        if ($form->reefer_temp !== null && (string) $form->reefer_temp !== '') {
-            $reeferBits[] = $labels['lbl_temp'] . ': ' . $form->reefer_temp;
-        }
-        if (trim((string) ($form->reefer_vent ?? '')) !== '') {
-            $reeferBits[] = $labels['lbl_vent'] . ': ' . $form->reefer_vent;
-        }
-        if ($form->reefer_hum !== null && (string) $form->reefer_hum !== '') {
-            $reeferBits[] = $labels['lbl_humidity'] . ': ' . $form->reefer_hum;
-        }
-        $reeferLine = $reeferBits !== [] ? implode(' · ', $reeferBits) : '';
-
         $directionNorm = trim((string) ($form->shipment_direction ?? ''));
         $isImport = strcasecmp($directionNorm, 'Import') === 0;
-        $ctLower = strtolower($containerType);
-        $isReeferType = str_contains($ctLower, 'reefer');
-        $hasReeferData = ($form->reefer_temp !== null && (string) $form->reefer_temp !== '')
-            || trim((string) ($form->reefer_vent ?? '')) !== ''
-            || ($form->reefer_hum !== null && (string) $form->reefer_hum !== '');
-        $isReefer = $isReeferType || $hasReeferData;
-
-        $sectionNum = 7;
-        $importSectionNum = null;
-        $reeferSectionNum = null;
-        if ($isImport) {
-            $importSectionNum = $sectionNum++;
-        }
-        if ($isReefer) {
-            $reeferSectionNum = $sectionNum++;
-        }
-        $notesSectionNum = $sectionNum;
+        $isReeferType = str_contains(strtolower($containerType), 'reefer');
 
         $acidDisplayRaw = trim((string) ($form->acid_number ?? ''));
         $acidDisplay = $acidDisplayRaw !== '' ? $acidDisplayRaw : '—';
 
-        $tempDisplay = ($form->reefer_temp !== null && (string) $form->reefer_temp !== '')
-            ? rtrim(rtrim((string) $form->reefer_temp, '0'), '.') . ' °C'
-            : '—';
-        $ventDisplay = trim((string) ($form->reefer_vent ?? '')) !== '' ? (string) $form->reefer_vent : '—';
-        $humDisplay = ($form->reefer_hum !== null && (string) $form->reefer_hum !== '')
-            ? rtrim(rtrim((string) $form->reefer_hum, '0'), '.') . ' %'
-            : '—';
+        $formatReeferValue = static function ($value, string $unit): string {
+            $raw = trim((string) $value);
+            if ($raw === '') {
+                return '—';
+            }
+            $normalized = rtrim(rtrim($raw, '0'), '.');
+            if (preg_match('/' . preg_quote($unit, '/') . '/iu', $raw)) {
+                return $raw;
+            }
+
+            return $normalized . ' ' . $unit;
+        };
+
+        $tempDisplay = $formatReeferValue($form->reefer_temp, $labels['unit_celsius'] ?? '°C');
+        $ventDisplay = $formatReeferValue($form->reefer_vent, $labels['unit_cbm_h'] ?? 'CBM/H');
+        $humDisplay = $formatReeferValue($form->reefer_hum, $labels['unit_percent'] ?? '%');
 
         $notesBody = trim((string) ($form->notes ?? ''));
-        $extraLines = [];
-        if (! $isImport && ! empty($form->acid_number)) {
-            $extraLines[] = '<span class="pdf-label-strong">' . $labels['acid'] . ':</span> ' . e($form->acid_number);
-        }
-        if (! $isReefer && $reeferLine !== '') {
-            $extraLines[] = '<span class="pdf-label-strong">' . $labels['lbl_reefer'] . ':</span> ' . e($reeferLine);
-        }
-        $notesHtmlParts = [];
-        if ($notesBody !== '') {
-            $notesHtmlParts[] = nl2br(e($notesBody));
-        }
-        if ($extraLines !== []) {
-            $notesHtmlParts[] = implode('<br>', $extraLines);
-        }
-        $notesBlockHtml = $notesHtmlParts !== [] ? implode('<br><br>', $notesHtmlParts) : '—';
+        $notesBlockHtml = $notesBody !== '' ? nl2br(e($notesBody)) : '—';
 
         $clientName = $form->client?->name ?? '—';
         $salesRepName = $form->salesRep?->name ?? '—';
@@ -164,12 +131,12 @@
                                 <span class="pdf-header__meta-label">{{ $labels['lbl_document_date'] }}</span>
                                 <span class="pdf-header__meta-val">{{ $documentDateStr }}</span>
                             </div>
-                            @if($isImport || $isReefer)
+                            @if($isImport || $isReeferType)
                                 <div class="pdf-sd-header-badges">
                                     @if($isImport)
                                         <span class="pdf-sd-badge pdf-sd-badge--import">{{ $labels['badge_import'] }}</span>
                                     @endif
-                                    @if($isReefer)
+                                    @if($isReeferType)
                                         <span class="pdf-sd-badge pdf-sd-badge--reefer">{{ $labels['badge_reefer'] }}</span>
                                     @endif
                                 </div>
@@ -181,7 +148,7 @@
             </header>
         @endif
 
-        {{-- 1. Client & Sales Representative --}}
+        {{-- Client & Sales Representative --}}
         <div class="pdf-section">
             <p class="pdf-section__heading">{{ $labels['sec_1_client_sales'] }}</p>
             <table class="pdf-table">
@@ -212,7 +179,7 @@
             </table>
         </div>
 
-        {{-- 2. Shipment Basic Information --}}
+        {{-- Shipment Basic Information --}}
         <div class="pdf-section">
             <p class="pdf-section__heading">{{ $labels['sec_2_shipment_basic'] }}</p>
             <table class="pdf-table">
@@ -248,7 +215,7 @@
             </table>
         </div>
 
-        {{-- 3. Parties Information --}}
+        {{-- Party Information --}}
         <div class="pdf-section">
             <p class="pdf-section__heading">{{ $labels['sec_3_parties'] }}</p>
             <table class="pdf-table">
@@ -265,7 +232,7 @@
             </table>
         </div>
 
-        {{-- 4. Container Details --}}
+        {{-- Container Details --}}
         <div class="pdf-section">
             <p class="pdf-section__heading">{{ $labels['sec_4_container'] }}</p>
             <table class="pdf-table">
@@ -282,7 +249,7 @@
             </table>
         </div>
 
-        {{-- 5. Cargo Information --}}
+        {{-- Cargo Information --}}
         <div class="pdf-section">
             <p class="pdf-section__heading">{{ $labels['sec_5_cargo'] }}</p>
             <table class="pdf-table">
@@ -297,7 +264,7 @@
             </table>
         </div>
 
-        {{-- 6. Weight Details --}}
+        {{-- Weight Details --}}
         <div class="pdf-section">
             <p class="pdf-section__heading">{{ $labels['sec_6_weight'] }}</p>
             <table class="pdf-table">
@@ -312,49 +279,58 @@
             </table>
         </div>
 
-    @if($isImport)
+        @if ($isReeferType)
+            <div class="pdf-section">
+                <p class="pdf-section__heading pdf-section__heading--reefer-details">{{ $labels['sec_reefer_details'] }}</p>
+                <table class="pdf-table">
+                    <tr>
+                        <th class="pdf-w-33">{{ $labels['lbl_temp_long'] }}</th>
+                        <th class="pdf-w-33">{{ $labels['lbl_vent_long'] }}</th>
+                        <th class="pdf-w-33">{{ $labels['lbl_humidity_long'] }}</th>
+                    </tr>
+                    <tr>
+                        <td class="pdf-sd-cell--reefer">{{ $tempDisplay }}</td>
+                        <td class="pdf-sd-cell--reefer">{{ $ventDisplay }}</td>
+                        <td class="pdf-sd-cell--reefer">{{ $humDisplay }}</td>
+                    </tr>
+                </table>
+            </div>
+        @else
+            <div class="pdf-section">
+                <p class="pdf-section__heading">{{ $labels['sec_additional_details'] }}</p>
+                <table class="pdf-table">
+                    <tr>
+                        <td class="pdf-block-text pdf-sd-notes-cell">—</td>
+                    </tr>
+                </table>
+            </div>
+        @endif
+
+        @if ($isImport)
+            <div class="pdf-section">
+                <p class="pdf-section__heading pdf-section__heading--import-customs">{{ $labels['sec_import_customs'] }}</p>
+                <table class="pdf-table">
+                    <tr>
+                        <th colspan="3">{{ $labels['lbl_acid_number'] }}</th>
+                    </tr>
+                    <tr>
+                        <td colspan="3" class="pdf-block-text pdf-sd-cell--import">{{ $acidDisplay }}</td>
+                    </tr>
+                </table>
+            </div>
+        @endif
+
         <div class="pdf-section">
-            <p class="pdf-section__heading pdf-section__heading--import-customs">{{ $importSectionNum }}. {{ $labels['sec_import_customs'] }}</p>
+            <p class="pdf-section__heading">{{ $labels['sec_additional_notes'] }}</p>
             <table class="pdf-table">
                 <tr>
-                    <th colspan="2">{{ $labels['lbl_acid_number'] }}</th>
+                    <th>{{ $labels['lbl_notes_instructions'] }}</th>
                 </tr>
                 <tr>
-                    <td colspan="2" class="pdf-block-text pdf-sd-cell--import">{{ $acidDisplay }}</td>
+                    <td class="pdf-block-text pdf-sd-notes-cell">{!! $notesBlockHtml !!}</td>
                 </tr>
             </table>
         </div>
-    @endif
-
-    @if($isReefer)
-        <div class="pdf-section">
-            <p class="pdf-section__heading pdf-section__heading--reefer-details">{{ $reeferSectionNum }}. {{ $labels['sec_reefer_details'] }}</p>
-            <table class="pdf-table">
-                <tr>
-                    <th class="pdf-w-33">{{ $labels['lbl_temp_long'] }}</th>
-                    <th class="pdf-w-33">{{ $labels['lbl_vent_long'] }}</th>
-                    <th class="pdf-w-33">{{ $labels['lbl_humidity_long'] }}</th>
-                </tr>
-                <tr>
-                    <td class="pdf-sd-cell--reefer">{{ $tempDisplay }}</td>
-                    <td class="pdf-sd-cell--reefer">{{ $ventDisplay }}</td>
-                    <td class="pdf-sd-cell--reefer">{{ $humDisplay }}</td>
-                </tr>
-            </table>
-        </div>
-    @endif
-
-    <div class="pdf-section">
-        <p class="pdf-section__heading">{{ $notesSectionNum }}. {{ $labels['sec_additional_notes'] }}</p>
-        <table class="pdf-table">
-            <tr>
-                <th>{{ $labels['lbl_notes_instructions'] }}</th>
-            </tr>
-            <tr>
-                <td class="pdf-block-text pdf-sd-notes-cell">{!! $notesBlockHtml !!}</td>
-            </tr>
-        </table>
-    </div>
 
         @if (!empty($footerHtml))
             <footer class="pdf-footer">
