@@ -965,67 +965,10 @@
 .pricing-rate-card__header-identity-row {
   display: flex;
   flex-wrap: wrap;
-  align-items: stretch;
+  align-items: center;
   gap: 0.38rem 0.5rem;
   max-width: 100%;
   min-width: 0;
-}
-
-.pricing-rate-card__header-identity-row > .pricing-rate-card__pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  align-self: stretch;
-  box-sizing: border-box;
-}
-
-.pricing-rate-card__header-identity-row > .pricing-rate-card__route-wrap {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  align-self: stretch;
-  height: auto;
-}
-
-.pricing-rate-card__header-identity-row > .pricing-rate-card__meta--sea {
-  align-self: stretch;
-  align-items: stretch;
-  height: auto;
-}
-
-.pricing-rate-card__header-identity-row .pricing-rate-card__meta-strip {
-  align-self: stretch;
-  height: 100%;
-  justify-content: center;
-}
-
-.pricing-rate-card__header-identity-row .pricing-rate-card__meta-ft-block {
-  display: flex;
-  flex-direction: column;
-  align-self: stretch;
-  height: 100%;
-}
-
-.pricing-rate-card__header-identity-row .pricing-rate-card__meta-ft-grid {
-  flex: 1 1 auto;
-  height: 100%;
-  align-items: stretch;
-}
-
-.pricing-rate-card__header-identity-row .pricing-rate-card__meta-ft-port {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  height: 100%;
-  box-sizing: border-box;
-}
-
-.pricing-rate-card__header-identity-row:has(.pricing-rate-card__meta-ft-block) .pricing-rate-card__meta-strip {
-  justify-content: space-between;
-}
-
-.pricing-rate-card__header-identity-row:has(.pricing-rate-card__meta-ft-block) .pricing-rate-card__meta-item {
-  flex: 1 1 0;
 }
 
 .pricing-rate-card__pill {
@@ -1327,11 +1270,10 @@
 
 .pricing-rate-card__meta-strip {
   display: inline-flex;
-  flex-direction: column;
-  flex-wrap: nowrap;
-  align-items: stretch;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 0.35rem;
-  width: max-content;
   max-width: 100%;
   min-width: 0;
 }
@@ -1341,7 +1283,8 @@
   align-items: center;
   justify-content: center;
   gap: 0.26rem;
-  width: 100%;
+  width: auto;
+  flex: 0 1 auto;
   box-sizing: border-box;
   padding: 0.2rem 0.45rem 0.2rem 0.38rem;
   font-size: 0.64rem;
@@ -1423,89 +1366,59 @@
   color: #e2e8f0;
 }
 
-/* Free time — POL / POD split (rate card meta) */
-.pricing-rate-card__meta-ft-block {
-  flex: 1 1 auto;
-  min-width: min(100%, 11rem);
-  max-width: 100%;
+.pricing-rate-card__meta-item--pol {
+  border-inline-start-color: #378add;
 }
 
-.pricing-rate-card__meta-ft-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.35rem;
-  min-width: 0;
-}
-
-.pricing-rate-card__meta-ft-port {
-  padding: 0.38rem 0.45rem;
-  border-radius: 0.35rem;
-  background: rgba(248, 250, 252, 0.95);
-  border: 1px solid rgba(226, 232, 240, 0.95);
-  min-width: 0;
-}
-
-[data-theme='dark'] .pricing-rate-card__meta-ft-port,
-.dark .pricing-rate-card__meta-ft-port {
-  background: rgba(30, 41, 59, 0.55);
-  border-color: rgba(71, 85, 105, 0.75);
-}
-
-.pricing-rate-card__meta-ft-port--pol {
-  border-inline-end-width: 3px;
-  border-inline-end-color: #378add;
-}
-
-.pricing-rate-card__meta-ft-port--pod {
-  border-inline-end-width: 3px;
-  border-inline-end-color: #d85a30;
-}
-
-.pricing-rate-card__meta-ft-port-title {
-  margin-bottom: 0.28rem;
-  font-size: 0.6rem;
-  font-weight: 700;
-  line-height: 1.3;
-  text-align: start;
-}
-
-.pricing-rate-card__meta-ft-port--pol .pricing-rate-card__meta-ft-port-title {
+.pricing-rate-card__meta-item--pol .pricing-rate-card__meta-item-icon {
   color: #0c447c;
 }
 
-.pricing-rate-card__meta-ft-port--pod .pricing-rate-card__meta-ft-port-title {
+.pricing-rate-card__meta-item--pod {
+  border-inline-start-color: #d85a30;
+}
+
+.pricing-rate-card__meta-item--pod .pricing-rate-card__meta-item-icon {
   color: #993c1d;
 }
 
-[data-theme='dark'] .pricing-rate-card__meta-ft-port--pol .pricing-rate-card__meta-ft-port-title,
-.dark .pricing-rate-card__meta-ft-port--pol .pricing-rate-card__meta-ft-port-title {
+[data-theme='dark'] .pricing-rate-card__meta-item--pol .pricing-rate-card__meta-item-icon,
+.dark .pricing-rate-card__meta-item--pol .pricing-rate-card__meta-item-icon {
   color: #7dd3fc;
 }
 
-[data-theme='dark'] .pricing-rate-card__meta-ft-port--pod .pricing-rate-card__meta-ft-port-title,
-.dark .pricing-rate-card__meta-ft-port--pod .pricing-rate-card__meta-ft-port-title {
+[data-theme='dark'] .pricing-rate-card__meta-item--pod .pricing-rate-card__meta-item-icon,
+.dark .pricing-rate-card__meta-item--pod .pricing-rate-card__meta-item-icon {
   color: #fdba74;
 }
 
-.pricing-rate-card__meta-ft-row {
-  display: flex;
+.pricing-rate-card__meta-item-value--ft {
+  display: inline-flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  justify-content: space-between;
-  gap: 0.35rem;
-  padding: 0.1rem 0;
-  font-size: 0.6rem;
-  line-height: 1.35;
+  justify-content: center;
+  gap: 0.2rem 0.28rem;
+  white-space: normal;
 }
 
-.pricing-rate-card__meta-ft-row + .pricing-rate-card__meta-ft-row {
-  margin-top: 0.12rem;
-  padding-top: 0.14rem;
-  border-top: 1px dashed rgba(148, 163, 184, 0.35);
+.pricing-rate-card__meta-ft-pair {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.18rem;
+}
+
+.pricing-rate-card__meta-ft-sep {
+  color: var(--form-text-muted, #94a3b8);
+  font-weight: 700;
+  user-select: none;
 }
 
 .pricing-rate-card__meta-ft-k {
   flex-shrink: 0;
-  font-weight: 600;
+  font-size: 0.56rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
   color: #64748b;
 }
 
@@ -1518,7 +1431,6 @@
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--form-text, #334155);
-  text-align: end;
 }
 
 [data-theme='dark'] .pricing-rate-card__meta-ft-v,
@@ -1697,7 +1609,7 @@
 
   .pricing-rate-card__header-identity-row {
     gap: 0.32rem;
-    align-items: stretch;
+    align-items: center;
   }
 
   .pricing-rate-card__meta--sea {
@@ -1715,14 +1627,6 @@
 
   .pricing-rate-card__meta-item-value {
     font-size: 0.6rem;
-  }
-
-  .pricing-rate-card__meta-ft-block {
-    flex-basis: 100%;
-  }
-
-  .pricing-rate-card__meta-ft-grid {
-    grid-template-columns: 1fr;
   }
 
   .pricing-rate-card__route-block {

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Box, Clock, Eye, Pencil } from 'lucide-react'
+import { Box, Clock, Eye, Pencil, Timer } from 'lucide-react'
 import { formatDate } from '../../../utils/dateUtils'
 import { IconActionButton } from '../../../components/Table'
 import PricingInlineActions from './PricingInlineActions'
@@ -59,34 +59,33 @@ function formatRateCardFreeTimeDays(value, dayUnit, daysUnit) {
   return `${num} ${daysUnit}`
 }
 
-function SeaRateCardFreeTimePort({ variant, detention, demurrage, t }) {
+function SeaRateCardFreeTimeMetaItem({ variant, detention, demurrage, t }) {
   const isPol = variant === 'pol'
-  const title = `${t(isPol ? 'pricing.oceanRoutePolArabic' : 'pricing.oceanRoutePodArabic', isPol ? 'POL' : 'POD')} / ${t(
-    isPol ? 'pricing.oceanRoutePolEnglishAbbr' : 'pricing.oceanRoutePodEnglishAbbr',
-    isPol ? 'POL' : 'POD'
-  )}`
+  const label = t(isPol ? 'pricing.oceanRoutePolEnglishAbbr' : 'pricing.oceanRoutePodEnglishAbbr', isPol ? 'POL' : 'POD')
   const dayUnit = t('pricing.offerDetailDayUnit', 'day')
   const daysUnit = t('pricing.offerDetailDaysUnit', 'days')
 
   return (
-    <div
-      className={`pricing-rate-card__meta-ft-port pricing-rate-card__meta-ft-port--${variant}`}
-      aria-label={title}
+    <span
+      className={`pricing-rate-card__meta-item pricing-rate-card__meta-item--${variant}`}
+      aria-label={`${label} ${t('pricing.detailFreeTimePolPod', 'Free time')}`}
     >
-      <div className="pricing-rate-card__meta-ft-port-title">{title}</div>
-      <div className="pricing-rate-card__meta-ft-row">
-        <span className="pricing-rate-card__meta-ft-k">
-          {t('pricing.freeTimeDetentionEnglishAbbr', 'Detention')}
+      <Timer className="pricing-rate-card__meta-item-icon" aria-hidden />
+      <span className="pricing-rate-card__meta-item-label">{label}</span>
+      <span className="pricing-rate-card__meta-item-value pricing-rate-card__meta-item-value--ft">
+        <span className="pricing-rate-card__meta-ft-pair">
+          <span className="pricing-rate-card__meta-ft-k">{t('pricing.offerDetailDetentionShort', 'Det')}</span>
+          <span className="pricing-rate-card__meta-ft-v">{formatRateCardFreeTimeDays(detention, dayUnit, daysUnit)}</span>
         </span>
-        <span className="pricing-rate-card__meta-ft-v">{formatRateCardFreeTimeDays(detention, dayUnit, daysUnit)}</span>
-      </div>
-      <div className="pricing-rate-card__meta-ft-row">
-        <span className="pricing-rate-card__meta-ft-k">
-          {t('pricing.freeTimeDemurrageEnglishAbbr', 'Demurrage')}
+        <span className="pricing-rate-card__meta-ft-sep" aria-hidden>
+          ·
         </span>
-        <span className="pricing-rate-card__meta-ft-v">{formatRateCardFreeTimeDays(demurrage, dayUnit, daysUnit)}</span>
-      </div>
-    </div>
+        <span className="pricing-rate-card__meta-ft-pair">
+          <span className="pricing-rate-card__meta-ft-k">{t('pricing.offerDetailDemurrageShort', 'Dem')}</span>
+          <span className="pricing-rate-card__meta-ft-v">{formatRateCardFreeTimeDays(demurrage, dayUnit, daysUnit)}</span>
+        </span>
+      </span>
+    </span>
   )
 }
 
@@ -108,15 +107,13 @@ function SeaRateCardMeta({ offer, containerSummary, dash, t }) {
           <span className="pricing-rate-card__meta-item-label">{t('pricing.transitTime', 'Transit Time')}</span>
           <span className="pricing-rate-card__meta-item-value">{transit}</span>
         </span>
+        {hasFreeTime ? (
+          <>
+            <SeaRateCardFreeTimeMetaItem variant="pol" detention={ft.polDet} demurrage={ft.polDem} t={t} />
+            <SeaRateCardFreeTimeMetaItem variant="pod" detention={ft.podDet} demurrage={ft.podDem} t={t} />
+          </>
+        ) : null}
       </div>
-      {hasFreeTime ? (
-        <div className="pricing-rate-card__meta-ft-block" role="group" aria-label={t('pricing.detailFreeTimePolPod', 'Free time (POL / POD)')}>
-          <div className="pricing-rate-card__meta-ft-grid">
-            <SeaRateCardFreeTimePort variant="pol" detention={ft.polDet} demurrage={ft.polDem} t={t} />
-            <SeaRateCardFreeTimePort variant="pod" detention={ft.podDet} demurrage={ft.podDem} t={t} />
-          </div>
-        </div>
-      ) : null}
     </div>
   )
 }
