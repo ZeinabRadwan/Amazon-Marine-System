@@ -917,6 +917,8 @@
     "detailCostBreakdown": "تفصيل التكلفة",
     "detailApproxTotal": "إجمالي تقريبي",
     "detailFreeTimePolPod": "وقت الفراغ (ميناء الشحن / ميناء الوصول)",
+    "rateCardFreeTimeHeading": "أيام الفري / Free time",
+    "rateCardMetaGroup": "تفاصيل السعر",
     "detailNoFreeTime": "لا توجد ملاحظات وقت فراغ.",
     "detailAdditionalInfo": "معلومات إضافية",
     "transitTimeLabel": "Transit Time",

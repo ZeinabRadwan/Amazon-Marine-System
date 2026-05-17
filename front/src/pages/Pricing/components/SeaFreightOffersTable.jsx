@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Box, Clock, Eye, Pencil, Timer } from 'lucide-react'
+import { Box, Clock, Eye, Pencil } from 'lucide-react'
 import { formatDate } from '../../../utils/dateUtils'
 import { IconActionButton } from '../../../components/Table'
 import PricingInlineActions from './PricingInlineActions'
@@ -52,11 +52,48 @@ function parseFreeTimeFromDnd(dnd) {
   return result
 }
 
+function formatRateCardFreeTimeDays(value, dayUnit, daysUnit) {
+  const num = Number(value)
+  if (!Number.isFinite(num) || num <= 0) return `0 ${daysUnit}`
+  if (num === 1) return `1 ${dayUnit}`
+  return `${num} ${daysUnit}`
+}
+
+function SeaRateCardFreeTimePort({ variant, detention, demurrage, t }) {
+  const isPol = variant === 'pol'
+  const title = `${t(isPol ? 'pricing.oceanRoutePolArabic' : 'pricing.oceanRoutePodArabic', isPol ? 'POL' : 'POD')} / ${t(
+    isPol ? 'pricing.oceanRoutePolEnglishAbbr' : 'pricing.oceanRoutePodEnglishAbbr',
+    isPol ? 'POL' : 'POD'
+  )}`
+  const dayUnit = t('pricing.offerDetailDayUnit', 'day')
+  const daysUnit = t('pricing.offerDetailDaysUnit', 'days')
+
+  return (
+    <div
+      className={`pricing-rate-card__meta-ft-port pricing-rate-card__meta-ft-port--${variant}`}
+      aria-label={title}
+    >
+      <div className="pricing-rate-card__meta-ft-port-title">{title}</div>
+      <div className="pricing-rate-card__meta-ft-row">
+        <span className="pricing-rate-card__meta-ft-k">
+          {t('pricing.freeTimeDetentionEnglishAbbr', 'Detention')}
+        </span>
+        <span className="pricing-rate-card__meta-ft-v">{formatRateCardFreeTimeDays(detention, dayUnit, daysUnit)}</span>
+      </div>
+      <div className="pricing-rate-card__meta-ft-row">
+        <span className="pricing-rate-card__meta-ft-k">
+          {t('pricing.freeTimeDemurrageEnglishAbbr', 'Demurrage')}
+        </span>
+        <span className="pricing-rate-card__meta-ft-v">{formatRateCardFreeTimeDays(demurrage, dayUnit, daysUnit)}</span>
+      </div>
+    </div>
+  )
+}
+
 function SeaRateCardMeta({ offer, containerSummary, dash, t }) {
   const ft = parseFreeTimeFromDnd(offer.dnd)
   const hasFreeTime = Boolean(offer.dnd?.trim())
   const transit = offer.transit_time?.trim() || dash
-  const daysUnit = t('pricing.offerDetailDaysUnit', 'days')
 
   return (
     <div className="pricing-rate-card__meta pricing-rate-card__meta--sea" onClick={(e) => e.stopPropagation()}>
@@ -71,31 +108,15 @@ function SeaRateCardMeta({ offer, containerSummary, dash, t }) {
           <span className="pricing-rate-card__meta-item-label">{t('pricing.transitTime', 'Transit Time')}</span>
           <span className="pricing-rate-card__meta-item-value">{transit}</span>
         </span>
-        {hasFreeTime ? (
-        <span className="pricing-rate-card__meta-item pricing-rate-card__meta-item--freetime">
-          <Timer className="pricing-rate-card__meta-item-icon" aria-hidden />
-          <span className="pricing-rate-card__meta-item-label">{t('pricing.detailFreeTimePolPod', 'Free time')}</span>
-          <span className="pricing-rate-card__meta-item-value pricing-rate-card__meta-ft">
-            <span className="pricing-rate-card__meta-ft-group">
-              <span className="pricing-rate-card__meta-ft-k">{t('pricing.offerDetailDetentionShort', 'Det')}</span>
-              <span className="pricing-rate-card__meta-ft-v">
-                {ft.polDet}/{ft.podDet}
-              </span>
-            </span>
-            <span className="pricing-rate-card__meta-ft-sep" aria-hidden>
-              ·
-            </span>
-            <span className="pricing-rate-card__meta-ft-group">
-              <span className="pricing-rate-card__meta-ft-k">{t('pricing.offerDetailDemurrageShort', 'Dem')}</span>
-              <span className="pricing-rate-card__meta-ft-v">
-                {ft.polDem}/{ft.podDem} {daysUnit}
-              </span>
-            </span>
-            <span className="pricing-rate-card__meta-ft-hint">(POL/POD)</span>
-          </span>
-        </span>
-      ) : null}
       </div>
+      {hasFreeTime ? (
+        <div className="pricing-rate-card__meta-ft-block" role="group" aria-label={t('pricing.detailFreeTimePolPod', 'Free time (POL / POD)')}>
+          <div className="pricing-rate-card__meta-ft-grid">
+            <SeaRateCardFreeTimePort variant="pol" detention={ft.polDet} demurrage={ft.polDem} t={t} />
+            <SeaRateCardFreeTimePort variant="pod" detention={ft.podDet} demurrage={ft.podDem} t={t} />
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

@@ -916,6 +916,8 @@
     "detailCostBreakdown": "Cost breakdown",
     "detailApproxTotal": "Approx. total",
     "detailFreeTimePolPod": "Free time (POL / POD)",
+    "rateCardFreeTimeHeading": "Free time",
+    "rateCardMetaGroup": "Rate details",
     "detailNoFreeTime": "No free time notes on file.",
     "detailAdditionalInfo": "Additional info",
     "transitTimeLabel": "Transit Time",
