@@ -1,6 +1,7 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ChevronDown, X, Ship, Truck, FilePlus2, ArrowRight, ArrowLeft, MapPin } from 'lucide-react'
+import { ChevronDown, X, Ship, Truck, FilePlus2, ArrowRight, ArrowLeft, MapPin, Trash2 } from 'lucide-react'
+import { useMutateOffer } from '../../../hooks/usePricing'
 import '../../Clients/ClientDetailModal.css'
 import '../../Shipments/Shipments.css'
 import { formatDate, sortCurrencyCodes, sumAmountsByCurrencyFromItems, sumPricingObjectByCurrency } from '../../../utils/dateUtils'
@@ -268,10 +269,21 @@ function OfferDetailRouteSection({ isSea, offer, dash, t, i18n }) {
   )
 }
 
-export default function OfferDetailModal({ isOpen, offer, onClose, onCreateQuotation }) {
+export default function OfferDetailModal({
+  isOpen,
+  offer,
+  onClose,
+  onCreateQuotation,
+  canManageOffers = false,
+  onDeleted,
+}) {
   const { t, i18n } = useTranslation()
+  const { delete: deleteOffer, loading: deleteLoading } = useMutateOffer()
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const isSea = offer?.pricing_type === 'sea'
   const amountFirst = Boolean(i18n.language?.startsWith('ar'))
+  const isArchived = offer?.status === 'archived'
+  const showDelete = canManageOffers && isArchived
 
   const otherChargeLabels = useMemo(
     () => parseOtherChargeLabels(offer?.other_charges),
@@ -404,6 +416,18 @@ export default function OfferDetailModal({ isOpen, offer, onClose, onCreateQuota
   const handleCreateQuotation = () => {
     onCreateQuotation?.(offer)
     onClose?.()
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!offer?.id || deleteLoading) return
+    try {
+      await deleteOffer(offer.id)
+      setDeleteConfirmOpen(false)
+      onClose?.()
+      onDeleted?.()
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   const notesText = typeof offer.notes === 'string' ? offer.notes.trim() : ''
@@ -636,25 +660,39 @@ export default function OfferDetailModal({ isOpen, offer, onClose, onCreateQuota
           </div>
         </div>
 
-        <div className="pricing-fin-modal__footer pricing-fin-modal__footer--detail flex flex-col-reverse sm:flex-row gap-3 sm:justify-end">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-5 py-2.5 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200/80 dark:hover:bg-gray-700 rounded-xl transition-colors"
-          >
-            {t('common.close', 'Close')}
-          </button>
-          {typeof onCreateQuotation === 'function' ? (
+        <div className="pricing-fin-modal__footer pricing-fin-modal__footer--detail flex flex-col-reverse sm:flex-row gap-3 sm:justify-between sm:items-center">
+          {showDelete ? (
             <button
               type="button"
-              onClick={handleCreateQuotation}
-              className="page-header__btn page-header__btn--primary inline-flex items-center justify-center gap-2"
+              onClick={() => setDeleteConfirmOpen(true)}
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors"
             >
-              <FilePlus2 className="h-4 w-4 shrink-0" aria-hidden />
-              {t('pricing.ctaCreateQuotation', 'Create Quotation')}
+              <Trash2 className="h-4 w-4 shrink-0" aria-hidden />
+              {t('pricing.actionDelete', 'Delete')}
             </button>
-          ) : null}
-        </div>
+          ) : (
+            <span className="hidden sm:block" aria-hidden />
+          )}
+          <div className="flex flex-col-reverse sm:flex-row gap-3 sm:justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2.5 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200/80 dark:hover:bg-gray-700 rounded-xl transition-colors"
+            >
+              {t('common.close', 'Close')}
+            </button>
+            {typeof onCreateQuotation === 'function' ? (
+              <button
+                type="button"
+                onClick={handleCreateQuotation}
+                className="page-header__btn page-header__btn--primary inline-flex items-center justify-center gap-2"
+              >
+                <FilePlus2 className="h-4 w-4 shrink-0" aria-hidden />
+                {t('pricing.ctaCreateQuotation', 'Create Quotation')}
+              </button>
+            ) : null}
+          </motion>
+        </motion>
       </div>
     </div>
   )

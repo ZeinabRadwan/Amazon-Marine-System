@@ -24,6 +24,9 @@ import {
   getDefaultAccountingTab,
   getAttendanceTabs,
   getDefaultAttendanceSection,
+  computeIsPricingRole,
+  getPricingTabs,
+  getDefaultPricingTab,
   canShowSendToOpsButton,
   canShowEmailToOpsButton,
 } from './permissionHelpers'
@@ -327,7 +330,43 @@ describe('Attendance tabs — Admin Rule', () => {
   })
 })
 
-// ─── 10. SD Forms — Send/Email to Operations Buttons ─────────────────────────
+// ─── 10. Pricing page tabs — Pricing role hides Quotations ───────────────────
+
+describe('Pricing page tabs — Pricing role', () => {
+  describe('computeIsPricingRole()', () => {
+    it('detects Pricing role by role_id', () => {
+      expect(computeIsPricingRole(pricingUser)).toBe(true)
+    })
+
+    it('detects Pricing role by primary_role name', () => {
+      expect(computeIsPricingRole({ primary_role: 'pricing' })).toBe(true)
+    })
+
+    it('returns false for Sales and Admin', () => {
+      expect(computeIsPricingRole(salesUser)).toBe(false)
+      expect(computeIsPricingRole(adminUser)).toBe(false)
+    })
+  })
+
+  describe('getPricingTabs()', () => {
+    it('Pricing role sees only price sheets tab', () => {
+      expect(getPricingTabs(pricingUser)).toEqual(['rates'])
+    })
+
+    it('Sales and Admin see both tabs', () => {
+      expect(getPricingTabs(salesUser)).toEqual(['rates', 'quotes'])
+      expect(getPricingTabs(adminUser)).toEqual(['rates', 'quotes'])
+    })
+  })
+
+  describe('getDefaultPricingTab()', () => {
+    it('defaults to price sheets', () => {
+      expect(getDefaultPricingTab()).toBe('rates')
+    })
+  })
+})
+
+// ─── 11. SD Forms — Send/Email to Operations Buttons ─────────────────────────
 
 describe('SD Forms — Send & Email to Operations visibility', () => {
   describe('canShowSendToOpsButton()', () => {
@@ -382,7 +421,7 @@ describe('SD Forms — Send & Email to Operations visibility', () => {
   })
 })
 
-// ─── 11. Edge Cases & Cross-Role Checks ──────────────────────────────────────
+// ─── 12. Edge Cases & Cross-Role Checks ──────────────────────────────────────
 
 describe('Edge cases', () => {
   it('null/undefined user never causes a crash', () => {
@@ -393,6 +432,7 @@ describe('Edge cases', () => {
     expect(() => computeHasPermission(null, [], 'page', 'key')).not.toThrow()
     expect(() => getAttendanceTabs(null)).not.toThrow()
     expect(() => getAccountingTabs(null)).not.toThrow()
+    expect(() => getPricingTabs(null)).not.toThrow()
   })
 
   it('a user object with roles array (no role_id) is resolved correctly', () => {

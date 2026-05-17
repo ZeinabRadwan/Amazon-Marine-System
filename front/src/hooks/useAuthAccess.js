@@ -6,7 +6,7 @@ import { ROLE_ID } from '../constants/roles'
 /**
  * Page-level and specific action gates aligned with backend `permissions` from AuthenticatedLayout.
  *
- * @returns {{ hasPageAccess: (pageKey: string) => boolean, hasPermission: (page: string, key: string) => boolean, hasAbility: (name: string) => boolean, permissions: any[], abilityNames: string[], allowedPages: string[], user: object|undefined, isAdminRole: boolean, isAccountant: boolean, isOperations: boolean, isSalesRole: boolean, isPricingSalesViewOnly: boolean, roleId: number|undefined, canManagePricingOffers: boolean }}
+ * @returns {{ hasPageAccess: (pageKey: string) => boolean, hasPermission: (page: string, key: string) => boolean, hasAbility: (name: string) => boolean, permissions: any[], abilityNames: string[], allowedPages: string[], user: object|undefined, isAdminRole: boolean, isAccountant: boolean, isOperations: boolean, isSalesRole: boolean, isPricingRole: boolean, isPricingSalesViewOnly: boolean, roleId: number|undefined, canManagePricingOffers: boolean }}
  */
 export function useAuthAccess() {
   const {
@@ -36,6 +36,15 @@ export function useAuthAccess() {
     if (roleId === ROLE_ID.SALES || roleId === ROLE_ID.SALES_MANAGER) return true
     const primary = (user?.primary_role ?? user?.roles?.[0]?.name ?? user?.role?.name ?? '').toString().toLowerCase()
     return primary === 'sales' || primary === 'sales_manager'
+  }, [user, roleId])
+
+  /** Pricing team (role 5 / primary "pricing") — price sheets only on the Pricing page. */
+  const isPricingRole = useMemo(() => {
+    if (roleId === ROLE_ID.PRICING) return true
+    const primary = (user?.primary_role ?? user?.roles?.[0]?.name ?? user?.role?.name ?? '')
+      .toString()
+      .toLowerCase()
+    return primary === 'pricing'
   }, [user, roleId])
 
   const isPricingSalesViewOnly = useMemo(() => isSalesRole && !isAdminRole, [isSalesRole, isAdminRole])
@@ -106,6 +115,7 @@ export function useAuthAccess() {
     isAccountant,
     isOperations,
     isSalesRole,
+    isPricingRole,
     isPricingSalesViewOnly,
     roleId,
     canManagePricingOffers,

@@ -33,6 +33,15 @@ export function computeIsOperations(user) {
   return getRoleId(user) === ROLE_ID.OPERATIONS
 }
 
+/** Returns true if the user is on the Pricing team (role 5 / primary "pricing"). */
+export function computeIsPricingRole(user) {
+  if (getRoleId(user) === ROLE_ID.PRICING) return true
+  const primary = (user?.primary_role ?? user?.roles?.[0]?.name ?? user?.role?.name ?? '')
+    .toString()
+    .toLowerCase()
+  return primary === 'pricing'
+}
+
 /** Returns true if a given page key is in the allowed pages list (or user is admin). */
 export function computeHasPageAccess(user, allowedPages, pageKey) {
   if (!pageKey) return false
@@ -77,6 +86,22 @@ export function getAccountingTabs(user) {
 /** Returns the default Accounting active tab for the user. */
 export function getDefaultAccountingTab(user) {
   return computeIsAccountant(user) ? 'partners' : 'clients'
+}
+
+// ─── Pricing page tab visibility ─────────────────────────────────────────────
+
+const ALL_PRICING_TABS = ['rates', 'quotes']
+
+/** Returns visible Pricing page tab IDs (Pricing role hides Quotations). */
+export function getPricingTabs(user) {
+  const hideQuotations = computeIsPricingRole(user) && !computeIsAdminRole(user)
+  if (hideQuotations) return ALL_PRICING_TABS.filter((id) => id !== 'quotes')
+  return [...ALL_PRICING_TABS]
+}
+
+/** Default Pricing page tab — always price sheets for Pricing role. */
+export function getDefaultPricingTab() {
+  return 'rates'
 }
 
 // ─── Attendance tab visibility ────────────────────────────────────────────────

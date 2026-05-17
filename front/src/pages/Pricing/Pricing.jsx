@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Table, FileText } from 'lucide-react'
 import { Container } from '../../components/Container'
 import Tabs from '../../components/Tabs'
+import { useAuthAccess } from '../../hooks/useAuthAccess'
 import '../../components/Tabs/Tabs.css'
 import '../Clients/Clients.css'
 import '../Invoices/Invoices.css'
@@ -15,26 +16,36 @@ import '../Accountings/CurrencyMapBadges.css'
 
 export default function Pricing() {
   const { t } = useTranslation()
+  const { isPricingRole, isAdminRole } = useAuthAccess()
+  const hideQuotationsTab = isPricingRole && !isAdminRole
   const [activeTab, setActiveTab] = useState('rates')
   const [modalConfig, setModalConfig] = useState({ isOpen: false, offer: null, pricingMode: 'sea' })
   const [refreshKey, setRefreshKey] = useState(0)
 
-  const PRICING_TABS = [
-    { id: 'rates', label: t('pricing.priceSheets'), icon: <Table className="h-4 w-4" /> },
-    { id: 'quotes', label: t('pricing.quotations', 'Quotations'), icon: <FileText className="h-4 w-4" /> },
-  ]
+  const pricingTabs = useMemo(() => {
+    const all = [
+      { id: 'rates', label: t('pricing.priceSheets'), icon: <Table className="h-4 w-4" /> },
+      { id: 'quotes', label: t('pricing.quotations', 'Quotations'), icon: <FileText className="h-4 w-4" /> },
+    ]
+    if (hideQuotationsTab) return all.filter((tab) => tab.id !== 'quotes')
+    return all
+  }, [t, hideQuotationsTab])
+
+  const effectiveTab = hideQuotationsTab && activeTab === 'quotes' ? 'rates' : activeTab
 
   return (
     <Container size="xl">
       <div className="clients-page pricing-page py-6">
-        <div className="invoices-tabs-section">
-          <div className="invoices-tabs-wrap">
-            <Tabs tabs={PRICING_TABS} activeTab={activeTab} onChange={setActiveTab} />
+        {pricingTabs.length > 1 ? (
+          <div className="invoices-tabs-section">
+            <div className="invoices-tabs-wrap">
+              <Tabs tabs={pricingTabs} activeTab={effectiveTab} onChange={setActiveTab} />
+            </div>
           </div>
-        </div>
+        ) : null}
 
         <main className="pricing-content">
-          {activeTab === 'rates' ? (
+          {effectiveTab === 'rates' ? (
             <RateSheet
               refreshKey={refreshKey}
               onAddOffer={(mode) => setModalConfig({ isOpen: true, offer: null, pricingMode: mode || 'sea' })}
