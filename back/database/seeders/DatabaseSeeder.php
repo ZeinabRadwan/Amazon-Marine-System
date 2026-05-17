@@ -5,37 +5,32 @@ namespace Database\Seeders;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
+/**
+ * Production bootstrap only — roles, admin user, lookups, and system reference data.
+ *
+ * Does not seed demo clients, shipments, quotes, invoices, expenses, or sample transactions.
+ */
 class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
 
     /**
-     * Seed the application's database.
+     * Run the database seeds.
      */
     public function run(): void
     {
         $this->call([
             RolesAndPermissionsSeeder::class,
             AdminUserSeeder::class,
-            RoleUsersSeeder::class,
-            SalesTeamUsersSeeder::class,
             BilingualStatusesSeeder::class,
+            ShipmentOperationalStatusesSeeder::class,
             ClientLookupsSeeder::class,
             VendorPartnerTypesSeeder::class,
-            ClientsSeeder::class,
             PortsSeeder::class,
+            ShippingLineSeeder::class,
             SDFormLookupsSeeder::class,
-            SDFormsSeeder::class,
-            ExpensesSeeder::class,
-            InvoicesSeeder::class,
-            CustomerServiceSeeder::class,
-            TreasuryCashWalletsSeeder::class,
             PricingFreightUnitTypesSeeder::class,
-            PricingSeeder::class,
-            VendorsSeeder::class,
-            ClientStatusesSeeder::class,
-            ShipmentStatusesSeeder::class,
-            ShipmentOperationalStatusesSeeder::class,
+            TreasuryCashWalletsSeeder::class,
         ]);
     }
 }

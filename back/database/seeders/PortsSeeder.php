@@ -6,8 +6,7 @@ use App\Models\Port;
 use Illuminate\Database\Seeder;
 
 /**
- * POL/POD reference data — UI/sd-forms.html (Alexandria, Port Said East, Jeddah, Dubai)
- * plus ports named in SDFormsSeeder sample rows (Damietta, Sokhna, Hamburg, Genoa).
+ * POL/POD reference ports for SD forms, pricing, and operations.
  */
 class PortsSeeder extends Seeder
 {
