@@ -65,6 +65,7 @@
         $directionNorm = trim((string) ($form->shipment_direction ?? ''));
         $isImport = strcasecmp($directionNorm, 'Import') === 0;
         $isReeferType = str_contains(strtolower($containerType), 'reefer');
+        $headerVariant = $isReeferType ? 'reefer' : 'import';
 
         $acidDisplayRaw = trim((string) ($form->acid_number ?? ''));
         $acidDisplay = $acidDisplayRaw !== '' ? $acidDisplayRaw : '—';
@@ -99,23 +100,29 @@
         $documentDateStr = optional($form->created_at)->format('d/m/Y') ?? '—';
 
         $logoSrc = \App\Support\PdfLogo::imgSrc();
+        $footerBadgeParts = array_filter([
+            $isImport ? ($labels['badge_import'] ?? 'IMPORT') : null,
+            $isReeferType ? ($labels['badge_reefer'] ?? 'REEFER') : null,
+        ]);
+        $footerBadgeText = $footerBadgeParts !== []
+            ? implode(' | ', $footerBadgeParts) . ' | ' . $sdNum
+            : $sdNum;
+        $footerYear = now()->year;
     @endphp
 
-    <div class="pdf-sd-doc">
+    <div class="pdf-sd-doc pdf-sd-doc--{{ $headerVariant }}">
 
         @if (!empty($headerHtml))
             {!! $headerHtml !!}
         @else
-            <header class="pdf-header pdf-header--branded pdf-header--sd">
-                <table class="pdf-header__table">
+            <header class="pdf-header pdf-header--branded pdf-header--sd pdf-header--sd-banner">
+                <table class="pdf-header__table" width="100%" cellspacing="0" cellpadding="0">
                     <tr>
-                        <td class="pdf-header__logo">
-                            @if ($logoSrc)
+                        @if ($logoSrc)
+                            <td class="pdf-header__logo-cell">
                                 <img class="pdf-header__logo-img" src="{{ $logoSrc }}" alt="">
-                            @else
-                                <div class="pdf-header__logo-fallback">MH</div>
-                            @endif
-                        </td>
+                            </td>
+                        @endif
                         <td class="pdf-header__brand-cell">
                             <div class="pdf-header__brand-stack">
                                 <div class="pdf-header__brand-line"><strong>{{ $labels['brand'] }}</strong></div>
@@ -126,27 +133,27 @@
                         <td class="pdf-header__doc">
                             <p class="pdf-header__title">{{ $labels['doc_title'] }}</p>
                             <div class="pdf-header__sd-big">{{ $sdNum }}</div>
-                            <div class="pdf-header__meta-list">
-                            <div class="pdf-header__date-page-row">
-                                <span class="pdf-header__meta-label">{{ $labels['lbl_document_date'] }}</span>
-                                <span class="pdf-header__meta-val">{{ $documentDateStr }}</span>
+                            <div class="pdf-header__meta-line">
+                                {{ $labels['lbl_document_date'] }} {{ $documentDateStr }}
+                                &nbsp;&nbsp; Page 1 of 1
                             </div>
-                            @if($isImport || $isReeferType)
+                            @if ($isImport || $isReeferType)
                                 <div class="pdf-sd-header-badges">
-                                    @if($isImport)
-                                        <span class="pdf-sd-badge pdf-sd-badge--import">{{ $labels['badge_import'] }}</span>
+                                    @if ($isImport)
+                                        <span class="pdf-sd-badge">{{ $labels['badge_import'] }}</span>
                                     @endif
-                                    @if($isReeferType)
-                                        <span class="pdf-sd-badge pdf-sd-badge--reefer">{{ $labels['badge_reefer'] }}</span>
+                                    @if ($isReeferType)
+                                        <span class="pdf-sd-badge">{{ $labels['badge_reefer'] }}</span>
                                     @endif
                                 </div>
                             @endif
-                        </div>
-                    </td>
+                        </td>
                     </tr>
                 </table>
             </header>
         @endif
+
+        <div class="pdf-sd-body">
 
         {{-- Client & Sales Representative --}}
         <div class="pdf-section">
@@ -284,9 +291,9 @@
                 <p class="pdf-section__heading pdf-section__heading--reefer-details">{{ $labels['sec_reefer_details'] }}</p>
                 <table class="pdf-table">
                     <tr>
-                        <th class="pdf-w-33">{{ $labels['lbl_temp_long'] }}</th>
-                        <th class="pdf-w-33">{{ $labels['lbl_vent_long'] }}</th>
-                        <th class="pdf-w-33">{{ $labels['lbl_humidity_long'] }}</th>
+                        <th class="pdf-w-33 pdf-sd-cell--reefer-label">{{ $labels['lbl_temp_long'] }}</th>
+                        <th class="pdf-w-33 pdf-sd-cell--reefer-label">{{ $labels['lbl_vent_long'] }}</th>
+                        <th class="pdf-w-33 pdf-sd-cell--reefer-label">{{ $labels['lbl_humidity_long'] }}</th>
                     </tr>
                     <tr>
                         <td class="pdf-sd-cell--reefer">{{ $tempDisplay }}</td>
@@ -311,10 +318,12 @@
                 <p class="pdf-section__heading pdf-section__heading--import-customs">{{ $labels['sec_import_customs'] }}</p>
                 <table class="pdf-table">
                     <tr>
-                        <th colspan="3">{{ $labels['lbl_acid_number'] }}</th>
+                        <th class="pdf-w-50 pdf-sd-cell--import-label">{{ $labels['lbl_acid_number'] }}</th>
+                        <th class="pdf-w-50"></th>
                     </tr>
                     <tr>
-                        <td colspan="3" class="pdf-block-text pdf-sd-cell--import">{{ $acidDisplay }}</td>
+                        <td class="pdf-sd-cell--import">{{ $acidDisplay }}</td>
+                        <td></td>
                     </tr>
                 </table>
             </div>
@@ -332,6 +341,17 @@
             </table>
         </div>
 
+        </div>
+
+        <footer class="pdf-sd-footer-bar">
+            <table class="pdf-sd-footer-bar__table" width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                    <td>{{ $labels['brand'] }} &copy; {{ $footerYear }} &nbsp;|&nbsp; Version 1.0</td>
+                    <td class="pdf-sd-footer-bar__right">{{ $footerBadgeText }}</td>
+                </tr>
+            </table>
+        </footer>
+
         @if (!empty($footerHtml))
             <footer class="pdf-footer">
                 {!! $footerHtml !!}
@@ -341,15 +361,3 @@
     </div>
 @endsection
 
-@push('pdf_footer_fullbleed')
-    @if ($pdfFooterBanner = \App\Support\PdfLogo::footerImgSrc())
-        <table class="pdf-footer-fullbleed" width="100%" cellspacing="0" cellpadding="0" border="0"
-            role="presentation">
-            <tr>
-                <td class="pdf-footer-fullbleed__cell">
-                    <img class="pdf-footer-fullbleed__img" src="{{ $pdfFooterBanner }}" alt="">
-                </td>
-            </tr>
-        </table>
-    @endif
-@endpush
