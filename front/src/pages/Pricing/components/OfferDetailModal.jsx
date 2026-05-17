@@ -108,7 +108,7 @@ function seaPricingLabel(code, t, otherChargeLabels = []) {
     thc40: 'THC',
     thcRf: 'THC',
     blFee: 'B/L fee (بوليصة)',
-    telex: 'Telex release',
+    telex: t('pricing.breakdown.telex', 'Telex Release'),
     pti: 'PTI',
     powerDay: 'Power',
   }
@@ -608,7 +608,11 @@ export default function OfferDetailModal({
               )}
               {approxTotalCurrencyKeys.length ? (
                 <div className="pricing-offer-detail-breakdown__foot">
-                  <span className="pricing-offer-detail-breakdown__foot-label">{t('pricing.detailApproxTotal', 'Approx. total')}</span>
+                  <span className="pricing-offer-detail-breakdown__foot-label">
+                    {isSea
+                      ? t('pricing.detailApproxTotal', 'Approx. total')
+                      : t('pricing.total', 'Total')}
+                  </span>
                   <CurrencyMapBadges value={approxTotalsNormalized} size="sm" amountFirst={amountFirst} emptyLabel={dash} />
                 </div>
               ) : null}

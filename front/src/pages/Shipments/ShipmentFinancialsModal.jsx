@@ -251,7 +251,7 @@ const CURRENCIES = ['EGP', 'USD', 'EUR']
 /** English prefixes stored in `description` so template matchers keep working. */
 const LINE_DESC_PREFIX = {
   thc: 'THC – Terminal Handling Charges - عوائد الشحن / رسوم تداول الحاويات بالميناء',
-  telex: 'Telex Release Fee - رسوم التليكس',
+  telex: 'Telex Release',
   dhl: 'DHL / Courier Fees - مصاريف DHL أو الشحن السريع للمستندات',
   bl: 'Bill of Lading Fee (B/L Fee) - رسوم البوليصة',
   power: 'Power Charge - رسوم الباور (خاصة بحاويات الريفير)',

@@ -994,7 +994,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
               <PricingFinSection title="قسم 2: أيام الفري / Free time (Detention & Demurrage)">
               <div className="sea-rate-grid-2 sea-rate-freetime-outer-grid">
                 <div className="sea-rate-freetime-box sea-rate-freetime-pol">
-                  <div className="sea-rate-freetime-title">ميناء التحميل / POL Free Time</div>
+                  <div className="sea-rate-freetime-title">{t('pricing.seaRateFreeTimePolTitle', 'POL')}</div>
                   <div className="sea-rate-freetime-field-rows">
                     <div className="sea-rate-freetime-field-row">
                       <label htmlFor="offer-pol-detention" className="sea-rate-label sea-rate-label--inline">
@@ -1039,7 +1039,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                   </div>
                 </div>
                 <div className="sea-rate-freetime-box sea-rate-freetime-pod">
-                  <div className="sea-rate-freetime-title">ميناء الوصول / POD Free Time</div>
+                  <div className="sea-rate-freetime-title">{t('pricing.seaRateFreeTimePodTitle', 'POD')}</div>
                   <div className="sea-rate-freetime-field-rows">
                     <div className="sea-rate-freetime-field-row">
                       <label htmlFor="offer-pod-detention" className="sea-rate-label sea-rate-label--inline">
