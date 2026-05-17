@@ -656,7 +656,8 @@ export default function OfferDetailModal({
             </PricingFinSection>
           ) : null}
 
-          <PricingFinSection title={t('pricing.detailFreeTimePolPod', 'Free time (POL / POD)')}>
+          {isSea ? (
+            <PricingFinSection title={t('pricing.detailFreeTimePolPod', 'Free time (POL / POD)')}>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 p-4 shadow-sm">
                 <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-1.5">
@@ -681,6 +682,7 @@ export default function OfferDetailModal({
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{t('pricing.detailNoFreeTime', 'No free time notes on file.')}</p>
             ) : null}
           </PricingFinSection>
+          ) : null}
 
           {hasNotes ? (
             <PricingFinSection title={t('pricing.notes', 'Notes')}>
