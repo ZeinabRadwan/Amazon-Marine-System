@@ -47,7 +47,7 @@ function quotePortLabel(row, dash) {
 
 export default function QuotationTable({ refreshKey }) {
   const { t, i18n } = useTranslation()
-  const { isPricingSalesViewOnly } = useAuthAccess()
+  const { canManagePricingQuotes } = useAuthAccess()
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(12)
@@ -216,7 +216,7 @@ export default function QuotationTable({ refreshKey }) {
             label={t('common.view', 'View Details')}
             onClick={() => handleView(row)}
           />
-          {!isPricingSalesViewOnly ? (
+          {canManagePricingQuotes ? (
             <>
               <IconActionButton
                 icon={<Check className="h-4 w-4" />}
@@ -268,7 +268,7 @@ export default function QuotationTable({ refreshKey }) {
         onClear={() => setSearch('')}
         endActions={
           <>
-            {!isPricingSalesViewOnly ? (
+            {canManagePricingQuotes ? (
               <div className="clients-filters__actions quotation-toolbar-actions">
                 <button
                   type="button"

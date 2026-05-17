@@ -17,6 +17,7 @@ class PricingQuoteApiTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        config(['permissions.verification_enabled' => true]);
         $this->seed(RolesAndPermissionsSeeder::class);
     }
 
@@ -24,10 +25,7 @@ class PricingQuoteApiTest extends TestCase
     {
         /** @var User $user */
         $user = User::factory()->create();
-        $user->givePermissionTo([
-            'pricing.view_quotes',
-            'pricing.manage_quotes',
-        ]);
+        $user->assignRole('pricing');
 
         return $user;
     }
@@ -432,5 +430,35 @@ class PricingQuoteApiTest extends TestCase
             ->assertJsonPath('message', 'Quotation deleted.');
 
         $this->assertDatabaseMissing('pricing_quotes', ['id' => $id]);
+    }
+
+    public function test_sales_role_cannot_delete_quote(): void
+    {
+        $pricingUser = $this->actingAsPricingUser();
+        $client = Client::factory()->create();
+        $offer = PricingOffer::factory()->create();
+
+        $create = $this->actingAs($pricingUser, 'sanctum')->postJson('/api/v1/pricing/quotes', [
+            'client_id' => $client->id,
+            'pricing_offer_id' => $offer->id,
+            'pol' => $offer->pol,
+            'pod' => $offer->pod,
+            'shipping_line' => $offer->shipping_line,
+            'container_type' => '40HQ Dry',
+            'qty' => 1,
+            'items' => [
+                ['code' => 'OF', 'name' => 'Ocean Freight', 'description' => '', 'amount' => 500, 'currency' => 'USD'],
+            ],
+        ]);
+        $create->assertCreated();
+        $id = $create->json('data.id');
+
+        /** @var User $sales */
+        $sales = User::factory()->create();
+        $sales->assignRole('sales');
+
+        $this->actingAs($sales, 'sanctum')
+            ->deleteJson('/api/v1/pricing/quotes/'.$id)
+            ->assertForbidden();
     }
 }

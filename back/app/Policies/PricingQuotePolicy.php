@@ -19,26 +19,31 @@ class PricingQuotePolicy
 
     public function create(User $user): bool
     {
-        return $user->hasRole('admin') || $user->can('pricing.manage_quotes');
+        return $this->canManageQuotes($user);
     }
 
     public function update(User $user, PricingQuote $quote): bool
     {
-        return $user->hasRole('admin') || $user->can('pricing.manage_quotes');
+        return $this->canManageQuotes($user);
     }
 
     public function accept(User $user, PricingQuote $quote): bool
     {
-        return $user->hasRole('admin') || $user->can('pricing.manage_quotes');
+        return $this->canManageQuotes($user);
     }
 
     public function reject(User $user, PricingQuote $quote): bool
     {
-        return $user->hasRole('admin') || $user->can('pricing.manage_quotes');
+        return $this->canManageQuotes($user);
     }
 
     public function delete(User $user, PricingQuote $quote): bool
     {
-        return $user->hasRole('admin') || $user->can('pricing.manage_quotes');
+        return $this->canManageQuotes($user);
+    }
+
+    private function canManageQuotes(User $user): bool
+    {
+        return $user->hasRole('admin') || $user->hasRole('pricing');
     }
 }

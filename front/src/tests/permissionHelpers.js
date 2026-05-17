@@ -33,6 +33,11 @@ export function computeIsOperations(user) {
   return getRoleId(user) === ROLE_ID.OPERATIONS
 }
 
+/** Admin or Pricing role may create/update/delete quotations. */
+export function computeCanManagePricingQuotes(user) {
+  return computeIsAdminRole(user) || computeIsPricingRole(user)
+}
+
 /** Returns true if the user is on the Pricing team (role 5 / primary "pricing"). */
 export function computeIsPricingRole(user) {
   if (getRoleId(user) === ROLE_ID.PRICING) return true

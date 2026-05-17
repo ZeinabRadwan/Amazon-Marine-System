@@ -6,7 +6,7 @@ import { ROLE_ID } from '../constants/roles'
 /**
  * Page-level and specific action gates aligned with backend `permissions` from AuthenticatedLayout.
  *
- * @returns {{ hasPageAccess: (pageKey: string) => boolean, hasPermission: (page: string, key: string) => boolean, hasAbility: (name: string) => boolean, permissions: any[], abilityNames: string[], allowedPages: string[], user: object|undefined, isAdminRole: boolean, isAccountant: boolean, isOperations: boolean, isSalesRole: boolean, isPricingRole: boolean, isPricingSalesViewOnly: boolean, roleId: number|undefined, canManagePricingOffers: boolean }}
+ * @returns {{ hasPageAccess: (pageKey: string) => boolean, hasPermission: (page: string, key: string) => boolean, hasAbility: (name: string) => boolean, permissions: any[], abilityNames: string[], allowedPages: string[], user: object|undefined, isAdminRole: boolean, isAccountant: boolean, isOperations: boolean, isSalesRole: boolean, isPricingRole: boolean, isPricingSalesViewOnly: boolean, roleId: number|undefined, canManagePricingOffers: boolean, canManagePricingQuotes: boolean }}
  */
 export function useAuthAccess() {
   const {
@@ -93,6 +93,13 @@ export function useAuthAccess() {
     return primary === 'pricing'
   }, [isAdminRole, isPricingSalesViewOnly, abilityNames, user])
 
+  /** Quotations: create, update, accept/reject, delete — Admin + Pricing role only. */
+  const canManagePricingQuotes = useMemo(() => {
+    if (isAdminRole) return true
+    if (isPricingRole) return true
+    return false
+  }, [isAdminRole, isPricingRole])
+
   /** Quotation defaults: customs clearance fee (settings). Admin + pricing team only. */
   const canManageQuotationCustomsFee = useMemo(() => {
     if (isAdminRole) return true
@@ -119,6 +126,7 @@ export function useAuthAccess() {
     isPricingSalesViewOnly,
     roleId,
     canManagePricingOffers,
+    canManagePricingQuotes,
     canManageQuotationCustomsFee,
   }
 }

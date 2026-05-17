@@ -25,6 +25,7 @@ import {
   getAttendanceTabs,
   getDefaultAttendanceSection,
   computeIsPricingRole,
+  computeCanManagePricingQuotes,
   getPricingTabs,
   getDefaultPricingTab,
   canShowSendToOpsButton,
@@ -362,6 +363,19 @@ describe('Pricing page tabs — Pricing role', () => {
   describe('getDefaultPricingTab()', () => {
     it('defaults to price sheets', () => {
       expect(getDefaultPricingTab()).toBe('rates')
+    })
+  })
+
+  describe('computeCanManagePricingQuotes()', () => {
+    it('allows Admin and Pricing only', () => {
+      expect(computeCanManagePricingQuotes(adminUser)).toBe(true)
+      expect(computeCanManagePricingQuotes(pricingUser)).toBe(true)
+    })
+
+    it('denies Sales, Sales Manager, and Operations', () => {
+      expect(computeCanManagePricingQuotes(salesUser)).toBe(false)
+      expect(computeCanManagePricingQuotes(salesManagerUser)).toBe(false)
+      expect(computeCanManagePricingQuotes(opsUser)).toBe(false)
     })
   })
 })

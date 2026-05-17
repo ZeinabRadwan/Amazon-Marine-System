@@ -24,7 +24,7 @@ const OCEAN_CONTAINER_ITEM_CODES = ['of20', 'of20rf', 'of40', 'of40rf']
 
 export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
   const { t, i18n } = useTranslation()
-  const { canManagePricingOffers, isPricingSalesViewOnly } = useAuthAccess()
+  const { canManagePricingOffers, canManagePricingQuotes } = useAuthAccess()
   const [type, setType] = useState('sea')
   const [seaPol, setSeaPol] = useState('')
   const [seaPod, setSeaPod] = useState('')
@@ -303,12 +303,12 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
         onMutate={refetch}
         onOfferUpdated={setDetailOffer}
         onCreateQuotation={
-          isPricingSalesViewOnly
-            ? undefined
-            : (o) => {
+          canManagePricingQuotes
+            ? (o) => {
                 setQuoteSourceOffer(o)
                 setCreateQuoteOpen(true)
               }
+            : undefined
         }
       />
 
