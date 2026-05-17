@@ -962,6 +962,15 @@
   max-width: 100%;
 }
 
+.pricing-rate-card__header-identity-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.38rem 0.5rem;
+  max-width: 100%;
+  min-width: 0;
+}
+
 .pricing-rate-card__pill {
   flex-shrink: 0;
   padding: 0.22rem 0.55rem;
@@ -1246,6 +1255,185 @@
   opacity: 0.7;
 }
 
+/* Sea rate meta — compact spec strip (header), not footer pill tags */
+.pricing-rate-card__meta--sea {
+  flex: 1 1 12rem;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  line-height: 1.25;
+}
+
+.pricing-rate-card__meta-strip {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0;
+  max-width: 100%;
+  padding: 0.2rem 0.5rem 0.2rem 0.38rem;
+  border-radius: 0.32rem;
+  border: 1px solid rgba(14, 165, 233, 0.28);
+  border-inline-start-width: 3px;
+  border-inline-start-color: #0ea5e9;
+  background: linear-gradient(
+    90deg,
+    rgba(224, 242, 254, 0.55) 0%,
+    rgba(248, 250, 252, 0.35) 42%,
+    rgba(255, 255, 255, 0.15) 100%
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+[data-theme='dark'] .pricing-rate-card__meta-strip,
+.dark .pricing-rate-card__meta-strip {
+  border-color: rgba(56, 189, 248, 0.35);
+  border-inline-start-color: #38bdf8;
+  background: linear-gradient(
+    90deg,
+    rgba(12, 74, 110, 0.45) 0%,
+    rgba(30, 41, 59, 0.55) 50%,
+    rgba(15, 23, 42, 0.35) 100%
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.pricing-rate-card__meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.26rem;
+  padding: 0.12rem 0.45rem;
+  font-size: 0.64rem;
+  line-height: 1.25;
+  max-width: 100%;
+  min-width: 0;
+  border-inline-end: 1px solid rgba(148, 163, 184, 0.38);
+}
+
+.pricing-rate-card__meta-item:last-child {
+  border-inline-end: none;
+  padding-inline-end: 0;
+}
+
+.pricing-rate-card__meta-item:first-child {
+  padding-inline-start: 0;
+}
+
+[data-theme='dark'] .pricing-rate-card__meta-item,
+.dark .pricing-rate-card__meta-item {
+  border-inline-end-color: rgba(71, 85, 105, 0.75);
+}
+
+.pricing-rate-card__meta-item-icon {
+  width: 0.68rem;
+  height: 0.68rem;
+  flex-shrink: 0;
+  color: #0369a1;
+  opacity: 0.92;
+}
+
+[data-theme='dark'] .pricing-rate-card__meta-item-icon,
+.dark .pricing-rate-card__meta-item-icon {
+  color: #7dd3fc;
+}
+
+.pricing-rate-card__meta-item-label {
+  flex-shrink: 0;
+  font-size: 0.56rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+}
+
+[data-theme='dark'] .pricing-rate-card__meta-item-label,
+.dark .pricing-rate-card__meta-item-label {
+  color: #94a3b8;
+}
+
+.pricing-rate-card__meta-item-label::after {
+  content: ':';
+  margin-inline-start: 0.04rem;
+  opacity: 0.75;
+}
+
+.pricing-rate-card__meta-item-value {
+  font-size: 0.64rem;
+  font-weight: 700;
+  color: #1e3a5f;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-theme='dark'] .pricing-rate-card__meta-item-value,
+.dark .pricing-rate-card__meta-item-value {
+  color: #e2e8f0;
+}
+
+.pricing-rate-card__meta-item--freetime .pricing-rate-card__meta-item-icon {
+  color: #b45309;
+}
+
+[data-theme='dark'] .pricing-rate-card__meta-item--freetime .pricing-rate-card__meta-item-icon,
+.dark .pricing-rate-card__meta-item--freetime .pricing-rate-card__meta-item-icon {
+  color: #fbbf24;
+}
+
+.pricing-rate-card__meta-item--freetime .pricing-rate-card__meta-item-value {
+  white-space: normal;
+}
+
+.pricing-rate-card__meta-ft {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.28rem 0.35rem;
+}
+
+.pricing-rate-card__meta-ft-group {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.2rem;
+}
+
+.pricing-rate-card__meta-ft-k {
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #b45309;
+}
+
+[data-theme='dark'] .pricing-rate-card__meta-ft-k,
+.dark .pricing-rate-card__meta-ft-k {
+  color: #fbbf24;
+}
+
+.pricing-rate-card__meta-ft-v {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--form-text, #1e293b);
+}
+
+[data-theme='dark'] .pricing-rate-card__meta-ft-v,
+.dark .pricing-rate-card__meta-ft-v {
+  color: #f8fafc;
+}
+
+.pricing-rate-card__meta-ft-sep {
+  color: var(--form-text-muted, #cbd5e1);
+  font-weight: 700;
+  user-select: none;
+}
+
+.pricing-rate-card__meta-ft-hint {
+  font-size: 0.58rem;
+  font-weight: 600;
+  color: var(--form-text-muted, #94a3b8);
+  opacity: 0.9;
+}
+
 .pricing-rate-card__amounts {
   flex-shrink: 0;
   text-align: end;
@@ -1413,6 +1601,32 @@
 
   .pricing-rate-card__header-identity {
     gap: 0.28rem;
+  }
+
+  .pricing-rate-card__header-identity-row {
+    gap: 0.32rem;
+  }
+
+  .pricing-rate-card__meta--sea {
+    flex-basis: 100%;
+  }
+
+  .pricing-rate-card__meta-strip {
+    width: 100%;
+    padding: 0.24rem 0.42rem 0.24rem 0.34rem;
+  }
+
+  .pricing-rate-card__meta-item {
+    padding: 0.14rem 0.36rem;
+    font-size: 0.6rem;
+  }
+
+  .pricing-rate-card__meta-item-label {
+    display: none;
+  }
+
+  .pricing-rate-card__meta-item-value {
+    font-size: 0.6rem;
   }
 
   .pricing-rate-card__route-block {

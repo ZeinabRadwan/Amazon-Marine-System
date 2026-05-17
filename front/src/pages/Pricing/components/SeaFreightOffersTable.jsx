@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Eye, Pencil } from 'lucide-react'
+import { Box, Clock, Eye, Pencil, Timer } from 'lucide-react'
 import { formatDate } from '../../../utils/dateUtils'
 import { IconActionButton } from '../../../components/Table'
 import PricingInlineActions from './PricingInlineActions'
@@ -52,10 +52,52 @@ function parseFreeTimeFromDnd(dnd) {
   return result
 }
 
-function seaFreeTimeSummary(dnd, dash) {
-  if (!dnd?.trim()) return dash
-  const ft = parseFreeTimeFromDnd(dnd)
-  return `Free: Det ${ft.polDet}/${ft.podDet} | Dem ${ft.polDem}/${ft.podDem} أيام (POL/POD)`
+function SeaRateCardMeta({ offer, containerSummary, dash, t }) {
+  const ft = parseFreeTimeFromDnd(offer.dnd)
+  const hasFreeTime = Boolean(offer.dnd?.trim())
+  const transit = offer.transit_time?.trim() || dash
+  const daysUnit = t('pricing.offerDetailDaysUnit', 'days')
+
+  return (
+    <div className="pricing-rate-card__meta pricing-rate-card__meta--sea" onClick={(e) => e.stopPropagation()}>
+      <div className="pricing-rate-card__meta-strip" role="group" aria-label={t('pricing.rateCardMetaGroup', 'Rate details')}>
+        <span className="pricing-rate-card__meta-item">
+          <Box className="pricing-rate-card__meta-item-icon" aria-hidden />
+          <span className="pricing-rate-card__meta-item-label">{t('pricing.containerType', 'Container')}</span>
+          <span className="pricing-rate-card__meta-item-value">{containerSummary}</span>
+        </span>
+        <span className="pricing-rate-card__meta-item">
+          <Clock className="pricing-rate-card__meta-item-icon" aria-hidden />
+          <span className="pricing-rate-card__meta-item-label">{t('pricing.transitTime', 'Transit')}</span>
+          <span className="pricing-rate-card__meta-item-value">{transit}</span>
+        </span>
+        {hasFreeTime ? (
+        <span className="pricing-rate-card__meta-item pricing-rate-card__meta-item--freetime">
+          <Timer className="pricing-rate-card__meta-item-icon" aria-hidden />
+          <span className="pricing-rate-card__meta-item-label">{t('pricing.detailFreeTimePolPod', 'Free time')}</span>
+          <span className="pricing-rate-card__meta-item-value pricing-rate-card__meta-ft">
+            <span className="pricing-rate-card__meta-ft-group">
+              <span className="pricing-rate-card__meta-ft-k">{t('pricing.offerDetailDetentionShort', 'Det')}</span>
+              <span className="pricing-rate-card__meta-ft-v">
+                {ft.polDet}/{ft.podDet}
+              </span>
+            </span>
+            <span className="pricing-rate-card__meta-ft-sep" aria-hidden>
+              ·
+            </span>
+            <span className="pricing-rate-card__meta-ft-group">
+              <span className="pricing-rate-card__meta-ft-k">{t('pricing.offerDetailDemurrageShort', 'Dem')}</span>
+              <span className="pricing-rate-card__meta-ft-v">
+                {ft.polDem}/{ft.podDem} {daysUnit}
+              </span>
+            </span>
+            <span className="pricing-rate-card__meta-ft-hint">(POL/POD)</span>
+          </span>
+        </span>
+      ) : null}
+      </div>
+    </div>
+  )
 }
 
 function formatSailingSummary(offer, language, dash, t) {
@@ -135,17 +177,17 @@ export default function SeaFreightOffersTable({
                   <div className="pricing-rate-card__header">
                     <div className="pricing-rate-card__header-main">
                       <div className="pricing-rate-card__header-identity">
-                        <div className="pricing-rate-card__pill pricing-rate-card__pill--carrier">{offer.shipping_line || dash}</div>
-                        <div className="pricing-rate-card__route-wrap">
-                          <PricingRateCardRoute
-                            variant="sea"
-                            origin={offer.pol}
-                            destination={offer.pod || offer.region}
-                            dash={dash}
-                          />
-                        </div>
-                        <div className="pricing-rate-card__meta">
-                          {containerSummary} | Transit: {offer.transit_time || dash} | {seaFreeTimeSummary(offer.dnd, dash)}
+                        <div className="pricing-rate-card__header-identity-row">
+                          <span className="pricing-rate-card__pill pricing-rate-card__pill--carrier">{offer.shipping_line || dash}</span>
+                          <div className="pricing-rate-card__route-wrap">
+                            <PricingRateCardRoute
+                              variant="sea"
+                              origin={offer.pol}
+                              destination={offer.pod || offer.region}
+                              dash={dash}
+                            />
+                          </div>
+                          <SeaRateCardMeta offer={offer} containerSummary={containerSummary} dash={dash} t={t} />
                         </div>
                       </div>
                     </div>
