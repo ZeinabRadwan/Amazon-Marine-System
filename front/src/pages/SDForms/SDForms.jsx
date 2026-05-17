@@ -275,7 +275,7 @@ function clearLocalCreateDraft() {
 export default function SDForms() {
   const { t, i18n } = useTranslation()
   const token = getStoredToken()
-  const { isOperations, isAdminRole, isAccountant, roleId, user: authUser } = useAuthAccess()
+  const { isOperations, isAdminRole, isAccountant, roleId } = useAuthAccess()
   const isSales = roleId === 3 // SALES
   const isSalesManager = roleId === 2 // SALES_MANAGER
   const isAnySales = isSales || isSalesManager
@@ -666,16 +666,15 @@ export default function SDForms() {
 
   const openCreate = useCallback(() => {
     const stored = loadLocalCreateDraft()
-    const salesRepId = authUser?.id != null ? String(authUser.id) : ''
     if (stored) {
-      setCreateForm({ ...initialCreateForm(), ...stored, sales_rep_id: salesRepId })
+      setCreateForm({ ...initialCreateForm(), ...stored })
       setDraftRestored(true)
     } else {
-      setCreateForm({ ...initialCreateForm(), sales_rep_id: salesRepId })
+      setCreateForm(initialCreateForm())
       setDraftRestored(false)
     }
     setShowCreate(true)
-  }, [authUser?.id])
+  }, [])
 
   const closeCreate = useCallback(() => {
     setShowCreate(false)
@@ -1098,48 +1097,37 @@ export default function SDForms() {
     [shipmentDirections],
   )
 
-  const resolveSalesRepDisplayName = useCallback(
-    (salesRepId) => {
-      const id =
-        salesRepId != null && String(salesRepId).trim() !== ''
-          ? Number(salesRepId)
-          : authUser?.id != null
-            ? Number(authUser.id)
-            : null
-      if (id == null || Number.isNaN(id)) return '—'
-      const fromList = usersList.find((u) => Number(u.id) === id)
-      if (fromList) return fromList.name ?? fromList.email ?? `User #${fromList.id}`
-      if (authUser && Number(authUser.id) === id) {
-        return authUser.name ?? authUser.email ?? '—'
-      }
-      return '—'
-    },
-    [authUser, usersList]
-  )
-
   const renderSdFormFields = (form, setForm, options = {}) => {
     const { disabled = false, sdNumber = null } = options
     const showAcid = form.shipment_direction === 'Import'
     const showNotifyDetails = form.notify_party_mode === 'different'
-    const showReefer = /reefer/i.test(String(form.container_type || '').trim())
-    const salesRepDisplay = resolveSalesRepDisplayName(form.sales_rep_id)
-    const sdNumberDisplay = sdNumber || '—'
+    const showReefer = String(form.container_type || '').trim().toLowerCase() === 'reefer'
+    const selectedClient = clientsList.find((c) => String(c.id) === String(form.client_id))
+    const clientNamePreview = selectedClient ? (selectedClient.name ?? selectedClient.client_name ?? `#${selectedClient.id}`) : '—'
     const notesHelpText =
       'استخدم هذا الحقل لكتابة أي ملاحظات خاصة بالحجز يجب أن يكون فريق الحجز على علم بها، مثل الشحنات الترانزيت أو أي استثناءات أو تعليمات خاصة بالشحنة'
 
     return (
       <div className="clients-form-sections sd-create-form" lang="en">
-        <section className="client-detail-modal__section sd-form-section-client-sales">
+        <section className="client-detail-modal__section">
+          <h3 className="client-detail-modal__section-title">SD Number</h3>
+          <p className="sd-form-modal-preview__value">{sdNumber || 'SD-000001'}</p>
+          {!sdNumber ? (
+            <p className="sd-form-modal-preview__hint">Auto-generated</p>
+          ) : null}
+          <p className="sd-form-modal-preview__hint" style={{ marginTop: 8 }}>
+            Client Name: {clientNamePreview}
+          </p>
+        </section>
+
+        <section className="client-detail-modal__section">
           <h3 className="client-detail-modal__section-title">
-            {t('sdForms.declaration.sections.clientSalesRep', {
-              lng: 'en',
-              defaultValue: 'Client & Sales Representative',
-            })}
+            {t('sdForms.declaration.sections.clientInfo', { lng: 'en' })}
           </h3>
-          <div className="sd-form-client-sales-row">
+          <div className="client-detail-modal__form-grid">
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-client">
-                {t('sdForms.form.clientName', { lng: 'en', defaultValue: 'Client Name' })}
+                {t('sdForms.form.client', { lng: 'en' })}
               </label>
               <select
                 id="sd-c-client"
@@ -1147,7 +1135,7 @@ export default function SDForms() {
                 onChange={(e) => setForm((f) => ({ ...f, client_id: e.target.value }))}
                 disabled={disabled}
               >
-                <option value="">{t('sdForms.form.selectClient', { lng: 'en', defaultValue: 'Select client…' })}</option>
+                <option value="">{t('sdForms.form.optional', { lng: 'en' })}</option>
                 {clientsList.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name ?? c.client_name ?? `#${c.id}`}
@@ -1155,51 +1143,34 @@ export default function SDForms() {
                 ))}
               </select>
             </div>
-            <div className="client-detail-modal__form-field">
-              <label htmlFor="sd-c-rep-display">
-                {t('sdForms.form.salesRep', { lng: 'en', defaultValue: 'Sales Representative' })}
-              </label>
-              <input
-                id="sd-c-rep-display"
-                type="text"
-                className="sd-form-readonly-input"
-                value={salesRepDisplay}
-                readOnly
-                tabIndex={-1}
-                aria-readonly="true"
-              />
-            </div>
-            <div className="client-detail-modal__form-field">
-              <label htmlFor="sd-c-sd-number">
-                {t('sdForms.form.sdNumber', { lng: 'en', defaultValue: 'SD Number' })}
-              </label>
-              <input
-                id="sd-c-sd-number"
-                type="text"
-                className="sd-form-readonly-input"
-                value={sdNumberDisplay}
-                readOnly
-                tabIndex={-1}
-                aria-readonly="true"
-              />
-              {!sdNumber ? (
-                <p className="sd-form-modal-preview__hint">
-                  {t('sdForms.form.sdNumberAuto', { lng: 'en', defaultValue: 'Auto-generated on save' })}
-                </p>
-              ) : null}
-            </div>
+            {!isAnySales && (
+              <div className="client-detail-modal__form-field">
+                <label htmlFor="sd-c-rep">
+                  {t('sdForms.form.salesRep', { lng: 'en' })}
+                </label>
+                <select
+                  id="sd-c-rep"
+                  value={form.sales_rep_id}
+                  onChange={(e) => setForm((f) => ({ ...f, sales_rep_id: e.target.value }))}
+                  disabled={disabled}
+                >
+                  <option value="">{t('sdForms.form.defaultCurrentUser', { lng: 'en' })}</option>
+                  {usersList.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name ?? u.email ?? `#${u.id}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         </section>
 
-        <section className="client-detail-modal__section sd-form-section-basic">
-          <h3 className="client-detail-modal__section-title">
-            {t('sdForms.declaration.sections.basic', { lng: 'en', defaultValue: 'Shipment Basic Information' })}
-          </h3>
-          <div className="sd-form-basic-row sd-form-basic-row--4">
+        <section className="client-detail-modal__section">
+          <h3 className="client-detail-modal__section-title">1. Shipment Basic Information</h3>
+          <div className="client-detail-modal__form-grid">
             <div className="client-detail-modal__form-field">
-              <label htmlFor="sd-c-pol">
-                {t('sdForms.form.pol', { lng: 'en', defaultValue: 'Port of Loading (POL)' })}
-              </label>
+              <label htmlFor="sd-c-pol">1. Port of Loading (POL)</label>
               <AsyncSelect
                 id="sd-c-pol"
                 value={getPortOption(form.pol_id)}
@@ -1211,9 +1182,7 @@ export default function SDForms() {
               />
             </div>
             <div className="client-detail-modal__form-field">
-              <label htmlFor="sd-c-pod">
-                {t('sdForms.form.pod', { lng: 'en', defaultValue: 'Port of Discharge (POD)' })}
-              </label>
+              <label htmlFor="sd-c-pod">2. Port of Discharge (POD)</label>
               <AsyncSelect
                 id="sd-c-pod"
                 value={getPortOption(form.pod_id)}
@@ -1226,23 +1195,36 @@ export default function SDForms() {
             </div>
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-fdest">
-                {t('sdForms.form.finalDestination', { lng: 'en', defaultValue: 'Final Destination' })}
+                3. Final Destination
               </label>
               <input
                 id="sd-c-fdest"
                 type="text"
-                placeholder={t('sdForms.declaration.finalDestinationPlaceholder', {
-                  lng: 'en',
-                  defaultValue: 'Final destination if different from POD',
-                })}
+                placeholder="Final destination if different from POD"
                 value={form.final_destination}
                 onChange={(e) => setForm((f) => ({ ...f, final_destination: e.target.value }))}
                 disabled={disabled}
               />
             </div>
             <div className="client-detail-modal__form-field">
+              <label htmlFor="sd-c-sline">5. Shipping Line (Required)</label>
+              <AsyncSelect
+                id="sd-c-sline"
+                value={getShippingLineOption(form.shipping_line_id, form.shipping_line)}
+                onChange={(opt) => setForm((f) => ({ 
+                  ...f, 
+                  shipping_line_id: opt?.value || '',
+                  shipping_line: opt?.label || ''
+                }))}
+                loadOptions={loadShippingLineOptions}
+                onCreate={handleCreateShippingLine}
+                placeholder="Select or create shipping line"
+                disabled={disabled}
+              />
+            </div>
+            <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-dir">
-                {t('sdForms.form.shipmentDirection', { lng: 'en', defaultValue: 'Shipment Direction' })}
+                4. Shipment Direction
               </label>
               <select
                 id="sd-c-dir"
@@ -1257,106 +1239,43 @@ export default function SDForms() {
                 }
                 disabled={disabled}
               >
-                <option value="Export">{t('sdForms.declaration.exportDirection', { lng: 'en', defaultValue: 'Export' })}</option>
-                <option value="Import">{t('sdForms.declaration.importDirection', { lng: 'en', defaultValue: 'Import' })}</option>
-              </select>
-            </div>
-          </div>
-          <div className="sd-form-basic-row sd-form-basic-row--3">
-            <div className="client-detail-modal__form-field">
-              <label htmlFor="sd-c-sline">
-                {t('sdForms.form.shippingLine', { lng: 'en', defaultValue: 'Shipping Line' })}
-                {' '}
-                <span className="sd-form-required-mark" aria-hidden="true">*</span>
-              </label>
-              <AsyncSelect
-                id="sd-c-sline"
-                value={getShippingLineOption(form.shipping_line_id, form.shipping_line)}
-                onChange={(opt) =>
-                  setForm((f) => ({
-                    ...f,
-                    shipping_line_id: opt?.value || '',
-                    shipping_line: opt?.label || '',
-                  }))
-                }
-                loadOptions={loadShippingLineOptions}
-                onCreate={handleCreateShippingLine}
-                placeholder={t('sdForms.declaration.selectOrAddShippingLine', {
-                  lng: 'en',
-                  defaultValue: 'Select or create shipping line',
-                })}
-                disabled={disabled}
-              />
-            </div>
-            <div className="client-detail-modal__form-field">
-              <label htmlFor="sd-c-rvd">
-                {t('sdForms.form.requestedVesselDate', { lng: 'en', defaultValue: 'Requested Vessel Date' })}
-              </label>
-              <DatePicker
-                id="sd-c-rvd"
-                locale={i18n.language}
-                className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition-colors placeholder:text-gray-400 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
-                value={form.requested_vessel_date}
-                onChange={(value) => setForm((f) => ({ ...f, requested_vessel_date: value }))}
-                disabled={disabled}
-              />
-            </div>
-            <div className="client-detail-modal__form-field">
-              <label htmlFor="sd-c-ft">
-                {t('sdForms.form.freightTerm', { lng: 'en', defaultValue: 'Freight Term' })}
-              </label>
-              <select
-                id="sd-c-ft"
-                value={form.freight_term}
-                onChange={(e) => setForm((f) => ({ ...f, freight_term: e.target.value }))}
-                disabled={disabled}
-              >
-                <option value="">{t('sdForms.form.freightUnset', { lng: 'en', defaultValue: 'Select' })}</option>
-                <option value="Prepaid">{t('sdForms.declaration.prepaid', { lng: 'en', defaultValue: 'Prepaid' })}</option>
-                <option value="Collect">{t('sdForms.declaration.collect', { lng: 'en', defaultValue: 'Collect' })}</option>
+                <option value="Export">Export</option>
+                <option value="Import">Import</option>
               </select>
             </div>
           </div>
         </section>
 
-        <section className="client-detail-modal__section sd-form-section-parties">
-          <h3 className="client-detail-modal__section-title">
-            {t('sdForms.declaration.sections.parties', { lng: 'en', defaultValue: 'Party Information' })}
-          </h3>
-          <div className="sd-form-parties-row">
-            <div className="client-detail-modal__form-field sd-form-parties-col sd-form-parties-col--shipper">
+        <section className="client-detail-modal__section">
+          <h3 className="client-detail-modal__section-title">2. Parties Information</h3>
+          <div className="client-detail-modal__form-grid">
+            <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
               <label htmlFor="sd-c-shipper">
-                {t('sdForms.form.shipper', { lng: 'en', defaultValue: 'Shipper Information' })}
+                5. Shipper Information
               </label>
               <textarea
                 id="sd-c-shipper"
-                placeholder={t('sdForms.declaration.shipperPlaceholder', {
-                  lng: 'en',
-                  defaultValue: 'Name, address, contact…',
-                })}
+                placeholder="Full shipper details"
                 value={form.shipper_info}
                 onChange={(e) => setForm((f) => ({ ...f, shipper_info: e.target.value }))}
                 disabled={disabled}
               />
             </div>
-            <div className="client-detail-modal__form-field sd-form-parties-col sd-form-parties-col--consignee">
+            <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
               <label htmlFor="sd-c-consignee">
-                {t('sdForms.form.consignee', { lng: 'en', defaultValue: 'Consignee Information' })}
+                6. Consignee Information
               </label>
               <textarea
                 id="sd-c-consignee"
-                placeholder={t('sdForms.declaration.consigneePlaceholder', {
-                  lng: 'en',
-                  defaultValue: 'Name, address, contact…',
-                })}
+                placeholder="Full consignee details"
                 value={form.consignee_info}
                 onChange={(e) => setForm((f) => ({ ...f, consignee_info: e.target.value }))}
                 disabled={disabled}
               />
             </div>
-            <div className="client-detail-modal__form-field sd-form-parties-col sd-form-parties-col--notify">
+            <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-npm">
-                {t('sdForms.form.notifyPartyMode', { lng: 'en', defaultValue: 'Notify Party' })}
+                7. Notify Party
               </label>
               <select
                 id="sd-c-npm"
@@ -1364,57 +1283,60 @@ export default function SDForms() {
                 onChange={(e) => setForm((f) => ({ ...f, notify_party_mode: e.target.value }))}
                 disabled={disabled}
               >
-                <option value="">{t('sdForms.declaration.directionPlaceholder', { lng: 'en', defaultValue: 'Select' })}</option>
-                <option value="same">
-                  {t('sdForms.declaration.notifySameAsConsignee', { lng: 'en', defaultValue: 'Same as Consignee' })}
-                </option>
-                <option value="different">{t('sdForms.form.notifyDifferent', { lng: 'en', defaultValue: 'Different' })}</option>
+                <option value="">Select</option>
+                <option value="same">Same as Consignee</option>
+                <option value="different">Different</option>
               </select>
             </div>
-          </div>
-          {showNotifyDetails ? (
-            <div className="sd-form-parties-notify-details">
-              <div className="client-detail-modal__form-field">
+            {showNotifyDetails ? (
+              <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
                 <label htmlFor="sd-c-npd">
-                  {t('sdForms.form.notifyPartyDetails', { lng: 'en', defaultValue: 'Notify party details' })}
+                  Notify party details
                 </label>
                 <textarea
                   id="sd-c-npd"
-                  placeholder={t('sdForms.declaration.notifyDetailsPlaceholder', {
-                    lng: 'en',
-                    defaultValue: 'Notify party name and details',
-                  })}
+                  placeholder="Notify party name and address"
                   value={form.notify_party_details}
                   onChange={(e) => setForm((f) => ({ ...f, notify_party_details: e.target.value }))}
                   disabled={disabled}
                 />
               </div>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
         </section>
 
-        <section className="client-detail-modal__section sd-form-section-container">
-          <h3 className="client-detail-modal__section-title">
-            {t('sdForms.declaration.sections.container', { lng: 'en', defaultValue: 'Container Details' })}
-          </h3>
-          <div className="sd-form-container-row">
+        <section className="client-detail-modal__section">
+          <h3 className="client-detail-modal__section-title">3. Freight & Payment</h3>
+          <div className="client-detail-modal__form-grid">
+            <div className="client-detail-modal__form-field">
+              <label htmlFor="sd-c-ft">
+                9. Freight Term
+              </label>
+              <select
+                id="sd-c-ft"
+                value={form.freight_term}
+                onChange={(e) => setForm((f) => ({ ...f, freight_term: e.target.value }))}
+                disabled={disabled}
+              >
+                <option value="">Select</option>
+                <option value="Prepaid">Prepaid</option>
+                <option value="Collect">Collect</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <section className="client-detail-modal__section">
+          <h3 className="client-detail-modal__section-title">4. Container Details</h3>
+          <div className="client-detail-modal__form-grid">
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-ctype">
-                {t('sdForms.form.containerType', { lng: 'en', defaultValue: 'Container Type' })}
+                10. Container Type
               </label>
               <select
                 id="sd-c-ctype"
                 value={form.container_type}
-                onChange={(e) => {
-                  const nextType = e.target.value
-                  setForm((f) => ({
-                    ...f,
-                    container_type: nextType,
-                    ...(!/reefer/i.test(String(nextType || '').trim())
-                      ? { reefer_temp: '', reefer_vent: '', reefer_hum: '' }
-                      : {}),
-                  }))
-                }}
+                onChange={(e) => setForm((f) => ({ ...f, container_type: e.target.value }))}
                 disabled={disabled}
               >
                 <option value="">Select</option>
@@ -1427,7 +1349,7 @@ export default function SDForms() {
             </div>
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-csize">
-                {t('sdForms.form.containerSize', { lng: 'en', defaultValue: 'Container Size' })}
+                11. Container Size
               </label>
               <select
                 id="sd-c-csize"
@@ -1445,7 +1367,7 @@ export default function SDForms() {
             </div>
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-numc">
-                {t('sdForms.form.numContainers', { lng: 'en', defaultValue: 'Number of Containers' })}
+                12. Number of Containers
               </label>
               <input
                 id="sd-c-numc"
@@ -1460,34 +1382,62 @@ export default function SDForms() {
           </div>
         </section>
 
-        <section className="client-detail-modal__section sd-form-section-cargo">
-          <h3 className="client-detail-modal__section-title">
-            {t('sdForms.declaration.sections.cargo', { lng: 'en', defaultValue: 'Cargo Information' })}
-          </h3>
-          <div className="sd-form-cargo-row">
-            <div className="client-detail-modal__form-field sd-form-cargo-col sd-form-cargo-col--description">
+        <section className="client-detail-modal__section">
+          <h3 className="client-detail-modal__section-title">5. Shipment Details</h3>
+          <div className="client-detail-modal__form-grid">
+            <div className="client-detail-modal__form-field">
+              <label htmlFor="sd-c-rvd">
+                13. Requested Vessel Date
+              </label>
+              <DatePicker
+                id="sd-c-rvd"
+                locale={i18n.language}
+                className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition-colors placeholder:text-gray-400 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
+                value={form.requested_vessel_date}
+                onChange={(value) => setForm((f) => ({ ...f, requested_vessel_date: value }))}
+                disabled={disabled}
+              />
+            </div>
+            {showAcid ? (
+              <div className="client-detail-modal__form-field">
+                <label htmlFor="sd-c-acid">
+                  14. ACID Number
+                </label>
+                <input
+                  id="sd-c-acid"
+                  type="text"
+                  value={form.acid_number}
+                  onChange={(e) => setForm((f) => ({ ...f, acid_number: e.target.value }))}
+                  disabled={disabled}
+                />
+              </div>
+            ) : null}
+          </div>
+        </section>
+
+        <section className="client-detail-modal__section">
+          <h3 className="client-detail-modal__section-title">6. Cargo Information</h3>
+          <div className="client-detail-modal__form-grid">
+            <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
               <label htmlFor="sd-c-cargo">
-                {t('sdForms.form.cargo', { lng: 'en', defaultValue: 'Cargo Description' })}
+                15. Cargo Description
               </label>
               <textarea
                 id="sd-c-cargo"
-                placeholder={t('sdForms.declaration.cargoPlaceholder', {
-                  lng: 'en',
-                  defaultValue: 'Describe the cargo',
-                })}
+                placeholder="Cargo description"
                 value={form.cargo_description}
                 onChange={(e) => setForm((f) => ({ ...f, cargo_description: e.target.value }))}
                 disabled={disabled}
               />
             </div>
-            <div className="client-detail-modal__form-field sd-form-cargo-col sd-form-cargo-col--hs">
+            <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-hs">
-                {t('sdForms.form.hsCode', { lng: 'en', defaultValue: 'HS Code' })}
+                16. HS Code
               </label>
               <input
                 id="sd-c-hs"
                 type="text"
-                placeholder={t('sdForms.declaration.hsPlaceholder', { lng: 'en', defaultValue: 'e.g. 5208.11' })}
+                placeholder="e.g. 5208.11"
                 value={form.hs_code}
                 onChange={(e) => setForm((f) => ({ ...f, hs_code: e.target.value }))}
                 disabled={disabled}
@@ -1496,14 +1446,56 @@ export default function SDForms() {
           </div>
         </section>
 
-        <section className="client-detail-modal__section sd-form-section-weight">
-          <h3 className="client-detail-modal__section-title">
-            {t('sdForms.declaration.sections.weight', { lng: 'en', defaultValue: 'Weight Details' })}
-          </h3>
+        {showReefer ? (
+          <section className="client-detail-modal__section">
+            <h3 className="client-detail-modal__section-title">7. Reefer Details</h3>
+            <div className="client-detail-modal__form-grid">
+              <div className="client-detail-modal__form-field">
+                <label htmlFor="sd-c-rt">
+                  17. Temperature (Temp)
+                </label>
+                <input
+                  id="sd-c-rt"
+                  type="text"
+                  value={form.reefer_temp}
+                  onChange={(e) => setForm((f) => ({ ...f, reefer_temp: e.target.value }))}
+                  disabled={disabled}
+                />
+              </div>
+              <div className="client-detail-modal__form-field">
+                <label htmlFor="sd-c-rv">
+                  18. Ventilation (Vent)
+                </label>
+                <input
+                  id="sd-c-rv"
+                  type="text"
+                  value={form.reefer_vent}
+                  onChange={(e) => setForm((f) => ({ ...f, reefer_vent: e.target.value }))}
+                  disabled={disabled}
+                />
+              </div>
+              <div className="client-detail-modal__form-field">
+                <label htmlFor="sd-c-rh">
+                  19. Humidity (Hum)
+                </label>
+                <input
+                  id="sd-c-rh"
+                  type="text"
+                  value={form.reefer_hum}
+                  onChange={(e) => setForm((f) => ({ ...f, reefer_hum: e.target.value }))}
+                  disabled={disabled}
+                />
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        <section className="client-detail-modal__section">
+          <h3 className="client-detail-modal__section-title">8. Weight Details</h3>
           <div className="client-detail-modal__form-grid">
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-gw">
-                {t('sdForms.declaration.grossWeightKg', { lng: 'en', defaultValue: 'Total Gross Weight (KG)' })}
+                20. Total Gross Weight (KG)
               </label>
               <input
                 id="sd-c-gw"
@@ -1518,7 +1510,7 @@ export default function SDForms() {
             </div>
             <div className="client-detail-modal__form-field">
               <label htmlFor="sd-c-nw">
-                {t('sdForms.declaration.netWeightKg', { lng: 'en', defaultValue: 'Total Net Weight (KG)' })}
+                21. Total Net Weight (KG)
               </label>
               <input
                 id="sd-c-nw"
@@ -1534,120 +1526,9 @@ export default function SDForms() {
           </div>
         </section>
 
-        {showReefer ? (
-          <section className="client-detail-modal__section sd-form-section-reefer">
-            <h3 className="client-detail-modal__section-title">
-              {t('sdForms.declaration.sections.reefer', { lng: 'en', defaultValue: 'Reefer Details' })}
-            </h3>
-            <div className="sd-form-reefer-row">
-              <div className="client-detail-modal__form-field">
-                <label htmlFor="sd-c-rt">
-                  {t('sdForms.form.reeferTempLabel', { lng: 'en', defaultValue: 'Temperature (Temp)' })}
-                </label>
-                <div className="sd-form-input-with-unit">
-                  <input
-                    id="sd-c-rt"
-                    type="text"
-                    placeholder={t('sdForms.declaration.reeferTempPlaceholder', {
-                      lng: 'en',
-                      defaultValue: 'e.g. -18',
-                    })}
-                    value={form.reefer_temp}
-                    onChange={(e) => setForm((f) => ({ ...f, reefer_temp: e.target.value }))}
-                    disabled={disabled}
-                  />
-                  <span className="sd-form-input-unit" aria-hidden="true">
-                    {t('sdForms.form.reeferTempUnit', { lng: 'en', defaultValue: '°C' })}
-                  </span>
-                </div>
-              </div>
-              <div className="client-detail-modal__form-field">
-                <label htmlFor="sd-c-rv">
-                  {t('sdForms.form.reeferVentLabel', { lng: 'en', defaultValue: 'Ventilation (Vent)' })}
-                </label>
-                <div className="sd-form-input-with-unit">
-                  <input
-                    id="sd-c-rv"
-                    type="text"
-                    placeholder={t('sdForms.declaration.reeferVentPlaceholder', {
-                      lng: 'en',
-                      defaultValue: 'e.g. 25',
-                    })}
-                    value={form.reefer_vent}
-                    onChange={(e) => setForm((f) => ({ ...f, reefer_vent: e.target.value }))}
-                    disabled={disabled}
-                  />
-                  <span className="sd-form-input-unit" aria-hidden="true">
-                    {t('sdForms.form.reeferVentUnit', { lng: 'en', defaultValue: 'CBM/H' })}
-                  </span>
-                </div>
-              </div>
-              <div className="client-detail-modal__form-field">
-                <label htmlFor="sd-c-rh">
-                  {t('sdForms.form.reeferHumLabel', { lng: 'en', defaultValue: 'Humidity (Hum)' })}
-                </label>
-                <div className="sd-form-input-with-unit">
-                  <input
-                    id="sd-c-rh"
-                    type="text"
-                    placeholder={t('sdForms.declaration.reeferHumPlaceholder', {
-                      lng: 'en',
-                      defaultValue: 'e.g. 85',
-                    })}
-                    value={form.reefer_hum}
-                    onChange={(e) => setForm((f) => ({ ...f, reefer_hum: e.target.value }))}
-                    disabled={disabled}
-                  />
-                  <span className="sd-form-input-unit" aria-hidden="true">
-                    {t('sdForms.form.reeferHumUnit', { lng: 'en', defaultValue: '%' })}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </section>
-        ) : (
-          <section className="client-detail-modal__section sd-form-section-additional-details">
-            <h3 className="client-detail-modal__section-title">
-              {t('sdForms.declaration.sections.additionalDetails', {
-                lng: 'en',
-                defaultValue: 'Additional Details',
-              })}
-            </h3>
-          </section>
-        )}
-
-        {showAcid ? (
-          <section className="client-detail-modal__section sd-form-section-import-customs">
-            <h3 className="client-detail-modal__section-title">
-              {t('sdForms.declaration.sections.importCustoms', {
-                lng: 'en',
-                defaultValue: 'Import Customs',
-              })}
-            </h3>
-            <div className="sd-form-import-customs-row">
-              <div className="client-detail-modal__form-field">
-                <label htmlFor="sd-c-acid">
-                  {t('sdForms.form.acidNumber', { lng: 'en', defaultValue: 'ACID Number' })}
-                </label>
-                <input
-                  id="sd-c-acid"
-                  type="text"
-                  placeholder={t('sdForms.declaration.acidPlaceholder', {
-                    lng: 'en',
-                    defaultValue: 'ACID for import',
-                  })}
-                  value={form.acid_number}
-                  onChange={(e) => setForm((f) => ({ ...f, acid_number: e.target.value }))}
-                  disabled={disabled}
-                />
-              </div>
-            </div>
-          </section>
-        ) : null}
-
-        <section className="client-detail-modal__section sd-form-section-notes">
+        <section className="client-detail-modal__section">
           <h3 className="client-detail-modal__section-title flex items-center gap-2">
-            {t('sdForms.declaration.sections.notes', { lng: 'en', defaultValue: 'Additional Notes' })}
+            {t('sdForms.declaration.sections.notes', { lng: 'en' })}
             <span className="help-icon-wrapper">
               <HelpCircle className="h-4 w-4 text-gray-400" />
               <div className="help-icon-tooltip">
@@ -2076,7 +1957,7 @@ export default function SDForms() {
             <div className="client-detail-modal__box client-detail-modal__box--form">
               <header className="client-detail-modal__header client-detail-modal__header--form">
                 <h2 id="sd-create-title" className="client-detail-modal__title">
-                  {t('sdForms.createTitle')}
+                  Create SD Form
                 </h2>
                 <button
                   type="button"
