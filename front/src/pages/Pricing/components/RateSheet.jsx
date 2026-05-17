@@ -301,6 +301,8 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
         isOpen={!!detailOffer}
         offer={detailOffer}
         onClose={() => setDetailOffer(null)}
+        canManageOffers={canManagePricingOffers}
+        onDeleted={refetch}
         onCreateQuotation={
           isPricingSalesViewOnly
             ? undefined

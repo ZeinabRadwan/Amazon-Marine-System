@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown, X, Ship, Truck, FilePlus2, ArrowRight, ArrowLeft, MapPin, Trash2 } from 'lucide-react'
 import { useMutateOffer } from '../../../hooks/usePricing'
@@ -284,6 +284,10 @@ export default function OfferDetailModal({
   const amountFirst = Boolean(i18n.language?.startsWith('ar'))
   const isArchived = offer?.status === 'archived'
   const showDelete = canManageOffers && isArchived
+
+  useEffect(() => {
+    if (!isOpen) setDeleteConfirmOpen(false)
+  }, [isOpen])
 
   const otherChargeLabels = useMemo(
     () => parseOtherChargeLabels(offer?.other_charges),
@@ -691,9 +695,46 @@ export default function OfferDetailModal({
                 {t('pricing.ctaCreateQuotation', 'Create Quotation')}
               </button>
             ) : null}
-          </motion>
-        </motion>
+          </div>
+        </div>
       </div>
+      {deleteConfirmOpen ? (
+        <div className="clients-modal" role="dialog" aria-modal="true" aria-labelledby="offer-delete-title">
+          <div
+            className="clients-modal-backdrop"
+            onClick={() => !deleteLoading && setDeleteConfirmOpen(false)}
+            aria-hidden
+          />
+          <div className="clients-modal-content">
+            <h2 id="offer-delete-title">{t('pricing.confirmDeleteRate', 'Delete this pricing rate?')}</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 m-0">
+              {t(
+                'pricing.confirmDeleteRateHint',
+                'This action cannot be undone. The rate will be permanently removed.'
+              )}
+            </p>
+            <div className="clients-modal-actions">
+              <button
+                type="button"
+                className="clients-btn"
+                onClick={() => setDeleteConfirmOpen(false)}
+                disabled={deleteLoading}
+              >
+                {t('common.cancel', 'Cancel')}
+              </button>
+              <button
+                type="button"
+                className="clients-btn clients-btn--danger"
+                onClick={handleDeleteConfirm}
+                disabled={deleteLoading}
+              >
+                {deleteLoading ? t('common.deleting', 'Deleting…') : t('pricing.actionDelete', 'Delete')}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
     </div>
   )
 }
