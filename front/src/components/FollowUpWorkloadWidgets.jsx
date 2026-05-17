@@ -19,6 +19,7 @@ export default function FollowUpWorkloadWidgets({
   loading = false,
   error = null,
   onClientClick,
+  showClientLinks = true,
   className = '',
 }) {
   const { t, i18n } = useTranslation()
@@ -56,7 +57,9 @@ export default function FollowUpWorkloadWidgets({
                     const inner = (
                       <>
                         <span className="followup-workload-widget__row-head">
-                          <span className="followup-workload-widget__client">{row.client_name ?? '—'}</span>
+                          {showClientLinks ? (
+                            <span className="followup-workload-widget__client">{row.client_name ?? '—'}</span>
+                          ) : null}
                           {priority ? (
                             <span className={`followup-workload-widget__priority followup-workload-widget__priority--${priority}`}>
                               {t(`clients.followUpPriority.${priority}`, priority)}
@@ -76,7 +79,7 @@ export default function FollowUpWorkloadWidgets({
                     )
                     return (
                       <li key={`${key}-${row.id}`} className="followup-workload-widget__item">
-                        {typeof onClientClick === 'function' && row.client_id != null ? (
+                        {showClientLinks && typeof onClientClick === 'function' && row.client_id != null ? (
                           <button
                             type="button"
                             className="followup-workload-widget__btn"

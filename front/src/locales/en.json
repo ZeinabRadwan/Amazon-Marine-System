@@ -2421,6 +2421,7 @@
       "day": "day(s)"
     },
     "followUpWorkloadTitle": "Your follow-up workload",
+    "followUpClientWorkloadTitle": "Follow-ups for this client",
     "followUpWorkloadError": "Could not load follow-up workload.",
     "followUpWidgetOverdue": "Overdue follow-ups",
     "followUpWidgetToday": "Due today",

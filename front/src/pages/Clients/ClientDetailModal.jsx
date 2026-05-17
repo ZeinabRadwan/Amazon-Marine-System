@@ -225,6 +225,7 @@ export default function ClientDetailModal({
   workloadSummary = null,
   workloadSummaryLoading = false,
   workloadSummaryError = null,
+  workloadScopedToClient = false,
   onWorkloadClientId,
   shipmentCreating = false,
   onCreateShipment,
@@ -592,12 +593,17 @@ export default function ClientDetailModal({
             <section className="client-detail-modal__section">
               <h3 className="client-detail-modal__section-title">{t('clients.tabs.followups')}</h3>
               <div className="client-detail-modal__followup-widgets-wrap">
-                <p className="client-detail-modal__followup-widgets-label">{t('clients.followUpWorkloadTitle', 'Your follow-up workload')}</p>
+                <p className="client-detail-modal__followup-widgets-label">
+                  {workloadScopedToClient
+                    ? t('clients.followUpClientWorkloadTitle', 'Follow-ups for this client')
+                    : t('clients.followUpWorkloadTitle', 'Your follow-up workload')}
+                </p>
                 <FollowUpWorkloadWidgets
                   summary={workloadSummary}
                   loading={workloadSummaryLoading}
                   error={workloadSummaryError}
-                  onClientClick={onWorkloadClientId}
+                  showClientLinks={!workloadScopedToClient}
+                  onClientClick={workloadScopedToClient ? undefined : onWorkloadClientId}
                 />
               </div>
               {onAddFollowUp && (

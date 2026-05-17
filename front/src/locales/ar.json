@@ -2422,6 +2422,7 @@
       "day": "يوم"
     },
     "followUpWorkloadTitle": "عبء المتابعات لديك",
+    "followUpClientWorkloadTitle": "متابعات هذا العميل",
     "followUpWorkloadError": "تعذر تحميل ملخص المتابعات.",
     "followUpWidgetOverdue": "متابعات متأخرة",
     "followUpWidgetToday": "مطلوبة اليوم",

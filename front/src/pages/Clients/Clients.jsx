@@ -27,7 +27,6 @@ import {
   getClientFollowUps,
   updateClientFollowUp,
   deleteClientFollowUp,
-  getFollowUpMySummary,
   postClientFollowUp,
   createClientShipment,
 } from '../../api/clients'
@@ -40,6 +39,7 @@ import {
   listDecisionMakerTitles,
 } from '../../api/clientLookups'
 import { useAuthAccess } from '../../hooks/useAuthAccess'
+import { buildFollowUpWorkloadSummary } from '../../utils/followUpWorkload'
 import { Container } from '../../components/Container'
 import '../../components/PageHeader/PageHeader.css'
 import { Table, IconActionButton } from '../../components/Table'
@@ -211,10 +211,6 @@ export default function Clients() {
   const [followUpSubmitting, setFollowUpSubmitting] = useState(false)
   const [followUpUpdatingId, setFollowUpUpdatingId] = useState(null)
   const [followUpDeletingId, setFollowUpDeletingId] = useState(null)
-  const [workloadSummary, setWorkloadSummary] = useState(null)
-  const [workloadSummaryLoading, setWorkloadSummaryLoading] = useState(false)
-  const [workloadSummaryError, setWorkloadSummaryError] = useState(null)
-  const [workloadRefreshKey, setWorkloadRefreshKey] = useState(0)
   const [shipmentCreating, setShipmentCreating] = useState(false)
   const [charts, setCharts] = useState(null)
   const [chartsLoading, setChartsLoading] = useState(false)
@@ -412,28 +408,16 @@ export default function Clients() {
       .finally(() => setFollowUpsLoading(false))
   }, [token, detailId, detailTab, t])
 
-  useEffect(() => {
-    if (!token || detailTab !== 'followups') return
-    let cancelled = false
-    setWorkloadSummaryLoading(true)
-    setWorkloadSummaryError(null)
-    getFollowUpMySummary(token)
-      .then((res) => {
-        if (!cancelled) setWorkloadSummary(res)
-      })
-      .catch((e) => {
-        if (!cancelled) {
-          setWorkloadSummary(null)
-          setWorkloadSummaryError(e?.message || t('clients.followUpWorkloadError', 'Could not load workload summary.'))
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setWorkloadSummaryLoading(false)
-      })
-    return () => {
-      cancelled = true
+  const clientFollowUpWorkload = useMemo(() => {
+    if (!detailId || detailTab !== 'followups') return null
+    const clientName = detailClient?.company_name || detailClient?.name || ''
+    return {
+      data: buildFollowUpWorkloadSummary(followUps, {
+        clientId: detailId,
+        clientName,
+      }),
     }
-  }, [token, detailTab, workloadRefreshKey, t])
+  }, [detailId, detailTab, detailClient, followUps])
 
   useEffect(() => {
     const id = location.state?.focusClientId
@@ -857,7 +841,6 @@ export default function Clients() {
       const data = await getClientFollowUps(token, detailId)
       const arr = data.data ?? data.follow_ups ?? data
       setFollowUps(Array.isArray(arr) ? arr : [])
-      setWorkloadRefreshKey((k) => k + 1)
       window.dispatchEvent(new CustomEvent('am:followups:changed'))
       setAlert({ type: 'success', message: t('clients.followUpAdded', 'Follow-up added.') })
       return true
@@ -878,7 +861,6 @@ export default function Clients() {
       const data = await getClientFollowUps(token, detailId)
       const arr = data.data ?? data.follow_ups ?? data
       setFollowUps(Array.isArray(arr) ? arr : [])
-      setWorkloadRefreshKey((k) => k + 1)
       window.dispatchEvent(new CustomEvent('am:followups:changed'))
       setAlert({ type: 'success', message: t('clients.followUpUpdated', 'Follow-up updated.') })
       return true
@@ -897,7 +879,6 @@ export default function Clients() {
     try {
       await deleteClientFollowUp(token, detailId, followUpId)
       setFollowUps((prev) => prev.filter((f) => Number(f.id) !== Number(followUpId)))
-      setWorkloadRefreshKey((k) => k + 1)
       window.dispatchEvent(new CustomEvent('am:followups:changed'))
       setAlert({ type: 'success', message: t('clients.followUpDeleted', 'Follow-up deleted.') })
       return true
@@ -1740,15 +1721,10 @@ export default function Clients() {
         onAddFollowUp={handleAddFollowUp}
         onUpdateFollowUp={handleUpdateFollowUp}
         onDeleteFollowUp={handleDeleteFollowUp}
-        workloadSummary={workloadSummary}
-        workloadSummaryLoading={workloadSummaryLoading}
-        workloadSummaryError={workloadSummaryError}
-        onWorkloadClientId={(cid) => {
-          if (cid != null && Number(cid) !== Number(detailId)) {
-            setDetailId(Number(cid))
-            setDetailTab('followups')
-          }
-        }}
+        workloadSummary={clientFollowUpWorkload}
+        workloadSummaryLoading={followUpsLoading}
+        workloadSummaryError={null}
+        workloadScopedToClient
         shipmentCreating={shipmentCreating}
         onCreateShipment={handleCreateShipment}
         financialSummaryList={financialSummaryList}
