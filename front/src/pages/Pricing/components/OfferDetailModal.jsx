@@ -41,27 +41,6 @@ const INLAND_ITEMS = [
   { key: 'generator', optional: true },
 ]
 
-/** Split combined D&D string into POL / POD columns when possible. */
-function splitFreeTimePolPod(dnd) {
-  if (!dnd || !String(dnd).trim()) {
-    return { pol: null, pod: null }
-  }
-  const s = String(dnd).trim()
-  const nl = s.split(/\r?\n/).filter(Boolean)
-  if (nl.length >= 2) {
-    return { pol: nl[0], pod: nl.slice(1).join(' ') }
-  }
-  const slash = s.split(/\s*\/\s+/)
-  if (slash.length >= 2) {
-    return { pol: slash[0], pod: slash.slice(1).join(' / ') }
-  }
-  const pipe = s.split(/\s*\|\s*/)
-  if (pipe.length >= 2) {
-    return { pol: pipe[0], pod: pipe[1] }
-  }
-  return { pol: s, pod: s }
-}
-
 function parseFreeTimeDigits(raw) {
   const s = String(raw ?? '').trim()
   if (!s) return '0'
@@ -387,7 +366,6 @@ export default function OfferDetailModal({
     return o
   }, [approxTotalsByCurrency, approxTotalCurrencyKeys])
 
-  const { pol: freePol, pod: freePod } = splitFreeTimePolPod(offer?.dnd)
 
   if (!isOpen || !offer) return null
 
@@ -636,7 +614,7 @@ export default function OfferDetailModal({
           </PricingFinSection>
 
           {isSea ? (
-            <PricingFinSection title={t('pricing.offerDetailFreeTimeDetDemTitle', 'Detention & Demurrage')}>
+            <PricingFinSection title={t('pricing.offerDetailFreeTimeDetDemTitle', 'Free Time (Days)')}>
               <div className="pricing-offer-detail-detdem">
                 <div className="pricing-offer-detail-detdem__box pricing-offer-detail-detdem__box--pol">
                   <div className="pricing-offer-detail-detdem__title">{t('pricing.pol', 'POL')}</div>
@@ -670,34 +648,6 @@ export default function OfferDetailModal({
                 </div>
               </div>
             </PricingFinSection>
-          ) : null}
-
-          {isSea ? (
-            <PricingFinSection title={t('pricing.detailFreeTimePolPod', 'Free time (POL / POD)')}>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 p-4 shadow-sm">
-                <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5" aria-hidden />
-                  {t('pricing.pol', 'POL')}
-                </p>
-                <p className="text-sm font-semibold text-gray-900 dark:text-white whitespace-pre-wrap leading-relaxed">
-                  {freePol || dash}
-                </p>
-              </div>
-              <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 p-4 shadow-sm">
-                <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5" aria-hidden />
-                  {t('pricing.pod', 'POD')}
-                </p>
-                <p className="text-sm font-semibold text-gray-900 dark:text-white whitespace-pre-wrap leading-relaxed">
-                  {freePod || dash}
-                </p>
-              </div>
-            </div>
-            {!offer.dnd?.trim() ? (
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{t('pricing.detailNoFreeTime', 'No free time notes on file.')}</p>
-            ) : null}
-          </PricingFinSection>
           ) : null}
 
           {hasNotes ? (

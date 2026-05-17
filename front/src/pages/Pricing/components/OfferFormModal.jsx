@@ -916,7 +916,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
               </div>
               </PricingFinSection>
 
-              <PricingFinSection title={t('pricing.offerDetailFreeTimeDetDemTitle', 'Detention & Demurrage')}>
+              <PricingFinSection title={t('pricing.offerDetailFreeTimeDetDemTitle', 'Free Time (Days)')}>
               <div className="sea-rate-grid-2 sea-rate-freetime-outer-grid">
                 <div className="sea-rate-freetime-box sea-rate-freetime-pol">
                   <div className="sea-rate-freetime-title">{t('pricing.seaRateFreeTimePolTitle', 'POL')}</div>

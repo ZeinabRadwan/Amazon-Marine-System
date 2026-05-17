@@ -594,7 +594,7 @@
     "offerDetailRouteBadgeDestination": "الوجهة",
     "offerDetailGovAreaLabel": "المحافظة / المنطقة",
     "offerDetailEquipmentScheduleTitle": "المعدات والجدول",
-    "offerDetailFreeTimeDetDemTitle": "Detention & Demurrage",
+    "offerDetailFreeTimeDetDemTitle": "وقت الفراغ (أيام)",
     "offerDetailDetentionShort": "Detention",
     "offerDetailDemurrageShort": "Demurrage",
     "offerDetailDaysUnit": "أيام",

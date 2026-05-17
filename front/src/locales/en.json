@@ -593,7 +593,7 @@
     "offerDetailRouteBadgeDestination": "Destination",
     "offerDetailGovAreaLabel": "Governorate / area",
     "offerDetailEquipmentScheduleTitle": "Equipment & schedule",
-    "offerDetailFreeTimeDetDemTitle": "Detention & Demurrage",
+    "offerDetailFreeTimeDetDemTitle": "Free Time (Days)",
     "offerDetailDetentionShort": "Detention",
     "offerDetailDemurrageShort": "Demurrage",
     "offerDetailDaysUnit": "days",
