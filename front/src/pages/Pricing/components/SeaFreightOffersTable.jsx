@@ -68,7 +68,7 @@ function SeaRateCardMeta({ offer, containerSummary, dash, t }) {
         </span>
         <span className="pricing-rate-card__meta-item">
           <Clock className="pricing-rate-card__meta-item-icon" aria-hidden />
-          <span className="pricing-rate-card__meta-item-label">{t('pricing.transitTime', 'Transit')}</span>
+          <span className="pricing-rate-card__meta-item-label">{t('pricing.transitTime', 'Transit Time')}</span>
           <span className="pricing-rate-card__meta-item-value">{transit}</span>
         </span>
         {hasFreeTime ? (

@@ -97,7 +97,7 @@ export default function QuoteDetailViewContent({ quote }) {
                 t={t}
               />
               <QuoteSummaryBadge label={t('pricing.quoteBadgeContainer', 'نوع الحاوية')}>{containerLabel}</QuoteSummaryBadge>
-              <QuoteSummaryBadge label={t('pricing.quoteBadgeTransit', 'مدة العبور')}>
+              <QuoteSummaryBadge label={t('pricing.quoteBadgeTransit', 'Transit Time')}>
                 {quote?.transit_time || dash}
               </QuoteSummaryBadge>
               <QuoteSailingScheduleDisplay text={sailingScheduleDisplayText} />

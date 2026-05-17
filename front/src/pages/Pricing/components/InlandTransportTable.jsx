@@ -140,7 +140,7 @@ export default function InlandTransportTable({
                       {(() => {
                         const bits = []
                           if (offer.transit_time?.trim()) {
-                            bits.push(`${t('pricing.transitTime', 'Transit')}: ${offer.transit_time.trim()}`)
+                            bits.push(`${t('pricing.transitTime', 'Transit Time')}: ${offer.transit_time.trim()}`)
                           }
                           if (offer.dnd?.trim()) {
                             bits.push(offer.dnd.trim())

@@ -1386,7 +1386,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                       <QuoteSummaryBadge label={t('pricing.quoteBadgeContainer', 'نوع الحاوية')}>
                         {routeDisplayOffer ? inferContainerFromOffer(routeDisplayOffer) : form.container_type || '—'}
                       </QuoteSummaryBadge>
-                      <QuoteSummaryBadge label={t('pricing.quoteBadgeTransit', 'مدة العبور')}>
+                      <QuoteSummaryBadge label={t('pricing.quoteBadgeTransit', 'Transit Time')}>
                         {routeDisplayOffer?.transit_time || form.transit_time || '—'}
                       </QuoteSummaryBadge>
                       {sailingSchedule || sailingScheduleDisplayText !== t('common.dash', '—') ? (
@@ -1443,7 +1443,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                         />
                       </label>
                       <label className="pricing-quote-field-chip">
-                        <span className="pricing-quote-field-chip__label">{t('pricing.transitTime', 'Transit')}</span>
+                        <span className="pricing-quote-field-chip__label">{t('pricing.transitTime', 'Transit Time')}</span>
                         <input
                           value={form.transit_time}
                           onChange={(e) => setField('transit_time', e.target.value)}

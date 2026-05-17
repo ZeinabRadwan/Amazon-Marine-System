@@ -973,7 +973,9 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="offer-transit-time" className="sea-rate-label">مدة العبور / Transit Time</label>
+                  <label htmlFor="offer-transit-time" className="sea-rate-label">
+                    {t('pricing.transitTimeLabel', 'Transit Time')}
+                  </label>
                   <input
                     id="offer-transit-time"
                     type="number"
@@ -983,7 +985,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                     value={displayNumericInputValue(form.transit_time_days)}
                     onChange={(e) => updateForm({ transit_time_days: e.target.value })}
                     placeholder="0"
-                    aria-label={t('pricing.oceanRouteTransitTimeAria', 'Transit time (days)')}
+                    aria-label={t('pricing.oceanRouteTransitTimeAria', 'Transit Time (days)')}
                   />
                 </div>
               </div>

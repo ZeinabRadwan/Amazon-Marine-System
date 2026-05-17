@@ -201,7 +201,7 @@ export default function QuickQuoteForm({
             </div>
             <div className="space-y-1">
               <label className="text-sm font-bold text-gray-700 dark:text-gray-300">
-                {t('pricing.transitTime', 'Transit time (days)')}
+                {t('pricing.transitTimeLabel', 'Transit Time')}
               </label>
               <input
                 value={form.transit_time}

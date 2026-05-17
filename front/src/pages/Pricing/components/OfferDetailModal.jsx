@@ -547,7 +547,7 @@ export default function OfferDetailModal({
                   <OfferDetailFieldRow label={t('pricing.offerDetailContainerTypeFieldLabel', 'Container Type / نوع الحاوية')}>
                     {seaContainerSummary(offer.pricing, t)}
                   </OfferDetailFieldRow>
-                  <OfferDetailFieldRow label={t('pricing.offerDetailTransitFieldLabel', 'Transit Time / مدة العبور')}>
+                  <OfferDetailFieldRow label={t('pricing.offerDetailTransitFieldLabel', 'Transit Time')}>
                     {offer.transit_time || dash}
                   </OfferDetailFieldRow>
                   <OfferDetailFieldRow label={t('pricing.offerDetailValidityFieldLabel', 'Validity / الصلاحية')}>
@@ -566,7 +566,7 @@ export default function OfferDetailModal({
                     {routeLabel}
                   </OfferDetailFieldRow>
                   {offer.transit_time ? (
-                    <OfferDetailFieldRow label={t('pricing.offerDetailTransitFieldLabel', 'Transit Time / مدة العبور')}>
+                    <OfferDetailFieldRow label={t('pricing.offerDetailTransitFieldLabel', 'Transit Time')}>
                       {offer.transit_time}
                     </OfferDetailFieldRow>
                   ) : null}
