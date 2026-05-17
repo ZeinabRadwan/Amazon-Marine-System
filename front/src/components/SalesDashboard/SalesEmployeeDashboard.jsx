@@ -120,6 +120,19 @@ export default function SalesEmployeeDashboard({
         </p>
       )}
 
+      <section className="sales-dash__panel" aria-labelledby="sales-followups-heading">
+        <h3 id="sales-followups-heading" className="sales-dash__panel-title">
+          {t('salesDashboard.followUps.title')}
+        </h3>
+        <FollowUpWorkloadWidgets
+          summary={followUpSummaryState?.data}
+          loading={!!followUpSummaryState?.loading}
+          error={followUpSummaryState?.error}
+          onClientClick={onClientClick}
+          className="sales-dash__followups"
+        />
+      </section>
+
       <div className="sales-dash__kpi-grid">
         <StatsCard
           title={t('salesDashboard.kpi.activeCustomers')}
@@ -236,19 +249,6 @@ export default function SalesEmployeeDashboard({
           height={280}
         />
       </div>
-
-      <section className="sales-dash__panel" aria-labelledby="sales-followups-heading">
-        <h3 id="sales-followups-heading" className="sales-dash__panel-title">
-          {t('salesDashboard.followUps.title')}
-        </h3>
-        <FollowUpWorkloadWidgets
-          summary={followUpSummaryState?.data}
-          loading={!!followUpSummaryState?.loading}
-          error={followUpSummaryState?.error}
-          onClientClick={onClientClick}
-          className="sales-dash__followups"
-        />
-      </section>
     </div>
   )
 }

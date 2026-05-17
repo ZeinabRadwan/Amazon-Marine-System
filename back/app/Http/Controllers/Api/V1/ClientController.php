@@ -235,29 +235,32 @@ class ClientController extends Controller
         $startLastMonth = $now->copy()->subMonth()->startOfMonth();
         $endLastMonth = $now->copy()->subMonth()->endOfMonth();
 
-        $totalClients = Client::count();
-        $totalClientsEndLastMonth = Client::where('created_at', '<=', $endLastMonth)->count();
+        $clientsQuery = $this->clientsQueryForUser($request);
+        $invoicesQuery = $this->invoicesQueryForUser($request);
+
+        $totalClients = (clone $clientsQuery)->count();
+        $totalClientsEndLastMonth = (clone $clientsQuery)->where('created_at', '<=', $endLastMonth)->count();
         $totalClientsTrend = $this->computeTrend($totalClientsEndLastMonth, $totalClients, true);
 
-        $activeClients = Client::whereHas('clientStatus', fn ($q) => $q->where('name', 'Active'))->count();
-        $activeClientsLastMonth = Client::whereHas('clientStatus', fn ($q) => $q->where('name', 'Active'))
+        $activeClients = (clone $clientsQuery)->whereHas('clientStatus', fn ($q) => $q->where('name', 'Active'))->count();
+        $activeClientsLastMonth = (clone $clientsQuery)->whereHas('clientStatus', fn ($q) => $q->where('name', 'Active'))
             ->where('created_at', '<=', $endLastMonth)
             ->count();
         $activeClientsTrend = $this->computeTrend($activeClientsLastMonth, $activeClients, true);
 
-        $newClientsThisMonth = Client::whereMonth('created_at', $now->month)
+        $newClientsThisMonth = (clone $clientsQuery)->whereMonth('created_at', $now->month)
             ->whereYear('created_at', $now->year)
             ->count();
-        $newClientsLastMonth = Client::whereMonth('created_at', $startLastMonth->month)
+        $newClientsLastMonth = (clone $clientsQuery)->whereMonth('created_at', $startLastMonth->month)
             ->whereYear('created_at', $startLastMonth->year)
             ->count();
         $newClientsTrend = $this->computeTrend($newClientsLastMonth, $newClientsThisMonth, false);
 
-        $totalRevenueFromClients = (float) Invoice::whereNotIn('status', ['cancelled'])->sum('net_amount');
-        $revenueThisMonth = (float) Invoice::whereNotIn('status', ['cancelled'])
+        $totalRevenueFromClients = (float) (clone $invoicesQuery)->sum('net_amount');
+        $revenueThisMonth = (float) (clone $invoicesQuery)
             ->whereBetween('issue_date', [$startThisMonth, $now])
             ->sum('net_amount');
-        $revenueLastMonth = (float) Invoice::whereNotIn('status', ['cancelled'])
+        $revenueLastMonth = (float) (clone $invoicesQuery)
             ->whereBetween('issue_date', [$startLastMonth, $endLastMonth])
             ->sum('net_amount');
         $revenueTrend = $this->computeTrend($revenueLastMonth, $revenueThisMonth, true);
@@ -317,6 +320,41 @@ class ClientController extends Controller
         ];
     }
 
+    /**
+     * Sales users see only clients assigned to them; admins and other roles see all clients.
+     */
+    private function clientsQueryForUser(Request $request)
+    {
+        $query = Client::query();
+        $user = $request->user();
+        if ($user && $this->userShouldSeeOnlyAssignedClients($user)) {
+            $query->where('assigned_sales_id', $user->id);
+        }
+
+        return $query;
+    }
+
+    /**
+     * Invoice totals for client stats — scoped to assigned clients for sales roles.
+     */
+    private function invoicesQueryForUser(Request $request)
+    {
+        $query = Invoice::query()->whereNotIn('status', ['cancelled']);
+        $user = $request->user();
+        if ($user && $this->userShouldSeeOnlyAssignedClients($user)) {
+            $query->whereHas('client', fn ($q) => $q->where('assigned_sales_id', $user->id));
+        }
+
+        return $query;
+    }
+
+    private function userShouldSeeOnlyAssignedClients($user): bool
+    {
+        $roleNames = $user->roles->pluck('name')->all();
+
+        return in_array('sales', $roleNames, true) || in_array('sales_manager', $roleNames, true);
+    }
+
     public function charts(Request $request)
     {
         $this->authorize('viewAny', Client::class);
@@ -324,7 +362,9 @@ class ClientController extends Controller
         $months = (int) $request->query('months', 6);
         $from = now()->subMonths($months);
 
-        $newClientsByMonth = Client::query()
+        $clientsQuery = $this->clientsQueryForUser($request);
+
+        $newClientsByMonth = (clone $clientsQuery)
             ->where('created_at', '>=', $from)
             ->get()
             ->groupBy(fn (Client $c) => $c->created_at?->format('Y-m-01'))
@@ -332,7 +372,7 @@ class ClientController extends Controller
             ->sortKeys()
             ->values();
 
-        $byLeadSource = Client::query()
+        $byLeadSource = (clone $clientsQuery)
             ->selectRaw('lead_source_id, COUNT(*) as count')
             ->whereNotNull('lead_source_id')
             ->groupBy('lead_source_id')

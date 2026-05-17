@@ -693,7 +693,7 @@ class SDFormController extends Controller
     {
         $this->authorize('viewAny', SDForm::class);
 
-        $byStatus = SDForm::query()
+        $byStatus = $this->sdFormsQueryForUser($request)
             ->selectRaw('status, COUNT(*) as count')
             ->groupBy('status')
             ->get();
@@ -724,7 +724,7 @@ class SDFormController extends Controller
         $months = max(1, (int) $request->query('months', 6));
         $from = now()->subMonths($months - 1)->startOfMonth();
 
-        $forms = SDForm::query()
+        $forms = $this->sdFormsQueryForUser($request)
             ->where('created_at', '>=', $from)
             ->get();
 
@@ -760,6 +760,20 @@ class SDFormController extends Controller
                 'by_status' => $byStatus,
             ],
         ]);
+    }
+
+    /**
+     * Sales users see only SD forms they own (sales_rep_id); other roles see all forms.
+     */
+    private function sdFormsQueryForUser(Request $request)
+    {
+        $query = SDForm::query();
+        $authUser = $request->user();
+        if ($authUser && $authUser->roles()->where('name', 'sales')->exists()) {
+            $query->where('sales_rep_id', $authUser->id);
+        }
+
+        return $query;
     }
 
     public function emailToOperations(Request $request, SDForm $sdForm)
