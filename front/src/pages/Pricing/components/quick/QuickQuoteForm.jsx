@@ -1,7 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Plus } from 'lucide-react'
 import AsyncSelect from '../../../../components/AsyncSelect'
+import DatePicker from '../../../../components/DatePicker'
+import { formatDate, UI_DATE_FORMAT } from '../../../../utils/dateUtils'
 import PortNameAsyncSelect from '../PortNameAsyncSelect'
 import ShippingLineNameAsyncSelect from '../ShippingLineNameAsyncSelect'
 import QuoteFinCard from '../quoteFinCard'
@@ -23,14 +25,22 @@ function parseNum(v) {
   return Number.isFinite(n) ? n : 0
 }
 
+function formatIsoDateDisplay(iso, locale) {
+  if (!iso || typeof iso !== 'string') return ''
+  const s = iso.trim()
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return iso
+  const [y, m, d] = s.split('-').map(Number)
+  return formatDate(new Date(y, m - 1, d), { locale })
+}
+
 /**
  * Fully manual quick quotation builder (independent from CRM price sheets).
  */
 export default function QuickQuoteForm({
   form,
   setField,
-  quickSailingDate,
-  onQuickSailingDateChange,
+  quickSailingDates = [],
+  onQuickSailingDatesChange,
   oceanLines,
   updateOceanLine,
   onAddOceanLine,
@@ -79,7 +89,27 @@ export default function QuickQuoteForm({
   quoteProfitByCurrency,
   grandSellingByCurrency,
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const [draftSailingDate, setDraftSailingDate] = useState('')
+
+  const canAddDraftSailingDate = useMemo(() => {
+    const d = String(draftSailingDate || '').trim()
+    return Boolean(d) && !quickSailingDates.includes(d)
+  }, [draftSailingDate, quickSailingDates])
+
+  const addDraftSailingDate = useCallback(() => {
+    const d = String(draftSailingDate || '').trim()
+    if (!d || quickSailingDates.includes(d)) return
+    onQuickSailingDatesChange?.([...quickSailingDates, d].sort())
+    setDraftSailingDate('')
+  }, [draftSailingDate, quickSailingDates, onQuickSailingDatesChange])
+
+  const removeSailingDate = useCallback(
+    (dateStr) => {
+      onQuickSailingDatesChange?.(quickSailingDates.filter((d) => d !== dateStr))
+    },
+    [quickSailingDates, onQuickSailingDatesChange]
+  )
   const [oceanExtraDraft, setOceanExtraDraft] = useState({
     name: '',
     cost: '',
@@ -210,16 +240,57 @@ export default function QuickQuoteForm({
                 placeholder="0"
               />
             </div>
-            <div className="space-y-1">
+            <div className="space-y-2 md:col-span-2 lg:col-span-3">
               <label className="text-sm font-bold text-gray-700 dark:text-gray-300">
                 {t('pricing.quickSailingDateLabel', 'تاريخ الإبحار / Sailing date')}
               </label>
-              <input
-                type="date"
-                value={quickSailingDate}
-                onChange={(e) => onQuickSailingDateChange(e.target.value)}
-                className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
-              />
+              <div className="pricing-quick-sailing-dates">
+                <div className="pricing-quick-sailing-dates__picker">
+                  <DatePicker
+                    id="quick-quote-sailing-draft"
+                    className="pricing-quick-sailing-dates__input"
+                    value={draftSailingDate}
+                    onChange={setDraftSailingDate}
+                    locale={i18n.language}
+                    placeholder={UI_DATE_FORMAT}
+                  />
+                  <button
+                    type="button"
+                    className="pricing-quick-sailing-dates__add"
+                    disabled={!canAddDraftSailingDate}
+                    title={
+                      draftSailingDate && quickSailingDates.includes(String(draftSailingDate).trim())
+                        ? t('pricing.sailingDateAlreadyAdded', 'This date is already listed')
+                        : undefined
+                    }
+                    onClick={addDraftSailingDate}
+                  >
+                    {t('pricing.quickAddSailingDate', 'Add date')}
+                  </button>
+                </div>
+                {quickSailingDates.length > 0 ? (
+                  <div className="pricing-quick-sailing-dates__list">
+                    <span className="pricing-quick-sailing-dates__list-label">
+                      {t('pricing.seaSelectedSailingDatesTitle', 'Selected sailing dates / التواريخ المحددة')}
+                    </span>
+                    <div className="sea-rate-tags sea-rate-tags--in-block">
+                      {quickSailingDates.map((d) => (
+                        <button
+                          key={d}
+                          type="button"
+                          className="sea-rate-tag sea-rate-tag-blue"
+                          onClick={() => removeSailingDate(d)}
+                          aria-label={t('pricing.removeFixedDateAria', 'Remove {{date}}', {
+                            date: formatIsoDateDisplay(d, i18n.language),
+                          })}
+                        >
+                          {formatIsoDateDisplay(d, i18n.language)} ×
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
             </div>
           </div>
         </div>

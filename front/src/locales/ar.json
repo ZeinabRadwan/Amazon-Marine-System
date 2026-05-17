@@ -641,6 +641,7 @@
     "quickLineLabel": "الخط الملاحي / Line",
     "quickContainerLabel": "نوع الحاوية / Container",
     "quickSailingDateLabel": "تاريخ الإبحار / Sailing date",
+    "quickAddSailingDate": "أضف تاريخ",
     "quickOceanManualHint": "أدخل التكلفة وسعر البيع لكل بند يدوياً.",
     "quickOceanTableHint": "⚡ أدخل التكلفة والسعر للعميل يدوياً لكل بند",
     "quickOceanAddChargeTitle": "إضافة بند بحري إضافي",

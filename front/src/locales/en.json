@@ -640,6 +640,7 @@
     "quickLineLabel": "Shipping line",
     "quickContainerLabel": "Container type",
     "quickSailingDateLabel": "Sailing date",
+    "quickAddSailingDate": "Add date",
     "quickOceanManualHint": "Enter cost and selling for each line manually.",
     "quickOceanTableHint": "⚡ Enter cost and selling price manually for each line",
     "quickOceanAddChargeTitle": "Add extra ocean charge",

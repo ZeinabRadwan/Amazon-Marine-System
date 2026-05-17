@@ -409,7 +409,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
   const [quickInlandGov, setQuickInlandGov] = useState('')
   const [quickInlandZone, setQuickInlandZone] = useState('')
   const [quickInlandVehicle, setQuickInlandVehicle] = useState('')
-  const [quickSailingDate, setQuickSailingDate] = useState('')
+  const [quickSailingDates, setQuickSailingDates] = useState([])
   const [inlandManualOpen, setInlandManualOpen] = useState(false)
 
   const draftPayload = useMemo(
@@ -439,7 +439,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
       quickInlandGov,
       quickInlandZone,
       quickInlandVehicle,
-      quickSailingDate,
+      quickSailingDates,
       inlandManualOpen,
     }),
     [
@@ -466,7 +466,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
       quickInlandGov,
       quickInlandZone,
       quickInlandVehicle,
-      quickSailingDate,
+      quickSailingDates,
       inlandManualOpen,
     ]
   )
@@ -615,7 +615,13 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
         setQuickInlandGov(saved.quickInlandGov ?? '')
         setQuickInlandZone(saved.quickInlandZone ?? '')
         setQuickInlandVehicle(saved.quickInlandVehicle ?? '')
-        setQuickSailingDate(saved.quickSailingDate ?? '')
+        setQuickSailingDates(
+          Array.isArray(saved.quickSailingDates)
+            ? saved.quickSailingDates.filter(Boolean)
+            : saved.quickSailingDate
+              ? [saved.quickSailingDate]
+              : []
+        )
         setInlandManualOpen(Boolean(saved.inlandManualOpen))
         setDraftRestoredBanner(true)
         return
@@ -649,7 +655,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
         },
       ])
       setForm(defaultQuoteForm())
-      setQuickSailingDate('')
+      setQuickSailingDates([])
       setInlandManualOpen(false)
 
       if (initialQuickMode) {
@@ -1156,8 +1162,8 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
       valid_from: String(form.valid_from || '').trim() || null,
       valid_to: String(form.valid_to || '').trim() || null,
       sailing_dates:
-        isQuickSubmit && quickSailingDate
-          ? [quickSailingDate]
+        isQuickSubmit && quickSailingDates.length
+          ? [...quickSailingDates].filter(Boolean).sort()
           : hasOceanRoute && Array.isArray(form.sailing_dates)
             ? form.sailing_dates
             : [],
@@ -1276,8 +1282,8 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
               <QuickQuoteForm
                 form={form}
                 setField={setField}
-                quickSailingDate={quickSailingDate}
-                onQuickSailingDateChange={setQuickSailingDate}
+                quickSailingDates={quickSailingDates}
+                onQuickSailingDatesChange={setQuickSailingDates}
                 oceanLines={oceanLines}
                 updateOceanLine={updateOceanLine}
                 onAddOceanLine={addOceanLine}

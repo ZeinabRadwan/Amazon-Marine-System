@@ -152,6 +152,59 @@
   margin-bottom: 0;
 }
 
+.pricing-quick-sailing-dates {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pricing-quick-sailing-dates__picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.pricing-quick-sailing-dates__input {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.pricing-quick-sailing-dates__add {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 10px;
+  border: 1px solid #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.pricing-quick-sailing-dates__add:hover:not(:disabled) {
+  background: #dbeafe;
+}
+
+.pricing-quick-sailing-dates__add:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pricing-quick-sailing-dates__list-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+[data-theme='dark'] .pricing-quick-sailing-dates__list-label,
+.dark .pricing-quick-sailing-dates__list-label {
+  color: #94a3b8;
+}
+
 .pricing-fin-section > summary.pricing-fin-section__summary {
   list-style: none;
 }
