@@ -5,6 +5,7 @@ import {
   Check,
   CheckCircle2,
   Clock,
+  Download,
   Eye,
   Plus,
   Trash2,
@@ -57,7 +58,8 @@ export default function QuotationTable({ refreshKey }) {
   const [detail, setDetail] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleteRowLoading, setDeleteRowLoading] = useState(null)
-  const { accept, reject, get, delete: deleteQuote } = useMutateQuote()
+  const [pdfRowLoading, setPdfRowLoading] = useState(null)
+  const { accept, reject, get, delete: deleteQuote, downloadPdf } = useMutateQuote()
 
   const { data: quotes, meta, loading, error, refetch } = useQuotes({
     q: debouncedSearch || undefined,
@@ -103,6 +105,24 @@ export default function QuotationTable({ refreshKey }) {
       refetch()
     } catch (e) {
       console.error(e)
+    }
+  }
+
+  const handleDownloadPdf = async (row) => {
+    if (!row?.id) return
+    setPdfRowLoading(row.id)
+    try {
+      const { blob, filename } = await downloadPdf(row.id, { locale: i18n.language })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setPdfRowLoading(null)
     }
   }
 
@@ -153,10 +173,12 @@ export default function QuotationTable({ refreshKey }) {
   const columns = [
     {
       key: 'quote_no',
-      label: t('pricing.quotationColCustomerNo'),
+      label: t('pricing.quotationColRecordNo', 'Record No.'),
       render: (val, row) => (
         <span className="inline-flex flex-wrap items-center gap-2">
-          <span className="font-bold text-gray-900 dark:text-white">{val || dash}</span>
+          <span className="font-bold text-gray-900 dark:text-white font-mono tabular-nums">
+            {val || (row.id != null ? String(row.id) : dash)}
+          </span>
           {row.is_quick_quotation ?? row.quick_mode ? (
             <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100">
               {t('pricing.quickModeBadgeShort', 'Quick')}
@@ -218,6 +240,12 @@ export default function QuotationTable({ refreshKey }) {
           />
           {canManagePricingQuotes ? (
             <>
+              <IconActionButton
+                icon={<Download className="h-4 w-4" />}
+                label={t('pricing.downloadQuotePdf', 'Download PDF')}
+                onClick={() => handleDownloadPdf(row)}
+                disabled={pdfRowLoading === row.id}
+              />
               <IconActionButton
                 icon={<Check className="h-4 w-4" />}
                 label={t('pricing.accept', 'Accept')}

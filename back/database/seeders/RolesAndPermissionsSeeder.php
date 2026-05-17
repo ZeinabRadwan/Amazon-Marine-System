@@ -83,8 +83,6 @@ class RolesAndPermissionsSeeder extends Seeder
             $pricingRole->syncPermissions([
                 $permissions['pricing.view_offers'],
                 $permissions['pricing.manage_offers'],
-                $permissions['pricing.view_quotes'],
-                $permissions['pricing.manage_quotes'],
             ]);
         }
 
@@ -92,6 +90,7 @@ class RolesAndPermissionsSeeder extends Seeder
             $salesRole->syncPermissions([
                 $permissions['pricing.view_offers'],
                 $permissions['pricing.view_quotes'],
+                $permissions['pricing.manage_quotes'],
             ]);
         }
 
@@ -99,6 +98,7 @@ class RolesAndPermissionsSeeder extends Seeder
             $salesManagerRole->syncPermissions([
                 $permissions['pricing.view_offers'],
                 $permissions['pricing.view_quotes'],
+                $permissions['pricing.manage_quotes'],
             ]);
         }
 

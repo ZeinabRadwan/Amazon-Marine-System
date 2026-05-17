@@ -82,15 +82,16 @@ export function useAuthAccess() {
     [isAdminRole, abilityNames]
   )
 
-  /** Price sheets + quotations write actions — Admin (1) and Pricing (5) roles only (UI gate). */
+  /** Price sheets — View / Edit / Archive / Restore / Delete (Admin + Pricing only). */
   const canManagePricingOffers = useMemo(
     () => isAdminRole || isPricingRole,
     [isAdminRole, isPricingRole]
   )
 
+  /** Quotations tab + «Create quotation» from price sheet (Admin + Sales Manager + Sales only). */
   const canManagePricingQuotes = useMemo(
-    () => isAdminRole || isPricingRole,
-    [isAdminRole, isPricingRole]
+    () => isAdminRole || isSalesRole,
+    [isAdminRole, isSalesRole]
   )
 
   /** Quotation defaults: customs clearance fee (settings). Admin + pricing team only. */

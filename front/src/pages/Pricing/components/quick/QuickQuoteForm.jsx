@@ -166,7 +166,7 @@ export default function QuickQuoteForm({
             </div>
             <div className="space-y-1">
               <label className="text-sm font-bold text-gray-700 dark:text-gray-300">
-                {t('pricing.quickPodLabel', 'ميناء الوصول / POD')}
+                {t('pricing.quickPodLabel', 'POD / POD')}
               </label>
               <PortNameAsyncSelect value={form.pod} onChange={(v) => setField('pod', v)} placeholder={t('pricing.podShort', 'POD')} />
             </div>

@@ -505,6 +505,8 @@
     "searchQuotes": "Search by client or ID...",
     "quoteId": "ID",
     "quotationColCustomerNo": "Customer Number",
+    "quotationColId": "ID",
+    "quotationColRecordNo": "Record No.",
     "quotationColPort": "Port",
     "quotationColShippingLine": "Shipping Line",
     "quotationOptionDelete": "Delete",

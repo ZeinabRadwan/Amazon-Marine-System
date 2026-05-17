@@ -62,6 +62,9 @@ class PricingQuoteController extends Controller
                     ->orWhere('pol', 'like', '%'.$q.'%')
                     ->orWhere('pod', 'like', '%'.$q.'%')
                     ->orWhere('shipping_line', 'like', '%'.$q.'%');
+                if (ctype_digit((string) $q)) {
+                    $sub->orWhere('id', (int) $q);
+                }
             });
         }
 
@@ -928,10 +931,18 @@ class PricingQuoteController extends Controller
 
     protected function generateQuoteNo(): string
     {
-        $year = now()->format('Y');
-        $rand = Str::upper(Str::random(6));
+        $max = 0;
+        PricingQuote::query()
+            ->where('quote_no', 'like', 'QT-%')
+            ->lockForUpdate()
+            ->pluck('quote_no')
+            ->each(function (mixed $quoteNo) use (&$max): void {
+                if (preg_match('/^QT-(\d+)$/i', (string) $quoteNo, $matches)) {
+                    $max = max($max, (int) $matches[1]);
+                }
+            });
 
-        return 'Q-'.$year.'-'.$rand;
+        return 'QT-'.str_pad((string) ($max + 1), 4, '0', STR_PAD_LEFT);
     }
 
     /**

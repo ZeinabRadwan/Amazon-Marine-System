@@ -920,7 +920,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                   />
                 </div>
                 <div>
-                  <label htmlFor="offer-pod" className="sea-rate-label">ميناء الوصول / POD</label>
+                  <label htmlFor="offer-pod" className="sea-rate-label">POD / POD</label>
                   <PortNameAsyncSelect
                     id="offer-pod"
                     value={form.pod}

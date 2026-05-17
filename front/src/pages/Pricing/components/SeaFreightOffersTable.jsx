@@ -107,12 +107,6 @@ function SeaRateCardMeta({ offer, containerSummary, dash, t }) {
           <span className="pricing-rate-card__meta-item-label">{t('pricing.transitTime', 'Transit Time')}</span>
           <span className="pricing-rate-card__meta-item-value">{transit}</span>
         </span>
-        {hasFreeTime ? (
-          <>
-            <SeaRateCardFreeTimeMetaItem variant="pol" detention={ft.polDet} demurrage={ft.polDem} t={t} />
-            <SeaRateCardFreeTimeMetaItem variant="pod" detention={ft.podDet} demurrage={ft.podDem} t={t} />
-          </>
-        ) : null}
       </div>
     </div>
   )

@@ -33,14 +33,24 @@ export function computeIsOperations(user) {
   return getRoleId(user) === ROLE_ID.OPERATIONS
 }
 
-/** Admin or Pricing role — price sheets & quotations write UI. */
+/** Admin or Pricing role — price sheet Edit / Archive / Restore / Delete UI. */
 export function computeCanManagePricingOffers(user) {
   return computeIsAdminRole(user) || computeIsPricingRole(user)
 }
 
-/** @deprecated alias — same as computeCanManagePricingOffers */
+/** Returns true if the user is Sales or Sales Manager (role 2–3 / primary name). */
+export function computeIsSalesRole(user) {
+  const roleId = getRoleId(user)
+  if (roleId === ROLE_ID.SALES || roleId === ROLE_ID.SALES_MANAGER) return true
+  const primary = (user?.primary_role ?? user?.roles?.[0]?.name ?? user?.role?.name ?? '')
+    .toString()
+    .toLowerCase()
+  return primary === 'sales' || primary === 'sales_manager'
+}
+
+/** Admin or Sales roles — quotations tab + create quotation from price sheet. */
 export function computeCanManagePricingQuotes(user) {
-  return computeCanManagePricingOffers(user)
+  return computeIsAdminRole(user) || computeIsSalesRole(user)
 }
 
 /** Returns true if the user is on the Pricing team (role 5 / primary "pricing"). */

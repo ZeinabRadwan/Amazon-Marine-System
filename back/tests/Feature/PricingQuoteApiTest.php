@@ -21,6 +21,15 @@ class PricingQuoteApiTest extends TestCase
         $this->seed(RolesAndPermissionsSeeder::class);
     }
 
+    protected function actingAsSalesUser(): User
+    {
+        /** @var User $user */
+        $user = User::factory()->create();
+        $user->assignRole('sales');
+
+        return $user;
+    }
+
     protected function actingAsPricingUser(): User
     {
         /** @var User $user */
@@ -32,7 +41,7 @@ class PricingQuoteApiTest extends TestCase
 
     public function test_can_create_and_view_quote(): void
     {
-        $user = $this->actingAsPricingUser();
+        $user = $this->actingAsSalesUser();
 
         $client = Client::factory()->create([
             'name' => 'Test Client',
@@ -69,6 +78,10 @@ class PricingQuoteApiTest extends TestCase
             ->assertJsonPath('data.client.id', $client->id)
             ->assertJsonPath('data.items.0.amount', 1000);
 
+        $quoteNo = $create->json('data.quote_no');
+        $this->assertIsString($quoteNo);
+        $this->assertMatchesRegularExpression('/^QT-\d{4}$/', $quoteNo);
+
         $id = $create->json('data.id');
         $this->assertNotNull($id);
 
@@ -83,7 +96,7 @@ class PricingQuoteApiTest extends TestCase
 
     public function test_handling_fee_line_item_accepts_handling_code(): void
     {
-        $user = $this->actingAsPricingUser();
+        $user = $this->actingAsSalesUser();
 
         $client = Client::factory()->create();
 
@@ -118,7 +131,7 @@ class PricingQuoteApiTest extends TestCase
 
     public function test_official_receipts_note_is_stored_separately_from_line_items(): void
     {
-        $user = $this->actingAsPricingUser();
+        $user = $this->actingAsSalesUser();
 
         $client = Client::factory()->create();
 
@@ -157,7 +170,7 @@ class PricingQuoteApiTest extends TestCase
 
     public function test_can_set_show_carrier_on_pdf_when_creating_quote(): void
     {
-        $user = $this->actingAsPricingUser();
+        $user = $this->actingAsSalesUser();
 
         $client = Client::factory()->create();
 
@@ -200,7 +213,7 @@ class PricingQuoteApiTest extends TestCase
 
     public function test_quote_pdf_endpoint_returns_pdf(): void
     {
-        $user = $this->actingAsPricingUser();
+        $user = $this->actingAsSalesUser();
 
         $client = Client::factory()->create();
 
@@ -237,7 +250,7 @@ class PricingQuoteApiTest extends TestCase
 
     public function test_can_accept_and_reject_quote(): void
     {
-        $user = $this->actingAsPricingUser();
+        $user = $this->actingAsSalesUser();
 
         $client = Client::factory()->create();
 
@@ -269,7 +282,7 @@ class PricingQuoteApiTest extends TestCase
 
     public function test_is_quick_quotation_alias_maps_to_quick_mode(): void
     {
-        $user = $this->actingAsPricingUser();
+        $user = $this->actingAsSalesUser();
 
         $client = Client::factory()->create();
 
@@ -292,7 +305,7 @@ class PricingQuoteApiTest extends TestCase
 
     public function test_quick_quotation_strips_offer_and_snapshot_even_if_offer_id_sent(): void
     {
-        $user = $this->actingAsPricingUser();
+        $user = $this->actingAsSalesUser();
         $client = Client::factory()->create();
         $offer = PricingOffer::factory()->create([
             'pol' => 'Sokhna',
@@ -325,7 +338,7 @@ class PricingQuoteApiTest extends TestCase
 
     public function test_standard_quote_stores_cost_visibility_and_pricing_team_flag(): void
     {
-        $user = $this->actingAsPricingUser();
+        $user = $this->actingAsSalesUser();
         $client = Client::factory()->create();
         $offer = PricingOffer::factory()->create([
             'pol' => 'Alexandria',
@@ -365,7 +378,7 @@ class PricingQuoteApiTest extends TestCase
 
     public function test_can_create_inland_quote_with_pricing_type(): void
     {
-        $user = $this->actingAsPricingUser();
+        $user = $this->actingAsSalesUser();
         $client = Client::factory()->create();
 
         $offer = PricingOffer::factory()->create([
@@ -405,7 +418,7 @@ class PricingQuoteApiTest extends TestCase
 
     public function test_can_delete_quote(): void
     {
-        $user = $this->actingAsPricingUser();
+        $user = $this->actingAsSalesUser();
         $client = Client::factory()->create();
         $offer = PricingOffer::factory()->create();
 
@@ -432,13 +445,13 @@ class PricingQuoteApiTest extends TestCase
         $this->assertDatabaseMissing('pricing_quotes', ['id' => $id]);
     }
 
-    public function test_sales_role_cannot_delete_quote(): void
+    public function test_pricing_role_cannot_manage_quotes(): void
     {
-        $pricingUser = $this->actingAsPricingUser();
+        $salesUser = $this->actingAsSalesUser();
         $client = Client::factory()->create();
         $offer = PricingOffer::factory()->create();
 
-        $create = $this->actingAs($pricingUser, 'sanctum')->postJson('/api/v1/pricing/quotes', [
+        $create = $this->actingAs($salesUser, 'sanctum')->postJson('/api/v1/pricing/quotes', [
             'client_id' => $client->id,
             'pricing_offer_id' => $offer->id,
             'pol' => $offer->pol,
@@ -453,12 +466,22 @@ class PricingQuoteApiTest extends TestCase
         $create->assertCreated();
         $id = $create->json('data.id');
 
-        /** @var User $sales */
-        $sales = User::factory()->create();
-        $sales->assignRole('sales');
+        $pricingUser = $this->actingAsPricingUser();
 
-        $this->actingAs($sales, 'sanctum')
+        $this->actingAs($pricingUser, 'sanctum')
             ->deleteJson('/api/v1/pricing/quotes/'.$id)
+            ->assertForbidden();
+
+        $this->actingAs($pricingUser, 'sanctum')
+            ->postJson('/api/v1/pricing/quotes', [
+                'client_id' => $client->id,
+                'quick_mode' => true,
+                'pol' => 'Sokhna',
+                'pod' => 'Jeddah',
+                'items' => [
+                    ['code' => 'OF', 'name' => 'Ocean Freight', 'amount' => 100, 'currency' => 'USD'],
+                ],
+            ])
             ->assertForbidden();
     }
 }

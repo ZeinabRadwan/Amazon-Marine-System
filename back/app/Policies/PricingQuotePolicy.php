@@ -9,12 +9,12 @@ class PricingQuotePolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasRole('admin') || $user->can('pricing.view_quotes');
+        return $this->canViewQuotes($user);
     }
 
     public function view(User $user, PricingQuote $quote): bool
     {
-        return $user->hasRole('admin') || $user->can('pricing.view_quotes');
+        return $this->canViewQuotes($user);
     }
 
     public function create(User $user): bool
@@ -42,8 +42,19 @@ class PricingQuotePolicy
         return $this->canManageQuotes($user);
     }
 
+    private function canViewQuotes(User $user): bool
+    {
+        return $user->hasRole('admin')
+            || $user->hasRole('sales')
+            || $user->hasRole('sales_manager')
+            || $user->can('pricing.view_quotes');
+    }
+
     private function canManageQuotes(User $user): bool
     {
-        return $user->hasRole('admin') || $user->hasRole('pricing');
+        return $user->hasRole('admin')
+            || $user->hasRole('sales')
+            || $user->hasRole('sales_manager')
+            || $user->can('pricing.manage_quotes');
     }
 }

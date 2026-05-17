@@ -25,6 +25,7 @@ import {
   getAttendanceTabs,
   getDefaultAttendanceSection,
   computeIsPricingRole,
+  computeCanManagePricingOffers,
   computeCanManagePricingQuotes,
   getPricingTabs,
   getDefaultPricingTab,
@@ -366,15 +367,29 @@ describe('Pricing page tabs — Pricing role', () => {
     })
   })
 
-  describe('computeCanManagePricingOffers / Quotes()', () => {
+  describe('computeCanManagePricingOffers()', () => {
     it('allows Admin and Pricing only', () => {
-      expect(computeCanManagePricingQuotes(adminUser)).toBe(true)
-      expect(computeCanManagePricingQuotes(pricingUser)).toBe(true)
+      expect(computeCanManagePricingOffers(adminUser)).toBe(true)
+      expect(computeCanManagePricingOffers(pricingUser)).toBe(true)
     })
 
     it('denies Sales, Sales Manager, Operations, and Accountant', () => {
-      expect(computeCanManagePricingQuotes(salesUser)).toBe(false)
-      expect(computeCanManagePricingQuotes(salesManagerUser)).toBe(false)
+      expect(computeCanManagePricingOffers(salesUser)).toBe(false)
+      expect(computeCanManagePricingOffers(salesManagerUser)).toBe(false)
+      expect(computeCanManagePricingOffers(opsUser)).toBe(false)
+      expect(computeCanManagePricingOffers(accountantUser)).toBe(false)
+    })
+  })
+
+  describe('computeCanManagePricingQuotes()', () => {
+    it('allows Admin, Sales Manager, and Sales only', () => {
+      expect(computeCanManagePricingQuotes(adminUser)).toBe(true)
+      expect(computeCanManagePricingQuotes(salesManagerUser)).toBe(true)
+      expect(computeCanManagePricingQuotes(salesUser)).toBe(true)
+    })
+
+    it('denies Pricing, Operations, and Accountant', () => {
+      expect(computeCanManagePricingQuotes(pricingUser)).toBe(false)
       expect(computeCanManagePricingQuotes(opsUser)).toBe(false)
       expect(computeCanManagePricingQuotes(accountantUser)).toBe(false)
     })
