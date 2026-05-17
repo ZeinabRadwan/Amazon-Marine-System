@@ -270,7 +270,6 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
                 onEdit={onEdit}
                 canManageOffers={canManagePricingOffers}
                 onView={setDetailOffer}
-                onMutate={refetch}
               />
             ) : (
               <SeaFreightOffersTable
@@ -279,7 +278,6 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
                 onEdit={onEdit}
                 canManageOffers={canManagePricingOffers}
                 onView={setDetailOffer}
-                onMutate={refetch}
               />
             )}
           </div>
@@ -302,7 +300,8 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
         offer={detailOffer}
         onClose={() => setDetailOffer(null)}
         canManageOffers={canManagePricingOffers}
-        onDeleted={refetch}
+        onMutate={refetch}
+        onOfferUpdated={setDetailOffer}
         onCreateQuotation={
           isPricingSalesViewOnly
             ? undefined

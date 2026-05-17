@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ChevronDown, X, Ship, Truck, FilePlus2, ArrowRight, ArrowLeft, MapPin, Trash2 } from 'lucide-react'
+import { ChevronDown, X, Ship, Truck, FilePlus2, ArrowRight, ArrowLeft, MapPin, Trash2, Archive, RotateCcw, Loader2 } from 'lucide-react'
 import { useMutateOffer } from '../../../hooks/usePricing'
 import '../../Clients/ClientDetailModal.css'
 import '../../Shipments/Shipments.css'
@@ -275,14 +275,17 @@ export default function OfferDetailModal({
   onClose,
   onCreateQuotation,
   canManageOffers = false,
-  onDeleted,
+  onMutate,
+  onOfferUpdated,
 }) {
   const { t, i18n } = useTranslation()
-  const { delete: deleteOffer, loading: deleteLoading } = useMutateOffer()
+  const { delete: deleteOffer, activate, archive, loading: mutateLoading } = useMutateOffer()
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const isSea = offer?.pricing_type === 'sea'
   const amountFirst = Boolean(i18n.language?.startsWith('ar'))
   const isArchived = offer?.status === 'archived'
+  const showArchive = canManageOffers && !isArchived
+  const showRestore = canManageOffers && isArchived
   const showDelete = canManageOffers && isArchived
 
   useEffect(() => {
@@ -422,13 +425,35 @@ export default function OfferDetailModal({
     onClose?.()
   }
 
+  const handleArchive = async () => {
+    if (!offer?.id || mutateLoading) return
+    try {
+      await archive(offer.id)
+      onOfferUpdated?.({ ...offer, status: 'archived' })
+      onMutate?.()
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const handleRestore = async () => {
+    if (!offer?.id || mutateLoading) return
+    try {
+      await activate(offer.id)
+      onOfferUpdated?.({ ...offer, status: 'active' })
+      onMutate?.()
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
   const handleDeleteConfirm = async () => {
-    if (!offer?.id || deleteLoading) return
+    if (!offer?.id || mutateLoading) return
     try {
       await deleteOffer(offer.id)
       setDeleteConfirmOpen(false)
       onClose?.()
-      onDeleted?.()
+      onMutate?.()
     } catch (err) {
       console.error(err)
     }
@@ -665,15 +690,50 @@ export default function OfferDetailModal({
         </div>
 
         <div className="pricing-fin-modal__footer pricing-fin-modal__footer--detail flex flex-col-reverse sm:flex-row gap-3 sm:justify-between sm:items-center">
-          {showDelete ? (
-            <button
-              type="button"
-              onClick={() => setDeleteConfirmOpen(true)}
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors"
-            >
-              <Trash2 className="h-4 w-4 shrink-0" aria-hidden />
-              {t('pricing.actionDelete', 'Delete')}
-            </button>
+          {showArchive || showRestore || showDelete ? (
+            <div className="flex flex-wrap items-center gap-2">
+              {showArchive ? (
+                <button
+                  type="button"
+                  onClick={handleArchive}
+                  disabled={mutateLoading}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-bold text-amber-800 dark:text-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/40 rounded-xl transition-colors disabled:opacity-50"
+                >
+                  {mutateLoading ? (
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+                  ) : (
+                    <Archive className="h-4 w-4 shrink-0" aria-hidden />
+                  )}
+                  {t('pricing.actionArchive', 'Archive')}
+                </button>
+              ) : null}
+              {showRestore ? (
+                <button
+                  type="button"
+                  onClick={handleRestore}
+                  disabled={mutateLoading}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-bold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-xl transition-colors disabled:opacity-50"
+                >
+                  {mutateLoading ? (
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+                  ) : (
+                    <RotateCcw className="h-4 w-4 shrink-0" aria-hidden />
+                  )}
+                  {t('pricing.actionUnarchive', 'Restore')}
+                </button>
+              ) : null}
+              {showDelete ? (
+                <button
+                  type="button"
+                  onClick={() => setDeleteConfirmOpen(true)}
+                  disabled={mutateLoading}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors disabled:opacity-50"
+                >
+                  <Trash2 className="h-4 w-4 shrink-0" aria-hidden />
+                  {t('pricing.actionDelete', 'Delete')}
+                </button>
+              ) : null}
+            </div>
           ) : (
             <span className="hidden sm:block" aria-hidden />
           )}
@@ -702,7 +762,7 @@ export default function OfferDetailModal({
         <div className="clients-modal" role="dialog" aria-modal="true" aria-labelledby="offer-delete-title">
           <div
             className="clients-modal-backdrop"
-            onClick={() => !deleteLoading && setDeleteConfirmOpen(false)}
+            onClick={() => !mutateLoading && setDeleteConfirmOpen(false)}
             aria-hidden
           />
           <div className="clients-modal-content">
@@ -718,7 +778,7 @@ export default function OfferDetailModal({
                 type="button"
                 className="clients-btn"
                 onClick={() => setDeleteConfirmOpen(false)}
-                disabled={deleteLoading}
+                disabled={mutateLoading}
               >
                 {t('common.cancel', 'Cancel')}
               </button>
@@ -726,9 +786,9 @@ export default function OfferDetailModal({
                 type="button"
                 className="clients-btn clients-btn--danger"
                 onClick={handleDeleteConfirm}
-                disabled={deleteLoading}
+                disabled={mutateLoading}
               >
-                {deleteLoading ? t('common.deleting', 'Deleting…') : t('pricing.actionDelete', 'Delete')}
+                {mutateLoading ? t('common.deleting', 'Deleting…') : t('pricing.actionDelete', 'Delete')}
               </button>
             </div>
           </div>

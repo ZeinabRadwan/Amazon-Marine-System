@@ -1,8 +1,6 @@
-import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Archive, Eye, Pencil, RotateCcw } from 'lucide-react'
+import { Eye, Pencil } from 'lucide-react'
 import { formatDate } from '../../../utils/dateUtils'
-import { useMutateOffer } from '../../../hooks/usePricing'
 import { IconActionButton } from '../../../components/Table'
 import PricingInlineActions from './PricingInlineActions'
 import { CurrencyMapBadges } from '../../Accountings/CurrencyMapBadges'
@@ -91,29 +89,9 @@ export default function SeaFreightOffersTable({
   onView,
   onEdit,
   canManageOffers = true,
-  onMutate,
 }) {
   const { t, i18n } = useTranslation()
   const dash = t('common.dash', '—')
-  const { activate, archive, loading: mutateLoading } = useMutateOffer()
-  const [actionOfferId, setActionOfferId] = useState(null)
-  const [actionKind, setActionKind] = useState(null)
-
-  const runAction = async (offer, kind, fn) => {
-    setActionOfferId(offer.id)
-    setActionKind(kind)
-    try {
-      await fn(offer.id)
-      onMutate?.()
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setActionOfferId(null)
-      setActionKind(null)
-    }
-  }
-
-  const isBusy = (offer, kind) => mutateLoading && actionOfferId === offer.id && actionKind === kind
 
   const count = offers?.length || 0
 
@@ -213,23 +191,6 @@ export default function SeaFreightOffersTable({
                           icon={<Pencil className="h-4 w-4" />}
                           label={t('common.edit', 'Edit')}
                           onClick={() => onEdit?.(offer)}
-                        />
-                      ) : null}
-                      {canManageOffers && !archived ? (
-                        <IconActionButton
-                          icon={<Archive className="h-4 w-4" />}
-                          label={t('pricing.actionArchive', 'Archive')}
-                          disabled={isBusy(offer, 'archive')}
-                          onClick={() => runAction(offer, 'archive', archive)}
-                        />
-                      ) : null}
-                      {canManageOffers && archived ? (
-                        <IconActionButton
-                          icon={<RotateCcw className="h-4 w-4" />}
-                          label={t('pricing.actionUnarchive', 'Unarchive')}
-                          disabled={isBusy(offer, 'unarchive')}
-                          onClick={() => runAction(offer, 'unarchive', activate)}
-                          variant="success"
                         />
                       ) : null}
                     </PricingInlineActions>

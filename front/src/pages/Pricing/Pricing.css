@@ -7,6 +7,11 @@
   z-index: 1000;
 }
 
+/* Delete confirm stacked above rate detail modal */
+.pricing-fin-modal-root .clients-modal {
+  z-index: 1101;
+}
+
 .pricing-fin-modal-root .client-detail-modal__box.pricing-fin-form-modal__box {
   max-width: min(1080px, 96vw);
 }
