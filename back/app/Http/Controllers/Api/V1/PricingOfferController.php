@@ -49,8 +49,24 @@ class PricingOfferController extends Controller
             $query->where('destination', $destination);
         }
 
-        if ($status = $request->query('status')) {
+        if ($request->boolean('quotable')) {
+            $query->where('status', 'active')
+                ->where(function ($sub): void {
+                    $sub->whereNull('valid_to')
+                        ->orWhereDate('valid_to', '>=', now()->toDateString());
+                });
+        } elseif ($status = $request->query('status')) {
             $query->where('status', $status);
+        }
+
+        $user = $request->user();
+        if (
+            ! $request->boolean('quotable')
+            && $user
+            && ($user->hasRole('sales') || $user->hasRole('sales_manager'))
+            && ! $user->hasRole('admin')
+        ) {
+            $query->where('status', '!=', 'draft');
         }
 
         if ($itemCode = $request->query('pricing_item_code')) {
@@ -196,7 +212,7 @@ class PricingOfferController extends Controller
             $offer->valid_from = $validated['valid_from'] ?? null;
             $offer->weekly_sailing_days = $validated['weekly_sailing_days'] ?? null;
             $offer->valid_to = $validated['valid_to'] ?? null;
-            $offer->status = $validated['status'] ?? 'draft';
+            $offer->status = $validated['status'] ?? 'active';
             $offer->other_charges = $validated['other_charges'] ?? null;
             $offer->notes = $validated['notes'] ?? null;
             $offer->save();
@@ -409,6 +425,8 @@ class PricingOfferController extends Controller
             'inland_city' => $offer->inland_city,
             'valid_to' => $offer->valid_to?->toDateString(),
             'status' => $offer->status,
+            'display_status' => $offer->displayStatus(),
+            'is_quotable' => $offer->isQuotable(),
             'other_charges' => $offer->other_charges,
             'notes' => $offer->notes,
             'sailing_dates' => $offer->sailingDates->pluck('sailing_date')->map(

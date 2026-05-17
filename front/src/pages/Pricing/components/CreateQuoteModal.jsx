@@ -539,8 +539,8 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
     const token = getStoredToken()
     if (!token) return
     Promise.all([
-      listOffers(token, { pricing_type: 'sea', per_page: 300, page: 1 }),
-      listOffers(token, { pricing_type: 'inland', per_page: 300, page: 1 }),
+      listOffers(token, { pricing_type: 'sea', per_page: 300, page: 1, quotable: 1 }),
+      listOffers(token, { pricing_type: 'inland', per_page: 300, page: 1, quotable: 1 }),
     ])
       .then(([seaRes, inlandRes]) => {
         setSeaOffers(Array.isArray(seaRes?.data) ? seaRes.data : [])

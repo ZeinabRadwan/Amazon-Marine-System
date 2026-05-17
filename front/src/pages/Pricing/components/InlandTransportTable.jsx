@@ -6,7 +6,9 @@ import PricingInlineActions from './PricingInlineActions'
 import { CurrencyMapBadges } from '../../Accountings/CurrencyMapBadges'
 import { INLAND_PRICE_KEYS } from '../utils/pricingDisplay'
 import PricingValidityBadge from './PricingValidityBadge'
+import PricingOfferStatusBadge from './PricingOfferStatusBadge'
 import PricingRateCardRoute from './PricingRateCardRoute'
+import { resolveOfferDisplayStatus } from '../utils/pricingOfferStatus'
 import '../Pricing.css'
 
 function formatGovArea(offer, dash = '—') {
@@ -100,6 +102,7 @@ export default function InlandTransportTable({
           : offers.map((offer) => {
               const p = offer.pricing || {}
               const archived = offer.status === 'archived'
+              const displayStatus = resolveOfferDisplayStatus(offer)
               const primary = primaryInlandPrice(p)
               const generator = p.generator
               const validStr = offer.valid_to ? formatDate(offer.valid_to, { locale: i18n.language }) : ''
@@ -114,7 +117,7 @@ export default function InlandTransportTable({
               return (
                 <article
                   key={offer.id}
-                  className={`pricing-rate-card ${archived ? 'pricing-rate-card--archived' : ''}`}
+                  className={`pricing-rate-card ${archived ? 'pricing-rate-card--archived' : ''} ${displayStatus === 'draft' ? 'pricing-rate-card--draft' : ''} ${displayStatus === 'expired' ? 'pricing-rate-card--expired' : ''}`}
                   onClick={() => onView?.(offer)}
                   role="button"
                   tabIndex={0}
@@ -159,6 +162,7 @@ export default function InlandTransportTable({
 
                   <div className="pricing-rate-card__footer">
                     <div className="pricing-rate-card__tags">
+                      <PricingOfferStatusBadge offer={offer} />
                       <PricingValidityBadge validTo={offer.valid_to} formattedDate={validStr} />
                       {generator?.price != null && genMap ? (
                         <span className="pricing-rate-card__tag pricing-rate-card__tag--muted pricing-rate-card__tag--currency">

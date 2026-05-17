@@ -199,6 +199,7 @@ class PricingQuoteController extends Controller
             if (! $quickMode && ! $originSnapshotId && ! empty($validated['pricing_offer_id'])) {
                 $offer = PricingOffer::query()->with(['items', 'sailingDates'])->find((int) $validated['pricing_offer_id']);
                 if ($offer) {
+                    $this->assertOfferQuotable($offer);
                     $originSnapshotId = $this->createOriginRateSnapshot($offer)->id;
                 }
             }
@@ -392,7 +393,18 @@ class PricingQuoteController extends Controller
             ) {
                 $offer = PricingOffer::query()->with(['items', 'sailingDates'])->find((int) $validated['pricing_offer_id']);
                 if ($offer) {
+                    $this->assertOfferQuotable($offer);
                     $quote->origin_rate_snapshot_id = $this->createOriginRateSnapshot($offer)->id;
+                }
+            }
+
+            if (
+                ! $quote->quick_mode
+                && ! empty($validated['pricing_offer_id'] ?? $quote->pricing_offer_id)
+            ) {
+                $linked = PricingOffer::query()->find((int) ($validated['pricing_offer_id'] ?? $quote->pricing_offer_id));
+                if ($linked) {
+                    $this->assertOfferQuotable($linked);
                 }
             }
 
@@ -1097,6 +1109,13 @@ class PricingQuoteController extends Controller
     /**
      * @param  array<string, mixed>  $validated
      */
+    protected function assertOfferQuotable(PricingOffer $offer): void
+    {
+        if (! $offer->isQuotable()) {
+            abort(422, 'This price sheet is not available for quotations. Publish it or choose an active, non-expired rate.');
+        }
+    }
+
     protected function resolveQuotePricingTypeFromPayload(array $validated, bool $quickMode): string
     {
         $explicit = strtolower((string) ($validated['pricing_type'] ?? ''));

@@ -13,6 +13,7 @@ import {
 } from '../utils/pricingDisplay'
 import { CurrencyMapBadges } from '../../Accountings/CurrencyMapBadges'
 import '../../../components/PageHeader/PageHeader.css'
+import { isOfferQuotable, resolveOfferDisplayStatus } from '../utils/pricingOfferStatus'
 import '../Pricing.css'
 
 const SEA_ITEMS = [
@@ -284,7 +285,10 @@ export default function OfferDetailModal({
   const isSea = offer?.pricing_type === 'sea'
   const amountFirst = Boolean(i18n.language?.startsWith('ar'))
   const isArchived = offer?.status === 'archived'
-  const showArchive = canManageOffers && !isArchived
+  const isDraft = offer?.status === 'draft'
+  const quotable = isOfferQuotable(offer)
+  const showArchive = canManageOffers && !isArchived && !isDraft
+  const showPublish = canManageOffers && isDraft
   const showRestore = canManageOffers && isArchived
   const showDelete = canManageOffers && isArchived
 
@@ -411,14 +415,15 @@ export default function OfferDetailModal({
       ? offer.sailing_dates.map((d) => formatDate(d, { locale: i18n.language })).join(sailingSep)
       : dash
 
+  const displayStatus = resolveOfferDisplayStatus(offer)
   const offerStatusLabel =
-    offer.status === 'active'
-      ? t('pricing.offerStatusActive')
-      : offer.status === 'archived'
-        ? t('pricing.offerStatusArchived')
-        : offer.status === 'draft'
-          ? t('pricing.offerStatusDraft')
-          : offer.status || dash
+    displayStatus === 'draft'
+      ? t('pricing.offerStatusDraft')
+      : displayStatus === 'expired'
+        ? t('pricing.offerStatusExpired', 'Expired')
+        : displayStatus === 'archived'
+          ? t('pricing.offerStatusArchived')
+          : t('pricing.offerStatusActive')
 
   const handleCreateQuotation = () => {
     onCreateQuotation?.(offer)
@@ -441,6 +446,17 @@ export default function OfferDetailModal({
     try {
       await activate(offer.id)
       onOfferUpdated?.({ ...offer, status: 'active' })
+      onMutate?.()
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const handlePublish = async () => {
+    if (!offer?.id || mutateLoading) return
+    try {
+      await activate(offer.id)
+      onOfferUpdated?.({ ...offer, status: 'active', display_status: 'active', is_quotable: true })
       onMutate?.()
     } catch (err) {
       console.error(err)
@@ -696,8 +712,23 @@ export default function OfferDetailModal({
         </div>
 
         <div className="pricing-fin-modal__footer pricing-fin-modal__footer--detail flex flex-col-reverse sm:flex-row gap-3 sm:justify-between sm:items-center">
-          {showArchive || showRestore || showDelete ? (
+          {showPublish || showArchive || showRestore || showDelete ? (
             <div className="flex flex-wrap items-center gap-2">
+              {showPublish ? (
+                <button
+                  type="button"
+                  onClick={handlePublish}
+                  disabled={mutateLoading}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-bold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-xl transition-colors disabled:opacity-50"
+                >
+                  {mutateLoading ? (
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+                  ) : (
+                    <RotateCcw className="h-4 w-4 shrink-0" aria-hidden />
+                  )}
+                  {t('pricing.actionPublishOffer', 'Publish')}
+                </button>
+              ) : null}
               {showArchive ? (
                 <button
                   type="button"
@@ -751,7 +782,7 @@ export default function OfferDetailModal({
             >
               {t('common.close', 'Close')}
             </button>
-            {typeof onCreateQuotation === 'function' ? (
+            {typeof onCreateQuotation === 'function' && quotable ? (
               <button
                 type="button"
                 onClick={handleCreateQuotation}

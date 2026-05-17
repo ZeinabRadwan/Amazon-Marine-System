@@ -59,6 +59,9 @@ class PricingOfferApiTest extends TestCase
 
         $response->assertCreated()
             ->assertJsonPath('data.region', 'البحر الأحمر')
+            ->assertJsonPath('data.status', 'active')
+            ->assertJsonPath('data.display_status', 'active')
+            ->assertJsonPath('data.is_quotable', true)
             ->assertJsonPath('data.pricing.of20.price', 70);
 
         $offerId = $response->json('data.id');
@@ -230,6 +233,82 @@ class PricingOfferApiTest extends TestCase
             'id' => $offer->id,
             'status' => 'active',
         ]);
+    }
+
+    public function test_can_create_draft_offer_and_publish(): void
+    {
+        $user = $this->actingAsPricingUser();
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->postJson('/api/v1/pricing/offers', [
+                'pricing_type' => 'sea',
+                'region' => 'Europe',
+                'pod' => 'Rotterdam',
+                'shipping_line' => 'MSC',
+                'pol' => 'Sokhna',
+                'status' => 'draft',
+                'pricing' => ['of20' => ['price' => 100, 'currency' => 'USD']],
+            ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.status', 'draft')
+            ->assertJsonPath('data.display_status', 'draft')
+            ->assertJsonPath('data.is_quotable', false);
+
+        $offerId = $response->json('data.id');
+
+        $this->actingAs($user, 'sanctum')
+            ->postJson('/api/v1/pricing/offers/'.$offerId.'/activate')
+            ->assertOk()
+            ->assertJsonPath('data.status', 'active')
+            ->assertJsonPath('data.is_quotable', true);
+    }
+
+    public function test_quotable_filter_excludes_draft_and_expired(): void
+    {
+        $user = $this->actingAsPricingUser();
+
+        $active = PricingOffer::factory()->create([
+            'pricing_type' => 'sea',
+            'status' => 'active',
+            'valid_to' => now()->addMonth()->toDateString(),
+        ]);
+        $draft = PricingOffer::factory()->create([
+            'pricing_type' => 'sea',
+            'status' => 'draft',
+        ]);
+        $expired = PricingOffer::factory()->create([
+            'pricing_type' => 'sea',
+            'status' => 'active',
+            'valid_to' => now()->subDay()->toDateString(),
+        ]);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->getJson('/api/v1/pricing/offers?quotable=1&pricing_type=sea');
+
+        $response->assertOk();
+        $ids = collect($response->json('data'))->pluck('id')->all();
+        $this->assertContains($active->id, $ids);
+        $this->assertNotContains($draft->id, $ids);
+        $this->assertNotContains($expired->id, $ids);
+    }
+
+    public function test_sales_user_does_not_see_draft_offers_in_list(): void
+    {
+        /** @var User $user */
+        $user = User::factory()->create();
+        $user->assignRole(Role::query()->where('name', 'sales_manager')->firstOrFail());
+
+        $draft = PricingOffer::factory()->create(['status' => 'draft', 'pricing_type' => 'sea']);
+        $active = PricingOffer::factory()->create(['status' => 'active', 'pricing_type' => 'sea']);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->getJson('/api/v1/pricing/offers?pricing_type=sea');
+
+        $response->assertOk();
+        $ids = collect($response->json('data'))->pluck('id')->all();
+        $this->assertContains($active->id, $ids);
+        $this->assertNotContains($draft->id, $ids);
     }
 
     public function test_sales_manager_can_only_view_pricing_offers(): void

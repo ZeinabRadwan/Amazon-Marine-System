@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-
 class PricingOffer extends Model
 {
     use HasFactory;
@@ -40,6 +39,44 @@ class PricingOffer extends Model
         'valid_from' => 'date',
         'valid_to' => 'date',
     ];
+
+    public function isExpired(): bool
+    {
+        if ($this->status !== 'active') {
+            return false;
+        }
+
+        if ($this->valid_to === null) {
+            return false;
+        }
+
+        return $this->valid_to->startOfDay()->lt(now()->startOfDay());
+    }
+
+    public function isQuotable(): bool
+    {
+        return $this->status === 'active' && ! $this->isExpired();
+    }
+
+    /**
+     * UI / API lifecycle: draft | active | expired | archived
+     */
+    public function displayStatus(): string
+    {
+        if ($this->status === 'draft') {
+            return 'draft';
+        }
+
+        if ($this->status === 'archived') {
+            return 'archived';
+        }
+
+        if ($this->isExpired()) {
+            return 'expired';
+        }
+
+        return 'active';
+    }
 
     /**
      * @return HasMany<PricingOfferItem>

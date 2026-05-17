@@ -928,6 +928,67 @@
   opacity: 0.72;
 }
 
+.pricing-rate-card--draft {
+  border-color: #cbd5e1;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+}
+
+.pricing-rate-card--expired {
+  opacity: 0.72;
+}
+
+.pricing-rate-card__pill--status {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.pricing-rate-card__pill--status-draft {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.pricing-rate-card__pill--status-active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.pricing-rate-card__pill--status-expired {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.pricing-rate-card__pill--status-archived {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.pricing-fin-modal__footer--offer-actions {
+  justify-content: space-between;
+}
+
+.pricing-fin-modal__footer-primary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.sea-rate-btn-draft,
+.inland-rate-btn-draft {
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #334155;
+}
+
+.sea-rate-btn-draft:hover:not(:disabled),
+.inland-rate-btn-draft:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
 .pricing-rate-card--skeleton {
   cursor: default;
   pointer-events: none;

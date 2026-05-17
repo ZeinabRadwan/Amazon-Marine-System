@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X, Snowflake, Zap, CheckCircle2 } from 'lucide-react'
+import { X, Snowflake, Zap } from 'lucide-react'
 import '../../Clients/ClientDetailModal.css'
 import '../../Shipments/Shipments.css'
 import { useMutateOffer } from '../../../hooks/usePricing'
@@ -17,11 +17,6 @@ import {
   parseOptionalAmount,
   priceToFormString,
 } from '../utils/pricingFormNumeric'
-import {
-  clearPricingOfferDraft,
-  readPricingOfferDraft,
-  writePricingOfferDraft,
-} from '../utils/pricingOfferDraftStorage'
 import SeaCustomChargeEntry, { SEA_PRICING_CURRENCIES } from './SeaCustomChargeEntry'
 
 /** Canonical weekday names stored in API (`weekly_sailing_days` comma-separated); sort order Sat → Fri */
@@ -374,7 +369,6 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
   const [reeferExtras, setReeferExtras] = useState(() => defaultReeferExtras())
   /** Single sailing date pending add (ISO YYYY-MM-DD from DatePicker) */
   const [draftFixedSailingDate, setDraftFixedSailingDate] = useState('')
-  const [draftRestoredBanner, setDraftRestoredBanner] = useState(false)
 
   const mergedInlandUnitTypes = useMemo(
     () => DEFAULT_INLAND_TRUCK_PRESETS.map((p) => ({ slug: p.slug, label: p.label, sort_order: 0 })),
@@ -389,15 +383,8 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
   useEffect(() => {
     if (!isOpen) {
       setDraftFixedSailingDate('')
-      setDraftRestoredBanner(false)
     }
   }, [isOpen])
-
-  useEffect(() => {
-    if (!draftRestoredBanner || !isOpen) return
-    const timer = setTimeout(() => setDraftRestoredBanner(false), 6000)
-    return () => clearTimeout(timer)
-  }, [draftRestoredBanner, isOpen])
 
   useEffect(() => {
     if (form.sailing_tab !== 'fixed') setDraftFixedSailingDate('')
@@ -431,12 +418,6 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
     if (mode !== 'inland') return
 
     if (!offerToEdit) {
-      const saved = readPricingOfferDraft('inland')
-      if (saved?.inlandForm) {
-        setInlandForm({ ...defaultInlandForm(), ...saved.inlandForm })
-        setDraftRestoredBanner(true)
-        return
-      }
       setInlandForm(defaultInlandForm())
       return
     }
@@ -464,21 +445,6 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
     if (mode !== 'sea') return
 
     if (!offerToEdit) {
-      const saved = readPricingOfferDraft('sea')
-      if (saved?.form) {
-        setForm({ ...defaultSeaForm(), ...saved.form })
-        setSeaCoreLines(
-          Array.isArray(saved.seaCoreLines) && saved.seaCoreLines.length
-            ? saved.seaCoreLines
-            : initialSeaCoreLines()
-        )
-        setSeaCustomLines(Array.isArray(saved.seaCustomLines) ? saved.seaCustomLines : [])
-        setCustomChargeDraft({ ...defaultCustomChargeDraft(), ...(saved.customChargeDraft || {}) })
-        setReeferExtras({ ...defaultReeferExtras(), ...(saved.reeferExtras || {}) })
-        setDraftFixedSailingDate(saved.draftFixedSailingDate || '')
-        setDraftRestoredBanner(true)
-        return
-      }
       setForm(defaultSeaForm())
       setSeaCoreLines(initialSeaCoreLines())
       setSeaCustomLines([])
@@ -613,41 +579,15 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
   }
   const removeCustomCharge = (id) => setSeaCustomLines((prev) => prev.filter((x) => x.id !== id))
 
-  const draftPayload = useMemo(() => {
-    if (effectiveMode === 'inland') {
-      return { inlandForm }
-    }
-    return {
-      form,
-      seaCoreLines,
-      seaCustomLines,
-      customChargeDraft,
-      reeferExtras,
-      draftFixedSailingDate,
-    }
-  }, [effectiveMode, form, inlandForm, seaCoreLines, seaCustomLines, customChargeDraft, reeferExtras, draftFixedSailingDate])
-
-  useEffect(() => {
-    if (!isOpen || offerToEdit) return
-    const timer = setTimeout(() => {
-      writePricingOfferDraft(effectiveMode, draftPayload)
-    }, 450)
-    return () => clearTimeout(timer)
-  }, [isOpen, offerToEdit, effectiveMode, draftPayload])
-
   const handleDismiss = useCallback(() => {
     onClose()
   }, [onClose])
 
   const handleCancel = useCallback(() => {
-    clearPricingOfferDraft(effectiveMode)
-    setDraftRestoredBanner(false)
     onClose()
-  }, [effectiveMode, onClose])
+  }, [onClose])
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-
+  const persistOffer = async (status) => {
     if (effectiveMode === 'inland') {
       const gov = inlandForm.inland_gov.trim()
       const port = inlandForm.inland_port.trim()
@@ -694,12 +634,12 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
         inland_city: inlandForm.inland_area.trim() || null,
         destination: inlandForm.inland_area.trim() || null,
         pricing: inlandPricing,
+        status,
       }
 
       try {
         if (offerToEdit?.id) await update(offerToEdit.id, payload)
         else await create(payload)
-        clearPricingOfferDraft('inland')
         onSuccess?.()
         onClose()
       } catch (err) {
@@ -803,17 +743,27 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
       destination: '',
       inland_gov: '',
       inland_city: '',
+      status,
     }
 
     try {
       if (offerToEdit?.id) await update(offerToEdit.id, payload)
       else await create(payload)
-      clearPricingOfferDraft('sea')
       onSuccess?.()
       onClose()
     } catch (err) {
       console.error(err)
     }
+  }
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    persistOffer('active')
+  }
+
+  const handleSaveDraft = (e) => {
+    e.preventDefault()
+    persistOffer('draft')
   }
 
   if (!isOpen) return null
@@ -881,26 +831,6 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
             {error ? (
               <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200 shipment-fin-flash shipment-fin-flash--error">
                 {error}
-              </div>
-            ) : null}
-
-            {!offerToEdit && draftRestoredBanner ? (
-              <div
-                className="pricing-offer-draft-banner shipment-fin-flash shipment-fin-flash--success mb-3"
-                role="status"
-              >
-                <CheckCircle2 className="pricing-offer-draft-banner__icon" aria-hidden />
-                <span className="pricing-offer-draft-banner__text">
-                  {t('pricing.draftRestored')}
-                </span>
-                <button
-                  type="button"
-                  className="pricing-offer-draft-banner__dismiss"
-                  onClick={() => setDraftRestoredBanner(false)}
-                  aria-label={t('common.dismiss', 'Dismiss')}
-                >
-                  <X className="h-4 w-4" aria-hidden />
-                </button>
               </div>
             ) : null}
 
@@ -1628,13 +1558,42 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
           </div>
         </div>
 
-        <div className={`pricing-fin-modal__footer ${effectiveMode === 'sea' ? 'pricing-fin-modal__footer--sea' : effectiveMode === 'inland' ? 'pricing-fin-modal__footer--inland' : ''}`}>
+        <div className={`pricing-fin-modal__footer pricing-fin-modal__footer--offer-actions ${effectiveMode === 'sea' ? 'pricing-fin-modal__footer--sea' : effectiveMode === 'inland' ? 'pricing-fin-modal__footer--inland' : ''}`}>
           <button type="button" onClick={handleCancel} className={effectiveMode === 'sea' ? 'sea-rate-btn sea-rate-btn-footer' : effectiveMode === 'inland' ? 'inland-rate-btn inland-rate-btn-footer' : 'px-5 py-2.5 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-colors'}>
-            {effectiveMode === 'sea' || effectiveMode === 'inland' ? 'إلغاء / Cancel' : t('common.cancel', 'Cancel')}
+            {t('common.cancel', 'Cancel')}
           </button>
-          <button type="submit" form="offerForm" disabled={loading} className={effectiveMode === 'sea' ? 'sea-rate-btn sea-rate-btn-primary sea-rate-btn-footer' : effectiveMode === 'inland' ? 'inland-rate-btn inland-rate-btn-primary inland-rate-btn-footer' : 'px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors flex items-center gap-2 disabled:opacity-50'}>
-            {effectiveMode === 'sea' || effectiveMode === 'inland' ? (loading ? t('common.saving', 'Saving...') : 'حفظ / Save') : loading ? t('common.saving', 'Saving...') : t('common.save', 'Save')}
-          </button>
+          <div className="pricing-fin-modal__footer-primary-actions">
+            {!offerToEdit ? (
+              <button
+                type="button"
+                onClick={handleSaveDraft}
+                disabled={loading}
+                className={
+                  effectiveMode === 'sea'
+                    ? 'sea-rate-btn sea-rate-btn-footer sea-rate-btn-draft'
+                    : effectiveMode === 'inland'
+                      ? 'inland-rate-btn inland-rate-btn-footer inland-rate-btn-draft'
+                      : 'px-5 py-2.5 text-sm font-bold text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50'
+                }
+              >
+                {loading ? t('common.saving', 'Saving...') : t('pricing.saveOfferAsDraft', 'Save as Draft')}
+              </button>
+            ) : null}
+            <button
+              type="submit"
+              form="offerForm"
+              disabled={loading}
+              className={
+                effectiveMode === 'sea'
+                  ? 'sea-rate-btn sea-rate-btn-primary sea-rate-btn-footer'
+                  : effectiveMode === 'inland'
+                    ? 'inland-rate-btn inland-rate-btn-primary inland-rate-btn-footer'
+                    : 'px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors flex items-center gap-2 disabled:opacity-50'
+              }
+            >
+              {loading ? t('common.saving', 'Saving...') : t('pricing.saveOfferActive', 'Save')}
+            </button>
+          </div>
         </div>
       </div>
 

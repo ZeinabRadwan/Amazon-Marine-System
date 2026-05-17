@@ -40,6 +40,7 @@ export async function listOffers(token, params = {}, fetchInit = {}) {
   if (params.inland_port) searchParams.set('inland_port', params.inland_port)
   if (params.destination) searchParams.set('destination', params.destination)
   if (params.status) searchParams.set('status', params.status)
+  if (params.quotable) searchParams.set('quotable', '1')
   if (params.q) searchParams.set('q', params.q)
   if (params.per_page) searchParams.set('per_page', String(params.per_page))
   if (params.page) searchParams.set('page', String(params.page))
