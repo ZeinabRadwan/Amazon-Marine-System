@@ -88,7 +88,7 @@ export default function SeaFreightOffersTable({
   loading = false,
   onView,
   onEdit,
-  canManageOffers = true,
+  canManageOffers = false,
 }) {
   const { t, i18n } = useTranslation()
   const dash = t('common.dash', '—')

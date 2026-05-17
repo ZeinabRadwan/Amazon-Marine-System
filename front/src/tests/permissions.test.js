@@ -366,16 +366,17 @@ describe('Pricing page tabs — Pricing role', () => {
     })
   })
 
-  describe('computeCanManagePricingQuotes()', () => {
+  describe('computeCanManagePricingOffers / Quotes()', () => {
     it('allows Admin and Pricing only', () => {
       expect(computeCanManagePricingQuotes(adminUser)).toBe(true)
       expect(computeCanManagePricingQuotes(pricingUser)).toBe(true)
     })
 
-    it('denies Sales, Sales Manager, and Operations', () => {
+    it('denies Sales, Sales Manager, Operations, and Accountant', () => {
       expect(computeCanManagePricingQuotes(salesUser)).toBe(false)
       expect(computeCanManagePricingQuotes(salesManagerUser)).toBe(false)
       expect(computeCanManagePricingQuotes(opsUser)).toBe(false)
+      expect(computeCanManagePricingQuotes(accountantUser)).toBe(false)
     })
   })
 })

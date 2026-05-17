@@ -82,23 +82,16 @@ export function useAuthAccess() {
     [isAdminRole, abilityNames]
   )
 
-  /** Price sheets: add/edit/activate/archive offers (not quotations). */
-  const canManagePricingOffers = useMemo(() => {
-    if (isAdminRole) return true
-    if (isPricingSalesViewOnly) return false
-    if (abilityNames.includes('pricing.manage_offers')) return true
-    const primary = (user?.primary_role ?? user?.roles?.[0]?.name ?? user?.role?.name ?? '')
-      .toString()
-      .toLowerCase()
-    return primary === 'pricing'
-  }, [isAdminRole, isPricingSalesViewOnly, abilityNames, user])
+  /** Price sheets + quotations write actions — Admin (1) and Pricing (5) roles only (UI gate). */
+  const canManagePricingOffers = useMemo(
+    () => isAdminRole || isPricingRole,
+    [isAdminRole, isPricingRole]
+  )
 
-  /** Quotations: create, update, accept/reject, delete — Admin + Pricing role only. */
-  const canManagePricingQuotes = useMemo(() => {
-    if (isAdminRole) return true
-    if (isPricingRole) return true
-    return false
-  }, [isAdminRole, isPricingRole])
+  const canManagePricingQuotes = useMemo(
+    () => isAdminRole || isPricingRole,
+    [isAdminRole, isPricingRole]
+  )
 
   /** Quotation defaults: customs clearance fee (settings). Admin + pricing team only. */
   const canManageQuotationCustomsFee = useMemo(() => {

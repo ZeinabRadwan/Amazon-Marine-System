@@ -16,7 +16,7 @@ import '../Accountings/CurrencyMapBadges.css'
 
 export default function Pricing() {
   const { t } = useTranslation()
-  const { isPricingRole, isAdminRole } = useAuthAccess()
+  const { isPricingRole, isAdminRole, canManagePricingOffers } = useAuthAccess()
   const hideQuotationsTab = isPricingRole && !isAdminRole
   const [activeTab, setActiveTab] = useState('rates')
   const [modalConfig, setModalConfig] = useState({ isOpen: false, offer: null, pricingMode: 'sea' })
@@ -58,13 +58,15 @@ export default function Pricing() {
           )}
         </main>
 
-        <OfferFormModal
-          isOpen={modalConfig.isOpen}
-          offerToEdit={modalConfig.offer}
-          pricingMode={modalConfig.pricingMode}
-          onClose={() => setModalConfig({ isOpen: false, offer: null, pricingMode: 'sea' })}
-          onSuccess={() => setRefreshKey((k) => k + 1)}
-        />
+        {canManagePricingOffers ? (
+          <OfferFormModal
+            isOpen={modalConfig.isOpen}
+            offerToEdit={modalConfig.offer}
+            pricingMode={modalConfig.pricingMode}
+            onClose={() => setModalConfig({ isOpen: false, offer: null, pricingMode: 'sea' })}
+            onSuccess={() => setRefreshKey((k) => k + 1)}
+          />
+        ) : null}
 
         <PricingToastHost />
       </div>
