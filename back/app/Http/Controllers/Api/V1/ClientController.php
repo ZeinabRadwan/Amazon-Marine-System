@@ -235,7 +235,7 @@ class ClientController extends Controller
         $startLastMonth = $now->copy()->subMonth()->startOfMonth();
         $endLastMonth = $now->copy()->subMonth()->endOfMonth();
 
-        $clientsQuery = $this->clientsQueryForUser($request);
+        $clientsQuery = $this->scopedClientsQuery($request);
         $invoicesQuery = $this->invoicesQueryForUser($request);
 
         $totalClients = (clone $clientsQuery)->count();
@@ -335,6 +335,20 @@ class ClientController extends Controller
     }
 
     /**
+     * Clients query scoped by role and optional ?client_type=lead|client filter.
+     */
+    private function scopedClientsQuery(Request $request)
+    {
+        $query = $this->clientsQueryForUser($request);
+        $clientType = $request->query('client_type');
+        if (in_array($clientType, ['lead', 'client'], true)) {
+            $query->where('client_type', $clientType);
+        }
+
+        return $query;
+    }
+
+    /**
      * Invoice totals for client stats — scoped to assigned clients for sales roles.
      */
     private function invoicesQueryForUser(Request $request)
@@ -362,7 +376,7 @@ class ClientController extends Controller
         $months = (int) $request->query('months', 6);
         $from = now()->subMonths($months);
 
-        $clientsQuery = $this->clientsQueryForUser($request);
+        $clientsQuery = $this->scopedClientsQuery($request);
 
         $newClientsByMonth = (clone $clientsQuery)
             ->where('created_at', '>=', $from)

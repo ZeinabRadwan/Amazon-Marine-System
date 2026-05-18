@@ -10,10 +10,11 @@ export default function ClientFormFields({
   disabled = false,
   formGroupId = 'client',
   lookups = {},
+  formOptions = {},
 }) {
   const { t, i18n } = useTranslation()
   const clientStatuses = lookups.clientStatuses ?? []
-  const sections = useMemo(() => buildClientFormSections(lookups), [lookups])
+  const sections = useMemo(() => buildClientFormSections(lookups, formOptions), [lookups, formOptions])
 
   return (
     <div className="clients-form-sections">

@@ -231,6 +231,10 @@ export default function ClientDetailModal({
   onCreateShipment,
   financialSummaryList = [],
   numberLocale = 'en-US',
+  crmMode = 'client',
+  onConvertToClient,
+  convertingToClient = false,
+  canConvertToClient = false,
 }) {
   const { t, i18n } = useTranslation()
   const [noteContent, setNoteContent] = useState('')
@@ -258,7 +262,8 @@ export default function ClientDetailModal({
 
   if (!open) return null
 
-  const tabs = [
+  const isLeadMode = crmMode === 'lead'
+  const allTabs = [
     { id: 'info', label: t('clients.tabs.info', 'Info') },
     { id: 'visits', label: t('clients.tabs.visits', 'Visits') },
     { id: 'shipments', label: t('clients.tabs.shipments', 'Shipments') },
@@ -267,6 +272,9 @@ export default function ClientDetailModal({
     { id: 'followups', label: t('clients.tabs.followups', 'Follow-ups') },
     { id: 'financial', label: t('clients.tabs.financial', 'Financial summary / Statement') },
   ]
+  const tabs = isLeadMode
+    ? allTabs.filter((tab) => tab.id === 'info' || tab.id === 'followups')
+    : allTabs
 
   return (
     <div className="client-detail-modal" role="dialog" aria-modal="true" aria-labelledby="client-detail-modal-title">
@@ -278,7 +286,7 @@ export default function ClientDetailModal({
           <div className="client-detail-modal__ui-modal-head">
             <h2 id="client-detail-modal-title" className="client-detail-modal__ui-modal-title">
               <Users className="client-detail-modal__ui-modal-title-icon" aria-hidden />
-              <span>{t('clients.detail')}</span>
+              <span>{isLeadMode ? t('leads.detail', t('leads.title')) : t('clients.detail')}</span>
               <span className="client-detail-modal__ui-modal-sep"> — </span>
               <span>{detailClient ? (detailClient.company_name || detailClient.name || '—') : '—'}</span>
             </h2>
@@ -1280,6 +1288,16 @@ export default function ClientDetailModal({
           <button type="button" className="client-detail-modal__btn client-detail-modal__btn--secondary" onClick={onClose}>
             {t('clients.close')}
           </button>
+          {isLeadMode && canConvertToClient && detailClient?.client_type === 'lead' && onConvertToClient && (
+            <button
+              type="button"
+              className="client-detail-modal__btn client-detail-modal__btn--primary"
+              onClick={onConvertToClient}
+              disabled={convertingToClient}
+            >
+              {convertingToClient ? t('leads.converting') : t('leads.convertToClient')}
+            </button>
+          )}
           {detailClient && detailTab === 'info' && (
             <button
               type="button"

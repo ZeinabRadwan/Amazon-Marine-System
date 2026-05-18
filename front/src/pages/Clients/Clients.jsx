@@ -129,7 +129,7 @@ const defaultClientForm = () => ({
   website_url: '',
   facebook_url: '',
   linkedin_url: '',
-  client_type: 'lead',
+  client_type: 'client',
   status_id: '',
   lead_source_id: '',
   lead_source_other: '',
@@ -149,11 +149,15 @@ const defaultClientForm = () => ({
   assigned_sales_id: '',
 })
 
-export default function Clients() {
+export function ClientsCrmPage({ crmMode = 'client' }) {
   const { t, i18n } = useTranslation()
   const { hasPageAccess, user } = useAuthAccess()
   const location = useLocation()
   const navigate = useNavigate()
+  const isLeadMode = crmMode === 'lead'
+  const pageKey = isLeadMode ? 'leads' : 'clients'
+  const fixedClientType = isLeadMode ? 'lead' : 'client'
+  const canManagePage = hasPageAccess(pageKey)
   const token = getStoredToken()
   const numberLocale = 'en-US'
   const monthFormat = getMonthFormat(i18n.language)
@@ -162,7 +166,7 @@ export default function Clients() {
   const [alert, setAlert] = useState(null)
   const [filters, setFilters] = useState({
     q: '',
-    client_type: '',
+    client_type: fixedClientType,
     status_id: '',
     lead_source_id: '',
     sort: 'client',
@@ -223,6 +227,15 @@ export default function Clients() {
   const [leadSources, setLeadSources] = useState([])
   const [interestLevels, setInterestLevels] = useState([])
   const [decisionMakerTitles, setDecisionMakerTitles] = useState([])
+  const [convertingToClient, setConvertingToClient] = useState(false)
+
+  const makeDefaultForm = useCallback(
+    () => ({
+      ...defaultClientForm(),
+      client_type: fixedClientType,
+    }),
+    [fixedClientType],
+  )
 
   const pageLoading =
     loading ||
@@ -266,20 +279,20 @@ export default function Clients() {
   useEffect(() => {
     if (!token) return
     setStatsLoading(true)
-    getClientStats(token)
+    getClientStats(token, { client_type: fixedClientType })
       .then((data) => setStats(data.data ?? data.stats ?? data))
       .catch(() => setStats(null))
       .finally(() => setStatsLoading(false))
-  }, [token])
+  }, [token, fixedClientType])
 
   useEffect(() => {
-    if (!token) return
+    if (!token || isLeadMode) return
     setChartsLoading(true)
-    getClientCharts(token, { months: 6 })
+    getClientCharts(token, { months: 6, client_type: fixedClientType })
       .then((data) => setCharts(data.data ?? data.charts ?? data))
       .catch(() => setCharts(null))
       .finally(() => setChartsLoading(false))
-  }, [token])
+  }, [token, fixedClientType, isLeadMode])
 
   useEffect(() => {
     if (!token) return
@@ -423,9 +436,15 @@ export default function Clients() {
     const id = location.state?.focusClientId
     if (id == null) return
     setDetailId(Number(id))
-    setDetailTab('followups')
+    setDetailTab(isLeadMode ? 'info' : 'followups')
     navigate(`${location.pathname}${location.search}`, { replace: true, state: {} })
-  }, [location.state, location.pathname, location.search, navigate])
+  }, [location.state, location.pathname, location.search, navigate, isLeadMode])
+
+  useEffect(() => {
+    if (isLeadMode && detailId && !['info', 'followups'].includes(detailTab)) {
+      setDetailTab('info')
+    }
+  }, [isLeadMode, detailId, detailTab])
 
   useEffect(() => {
     if (!token) return
@@ -559,13 +578,13 @@ export default function Clients() {
         facebook_url: payload.facebook_url ?? '',
         linkedin_url: payload.linkedin_url ?? '',
       }))
-      await createClient(token, payload)
+      await createClient(token, { ...payload, client_type: fixedClientType })
       setShowCreate(false)
-      setCreateForm(defaultClientForm())
+      setCreateForm(makeDefaultForm())
       loadList()
-      setAlert({ type: 'success', message: t('clients.created') })
+      setAlert({ type: 'success', message: isLeadMode ? t('leads.created') : t('clients.created') })
     } catch (err) {
-      setAlert({ type: 'error', message: err?.isValidation ? err.message : t('clients.errorCreate') })
+      setAlert({ type: 'error', message: err?.isValidation ? err.message : (isLeadMode ? t('leads.errorCreate') : t('clients.errorCreate')) })
     } finally {
       setCreateSubmitting(false)
     }
@@ -908,55 +927,61 @@ export default function Clients() {
   }
 
   /** Form sections and field order matching reference (Basic → Decision Maker → Source & Sales → Notes); attachments excluded */
-  const clientFormSections = [
-    {
-      titleKey: 'clients.sections.basic',
-      fields: [
-        { key: 'name', type: 'text', required: true },
-        { key: 'company_name', type: 'text', required: true },
-        { key: 'company_type_id', type: 'select', options: companyTypes },
-        { key: 'business_activity', type: 'text' },
-        { key: 'target_markets', type: 'text' },
-        { key: 'shipping_problems', type: 'textarea', rows: 2 },
-        { key: 'preferred_comm_method_id', type: 'select', options: commMethods },
-        { key: 'phone', type: 'text' },
-        { key: 'email', type: 'email' },
-        { key: 'interest_level_id', type: 'select', options: interestLevels },
-        { key: 'address', type: 'text' },
-        { key: 'website_url', type: 'url' },
-        { key: 'tax_id', type: 'text' },
-        { key: 'facebook_url', type: 'url' },
-        { key: 'linkedin_url', type: 'url' },
-      ],
-    },
-    {
-      titleKey: 'clients.sections.decisionMaker',
-      fields: [
-        { key: 'decision_maker_name', type: 'text' },
-        { key: 'decision_maker_title_id', type: 'select', options: decisionMakerTitles },
-        { key: 'decision_maker_title_other', type: 'text' },
-      ],
-    },
-    {
-      titleKey: 'clients.sections.sourceSales',
-      fields: [
-        { key: 'client_type', type: 'client_type', required: true },
-        { key: 'lead_source_id', type: 'select', options: leadSources },
-        { key: 'lead_source_other', type: 'text' },
-        { key: 'status_id', type: 'select', options: clientStatuses },
-      ],
-    },
-    {
-      titleKey: 'clients.sections.notesGuidance',
-      fields: [
-        { key: 'current_need', type: 'textarea', rows: 2 },
-        { key: 'pain_points', type: 'textarea', rows: 2 },
-        { key: 'opportunity', type: 'textarea', rows: 2 },
-        { key: 'special_requirements', type: 'textarea', rows: 2 },
-        { key: 'notes', type: 'textarea', rows: 4 },
-      ],
-    },
-  ]
+  const clientFormSections = useMemo(() => {
+    const sections = [
+      {
+        titleKey: 'clients.sections.basic',
+        fields: [
+          { key: 'name', type: 'text', required: true },
+          { key: 'company_name', type: 'text', required: true },
+          { key: 'company_type_id', type: 'select', options: companyTypes },
+          { key: 'business_activity', type: 'text' },
+          { key: 'target_markets', type: 'text' },
+          { key: 'shipping_problems', type: 'textarea', rows: 2 },
+          { key: 'preferred_comm_method_id', type: 'select', options: commMethods },
+          { key: 'phone', type: 'text' },
+          { key: 'email', type: 'email' },
+          { key: 'interest_level_id', type: 'select', options: interestLevels },
+          { key: 'address', type: 'text' },
+          { key: 'website_url', type: 'url' },
+          { key: 'tax_id', type: 'text' },
+          { key: 'facebook_url', type: 'url' },
+          { key: 'linkedin_url', type: 'url' },
+        ],
+      },
+      ...(isLeadMode
+        ? []
+        : [
+            {
+              titleKey: 'clients.sections.decisionMaker',
+              fields: [
+                { key: 'decision_maker_name', type: 'text' },
+                { key: 'decision_maker_title_id', type: 'select', options: decisionMakerTitles },
+                { key: 'decision_maker_title_other', type: 'text' },
+              ],
+            },
+          ]),
+      {
+        titleKey: 'clients.sections.sourceSales',
+        fields: [
+          { key: 'lead_source_id', type: 'select', options: leadSources },
+          { key: 'lead_source_other', type: 'text' },
+          { key: 'status_id', type: 'select', options: clientStatuses },
+        ],
+      },
+      {
+        titleKey: 'clients.sections.notesGuidance',
+        fields: [
+          { key: 'current_need', type: 'textarea', rows: 2 },
+          { key: 'pain_points', type: 'textarea', rows: 2 },
+          { key: 'opportunity', type: 'textarea', rows: 2 },
+          { key: 'special_requirements', type: 'textarea', rows: 2 },
+          { key: 'notes', type: 'textarea', rows: 4 },
+        ],
+      },
+    ]
+    return sections
+  }, [isLeadMode, companyTypes, commMethods, interestLevels, decisionMakerTitles, leadSources, clientStatuses])
 
   const renderForm = (form, setForm, disabled, formGroupId = 'client') => (
     <div className="clients-form-sections">
@@ -1003,11 +1028,11 @@ export default function Clients() {
               if (field.type === 'select') {
                 const options =
                   key === 'status_id'
-                    ? clientStatuses.filter((s) => String(s.applies_to) === String(form.client_type))
+                    ? clientStatuses.filter((s) => String(s.applies_to) === String(fixedClientType))
                     : (field.options ?? [])
                 const statusLabelKey =
                   key === 'status_id'
-                    ? form.client_type === 'lead'
+                    ? isLeadMode
                       ? 'clients.salesStage'
                       : 'clients.fields.status_id'
                     : labelKey
@@ -1018,7 +1043,7 @@ export default function Clients() {
                       id={`${formGroupId}-${key}`}
                       value={value}
                       onChange={(e) => update(e.target.value)}
-                      disabled={disabled || (key === 'status_id' && !form.client_type)}
+                      disabled={disabled}
                       aria-label={t(statusLabelKey)}
                     >
                       <option value="">—</option>
@@ -1134,13 +1159,35 @@ export default function Clients() {
     </div>
   )
 
+  const handleConvertToClient = async () => {
+    if (!detailId || !token || !detailClient) return
+    const defaultClientStatus = clientStatuses.find((s) => String(s.applies_to) === 'client')
+    if (!defaultClientStatus?.id) {
+      setAlert({ type: 'error', message: t('leads.convertError') })
+      return
+    }
+    setAlert(null)
+    setConvertingToClient(true)
+    try {
+      await updateClient(token, detailId, {
+        client_type: 'client',
+        status_id: Number(defaultClientStatus.id),
+      })
+      const convertedId = detailId
+      setDetailId(null)
+      setDetailClient(null)
+      setDetailTab('info')
+      navigate('/clients', { state: { focusClientId: convertedId } })
+      setAlert({ type: 'success', message: t('leads.convertSuccess') })
+    } catch (err) {
+      setAlert({ type: 'error', message: err.message || t('leads.convertError') })
+    } finally {
+      setConvertingToClient(false)
+    }
+  }
+
   const clientColumns = useMemo(() => {
-    const statusColumnLabel =
-      filters.client_type === 'lead'
-        ? t('clients.salesStage')
-        : filters.client_type === 'client'
-          ? t('clients.fields.status_id')
-          : t('clients.statusColumnMixed')
+    const statusColumnLabel = isLeadMode ? t('clients.salesStage') : t('clients.fields.status_id')
 
     return [
       {
@@ -1187,14 +1234,14 @@ export default function Clients() {
               label={t('clients.view')}
               onClick={() => setDetailId(c.id)}
             />
-            {hasPageAccess('clients') && (
+            {canManagePage && (
               <IconActionButton
                 icon={<Pencil className="h-4 w-4" />}
                 label={t('clients.edit')}
                 onClick={() => openEdit(c)}
               />
             )}
-            {hasPageAccess('clients') && (
+            {canManagePage && (
               <IconActionButton
                 icon={<Trash2 className="h-4 w-4" />}
                 label={t('clients.delete')}
@@ -1206,7 +1253,7 @@ export default function Clients() {
         ),
       },
     ]
-  }, [t, i18n, clientStatuses, filters.client_type, hasPageAccess])
+  }, [t, i18n, clientStatuses, isLeadMode, canManagePage])
 
   return (
     <Container size="xl">
@@ -1218,40 +1265,66 @@ export default function Clients() {
       )}
       {stats && typeof stats === 'object' && (
         <div className="clients-stats-grid">
-          {[
-            {
-              key: 'total_clients',
-              variant: 'blue',
-              format: 'number',
-              trendDirectionKey: 'total_clients_trend_direction',
-              trendPctKey: 'total_clients_trend_pct',
-            },
-            {
-              key: 'active_clients',
-              variant: 'green',
-              format: 'number',
-              trendDirectionKey: 'active_clients_trend_direction',
-              trendPctKey: 'active_clients_trend_pct',
-            },
-            {
-              key: 'new_clients_this_month',
-              variant: 'amber',
-              format: 'number',
-              trendDirectionKey: 'new_clients_trend_direction',
-              trendValueKey: 'new_clients_trend_value',
-              trendPctKey: 'new_clients_trend_pct',
-              useDiffForChange: true,
-            },
-            {
-              key: 'total_revenue_from_clients',
-              variant: 'default',
-              format: 'currency',
-              trendDirectionKey: 'total_revenue_trend_direction',
-              trendPctKey: 'total_revenue_trend_pct',
-            },
-          ].map((cfg) => {
+          {(isLeadMode
+            ? [
+                {
+                  key: 'total_clients',
+                  variant: 'blue',
+                  format: 'number',
+                  trendDirectionKey: 'total_clients_trend_direction',
+                  trendPctKey: 'total_clients_trend_pct',
+                  titleKey: 'leads.stats.total_leads',
+                },
+                {
+                  key: 'new_clients_this_month',
+                  variant: 'amber',
+                  format: 'number',
+                  trendDirectionKey: 'new_clients_trend_direction',
+                  trendValueKey: 'new_clients_trend_value',
+                  trendPctKey: 'new_clients_trend_pct',
+                  useDiffForChange: true,
+                  titleKey: 'leads.stats.new_leads_this_month',
+                },
+              ]
+            : [
+                {
+                  key: 'total_clients',
+                  variant: 'blue',
+                  format: 'number',
+                  trendDirectionKey: 'total_clients_trend_direction',
+                  trendPctKey: 'total_clients_trend_pct',
+                  titleKey: 'clients.stats.total_clients',
+                },
+                {
+                  key: 'active_clients',
+                  variant: 'green',
+                  format: 'number',
+                  trendDirectionKey: 'active_clients_trend_direction',
+                  trendPctKey: 'active_clients_trend_pct',
+                  titleKey: 'clients.stats.active_clients',
+                },
+                {
+                  key: 'new_clients_this_month',
+                  variant: 'amber',
+                  format: 'number',
+                  trendDirectionKey: 'new_clients_trend_direction',
+                  trendValueKey: 'new_clients_trend_value',
+                  trendPctKey: 'new_clients_trend_pct',
+                  useDiffForChange: true,
+                  titleKey: 'clients.stats.new_clients_this_month',
+                },
+                {
+                  key: 'total_revenue_from_clients',
+                  variant: 'default',
+                  format: 'currency',
+                  trendDirectionKey: 'total_revenue_trend_direction',
+                  trendPctKey: 'total_revenue_trend_pct',
+                  titleKey: 'clients.stats.total_revenue_from_clients',
+                },
+              ]
+          ).map((cfg) => {
             const value = stats[cfg.key]
-            const title = t(`clients.stats.${cfg.key}`, { defaultValue: cfg.key.replace(/_/g, ' ') })
+            const title = t(cfg.titleKey, { defaultValue: cfg.key.replace(/_/g, ' ') })
             const displayValue =
               cfg.format === 'currency' && typeof value === 'number'
                 ? new Intl.NumberFormat(numberLocale, {
@@ -1287,6 +1360,7 @@ export default function Clients() {
         </div>
       )}
 
+      {!isLeadMode && (
       <div className="clients-extra-panel clients-charts-panel mb-4">
         {charts && (charts.new_clients_by_month?.length > 0 || charts.by_lead_source?.length > 0) ? (
           <div className="clients-charts-grid">
@@ -1327,6 +1401,7 @@ export default function Clients() {
           <p className="text-sm text-gray-500 dark:text-gray-400">{t('clients.chartsNoData', 'No chart data')}</p>
         )}
       </div>
+      )}
 
       <div className="clients-filters-card">
         <div className="clients-filters__row clients-filters__row--main">
@@ -1343,33 +1418,15 @@ export default function Clients() {
           </div>
           <div className="clients-filters__fields">
             <select
-              value={filters.client_type ?? ''}
-              onChange={(e) =>
-                setFilters((f) => ({
-                  ...f,
-                  client_type: e.target.value,
-                  status_id: '',
-                  page: 1,
-                }))
-              }
-              className="clients-input"
-              aria-label={t('clients.fields.client_type')}
-            >
-              <option value="">{t('clients.filterClientTypeAll')}</option>
-              <option value="lead">{t('clients.clientType.lead')}</option>
-              <option value="client">{t('clients.clientType.client')}</option>
-            </select>
-            <select
               value={filters.status_id ?? ''}
               onChange={(e) => setFilters((f) => ({ ...f, status_id: e.target.value, page: 1 }))}
               className="clients-input"
               aria-label={t('clients.status')}
             >
               <option value="">{t('clients.statusAll')}</option>
-              {(filters.client_type
-                ? clientStatuses.filter((s) => String(s.applies_to) === String(filters.client_type))
-                : clientStatuses
-              ).map((s) => (
+              {clientStatuses
+                .filter((s) => String(s.applies_to) === String(fixedClientType))
+                .map((s) => (
                 <option key={s.id} value={s.id}>
                   {localizedStatusLabel(s, i18n.language)}
                 </option>
@@ -1395,7 +1452,7 @@ export default function Clients() {
             onClick={() => setFilters((f) => ({
               ...f,
               q: '',
-              client_type: '',
+              client_type: fixedClientType,
               status_id: '',
               lead_source_id: '',
               sort: 'client',
@@ -1434,27 +1491,32 @@ export default function Clients() {
                 <FileSpreadsheet className="clients-filters__btn-icon-svg" aria-hidden />
               )}
             </button>
-            {hasPageAccess('clients') && (
+            {canManagePage && (
               <>
-                <button
-                  type="button"
-                  className="page-header__btn clients-import-open-btn"
-                  onClick={() => {
-                    setAlert(null)
-                    setImportFile(null)
-                    setImportErrors([])
-                    setImportModalOpen(true)
-                  }}
-                >
-                  <Upload className="clients-import-open-btn__icon" size={18} aria-hidden />
-                  {t('clients.importClients')}
-                </button>
+                {!isLeadMode && (
+                  <button
+                    type="button"
+                    className="page-header__btn clients-import-open-btn"
+                    onClick={() => {
+                      setAlert(null)
+                      setImportFile(null)
+                      setImportErrors([])
+                      setImportModalOpen(true)
+                    }}
+                  >
+                    <Upload className="clients-import-open-btn__icon" size={18} aria-hidden />
+                    {t('clients.importClients')}
+                  </button>
+                )}
                 <button
                   type="button"
                   className="page-header__btn page-header__btn--primary"
-                  onClick={() => setShowCreate(true)}
+                  onClick={() => {
+                    setCreateForm(makeDefaultForm())
+                    setShowCreate(true)
+                  }}
                 >
-                  {t('clients.createClient')}
+                  {isLeadMode ? t('leads.createLead') : t('clients.createClient')}
                 </button>
               </>
             )}
@@ -1504,7 +1566,7 @@ export default function Clients() {
       )}
 
       {list.length === 0 ? (
-        <p className="clients-empty">{t('clients.noClients')}</p>
+        <p className="clients-empty">{isLeadMode ? t('leads.noLeads') : t('clients.noClients')}</p>
       ) : (
         <Table
           columns={clientColumns}
@@ -1658,7 +1720,7 @@ export default function Clients() {
           <div className="client-detail-modal__box client-detail-modal__box--form">
             <header className="client-detail-modal__header client-detail-modal__header--form">
               <h2 id="client-create-modal-title" className="client-detail-modal__title">
-                {t('clients.createClient')}
+                {isLeadMode ? t('leads.createLead') : t('clients.createClient')}
               </h2>
               <button
                 type="button"
@@ -1729,6 +1791,10 @@ export default function Clients() {
         onCreateShipment={handleCreateShipment}
         financialSummaryList={financialSummaryList}
         numberLocale={numberLocale}
+        crmMode={crmMode}
+        onConvertToClient={isLeadMode ? handleConvertToClient : undefined}
+        convertingToClient={convertingToClient}
+        canConvertToClient={canManagePage}
       />
 
       {/* Edit modal */}
@@ -1789,4 +1855,8 @@ export default function Clients() {
       </div>
     </Container>
   )
+}
+
+export default function Clients() {
+  return <ClientsCrmPage crmMode="client" />
 }

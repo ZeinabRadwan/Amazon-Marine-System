@@ -2194,6 +2194,7 @@
   },
   "leads": {
     "title": "Leads",
+    "detail": "Lead details",
     "createLead": "Add lead",
     "noLeads": "No leads yet.",
     "created": "Lead created.",
@@ -2202,7 +2203,12 @@
     "convertToClient": "Convert to client",
     "converting": "Converting…",
     "convertSuccess": "Lead converted to client.",
-    "convertError": "Could not convert lead."
+    "convertError": "Could not convert lead.",
+    "stats": {
+      "total_leads": "Total leads",
+      "new_leads_this_month": "New leads this month",
+      "vsLastMonth": "vs last month"
+    }
   },
   "clients": {
     "title": "Clients",

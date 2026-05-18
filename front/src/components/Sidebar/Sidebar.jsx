@@ -37,6 +37,7 @@ const SIDEBAR_SECTIONS = [
     sectionKey: 'clients',
     items: [
       { id: 'clientsCrm', menuKey: 'clientsCrm', Icon: ContactsIcon, badge: 'crm' },
+      { id: 'leadsCrm', menuKey: 'leadsCrm', Icon: ContactsIcon },
       // { id: 'clientLookups', menuKey: 'clientLookups', Icon: ClipboardIcon },
     ],
   },
@@ -96,6 +97,7 @@ const SIDEBAR_SECTIONS = [
 const SIDEBAR_ID_TO_PAGE_KEY = {
   dashboard: 'dashboard',
   clientsCrm: 'clients',
+  leadsCrm: 'leads',
   shipments: 'shipments',
   sdForms: 'sd_forms',
   invoices: 'invoices',

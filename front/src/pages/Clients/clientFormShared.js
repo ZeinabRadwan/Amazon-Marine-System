@@ -15,7 +15,7 @@ export function defaultClientForm() {
     website_url: '',
     facebook_url: '',
     linkedin_url: '',
-    client_type: 'lead',
+    client_type: 'client',
     status_id: '',
     lead_source_id: '',
     lead_source_other: '',
@@ -36,7 +36,11 @@ export function defaultClientForm() {
   }
 }
 
-export function buildClientFormSections(lookups) {
+export function buildClientFormSections(lookups, options = {}) {
+  const {
+    hideClientType = false,
+    hideDecisionMaker = false,
+  } = options
   const {
     companyTypes = [],
     commMethods = [],
@@ -46,7 +50,7 @@ export function buildClientFormSections(lookups) {
     clientStatuses = [],
   } = lookups
 
-  return [
+  const sections = [
     {
       titleKey: 'clients.sections.basic',
       fields: [
@@ -67,18 +71,22 @@ export function buildClientFormSections(lookups) {
         { key: 'linkedin_url', type: 'url' },
       ],
     },
-    {
-      titleKey: 'clients.sections.decisionMaker',
-      fields: [
-        { key: 'decision_maker_name', type: 'text' },
-        { key: 'decision_maker_title_id', type: 'select', options: decisionMakerTitles },
-        { key: 'decision_maker_title_other', type: 'text' },
-      ],
-    },
+    ...(hideDecisionMaker
+      ? []
+      : [
+          {
+            titleKey: 'clients.sections.decisionMaker',
+            fields: [
+              { key: 'decision_maker_name', type: 'text' },
+              { key: 'decision_maker_title_id', type: 'select', options: decisionMakerTitles },
+              { key: 'decision_maker_title_other', type: 'text' },
+            ],
+          },
+        ]),
     {
       titleKey: 'clients.sections.sourceSales',
       fields: [
-        { key: 'client_type', type: 'client_type', required: true },
+        ...(hideClientType ? [] : [{ key: 'client_type', type: 'client_type', required: true }]),
         { key: 'lead_source_id', type: 'select', options: leadSources },
         { key: 'lead_source_other', type: 'text' },
         { key: 'status_id', type: 'select', options: clientStatuses },
@@ -95,6 +103,8 @@ export function buildClientFormSections(lookups) {
       ],
     },
   ]
+
+  return sections
 }
 
 export function normalizeUrlForSubmit(value, fieldKey, t) {

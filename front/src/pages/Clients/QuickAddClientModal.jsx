@@ -161,6 +161,7 @@ export function QuickAddClientModal({ open, onClose, onCreated }) {
                   disabled={submitting}
                   formGroupId="quote-create-client"
                   lookups={lookups}
+                  formOptions={{ hideClientType: true }}
                 />
               )}
             </div>

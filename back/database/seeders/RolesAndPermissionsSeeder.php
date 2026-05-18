@@ -162,6 +162,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 $permissions['financial.view'],
                 $permissions['financial.manage'],
                 $permissions['clients.view'],
+                $permissions['leads.view'],
             ]);
         }
 
@@ -210,7 +211,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'attendance' => true, 'visits' => true, 'users' => false, 'roles_permissions' => false, 'settings' => true,
             ],
             'accounting' => [
-                'dashboard' => true, 'clients' => true, 'leads' => false, 'shipments' => true, 'sd_forms' => false, 'operations' => false,
+                'dashboard' => true, 'clients' => true, 'leads' => true, 'shipments' => true, 'sd_forms' => false, 'operations' => false,
                 'invoices' => true, 'accounting' => true, 'treasury' => true, 'expenses' => true, 'pricing' => false,
                 'partners' => true, 'reports' => true, 'official_documents' => false, 'customer_service' => false,
                 'attendance' => true, 'visits' => false, 'users' => false, 'roles_permissions' => false, 'settings' => true,

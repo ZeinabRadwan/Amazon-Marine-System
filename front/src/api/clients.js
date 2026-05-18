@@ -118,8 +118,13 @@ export async function deleteClient(token, clientId) {
 /**
  * GET {{base_url}}/clients/stats – Client Stats
  */
-export async function getClientStats(token) {
-  const res = await apiFetch(`${getBaseUrl()}/clients/stats`, { headers: authHeaders(token) })
+export async function getClientStats(token, params = {}) {
+  const searchParams = new URLSearchParams()
+  if (params.client_type != null && params.client_type !== '') {
+    searchParams.set('client_type', String(params.client_type))
+  }
+  const query = searchParams.toString()
+  const res = await apiFetch(`${getBaseUrl()}/clients/stats${query ? `?${query}` : ''}`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to get client stats (${res.status})`)
   return data
@@ -130,7 +135,11 @@ export async function getClientStats(token) {
  */
 export async function getClientCharts(token, params = {}) {
   const months = params.months != null ? params.months : 6
-  const res = await apiFetch(`${getBaseUrl()}/clients/charts?months=${months}`, { headers: authHeaders(token) })
+  const searchParams = new URLSearchParams({ months: String(months) })
+  if (params.client_type != null && params.client_type !== '') {
+    searchParams.set('client_type', String(params.client_type))
+  }
+  const res = await apiFetch(`${getBaseUrl()}/clients/charts?${searchParams.toString()}`, { headers: authHeaders(token) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to get client charts (${res.status})`)
   return data

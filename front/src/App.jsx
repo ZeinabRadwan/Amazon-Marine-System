@@ -22,6 +22,7 @@ import Profile from './pages/Profile'
 import Users from './pages/Users'
 import RolesPermissions from './pages/RolesPermissions'
 import Clients from './pages/Clients'
+import Leads from './pages/Leads/Leads'
 import Accountings from './pages/Accountings'
 import CustomerStatementDetailPage from './pages/Accountings/CustomerStatementDetailPage'
 import PartnerStatementDetailPage from './pages/Accountings/PartnerStatementDetailPage'
@@ -697,6 +698,14 @@ function App() {
             element={
               <RequirePageAccess pageKey="clients">
                 <Clients />
+              </RequirePageAccess>
+            }
+          />
+          <Route
+            path="/leads"
+            element={
+              <RequirePageAccess pageKey="leads">
+                <Leads />
               </RequirePageAccess>
             }
           />
