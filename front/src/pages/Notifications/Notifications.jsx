@@ -21,6 +21,7 @@ import {
   extractUnreadCountFromResponse,
   getNotificationNavigationPath,
 } from '../../utils/notificationsDisplay'
+import { dispatchSidebarActivityRefresh } from '../../utils/sidebarActivity'
 
 export default function Notifications() {
   const { t } = useTranslation()
@@ -96,6 +97,8 @@ export default function Notifications() {
           prev.map((n) => (String(n.id) === String(id) ? { ...n, read_at: n.read_at || new Date().toISOString() } : n))
         )
         loadUnreadCount()
+        dispatchSidebarActivityRefresh()
+        window.dispatchEvent(new CustomEvent('am:notifications:changed'))
       })
       .catch((err) => setAlert({ type: 'error', message: err.message || t('notifications.errorMarkRead') }))
       .finally(() => setMarkingId(null))
@@ -109,6 +112,8 @@ export default function Notifications() {
       .then(() => {
         setList((prev) => prev.map((n) => ({ ...n, read_at: n.read_at || new Date().toISOString() })))
         setUnreadCount(0)
+        dispatchSidebarActivityRefresh()
+        window.dispatchEvent(new CustomEvent('am:notifications:changed'))
         setAlert({ type: 'success', message: t('notifications.markAllSuccess') })
       })
       .catch((err) => setAlert({ type: 'error', message: err.message || t('notifications.errorMarkAll') }))

@@ -75,3 +75,15 @@ export async function getSidebarCounts(token) {
   return data.data ?? data
 }
 
+/** Mark a module as viewed — clears pending follow-up badge slice for that module. */
+export async function acknowledgeSidebarModule(token, module) {
+  const res = await apiFetch(`${getBaseUrl()}/dashboard/sidebar-activity/acknowledge`, {
+    method: 'POST',
+    headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ module }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to acknowledge sidebar activity (${res.status})`)
+  return data.data ?? data
+}
+

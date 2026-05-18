@@ -447,6 +447,7 @@ Route::prefix('v1')->group(function () {
         Route::get('dashboard/overview', [DashboardController::class, 'overview'])
             ->middleware('page_permission:dashboard,view');
         Route::get('dashboard/sidebar-counts', [DashboardController::class, 'sidebarCounts']);
+        Route::post('dashboard/sidebar-activity/acknowledge', [DashboardController::class, 'acknowledgeSidebarModule']);
         Route::get('dashboard/admin-overview', [DashboardController::class, 'adminOverview'])
             ->middleware('page_permission:dashboard,view');
         Route::get('dashboard/sales-manager', [DashboardController::class, 'salesManager'])

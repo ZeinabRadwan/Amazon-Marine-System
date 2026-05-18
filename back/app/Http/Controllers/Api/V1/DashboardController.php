@@ -15,6 +15,8 @@ use App\Models\User;
 use App\Models\VendorBill;
 use App\Services\AdminDashboardService;
 use App\Services\SalesDashboardService;
+use App\Services\SidebarActivityService;
+use App\Support\NotificationSidebarModule;
 use App\Support\ShipmentOperationTaskSummary;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -475,40 +477,38 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function sidebarCounts(Request $request)
+    public function sidebarCounts(Request $request, SidebarActivityService $sidebarActivity)
     {
         abort_unless($request->user() !== null, 401);
-        $user = $request->user();
-        $role = $this->roleName($request);
 
-        // CRM Count (Clients)
-        $crmQuery = Client::query();
-        if ($role === 'sales') {
-            $crmQuery->where('assigned_sales_id', $user->id);
-        }
-        $crmCount = $crmQuery->count();
-
-        // Shipments Count
-        $shipmentsQuery = $this->scopedShipmentQuery($request);
-        $shipmentsCount = $shipmentsQuery->count();
-
-        // SD Forms Count
-        $sdFormsQuery = SDForm::query();
-        if ($role === 'sales') {
-            $sdFormsQuery->where('sales_rep_id', $user->id);
-        }
-        $sdFormsCount = $sdFormsQuery->count();
-
-        // Tickets Count (Open ones)
-        $ticketsCount = Ticket::where('status', 'open')->count();
+        $badges = $sidebarActivity->badgesFor($request->user());
+        $legacy = $sidebarActivity->legacyPropsFromBadges($badges);
 
         return response()->json([
-            'data' => [
-                'crmCount' => $crmCount,
-                'shipmentsCount' => $shipmentsCount,
-                'sdFormsCount' => $sdFormsCount,
-                'ticketsCount' => $ticketsCount,
-            ],
+            'data' => array_merge($legacy, [
+                'badges' => $badges,
+            ]),
+        ]);
+    }
+
+    public function acknowledgeSidebarModule(Request $request, SidebarActivityService $sidebarActivity)
+    {
+        abort_unless($request->user() !== null, 401);
+
+        $validated = $request->validate([
+            'module' => ['required', 'string', 'in:'.implode(',', NotificationSidebarModule::acknowledgeableModules())],
+        ]);
+
+        $sidebarActivity->acknowledge($request->user(), $validated['module']);
+
+        $badges = $sidebarActivity->badgesFor($request->user());
+        $legacy = $sidebarActivity->legacyPropsFromBadges($badges);
+
+        return response()->json([
+            'data' => array_merge($legacy, [
+                'badges' => $badges,
+                'acknowledged_module' => $validated['module'],
+            ]),
         ]);
     }
 }

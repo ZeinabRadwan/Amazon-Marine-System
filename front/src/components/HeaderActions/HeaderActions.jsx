@@ -12,6 +12,7 @@ import {
   extractUnreadCountFromResponse,
   getNotificationNavigationPath,
 } from '../../utils/notificationsDisplay'
+import { dispatchSidebarActivityRefresh } from '../../utils/sidebarActivity'
 import './HeaderActions.css'
 
 const RECENT_NOTIF_LIMIT = 8
@@ -81,6 +82,8 @@ export default function HeaderActions({ variant = 'navbar', className = '', aler
       .then(() => {
         setRecentNotifications((prev) => prev.map((item) => ({ ...item, read_at: item.read_at || new Date().toISOString() })))
         setUnreadCount(0)
+        dispatchSidebarActivityRefresh()
+        window.dispatchEvent(new CustomEvent('am:notifications:changed'))
       })
       .catch(() => {})
       .finally(() => setMarkAllBusy(false))
@@ -94,6 +97,8 @@ export default function HeaderActions({ variant = 'navbar', className = '', aler
           prev.map((item) => (String(item.id) === String(n.id) ? { ...item, read_at: item.read_at || new Date().toISOString() } : item))
         )
         loadUnreadCount()
+        dispatchSidebarActivityRefresh()
+        window.dispatchEvent(new CustomEvent('am:notifications:changed'))
       })
     }
     setNotifOpen(false)

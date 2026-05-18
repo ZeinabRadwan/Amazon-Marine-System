@@ -7,7 +7,13 @@ import { getApiBaseUrl } from '../../api/apiBaseUrl'
 import { getUnreadCount } from '../../api/notifications'
 import { extractUnreadCountFromResponse } from '../../utils/notificationsDisplay'
 import { getPermissionsByRole } from '../../api/roles'
-import { getSidebarCounts } from '../../api/dashboard'
+import { getSidebarCounts, acknowledgeSidebarModule } from '../../api/dashboard'
+import {
+  dispatchSidebarActivityRefresh,
+  mapSidebarActivityToCounts,
+  moduleKeyForPathname,
+  SIDEBAR_ACTIVITY_REFRESH_EVENT,
+} from '../../utils/sidebarActivity'
 import { ROLE_ID } from '../../constants/roles'
 import AppLayout from '../AppLayout'
 import LoaderDots from '../LoaderDots'
@@ -255,12 +261,7 @@ export default function AuthenticatedLayout() {
       try {
         const data = await getSidebarCounts(token)
         if (cancelled) return
-        setSidebarCounts({
-          crmCount: data.crmCount ?? 0,
-          shipmentsCount: data.shipmentsCount ?? 0,
-          sdFormsCount: data.sdFormsCount ?? 0,
-          ticketsCount: data.ticketsCount ?? 0,
-        })
+        setSidebarCounts(mapSidebarActivityToCounts(data))
       } catch {
         // ignore
       }
@@ -268,15 +269,43 @@ export default function AuthenticatedLayout() {
 
     loadCounts()
 
-    const interval = window.setInterval(() => {
+    const onRefresh = () => {
       loadUnread()
       loadCounts()
-    }, 60000)
+    }
+    window.addEventListener(SIDEBAR_ACTIVITY_REFRESH_EVENT, onRefresh)
+    window.addEventListener('am:followups:changed', onRefresh)
+    window.addEventListener('am:notifications:changed', onRefresh)
+
+    const interval = window.setInterval(onRefresh, 60000)
     return () => {
       cancelled = true
       window.clearInterval(interval)
+      window.removeEventListener(SIDEBAR_ACTIVITY_REFRESH_EVENT, onRefresh)
+      window.removeEventListener('am:followups:changed', onRefresh)
+      window.removeEventListener('am:notifications:changed', onRefresh)
     }
   }, [token])
+
+  useEffect(() => {
+    if (!token) return
+    const module = moduleKeyForPathname(location.pathname)
+    if (!module) return
+
+    let cancelled = false
+    acknowledgeSidebarModule(token, module)
+      .then((data) => {
+        if (!cancelled) setSidebarCounts(mapSidebarActivityToCounts(data))
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) dispatchSidebarActivityRefresh()
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [token, location.pathname])
 
   // ── Global 401 handler (backend idle-logout or expired token) ─────────────
   useEffect(() => {
