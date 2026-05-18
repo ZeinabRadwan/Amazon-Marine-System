@@ -1588,7 +1588,25 @@ export default function SDForms() {
         ),
       },
       { key: 'sd_number', label: t('sdForms.sdNumber'), sortKey: 'sd', render: (_, r) => r.sd_number ?? '—' },
-      { key: 'client_name', label: t('sdForms.client'), sortKey: 'client', render: (_, r) => r.client_name ?? '—' },
+      {
+        key: 'client_name',
+        label: t('sdForms.client'),
+        sortKey: 'client',
+        render: (_, r) => {
+          const name = (r.client_name || '').trim()
+          const company = (r.client_company_name || '').trim()
+          if (!name && !company) return '—'
+          if (name && company && name !== company) {
+            return (
+              <span className="sd-forms-client-cell">
+                <span className="sd-forms-client-cell__primary">{name}</span>
+                <span className="sd-forms-client-cell__secondary">{company}</span>
+              </span>
+            )
+          }
+          return name || company
+        },
+      },
       { key: 'pol', label: t('sdForms.pol'), render: (_, r) => r.pol ?? '—' },
       { key: 'pod', label: t('sdForms.pod'), render: (_, r) => r.pod ?? '—' },
       { key: 'shipping_line', label: t('sdForms.form.shippingLine'), sortKey: 'shipping_line', render: (_, r) => r.shipping_line ?? '—' },

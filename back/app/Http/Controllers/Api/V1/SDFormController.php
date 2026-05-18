@@ -203,6 +203,7 @@ class SDFormController extends Controller
             'sd_number' => $form->sd_number,
             'client_id' => $form->client_id,
             'client_name' => $form->client?->name ?? '',
+            'client_company_name' => $form->client?->company_name ?? '',
             'pol_id' => $form->pol_id,
             'pod_id' => $form->pod_id,
             'pol' => $form->pol?->name ?? $form->pol_text,
