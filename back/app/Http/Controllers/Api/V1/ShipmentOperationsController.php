@@ -20,7 +20,7 @@ class ShipmentOperationsController extends Controller
 {
     public function show(Shipment $shipment)
     {
-        $this->authorize('update', $shipment);
+        $this->authorize('view', $shipment);
 
         $operation = $shipment->operation()->with([
             'transportContractor',
