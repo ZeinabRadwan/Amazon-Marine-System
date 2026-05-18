@@ -18,6 +18,7 @@ export default function AppLayout({
   isAdminRole,
   isAccountant,
   isOperations,
+  isPricingRole,
   activeTab = 'personal',
   onTabChange,
   activeMenu = 'dashboard',
@@ -44,6 +45,7 @@ export default function AppLayout({
         isAdminRole={isAdminRole}
         isAccountant={isAccountant}
         isOperations={isOperations}
+        isPricingRole={isPricingRole}
         activeTab={activeTab}
         onTabChange={onTabChange}
         activeMenu={activeMenu}

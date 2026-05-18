@@ -459,10 +459,14 @@ export default function Shipments() {
     }
     const rawClientId = showCreate ? createForm.client_id : editForm.client_id
     const clientId = numOrUndef(rawClientId)
+    if (clientId == null) {
+      setQuoteOptions([])
+      setQuoteOptionsLoading(false)
+      return
+    }
     let cancelled = false
     setQuoteOptionsLoading(true)
-    const params = { per_page: 200, sort: 'created_at', direction: 'desc' }
-    if (clientId != null) params.client_id = clientId
+    const params = { per_page: 200, sort: 'created_at', direction: 'desc', client_id: clientId }
     listQuotes(token, params)
       .then((res) => {
         if (cancelled) return
@@ -1489,6 +1493,8 @@ export default function Shipments() {
                   ...f,
                   client_id: e.target.value,
                   sd_form_id: '',
+                  pricing_quote_id: '',
+                  quotation_reference: '',
                 }))
               }
               disabled={disabled}
@@ -1564,20 +1570,30 @@ export default function Shipments() {
                       quotation_reference: quote?.quote_no ? String(quote.quote_no) : f.quotation_reference,
                     }))
                   }}
-                  disabled={disabled || quoteOptionsLoading}
+                  disabled={disabled || !numOrUndef(form.client_id) || quoteOptionsLoading}
                 >
                   <option value="">
-                    {quoteOptionsLoading
-                      ? t('shipments.quotationLink.loading')
-                      : t('shipments.quotationLink.none')}
+                    {!numOrUndef(form.client_id)
+                      ? t('shipments.quotationLink.selectClientFirst')
+                      : quoteOptionsLoading
+                        ? t('shipments.quotationLink.loading')
+                        : t('shipments.quotationLink.none')}
                   </option>
                   {quoteOptions.map((q) => (
                     <option key={q.id} value={q.id}>
                       {q.quote_no || `#${q.id}`}
-                      {q.client?.company_name || q.client?.name ? ` — ${q.client.company_name || q.client.name}` : ''}
                     </option>
                   ))}
                 </select>
+                {numOrUndef(form.client_id) ? (
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    {quoteOptionsLoading
+                      ? t('shipments.quotationLink.loading')
+                      : quoteOptions.length === 0
+                        ? t('shipments.quotationLink.noQuotesForClient')
+                        : t('shipments.quotationLink.linkHint')}
+                  </p>
+                ) : null}
               </div>
             </>
           )}

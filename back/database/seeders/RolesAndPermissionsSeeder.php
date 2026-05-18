@@ -171,8 +171,8 @@ class RolesAndPermissionsSeeder extends Seeder
                 'attendance' => true, 'visits' => false, 'users' => false, 'roles_permissions' => false, 'settings' => true,
             ],
             'pricing' => [
-                'dashboard' => true, 'clients' => true, 'shipments' => true, 'sd_forms' => false, 'operations' => false,
-                'invoices' => true, 'accounting' => false, 'treasury' => false, 'expenses' => false, 'pricing' => true,
+                'dashboard' => true, 'clients' => false, 'shipments' => false, 'sd_forms' => false, 'operations' => false,
+                'invoices' => false, 'accounting' => false, 'treasury' => false, 'expenses' => false, 'pricing' => true,
                 'partners' => false, 'reports' => true, 'official_documents' => false, 'customer_service' => false,
                 'attendance' => true, 'visits' => false, 'users' => false, 'roles_permissions' => false, 'settings' => true,
             ],

@@ -131,12 +131,16 @@ const BADGE_CONFIG = {
   alerts: { class: 'sidebar-badge--green', countKey: 'alertsCount' },
 }
 
+/** Pricing team: price sheets only — no CRM, shipments, or invoices in the sidebar. */
+const PRICING_HIDDEN_MENU_IDS = new Set(['clientsCrm', 'shipments', 'invoices'])
+
 export default function Sidebar({
   appName = 'Marketerz',
   /** From layout (Sidebar is outside `<Outlet />`, so `useAuthAccess` has no user context). */
   isAdminRole: isAdminRoleFromLayout,
   isAccountant: isAccountantFromLayout,
   isOperations: isOperationsFromLayout,
+  isPricingRole: isPricingRoleFromLayout,
   activeMenu = 'dashboard',
   onMenuChange,
   allowedPages: allowedPagesProp,
@@ -153,10 +157,11 @@ export default function Sidebar({
 }) {
   const badgeCounts = { crmCount, ticketsCount, alertsCount, shipmentsCount, sdFormsCount }
   const { t, i18n } = useTranslation()
-  const { allowedPages: hookAllowedPages, isAccountant, isAdminRole, isOperations } = useAuthAccess()
+  const { allowedPages: hookAllowedPages, isAccountant, isAdminRole, isOperations, isPricingRole } = useAuthAccess()
   const effectiveIsAdminRole = isAdminRoleFromLayout ?? isAdminRole
   const effectiveIsAccountant = isAccountantFromLayout ?? isAccountant
   const effectiveIsOperations = isOperationsFromLayout ?? isOperations
+  const effectiveIsPricingRole = isPricingRoleFromLayout ?? isPricingRole
   const allowedPages = allowedPagesProp ?? hookAllowedPages
   const isRtl = i18n.language === 'ar'
   const [theme, setTheme] = useState(() => getResolvedTheme())
@@ -222,6 +227,7 @@ export default function Sidebar({
 
             const filteredItems = allowedPagesSet
               ? items.filter(({ id }) => {
+                  if (effectiveIsPricingRole && PRICING_HIDDEN_MENU_IDS.has(id)) return false
                   if (effectiveIsAccountant && sectionKey === 'operations' && id !== 'shipments') return false
                   if (id === 'settings' && !effectiveIsAdminRole) return false
                   if (id === 'reports') return effectiveIsAdminRole
@@ -230,6 +236,7 @@ export default function Sidebar({
                   return allowedPagesSet.has(pageKey)
                 })
               : items.filter(({ id }) => {
+                  if (effectiveIsPricingRole && PRICING_HIDDEN_MENU_IDS.has(id)) return false
                   if (effectiveIsAccountant && sectionKey === 'operations' && id !== 'shipments') return false
                   return id !== 'reports' || effectiveIsAdminRole
                 })

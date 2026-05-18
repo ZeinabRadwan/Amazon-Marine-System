@@ -79,6 +79,14 @@ export function computeHasPermission(user, permissions, page, key) {
 
 // ─── Sidebar section visibility ──────────────────────────────────────────────
 
+const PRICING_HIDDEN_SIDEBAR_IDS = new Set(['clientsCrm', 'shipments', 'invoices'])
+
+/** Returns whether a sidebar menu id should show for the given user. */
+export function isSidebarMenuVisible(user, menuId) {
+  if (computeIsPricingRole(user) && PRICING_HIDDEN_SIDEBAR_IDS.has(menuId)) return false
+  return true
+}
+
 /** Returns the section keys visible to the user, applying Accountant rule. */
 export function getVisibleSidebarSections(user, allSectionKeys, allowedPages) {
   const isAccountant = computeIsAccountant(user)

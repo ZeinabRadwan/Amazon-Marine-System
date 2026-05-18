@@ -3561,9 +3561,12 @@
       "clientLinkHint": "The shipment is linked to the client automatically via booking or B/L number (simulation)."
     },
     "quotationLink": {
-      "select": "Linked quotation",
-      "none": "No quotation selected",
+      "select": "Link to quotation",
+      "selectClientFirst": "— Select client first —",
+      "none": "— No quotation —",
       "loading": "Loading quotations…",
+      "linkHint": "Only quotations for the selected client are listed.",
+      "noQuotesForClient": "No quotations for this client.",
       "hint": "Link this shipment to a pricing quote to track conversion on your dashboard.",
       "reference": "Quotation reference",
       "referencePlaceholder": "Quote number or external reference"

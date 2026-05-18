@@ -542,6 +542,7 @@ export default function AuthenticatedLayout() {
   )
   const isAccountantForSidebar = useMemo(() => sidebarRoleId === ROLE_ID.ACCOUNTANT, [sidebarRoleId])
   const isOperationsForSidebar = useMemo(() => sidebarRoleId === ROLE_ID.OPERATIONS, [sidebarRoleId])
+  const isPricingForSidebar = useMemo(() => sidebarRoleId === ROLE_ID.PRICING, [sidebarRoleId])
   const isAdminFromProfile = useMemo(() => userHasAdminRole(user), [user])
   const hasPageAccess = useCallback(
     (pageKey) => {
@@ -568,6 +569,7 @@ export default function AuthenticatedLayout() {
       isAdminRole={isAdminFromProfile}
       isAccountant={isAccountantForSidebar}
       isOperations={isOperationsForSidebar}
+      isPricingRole={isPricingForSidebar}
       activeMenu={activeMenu}
       onMenuChange={handleMenuChange}
       allowedPages={allowedPages}

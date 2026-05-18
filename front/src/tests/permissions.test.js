@@ -29,6 +29,7 @@ import {
   computeCanManagePricingQuotes,
   getPricingTabs,
   getDefaultPricingTab,
+  isSidebarMenuVisible,
   canShowSendToOpsButton,
   canShowEmailToOpsButton,
 } from './permissionHelpers'
@@ -378,6 +379,23 @@ describe('Pricing page tabs — Pricing role', () => {
       expect(computeCanManagePricingOffers(salesManagerUser)).toBe(false)
       expect(computeCanManagePricingOffers(opsUser)).toBe(false)
       expect(computeCanManagePricingOffers(accountantUser)).toBe(false)
+    })
+  })
+
+  describe('isSidebarMenuVisible()', () => {
+    it('hides clients, shipments, and invoices for Pricing role', () => {
+      expect(isSidebarMenuVisible(pricingUser, 'clientsCrm')).toBe(false)
+      expect(isSidebarMenuVisible(pricingUser, 'shipments')).toBe(false)
+      expect(isSidebarMenuVisible(pricingUser, 'invoices')).toBe(false)
+    })
+
+    it('still shows pricing menu for Pricing role', () => {
+      expect(isSidebarMenuVisible(pricingUser, 'pricing')).toBe(true)
+    })
+
+    it('does not hide CRM/shipment/invoice menus for Sales', () => {
+      expect(isSidebarMenuVisible(salesUser, 'clientsCrm')).toBe(true)
+      expect(isSidebarMenuVisible(salesUser, 'shipments')).toBe(true)
     })
   })
 
