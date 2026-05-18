@@ -16,10 +16,20 @@ import '../Accountings/CurrencyMapBadges.css'
 
 export default function Pricing() {
   const { t } = useTranslation()
-  const { isPricingRole, isAdminRole, canManagePricingOffers } = useAuthAccess()
-  const hideQuotationsTab = isPricingRole && !isAdminRole
+  const { isPricingRole, isAdminRole, canManagePricingOffers, user } = useAuthAccess()
+  const primaryRole = (user?.primary_role ?? user?.roles?.[0]?.name ?? user?.role?.name ?? '')
+    .toString()
+    .toLowerCase()
+  const isPricingTeamOnly =
+    isPricingRole || primaryRole === 'export_pricing' || primaryRole === 'import_pricing'
+  const hideQuotationsTab = isPricingTeamOnly && !isAdminRole
   const [activeTab, setActiveTab] = useState('rates')
-  const [modalConfig, setModalConfig] = useState({ isOpen: false, offer: null, pricingMode: 'sea' })
+  const [modalConfig, setModalConfig] = useState({
+    isOpen: false,
+    offer: null,
+    pricingMode: 'sea',
+    pricingDirection: 'export',
+  })
   const [refreshKey, setRefreshKey] = useState(0)
 
   const pricingTabs = useMemo(() => {
@@ -48,9 +58,21 @@ export default function Pricing() {
           {effectiveTab === 'rates' ? (
             <RateSheet
               refreshKey={refreshKey}
-              onAddOffer={(mode) => setModalConfig({ isOpen: true, offer: null, pricingMode: mode || 'sea' })}
+              onAddOffer={(mode, direction) =>
+                setModalConfig({
+                  isOpen: true,
+                  offer: null,
+                  pricingMode: mode || 'sea',
+                  pricingDirection: direction || 'export',
+                })
+              }
               onEdit={(offer) =>
-                setModalConfig({ isOpen: true, offer, pricingMode: offer?.pricing_type || 'sea' })
+                setModalConfig({
+                  isOpen: true,
+                  offer,
+                  pricingMode: offer?.pricing_type || 'sea',
+                  pricingDirection: offer?.pricing_direction || 'export',
+                })
               }
             />
           ) : (
@@ -63,7 +85,10 @@ export default function Pricing() {
             isOpen={modalConfig.isOpen}
             offerToEdit={modalConfig.offer}
             pricingMode={modalConfig.pricingMode}
-            onClose={() => setModalConfig({ isOpen: false, offer: null, pricingMode: 'sea' })}
+            pricingDirection={modalConfig.pricingDirection}
+            onClose={() =>
+              setModalConfig({ isOpen: false, offer: null, pricingMode: 'sea', pricingDirection: 'export' })
+            }
             onSuccess={() => setRefreshKey((k) => k + 1)}
           />
         ) : null}

@@ -52,6 +52,7 @@ import {
 import QuotePricingLinesTable from './QuotePricingLinesTable'
 import QuoteOceanLinesSummary from './QuoteOceanLinesSummary'
 import QuoteReeferDeferredFootnote from './QuoteReeferDeferredFootnote'
+import QuoteOwsDeferredFootnote from './QuoteOwsDeferredFootnote'
 import {
   buildReeferFreeTimeDataPayload,
   extractReeferDeferredFromOffer,
@@ -61,6 +62,12 @@ import {
   isReeferDeferredQuoteCode,
   shouldShowReeferDeferredPowerFootnote,
 } from '../utils/reeferQuoteCharges'
+import {
+  buildOwsFreeTimeDataPayload,
+  extractOwsFromOffer,
+  stripOwsFromNotes,
+  shouldShowOwsFootnote,
+} from '../utils/owsQuoteCharges'
 import { sortSeaOceanQuoteLines, sortSeaPricingCodeEntries } from '../utils/seaPricingOrder'
 import QuoteInlandTransportSection from './QuoteInlandTransportSection'
 import QuoteCustomsClearanceSection, { buildCustomsOfficialReceiptsNote } from './QuoteCustomsClearanceSection'
@@ -152,6 +159,7 @@ function moneySymbol(currency) {
 function normalizeOfferCodeToQuoteCode(sourceCode) {
   const lower = String(sourceCode || '').toLowerCase()
   if (lower.includes('of') || lower === 'of20' || lower === 'of40' || lower === 'of40rf') return 'OF'
+  if (lower.includes('dthc')) return 'DTHC'
   if (lower.includes('thc')) return 'THC'
   if (lower.includes('power')) return 'POWER'
   if (lower.includes('pti')) return 'PTI'
@@ -409,6 +417,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
   const [quickSailingDates, setQuickSailingDates] = useState([])
   const [inlandManualOpen, setInlandManualOpen] = useState(false)
   const [reeferDeferred, setReeferDeferred] = useState(null)
+  const [owsDeferred, setOwsDeferred] = useState(null)
 
   const handleDismiss = useCallback(() => {
     onClose?.()
@@ -421,6 +430,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
       const allLines = mapOfferPricingToOceanLines(offer, quoteCodeLabel, t)
       const lines = isReefer ? filterBillableOceanLines(allLines, true) : allLines
       setReeferDeferred(isReefer ? extractReeferDeferredFromOffer(offer) : null)
+      setOwsDeferred(extractOwsFromOffer(offer))
       setOceanLines(lines.length ? lines : [])
       const sailingFields = sailingFieldsFromOffer(offer)
       setForm((prev) => ({
@@ -435,7 +445,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
         valid_from: offer.valid_from ? String(offer.valid_from).slice(0, 10) : '',
         valid_to: offer.valid_to ? String(offer.valid_to).slice(0, 10) : '',
         ...sailingFields,
-        notes: offer.notes || '',
+        notes: stripOwsFromNotes(offer.notes || ''),
       }))
     },
     [quoteCodeLabel, t]
@@ -676,6 +686,11 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
   const showReeferDeferredPowerFootnote = useMemo(
     () => shouldShowReeferDeferredPowerFootnote(isReeferOcean, reeferDeferred),
     [isReeferOcean, reeferDeferred]
+  )
+
+  const showOwsDeferredFootnote = useMemo(
+    () => shouldShowOwsFootnote(selectedSeaOffer, owsDeferred),
+    [selectedSeaOffer, owsDeferred]
   )
   const oceanQuickSelectCodes = useMemo(
     () =>
@@ -1093,7 +1108,12 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
         : null,
       container_type: hasOceanRoute ? form.container_type : null,
       qty: hasOceanRoute ? (form.qty ? Number(form.qty) : null) : null,
-      free_time_data: isReeferOcean ? buildReeferFreeTimeDataPayload(reeferDeferred) : null,
+      free_time_data: (() => {
+        const reefer = isReeferOcean ? buildReeferFreeTimeDataPayload(reeferDeferred) : null
+        const ows = owsDeferred ? buildOwsFreeTimeDataPayload(owsDeferred) : null
+        if (!reefer && !ows) return null
+        return { ...(reefer || {}), ...(ows || {}) }
+      })(),
       show_carrier_on_pdf: hasOceanRoute ? (isQuickSubmit ? true : showCarrierOnPdf) : false,
       official_receipts_note: customsEnabled ? buildCustomsOfficialReceiptsNote(t) : null,
       pricing_team_confirmed: pricingTeamConfirmed,
@@ -1449,19 +1469,33 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                       profitByCurrency={pricingLinesProfitByCurrency}
                       sellingByCurrency={oceanSellingByCurrency}
                       footer={
-                        showReeferDeferredPowerFootnote ? (
-                          <QuoteReeferDeferredFootnote
-                            powerPerDay={reeferDeferred?.powerPerDay}
-                            freePowerDays={reeferDeferred?.freePowerDays}
-                          />
+                        showReeferDeferredPowerFootnote || showOwsDeferredFootnote ? (
+                          <div className="pricing-quote-deferred-footnotes">
+                            {showReeferDeferredPowerFootnote ? (
+                              <QuoteReeferDeferredFootnote
+                                powerPerDay={reeferDeferred?.powerPerDay}
+                                freePowerDays={reeferDeferred?.freePowerDays}
+                              />
+                            ) : null}
+                            {showOwsDeferredFootnote ? (
+                              <QuoteOwsDeferredFootnote ows={owsDeferred?.ows} />
+                            ) : null}
+                          </div>
                         ) : null
                       }
                     />
-                  ) : showReeferDeferredPowerFootnote ? (
-                    <QuoteReeferDeferredFootnote
-                      powerPerDay={reeferDeferred?.powerPerDay}
-                      freePowerDays={reeferDeferred?.freePowerDays}
-                    />
+                  ) : showReeferDeferredPowerFootnote || showOwsDeferredFootnote ? (
+                    <div className="pricing-quote-deferred-footnotes">
+                      {showReeferDeferredPowerFootnote ? (
+                        <QuoteReeferDeferredFootnote
+                          powerPerDay={reeferDeferred?.powerPerDay}
+                          freePowerDays={reeferDeferred?.freePowerDays}
+                        />
+                      ) : null}
+                      {showOwsDeferredFootnote ? (
+                        <QuoteOwsDeferredFootnote ows={owsDeferred?.ows} />
+                      ) : null}
+                    </div>
                   ) : null}
                 </div>
               ) : isQuick ? (

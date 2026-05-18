@@ -14,6 +14,7 @@ import {
   formatReeferPowerFreeDaysEnglish,
   isReeferSeaOffer,
 } from '../utils/reeferQuoteCharges'
+import { extractOwsFromOffer, formatOwsSalesLines, isImportSeaOffer } from '../utils/owsQuoteCharges'
 import '../Pricing.css'
 
 function seaTotalByCurrency(offer) {
@@ -150,18 +151,30 @@ export default function SeaFreightOffersTable({
   onView,
   onEdit,
   canManageOffers = false,
+  sectionTitle = null,
+  sectionKey = 'sea',
+  hideSectionTitle = false,
 }) {
   const { t, i18n } = useTranslation()
   const dash = t('common.dash', '—')
 
   const count = offers?.length || 0
 
+  const heading =
+    sectionTitle || t('pricing.savedSeaFreightRatesHeading', 'Saved sea freight rates')
+
   return (
-    <div className="pricing-saved-rates">
-      <div className="pricing-saved-rates__title">
-        <span className="pricing-saved-rates__title-main">{t('pricing.savedSeaFreightRatesHeading', 'Saved sea freight rates')}</span>
-        <span className="pricing-saved-rates__title-count">{t('pricing.savedRatesCountSuffix', { count, defaultValue: '{{count}} offers' })}</span>
-      </div>
+    <div className={`pricing-saved-rates pricing-saved-rates--${sectionKey}`}>
+      {hideSectionTitle ? (
+        <div className="pricing-saved-rates__title pricing-saved-rates__title--count-only">
+          <span className="pricing-saved-rates__title-count">{t('pricing.savedRatesCountSuffix', { count, defaultValue: '{{count}} offers' })}</span>
+        </div>
+      ) : (
+        <div className="pricing-saved-rates__title">
+          <span className="pricing-saved-rates__title-main">{heading}</span>
+          <span className="pricing-saved-rates__title-count">{t('pricing.savedRatesCountSuffix', { count, defaultValue: '{{count}} offers' })}</span>
+        </div>
+      )}
       <div className="pricing-saved-rates__grid">
         {loading
           ? Array.from({ length: 4 }).map((_, i) => (
@@ -183,6 +196,9 @@ export default function SeaFreightOffersTable({
               const powerFreeDaysLabel = isReeferSeaOffer(offer)
                 ? formatReeferPowerFreeDaysEnglish(extractReeferDeferredFromOffer(offer).freePowerDays)
                 : ''
+              const owsLines = isImportSeaOffer(offer)
+                ? formatOwsSalesLines(extractOwsFromOffer(offer)?.ows)
+                : []
               return (
                 <article
                   key={offer.id}
@@ -249,6 +265,15 @@ export default function SeaFreightOffersTable({
                           {powerFreeDaysLabel}
                         </span>
                       ) : null}
+                      {owsLines.map((line) => (
+                        <span
+                          key={line}
+                          className="pricing-rate-card__tag pricing-rate-card__tag--muted pricing-rate-card__tag--ows"
+                          lang="en"
+                        >
+                          {line}
+                        </span>
+                      ))}
                     </div>
                     <PricingInlineActions
                       className="pricing-rate-card__actions"

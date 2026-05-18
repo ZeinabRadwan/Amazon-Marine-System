@@ -103,6 +103,8 @@ return [
         'pricing' => [
             'pricing.view_offers',
             'pricing.manage_offers',
+            'pricing.manage_export_offers',
+            'pricing.manage_import_offers',
             'pricing.view_quotes',
             'pricing.manage_quotes',
             'pricing.view_client_pricing',

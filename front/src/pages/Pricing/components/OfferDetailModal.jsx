@@ -12,6 +12,12 @@ import {
   seaContainerSummary,
 } from '../utils/pricingDisplay'
 import { extractReeferDeferredFromOffer, isReeferSeaOffer } from '../utils/reeferQuoteCharges'
+import {
+  extractOwsFromOffer,
+  formatOwsSalesLines,
+  isImportSeaOffer,
+  stripOwsFromNotes,
+} from '../utils/owsQuoteCharges'
 import QuoteReeferDeferredFootnote from './QuoteReeferDeferredFootnote'
 import {
   SEA_PRICING_DETAIL_FALLBACK_KEYS,
@@ -87,6 +93,10 @@ function seaPricingLabel(code, t, otherChargeLabels = []) {
     thc20rf: 'THC',
     thc40: 'THC',
     thcRf: 'THC',
+    dthc20: 'DTHC',
+    dthc20rf: 'DTHC',
+    dthc40: 'DTHC',
+    dthcrf: 'DTHC',
     blFee: 'B/L fee (بوليصة)',
     telex: t('pricing.breakdown.telex', 'Telex Release'),
     pti: 'PTI',
@@ -287,6 +297,11 @@ export default function OfferDetailModal({
     return extractReeferDeferredFromOffer(offer)
   }, [offer, isReeferSea])
 
+  const owsSalesLines = useMemo(() => {
+    if (!offer || !isImportSeaOffer(offer)) return []
+    return formatOwsSalesLines(extractOwsFromOffer(offer)?.ows)
+  }, [offer])
+
   const breakdownRows = useMemo(() => {
     if (!offer) return []
     const dash = t('common.dash')
@@ -480,7 +495,7 @@ export default function OfferDetailModal({
     }
   }
 
-  const notesText = typeof offer.notes === 'string' ? offer.notes.trim() : ''
+  const notesText = stripOwsFromNotes(typeof offer.notes === 'string' ? offer.notes : '')
   const hasNotes = Boolean(notesText)
 
   const ft = parseFreeTimeFromDnd(offer.dnd || '')
@@ -649,6 +664,18 @@ export default function OfferDetailModal({
                       'pricing.seaReeferSalesInfoHint',
                       'Power and free days are reference only — not included in the total above.'
                     )}
+                  </p>
+                </div>
+              ) : null}
+              {owsSalesLines.length ? (
+                <div className="pricing-offer-detail-ows-info" role="note">
+                  {owsSalesLines.map((line) => (
+                    <p key={line} className="pricing-offer-detail-ows-info__line" lang="en">
+                      {line}
+                    </p>
+                  ))}
+                  <p className="pricing-offer-detail-reefer-info__hint">
+                    {t('pricing.seaOwsSalesInfoHint')}
                   </p>
                 </div>
               ) : null}

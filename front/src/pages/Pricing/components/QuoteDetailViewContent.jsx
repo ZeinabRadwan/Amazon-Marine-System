@@ -10,6 +10,7 @@ import { QuoteSummaryBadge, ShippingLineSummaryBadgeReadOnly } from './quoteForm
 import QuotePricingLinesTable from './QuotePricingLinesTable'
 import QuoteOceanLinesSummary from './QuoteOceanLinesSummary'
 import QuoteReeferDeferredFootnote from './QuoteReeferDeferredFootnote'
+import QuoteOwsDeferredFootnote from './QuoteOwsDeferredFootnote'
 import QuoteInlandTransportSection from './QuoteInlandTransportSection'
 import QuoteCustomsClearanceSection from './QuoteCustomsClearanceSection'
 import QuoteHandlingFeesSection from './QuoteHandlingFeesSection'
@@ -48,6 +49,8 @@ export default function QuoteDetailViewContent({ quote }) {
     containerLabel,
     showReeferDeferredPowerFootnote,
     reeferDeferred,
+    showOwsDeferredFootnote,
+    owsDeferred,
   } = vm
 
   const sailingScheduleDisplayText = formatSailingScheduleFromQuote(quote, t('common.dash', '—'))
@@ -131,11 +134,18 @@ export default function QuoteDetailViewContent({ quote }) {
               profitByCurrency={pricingLinesProfitByCurrency}
               sellingByCurrency={oceanSellingByCurrency}
               footer={
-                showReeferDeferredPowerFootnote ? (
-                  <QuoteReeferDeferredFootnote
-                    powerPerDay={reeferDeferred?.powerPerDay}
-                    freePowerDays={reeferDeferred?.freePowerDays}
-                  />
+                showReeferDeferredPowerFootnote || showOwsDeferredFootnote ? (
+                  <div className="pricing-quote-deferred-footnotes">
+                    {showReeferDeferredPowerFootnote ? (
+                      <QuoteReeferDeferredFootnote
+                        powerPerDay={reeferDeferred?.powerPerDay}
+                        freePowerDays={reeferDeferred?.freePowerDays}
+                      />
+                    ) : null}
+                    {showOwsDeferredFootnote ? (
+                      <QuoteOwsDeferredFootnote ows={owsDeferred?.ows} />
+                    ) : null}
+                  </div>
                 ) : null
               }
             />

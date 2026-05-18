@@ -88,6 +88,37 @@ export function useAuthAccess() {
     [isAdminRole, isPricingRole]
   )
 
+  const canManageExportSeaOffers = useMemo(
+    () =>
+      isAdminRole ||
+      hasAbility('pricing.manage_offers') ||
+      hasAbility('pricing.manage_export_offers') ||
+      isPricingRole,
+    [isAdminRole, hasAbility, isPricingRole]
+  )
+
+  const canManageImportSeaOffers = useMemo(
+    () =>
+      isAdminRole ||
+      hasAbility('pricing.manage_offers') ||
+      hasAbility('pricing.manage_import_offers') ||
+      isPricingRole,
+    [isAdminRole, hasAbility, isPricingRole]
+  )
+
+  const showExportSeaRates = useMemo(() => {
+    if (isAdminRole || isSalesRole) return true
+    if (hasAbility('pricing.manage_offers') || hasAbility('pricing.manage_export_offers')) return true
+    if (isPricingRole && !hasAbility('pricing.manage_import_offers')) return true
+    return false
+  }, [isAdminRole, isSalesRole, hasAbility, isPricingRole])
+
+  const showImportSeaRates = useMemo(() => {
+    if (isAdminRole || isSalesRole) return true
+    if (hasAbility('pricing.manage_offers') || hasAbility('pricing.manage_import_offers')) return true
+    return false
+  }, [isAdminRole, isSalesRole, hasAbility])
+
   /** Quotations tab + «Create quotation» from price sheet (Admin + Sales Manager + Sales only). */
   const canManagePricingQuotes = useMemo(
     () => isAdminRole || isSalesRole,
@@ -120,6 +151,10 @@ export function useAuthAccess() {
     isPricingSalesViewOnly,
     roleId,
     canManagePricingOffers,
+    canManageExportSeaOffers,
+    canManageImportSeaOffers,
+    showExportSeaRates,
+    showImportSeaRates,
     canManagePricingQuotes,
     canManageQuotationCustomsFee,
   }

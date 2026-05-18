@@ -12,9 +12,10 @@ import {
   resolveReeferDeferredMeta,
   shouldShowReeferDeferredPowerFootnote,
 } from './reeferQuoteCharges'
+import { resolveOwsMeta, shouldShowOwsFootnote } from './owsQuoteCharges'
 import { sortSeaOceanQuoteLines } from './seaPricingOrder'
 
-const OCEAN_CODES = new Set(['OF', 'THC', 'BL', 'TELEX', 'ISPS', 'PTI', 'POWER'])
+const OCEAN_CODES = new Set(['OF', 'DTHC', 'THC', 'BL', 'TELEX', 'ISPS', 'PTI', 'POWER'])
 
 export function parseNum(v) {
   const n = Number(v)
@@ -164,6 +165,8 @@ export function buildQuoteDetailViewModel(quote) {
   const isReefer = isReeferContainerSpec(quote?.container_type, quote?.container_spec)
   const reeferDeferred = resolveReeferDeferredMeta(quote)
   const showReeferDeferredPowerFootnote = shouldShowReeferDeferredPowerFootnote(isReefer, reeferDeferred)
+  const owsDeferred = resolveOwsMeta(quote)
+  const showOwsDeferredFootnote = shouldShowOwsFootnote(quote, owsDeferred)
   const items = Array.isArray(quote?.items) ? quote.items : []
 
   const oceanLines = []
@@ -328,6 +331,8 @@ export function buildQuoteDetailViewModel(quote) {
     oceanLines: billableOceanLines,
     showReeferDeferredPowerFootnote,
     reeferDeferred,
+    showOwsDeferredFootnote,
+    owsDeferred,
     inlandLineRows,
     inlandOfferId,
     quickInland,

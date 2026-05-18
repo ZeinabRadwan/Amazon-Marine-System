@@ -49,6 +49,14 @@ class RolesAndPermissionsSeeder extends Seeder
                 'name_ar' => 'فريق التسعير',
                 'name_en' => 'Pricing Team',
             ],
+            'export_pricing' => [
+                'name_ar' => 'التسعير صادر',
+                'name_en' => 'Export Pricing',
+            ],
+            'import_pricing' => [
+                'name_ar' => 'التسعير وارد',
+                'name_en' => 'Import Pricing',
+            ],
             'operations' => [
                 'name_ar' => 'موظف العمليات',
                 'name_en' => 'Operations Employee',
@@ -83,6 +91,22 @@ class RolesAndPermissionsSeeder extends Seeder
             $pricingRole->syncPermissions([
                 $permissions['pricing.view_offers'],
                 $permissions['pricing.manage_offers'],
+                $permissions['pricing.manage_export_offers'],
+                $permissions['pricing.manage_import_offers'],
+            ]);
+        }
+
+        if ($exportPricingRole = $roles['export_pricing'] ?? null) {
+            $exportPricingRole->syncPermissions([
+                $permissions['pricing.view_offers'],
+                $permissions['pricing.manage_export_offers'],
+            ]);
+        }
+
+        if ($importPricingRole = $roles['import_pricing'] ?? null) {
+            $importPricingRole->syncPermissions([
+                $permissions['pricing.view_offers'],
+                $permissions['pricing.manage_import_offers'],
             ]);
         }
 
@@ -171,6 +195,18 @@ class RolesAndPermissionsSeeder extends Seeder
                 'attendance' => true, 'visits' => false, 'users' => false, 'roles_permissions' => false, 'settings' => true,
             ],
             'pricing' => [
+                'dashboard' => true, 'clients' => false, 'shipments' => false, 'sd_forms' => false, 'operations' => false,
+                'invoices' => false, 'accounting' => false, 'treasury' => false, 'expenses' => false, 'pricing' => true,
+                'partners' => false, 'reports' => true, 'official_documents' => false, 'customer_service' => false,
+                'attendance' => true, 'visits' => false, 'users' => false, 'roles_permissions' => false, 'settings' => true,
+            ],
+            'export_pricing' => [
+                'dashboard' => true, 'clients' => false, 'shipments' => false, 'sd_forms' => false, 'operations' => false,
+                'invoices' => false, 'accounting' => false, 'treasury' => false, 'expenses' => false, 'pricing' => true,
+                'partners' => false, 'reports' => true, 'official_documents' => false, 'customer_service' => false,
+                'attendance' => true, 'visits' => false, 'users' => false, 'roles_permissions' => false, 'settings' => true,
+            ],
+            'import_pricing' => [
                 'dashboard' => true, 'clients' => false, 'shipments' => false, 'sd_forms' => false, 'operations' => false,
                 'invoices' => false, 'accounting' => false, 'treasury' => false, 'expenses' => false, 'pricing' => true,
                 'partners' => false, 'reports' => true, 'official_documents' => false, 'customer_service' => false,

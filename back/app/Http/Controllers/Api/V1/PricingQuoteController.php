@@ -25,7 +25,7 @@ class PricingQuoteController extends Controller
      *
      * @var array<int, string>
      */
-    private const PRICING_ITEM_CODES = ['OF', 'THC', 'BL', 'TELEX', 'ISPS', 'PTI', 'POWER', 'INLAND', 'HANDLING', 'OTHER'];
+    private const PRICING_ITEM_CODES = ['OF', 'DTHC', 'THC', 'BL', 'TELEX', 'ISPS', 'PTI', 'POWER', 'INLAND', 'HANDLING', 'OTHER'];
 
     public function index(Request $request)
     {

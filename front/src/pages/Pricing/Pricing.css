@@ -660,6 +660,35 @@
   min-width: 0;
 }
 
+/* Import sea: OF, DTHC, THC, B/L, Telex — one row, 20% each */
+.sea-rate-pricing-grid--import-inline {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.sea-rate-pricing-grid--import-inline .sea-rate-pricing-grid__cell {
+  min-width: 0;
+}
+
+.sea-rate-pricing-grid--import-inline .sea-rate-label {
+  font-size: 11px;
+  line-height: 1.25;
+  margin-bottom: 3px;
+}
+
+.sea-rate-pricing-grid--import-inline .sea-rate-input-group .sea-rate-select {
+  width: 58px;
+  min-width: 58px;
+  font-size: 11px;
+  padding-inline: 4px;
+}
+
+.sea-rate-pricing-grid--custom {
+  margin-top: 4px;
+}
+
 .sea-rate-input-group {
   display: flex;
   gap: 4px;
@@ -3713,6 +3742,139 @@
 
 .pricing-quote-reefer-deferred-footnote__line--free {
   margin-top: 0.15rem;
+}
+
+.pricing-sea-direction-tabs {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+}
+
+.pricing-saved-rates__title--count-only {
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
+}
+
+.pricing-add-rate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.sea-rate-ows-block {
+  margin: 1rem 0 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed rgba(148, 163, 184, 0.45);
+}
+
+.sea-rate-ows-section__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.sea-rate-ows-section__mode {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.sea-rate-ows-section__mode label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.875rem;
+}
+
+.sea-rate-ows-section__grid--fixed {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 12px;
+  max-width: 520px;
+}
+
+.sea-rate-ows-section__ranges {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sea-rate-ows-range-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.35fr auto;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 0;
+}
+
+.sea-rate-ows-range-row__field {
+  min-width: 0;
+}
+
+.sea-rate-ows-range-row__actions {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-width: 2.5rem;
+}
+
+.sea-rate-label--invisible {
+  visibility: hidden;
+  user-select: none;
+}
+
+.sea-rate-ows-range-row__remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+@media (max-width: 1100px) {
+  .sea-rate-pricing-grid--import-inline {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .sea-rate-pricing-grid--import-inline {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sea-rate-ows-range-row {
+    grid-template-columns: 1fr 1fr;
+    align-items: stretch;
+  }
+
+  .sea-rate-ows-range-row__actions {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+
+  .sea-rate-ows-range-row__actions .sea-rate-label--invisible {
+    display: none;
+  }
+}
+
+.pricing-offer-detail-ows-info__line {
+  margin: 0.2rem 0;
+  font-size: 0.8125rem;
+  font-style: italic;
+  color: rgb(100, 116, 139);
+}
+
+.pricing-quote-deferred-footnotes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
 }
 
 .pricing-quote-reefer-deferred-footnote__plus {

@@ -1,6 +1,6 @@
 /**
  * Canonical Ocean Side Pricing display order (sea freight rate + quotation lines).
- * OF → THC → B/L → Telex → PTI → Power → other charges.
+ * OF → DTHC (import) → THC → B/L → Telex → PTI → Power → other charges.
  */
 
 export const SEA_PRICING_CODE_ORDER = [
@@ -8,6 +8,10 @@ export const SEA_PRICING_CODE_ORDER = [
   'of20rf',
   'of40',
   'of40rf',
+  'dthc20',
+  'dthc20rf',
+  'dthc40',
+  'dthcrf',
   'thc20',
   'thc20rf',
   'thc40',
@@ -23,7 +27,7 @@ export const SEA_PRICING_CODE_ORDER = [
 ]
 
 /** Quotation item codes derived from sea rate pricing keys. */
-export const SEA_QUOTE_CODE_ORDER = ['OF', 'THC', 'BL', 'TELEX', 'ISPS', 'PTI', 'POWER']
+export const SEA_QUOTE_CODE_ORDER = ['OF', 'DTHC', 'THC', 'BL', 'TELEX', 'ISPS', 'PTI', 'POWER']
 
 const codeIndexMap = (() => {
   const m = new Map()

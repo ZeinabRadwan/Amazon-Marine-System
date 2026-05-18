@@ -26,6 +26,12 @@ class PricingOfferController extends Controller
             $query->where('pricing_type', $type);
         }
 
+        if ($direction = $request->query('pricing_direction')) {
+            $query->where('pricing_direction', $direction);
+        } elseif ($request->query('pricing_type') === 'sea') {
+            $this->applySeaDirectionScopeForUser($query, $request->user());
+        }
+
         if ($region = $request->query('region')) {
             $query->where('region', $region);
         }
@@ -174,6 +180,7 @@ class PricingOfferController extends Controller
 
         $validated = $request->validate([
             'pricing_type' => ['required', 'string', 'in:sea,inland'],
+            'pricing_direction' => ['nullable', 'string', 'in:export,import'],
             'region' => ['required', 'string', 'max:255'],
             'pod' => ['required', 'string', 'max:255'],
             'valid_from' => ['nullable', 'date'],
@@ -181,6 +188,7 @@ class PricingOfferController extends Controller
             'valid_to' => ['nullable', 'date'],
             'status' => ['sometimes', 'string', 'in:draft,active,archived'],
             'notes' => ['nullable', 'string'],
+            'ows_data' => ['nullable', 'array'],
             'other_charges' => ['nullable', 'string', 'max:255'],
             'shipping_line' => ['required_if:pricing_type,sea', 'nullable', 'string', 'max:255'],
             'pol' => ['required_if:pricing_type,sea', 'nullable', 'string', 'max:255'],
@@ -197,9 +205,15 @@ class PricingOfferController extends Controller
             'pricing.*.currency' => ['nullable', 'string', 'max:10'],
         ]);
 
-        $offer = DB::transaction(function () use ($validated) {
+        $direction = $validated['pricing_type'] === 'sea'
+            ? ($validated['pricing_direction'] ?? 'export')
+            : 'export';
+        $this->ensureCanManageSeaDirection($request->user(), $direction);
+
+        $offer = DB::transaction(function () use ($validated, $direction) {
             $offer = new PricingOffer;
             $offer->pricing_type = $validated['pricing_type'];
+            $offer->pricing_direction = $direction;
             $offer->region = $validated['region'];
             $offer->pod = $validated['pod'];
             $offer->shipping_line = $validated['shipping_line'] ?? null;
@@ -215,7 +229,11 @@ class PricingOfferController extends Controller
             $offer->valid_to = $validated['valid_to'] ?? null;
             $offer->status = $validated['status'] ?? 'active';
             $offer->other_charges = $validated['other_charges'] ?? null;
-            $offer->notes = $validated['notes'] ?? null;
+            [$offer->notes, $offer->ows_data] = $this->resolveNotesAndOwsData(
+                $validated['notes'] ?? null,
+                $validated['ows_data'] ?? null,
+                $direction
+            );
             $offer->save();
 
             $this->syncSailingDates($offer, $validated['sailing_dates'] ?? []);
@@ -237,6 +255,7 @@ class PricingOfferController extends Controller
         $this->authorize('update', $offer);
 
         $validated = $request->validate([
+            'pricing_direction' => ['sometimes', 'string', 'in:export,import'],
             'region' => ['sometimes', 'string', 'max:255'],
             'pod' => ['sometimes', 'string', 'max:255'],
             'valid_from' => ['sometimes', 'nullable', 'date'],
@@ -244,6 +263,7 @@ class PricingOfferController extends Controller
             'valid_to' => ['sometimes', 'nullable', 'date'],
             'status' => ['sometimes', 'string', 'in:draft,active,archived'],
             'notes' => ['sometimes', 'nullable', 'string'],
+            'ows_data' => ['sometimes', 'nullable', 'array'],
             'other_charges' => ['sometimes', 'nullable', 'string', 'max:255'],
             'shipping_line' => ['sometimes', 'nullable', 'string', 'max:255'],
             'pol' => ['sometimes', 'nullable', 'string', 'max:255'],
@@ -260,7 +280,22 @@ class PricingOfferController extends Controller
             'pricing.*.currency' => ['nullable', 'string', 'max:10'],
         ]);
 
+        $nextDirection = $validated['pricing_direction'] ?? $offer->pricing_direction ?? 'export';
+        if ($offer->pricing_type === 'sea') {
+            $this->ensureCanManageSeaDirection($request->user(), $nextDirection);
+        }
+
         DB::transaction(function () use ($offer, $validated): void {
+            if (array_key_exists('notes', $validated) || array_key_exists('ows_data', $validated)) {
+                $direction = $validated['pricing_direction'] ?? $offer->pricing_direction ?? 'export';
+                [$notes, $owsData] = $this->resolveNotesAndOwsData(
+                    array_key_exists('notes', $validated) ? $validated['notes'] : $offer->notes,
+                    array_key_exists('ows_data', $validated) ? $validated['ows_data'] : $offer->ows_data,
+                    $direction
+                );
+                $validated['notes'] = $notes;
+                $validated['ows_data'] = $owsData;
+            }
             $offer->fill($validated);
             $offer->save();
 
@@ -343,8 +378,55 @@ class PricingOfferController extends Controller
             throw new AuthorizationException;
         }
 
-        if (! $user->hasRole('pricing') && ! $user->hasPermissionTo('pricing.manage_offers')) {
+        if (
+            ! $user->hasRole('pricing')
+            && ! $user->hasPermissionTo('pricing.manage_offers')
+            && ! $user->hasPermissionTo('pricing.manage_export_offers')
+            && ! $user->hasPermissionTo('pricing.manage_import_offers')
+        ) {
             throw new AuthorizationException;
+        }
+    }
+
+    protected function ensureCanManageSeaDirection(?User $user, string $direction): void
+    {
+        if (! $user) {
+            throw new AuthorizationException;
+        }
+
+        if ($user->hasRole('admin') || $user->hasPermissionTo('pricing.manage_offers')) {
+            return;
+        }
+
+        $direction = $direction === 'import' ? 'import' : 'export';
+
+        if ($direction === 'export' && $user->hasPermissionTo('pricing.manage_export_offers')) {
+            return;
+        }
+
+        if ($direction === 'import' && $user->hasPermissionTo('pricing.manage_import_offers')) {
+            return;
+        }
+
+        throw new AuthorizationException;
+    }
+
+    /**
+     * @param  \Illuminate\Database\Eloquent\Builder<PricingOffer>  $query
+     */
+    protected function applySeaDirectionScopeForUser($query, ?User $user): void
+    {
+        if (! $user || $user->hasRole('admin') || $user->hasPermissionTo('pricing.manage_offers')) {
+            return;
+        }
+
+        $canExport = $user->hasPermissionTo('pricing.manage_export_offers');
+        $canImport = $user->hasPermissionTo('pricing.manage_import_offers');
+
+        if ($canExport && ! $canImport) {
+            $query->where('pricing_direction', 'export');
+        } elseif ($canImport && ! $canExport) {
+            $query->where('pricing_direction', 'import');
         }
     }
 
@@ -390,6 +472,69 @@ class PricingOfferController extends Controller
     }
 
     /**
+     * @return array{0: ?string, 1: ?array<string, mixed>}
+     */
+    protected function resolveNotesAndOwsData(?string $notes, mixed $owsData, string $direction): array
+    {
+        $cleanNotes = self::stripOwsFromNotes($notes);
+        $normalizedOws = $direction === 'import' ? self::normalizeOwsData($owsData) : null;
+
+        if ($normalizedOws === null && $direction === 'import') {
+            $legacy = self::parseOwsFromNotes($notes);
+            $normalizedOws = self::normalizeOwsData($legacy);
+        }
+
+        return [$cleanNotes, $normalizedOws];
+    }
+
+    protected static function stripOwsFromNotes(?string $notes): ?string
+    {
+        if ($notes === null || trim($notes) === '') {
+            return null;
+        }
+
+        $s = preg_replace('/\n\n__OWS_DATA_B64__=[\s\S]*?__/s', '', $notes) ?? $notes;
+        $s = preg_replace('/^__OWS_DATA_B64__=[\s\S]*?__(\n\n|\n)?/m', '', $s) ?? $s;
+        $s = trim($s);
+
+        return $s !== '' ? $s : null;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    protected static function parseOwsFromNotes(?string $notes): ?array
+    {
+        if ($notes === null || ! preg_match('/__OWS_DATA_B64__=(.+?)__/s', $notes, $matches)) {
+            return null;
+        }
+
+        try {
+            $json = base64_decode($matches[1], true);
+            if ($json === false) {
+                return null;
+            }
+            $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+
+            return is_array($data) ? $data : null;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    protected static function normalizeOwsData(mixed $raw): ?array
+    {
+        if (! is_array($raw) || empty($raw['enabled'])) {
+            return null;
+        }
+
+        return $raw;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     protected function transformOffer(PricingOffer $offer): array
@@ -418,6 +563,7 @@ class PricingOfferController extends Controller
         return [
             'id' => $offer->id,
             'pricing_type' => $offer->pricing_type,
+            'pricing_direction' => $offer->pricing_direction ?? 'export',
             'region' => $offer->region,
             'pod' => $offer->pod,
             'shipping_line' => $offer->shipping_line,
@@ -435,7 +581,8 @@ class PricingOfferController extends Controller
             'display_status' => $offer->displayStatus(),
             'is_quotable' => $offer->isQuotable(),
             'other_charges' => $offer->other_charges,
-            'notes' => $offer->notes,
+            'notes' => self::stripOwsFromNotes($offer->notes),
+            'ows_data' => $offer->ows_data ?? self::normalizeOwsData(self::parseOwsFromNotes($offer->notes)),
             'sailing_dates' => $offer->sailingDates->pluck('sailing_date')->map(
                 static fn ($d) => $d?->toDateString()
             )->filter()->values(),

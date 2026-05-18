@@ -19,6 +19,21 @@ import {
 } from '../utils/pricingFormNumeric'
 import SeaCustomChargeEntry, { SEA_PRICING_CURRENCIES } from './SeaCustomChargeEntry'
 import { compareSeaPricingCodes, sortSeaPricingCodeEntries } from '../utils/seaPricingOrder'
+import {
+  isSeaCoreLineEnglishOnly,
+  isSeaImportDirection,
+  seaCoreLineDisplayLabel,
+  seaCoreLineNamesForDirection,
+  SEA_IMPORT_CORE_LINE_NAMES,
+} from '../utils/seaPricingLines'
+import {
+  defaultOwsFormState,
+  owsFormStateFromData,
+  owsFormStateToPayload,
+  parseOwsDataFromNotes,
+  stripOwsFromNotes,
+} from '../utils/owsQuoteCharges'
+import SeaOwsChargesSection from './SeaOwsChargesSection'
 
 /** Canonical weekday names stored in API (`weekly_sailing_days` comma-separated); sort order Sat → Fri */
 const WEEK_DAYS = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
@@ -39,8 +54,9 @@ const SEA_OCEAN_UNIT_TYPES = Object.freeze([
 
 const CURRENCIES = SEA_PRICING_CURRENCIES
 
-/** Default editable charge rows for ocean freight */
-const DEFAULT_SEA_LINE_NAMES = ['Ocean Freight', 'THC', 'B/L Fee', 'Telex Release']
+function initialSeaCoreLines(direction = 'export', isReefer = false) {
+  return seaCoreLineNamesForDirection(direction, isReefer).map((name) => makeSeaCoreRow(name))
+}
 
 /** Chip label for stored API dates (YYYY-MM-DD) without UTC shift */
 function formatIsoDateDisplay(iso, locale) {
@@ -160,7 +176,6 @@ const defaultSeaForm = () => ({
 
 const makeSeaCoreRow = (name) => ({ name, amount: '', currency: 'USD' })
 
-const initialSeaCoreLines = () => DEFAULT_SEA_LINE_NAMES.map((name) => makeSeaCoreRow(name))
 
 const makeCustomChargeItem = () => ({
   id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -210,6 +225,11 @@ function inferLegacyPricingCode(itemName, presetSlug, oceanUnitTypes, idx = 0) {
     if (type === 'Reefer') return size === '20' ? 'of20rf' : 'of40rf'
     if (size === '20') return 'of20'
     return 'of40'
+  }
+  if (itemName === 'DTHC') {
+    if (type === 'Reefer') return size === '20' ? 'dthc20rf' : 'dthcrf'
+    if (size === '20') return 'dthc20'
+    return 'dthc40'
   }
   if (itemName === 'THC') {
     if (type === 'Reefer') return size === '20' ? 'thc20rf' : 'thcRf'
@@ -301,12 +321,12 @@ function parseFreeTimeFromDnd(dnd) {
   return empty
 }
 
-function buildSeaPricingStateFromOffer(offer, oceanUnitTypes) {
+function buildSeaPricingStateFromOffer(offer, oceanUnitTypes, pricingDirection = 'export') {
   const pricing = offer?.pricing || {}
   const preset = inferPresetFromPricing(offer || {})
   const meta = resolveOceanMeta(preset, oceanUnitTypes)
-  const coreNames =
-    meta.type === 'Reefer' ? [...DEFAULT_SEA_LINE_NAMES, 'Power'] : [...DEFAULT_SEA_LINE_NAMES]
+  const direction = offer?.pricing_direction || pricingDirection || 'export'
+  const coreNames = seaCoreLineNamesForDirection(direction, meta.type === 'Reefer')
   const seaCoreLines = coreNames.map((name) => {
     const code = inferLegacyPricingCode(name, preset, oceanUnitTypes, 0)
     const item = pricing[code]
@@ -352,15 +372,23 @@ function PricingFinSection({ title, subtitle, children }) {
   )
 }
 
-export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit, pricingMode = 'sea' }) {
+export default function OfferFormModal({
+  isOpen,
+  onClose,
+  onSuccess,
+  offerToEdit,
+  pricingMode = 'sea',
+  pricingDirection = 'export',
+}) {
   const { t, i18n } = useTranslation()
   const { create, update, loading, error } = useMutateOffer()
   const [form, setForm] = useState(defaultSeaForm)
   const [inlandForm, setInlandForm] = useState(defaultInlandForm)
-  const [seaCoreLines, setSeaCoreLines] = useState(initialSeaCoreLines)
+  const [seaCoreLines, setSeaCoreLines] = useState(() => initialSeaCoreLines(pricingDirection))
   const [seaCustomLines, setSeaCustomLines] = useState([])
   const [customChargeDraft, setCustomChargeDraft] = useState(defaultCustomChargeDraft)
   const [reeferExtras, setReeferExtras] = useState(() => defaultReeferExtras())
+  const [owsForm, setOwsForm] = useState(() => defaultOwsFormState())
   /** Single sailing date pending add (ISO YYYY-MM-DD from DatePicker) */
   const [draftFixedSailingDate, setDraftFixedSailingDate] = useState('')
 
@@ -373,6 +401,13 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
     () => offerToEdit?.pricing_type ?? pricingMode ?? 'sea',
     [offerToEdit?.pricing_type, pricingMode]
   )
+
+  const effectiveDirection = useMemo(
+    () => offerToEdit?.pricing_direction ?? pricingDirection ?? 'export',
+    [offerToEdit?.pricing_direction, pricingDirection]
+  )
+
+  const isImportSea = effectiveMode === 'sea' && isSeaImportDirection(effectiveDirection)
 
   useEffect(() => {
     if (!isOpen) {
@@ -440,10 +475,11 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
 
     if (!offerToEdit) {
       setForm(defaultSeaForm())
-      setSeaCoreLines(initialSeaCoreLines())
+      setSeaCoreLines(initialSeaCoreLines(effectiveDirection, false))
       setSeaCustomLines([])
       setCustomChargeDraft(defaultCustomChargeDraft())
       setReeferExtras(defaultReeferExtras())
+      setOwsForm(defaultOwsFormState())
       return
     }
 
@@ -480,17 +516,28 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
       fixed_dates: fixedFromApi,
       valid_from: offerToEdit.valid_from ? String(offerToEdit.valid_from).slice(0, 10) : '',
       valid_to: offerToEdit.valid_to ? String(offerToEdit.valid_to).slice(0, 10) : '',
-      notes: stripPowerFreeDaysFromNotes(rawNotes),
+      notes: stripOwsFromNotes(stripPowerFreeDaysFromNotes(rawNotes)),
     })
+
+    setOwsForm(
+      owsFormStateFromData(
+        offerToEdit.ows_data || parseOwsDataFromNotes(rawNotes)
+      )
+    )
 
     const { seaCoreLines: loadedCore, seaCustomLines: loadedCustom } = buildSeaPricingStateFromOffer(
       offerToEdit,
-      SEA_OCEAN_UNIT_TYPES
+      SEA_OCEAN_UNIT_TYPES,
+      effectiveDirection
     )
-    setSeaCoreLines(loadedCore.length ? loadedCore : initialSeaCoreLines())
+    setSeaCoreLines(
+      loadedCore.length
+        ? loadedCore
+        : initialSeaCoreLines(effectiveDirection, resolveOceanMeta(inferPresetFromPricing(offerToEdit), SEA_OCEAN_UNIT_TYPES).type === 'Reefer')
+    )
     setSeaCustomLines(loadedCustom)
     setCustomChargeDraft(defaultCustomChargeDraft())
-  }, [offerToEdit, isOpen, pricingMode])
+  }, [offerToEdit, isOpen, pricingMode, effectiveDirection])
 
   const oceanMeta = useMemo(
     () => resolveOceanMeta(form.container_preset, SEA_OCEAN_UNIT_TYPES),
@@ -499,24 +546,59 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
 
   const seaPowerRow = useMemo(() => seaCoreLines.find((r) => r.name === 'Power'), [seaCoreLines])
 
+  const importCoreDisplayLines = useMemo(() => {
+    if (!isImportSea) return []
+    const byName = Object.fromEntries(seaCoreLines.map((r) => [r.name, r]))
+    return SEA_IMPORT_CORE_LINE_NAMES.map((name) => byName[name] || makeSeaCoreRow(name))
+  }, [isImportSea, seaCoreLines])
+
+  const renderSeaCoreLineCell = (row) => (
+    <div key={row.name} className="sea-rate-pricing-grid__cell">
+      <label
+        className="sea-rate-label"
+        lang={isSeaCoreLineEnglishOnly(row.name) ? 'en' : undefined}
+      >
+        {seaCoreLineDisplayLabel(row.name, t)}
+      </label>
+      <div className="sea-rate-input-group">
+        <input
+          type="number"
+          min={0}
+          step="0.01"
+          className="sea-rate-input"
+          value={displayNumericInputValue(row.amount)}
+          onChange={(e) => patchSeaCoreLine(row.name, { amount: e.target.value })}
+          placeholder="0"
+        />
+        <select
+          className="sea-rate-select"
+          value={row.currency}
+          onChange={(e) => patchSeaCoreLine(row.name, { currency: e.target.value })}
+        >
+          {CURRENCIES.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+  )
+
   const syncSeaCoreLinesForPreset = useCallback(
     (presetSlug) => {
       const meta = resolveOceanMeta(presetSlug, SEA_OCEAN_UNIT_TYPES)
       setSeaCoreLines((prev) => {
         const byName = Object.fromEntries(prev.map((r) => [r.name, r]))
-        const base = DEFAULT_SEA_LINE_NAMES.map((name) => ({
+        const names = seaCoreLineNamesForDirection(effectiveDirection, meta.type === 'Reefer')
+        return names.map((name) => ({
           name,
           amount: byName[name]?.amount ?? '',
           currency: byName[name]?.currency ?? 'USD',
         }))
-        if (meta.type === 'Reefer') {
-          const p = byName.Power || { amount: '', currency: 'USD' }
-          return [...base, { name: 'Power', amount: p.amount, currency: p.currency }]
-        }
-        return base
       })
     },
-    []
+    [effectiveDirection]
   )
 
   const updateForm = (patch) => setForm((prev) => ({ ...prev, ...patch }))
@@ -722,8 +804,15 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
         : null
 
     const regionTrim = (form.region && String(form.region).trim()) || ''
+    let notesText = mergePowerFreeDaysIntoNotes(
+      form.notes?.trim() || '',
+      oceanMeta.type === 'Reefer' ? reeferExtras.power_free_days : ''
+    )
+    const owsPayload = isImportSea ? owsFormStateToPayload(owsForm) : null
+
     const payload = {
       pricing_type: 'sea',
+      pricing_direction: isImportSea ? 'import' : 'export',
       region: regionTrim || form.pod || form.pol || 'Sea',
       pol: form.pol,
       pod: form.pod,
@@ -734,11 +823,8 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
       valid_to: form.valid_to || null,
       weekly_sailing_days,
       sailing_dates,
-      notes:
-        mergePowerFreeDaysIntoNotes(
-          form.notes?.trim() || '',
-          oceanMeta.type === 'Reefer' ? reeferExtras.power_free_days : ''
-        ).trim() || null,
+      notes: notesText.trim() || null,
+      ows_data: owsPayload?.enabled ? owsPayload : null,
       other_charges: parsedItems
         .filter((x) => x.name === 'Other Charges')
         .map((x) => x.description)
@@ -777,11 +863,15 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
   const formTitle =
     effectiveMode === 'inland'
       ? offerToEdit
-        ? 'تعديل سعر نقل داخلي / Edit Inland Rate'
-        : 'إضافة سعر نقل داخلي / Add Inland Rate'
+        ? t('pricing.editInlandOffer')
+        : t('pricing.addInlandOffer')
       : offerToEdit
-        ? 'تعديل عرض سعر شحن بحري / Edit Rate Sea Freight'
-        : 'إضافة عرض سعر جديد شحن بحري / Add New Rate Sea Freight'
+        ? isImportSea
+          ? t('pricing.editImportSeaFreightRateTitle')
+          : t('pricing.editExportSeaFreightRateTitle')
+        : isImportSea
+          ? t('pricing.addImportSeaFreightRateTitle')
+          : t('pricing.addExportSeaFreightRateTitle')
 
   return (
     <div
@@ -1122,56 +1212,71 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
               </PricingFinSection>
 
               <PricingFinSection title="قسم 4: بنود التسعير / Pricing conditions">
-              <div className="sea-rate-grid-4 sea-rate-pricing-grid">
-                {(oceanMeta.type === 'Reefer' ? seaCoreLines.filter((row) => row.name !== 'Power') : seaCoreLines).map((row) => (
-                  <div key={row.name}>
-                    <label className="sea-rate-label">{row.name === 'Ocean Freight' ? 'Ocean freight (OF)' : row.name === 'B/L Fee' ? 'B/L fee (بوليصة)' : row.name}</label>
-                    <div className="sea-rate-input-group">
-                      <input
-                        type="number"
-                        min={0}
-                        step="0.01"
-                        className="sea-rate-input"
-                        value={displayNumericInputValue(row.amount)}
-                        onChange={(e) => patchSeaCoreLine(row.name, { amount: e.target.value })}
-                        placeholder="0"
-                      />
-                      <select
-                        className="sea-rate-select"
-                        value={row.currency}
-                        onChange={(e) => patchSeaCoreLine(row.name, { currency: e.target.value })}
-                      >
-                        {CURRENCIES.map((c) => (
-                          <option key={c} value={c}>
-                            {c}
-                          </option>
-                        ))}
-                      </select>
+              {isImportSea ? (
+                <>
+                  <div className="sea-rate-pricing-grid sea-rate-pricing-grid--import-inline">
+                    {importCoreDisplayLines.map((row) => renderSeaCoreLineCell(row))}
+                  </div>
+                  {seaCustomLines.length ? (
+                    <div className="sea-rate-grid-4 sea-rate-pricing-grid sea-rate-pricing-grid--custom">
+                      {seaCustomLines.map((row) => (
+                        <div key={row.id} className="sea-rate-grid-custom-cell">
+                          <SeaCustomChargeEntry
+                            name={row.name}
+                            amount={row.amount}
+                            currency={row.currency}
+                            currencies={CURRENCIES}
+                            nameLabel={t('pricing.customChargeName', 'اسم البند / Charge Name')}
+                            amountLabel={t('pricing.amount', 'المبلغ / Amount')}
+                            currencyLabel={t('pricing.currencyAria', 'العملة')}
+                            namePlaceholder={t('pricing.customChargeNamePlaceholder', 'e.g. ISPS, EBS, BAF...')}
+                            onNameChange={(v) => patchSeaCustomLine(row.id, { name: v })}
+                            onAmountChange={(v) => patchSeaCustomLine(row.id, { amount: v })}
+                            onCurrencyChange={(v) => patchSeaCustomLine(row.id, { currency: v })}
+                            onAction={() => removeCustomCharge(row.id)}
+                            actionLabel="×"
+                            actionAriaLabel={t('common.remove', 'Remove')}
+                            actionVariant="remove"
+                          />
+                        </div>
+                      ))}
                     </div>
-                  </div>
-                ))}
-                {seaCustomLines.map((row) => (
-                  <div key={row.id} className="sea-rate-grid-custom-cell">
-                    <SeaCustomChargeEntry
-                      name={row.name}
-                      amount={row.amount}
-                      currency={row.currency}
-                      currencies={CURRENCIES}
-                      nameLabel={t('pricing.customChargeName', 'اسم البند / Charge Name')}
-                      amountLabel={t('pricing.amount', 'المبلغ / Amount')}
-                      currencyLabel={t('pricing.currencyAria', 'العملة')}
-                      namePlaceholder={t('pricing.customChargeNamePlaceholder', 'e.g. ISPS, EBS, BAF...')}
-                      onNameChange={(v) => patchSeaCustomLine(row.id, { name: v })}
-                      onAmountChange={(v) => patchSeaCustomLine(row.id, { amount: v })}
-                      onCurrencyChange={(v) => patchSeaCustomLine(row.id, { currency: v })}
-                      onAction={() => removeCustomCharge(row.id)}
-                      actionLabel="×"
-                      actionAriaLabel={t('common.remove', 'Remove')}
-                      actionVariant="remove"
-                    />
-                  </div>
-                ))}
-              </div>
+                  ) : null}
+                </>
+              ) : (
+                <div className="sea-rate-grid-4 sea-rate-pricing-grid">
+                  {(oceanMeta.type === 'Reefer'
+                    ? seaCoreLines.filter((row) => row.name !== 'Power')
+                    : seaCoreLines
+                  ).map((row) => renderSeaCoreLineCell(row))}
+                  {seaCustomLines.map((row) => (
+                    <div key={row.id} className="sea-rate-grid-custom-cell">
+                      <SeaCustomChargeEntry
+                        name={row.name}
+                        amount={row.amount}
+                        currency={row.currency}
+                        currencies={CURRENCIES}
+                        nameLabel={t('pricing.customChargeName', 'اسم البند / Charge Name')}
+                        amountLabel={t('pricing.amount', 'المبلغ / Amount')}
+                        currencyLabel={t('pricing.currencyAria', 'العملة')}
+                        namePlaceholder={t('pricing.customChargeNamePlaceholder', 'e.g. ISPS, EBS, BAF...')}
+                        onNameChange={(v) => patchSeaCustomLine(row.id, { name: v })}
+                        onAmountChange={(v) => patchSeaCustomLine(row.id, { amount: v })}
+                        onCurrencyChange={(v) => patchSeaCustomLine(row.id, { currency: v })}
+                        onAction={() => removeCustomCharge(row.id)}
+                        actionLabel="×"
+                        actionAriaLabel={t('common.remove', 'Remove')}
+                        actionVariant="remove"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+              {isImportSea ? (
+                <div className="sea-rate-ows-block">
+                  <SeaOwsChargesSection owsForm={owsForm} setOwsForm={setOwsForm} />
+                </div>
+              ) : null}
               <div className="sea-rate-custom-charges">
                 <div className="sea-rate-hint">بنود إضافية (حسب الخط الملاحي) / Custom Charges:</div>
                 <div className="sea-rate-sub-section">

@@ -24,7 +24,14 @@ const OCEAN_CONTAINER_ITEM_CODES = ['of20', 'of20rf', 'of40', 'of40rf']
 
 export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
   const { t, i18n } = useTranslation()
-  const { canManagePricingOffers, canManagePricingQuotes } = useAuthAccess()
+  const {
+    canManagePricingOffers,
+    canManagePricingQuotes,
+    canManageExportSeaOffers,
+    canManageImportSeaOffers,
+    showExportSeaRates,
+    showImportSeaRates,
+  } = useAuthAccess()
   const [type, setType] = useState('sea')
   const [seaPol, setSeaPol] = useState('')
   const [seaPod, setSeaPod] = useState('')
@@ -39,6 +46,22 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
   const [detailOffer, setDetailOffer] = useState(null)
   const [quoteSourceOffer, setQuoteSourceOffer] = useState(null)
   const [createQuoteOpen, setCreateQuoteOpen] = useState(false)
+
+  const showSeaDirectionTabs = showExportSeaRates && showImportSeaRates
+
+  const [seaDirectionTab, setSeaDirectionTab] = useState('export')
+
+  useEffect(() => {
+    if (!showImportSeaRates && showExportSeaRates) setSeaDirectionTab('export')
+    else if (showImportSeaRates && !showExportSeaRates) setSeaDirectionTab('import')
+  }, [showExportSeaRates, showImportSeaRates])
+
+  const activeSeaDirection =
+    showSeaDirectionTabs
+      ? seaDirectionTab
+      : showImportSeaRates && !showExportSeaRates
+        ? 'import'
+        : 'export'
 
   const oceanContainerOptions = useMemo(
     () =>
@@ -62,16 +85,19 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
   // Reset page when any filter changes (debounced text counts as one logical filter).
   useEffect(() => {
     setPage(1)
-  }, [type, seaPol, seaPod, seaItemCode, region, pod, inlandTruckType, debouncedSearch])
+  }, [type, seaPol, seaPod, seaItemCode, region, pod, inlandTruckType, debouncedSearch, seaDirectionTab])
 
   useEffect(() => {
     setPage(1)
   }, [perPage])
 
+  const seaDirectionFilter = type === 'sea' ? activeSeaDirection : undefined
+
   const offerParams =
     type === 'sea'
       ? {
           pricing_type: 'sea',
+          pricing_direction: seaDirectionFilter,
           pol: seaPol || undefined,
           pod: seaPod || undefined,
           pricing_item_code: seaItemCode || undefined,
@@ -131,6 +157,22 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
     { id: 'sea', label: t('pricing.oceanFreight', 'Ocean Freight'), icon: <Ship className="h-4 w-4" /> },
     { id: 'inland', label: t('pricing.inlandTransport', 'Inland Transport'), icon: <Truck className="h-4 w-4" /> },
   ]
+
+  const seaDirectionTabs = useMemo(
+    () => [
+      { id: 'export', label: t('pricing.exportSeaFreightRatesHeading') },
+      { id: 'import', label: t('pricing.importSeaFreightRatesHeading') },
+    ],
+    [t]
+  )
+
+  const seaSectionTitle =
+    activeSeaDirection === 'import'
+      ? t('pricing.importSeaFreightRatesHeading')
+      : t('pricing.exportSeaFreightRatesHeading')
+
+  const activeCanManageSeaOffers =
+    activeSeaDirection === 'import' ? canManageImportSeaOffers : canManageExportSeaOffers
 
   return (
     <div className="rate-sheet">
@@ -232,17 +274,30 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
                 {t('common.loading', 'Loading…')}
               </span>
             ) : null}
-            {typeof onAddOffer === 'function' && canManagePricingOffers ? (
+            {typeof onAddOffer === 'function' && type === 'sea' && activeCanManageSeaOffers ? (
+              <div className="clients-filters__actions pricing-add-rate-actions">
+                <button
+                  type="button"
+                  className={`clients-filters__btn-icon clients-filters__btn-icon--primary pricing-add-rate-btn${activeSeaDirection === 'import' ? ' pricing-add-rate-btn--import' : ''}`}
+                  onClick={() => onAddOffer('sea', activeSeaDirection)}
+                >
+                  <Plus className="clients-filters__btn-icon-svg pricing-add-rate-btn__icon" aria-hidden />
+                  <span className="pricing-add-rate-btn__text">
+                    {activeSeaDirection === 'import'
+                      ? t('pricing.addImportSeaRateShort')
+                      : t('pricing.addExportSeaRateShort')}
+                  </span>
+                </button>
+              </div>
+            ) : typeof onAddOffer === 'function' && canManagePricingOffers ? (
               <div className="clients-filters__actions">
                 <button
                   type="button"
                   className="clients-filters__btn-icon clients-filters__btn-icon--primary pricing-add-rate-btn"
                   onClick={() => onAddOffer(type)}
-                  aria-label={t('pricing.addRateButton', '+ إضافة سعر')}
-                  title={t('pricing.addRateButton', '+ إضافة سعر')}
                 >
                   <Plus className="clients-filters__btn-icon-svg pricing-add-rate-btn__icon" aria-hidden />
-                  <span className="pricing-add-rate-btn__text">{t('pricing.addRateButtonText', 'إضافة سعر')}</span>
+                  <span className="pricing-add-rate-btn__text">{t('pricing.addRateButtonText')}</span>
                 </button>
               </div>
             ) : null}
@@ -260,9 +315,18 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
         </div>
       ) : (
         <>
-          <div
-            className="mb-8"
-          >
+          {type === 'sea' && showSeaDirectionTabs ? (
+            <div className="pricing-sea-direction-tabs rate-sheet-subtabs mb-6">
+              <Tabs
+                variant="sub"
+                inline
+                tabs={seaDirectionTabs}
+                activeTab={seaDirectionTab}
+                onChange={setSeaDirectionTab}
+              />
+            </div>
+          ) : null}
+          <div className="mb-8">
             {type === 'inland' ? (
               <InlandTransportTable
                 offers={offers || []}
@@ -273,10 +337,13 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
               />
             ) : (
               <SeaFreightOffersTable
+                sectionKey={activeSeaDirection}
+                sectionTitle={seaSectionTitle}
+                hideSectionTitle={showSeaDirectionTabs}
                 offers={offers || []}
                 loading={loading}
                 onEdit={onEdit}
-                canManageOffers={canManagePricingOffers}
+                canManageOffers={activeCanManageSeaOffers}
                 onView={setDetailOffer}
               />
             )}

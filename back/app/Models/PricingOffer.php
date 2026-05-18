@@ -14,6 +14,7 @@ class PricingOffer extends Model
      */
     protected $fillable = [
         'pricing_type',
+        'pricing_direction',
         'region',
         'pod',
         'shipping_line',
@@ -30,6 +31,7 @@ class PricingOffer extends Model
         'status',
         'other_charges',
         'notes',
+        'ows_data',
     ];
 
     /**
@@ -38,6 +40,7 @@ class PricingOffer extends Model
     protected $casts = [
         'valid_from' => 'date',
         'valid_to' => 'date',
+        'ows_data' => 'array',
     ];
 
     public function isExpired(): bool

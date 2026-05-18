@@ -32,6 +32,7 @@ export async function listSeaPricingRegions(token, params = {}, fetchInit = {}) 
 export async function listOffers(token, params = {}, fetchInit = {}) {
   const searchParams = new URLSearchParams()
   if (params.pricing_type) searchParams.set('pricing_type', params.pricing_type)
+  if (params.pricing_direction) searchParams.set('pricing_direction', params.pricing_direction)
   if (params.region) searchParams.set('region', params.region)
   if (params.pod) searchParams.set('pod', params.pod)
   if (params.pol) searchParams.set('pol', params.pol)
