@@ -213,6 +213,8 @@
                         'sectionEn' => $section['en'],
                         'totals' => $section['totals'],
                         'formatBreakdown' => $formatBreakdown,
+                        'showReeferDeferredPower' => $section['key'] === 'ocean' && !empty($showReeferDeferredPower),
+                        'labels' => $labels,
                     ])
                 </div>
                 @if ($section['key'] === 'customs')

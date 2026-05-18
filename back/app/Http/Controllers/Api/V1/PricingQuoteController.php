@@ -160,6 +160,15 @@ class PricingQuoteController extends Controller
             'free_time_data.pod' => ['nullable', 'array'],
             'free_time_data.pod.detention' => ['nullable', 'integer', 'min:0'],
             'free_time_data.pod.demurrage' => ['nullable', 'integer', 'min:0'],
+            'free_time_data.reefer' => ['nullable', 'array'],
+            'free_time_data.reefer.deferred_power' => ['nullable', 'boolean'],
+            'free_time_data.reefer.power_per_day' => ['nullable', 'array'],
+            'free_time_data.reefer.power_per_day.amount' => ['nullable', 'numeric', 'min:0'],
+            'free_time_data.reefer.power_per_day.currency' => ['nullable', 'string', 'max:10'],
+            'free_time_data.reefer.pti' => ['nullable', 'array'],
+            'free_time_data.reefer.pti.amount' => ['nullable', 'numeric', 'min:0'],
+            'free_time_data.reefer.pti.currency' => ['nullable', 'string', 'max:10'],
+            'free_time_data.reefer.free_power_days' => ['nullable', 'integer', 'min:0'],
             'schedule_type' => ['nullable', 'string', 'in:fixed,weekly'],
             'valid_from' => ['nullable', 'date'],
             'valid_to' => ['nullable', 'date'],
@@ -311,6 +320,15 @@ class PricingQuoteController extends Controller
             'free_time_data.pod' => ['nullable', 'array'],
             'free_time_data.pod.detention' => ['nullable', 'integer', 'min:0'],
             'free_time_data.pod.demurrage' => ['nullable', 'integer', 'min:0'],
+            'free_time_data.reefer' => ['nullable', 'array'],
+            'free_time_data.reefer.deferred_power' => ['nullable', 'boolean'],
+            'free_time_data.reefer.power_per_day' => ['nullable', 'array'],
+            'free_time_data.reefer.power_per_day.amount' => ['nullable', 'numeric', 'min:0'],
+            'free_time_data.reefer.power_per_day.currency' => ['nullable', 'string', 'max:10'],
+            'free_time_data.reefer.pti' => ['nullable', 'array'],
+            'free_time_data.reefer.pti.amount' => ['nullable', 'numeric', 'min:0'],
+            'free_time_data.reefer.pti.currency' => ['nullable', 'string', 'max:10'],
+            'free_time_data.reefer.free_power_days' => ['nullable', 'integer', 'min:0'],
             'schedule_type' => ['sometimes', 'nullable', 'string', 'in:fixed,weekly'],
             'valid_from' => ['sometimes', 'nullable', 'date'],
             'valid_to' => ['sometimes', 'nullable', 'date'],
@@ -506,7 +524,7 @@ class PricingQuoteController extends Controller
     {
         $this->authorize('view', $quote);
 
-        $quote->load(['items', 'sailingDates', 'client', 'salesUser']);
+        $quote->load(['items', 'sailingDates', 'client', 'salesUser', 'offer.items']);
 
         $locale = strtolower((string) $request->header('X-App-Locale', 'en')) === 'ar' ? 'ar' : 'en';
 
@@ -519,6 +537,7 @@ class PricingQuoteController extends Controller
         $clientVisibleItems = $quote->items->filter(
             fn (PricingQuoteItem $i): bool => (bool) ($i->visible_to_client ?? true)
         );
+        $clientVisibleItems = $this->excludeDeferredReeferQuoteItems($quote, $clientVisibleItems);
         $partition = $this->partitionQuoteItemsForPdf($quote, $clientVisibleItems);
         $grandTotalsByCurrency = $this->sumQuoteItemsByCurrency($clientVisibleItems);
 
@@ -538,6 +557,7 @@ class PricingQuoteController extends Controller
         $quotePricingType = $this->resolveQuotePricingType($quote);
         $isSeaQuote = $quotePricingType === 'sea';
         $isInlandQuote = $quotePricingType === 'inland';
+        $showReeferDeferredPower = $isSeaQuote && $this->quoteShowsDeferredReeferPower($quote);
 
         $html = view('pricing.quote_pdf', [
             'quote' => $quote,
@@ -565,6 +585,7 @@ class PricingQuoteController extends Controller
             'validUntilFormatted' => $quote->valid_to ? $pdfFmtDate($quote->valid_to) : '—',
             'containerDisplay' => $this->quotePdfContainerDisplay($quote),
             'formatBreakdown' => fn (array $map): string => $this->formatCurrencyBreakdown($map),
+            'showReeferDeferredPower' => $showReeferDeferredPower,
         ])->render();
 
         $mpdf = new Mpdf([
@@ -690,6 +711,7 @@ class PricingQuoteController extends Controller
                     .'<p>هذا العرض لا يُعتبر تأكيدًا للحجز حتى يتم إصداره تأكيدًا خطيًا من الشركة.</p>',
                 'quick_quotation_badge' => 'عرض سريع',
                 'official_receipts_title' => 'الإيصالات الرسمية (معلوماتي — لا يُحتسب في الإجمالي)',
+                'reefer_deferred_power' => 'Power',
             ]);
         }
 
@@ -742,6 +764,7 @@ class PricingQuoteController extends Controller
                 .'<p>Validity and surcharges apply as stated in this offer.</p>',
             'quick_quotation_badge' => 'Quick',
             'official_receipts_title' => 'Official receipts (informational — not included in totals)',
+            'reefer_deferred_power' => 'Power',
         ]);
     }
 
@@ -899,10 +922,16 @@ class PricingQuoteController extends Controller
         })->values();
 
         /** Everything except inland, handling, and customs/other charges (OTHER), including ocean codes and legacy rows */
-        $ocean = $sorted->filter(function (PricingQuoteItem $i): bool {
+        $ocean = $sorted->filter(function (PricingQuoteItem $i) use ($quote): bool {
             $c = strtoupper(trim((string) ($i->code ?? '')));
+            if ($c === 'INLAND' || $c === 'OTHER' || $c === 'HANDLING') {
+                return false;
+            }
+            if ($this->quoteIsReeferContainer($quote) && in_array($c, ['PTI', 'POWER'], true)) {
+                return false;
+            }
 
-            return $c !== 'INLAND' && $c !== 'OTHER' && $c !== 'HANDLING';
+            return true;
         })->values();
 
         return [
@@ -927,6 +956,82 @@ class PricingQuoteController extends Controller
         ksort($totals);
 
         return $totals;
+    }
+
+    /**
+     * @param  Collection<int, PricingQuoteItem>  $items
+     * @return Collection<int, PricingQuoteItem>
+     */
+    protected function excludeDeferredReeferQuoteItems(PricingQuote $quote, Collection $items): Collection
+    {
+        if (! $this->quoteIsReeferContainer($quote)) {
+            return $items;
+        }
+
+        return $items
+            ->filter(function (PricingQuoteItem $i): bool {
+                $c = strtoupper(trim((string) ($i->code ?? '')));
+
+                return ! in_array($c, ['PTI', 'POWER'], true);
+            })
+            ->values();
+    }
+
+    protected function quoteIsReeferContainer(PricingQuote $quote): bool
+    {
+        $spec = $quote->container_spec;
+        if (is_array($spec) && ($spec['type'] ?? '') === 'reefer') {
+            return true;
+        }
+
+        return str_contains(strtolower((string) ($quote->container_type ?? '')), 'reefer');
+    }
+
+    protected function quoteShowsDeferredReeferPower(PricingQuote $quote): bool
+    {
+        if (! $this->quoteIsReeferContainer($quote)) {
+            return false;
+        }
+
+        $data = $quote->free_time_data;
+        if (is_array($data) && ! empty($data['reefer']['deferred_power'])) {
+            return true;
+        }
+
+        if ($quote->items->contains(
+            fn (PricingQuoteItem $i): bool => strtoupper(trim((string) ($i->code ?? ''))) === 'POWER'
+        )) {
+            return true;
+        }
+
+        return $this->linkedOfferHasReeferPowerRate($quote);
+    }
+
+    protected function linkedOfferHasReeferPowerRate(PricingQuote $quote): bool
+    {
+        if (! $quote->pricing_offer_id) {
+            return false;
+        }
+
+        $offer = $quote->relationLoaded('offer')
+            ? $quote->offer
+            : PricingOffer::query()->with('items')->find($quote->pricing_offer_id);
+
+        if (! $offer) {
+            return false;
+        }
+
+        foreach ($offer->items as $item) {
+            $code = strtolower(trim((string) ($item->code ?? '')));
+            if ($code !== 'powerday' && $code !== 'power_day') {
+                continue;
+            }
+            if ($item->price !== null && (float) $item->price >= 0) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

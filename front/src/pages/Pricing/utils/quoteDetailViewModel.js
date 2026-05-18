@@ -5,6 +5,13 @@ import {
   isSeaQuote as checkSeaQuote,
   resolveQuotePricingType,
 } from './quotePricingType'
+import {
+  filterBillableOceanLines,
+  isReeferContainerSpec,
+  isReeferDeferredQuoteCode,
+  resolveReeferDeferredMeta,
+  shouldShowReeferDeferredPowerFootnote,
+} from './reeferQuoteCharges'
 
 const OCEAN_CODES = new Set(['OF', 'THC', 'BL', 'TELEX', 'ISPS', 'PTI', 'POWER'])
 
@@ -153,6 +160,9 @@ export function buildSailingScheduleFromQuote(quote) {
  */
 export function buildQuoteDetailViewModel(quote) {
   const isQuick = Boolean(quote?.quick_mode ?? quote?.is_quick_quotation)
+  const isReefer = isReeferContainerSpec(quote?.container_type, quote?.container_spec)
+  const reeferDeferred = resolveReeferDeferredMeta(quote)
+  const showReeferDeferredPowerFootnote = shouldShowReeferDeferredPowerFootnote(isReefer, reeferDeferred)
   const items = Array.isArray(quote?.items) ? quote.items : []
 
   const oceanLines = []
@@ -201,6 +211,7 @@ export function buildQuoteDetailViewModel(quote) {
     }
 
     if (OCEAN_CODES.has(code)) {
+      if (isReefer && isReeferDeferredQuoteCode(code)) continue
       oceanLines.push(mapOceanLine(it))
       continue
     }
@@ -252,9 +263,10 @@ export function buildQuoteDetailViewModel(quote) {
     }
   }
 
-  const oceanSellingByCurrency = sumLineSellingByCurrency(oceanLines)
-  const oceanCostByCurrency = sumLineCostByCurrency(oceanLines)
-  const pricingLinesProfitByCurrency = sumProfitsByCurrency(oceanLines)
+  const billableOceanLines = filterBillableOceanLines(oceanLines, isReefer)
+  const oceanSellingByCurrency = sumLineSellingByCurrency(billableOceanLines)
+  const oceanCostByCurrency = sumLineCostByCurrency(billableOceanLines)
+  const pricingLinesProfitByCurrency = sumProfitsByCurrency(billableOceanLines)
 
   const customsSellingByCurrency = sumCustomsCostByCurrency(customsClearanceFee, customsExtraItems, customsEnabled)
   const handlingSellingByCurrency = sumHandlingByCurrency(handlingLines)
@@ -312,7 +324,8 @@ export function buildQuoteDetailViewModel(quote) {
     isSeaQuote,
     isInlandQuote,
     routeSummary: buildQuoteRouteSummary(quote),
-    oceanLines,
+    oceanLines: billableOceanLines,
+    showReeferDeferredPowerFootnote,
     inlandLineRows,
     inlandOfferId,
     quickInland,

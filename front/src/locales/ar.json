@@ -465,6 +465,8 @@
     "seaReeferPowerFreeDays": "أيام فري باور",
     "seaReeferSalesNoteLead": "ملاحظة للسيلز:",
     "seaReeferPowerSalesNote": "سعر الـ Power غير شامل في إجمالي عرض السعر — يُحسب بشكل منفصل حسب عدد الأيام الفعلية بالميناء بعد خصم أيام الفري. مثال: لو أيام الفري ٣ وسعر اليوم ٢٥ دولاراً والحاوية قضت ٥ أيام بالميناء، فالمطلوب: (٥ − ٣) × ٢٥ = ٥٠ دولاراً.",
+    "reeferDeferredPowerLabel": "Power",
+    "reeferDeferredPowerTooltip": "تُحسب كهرباء الميناء بشكل منفصل حسب أيام الإقامة الفعلية بعد أيام الكهرباء المجانية. غير مشمولة في إجمالي عرض السعر.",
     "seaSelectedSailingDatesTitle": "التواريخ المحددة / Selected sailing dates",
     "seaSailingPickDateLabel": "اختر التاريخ / Pick date",
     "inlandPortField": "الميناء / Port",

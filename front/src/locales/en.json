@@ -464,6 +464,8 @@
     "seaReeferPowerFreeDays": "Free power days",
     "seaReeferSalesNoteLead": "Note for sales:",
     "seaReeferPowerSalesNote": "Power charges are NOT included in the total quotation price. They are calculated separately based on actual port stay days after deducting free power days. Example: if free power days = 3, daily power price = USD 25, and the container stayed 5 days, then: (5 − 3) × 25 = USD 50.",
+    "reeferDeferredPowerLabel": "Power",
+    "reeferDeferredPowerTooltip": "Port power is billed separately based on actual stay days after free power days. Not included in the quotation total.",
     "seaSelectedSailingDatesTitle": "Selected sailing dates / التواريخ المحددة",
     "seaSailingPickDateLabel": "Pick date / اختر التاريخ",
     "inlandPortField": "Port / الميناء",

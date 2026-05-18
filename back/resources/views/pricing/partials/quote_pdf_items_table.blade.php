@@ -19,5 +19,13 @@
             <td class="pdf-inv-sub-label"><strong>{{ $sectionEn }} Total</strong></td>
             <td colspan="2" class="pdf-inv-sub-amt">{{ $formatBreakdown($totals) }}</td>
         </tr>
+        @if (!empty($showReeferDeferredPower))
+            <tr class="pdf-quote-reefer-deferred-footnote-row">
+                <td colspan="3" class="pdf-quote-reefer-deferred-footnote-cell">
+                    <span class="pdf-quote-reefer-deferred-footnote__plus">+</span>
+                    <em class="pdf-quote-reefer-deferred-footnote__power" lang="en">Power</em>
+                </td>
+            </tr>
+        @endif
     </tbody>
 </table>

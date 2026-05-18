@@ -9,6 +9,7 @@ import ShippingLineNameAsyncSelect from '../ShippingLineNameAsyncSelect'
 import QuoteFinCard from '../quoteFinCard'
 import QuotePricingLinesTable from '../QuotePricingLinesTable'
 import QuoteOceanLinesSummary from '../QuoteOceanLinesSummary'
+import QuoteReeferDeferredFootnote from '../QuoteReeferDeferredFootnote'
 import QuoteCustomsClearanceSection from '../QuoteCustomsClearanceSection'
 import QuoteHandlingFeesSection from '../QuoteHandlingFeesSection'
 import {
@@ -88,6 +89,7 @@ export default function QuickQuoteForm({
   hasCustomsPricing,
   quoteProfitByCurrency,
   grandSellingByCurrency,
+  showReeferDeferredPowerFootnote = false,
 }) {
   const { t, i18n } = useTranslation()
   const [draftSailingDate, setDraftSailingDate] = useState('')
@@ -318,7 +320,12 @@ export default function QuickQuoteForm({
                 costByCurrency={oceanCostByCurrency}
                 profitByCurrency={pricingLinesProfitByCurrency}
                 sellingByCurrency={oceanSellingByCurrency}
+                footer={
+                  showReeferDeferredPowerFootnote ? <QuoteReeferDeferredFootnote /> : null
+                }
               />
+            ) : showReeferDeferredPowerFootnote ? (
+              <QuoteReeferDeferredFootnote />
             ) : null}
           </>
         ) : null}

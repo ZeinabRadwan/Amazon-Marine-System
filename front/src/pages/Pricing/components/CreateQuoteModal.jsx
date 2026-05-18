@@ -51,6 +51,16 @@ import {
 } from './quoteSummaryUi'
 import QuotePricingLinesTable from './QuotePricingLinesTable'
 import QuoteOceanLinesSummary from './QuoteOceanLinesSummary'
+import QuoteReeferDeferredFootnote from './QuoteReeferDeferredFootnote'
+import {
+  buildReeferFreeTimeDataPayload,
+  extractReeferDeferredFromOffer,
+  filterBillableOceanLines,
+  isReeferContainerSpec,
+  isReeferDeferredOceanLine,
+  isReeferDeferredQuoteCode,
+  shouldShowReeferDeferredPowerFootnote,
+} from '../utils/reeferQuoteCharges'
 import QuoteInlandTransportSection from './QuoteInlandTransportSection'
 import QuoteCustomsClearanceSection, { buildCustomsOfficialReceiptsNote } from './QuoteCustomsClearanceSection'
 import QuoteHandlingFeesSection from './QuoteHandlingFeesSection'
@@ -397,6 +407,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
   const [quickInlandVehicle, setQuickInlandVehicle] = useState('')
   const [quickSailingDates, setQuickSailingDates] = useState([])
   const [inlandManualOpen, setInlandManualOpen] = useState(false)
+  const [reeferDeferred, setReeferDeferred] = useState(null)
 
   const handleDismiss = useCallback(() => {
     onClose?.()
@@ -405,7 +416,10 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
   const applySeaOffer = useCallback(
     (offer) => {
       if (!offer) return
-      const lines = mapOfferPricingToOceanLines(offer, quoteCodeLabel, t)
+      const isReefer = inferContainerFromOffer(offer).toLowerCase().includes('reefer')
+      const allLines = mapOfferPricingToOceanLines(offer, quoteCodeLabel, t)
+      const lines = isReefer ? filterBillableOceanLines(allLines, true) : allLines
+      setReeferDeferred(isReefer ? extractReeferDeferredFromOffer(offer) : null)
       setOceanLines(lines.length ? lines : [])
       const sailingFields = sailingFieldsFromOffer(offer)
       setForm((prev) => ({
@@ -508,6 +522,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
       setForm(defaultQuoteForm())
       setQuickSailingDates([])
       setInlandManualOpen(false)
+      setReeferDeferred(null)
 
       if (initialQuickMode) {
         setOceanLines(createQuickOceanCoreRows(t, quoteCodeLabel))
@@ -653,6 +668,57 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
 
   const isPricing = entryMode === 'pricing'
   const isQuick = entryMode === 'quick'
+  const isReeferOcean = useMemo(
+    () => isReeferContainerSpec(form.container_type),
+    [form.container_type]
+  )
+  const showReeferDeferredPowerFootnote = useMemo(
+    () => shouldShowReeferDeferredPowerFootnote(isReeferOcean, reeferDeferred),
+    [isReeferOcean, reeferDeferred]
+  )
+  const oceanQuickSelectCodes = useMemo(
+    () =>
+      QUICK_SELECT_CODES.filter((code) => !isReeferOcean || !isReeferDeferredQuoteCode(code)),
+    [isReeferOcean]
+  )
+
+  useEffect(() => {
+    if (!isReeferOcean) {
+      setReeferDeferred(null)
+      return
+    }
+    setOceanLines((prev) => {
+      const deferredLines = prev.filter(isReeferDeferredOceanLine)
+      if (!deferredLines.length) return prev
+
+      const ptiLine = deferredLines.find((l) => l.code === 'PTI')
+      const powerLine = deferredLines.find((l) => l.code === 'POWER')
+      if (ptiLine || powerLine) {
+        const fromLines = extractReeferDeferredFromOffer({
+          pricing: {
+            ...(ptiLine
+              ? { pti: { price: ptiLine.cost_amount, currency: ptiLine.currency } }
+              : {}),
+            ...(powerLine
+              ? { powerDay: { price: powerLine.cost_amount, currency: powerLine.currency } }
+              : {}),
+          },
+          notes: '',
+        })
+        setReeferDeferred((current) =>
+          current?.showPowerFootnote
+            ? {
+                ...fromLines,
+                showPowerFootnote: true,
+                powerPerDay: current.powerPerDay || fromLines.powerPerDay,
+                pti: current.pti || fromLines.pti,
+              }
+            : fromLines
+        )
+      }
+      return filterBillableOceanLines(prev, true)
+    })
+  }, [isReeferOcean])
   const routeDisplayOffer = selectedSeaOffer
   const routeDisplayInlandOffer = selectedInlandOffer
   const isRouteLocked = Boolean(form.pricing_offer_id && routeDisplayOffer)
@@ -855,6 +921,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
     }
 
     oceanLines.forEach((line) => {
+      if (isReeferOcean && isReeferDeferredOceanLine(line)) return
       if (line.included === false) return
       const sell = parseNum(line.selling_amount)
       if (sell <= 0 || !line.code) return
@@ -1021,7 +1088,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
         : null,
       container_type: hasOceanRoute ? form.container_type : null,
       qty: hasOceanRoute ? (form.qty ? Number(form.qty) : null) : null,
-      free_time_data: null,
+      free_time_data: isReeferOcean ? buildReeferFreeTimeDataPayload(reeferDeferred) : null,
       show_carrier_on_pdf: hasOceanRoute ? (isQuickSubmit ? true : showCarrierOnPdf) : false,
       official_receipts_note: customsEnabled ? buildCustomsOfficialReceiptsNote(t) : null,
       pricing_team_confirmed: pricingTeamConfirmed,
@@ -1165,6 +1232,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                 hasCustomsPricing={hasCustomsPricing}
                 quoteProfitByCurrency={quoteProfitByCurrency}
                 grandSellingByCurrency={grandSellingByCurrency}
+                showReeferDeferredPowerFootnote={showReeferDeferredPowerFootnote}
               />
             ) : (
             <>
@@ -1307,6 +1375,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                       setField('pricing_offer_id', id)
                       if (!id) {
                         setOceanLines([])
+                        setReeferDeferred(null)
                         setForm((prev) => ({
                           ...prev,
                           pricing_offer_id: '',
@@ -1360,7 +1429,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                       readOnlyName={isPricing && Boolean(form.pricing_offer_id)}
                       allowOceanCodeEdit={!isPricing || !form.pricing_offer_id}
                       quoteCodeLabel={quoteCodeLabel}
-                      quickSelectCodes={QUICK_SELECT_CODES}
+                      quickSelectCodes={oceanQuickSelectCodes}
                       variant="ocean"
                     />
                   </div>
@@ -1369,7 +1438,12 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                       costByCurrency={oceanCostByCurrency}
                       profitByCurrency={pricingLinesProfitByCurrency}
                       sellingByCurrency={oceanSellingByCurrency}
+                      footer={
+                        showReeferDeferredPowerFootnote ? <QuoteReeferDeferredFootnote /> : null
+                      }
                     />
+                  ) : showReeferDeferredPowerFootnote ? (
+                    <QuoteReeferDeferredFootnote />
                   ) : null}
                 </div>
               ) : isQuick ? (

@@ -9,6 +9,7 @@ import QuoteFinCard from './quoteFinCard'
 import { QuoteSummaryBadge, ShippingLineSummaryBadgeReadOnly } from './quoteFormLayout'
 import QuotePricingLinesTable from './QuotePricingLinesTable'
 import QuoteOceanLinesSummary from './QuoteOceanLinesSummary'
+import QuoteReeferDeferredFootnote from './QuoteReeferDeferredFootnote'
 import QuoteInlandTransportSection from './QuoteInlandTransportSection'
 import QuoteCustomsClearanceSection from './QuoteCustomsClearanceSection'
 import QuoteHandlingFeesSection from './QuoteHandlingFeesSection'
@@ -45,6 +46,7 @@ export default function QuoteDetailViewContent({ quote }) {
     grandSellingByCurrency,
     hasInlandQuoteData,
     containerLabel,
+    showReeferDeferredPowerFootnote,
   } = vm
 
   const sailingScheduleDisplayText = formatSailingScheduleFromQuote(quote, t('common.dash', '—'))
@@ -132,6 +134,9 @@ export default function QuoteDetailViewContent({ quote }) {
               costByCurrency={oceanCostByCurrency}
               profitByCurrency={pricingLinesProfitByCurrency}
               sellingByCurrency={oceanSellingByCurrency}
+              footer={
+                showReeferDeferredPowerFootnote ? <QuoteReeferDeferredFootnote /> : null
+              }
             />
           </div>
         )}

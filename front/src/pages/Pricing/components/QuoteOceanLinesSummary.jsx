@@ -9,14 +9,18 @@ export default function QuoteOceanLinesSummary({
   sellingByCurrency,
   summaryClassName = 'pricing-quote-module-summary',
   ariaLabelKey = 'pricing.oceanLinesSummaryTitle',
+  footer = null,
 }) {
   return (
-    <QuoteModuleLinesSummary
-      costByCurrency={costByCurrency}
-      profitByCurrency={profitByCurrency}
-      sellingByCurrency={sellingByCurrency}
-      className={summaryClassName}
-      ariaLabelKey={ariaLabelKey}
-    />
+    <>
+      <QuoteModuleLinesSummary
+        costByCurrency={costByCurrency}
+        profitByCurrency={profitByCurrency}
+        sellingByCurrency={sellingByCurrency}
+        className={summaryClassName}
+        ariaLabelKey={ariaLabelKey}
+      />
+      {footer}
+    </>
   )
 }
