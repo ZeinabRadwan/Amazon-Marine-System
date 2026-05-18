@@ -1,20 +1,62 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { AlertTriangle, CalendarClock, CalendarDays, Ship } from 'lucide-react'
+import { AlertTriangle, CalendarClock, CalendarDays, Check, Ship } from 'lucide-react'
 import { getStoredToken } from '../Login'
 import { getOperationsDashboard } from '../../api/dashboard'
+import { bulkUpdateShipmentTasks } from '../../api/shipments'
 import { StatsCard } from '../../components/StatsCard'
 import LoaderDots from '../../components/LoaderDots'
 import { formatDate } from '../../utils/dateUtils'
 import '../Clients/Clients.css'
 import './OperationsDashboard.css'
-import { getTaskDisplayStatus } from '../Shipments/shipmentOperationTaskUi'
+import '../Shipments/ShipmentsOperationsDashboard.css'
+import '../Shipments/Shipments.css'
+import {
+  getTaskDisplayStatus,
+  isTaskCompleted,
+  priorityBadgeClass,
+  taskStatusBadgeClass,
+} from '../Shipments/shipmentOperationTaskUi'
 
 const UPCOMING_OPTIONS = ['tomorrow', '3_days', 'week', 'month']
 
-function TaskTable({ title, rows, emptyLabel, t, i18nLanguage }) {
+const SECTION_ACCENT = {
+  overdue: 'ops-dash__row-accent--red',
+  today: 'ops-dash__row-accent--amber',
+  upcoming: 'ops-dash__row-accent--green',
+}
+
+function clientCompanyLine(row) {
+  const company = (row.client_company_name || '').trim()
+  const name = (row.client_name || '').trim()
+  if (company && name && company !== name) return { primary: company, secondary: name }
+  if (company) return { primary: company, secondary: null }
+  if (name) return { primary: name, secondary: null }
+  return { primary: null, secondary: null }
+}
+
+function taskPayloadForComplete(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    sort_order: row.sort_order ?? 1,
+    status: 'completed',
+    completed_at: new Date().toISOString(),
+    priority: row.priority || 'medium',
+    due_date: row.due_date || null,
+    execution_at: row.execution_at || null,
+    assigned_to_id: row.assigned_to_id ?? row.assigned_to?.id ?? null,
+    reminder_at: null,
+    reminder_before_value: null,
+    reminder_before_unit: null,
+  }
+}
+
+function TaskList({ title, rows, emptyLabel, sectionKey, t, i18nLanguage, token, onTaskCompleted }) {
   const navigate = useNavigate()
+  const [completingIds, setCompletingIds] = useState(() => new Set())
+  const accentClass = SECTION_ACCENT[sectionKey] || 'ops-dash__row-accent--gray'
 
   const goToShipment = useCallback(
     (shipmentId) => {
@@ -25,101 +67,152 @@ function TaskTable({ title, rows, emptyLabel, t, i18nLanguage }) {
     [navigate],
   )
 
+  const handleMarkComplete = useCallback(
+    async (row, e) => {
+      e?.stopPropagation?.()
+      if (!token || isTaskCompleted(row) || completingIds.has(row.id)) return
+      const sid = Number(row.shipment_id)
+      if (!Number.isFinite(sid) || sid <= 0) return
+
+      setCompletingIds((prev) => new Set(prev).add(row.id))
+      try {
+        await bulkUpdateShipmentTasks(token, sid, [taskPayloadForComplete(row)])
+        onTaskCompleted?.()
+        window.dispatchEvent(new CustomEvent('am:dashboard:refresh'))
+      } catch {
+        /* reload on next refresh tick */
+      } finally {
+        setCompletingIds((prev) => {
+          const next = new Set(prev)
+          next.delete(row.id)
+          return next
+        })
+      }
+    },
+    [token, onTaskCompleted],
+  )
+
   return (
-    <section className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/80 shadow-sm overflow-hidden mb-8">
+    <section className="ops-dash-task-section rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/80 shadow-sm overflow-hidden mb-8">
       <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-slate-50/90 dark:bg-slate-900/40">
         <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">{title}</h2>
       </div>
-      <div className="overflow-x-auto">
-        {rows.length === 0 ? (
-          <p className="px-4 py-8 text-sm text-gray-500 dark:text-gray-400 text-center">{emptyLabel}</p>
-        ) : (
-          <table className="min-w-full text-sm ops-dash-table">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-600 bg-gray-50/80 dark:bg-gray-900/50">
-                <th className="text-start px-3 py-2 font-semibold text-gray-700 dark:text-gray-200">{t('operationsDashboard.colTask')}</th>
-                <th className="text-start px-3 py-2 font-semibold text-gray-700 dark:text-gray-200">{t('operationsDashboard.colShipment')}</th>
-                <th className="text-start px-3 py-2 font-semibold text-gray-700 dark:text-gray-200">{t('operationsDashboard.colDue')}</th>
-                <th className="text-start px-3 py-2 font-semibold text-gray-700 dark:text-gray-200">{t('operationsDashboard.colPriority')}</th>
-                <th className="text-start px-3 py-2 font-semibold text-gray-700 dark:text-gray-200">{t('operationsDashboard.colStatus')}</th>
-                <th className="text-start px-3 py-2 font-semibold text-gray-700 dark:text-gray-200">{t('operationsDashboard.colCompletion')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => {
-                const sid = Number(row.shipment_id)
-                const canNav = Number.isFinite(sid) && sid > 0
-                return (
-                  <tr
-                    key={row.id}
-                    data-shipment-id={canNav ? String(sid) : undefined}
-                    tabIndex={canNav ? 0 : undefined}
-                    role={canNav ? 'link' : undefined}
-                    aria-label={canNav ? t('shipments.opsCard.openShipmentAria') : undefined}
-                    className={`border-b border-gray-100 dark:border-gray-700/80 hover:bg-gray-50/60 dark:hover:bg-gray-900/30${
-                      canNav ? ' cursor-pointer ops-dash-table__row--nav' : ''
-                    }`}
-                    onClick={(e) => {
-                      if (!canNav) return
-                      if (e.target.closest('button, a, input, select, textarea, label, [role="button"], [data-table-row-ignore]')) {
-                        return
-                      }
-                      goToShipment(sid)
-                    }}
-                    onKeyDown={(e) => {
-                      if (!canNav) return
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault()
-                        goToShipment(sid)
-                      }
-                    }}
+      {rows.length === 0 ? (
+        <p className="px-4 py-8 text-sm text-gray-500 dark:text-gray-400 text-center">{emptyLabel}</p>
+      ) : (
+        <div className="ops-dash__task-list p-2 sm:p-3">
+          {rows.map((row) => {
+            const sid = Number(row.shipment_id)
+            const canNav = Number.isFinite(sid) && sid > 0
+            const completed = isTaskCompleted(row)
+            const displayStatus = getTaskDisplayStatus(row)
+            const pri = row.priority || 'medium'
+            const clientLines = clientCompanyLine(row)
+            const isCompleting = completingIds.has(row.id)
+
+            return (
+              <div
+                key={row.id}
+                className={`ops-dash__ship-row ops-dash__task-row${completed ? ' ops-dash__task-row--done' : ''}`}
+                role={canNav ? 'button' : undefined}
+                tabIndex={canNav ? 0 : undefined}
+                onClick={() => {
+                  if (canNav) goToShipment(sid)
+                }}
+                onKeyDown={(e) => {
+                  if (!canNav) return
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    goToShipment(sid)
+                  }
+                }}
+              >
+                <div className={`ops-dash__row-accent ${accentClass}`} aria-hidden />
+                <div className="ops-dash__task-row-inner">
+                  <div
+                    className="ops-dash__task-check"
+                    data-table-row-ignore
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
                   >
-                    <td className="px-3 py-2 align-top text-gray-900 dark:text-gray-100">{row.name}</td>
-                    <td className="px-3 py-2 align-top">
-                      <span
-                        className={
-                          canNav
-                            ? 'font-medium text-sky-700 dark:text-sky-400'
-                            : 'font-medium text-gray-900 dark:text-gray-100'
-                        }
-                      >
-                        {row.shipment_ref}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 align-top whitespace-nowrap text-gray-700 dark:text-gray-300">
-                      {row.due_date ? formatDate(row.due_date, { locale: i18nLanguage }) : '—'}
-                    </td>
-                    <td className="px-3 py-2 align-top">
-                      {t(`shipments.ops.taskPriority.${row.priority}`, { defaultValue: row.priority || '—' })}
-                    </td>
-                    <td className="px-3 py-2 align-top text-gray-700 dark:text-gray-300">
-                      {t(
-                        `shipments.ops.taskDisplayStatus.${getTaskDisplayStatus({
-                          status: row.status,
-                          completed_at: row.completed_at,
-                          execution_at: row.execution_at,
-                          due_date: row.due_date,
-                        })}`,
-                        { defaultValue: row.status || '—' },
+                    <input
+                      type="checkbox"
+                      className="shipment-op-task-checkbox"
+                      checked={completed}
+                      disabled={completed || isCompleting || !token}
+                      onChange={(e) => handleMarkComplete(row, e)}
+                      aria-label={t('shipments.ops.markComplete')}
+                    />
+                    <button
+                      type="button"
+                      className="shipment-op-task-icon-btn"
+                      disabled={completed || isCompleting || !token}
+                      onClick={(e) => handleMarkComplete(row, e)}
+                      aria-label={t('shipments.ops.markComplete')}
+                      title={t('shipments.ops.markComplete')}
+                    >
+                      {isCompleting ? (
+                        <LoaderDots size={8} />
+                      ) : (
+                        <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden />
                       )}
-                    </td>
-                    <td className="px-3 py-2 align-top text-gray-700 dark:text-gray-300">
-                      {row.completed_at
-                        ? formatDate(row.completed_at, { locale: i18nLanguage, includeTime: true })
-                        : t('operationsDashboard.notCompleted')}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
+                    </button>
+                  </div>
+
+                  <div className="ops-dash__col ops-dash__col--task">
+                    <div className="ops-dash__task-name">{row.name}</div>
+                    {clientLines.primary ? (
+                      <div className="ops-dash__client-name">{clientLines.primary}</div>
+                    ) : null}
+                    {clientLines.secondary ? (
+                      <div className="ops-dash__bl-ref">{clientLines.secondary}</div>
+                    ) : null}
+                  </div>
+
+                  <div className="ops-dash__col">
+                    <span className="ops-dash__date-label">{t('operationsDashboard.colShipment')}</span>
+                    <span
+                      className={
+                        canNav
+                          ? 'ops-dash__bl-ref font-semibold text-sky-700 dark:text-sky-400'
+                          : 'ops-dash__bl-ref'
+                      }
+                    >
+                      {row.shipment_ref}
+                    </span>
+                  </div>
+
+                  <div className="ops-dash__col">
+                    <span className="ops-dash__date-label">{t('operationsDashboard.colDue')}</span>
+                    <span className="ops-dash__date-val ops-dash__date-val--gray">
+                      {row.due_date ? formatDate(row.due_date, { locale: i18nLanguage }) : '—'}
+                    </span>
+                  </div>
+
+                  <div className="ops-dash__col">
+                    <span className="ops-dash__date-label">{t('operationsDashboard.colPriority')}</span>
+                    <span className={priorityBadgeClass(pri)}>
+                      {t(`shipments.ops.taskPriority.${pri}`, { defaultValue: pri })}
+                    </span>
+                  </div>
+
+                  <div className="ops-dash__col">
+                    <span className="ops-dash__date-label">{t('operationsDashboard.colStatus')}</span>
+                    <span className={taskStatusBadgeClass(displayStatus)}>
+                      {t(`shipments.ops.taskDisplayStatus.${displayStatus}`, { defaultValue: displayStatus })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
     </section>
   )
 }
 
-/** Operations task dashboard (stats + task tables). Used on home `/` for operations role. */
+/** Operations task dashboard (stats + task lists). Used on home `/` for operations role. */
 export function OperationsDashboardPanel({ showHeader = true, className = '' }) {
   const { t, i18n } = useTranslation()
   const token = getStoredToken()
@@ -274,26 +367,35 @@ export function OperationsDashboardPanel({ showHeader = true, className = '' }) 
             />
           </div>
 
-          <TaskTable
+          <TaskList
             title={t('operationsDashboard.tableOverdue')}
             rows={tables.overdue}
             emptyLabel={t('operationsDashboard.tableEmpty')}
+            sectionKey="overdue"
             t={t}
             i18nLanguage={i18n.language}
+            token={token}
+            onTaskCompleted={load}
           />
-          <TaskTable
+          <TaskList
             title={t('operationsDashboard.tableToday')}
             rows={tables.today}
             emptyLabel={t('operationsDashboard.tableEmpty')}
+            sectionKey="today"
             t={t}
             i18nLanguage={i18n.language}
+            token={token}
+            onTaskCompleted={load}
           />
-          <TaskTable
+          <TaskList
             title={t('operationsDashboard.tableUpcoming', { window: upcomingLabel })}
             rows={tables.upcoming}
             emptyLabel={t('operationsDashboard.tableEmpty')}
+            sectionKey="upcoming"
             t={t}
             i18nLanguage={i18n.language}
+            token={token}
+            onTaskCompleted={load}
           />
         </>
       )}

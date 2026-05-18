@@ -3,3 +3,82 @@
   outline: 2px solid var(--form-primary, #0039c5);
   outline-offset: 2px;
 }
+
+/* Operations dashboard task lists (same row shell as Shipments ops cards) */
+.ops-dash__task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ops-dash__task-row {
+  cursor: default;
+}
+
+.ops-dash__task-row[role='button'] {
+  cursor: pointer;
+}
+
+.ops-dash__task-row--done {
+  opacity: 0.72;
+}
+
+.ops-dash__task-row-inner {
+  display: grid;
+  grid-template-columns:
+    auto
+    minmax(140px, 1.4fr)
+    minmax(88px, 0.85fr)
+    minmax(88px, 0.75fr)
+    minmax(88px, 0.7fr)
+    minmax(96px, 0.75fr);
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 1024px) {
+  .ops-dash__task-row-inner {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .ops-dash__task-row-inner .ops-dash__col {
+    border-inline-end: none;
+    border-bottom: 1px solid var(--ops-gray-100, #f1f5f9);
+  }
+
+  .ops-dash__task-row-inner .ops-dash__col:last-child {
+    border-bottom: none;
+  }
+
+  .ops-dash__task-check {
+    border-bottom: 1px solid var(--ops-gray-100, #f1f5f9);
+    padding: 10px 12px;
+  }
+}
+
+.ops-dash__task-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 10px;
+  border-inline-end: 1px solid var(--ops-gray-100, #f1f5f9);
+}
+
+.ops-dash__col--task {
+  align-items: flex-start;
+}
+
+.ops-dash__task-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ops-navy, #0f2340);
+  line-height: 1.35;
+  margin-bottom: 2px;
+}
+
+[data-theme='dark'] .ops-dash__task-name,
+.dark .ops-dash__task-name {
+  color: #f3f4f6;
+}

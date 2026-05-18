@@ -178,6 +178,15 @@ function serviceChipLabel(row, t) {
   return parts.join(' · ')
 }
 
+/** CUT-OFF and loading dates from العمليات → التواريخ الأساسية (not create-shipment fields). */
+function opsDashboardKeyDates(row) {
+  const op = row?.operation
+  return {
+    cutOff: op?.cut_off_date ?? null,
+    loading: op?.ops_loading_date ?? null,
+  }
+}
+
 function operationalBadgeStyle(code) {
   const c = String(code || '')
   if (c.includes('custom') || c.includes('clearance')) {
@@ -196,8 +205,7 @@ function operationalBadgeStyle(code) {
 }
 
 function DashboardRowLayout({ row, t, i18n, actionsMenuItems, menuAlignEnd, onOpen, onKeyActivate }) {
-  const cutRaw = row.operation?.cut_off_date ?? row.cut_off_date
-  const loadRaw = row.loading_date
+  const { cutOff: cutRaw, loading: loadRaw } = opsDashboardKeyDates(row)
   const cutDay = toLocalDay(cutRaw)
   const loadDay = toLocalDay(loadRaw)
   const cutTone = cutDay ? toneForCalendarDay(cutDay) : 'gray'

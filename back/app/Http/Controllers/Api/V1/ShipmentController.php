@@ -39,7 +39,16 @@ class ShipmentController extends Controller
         $this->authorize('viewAny', Shipment::class);
 
         $query = $this->buildShipmentListQuery($request)
-            ->with(['client', 'salesRep', 'lineVendor', 'shippingLine', 'originPort', 'destinationPort', 'sdForm']);
+            ->with([
+                'client',
+                'salesRep',
+                'lineVendor',
+                'shippingLine',
+                'originPort',
+                'destinationPort',
+                'sdForm',
+                'operation:id,shipment_id,cut_off_date,ops_loading_date',
+            ]);
 
         if (str_contains((string) $request->query('include'), 'latest_tracking_update')) {
             $query->with(['latestTrackingUpdate' => fn ($q) => $q->with('createdBy')]);

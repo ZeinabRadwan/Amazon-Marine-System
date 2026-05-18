@@ -138,10 +138,15 @@ class OperationsDashboardController extends Controller
      */
     private function serializeTasks($rows): array
     {
-        $rows->loadMissing(['shipment:id,booking_number,bl_number,status', 'assignedTo:id,name']);
+        $rows->loadMissing([
+            'shipment:id,booking_number,bl_number,status,client_id',
+            'shipment.client:id,company_name,name',
+            'assignedTo:id,name',
+        ]);
 
         return $rows->map(function (ShipmentOperationTask $t) {
             $ship = $t->shipment;
+            $client = $ship?->client;
             $ref = $ship?->booking_number ?: $ship?->bl_number;
             if (! $ref) {
                 $ref = $ship ? '#'.$ship->id : '—';
@@ -154,13 +159,17 @@ class OperationsDashboardController extends Controller
             return [
                 'id' => $t->id,
                 'name' => $t->name,
+                'sort_order' => $t->sort_order,
                 'shipment_id' => $t->shipment_id,
                 'shipment_ref' => $ref,
+                'client_company_name' => $client?->company_name ?? '',
+                'client_name' => $client?->name ?? '',
                 'due_date' => $due,
                 'execution_at' => $t->execution_at?->toIso8601String(),
                 'priority' => $t->priority ?? 'medium',
                 'status' => $t->status ?? 'pending',
                 'completed_at' => $t->completed_at?->toIso8601String(),
+                'assigned_to_id' => $t->assigned_to_id,
                 'assigned_to' => $t->assignedTo ? [
                     'id' => $t->assignedTo->id,
                     'name' => $t->assignedTo->name,
