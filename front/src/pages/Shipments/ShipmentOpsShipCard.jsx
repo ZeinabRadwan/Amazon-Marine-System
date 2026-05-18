@@ -370,17 +370,6 @@ function DashboardRowLayout({ row, t, i18n, actionsMenuItems, menuAlignEnd, onOp
             <span className="ops-dash__bl-ref"> </span>
           )}
         </div>
-        <div className="ops-dash__col ops-dash__col--open" onClick={(e) => e.stopPropagation()}>
-          <button
-            type="button"
-            className="ops-dash__open-btn"
-            title={t('shipments.opsCard.openShipmentAria')}
-            aria-label={t('shipments.opsCard.openShipmentAria')}
-            onClick={() => onOpen?.()}
-          >
-            <OpenIcon className="h-4 w-4" aria-hidden />
-          </button>
-        </div>
       </div>
     </div>
   )
