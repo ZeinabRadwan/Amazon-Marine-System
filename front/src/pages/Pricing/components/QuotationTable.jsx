@@ -46,6 +46,12 @@ function quotePortLabel(row, dash) {
   return pod || pol || dash
 }
 
+function quoteSeaDirection(row) {
+  if (String(row.pricing_type || '').toLowerCase() === 'inland') return null
+  const direction = String(row.pricing_direction || 'export').toLowerCase()
+  return direction === 'import' ? 'import' : 'export'
+}
+
 export default function QuotationTable({ refreshKey }) {
   const { t, i18n } = useTranslation()
   const { canManagePricingQuotes } = useAuthAccess()
@@ -174,18 +180,30 @@ export default function QuotationTable({ refreshKey }) {
     {
       key: 'quote_no',
       label: t('pricing.quotationColRecordNo', 'Record No.'),
-      render: (val, row) => (
-        <span className="inline-flex flex-wrap items-center gap-2">
-          <span className="font-bold text-gray-900 dark:text-white font-mono tabular-nums">
-            {val || (row.id != null ? String(row.id) : dash)}
-          </span>
-          {row.is_quick_quotation ?? row.quick_mode ? (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100">
-              {t('pricing.quickModeBadgeShort', 'Quick')}
+      render: (val, row) => {
+        const seaDirection = quoteSeaDirection(row)
+        return (
+          <span className="inline-flex flex-wrap items-center gap-2">
+            <span className="font-bold text-gray-900 dark:text-white font-mono tabular-nums">
+              {val || (row.id != null ? String(row.id) : dash)}
             </span>
-          ) : null}
-        </span>
-      ),
+            {seaDirection === 'import' ? (
+              <span className="quotation-table__direction quotation-table__direction--import">
+                {t('pricing.quotationSeaDirectionImport')}
+              </span>
+            ) : seaDirection === 'export' ? (
+              <span className="quotation-table__direction quotation-table__direction--export">
+                {t('pricing.quotationSeaDirectionExport')}
+              </span>
+            ) : null}
+            {row.is_quick_quotation ?? row.quick_mode ? (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100">
+                {t('pricing.quickModeBadgeShort', 'Quick')}
+              </span>
+            ) : null}
+          </span>
+        )
+      },
     },
     {
       key: 'port',

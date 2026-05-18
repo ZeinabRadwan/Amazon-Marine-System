@@ -31,7 +31,12 @@ class PricingQuoteController extends Controller
     {
         $this->authorize('viewAny', PricingQuote::class);
 
-        $query = PricingQuote::query()->with(['client', 'salesUser', 'items']);
+        $query = PricingQuote::query()->with([
+            'client',
+            'salesUser',
+            'items',
+            'offer:id,pricing_type,pricing_direction',
+        ]);
 
         if ($status = $request->query('status')) {
             $query->where('status', $status);
@@ -86,6 +91,7 @@ class PricingQuoteController extends Controller
                 'client' => $quote->client ? ['id' => $quote->client->id, 'name' => $quote->client->name] : null,
                 'sales_user' => $quote->salesUser ? ['id' => $quote->salesUser->id, 'name' => $quote->salesUser->name] : null,
                 'pricing_type' => $this->resolveQuotePricingType($quote),
+                'pricing_direction' => $this->resolveQuoteSeaDirection($quote),
                 'pol' => $quote->pol,
                 'pod' => $quote->pod,
                 'inland_port' => $quote->inland_port,
@@ -182,7 +188,7 @@ class PricingQuoteController extends Controller
             'sailing_weekdays' => ['sometimes', 'array'],
             'sailing_weekdays.*' => ['string', 'in:Saturday,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday'],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.code' => ['required', 'string', 'in:OF,THC,BL,TELEX,ISPS,PTI,POWER,INLAND,HANDLING,OTHER'],
+            'items.*.code' => ['required', 'string', Rule::in(self::PRICING_ITEM_CODES)],
             'items.*.name' => ['required', 'string', 'max:120'],
             'items.*.description' => ['nullable', 'string', 'max:255'],
             'items.*.cost_amount' => ['nullable', 'numeric', 'min:0'],
@@ -342,7 +348,7 @@ class PricingQuoteController extends Controller
             'sailing_weekdays' => ['sometimes', 'array'],
             'sailing_weekdays.*' => ['string', 'in:Saturday,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday'],
             'items' => ['sometimes', 'array', 'min:1'],
-            'items.*.code' => ['required_with:items', 'string', 'in:OF,THC,BL,TELEX,ISPS,PTI,POWER,INLAND,HANDLING,OTHER'],
+            'items.*.code' => ['required_with:items', 'string', Rule::in(self::PRICING_ITEM_CODES)],
             'items.*.name' => ['required_with:items', 'string', 'max:120'],
             'items.*.description' => ['nullable', 'string', 'max:255'],
             'items.*.cost_amount' => ['nullable', 'numeric', 'min:0'],
@@ -562,6 +568,8 @@ class PricingQuoteController extends Controller
         $reeferFreePowerDaysLabel = $showReeferDeferredPower
             ? $this->reeferFreePowerDaysLabelForPdf($quote)
             : null;
+        $showOwsDeferred = $isSeaQuote && $this->quoteShowsDeferredOws($quote);
+        $owsDeferredLines = $showOwsDeferred ? $this->owsDeferredFootnoteLinesForPdf($quote) : [];
 
         $html = view('pricing.quote_pdf', [
             'quote' => $quote,
@@ -592,6 +600,8 @@ class PricingQuoteController extends Controller
             'showReeferDeferredPower' => $showReeferDeferredPower,
             'reeferPowerPerDay' => $reeferPowerPerDay,
             'reeferFreePowerDaysLabel' => $reeferFreePowerDaysLabel,
+            'showOwsDeferred' => $showOwsDeferred,
+            'owsDeferredLines' => $owsDeferredLines,
         ])->render();
 
         $mpdf = new Mpdf([
@@ -1100,6 +1110,135 @@ class PricingQuoteController extends Controller
         return $days === 1 ? '1 Power Free Day' : "{$days} Power Free Days";
     }
 
+    /**
+     * Import OWS — informational footnote on PDF (same idea as deferred reefer power).
+     */
+    protected function quoteShowsDeferredOws(PricingQuote $quote): bool
+    {
+        if ($this->resolveQuotePricingType($quote) !== 'sea') {
+            return false;
+        }
+
+        $ows = $this->owsDataForQuote($quote);
+
+        return $ows !== null && ! empty($ows['enabled']);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    protected function owsDataForQuote(PricingQuote $quote): ?array
+    {
+        $data = $quote->free_time_data;
+        if (is_array($data) && is_array($data['ows'] ?? null)) {
+            $normalized = $this->normalizeOwsData($data['ows']);
+            if ($normalized !== null) {
+                return $normalized;
+            }
+        }
+
+        if (! $quote->pricing_offer_id) {
+            return null;
+        }
+
+        $offer = $quote->relationLoaded('offer')
+            ? $quote->offer
+            : PricingOffer::query()->find($quote->pricing_offer_id);
+
+        if (! $offer || $offer->pricing_direction !== 'import') {
+            return null;
+        }
+
+        return $this->normalizeOwsData($offer->ows_data);
+    }
+
+    /**
+     * @param  array<string, mixed>  $raw
+     * @return array<string, mixed>|null
+     */
+    protected function normalizeOwsData(array $raw): ?array
+    {
+        if (empty($raw['enabled'])) {
+            return null;
+        }
+
+        return $raw;
+    }
+
+    /**
+     * English detail lines after "OWS:" — not included in section totals.
+     *
+     * @return list<string>
+     */
+    protected function owsDeferredFootnoteLinesForPdf(PricingQuote $quote): array
+    {
+        $ows = $this->owsDataForQuote($quote);
+        if ($ows === null) {
+            return [];
+        }
+
+        $lines = [];
+        $mode = ($ows['mode'] ?? 'fixed') === 'range' ? 'range' : 'fixed';
+
+        if ($mode === 'fixed' && is_array($ows['fixed'] ?? null)) {
+            $detail = $this->formatOwsPdfDetailLine($ows['fixed'], true);
+            if ($detail !== '') {
+                $lines[] = $detail;
+            }
+        } else {
+            foreach ($ows['ranges'] ?? [] as $range) {
+                if (! is_array($range)) {
+                    continue;
+                }
+                $detail = $this->formatOwsPdfDetailLine($range, false);
+                if ($detail !== '') {
+                    $lines[] = $detail;
+                }
+            }
+        }
+
+        return $lines;
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     */
+    protected function formatOwsPdfDetailLine(array $row, bool $isFixed): string
+    {
+        $from = $row['from'] ?? ($isFixed ? ($row['weight'] ?? null) : null);
+        $to = $row['to'] ?? ($isFixed ? $from : null);
+        $unit = strtoupper((string) ($row['unit'] ?? 'KG'));
+        $price = $row['price'] ?? null;
+        $currency = strtoupper((string) ($row['currency'] ?? 'USD'));
+
+        $range = '';
+        if ($from !== null && $to !== null && (float) $from !== (float) $to) {
+            $range = rtrim(rtrim(number_format((float) $from, 0, '.', ''), '.'), '.')
+                .'–'
+                .rtrim(rtrim(number_format((float) $to, 0, '.', ''), '.'), '.')
+                .' '.$unit;
+        } elseif ($from !== null) {
+            $range = rtrim(rtrim(number_format((float) $from, 0, '.', ''), '.'), '.').' '.$unit;
+        }
+
+        $money = '';
+        if ($price !== null && is_numeric($price)) {
+            $money = rtrim(rtrim(number_format((float) $price, 2, '.', ''), '0'), '.').' '.$currency;
+        }
+
+        if ($range !== '' && $money !== '') {
+            return $range.' → '.$money;
+        }
+        if ($money !== '') {
+            return $money;
+        }
+        if ($range !== '') {
+            return 'for '.$range;
+        }
+
+        return '';
+    }
+
     protected function linkedOfferHasReeferPowerRate(PricingQuote $quote): bool
     {
         if (! $quote->pricing_offer_id) {
@@ -1269,7 +1408,16 @@ class PricingQuoteController extends Controller
             'client' => $quote->client ? ['id' => $quote->client->id, 'name' => $quote->client->name] : null,
             'sales_user' => $quote->salesUser ? ['id' => $quote->salesUser->id, 'name' => $quote->salesUser->name] : null,
             'pricing_offer_id' => $quote->pricing_offer_id,
+            'offer' => $quote->relationLoaded('offer') && $quote->offer
+                ? [
+                    'id' => $quote->offer->id,
+                    'pricing_type' => $quote->offer->pricing_type,
+                    'pricing_direction' => $quote->offer->pricing_direction ?? 'export',
+                    'ows_data' => $quote->offer->ows_data,
+                ]
+                : null,
             'pricing_type' => $this->resolveQuotePricingType($quote),
+            'pricing_direction' => $this->resolveQuoteSeaDirection($quote),
             'inland_port' => $quote->inland_port,
             'inland_address' => $quote->inland_address,
             'origin_rate_snapshot_id' => $quote->origin_rate_snapshot_id,
@@ -1344,6 +1492,36 @@ class PricingQuoteController extends Controller
         }
 
         return 'sea';
+    }
+
+    /**
+     * Sea quotations only: export vs import (from linked rate sheet or line items).
+     */
+    protected function resolveQuoteSeaDirection(PricingQuote $quote): ?string
+    {
+        if ($this->resolveQuotePricingType($quote) !== 'sea') {
+            return null;
+        }
+
+        $quote->loadMissing('items', 'offer');
+
+        if ($quote->offer) {
+            return $quote->offer->pricing_direction ?? 'export';
+        }
+
+        $hasDthc = $quote->items->contains(
+            fn (PricingQuoteItem $i): bool => strtoupper((string) $i->code) === 'DTHC'
+        );
+        if ($hasDthc) {
+            return 'import';
+        }
+
+        $freeTime = $quote->free_time_data;
+        if (is_array($freeTime) && ! empty($freeTime['ows']['enabled'])) {
+            return 'import';
+        }
+
+        return 'export';
     }
 
     protected function resolveQuotePricingType(PricingQuote $quote): string

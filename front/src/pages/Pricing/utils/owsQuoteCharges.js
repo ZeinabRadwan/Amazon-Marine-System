@@ -117,16 +117,28 @@ export function buildOwsFreeTimeDataPayload(owsMeta) {
 
 export function resolveOwsMeta(quote) {
   const stored = quote?.free_time_data?.ows
-  if (stored?.enabled || stored?.deferred) {
-    return { showFootnote: true, ows: normalizeOwsData(stored) }
+  if (stored) {
+    const ows = normalizeOwsData(stored)
+    if (ows?.enabled) {
+      return { showFootnote: true, ows }
+    }
   }
+
+  const offer = quote?.offer
+  if (offer && isImportSeaOffer(offer)) {
+    const ows = normalizeOwsData(offer.ows_data)
+    if (ows?.enabled) {
+      return { showFootnote: true, ows }
+    }
+  }
+
   return null
 }
 
 export function shouldShowOwsFootnote(quoteOrOffer, owsMeta) {
-  if (owsMeta?.showFootnote) return true
+  if (owsMeta?.ows?.enabled) return true
   if (quoteOrOffer?.pricing_type === 'sea') {
-    return Boolean(extractOwsFromOffer(quoteOrOffer)?.showFootnote)
+    return Boolean(extractOwsFromOffer(quoteOrOffer)?.ows?.enabled)
   }
   return false
 }
@@ -170,29 +182,36 @@ export function formatOwsSalesLines(ows) {
     .filter(Boolean)
 }
 
-/** Quotation footnote — short English, no calculations. */
-export function formatOwsQuoteFootnote(ows) {
-  const data = normalizeOwsData(ows)
-  if (!data?.enabled) return ''
-
-  if (data.mode === 'fixed' && data.fixed) {
-    const { weight, unit, price, currency } = data.fixed
-    const range = weight != null ? formatWeightRange(weight, weight, unit) : ''
-    const p = formatMoney(price, currency)
-    if (range && p) return `for ${range}`
-    if (p) return p
-    if (range) return `for ${range}`
-    return ''
-  }
-
-  const first = (data.ranges || [])[0]
-  if (!first) return ''
-  const range = formatWeightRange(first.from, first.to, first.unit)
-  const p = formatMoney(first.price, first.currency)
-  if (range && p) return `for ${range}`
+function formatOwsQuoteDetailLine(row, isFixed) {
+  const from = row?.from ?? (isFixed ? row?.weight : null)
+  const to = row?.to ?? (isFixed ? from : null)
+  const unit = row?.unit || 'KG'
+  const range = formatWeightRange(from, to, unit)
+  const p = formatMoney(row?.price, row?.currency)
+  if (range && p) return `${range} → ${p}`
   if (p) return p
   if (range) return `for ${range}`
   return ''
+}
+
+/** Quotation footnote lines — English only, no calculations; one line per OWS band. */
+export function formatOwsQuoteFootnoteLines(ows) {
+  const data = normalizeOwsData(ows)
+  if (!data?.enabled) return []
+
+  if (data.mode === 'fixed' && data.fixed) {
+    const detail = formatOwsQuoteDetailLine(data.fixed, true)
+    return detail ? [detail] : []
+  }
+
+  return (data.ranges || [])
+    .map((r) => formatOwsQuoteDetailLine(r, false))
+    .filter(Boolean)
+}
+
+/** Quotation footnote — short English, no calculations (first band only). */
+export function formatOwsQuoteFootnote(ows) {
+  return formatOwsQuoteFootnoteLines(ows)[0] || ''
 }
 
 export const defaultOwsFormState = () => ({

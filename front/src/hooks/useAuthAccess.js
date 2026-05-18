@@ -106,6 +106,12 @@ export function useAuthAccess() {
     [isAdminRole, hasAbility, isPricingRole]
   )
 
+  /** Create / edit offer modal — full pricing team or export/import sea roles. */
+  const canOpenOfferFormModal = useMemo(
+    () => canManagePricingOffers || canManageExportSeaOffers || canManageImportSeaOffers,
+    [canManagePricingOffers, canManageExportSeaOffers, canManageImportSeaOffers]
+  )
+
   const showExportSeaRates = useMemo(() => {
     if (isAdminRole || isSalesRole) return true
     if (hasAbility('pricing.manage_offers') || hasAbility('pricing.manage_export_offers')) return true
@@ -151,6 +157,7 @@ export function useAuthAccess() {
     isPricingSalesViewOnly,
     roleId,
     canManagePricingOffers,
+    canOpenOfferFormModal,
     canManageExportSeaOffers,
     canManageImportSeaOffers,
     showExportSeaRates,

@@ -461,6 +461,12 @@
     color: #b45309;
     opacity: 0.85;
 }
+.pdf-quote-ows-deferred-footnote__label {
+    font-style: italic;
+    text-decoration: line-through;
+    color: #6d28d9;
+    opacity: 0.9;
+}
 .pdf-quote-reefer-deferred-footnote__line {
     line-height: 1.45;
 }

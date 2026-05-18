@@ -216,6 +216,8 @@
                         'showReeferDeferredPower' => $section['key'] === 'ocean' && !empty($showReeferDeferredPower),
                         'reeferPowerPerDay' => $reeferPowerPerDay ?? null,
                         'reeferFreePowerDaysLabel' => $reeferFreePowerDaysLabel ?? null,
+                        'showOwsDeferred' => $section['key'] === 'ocean' && !empty($showOwsDeferred),
+                        'owsDeferredLines' => $section['key'] === 'ocean' ? ($owsDeferredLines ?? []) : [],
                         'labels' => $labels,
                     ])
                 </div>
@@ -241,6 +243,11 @@
                     'sectionEn' => 'Handling Fees',
                     'totals' => $handlingTotalsByCurrency,
                     'formatBreakdown' => $formatBreakdown,
+                    'showReeferDeferredPower' => false,
+                    'reeferPowerPerDay' => null,
+                    'reeferFreePowerDaysLabel' => null,
+                    'showOwsDeferred' => false,
+                    'owsDeferredLines' => [],
                 ])
             </div>
         @endif

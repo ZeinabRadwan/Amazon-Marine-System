@@ -174,6 +174,14 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
   const activeCanManageSeaOffers =
     activeSeaDirection === 'import' ? canManageImportSeaOffers : canManageExportSeaOffers
 
+  const canManageDetailOffer = (offer) => {
+    if (!offer) return false
+    if (offer.pricing_type === 'inland') return canManagePricingOffers
+    return (offer.pricing_direction || 'export') === 'import'
+      ? canManageImportSeaOffers
+      : canManageExportSeaOffers
+  }
+
   return (
     <div className="rate-sheet">
       <div className="rate-sheet-subtabs mb-6">
@@ -366,7 +374,7 @@ export default function RateSheet({ refreshKey, onEdit, onAddOffer }) {
         isOpen={!!detailOffer}
         offer={detailOffer}
         onClose={() => setDetailOffer(null)}
-        canManageOffers={canManagePricingOffers}
+        canManageOffers={canManageDetailOffer(detailOffer)}
         onMutate={refetch}
         onOfferUpdated={setDetailOffer}
         onCreateQuotation={

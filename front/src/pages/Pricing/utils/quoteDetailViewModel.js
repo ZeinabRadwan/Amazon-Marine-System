@@ -12,7 +12,7 @@ import {
   resolveReeferDeferredMeta,
   shouldShowReeferDeferredPowerFootnote,
 } from './reeferQuoteCharges'
-import { resolveOwsMeta, shouldShowOwsFootnote } from './owsQuoteCharges'
+import { resolveOwsMeta } from './owsQuoteCharges'
 import { sortSeaOceanQuoteLines } from './seaPricingOrder'
 
 const OCEAN_CODES = new Set(['OF', 'DTHC', 'THC', 'BL', 'TELEX', 'ISPS', 'PTI', 'POWER'])
@@ -166,7 +166,7 @@ export function buildQuoteDetailViewModel(quote) {
   const reeferDeferred = resolveReeferDeferredMeta(quote)
   const showReeferDeferredPowerFootnote = shouldShowReeferDeferredPowerFootnote(isReefer, reeferDeferred)
   const owsDeferred = resolveOwsMeta(quote)
-  const showOwsDeferredFootnote = shouldShowOwsFootnote(quote, owsDeferred)
+  const showOwsDeferredFootnote = Boolean(owsDeferred?.ows?.enabled)
   const items = Array.isArray(quote?.items) ? quote.items : []
 
   const oceanLines = []

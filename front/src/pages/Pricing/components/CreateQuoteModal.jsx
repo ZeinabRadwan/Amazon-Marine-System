@@ -326,6 +326,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
     (code) => {
       const keyMap = {
         OF: 'quoteCodeOF',
+        DTHC: 'quoteCodeDTHC',
         THC: 'quoteCodeTHC',
         BL: 'quoteCodeBL',
         TELEX: 'quoteCodeTELEX',

@@ -1,7 +1,7 @@
 export const QUOTE_PRICING_TYPE_SEA = 'sea'
 export const QUOTE_PRICING_TYPE_INLAND = 'inland'
 
-const OCEAN_ITEM_CODES = new Set(['OF', 'THC', 'BL', 'TELEX', 'ISPS', 'PTI', 'POWER'])
+const OCEAN_ITEM_CODES = new Set(['OF', 'DTHC', 'THC', 'BL', 'TELEX', 'ISPS', 'PTI', 'POWER'])
 
 /**
  * Single source of truth for quotation module (sea vs inland).

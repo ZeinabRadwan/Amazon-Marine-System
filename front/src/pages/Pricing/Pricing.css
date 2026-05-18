@@ -5494,6 +5494,45 @@
   border: 1px solid rgba(34, 197, 94, 0.35);
 }
 
+.quotation-table__direction {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.quotation-table__direction--export {
+  background: rgba(59, 130, 246, 0.12);
+  color: #1d4ed8;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+}
+
+.quotation-table__direction--import {
+  background: rgba(139, 92, 246, 0.12);
+  color: #6d28d9;
+  border: 1px solid rgba(139, 92, 246, 0.35);
+}
+
+[data-theme='dark'] .quotation-table__direction--export,
+.dark .quotation-table__direction--export {
+  background: rgba(59, 130, 246, 0.18);
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+[data-theme='dark'] .quotation-table__direction--import,
+.dark .quotation-table__direction--import {
+  background: rgba(139, 92, 246, 0.18);
+  color: #c4b5fd;
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
 .quotation-table__status {
   display: inline-flex;
   align-items: center;

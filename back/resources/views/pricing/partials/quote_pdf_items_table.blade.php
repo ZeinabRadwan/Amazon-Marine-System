@@ -1,4 +1,9 @@
 {{-- Line items table with section subtotal footer (quotation PDF) --}}
+@php
+    $showReeferDeferredPower = !empty($showReeferDeferredPower);
+    $showOwsDeferred = !empty($showOwsDeferred);
+    $owsDeferredLines = $owsDeferredLines ?? [];
+@endphp
 <table class="pdf-inv-table" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
     <thead>
         <tr>
@@ -39,6 +44,21 @@
                     @endif
                 </td>
             </tr>
+        @endif
+        @if (!empty($showOwsDeferred) && !empty($owsDeferredLines))
+            @foreach ($owsDeferredLines as $owsDetail)
+                <tr class="pdf-quote-reefer-deferred-footnote-row pdf-quote-ows-deferred-footnote-row">
+                    <td colspan="3" class="pdf-quote-reefer-deferred-footnote-cell">
+                        <div class="pdf-quote-reefer-deferred-footnote__line">
+                            <span class="pdf-quote-reefer-deferred-footnote__plus">+</span>
+                            <em class="pdf-quote-ows-deferred-footnote__label" lang="en">OWS:</em>
+                            @if ($owsDetail !== '')
+                                <span class="pdf-quote-reefer-deferred-footnote__rate" lang="en">{{ $owsDetail }}</span>
+                            @endif
+                        </div>
+                    </td>
+                </tr>
+            @endforeach
         @endif
     </tbody>
 </table>

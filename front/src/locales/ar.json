@@ -63,6 +63,7 @@
       "notifications": "إدارة الإشعارات",
       "profile": "الملف الشخصي",
       "clientsCrm": "العملاء",
+      "leadsCrm": "العملاء المحتملين",
       "clientLookups": "بيانات العملاء المرجعية",
       "shipments": "الشحنات",
       "sdForms": "نماذج SD",
@@ -533,6 +534,8 @@
     "quotationColCustomerNo": "رقم العميل",
     "quotationColId": "المعرّف",
     "quotationColRecordNo": "رقم السجل",
+    "quotationSeaDirectionExport": "صادر",
+    "quotationSeaDirectionImport": "وارد",
     "quotationColPort": "الميناء",
     "quotationColShippingLine": "الخط الملاحي",
     "quotationOptionDelete": "حذف",
@@ -963,6 +966,7 @@
     "saveOfferActive": "حفظ",
     "actionPublishOffer": "نشر",
     "quoteCodeOF": "الشحن البحري",
+    "quoteCodeDTHC": "DTHC",
     "quoteCodeTHC": "THC",
     "quoteCodeBL": "رسوم B/L",
     "quoteCodeTELEX": "Telex Release",
@@ -2188,6 +2192,18 @@
         "containerSizes": "لا توجد أحجام حاويات بعد."
       }
     }
+  },
+  "leads": {
+    "title": "العملاء المحتملين",
+    "createLead": "إضافة عميل محتمل",
+    "noLeads": "لا يوجد عملاء محتملون بعد.",
+    "created": "تم إنشاء العميل المحتمل.",
+    "deleted": "تم حذف العميل المحتمل.",
+    "errorCreate": "فشل إنشاء العميل المحتمل.",
+    "convertToClient": "تحويل إلى عميل",
+    "converting": "جاري التحويل…",
+    "convertSuccess": "تم تحويل العميل المحتمل إلى عميل.",
+    "convertError": "تعذر تحويل العميل المحتمل."
   },
   "clients": {
     "title": "العملاء",

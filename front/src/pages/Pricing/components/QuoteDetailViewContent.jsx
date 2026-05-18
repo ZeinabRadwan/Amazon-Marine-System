@@ -112,7 +112,7 @@ export default function QuoteDetailViewContent({ quote }) {
 
       {isSeaQuote ? (
       <QuoteFinCard defaultOpen icon={Ship} title={t('pricing.quoteSectionOcean', 'القسم 1: الشحن البحري / Ocean freight')}>
-        {oceanLines.length === 0 ? (
+        {oceanLines.length === 0 && !showOwsDeferredFootnote && !showReeferDeferredPowerFootnote ? (
           <p className="text-sm text-gray-500 dark:text-gray-400 m-0">
             {t('pricing.quoteNoPricedLines', 'No line items yet. Add a row or link a sea price sheet.')}
           </p>

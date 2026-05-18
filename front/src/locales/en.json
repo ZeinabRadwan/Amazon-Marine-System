@@ -62,6 +62,7 @@
       "notifications": "Notifications",
       "profile": "Profile (me)",
       "clientsCrm": "Clients",
+      "leadsCrm": "Leads",
       "clientLookups": "Client Lookups",
       "shipments": "Shipments",
       "sdForms": "SD Forms",
@@ -532,6 +533,8 @@
     "quotationColCustomerNo": "Customer Number",
     "quotationColId": "ID",
     "quotationColRecordNo": "Record No.",
+    "quotationSeaDirectionExport": "Export",
+    "quotationSeaDirectionImport": "Import",
     "quotationColPort": "Port",
     "quotationColShippingLine": "Shipping Line",
     "quotationOptionDelete": "Delete",
@@ -962,6 +965,7 @@
     "saveOfferActive": "Save",
     "actionPublishOffer": "Publish",
     "quoteCodeOF": "Ocean Freight",
+    "quoteCodeDTHC": "DTHC",
     "quoteCodeTHC": "THC",
     "quoteCodeBL": "B/L Fee",
     "quoteCodeTELEX": "Telex Release",
@@ -2187,6 +2191,18 @@
         "containerSizes": "No container sizes yet."
       }
     }
+  },
+  "leads": {
+    "title": "Leads",
+    "createLead": "Add lead",
+    "noLeads": "No leads yet.",
+    "created": "Lead created.",
+    "deleted": "Lead deleted.",
+    "errorCreate": "Failed to create lead.",
+    "convertToClient": "Convert to client",
+    "converting": "Converting…",
+    "convertSuccess": "Lead converted to client.",
+    "convertError": "Could not convert lead."
   },
   "clients": {
     "title": "Clients",

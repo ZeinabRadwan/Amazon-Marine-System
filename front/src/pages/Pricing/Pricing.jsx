@@ -16,7 +16,7 @@ import '../Accountings/CurrencyMapBadges.css'
 
 export default function Pricing() {
   const { t } = useTranslation()
-  const { isPricingRole, isAdminRole, canManagePricingOffers, user } = useAuthAccess()
+  const { isPricingRole, isAdminRole, canOpenOfferFormModal, user } = useAuthAccess()
   const primaryRole = (user?.primary_role ?? user?.roles?.[0]?.name ?? user?.role?.name ?? '')
     .toString()
     .toLowerCase()
@@ -80,7 +80,7 @@ export default function Pricing() {
           )}
         </main>
 
-        {canManagePricingOffers ? (
+        {canOpenOfferFormModal ? (
           <OfferFormModal
             isOpen={modalConfig.isOpen}
             offerToEdit={modalConfig.offer}

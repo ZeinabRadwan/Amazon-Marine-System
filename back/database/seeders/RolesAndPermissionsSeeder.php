@@ -115,6 +115,16 @@ class RolesAndPermissionsSeeder extends Seeder
                 $permissions['pricing.view_offers'],
                 $permissions['pricing.view_quotes'],
                 $permissions['pricing.manage_quotes'],
+                $permissions['clients.view'],
+                $permissions['clients.create'],
+                $permissions['clients.edit'],
+                $permissions['clients.manage'],
+                $permissions['clients.delete'],
+                $permissions['leads.view'],
+                $permissions['leads.create'],
+                $permissions['leads.edit'],
+                $permissions['leads.manage'],
+                $permissions['leads.delete'],
             ]);
         }
 
@@ -123,6 +133,16 @@ class RolesAndPermissionsSeeder extends Seeder
                 $permissions['pricing.view_offers'],
                 $permissions['pricing.view_quotes'],
                 $permissions['pricing.manage_quotes'],
+                $permissions['clients.view'],
+                $permissions['clients.create'],
+                $permissions['clients.edit'],
+                $permissions['clients.manage'],
+                $permissions['clients.delete'],
+                $permissions['leads.view'],
+                $permissions['leads.create'],
+                $permissions['leads.edit'],
+                $permissions['leads.manage'],
+                $permissions['leads.delete'],
             ]);
         }
 
@@ -156,6 +176,7 @@ class RolesAndPermissionsSeeder extends Seeder
         $pages = [
             'dashboard',
             'clients',
+            'leads',
             'shipments',
             'sd_forms',
             'invoices',
@@ -177,19 +198,19 @@ class RolesAndPermissionsSeeder extends Seeder
         $visibilityMatrix = [
             'admin' => collect($pages)->mapWithKeys(fn (string $page): array => [$page => true])->all(),
             'sales_manager' => [
-                'dashboard' => true, 'clients' => true, 'shipments' => true, 'sd_forms' => true, 'operations' => false,
+                'dashboard' => true, 'clients' => true, 'leads' => true, 'shipments' => true, 'sd_forms' => true, 'operations' => false,
                 'invoices' => false, 'accounting' => false, 'treasury' => false, 'expenses' => false, 'pricing' => true,
                 'partners' => false, 'reports' => true, 'official_documents' => false, 'customer_service' => false,
                 'attendance' => true, 'visits' => true, 'users' => false, 'roles_permissions' => false, 'settings' => true,
             ],
             'sales' => [
-                'dashboard' => true, 'clients' => true, 'shipments' => true, 'sd_forms' => true, 'operations' => false,
+                'dashboard' => true, 'clients' => true, 'leads' => true, 'shipments' => true, 'sd_forms' => true, 'operations' => false,
                 'invoices' => false, 'accounting' => false, 'treasury' => false, 'expenses' => false, 'pricing' => true,
                 'partners' => false, 'reports' => true, 'official_documents' => false, 'customer_service' => false,
                 'attendance' => true, 'visits' => true, 'users' => false, 'roles_permissions' => false, 'settings' => true,
             ],
             'accounting' => [
-                'dashboard' => true, 'clients' => true, 'shipments' => true, 'sd_forms' => false, 'operations' => false,
+                'dashboard' => true, 'clients' => true, 'leads' => false, 'shipments' => true, 'sd_forms' => false, 'operations' => false,
                 'invoices' => true, 'accounting' => true, 'treasury' => true, 'expenses' => true, 'pricing' => false,
                 'partners' => true, 'reports' => true, 'official_documents' => false, 'customer_service' => false,
                 'attendance' => true, 'visits' => false, 'users' => false, 'roles_permissions' => false, 'settings' => true,
@@ -219,7 +240,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'attendance' => true, 'visits' => false, 'users' => false, 'roles_permissions' => false, 'settings' => true,
             ],
             'support' => [
-                'dashboard' => true, 'clients' => true, 'shipments' => true, 'sd_forms' => false, 'operations' => false,
+                'dashboard' => true, 'clients' => true, 'leads' => true, 'shipments' => true, 'sd_forms' => false, 'operations' => false,
                 'invoices' => true, 'accounting' => false, 'treasury' => false, 'expenses' => false, 'pricing' => false,
                 'partners' => false, 'reports' => false, 'official_documents' => false, 'customer_service' => true,
                 'attendance' => true, 'visits' => true, 'users' => false, 'roles_permissions' => false, 'settings' => true,

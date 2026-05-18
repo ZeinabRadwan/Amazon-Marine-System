@@ -27,7 +27,8 @@ return [
     'pages' => [
         // Sidebar order
         'dashboard' => ['name_ar' => 'لوحة التحكم', 'name_en' => 'Dashboard'],
-        'clients' => ['name_ar' => 'العملاء / CRM', 'name_en' => 'Clients / CRM'],
+        'clients' => ['name_ar' => 'العملاء', 'name_en' => 'Clients'],
+        'leads' => ['name_ar' => 'العملاء المحتملين', 'name_en' => 'Leads'],
         'shipments' => ['name_ar' => 'الشحنات', 'name_en' => 'Shipments'],
         'sd_forms' => ['name_ar' => 'نماذج SD', 'name_en' => 'SD Forms'],
         'invoices' => ['name_ar' => 'الفواتير', 'name_en' => 'Invoices'],
@@ -71,8 +72,17 @@ return [
         ],
         'clients' => [
             'clients.view',
-            'clients.manage',
+            'clients.create',
+            'clients.edit',
             'clients.delete',
+            'clients.manage',
+        ],
+        'leads' => [
+            'leads.view',
+            'leads.create',
+            'leads.edit',
+            'leads.delete',
+            'leads.manage',
         ],
         'sd_forms' => [
             'sd_forms.view',
