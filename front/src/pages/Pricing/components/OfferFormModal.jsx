@@ -1284,8 +1284,8 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                         </div>
                       ) : null}
                       <div>
-                        <label htmlFor="offer-sea-reefer-power-free" className="sea-rate-label">
-                          {t('pricing.seaReeferPowerFreeDays', 'Free power days')}
+                        <label htmlFor="offer-sea-reefer-power-free" className="sea-rate-label" lang="en">
+                          Power Free Days
                         </label>
                         <input
                           id="offer-sea-reefer-power-free"

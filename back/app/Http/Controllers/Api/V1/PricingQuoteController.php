@@ -559,6 +559,9 @@ class PricingQuoteController extends Controller
         $isInlandQuote = $quotePricingType === 'inland';
         $showReeferDeferredPower = $isSeaQuote && $this->quoteShowsDeferredReeferPower($quote);
         $reeferPowerPerDay = $showReeferDeferredPower ? $this->reeferDeferredPowerPerDayForPdf($quote) : null;
+        $reeferFreePowerDaysLabel = $showReeferDeferredPower
+            ? $this->reeferFreePowerDaysLabelForPdf($quote)
+            : null;
 
         $html = view('pricing.quote_pdf', [
             'quote' => $quote,
@@ -588,6 +591,7 @@ class PricingQuoteController extends Controller
             'formatBreakdown' => fn (array $map): string => $this->formatCurrencyBreakdown($map),
             'showReeferDeferredPower' => $showReeferDeferredPower,
             'reeferPowerPerDay' => $reeferPowerPerDay,
+            'reeferFreePowerDaysLabel' => $reeferFreePowerDaysLabel,
         ])->render();
 
         $mpdf = new Mpdf([
@@ -1054,6 +1058,46 @@ class PricingQuoteController extends Controller
         }
 
         return null;
+    }
+
+    protected function reeferFreePowerDaysForPdf(PricingQuote $quote): ?int
+    {
+        $data = $quote->free_time_data;
+        if (is_array($data) && array_key_exists('free_power_days', $data['reefer'] ?? [])) {
+            $raw = $data['reefer']['free_power_days'];
+            if ($raw !== null && $raw !== '') {
+                return max(0, (int) $raw);
+            }
+        }
+
+        if (! $quote->pricing_offer_id) {
+            return null;
+        }
+
+        $offer = $quote->relationLoaded('offer')
+            ? $quote->offer
+            : PricingOffer::query()->find($quote->pricing_offer_id);
+
+        if (! $offer || ! is_string($offer->notes)) {
+            return null;
+        }
+
+        if (preg_match('/__REEFER_POWER_FREE_DAYS__=(\d+)__/', $offer->notes, $m)) {
+            return max(0, (int) $m[1]);
+        }
+
+        return null;
+    }
+
+    /** English-only label for PDF/UI — not translated in Arabic locale. */
+    protected function reeferFreePowerDaysLabelForPdf(PricingQuote $quote): ?string
+    {
+        $days = $this->reeferFreePowerDaysForPdf($quote);
+        if ($days === null) {
+            return null;
+        }
+
+        return $days === 1 ? '1 Power Free Day' : "{$days} Power Free Days";
     }
 
     protected function linkedOfferHasReeferPowerRate(PricingQuote $quote): bool

@@ -461,3 +461,15 @@
     color: #b45309;
     opacity: 0.85;
 }
+.pdf-quote-reefer-deferred-footnote__line {
+    line-height: 1.45;
+}
+.pdf-quote-reefer-deferred-footnote__line--free {
+    margin-top: 2px;
+    font-style: italic;
+    color: #94a3b8;
+}
+.pdf-quote-reefer-deferred-footnote__rate {
+    font-style: italic;
+    margin-left: 4px;
+}

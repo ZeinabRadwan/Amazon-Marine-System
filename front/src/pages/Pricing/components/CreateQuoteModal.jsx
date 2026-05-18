@@ -1239,6 +1239,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                 grandSellingByCurrency={grandSellingByCurrency}
                 showReeferDeferredPowerFootnote={showReeferDeferredPowerFootnote}
                 reeferPowerPerDay={reeferDeferred?.powerPerDay}
+                reeferFreePowerDays={reeferDeferred?.freePowerDays}
                 showRouteSummary={showRouteSummary}
               />
             ) : (
@@ -1449,12 +1450,18 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                       sellingByCurrency={oceanSellingByCurrency}
                       footer={
                         showReeferDeferredPowerFootnote ? (
-                          <QuoteReeferDeferredFootnote powerPerDay={reeferDeferred?.powerPerDay} />
+                          <QuoteReeferDeferredFootnote
+                            powerPerDay={reeferDeferred?.powerPerDay}
+                            freePowerDays={reeferDeferred?.freePowerDays}
+                          />
                         ) : null
                       }
                     />
                   ) : showReeferDeferredPowerFootnote ? (
-                    <QuoteReeferDeferredFootnote powerPerDay={reeferDeferred?.powerPerDay} />
+                    <QuoteReeferDeferredFootnote
+                      powerPerDay={reeferDeferred?.powerPerDay}
+                      freePowerDays={reeferDeferred?.freePowerDays}
+                    />
                   ) : null}
                 </div>
               ) : isQuick ? (

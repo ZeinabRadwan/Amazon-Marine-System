@@ -132,7 +132,10 @@ export default function QuoteDetailViewContent({ quote }) {
               sellingByCurrency={oceanSellingByCurrency}
               footer={
                 showReeferDeferredPowerFootnote ? (
-                  <QuoteReeferDeferredFootnote powerPerDay={reeferDeferred?.powerPerDay} />
+                  <QuoteReeferDeferredFootnote
+                    powerPerDay={reeferDeferred?.powerPerDay}
+                    freePowerDays={reeferDeferred?.freePowerDays}
+                  />
                 ) : null
               }
             />

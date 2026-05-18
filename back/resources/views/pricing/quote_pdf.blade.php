@@ -215,6 +215,7 @@
                         'formatBreakdown' => $formatBreakdown,
                         'showReeferDeferredPower' => $section['key'] === 'ocean' && !empty($showReeferDeferredPower),
                         'reeferPowerPerDay' => $reeferPowerPerDay ?? null,
+                        'reeferFreePowerDaysLabel' => $reeferFreePowerDaysLabel ?? null,
                         'labels' => $labels,
                     ])
                 </div>

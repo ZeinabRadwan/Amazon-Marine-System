@@ -3707,6 +3707,14 @@
   text-align: end;
 }
 
+.pricing-quote-reefer-deferred-footnote__line {
+  margin: 0;
+}
+
+.pricing-quote-reefer-deferred-footnote__line--free {
+  margin-top: 0.15rem;
+}
+
 .pricing-quote-reefer-deferred-footnote__plus {
   font-weight: 700;
   margin-inline-end: 0.2rem;
@@ -3727,6 +3735,18 @@
   color: rgb(100, 116, 139);
   opacity: 0.9;
   margin-inline-start: 0.25rem;
+}
+
+.pricing-quote-reefer-deferred-footnote__free-days {
+  font-style: italic;
+  font-weight: 500;
+  color: rgb(100, 116, 139);
+  opacity: 0.85;
+}
+
+.pricing-offer-detail-reefer-info__footnote {
+  text-align: start;
+  margin: 0;
 }
 
 [data-theme='dark'] .pricing-quote-reefer-deferred-footnote,

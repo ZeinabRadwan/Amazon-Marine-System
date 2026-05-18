@@ -9,6 +9,11 @@ import PricingValidityBadge from './PricingValidityBadge'
 import PricingOfferStatusBadge from './PricingOfferStatusBadge'
 import PricingRateCardRoute from './PricingRateCardRoute'
 import { resolveOfferDisplayStatus } from '../utils/pricingOfferStatus'
+import {
+  extractReeferDeferredFromOffer,
+  formatReeferPowerFreeDaysEnglish,
+  isReeferSeaOffer,
+} from '../utils/reeferQuoteCharges'
 import '../Pricing.css'
 
 function seaTotalByCurrency(offer) {
@@ -175,6 +180,9 @@ export default function SeaFreightOffersTable({
               const totalsMap = seaTotalByCurrency(offer)
               const sailingText = formatSailingSummary(offer, i18n.language, dash, t)
               const amountFirst = Boolean(i18n.language?.startsWith('ar'))
+              const powerFreeDaysLabel = isReeferSeaOffer(offer)
+                ? formatReeferPowerFreeDaysEnglish(extractReeferDeferredFromOffer(offer).freePowerDays)
+                : ''
               return (
                 <article
                   key={offer.id}
@@ -231,6 +239,14 @@ export default function SeaFreightOffersTable({
                             size="sm"
                             amountFirst={amountFirst}
                           />
+                        </span>
+                      ) : null}
+                      {powerFreeDaysLabel ? (
+                        <span
+                          className="pricing-rate-card__tag pricing-rate-card__tag--muted pricing-rate-card__tag--reefer-power-free"
+                          lang="en"
+                        >
+                          {powerFreeDaysLabel}
                         </span>
                       ) : null}
                     </div>

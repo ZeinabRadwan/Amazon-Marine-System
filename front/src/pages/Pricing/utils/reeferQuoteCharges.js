@@ -111,3 +111,18 @@ export function formatReeferPowerPerDayRate(powerPerDay) {
   const cur = String(powerPerDay.currency || 'USD').toUpperCase()
   return `${amt} ${cur}/day`
 }
+
+/** Free power days count when set (including 0). */
+export function normalizeReeferFreePowerDays(freePowerDays) {
+  if (freePowerDays == null || freePowerDays === '') return null
+  const n = Math.max(0, Math.floor(Number(freePowerDays) || 0))
+  return Number.isFinite(n) ? n : null
+}
+
+/** Always English for UI/PDF — not translated in Arabic locale. */
+export function formatReeferPowerFreeDaysEnglish(freePowerDays) {
+  const n = normalizeReeferFreePowerDays(freePowerDays)
+  if (n == null) return ''
+  if (n === 1) return '1 Power Free Day'
+  return `${n} Power Free Days`
+}

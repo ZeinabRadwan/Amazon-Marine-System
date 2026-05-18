@@ -11,11 +11,8 @@ import {
   resolvePricingBreakdownLabel,
   seaContainerSummary,
 } from '../utils/pricingDisplay'
-import {
-  extractReeferDeferredFromOffer,
-  formatReeferPowerPerDayRate,
-  isReeferSeaOffer,
-} from '../utils/reeferQuoteCharges'
+import { extractReeferDeferredFromOffer, isReeferSeaOffer } from '../utils/reeferQuoteCharges'
+import QuoteReeferDeferredFootnote from './QuoteReeferDeferredFootnote'
 import {
   SEA_PRICING_DETAIL_FALLBACK_KEYS,
   sortSeaPricingCodeEntries,
@@ -640,28 +637,13 @@ export default function OfferDetailModal({
                   <CurrencyMapBadges value={approxTotalsNormalized} size="sm" amountFirst={amountFirst} emptyLabel={dash} />
                 </div>
               ) : null}
-              {isReeferSea && reeferSalesInfo ? (
+              {isReeferSea && reeferSalesInfo?.showPowerFootnote ? (
                 <div className="pricing-offer-detail-reefer-info" role="note">
-                  {reeferSalesInfo.powerPerDay ? (
-                    <div className="pricing-offer-detail-reefer-info__row">
-                      <span className="pricing-offer-detail-reefer-info__label">
-                        {t('pricing.seaReeferPowerPricePerDay', 'Power per day')}
-                      </span>
-                      <span className="pricing-offer-detail-reefer-info__value" lang="en">
-                        {formatReeferPowerPerDayRate(reeferSalesInfo.powerPerDay).replace('/day', ' / day')}
-                      </span>
-                    </div>
-                  ) : null}
-                  {reeferSalesInfo.freePowerDays != null && reeferSalesInfo.freePowerDays !== '' ? (
-                    <div className="pricing-offer-detail-reefer-info__row">
-                      <span className="pricing-offer-detail-reefer-info__label">
-                        {t('pricing.seaReeferPowerFreeDays', 'Free power days')}
-                      </span>
-                      <span className="pricing-offer-detail-reefer-info__value">
-                        {reeferSalesInfo.freePowerDays} {t('pricing.offerDetailDaysUnit', 'days')}
-                      </span>
-                    </div>
-                  ) : null}
+                  <QuoteReeferDeferredFootnote
+                    powerPerDay={reeferSalesInfo.powerPerDay}
+                    freePowerDays={reeferSalesInfo.freePowerDays}
+                    className="pricing-offer-detail-reefer-info__footnote"
+                  />
                   <p className="pricing-offer-detail-reefer-info__hint">
                     {t(
                       'pricing.seaReeferSalesInfoHint',
