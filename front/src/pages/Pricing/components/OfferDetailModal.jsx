@@ -11,23 +11,26 @@ import {
   resolvePricingBreakdownLabel,
   seaContainerSummary,
 } from '../utils/pricingDisplay'
+import {
+  extractReeferDeferredFromOffer,
+  formatReeferPowerPerDayRate,
+  isReeferSeaOffer,
+} from '../utils/reeferQuoteCharges'
+import {
+  SEA_PRICING_DETAIL_FALLBACK_KEYS,
+  sortSeaPricingCodeEntries,
+  sortSeaPricingItems,
+} from '../utils/seaPricingOrder'
 import { CurrencyMapBadges } from '../../Accountings/CurrencyMapBadges'
 import '../../../components/PageHeader/PageHeader.css'
 import { isOfferQuotable, resolveOfferDisplayStatus } from '../utils/pricingOfferStatus'
 import '../Pricing.css'
 
-const SEA_ITEMS = [
-  { key: 'of20', optional: false },
-  { key: 'of20rf', optional: true },
-  { key: 'of40', optional: false },
-  { key: 'thc20', optional: false },
-  { key: 'thc20rf', optional: true },
-  { key: 'thc40', optional: false },
-  { key: 'of40rf', optional: true },
-  { key: 'thcRf', optional: true },
-  { key: 'powerDay', optional: true },
-  { key: 'pti', optional: true },
-]
+const SEA_CORE_REQUIRED_KEYS = new Set(['of20', 'of40', 'thc20', 'thc40', 'blFee', 'telex'])
+const SEA_ITEMS = SEA_PRICING_DETAIL_FALLBACK_KEYS.map((key) => ({
+  key,
+  optional: !SEA_CORE_REQUIRED_KEYS.has(key),
+}))
 
 const INLAND_ITEMS = [
   { key: 'p20x1', optional: true },
@@ -280,26 +283,43 @@ export default function OfferDetailModal({
     [offer?.other_charges]
   )
 
+  const isReeferSea = Boolean(offer && isSea && isReeferSeaOffer(offer))
+
+  const reeferSalesInfo = useMemo(() => {
+    if (!offer || !isReeferSea) return null
+    return extractReeferDeferredFromOffer(offer)
+  }, [offer, isReeferSea])
+
   const breakdownRows = useMemo(() => {
     if (!offer) return []
     const dash = t('common.dash')
     const fromApi = Array.isArray(offer.pricing_items) ? offer.pricing_items : null
     const seaMode = offer.pricing_type === 'sea'
+    const mapRow = (code, label, price, currency, { informational = false } = {}) => {
+      const n = Number(price)
+      const has = Number.isFinite(n)
+      const cur = String(currency || 'USD').toUpperCase().trim() || 'USD'
+      return {
+        key: code,
+        label,
+        money: informational || !has ? null : { [cur]: n },
+        informational,
+        displayValue: informational && has ? `${n} ${cur}` : null,
+      }
+    }
+
     if (fromApi?.length) {
-      return fromApi.map((row, idx) => {
-        const n = Number(row.price)
-        const has = Number.isFinite(n)
-        const cur = String(row.currency || 'USD').toUpperCase().trim() || 'USD'
-        const code = row.code || row.item_code || row.pricing_item_code || `line-${idx}`
-        const label = seaMode
-          ? seaPricingLabel(code, t, otherChargeLabels)
-          : resolvePricingBreakdownLabel(code, t, otherChargeLabels)
-        return {
-          key: code,
-          label,
-          money: has ? { [cur]: n } : null,
-        }
-      })
+      return sortSeaPricingItems(fromApi)
+        .map((row, idx) => {
+          const code = row.code || row.item_code || row.pricing_item_code || `line-${idx}`
+          const label = seaMode
+            ? seaPricingLabel(code, t, otherChargeLabels)
+            : resolvePricingBreakdownLabel(code, t, otherChargeLabels)
+          const lower = String(code).toLowerCase()
+          const informational = isReeferSea && (lower === 'powerday' || lower === 'power_day')
+          return mapRow(code, label, row.price, row.currency, { informational })
+        })
+        .filter((r) => !(isReeferSea && String(r.key).toLowerCase() === 'powerday'))
     }
     const items = seaMode ? SEA_ITEMS : INLAND_ITEMS
     const fallbackCur = seaMode ? 'USD' : 'EGP'
@@ -312,17 +332,19 @@ export default function OfferDetailModal({
           : resolvePricingBreakdownLabel(it.key, t, otherChargeLabels)
         if (it.optional && (!item || item.price == null || item.price === '')) return null
         if (!item || item.price == null || item.price === '') {
-          return it.optional ? null : { key: it.key, label, money: null }
+          return it.optional ? null : { key: it.key, label, money: null, informational: false, displayValue: null }
         }
+        const informational = isReeferSea && it.key === 'powerDay'
+        if (informational) return null
         const n = Number(item?.price)
-        if (!Number.isFinite(n)) return it.optional ? null : { key: it.key, label, money: null }
+        if (!Number.isFinite(n)) return it.optional ? null : { key: it.key, label, money: null, informational: false, displayValue: null }
         const cur = String(item?.currency || fallbackCur).toUpperCase().trim() || fallbackCur
-        return { key: it.key, label, money: { [cur]: n } }
+        return { key: it.key, label, money: { [cur]: n }, informational: false, displayValue: null }
       })
       .filter(Boolean)
 
     if (offer.pricing && typeof offer.pricing === 'object') {
-      Object.entries(offer.pricing).forEach(([code, item]) => {
+      sortSeaPricingCodeEntries(Object.entries(offer.pricing)).forEach(([code, item]) => {
         if (knownKeys.has(code)) return
         if (!/^otherCharge\d+$/i.test(code)) return
         if (item?.price == null || item.price === '') return
@@ -335,22 +357,30 @@ export default function OfferDetailModal({
             ? seaPricingLabel(code, t, otherChargeLabels)
             : resolvePricingBreakdownLabel(code, t, otherChargeLabels),
           money: { [cur]: n },
+          informational: false,
+          displayValue: null,
         })
       })
     }
 
     return rows
-  }, [offer, t, otherChargeLabels])
+  }, [offer, t, otherChargeLabels, isReeferSea])
 
   const approxTotalsByCurrency = useMemo(() => {
     if (!offer) return {}
     const fromApi = Array.isArray(offer.pricing_items) ? offer.pricing_items : null
     if (fromApi?.length) {
-      return sumAmountsByCurrencyFromItems(fromApi.map((row) => ({ amount: row.price, currency: row.currency })))
+      const billable = fromApi.filter((row) => {
+        if (!isReeferSea) return true
+        const c = String(row.code || '').toLowerCase()
+        return c !== 'powerday' && c !== 'power_day'
+      })
+      return sumAmountsByCurrencyFromItems(billable.map((row) => ({ amount: row.price, currency: row.currency })))
     }
     const keys = offer.pricing_type === 'sea' ? SEA_KEYS : INLAND_KEYS
-    return sumPricingObjectByCurrency(offer.pricing, keys)
-  }, [offer])
+    const billableKeys = isReeferSea ? keys.filter((k) => k !== 'powerDay') : keys
+    return sumPricingObjectByCurrency(offer.pricing, billableKeys)
+  }, [offer, isReeferSea])
 
   const approxTotalCurrencyKeys = useMemo(
     () => sortCurrencyCodes(Object.keys(approxTotalsByCurrency).filter((c) => Math.abs(approxTotalsByCurrency[c] || 0) > 1e-9)),
@@ -608,6 +638,36 @@ export default function OfferDetailModal({
                       : t('pricing.total', 'Total')}
                   </span>
                   <CurrencyMapBadges value={approxTotalsNormalized} size="sm" amountFirst={amountFirst} emptyLabel={dash} />
+                </div>
+              ) : null}
+              {isReeferSea && reeferSalesInfo ? (
+                <div className="pricing-offer-detail-reefer-info" role="note">
+                  {reeferSalesInfo.powerPerDay ? (
+                    <div className="pricing-offer-detail-reefer-info__row">
+                      <span className="pricing-offer-detail-reefer-info__label">
+                        {t('pricing.seaReeferPowerPricePerDay', 'Power per day')}
+                      </span>
+                      <span className="pricing-offer-detail-reefer-info__value" lang="en">
+                        {formatReeferPowerPerDayRate(reeferSalesInfo.powerPerDay).replace('/day', ' / day')}
+                      </span>
+                    </div>
+                  ) : null}
+                  {reeferSalesInfo.freePowerDays != null && reeferSalesInfo.freePowerDays !== '' ? (
+                    <div className="pricing-offer-detail-reefer-info__row">
+                      <span className="pricing-offer-detail-reefer-info__label">
+                        {t('pricing.seaReeferPowerFreeDays', 'Free power days')}
+                      </span>
+                      <span className="pricing-offer-detail-reefer-info__value">
+                        {reeferSalesInfo.freePowerDays} {t('pricing.offerDetailDaysUnit', 'days')}
+                      </span>
+                    </div>
+                  ) : null}
+                  <p className="pricing-offer-detail-reefer-info__hint">
+                    {t(
+                      'pricing.seaReeferSalesInfoHint',
+                      'Power and free days are reference only — not included in the total above.'
+                    )}
+                  </p>
                 </div>
               ) : null}
             </div>

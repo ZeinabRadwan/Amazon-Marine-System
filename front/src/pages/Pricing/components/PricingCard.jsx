@@ -4,6 +4,7 @@ import { CheckCircle, Archive, Loader2, FilePlus2, Eye, Pencil } from 'lucide-re
 import { useMutateOffer } from '../../../hooks/usePricing'
 import { IconActionButton, IconActionButtonGroup } from '../../../components/Table'
 import { formatDate, formatLocaleMoney, sortCurrencyCodes, sumPricingObjectByCurrency } from '../../../utils/dateUtils'
+import { isReeferSeaOffer } from '../utils/reeferQuoteCharges'
 import {
   INLAND_PRICE_KEYS,
   SEA_PRICE_KEYS,
@@ -77,7 +78,9 @@ export default function PricingCard({
   const freeStr = offer.dnd?.trim() || '—'
   const validStr = offer.valid_to ? formatDate(offer.valid_to, { locale: i18n.language }) : ''
 
-  const approxTotalsByCurrency = sumPricingObjectByCurrency(p, isSea ? SEA_PRICE_KEYS : INLAND_PRICE_KEYS)
+  const seaKeys =
+    isSea && isReeferSeaOffer(offer) ? SEA_PRICE_KEYS.filter((k) => k !== 'powerDay') : isSea ? SEA_PRICE_KEYS : INLAND_PRICE_KEYS
+  const approxTotalsByCurrency = sumPricingObjectByCurrency(p, seaKeys)
   const approxTotalKeys = sortCurrencyCodes(
     Object.keys(approxTotalsByCurrency).filter((c) => Math.abs(approxTotalsByCurrency[c] || 0) > 1e-9)
   )

@@ -18,6 +18,7 @@ import {
   priceToFormString,
 } from '../utils/pricingFormNumeric'
 import SeaCustomChargeEntry, { SEA_PRICING_CURRENCIES } from './SeaCustomChargeEntry'
+import { compareSeaPricingCodes, sortSeaPricingCodeEntries } from '../utils/seaPricingOrder'
 
 /** Canonical weekday names stored in API (`weekly_sailing_days` comma-separated); sort order Sat → Fri */
 const WEEK_DAYS = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
@@ -321,9 +322,7 @@ function buildSeaPricingStateFromOffer(offer, oceanUnitTypes) {
   if (meta.type === 'Reefer') {
     usedCodes.add('pti')
   }
-  const extras = Object.entries(pricing)
-    .filter(([code]) => !usedCodes.has(code))
-    .sort(([a], [b]) => a.localeCompare(b))
+  const extras = sortSeaPricingCodeEntries(Object.entries(pricing)).filter(([code]) => !usedCodes.has(code))
   const descParts = offer?.other_charges ? String(offer.other_charges).split(/\s*\|\s*/) : []
   const seaCustomLines = extras.map(([code, item], idx) => ({
     id: `loaded-${code}-${idx}`,
@@ -647,7 +646,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
       .map((row) => {
         const amount = parseOptionalAmount(row.amount)
         if (amount == null || amount < 0) return null
-        if (row.name === 'Power' && oceanMeta.type !== 'Reefer') return null
+        if (row.name === 'Power') return null
         const code = inferLegacyPricingCode(row.name, form.container_preset, SEA_OCEAN_UNIT_TYPES, 0)
         return {
           code,
@@ -691,9 +690,21 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
           currency: reeferExtras.pti_currency || 'USD',
         })
       }
+      const powerAmt = parseOptionalAmount(seaPowerRow?.amount)
+      if (powerAmt != null && powerAmt >= 0) {
+        parsedItems.push({
+          code: 'powerDay',
+          name: 'Power',
+          description: '',
+          amount: powerAmt,
+          currency: seaPowerRow?.currency || 'USD',
+        })
+      }
     }
 
     if (!parsedItems.length) return
+
+    parsedItems.sort((a, b) => compareSeaPricingCodes(a.code, b.code))
 
     const pricing = {}
     parsedItems.forEach((row) => {
@@ -1301,7 +1312,7 @@ export default function OfferFormModal({ isOpen, onClose, onSuccess, offerToEdit
                       <p className="sea-rate-reefer-alert__body">
                         {t(
                           'pricing.seaReeferPowerSalesNote',
-                          'Power charges are NOT included in the total quotation price. They are calculated separately based on actual port stay days after deducting free power days. Example: if free power days = 3, daily power price = USD 25, and the container stayed 5 days, then: (5 − 3) × 25 = USD 50.'
+                          'Power per day and free power days are for sales reference only. They are not multiplied and are not included in the rate total or quotation — port power is billed later from actual stay days.'
                         )}
                       </p>
                     </div>

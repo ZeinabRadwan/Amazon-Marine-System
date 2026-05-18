@@ -1,8 +1,8 @@
-/** Pricing keys on sea rate sheets that stay internal — not billable quotation lines. */
-export const REEFER_DEFERRED_SOURCE_KEYS = new Set(['pti', 'powerday'])
+/** Pricing keys excluded from quotation lines / totals (daily rate only — not multiplied). */
+export const REEFER_DEFERRED_SOURCE_KEYS = new Set(['powerday'])
 
 /** Quote item codes excluded from quotation lines / totals when container is reefer. */
-export const REEFER_DEFERRED_QUOTE_CODES = new Set(['PTI', 'POWER'])
+export const REEFER_DEFERRED_QUOTE_CODES = new Set(['POWER'])
 
 export function extractPowerFreeDaysFromNotes(notes) {
   const m = String(notes || '').match(/__REEFER_POWER_FREE_DAYS__=(\d+)__/)
@@ -29,6 +29,18 @@ export function isReeferContainerSpec(containerType, containerSpec) {
     .includes('reefer')
 }
 
+export function isReeferSeaOffer(offer) {
+  if (!offer || offer.pricing_type !== 'sea') return false
+  const p = offer.pricing || {}
+  if (p.of20rf?.price != null || p.of40rf?.price != null || p.thc20rf?.price != null || p.thcRf?.price != null) {
+    return true
+  }
+  if (p.powerDay?.price != null || p.pti?.price != null) return true
+  const notes = String(offer.notes || '')
+  if (/reefer|refrigerat/i.test(notes)) return true
+  return false
+}
+
 export function filterBillableOceanLines(lines, isReefer) {
   if (!isReefer || !Array.isArray(lines)) return lines || []
   return lines.filter((line) => !isReeferDeferredOceanLine(line))
@@ -36,10 +48,7 @@ export function filterBillableOceanLines(lines, isReefer) {
 
 export function extractReeferDeferredFromOffer(offer) {
   const pricing = offer?.pricing || {}
-  const ptiRaw = pricing.pti
   const powerRaw = pricing.powerDay
-  const ptiAmount =
-    ptiRaw?.price != null && ptiRaw.price !== '' ? Number(ptiRaw.price) : null
   const powerAmount =
     powerRaw?.price != null && powerRaw.price !== '' ? Number(powerRaw.price) : null
   const freeDaysRaw = extractPowerFreeDaysFromNotes(offer?.notes)
@@ -52,23 +61,18 @@ export function extractReeferDeferredFromOffer(offer) {
     powerPerDay: hasPowerRate
       ? { amount: powerAmount, currency: powerRaw?.currency || 'USD' }
       : null,
-    pti:
-      ptiAmount != null && Number.isFinite(ptiAmount) && ptiAmount >= 0
-        ? { amount: ptiAmount, currency: ptiRaw?.currency || 'USD' }
-        : null,
     freePowerDays,
   }
 }
 
-/** Persisted on quote.free_time_data for sales reference; not shown as line items. */
+/** Persisted on quote.free_time_data — power rate + free days for sales; not billable totals. */
 export function buildReeferFreeTimeDataPayload(deferred) {
-  if (!deferred?.showPowerFootnote) return null
+  if (!deferred?.showPowerFootnote && deferred?.freePowerDays == null) return null
   return {
     reefer: {
-      deferred_power: true,
-      power_per_day: deferred.powerPerDay,
-      pti: deferred.pti,
-      free_power_days: deferred.freePowerDays,
+      deferred_power: Boolean(deferred?.showPowerFootnote),
+      power_per_day: deferred?.powerPerDay ?? null,
+      free_power_days: deferred?.freePowerDays,
     },
   }
 }
@@ -78,11 +82,10 @@ export function resolveReeferDeferredMeta(quote) {
   if (!isReefer) return null
 
   const stored = quote?.free_time_data?.reefer
-  if (stored?.deferred_power) {
+  if (stored && (stored.deferred_power || stored.power_per_day)) {
     return {
-      showPowerFootnote: true,
+      showPowerFootnote: Boolean(stored.deferred_power || stored.power_per_day),
       powerPerDay: stored.power_per_day ?? null,
-      pti: stored.pti ?? null,
       freePowerDays: stored.free_power_days ?? null,
     }
   }
@@ -90,7 +93,7 @@ export function resolveReeferDeferredMeta(quote) {
   const items = Array.isArray(quote?.items) ? quote.items : []
   const hadPower = items.some((it) => isReeferDeferredQuoteCode(it.code))
   if (hadPower) {
-    return { showPowerFootnote: true, powerPerDay: null, pti: null, freePowerDays: null }
+    return { showPowerFootnote: true, powerPerDay: null, freePowerDays: null }
   }
 
   return null
@@ -98,4 +101,13 @@ export function resolveReeferDeferredMeta(quote) {
 
 export function shouldShowReeferDeferredPowerFootnote(isReefer, deferredMeta) {
   return Boolean(isReefer && deferredMeta?.showPowerFootnote)
+}
+
+/** e.g. "35 USD/day" for quotation footnote */
+export function formatReeferPowerPerDayRate(powerPerDay) {
+  if (powerPerDay?.amount == null || powerPerDay.amount === '') return ''
+  const amt = Number(powerPerDay.amount)
+  if (!Number.isFinite(amt)) return ''
+  const cur = String(powerPerDay.currency || 'USD').toUpperCase()
+  return `${amt} ${cur}/day`
 }

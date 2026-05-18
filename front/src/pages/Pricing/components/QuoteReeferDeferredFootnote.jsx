@@ -1,10 +1,12 @@
 import { useTranslation } from 'react-i18next'
+import { formatReeferPowerPerDayRate } from '../utils/reeferQuoteCharges'
 
 /**
  * Shown below ocean pricing totals when reefer power is deferred (not in grand total).
  */
-export default function QuoteReeferDeferredFootnote({ className = '' }) {
+export default function QuoteReeferDeferredFootnote({ powerPerDay, className = '' }) {
   const { t } = useTranslation()
+  const rate = formatReeferPowerPerDayRate(powerPerDay)
 
   return (
     <p
@@ -21,6 +23,12 @@ export default function QuoteReeferDeferredFootnote({ className = '' }) {
       <span className="pricing-quote-reefer-deferred-footnote__power" lang="en">
         Power
       </span>
+      {rate ? (
+        <span className="pricing-quote-reefer-deferred-footnote__rate" lang="en">
+          {' '}
+          {rate}
+        </span>
+      ) : null}
     </p>
   )
 }

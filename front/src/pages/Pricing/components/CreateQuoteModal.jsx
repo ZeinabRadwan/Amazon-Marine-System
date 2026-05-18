@@ -61,6 +61,7 @@ import {
   isReeferDeferredQuoteCode,
   shouldShowReeferDeferredPowerFootnote,
 } from '../utils/reeferQuoteCharges'
+import { sortSeaOceanQuoteLines, sortSeaPricingCodeEntries } from '../utils/seaPricingOrder'
 import QuoteInlandTransportSection from './QuoteInlandTransportSection'
 import QuoteCustomsClearanceSection, { buildCustomsOfficialReceiptsNote } from './QuoteCustomsClearanceSection'
 import QuoteHandlingFeesSection from './QuoteHandlingFeesSection'
@@ -174,7 +175,7 @@ function resolveOceanLineName(sourceCode, qCode, offer, t, resolveQuoteName) {
 function mapOfferPricingToOceanLines(offer, resolveQuoteName, t) {
   const pricing = offer?.pricing || {}
   const rows = []
-  Object.entries(pricing).forEach(([sourceCode, item]) => {
+  sortSeaPricingCodeEntries(Object.entries(pricing)).forEach(([sourceCode, item]) => {
     const price = item?.price
     if (price == null || price === '') return
     const qCode = normalizeOfferCodeToQuoteCode(sourceCode)
@@ -191,7 +192,7 @@ function mapOfferPricingToOceanLines(offer, resolveQuoteName, t) {
       included: true,
     })
   })
-  return rows
+  return sortSeaOceanQuoteLines(rows)
 }
 
 function inferContainerFromOffer(offer) {
@@ -691,17 +692,11 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
       const deferredLines = prev.filter(isReeferDeferredOceanLine)
       if (!deferredLines.length) return prev
 
-      const ptiLine = deferredLines.find((l) => l.code === 'PTI')
       const powerLine = deferredLines.find((l) => l.code === 'POWER')
-      if (ptiLine || powerLine) {
+      if (powerLine) {
         const fromLines = extractReeferDeferredFromOffer({
           pricing: {
-            ...(ptiLine
-              ? { pti: { price: ptiLine.cost_amount, currency: ptiLine.currency } }
-              : {}),
-            ...(powerLine
-              ? { powerDay: { price: powerLine.cost_amount, currency: powerLine.currency } }
-              : {}),
+            powerDay: { price: powerLine.cost_amount, currency: powerLine.currency },
           },
           notes: '',
         })
@@ -711,7 +706,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                 ...fromLines,
                 showPowerFootnote: true,
                 powerPerDay: current.powerPerDay || fromLines.powerPerDay,
-                pti: current.pti || fromLines.pti,
+                freePowerDays: current?.freePowerDays ?? fromLines.freePowerDays,
               }
             : fromLines
         )
@@ -1243,6 +1238,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                 quoteProfitByCurrency={quoteProfitByCurrency}
                 grandSellingByCurrency={grandSellingByCurrency}
                 showReeferDeferredPowerFootnote={showReeferDeferredPowerFootnote}
+                reeferPowerPerDay={reeferDeferred?.powerPerDay}
                 showRouteSummary={showRouteSummary}
               />
             ) : (
@@ -1452,11 +1448,13 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                       profitByCurrency={pricingLinesProfitByCurrency}
                       sellingByCurrency={oceanSellingByCurrency}
                       footer={
-                        showReeferDeferredPowerFootnote ? <QuoteReeferDeferredFootnote /> : null
+                        showReeferDeferredPowerFootnote ? (
+                          <QuoteReeferDeferredFootnote powerPerDay={reeferDeferred?.powerPerDay} />
+                        ) : null
                       }
                     />
                   ) : showReeferDeferredPowerFootnote ? (
-                    <QuoteReeferDeferredFootnote />
+                    <QuoteReeferDeferredFootnote powerPerDay={reeferDeferred?.powerPerDay} />
                   ) : null}
                 </div>
               ) : isQuick ? (

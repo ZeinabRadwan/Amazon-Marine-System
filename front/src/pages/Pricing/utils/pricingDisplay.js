@@ -1,5 +1,7 @@
-/** Shared keys for approx. totals (must match PricingCard). */
-export const SEA_PRICE_KEYS = ['of20', 'of20rf', 'of40', 'thc20', 'thc20rf', 'thc40', 'of40rf', 'thcRf', 'powerDay', 'pti']
+import { SEA_PRICING_CODE_ORDER } from './seaPricingOrder'
+
+/** Shared keys for approx. totals (must match ocean pricing display order). */
+export const SEA_PRICE_KEYS = [...SEA_PRICING_CODE_ORDER]
 export const INLAND_PRICE_KEYS = [
   'reefer-container-40',
   'reefer-container-20',

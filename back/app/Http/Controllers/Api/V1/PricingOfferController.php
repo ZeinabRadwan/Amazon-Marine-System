@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Support\SeaPricingDisplayOrder;
 use App\Models\PricingOffer;
 use App\Models\PricingOfferItem;
 use App\Models\PricingOfferSailingDate;
@@ -406,6 +407,12 @@ class PricingOfferController extends Controller
                 'price' => (float) $item->price,
                 'currency' => $item->currency_code,
             ];
+        }
+
+        if ($offer->pricing_type === 'sea' && count($pricingItems) > 1) {
+            usort($pricingItems, static function (array $a, array $b): int {
+                return SeaPricingDisplayOrder::compare((string) ($a['code'] ?? ''), (string) ($b['code'] ?? ''));
+            });
         }
 
         return [

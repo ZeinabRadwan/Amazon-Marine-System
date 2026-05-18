@@ -90,6 +90,7 @@ export default function QuickQuoteForm({
   quoteProfitByCurrency,
   grandSellingByCurrency,
   showReeferDeferredPowerFootnote = false,
+  reeferPowerPerDay = null,
   showRouteSummary = false,
 }) {
   const { t, i18n } = useTranslation()
@@ -324,11 +325,13 @@ export default function QuickQuoteForm({
                 profitByCurrency={pricingLinesProfitByCurrency}
                 sellingByCurrency={oceanSellingByCurrency}
                 footer={
-                  showReeferDeferredPowerFootnote ? <QuoteReeferDeferredFootnote /> : null
+                  showReeferDeferredPowerFootnote ? (
+                    <QuoteReeferDeferredFootnote powerPerDay={reeferPowerPerDay} />
+                  ) : null
                 }
               />
             ) : showReeferDeferredPowerFootnote ? (
-              <QuoteReeferDeferredFootnote />
+              <QuoteReeferDeferredFootnote powerPerDay={reeferPowerPerDay} />
             ) : null}
           </>
         ) : null}

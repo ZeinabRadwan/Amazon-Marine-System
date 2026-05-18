@@ -214,6 +214,7 @@
                         'totals' => $section['totals'],
                         'formatBreakdown' => $formatBreakdown,
                         'showReeferDeferredPower' => $section['key'] === 'ocean' && !empty($showReeferDeferredPower),
+                        'reeferPowerPerDay' => $reeferPowerPerDay ?? null,
                         'labels' => $labels,
                     ])
                 </div>

@@ -558,6 +558,7 @@ class PricingQuoteController extends Controller
         $isSeaQuote = $quotePricingType === 'sea';
         $isInlandQuote = $quotePricingType === 'inland';
         $showReeferDeferredPower = $isSeaQuote && $this->quoteShowsDeferredReeferPower($quote);
+        $reeferPowerPerDay = $showReeferDeferredPower ? $this->reeferDeferredPowerPerDayForPdf($quote) : null;
 
         $html = view('pricing.quote_pdf', [
             'quote' => $quote,
@@ -586,6 +587,7 @@ class PricingQuoteController extends Controller
             'containerDisplay' => $this->quotePdfContainerDisplay($quote),
             'formatBreakdown' => fn (array $map): string => $this->formatCurrencyBreakdown($map),
             'showReeferDeferredPower' => $showReeferDeferredPower,
+            'reeferPowerPerDay' => $reeferPowerPerDay,
         ])->render();
 
         $mpdf = new Mpdf([
@@ -927,7 +929,7 @@ class PricingQuoteController extends Controller
             if ($c === 'INLAND' || $c === 'OTHER' || $c === 'HANDLING') {
                 return false;
             }
-            if ($this->quoteIsReeferContainer($quote) && in_array($c, ['PTI', 'POWER'], true)) {
+            if ($this->quoteIsReeferContainer($quote) && $c === 'POWER') {
                 return false;
             }
 
@@ -972,7 +974,7 @@ class PricingQuoteController extends Controller
             ->filter(function (PricingQuoteItem $i): bool {
                 $c = strtoupper(trim((string) ($i->code ?? '')));
 
-                return ! in_array($c, ['PTI', 'POWER'], true);
+                return $c !== 'POWER';
             })
             ->values();
     }
@@ -1005,6 +1007,53 @@ class PricingQuoteController extends Controller
         }
 
         return $this->linkedOfferHasReeferPowerRate($quote);
+    }
+
+    /**
+     * Daily power rate for deferred footnote (not multiplied by free days).
+     *
+     * @return array{amount: float, currency: string}|null
+     */
+    protected function reeferDeferredPowerPerDayForPdf(PricingQuote $quote): ?array
+    {
+        $data = $quote->free_time_data;
+        if (is_array($data) && isset($data['reefer']['power_per_day']) && is_array($data['reefer']['power_per_day'])) {
+            $ppd = $data['reefer']['power_per_day'];
+            $amount = $ppd['amount'] ?? null;
+            if ($amount !== null && is_numeric($amount)) {
+                return [
+                    'amount' => (float) $amount,
+                    'currency' => strtoupper((string) ($ppd['currency'] ?? 'USD')),
+                ];
+            }
+        }
+
+        if (! $quote->pricing_offer_id) {
+            return null;
+        }
+
+        $offer = $quote->relationLoaded('offer')
+            ? $quote->offer
+            : PricingOffer::query()->with('items')->find($quote->pricing_offer_id);
+
+        if (! $offer) {
+            return null;
+        }
+
+        foreach ($offer->items as $item) {
+            $code = strtolower(trim((string) ($item->code ?? '')));
+            if ($code !== 'powerday' && $code !== 'power_day') {
+                continue;
+            }
+            if ($item->price !== null && (float) $item->price >= 0) {
+                return [
+                    'amount' => (float) $item->price,
+                    'currency' => strtoupper((string) ($item->currency_code ?: 'USD')),
+                ];
+            }
+        }
+
+        return null;
     }
 
     protected function linkedOfferHasReeferPowerRate(PricingQuote $quote): bool

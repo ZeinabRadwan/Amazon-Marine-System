@@ -24,6 +24,12 @@
                 <td colspan="3" class="pdf-quote-reefer-deferred-footnote-cell">
                     <span class="pdf-quote-reefer-deferred-footnote__plus">+</span>
                     <em class="pdf-quote-reefer-deferred-footnote__power" lang="en">Power</em>
+                    @if (!empty($reeferPowerPerDay['amount']))
+                        <span class="pdf-quote-reefer-deferred-footnote__rate" lang="en">
+                            {{ number_format((float) $reeferPowerPerDay['amount'], 2) }}
+                            {{ strtoupper($reeferPowerPerDay['currency'] ?? 'USD') }}/day
+                        </span>
+                    @endif
                 </td>
             </tr>
         @endif

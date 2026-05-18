@@ -12,6 +12,7 @@ import {
   resolveReeferDeferredMeta,
   shouldShowReeferDeferredPowerFootnote,
 } from './reeferQuoteCharges'
+import { sortSeaOceanQuoteLines } from './seaPricingOrder'
 
 const OCEAN_CODES = new Set(['OF', 'THC', 'BL', 'TELEX', 'ISPS', 'PTI', 'POWER'])
 
@@ -263,7 +264,7 @@ export function buildQuoteDetailViewModel(quote) {
     }
   }
 
-  const billableOceanLines = filterBillableOceanLines(oceanLines, isReefer)
+  const billableOceanLines = filterBillableOceanLines(sortSeaOceanQuoteLines(oceanLines), isReefer)
   const oceanSellingByCurrency = sumLineSellingByCurrency(billableOceanLines)
   const oceanCostByCurrency = sumLineCostByCurrency(billableOceanLines)
   const pricingLinesProfitByCurrency = sumProfitsByCurrency(billableOceanLines)
@@ -326,6 +327,7 @@ export function buildQuoteDetailViewModel(quote) {
     routeSummary: buildQuoteRouteSummary(quote),
     oceanLines: billableOceanLines,
     showReeferDeferredPowerFootnote,
+    reeferDeferred,
     inlandLineRows,
     inlandOfferId,
     quickInland,

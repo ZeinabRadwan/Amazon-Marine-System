@@ -47,6 +47,7 @@ export default function QuoteDetailViewContent({ quote }) {
     hasInlandQuoteData,
     containerLabel,
     showReeferDeferredPowerFootnote,
+    reeferDeferred,
   } = vm
 
   const sailingScheduleDisplayText = formatSailingScheduleFromQuote(quote, t('common.dash', '—'))
@@ -130,7 +131,9 @@ export default function QuoteDetailViewContent({ quote }) {
               profitByCurrency={pricingLinesProfitByCurrency}
               sellingByCurrency={oceanSellingByCurrency}
               footer={
-                showReeferDeferredPowerFootnote ? <QuoteReeferDeferredFootnote /> : null
+                showReeferDeferredPowerFootnote ? (
+                  <QuoteReeferDeferredFootnote powerPerDay={reeferDeferred?.powerPerDay} />
+                ) : null
               }
             />
           </div>
