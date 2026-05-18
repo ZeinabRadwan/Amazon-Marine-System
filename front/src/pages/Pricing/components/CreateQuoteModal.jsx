@@ -12,7 +12,6 @@ import {
   Ship,
   Plus,
   Trash2,
-  CheckCircle2,
 } from 'lucide-react'
 import { useMutateQuote } from '../../../hooks/usePricing'
 import { useAuthAccess } from '../../../hooks/useAuthAccess'
@@ -29,13 +28,6 @@ import '../../Shipments/Shipments.css'
 import '../Pricing.css'
 import { formatLocaleMoney, formatPricingDecimal, mergeCurrencyAmountMaps, sortCurrencyCodes } from '../../../utils/dateUtils'
 import { displayNumericInputValue, priceToFormString } from '../utils/pricingFormNumeric'
-import {
-  clearPricingQuoteDraft,
-  getQuoteDraftScope,
-  isQuoteDraftMeaningful,
-  readPricingQuoteDraft,
-  writePricingQuoteDraft,
-} from '../utils/pricingQuoteDraftStorage'
 import {
   buildSailingScheduleFromOffer,
   formatSailingScheduleFromForm,
@@ -311,11 +303,6 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
     return 'manual'
   }, [initialOffer, initialQuickMode])
 
-  const draftScope = useMemo(
-    () => getQuoteDraftScope(initialOffer, initialQuickMode),
-    [initialOffer, initialQuickMode]
-  )
-
   const quoteCodeLabel = useCallback(
     (code) => {
       const keyMap = {
@@ -369,7 +356,6 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
   const { create, loading, error } = useMutateQuote()
 
   const [form, setForm] = useState(defaultQuoteForm)
-  const [draftRestoredBanner, setDraftRestoredBanner] = useState(false)
 
   const [oceanLines, setOceanLines] = useState([])
   const [seaOffers, setSeaOffers] = useState([])
@@ -412,93 +398,9 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
   const [quickSailingDates, setQuickSailingDates] = useState([])
   const [inlandManualOpen, setInlandManualOpen] = useState(false)
 
-  const draftPayload = useMemo(
-    () => ({
-      entryMode,
-      pricingOfferId: initialOffer?.id != null ? String(initialOffer.id) : '',
-      form,
-      oceanLines,
-      inlandOfferId,
-      inlandCost,
-      inlandSelling,
-      inlandCurrency,
-      inlandGenCost,
-      inlandGenSelling,
-      inlandGenCurrency,
-      inlandLineRows,
-      customsEnabled,
-      customsExtraItems,
-      handlingLines,
-      showCarrierOnPdf,
-      quickModeReason,
-      pricingTeamConfirmed,
-      clientAsync: clientAsync
-        ? { value: clientAsync.value, label: clientAsync.label }
-        : null,
-      quickInlandPort,
-      quickInlandGov,
-      quickInlandZone,
-      quickInlandVehicle,
-      quickSailingDates,
-      inlandManualOpen,
-    }),
-    [
-      entryMode,
-      initialOffer?.id,
-      form,
-      oceanLines,
-      inlandOfferId,
-      inlandCost,
-      inlandSelling,
-      inlandCurrency,
-      inlandGenCost,
-      inlandGenSelling,
-      inlandGenCurrency,
-      inlandLineRows,
-      customsEnabled,
-      customsExtraItems,
-      handlingLines,
-      showCarrierOnPdf,
-      quickModeReason,
-      pricingTeamConfirmed,
-      clientAsync,
-      quickInlandPort,
-      quickInlandGov,
-      quickInlandZone,
-      quickInlandVehicle,
-      quickSailingDates,
-      inlandManualOpen,
-    ]
-  )
-
-  useEffect(() => {
-    if (!isOpen) {
-      setDraftRestoredBanner(false)
-    }
-  }, [isOpen])
-
-  useEffect(() => {
-    if (!draftRestoredBanner || !isOpen) return
-    const timer = setTimeout(() => setDraftRestoredBanner(false), 6000)
-    return () => clearTimeout(timer)
-  }, [draftRestoredBanner, isOpen])
-
-  useEffect(() => {
-    if (!isOpen) return
-    const timer = setTimeout(() => {
-      writePricingQuoteDraft(draftScope, draftPayload)
-    }, 450)
-    return () => clearTimeout(timer)
-  }, [isOpen, draftScope, draftPayload])
-
-  const flushQuoteDraft = useCallback(() => {
-    writePricingQuoteDraft(draftScope, draftPayload)
-  }, [draftScope, draftPayload])
-
   const handleDismiss = useCallback(() => {
-    flushQuoteDraft()
     onClose?.()
-  }, [flushQuoteDraft, onClose])
+  }, [onClose])
 
   const applySeaOffer = useCallback(
     (offer) => {
@@ -576,57 +478,6 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
 
       setCustomsClearanceFee({ amount: certAmt, currency: certCur })
 
-      const saved = readPricingQuoteDraft(draftScope)
-      if (saved && isQuoteDraftMeaningful(saved)) {
-        setForm({ ...defaultQuoteForm(), ...(saved.form || {}) })
-        setOceanLines(Array.isArray(saved.oceanLines) ? saved.oceanLines : [])
-        setInlandOfferId(saved.inlandOfferId || '')
-        setInlandCost(saved.inlandCost ?? '')
-        setInlandSelling(saved.inlandSelling ?? '')
-        setInlandCurrency(saved.inlandCurrency || 'EGP')
-        setInlandGenCost(saved.inlandGenCost ?? '')
-        setInlandGenSelling(saved.inlandGenSelling ?? '')
-        setInlandGenCurrency(saved.inlandGenCurrency || 'EGP')
-        setInlandLineRows(Array.isArray(saved.inlandLineRows) ? saved.inlandLineRows : [])
-        setCustomsEnabled(Boolean(saved.customsEnabled))
-        setCustomsExtraItems(Array.isArray(saved.customsExtraItems) ? saved.customsExtraItems : [])
-        setHandlingLines(
-          Array.isArray(saved.handlingLines) && saved.handlingLines.length
-            ? saved.handlingLines.map((row, i) => ({
-                ...row,
-                currency: row.currency || ADMIN_HANDLING_FEE_CURRENCY,
-                isDefault: row.isDefault ?? i === 0,
-              }))
-            : [
-                {
-                  id: 'h-default',
-                  name: 'Handling Fees',
-                  amount: String(ADMIN_HANDLING_FEE_AMOUNT),
-                  currency: ADMIN_HANDLING_FEE_CURRENCY,
-                  isDefault: true,
-                },
-              ]
-        )
-        setShowCarrierOnPdf(saved.showCarrierOnPdf !== false)
-        setQuickModeReason(saved.quickModeReason ?? '')
-        setPricingTeamConfirmed(Boolean(saved.pricingTeamConfirmed))
-        setClientAsync(saved.clientAsync?.value ? saved.clientAsync : null)
-        setQuickInlandPort(saved.quickInlandPort ?? '')
-        setQuickInlandGov(saved.quickInlandGov ?? '')
-        setQuickInlandZone(saved.quickInlandZone ?? '')
-        setQuickInlandVehicle(saved.quickInlandVehicle ?? '')
-        setQuickSailingDates(
-          Array.isArray(saved.quickSailingDates)
-            ? saved.quickSailingDates.filter(Boolean)
-            : saved.quickSailingDate
-              ? [saved.quickSailingDate]
-              : []
-        )
-        setInlandManualOpen(Boolean(saved.inlandManualOpen))
-        setDraftRestoredBanner(true)
-        return
-      }
-
       setQuickModeReason('')
       setPricingTeamConfirmed(false)
       setClientAsync(null)
@@ -681,15 +532,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
     return () => {
       cancelled = true
     }
-  }, [
-    isOpen,
-    draftScope,
-    initialOffer,
-    initialQuickMode,
-    applySeaOffer,
-    t,
-    quoteCodeLabel,
-  ])
+  }, [isOpen, initialOffer, initialQuickMode, applySeaOffer, t, quoteCodeLabel])
 
   const selectedSeaOffer = useMemo(() => {
     if (!form.pricing_offer_id) return null
@@ -1187,7 +1030,6 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
 
     try {
       await create(payload)
-      clearPricingQuoteDraft(draftScope)
       onSuccess?.()
       onClose?.()
     } catch (err) {
@@ -1257,24 +1099,6 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
             <div className="shipment-fin-panel shipment-fin-panel--enter shipment-fin-panel--expenses pricing-quote-modal__panel">
           {error ? (
             <div className="mb-4 p-4 text-sm text-red-700 bg-red-50 rounded-lg dark:bg-red-900/40 dark:text-red-300">{error}</div>
-          ) : null}
-
-          {draftRestoredBanner ? (
-            <div
-              className="pricing-offer-draft-banner shipment-fin-flash shipment-fin-flash--success mb-4"
-              role="status"
-            >
-              <CheckCircle2 className="pricing-offer-draft-banner__icon" aria-hidden />
-              <span className="pricing-offer-draft-banner__text">{t('pricing.draftRestored')}</span>
-              <button
-                type="button"
-                className="pricing-offer-draft-banner__dismiss"
-                onClick={() => setDraftRestoredBanner(false)}
-                aria-label={t('common.dismiss', 'Dismiss')}
-              >
-                ×
-              </button>
-            </div>
           ) : null}
 
           <form id="quoteForm" onSubmit={handleSubmit} className="shipment-fin-panel shipment-fin-panel--enter space-y-6">
@@ -1742,10 +1566,6 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
         onCreated={(option) => {
           setClientAsync(option)
           setShowAddClientModal(false)
-          writePricingQuoteDraft(draftScope, {
-            ...draftPayload,
-            clientAsync: { value: option.value, label: option.label },
-          })
         }}
       />
     </div>
