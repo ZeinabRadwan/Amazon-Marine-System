@@ -36,6 +36,22 @@ export function isInlandQuote(quote) {
   return resolveQuotePricingType(quote) === QUOTE_PRICING_TYPE_INLAND
 }
 
+/**
+ * Create-quotation UI: show sea route summary (POL/POD, carrier, sailing) only when sea freight is involved.
+ * Standard mode: requires a selected sea rate sheet. Quick mode: requires ocean line items started.
+ */
+export function shouldShowQuoteRouteSummary({
+  isQuick = false,
+  seaOfferId = '',
+  hasOceanLines = false,
+  hasBillableOceanLines = false,
+} = {}) {
+  if (isQuick) {
+    return Boolean(hasOceanLines || hasBillableOceanLines)
+  }
+  return Boolean(String(seaOfferId ?? '').trim())
+}
+
 /** Derived route label — not user-selectable. */
 export function buildQuoteRouteSummary(quote, dash = '—') {
   if (!quote) return dash

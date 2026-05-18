@@ -65,7 +65,7 @@ import QuoteInlandTransportSection from './QuoteInlandTransportSection'
 import QuoteCustomsClearanceSection, { buildCustomsOfficialReceiptsNote } from './QuoteCustomsClearanceSection'
 import QuoteHandlingFeesSection from './QuoteHandlingFeesSection'
 import QuickQuoteForm from './quick/QuickQuoteForm'
-import { inlandRouteFromOffer } from '../utils/quotePricingType'
+import { inlandRouteFromOffer, shouldShowQuoteRouteSummary } from '../utils/quotePricingType'
 import { createQuickOceanCoreRows } from '../utils/quickQuoteConstants'
 import {
   isOtherChargePricingCode,
@@ -735,6 +735,16 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
     [oceanLines]
   )
   const showOceanPricing = oceanLines.length > 0
+  const showRouteSummary = useMemo(
+    () =>
+      shouldShowQuoteRouteSummary({
+        isQuick,
+        seaOfferId: form.pricing_offer_id,
+        hasOceanLines: oceanLines.length > 0,
+        hasBillableOceanLines: hasOceanLineData,
+      }),
+    [isQuick, form.pricing_offer_id, oceanLines.length, hasOceanLineData]
+  )
   const hasInlandLineData = useMemo(() => {
     if (isQuick) {
       if (inlandLineRows.length > 0) {
@@ -1233,6 +1243,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                 quoteProfitByCurrency={quoteProfitByCurrency}
                 grandSellingByCurrency={grandSellingByCurrency}
                 showReeferDeferredPowerFootnote={showReeferDeferredPowerFootnote}
+                showRouteSummary={showRouteSummary}
               />
             ) : (
             <>
@@ -1267,6 +1278,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
               </div>
             </QuoteFinCard>
 
+            {showRouteSummary ? (
             <QuoteFinCard icon={MapPin} title={t('pricing.quoteSectionRoute', 'ملخص المسار / Route summary')}>
               {isRouteLocked ? (
                 <div className="pricing-quote-shipment-badges">
@@ -1363,6 +1375,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                 </div>
               )}
             </QuoteFinCard>
+            ) : null}
 
             <QuoteFinCard icon={Ship} title={t('pricing.quoteSectionOcean', 'القسم 1: الشحن البحري / Ocean freight')}>
               {!isQuick ? (

@@ -86,30 +86,25 @@ export default function QuoteDetailViewContent({ quote }) {
         </div>
       </QuoteFinCard>
 
+      {isSeaQuote ? (
       <QuoteFinCard defaultOpen icon={MapPin} title={t('pricing.quoteSectionRoute', 'ملخص المسار / Route summary')}>
         <div className="pricing-quote-shipment-badges">
           <QuoteSummaryBadge label={t('pricing.quoteBadgeRoute', 'المسار')}>
             {routeSummary || buildQuoteRouteSummary(quote, dash)}
           </QuoteSummaryBadge>
-          {isSeaQuote ? (
-            <>
-              <ShippingLineSummaryBadgeReadOnly
-                line={quote?.shipping_line || dash}
-                visible={showCarrierOnPdf}
-                t={t}
-              />
-              <QuoteSummaryBadge label={t('pricing.quoteBadgeContainer', 'نوع الحاوية')}>{containerLabel}</QuoteSummaryBadge>
-              <QuoteSummaryBadge label={t('pricing.quoteBadgeTransit', 'Transit Time')}>
-                {quote?.transit_time || dash}
-              </QuoteSummaryBadge>
-              <QuoteSailingScheduleDisplay text={sailingScheduleDisplayText} />
-            </>
-          ) : null}
-          {isInlandQuote && quote?.inland_port ? (
-            <QuoteSummaryBadge label={t('pricing.port', 'Port')}>{quote.inland_port}</QuoteSummaryBadge>
-          ) : null}
+          <ShippingLineSummaryBadgeReadOnly
+            line={quote?.shipping_line || dash}
+            visible={showCarrierOnPdf}
+            t={t}
+          />
+          <QuoteSummaryBadge label={t('pricing.quoteBadgeContainer', 'نوع الحاوية')}>{containerLabel}</QuoteSummaryBadge>
+          <QuoteSummaryBadge label={t('pricing.quoteBadgeTransit', 'Transit Time')}>
+            {quote?.transit_time || dash}
+          </QuoteSummaryBadge>
+          <QuoteSailingScheduleDisplay text={sailingScheduleDisplayText} />
         </div>
       </QuoteFinCard>
+      ) : null}
 
       {isSeaQuote ? (
       <QuoteFinCard defaultOpen icon={Ship} title={t('pricing.quoteSectionOcean', 'القسم 1: الشحن البحري / Ocean freight')}>

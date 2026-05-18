@@ -90,6 +90,7 @@ export default function QuickQuoteForm({
   quoteProfitByCurrency,
   grandSellingByCurrency,
   showReeferDeferredPowerFootnote = false,
+  showRouteSummary = false,
 }) {
   const { t, i18n } = useTranslation()
   const [draftSailingDate, setDraftSailingDate] = useState('')
@@ -184,6 +185,7 @@ export default function QuickQuoteForm({
         </div>
       </QuoteFinCard>
 
+      {showRouteSummary ? (
       <QuoteFinCard icon={MapPin} title={t('pricing.quickRouteSectionTitle', 'ملخص المسار / Route summary — إدخال يدوي')}>
         <div className="pricing-quick-section space-y-3">
           <div className="pricing-quick-section-label">
@@ -297,6 +299,7 @@ export default function QuickQuoteForm({
           </div>
         </div>
       </QuoteFinCard>
+      ) : null}
 
       <QuoteFinCard icon={Ship} title={t('pricing.quoteSectionOcean', 'القسم 1: الشحن البحري / Ocean freight')}>
         <div className="pricing-quick-ocean-hint text-[11px] font-semibold text-amber-900/90 dark:text-amber-100/95 rounded-lg px-3 py-2 border border-amber-200/90 dark:border-amber-800/60 bg-amber-50/95 dark:bg-amber-950/40 mb-4">
