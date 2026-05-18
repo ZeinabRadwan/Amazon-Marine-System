@@ -151,10 +151,7 @@
 }
 
 .ops-dash__tbl-header {
-  display: grid;
-  grid-template-columns:
-    4px minmax(120px, 1.15fr) minmax(88px, 0.92fr) minmax(72px, 0.68fr) minmax(76px, 0.62fr) minmax(104px, 1.05fr) minmax(96px, 0.82fr)
-    minmax(100px, 0.95fr) 36px 40px;
+  display: flex;
   align-items: stretch;
   gap: 0;
   padding: 0;
@@ -250,12 +247,28 @@
 .ops-dash__row-inner {
   display: grid;
   grid-template-columns:
-    minmax(120px, 1.15fr) minmax(88px, 0.92fr) minmax(72px, 0.68fr) minmax(76px, 0.62fr) minmax(104px, 1.05fr) minmax(96px, 0.82fr)
-    minmax(100px, 0.95fr) 36px 40px;
+    minmax(120px, 1.15fr) minmax(88px, 0.92fr) minmax(72px, 0.68fr) minmax(76px, 0.62fr) minmax(88px, 0.78fr) minmax(88px, 0.78fr)
+    minmax(96px, 0.82fr) minmax(100px, 0.95fr) 36px;
   align-items: center;
   gap: 0;
   flex: 1;
   min-width: 0;
+}
+
+.ops-dash__row-inner--header {
+  align-items: stretch;
+}
+
+.ops-dash__row-inner--header .ops-dash__th {
+  border-inline-end: 1px solid var(--form-divider, #e5e7eb);
+}
+
+.ops-dash__row-inner--header .ops-dash__th:last-child {
+  border-inline-end: none;
+}
+
+.dark .ops-dash__row-inner--header .ops-dash__th {
+  border-inline-end-color: #374151;
 }
 
 @media (max-width: 1024px) {
@@ -345,7 +358,8 @@
   justify-content: center;
 }
 
-.ops-dash__col--dates {
+.ops-dash__col--cutoff,
+.ops-dash__col--loading {
   justify-content: center;
 }
 

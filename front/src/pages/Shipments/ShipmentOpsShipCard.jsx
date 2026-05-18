@@ -325,17 +325,11 @@ function DashboardRowLayout({ row, t, i18n, actionsMenuItems, menuAlignEnd, onOp
         <div className="ops-dash__col ops-dash__col--vessel">
           <div className="ops-dash__vessel">{vesselLine}</div>
         </div>
-        <div className="ops-dash__col ops-dash__col--dates">
-          <div className="ops-dash__dates-inner">
-            <div className="ops-dash__date-item">
-              <span className="ops-dash__date-label">{t('shipments.opsDash.cutoffLabel')}</span>
-              <span className={`ops-dash__date-val ${cutClass}`}>{cutDisplay}</span>
-            </div>
-            <div className="ops-dash__date-item">
-              <span className="ops-dash__date-label">{t('shipments.opsDash.loadingLabel')}</span>
-              <span className={`ops-dash__date-val ${loadClass}`}>{loadDisplay}</span>
-            </div>
-          </div>
+        <div className="ops-dash__col ops-dash__col--cutoff">
+          <span className={`ops-dash__date-val ${cutClass}`}>{cutDisplay}</span>
+        </div>
+        <div className="ops-dash__col ops-dash__col--loading">
+          <span className={`ops-dash__date-val ${loadClass}`}>{loadDisplay}</span>
         </div>
         <div className="ops-dash__col">
           <span className="ops-dash__status-badge" style={badgeStyle}>

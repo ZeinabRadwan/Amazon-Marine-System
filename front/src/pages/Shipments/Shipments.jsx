@@ -2439,15 +2439,17 @@ export default function Shipments() {
               <div className="ops-dash__tbl-header-wrap">
                 <div className="ops-dash__tbl-header" role="row">
                   <div className="ops-dash__th-spacer" aria-hidden />
-                  <div className="ops-dash__th">{t('shipments.opsDash.colClientShipment')}</div>
-                  <div className="ops-dash__th">{t('shipments.opsDash.colRoute')}</div>
+                  <div className="ops-dash__row-inner ops-dash__row-inner--header">
+                    <div className="ops-dash__th">{t('shipments.opsDash.colClientShipment')}</div>
+                    <div className="ops-dash__th">{t('shipments.opsDash.colRoute')}</div>
                   <div className="ops-dash__th">{t('shipments.opsDash.colContainers')}</div>
                   <div className="ops-dash__th">{t('shipments.opsDash.colVessel')}</div>
-                  <div className="ops-dash__th">{t('shipments.opsDash.colDates')}</div>
+                  <div className="ops-dash__th">{t('shipments.opsDash.colCutoff')}</div>
+                    <div className="ops-dash__th">{t('shipments.opsDash.colLoading')}</div>
                   <div className="ops-dash__th">{t('shipments.opsDash.colStatus')}</div>
                   <div className="ops-dash__th">{t('shipments.opsDash.colPlanningProcedures')}</div>
-                  <div className="ops-dash__th ops-dash__th--narrow" aria-hidden />
-                  <div className="ops-dash__th ops-dash__th--narrow" aria-hidden />
+                    <div className="ops-dash__th ops-dash__th--narrow" aria-hidden />
+                  </div>
                 </div>
               </div>
               <div className="ops-dash__ship-rows" role="list">
