@@ -130,6 +130,16 @@ function shipmentClientDisplayName(shipment) {
   return shipment?.client?.company_name ?? shipment?.client?.name ?? shipment?.client_name ?? '—'
 }
 
+function shipmentLinkedPricingQuote(shipment) {
+  return shipment?.pricing_quote ?? shipment?.pricingQuote ?? null
+}
+
+function shipmentPricingQuoteNumber(shipment) {
+  const quote = shipmentLinkedPricingQuote(shipment)
+  const ref = shipment?.quotation_reference
+  return quote?.quote_no || (typeof ref === 'string' && ref.trim() ? ref.trim() : null)
+}
+
 /** Operations key dates — same DatePicker as Create Shipment (`Shipments.jsx` booking/loading dates). */
 function OpsBasicDateField({ id, label, isoValue, onCommit, disabled }) {
   const { i18n } = useTranslation()
@@ -919,6 +929,38 @@ export default function ShipmentDetailModal({
                           <span className="shipment-detail-card__label">{t('shipments.createModal.clientName')}</span>
                           <span className="shipment-detail-card__value font-semibold">
                             {shipmentClientDisplayName(shipment)}
+                          </span>
+                        </div>
+                        <div className="shipment-detail-card__row">
+                          <span className="shipment-detail-card__label">{t('shipments.quotationLink.select')}</span>
+                          <span className="shipment-detail-card__value">
+                            {(() => {
+                              const quote = shipmentLinkedPricingQuote(shipment)
+                              const quoteNo = shipmentPricingQuoteNumber(shipment)
+                              if (!quoteNo) return '—'
+                              const statusKey = String(quote?.status || '').toLowerCase()
+                              const statusLabel =
+                                statusKey === 'accepted'
+                                  ? t('common.status.accepted')
+                                  : statusKey === 'rejected'
+                                    ? t('common.status.rejected')
+                                    : statusKey === 'pending'
+                                      ? t('common.status.pending')
+                                      : quote?.status || null
+                              return (
+                                <span className="inline-flex flex-wrap items-center gap-2">
+                                  <span className="font-mono font-semibold">{quoteNo}</span>
+                                  {statusLabel && (
+                                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                                      {statusLabel}
+                                    </span>
+                                  )}
+                                  {quote?.id != null && (
+                                    <span className="text-xs text-gray-400 dark:text-gray-500">#{quote.id}</span>
+                                  )}
+                                </span>
+                              )
+                            })()}
                           </span>
                         </div>
                         <div className="shipment-detail-card__row">

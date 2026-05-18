@@ -1501,7 +1501,6 @@ export default function Shipments() {
                 </option>
               ))}
             </select>
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t('shipments.createModal.clientLinkHint')}</p>
           </div>
           <div className="client-detail-modal__form-field">
             <label htmlFor={isEdit ? 'sh-sd-edit' : 'sh-sd-create'}>{t('shipments.selectSdForm')}</label>
@@ -1531,10 +1530,9 @@ export default function Shipments() {
                 </option>
               ))}
             </select>
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              {!numOrUndef(form.client_id)
-                ? t('shipments.sdFormHintNeedClient')
-                : sdFormsForClientLoading
+            {numOrUndef(form.client_id) && (
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {sdFormsForClientLoading
                   ? t('shipments.sdFormsLoadingForClient')
                   : sdFormsSortedForClient.length === 0
                     ? t(
@@ -1545,7 +1543,8 @@ export default function Shipments() {
                         'shipments.sdFormEligibilityHint',
                         'Only SD forms with a confirmed booking are listed here.',
                       )}
-            </p>
+              </p>
+            )}
           </div>
           {canCreateShipment && (
             <>
@@ -1579,21 +1578,6 @@ export default function Shipments() {
                     </option>
                   ))}
                 </select>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t('shipments.quotationLink.hint')}</p>
-              </div>
-              <div className="client-detail-modal__form-field">
-                <label htmlFor={isEdit ? 'sh-quote-ref-edit' : 'sh-quote-ref-create'}>
-                  {t('shipments.quotationLink.reference')}
-                </label>
-                <input
-                  id={isEdit ? 'sh-quote-ref-edit' : 'sh-quote-ref-create'}
-                  type="text"
-                  className="clients-input"
-                  value={form.quotation_reference}
-                  onChange={(e) => setForm((f) => ({ ...f, quotation_reference: e.target.value }))}
-                  disabled={disabled}
-                  placeholder={t('shipments.quotationLink.referencePlaceholder')}
-                />
               </div>
             </>
           )}
