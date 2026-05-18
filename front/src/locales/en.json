@@ -3598,7 +3598,6 @@
       "Export": "Export",
       "Import": "Import"
     },
-    "dateInputHint": "mm/dd/yyyy (browser locale)",
     "editTitle": "Edit shipment",
     "detail": "Shipment",
     "actions": "Actions",
@@ -3997,6 +3996,8 @@
     "sdFormNone": "— No SD —",
     "sdFormSelectClientFirst": "— Select a client first —",
     "sdFormsLoadingForClient": "Loading SD forms…",
+    "noEligibleSdFormsForClient": "No SD forms to link. Only confirmed or converted bookings are listed.",
+    "sdFormEligibilityHint": "Confirmed or converted bookings only.",
     "noSdFormsForClient": "No SD forms for this client.",
     "sdFormHintNeedClient": "Choose a client first. Then you can link an SD form and copy route and cargo from it.",
     "sdFormLinkHint": "Only SD forms for the selected client are listed. Pick one to fill route and cargo from the form.",

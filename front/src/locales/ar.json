@@ -3599,7 +3599,6 @@
       "Export": "تصدير",
       "Import": "استيراد"
     },
-    "dateInputHint": "يوم/شهر/سنة (حسب المتصفح)",
     "editTitle": "تعديل الشحنة",
     "detail": "الشحنة",
     "actions": "إجراءات",
@@ -4000,6 +3999,8 @@
     "sdFormNone": "— بدون SD —",
     "sdFormSelectClientFirst": "— اختر العميل أولاً —",
     "sdFormsLoadingForClient": "جاري تحميل نماذج SD…",
+    "noEligibleSdFormsForClient": "لا توجد نماذج SD للربط. يُعرض الحجز المؤكّد أو المحوّل لشحنة فقط.",
+    "sdFormEligibilityHint": "حجوزات مؤكّدة أو محوّلة لشحنة فقط.",
     "noSdFormsForClient": "لا توجد نماذج SD لهذا العميل.",
     "sdFormHintNeedClient": "اختر اسم العميل أولاً، ثم تظهر قائمة نماذج SD الخاصة به ويمكنك ربط أحدهما لنسخ المسار والبضاعة.",
     "sdFormLinkHint": "تُعرض هنا أرقام نماذج SD الموجودة للعميل المحدد فقط. عند الاختيار تُحدَّث حقول المسار والبضاعة من النموذج.",

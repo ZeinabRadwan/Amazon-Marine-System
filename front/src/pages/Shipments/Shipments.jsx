@@ -1541,14 +1541,8 @@ export default function Shipments() {
                 {sdFormsForClientLoading
                   ? t('shipments.sdFormsLoadingForClient')
                   : sdFormsSortedForClient.length === 0
-                    ? t(
-                        'shipments.noEligibleSdFormsForClient',
-                        'No confirmed SD forms for this client. Only Booking Confirmed or Completed & Converted SD forms can be linked.',
-                      )
-                    : t(
-                        'shipments.sdFormEligibilityHint',
-                        'Only SD forms with a confirmed booking are listed here.',
-                      )}
+                    ? t('shipments.noEligibleSdFormsForClient')
+                    : t('shipments.sdFormEligibilityHint')}
               </p>
             )}
           </div>
@@ -1719,9 +1713,6 @@ export default function Shipments() {
               onChange={(value) => setForm((f) => ({ ...f, booking_date: value }))}
               disabled={disabled}
             />
-            <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">
-              {t('shipments.dateInputHint')}
-            </span>
           </div>
           <div className="client-detail-modal__form-field">
             <label htmlFor="sh-booking">{t('shipments.fields.booking_number')}</label>
@@ -1940,9 +1931,6 @@ export default function Shipments() {
               onChange={(value) => setForm((f) => ({ ...f, loading_date: value }))}
               disabled={disabled}
             />
-            <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">
-              {t('shipments.dateInputHint')}
-            </span>
           </div>
           <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
             <label htmlFor="sh-notes">{t('shipments.fields.notes')}</label>
