@@ -66,7 +66,7 @@
     /* mPDF: avoid width:100% on a table cell beside other columns (causes page-wide shrink). Use pt for reliable sizing. */
     .ti-v4-root {
         font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif;
-        font-size: 13pt;
+        font-size: 8pt;
         color: #0b1828;
         direction: rtl;
         line-height: 1.45;
@@ -78,6 +78,20 @@
         table-layout: fixed;
         background: #ffffff;
         border-collapse: collapse;
+        border-spacing: 0;
+        /* mPDF: line-height on the outer table creates a gap between <tr> rows */
+        line-height: 0;
+    }
+
+    .ti-v4-page>tr>td,
+    .ti-v4-page>tbody>tr>td {
+        line-height: normal;
+        vertical-align: top;
+    }
+
+    .ti-v4-main {
+        padding: 0;
+        background: #162035;
     }
 
     .ti-v4-hd {
@@ -197,6 +211,7 @@
     .ti-v4-body {
         padding: 0 22px 22px;
         vertical-align: top;
+        line-height: 1.45;
     }
 
     .ti-v4-sec {
@@ -211,7 +226,7 @@
     .ti-v4-sec-en {
         background: #162035;
         color: #ffffff;
-        font-size: 10pt;
+        font-size: 9pt;
         font-weight: 700;
         letter-spacing: 0.08em;
         text-transform: uppercase;
@@ -225,7 +240,7 @@
     .ti-v4-sec-ar {
         background: #dde5f0;
         color: #1b2a4a;
-        font-size: 13pt;
+        font-size: 11pt;
         font-weight: 600;
         padding: 6px 12px;
         text-align: right;
@@ -255,7 +270,7 @@
     }
 
     .ti-v4-bkey-en {
-        font-size: 8pt;
+        font-size: 6pt;
         font-weight: 700;
         color: #8699b8;
         letter-spacing: 0.06em;
@@ -265,7 +280,7 @@
     }
 
     .ti-v4-bkey-ar {
-        font-size: 10pt;
+        font-size: 8pt;
         font-weight: 600;
         color: #4f6180;
     }
@@ -273,7 +288,7 @@
     .ti-v4-bval {
         background: #ffffff;
         padding: 9px 14px;
-        font-size: 14pt;
+        font-size: 8pt;
         font-weight: 500;
         color: #0b1828;
         vertical-align: middle;
@@ -290,7 +305,7 @@
     }
 
     .ti-v4-bval-bold {
-        font-size: 15pt;
+        font-size: 9pt;
         font-weight: 700;
     }
 
@@ -311,14 +326,14 @@
     .ti-v4-ctag {
         background: #162035;
         color: #ffffff;
-        font-size: 13pt;
+        font-size: 11pt;
         font-weight: 600;
         padding: 5px 14px;
     }
 
     .ti-v4-ctag-badge {
         background: #3d4f6e;
-        font-size: 11pt;
+        font-size: 8pt;
         font-weight: 800;
         padding: 2px 7px;
         margin-left: 6px;
@@ -348,7 +363,7 @@
 
     .ti-v4-dg-val {
         padding: 14px;
-        font-size: 16pt;
+        font-size: 11pt;
         font-weight: 700;
         color: #162035;
         text-align: center;
@@ -363,7 +378,7 @@
 
     .ti-v4-dg-val-mono {
         font-family: 'DejaVu Sans Mono', monospace;
-        font-size: 24pt;
+        font-size: 11pt;
         color: #1e3a6e;
     }
 
@@ -384,7 +399,7 @@
     }
 
     .ti-v4-pill-na {
-        font-size: 12pt;
+        font-size: 9pt;
         font-weight: 500;
         padding: 4px 12px;
         background: #edf1f8;
@@ -393,7 +408,7 @@
 
     .ti-v4-map-link {
         color: #1e3a6e;
-        font-size: 11pt;
+        font-size: 8pt;
         direction: ltr;
         text-decoration: underline;
     }
@@ -424,9 +439,10 @@
 
 <div class="ti-v4-root" dir="rtl" lang="ar">
     <table class="ti-v4-page" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
-        {{-- Header --}}
+        {{-- Header + body (single row avoids mPDF gap between adjacent <tr>) --}}
         <tr>
-            <td class="ti-v4-hd">
+            <td class="ti-v4-main">
+                <div class="ti-v4-hd">
                 <table width="100%" cellspacing="0" cellpadding="0" border="0" class="ti-v4-hd-row"
                     role="presentation">
                     <tr>
@@ -481,12 +497,9 @@
                         </td>
                     </tr>
                 </table>
-            </td>
-        </tr>
+                </div>
 
-        {{-- Body --}}
-        <tr>
-            <td class="ti-v4-body">
+                <div class="ti-v4-body">
                 {{-- 1 · Booking --}}
                 <table class="ti-v4-sec" width="100%" cellspacing="0" cellpadding="0" border="0"
                     role="presentation">
@@ -695,6 +708,7 @@
                             {!! ($ti['customs_notes'] ?? '') !== '' ? nl2br(e($ti['customs_notes'])) : '—' !!}</td>
                     </tr>
                 </table>
+                </div>
             </td>
         </tr>
 
