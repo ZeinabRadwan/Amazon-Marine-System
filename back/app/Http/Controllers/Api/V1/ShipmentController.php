@@ -1062,7 +1062,7 @@ class ShipmentController extends Controller
         $locale = strtolower((string) $request->header('X-App-Locale', 'en')) === 'ar' ? 'ar' : 'en';
         $baseLabels = $this->shipmentPdfLabels($locale);
         $labels = array_merge($baseLabels, $this->transportInstructionPdfExtraLabels($locale));
-        $labels['title'] = $locale === 'ar' ? 'تعليمات الشحن' : 'Transport instructions';
+        $labels['title'] = $locale === 'ar' ? 'تعليمات النقل الداخلي' : 'Internal transport instructions';
 
         $layout = PdfLayout::where('document_type', 'shipment')->first();
 
@@ -1088,6 +1088,7 @@ class ShipmentController extends Controller
             'margin_bottom' => 15,
             'margin_left' => 10,
             'margin_right' => 10,
+            'shrink_tables_to_fit' => 0,
         ]);
 
         $mpdf->WriteHTML($html);
@@ -1292,7 +1293,7 @@ class ShipmentController extends Controller
         if ($locale === 'ar') {
             return [
                 'sec_ti_summary' => 'ملخص الشحنة (تلقائي)',
-                'sec_ti_form' => 'تعليمات الشحن',
+                'sec_ti_form' => 'تعليمات النقل الداخلي',
                 'sec_ti_1_shipment' => 'معلومات الشحنة',
                 'sec_ti_2_delivery' => 'تفاصيل التسليم',
                 'sec_ti_3_contact' => 'بيانات الاتصال',
@@ -1322,7 +1323,7 @@ class ShipmentController extends Controller
 
         return [
             'sec_ti_summary' => 'Shipment summary (auto-filled)',
-            'sec_ti_form' => 'Transport instructions',
+            'sec_ti_form' => 'Internal transport instructions',
             'sec_ti_1_shipment' => 'Shipment information',
             'sec_ti_2_delivery' => 'Delivery details',
             'sec_ti_3_contact' => 'Contact details',

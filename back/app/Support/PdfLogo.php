@@ -9,6 +9,25 @@ final class PdfLogo
         return public_path('images/logo_lightmode.png');
     }
 
+    public static function transportInstructionsPath(): string
+    {
+        return public_path('images/logo_darkmode.png');
+    }
+
+    /**
+     * Dark logo for transport-instructions PDF (file:// URI), or null if missing.
+     */
+    public static function transportInstructionsImgSrc(): ?string
+    {
+        $path = self::transportInstructionsPath();
+
+        if (! is_file($path)) {
+            return null;
+        }
+
+        return 'file://'.str_replace('\\', '/', $path);
+    }
+
     /**
      * Absolute file:// URI for mPDF img src, or null if the file is missing.
      */

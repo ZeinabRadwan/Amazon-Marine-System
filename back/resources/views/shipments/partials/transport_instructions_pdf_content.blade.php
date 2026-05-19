@@ -20,7 +20,7 @@
     };
 
     $genYes = ($ti['generator'] ?? 'no') === 'yes';
-    $genPill = $genYes ? ($labels['ti_gen_yes'] ?? 'Yes') : ($labels['ti_gen_no'] ?? 'No');
+    $genPill = $genYes ? $labels['ti_gen_yes'] ?? 'Yes' : $labels['ti_gen_no'] ?? 'No';
 
     $brokerName = null;
     $bid = $ti['approved_customs_broker_id'] ?? null;
@@ -52,167 +52,431 @@
     $containerCount = $shipment->container_count;
     $containerSize = filled($shipment->container_size) ? (string) $shipment->container_size : '';
     $containerType = filled($shipment->container_type) ? (string) $shipment->container_type : '';
-    $containerTagText = trim($containerSize.($containerSize && $containerType ? ' ' : '').$containerType);
+    $containerTagText = trim($containerSize . ($containerSize && $containerType ? ' ' : '') . $containerType);
     $hasContainerTag = $containerCount !== null && $containerCount !== '' && $containerTagText !== '';
 
-    $tiRef = 'TI-'.now()->format('Y').'-'.str_pad((string) $shipment->id, 4, '0', STR_PAD_LEFT);
+    $tiRef = 'TI-' . now()->format('Y') . '-' . str_pad((string) $shipment->id, 4, '0', STR_PAD_LEFT);
     $tiGenerated = now()->format('d / m / Y');
-    $logoSrc = PdfLogo::imgSrc();
+    $logoSrc = PdfLogo::transportInstructionsImgSrc();
     $brand = $labels['brand'] ?? 'AMAZON MARINE';
     $brandTag = $labels['brand_tag'] ?? 'Ocean Freight & Logistics';
     $docTitle = $labels['title'] ?? ($labels['sec_ti_form'] ?? 'Transport instructions');
 @endphp
 <style type="text/css">
+    /* mPDF: avoid width:100% on a table cell beside other columns (causes page-wide shrink). Use pt for reliable sizing. */
     .ti-v4-root {
         font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif;
-        font-size: 10.5px;
+        font-size: 13pt;
         color: #0b1828;
         direction: rtl;
         line-height: 1.45;
     }
+
     .ti-v4-page {
         width: 100%;
+        max-width: 100%;
+        table-layout: fixed;
         background: #ffffff;
         border-collapse: collapse;
     }
-    .ti-v4-hd { background: #162035; }
+
+    .ti-v4-hd {
+        background: #162035;
+        padding: 0;
+        margin: 0;
+    }
+
+    .ti-v4-hd-row {
+        width: 100%;
+        border-collapse: collapse;
+        direction: ltr;
+    }
+
     .ti-v4-hd-logo {
         background: #1b2a4a;
-        border-left: 3px solid #f47b1a;
+        border-right: 3px solid #f47b1a;
+        border-left: none;
         padding: 16px 20px;
-        width: 28%;
+        width: 32%;
+        vertical-align: middle;
+        text-align: left;
+    }
+
+    .ti-v4-hd-logo-img {
+        height: 52px;
+        width: auto;
+        max-width: 160px;
+        display: block;
+    }
+
+    .ti-v4-hd-logo-name {
+        font-size: 20pt;
+        font-weight: 700;
+        color: #ffffff;
+        letter-spacing: 0.05em;
+    }
+
+    .ti-v4-hd-logo-sub {
+        font-size: 8pt;
+        color: #999999;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        margin-top: 4px;
+    }
+
+    .ti-v4-hd-info {
+        padding: 14px 20px 14px 12px;
+        vertical-align: middle;
+        direction: ltr;
+        text-align: right;
+    }
+
+    .ti-v4-hd-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .ti-v4-hd-item {
+        font-size: 10pt;
+        color: #aaaaaa;
+        line-height: 1.4;
+        margin: 0 0 7px;
+        padding: 0 0 0 14px;
+    }
+
+    .ti-v4-hd-item-last {
+        margin-bottom: 0;
+    }
+
+    .ti-v4-hd-bullet {
+        color: #f47b1a;
+        font-weight: 700;
+        padding-right: 6px;
+    }
+
+    .ti-v4-band {
+        background: #f47b1a;
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0;
+    }
+
+    .ti-v4-band-title {
+        font-size: 16pt;
+        font-weight: 700;
+        color: #ffffff;
+        padding: 10px 20px;
         vertical-align: middle;
     }
-    .ti-v4-hd-logo-img { height: 48px; width: auto; max-width: 160px; display: block; }
-    .ti-v4-hd-logo-name { font-size: 17px; font-weight: 700; color: #ffffff; letter-spacing: 0.05em; }
-    .ti-v4-hd-logo-sub {
-        font-size: 8px; color: rgba(255, 255, 255, 0.45);
-        letter-spacing: 0.14em; text-transform: uppercase; margin-top: 4px;
+
+    .ti-v4-band-meta {
+        direction: ltr;
+        text-align: left;
+        padding: 8px 16px 8px 0;
+        vertical-align: middle;
+        white-space: nowrap;
     }
-    .ti-v4-hd-info { padding: 14px 18px; vertical-align: middle; direction: ltr; text-align: left; }
-    .ti-v4-hd-item { font-size: 9.5px; color: rgba(255, 255, 255, 0.65); padding: 2px 14px 2px 0; }
-    .ti-v4-band { background: #f47b1a; padding: 8px 20px; }
-    .ti-v4-band-title { font-size: 13px; font-weight: 700; color: #ffffff; }
-    .ti-v4-band-meta { direction: ltr; text-align: left; }
+
+    .ti-v4-band-meta-table {
+        border-collapse: separate;
+        border-spacing: 10px 0;
+        direction: ltr;
+    }
+
     .ti-v4-chip {
         font-family: 'DejaVu Sans Mono', monospace;
-        font-size: 9.5px; font-weight: 600; color: #ffffff;
-        background: rgba(255, 255, 255, 0.18); border-radius: 4px;
-        padding: 3px 9px; margin-left: 6px; display: inline-block;
+        font-size: 8pt;
+        font-weight: 600;
+        color: #ffffff;
+        background: #e8954d;
+        padding: 4px 10px;
+        white-space: nowrap;
     }
-    .ti-v4-body { padding: 18px 22px 22px; vertical-align: top; }
-    .ti-v4-sec { width: 100%; border-collapse: collapse; margin: 0 0 10px; }
+
+    .ti-v4-body {
+        padding: 0 22px 22px;
+        vertical-align: top;
+    }
+
+    .ti-v4-sec {
+        width: 100%;
+        max-width: 100%;
+        table-layout: fixed;
+        border-collapse: collapse;
+        margin: 0 0 10px;
+        border-bottom: 1.5px solid #e2e9f2;
+    }
+
     .ti-v4-sec-en {
-        background: #162035; color: #ffffff; font-size: 9px; font-weight: 700;
-        letter-spacing: 0.1em; text-transform: uppercase; padding: 5px 11px;
-        border-radius: 4px 0 0 4px; white-space: nowrap; direction: ltr; text-align: left;
+        background: #162035;
+        color: #ffffff;
+        font-size: 10pt;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 6px 12px;
+        width: 38%;
+        direction: ltr;
+        text-align: left;
+        vertical-align: middle;
     }
+
     .ti-v4-sec-ar {
-        background: #dde5f0; color: #1b2a4a; font-size: 11px; font-weight: 600;
-        padding: 5px 12px; border-radius: 0 4px 4px 0; white-space: nowrap;
+        background: #dde5f0;
+        color: #1b2a4a;
+        font-size: 13pt;
+        font-weight: 600;
+        padding: 6px 12px;
+        text-align: right;
+        vertical-align: middle;
     }
-    .ti-v4-sec-rule { border-bottom: 1.5px solid #e2e9f2; width: 100%; }
+
     .ti-v4-block {
-        width: 100%; border-collapse: collapse; border: 1px solid #c8d4e6;
-        border-radius: 7px; margin: 0 0 16px; overflow: hidden;
+        width: 100%;
+        max-width: 100%;
+        table-layout: fixed;
+        border-collapse: collapse;
+        border: 1px solid #c8d4e6;
+        margin: 0 0 16px;
     }
+
     .ti-v4-bkey {
-        background: #edf1f8; padding: 8px 12px; width: 22%; vertical-align: middle;
-        border-bottom: 1px solid #e2e9f2; border-left: 1px solid #e2e9f2;
+        background: #edf1f8;
+        padding: 9px 12px;
+        width: 22%;
+        vertical-align: middle;
+        border-bottom: 1px solid #e2e9f2;
+        border-left: 1px solid #e2e9f2;
     }
-    .ti-v4-bkey-first { border-left: none; }
+
+    .ti-v4-bkey-first {
+        border-left: none;
+    }
+
     .ti-v4-bkey-en {
-        font-size: 8.5px; font-weight: 700; color: #8699b8;
-        letter-spacing: 0.08em; text-transform: uppercase; direction: ltr; text-align: left;
+        font-size: 8pt;
+        font-weight: 700;
+        color: #8699b8;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        direction: ltr;
+        text-align: left;
     }
-    .ti-v4-bkey-ar { font-size: 11px; font-weight: 600; color: #4f6180; }
+
+    .ti-v4-bkey-ar {
+        font-size: 10pt;
+        font-weight: 600;
+        color: #4f6180;
+    }
+
     .ti-v4-bval {
-        background: #ffffff; padding: 8px 14px; font-size: 12.5px; font-weight: 500;
-        color: #0b1828; vertical-align: middle; border-bottom: 1px solid #e2e9f2;
-        word-wrap: break-word; unicode-bidi: plaintext;
+        background: #ffffff;
+        padding: 9px 14px;
+        font-size: 14pt;
+        font-weight: 500;
+        color: #0b1828;
+        vertical-align: middle;
+        border-bottom: 1px solid #e2e9f2;
+        word-wrap: break-word;
+        unicode-bidi: plaintext;
     }
-    .ti-v4-bval-mono { font-family: 'DejaVu Sans Mono', monospace; font-weight: 700; direction: ltr; text-align: left; }
-    .ti-v4-bval-bold { font-size: 13.5px; font-weight: 700; }
-    .ti-v4-bval-block { white-space: pre-wrap; line-height: 1.55; }
-    .ti-v4-row-last .ti-v4-bkey, .ti-v4-row-last .ti-v4-bval { border-bottom: none; }
-    .ti-v4-ctag-wrap { padding: 8px 14px; }
+
+    .ti-v4-bval-mono {
+        font-family: 'DejaVu Sans Mono', monospace;
+        font-weight: 700;
+        direction: ltr;
+        text-align: left;
+    }
+
+    .ti-v4-bval-bold {
+        font-size: 15pt;
+        font-weight: 700;
+    }
+
+    .ti-v4-bval-block {
+        white-space: pre-wrap;
+        line-height: 1.55;
+    }
+
+    .ti-v4-row-last .ti-v4-bkey,
+    .ti-v4-row-last .ti-v4-bval {
+        border-bottom: none;
+    }
+
+    .ti-v4-ctag-wrap {
+        padding: 8px 14px;
+    }
+
     .ti-v4-ctag {
-        display: inline-block; background: #162035; color: #ffffff;
-        font-size: 11.5px; font-weight: 600; padding: 4px 12px; border-radius: 20px;
+        background: #162035;
+        color: #ffffff;
+        font-size: 13pt;
+        font-weight: 600;
+        padding: 5px 14px;
     }
+
     .ti-v4-ctag-badge {
-        background: rgba(255, 255, 255, 0.18); font-size: 9.5px; font-weight: 800;
-        padding: 1px 6px; border-radius: 10px; margin-left: 6px;
+        background: #3d4f6e;
+        font-size: 11pt;
+        font-weight: 800;
+        padding: 2px 7px;
+        margin-left: 6px;
     }
+
     .ti-v4-date {
-        width: 100%; border-collapse: collapse; border: 1px solid #c8d4e6;
-        border-radius: 7px; margin: 0 0 16px;
+        width: 100%;
+        max-width: 100%;
+        table-layout: fixed;
+        border-collapse: collapse;
+        border: 1px solid #c8d4e6;
+        margin: 0 0 16px;
     }
+
     .ti-v4-dg-head {
-        background: #edf1f8; padding: 7px 12px; text-align: center;
-        border-bottom: 1px solid #e2e9f2; border-left: 1px solid #e2e9f2;
-        width: 33.33%;
+        background: #edf1f8;
+        padding: 8px 12px;
+        text-align: center;
+        border-bottom: 1px solid #e2e9f2;
+        border-left: 1px solid #e2e9f2;
+        width: 33%;
     }
-    .ti-v4-dg-head-first { border-left: none; }
+
+    .ti-v4-dg-head-first {
+        border-left: none;
+    }
+
     .ti-v4-dg-val {
-        padding: 12px; font-size: 24px; font-weight: 700; color: #162035;
-        text-align: center; background: #ffffff; border-left: 1px solid #e2e9f2;
-        width: 33.33%;
+        padding: 14px;
+        font-size: 16pt;
+        font-weight: 700;
+        color: #162035;
+        text-align: center;
+        background: #ffffff;
+        border-left: 1px solid #e2e9f2;
+        width: 33%;
     }
-    .ti-v4-dg-val-first { border-left: none; }
-    .ti-v4-dg-val-mono { font-family: 'DejaVu Sans Mono', monospace; font-size: 20px; color: #1e3a6e; }
+
+    .ti-v4-dg-val-first {
+        border-left: none;
+    }
+
+    .ti-v4-dg-val-mono {
+        font-family: 'DejaVu Sans Mono', monospace;
+        font-size: 24pt;
+        color: #1e3a6e;
+    }
+
     .ti-v4-pill-yes {
-        display: inline-block; font-size: 10.5px; font-weight: 700; padding: 3px 11px;
-        border-radius: 20px; background: #dcfce7; color: #166534;
+        font-size: 8pt;
+        font-weight: 700;
+        padding: 4px 12px;
+        background: #dcfce7;
+        color: #166534;
     }
+
     .ti-v4-pill-no {
-        display: inline-block; font-size: 10.5px; font-weight: 700; padding: 3px 11px;
-        border-radius: 20px; background: #fee2e2; color: #991b1b;
+        font-size: 8pt;
+        font-weight: 700;
+        padding: 4px 12px;
+        background: #fee2e2;
+        color: #991b1b;
     }
+
     .ti-v4-pill-na {
-        display: inline-block; font-size: 10.5px; font-weight: 500; padding: 3px 11px;
-        border-radius: 20px; background: #edf1f8; color: #8699b8;
+        font-size: 12pt;
+        font-weight: 500;
+        padding: 4px 12px;
+        background: #edf1f8;
+        color: #8699b8;
     }
-    .ti-v4-map-link { color: #1e3a6e; font-size: 11px; direction: ltr; text-decoration: underline; }
-    .ti-v4-ft { background: #162035; padding: 9px 22px; direction: ltr; }
-    .ti-v4-ft-brand { font-size: 9px; color: rgba(255, 255, 255, 0.5); }
-    .ti-v4-ft-brand strong { color: rgba(255, 255, 255, 0.82); font-weight: 600; }
+
+    .ti-v4-map-link {
+        color: #1e3a6e;
+        font-size: 11pt;
+        direction: ltr;
+        text-decoration: underline;
+    }
+
+    .ti-v4-ft {
+        background: #162035;
+        padding: 10px 22px;
+        direction: ltr;
+    }
+
+    .ti-v4-ft-brand {
+        font-size: 8pt;
+        color: #999999;
+    }
+
+    .ti-v4-ft-brand strong {
+        color: #dddddd;
+        font-weight: 600;
+    }
+
     .ti-v4-ft-num {
-        font-family: 'DejaVu Sans Mono', monospace; font-size: 9px;
-        color: rgba(255, 255, 255, 0.42); text-align: right;
+        font-family: 'DejaVu Sans Mono', monospace;
+        font-size: 8pt;
+        color: #888888;
+        text-align: right;
     }
 </style>
 
 <div class="ti-v4-root" dir="rtl" lang="ar">
-    <table class="ti-v4-page" cellspacing="0" cellpadding="0" border="0" role="presentation">
+    <table class="ti-v4-page" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
         {{-- Header --}}
         <tr>
             <td class="ti-v4-hd">
-                <table width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
+                <table width="100%" cellspacing="0" cellpadding="0" border="0" class="ti-v4-hd-row"
+                    role="presentation">
                     <tr>
                         <td class="ti-v4-hd-logo">
-                            @if($logoSrc)
-                                <img class="ti-v4-hd-logo-img" src="{{ $logoSrc }}" alt="">
-                            @else
-                                <div class="ti-v4-hd-logo-name">{{ $brand }}</div>
-                                <div class="ti-v4-hd-logo-sub">{{ $brandTag }}</div>
-                            @endif
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                                <tr>
+                                    <td style="width:60px; vertical-align:middle;">
+                                        @if ($logoSrc)
+                                            <img class="ti-v4-hd-logo-img" src="{{ $logoSrc }}" alt="">
+                                        @endif
+                                    </td>
+
+                                    <td style="vertical-align:middle; padding-left:10px;">
+                                        <div style="color:#ffffff; font-size:14pt; font-weight:800; line-height:1.2;">
+                                            AMAZON MARINE
+                                        </div>
+                                        <div
+                                            style="color:#cfd6e4; font-size:8pt; letter-spacing:0.12em; margin-top:2px;">
+                                            Ocean Freight & Logistics
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
                         </td>
                         <td class="ti-v4-hd-info">
-                            <span class="ti-v4-hd-item">www.amazonmarine.ltd</span>
-                            <span class="ti-v4-hd-item">cs@amazonmarine.ltd</span><br>
-                            <span class="ti-v4-hd-item">+2 02 2560 1776</span>
-                            <span class="ti-v4-hd-item">+2 012 0074 4888</span><br>
-                            <span class="ti-v4-hd-item">Fifth Settlement, New Cairo, Egypt</span>
+                            <ul class="ti-v4-hd-list">
+                                <li class="ti-v4-hd-item"><span class="ti-v4-hd-bullet">•</span> www.amazonmarine.ltd
+                                </li>
+                                <li class="ti-v4-hd-item"><span class="ti-v4-hd-bullet">•</span> cs@amazonmarine.ltd
+                                </li>
+                                <li class="ti-v4-hd-item"><span class="ti-v4-hd-bullet">•</span> +2 02 2560 1776</li>
+                                <li class="ti-v4-hd-item"><span class="ti-v4-hd-bullet">•</span> +2 012 0074 4888</li>
+                                <li class="ti-v4-hd-item ti-v4-hd-item-last"><span class="ti-v4-hd-bullet">•</span>
+                                    Fifth Settlement, New Cairo, Egypt</li>
+                            </ul>
                         </td>
                     </tr>
                 </table>
-                <table width="100%" cellspacing="0" cellpadding="0" border="0" class="ti-v4-band" role="presentation">
+                <table width="100%" cellspacing="0" cellpadding="0" border="0" class="ti-v4-band"
+                    role="presentation">
                     <tr>
                         <td class="ti-v4-band-title">{{ $docTitle }}</td>
                         <td class="ti-v4-band-meta" align="left">
-                            <span class="ti-v4-chip">{{ $tiRef }}</span>
-                            <span class="ti-v4-chip">{{ $tiGenerated }}</span>
+                            <table cellspacing="0" cellpadding="0" border="0" class="ti-v4-band-meta-table"
+                                role="presentation">
+                                <tr>
+                                    <td class="ti-v4-chip">{{ $tiRef }}</td>
+                                    <td class="ti-v4-chip">{{ $tiGenerated }}</td>
+                                </tr>
+                            </table>
                         </td>
                     </tr>
                 </table>
@@ -223,17 +487,18 @@
         <tr>
             <td class="ti-v4-body">
                 {{-- 1 · Booking --}}
-                <table class="ti-v4-sec" cellspacing="0" cellpadding="0" border="0" role="presentation">
+                <table class="ti-v4-sec" width="100%" cellspacing="0" cellpadding="0" border="0"
+                    role="presentation">
                     <tr>
                         <td class="ti-v4-sec-en">Booking Info</td>
                         <td class="ti-v4-sec-ar">بيانات الحجز</td>
-                        <td class="ti-v4-sec-rule">&nbsp;</td>
                     </tr>
                 </table>
-                <table class="ti-v4-block" cellspacing="0" cellpadding="0" border="0" role="presentation">
+                <table class="ti-v4-block" width="100%" cellspacing="0" cellpadding="0" border="0"
+                    role="presentation">
                     <tr>
                         <td class="ti-v4-bkey ti-v4-bkey-first">
-                            <span class="ti-v4-bkey-en">Booking No.</span><br>
+                            <span class="ti-v4-bkey-en">Booking No</span><br>
                             <span class="ti-v4-bkey-ar">رقم الحجز</span>
                         </td>
                         <td class="ti-v4-bval ti-v4-bval-mono">{{ $shipment->booking_number ?? '—' }}</td>
@@ -241,7 +506,8 @@
                             <span class="ti-v4-bkey-en">Shipping Line</span><br>
                             <span class="ti-v4-bkey-ar">الخط الملاحي</span>
                         </td>
-                        <td class="ti-v4-bval ti-v4-bval-bold pdf-cell-dir-auto">{{ $shipment->shippingLine?->name ?? '—' }}</td>
+                        <td class="ti-v4-bval ti-v4-bval-bold pdf-cell-dir-auto">
+                            {{ $shipment->shippingLine?->name ?? '—' }}</td>
                     </tr>
                     <tr class="ti-v4-row-last">
                         <td class="ti-v4-bkey ti-v4-bkey-first">
@@ -249,7 +515,7 @@
                             <span class="ti-v4-bkey-ar">الحاويات</span>
                         </td>
                         <td class="ti-v4-bval" colspan="3">
-                            @if($hasContainerTag)
+                            @if ($hasContainerTag)
                                 <span class="ti-v4-ctag-wrap">
                                     <span class="ti-v4-ctag">
                                         <span class="ti-v4-ctag-badge">{{ $containerCount }}×</span>
@@ -264,14 +530,15 @@
                 </table>
 
                 {{-- 2 · Client arrival --}}
-                <table class="ti-v4-sec" cellspacing="0" cellpadding="0" border="0" role="presentation">
+                <table class="ti-v4-sec" width="100%" cellspacing="0" cellpadding="0" border="0"
+                    role="presentation">
                     <tr>
                         <td class="ti-v4-sec-en">Client Arrival</td>
                         <td class="ti-v4-sec-ar">موعد وصول العميل</td>
-                        <td class="ti-v4-sec-rule">&nbsp;</td>
                     </tr>
                 </table>
-                <table class="ti-v4-date" cellspacing="0" cellpadding="0" border="0" role="presentation">
+                <table class="ti-v4-date" width="100%" cellspacing="0" cellpadding="0" border="0"
+                    role="presentation">
                     <tr>
                         <td class="ti-v4-dg-head ti-v4-dg-head-first">
                             <span class="ti-v4-bkey-en" style="display:block;text-align:center;">Day</span>
@@ -294,27 +561,30 @@
                 </table>
 
                 {{-- 3 · Place of loading --}}
-                <table class="ti-v4-sec" cellspacing="0" cellpadding="0" border="0" role="presentation">
+                <table class="ti-v4-sec" width="100%" cellspacing="0" cellpadding="0" border="0"
+                    role="presentation">
                     <tr>
                         <td class="ti-v4-sec-en">Place of Loading</td>
                         <td class="ti-v4-sec-ar">مكان التحميل</td>
-                        <td class="ti-v4-sec-rule">&nbsp;</td>
                     </tr>
                 </table>
-                <table class="ti-v4-block" cellspacing="0" cellpadding="0" border="0" role="presentation">
+                <table class="ti-v4-block" width="100%" cellspacing="0" cellpadding="0" border="0"
+                    role="presentation">
                     <tr>
                         <td class="ti-v4-bkey ti-v4-bkey-first" width="22%">
                             <span class="ti-v4-bkey-en">Location Name</span><br>
                             <span class="ti-v4-bkey-ar">اسم المكان</span>
                         </td>
-                        <td class="ti-v4-bval ti-v4-bval-bold pdf-cell-dir-auto" colspan="3">{{ $tiVal('loading_place_name') }}</td>
+                        <td class="ti-v4-bval ti-v4-bval-bold pdf-cell-dir-auto" colspan="3">
+                            {{ $tiVal('loading_place_name') }}</td>
                     </tr>
                     <tr>
                         <td class="ti-v4-bkey ti-v4-bkey-first">
                             <span class="ti-v4-bkey-en">Full Address</span><br>
                             <span class="ti-v4-bkey-ar">العنوان الكامل</span>
                         </td>
-                        <td class="ti-v4-bval ti-v4-bval-block pdf-cell-dir-auto" colspan="3">{!! ($ti['loading_address'] ?? '') !== '' ? nl2br(e($ti['loading_address'])) : '—' !!}</td>
+                        <td class="ti-v4-bval ti-v4-bval-block pdf-cell-dir-auto" colspan="3">
+                            {!! ($ti['loading_address'] ?? '') !== '' ? nl2br(e($ti['loading_address'])) : '—' !!}</td>
                     </tr>
                     <tr class="ti-v4-row-last">
                         <td class="ti-v4-bkey ti-v4-bkey-first">
@@ -322,8 +592,9 @@
                             <span class="ti-v4-bkey-ar">خرائط جوجل</span>
                         </td>
                         <td class="ti-v4-bval" colspan="3">
-                            @if($mapsIsLink)
-                                <a class="ti-v4-map-link" href="{{ e($mapsRaw) }}">{{ $labels['ti_maps_open'] ?? $mapsRaw }}</a>
+                            @if ($mapsIsLink)
+                                <a class="ti-v4-map-link"
+                                    href="{{ e($mapsRaw) }}">{{ $labels['ti_maps_open'] ?? $mapsRaw }}</a>
                             @else
                                 {{ $mapsRaw !== '' ? $mapsRaw : '—' }}
                             @endif
@@ -332,37 +603,41 @@
                 </table>
 
                 {{-- 4 · Loading contact --}}
-                <table class="ti-v4-sec" cellspacing="0" cellpadding="0" border="0" role="presentation">
+                <table class="ti-v4-sec" width="100%" cellspacing="0" cellpadding="0" border="0"
+                    role="presentation">
                     <tr>
                         <td class="ti-v4-sec-en">Loading Contact</td>
                         <td class="ti-v4-sec-ar">مسؤول التحميل</td>
-                        <td class="ti-v4-sec-rule">&nbsp;</td>
                     </tr>
                 </table>
-                <table class="ti-v4-block" cellspacing="0" cellpadding="0" border="0" role="presentation">
+                <table class="ti-v4-block" width="100%" cellspacing="0" cellpadding="0" border="0"
+                    role="presentation">
                     <tr class="ti-v4-row-last">
                         <td class="ti-v4-bkey ti-v4-bkey-first">
                             <span class="ti-v4-bkey-en">Contact Name</span><br>
                             <span class="ti-v4-bkey-ar">اسم جهة الاتصال</span>
                         </td>
-                        <td class="ti-v4-bval ti-v4-bval-bold pdf-cell-dir-auto">{{ $tiVal('loading_contact_name') }}</td>
+                        <td class="ti-v4-bval ti-v4-bval-bold pdf-cell-dir-auto">{{ $tiVal('loading_contact_name') }}
+                        </td>
                         <td class="ti-v4-bkey">
                             <span class="ti-v4-bkey-en">Contact Phone</span><br>
                             <span class="ti-v4-bkey-ar">هاتف جهة الاتصال</span>
                         </td>
-                        <td class="ti-v4-bval ti-v4-bval-mono" style="text-align:right;">{{ $tiVal('loading_contact_phone') }}</td>
+                        <td class="ti-v4-bval ti-v4-bval-mono" style="text-align:right;">
+                            {{ $tiVal('loading_contact_phone') }}</td>
                     </tr>
                 </table>
 
                 {{-- 5 · Customs & equipment --}}
-                <table class="ti-v4-sec" cellspacing="0" cellpadding="0" border="0" role="presentation">
+                <table class="ti-v4-sec" width="100%" cellspacing="0" cellpadding="0" border="0"
+                    role="presentation">
                     <tr>
                         <td class="ti-v4-sec-en">Customs &amp; Equipment</td>
                         <td class="ti-v4-sec-ar">الجمارك والمعدات</td>
-                        <td class="ti-v4-sec-rule">&nbsp;</td>
                     </tr>
                 </table>
-                <table class="ti-v4-block" cellspacing="0" cellpadding="0" border="0" role="presentation">
+                <table class="ti-v4-block" width="100%" cellspacing="0" cellpadding="0" border="0"
+                    role="presentation">
                     <tr>
                         <td class="ti-v4-bkey ti-v4-bkey-first">
                             <span class="ti-v4-bkey-en">Customs Doc. Type</span><br>
@@ -374,23 +649,27 @@
                             <span class="ti-v4-bkey-ar">مولد كهربائي</span>
                         </td>
                         <td class="ti-v4-bval">
-                            <span class="{{ $genYes ? 'ti-v4-pill-yes' : 'ti-v4-pill-no' }}">{{ $genPill }}</span>
+                            <span
+                                class="{{ $genYes ? 'ti-v4-pill-yes' : 'ti-v4-pill-no' }}">{{ $genPill }}</span>
                         </td>
                     </tr>
-                    @if($genYes)
+                    @if ($genYes)
                         <tr>
                             <td class="ti-v4-bkey ti-v4-bkey-first">
                                 <span class="ti-v4-bkey-en">Temperature</span><br>
                                 <span class="ti-v4-bkey-ar">{{ $labels['ti_temp'] ?? 'درجة الحرارة' }}</span>
                             </td>
-                            <td class="ti-v4-bval ti-v4-bval-mono pdf-cell-dir-auto" colspan="3">{{ $tiVal('generator_temperature') }}</td>
+                            <td class="ti-v4-bval ti-v4-bval-mono pdf-cell-dir-auto" colspan="3">
+                                {{ $tiVal('generator_temperature') }}</td>
                         </tr>
                         <tr>
                             <td class="ti-v4-bkey ti-v4-bkey-first">
                                 <span class="ti-v4-bkey-en">Driver Instructions</span><br>
-                                <span class="ti-v4-bkey-ar">{{ $labels['ti_driver_notes'] ?? 'تعليمات السائق' }}</span>
+                                <span
+                                    class="ti-v4-bkey-ar">{{ $labels['ti_driver_notes'] ?? 'تعليمات السائق' }}</span>
                             </td>
-                            <td class="ti-v4-bval ti-v4-bval-block pdf-cell-dir-auto" colspan="3">{!! ($ti['generator_driver_instructions'] ?? '') !== '' ? nl2br(e($ti['generator_driver_instructions'])) : '—' !!}</td>
+                            <td class="ti-v4-bval ti-v4-bval-block pdf-cell-dir-auto" colspan="3">
+                                {!! ($ti['generator_driver_instructions'] ?? '') !== '' ? nl2br(e($ti['generator_driver_instructions'])) : '—' !!}</td>
                         </tr>
                     @endif
                     <tr>
@@ -399,7 +678,7 @@
                             <span class="ti-v4-bkey-ar">المخلص الجمركي</span>
                         </td>
                         <td class="ti-v4-bval pdf-cell-dir-auto" colspan="3">
-                            @if(filled($brokerName))
+                            @if (filled($brokerName))
                                 {{ $brokerName }}
                             @else
                                 <span class="ti-v4-pill-na">{{ $labels['ti_broker_na'] ?? 'لم يُحدد' }}</span>
@@ -411,7 +690,8 @@
                             <span class="ti-v4-bkey-en">Customs Notes</span><br>
                             <span class="ti-v4-bkey-ar">ملاحظات جمركية</span>
                         </td>
-                        <td class="ti-v4-bval ti-v4-bval-block pdf-cell-dir-auto" colspan="3">{!! ($ti['customs_notes'] ?? '') !== '' ? nl2br(e($ti['customs_notes'])) : '—' !!}</td>
+                        <td class="ti-v4-bval ti-v4-bval-block pdf-cell-dir-auto" colspan="3">
+                            {!! ($ti['customs_notes'] ?? '') !== '' ? nl2br(e($ti['customs_notes'])) : '—' !!}</td>
                     </tr>
                 </table>
             </td>
@@ -423,7 +703,8 @@
                 <table width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
                     <tr>
                         <td class="ti-v4-ft-brand">
-                            <strong>{{ $brand }}</strong> &nbsp;·&nbsp; cs@amazonmarine.ltd &nbsp;·&nbsp; www.amazonmarine.ltd
+                            <strong>AMAZON MARINE</strong> &nbsp;·&nbsp; cs@amazonmarine.ltd &nbsp;·&nbsp;
+                            www.amazonmarine.ltd
                         </td>
                         <td class="ti-v4-ft-num" align="right">PAGE 1 / 1 &nbsp;·&nbsp; {{ $tiRef }}</td>
                     </tr>

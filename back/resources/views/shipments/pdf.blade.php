@@ -317,9 +317,18 @@
             padding: 0;
             border: none;
         }
+        body.shipment-pdf--transport-instructions {
+            font-size: 13pt;
+            margin: 0;
+            padding: 0;
+        }
+        body.shipment-pdf--transport-instructions .wrap {
+            padding: 0;
+            max-width: 100%;
+        }
     </style>
 </head>
-<body>
+<body @if(!empty($transportInstructionsPdf)) class="shipment-pdf--transport-instructions" @endif>
     @php
         $pdfHeaderBanner = \App\Support\PdfLogo::headerImgSrc();
         $logoSrc = \App\Support\PdfLogo::imgSrc();
