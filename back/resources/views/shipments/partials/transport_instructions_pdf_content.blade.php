@@ -94,10 +94,10 @@
 
     .ti-v4-hd-logo {
         background: #1b2a4a;
-        border-right: 3px solid #f47b1a;
-        border-left: none;
+        border-left: 3px solid #f47b1a;
+        border-right: none;
         padding: 16px 20px;
-        width: 32%;
+        width: 40%;
         vertical-align: middle;
         text-align: left;
     }
@@ -125,10 +125,10 @@
     }
 
     .ti-v4-hd-info {
-        padding: 14px 20px 14px 12px;
+        padding: 14px 12px;
         vertical-align: middle;
         direction: ltr;
-        text-align: right;
+        text-align: left;
     }
 
     .ti-v4-hd-list {
@@ -138,8 +138,8 @@
     }
 
     .ti-v4-hd-item {
-        font-size: 10pt;
-        color: #aaaaaa;
+        font-size: 8pt;
+        color: #ffffff;
         line-height: 1.4;
         margin: 0 0 7px;
         padding: 0 0 0 14px;
@@ -163,8 +163,8 @@
     }
 
     .ti-v4-band-title {
-        font-size: 16pt;
-        font-weight: 700;
+        font-size: 11pt;
+        font-weight: 800;
         color: #ffffff;
         padding: 10px 20px;
         vertical-align: middle;
@@ -440,7 +440,7 @@
                                     </td>
 
                                     <td style="vertical-align:middle; padding-left:10px;">
-                                        <div style="color:#ffffff; font-size:14pt; font-weight:800; line-height:1.2;">
+                                        <div style="color:#ffffff; font-size:11pt; font-weight:800; line-height:1.2;">
                                             AMAZON MARINE
                                         </div>
                                         <div
@@ -453,14 +453,15 @@
                         </td>
                         <td class="ti-v4-hd-info">
                             <ul class="ti-v4-hd-list">
-                                <li class="ti-v4-hd-item"><span class="ti-v4-hd-bullet">•</span> www.amazonmarine.ltd
+                                <li class="ti-v4-hd-item">
+                                    <span class="ti-v4-hd-bullet">•</span> www.amazonmarine.ltd
+                                    <span class="ti-v4-hd-bullet">•</span> cs@amazonmarine.ltd
                                 </li>
-                                <li class="ti-v4-hd-item"><span class="ti-v4-hd-bullet">•</span> cs@amazonmarine.ltd
+                                <li class="ti-v4-hd-item">
+                                    <span class="ti-v4-hd-bullet">•</span> +20225601776
+                                    <span class="ti-v4-hd-bullet">•</span> +201200744888
+                                    <span class="ti-v4-hd-bullet">•</span>Fifth Settlement, New Cairo, Egypt
                                 </li>
-                                <li class="ti-v4-hd-item"><span class="ti-v4-hd-bullet">•</span> +2 02 2560 1776</li>
-                                <li class="ti-v4-hd-item"><span class="ti-v4-hd-bullet">•</span> +2 012 0074 4888</li>
-                                <li class="ti-v4-hd-item ti-v4-hd-item-last"><span class="ti-v4-hd-bullet">•</span>
-                                    Fifth Settlement, New Cairo, Egypt</li>
                             </ul>
                         </td>
                     </tr>
