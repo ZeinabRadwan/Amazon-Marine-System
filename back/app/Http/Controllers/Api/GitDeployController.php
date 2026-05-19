@@ -25,10 +25,12 @@ class GitDeployController extends Controller
         $frontDistQ = escapeshellarg($frontDist);
 
         // git pull updates back/ + front/ in the repo; ui/ is removed and never published.
-        // cp -a dist/. copies hidden files too (.htaccess SPA fallback — required for /attendance refresh).
+        // Do NOT wipe public_html — only replace index.html + assets, then copy dist (cp -a includes
+        // hidden files: .htaccess for Apache SPA fallback, web.config for IIS if present in dist).
         $command = "cd {$repoRootQ} && git pull && ".
             "rm -rf {$uiDirQ} && ".
-            "find {$publicHtmlQ} -mindepth 1 -delete 2>/dev/null || true && ".
+            "rm -f {$publicHtmlQ}/index.html && ".
+            "rm -rf {$publicHtmlQ}/assets && ".
             "cp -a {$frontDistQ}/. {$publicHtmlQ}/";
 
         $result = Process::path($repoRoot)

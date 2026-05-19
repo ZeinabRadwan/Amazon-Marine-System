@@ -1,4 +1,5 @@
-# Copied into dist/ on build — use when hosting on Apache (XAMPP, cPanel, etc.)
+# Apache SPA fallback — copied into dist/ on `npm run build` (Vite public/).
+# Required for direct loads / refresh on routes like /attendance, /dashboard, /users.
 
 <IfModule mod_mime.c>
   AddType application/javascript .js
@@ -8,7 +9,15 @@
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
+  RewriteBase /
+
+  # Same-host /api (ProxyPass or PHP) — do not serve index.html for API paths
+  RewriteRule ^api(/|$) - [L]
+
+  RewriteRule ^index\.html$ - [L]
+
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule ^ index.html [L]
+
+  RewriteRule . /index.html [L]
 </IfModule>
