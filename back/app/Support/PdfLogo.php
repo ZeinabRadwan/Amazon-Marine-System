@@ -79,4 +79,23 @@ final class PdfLogo
 
         return 'file://'.str_replace('\\', '/', $path);
     }
+
+    public static function mapPinPath(): string
+    {
+        return public_path('images/icon_map_pin.png');
+    }
+
+    /**
+     * Map pin icon for transport-instructions PDF links, or null if missing.
+     */
+    public static function mapPinImgSrc(): ?string
+    {
+        $path = self::mapPinPath();
+
+        if (! is_file($path)) {
+            return null;
+        }
+
+        return 'file://'.str_replace('\\', '/', $path);
+    }
 }

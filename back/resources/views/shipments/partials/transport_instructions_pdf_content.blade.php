@@ -58,6 +58,7 @@
     $tiRef = 'TI-' . now()->format('Y') . '-' . str_pad((string) $shipment->id, 4, '0', STR_PAD_LEFT);
     $tiGenerated = now()->format('d / m / Y');
     $logoSrc = PdfLogo::transportInstructionsImgSrc();
+    $mapPinSrc = PdfLogo::mapPinImgSrc();
     $brand = $labels['brand'] ?? 'AMAZON MARINE';
     $brandTag = $labels['brand_tag'] ?? 'Ocean Freight & Logistics';
     $docTitle = $labels['title'] ?? ($labels['sec_ti_form'] ?? 'Transport instructions');
@@ -219,7 +220,7 @@
         max-width: 100%;
         table-layout: fixed;
         border-collapse: collapse;
-        margin: 0 0 10px;
+        margin: 0;
         border-bottom: 1.5px solid #e2e9f2;
     }
 
@@ -235,6 +236,7 @@
         direction: ltr;
         text-align: left;
         vertical-align: middle;
+        margin:0;
     }
 
     .ti-v4-sec-ar {
@@ -245,6 +247,7 @@
         padding: 6px 12px;
         text-align: right;
         vertical-align: middle;
+                margin:0;
     }
 
     .ti-v4-block {
@@ -253,7 +256,7 @@
         table-layout: fixed;
         border-collapse: collapse;
         border: 1px solid #c8d4e6;
-        margin: 0 0 16px;
+        margin: 0;
     }
 
     .ti-v4-bkey {
@@ -300,6 +303,7 @@
     .ti-v4-bval-mono {
         font-family: 'DejaVu Sans Mono', monospace;
         font-weight: 700;
+        font-size: 10pt;
         direction: ltr;
         text-align: left;
     }
@@ -317,6 +321,13 @@
     .ti-v4-row-last .ti-v4-bkey,
     .ti-v4-row-last .ti-v4-bval {
         border-bottom: none;
+    }
+
+    .ti-v4-block-arrival .ti-v4-bkey,
+    .ti-v4-block-arrival .ti-v4-bval,
+    .ti-v4-block-arrival .ti-v4-bkey-en,
+    .ti-v4-block-arrival .ti-v4-bval-mono {
+        text-align: center;
     }
 
     .ti-v4-ctag-wrap {
@@ -364,10 +375,25 @@
     }
 
     .ti-v4-map-link {
-        color: #1e3a6e;
-        font-size: 8pt;
+        display: inline-block;
+        line-height: 0;
+        text-decoration: none;
         direction: ltr;
-        text-decoration: underline;
+    }
+
+    .ti-v4-map-icon {
+        width: 25px;
+        height: 20px;
+        border: 0;
+        vertical-align: middle;
+        background: #ffffff;
+    }
+
+    .ti-v4-map-link-text {
+        font-size: 8pt;
+        color: #1e3a6e;
+        font-weight: 600;
+        text-decoration: underline dashed #1e3a6e;
     }
 
     .ti-v4-ft {
@@ -508,26 +534,26 @@
                         <td class="ti-v4-sec-ar">موعد وصول العميل</td>
                     </tr>
                 </table>
-                <table class="ti-v4-block" width="100%" cellspacing="0" cellpadding="0" border="0"
-                    role="presentation">
+                <table class="ti-v4-block ti-v4-block-arrival" width="100%" cellspacing="0" cellpadding="0"
+                    border="0" role="presentation">
                     <tr>
-                        <td class="ti-v4-bkey ti-v4-bkey-first">
+                        <td class="ti-v4-bkey ti-v4-bkey-first" width="33%">
                             <span class="ti-v4-bkey-en">Day</span><br>
                             <span class="ti-v4-bkey-ar">اليوم</span>
                         </td>
-                        <td class="ti-v4-bval ti-v4-bval-mono">{{ $arrivalDay }}</td>
-                        <td class="ti-v4-bkey">
+                        <td class="ti-v4-bkey" width="33%">
                             <span class="ti-v4-bkey-en">Month</span><br>
                             <span class="ti-v4-bkey-ar">الشهر</span>
                         </td>
-                        <td class="ti-v4-bval ti-v4-bval-mono">{{ $arrivalMonth }}</td>
-                    </tr>
-                    <tr class="ti-v4-row-last">
-                        <td class="ti-v4-bkey ti-v4-bkey-first">
+                        <td class="ti-v4-bkey" width="34%">
                             <span class="ti-v4-bkey-en">Time</span><br>
                             <span class="ti-v4-bkey-ar">الساعة</span>
                         </td>
-                        <td class="ti-v4-bval ti-v4-bval-mono" colspan="3">{{ $arrivalTime }}</td>
+                    </tr>
+                    <tr class="ti-v4-row-last">
+                        <td class="ti-v4-bval ti-v4-bval-mono" width="33%">{{ $arrivalDay }}</td>
+                        <td class="ti-v4-bval ti-v4-bval-mono" width="33%">{{ $arrivalMonth }}</td>
+                        <td class="ti-v4-bval ti-v4-bval-mono" width="34%">{{ $arrivalTime }}</td>
                     </tr>
                 </table>
 
@@ -564,8 +590,15 @@
                         </td>
                         <td class="ti-v4-bval" colspan="3">
                             @if ($mapsIsLink)
-                                <a class="ti-v4-map-link"
-                                    href="{{ e($mapsRaw) }}">{{ $labels['ti_maps_open'] ?? $mapsRaw }}</a>
+                                <a class="ti-v4-map-link" href="{{ e($mapsRaw) }}">
+                                    @if ($mapPinSrc)
+                                        <img class="ti-v4-map-icon" src="{{ $mapPinSrc }}" width="18" height="18"
+                                            alt="">
+                                        <span class="ti-v4-map-link-text">{{ $labels['ti_maps_open'] ?? $mapsRaw }}</span>
+                                    @else
+                                        <span class="ti-v4-map-link-fallback">&#9679;</span>
+                                    @endif
+                                </a>
                             @else
                                 {{ $mapsRaw !== '' ? $mapsRaw : '—' }}
                             @endif
@@ -630,7 +663,8 @@
                                 <span class="ti-v4-bkey-en">Temperature</span><br>
                                 <span class="ti-v4-bkey-ar">{{ $labels['ti_temp'] ?? 'درجة الحرارة' }}</span>
                             </td>
-                            <td class="ti-v4-bval ti-v4-bval-mono pdf-cell-dir-auto" colspan="3">
+                            <td class="ti-v4-bval ti-v4-bval-mono pdf-cell-dir-auto" colspan="3"
+                                style="text-align:right;">
                                 {{ $tiVal('generator_temperature') }}</td>
                         </tr>
                         <tr>
