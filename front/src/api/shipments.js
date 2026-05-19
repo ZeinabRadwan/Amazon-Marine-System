@@ -345,6 +345,19 @@ export async function getShipmentCostInvoice(token, shipmentId) {
   return json
 }
 
+function shipmentCostInvoiceErrorMessage(json, status) {
+  const errs = json?.errors
+  if (errs && typeof errs === 'object') {
+    const parts = Object.values(errs)
+      .flat()
+      .filter((m) => m != null && String(m).trim() !== '')
+    if (parts.length > 0) {
+      return parts.join(' ')
+    }
+  }
+  return json?.message || json?.error || `Failed to save shipment cost invoice (${status})`
+}
+
 export async function updateShipmentCostInvoice(token, shipmentId, body) {
   const res = await apiFetch(`${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}/cost-invoice`, {
     method: 'PUT',
@@ -353,7 +366,7 @@ export async function updateShipmentCostInvoice(token, shipmentId, body) {
   })
   const json = await res.json().catch(() => ({}))
   if (!res.ok) {
-    throw new Error(json.message || json.error || `Failed to save shipment cost invoice (${res.status})`)
+    throw new Error(shipmentCostInvoiceErrorMessage(json, res.status))
   }
   return json
 }

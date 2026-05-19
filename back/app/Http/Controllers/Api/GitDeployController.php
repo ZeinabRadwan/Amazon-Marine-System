@@ -9,18 +9,28 @@ use Illuminate\Support\Facades\Process;
 class GitDeployController extends Controller
 {
     /**
-     * Git lives in the repo root, not inside `back/`. Run from Laravel root: `cd ..` then `git pull`.
+     * On-server deploy: pull repo (back + front from git), drop legacy ui/, publish front/dist to public_html.
+     * Git lives in the repo root, not inside `back/`.
      */
     public function __invoke(): JsonResponse
     {
         $repoRoot = dirname(base_path());
-        $publicHtml = dirname($repoRoot) . '/public_html';
+        $publicHtml = dirname($repoRoot).'/public_html';
+        $uiDir = $repoRoot.'/ui';
+        $frontDist = $repoRoot.'/front/dist';
 
-        $command = "cd $repoRoot && git pull && " .
-                   "rm -f $publicHtml/index.html && " .
-                   "rm -rf $publicHtml/assets/* && " .
-                   "cp $repoRoot/front/dist/index.html $publicHtml/index.html && " .
-                   "cp -r $repoRoot/front/dist/assets/* $publicHtml/assets/";
+        $repoRootQ = escapeshellarg($repoRoot);
+        $publicHtmlQ = escapeshellarg($publicHtml);
+        $uiDirQ = escapeshellarg($uiDir);
+        $frontDistQ = escapeshellarg($frontDist);
+
+        // git pull updates back/ + front/ in the repo; ui/ is removed and never published.
+        // rm -rf public_html/* clears visible entries; find removes any remainder (e.g. dotfiles).
+        $command = "cd {$repoRootQ} && git pull && ".
+            "rm -rf {$uiDirQ} && ".
+            "rm -rf {$publicHtmlQ}/* && ".
+            "find {$publicHtmlQ} -mindepth 1 -delete 2>/dev/null || true && ".
+            "cp -r {$frontDistQ}/* {$publicHtmlQ}/";
 
         $result = Process::path($repoRoot)
             ->timeout(300)

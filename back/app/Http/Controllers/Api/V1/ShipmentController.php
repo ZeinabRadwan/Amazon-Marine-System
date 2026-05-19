@@ -743,27 +743,17 @@ class ShipmentController extends Controller
         $customsItems = array_values(array_filter($normalizedItems, static fn (array $it): bool => ($it['bucket_id'] ?? '') === 'customs'));
         $inlandVendorId = (int) data_get($sectionMeta, 'inland.contractor_vendor_id', 0);
         $customsVendorId = (int) data_get($sectionMeta, 'customs.customs_broker_vendor_id', 0);
-        $inlandStarted = count($inlandItems) > 0 || $inlandVendorId > 0;
-        $customsStarted = count($customsItems) > 0 || $customsVendorId > 0;
 
-        if ($inlandStarted && $inlandVendorId <= 0) {
+        // Partner vendors from Operations may exist in section_meta before cost lines are entered.
+        // Require vendor only when saving line items for that bucket (not when vendor alone is present).
+        if (count($inlandItems) > 0 && $inlandVendorId <= 0) {
             return response()->json([
                 'message' => __('Inland Transportation section requires contractor vendor selection.'),
             ], 422);
         }
-        if ($inlandStarted && count($inlandItems) < 1) {
-            return response()->json([
-                'message' => __('Inland Transportation section requires at least one line item.'),
-            ], 422);
-        }
-        if ($customsStarted && $customsVendorId <= 0) {
+        if (count($customsItems) > 0 && $customsVendorId <= 0) {
             return response()->json([
                 'message' => __('Customs Clearance section requires customs broker vendor selection.'),
-            ], 422);
-        }
-        if ($customsStarted && count($customsItems) < 1) {
-            return response()->json([
-                'message' => __('Customs Clearance section requires at least one line item.'),
             ], 422);
         }
 

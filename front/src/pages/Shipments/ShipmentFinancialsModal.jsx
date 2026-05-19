@@ -40,6 +40,7 @@ import {
   opsPartnerForBucket,
   parseOpsPartnersFromOperation,
 } from './shipmentOpsPartners'
+import { validateCostInvoicePartnerSections } from './shipmentCostInvoiceValidation'
 import { buildClientInvoiceItemsFromRows } from './clientInvoiceDraft'
 import { resolveCostItemStyleFeeNameFromExpense, resolveCostItemStyleFeeNameFromRow } from './shipmentFinFeeNames'
 import { listBankAccounts, listPayments, recordPayment } from '../../api/accountings'
@@ -1622,31 +1623,13 @@ export default function ShipmentFinancialsModal({
     try {
       const { items, inlandItemsCount, customsItemsCount } = buildCostInvoiceItemsFromForm(null)
 
-      const inlandStarted = inlandItemsCount > 0 || Boolean(effectiveSectionMeta.inland?.contractor_vendor_id)
-      const customsStarted = customsItemsCount > 0 || Boolean(effectiveSectionMeta.customs?.customs_broker_vendor_id)
-
-      if (inlandStarted && !Number(effectiveSectionMeta.inland?.contractor_vendor_id || 0)) {
-        throw new Error(
-          t(
-            'shipments.fin.opsInlandContractorRequired',
-            'Assign the inland contractor in Operations → Vendors & Partners before saving cost items.'
-          )
-        )
-      }
-      if (inlandStarted && inlandItemsCount < 1) {
-        throw new Error(t('shipments.fin.inlandAtLeastOneItem', { defaultValue: 'Inland Transportation requires at least one line item.' }))
-      }
-      if (customsStarted && !Number(effectiveSectionMeta.customs?.customs_broker_vendor_id || 0)) {
-        throw new Error(
-          t(
-            'shipments.fin.opsCustomsBrokerRequired',
-            'Assign the customs broker in Operations → Vendors & Partners before saving cost items.'
-          )
-        )
-      }
-      if (customsStarted && customsItemsCount < 1) {
-        throw new Error(t('shipments.fin.customsAtLeastOneItem', { defaultValue: 'Customs Clearance requires at least one line item.' }))
-      }
+      const partnerErr = validateCostInvoicePartnerSections({
+        inlandItemsCount,
+        customsItemsCount,
+        sectionMeta: effectiveSectionMeta,
+        t,
+      })
+      if (partnerErr) throw new Error(partnerErr)
 
       await persistCostInvoicePayload(items, { notifySales: true })
 
@@ -1682,38 +1665,13 @@ export default function ShipmentFinancialsModal({
       try {
         const { items: sectionItems, inlandItemsCount, customsItemsCount } = buildCostInvoiceItemsFromForm(new Set([sectionId]))
 
-        if (sectionId === 'inland') {
-          const inlandStarted = inlandItemsCount > 0 || Boolean(effectiveSectionMeta.inland?.contractor_vendor_id)
-          if (inlandStarted && !Number(effectiveSectionMeta.inland?.contractor_vendor_id || 0)) {
-            throw new Error(
-              t(
-                'shipments.fin.opsInlandContractorRequired',
-                'Assign the inland contractor in Operations → Vendors & Partners before saving cost items.'
-              )
-            )
-          }
-          if (inlandStarted && inlandItemsCount < 1) {
-            throw new Error(
-              t('shipments.fin.inlandAtLeastOneItem', { defaultValue: 'Inland Transportation requires at least one line item.' })
-            )
-          }
-        }
-        if (sectionId === 'customs') {
-          const customsStarted = customsItemsCount > 0 || Boolean(effectiveSectionMeta.customs?.customs_broker_vendor_id)
-          if (customsStarted && !Number(effectiveSectionMeta.customs?.customs_broker_vendor_id || 0)) {
-            throw new Error(
-              t(
-                'shipments.fin.opsCustomsBrokerRequired',
-                'Assign the customs broker in Operations → Vendors & Partners before saving cost items.'
-              )
-            )
-          }
-          if (customsStarted && customsItemsCount < 1) {
-            throw new Error(
-              t('shipments.fin.customsAtLeastOneItem', { defaultValue: 'Customs Clearance requires at least one line item.' })
-            )
-          }
-        }
+        const partnerErr = validateCostInvoicePartnerSections({
+          inlandItemsCount,
+          customsItemsCount,
+          sectionMeta: effectiveSectionMeta,
+          t,
+        })
+        if (partnerErr) throw new Error(partnerErr)
 
         const invRes = await getShipmentCostInvoice(token, shipment.id)
         const existingItems = Array.isArray(invRes?.data?.items) ? invRes.data.items : []
