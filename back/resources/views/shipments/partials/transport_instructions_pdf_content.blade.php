@@ -226,7 +226,7 @@
     .ti-v4-sec-en {
         background: #162035;
         color: #ffffff;
-        font-size: 9pt;
+        font-size: 8pt;
         font-weight: 700;
         letter-spacing: 0.08em;
         text-transform: uppercase;
@@ -240,7 +240,7 @@
     .ti-v4-sec-ar {
         background: #dde5f0;
         color: #1b2a4a;
-        font-size: 11pt;
+        font-size: 9pt;
         font-weight: 600;
         padding: 6px 12px;
         text-align: right;
@@ -326,7 +326,7 @@
     .ti-v4-ctag {
         background: #162035;
         color: #ffffff;
-        font-size: 11pt;
+        font-size: 8pt;
         font-weight: 600;
         padding: 5px 14px;
     }
@@ -337,49 +337,6 @@
         font-weight: 800;
         padding: 2px 7px;
         margin-left: 6px;
-    }
-
-    .ti-v4-date {
-        width: 100%;
-        max-width: 100%;
-        table-layout: fixed;
-        border-collapse: collapse;
-        border: 1px solid #c8d4e6;
-        margin: 0 0 16px;
-    }
-
-    .ti-v4-dg-head {
-        background: #edf1f8;
-        padding: 8px 12px;
-        text-align: center;
-        border-bottom: 1px solid #e2e9f2;
-        border-left: 1px solid #e2e9f2;
-        width: 33%;
-    }
-
-    .ti-v4-dg-head-first {
-        border-left: none;
-    }
-
-    .ti-v4-dg-val {
-        padding: 14px;
-        font-size: 11pt;
-        font-weight: 700;
-        color: #162035;
-        text-align: center;
-        background: #ffffff;
-        border-left: 1px solid #e2e9f2;
-        width: 33%;
-    }
-
-    .ti-v4-dg-val-first {
-        border-left: none;
-    }
-
-    .ti-v4-dg-val-mono {
-        font-family: 'DejaVu Sans Mono', monospace;
-        font-size: 11pt;
-        color: #1e3a6e;
     }
 
     .ti-v4-pill-yes {
@@ -551,26 +508,26 @@
                         <td class="ti-v4-sec-ar">موعد وصول العميل</td>
                     </tr>
                 </table>
-                <table class="ti-v4-date" width="100%" cellspacing="0" cellpadding="0" border="0"
+                <table class="ti-v4-block" width="100%" cellspacing="0" cellpadding="0" border="0"
                     role="presentation">
                     <tr>
-                        <td class="ti-v4-dg-head ti-v4-dg-head-first">
-                            <span class="ti-v4-bkey-en" style="display:block;text-align:center;">Day</span>
-                            <span class="ti-v4-bkey-ar" style="display:block;text-align:center;">اليوم</span>
+                        <td class="ti-v4-bkey ti-v4-bkey-first">
+                            <span class="ti-v4-bkey-en">Day</span><br>
+                            <span class="ti-v4-bkey-ar">اليوم</span>
                         </td>
-                        <td class="ti-v4-dg-head">
-                            <span class="ti-v4-bkey-en" style="display:block;text-align:center;">Month</span>
-                            <span class="ti-v4-bkey-ar" style="display:block;text-align:center;">الشهر</span>
+                        <td class="ti-v4-bval ti-v4-bval-mono">{{ $arrivalDay }}</td>
+                        <td class="ti-v4-bkey">
+                            <span class="ti-v4-bkey-en">Month</span><br>
+                            <span class="ti-v4-bkey-ar">الشهر</span>
                         </td>
-                        <td class="ti-v4-dg-head">
-                            <span class="ti-v4-bkey-en" style="display:block;text-align:center;">Time</span>
-                            <span class="ti-v4-bkey-ar" style="display:block;text-align:center;">الساعة</span>
-                        </td>
+                        <td class="ti-v4-bval ti-v4-bval-mono">{{ $arrivalMonth }}</td>
                     </tr>
-                    <tr>
-                        <td class="ti-v4-dg-val ti-v4-dg-val-first">{{ $arrivalDay }}</td>
-                        <td class="ti-v4-dg-val">{{ $arrivalMonth }}</td>
-                        <td class="ti-v4-dg-val ti-v4-dg-val-mono">{{ $arrivalTime }}</td>
+                    <tr class="ti-v4-row-last">
+                        <td class="ti-v4-bkey ti-v4-bkey-first">
+                            <span class="ti-v4-bkey-en">Time</span><br>
+                            <span class="ti-v4-bkey-ar">الساعة</span>
+                        </td>
+                        <td class="ti-v4-bval ti-v4-bval-mono" colspan="3">{{ $arrivalTime }}</td>
                     </tr>
                 </table>
 
