@@ -406,18 +406,18 @@
 
     .ti-v4-ft-brand {
         font-size: 8pt;
-        color: #999999;
+        color: #ffffff;
     }
 
     .ti-v4-ft-brand strong {
-        color: #dddddd;
+        color: #ffffff;
         font-weight: 600;
     }
 
     .ti-v4-ft-num {
         font-family: 'DejaVu Sans Mono', monospace;
         font-size: 8pt;
-        color: #888888;
+        color: #ffffff;
         text-align: right;
     }
 </style>
