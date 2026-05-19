@@ -137,7 +137,7 @@ export function getDefaultPricingTab() {
 /** Returns the visible attendance section tab IDs for the user. */
 export function getAttendanceTabs(user) {
   if (computeIsAdminRole(user)) return ['admin']
-  return ['my', 'excuses']
+  return ['my']
 }
 
 /** Returns the default Attendance active section for the user. */

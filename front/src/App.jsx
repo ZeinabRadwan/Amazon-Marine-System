@@ -667,18 +667,18 @@ function App() {
     <BrowserRouter basename={basename}>
       <DateInputLangSync />
       <Routes>
-        <Route element={<AuthenticatedLayout />}>
+        <Route path="/" element={<AuthenticatedLayout />}>
           <Route
-            path="/"
+            index
             element={
               <RequirePageAccess pageKey="dashboard">
                 <Home />
               </RequirePageAccess>
             }
           />
-          <Route path="/profile" element={<Profile />} />
+          <Route path="profile" element={<Profile />} />
           <Route
-            path="/users"
+            path="users"
             element={
               <RequirePageAccess pageKey="users">
                 <Users />
@@ -686,7 +686,7 @@ function App() {
             }
           />
           <Route
-            path="/roles-permissions"
+            path="roles-permissions"
             element={
               <RequirePageAccess pageKey="roles_permissions">
                 <RolesPermissions />
@@ -694,7 +694,7 @@ function App() {
             }
           />
           <Route
-            path="/clients"
+            path="clients"
             element={
               <RequirePageAccess pageKey="clients">
                 <Clients />
@@ -702,7 +702,7 @@ function App() {
             }
           />
           <Route
-            path="/leads"
+            path="leads"
             element={
               <RequirePageAccess pageKey="leads">
                 <Leads />
@@ -710,7 +710,7 @@ function App() {
             }
           />
           <Route
-            path="/accountings"
+            path="accountings"
             element={
               <RequirePageAccess pageKey="accounting">
                 <Accountings />
@@ -718,7 +718,7 @@ function App() {
             }
           />
           <Route
-            path="/accountings/customers/:customerId/statement"
+            path="accountings/customers/:customerId/statement"
             element={
               <RequirePageAccess pageKey="accounting">
                 <CustomerStatementDetailPage />
@@ -726,7 +726,7 @@ function App() {
             }
           />
           <Route
-            path="/accountings/partners/:partnerId/statement"
+            path="accountings/partners/:partnerId/statement"
             element={
               <RequirePageAccess pageKey="accounting">
                 <PartnerStatementDetailPage />
@@ -734,7 +734,7 @@ function App() {
             }
           />
           <Route
-            path="/treasury"
+            path="treasury"
             element={
               <RequirePageAccess pageKey="treasury">
                 <Treasury />
@@ -742,7 +742,7 @@ function App() {
             }
           />
           <Route
-            path="/expenses"
+            path="expenses"
             element={
               <RequirePageAccess pageKey="expenses">
                 <Expenses />
@@ -750,7 +750,7 @@ function App() {
             }
           />
           <Route
-            path="/vendors"
+            path="vendors"
             element={
               <RequirePageAccess pageKey="partners">
                 <Vendors />
@@ -758,16 +758,16 @@ function App() {
             }
           />
           <Route
-            path="/visits"
+            path="visits"
             element={
               <RequirePageAccess pageKey="visits">
                 <Visits />
               </RequirePageAccess>
             }
           />
-          <Route path="/client-lookups" element={<ClientLookups />} />
+          <Route path="client-lookups" element={<ClientLookups />} />
           <Route
-            path="/customer-services"
+            path="customer-services"
             element={
               <RequirePageAccess pageKey="customer_service">
                 <CustomerServices />
@@ -775,7 +775,7 @@ function App() {
             }
           />
           <Route
-            path="/attendance"
+            path="attendance"
             element={
               <RequirePageAccess pageKey="attendance">
                 <Attendance />
@@ -783,7 +783,7 @@ function App() {
             }
           />
           <Route
-            path="/sd-forms"
+            path="sd-forms"
             element={
               <RequirePageAccess pageKey="sd_forms">
                 <SDForms />
@@ -791,7 +791,7 @@ function App() {
             }
           />
           <Route
-            path="/sd-forms/declaration"
+            path="sd-forms/declaration"
             element={
               <RequirePageAccess pageKey="sd_forms">
                 <ShipmentDeclarationForm />
@@ -799,16 +799,16 @@ function App() {
             }
           />
           <Route
-            path="/shipments"
+            path="shipments"
             element={
               <RequirePageAccess pageKey="shipments">
                 <Shipments />
               </RequirePageAccess>
             }
           />
-          <Route path="/operations-dashboard" element={<Navigate to="/" replace />} />
+          <Route path="operations-dashboard" element={<Navigate to="/" replace />} />
           <Route
-            path="/pricing"
+            path="pricing"
             element={
               <RequirePageAccess pageKey="pricing">
                 <Pricing />
@@ -816,7 +816,7 @@ function App() {
             }
           />
           <Route
-            path="/invoices"
+            path="invoices"
             element={
               <RequirePageAccess pageKey="invoices">
                 <Invoices />
@@ -824,7 +824,7 @@ function App() {
             }
           />
           <Route
-            path="/invoices/:invoiceId/edit"
+            path="invoices/:invoiceId/edit"
             element={
               <RequirePageAccess pageKey="invoices">
                 <InvoiceEditRouteRedirect />
@@ -832,16 +832,16 @@ function App() {
             }
           />
           <Route
-            path="/partner-ledger"
+            path="partner-ledger"
             element={
               <RequirePageAccess pageKey="accounting">
                 <PartnerLedger />
               </RequirePageAccess>
             }
           />
-          <Route path="/notifications" element={<Notifications />} />
+          <Route path="notifications" element={<Notifications />} />
           <Route
-            path="/admin/notifications"
+            path="admin/notifications"
             element={
               <RequirePageAccess pageKey="users">
                 <AdminNotifications />
@@ -849,7 +849,7 @@ function App() {
             }
           />
           <Route
-            path="/settings"
+            path="settings"
             element={
               <RequireAdminOnly>
                 <Settings />
@@ -857,7 +857,7 @@ function App() {
             }
           />
           <Route
-            path="/reports"
+            path="reports"
             element={
               <RequireAdmin>
                 <Reports />
@@ -865,7 +865,7 @@ function App() {
             }
           />
           <Route
-            path="/official-documents"
+            path="official-documents"
             element={
               <RequirePageAccess pageKey="official_documents">
                 <Documents />

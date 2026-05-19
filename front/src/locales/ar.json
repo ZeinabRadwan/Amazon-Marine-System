@@ -1647,9 +1647,7 @@
     "saving": "جاري الحفظ…",
     "tabs": {
       "my": "حضوري",
-      "excuses": "الأعذار",
-      "admin": "تقرير المسؤول",
-      "excusesAdmin": "اعتماد الأعذار"
+      "admin": "تقرير المسؤول"
     },
     "geoHint": "اسمح بالوصول للموقع لحساب المسافة من المكتب. بدون الموقع قد يُرفض التسجيل إذا كان مطلوباً.",
     "scheduleBlockBeforeStart": "تسجيل الدخول غير مسموح بعد: قبل {{start}} ({{tz}}). انتظر بداية اليوم المجدولة أو اطلب من المسؤول تعديل السياسة أو منطقتك الزمنية.",
@@ -1660,28 +1658,6 @@
     "withinRadius": "ضمن النطاق",
     "distanceM": "المسافة (م)",
     "no": "لا",
-    "excuses": {
-      "submitTitle": "تقديم عذر",
-      "submitHint": "املأ النموذج وأرسل طلب عذرك.",
-      "chooseFile": "اختيار ملف",
-      "removeFile": "إزالة الملف",
-      "noFile": "لم يتم اختيار ملف",
-      "reasonPlaceholder": "اكتب السبب بالتفصيل...",
-      "reason": "السبب",
-      "attachment": "مرفق (PDF أو صورة)",
-      "requiredField": "{{field}} مطلوب.",
-      "reset": "إعادة التعيين",
-      "submit": "إرسال العذر",
-      "submitSuccess": "تم إرسال العذر.",
-      "myList": "أعذاري",
-      "empty": "لا توجد أعذار بعد.",
-      "viewAttachment": "عرض المرفق",
-      "status": {
-        "pending": "قيد المراجعة",
-        "approved": "معتمد",
-        "rejected": "مرفوض"
-      }
-    },
     "admin": {
       "totalDays": "إجمالي الأيام",
       "avgWorkedHours": "متوسط ساعات العمل",
@@ -1693,13 +1669,7 @@
       "summaryTitle": "ملخص حسب الموظف",
       "summaryEmpty": "لا يوجد ملخص لهذا المرشح.",
       "records": "سجلات",
-      "employees": "موظفون",
-      "pendingExcuses": "أعذار قيد المراجعة",
-      "noPendingExcuses": "لا توجد أعذار معلقة.",
-      "approve": "موافقة",
-      "reject": "رفض",
-      "viewAttachment": "عرض المرفق",
-      "excuseUpdated": "تم تحديث العذر."
+      "employees": "موظفون"
     },
     "user": "المستخدم",
     "date": "التاريخ",
@@ -1825,9 +1795,6 @@
       },
       "client_follow_up_reminder": {
         "title": "تذكير متابعة عميل"
-      },
-      "excuse_decision": {
-        "title": "قرار عذر حضور"
       }
     }
   },

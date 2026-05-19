@@ -108,7 +108,6 @@ return [
         'attendance' => [
             'attendance.view',
             'attendance.admin',
-            'attendance.excuses.manage',
         ],
         'pricing' => [
             'pricing.view_offers',

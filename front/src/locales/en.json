@@ -1646,9 +1646,7 @@
     "saving": "Saving…",
     "tabs": {
       "my": "My attendance",
-      "excuses": "Excuses",
-      "admin": "Admin sheet",
-      "excusesAdmin": "Excuse approvals"
+      "admin": "Admin sheet"
     },
     "geoHint": "Allow location access for accurate office distance. If disabled, clock-in may fail when location is required.",
     "scheduleBlockBeforeStart": "Clock-in is not allowed yet: before {{start}} ({{tz}}). Wait until the scheduled start or ask an admin to adjust policy / your timezone.",
@@ -1659,28 +1657,6 @@
     "withinRadius": "Within radius",
     "distanceM": "Distance (m)",
     "no": "No",
-    "excuses": {
-      "submitTitle": "Submit excuse",
-      "submitHint": "Fill in the form and submit your excuse request.",
-      "chooseFile": "Choose file",
-      "removeFile": "Remove file",
-      "noFile": "No file selected",
-      "reasonPlaceholder": "Write the reason in detail...",
-      "reason": "Reason",
-      "attachment": "Attachment (PDF or image)",
-      "requiredField": "{{field}} is required.",
-      "reset": "Reset",
-      "submit": "Submit excuse",
-      "submitSuccess": "Excuse submitted.",
-      "myList": "My excuses",
-      "empty": "No excuses yet.",
-      "viewAttachment": "View attachment",
-      "status": {
-        "pending": "Pending",
-        "approved": "Approved",
-        "rejected": "Rejected"
-      }
-    },
     "admin": {
       "totalDays": "Total days",
       "avgWorkedHours": "Avg. worked hours",
@@ -1692,13 +1668,7 @@
       "summaryTitle": "Summary by employee",
       "summaryEmpty": "No summary for this filter.",
       "records": "Records",
-      "employees": "Employees",
-      "pendingExcuses": "Pending excuses",
-      "noPendingExcuses": "No pending excuses.",
-      "approve": "Approve",
-      "reject": "Reject",
-      "viewAttachment": "View attachment",
-      "excuseUpdated": "Excuse updated."
+      "employees": "Employees"
     },
     "user": "User",
     "date": "Date",
@@ -1824,9 +1794,6 @@
       },
       "client_follow_up_reminder": {
         "title": "Client follow-up reminder"
-      },
-      "excuse_decision": {
-        "title": "Attendance excuse update"
       }
     }
   },

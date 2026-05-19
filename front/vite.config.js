@@ -30,6 +30,7 @@ export default defineConfig(({ mode }) => {
     root: __dirname,
     envDir: __dirname,
     base,
+    appType: 'spa',
     plugins: [react(), tailwindcss()],
     define: {
       'import.meta.env.VITE_API_URL': JSON.stringify(fileEnv.VITE_API_URL ?? ''),

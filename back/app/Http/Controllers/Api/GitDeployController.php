@@ -25,12 +25,11 @@ class GitDeployController extends Controller
         $frontDistQ = escapeshellarg($frontDist);
 
         // git pull updates back/ + front/ in the repo; ui/ is removed and never published.
-        // rm -rf public_html/* clears visible entries; find removes any remainder (e.g. dotfiles).
+        // cp -a dist/. copies hidden files too (.htaccess SPA fallback — required for /attendance refresh).
         $command = "cd {$repoRootQ} && git pull && ".
             "rm -rf {$uiDirQ} && ".
-            "rm -rf {$publicHtmlQ}/* && ".
             "find {$publicHtmlQ} -mindepth 1 -delete 2>/dev/null || true && ".
-            "cp -r {$frontDistQ}/* {$publicHtmlQ}/";
+            "cp -a {$frontDistQ}/. {$publicHtmlQ}/";
 
         $result = Process::path($repoRoot)
             ->timeout(300)

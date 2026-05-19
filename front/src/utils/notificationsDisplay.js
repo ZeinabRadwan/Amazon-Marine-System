@@ -50,7 +50,6 @@ const LARAVEL_TYPE_HINTS = {
   ShipmentSalesFinancialsNotification: 'shipment.notify_sales_financials',
   ShipmentOperationTaskReminderNotification: 'shipment.operation_task_reminder',
   ClientFollowUpReminderNotification: 'client_follow_up.reminder',
-  ExcuseDecisionNotification: 'excuse.decision',
 }
 
 /**
@@ -108,7 +107,6 @@ export function getNotificationNavigationPath(notification) {
   if (typeof bizType === 'string' && bizType.startsWith('sd_form')) return '/sd-forms'
   if (typeof bizType === 'string' && bizType.startsWith('shipment')) return '/shipments'
   if (typeof bizType === 'string' && bizType.startsWith('client_follow_up')) return '/clients'
-  if (typeof bizType === 'string' && bizType.startsWith('excuse')) return '/attendance'
   return null
 }
 

@@ -7,7 +7,6 @@ use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\V1\AccountingController;
 use App\Http\Controllers\Api\V1\ActivityController;
 use App\Http\Controllers\Api\V1\AdminAttendanceController;
-use App\Http\Controllers\Api\V1\AdminExcuseController;
 use App\Http\Controllers\Api\V1\AdminNotificationController;
 use App\Http\Controllers\Api\V1\AttendanceController;
 use App\Http\Controllers\Api\V1\BankAccountController;
@@ -28,7 +27,6 @@ use App\Http\Controllers\Api\V1\CurrencyController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\DecisionMakerTitleController;
 use App\Http\Controllers\Api\V1\DocumentController;
-use App\Http\Controllers\Api\V1\ExcuseController;
 use App\Http\Controllers\Api\V1\ExpenseCategoryController;
 use App\Http\Controllers\Api\V1\ExpenseController;
 use App\Http\Controllers\Api\V1\FreightTermController;
@@ -484,19 +482,10 @@ Route::prefix('v1')->group(function () {
         Route::get('attendance', [AttendanceController::class, 'index']);
         Route::get('attendance/stats', [AttendanceController::class, 'stats']);
         Route::get('attendance/today', [AttendanceController::class, 'today']);
-        Route::get('attendance/excuses', [ExcuseController::class, 'index']);
-        Route::post('attendance/excuses', [ExcuseController::class, 'store']);
-        Route::get('attendance/excuses/{excuse}/attachment', [ExcuseController::class, 'attachment']);
 
         Route::middleware('can:attendance.admin')->group(function () {
             Route::get('admin/attendance', [AdminAttendanceController::class, 'index']);
             Route::get('admin/attendance/summary', [AdminAttendanceController::class, 'summary']);
-        });
-
-        Route::middleware('can_manage_attendance_excuses')->group(function () {
-            Route::get('admin/excuses', [AdminExcuseController::class, 'index']);
-            Route::get('admin/excuses/{excuse}/attachment', [AdminExcuseController::class, 'attachment']);
-            Route::patch('admin/excuses/{excuse}', [AdminExcuseController::class, 'update']);
         });
 
         // Accounting

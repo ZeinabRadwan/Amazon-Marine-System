@@ -33,7 +33,6 @@ const TYPE_ICON = {
   'shipment.notify_sales_financials': 'ship',
   'shipment.operation_task_reminder': 'clipboard',
   'client_follow_up.reminder': 'user',
-  'excuse.decision': 'calendar',
 }
 
 function str(v) {

@@ -300,22 +300,19 @@ describe('Attendance tabs — Admin Rule', () => {
 
     it('Sales (regular user) sees personal tabs only', () => {
       const tabs = getAttendanceTabs(salesUser)
-      expect(tabs).toContain('my')
-      expect(tabs).toContain('excuses')
+      expect(tabs).toEqual(['my'])
       expect(tabs).not.toContain('admin')
     })
 
     it('Operations sees personal tabs only', () => {
       const tabs = getAttendanceTabs(opsUser)
-      expect(tabs).toContain('my')
-      expect(tabs).toContain('excuses')
+      expect(tabs).toEqual(['my'])
       expect(tabs).not.toContain('admin')
     })
 
     it('Accountant sees personal tabs only', () => {
       const tabs = getAttendanceTabs(accountantUser)
-      expect(tabs).toContain('my')
-      expect(tabs).toContain('excuses')
+      expect(tabs).toEqual(['my'])
     })
   })
 

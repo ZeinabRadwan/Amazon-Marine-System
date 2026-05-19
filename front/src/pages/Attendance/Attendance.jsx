@@ -9,14 +9,8 @@ import {
   listAttendance,
   getAttendanceStats,
   getAttendanceToday,
-  listMyExcuses,
-  submitExcuse,
   adminListAttendance,
   adminAttendanceSummary,
-  adminListExcuses,
-  adminPatchExcuse,
-  openAdminExcuseAttachment,
-  openMyExcuseAttachment,
 } from '../../api/attendance'
 import { getProfile } from '../../api/auth'
 import { listUsers } from '../../api/users'
@@ -41,8 +35,6 @@ import {
   MapPin,
   Building2,
   Timer,
-  Paperclip,
-  XCircle,
   RotateCcw,
   AlertTriangle,
   FileSpreadsheet,
@@ -70,15 +62,6 @@ function dateLocaleForLang(lang) {
 
 function formatDateOnly(dateStr) {
   return formatDate(dateStr)
-}
-
-function excuseStatusLabel(t, status) {
-  if (status == null || String(status).trim() === '') return '—'
-  const key = String(status).trim().toLowerCase().replace(/\s+/g, '_')
-  if (key === 'pending' || key === 'approved' || key === 'rejected') {
-    return t(`attendance.excuses.status.${key}`)
-  }
-  return String(status).replace(/_/g, ' ')
 }
 
 /** Policy `HH:mm` / `H:mm` → 12h label for the shift timeline (locale-aware). */
@@ -214,19 +197,13 @@ export default function Attendance() {
   }, [])
   const canShowAdminTab = isAdminRole
   const canAdminAttendance = isAdminRole
-  const canManageAttendanceExcuses = isAdminRole
   const canFilterAll = isAdminRole
 
   const sectionTabs = useMemo(() => {
-    // Admin (role 1): Only sees Admin/Reports tab, loses personal recording/excuses
     if (isAdminRole) {
       return [{ id: 'admin', label: t('attendance.tabs.admin') }]
     }
-    // Regular User: Sees personal tabs, loses Admin/Reports
-    return [
-      { id: 'my', label: t('attendance.tabs.my') },
-      { id: 'excuses', label: t('attendance.tabs.excuses') },
-    ]
+    return [{ id: 'my', label: t('attendance.tabs.my') }]
   }, [isAdminRole, t])
 
   const [activeSection, setActiveSection] = useState(isAdminRole ? 'admin' : 'my')
@@ -262,12 +239,6 @@ export default function Attendance() {
     updatedAt: null,
   })
 
-  const [myExcuses, setMyExcuses] = useState([])
-  const [excusesLoading, setExcusesLoading] = useState(false)
-  const [excuseForm, setExcuseForm] = useState({ date: today, reason: '', file: null })
-  const [excuseErrors, setExcuseErrors] = useState({})
-  const [excuseSubmitting, setExcuseSubmitting] = useState(false)
-
   const [adminFilters, setAdminFilters] = useState({
     employee_id: '',
     date_from: today,
@@ -284,10 +255,6 @@ export default function Attendance() {
   const [adminSortKey, setAdminSortKey] = useState('date')
   const [adminSortDir, setAdminSortDir] = useState('desc')
 
-  const [adminExcuses, setAdminExcuses] = useState([])
-  const [adminExcusesLoading, setAdminExcusesLoading] = useState(false)
-  const [excuseActionId, setExcuseActionId] = useState(null)
-  const [openingAttachmentId, setOpeningAttachmentId] = useState(null)
   const [adminRefresh, setAdminRefresh] = useState(0)
   const adminFiltersRef = useRef(adminFilters)
   adminFiltersRef.current = adminFilters
@@ -433,32 +400,6 @@ export default function Attendance() {
     refreshUserLocation()
   }, [activeSection, refreshUserLocation])
 
-  const loadMyExcuses = useCallback(() => {
-    if (!token) return
-    setExcusesLoading(true)
-    listMyExcuses(token)
-      .then((data) => setMyExcuses(Array.isArray(data) ? data : []))
-      .catch(() => setMyExcuses([]))
-      .finally(() => setExcusesLoading(false))
-  }, [token])
-
-  useEffect(() => {
-    if (activeSection === 'excuses') loadMyExcuses()
-  }, [activeSection, loadMyExcuses])
-
-  const loadAdminExcuses = useCallback(() => {
-    if (!token || !canManageAttendanceExcuses) return
-    setAdminExcusesLoading(true)
-    adminListExcuses(token, { status: 'pending', per_page: 50 })
-      .then((res) => {
-        setAdminExcuses(Array.isArray(res?.items) ? res.items : [])
-      })
-      .catch(() => {
-        setAdminExcuses([])
-      })
-      .finally(() => setAdminExcusesLoading(false))
-  }, [token, canManageAttendanceExcuses])
-
   useEffect(() => {
     if (activeSection !== 'admin' || !canAdminAttendance || !token) return
     let cancelled = false
@@ -513,12 +454,6 @@ export default function Attendance() {
     }
   }, [activeSection, canAdminAttendance])
 
-  useEffect(() => {
-    if (activeSection === 'admin' && canManageAttendanceExcuses) {
-      loadAdminExcuses()
-    }
-  }, [activeSection, canManageAttendanceExcuses, loadAdminExcuses])
-
   const handleCheckIn = async () => {
     if (!token) return
     setAlert(null)
@@ -562,83 +497,6 @@ export default function Attendance() {
       setAlert({ type: 'error', message: err.message || t('attendance.error') })
     } finally {
       setCheckOutSubmitting(false)
-    }
-  }
-
-  const handleSubmitExcuse = async (e) => {
-    e.preventDefault()
-    if (!token) return
-    const nextErrors = {}
-    if (!excuseForm.date) nextErrors.date = t('attendance.date')
-    if (!excuseForm.reason?.trim()) nextErrors.reason = t('attendance.excuses.reason')
-    if (Object.keys(nextErrors).length > 0) {
-      setExcuseErrors(nextErrors)
-      return
-    }
-    setExcuseErrors({})
-    setExcuseSubmitting(true)
-    setAlert(null)
-    try {
-      await submitExcuse(token, {
-        date: excuseForm.date,
-        reason: excuseForm.reason,
-        attachment: excuseForm.file || undefined,
-      })
-      setAlert({ type: 'success', message: t('attendance.excuses.submitSuccess') })
-      setExcuseForm({ date: today, reason: '', file: null })
-      setExcuseErrors({})
-      loadMyExcuses()
-    } catch (err) {
-      setAlert({ type: 'error', message: err.message || t('attendance.error') })
-    } finally {
-      setExcuseSubmitting(false)
-    }
-  }
-
-  const handleResetExcuseForm = () => {
-    setExcuseForm({ date: today, reason: '', file: null })
-    setExcuseErrors({})
-  }
-
-  const handleOpenAdminExcuseAttachment = async (id) => {
-    if (!token) return
-    setOpeningAttachmentId(id)
-    setAlert(null)
-    try {
-      await openAdminExcuseAttachment(token, id)
-    } catch (err) {
-      setAlert({ type: 'error', message: err.message || t('attendance.error') })
-    } finally {
-      setOpeningAttachmentId(null)
-    }
-  }
-
-  const handleOpenMyExcuseAttachment = async (id) => {
-    if (!token) return
-    setOpeningAttachmentId(id)
-    setAlert(null)
-    try {
-      await openMyExcuseAttachment(token, id)
-    } catch (err) {
-      setAlert({ type: 'error', message: err.message || t('attendance.error') })
-    } finally {
-      setOpeningAttachmentId(null)
-    }
-  }
-
-  const handleAdminExcuseDecision = async (id, status) => {
-    if (!token) return
-    setExcuseActionId(id)
-    setAlert(null)
-    try {
-      await adminPatchExcuse(token, id, { status })
-      setAlert({ type: 'success', message: t('attendance.admin.excuseUpdated') })
-      loadAdminExcuses()
-      if (canAdminAttendance) setAdminRefresh((n) => n + 1)
-    } catch (err) {
-      setAlert({ type: 'error', message: err.message || t('attendance.error') })
-    } finally {
-      setExcuseActionId(null)
     }
   }
 
@@ -1041,9 +899,16 @@ export default function Attendance() {
   return (
     <Container size="xl">
       <div className="clients-page attendance-page">
-        <div className="mb-4">
-          <Tabs tabs={sectionTabs} activeTab={activeSection} onChange={setActiveSection} className="attendance-section-tabs" />
-        </div>
+        {sectionTabs.length > 1 && (
+          <div className="mb-4">
+            <Tabs
+              tabs={sectionTabs}
+              activeTab={activeSection}
+              onChange={setActiveSection}
+              className="attendance-section-tabs"
+            />
+          </div>
+        )}
 
         {activeSection === 'my' && (
           <>
@@ -1517,7 +1382,6 @@ export default function Attendance() {
                     <option value="late">late</option>
                     <option value="early_leave">early_leave</option>
                     <option value="absent">absent</option>
-                    <option value="excused">excused</option>
                   </select>
                   <select
                     className="clients-input min-w-[8rem]"
@@ -1597,142 +1461,6 @@ export default function Attendance() {
           </>
         )}
 
-        {activeSection === 'excuses' && (
-          <div className="space-y-6">
-            <div className="clients-filters-card attendance-excuse-card">
-              <div className="clients-filters__row clients-filters__row--main">
-                <div className="min-w-0 flex-1">
-                  <h2 className="attendance-excuse-title">{t('attendance.excuses.submitTitle')}</h2>
-                  <p className="attendance-excuse-subtitle">{t('attendance.excuses.submitHint')}</p>
-                </div>
-              </div>
-
-              <form className="attendance-excuse-form" onSubmit={handleSubmitExcuse}>
-                <div className="attendance-excuse-grid">
-                  <label className="settings-input-wrap">
-                    <span className="settings-input-label">{t('attendance.date')}</span>
-                    <input
-                      type="date"
-                      lang={i18n.language}
-                      className={`clients-input ${excuseErrors.date ? 'attendance-input--error' : ''}`}
-                      value={excuseForm.date}
-                      onChange={(e) => {
-                        setExcuseForm((f) => ({ ...f, date: e.target.value }))
-                        if (excuseErrors.date) setExcuseErrors((prev) => ({ ...prev, date: undefined }))
-                      }}
-                      required
-                    />
-                    {excuseErrors.date && (
-                      <span className="attendance-field-error">
-                        {t('attendance.excuses.requiredField', { field: excuseErrors.date })}
-                      </span>
-                    )}
-                  </label>
-
-                  <label className="settings-input-wrap">
-                    <span className="settings-input-label">{t('attendance.excuses.attachment')}</span>
-                    <div className="attendance-file-upload">
-                      <label className="page-header__btn attendance-file-upload__choose">
-                        <Paperclip size={16} aria-hidden />
-                        <span>{t('attendance.excuses.chooseFile')}</span>
-                        <input
-                          type="file"
-                          className="attendance-file-upload__input"
-                          accept=".pdf,.jpg,.jpeg,.png,.webp"
-                          onChange={(e) => setExcuseForm((f) => ({ ...f, file: e.target.files?.[0] || null }))}
-                        />
-                      </label>
-                      {excuseForm.file ? (
-                        <div className="attendance-file-upload__selected">
-                          <span className="attendance-file-upload__name">{excuseForm.file.name}</span>
-                          <button
-                            type="button"
-                            className="clients-filters__btn-icon"
-                            onClick={() => setExcuseForm((f) => ({ ...f, file: null }))}
-                            aria-label={t('attendance.excuses.removeFile')}
-                            title={t('attendance.excuses.removeFile')}
-                          >
-                            <XCircle className="clients-filters__btn-icon-svg" aria-hidden />
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="attendance-file-upload__hint">{t('attendance.excuses.noFile')}</span>
-                      )}
-                    </div>
-                  </label>
-
-                  <label className="settings-input-wrap attendance-excuse-grid__full">
-                    <span className="settings-input-label">{t('attendance.excuses.reason')}</span>
-                    <textarea
-                      className={`clients-input min-h-[120px] ${excuseErrors.reason ? 'attendance-input--error' : ''}`}
-                      value={excuseForm.reason}
-                      onChange={(e) => {
-                        setExcuseForm((f) => ({ ...f, reason: e.target.value }))
-                        if (excuseErrors.reason) setExcuseErrors((prev) => ({ ...prev, reason: undefined }))
-                      }}
-                      placeholder={t('attendance.excuses.reasonPlaceholder')}
-                      required
-                    />
-                    {excuseErrors.reason && (
-                      <span className="attendance-field-error">
-                        {t('attendance.excuses.requiredField', { field: excuseErrors.reason })}
-                      </span>
-                    )}
-                  </label>
-                </div>
-
-                <div className="attendance-excuse-actions">
-                  <button type="button" className="page-header__btn" onClick={handleResetExcuseForm} disabled={excuseSubmitting}>
-                    {t('attendance.excuses.reset')}
-                  </button>
-                  <button type="submit" className="page-header__btn page-header__btn--primary" disabled={excuseSubmitting}>
-                    {excuseSubmitting ? t('attendance.saving') : t('attendance.excuses.submit')}
-                  </button>
-                </div>
-              </form>
-            </div>
-
-            <div className="clients-filters-card attendance-my-excuses-card">
-              <div className="attendance-my-excuses-head">
-                <h2 className="text-lg font-semibold">{t('attendance.excuses.myList')}</h2>
-                <span className="attendance-my-excuses-count">{myExcuses.length}</span>
-              </div>
-              {excusesLoading ? (
-                <LoaderDots />
-              ) : myExcuses.length === 0 ? (
-                <p className="clients-empty">{t('attendance.excuses.empty')}</p>
-              ) : (
-                <ul className="attendance-my-excuses-list">
-                  {myExcuses.map((ex) => (
-                    <li key={ex.id} className="attendance-my-excuses-item">
-                      <div className="attendance-my-excuses-item__head">
-                        <span className="attendance-my-excuses-item__date">{formatDateOnly(ex.date, i18n.language)}</span>
-                        <span className={`attendance-my-excuses-item__status attendance-my-excuses-item__status--${String(ex.status || '').toLowerCase()}`}>
-                          {excuseStatusLabel(t, ex.status)}
-                        </span>
-                      </div>
-                      <p className="attendance-my-excuses-item__reason">{ex.reason}</p>
-                      {(ex.has_attachment || ex.attachment_path) && (
-                        <div className="attendance-my-excuses-item__attachment">
-                          <button
-                            type="button"
-                            className="page-header__btn inline-flex items-center gap-2 text-sm"
-                            disabled={openingAttachmentId === ex.id}
-                            onClick={() => handleOpenMyExcuseAttachment(ex.id)}
-                          >
-                            <Paperclip size={16} aria-hidden />
-                            {openingAttachmentId === ex.id ? t('attendance.saving') : t('attendance.excuses.viewAttachment')}
-                          </button>
-                        </div>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
-        )}
-
         {activeSection === 'admin' && canShowAdminTab && (
           <div className="space-y-6">
             {canAdminAttendance ? (
@@ -1785,7 +1513,6 @@ export default function Attendance() {
                     <option value="late">late</option>
                     <option value="early_leave">early_leave</option>
                     <option value="absent">absent</option>
-                    <option value="excused">excused</option>
                   </select>
                   <select
                     className="clients-input min-w-[8rem]"
@@ -1905,59 +1632,6 @@ export default function Attendance() {
               </>
             ) : null}
 
-            {canManageAttendanceExcuses ? (
-              <>
-            <h2 className="text-lg font-semibold">{t('attendance.admin.pendingExcuses')}</h2>
-            {adminExcusesLoading ? (
-              <LoaderDots />
-            ) : adminExcuses.length === 0 ? (
-              <p className="clients-empty">{t('attendance.admin.noPendingExcuses')}</p>
-            ) : (
-              <ul className="space-y-3">
-                {adminExcuses.map((ex) => (
-                  <li key={ex.id} className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="font-medium">{ex.employee_name}</span>
-                      <span>{formatDateOnly(ex.date, i18n.language)}</span>
-                    </div>
-                    <p className="mt-2 text-sm whitespace-pre-wrap">{ex.reason}</p>
-                    {(ex.has_attachment || ex.attachment_path) && (
-                      <div className="mt-2">
-                        <button
-                          type="button"
-                          className="page-header__btn inline-flex items-center gap-2 text-sm"
-                          disabled={excuseActionId === ex.id || openingAttachmentId === ex.id}
-                          onClick={() => handleOpenAdminExcuseAttachment(ex.id)}
-                        >
-                          <Paperclip size={16} aria-hidden />
-                          {openingAttachmentId === ex.id ? t('attendance.saving') : t('attendance.admin.viewAttachment')}
-                        </button>
-                      </div>
-                    )}
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        className="page-header__btn page-header__btn--primary text-sm"
-                        disabled={excuseActionId === ex.id}
-                        onClick={() => handleAdminExcuseDecision(ex.id, 'approved')}
-                      >
-                        {t('attendance.admin.approve')}
-                      </button>
-                      <button
-                        type="button"
-                        className="page-header__btn text-sm"
-                        disabled={excuseActionId === ex.id}
-                        onClick={() => handleAdminExcuseDecision(ex.id, 'rejected')}
-                      >
-                        {t('attendance.admin.reject')}
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-              </>
-            ) : null}
           </div>
         )}
 

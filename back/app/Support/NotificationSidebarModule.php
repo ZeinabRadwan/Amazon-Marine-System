@@ -13,7 +13,6 @@ class NotificationSidebarModule
         'sd_form' => 'sd_forms',
         'shipment_financials' => 'shipments',
         'shipment' => 'shipments',
-        'excuse' => 'attendance',
     ];
 
     /** @var array<string, string> */
@@ -26,7 +25,6 @@ class NotificationSidebarModule
         'ShipmentOperationTaskReminderNotification' => 'shipments',
         'ShipmentFinancialsCompleted' => 'shipments',
         'ClientFollowUpReminderNotification' => 'clients',
-        'ExcuseDecisionNotification' => 'attendance',
     ];
 
     public static function resolve(?string $payloadType, ?string $laravelNotificationClass = null): ?string

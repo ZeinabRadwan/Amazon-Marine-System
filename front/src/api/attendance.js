@@ -3,8 +3,7 @@
  * Clock: POST /attendance/clock-in | clock-out (body: latitude?, longitude?, notes?)
  * Legacy aliases: check-in, check-out
  * List: GET /attendance, stats, today
- * Excuses: GET|POST /attendance/excuses, GET /attendance/excuses/{id}/attachment
- * Admin: GET /admin/attendance, /admin/attendance/summary, GET|PATCH /admin/excuses
+ * Admin: GET /admin/attendance, /admin/attendance/summary
  */
 
 import { getApiBaseUrl } from './apiBaseUrl'
@@ -119,31 +118,6 @@ export async function getAttendanceToday(token) {
   return unwrapPayload(data)
 }
 
-export async function listMyExcuses(token, params = {}) {
-  const q = new URLSearchParams()
-  if (params.status) q.set('status', params.status)
-  const url = `${getBaseUrl()}/attendance/excuses${q.toString() ? `?${q}` : ''}`
-  const res = await apiFetch(url, { headers: authHeaders(token) })
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.message || data.error || `Failed to load excuses (${res.status})`)
-  return unwrapPayload(data)
-}
-
-export async function submitExcuse(token, { date, reason, attachment }) {
-  const form = new FormData()
-  form.set('date', date)
-  form.set('reason', reason)
-  if (attachment) form.set('attachment', attachment)
-  const res = await apiFetch(`${getBaseUrl()}/attendance/excuses`, {
-    method: 'POST',
-    headers: authHeaders(token),
-    body: form,
-  })
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.message || data.error || `Failed to submit excuse (${res.status})`)
-  return unwrapPayload(data)
-}
-
 export async function adminListAttendance(token, params = {}) {
   const q = new URLSearchParams()
   const keys = ['employee_id', 'date_from', 'date_to', 'status', 'device_type', 'is_within_radius', 'page', 'per_page']
@@ -167,83 +141,4 @@ export async function adminAttendanceSummary(token, params = {}) {
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Summary failed (${res.status})`)
   return unwrapPayload(data)
-}
-
-export async function adminListExcuses(token, params = {}) {
-  const q = new URLSearchParams()
-  ;['status', 'employee_id', 'date_from', 'date_to', 'page', 'per_page'].forEach((k) => {
-    if (params[k] != null && params[k] !== '') q.set(k, String(params[k]))
-  })
-  const url = `${getBaseUrl()}/admin/excuses${q.toString() ? `?${q}` : ''}`
-  const res = await apiFetch(url, { headers: authHeaders(token) })
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.message || data.error || `Admin excuses failed (${res.status})`)
-  return unwrapPayload(data)
-}
-
-export async function adminPatchExcuse(token, id, body) {
-  const res = await apiFetch(`${getBaseUrl()}/admin/excuses/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
-    body: JSON.stringify(body),
-  })
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.message || data.error || `Update failed (${res.status})`)
-  return unwrapPayload(data)
-}
-
-/**
- * Open excuse attachment in a new tab (Bearer auth; blob URL — works cross-origin).
- * @param {string} token
- * @param {number|string} excuseId
- */
-export async function openAdminExcuseAttachment(token, excuseId) {
-  const url = `${getBaseUrl()}/admin/excuses/${excuseId}/attachment`
-  const res = await apiFetch(url, { headers: authHeaders(token) })
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}))
-    throw new Error(data.message || data.error || `Failed to load attachment (${res.status})`)
-  }
-  const blob = await res.blob()
-  const objectUrl = URL.createObjectURL(blob)
-  const cd = res.headers.get('Content-Disposition')
-  const m = cd && /filename\*?=(?:UTF-8'')?["']?([^"';]+)/i.exec(cd)
-  const filename = m ? decodeURIComponent(m[1].replace(/"/g, '')) : `excuse-${excuseId}-attachment`
-  const w = window.open(objectUrl, '_blank', 'noopener,noreferrer')
-  if (!w) {
-    const a = document.createElement('a')
-    a.href = objectUrl
-    a.download = filename
-    a.rel = 'noopener'
-    a.click()
-  }
-  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 120_000)
-}
-
-/**
- * Open own excuse attachment in a new tab (Bearer auth; blob URL).
- * @param {string} token
- * @param {number|string} excuseId
- */
-export async function openMyExcuseAttachment(token, excuseId) {
-  const url = `${getBaseUrl()}/attendance/excuses/${excuseId}/attachment`
-  const res = await apiFetch(url, { headers: authHeaders(token) })
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}))
-    throw new Error(data.message || data.error || `Failed to load attachment (${res.status})`)
-  }
-  const blob = await res.blob()
-  const objectUrl = URL.createObjectURL(blob)
-  const cd = res.headers.get('Content-Disposition')
-  const m = cd && /filename\*?=(?:UTF-8'')?["']?([^"';]+)/i.exec(cd)
-  const filename = m ? decodeURIComponent(m[1].replace(/"/g, '')) : `excuse-${excuseId}-attachment`
-  const w = window.open(objectUrl, '_blank', 'noopener,noreferrer')
-  if (!w) {
-    const a = document.createElement('a')
-    a.href = objectUrl
-    a.download = filename
-    a.rel = 'noopener'
-    a.click()
-  }
-  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 120_000)
 }

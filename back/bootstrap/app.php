@@ -1,12 +1,18 @@
 <?php
 
+use App\Http\Middleware\CheckPagePermission;
+use App\Http\Middleware\SetApiLocale;
+use App\Http\Middleware\TrackUserSessionActivity;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Spatie\Permission\Middleware\PermissionMiddleware;
+use Spatie\Permission\Middleware\RoleMiddleware;
+use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -17,16 +23,15 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->api(prepend: [
-            \App\Http\Middleware\SetApiLocale::class,
+            SetApiLocale::class,
         ]);
 
         $middleware->alias([
-            'page_permission' => \App\Http\Middleware\CheckPagePermission::class,
-            'track_session' => \App\Http\Middleware\TrackUserSessionActivity::class,
-            'can_manage_attendance_excuses' => \App\Http\Middleware\EnsureCanManageAttendanceExcuses::class,
-            'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
-            'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
-            'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+            'page_permission' => CheckPagePermission::class,
+            'track_session' => TrackUserSessionActivity::class,
+            'role' => RoleMiddleware::class,
+            'permission' => PermissionMiddleware::class,
+            'role_or_permission' => RoleOrPermissionMiddleware::class,
         ]);
 
         $middleware->redirectGuestsTo(function ($request) {
