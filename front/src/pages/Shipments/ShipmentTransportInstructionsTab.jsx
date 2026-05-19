@@ -18,30 +18,39 @@ export const EMPTY_TRANSPORT_INSTRUCTION_PROFILE = {
   customs_notes: '',
 }
 
+function formatLocalTime(d) {
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 function arrivalPartsFromIso(isoOrEmpty) {
   if (!isoOrEmpty || typeof isoOrEmpty !== 'string') {
-    return { day: '', month: '', year: new Date().getFullYear(), hour: '' }
+    return { day: '', month: '', year: new Date().getFullYear(), time: '' }
   }
   const d = new Date(isoOrEmpty)
   if (Number.isNaN(d.getTime())) {
-    return { day: '', month: '', year: new Date().getFullYear(), hour: '' }
+    return { day: '', month: '', year: new Date().getFullYear(), time: '' }
   }
   return {
     day: d.getDate(),
     month: d.getMonth() + 1,
     year: d.getFullYear(),
-    hour: d.getHours(),
+    time: formatLocalTime(d),
   }
 }
 
-function buildArrivalIso(day, month, year, hour) {
-  if (day === '' || month === '' || year === '' || hour === '') return ''
+function buildArrivalIso(day, month, year, time) {
+  if (day === '' || month === '' || year === '' || time === '') return ''
   const di = Number(day)
   const mi = Number(month)
   const yi = Number(year)
-  const hi = Number(hour)
-  if (!Number.isFinite(di) || !Number.isFinite(mi) || !Number.isFinite(yi) || !Number.isFinite(hi)) return ''
-  const d = new Date(yi, mi - 1, di, hi, 0, 0, 0)
+  const [hStr, mStr] = String(time).split(':')
+  const hi = Number(hStr)
+  const min = Number(mStr ?? 0)
+  if (!Number.isFinite(di) || !Number.isFinite(mi) || !Number.isFinite(yi) || !Number.isFinite(hi) || !Number.isFinite(min)) {
+    return ''
+  }
+  const d = new Date(yi, mi - 1, di, hi, min, 0, 0)
   if (Number.isNaN(d.getTime())) return ''
   return d.toISOString()
 }
@@ -198,19 +207,19 @@ export default function ShipmentTransportInstructionsTab({
   const [arrivalDay, setArrivalDay] = useState('')
   const [arrivalMonth, setArrivalMonth] = useState('')
   const [arrivalYear, setArrivalYear] = useState(() => new Date().getFullYear())
-  const [arrivalHour, setArrivalHour] = useState('')
+  const [arrivalTime, setArrivalTime] = useState('')
 
   useEffect(() => {
     const p = arrivalPartsFromIso(tip.customer_arrival_at)
     setArrivalDay(p.day === '' ? '' : p.day)
     setArrivalMonth(p.month === '' ? '' : p.month)
     setArrivalYear(p.year)
-    setArrivalHour(p.hour === '' ? '' : p.hour)
+    setArrivalTime(p.time)
   }, [tip.customer_arrival_at])
 
   const commitArrival = (next) => {
-    const { day, month, year, hour } = next
-    const iso = buildArrivalIso(day, month, year, hour)
+    const { day, month, year, time } = next
+    const iso = buildArrivalIso(day, month, year, time)
     setTipField(setOpsData, 'customer_arrival_at', iso || '')
   }
 
@@ -297,7 +306,7 @@ export default function ShipmentTransportInstructionsTab({
               onChange={(e) => {
                 const v = e.target.value === '' ? '' : Number(e.target.value)
                 setArrivalDay(v)
-                commitArrival({ day: v, month: arrivalMonth, year: arrivalYear, hour: arrivalHour })
+                commitArrival({ day: v, month: arrivalMonth, year: arrivalYear, time: arrivalTime })
               }}
               disabled={!canEditOps}
             >
@@ -317,7 +326,7 @@ export default function ShipmentTransportInstructionsTab({
               onChange={(e) => {
                 const v = e.target.value === '' ? '' : Number(e.target.value)
                 setArrivalMonth(v)
-                commitArrival({ day: arrivalDay, month: v, year: arrivalYear, hour: arrivalHour })
+                commitArrival({ day: arrivalDay, month: v, year: arrivalYear, time: arrivalTime })
               }}
               disabled={!canEditOps}
             >
@@ -333,23 +342,17 @@ export default function ShipmentTransportInstructionsTab({
             <label className="text-[11px] text-slate-500 dark:text-slate-400 block mb-0.5">
               {t('shipments.transportInstructions.arrivalHour')}
             </label>
-            <select
+            <input
+              type="time"
               className="clients-input w-full text-sm py-1.5"
-              value={arrivalHour === '' ? '' : String(arrivalHour)}
+              value={arrivalTime}
               onChange={(e) => {
-                const v = e.target.value === '' ? '' : Number(e.target.value)
-                setArrivalHour(v)
-                commitArrival({ day: arrivalDay, month: arrivalMonth, year: arrivalYear, hour: v })
+                const v = e.target.value
+                setArrivalTime(v)
+                commitArrival({ day: arrivalDay, month: arrivalMonth, year: arrivalYear, time: v })
               }}
               disabled={!canEditOps}
-            >
-              <option value="">{t('shipments.transportInstructions.selectPlaceholder')}</option>
-              {rangeSelectOptions(0, 23).map((h) => (
-                <option key={h} value={String(h)}>
-                  {String(h).padStart(2, '0')}:00
-                </option>
-              ))}
-            </select>
+            />
           </div>
         </div>
       </div>
