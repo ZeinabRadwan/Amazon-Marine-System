@@ -49,7 +49,11 @@ import './Shipments.css'
 import '../SDForms/SDForms.css'
 import '../Clients/Clients.css'
 import '../Clients/ClientDetailModal.css'
-import { vendorsForCanonical } from './vendorOperationOptions'
+import {
+  vendorsForCanonical,
+  sanitizeOpsVendorIds,
+  opsVendorIdIsValid,
+} from './vendorOperationOptions'
 import {
   readShipmentOperationsDraft,
   writeShipmentOperationsDraft,
@@ -70,13 +74,16 @@ function normalizeOpsVendorIdsFromApi(d) {
   return out
 }
 
-function ensureVendorInOptions(vendors, id, relation) {
+function ensureVendorInOptions(vendors, id, relation, catalogVendors, staleSuffix) {
   const list = Array.isArray(vendors) ? vendors : []
   const vid = id != null && String(id).trim() !== '' ? Number(id) : NaN
   if (!Number.isFinite(vid) || vid <= 0) return list
   if (list.some((x) => Number(x?.id) === vid)) return list
-  const name = relation?.name ? String(relation.name) : `#${vid}`
-  const row = { id: vid, name, type: relation?.type ?? '' }
+  const catalog = Array.isArray(catalogVendors) ? catalogVendors : []
+  const inCatalog = catalog.some((x) => Number(x?.id) === vid)
+  const baseName = relation?.name ? String(relation.name) : `#${vid}`
+  const name = inCatalog || !staleSuffix ? baseName : `${baseName}${staleSuffix}`
+  const row = { id: vid, name, type: relation?.type ?? '', stale: !inCatalog }
   return [row, ...list]
 }
 
@@ -402,23 +409,71 @@ export default function ShipmentDetailModal({
     return fromParent
   }, [opsTabVendors, vendorOptions])
 
+  const staleVendorSuffix = t('shipments.ops.staleVendorSuffix')
+
   const inlandVendorOptions = useMemo(() => {
     const base = vendorsForCanonical(mergedVendorList, 'inland_transport')
     const rel = opsData?.transport_contractor ?? opsData?.transportContractor
-    return ensureVendorInOptions(base, opsData?.transport_contractor_id, rel)
-  }, [mergedVendorList, opsData?.transport_contractor_id, opsData?.transport_contractor, opsData?.transportContractor])
+    return ensureVendorInOptions(
+      base,
+      opsData?.transport_contractor_id,
+      rel,
+      mergedVendorList,
+      staleVendorSuffix
+    )
+  }, [
+    mergedVendorList,
+    opsData?.transport_contractor_id,
+    opsData?.transport_contractor,
+    opsData?.transportContractor,
+    staleVendorSuffix,
+  ])
 
   const customsVendorOptions = useMemo(() => {
     const base = vendorsForCanonical(mergedVendorList, 'customs_clearance')
     const rel = opsData?.customs_broker ?? opsData?.customsBroker
-    return ensureVendorInOptions(base, opsData?.customs_broker_id, rel)
-  }, [mergedVendorList, opsData?.customs_broker_id, opsData?.customs_broker, opsData?.customsBroker])
+    return ensureVendorInOptions(
+      base,
+      opsData?.customs_broker_id,
+      rel,
+      mergedVendorList,
+      staleVendorSuffix
+    )
+  }, [
+    mergedVendorList,
+    opsData?.customs_broker_id,
+    opsData?.customs_broker,
+    opsData?.customsBroker,
+    staleVendorSuffix,
+  ])
 
   const insuranceVendorOptions = useMemo(() => {
     const base = vendorsForCanonical(mergedVendorList, 'insurance')
     const rel = opsData?.insurance_company ?? opsData?.insuranceCompany
-    return ensureVendorInOptions(base, opsData?.insurance_company_id, rel)
-  }, [mergedVendorList, opsData?.insurance_company_id, opsData?.insurance_company, opsData?.insuranceCompany])
+    return ensureVendorInOptions(
+      base,
+      opsData?.insurance_company_id,
+      rel,
+      mergedVendorList,
+      staleVendorSuffix
+    )
+  }, [
+    mergedVendorList,
+    opsData?.insurance_company_id,
+    opsData?.insurance_company,
+    opsData?.insuranceCompany,
+    staleVendorSuffix,
+  ])
+
+  useEffect(() => {
+    if (!opsData || mergedVendorList.length === 0) return
+    setOpsData((prev) => {
+      if (!prev) return prev
+      const sanitized = sanitizeOpsVendorIds(prev, mergedVendorList)
+      if (sanitized === prev) return prev
+      return normalizeOpsVendorIdsFromApi(sanitized)
+    })
+  }, [mergedVendorList])
   useEffect(() => {
     if (!open || detailTab !== 'notes' || !shipment?.id) {
       setNotes([])
@@ -687,6 +742,25 @@ export default function ShipmentDetailModal({
     if (types.includes('customs_clearance') && !String(opsData.customs_broker_id || '').trim()) {
       throw new Error(t('shipments.ops.customsBrokerRequired'))
     }
+    if (
+      types.includes('inland_transport') &&
+      !opsVendorIdIsValid(mergedVendorList, 'inland_transport', opsData.transport_contractor_id)
+    ) {
+      throw new Error(t('shipments.ops.invalidInlandContractor'))
+    }
+    if (
+      types.includes('customs_clearance') &&
+      !opsVendorIdIsValid(mergedVendorList, 'customs_clearance', opsData.customs_broker_id)
+    ) {
+      throw new Error(t('shipments.ops.invalidCustomsBroker'))
+    }
+    if (
+      opsData.insurance_company_id != null &&
+      opsData.insurance_company_id !== '' &&
+      !opsVendorIdIsValid(mergedVendorList, 'insurance', opsData.insurance_company_id)
+    ) {
+      throw new Error(t('shipments.ops.invalidInsuranceCompany'))
+    }
 
     await updateShipmentOperations(token, shipment.id, {
       service_types: types,
@@ -713,7 +787,7 @@ export default function ShipmentDetailModal({
         tasks.map(serializeShipmentOperationTaskForApi)
       )
     }
-  }, [token, shipment?.id, opsData, detailTab, tasks, t])
+  }, [token, shipment?.id, opsData, detailTab, tasks, mergedVendorList, t])
 
   const handleSaveOps = async () => {
     if (!token || !shipment?.id || !opsData) return

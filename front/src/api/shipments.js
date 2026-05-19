@@ -395,6 +395,19 @@ export async function getShipmentOperations(token, shipmentId) {
   return json
 }
 
+function shipmentOperationsErrorMessage(json, status) {
+  const errs = json?.errors
+  if (errs && typeof errs === 'object') {
+    const parts = Object.values(errs)
+      .flat()
+      .filter((m) => m != null && String(m).trim() !== '')
+    if (parts.length > 0) {
+      return parts.join(' ')
+    }
+  }
+  return json?.message || json?.error || `Failed to update operations (${status})`
+}
+
 export async function updateShipmentOperations(token, shipmentId, body) {
   const res = await apiFetch(`${getBaseUrl()}/shipments/${encodeURIComponent(shipmentId)}/operations`, {
     method: 'PUT',
@@ -403,7 +416,7 @@ export async function updateShipmentOperations(token, shipmentId, body) {
   })
   const json = await res.json().catch(() => ({}))
   if (!res.ok) {
-    throw new Error(json.message || json.error || `Failed to update operations (${res.status})`)
+    throw new Error(shipmentOperationsErrorMessage(json, res.status))
   }
   return json
 }
