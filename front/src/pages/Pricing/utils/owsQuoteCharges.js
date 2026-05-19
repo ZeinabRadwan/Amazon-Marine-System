@@ -156,42 +156,46 @@ function formatWeightRange(from, to, unit) {
   return ''
 }
 
-/** Sales detail — English informational line(s). */
+/** Single English OWS detail (weight/price); optional `OWS:` prefix for sales surfaces. */
+function formatOwsDetailCore(row, { isFixed = false } = {}) {
+  const unit = String(row?.unit || 'KG').toUpperCase()
+  const p = formatMoney(row?.price, row?.currency)
+
+  if (isFixed) {
+    const w = row?.weight != null ? `${row.weight} ${unit}` : ''
+    if (w && p) return `${w} → ${p}`
+    if (p) return p
+    if (w) return w
+    return ''
+  }
+
+  const range = formatWeightRange(row?.from, row?.to, unit)
+  if (range && p) return `${range} → ${p}`
+  if (p) return p
+  if (range) return range
+  return ''
+}
+
+/** Sales detail — English informational line(s); one line per OWS band. */
 export function formatOwsSalesLines(ows) {
   const data = normalizeOwsData(ows)
   if (!data?.enabled) return []
 
   if (data.mode === 'fixed' && data.fixed) {
-    const { weight, unit, price, currency } = data.fixed
-    const w = weight != null ? `${weight} ${unit}` : ''
-    const p = formatMoney(price, currency)
-    if (w && p) return [`OWS: ${w} → ${p}`, `OWS: ${p} for ${w}`]
-    if (p) return [`OWS: ${p}`]
-    if (w) return [`OWS: ${w}`]
-    return []
+    const core = formatOwsDetailCore(data.fixed, { isFixed: true })
+    return core ? [`OWS: ${core}`] : []
   }
 
   return (data.ranges || [])
     .map((r) => {
-      const range = formatWeightRange(r.from, r.to, r.unit)
-      const p = formatMoney(r.price, r.currency)
-      if (range && p) return `OWS: ${range} → ${p}`
-      if (p) return `OWS: ${p}`
-      return range ? `OWS: ${range}` : ''
+      const core = formatOwsDetailCore(r, { isFixed: false })
+      return core ? `OWS: ${core}` : ''
     })
     .filter(Boolean)
 }
 
 function formatOwsQuoteDetailLine(row, isFixed) {
-  const from = row?.from ?? (isFixed ? row?.weight : null)
-  const to = row?.to ?? (isFixed ? from : null)
-  const unit = row?.unit || 'KG'
-  const range = formatWeightRange(from, to, unit)
-  const p = formatMoney(row?.price, row?.currency)
-  if (range && p) return `${range} → ${p}`
-  if (p) return p
-  if (range) return `for ${range}`
-  return ''
+  return formatOwsDetailCore(row, { isFixed })
 }
 
 /** Quotation footnote lines — English only, no calculations; one line per OWS band. */
