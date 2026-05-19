@@ -3671,6 +3671,7 @@
       "fullAddressLabel": "العنوان الكامل",
       "loadingContactTitle": "مسؤول التحميل / Loading Contact (مطلوب)",
       "arrival": "تاريخ وصول العميل (مطلوب)",
+      "arrivalDate": "التاريخ",
       "arrivalHour": "الساعة",
       "loadingPlace": "اسم مكان التحميل",
       "loadingAddress": "العنوان التفصيلي",

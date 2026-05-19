@@ -5478,13 +5478,22 @@
   background: rgba(30, 41, 59, 0.6);
 }
 
+.shipment-ti-arrival-grid--2,
 .shipment-ti-arrival-grid--3 {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.5rem;
 }
 
+.shipment-ti-arrival-grid--2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.shipment-ti-arrival-grid--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 @media (max-width: 480px) {
+  .shipment-ti-arrival-grid--2,
   .shipment-ti-arrival-grid--3 {
     grid-template-columns: 1fr;
   }

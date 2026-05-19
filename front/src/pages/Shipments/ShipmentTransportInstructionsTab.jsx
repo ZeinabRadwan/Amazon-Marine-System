@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
+import DatePicker from '../../components/DatePicker'
 import LoaderDots from '../../components/LoaderDots'
 import i18n from '../../i18n'
+import { UI_DATE_FORMAT } from '../../utils/dateUtils'
 import { latinDateTimeFormat } from '../../utils/westernNumerals'
+import { isoDatePart } from './opsDateDisplay'
 
 export const EMPTY_TRANSPORT_INSTRUCTION_PROFILE = {
   customer_arrival_at: '',
@@ -25,25 +28,25 @@ function formatLocalTime(d) {
 
 function arrivalPartsFromIso(isoOrEmpty) {
   if (!isoOrEmpty || typeof isoOrEmpty !== 'string') {
-    return { day: '', month: '', year: new Date().getFullYear(), time: '' }
+    return { date: '', time: '' }
   }
   const d = new Date(isoOrEmpty)
   if (Number.isNaN(d.getTime())) {
-    return { day: '', month: '', year: new Date().getFullYear(), time: '' }
+    return { date: '', time: '' }
   }
   return {
-    day: d.getDate(),
-    month: d.getMonth() + 1,
-    year: d.getFullYear(),
+    date: isoDatePart(isoOrEmpty),
     time: formatLocalTime(d),
   }
 }
 
-function buildArrivalIso(day, month, year, time) {
-  if (day === '' || month === '' || year === '' || time === '') return ''
-  const di = Number(day)
-  const mi = Number(month)
-  const yi = Number(year)
+function buildArrivalIso(date, time) {
+  if (!date || !time) return ''
+  const dm = String(date).match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (!dm) return ''
+  const yi = Number(dm[1])
+  const mi = Number(dm[2])
+  const di = Number(dm[3])
   const [hStr, mStr] = String(time).split(':')
   const hi = Number(hStr)
   const min = Number(mStr ?? 0)
@@ -180,12 +183,6 @@ function setTipField(setOpsData, field, value) {
   })
 }
 
-function rangeSelectOptions(from, to) {
-  const o = []
-  for (let i = from; i <= to; i += 1) o.push(i)
-  return o
-}
-
 export default function ShipmentTransportInstructionsTab({
   shipment,
   opsData,
@@ -204,22 +201,18 @@ export default function ShipmentTransportInstructionsTab({
 }) {
   const tip = opsData?.transport_instruction_profile || EMPTY_TRANSPORT_INSTRUCTION_PROFILE
 
-  const [arrivalDay, setArrivalDay] = useState('')
-  const [arrivalMonth, setArrivalMonth] = useState('')
-  const [arrivalYear, setArrivalYear] = useState(() => new Date().getFullYear())
+  const [arrivalDate, setArrivalDate] = useState('')
   const [arrivalTime, setArrivalTime] = useState('')
 
   useEffect(() => {
     const p = arrivalPartsFromIso(tip.customer_arrival_at)
-    setArrivalDay(p.day === '' ? '' : p.day)
-    setArrivalMonth(p.month === '' ? '' : p.month)
-    setArrivalYear(p.year)
+    setArrivalDate(p.date)
     setArrivalTime(p.time)
   }, [tip.customer_arrival_at])
 
   const commitArrival = (next) => {
-    const { day, month, year, time } = next
-    const iso = buildArrivalIso(day, month, year, time)
+    const { date, time } = next
+    const iso = buildArrivalIso(date, time)
     setTipField(setOpsData, 'customer_arrival_at', iso || '')
   }
 
@@ -297,46 +290,24 @@ export default function ShipmentTransportInstructionsTab({
           {t('shipments.transportInstructions.arrival')}
           <span className="text-red-600">{req(t('shipments.transportInstructions.requiredMark'))}</span>
         </div>
-        <div className="shipment-ti-arrival-grid shipment-ti-arrival-grid--3">
+        <div className="shipment-ti-arrival-grid shipment-ti-arrival-grid--2">
           <div>
-            <label className="text-[11px] text-slate-500 dark:text-slate-400 block mb-0.5">{t('common.day')}</label>
-            <select
+            <label className="text-[11px] text-slate-500 dark:text-slate-400 block mb-0.5">
+              {t('shipments.transportInstructions.arrivalDate')}
+            </label>
+            <DatePicker
+              id="shipment-ti-arrival-date"
+              locale={i18n.language}
               className="clients-input w-full text-sm py-1.5"
-              value={arrivalDay === '' ? '' : String(arrivalDay)}
-              onChange={(e) => {
-                const v = e.target.value === '' ? '' : Number(e.target.value)
-                setArrivalDay(v)
-                commitArrival({ day: v, month: arrivalMonth, year: arrivalYear, time: arrivalTime })
+              value={arrivalDate}
+              onChange={(v) => {
+                const date = v || ''
+                setArrivalDate(date)
+                commitArrival({ date, time: arrivalTime })
               }}
               disabled={!canEditOps}
-            >
-              <option value="">{t('shipments.transportInstructions.selectPlaceholder')}</option>
-              {rangeSelectOptions(1, 31).map((d) => (
-                <option key={d} value={String(d)}>
-                  {String(d).padStart(2, '0')}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="text-[11px] text-slate-500 dark:text-slate-400 block mb-0.5">{t('common.month')}</label>
-            <select
-              className="clients-input w-full text-sm py-1.5"
-              value={arrivalMonth === '' ? '' : String(arrivalMonth)}
-              onChange={(e) => {
-                const v = e.target.value === '' ? '' : Number(e.target.value)
-                setArrivalMonth(v)
-                commitArrival({ day: arrivalDay, month: v, year: arrivalYear, time: arrivalTime })
-              }}
-              disabled={!canEditOps}
-            >
-              <option value="">{t('shipments.transportInstructions.selectPlaceholder')}</option>
-              {rangeSelectOptions(1, 12).map((m) => (
-                <option key={m} value={String(m)}>
-                  {String(m).padStart(2, '0')}
-                </option>
-              ))}
-            </select>
+              placeholder={UI_DATE_FORMAT}
+            />
           </div>
           <div>
             <label className="text-[11px] text-slate-500 dark:text-slate-400 block mb-0.5">
@@ -349,7 +320,7 @@ export default function ShipmentTransportInstructionsTab({
               onChange={(e) => {
                 const v = e.target.value
                 setArrivalTime(v)
-                commitArrival({ day: arrivalDay, month: arrivalMonth, year: arrivalYear, time: v })
+                commitArrival({ date: arrivalDate, time: v })
               }}
               disabled={!canEditOps}
             />
