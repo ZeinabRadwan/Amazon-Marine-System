@@ -92,7 +92,7 @@
 
     .ti-v4-main {
         padding: 0;
-        background: #162035;
+        background: #ffffff;
     }
 
     .ti-v4-hd {
@@ -140,6 +140,7 @@
     }
 
     .ti-v4-hd-info {
+        background: #162035;
         padding: 14px 12px;
         vertical-align: middle;
         direction: ltr;
@@ -205,14 +206,14 @@
         font-weight: 600;
         color: #ffffff;
         background: #e8954d;
-        padding: 4px 10px;
-        white-space: nowrap;
+        padding: 0 10px 8px 10px;
     }
 
     .ti-v4-body {
         padding: 0 22px 22px;
         vertical-align: top;
         line-height: 1.45;
+        background: #ffffff;
     }
 
     .ti-v4-sec {
@@ -220,7 +221,7 @@
         max-width: 100%;
         table-layout: fixed;
         border-collapse: collapse;
-        margin: 0;
+        margin: 15px 0 0;
         border-bottom: 1.5px solid #e2e9f2;
     }
 
@@ -256,7 +257,7 @@
         table-layout: fixed;
         border-collapse: collapse;
         border: 1px solid #c8d4e6;
-        margin: 0;
+        margin: 10px 0 0;
     }
 
     .ti-v4-bkey {
@@ -273,7 +274,7 @@
     }
 
     .ti-v4-bkey-en {
-        font-size: 6pt;
+        font-size: 8pt;
         font-weight: 700;
         color: #8699b8;
         letter-spacing: 0.06em;
@@ -283,7 +284,7 @@
     }
 
     .ti-v4-bkey-ar {
-        font-size: 8pt;
+        font-size: 9pt;
         font-weight: 600;
         color: #4f6180;
     }
@@ -303,7 +304,7 @@
     .ti-v4-bval-mono {
         font-family: 'DejaVu Sans Mono', monospace;
         font-weight: 700;
-        font-size: 10pt;
+        font-size: 11pt;
         direction: ltr;
         text-align: left;
     }
@@ -330,24 +331,58 @@
         text-align: center;
     }
 
+    .ti-v4-block-arrival .ti-v4-bkey,
+    .ti-v4-block-arrival .ti-v4-bval {
+        border: 1px solid #c8d4e6;
+    }
+
+    .ti-v4-block-arrival .ti-v4-bkey-first {
+        border-left: 1px solid #c8d4e6;
+    }
+
+    .ti-v4-block-arrival .ti-v4-row-last .ti-v4-bkey,
+    .ti-v4-block-arrival .ti-v4-row-last .ti-v4-bval {
+        border-bottom: 1px solid #c8d4e6;
+    }
+
+    /* mPDF: border-radius + overflow:hidden on the outer shell clips inner badge/text reliably */
     .ti-v4-ctag-wrap {
+        display: inline-block;
         padding: 8px 14px;
     }
 
     .ti-v4-ctag {
+        display: inline-block;
         background: #162035;
         color: #ffffff;
         font-size: 8pt;
         font-weight: 600;
-        padding: 5px 14px;
+        padding: 4px 12px 4px 4px;
+        border: 1px solid #2d4060;
+        border-radius: 10px;
+        overflow: hidden;
+        line-height: 1.35;
+        vertical-align: middle;
     }
 
     .ti-v4-ctag-badge {
+        display: inline-block;
         background: #3d4f6e;
         font-size: 8pt;
         font-weight: 800;
-        padding: 2px 7px;
-        margin-left: 6px;
+        padding: 3px 8px;
+        margin: 0 8px 0 0;
+        border-radius: 6px;
+        vertical-align: middle;
+    }
+
+    .ti-v4-pill-yes,
+    .ti-v4-pill-no,
+    .ti-v4-pill-na {
+        display: inline-block;
+        border-radius: 10px;
+        overflow: hidden;
+        vertical-align: middle;
     }
 
     .ti-v4-pill-yes {
@@ -356,6 +391,7 @@
         padding: 4px 12px;
         background: #dcfce7;
         color: #166534;
+        border: 1px solid #86efac;
     }
 
     .ti-v4-pill-no {
@@ -364,6 +400,7 @@
         padding: 4px 12px;
         background: #fee2e2;
         color: #991b1b;
+        border: 1px solid #fca5a5;
     }
 
     .ti-v4-pill-na {
@@ -372,28 +409,24 @@
         padding: 4px 12px;
         background: #edf1f8;
         color: #8699b8;
-    }
-
-    .ti-v4-map-link {
-        display: inline-block;
-        line-height: 0;
-        text-decoration: none;
-        direction: ltr;
+        border: 1px solid #c8d4e6;
     }
 
     .ti-v4-map-icon {
-        width: 25px;
-        height: 20px;
+        width: 18px;
+        height: 18px;
         border: 0;
         vertical-align: middle;
-        background: #ffffff;
+        margin: 0 6px 0 0;
     }
 
     .ti-v4-map-link-text {
         font-size: 8pt;
         color: #1e3a6e;
         font-weight: 600;
-        text-decoration: underline dashed #1e3a6e;
+        border-bottom: 1px dashed #1e3a6e;
+        padding-bottom: 4px;
+        text-decoration: none;
     }
 
     .ti-v4-ft {
@@ -450,7 +483,7 @@
                                 </tr>
                             </table>
                         </td>
-                        <td class="ti-v4-hd-info">
+                        <td class="ti-v4-hd-info" bgcolor="#162035" style="background-color:#162035;">
                             <ul class="ti-v4-hd-list">
                                 <li class="ti-v4-hd-item">
                                     <span class="ti-v4-hd-bullet">•</span> www.amazonmarine.ltd
