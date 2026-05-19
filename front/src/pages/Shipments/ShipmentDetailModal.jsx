@@ -862,6 +862,12 @@ export default function ShipmentDetailModal({
       await commitOperationsToApi()
 
       const profile = buildTransportInstructionProfilePayload(opsData.transport_instruction_profile || {})
+      if (
+        profile.approved_customs_broker_id != null &&
+        !opsVendorIdIsValid(mergedVendorList, 'customs_clearance', profile.approved_customs_broker_id)
+      ) {
+        profile.approved_customs_broker_id = null
+      }
       const { blob, filename } = await postTransportInstructionsPdf(token, shipment.id, profile)
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')

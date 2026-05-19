@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تعليمات النقل الداخلي — أمازون مارين</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+
+:root{
+  /* ── Brand colors — amazonmarine.ltd ── */
+  --navy-900: #162035;   /* navbar / header bg                           */
+  --navy-700: #1b2a4a;   /* section label bg, logo zone                  */
+  --navy-500: #1e3a6e;   /* body heading text, hover                     */
+  --navy-200: #dde5f0;   /* key cell pale fill                           */
+  --navy-100: #edf1f8;   /* lightest bg fill                             */
+
+  /* Orange accent — max 10%: ONLY the header title band strip */
+  --gold:     #f47b1a;   /* vivid brand orange from website CTA + numbers */
+
+  --border:        #c8d4e6;
+  --border-light:  #e2e9f2;
+  --text:          #0b1828;
+  --muted:         #4f6180;
+  --hint:          #8699b8;
+  --white:         #ffffff;
+  --bg-page:       #edf0f6;
+}
+
+body{
+  background:var(--bg-page);
+  font-family:'IBM Plex Sans Arabic','Segoe UI',sans-serif;
+  direction:rtl;
+  color:var(--text);
+  padding:36px 20px 64px;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ─── PAGE ───────────────────────────────── */
+.page{
+  width:794px;
+  margin:0 auto;
+  background:var(--white);
+  box-shadow:0 8px 40px rgba(11,24,40,0.15);
+  border-radius:4px;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+
+/* ─── HEADER ──────────────────────────────── */
+.hd{ background:var(--navy-900); direction:ltr; }
+
+.hd-top{ display:flex; align-items:stretch; }
+
+.hd-logo{
+  background:var(--navy-700);
+  border-left:3px solid var(--gold);   /* gold: tiny 3px accent only */
+  padding:20px 26px;
+  min-width:206px;
+  display:flex; flex-direction:column; justify-content:center;
+}
+.hd-logo-name{
+  font-size:19px; font-weight:700; color:#fff; letter-spacing:0.05em; line-height:1;
+}
+.hd-logo-sub{
+  font-size:8.5px; color:rgba(255,255,255,0.45);
+  letter-spacing:0.16em; text-transform:uppercase; margin-top:5px;
+}
+
+.hd-info{
+  flex:1; padding:16px 22px;
+  display:flex; flex-direction:column; justify-content:center; gap:7px;
+}
+.hd-row{ display:flex; align-items:center; gap:22px; flex-wrap:wrap; }
+.hd-item{
+  display:flex; align-items:center; gap:5px;
+  font-size:10px; color:rgba(255,255,255,0.65); letter-spacing:0.01em;
+}
+.hd-dot{
+  width:3px; height:3px; background:rgba(255,255,255,0.35);
+  border-radius:50%; flex-shrink:0;
+}
+
+/* GOLD TITLE BAND — the only place gold is used as a fill */
+.hd-band{
+  background:var(--gold);           /* ← gold fill, ~5% of page area  */
+  padding:9px 26px;
+  direction:rtl;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.hd-band-title{
+  font-size:14px; font-weight:700; color:#fff; letter-spacing:0.02em;
+}
+.hd-band-meta{ display:flex; gap:9px; direction:ltr; }
+.hd-chip{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:10px; font-weight:600; color:#fff;
+  background:rgba(255,255,255,0.18);
+  border-radius:4px; padding:3px 10px; letter-spacing:0.05em;
+}
+
+/* ─── BODY ───────────────────────────────── */
+.body{ flex:1; padding:22px 26px 28px; }
+
+/* ─── SECTION HEADER ──────────────────────── */
+.sec-head{
+  display:flex; align-items:center; gap:0; margin-bottom:10px;
+}
+.sec-en{
+  background:var(--navy-900); color:#fff;
+  font-size:9.5px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase;
+  padding:5px 12px; border-radius:4px 0 0 4px; white-space:nowrap; direction:ltr;
+}
+.sec-ar{
+  background:var(--navy-200); color:var(--navy-700);
+  font-size:11.5px; font-weight:600;
+  padding:5px 13px; border-radius:0 4px 4px 0; white-space:nowrap;
+}
+.sec-rule{
+  flex:1; height:1.5px; background:var(--border-light); margin-right:12px;
+}
+
+/* ─── BLOCK ───────────────────────────────── */
+.block{
+  border:1px solid var(--border); border-radius:7px;
+  overflow:hidden; margin-bottom:18px;
+}
+
+/* half-row: 2 key+val pairs side by side */
+.brow-half{
+  display:grid; grid-template-columns:170px 1fr 170px 1fr;
+  border-bottom:1px solid var(--border-light);
+}
+.brow-half:last-child{ border-bottom:none; }
+.brow-half .bkey:nth-child(3){ border-right:1px solid var(--border-light); }
+
+/* full-row */
+.brow{
+  display:flex; border-bottom:1px solid var(--border-light);
+}
+.brow:last-child{ border-bottom:none; }
+
+.bkey{
+  background:var(--navy-100);
+  padding:9px 14px;
+  min-width:170px; max-width:170px; flex-shrink:0;
+  display:flex; flex-direction:column; gap:2px; justify-content:center;
+}
+.brow-half .bkey{ max-width:none; min-width:0; }
+
+.bkey-en{
+  font-size:9px; font-weight:700; color:var(--hint);
+  letter-spacing:0.09em; text-transform:uppercase; direction:ltr; text-align:left;
+}
+.bkey-ar{
+  font-size:11.5px; font-weight:600; color:var(--muted);
+}
+
+.bval{
+  flex:1; background:var(--white);
+  padding:9px 16px; font-size:13px; font-weight:500; color:var(--text);
+  line-height:1.6; overflow-wrap:break-word; word-break:break-word; min-width:0;
+}
+
+/* ─── CONTAINER TAGS ──────────────────────── */
+.ctags{ display:flex; flex-wrap:wrap; gap:7px; padding:10px 16px; }
+.ctag{
+  display:inline-flex; align-items:center; gap:7px;
+  background:var(--navy-900); color:#fff;
+  font-size:12px; font-weight:600; padding:5px 14px; border-radius:20px;
+}
+.ctag-badge{
+  /* only navy badge — no gold here */
+  background:rgba(255,255,255,0.18);
+  color:#fff; font-size:10px; font-weight:800;
+  padding:1px 7px; border-radius:10px;
+}
+
+/* ─── DATE GRID ───────────────────────────── */
+.date-grid{
+  display:grid; grid-template-columns:1fr 1fr 1fr;
+  border:1px solid var(--border); border-radius:7px;
+  overflow:hidden; margin-bottom:18px;
+}
+.dg-head{
+  background:var(--navy-100); padding:8px 14px;
+  border-bottom:1px solid var(--border-light);
+}
+.dg-head+.dg-head{ border-right:1px solid var(--border-light); }
+.dg-val{
+  padding:14px; font-size:28px; font-weight:700; color:var(--navy-900);
+  text-align:center; background:var(--white);
+}
+.dg-val+.dg-val{ border-right:1px solid var(--border-light); }
+.dg-val.mono{
+  font-family:'IBM Plex Mono',monospace; font-size:22px; color:var(--navy-500);
+}
+
+/* ─── PILLS ───────────────────────────────── */
+.pill-yes{ display:inline-block; font-size:11px; font-weight:700; padding:3px 12px; border-radius:20px; background:#dcfce7; color:#166534; }
+.pill-no { display:inline-block; font-size:11px; font-weight:700; padding:3px 12px; border-radius:20px; background:#fee2e2; color:#991b1b; }
+.pill-na { display:inline-block; font-size:11px; font-weight:500; padding:3px 12px; border-radius:20px; background:var(--navy-100); color:var(--hint); }
+
+/* ─── MAP LINK ────────────────────────────── */
+.map-link{
+  display:inline-flex; align-items:center; gap:5px;
+  color:var(--navy-500); font-size:11.5px; font-weight:500;
+  direction:ltr; text-decoration:none;
+  border-bottom:1px dashed var(--border); padding-bottom:1px;
+  max-width:340px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+
+/* ─── FOOTER ──────────────────────────────── */
+.ft{
+  background:var(--navy-900); padding:10px 26px;
+  direction:ltr; display:flex; align-items:center; justify-content:space-between;
+}
+.ft-brand{ font-size:9.5px; color:rgba(255,255,255,0.5); letter-spacing:0.04em; }
+.ft-brand strong{ color:rgba(255,255,255,0.82); font-weight:600; }
+.ft-num{
+  font-family:'IBM Plex Mono',monospace; font-size:9.5px;
+  color:rgba(255,255,255,0.42); letter-spacing:0.06em;
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ══ HEADER ══════════════════════════════ -->
+  <header class="hd">
+    <div class="hd-top">
+      <div class="hd-logo">
+        <div class="hd-logo-name">AMAZON MARINE</div>
+        <div class="hd-logo-sub">Ocean Freight &amp; Logistics</div>
+      </div>
+      <div class="hd-info">
+        <div class="hd-row">
+          <div class="hd-item"><span class="hd-dot"></span>www.amazonmarine.ltd</div>
+          <div class="hd-item"><span class="hd-dot"></span>cs@amazonmarine.ltd</div>
+        </div>
+        <div class="hd-row">
+          <div class="hd-item"><span class="hd-dot"></span>+2 02 2560 1776</div>
+          <div class="hd-item"><span class="hd-dot"></span>+2 012 0074 4888</div>
+          <div class="hd-item"><span class="hd-dot"></span>Fifth Settlement, New Cairo, Egypt</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- gold band: title strip only — ~5% of total page area -->
+    <div class="hd-band">
+      <div class="hd-band-title">تعليمات النقل الداخلي</div>
+      <div class="hd-band-meta">
+        <span class="hd-chip">TI-2025-0047</span>
+        <span class="hd-chip">07 / 08 / 2025</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ══ BODY ════════════════════════════════ -->
+  <main class="body">
+
+    <!-- 1 · BOOKING INFO ─────────────────── -->
+    <div class="sec-head">
+      <span class="sec-en">Booking Info</span>
+      <span class="sec-ar">بيانات الحجز</span>
+      <span class="sec-rule"></span>
+    </div>
+
+    <div class="block">
+      <div class="brow-half">
+        <div class="bkey">
+          <span class="bkey-en">Booking No.</span>
+          <span class="bkey-ar">رقم الحجز</span>
+        </div>
+        <div class="bval" style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;letter-spacing:0.06em;">
+          985744562
+        </div>
+        <div class="bkey">
+          <span class="bkey-en">Shipping Line</span>
+          <span class="bkey-ar">الخط الملاحي</span>
+        </div>
+        <div class="bval" style="font-size:14px;font-weight:700;">
+          CMA CGM
+        </div>
+      </div>
+      <div class="brow">
+        <div class="bkey">
+          <span class="bkey-en">Containers</span>
+          <span class="bkey-ar">الحاويات</span>
+        </div>
+        <div class="bval" style="padding:0;">
+          <div class="ctags">
+            <div class="ctag">
+              <span class="ctag-badge">3×</span>
+              40' Reefer — مبرد
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2 · CLIENT ARRIVAL ──────────────── -->
+    <div class="sec-head">
+      <span class="sec-en">Client Arrival</span>
+      <span class="sec-ar">موعد وصول العميل</span>
+      <span class="sec-rule"></span>
+    </div>
+
+    <div class="date-grid">
+      <div class="dg-head">
+        <span class="bkey-en" style="display:block;text-align:center;">Day</span>
+        <span class="bkey-ar" style="display:block;text-align:center;margin-top:2px;">اليوم</span>
+      </div>
+      <div class="dg-head" style="border-right:1px solid var(--border-light);">
+        <span class="bkey-en" style="display:block;text-align:center;">Month</span>
+        <span class="bkey-ar" style="display:block;text-align:center;margin-top:2px;">الشهر</span>
+      </div>
+      <div class="dg-head" style="border-right:1px solid var(--border-light);">
+        <span class="bkey-en" style="display:block;text-align:center;">Time</span>
+        <span class="bkey-ar" style="display:block;text-align:center;margin-top:2px;">الساعة</span>
+      </div>
+      <div class="dg-val">07</div>
+      <div class="dg-val">08</div>
+      <div class="dg-val mono">14:00</div>
+    </div>
+
+    <!-- 3 · PLACE OF LOADING ────────────── -->
+    <div class="sec-head">
+      <span class="sec-en">Place of Loading</span>
+      <span class="sec-ar">مكان التحميل</span>
+      <span class="sec-rule"></span>
+    </div>
+
+    <div class="block">
+      <div class="brow">
+        <div class="bkey">
+          <span class="bkey-en">Location Name</span>
+          <span class="bkey-ar">اسم المكان</span>
+        </div>
+        <div class="bval" style="font-size:14px;font-weight:700;">
+          مصنع المتحدة للصناعات الغذائية
+        </div>
+      </div>
+      <div class="brow">
+        <div class="bkey" style="align-self:flex-start;padding-top:10px;">
+          <span class="bkey-en">Full Address</span>
+          <span class="bkey-ar">العنوان الكامل</span>
+        </div>
+        <div class="bval">
+          المنطقة الصناعية الثانية، طريق الإسكندرية الصحراوي، كيلو 28، برج العرب الجديد، الإسكندرية
+        </div>
+      </div>
+      <div class="brow">
+        <div class="bkey">
+          <span class="bkey-en">Google Maps</span>
+          <span class="bkey-ar">خرائط جوجل</span>
+        </div>
+        <div class="bval">
+          <a class="map-link" href="#">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+            https://maps.google.com/?q=factory-location
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4 · LOADING CONTACT ─────────────── -->
+    <div class="sec-head">
+      <span class="sec-en">Loading Contact</span>
+      <span class="sec-ar">مسؤول التحميل</span>
+      <span class="sec-rule"></span>
+    </div>
+
+    <div class="block">
+      <div class="brow-half">
+        <div class="bkey">
+          <span class="bkey-en">Contact Name</span>
+          <span class="bkey-ar">اسم جهة الاتصال</span>
+        </div>
+        <div class="bval" style="font-size:14px;font-weight:700;">
+          أحمد محمود السيد
+        </div>
+        <div class="bkey">
+          <span class="bkey-en">Contact Phone</span>
+          <span class="bkey-ar">هاتف جهة الاتصال</span>
+        </div>
+        <div class="bval" style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;direction:ltr;text-align:right;">
+          0100 234 5678
+        </div>
+      </div>
+    </div>
+
+    <!-- 5 · CUSTOMS & EQUIPMENT ─────────── -->
+    <div class="sec-head">
+      <span class="sec-en">Customs &amp; Equipment</span>
+      <span class="sec-ar">الجمارك والمعدات</span>
+      <span class="sec-rule"></span>
+    </div>
+
+    <div class="block">
+      <div class="brow-half">
+        <div class="bkey">
+          <span class="bkey-en">Customs Doc. Type</span>
+          <span class="bkey-ar">نوع المستند الجمركي</span>
+        </div>
+        <div class="bval" style="font-size:13.5px;font-weight:700;">شهادة</div>
+        <div class="bkey">
+          <span class="bkey-en">Generator</span>
+          <span class="bkey-ar">مولد كهربائي</span>
+        </div>
+        <div class="bval"><span class="pill-no">لا</span></div>
+      </div>
+      <div class="brow">
+        <div class="bkey">
+          <span class="bkey-en">Customs Broker</span>
+          <span class="bkey-ar">المخلص الجمركي</span>
+        </div>
+        <div class="bval"><span class="pill-na">لم يُحدد</span></div>
+      </div>
+      <div class="brow">
+        <div class="bkey" style="align-self:flex-start;padding-top:10px;">
+          <span class="bkey-en">Customs Notes</span>
+          <span class="bkey-ar">ملاحظات جمركية</span>
+        </div>
+        <div class="bval">
+          يرجى التأكد من توافر شهادة المنشأ قبل الوصول للميناء. التنسيق مع المخلص الجمركي قبل 24 ساعة من الـ Cut-off.
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ══ FOOTER ══════════════════════════════ -->
+  <footer class="ft">
+    <div class="ft-brand">
+      <strong>AMAZON MARINE</strong> &nbsp;·&nbsp; cs@amazonmarine.ltd &nbsp;·&nbsp; www.amazonmarine.ltd
+    </div>
+    <div class="ft-num">PAGE 1 / 1 &nbsp;·&nbsp; TI-2025-0047</div>
+  </footer>
+
+</div>
+</body>
+</html>

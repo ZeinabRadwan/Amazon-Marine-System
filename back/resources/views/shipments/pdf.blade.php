@@ -331,6 +331,13 @@
     @endphp
 
     <div class="wrap">
+        @if($transportInstructionsPdf)
+            @include('shipments.partials.transport_instructions_pdf_content', [
+                'shipment' => $shipment,
+                'tiProfile' => $tiProfile ?? [],
+                'labels' => $labels,
+            ])
+        @else
         @if($pdfHeaderBanner)
             <div class="shipment-pdf-page-header">
                 <img class="shipment-pdf-page-header__img" src="{{ $pdfHeaderBanner }}" alt="">
@@ -382,9 +389,6 @@
         @endif
 
         <div class="body-pad">
-            @if($transportInstructionsPdf)
-                @include('shipments.partials.transport_instructions_pdf_content', ['shipment' => $shipment, 'tiProfile' => $tiProfile ?? [], 'labels' => $labels])
-            @else
             <div class="sec">
                 <p class="sec-h">{{ $labels['sec_shipment'] }}</p>
                 <table class="grid">
@@ -497,7 +501,6 @@
                     @endif
                 </div>
             </div>
-            @endif
         </div>
 
         <div class="footer">
@@ -597,6 +600,7 @@
                     </td>
                 </tr>
             </table>
+        @endif
         @endif
     </div>
 </body>

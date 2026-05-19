@@ -1043,8 +1043,8 @@ class ShipmentController extends Controller
         $profile = ShipmentOperation::normalizeTransportInstructionProfile($validated['transport_instruction_profile']);
         $brokerId = $profile['approved_customs_broker_id'] ?? null;
         if ($brokerId) {
-            $ok = Vendor::query()->whereKey($brokerId)->where('type', 'customs_clearance')->exists();
-            if (! $ok) {
+            $vendor = Vendor::query()->find($brokerId);
+            if ($vendor === null || ! VendorTypeAliases::vendorMatchesCanonical($vendor->type, 'customs_clearance')) {
                 abort(422, __('Invalid approved customs broker.'));
             }
         }
