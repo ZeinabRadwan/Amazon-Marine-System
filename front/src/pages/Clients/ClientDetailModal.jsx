@@ -91,12 +91,14 @@ function mapFollowUpToEditForm(f) {
     f.reminder_before_value != null &&
     f.reminder_before_unit != null &&
     String(f.reminder_before_unit).trim() !== ''
+  const nextAt = isoToLocalDateTimeInput(f.next_follow_up_at)
   return {
     channel: f.channel ?? f.type ?? 'phone',
     followup_type: f.followup_type ?? 'consultation',
     outcome: f.outcome ?? '',
+    has_next_follow_up: Boolean(nextAt),
     occurred_at: isoToLocalDateTimeInput(f.occurred_at) || defaultLocalDateTime(),
-    next_follow_up_at: isoToLocalDateTimeInput(f.next_follow_up_at),
+    next_follow_up_at: nextAt,
     reminder_mode: hasRelative ? 'before' : 'absolute',
     reminder_at: hasRelative ? '' : isoToLocalDateTimeInput(f.reminder_at),
     reminder_before_value: hasRelative ? String(f.reminder_before_value ?? '30') : '30',
@@ -105,39 +107,35 @@ function mapFollowUpToEditForm(f) {
   }
 }
 
-/**
- * @param {object} form — same shape as followUpForm / edit form
- * @param {(key: string, fallback?: string) => string} t
- * @returns {{ payload?: object, error?: string }}
- */
-function buildFollowUpPayload(form, t) {
-  const summary = String(form.notes ?? '').trim()
-  if (!summary) {
-    return { error: t('clients.followUpSummaryRequired', 'Follow-up summary is required.') }
+function defaultFollowUpFormState() {
+  return {
+    form_mode: 'log',
+    channel: 'phone',
+    followup_type: 'consultation',
+    outcome: '',
+    has_next_follow_up: false,
+    occurred_at: defaultLocalDateTime(),
+    next_follow_up_at: '',
+    reminder_mode: 'absolute',
+    reminder_at: '',
+    reminder_before_value: '30',
+    reminder_before_unit: 'minute',
+    notes: '',
   }
-  const hasNextFollowUp = Boolean(form.has_next_follow_up)
-  const nextNorm = normalizeDateTimeForApi(form.next_follow_up_at)
-  const base = {
-    channel: form.channel,
-    followup_type: form.followup_type,
-    outcome: form.outcome || undefined,
-    occurred_at: normalizeDateTimeForApi(form.occurred_at) ?? form.occurred_at,
-    summary,
-    next_follow_up_at: hasNextFollowUp ? nextNorm : undefined,
+}
+
+function hasScheduledNextFollowUp(form) {
+  if (form.has_next_follow_up !== undefined) {
+    return Boolean(form.has_next_follow_up)
   }
-  if (!hasNextFollowUp) {
-    return { payload: base }
-  }
+
+  return Boolean(normalizeDateTimeForApi(form.next_follow_up_at))
+}
+
+function appendFollowUpReminderFields(base, form, t) {
+  const nextNorm = base.next_follow_up_at
   if (form.reminder_mode === 'absolute') {
     const ra = normalizeDateTimeForApi(form.reminder_at)
-    // if (!ra) {
-    //   return {
-    //     error: t(
-    //       'clients.followUpReminderRequired',
-    //       'Set a reminder time or choose “before next follow-up” with a valid duration.',
-    //     ),
-    //   }
-    // }
     return { payload: { ...base, reminder_at: ra } }
   }
   if (!nextNorm) {
@@ -156,6 +154,51 @@ function buildFollowUpPayload(form, t) {
     }
   }
   return { payload: { ...base, reminder_before_value: v, reminder_before_unit: unit } }
+}
+
+/**
+ * @param {object} form — same shape as followUpForm / edit form
+ * @param {(key: string, fallback?: string) => string} t
+ * @returns {{ payload?: object, error?: string }}
+ */
+function buildFollowUpPayload(form, t) {
+  const mode = form.form_mode === 'schedule' ? 'schedule' : 'log'
+
+  if (mode === 'schedule') {
+    const nextNorm = normalizeDateTimeForApi(form.next_follow_up_at)
+    if (!nextNorm) {
+      return {
+        error: t('clients.followUpNextRequired', 'Scheduled follow-up date & time is required.'),
+      }
+    }
+    const base = {
+      channel: 'phone',
+      followup_type: 'other',
+      occurred_at: normalizeDateTimeForApi(defaultLocalDateTime()),
+      summary: undefined,
+      next_follow_up_at: nextNorm,
+    }
+    return appendFollowUpReminderFields(base, form, t)
+  }
+
+  const summary = String(form.notes ?? '').trim()
+  if (!summary) {
+    return { error: t('clients.followUpSummaryRequired', 'Follow-up summary is required.') }
+  }
+  const hasNextFollowUp = hasScheduledNextFollowUp(form)
+  const nextNorm = normalizeDateTimeForApi(form.next_follow_up_at)
+  const base = {
+    channel: form.channel,
+    followup_type: form.followup_type,
+    outcome: form.outcome || undefined,
+    occurred_at: normalizeDateTimeForApi(form.occurred_at) ?? form.occurred_at,
+    summary,
+    next_follow_up_at: hasNextFollowUp ? nextNorm : undefined,
+  }
+  if (!hasNextFollowUp) {
+    return { payload: base }
+  }
+  return appendFollowUpReminderFields(base, form, t)
 }
 
 /** API may return visit_date as ISO string (e.g. 2026-03-23T00:00:00.000000Z). */
@@ -242,19 +285,7 @@ export default function ClientDetailModal({
   const [editingNoteContent, setEditingNoteContent] = useState('')
   const [expandedShipmentId, setExpandedShipmentId] = useState(null)
   const { data: trackingUpdates, loading: trackingUpdatesLoading, error: trackingUpdatesError, refetch: refetchTrackingUpdates } = useShipmentTrackingUpdates(expandedShipmentId)
-  const [followUpForm, setFollowUpForm] = useState({
-    channel: 'phone',
-    followup_type: 'consultation',
-    outcome: '',
-    has_next_follow_up: false,
-    occurred_at: defaultLocalDateTime(),
-    next_follow_up_at: '',
-    reminder_mode: 'absolute',
-    reminder_at: '',
-    reminder_before_value: '30',
-    reminder_before_unit: 'minute',
-    notes: '',
-  })
+  const [followUpForm, setFollowUpForm] = useState(() => defaultFollowUpFormState())
   const [followUpValidationError, setFollowUpValidationError] = useState('')
   const [editingFollowUpId, setEditingFollowUpId] = useState(null)
   const [editFollowUpForm, setEditFollowUpForm] = useState(null)
@@ -616,10 +647,57 @@ export default function ClientDetailModal({
               </div>
               {onAddFollowUp && (
                 <fieldset className="client-detail-modal__followup-add-fieldset">
-                  <legend className="client-detail-modal__followup-add-legend">
-                    {t('clients.followUpAddSectionTitle', 'New follow-up')}
-                  </legend>
+                  <div
+                    className="client-detail-modal__followup-mode-tabs"
+                    role="tablist"
+                    aria-label={t('clients.followUpFormModeAria', 'Follow-up form mode')}
+                  >
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={followUpForm.form_mode === 'log'}
+                      className={`client-detail-modal__followup-mode-tab${followUpForm.form_mode === 'log' ? ' client-detail-modal__followup-mode-tab--active' : ''}`}
+                      onClick={() => {
+                        setFollowUpValidationError('')
+                        setFollowUpForm((prev) => ({ ...prev, form_mode: 'log' }))
+                      }}
+                      disabled={followUpSubmitting}
+                    >
+                      {t('clients.followUpModeLog', 'Record follow-up')}
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={followUpForm.form_mode === 'schedule'}
+                      className={`client-detail-modal__followup-mode-tab${followUpForm.form_mode === 'schedule' ? ' client-detail-modal__followup-mode-tab--active' : ''}`}
+                      onClick={() => {
+                        setFollowUpValidationError('')
+                        setFollowUpForm((prev) => ({
+                          ...prev,
+                          form_mode: 'schedule',
+                          has_next_follow_up: true,
+                          outcome: '',
+                        }))
+                      }}
+                      disabled={followUpSubmitting}
+                    >
+                      {t('clients.followUpModeSchedule', 'Schedule reminder')}
+                    </button>
+                  </div>
+                  <p className="client-detail-modal__followup-mode-hint">
+                    {followUpForm.form_mode === 'schedule'
+                      ? t(
+                          'clients.followUpModeScheduleHelp',
+                          'Create a future follow-up task without logging a completed interaction first.',
+                        )
+                      : t(
+                          'clients.followUpModeLogHelp',
+                          'Log a completed follow-up and optionally schedule the next one.',
+                        )}
+                  </p>
                   <div className="client-detail-modal__form-grid client-detail-modal__grid--card client-detail-modal__followup-form" style={{ marginBottom: 16 }}>
+                  {followUpForm.form_mode === 'log' ? (
+                    <>
                   <div className="client-detail-modal__form-field">
                     <label htmlFor="followup-channel">{t('clients.followUpChannelLabel', 'Follow-up channel')}</label>
                     <select
@@ -668,82 +746,106 @@ export default function ClientDetailModal({
                       ))}
                     </select>
                   </div>
-                  <div className="client-detail-modal__form-field">
-                    <label htmlFor="followup-occurred">{t('clients.followUpOccurredUnified', 'Follow-up date & time')}</label>
-                    <DateTimePicker
-                      id="followup-occurred"
-                      value={followUpForm.occurred_at}
-                      onChange={(v) => setFollowUpForm((prev) => ({ ...prev, occurred_at: v || defaultLocalDateTime() }))}
-                      disabled={followUpSubmitting}
-                      locale={i18n.language}
-                      className="client-detail-modal__datetime-input"
-                      placeholder={t('clients.followUpPickDateTime', 'Select date and time')}
-                    />
-                  </div>
-                  <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
-                    <label htmlFor="followup-notes">
-                      {t('clients.followUpSummary', 'Follow-up summary')}
-                      <span className="client-detail-modal__required-mark" aria-hidden>
-                        *
-                      </span>
-                    </label>
-                    <textarea
-                      id="followup-notes"
-                      value={followUpForm.notes}
-                      onChange={(e) => {
-                        setFollowUpValidationError('')
-                        setFollowUpForm((prev) => ({ ...prev, notes: e.target.value }))
-                      }}
-                      disabled={followUpSubmitting}
-                      rows={3}
-                      required
-                      aria-required="true"
-                    />
-                    {followUpValidationError ? (
-                      <p className="client-detail-modal__error-text">{followUpValidationError}</p>
-                    ) : null}
-                  </div>
-                  <div className="client-detail-modal__form-field client-detail-modal__form-field--full client-detail-modal__followup-toggle-wrap">
-                    <label className="client-detail-modal__reminder-mode-option" htmlFor="followup-has-next">
-                      <input
-                        id="followup-has-next"
-                        type="checkbox"
-                        checked={followUpForm.has_next_follow_up}
+                    <div className="client-detail-modal__form-field">
+                      <label htmlFor="followup-occurred">{t('clients.followUpOccurredUnified', 'Follow-up date & time')}</label>
+                      <DateTimePicker
+                        id="followup-occurred"
+                        value={followUpForm.occurred_at}
+                        onChange={(v) => setFollowUpForm((prev) => ({ ...prev, occurred_at: v || defaultLocalDateTime() }))}
+                        disabled={followUpSubmitting}
+                        locale={i18n.language}
+                        className="client-detail-modal__datetime-input"
+                        placeholder={t('clients.followUpPickDateTime', 'Select date and time')}
+                      />
+                    </div>
+                    </>
+                  ) : null}
+                  {followUpForm.form_mode === 'schedule' ? (
+                    <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+                      <label htmlFor="followup-next">
+                        {t('clients.followUpScheduledAt', 'Scheduled follow-up date & time')}
+                        <span className="client-detail-modal__required-mark" aria-hidden>
+                          *
+                        </span>
+                      </label>
+                      <DateTimePicker
+                        id="followup-next"
+                        value={followUpForm.next_follow_up_at}
+                        onChange={(v) => setFollowUpForm((prev) => ({ ...prev, next_follow_up_at: v }))}
+                        disabled={followUpSubmitting}
+                        locale={i18n.language}
+                        className="client-detail-modal__datetime-input"
+                        placeholder={t('clients.followUpPickDateTime', 'Select date and time')}
+                      />
+                    </div>
+                  ) : null}
+                  {followUpForm.form_mode === 'log' ? (
+                    <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+                      <label htmlFor="followup-notes">
+                        {t('clients.followUpSummary', 'Follow-up summary')}
+                        <span className="client-detail-modal__required-mark" aria-hidden>
+                          *
+                        </span>
+                      </label>
+                      <textarea
+                        id="followup-notes"
+                        value={followUpForm.notes}
                         onChange={(e) => {
-                          const enabled = e.target.checked
                           setFollowUpValidationError('')
-                          setFollowUpForm((prev) => ({
-                            ...prev,
-                            has_next_follow_up: enabled,
-                            next_follow_up_at: enabled ? prev.next_follow_up_at : '',
-                            reminder_mode: enabled ? prev.reminder_mode : 'absolute',
-                            reminder_at: enabled ? prev.reminder_at : '',
-                            reminder_before_value: enabled ? prev.reminder_before_value : '30',
-                            reminder_before_unit: enabled ? prev.reminder_before_unit : 'minute',
-                          }))
+                          setFollowUpForm((prev) => ({ ...prev, notes: e.target.value }))
                         }}
                         disabled={followUpSubmitting}
+                        rows={3}
+                        required
+                        aria-required="true"
                       />
-                      <span>{t('clients.followUpHasNextToggle', 'Has a next follow-up')}</span>
-                    </label>
-                    <p className="client-detail-modal__reminder-before-hint">
-                      {t('clients.followUpHasNextHelp', 'Enable this to set next follow-up date and reminder options.')}
-                    </p>
-                  </div>
-                  {followUpForm.has_next_follow_up ? (
-                    <>
-                      <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
-                        <label htmlFor="followup-next">{t('clients.followUpNext', 'Next follow-up')}</label>
-                        <DateTimePicker
-                          id="followup-next"
-                          value={followUpForm.next_follow_up_at}
-                          onChange={(v) => setFollowUpForm((prev) => ({ ...prev, next_follow_up_at: v }))}
+                    </div>
+                  ) : null}
+                  {followUpForm.form_mode === 'log' ? (
+                    <div className="client-detail-modal__form-field client-detail-modal__form-field--full client-detail-modal__followup-toggle-wrap">
+                      <label className="client-detail-modal__reminder-mode-option" htmlFor="followup-has-next">
+                        <input
+                          id="followup-has-next"
+                          type="checkbox"
+                          checked={followUpForm.has_next_follow_up}
+                          onChange={(e) => {
+                            const enabled = e.target.checked
+                            setFollowUpValidationError('')
+                            setFollowUpForm((prev) => ({
+                              ...prev,
+                              has_next_follow_up: enabled,
+                              next_follow_up_at: enabled ? prev.next_follow_up_at : '',
+                              reminder_mode: enabled ? prev.reminder_mode : 'absolute',
+                              reminder_at: enabled ? prev.reminder_at : '',
+                              reminder_before_value: enabled ? prev.reminder_before_value : '30',
+                              reminder_before_unit: enabled ? prev.reminder_before_unit : 'minute',
+                            }))
+                          }}
                           disabled={followUpSubmitting}
-                          locale={i18n.language}
-                          className="client-detail-modal__datetime-input"
-                          placeholder={t('clients.followUpNextPlaceholder', 'Optional')}
                         />
-                      </div>
+                        <span>{t('clients.followUpHasNextToggle', 'Has a next follow-up')}</span>
+                      </label>
+                      <p className="client-detail-modal__reminder-before-hint">
+                        {t('clients.followUpHasNextHelp', 'Enable this to set next follow-up date and reminder options.')}
+                      </p>
+                    </div>
+                  ) : null}
+                  {followUpForm.form_mode === 'schedule' || followUpForm.has_next_follow_up ? (
+                    <>
+                      {followUpForm.form_mode === 'log' ? (
+                        <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+                          <label htmlFor="followup-next">{t('clients.followUpNext', 'Next follow-up')}</label>
+                          <DateTimePicker
+                            id="followup-next"
+                            value={followUpForm.next_follow_up_at}
+                            onChange={(v) => setFollowUpForm((prev) => ({ ...prev, next_follow_up_at: v }))}
+                            disabled={followUpSubmitting}
+                            locale={i18n.language}
+                            className="client-detail-modal__datetime-input"
+                            placeholder={t('clients.followUpNextPlaceholder', 'Optional')}
+                          />
+                        </div>
+                      ) : null}
                       <div className="client-detail-modal__form-field client-detail-modal__form-field--full client-detail-modal__followup-reminder-block">
                         <span className="client-detail-modal__followup-reminder-label" id="followup-reminder-heading">
                           {t('clients.followUpReminder', 'Reminder time')}
@@ -826,6 +928,9 @@ export default function ClientDetailModal({
                       </div>
                     </>
                   ) : null}
+                  {followUpValidationError ? (
+                    <p className="client-detail-modal__error-text client-detail-modal__form-field--full">{followUpValidationError}</p>
+                  ) : null}
                   <div className="client-detail-modal__form-field client-detail-modal__form-field--full client-detail-modal__followup-submit-row">
                     <button
                       type="button"
@@ -839,23 +944,15 @@ export default function ClientDetailModal({
                         const ok = await onAddFollowUp?.(built.payload)
                         if (!ok) return
                         setFollowUpValidationError('')
-                        setFollowUpForm({
-                          channel: 'phone',
-                          followup_type: 'consultation',
-                          outcome: '',
-                          has_next_follow_up: false,
-                          occurred_at: defaultLocalDateTime(),
-                          next_follow_up_at: '',
-                          reminder_mode: 'absolute',
-                          reminder_at: '',
-                          reminder_before_value: '30',
-                          reminder_before_unit: 'minute',
-                          notes: '',
-                        })
+                        setFollowUpForm(defaultFollowUpFormState())
                       }}
                       disabled={followUpSubmitting}
                     >
-                      {followUpSubmitting ? t('clients.saving', 'Saving…') : t('clients.addFollowUp', 'Add follow-up')}
+                      {followUpSubmitting
+                        ? t('clients.saving', 'Saving…')
+                        : followUpForm.form_mode === 'schedule'
+                          ? t('clients.scheduleFollowUp', 'Schedule follow-up')
+                          : t('clients.addFollowUp', 'Add follow-up')}
                     </button>
                   </div>
                 </div>
@@ -961,6 +1058,10 @@ export default function ClientDetailModal({
                               ) : null}
                               {f.summary?.trim() ? (
                                 <div className="client-followup-timeline__notes">{f.summary}</div>
+                              ) : f.next_follow_up_at ? (
+                                <div className="client-followup-timeline__notes client-followup-timeline__notes--muted">
+                                  {t('clients.followUpScheduledTask', 'Scheduled follow-up reminder')}
+                                </div>
                               ) : null}
                             </>
                           ) : null}

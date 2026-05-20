@@ -105,6 +105,21 @@ class ClientFollowUpController extends Controller
     }
 
     /**
+     * @param  array<string, mixed>  $validated
+     */
+    private function validateSummaryOrScheduledFollowUp(array $validated): void
+    {
+        $summary = trim((string) ($validated['summary'] ?? ''));
+        $hasNext = ! empty($validated['next_follow_up_at']);
+
+        if ($summary === '' && ! $hasNext) {
+            throw ValidationException::withMessages([
+                'summary' => [__('Provide a follow-up summary or a scheduled follow-up date.')],
+            ]);
+        }
+    }
+
+    /**
      * List follow-ups (متابعات) for a client.
      */
     public function index(Client $client): JsonResponse
@@ -134,13 +149,15 @@ class ClientFollowUpController extends Controller
             'channel' => ['required', Rule::enum(FollowUpChannel::class)],
             'followup_type' => ['required', Rule::enum(FollowUpKind::class)],
             'occurred_at' => ['required', 'date'],
-            'summary' => ['required', 'string', 'max:65535'],
+            'summary' => ['nullable', 'string', 'max:65535'],
             'next_follow_up_at' => ['nullable', 'date'],
             'reminder_at' => ['nullable', 'date'],
             'reminder_before_value' => ['nullable', 'integer', 'min:1'],
             'reminder_before_unit' => ['nullable', Rule::in(['minute', 'hour', 'day'])],
             'outcome' => ['nullable', Rule::enum(FollowUpOutcome::class)],
         ])->validate();
+
+        $this->validateSummaryOrScheduledFollowUp($validated);
 
         $nextFollowUp = ! empty($validated['next_follow_up_at'])
             ? Carbon::parse($validated['next_follow_up_at'])
@@ -156,7 +173,8 @@ class ClientFollowUpController extends Controller
         $followUp->followup_type = $this->enumOrString($validated['followup_type']);
         $followUp->outcome = isset($validated['outcome']) ? $this->enumOrString($validated['outcome']) : null;
         $followUp->occurred_at = Carbon::parse($validated['occurred_at']);
-        $followUp->summary = $validated['summary'];
+        $summary = trim((string) ($validated['summary'] ?? ''));
+        $followUp->summary = $summary !== '' ? $summary : null;
         $followUp->next_follow_up_at = $nextFollowUp;
         $followUp->reminder_at = $reminderAt;
         $followUp->reminder_before_value = $reminderBeforeValue;
@@ -186,7 +204,7 @@ class ClientFollowUpController extends Controller
             'channel' => ['sometimes', Rule::enum(FollowUpChannel::class)],
             'followup_type' => ['sometimes', Rule::enum(FollowUpKind::class)],
             'occurred_at' => ['sometimes', 'date'],
-            'summary' => ['required', 'string', 'max:65535'],
+            'summary' => ['sometimes', 'nullable', 'string', 'max:65535'],
             'next_follow_up_at' => ['sometimes', 'nullable', 'date'],
             'reminder_at' => ['sometimes', 'nullable', 'date'],
             'reminder_before_value' => ['sometimes', 'nullable', 'integer', 'min:1'],
@@ -211,7 +229,8 @@ class ClientFollowUpController extends Controller
             $followUp->occurred_at = Carbon::parse($validated['occurred_at']);
         }
         if (array_key_exists('summary', $validated)) {
-            $followUp->summary = $validated['summary'];
+            $summary = trim((string) ($validated['summary'] ?? ''));
+            $followUp->summary = $summary !== '' ? $summary : null;
         }
         if (array_key_exists('next_follow_up_at', $validated)) {
             $followUp->next_follow_up_at = ! empty($validated['next_follow_up_at'])
