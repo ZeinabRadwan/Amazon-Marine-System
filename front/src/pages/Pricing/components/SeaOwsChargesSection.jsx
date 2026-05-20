@@ -4,15 +4,25 @@ import { displayNumericInputValue } from '../utils/pricingFormNumeric'
 
 const CURRENCIES = SEA_PRICING_CURRENCIES
 
+const newFixedRow = () => ({
+  id: `ows-f${Date.now()}`,
+  weight: '',
+  unit: 'KG',
+  price: '',
+  currency: 'USD',
+})
+
 export default function SeaOwsChargesSection({ owsForm, setOwsForm }) {
   const { t } = useTranslation()
 
   const patch = (partial) => setOwsForm((prev) => ({ ...prev, ...partial }))
 
-  const patchFixed = (partial) =>
+  const patchFixed = (id, partial) =>
     setOwsForm((prev) => ({
       ...prev,
-      fixed: { ...prev.fixed, unit: 'KG', ...partial },
+      fixeds: prev.fixeds.map((r) =>
+        r.id === id ? { ...r, unit: 'KG', ...partial } : { ...r, unit: 'KG' }
+      ),
     }))
 
   const patchRange = (id, partial) =>
@@ -21,6 +31,18 @@ export default function SeaOwsChargesSection({ owsForm, setOwsForm }) {
       ranges: prev.ranges.map((r) =>
         r.id === id ? { ...r, unit: 'KG', ...partial } : { ...r, unit: 'KG' }
       ),
+    }))
+
+  const addFixed = () =>
+    setOwsForm((prev) => ({
+      ...prev,
+      fixeds: [...prev.fixeds, newFixedRow()],
+    }))
+
+  const removeFixed = (id) =>
+    setOwsForm((prev) => ({
+      ...prev,
+      fixeds: prev.fixeds.length > 1 ? prev.fixeds.filter((r) => r.id !== id) : prev.fixeds,
     }))
 
   const addRange = () =>
@@ -80,43 +102,64 @@ export default function SeaOwsChargesSection({ owsForm, setOwsForm }) {
           </div>
 
           {owsForm.mode === 'fixed' ? (
-            <div className="sea-rate-ows-section__grid sea-rate-ows-section__grid--fixed">
-              <div>
-                <label className="sea-rate-label">{t('pricing.owsWeightKg')}</label>
-                <input
-                  type="number"
-                  min={0}
-                  className="sea-rate-input"
-                  value={displayNumericInputValue(owsForm.fixed.weight)}
-                  onChange={(e) => patchFixed({ weight: e.target.value })}
-                  placeholder="0"
-                />
-              </div>
-              <div>
-                <label className="sea-rate-label">{t('pricing.amount')}</label>
-                <div className="sea-rate-input-group">
-                  <input
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    className="sea-rate-input"
-                    value={displayNumericInputValue(owsForm.fixed.price)}
-                    onChange={(e) => patchFixed({ price: e.target.value })}
-                    placeholder="0"
-                  />
-                  <select
-                    className="sea-rate-select"
-                    value={owsForm.fixed.currency}
-                    onChange={(e) => patchFixed({ currency: e.target.value })}
-                  >
-                    {CURRENCIES.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
+            <div className="sea-rate-ows-section__ranges">
+              {owsForm.fixeds.map((row) => (
+                <div key={row.id} className="sea-rate-ows-range-row sea-rate-ows-range-row--fixed">
+                  <div className="sea-rate-ows-range-row__field">
+                    <label className="sea-rate-label">{t('pricing.owsWeightKg')}</label>
+                    <input
+                      type="number"
+                      min={0}
+                      className="sea-rate-input"
+                      value={displayNumericInputValue(row.weight)}
+                      onChange={(e) => patchFixed(row.id, { weight: e.target.value })}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="sea-rate-ows-range-row__field">
+                    <label className="sea-rate-label">{t('pricing.amount')}</label>
+                    <div className="sea-rate-input-group">
+                      <input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        className="sea-rate-input"
+                        value={displayNumericInputValue(row.price)}
+                        onChange={(e) => patchFixed(row.id, { price: e.target.value })}
+                        placeholder="0"
+                      />
+                      <select
+                        className="sea-rate-select"
+                        value={row.currency}
+                        onChange={(e) => patchFixed(row.id, { currency: e.target.value })}
+                      >
+                        {CURRENCIES.map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="sea-rate-ows-range-row__actions">
+                    <label className="sea-rate-label sea-rate-label--invisible" aria-hidden>
+                      &nbsp;
+                    </label>
+                    <button
+                      type="button"
+                      className="sea-rate-btn sea-rate-btn--ghost sea-rate-ows-range-row__remove"
+                      onClick={() => removeFixed(row.id)}
+                      disabled={owsForm.fixeds.length <= 1}
+                      aria-label={t('common.remove', 'Remove')}
+                    >
+                      ×
+                    </button>
+                  </div>
                 </div>
-              </div>
+              ))}
+              <button type="button" className="sea-rate-btn sea-rate-btn--add-date" onClick={addFixed}>
+                {t('pricing.owsAddFixed')}
+              </button>
             </div>
           ) : (
             <div className="sea-rate-ows-section__ranges">

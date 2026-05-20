@@ -57,23 +57,41 @@ function parsePrice(v) {
   return Number.isFinite(n) && n >= 0 ? n : null
 }
 
+/** Legacy single `fixed` object or `fixed` array. */
+function rawFixedEntries(raw) {
+  if (!raw?.fixed) return []
+  if (Array.isArray(raw.fixed)) return raw.fixed
+  if (typeof raw.fixed === 'object') return [raw.fixed]
+  return []
+}
+
+function normalizeFixedEntry(row, defaultUnit = 'KG') {
+  const weight = parseWeight(row?.weight)
+  const price = parsePrice(row?.price)
+  const unit = String(row?.unit || defaultUnit).toUpperCase() || 'KG'
+  const currency = String(row?.currency || 'USD').toUpperCase()
+  if (weight == null && price == null) return null
+  return { weight, unit, price, currency }
+}
+
 export function normalizeOwsData(raw) {
   if (!raw || typeof raw !== 'object') return null
   const enabled = Boolean(raw.enabled)
-  if (!enabled) return { enabled: false, mode: 'fixed', fixed: null, ranges: [] }
+  if (!enabled) return { enabled: false, mode: 'fixed', fixed: [], ranges: [] }
 
   const mode = raw.mode === 'range' ? 'range' : 'fixed'
-  const unit = String(raw.fixed?.unit || raw.ranges?.[0]?.unit || 'KG').toUpperCase() || 'KG'
+  const unit =
+    String(rawFixedEntries(raw)[0]?.unit || raw.ranges?.[0]?.unit || 'KG').toUpperCase() || 'KG'
 
   if (mode === 'fixed') {
-    const weight = parseWeight(raw.fixed?.weight)
-    const price = parsePrice(raw.fixed?.price)
-    const currency = String(raw.fixed?.currency || 'USD').toUpperCase()
-    if (weight == null && price == null) return { enabled: false, mode: 'fixed', fixed: null, ranges: [] }
+    const fixed = rawFixedEntries(raw)
+      .map((row) => normalizeFixedEntry(row, unit))
+      .filter(Boolean)
+    if (!fixed.length) return { enabled: false, mode: 'fixed', fixed: [], ranges: [] }
     return {
       enabled: true,
       mode: 'fixed',
-      fixed: { weight, unit, price, currency },
+      fixed,
       ranges: [],
     }
   }
@@ -88,9 +106,9 @@ export function normalizeOwsData(raw) {
     }))
     .filter((r) => r.from != null || r.to != null || r.price != null)
 
-  if (!ranges.length) return { enabled: false, mode: 'range', fixed: null, ranges: [] }
+  if (!ranges.length) return { enabled: false, mode: 'range', fixed: [], ranges: [] }
 
-  return { enabled: true, mode: 'range', fixed: null, ranges }
+  return { enabled: true, mode: 'range', fixed: [], ranges }
 }
 
 export function isImportSeaOffer(offer) {
@@ -181,9 +199,13 @@ export function formatOwsSalesLines(ows) {
   const data = normalizeOwsData(ows)
   if (!data?.enabled) return []
 
-  if (data.mode === 'fixed' && data.fixed) {
-    const core = formatOwsDetailCore(data.fixed, { isFixed: true })
-    return core ? [`OWS: ${core}`] : []
+  if (data.mode === 'fixed' && data.fixed?.length) {
+    return (data.fixed || [])
+      .map((row) => {
+        const core = formatOwsDetailCore(row, { isFixed: true })
+        return core ? `OWS: ${core}` : ''
+      })
+      .filter(Boolean)
   }
 
   return (data.ranges || [])
@@ -203,9 +225,10 @@ export function formatOwsQuoteFootnoteLines(ows) {
   const data = normalizeOwsData(ows)
   if (!data?.enabled) return []
 
-  if (data.mode === 'fixed' && data.fixed) {
-    const detail = formatOwsQuoteDetailLine(data.fixed, true)
-    return detail ? [detail] : []
+  if (data.mode === 'fixed' && data.fixed?.length) {
+    return (data.fixed || [])
+      .map((row) => formatOwsQuoteDetailLine(row, true))
+      .filter(Boolean)
   }
 
   return (data.ranges || [])
@@ -221,7 +244,7 @@ export function formatOwsQuoteFootnote(ows) {
 export const defaultOwsFormState = () => ({
   enabled: false,
   mode: 'fixed',
-  fixed: { weight: '', unit: 'KG', price: '', currency: 'USD' },
+  fixeds: [{ id: 'ows-f1', weight: '', unit: 'KG', price: '', currency: 'USD' }],
   ranges: [{ id: 'ows-r1', from: '', to: '', unit: 'KG', price: '', currency: 'USD' }],
 })
 
@@ -229,17 +252,17 @@ export function owsFormStateFromData(data) {
   const normalized = normalizeOwsData(data)
   if (!normalized?.enabled) return defaultOwsFormState()
 
-  if (normalized.mode === 'fixed' && normalized.fixed) {
-    const f = normalized.fixed
+  if (normalized.mode === 'fixed' && normalized.fixed?.length) {
     return {
       enabled: true,
       mode: 'fixed',
-      fixed: {
+      fixeds: normalized.fixed.map((f, idx) => ({
+        id: `ows-f${idx + 1}`,
         weight: f.weight != null ? String(f.weight) : '',
         unit: f.unit || 'KG',
         price: f.price != null ? String(f.price) : '',
         currency: f.currency || 'USD',
-      },
+      })),
       ranges: defaultOwsFormState().ranges,
     }
   }
@@ -247,7 +270,7 @@ export function owsFormStateFromData(data) {
   return {
     enabled: true,
     mode: 'range',
-    fixed: defaultOwsFormState().fixed,
+    fixeds: defaultOwsFormState().fixeds,
     ranges: (normalized.ranges || []).map((r, idx) => ({
       id: `ows-r${idx + 1}`,
       from: r.from != null ? String(r.from) : '',
@@ -260,18 +283,18 @@ export function owsFormStateFromData(data) {
 }
 
 export function owsFormStateToPayload(form) {
-  if (!form?.enabled) return { enabled: false, mode: 'fixed', fixed: null, ranges: [] }
+  if (!form?.enabled) return { enabled: false, mode: 'fixed', fixed: [], ranges: [] }
 
   if (form.mode === 'fixed') {
     return normalizeOwsData({
       enabled: true,
       mode: 'fixed',
-      fixed: {
-        weight: form.fixed?.weight,
-        unit: form.fixed?.unit,
-        price: form.fixed?.price,
-        currency: form.fixed?.currency,
-      },
+      fixed: (form.fixeds || []).map((row) => ({
+        weight: row.weight,
+        unit: row.unit,
+        price: row.price,
+        currency: row.currency,
+      })),
     })
   }
 

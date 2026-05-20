@@ -472,6 +472,7 @@
     "owsFromWeightKg": "From weight (KG)",
     "owsToWeightKg": "To weight (KG)",
     "owsAddRange": "Add range",
+    "owsAddFixed": "Add fixed weight",
     "currencyAria": "Currency",
     "seaReeferChargesTitle": "Reefer-only Charges / بنود إضافية للحاويات المبردة فقط",
     "seaReeferChargesSubtitle": "PTI plus port electricity (power) priced per day after free power days — see note below.",

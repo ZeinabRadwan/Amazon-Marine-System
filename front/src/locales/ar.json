@@ -473,6 +473,7 @@
     "owsFromWeightKg": "من وزن (KG)",
     "owsToWeightKg": "إلى وزن (KG)",
     "owsAddRange": "إضافة نطاق",
+    "owsAddFixed": "إضافة وزن ثابت",
     "currencyAria": "العملة",
     "seaReeferChargesTitle": "بنود إضافية للحاويات المبردة فقط / Reefer-only Charges",
     "seaReeferChargesSubtitle": "بند PTI بالإضافة إلى كهرباء الميناء (الباور) — السعر باليوم بعد خصم أيام الفري؛ راجع الملاحظة أدناه.",

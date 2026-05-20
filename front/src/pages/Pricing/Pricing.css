@@ -3814,6 +3814,10 @@
   margin-bottom: 0;
 }
 
+.sea-rate-ows-range-row--fixed {
+  grid-template-columns: 1fr 1.35fr auto;
+}
+
 .sea-rate-ows-range-row__field {
   min-width: 0;
 }
@@ -3855,6 +3859,10 @@
   .sea-rate-ows-range-row {
     grid-template-columns: 1fr 1fr;
     align-items: stretch;
+  }
+
+  .sea-rate-ows-range-row--fixed {
+    grid-template-columns: 1fr 1fr;
   }
 
   .sea-rate-ows-range-row__actions {

@@ -14,7 +14,6 @@ use App\Support\PdfLogo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Mpdf\Mpdf;
 
@@ -1166,6 +1165,24 @@ class PricingQuoteController extends Controller
     }
 
     /**
+     * @param  array<string, mixed>  $ows
+     * @return list<array<string, mixed>>
+     */
+    protected function owsFixedEntries(array $ows): array
+    {
+        $fixed = $ows['fixed'] ?? null;
+        if (! is_array($fixed)) {
+            return [];
+        }
+
+        if (array_is_list($fixed)) {
+            return array_values(array_filter($fixed, 'is_array'));
+        }
+
+        return [$fixed];
+    }
+
+    /**
      * English detail lines after "OWS:" — not included in section totals.
      *
      * @return list<string>
@@ -1180,10 +1197,12 @@ class PricingQuoteController extends Controller
         $lines = [];
         $mode = ($ows['mode'] ?? 'fixed') === 'range' ? 'range' : 'fixed';
 
-        if ($mode === 'fixed' && is_array($ows['fixed'] ?? null)) {
-            $detail = $this->formatOwsPdfDetailLine($ows['fixed'], true);
-            if ($detail !== '') {
-                $lines[] = $detail;
+        if ($mode === 'fixed') {
+            foreach ($this->owsFixedEntries($ows) as $fixed) {
+                $detail = $this->formatOwsPdfDetailLine($fixed, true);
+                if ($detail !== '') {
+                    $lines[] = $detail;
+                }
             }
         } else {
             foreach ($ows['ranges'] ?? [] as $range) {
