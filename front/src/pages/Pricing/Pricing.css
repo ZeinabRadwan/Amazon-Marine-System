@@ -1692,6 +1692,10 @@
   margin-inline-start: 0.25rem;
 }
 
+.pricing-rate-card__tag--reefer-power-free {
+  direction: ltr;
+}
+
 /* Validity badge — list cards (aligned with finance / status pills) */
 .pricing-rate-card__validity {
   display: inline-flex;

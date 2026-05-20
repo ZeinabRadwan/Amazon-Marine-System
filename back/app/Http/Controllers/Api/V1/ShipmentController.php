@@ -1314,7 +1314,7 @@ class ShipmentController extends Controller
                 'ti_broker' => 'مخلص جمركي معتمد',
                 'ti_customs_notes' => 'ملاحظات جمركية',
                 'ti_doc_certificate' => 'شهادة',
-                'ti_doc_bl' => 'بولصة',
+                'ti_doc_bl' => 'بوصلة',
                 'ti_doc_manifest' => 'منشور',
                 'ti_gen_yes' => 'نعم',
                 'ti_gen_no' => 'لا',
