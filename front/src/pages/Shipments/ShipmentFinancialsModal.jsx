@@ -968,9 +968,6 @@ export default function ShipmentFinancialsModal({
   const [clientInvoiceSectionStatus, setClientInvoiceSectionStatus] = useState({})
   const [invoiceIssueDateDraft, setInvoiceIssueDateDraft] = useState('')
   const [invoiceDueDateDraft, setInvoiceDueDateDraft] = useState('')
-  const clientDraftHydratedRef = useRef(false)
-  const clientDraftAutoSaveTimerRef = useRef(null)
-  const clientDraftAutoSaveInFlightRef = useRef(false)
   const [categoriesByCode, setCategoriesByCode] = useState({})
   const editMode = Boolean(token && canManageExpenses && shipment?.bl_number?.trim() && shipment?.id)
   const vendorsBySection = useMemo(() => {
@@ -1809,13 +1806,12 @@ export default function ShipmentFinancialsModal({
   }, [])
 
   const persistClientInvoiceSection = useCallback(
-    async (sectionId, opts = {}) => {
-      const { auto = false } = opts
+    async (sectionId) => {
       if (!token || !shipment?.id || !shipment.client_id || !canEditClientInvoiceLines) return false
       if (clientInvoice?.id && invoiceStatusBlocksEditing(clientInvoice.status)) return false
 
       setClientInvoiceSectionStatus((prev) => ({ ...prev, [sectionId]: 'saving' }))
-      if (!auto) setSavingClientInvoiceSectionId(sectionId)
+      setSavingClientInvoiceSectionId(sectionId)
 
       try {
         const currencyId = resolveClientInvoiceCurrencyId()
@@ -1849,19 +1845,15 @@ export default function ShipmentFinancialsModal({
 
         const inv = await upsertShipmentClientInvoiceDraft(token, shipment.id, payload)
         applyClientInvoiceResponse(inv)
-        markClientInvoiceSectionsSaved([sectionId], auto ? 'draft-saved' : 'saved')
-        if (!auto) {
-          setFinBanner({ type: 'success', message: t('shipments.fin.sectionSaved', { defaultValue: 'Section saved.' }) })
-        }
+        markClientInvoiceSectionsSaved([sectionId], 'saved')
+        setFinBanner({ type: 'success', message: t('shipments.fin.sectionSaved', { defaultValue: 'Section saved.' }) })
         return true
       } catch (e) {
         setClientInvoiceSectionStatus((prev) => ({ ...prev, [sectionId]: 'error' }))
-        if (!auto) {
-          setFinBanner({ type: 'error', message: e?.message || t('shipments.fin.errorSaveLine') })
-        }
+        setFinBanner({ type: 'error', message: e?.message || t('shipments.fin.errorSaveLine') })
         return false
       } finally {
-        if (!auto) setSavingClientInvoiceSectionId(null)
+        setSavingClientInvoiceSectionId(null)
       }
     },
     [
@@ -1883,14 +1875,12 @@ export default function ShipmentFinancialsModal({
     ],
   )
 
-  const flushClientInvoiceDraftAutoSave = useCallback(async () => {
-    if (!token || !shipment?.id || !shipment.client_id || !canEditClientInvoiceLines) return
-    if (!clientDraftHydratedRef.current) return
+  const handleSaveAllClientInvoiceDraft = useCallback(async () => {
+    if (!token || !shipment?.id || !shipment.client_id || !canEditClientInvoiceLines || pricingSaving) return
     if (clientInvoice?.id && invoiceStatusBlocksEditing(clientInvoice.status)) return
-    if (clientDraftAutoSaveInFlightRef.current) return
 
-    clientDraftAutoSaveInFlightRef.current = true
     const sectionIds = ['meta', 'handling', 'shipping', 'inland', 'customs', 'insurance', 'other']
+    setPricingSaving(true)
     setClientInvoiceSectionStatus((prev) => {
       const next = { ...prev }
       sectionIds.forEach((id) => {
@@ -1916,8 +1906,12 @@ export default function ShipmentFinancialsModal({
         items,
       })
       applyClientInvoiceResponse(inv)
-      markClientInvoiceSectionsSaved(sectionIds, 'draft-saved')
-    } catch {
+      markClientInvoiceSectionsSaved(sectionIds, 'saved')
+      setFinBanner({
+        type: 'success',
+        message: t('shipments.fin.clientInvoiceAllSaved', { defaultValue: 'All invoice sections saved as draft.' }),
+      })
+    } catch (e) {
       setClientInvoiceSectionStatus((prev) => {
         const next = { ...prev }
         sectionIds.forEach((id) => {
@@ -1925,8 +1919,9 @@ export default function ShipmentFinancialsModal({
         })
         return next
       })
+      setFinBanner({ type: 'error', message: e?.message || t('shipments.fin.errorSaveLine') })
     } finally {
-      clientDraftAutoSaveInFlightRef.current = false
+      setPricingSaving(false)
     }
   }, [
     token,
@@ -1934,6 +1929,7 @@ export default function ShipmentFinancialsModal({
     canEditClientInvoiceLines,
     clientInvoice?.id,
     clientInvoice?.status,
+    pricingSaving,
     tabBRows,
     handlingRow,
     deletedSellIds,
@@ -1946,38 +1942,10 @@ export default function ShipmentFinancialsModal({
     t,
   ])
 
-  const scheduleClientDraftAutoSave = useCallback(() => {
-    if (!clientDraftHydratedRef.current || !canEditClientInvoiceLines) return
-    if (clientDraftAutoSaveTimerRef.current) {
-      window.clearTimeout(clientDraftAutoSaveTimerRef.current)
-    }
-    clientDraftAutoSaveTimerRef.current = window.setTimeout(() => {
-      clientDraftAutoSaveTimerRef.current = null
-      flushClientInvoiceDraftAutoSave()
-    }, 900)
-  }, [canEditClientInvoiceLines, flushClientInvoiceDraftAutoSave])
-
-  const handleSaveAllClientInvoiceDraft = useCallback(async () => {
-    if (!token || !shipment?.id || pricingSaving) return
-    setPricingSaving(true)
-    try {
-      await flushClientInvoiceDraftAutoSave()
-      setFinBanner({
-        type: 'success',
-        message: t('shipments.fin.clientInvoiceAllSaved', { defaultValue: 'All invoice sections saved as draft.' }),
-      })
-    } catch (e) {
-      setFinBanner({ type: 'error', message: e?.message || t('shipments.fin.errorSaveLine') })
-    } finally {
-      setPricingSaving(false)
-    }
-  }, [token, shipment?.id, pricingSaving, flushClientInvoiceDraftAutoSave, t])
-
   useEffect(() => {
     if (!open || !shipment?.id || !token || !canAccessInvoices) return undefined
     if (tab !== 'selling' && tab !== 'summary') return undefined
     let cancelled = false
-    clientDraftHydratedRef.current = false
     setInvoiceLoading(true)
 
     const load = async () => {
@@ -2028,10 +1996,6 @@ export default function ShipmentFinancialsModal({
     load()
     return () => {
       cancelled = true
-      if (clientDraftAutoSaveTimerRef.current) {
-        window.clearTimeout(clientDraftAutoSaveTimerRef.current)
-        clientDraftAutoSaveTimerRef.current = null
-      }
     }
   }, [open, shipment?.id, token, tab, canAccessInvoices])
 
@@ -2053,29 +2017,7 @@ export default function ShipmentFinancialsModal({
         : new Date().toISOString().slice(0, 10),
     )
     setInvoiceDueDateDraft(clientInvoice?.due_date ? String(clientInvoice.due_date).slice(0, 10) : '')
-    clientDraftHydratedRef.current = false
-    const hydrateTimer = window.setTimeout(() => {
-      clientDraftHydratedRef.current = true
-    }, 400)
-    return () => window.clearTimeout(hydrateTimer)
   }, [open, clientInvoice?.id, clientInvoice?.notes, clientInvoice?.issue_date, clientInvoice?.due_date])
-
-  useEffect(() => {
-    if (!open || tab !== 'selling' || !canEditClientInvoiceLines) return undefined
-    scheduleClientDraftAutoSave()
-    return undefined
-  }, [
-    open,
-    tab,
-    canEditClientInvoiceLines,
-    invoiceNotesDraft,
-    invoiceIssueDateDraft,
-    invoiceDueDateDraft,
-    tabBRows,
-    handlingRow,
-    deletedSellIds,
-    scheduleClientDraftAutoSave,
-  ])
 
   useEffect(() => {
     if (!open || !shipment?.id || !token || tab !== 'history') return undefined
@@ -2164,7 +2106,7 @@ export default function ShipmentFinancialsModal({
           unit_price: Number.isNaN(sellVal) ? '' : String(sellVal),
           include,
         }
-      })
+      }),
     )
     syncManualFromInvoice()
   }, [expenses, clientInvoice, shipment?.container_count, shipment?.is_reefer, t])
