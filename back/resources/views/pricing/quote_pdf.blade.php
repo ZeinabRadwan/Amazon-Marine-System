@@ -551,31 +551,37 @@
             margin-top: 3px;
         }
 
-        /* Receipts note — EN left, AR right */
+        /* Receipts note */
         .pdf-quote-v3-receipts {
-            width: 100%;
-            border-collapse: collapse;
             background: #f0fdf4;
             border-left: 4px solid #22c55e;
+            padding: 9px 14px;
             margin-bottom: 12px;
             font-size: 9.5px;
             color: #14532d;
             line-height: 1.65;
         }
 
+        .pdf-quote-v3-receipts-cols {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
         .pdf-quote-v3-receipts-col {
-            padding: 9px 12px;
             vertical-align: top;
+            padding: 4px 0;
+            width: 100%;
         }
 
         .pdf-quote-v3-receipts-col--en {
-            direction: ltr;
             text-align: left;
+            direction: ltr;
+            padding-bottom: 6px;
         }
 
         .pdf-quote-v3-receipts-col--ar {
-            direction: rtl;
             text-align: right;
+            direction: rtl;
             font-size: 9px;
             color: #166534;
             line-height: 1.6;
@@ -586,6 +592,11 @@
             font-weight: 700;
             color: #16a34a;
             margin-bottom: 3px;
+        }
+
+        .pdf-quote-v3-receipts-col--ar .pdf-quote-v3-receipts-title {
+            font-size: 10px;
+            color: #166534;
         }
 
         /* Terms */

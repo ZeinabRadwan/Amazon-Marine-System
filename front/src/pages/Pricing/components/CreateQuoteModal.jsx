@@ -792,11 +792,6 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
         (Number(customsClearanceFee?.amount) || 0) > 0),
     [customsEnabled, customsSellingByCurrency, customsClearanceFee]
   )
-
-  useEffect(() => {
-    if (!hasCustomsPricing) setOfficialReceiptsNoteEnabled(false)
-  }, [hasCustomsPricing])
-
   const hasAnySectionPricing = hasOceanLineData || hasInlandLineData || hasCustomsPricing
 
   const pricingLinesProfitByCurrency = useMemo(() => sumProfitsByCurrency(oceanLines), [oceanLines])
@@ -1126,7 +1121,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
       })(),
       show_carrier_on_pdf: hasOceanRoute ? (isQuickSubmit ? true : showCarrierOnPdf) : false,
       official_receipts_note:
-        officialReceiptsNoteEnabled && hasCustomsPricing ? buildOfficialReceiptsNote(t) : null,
+        customsEnabled && officialReceiptsNoteEnabled ? buildOfficialReceiptsNote(t) : null,
       pricing_team_confirmed: pricingTeamConfirmed,
       items,
     }

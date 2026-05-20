@@ -208,8 +208,6 @@ export default function QuoteDetailViewContent({ quote }) {
           onRemoveItem={noop}
           totalCostByCurrency={customsSellingByCurrency}
           officialReceiptsNoteEnabled={officialReceiptsNoteEnabled}
-          onEnableOfficialReceiptsNote={noop}
-          onRemoveOfficialReceiptsNote={noop}
         />
       </QuoteFinCard>
       ) : null}

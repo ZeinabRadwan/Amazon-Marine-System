@@ -747,7 +747,6 @@
     "officialReceiptsNoteNoneAdded": "The official government receipts disclaimer is not included in this quotation.",
     "officialReceiptsNoteEnableBtn": "Include official receipts note in quotation",
     "officialReceiptsNoteRemoveBtn": "Remove note from quotation",
-    "officialReceiptsNoteWillAdd": "Will be added to the quotation",
     "quoteSectionHandling": "Section 4: Handling fees",
     "quoteSectionSummary": "ملخص / Summary",
     "quoteConfirmStatusLabel": "Status",

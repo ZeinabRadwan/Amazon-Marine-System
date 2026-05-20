@@ -4463,8 +4463,12 @@
   margin-top: 0.35rem;
 }
 
-.pricing-quote-modal-root .pricing-quote-official-receipts-controls {
-  margin-top: 0.35rem;
+.pricing-quote-modal-root .pricing-quote-official-receipts-in-customs {
+  margin-top: 0.5rem;
+}
+
+.pricing-quote-modal-root .pricing-quote-official-receipts-empty {
+  padding: 0.25rem 0;
 }
 
 /* Confirmation card (bottom of quote form) */
@@ -4619,24 +4623,27 @@
   color: #bbf7d0;
 }
 
-.pricing-quote-modal-root .pricing-quote-customs-info-note__bilingual {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px 16px;
-  align-items: start;
+.pricing-quote-modal-root .pricing-quote-customs-info-note__columns {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+  width: 100%;
   direction: ltr;
 }
 
+.pricing-quote-modal-root .pricing-quote-customs-info-note__col {
+  width: 100%;
+  flex: 0 0 auto;
+}
+
 .pricing-quote-modal-root .pricing-quote-customs-info-note__col--en {
-  grid-column: 1;
-  direction: ltr;
   text-align: left;
 }
 
 .pricing-quote-modal-root .pricing-quote-customs-info-note__col--ar {
-  grid-column: 2;
-  direction: rtl;
   text-align: right;
+  direction: rtl;
   font-family: 'Cairo', sans-serif;
 }
 
@@ -4645,6 +4652,11 @@
   font-weight: 700;
   color: #16a34a;
   margin-bottom: 3px;
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-info-note__col--ar .pricing-quote-customs-info-note__title {
+  font-size: 10.5px;
+  color: #166534;
 }
 
 .pricing-quote-modal-root .pricing-quote-customs-info-note__body {

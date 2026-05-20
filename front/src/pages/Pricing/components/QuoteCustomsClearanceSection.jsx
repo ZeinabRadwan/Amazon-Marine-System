@@ -1,9 +1,8 @@
-import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatPricingDecimal } from '../../../utils/dateUtils'
+import { QuoteOfficialReceiptsNoteControls } from './QuoteOfficialReceiptsNoteSection'
 import { QuoteSummaryCurrencyText, QuoteSummaryRow } from './quoteSummaryUi'
 import { QuoteAddItemPanel } from './quoteAddItemsUi'
-import QuoteOfficialReceiptsNoteSection from './QuoteOfficialReceiptsNoteSection'
 
 function CostAmountLabel({ amount, currency }) {
   const cur = String(currency ?? '')
@@ -42,12 +41,6 @@ export default function QuoteCustomsClearanceSection({
   const amount = Number(clearanceFee?.amount) || 0
   const currency = String(clearanceFee?.currency || 'EGP').toUpperCase()
   const fixedNote = t('pricing.customsFeeFixedNote', 'Fixed by pricing team, not editable')
-
-  const hasCustomsPricing = useMemo(() => {
-    if (!customsActive) return false
-    if (amount > 0) return true
-    return Object.values(totalCostByCurrency).some((v) => Math.abs(Number(v) || 0) > 1e-9)
-  }, [customsActive, amount, totalCostByCurrency])
 
   return (
     <div className="pricing-quote-customs-block">
@@ -89,14 +82,13 @@ export default function QuoteCustomsClearanceSection({
             </table>
           </div>
 
-          {hasCustomsPricing ? (
-            <QuoteOfficialReceiptsNoteSection
-              active={officialReceiptsNoteEnabled}
-              onEnable={onEnableOfficialReceiptsNote}
-              onRemove={onRemoveOfficialReceiptsNote}
-              readOnly={readOnly}
-            />
-          ) : null}
+          <QuoteOfficialReceiptsNoteControls
+            active={officialReceiptsNoteEnabled}
+            onEnable={onEnableOfficialReceiptsNote}
+            onRemove={onRemoveOfficialReceiptsNote}
+            readOnly={readOnly}
+            showPreviewWhenActive={readOnly && officialReceiptsNoteEnabled}
+          />
 
           <QuoteAddItemPanel
             items={extraItems}
