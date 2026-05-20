@@ -13,6 +13,7 @@ import QuoteReeferDeferredFootnote from './QuoteReeferDeferredFootnote'
 import QuoteOwsDeferredFootnote from './QuoteOwsDeferredFootnote'
 import QuoteInlandTransportSection from './QuoteInlandTransportSection'
 import QuoteCustomsClearanceSection from './QuoteCustomsClearanceSection'
+import QuoteOfficialReceiptsNoteControls from './QuoteOfficialReceiptsNoteSection'
 import QuoteHandlingFeesSection from './QuoteHandlingFeesSection'
 import { QuoteGrandSummaryPanel, QuoteSummaryCurrencyText, QuoteSummaryRow } from './quoteSummaryUi'
 
@@ -260,6 +261,10 @@ export default function QuoteDetailViewContent({ quote }) {
           <QuoteSummaryCurrencyText amounts={grandSellingByCurrency} dash={dash} />
         </QuoteSummaryRow>
       </QuoteGrandSummaryPanel>
+
+      {customsEnabled ? (
+        <QuoteOfficialReceiptsNoteControls readOnly active={officialReceiptsNoteEnabled} onEnable={noop} onRemove={noop} />
+      ) : null}
 
       <section
         className={`pricing-quote-confirmation-card ${

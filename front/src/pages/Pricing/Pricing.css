@@ -4463,12 +4463,18 @@
   margin-top: 0.35rem;
 }
 
-.pricing-quote-modal-root .pricing-quote-official-receipts-in-customs {
-  margin-top: 0.5rem;
+.pricing-quote-modal-root .pricing-quote-official-receipts-section {
+  margin-top: 0.25rem;
+  margin-bottom: 1rem;
 }
 
 .pricing-quote-modal-root .pricing-quote-official-receipts-empty {
   padding: 0.25rem 0;
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-active .pricing-quote-customs-info-note {
+  margin-top: 0.5rem;
+  margin-bottom: 0.25rem;
 }
 
 /* Confirmation card (bottom of quote form) */

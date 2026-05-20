@@ -71,7 +71,7 @@ import {
 import { sortSeaOceanQuoteLines, sortSeaPricingCodeEntries } from '../utils/seaPricingOrder'
 import QuoteInlandTransportSection from './QuoteInlandTransportSection'
 import QuoteCustomsClearanceSection from './QuoteCustomsClearanceSection'
-import { buildOfficialReceiptsNote } from './QuoteOfficialReceiptsNoteSection'
+import QuoteOfficialReceiptsNoteControls, { buildOfficialReceiptsNote } from './QuoteOfficialReceiptsNoteSection'
 import QuoteHandlingFeesSection from './QuoteHandlingFeesSection'
 import QuickQuoteForm from './quick/QuickQuoteForm'
 import { inlandRouteFromOffer, shouldShowQuoteRouteSummary } from '../utils/quotePricingType'
@@ -1255,8 +1255,6 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                 onRemoveCustomsItem={removeCustomsExtraItem}
                 customsSellingByCurrency={customsSellingByCurrency}
                 officialReceiptsNoteEnabled={officialReceiptsNoteEnabled}
-                onEnableOfficialReceiptsNote={() => setOfficialReceiptsNoteEnabled(true)}
-                onRemoveOfficialReceiptsNote={() => setOfficialReceiptsNoteEnabled(false)}
                 handlingLines={handlingLines}
                 onAddHandlingItem={addHandlingItem}
                 onUpdateHandlingLine={updateHandlingLine}
@@ -1568,8 +1566,6 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                 onRemoveItem={removeCustomsExtraItem}
                 totalCostByCurrency={customsSellingByCurrency}
                 officialReceiptsNoteEnabled={officialReceiptsNoteEnabled}
-                onEnableOfficialReceiptsNote={() => setOfficialReceiptsNoteEnabled(true)}
-                onRemoveOfficialReceiptsNote={() => setOfficialReceiptsNoteEnabled(false)}
               />
             </QuoteFinCard>
 
@@ -1624,6 +1620,14 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
 
             </>
             )}
+
+            {customsEnabled ? (
+              <QuoteOfficialReceiptsNoteControls
+                active={officialReceiptsNoteEnabled}
+                onEnable={() => setOfficialReceiptsNoteEnabled(true)}
+                onRemove={() => setOfficialReceiptsNoteEnabled(false)}
+              />
+            ) : null}
 
             <section
               className={`pricing-quote-confirmation-card ${

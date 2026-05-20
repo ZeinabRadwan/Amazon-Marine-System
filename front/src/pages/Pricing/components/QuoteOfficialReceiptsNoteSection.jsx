@@ -64,22 +64,21 @@ export function OfficialReceiptsNotePreview() {
 }
 
 /**
- * Official receipts note controls — embedded inside customs clearance (after fee table).
+ * Enable / remove controls — shown before pricing team confirmation (not inside customs table).
  */
 export function QuoteOfficialReceiptsNoteControls({
   active,
   onEnable,
   onRemove,
   readOnly = false,
-  showPreviewWhenActive = false,
 }) {
   const { t } = useTranslation()
 
   if (readOnly && !active) return null
 
   return (
-    <div
-      className="pricing-quote-official-receipts-in-customs"
+    <section
+      className="pricing-quote-official-receipts-section"
       aria-label={t('pricing.officialReceiptsNoteSectionTitle', 'Official government receipts note')}
     >
       {!active ? (
@@ -98,7 +97,6 @@ export function QuoteOfficialReceiptsNoteControls({
         )
       ) : (
         <div className="pricing-quote-official-receipts-active space-y-3">
-          {showPreviewWhenActive ? <OfficialReceiptsNotePreview /> : null}
           <p className="pricing-quote-official-receipts-hint text-sm text-gray-500 dark:text-gray-400 m-0">
             {t(
               'pricing.customsOfficialReceiptsFootnote',
@@ -118,11 +116,8 @@ export function QuoteOfficialReceiptsNoteControls({
           ) : null}
         </div>
       )}
-    </div>
+    </section>
   )
 }
 
-/** @deprecated Use QuoteOfficialReceiptsNoteControls inside customs section */
-export default function QuoteOfficialReceiptsNoteSection(props) {
-  return <QuoteOfficialReceiptsNoteControls {...props} showPreviewWhenActive={props.readOnly && props.active} />
-}
+export default QuoteOfficialReceiptsNoteControls

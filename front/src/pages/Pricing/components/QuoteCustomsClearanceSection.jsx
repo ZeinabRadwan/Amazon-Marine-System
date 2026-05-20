@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { formatPricingDecimal } from '../../../utils/dateUtils'
-import { QuoteOfficialReceiptsNoteControls } from './QuoteOfficialReceiptsNoteSection'
+import { OfficialReceiptsNotePreview } from './QuoteOfficialReceiptsNoteSection'
 import { QuoteSummaryCurrencyText, QuoteSummaryRow } from './quoteSummaryUi'
 import { QuoteAddItemPanel } from './quoteAddItemsUi'
 
@@ -33,8 +33,6 @@ export default function QuoteCustomsClearanceSection({
   onRemoveItem,
   totalCostByCurrency = {},
   officialReceiptsNoteEnabled = false,
-  onEnableOfficialReceiptsNote,
-  onRemoveOfficialReceiptsNote,
   readOnly = false,
 }) {
   const { t } = useTranslation()
@@ -82,13 +80,7 @@ export default function QuoteCustomsClearanceSection({
             </table>
           </div>
 
-          <QuoteOfficialReceiptsNoteControls
-            active={officialReceiptsNoteEnabled}
-            onEnable={onEnableOfficialReceiptsNote}
-            onRemove={onRemoveOfficialReceiptsNote}
-            readOnly={readOnly}
-            showPreviewWhenActive={readOnly && officialReceiptsNoteEnabled}
-          />
+          {officialReceiptsNoteEnabled ? <OfficialReceiptsNotePreview /> : null}
 
           <QuoteAddItemPanel
             items={extraItems}
