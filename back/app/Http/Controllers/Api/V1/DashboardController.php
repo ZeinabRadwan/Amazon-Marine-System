@@ -68,7 +68,7 @@ class DashboardController extends Controller
         $role = $this->roleName($request);
         $userId = $request->user()?->id;
         if ($role === 'sales' && $userId) {
-            $query->where('sales_rep_id', $userId);
+            $query->forSalesperson((int) $userId);
         }
 
         return $query;
@@ -237,8 +237,15 @@ class DashboardController extends Controller
 
     public function salesEmployee(Request $request, SalesDashboardService $salesDashboard)
     {
-        abort_unless($request->user() !== null, 401);
-        $userId = (int) $request->user()->id;
+        $user = $request->user();
+        abort_unless($user !== null, 401);
+        abort_unless(
+            $user->hasRole('sales') || $user->hasRole('admin'),
+            403,
+            'Sales employee dashboard is only available to sales users.'
+        );
+
+        $userId = (int) $user->id;
 
         $validated = $request->validate([
             'completed_period' => ['sometimes', 'string', 'in:current_month,last_2_months,custom'],

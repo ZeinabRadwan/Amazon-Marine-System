@@ -6,6 +6,7 @@ use App\Models\Client;
 use App\Models\PricingQuote;
 use App\Models\Shipment;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 class SalesDashboardService
@@ -21,7 +22,7 @@ class SalesDashboardService
 
         [$completedFromDate, $completedToDate] = $this->resolveCompletedRange($completedPeriod, $completedFrom, $completedTo, $now);
 
-        $shipmentsQuery = Shipment::query()->where('sales_rep_id', $userId);
+        $shipmentsQuery = $this->shipmentsForUser($userId);
         $allShipments = (clone $shipmentsQuery)->get(['id', 'status', 'selling_price_total', 'profit_total', 'created_at']);
 
         $activeCustomers = (int) Client::query()
@@ -42,33 +43,29 @@ class SalesDashboardService
             return $created->between($completedFromDate, $completedToDate);
         })->count();
 
-        $quotationsSentMonth = (int) PricingQuote::query()
-            ->where('sales_user_id', $userId)
+        $quotationsSentMonth = (int) $this->quotesForUser($userId)
             ->whereBetween('created_at', [$monthStart, $monthEnd])
             ->count();
 
-        $quotationsSentRange = (int) PricingQuote::query()
-            ->where('sales_user_id', $userId)
+        $quotationsSentRange = (int) $this->quotesForUser($userId)
             ->whereBetween('created_at', [$completedFromDate, $completedToDate])
             ->count();
 
-        $convertedShipments = (int) Shipment::query()
-            ->where('sales_rep_id', $userId)
+        $convertedShipments = (int) $this->shipmentsForUser($userId)
             ->whereNotNull('pricing_quote_id')
             ->count();
 
-        $convertedInRange = (int) Shipment::query()
-            ->where('sales_rep_id', $userId)
+        $convertedInRange = (int) $this->shipmentsForUser($userId)
             ->whereNotNull('pricing_quote_id')
             ->whereBetween('created_at', [$completedFromDate, $completedToDate])
             ->count();
 
-        $conversionDenominator = max($quotationsSentRange, 1);
         $conversionRatePct = $quotationsSentRange > 0
-            ? round($convertedInRange / $quotationsSentRange * 100, 1)
+            ? round($convertedInRange / max($quotationsSentRange, 1) * 100, 1)
             : 0.0;
 
-        $lifetimeConversionDenominator = max((int) PricingQuote::query()->where('sales_user_id', $userId)->count(), 1);
+        $lifetimeQuotes = (int) $this->quotesForUser($userId)->count();
+        $lifetimeConversionDenominator = max($lifetimeQuotes, 1);
         $lifetimeConversionPct = round($convertedShipments / $lifetimeConversionDenominator * 100, 1);
 
         $totalRevenue = round((float) $allShipments->sum(fn (Shipment $s) => (float) ($s->selling_price_total ?? 0)), 2);
@@ -79,6 +76,7 @@ class SalesDashboardService
         $conversionTrend = $this->conversionTrendByMonth($userId, 12);
 
         return [
+            'sales_user_id' => $userId,
             'kpis' => [
                 'active_customers' => $activeCustomers,
                 'open_shipments' => $openShipments,
@@ -109,6 +107,22 @@ class SalesDashboardService
                 'conversion_rate_line' => $conversionTrend,
             ],
         ];
+    }
+
+    /**
+     * @return Builder<Shipment>
+     */
+    private function shipmentsForUser(int $userId): Builder
+    {
+        return Shipment::query()->forSalesperson($userId);
+    }
+
+    /**
+     * @return Builder<PricingQuote>
+     */
+    private function quotesForUser(int $userId): Builder
+    {
+        return PricingQuote::query()->forSalesperson($userId);
     }
 
     /**
@@ -171,8 +185,7 @@ class SalesDashboardService
     private function monthlyShipmentMetrics(int $userId, int $months): array
     {
         $start = now()->copy()->subMonths($months - 1)->startOfMonth();
-        $rows = Shipment::query()
-            ->where('sales_rep_id', $userId)
+        $rows = $this->shipmentsForUser($userId)
             ->where('created_at', '>=', $start)
             ->get(['created_at', 'selling_price_total', 'profit_total']);
 
@@ -206,8 +219,7 @@ class SalesDashboardService
     private function quotationsByMonth(int $userId, int $months): array
     {
         $start = now()->copy()->subMonths($months - 1)->startOfMonth();
-        $quotes = PricingQuote::query()
-            ->where('sales_user_id', $userId)
+        $quotes = $this->quotesForUser($userId)
             ->where('created_at', '>=', $start)
             ->get(['created_at']);
 
@@ -233,13 +245,11 @@ class SalesDashboardService
     private function conversionTrendByMonth(int $userId, int $months): array
     {
         $start = now()->copy()->subMonths($months - 1)->startOfMonth();
-        $quotes = PricingQuote::query()
-            ->where('sales_user_id', $userId)
+        $quotes = $this->quotesForUser($userId)
             ->where('created_at', '>=', $start)
             ->get(['id', 'created_at']);
 
-        $converted = Shipment::query()
-            ->where('sales_rep_id', $userId)
+        $converted = $this->shipmentsForUser($userId)
             ->whereNotNull('pricing_quote_id')
             ->where('created_at', '>=', $start)
             ->get(['pricing_quote_id', 'created_at']);

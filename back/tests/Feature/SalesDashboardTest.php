@@ -67,9 +67,51 @@ class SalesDashboardTest extends TestCase
                     'conversion_rate_line',
                 ],
             ])
+            ->assertJsonPath('sales_user_id', $sales->id)
             ->assertJsonPath('kpis.active_customers', 1)
             ->assertJsonPath('kpis.total_revenue', 50000)
             ->assertJsonPath('kpis.net_profit', 8000);
+    }
+
+    public function test_sales_employee_dashboard_excludes_other_sales_users_data(): void
+    {
+        $salesA = User::factory()->create(['status' => 'active']);
+        $salesA->assignRole('sales');
+
+        $salesB = User::factory()->create(['status' => 'active']);
+        $salesB->assignRole('sales');
+
+        $clientB = Client::factory()->create(['assigned_sales_id' => $salesB->id]);
+
+        PricingQuote::create([
+            'quote_no' => 'Q-SD-B',
+            'client_id' => $clientB->id,
+            'sales_user_id' => $salesB->id,
+            'status' => 'pending',
+        ]);
+
+        Shipment::create([
+            'client_id' => $clientB->id,
+            'sales_rep_id' => $salesB->id,
+            'bl_number' => 'BL-SD-B',
+            'status' => 'completed',
+            'shipment_direction' => 'Export',
+            'selling_price_total' => 90000,
+            'profit_total' => 12000,
+        ]);
+
+        $tokenA = $salesA->createToken('test')->plainTextToken;
+
+        $this->getJson('/api/v1/dashboard/sales-employee?completed_period=current_month', [
+            'Authorization' => 'Bearer '.$tokenA,
+        ])
+            ->assertOk()
+            ->assertJsonPath('sales_user_id', $salesA->id)
+            ->assertJsonPath('kpis.active_customers', 0)
+            ->assertJsonPath('kpis.open_shipments', 0)
+            ->assertJsonPath('kpis.quotations_sent_month', 0)
+            ->assertJsonPath('kpis.total_revenue', 0)
+            ->assertJsonPath('kpis.net_profit', 0);
     }
 
     public function test_sales_can_link_shipment_to_quotation(): void

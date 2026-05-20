@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -82,6 +83,19 @@ class Shipment extends Model
     public function salesRep(): BelongsTo
     {
         return $this->belongsTo(User::class, 'sales_rep_id');
+    }
+
+    /**
+     * Shipments owned by a salesperson (explicit rep or assigned client).
+     *
+     * @param  Builder<Shipment>  $query
+     */
+    public function scopeForSalesperson(Builder $query, int $userId): void
+    {
+        $query->where(function (Builder $q) use ($userId) {
+            $q->where('sales_rep_id', $userId)
+                ->orWhereHas('client', fn (Builder $c) => $c->where('assigned_sales_id', $userId));
+        });
     }
 
     /**

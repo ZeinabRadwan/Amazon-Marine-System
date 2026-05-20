@@ -152,7 +152,7 @@ function Home() {
   }, [])
 
   useEffect(() => {
-    if (roleKey !== 'sales' || !token) {
+    if (roleKey !== 'sales' || !token || user?.id == null) {
       setSalesFollowUpSummary({ loading: false, error: null, data: null })
       return
     }
@@ -168,7 +168,7 @@ function Home() {
     return () => {
       cancelled = true
     }
-  }, [token, roleKey, salesSummaryRefreshKey, t])
+  }, [token, roleKey, user?.id, salesSummaryRefreshKey, t])
 
   useEffect(() => {
     const onFollowUpsChanged = () => setSalesSummaryRefreshKey((k) => k + 1)

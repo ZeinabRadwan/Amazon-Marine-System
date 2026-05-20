@@ -44,6 +44,7 @@ export default function SalesEmployeeDashboard({
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const token = getStoredToken()
+  const salesUserId = user?.id != null ? Number(user.id) : null
   const displayName = user?.name || user?.email || t('dashboardModule.salesEmployee', 'Sales')
 
   const [completedPeriod, setCompletedPeriod] = useState('current_month')
@@ -54,7 +55,7 @@ export default function SalesEmployeeDashboard({
   const [payload, setPayload] = useState(null)
 
   const loadDashboard = useCallback(() => {
-    if (!token) return
+    if (!token || salesUserId == null) return
     setLoading(true)
     setError(null)
     const params = { completed_period: completedPeriod }
@@ -63,17 +64,28 @@ export default function SalesEmployeeDashboard({
       if (customTo) params.completed_to = customTo
     }
     getDashboardSalesEmployee(token, params)
-      .then((res) => setPayload(extractPayload(res)))
+      .then((res) => {
+        const data = extractPayload(res)
+        const scopedUserId = data?.sales_user_id != null ? Number(data.sales_user_id) : salesUserId
+        if (scopedUserId !== salesUserId) {
+          setError(t('salesDashboard.scopeMismatch', 'Dashboard data is not scoped to your account.'))
+          setPayload(null)
+          return
+        }
+        setPayload(data)
+      })
       .catch((e) => setError(e?.message || t('common.error', 'Something went wrong')))
       .finally(() => setLoading(false))
-  }, [token, completedPeriod, customFrom, customTo, t])
+  }, [token, salesUserId, completedPeriod, customFrom, customTo, t])
 
   useEffect(() => {
+    if (salesUserId == null) return
     loadDashboard()
-  }, [loadDashboard, refreshKey])
+  }, [loadDashboard, refreshKey, salesUserId])
 
-  const kpis = payload?.kpis ?? {}
-  const charts = payload?.charts ?? {}
+  const scopedPayload = salesUserId == null ? null : payload
+  const kpis = scopedPayload?.kpis ?? {}
+  const charts = scopedPayload?.charts ?? {}
 
   const revenueLine = useMemo(
     () => (Array.isArray(charts.monthly_revenue_profit_line) ? charts.monthly_revenue_profit_line : []),

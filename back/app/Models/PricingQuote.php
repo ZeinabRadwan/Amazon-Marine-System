@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -74,6 +75,19 @@ class PricingQuote extends Model
     public function salesUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'sales_user_id');
+    }
+
+    /**
+     * Quotations owned by a salesperson (creator or assigned client).
+     *
+     * @param  Builder<PricingQuote>  $query
+     */
+    public function scopeForSalesperson(Builder $query, int $userId): void
+    {
+        $query->where(function (Builder $q) use ($userId) {
+            $q->where('sales_user_id', $userId)
+                ->orWhereHas('client', fn (Builder $c) => $c->where('assigned_sales_id', $userId));
+        });
     }
 
     /**

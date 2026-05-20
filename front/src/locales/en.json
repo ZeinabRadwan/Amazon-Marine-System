@@ -1070,6 +1070,7 @@
     "darkMode": "Switch to dark mode"
   },
   "salesDashboard": {
+    "scopeMismatch": "Dashboard data is not scoped to your account.",
     "greeting": "Sales overview — {{name}}",
     "subtitle": "Your performance, quotations, shipments, and follow-ups at a glance.",
     "kpi": {

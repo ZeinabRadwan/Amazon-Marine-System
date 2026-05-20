@@ -291,7 +291,7 @@ class ShipmentController extends Controller
 
         // Apply role-based filtering
         if (! $user->hasRole('admin') && ! $user->can('shipments.view') && $user->can('shipments.view_own')) {
-            $query->where('sales_rep_id', $user->id);
+            $query->forSalesperson((int) $user->id);
         }
 
         // Fetch counts for ALL statuses currently in the DB
@@ -411,7 +411,7 @@ class ShipmentController extends Controller
 
         // Apply role-based filtering
         if (! $user->hasRole('admin') && ! $user->can('shipments.view') && $user->can('shipments.view_own')) {
-            $query->where('sales_rep_id', $user->id);
+            $query->forSalesperson((int) $user->id);
         }
 
         // Fetch status name map for ID resolution

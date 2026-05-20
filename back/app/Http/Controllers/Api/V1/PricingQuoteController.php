@@ -47,7 +47,7 @@ class PricingQuoteController extends Controller
 
         $user = $request->user();
         if ($user && $user->hasRole('sales') && ! $user->hasRole('admin')) {
-            $query->where('sales_user_id', $user->id);
+            $query->forSalesperson((int) $user->id);
         } elseif ($salesUserId = $request->query('sales_user_id')) {
             $query->where('sales_user_id', (int) $salesUserId);
         }
@@ -235,7 +235,12 @@ class PricingQuoteController extends Controller
             $quote = new PricingQuote;
             $quote->quote_no = $validated['quote_no'] ?? $this->generateQuoteNo();
             $quote->client_id = $validated['client_id'] ?? null;
-            $quote->sales_user_id = $validated['sales_user_id'] ?? null;
+            $creator = $request->user();
+            if ($creator && $creator->hasRole('sales') && ! $creator->hasRole('admin')) {
+                $quote->sales_user_id = $creator->id;
+            } else {
+                $quote->sales_user_id = $validated['sales_user_id'] ?? null;
+            }
             $quote->pricing_offer_id = $quickMode ? null : ($validated['pricing_offer_id'] ?? null);
             $quote->pricing_type = $pricingType;
             $quote->origin_rate_snapshot_id = $quickMode ? null : $originSnapshotId;
