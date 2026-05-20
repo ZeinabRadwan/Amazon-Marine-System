@@ -4347,11 +4347,15 @@
 }
 
 .pricing-quote-modal-root .pricing-quote-customs-info-note {
-  background: #eaf3de;
-  border: 1px solid #c0dd97;
-  border-radius: 8px;
-  padding: 10px 14px;
+  background: #f0fdf4;
+  border: none;
+  border-left: 4px solid #22c55e;
+  border-radius: 0 8px 8px 0;
+  padding: 10px 16px;
   margin-bottom: 0;
+  font-size: 10px;
+  color: #14532d;
+  line-height: 1.75;
 }
 
 .pricing-quote-modal-root .pricing-quote-customs-info-note + .pricing-quote-add-item-panel {
@@ -4456,6 +4460,10 @@
 }
 
 .pricing-quote-modal-root .pricing-quote-handling-block .pricing-quote-module-summary--handling {
+  margin-top: 0.35rem;
+}
+
+.pricing-quote-modal-root .pricing-quote-official-receipts-controls {
   margin-top: 0.35rem;
 }
 
@@ -4606,21 +4614,48 @@
 
 [data-theme='dark'] .pricing-quote-modal-root .pricing-quote-customs-info-note,
 .dark .pricing-quote-modal-root .pricing-quote-customs-info-note {
-  background: rgba(34, 84, 20, 0.18);
-  border-color: rgba(96, 153, 34, 0.45);
+  background: rgba(20, 83, 45, 0.22);
+  border-left-color: #4ade80;
+  color: #bbf7d0;
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-info-note__bilingual {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+  align-items: start;
+  direction: ltr;
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-info-note__col--en {
+  grid-column: 1;
+  direction: ltr;
+  text-align: left;
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-info-note__col--ar {
+  grid-column: 2;
+  direction: rtl;
+  text-align: right;
+  font-family: 'Cairo', sans-serif;
 }
 
 .pricing-quote-modal-root .pricing-quote-customs-info-note__title {
-  font-size: 12px;
-  font-weight: 600;
-  color: #3b6d11;
-  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #16a34a;
+  margin-bottom: 3px;
 }
 
 .pricing-quote-modal-root .pricing-quote-customs-info-note__body {
-  font-size: 12px;
-  color: #3b6d11;
-  line-height: 1.7;
+  font-size: 10px;
+  color: #14532d;
+  line-height: 1.75;
+}
+
+.pricing-quote-modal-root .pricing-quote-customs-info-note__col--ar .pricing-quote-customs-info-note__body {
+  font-size: 9.5px;
+  color: #166534;
 }
 
 .pricing-quote-modal-root .pricing-quote-customs-info-note__body strong {
@@ -4628,21 +4663,25 @@
 }
 
 .pricing-quote-modal-root .pricing-quote-customs-info-note__footnote {
-  font-size: 11px;
-  color: #639922;
+  font-size: 9px;
+  color: #166534;
   margin-top: 6px;
+  opacity: 0.85;
 }
 
 [data-theme='dark'] .pricing-quote-modal-root .pricing-quote-customs-info-note__title,
+.dark .pricing-quote-modal-root .pricing-quote-customs-info-note__title {
+  color: #4ade80;
+}
+
 [data-theme='dark'] .pricing-quote-modal-root .pricing-quote-customs-info-note__body,
-.dark .pricing-quote-modal-root .pricing-quote-customs-info-note__title,
 .dark .pricing-quote-modal-root .pricing-quote-customs-info-note__body {
-  color: #a3d977;
+  color: #bbf7d0;
 }
 
 [data-theme='dark'] .pricing-quote-modal-root .pricing-quote-customs-info-note__footnote,
 .dark .pricing-quote-modal-root .pricing-quote-customs-info-note__footnote {
-  color: #7cb342;
+  color: #86efac;
 }
 
 .pricing-quote-modal-root .pricing-quote-customs-table-block {

@@ -86,8 +86,7 @@ export function sumHandlingByCurrency(lines) {
   return m
 }
 
-function isCustomsOtherItem(item, quote) {
-  if (!quote?.official_receipts_note) return false
+function isCustomsOtherItem(item) {
   const code = String(item.code || '').toUpperCase()
   if (code !== 'OTHER') return false
   const cost = item.cost_amount != null ? Number(item.cost_amount) : null
@@ -221,7 +220,7 @@ export function buildQuoteDetailViewModel(quote) {
     }
 
     if (code === 'OTHER') {
-      if (isCustomsOtherItem(it, quote)) {
+      if (isCustomsOtherItem(it)) {
         customsCandidates.push(it)
       } else {
         oceanLines.push(mapOceanLine(it))
@@ -229,7 +228,8 @@ export function buildQuoteDetailViewModel(quote) {
     }
   }
 
-  const customsEnabled = Boolean(quote?.official_receipts_note) || customsCandidates.length > 0
+  const customsEnabled = customsCandidates.length > 0
+  const officialReceiptsNoteEnabled = Boolean(String(quote?.official_receipts_note || '').trim())
   let customsClearanceFee = { amount: 0, currency: 'EGP' }
   let customsExtraItems = []
   if (customsCandidates.length) {
@@ -338,6 +338,7 @@ export function buildQuoteDetailViewModel(quote) {
     quickInland,
     handlingLines,
     customsEnabled,
+    officialReceiptsNoteEnabled,
     customsClearanceFee,
     customsExtraItems,
     oceanSellingByCurrency,

@@ -1,7 +1,9 @@
-import { Trans, useTranslation } from 'react-i18next'
+import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { formatPricingDecimal } from '../../../utils/dateUtils'
 import { QuoteSummaryCurrencyText, QuoteSummaryRow } from './quoteSummaryUi'
 import { QuoteAddItemPanel } from './quoteAddItemsUi'
+import QuoteOfficialReceiptsNoteSection from './QuoteOfficialReceiptsNoteSection'
 
 function CostAmountLabel({ amount, currency }) {
   const cur = String(currency ?? '')
@@ -18,23 +20,6 @@ function CostAmountLabel({ amount, currency }) {
   )
 }
 
-/** Plain-text note sent on the quotation when customs clearance is enabled. */
-export function buildCustomsOfficialReceiptsNote(t) {
-  return [
-    t('pricing.customsOfficialReceiptsTitle', 'Note for the client — official receipts:'),
-    t(
-      'pricing.customsOfficialReceiptsBodyPlain',
-      'Official receipts are determined after they are received from port authorities and government agencies, and original official receipts are provided to the client. The clearance price stated does not include official receipts.'
-    ),
-    t(
-      'pricing.customsOfficialReceiptsFootnote',
-      'This note is added automatically to the quotation sent to the client'
-    ),
-  ]
-    .filter(Boolean)
-    .join('\n\n')
-}
-
 /**
  * Customs clearance block for Create Quote — fixed fee table, separate added-items table, total cost.
  */
@@ -48,12 +33,21 @@ export default function QuoteCustomsClearanceSection({
   onUpdateItem,
   onRemoveItem,
   totalCostByCurrency = {},
+  officialReceiptsNoteEnabled = false,
+  onEnableOfficialReceiptsNote,
+  onRemoveOfficialReceiptsNote,
   readOnly = false,
 }) {
   const { t } = useTranslation()
   const amount = Number(clearanceFee?.amount) || 0
   const currency = String(clearanceFee?.currency || 'EGP').toUpperCase()
   const fixedNote = t('pricing.customsFeeFixedNote', 'Fixed by pricing team, not editable')
+
+  const hasCustomsPricing = useMemo(() => {
+    if (!customsActive) return false
+    if (amount > 0) return true
+    return Object.values(totalCostByCurrency).some((v) => Math.abs(Number(v) || 0) > 1e-9)
+  }, [customsActive, amount, totalCostByCurrency])
 
   return (
     <div className="pricing-quote-customs-block">
@@ -95,28 +89,14 @@ export default function QuoteCustomsClearanceSection({
             </table>
           </div>
 
-          <div
-            className="pricing-quote-customs-info-note"
-            role="note"
-            aria-label={t('pricing.customsOfficialReceiptsTitle', 'Note for the client — official receipts')}
-          >
-            <div className="pricing-quote-customs-info-note__title">
-              {t('pricing.customsOfficialReceiptsTitle', 'Note for the client — official receipts:')}
-            </div>
-            <div className="pricing-quote-customs-info-note__body">
-              <Trans
-                i18nKey="pricing.customsOfficialReceiptsBody"
-                components={{ strong: <strong /> }}
-                defaults="Official receipts are determined after they are received from port authorities and government agencies, and original official receipts are provided to the client. <strong>The clearance price stated does not include official receipts.</strong>"
-              />
-            </div>
-            <div className="pricing-quote-customs-info-note__footnote">
-              {t(
-                'pricing.customsOfficialReceiptsFootnote',
-                'This note is added automatically to the quotation sent to the client'
-              )}
-            </div>
-          </div>
+          {hasCustomsPricing ? (
+            <QuoteOfficialReceiptsNoteSection
+              active={officialReceiptsNoteEnabled}
+              onEnable={onEnableOfficialReceiptsNote}
+              onRemove={onRemoveOfficialReceiptsNote}
+              readOnly={readOnly}
+            />
+          ) : null}
 
           <QuoteAddItemPanel
             items={extraItems}

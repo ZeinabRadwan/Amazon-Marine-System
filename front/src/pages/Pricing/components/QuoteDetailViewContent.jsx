@@ -33,6 +33,7 @@ export default function QuoteDetailViewContent({ quote }) {
     quickInland,
     handlingLines,
     customsEnabled,
+    officialReceiptsNoteEnabled,
     customsClearanceFee,
     customsExtraItems,
     oceanSellingByCurrency,
@@ -206,6 +207,9 @@ export default function QuoteDetailViewContent({ quote }) {
           onUpdateItem={noop}
           onRemoveItem={noop}
           totalCostByCurrency={customsSellingByCurrency}
+          officialReceiptsNoteEnabled={officialReceiptsNoteEnabled}
+          onEnableOfficialReceiptsNote={noop}
+          onRemoveOfficialReceiptsNote={noop}
         />
       </QuoteFinCard>
       ) : null}

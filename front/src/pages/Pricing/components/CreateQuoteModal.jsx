@@ -70,7 +70,8 @@ import {
 } from '../utils/owsQuoteCharges'
 import { sortSeaOceanQuoteLines, sortSeaPricingCodeEntries } from '../utils/seaPricingOrder'
 import QuoteInlandTransportSection from './QuoteInlandTransportSection'
-import QuoteCustomsClearanceSection, { buildCustomsOfficialReceiptsNote } from './QuoteCustomsClearanceSection'
+import QuoteCustomsClearanceSection from './QuoteCustomsClearanceSection'
+import { buildOfficialReceiptsNote } from './QuoteOfficialReceiptsNoteSection'
 import QuoteHandlingFeesSection from './QuoteHandlingFeesSection'
 import QuickQuoteForm from './quick/QuickQuoteForm'
 import { inlandRouteFromOffer, shouldShowQuoteRouteSummary } from '../utils/quotePricingType'
@@ -394,6 +395,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
   const [customsEnabled, setCustomsEnabled] = useState(false)
   const [customsClearanceFee, setCustomsClearanceFee] = useState({ amount: 2500, currency: 'EGP' })
   const [customsExtraItems, setCustomsExtraItems] = useState([])
+  const [officialReceiptsNoteEnabled, setOfficialReceiptsNoteEnabled] = useState(false)
 
   const [handlingLines, setHandlingLines] = useState([
     {
@@ -517,6 +519,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
       setInlandGenCurrency('EGP')
       setCustomsEnabled(false)
       setCustomsExtraItems([])
+      setOfficialReceiptsNoteEnabled(false)
       setShowCarrierOnPdf(true)
       setQuickInlandPort('')
       setQuickInlandGov('')
@@ -676,6 +679,7 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
   const handleRemoveCustoms = () => {
     setCustomsEnabled(false)
     setCustomsExtraItems([])
+    setOfficialReceiptsNoteEnabled(false)
   }
 
   const isPricing = entryMode === 'pricing'
@@ -788,6 +792,11 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
         (Number(customsClearanceFee?.amount) || 0) > 0),
     [customsEnabled, customsSellingByCurrency, customsClearanceFee]
   )
+
+  useEffect(() => {
+    if (!hasCustomsPricing) setOfficialReceiptsNoteEnabled(false)
+  }, [hasCustomsPricing])
+
   const hasAnySectionPricing = hasOceanLineData || hasInlandLineData || hasCustomsPricing
 
   const pricingLinesProfitByCurrency = useMemo(() => sumProfitsByCurrency(oceanLines), [oceanLines])
@@ -1116,7 +1125,8 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
         return { ...(reefer || {}), ...(ows || {}) }
       })(),
       show_carrier_on_pdf: hasOceanRoute ? (isQuickSubmit ? true : showCarrierOnPdf) : false,
-      official_receipts_note: customsEnabled ? buildCustomsOfficialReceiptsNote(t) : null,
+      official_receipts_note:
+        officialReceiptsNoteEnabled && hasCustomsPricing ? buildOfficialReceiptsNote(t) : null,
       pricing_team_confirmed: pricingTeamConfirmed,
       items,
     }
@@ -1249,6 +1259,9 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                 onUpdateCustomsItem={updateCustomsExtraItem}
                 onRemoveCustomsItem={removeCustomsExtraItem}
                 customsSellingByCurrency={customsSellingByCurrency}
+                officialReceiptsNoteEnabled={officialReceiptsNoteEnabled}
+                onEnableOfficialReceiptsNote={() => setOfficialReceiptsNoteEnabled(true)}
+                onRemoveOfficialReceiptsNote={() => setOfficialReceiptsNoteEnabled(false)}
                 handlingLines={handlingLines}
                 onAddHandlingItem={addHandlingItem}
                 onUpdateHandlingLine={updateHandlingLine}
@@ -1559,6 +1572,9 @@ export default function CreateQuoteModal({ isOpen, onClose, onSuccess, initialOf
                 onUpdateItem={updateCustomsExtraItem}
                 onRemoveItem={removeCustomsExtraItem}
                 totalCostByCurrency={customsSellingByCurrency}
+                officialReceiptsNoteEnabled={officialReceiptsNoteEnabled}
+                onEnableOfficialReceiptsNote={() => setOfficialReceiptsNoteEnabled(true)}
+                onRemoveOfficialReceiptsNote={() => setOfficialReceiptsNoteEnabled(false)}
               />
             </QuoteFinCard>
 

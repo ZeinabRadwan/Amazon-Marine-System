@@ -198,7 +198,7 @@ class PricingQuoteController extends Controller
 
         $validated = $this->mergeQuickQuotationFlag($validated);
 
-        $quote = DB::transaction(function () use ($validated) {
+        $quote = DB::transaction(function () use ($validated, $request) {
             $quickMode = (bool) ($validated['quick_mode'] ?? false);
 
             $quickModeReason = isset($validated['quick_mode_reason']) ? trim((string) $validated['quick_mode_reason']) : '';
@@ -554,9 +554,12 @@ class PricingQuoteController extends Controller
         $filename = ($quote->quote_no ?: 'Quote-'.$quote->id).'.pdf';
 
         $labels = $this->quotePdfLabels($locale);
-        $labels['brand'] = $companyDisplayName !== '' ? $companyDisplayName : 'Amazon Marine System';
-        $labels['brand_tag'] = $locale === 'ar' ? 'الشحن الدولي والملاحة' : 'International Freight Forwarding';
+        $labels['brand'] = 'Amazon Marine';
+        $labels['brand_tag'] = 'Integrated Ocean Freight & Logistics';
+        $labels['pol'] = 'POL';
+        $labels['pod'] = 'POD';
         $labels['brand_contact'] = $this->quotePdfBrandContactLine($companyProfile, $locale);
+        $companyDisplayName = 'Amazon Marine';
 
         $pdfFmtDate = static function ($dt) use ($locale): ?string {
             return $dt
@@ -585,7 +588,7 @@ class PricingQuoteController extends Controller
             'showCarrier' => $isSeaQuote && (bool) ($quote->show_carrier_on_pdf ?? true),
             'companyProfile' => $companyProfile,
             'companyDisplayName' => $companyDisplayName,
-            'pdfLogoSrc' => PdfLogo::imgSrc(),
+            'pdfLogoSrc' => PdfLogo::transportInstructionsImgSrc() ?? PdfLogo::imgSrc(),
             'oceanItems' => $partition['ocean'],
             'inlandItems' => $partition['inland'],
             'customsItems' => $partition['customs'],
@@ -656,22 +659,40 @@ class PricingQuoteController extends Controller
         return [
             'doc_title_en' => 'Price Quotation',
             'doc_title_ar' => 'عرض سعر',
-            'quotation_id' => 'Quotation ID',
+            'quotation_id' => 'Quotation No.',
             'quotation_id_ar' => 'رقم عرض السعر',
             'valid_until' => 'Valid Until',
             'valid_until_ar' => 'صالح حتى',
             'issued_date' => 'Issue Date',
             'issued_date_ar' => 'تاريخ الإصدار',
+            'services_included' => 'Services',
+            'services_included_ar' => 'الخدمات المشمولة',
+            'from_party' => 'From',
+            'from_party_ar' => 'المرسل',
+            'prepared_for' => 'Prepared For',
+            'prepared_for_ar' => 'مُعدّ لـ',
+            'prepared_by' => 'Prepared By',
+            'prepared_by_ar' => 'مُعدّ بواسطة',
             'issued_by' => 'From issue by',
             'issued_by_ar' => 'صادر من',
             'billed_to' => 'Sent To',
             'billed_to_ar' => 'مرسلة إلى',
-            'available_sailing_en' => 'Available Sailing',
-            'available_sailing_ar' => 'مواعيد الإبحار المتاحة',
-            'section_handling_fees_en' => 'Handling Fees',
+            'available_sailing_en' => 'Available Sailings',
+            'available_sailing_ar' => 'مواعيد المراكب المتاحة',
+            'section_handling_fees_en' => 'Handling & Follow-up Fees',
             'section_handling_fees_ar' => 'رسوم الخدمة والمتابعة',
-            'containers' => 'Containers',
-            'containers_ar' => 'الحاويات',
+            'containers' => 'Container',
+            'containers_ar' => 'الحاوية',
+            'inland_route' => 'Inland Route',
+            'pol' => 'POL',
+            'pod' => 'POD',
+            'grand_total' => 'Grand Total',
+            'grand_total_ar' => 'الإجمالي الكلي',
+            'charge_col' => 'Charge / البند',
+            'details_col' => 'Details',
+            'amount_col' => 'Amount',
+            'sales_role' => 'Sales Executive',
+            'footer_slogan' => 'Your Trusted Logistics Partner — شريكك اللوجستي الموثوق',
         ];
     }
 
@@ -724,8 +745,8 @@ class PricingQuoteController extends Controller
                 'phone' => 'الهاتف',
                 'email' => 'البريد الإلكتروني',
                 'address' => 'العنوان',
-                'pol' => 'ميناء التحميل',
-                'pod' => 'ميناء التفريغ',
+                'pol' => 'POL',
+                'pod' => 'POD',
                 'terms_html' => '<p>يجب تأكيد الحجز قبل موعد الشحن بوقت كافٍ. الأسعار المعروضة خاضعة للتوفر وتعديل أسعار الناقل دون إشعار مسبق.</p>'
                     .'<p>أيام السريان والغرامات وفقًا لإعلان الخط الملاحي والمحطة.</p>'
                     .'<p>هذا العرض لا يُعتبر تأكيدًا للحجز حتى يتم إصداره تأكيدًا خطيًا من الشركة.</p>',

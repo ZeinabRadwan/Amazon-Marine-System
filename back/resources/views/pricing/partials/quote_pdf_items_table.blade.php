@@ -1,28 +1,56 @@
-{{-- Line items table with section subtotal footer (quotation PDF) --}}
+{{-- Line items table (quotation PDF v3) --}}
 @php
     $showReeferDeferredPower = !empty($showReeferDeferredPower);
     $showOwsDeferred = !empty($showOwsDeferred);
     $owsDeferredLines = $owsDeferredLines ?? [];
+    $labels = $labels ?? [];
+    $detailsFallback = $detailsFallback ?? '—';
+    $formatLineAmount = static function ($item): string {
+        $cur = strtoupper((string) ($item->currency_code ?: 'USD'));
+        $amt = number_format((float) $item->amount, 2);
+
+        return $amt.' '.$cur;
+    };
+    $sectionTotalAr = match ($sectionEn ?? '') {
+        'Ocean Freight' => 'إجمالي الشحن البحري',
+        'Inland Transport' => 'إجمالي النقل الداخلي',
+        'Customs Clearance' => 'إجمالي التخليص الجمركي',
+        'Handling Fees' => 'إجمالي رسوم الخدمة',
+        default => '',
+    };
 @endphp
-<table class="pdf-inv-table" width="100%" cellspacing="0" cellpadding="0" border="0" role="presentation">
+<table class="pdf-quote-v3-table" width="100%" cellspacing="0" cellpadding="0" border="0">
     <thead>
         <tr>
-            <th class="pdf-inv-col-item">NAME</th>
-            <th class="pdf-inv-col-amt pdf-inv-th-center">AMOUNT</th>
-            <th class="pdf-inv-col-cur pdf-inv-th-center">CURRENCY</th>
+            <th width="46%">{{ $labels['charge_col'] ?? 'Charge / البند' }}</th>
+            <th class="qtv3-th-center" width="30%">{{ $labels['details_col'] ?? 'Details' }}</th>
+            <th class="qtv3-th-right" width="24%">{{ $labels['amount_col'] ?? 'Amount' }}</th>
         </tr>
     </thead>
     <tbody>
-        @foreach ($items as $item)
-            <tr>
-                <td class="pdf-inv-col-item">{{ $item->name }}</td>
-                <td class="pdf-inv-col-amt pdf-inv-td-center">{{ number_format((float) $item->amount, 2) }}</td>
-                <td class="pdf-inv-col-cur pdf-inv-td-center">{{ strtoupper($item->currency_code ?: 'USD') }}</td>
+        @foreach ($items as $idx => $item)
+            @php
+                $details = trim((string) ($item->description ?? ''));
+                if ($details === '') {
+                    $details = $detailsFallback;
+                }
+            @endphp
+            <tr class="{{ $idx % 2 === 1 ? 'qtv3-row-alt' : '' }}">
+                <td>
+                    <div class="pdf-quote-v3-charge-en">{{ $item->name }}</div>
+                </td>
+                <td class="pdf-quote-v3-td-center">{{ $details }}</td>
+                <td class="pdf-quote-v3-td-right">{{ $formatLineAmount($item) }}</td>
             </tr>
         @endforeach
-        <tr class="pdf-inv-subtotal-row">
-            <td class="pdf-inv-sub-label"><strong>{{ $sectionEn }} Total</strong></td>
-            <td colspan="2" class="pdf-inv-sub-amt">{{ $formatBreakdown($totals) }}</td>
+        <tr class="qtv3-subtotal">
+            <td colspan="2">
+                <strong>{{ $sectionEn }} Total</strong>
+                @if ($sectionTotalAr !== '')
+                    <span class="pdf-quote-v3-sub-ar">/ {{ $sectionTotalAr }}</span>
+                @endif
+            </td>
+            <td class="pdf-quote-v3-td-right qtv3-td-right">{{ $formatBreakdown($totals) }}</td>
         </tr>
         @if (!empty($showReeferDeferredPower))
             <tr class="pdf-quote-reefer-deferred-footnote-row">

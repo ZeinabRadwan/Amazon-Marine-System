@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amazon Marine — Quotation AM-Q-2025-05-00198</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+*{ box-sizing:border-box; margin:0; padding:0; }
+
+:root{
+  --navy:       #1B2A4A;
+  --navy-deep:  #0F1D36;
+  --navy-soft:  #243858;
+  --orange:     #E8790A;
+  --orange-lt:  #FDF3E6;
+  --orange-bd:  #F5C77A;
+  --white:      #FFFFFF;
+  --gray-50:    #FAFBFC;
+  --gray-100:   #F3F4F6;
+  --gray-200:   #E5E7EB;
+  --gray-400:   #9CA3AF;
+  --gray-600:   #4B5563;
+  --gray-700:   #374151;
+  --border:     #E5E7EB;
+  --text:       #111827;
+}
+
+body{
+  font-family:'Inter','Cairo',sans-serif;
+  background:#CBD5E1;
+  color:var(--text);
+  font-size:12px;
+}
+
+/* ── PAGE ─────────────────────────────── */
+.page{
+  width:210mm;
+  min-height:297mm;
+  background:white;
+  margin:24px auto;
+  display:flex;
+  flex-direction:column;
+  box-shadow:0 4px 32px rgba(0,0,0,0.18);
+}
+
+/* ── HEADER ───────────────────────────── */
+.header{
+  background:var(--navy-deep);
+  padding:22px 36px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  position:relative;
+}
+.header::after{
+  content:"";
+  position:absolute;
+  bottom:0; left:0; right:0;
+  height:3px;
+  background:linear-gradient(to right, var(--orange) 30%, transparent 100%);
+}
+
+.logo-area{ display:flex; align-items:center; gap:14px; }
+.logo-mark{
+  width:48px; height:48px;
+  background:var(--navy-soft);
+  border-radius:8px;
+  display:flex; align-items:center; justify-content:center;
+  border:1px solid rgba(255,255,255,0.1);
+  flex-shrink:0;
+}
+.logo-mark svg{ width:28px; height:28px; }
+.logo-name{ font-size:17px; font-weight:700; color:white; letter-spacing:0.6px; line-height:1.1; }
+.logo-tagline{ font-size:9px; color:rgba(255,255,255,0.45); letter-spacing:0.4px; margin-top:3px; }
+
+.header-right{ text-align:right; }
+.doc-type-en{ font-size:22px; font-weight:700; color:white; letter-spacing:1.5px; text-transform:uppercase; line-height:1; }
+.doc-type-ar{ font-size:13px; color:var(--orange); font-weight:600; font-family:'Cairo',sans-serif; margin-top:3px; }
+.doc-ref{ font-size:10px; color:rgba(255,255,255,0.4); margin-top:5px; letter-spacing:0.8px; font-family:monospace; }
+
+/* ── INFO BAR ─────────────────────────── */
+.info-bar{
+  background:var(--gray-50);
+  border-bottom:1.5px solid var(--border);
+  padding:12px 36px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.info-group{ display:flex; gap:32px; flex-wrap:wrap; }
+.info-item{}
+.info-label{
+  font-size:8.5px; color:var(--gray-400);
+  text-transform:uppercase; font-weight:600; letter-spacing:0.6px;
+}
+.info-value{
+  font-size:12px; font-weight:700; color:var(--navy); margin-top:1px;
+}
+.info-sub{
+  font-size:8.5px; color:var(--gray-400);
+  font-family:'Cairo',sans-serif; margin-top:1px;
+}
+
+/* ── BODY ─────────────────────────────── */
+.body{ padding:22px 36px; flex:1; }
+
+/* ── PARTIES ──────────────────────────── */
+.parties{
+  display:grid;
+  grid-template-columns:1fr 1px 1fr;
+  margin-bottom:18px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  overflow:hidden;
+}
+.party{ padding:14px 18px; }
+.party-divider{ background:var(--border); }
+.party-role{
+  font-size:8.5px; font-weight:700; color:var(--orange);
+  text-transform:uppercase; letter-spacing:1px; margin-bottom:5px;
+}
+.party-name{ font-size:14px; font-weight:700; color:var(--navy); margin-bottom:4px; }
+.party-detail{ font-size:10px; color:var(--gray-400); line-height:1.75; }
+.party-detail-ar{
+  font-family:'Cairo',sans-serif; font-size:10px;
+  color:var(--gray-400); margin-top:3px; direction:rtl;
+}
+
+/* ── ROUTE CARD ───────────────────────── */
+.route-card{
+  background:var(--navy-deep);
+  border-radius:8px;
+  padding:16px 24px;
+  margin-bottom:12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:14px;
+}
+.route-flow{ display:flex; align-items:center; gap:16px; }
+.port-block{}
+.port-name{ font-size:18px; font-weight:700; color:white; line-height:1; }
+.port-label{ font-size:8.5px; color:rgba(255,255,255,0.38); margin-top:3px; text-transform:uppercase; letter-spacing:0.4px; }
+.route-arrow{ color:var(--orange); font-size:22px; font-weight:700; line-height:1; }
+.route-details{ display:flex; gap:20px; flex-wrap:wrap; align-items:center; }
+.route-detail{ text-align:center; }
+.route-detail-val{ font-size:13px; font-weight:700; color:white; }
+.route-detail-lbl{ font-size:8px; color:rgba(255,255,255,0.38); margin-top:2px; text-transform:uppercase; letter-spacing:0.3px; }
+.route-sep{ width:1px; height:28px; background:rgba(255,255,255,0.1); }
+
+/* ── SAILINGS ─────────────────────────── */
+.sailings-bar{
+  background:var(--orange-lt);
+  border:1px solid var(--orange-bd);
+  border-radius:8px;
+  padding:10px 18px;
+  margin-bottom:20px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.sailings-lbl-en{ font-size:10.5px; font-weight:700; color:var(--orange); white-space:nowrap; }
+.sailings-lbl-ar{ font-size:9.5px; color:#9A6200; font-family:'Cairo',sans-serif; white-space:nowrap; }
+.sailings-sep{ font-size:11px; color:var(--orange-bd); }
+.sailing-date{
+  background:white;
+  border:1px solid var(--orange-bd);
+  border-radius:6px;
+  padding:4px 12px;
+  font-size:11px; font-weight:600; color:var(--navy);
+  font-family:monospace; letter-spacing:0.3px;
+}
+
+/* ── SECTION ──────────────────────────── */
+.section{ margin-bottom:18px; }
+.section-header{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:8px;
+  padding-bottom:7px;
+  border-bottom:2px solid var(--navy);
+}
+.section-num{
+  background:var(--orange); color:white;
+  font-size:10px; font-weight:700;
+  width:23px; height:23px;
+  border-radius:5px;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+.section-title-en{ font-size:13px; font-weight:700; color:var(--navy); }
+.section-title-ar{ font-size:10.5px; color:var(--gray-400); font-family:'Cairo',sans-serif; }
+.section-meta{
+  margin-right:auto;
+  font-size:9.5px; color:var(--gray-400);
+  font-family:monospace; letter-spacing:0.3px;
+}
+
+/* ── PRICING TABLE ────────────────────── */
+.pricing-table{
+  width:100%;
+  border-collapse:collapse;
+  border:1px solid var(--border);
+  border-radius:6px;
+  overflow:hidden;
+}
+.pricing-table thead tr{ background:var(--navy); }
+.pricing-table th{
+  padding:7px 12px;
+  font-size:8.5px; font-weight:600;
+  color:rgba(255,255,255,0.75);
+  text-transform:uppercase; letter-spacing:0.6px;
+  text-align:left;
+}
+.pricing-table th.th-center{ text-align:center; }
+.pricing-table th.th-right{ text-align:right; }
+
+.pricing-table td{
+  padding:8px 12px;
+  border-bottom:1px solid var(--border);
+  font-size:11px; color:var(--gray-700);
+  vertical-align:middle;
+}
+.pricing-table tr:nth-child(even) td{ background:var(--gray-50); }
+.pricing-table tr:last-child td{ border-bottom:none; }
+
+.charge-en{ font-weight:600; color:var(--navy); font-size:11px; }
+.charge-ar{ font-size:9px; color:var(--gray-400); font-family:'Cairo',sans-serif; margin-top:1px; }
+.td-center{ text-align:center; font-size:10px; color:var(--gray-400); }
+.td-right{
+  text-align:right; font-weight:700; color:var(--navy);
+  font-family:monospace; font-size:12px; white-space:nowrap;
+}
+
+/* subtotal */
+.subtotal-row td{
+  background:var(--orange-lt) !important;
+  border-top:1.5px solid var(--orange-bd) !important;
+  border-bottom:none !important;
+  font-weight:700 !important;
+  color:var(--navy) !important;
+  font-size:11.5px !important;
+}
+.subtotal-row td.td-right{
+  color:var(--orange) !important;
+  font-size:13px !important;
+}
+
+/* ── HANDLING FEE ─────────────────────── */
+.handling-row{
+  background:var(--gray-50);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:10px 18px;
+  margin-bottom:14px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.handling-lbl-en{ font-size:12px; font-weight:600; color:var(--navy); }
+.handling-lbl-ar{ font-size:9.5px; color:var(--gray-400); font-family:'Cairo',sans-serif; }
+.handling-val{ font-size:14px; font-weight:700; color:var(--navy); font-family:monospace; }
+
+/* ── GRAND TOTAL ──────────────────────── */
+.grand-total{
+  background:var(--navy-deep);
+  border-radius:8px;
+  padding:16px 24px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:18px;
+}
+.gt-left{}
+.gt-label-en{ font-size:16px; font-weight:700; color:white; }
+.gt-label-ar{ font-size:11px; color:rgba(255,255,255,0.45); font-family:'Cairo',sans-serif; }
+.gt-right{ text-align:right; }
+.gt-main{ font-size:24px; font-weight:700; color:var(--orange); font-family:monospace; }
+.gt-secondary{ font-size:11px; color:rgba(255,255,255,0.5); margin-top:3px; font-family:monospace; }
+
+/* ── RECEIPTS NOTE ────────────────────── */
+.receipts-note{
+  background:#F0FDF4;
+  border-left:4px solid #22C55E;
+  border-radius:0 8px 8px 0;
+  padding:10px 16px;
+  margin-bottom:14px;
+  font-size:10px;
+  color:#14532D;
+  line-height:1.75;
+}
+.receipts-note-title{
+  font-size:11px; font-weight:700; color:#16A34A; margin-bottom:3px;
+}
+.receipts-note-ar{
+  font-family:'Cairo',sans-serif; font-size:9.5px;
+  color:#166534; direction:rtl; display:block; margin-top:4px;
+}
+
+/* ── TERMS ────────────────────────────── */
+.terms{
+  background:var(--gray-50);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:14px 18px;
+  margin-bottom:18px;
+}
+.terms-title{
+  font-size:11.5px; font-weight:700; color:var(--navy);
+  margin-bottom:8px; padding-bottom:6px;
+  border-bottom:1px solid var(--border);
+  display:flex; justify-content:space-between; align-items:baseline;
+}
+.terms-title-ar{ font-size:10px; color:var(--gray-400); font-family:'Cairo',sans-serif; }
+.term{ display:flex; gap:9px; margin-bottom:9px; align-items:flex-start; }
+.term:last-child{ margin-bottom:0; }
+.term-num{
+  width:18px; height:18px;
+  background:var(--navy);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  color:white; font-size:9px; font-weight:700;
+  flex-shrink:0; margin-top:1px;
+}
+.term-text{ font-size:10px; color:var(--gray-700); line-height:1.75; }
+.term-text strong{ color:var(--navy); }
+.term-ar{
+  font-size:9px; color:var(--gray-400);
+  font-family:'Cairo',sans-serif; direction:rtl; margin-top:2px;
+}
+
+/* ── SALES REP ────────────────────────── */
+.sales-rep{
+  background:var(--gray-50);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:14px 18px;
+  margin-bottom:8px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:12px;
+}
+.sr-badge{
+  display:flex; align-items:center; gap:12px;
+}
+.sr-avatar{
+  width:40px; height:40px;
+  background:var(--navy);
+  border-radius:8px;
+  display:flex; align-items:center; justify-content:center;
+  color:white; font-size:15px; font-weight:700;
+  flex-shrink:0;
+}
+.sr-title{ font-size:8.5px; font-weight:600; color:var(--orange); text-transform:uppercase; letter-spacing:1px; margin-bottom:3px; }
+.sr-name{ font-size:14px; font-weight:700; color:var(--navy); }
+.sr-role{ font-size:10px; color:var(--gray-400); margin-top:1px; }
+.sr-contacts{ display:flex; flex-direction:column; gap:3px; text-align:right; }
+.sr-contact{ font-size:10px; color:var(--gray-600); }
+.sr-contact span{ color:var(--orange); margin-right:4px; font-weight:600; }
+
+/* ── FOOTER ───────────────────────────── */
+.footer{
+  background:var(--navy-deep);
+  padding:14px 36px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:auto;
+  border-top:2px solid var(--orange);
+}
+.footer-col{ display:flex; flex-direction:column; gap:3px; }
+.footer-item{ font-size:9px; color:rgba(255,255,255,0.5); }
+.footer-item span{ color:var(--orange); font-weight:600; }
+.footer-center{ text-align:center; }
+.footer-brand{ font-size:13px; font-weight:700; color:white; letter-spacing:0.6px; }
+.footer-slogan{ font-size:8.5px; color:rgba(255,255,255,0.35); margin-top:2px; font-family:'Cairo',sans-serif; }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ══ HEADER ══════════════════════════ -->
+  <div class="header">
+    <div class="logo-area">
+      <img
+        src="https://www.amazonmarine.ltd/_next/image?url=%2Fimages%2Flogo.png&w=128&q=75"
+        alt="Amazon Marine Logo"
+        style="height:52px;width:auto;object-fit:contain;border-radius:4px;filter:brightness(0) invert(1);"
+      />
+      <div class="logo-text">
+        <div class="logo-name">AMAZON MARINE</div>
+        <div class="logo-tagline">Integrated Ocean Freight &amp; Logistics</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="doc-type-en">Price Quotation</div>
+      <div class="doc-type-ar">عرض سعر</div>
+      <div class="doc-ref">REF: AM-Q-2025-05-00198</div>
+    </div>
+  </div>
+
+  <!-- ══ INFO BAR ═════════════════════════ -->
+  <div class="info-bar">
+    <div class="info-group">
+      <div class="info-item">
+        <div class="info-label">Issue Date</div>
+        <div class="info-value">20 May 2025</div>
+        <div class="info-sub">تاريخ الإصدار</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Valid Until</div>
+        <div class="info-value">27 May 2025</div>
+        <div class="info-sub">صالح حتى</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Services</div>
+        <div class="info-value">Ocean + Inland + Customs</div>
+        <div class="info-sub">الخدمات المشمولة</div>
+      </div>
+    </div>
+    <div class="info-item" style="text-align:right;">
+      <div class="info-label">Quotation No.</div>
+      <div class="info-value" style="font-family:monospace;letter-spacing:1px;">AM-Q-2025-05-00198</div>
+      <div class="info-sub">رقم عرض السعر</div>
+    </div>
+  </div>
+
+  <!-- ══ BODY ═════════════════════════════ -->
+  <div class="body">
+
+    <!-- PARTIES ──────────────────────────── -->
+    <div class="parties">
+      <div class="party">
+        <div class="party-role">From / المرسل</div>
+        <div class="party-name">Amazon Marine</div>
+        <div class="party-detail">
+          5th Settlement, New Cairo, Egypt<br>
+          cs@amazonmarine.ltd<br>
+          www.amazonmarine.ltd<br>
+          +2 02 2560 1776 &nbsp;·&nbsp; +2 012 0074 4888
+        </div>
+
+      </div>
+      <div class="party-divider"></div>
+      <div class="party">
+        <div class="party-role">Prepared For / مُعدّ لـ</div>
+        <div class="party-name">شركة النيل للصناعات الغذائية</div>
+        <div class="party-detail">
+          Attn: Mr. Ahmed Mahmoud — Procurement Manager<br>
+          10th of Ramadan City, Egypt<br>
+          +2 010 0123 4567
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ROUTE ──────────────────────────── -->
+    <div class="route-card">
+      <div class="route-flow">
+        <div class="port-block">
+          <div class="port-name">Damietta</div>
+          <div class="port-label">POL — Port of Loading</div>
+        </div>
+        <div class="route-arrow">→</div>
+        <div class="port-block">
+          <div class="port-name">Alexandria</div>
+          <div class="port-label">POD — Port of Discharge</div>
+        </div>
+      </div>
+      <div class="route-details">
+        <div class="route-detail">
+          <div class="route-detail-val">MSC</div>
+          <div class="route-detail-lbl">Carrier</div>
+        </div>
+        <div class="route-sep"></div>
+        <div class="route-detail">
+          <div class="route-detail-val">40' Reefer</div>
+          <div class="route-detail-lbl">Container</div>
+        </div>
+        <div class="route-sep"></div>
+        <div class="route-detail">
+          <div class="route-detail-val">5 Days</div>
+          <div class="route-detail-lbl">Transit</div>
+        </div>
+        <div class="route-sep"></div>
+        <div class="route-detail">
+          <div class="route-detail-val">Alex → Cairo</div>
+          <div class="route-detail-lbl">Inland Route</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SAILINGS ──────────────────────── -->
+    <div class="sailings-bar">
+      <div class="sailings-lbl-en">Available Sailings</div>
+      <div class="sailings-lbl-ar">/ مواعيد المراكب المتاحة</div>
+      <div class="sailings-sep">|</div>
+      <div class="sailing-date">29 May 2025</div>
+      <div class="sailing-date">30 May 2025</div>
+      <div class="sailing-date">31 May 2025</div>
+    </div>
+
+    <!-- SECTION 01: OCEAN FREIGHT ──────── -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">01</div>
+        <div>
+          <div class="section-title-en">Ocean Freight</div>
+          <div class="section-title-ar">الشحن البحري</div>
+        </div>
+        <div class="section-meta">Damietta → Alexandria &nbsp;·&nbsp; MSC &nbsp;·&nbsp; 40' Reefer</div>
+      </div>
+      <table class="pricing-table">
+        <thead>
+          <tr>
+            <th>Charge / البند</th>
+            <th class="th-center">Details</th>
+            <th class="th-right">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="charge-en">Ocean Freight (OF)</div>
+              <div class="charge-ar">أجرة الشحن البحري</div>
+            </td>
+            <td class="td-center">1 × 40' Reefer</td>
+            <td class="td-right">$850 USD</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="charge-en">Terminal Handling Charge (THC)</div>
+              <div class="charge-ar">رسوم المحطة</div>
+            </td>
+            <td class="td-center">1 × 40' Reefer</td>
+            <td class="td-right">$120 USD</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="charge-en">Bill of Lading Fee (B/L)</div>
+              <div class="charge-ar">رسوم بوليصة الشحن</div>
+            </td>
+            <td class="td-center">—</td>
+            <td class="td-right">$50 USD</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="charge-en">Telex Release</div>
+              <div class="charge-ar">رسوم التليكس</div>
+            </td>
+            <td class="td-center">—</td>
+            <td class="td-right">$40 USD</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="charge-en">Pre-Trip Inspection (PTI)</div>
+              <div class="charge-ar">فحص الحاوية المبردة</div>
+            </td>
+            <td class="td-center">Reefer</td>
+            <td class="td-right">$30 USD</td>
+          </tr>
+          <tr class="subtotal-row">
+            <td colspan="2">
+              <strong>Ocean Freight Total</strong>
+              <span style="font-size:9.5px;color:#9A6200;font-family:Cairo;margin-right:6px;">/ إجمالي الشحن البحري</span>
+            </td>
+            <td class="td-right">$1,090 USD</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- SECTION 02: INLAND TRANSPORT ───── -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">02</div>
+        <div>
+          <div class="section-title-en">Inland Transport</div>
+          <div class="section-title-ar">النقل الداخلي</div>
+        </div>
+        <div class="section-meta">Alexandria → Cairo</div>
+      </div>
+      <table class="pricing-table">
+        <thead>
+          <tr>
+            <th>Charge / البند</th>
+            <th class="th-center">Route</th>
+            <th class="th-right">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="charge-en">Container Transport — 40' Dry</div>
+              <div class="charge-ar">نقل حاوية جافة 40'</div>
+            </td>
+            <td class="td-center" style="font-size:10px;">Alexandria → 5th Settlement, Cairo</td>
+            <td class="td-right">6,800 EGP</td>
+          </tr>
+          <tr class="subtotal-row">
+            <td colspan="2">
+              <strong>Inland Transport Total</strong>
+              <span style="font-size:9.5px;color:#9A6200;font-family:Cairo;margin-right:6px;">/ إجمالي النقل الداخلي</span>
+            </td>
+            <td class="td-right">6,800 EGP</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- SECTION 03: CUSTOMS CLEARANCE ──── -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">03</div>
+        <div>
+          <div class="section-title-en">Customs Clearance</div>
+          <div class="section-title-ar">التخليص الجمركي</div>
+        </div>
+      </div>
+      <table class="pricing-table">
+        <thead>
+          <tr>
+            <th>Charge / البند</th>
+            <th class="th-center">Details</th>
+            <th class="th-right">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="charge-en">Customs Certificate Fee</div>
+              <div class="charge-ar">رسوم فتح الشهادة الجمركية</div>
+            </td>
+            <td class="td-center">—</td>
+            <td class="td-right">2,500 EGP</td>
+          </tr>
+          <tr class="subtotal-row">
+            <td colspan="2">
+              <strong>Customs Clearance Total</strong>
+              <span style="font-size:9.5px;color:#9A6200;font-family:Cairo;margin-right:6px;">/ إجمالي التخليص الجمركي</span>
+            </td>
+            <td class="td-right">2,500 EGP</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- HANDLING FEE ───────────────────── -->
+    <div class="handling-row">
+      <div>
+        <div class="handling-lbl-en">Handling &amp; Follow-up Fees</div>
+        <div class="handling-lbl-ar">رسوم الخدمة والمتابعة</div>
+      </div>
+      <div class="handling-val">$100 USD</div>
+    </div>
+
+    <!-- GRAND TOTAL ──────────────────── -->
+    <div class="grand-total">
+      <div class="gt-left">
+        <div class="gt-label-en">Grand Total</div>
+        <div class="gt-label-ar">الإجمالي الكلي</div>
+      </div>
+      <div class="gt-right">
+        <div class="gt-main">$1,190 USD</div>
+        <div class="gt-secondary">+ 9,300 EGP &nbsp;(Inland + Customs)</div>
+      </div>
+    </div>
+
+    <!-- ⚡ OFFICIAL RECEIPTS NOTE — mandatory when inland and/or customs is included -->
+    <div class="receipts-note">
+      <div class="receipts-note-title">⚡ Important — Official Government Receipts</div>
+      The prices stated above for <strong>Inland Transport</strong> and/or <strong>Customs Clearance</strong>
+      <strong>do not include official government receipts</strong>.
+      This applies whether the service includes inland transport only, customs clearance only, or both.
+      Receipt amounts are determined upon issuance from port authorities and relevant government bodies,
+      and original receipts will be provided to the client upon collection.
+      <span class="receipts-note-ar">
+        أسعار <strong>النقل الداخلي</strong> و/أو <strong>التخليص الجمركي</strong> المذكورة أعلاه
+        <strong>غير شاملة الإيصالات الرسمية</strong> — سواء كانت الخدمة نقلاً داخلياً فقط، أو تخليصاً جمركياً فقط، أو كليهما معاً.
+        يتم تحديد قيمة الإيصالات بعد وصولها من هيئة الموانئ والجهات الحكومية، ويتم تقديم أصول الإيصالات للعميل.
+      </span>
+    </div>
+
+    <!-- TERMS ─────────────────────────── -->
+    <div class="terms">
+      <div class="terms-title">
+        Terms &amp; Conditions
+        <span class="terms-title-ar">الشروط والأحكام</span>
+      </div>
+
+      <!-- Term 2 only -->
+      <div class="term">
+        <div class="term-num">2</div>
+        <div>
+          <div class="term-text">
+            <strong>Vehicle Detention &amp; Waiting Time:</strong>
+            A free waiting period of <strong>8 hours</strong> is granted for loading / unloading operations.
+            Should loading operations exceed 8 hours, a detention penalty (بيات) will be applied
+            based on the actual number of additional hours. Please ensure adherence to the agreed loading schedule
+            to avoid any extra charges.
+          </div>
+          <div class="term-ar">
+            فترة سماح مجانية مدتها 8 ساعات لعمليات التحميل. في حال تجاوز ساعات التحميل هذه المدة،
+            يتم احتساب غرامة بيات على حسب عدد ساعات التأخير الفعلية.
+          </div>
+        </div>
+      </div>
+
+      <!-- Term 5 only -->
+      <div class="term">
+        <div class="term-num">5</div>
+        <div>
+          <div class="term-text">
+            <strong>Quotation Validity:</strong>
+            This quotation is valid until the date specified above.
+            Ocean freight rates are subject to confirmation by the shipping line at the time of actual booking.
+            Any booking placed after the expiry date is subject to re-pricing.
+          </div>
+          <div class="term-ar">
+            هذا العرض ساري حتى التاريخ المحدد. أسعار الشحن البحري خاضعة لتأكيد الخط الملاحي وقت الحجز الفعلي.
+            أي حجز بعد انتهاء الصلاحية يخضع لإعادة التسعير.
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SALES REP ─────────────────────── -->
+    <div class="sales-rep">
+      <div class="sr-badge">
+        <div class="sr-avatar">AM</div>
+        <div>
+          <div class="sr-title">Prepared By / مُعدّ بواسطة</div>
+          <div class="sr-name">Ahmed Mahmoud</div>
+          <div class="sr-role">Sales Executive — Amazon Marine</div>
+        </div>
+      </div>
+      <div class="sr-contacts">
+        <div class="sr-contact"><span>Email:</span> ahmed.mahmoud@amazonmarine.ltd</div>
+        <div class="sr-contact"><span>Mobile:</span> +20 100 000 0000</div>
+        <div class="sr-contact"><span>Office:</span> +2 02 2560 1776</div>
+      </div>
+    </div>
+
+  </div><!-- end body -->
+
+  <!-- ══ FOOTER ══════════════════════════ -->
+  <div class="footer">
+    <div class="footer-col">
+      <div class="footer-item"><span>Location:</span> 5th Settlement, New Cairo, Egypt</div>
+      <div class="footer-item"><span>Email:</span> cs@amazonmarine.ltd</div>
+    </div>
+    <div class="footer-center">
+      <div class="footer-brand">AMAZON MARINE</div>
+      <div class="footer-slogan">Your Trusted Logistics Partner — شريكك اللوجستي الموثوق</div>
+    </div>
+    <div class="footer-col" style="text-align:right;">
+      <div class="footer-item"><span>Web:</span> www.amazonmarine.ltd</div>
+      <div class="footer-item"><span>Phone:</span> 02-25601776 &nbsp;/&nbsp; 01200744888</div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -80,6 +80,9 @@ export default function QuickQuoteForm({
   onUpdateCustomsItem,
   onRemoveCustomsItem,
   customsSellingByCurrency,
+  officialReceiptsNoteEnabled,
+  onEnableOfficialReceiptsNote,
+  onRemoveOfficialReceiptsNote,
   handlingLines,
   onAddHandlingItem,
   onUpdateHandlingLine,
@@ -451,6 +454,9 @@ export default function QuickQuoteForm({
           onUpdateItem={onUpdateCustomsItem}
           onRemoveItem={onRemoveCustomsItem}
           totalCostByCurrency={customsSellingByCurrency}
+          officialReceiptsNoteEnabled={officialReceiptsNoteEnabled}
+          onEnableOfficialReceiptsNote={onEnableOfficialReceiptsNote}
+          onRemoveOfficialReceiptsNote={onRemoveOfficialReceiptsNote}
         />
       </QuoteFinCard>
 
