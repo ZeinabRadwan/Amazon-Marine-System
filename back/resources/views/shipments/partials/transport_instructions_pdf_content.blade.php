@@ -564,7 +564,7 @@
                     role="presentation">
                     <tr>
                         <td class="ti-v4-sec-en">Client Arrival</td>
-                        <td class="ti-v4-sec-ar">موعد وصول العميل</td>
+                        <td class="ti-v4-sec-ar">موعد وصول للعميل</td>
                     </tr>
                 </table>
                 <table class="ti-v4-block ti-v4-block-arrival" width="100%" cellspacing="0" cellpadding="0"
