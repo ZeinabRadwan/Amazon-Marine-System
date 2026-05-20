@@ -53,12 +53,15 @@ function sortCurrencyEntries(entries) {
   })
 }
 
-function formatAmount(amount, locale) {
+function formatAmount(amount, locale, { minimumFractionDigits = 2, maximumFractionDigits = 2 } = {}) {
   const n = Number(amount)
-  if (!Number.isFinite(n)) return '0.00'
+  if (!Number.isFinite(n)) {
+    return minimumFractionDigits > 0 ? '0.00' : '0'
+  }
   return new Intl.NumberFormat(locale || undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits,
+    maximumFractionDigits,
+    numberingSystem: 'latn',
   }).format(n)
 }
 
@@ -70,6 +73,8 @@ function formatAmount(amount, locale) {
  *   emptyLabel?: string,
  *   amountFirst?: boolean,
  *   numberLocale?: string,
+ *   minimumFractionDigits?: number,
+ *   maximumFractionDigits?: number,
  *   zeroFallbackCurrencies?: string[],
  * }} props
  *
@@ -84,10 +89,13 @@ export function CurrencyMapBadges({
   emptyLabel,
   amountFirst = false,
   numberLocale,
+  minimumFractionDigits = 2,
+  maximumFractionDigits = 2,
   zeroFallbackCurrencies,
 }) {
   const { i18n } = useTranslation()
   const localeForAmounts = numberLocale ?? i18n.language
+  const amountFormatOptions = { minimumFractionDigits, maximumFractionDigits }
   const normalized = normalizeAccountingCurrencyMap(value)
   let entries = sortCurrencyEntries(Object.entries(normalized)).filter(([, amount]) => Number(amount) !== 0)
 
@@ -120,13 +128,13 @@ export function CurrencyMapBadges({
           >
             {amountFirst ? (
               <>
-                <span className="accounting-currency-badge__amount">{formatAmount(amount, localeForAmounts)}</span>
+                <span className="accounting-currency-badge__amount">{formatAmount(amount, localeForAmounts, amountFormatOptions)}</span>
                 <span className="accounting-currency-badge__code">{label}</span>
               </>
             ) : (
               <>
                 <span className="accounting-currency-badge__code">{label}</span>
-                <span className="accounting-currency-badge__amount">{formatAmount(amount, localeForAmounts)}</span>
+                <span className="accounting-currency-badge__amount">{formatAmount(amount, localeForAmounts, amountFormatOptions)}</span>
               </>
             )}
           </span>

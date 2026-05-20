@@ -89,7 +89,7 @@ export default function SeaOwsChargesSection({ owsForm, setOwsForm }) {
                   className="sea-rate-input"
                   value={displayNumericInputValue(owsForm.fixed.weight)}
                   onChange={(e) => patchFixed({ weight: e.target.value })}
-                  placeholder="18000"
+                  placeholder="0"
                 />
               </div>
               <div>

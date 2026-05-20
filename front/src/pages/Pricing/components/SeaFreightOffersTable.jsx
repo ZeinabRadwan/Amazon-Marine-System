@@ -159,6 +159,10 @@ export default function SeaFreightOffersTable({
   const dash = t('common.dash', '—')
 
   const count = offers?.length || 0
+  const isImportSection = sectionKey === 'import'
+  const listAmountFormat = isImportSection
+    ? { minimumFractionDigits: 0, maximumFractionDigits: 2 }
+    : undefined
 
   const heading =
     sectionTitle || t('pricing.savedSeaFreightRatesHeading', 'Saved sea freight rates')
@@ -232,7 +236,13 @@ export default function SeaFreightOffersTable({
                     </div>
                     <div className="pricing-rate-card__amounts">
                       <div className="pricing-rate-card__amounts-value">
-                        <CurrencyMapBadges value={totalsMap} size="sm" amountFirst={amountFirst} emptyLabel={dash} />
+                        <CurrencyMapBadges
+                          value={totalsMap}
+                          size="sm"
+                          amountFirst={amountFirst}
+                          emptyLabel={dash}
+                          {...listAmountFormat}
+                        />
                       </div>
                       <div className="pricing-rate-card__amounts-label">{t('pricing.totalCostLabel', 'Total cost')}</div>
                     </div>
@@ -254,6 +264,7 @@ export default function SeaFreightOffersTable({
                             }}
                             size="sm"
                             amountFirst={amountFirst}
+                            {...listAmountFormat}
                           />
                         </span>
                       ) : null}
