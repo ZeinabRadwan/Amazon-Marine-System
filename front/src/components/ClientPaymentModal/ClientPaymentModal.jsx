@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { DollarSign, Sparkles, Wallet, X } from 'lucide-react'
+import { DollarSign, Paperclip, Sparkles, Wallet, X } from 'lucide-react'
+import DatePicker from '../DatePicker'
 import { ShipmentMoneyMap } from '../../pages/Shipments/shipmentMoneyDisplay'
 import '../../pages/Shipments/shipmentMoneyDisplay.css'
 import { bankSupportsCurrency } from '../../pages/Accountings/accountingsStatementShared'
@@ -222,11 +223,11 @@ export default function ClientPaymentModal({
                 <span className="shipment-fin-payment-field__label">
                   {t('shipments.fin.paymentDate', { defaultValue: 'Paid date' })}
                 </span>
-                <input
-                  type="date"
+                <DatePicker
                   className="shipment-fin-payment-field__input"
                   value={form.paid_at}
-                  onChange={(e) => setForm((p) => ({ ...p, paid_at: e.target.value }))}
+                  locale={i18n.language}
+                  onChange={(next) => setForm((p) => ({ ...p, paid_at: next }))}
                 />
               </label>
               <label className="shipment-fin-payment-field">
@@ -243,20 +244,45 @@ export default function ClientPaymentModal({
                   onChange={(e) => setForm((p) => ({ ...p, reference: e.target.value }))}
                 />
               </label>
-              {typeof setProofFile === 'function' ? (
-                <label className="shipment-fin-payment-field shipment-fin-payment-field--full">
+              {(isAdvance || typeof setProofFile === 'function') && typeof setProofFile === 'function' ? (
+                <div className="shipment-fin-payment-field shipment-fin-payment-field--full shipment-fin-payment-proof">
                   <span className="shipment-fin-payment-field__label">
                     {t('accountings.paymentReceipt', 'Receipt / proof')}
+                    <span className="shipment-fin-payment-field__optional">
+                      {t('common.optional', { defaultValue: 'Optional' })}
+                    </span>
                   </span>
-                  <input
-                    type="file"
-                    className="shipment-fin-payment-field__input"
-                    onChange={(e) => setProofFile(e.target.files?.[0] || null)}
-                  />
+                  <label className="shipment-fin-payment-proof__drop">
+                    <Paperclip className="shipment-fin-payment-proof__icon" aria-hidden />
+                    <span className="shipment-fin-payment-proof__text">
+                      {proofFile
+                        ? proofFile.name
+                        : t('shipments.fin.paymentProofChoose', {
+                            defaultValue: 'Choose image or PDF',
+                          })}
+                    </span>
+                    <input
+                      type="file"
+                      className="shipment-fin-payment-proof__input"
+                      accept="image/*,.pdf,application/pdf"
+                      onChange={(e) => setProofFile(e.target.files?.[0] || null)}
+                    />
+                  </label>
+                  <p className="shipment-fin-payment-proof__hint">
+                    {t('shipments.fin.paymentProofHint', {
+                      defaultValue: 'Transfer receipt, payment proof, or PDF (max 10 MB)',
+                    })}
+                  </p>
                   {proofFile ? (
-                    <span className="text-xs text-slate-500">{proofFile.name}</span>
+                    <button
+                      type="button"
+                      className="shipment-fin-payment-proof__clear"
+                      onClick={() => setProofFile(null)}
+                    >
+                      {t('common.remove', { defaultValue: 'Remove' })}
+                    </button>
                   ) : null}
-                </label>
+                </div>
               ) : null}
             </div>
             {showConvertHint ? (

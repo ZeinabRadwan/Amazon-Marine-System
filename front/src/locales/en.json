@@ -4253,6 +4253,8 @@
       "paymentMethod": "Method",
       "paymentReference": "Reference",
       "paymentDate": "Paid date",
+      "paymentProofChoose": "Choose image or PDF",
+      "paymentProofHint": "Transfer receipt, payment proof, or PDF (max 10 MB)",
       "pricingNoLines": "Add at least one included line with a valid sell amount.",
       "invoiceNotesLabel": "Invoice notes",
       "invoiceNotesPlaceholder": "Optional notes shown on the invoice document",

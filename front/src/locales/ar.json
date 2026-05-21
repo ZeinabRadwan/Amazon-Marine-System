@@ -4265,6 +4265,8 @@
       "paymentMethod": "الطريقة",
       "paymentReference": "المرجع",
       "paymentDate": "تاريخ الدفع",
+      "paymentProofChoose": "اختر صورة أو PDF",
+      "paymentProofHint": "إيصال تحويل، إثبات دفع، أو PDF (حد أقصى 10 ميجابايت)",
       "pricingNoLines": "أضف بنداً واحداً على الأقل مضمّناً بمبلغ بيع صالح.",
       "invoiceNotesLabel": "ملاحظات الفاتورة",
       "invoiceNotesPlaceholder": "ملاحظات اختيارية تظهر على مستند الفاتورة",

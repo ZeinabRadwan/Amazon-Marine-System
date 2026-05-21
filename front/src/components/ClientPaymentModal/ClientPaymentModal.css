@@ -272,6 +272,82 @@
   margin-inline-start: 2px;
 }
 
+.shipment-fin-payment-field__optional {
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+  margin-inline-start: 0.35rem;
+  opacity: 0.75;
+}
+
+.shipment-fin-payment-proof {
+  gap: 0.4rem;
+}
+
+body .flatpickr-calendar.open {
+  z-index: 1300;
+}
+
+.shipment-fin-payment-proof__drop {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px dashed var(--form-divider, #d1d5db);
+  border-radius: 10px;
+  cursor: pointer;
+  background: color-mix(in oklab, var(--form-bg, #fff) 92%, var(--form-primary, #0039c5) 8%);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.shipment-fin-payment-proof__drop:hover {
+  border-color: var(--form-primary, #0039c5);
+}
+
+.shipment-fin-payment-proof__icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: var(--form-primary, #0039c5);
+}
+
+.shipment-fin-payment-proof__text {
+  font-size: 0.875rem;
+  color: var(--form-text, #374151);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shipment-fin-payment-proof__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.shipment-fin-payment-proof__hint {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--form-text, #6b7280);
+}
+
+.shipment-fin-payment-proof__clear {
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 0.75rem;
+  color: var(--form-primary, #0039c5);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
 .shipment-fin-payment-field__input {
   width: 100%;
   box-sizing: border-box;

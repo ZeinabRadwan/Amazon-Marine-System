@@ -197,6 +197,7 @@ export default function CustomerStatementInteractive({ customerId, variant = 'pa
       await recordPayment(token, payload)
       setAdvancePaymentOpen(false)
       setAdvancePaymentForm(emptyClientPaymentForm())
+      setAdvanceProofFile(null)
       await reloadDetail()
     } catch (e) {
       setAdvancePaymentSubmitError(e?.message || String(e))
@@ -297,6 +298,7 @@ export default function CustomerStatementInteractive({ customerId, variant = 'pa
         onClose={() => {
           setAdvancePaymentOpen(false)
           setAdvancePaymentSubmitError(null)
+          setAdvanceProofFile(null)
         }}
         onSubmit={submitAdvancePayment}
         saving={advancePaymentBusy}

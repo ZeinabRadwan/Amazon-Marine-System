@@ -951,6 +951,7 @@ export default function ShipmentFinancialsModal({
     paid_at: new Date().toISOString().slice(0, 10),
     reference: '',
   })
+  const [paymentProofFile, setPaymentProofFile] = useState(null)
   const [shipmentClientPayments, setShipmentClientPayments] = useState([])
 
   const [activityRows, setActivityRows] = useState([])
@@ -2835,20 +2836,26 @@ export default function ShipmentFinancialsModal({
           return [refreshed, ...filtered]
         })
       } else {
-        await recordPayment(token, {
-          type: 'client_receipt',
-          client_id: shipment.client_id,
-          shipment_id: shipment?.id ?? null,
-          amount,
-          currency_code: paymentForm.currency,
-          method: paymentForm.method,
-          source_account_id: paymentForm.bank_account_id ? Number(paymentForm.bank_account_id) : null,
-          reference: paymentForm.reference || null,
-          paid_at: paymentForm.paid_at,
-        })
+        const payload = new FormData()
+        payload.append('type', 'client_receipt')
+        payload.append('client_id', String(shipment.client_id))
+        if (shipment?.id) payload.append('shipment_id', String(shipment.id))
+        payload.append('amount', String(amount))
+        payload.append('currency_code', paymentForm.currency)
+        payload.append('method', paymentForm.method || 'bank_transfer')
+        payload.append('paid_at', paymentForm.paid_at || new Date().toISOString().slice(0, 10))
+        if (paymentForm.bank_account_id) {
+          payload.append('source_account_id', String(Number(paymentForm.bank_account_id)))
+        }
+        if (paymentForm.reference?.trim()) {
+          payload.append('reference', paymentForm.reference.trim())
+        }
+        if (paymentProofFile) payload.append('proof_file', paymentProofFile)
+        await recordPayment(token, payload)
       }
       await loadShipmentClientPayments()
       setShowPaymentModal(false)
+      setPaymentProofFile(null)
       setPaymentForm((p) => ({ ...p, amount: '', reference: '' }))
       setFinBanner({ type: 'success', message: t('shipments.fin.paymentRecorded') })
       onShipmentTotalsRefresh?.()
@@ -2857,7 +2864,7 @@ export default function ShipmentFinancialsModal({
     } finally {
       setPaymentSaving(false)
     }
-  }, [token, clientInvoice?.id, shipment?.client_id, shipment?.id, paymentForm, t, loadShipmentClientPayments, onShipmentTotalsRefresh])
+  }, [token, clientInvoice?.id, shipment?.client_id, shipment?.id, paymentForm, paymentProofFile, t, loadShipmentClientPayments, onShipmentTotalsRefresh])
 
   const bucketTotalsLive = useCallback((bucketId) => {
     const rows = byBucket[bucketId] || []
@@ -4961,6 +4968,19 @@ export default function ShipmentFinancialsModal({
                               ? ` • ${p.invoice_reference || clientInvoice?.invoice_number || `INV-${p.invoice_id}`}`
                               : ` • ${t('shipments.fin.advancePaymentNote', { defaultValue: 'Prepaid — not yet applied to invoice' })}`}
                             {p.shipment_reference ? ` • ${p.shipment_reference}` : ''}
+                            {p.proof_url ? (
+                              <>
+                                {' • '}
+                                <a
+                                  href={p.proof_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="shipment-fin-summary-payment-item__proof"
+                                >
+                                  {t('accountings.paymentReceiptOpen', { defaultValue: 'View receipt' })}
+                                </a>
+                              </>
+                            ) : null}
                           </p>
                         </div>
                         <div className="shipment-fin-summary-payment-item__amount">
@@ -5073,7 +5093,10 @@ export default function ShipmentFinancialsModal({
           )}
           <ClientPaymentModal
             open={showPaymentModal}
-            onClose={() => setShowPaymentModal(false)}
+            onClose={() => {
+              setShowPaymentModal(false)
+              setPaymentProofFile(null)
+            }}
             onSubmit={submitClientPayment}
             saving={paymentSaving}
             mode={clientInvoice?.id ? 'invoice' : 'advance'}
@@ -5081,6 +5104,8 @@ export default function ShipmentFinancialsModal({
             setForm={setPaymentForm}
             bankAccounts={bankAccounts}
             prepaidByCurrency={prepaidByCurrency}
+            proofFile={paymentProofFile}
+            setProofFile={setPaymentProofFile}
             titleId="shipment-fin-payment-modal-title"
           />
           <InvoiceDocumentPreviewModal

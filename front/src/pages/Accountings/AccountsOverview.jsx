@@ -211,6 +211,7 @@ export default function AccountsOverview() {
       setAdvancePaymentOpen(false)
       setAdvancePaymentClientId(null)
       setAdvancePaymentForm(emptyClientPaymentForm())
+      setAdvanceProofFile(null)
       await loadOverview()
     } catch (e) {
       setAdvancePaymentSubmitError(e?.message || String(e))
@@ -842,6 +843,7 @@ export default function AccountsOverview() {
             setAdvancePaymentOpen(false)
             setAdvancePaymentClientId(null)
             setAdvancePaymentSubmitError(null)
+            setAdvanceProofFile(null)
           }}
           onSubmit={submitAdvancePayment}
           saving={advancePaymentBusy}

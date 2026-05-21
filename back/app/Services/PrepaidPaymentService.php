@@ -7,6 +7,7 @@ use App\Models\CustomerTransaction;
 use App\Models\Invoice;
 use App\Models\Payment;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
 
 class PrepaidPaymentService
 {
@@ -159,6 +160,8 @@ class PrepaidPaymentService
         }
 
         return $query->get()->map(static function (Payment $p): array {
+            $proofUrl = $p->proof_path ? Storage::disk('public')->url($p->proof_path) : null;
+
             return [
                 'id' => $p->id,
                 'amount' => (float) $p->amount,
@@ -173,6 +176,8 @@ class PrepaidPaymentService
                 'is_advance' => true,
                 'bank_account_name' => $p->sourceAccount?->account_name,
                 'bank_name' => $p->sourceAccount?->bank_name,
+                'proof_url' => $proofUrl,
+                'proof_filename' => $p->proof_path ? basename((string) $p->proof_path) : null,
             ];
         })->values()->all();
     }
