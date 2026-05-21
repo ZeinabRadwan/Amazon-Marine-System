@@ -650,6 +650,10 @@
   flex-shrink: 0;
 }
 
+.accountings-action-icon-btn--advance:hover {
+  color: var(--form-primary, #0039c5);
+}
+
 .accountings-form {
   display: flex;
   flex-direction: column;

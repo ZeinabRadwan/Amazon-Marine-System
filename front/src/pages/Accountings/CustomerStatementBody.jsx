@@ -3,6 +3,7 @@ import {
   DollarSign,
   Eye,
   Download,
+  Wallet,
   ChevronDown,
   ChevronUp,
   Paperclip,
@@ -34,6 +35,7 @@ export default function CustomerStatementBody({
   toggleCustomerPaymentRow,
   handleDownloadInvoicePdf,
   openPayment,
+  openAdvancePayment,
   downloadCustomerStatementSnapshot,
 }) {
   const customerStatementDetailTotals = useMemo(
@@ -72,6 +74,31 @@ export default function CustomerStatementBody({
           </dl>
         </div>
         <div className="accountings-statement-detail-header__actions">
+          {typeof openAdvancePayment === 'function' ? (
+            <button
+              type="button"
+              className="accountings-statement-detail-header__icon-btn accountings-action-icon-btn--advance"
+              title={t('accountings.recordAdvancePayment', 'Record advance payment')}
+              aria-label={t('accountings.recordAdvancePayment', 'Record advance payment')}
+              onClick={() => openAdvancePayment()}
+            >
+              <Wallet className="accountings-statement-detail-header__icon" aria-hidden />
+            </button>
+          ) : null}
+          <button
+            type="button"
+            className="accountings-statement-detail-header__icon-btn"
+            title={t('accountings.recordPayment')}
+            aria-label={t('accountings.recordPayment')}
+            onClick={() =>
+              openPayment({
+                link_type: 'customer',
+                client_id: customerDetail.customer_id,
+              })
+            }
+          >
+            <DollarSign className="accountings-statement-detail-header__icon" aria-hidden />
+          </button>
           <button
             type="button"
             className="accountings-statement-detail-header__icon-btn"

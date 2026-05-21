@@ -50,6 +50,7 @@ import { latinDateTimeFormat } from '../../utils/westernNumerals'
 import { BUCKET_DEFS, expenseBucket, LINE_TEMPLATES, expenseHaystack, partitionBucketRows } from './shipmentFinUtils'
 import Tabs from '../../components/Tabs'
 import InvoiceDocumentPreviewModal from '../../components/InvoiceDocumentPreviewModal'
+import ClientPaymentModal from '../../components/ClientPaymentModal'
 import '../SDForms/SDForms.css'
 import { apiFetch } from '../../api/http'
 import { getApiBaseUrl } from '../../api/apiBaseUrl'
@@ -5070,179 +5071,18 @@ export default function ShipmentFinancialsModal({
               )}
             </div>
           )}
-          {showPaymentModal ? (
-            <div
-              className="shipment-fin-payment-modal-backdrop"
-              role="presentation"
-              onClick={() => {
-                if (!paymentSaving) setShowPaymentModal(false)
-              }}
-            >
-              <div
-                className={`shipment-fin-payment-modal${clientInvoice?.id ? '' : ' shipment-fin-payment-modal--advance'}`}
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="shipment-fin-payment-modal-title"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <header className="shipment-fin-payment-modal__header">
-                  <div className="shipment-fin-payment-modal__header-main">
-                    <span className="shipment-fin-payment-modal__icon" aria-hidden>
-                      {clientInvoice?.id ? <DollarSign /> : <Wallet />}
-                    </span>
-                    <div className="shipment-fin-payment-modal__titles">
-                      <h4 id="shipment-fin-payment-modal-title">
-                        {clientInvoice?.id
-                          ? t('shipments.fin.recordPayment', { defaultValue: 'Record Payment' })
-                          : t('shipments.fin.recordAdvancePayment', { defaultValue: 'Record advance payment' })}
-                      </h4>
-                      <p className="shipment-fin-payment-modal__subtitle">
-                        {clientInvoice?.id
-                          ? t('shipments.fin.recordPaymentSubtitle', { defaultValue: 'Apply payment to the client invoice' })
-                          : t('shipments.fin.recordAdvancePaymentSubtitle', { defaultValue: 'Prepaid credit before invoice issuance' })}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    className="shipment-fin-payment-modal__close"
-                    disabled={paymentSaving}
-                    onClick={() => setShowPaymentModal(false)}
-                    aria-label={t('common.close', { defaultValue: 'Close' })}
-                  >
-                    <X className="h-4 w-4" aria-hidden />
-                  </button>
-                </header>
-
-                {!clientInvoice?.id ? (
-                  <div className="shipment-fin-payment-modal__notice">
-                    <Sparkles className="shipment-fin-payment-modal__notice-icon" aria-hidden />
-                    <p>
-                      {t('shipments.fin.advancePaymentHint', {
-                        defaultValue: 'Payment is saved as customer prepaid credit and can be applied when the invoice is issued.',
-                      })}
-                    </p>
-                  </div>
-                ) : null}
-
-                {!clientInvoice?.id && Object.keys(prepaidByCurrency).length > 0 ? (
-                  <div className="shipment-fin-payment-modal__prepaid">
-                    <span className="shipment-fin-payment-modal__prepaid-label">
-                      {t('shipments.fin.prepaidCredit', { defaultValue: 'Prepaid credit' })}
-                    </span>
-                    <span className="shipment-fin-payment-modal__prepaid-value">
-                      <ShipmentMoneyMap map={prepaidByCurrency} numberLocale={numberLocale} />
-                    </span>
-                  </div>
-                ) : null}
-
-                <div className="shipment-fin-payment-modal__body">
-                  <div className="shipment-fin-payment-form">
-                    <div className="shipment-fin-payment-row shipment-fin-payment-row--amount-currency">
-                      <label className="shipment-fin-payment-field shipment-fin-payment-field--amount">
-                        <span className="shipment-fin-payment-field__label">
-                          {t('shipments.expColAmount', { defaultValue: 'Amount' })}
-                          <span className="shipment-fin-payment-field__required" aria-hidden>*</span>
-                        </span>
-                        <input
-                          type="number"
-                          min="0.01"
-                          step="0.01"
-                          className="shipment-fin-payment-field__input"
-                          placeholder="0.00"
-                          value={paymentForm.amount}
-                          onChange={(e) => setPaymentForm((p) => ({ ...p, amount: e.target.value }))}
-                        />
-                      </label>
-                      <label className="shipment-fin-payment-field shipment-fin-payment-field--currency">
-                        <span className="shipment-fin-payment-field__label">{t('shipments.fin.paymentCurrency', { defaultValue: 'Currency' })}</span>
-                        <select
-                          className="shipment-fin-payment-field__input"
-                          value={paymentForm.currency}
-                          onChange={(e) => setPaymentForm((p) => ({ ...p, currency: e.target.value }))}
-                        >
-                          {CURRENCIES.map((c) => (
-                            <option key={c} value={c}>{c}</option>
-                          ))}
-                        </select>
-                      </label>
-                    </div>
-                    <div className="shipment-fin-payment-grid">
-                    <label className="shipment-fin-payment-field">
-                      <span className="shipment-fin-payment-field__label">{t('shipments.fin.paymentMethod', { defaultValue: 'Method' })}</span>
-                      <select
-                        className="shipment-fin-payment-field__input"
-                        value={paymentForm.method}
-                        onChange={(e) => setPaymentForm((p) => ({ ...p, method: e.target.value }))}
-                      >
-                        <option value="bank_transfer">{t('shipments.fin.paymentMethodBank', { defaultValue: 'Bank transfer' })}</option>
-                        <option value="cash">{t('shipments.fin.paymentMethodCash', { defaultValue: 'Cash' })}</option>
-                        <option value="cheque">{t('shipments.fin.paymentMethodCheque', { defaultValue: 'Cheque' })}</option>
-                        <option value="internal_transfer">{t('shipments.fin.paymentMethodInternal', { defaultValue: 'Internal transfer' })}</option>
-                      </select>
-                    </label>
-                    <label className="shipment-fin-payment-field">
-                      <span className="shipment-fin-payment-field__label">{t('partnerLedger.payment.sourceAccount', { defaultValue: 'Bank account' })}</span>
-                      <select
-                        className="shipment-fin-payment-field__input"
-                        value={paymentForm.bank_account_id}
-                        onChange={(e) => setPaymentForm((p) => ({ ...p, bank_account_id: e.target.value }))}
-                      >
-                        <option value="">{t('payments.bankAccountOptional', { defaultValue: 'Bank account (optional)' })}</option>
-                        {bankAccounts.map((b) => (
-                          <option key={b.id} value={b.id}>{b.bank_name} — {b.account_name}</option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="shipment-fin-payment-field">
-                      <span className="shipment-fin-payment-field__label">{t('shipments.fin.paymentDate', { defaultValue: 'Paid date' })}</span>
-                      <input
-                        type="date"
-                        className="shipment-fin-payment-field__input"
-                        value={paymentForm.paid_at}
-                        onChange={(e) => setPaymentForm((p) => ({ ...p, paid_at: e.target.value }))}
-                      />
-                    </label>
-                    <label className="shipment-fin-payment-field">
-                      <span className="shipment-fin-payment-field__label">{t('shipments.fin.paymentReference', { defaultValue: 'Reference' })}</span>
-                      <input
-                        type="text"
-                        className="shipment-fin-payment-field__input"
-                        placeholder={t('shipments.fin.paymentReferencePlaceholder', { defaultValue: 'Transfer ref., receipt no., …' })}
-                        value={paymentForm.reference}
-                        onChange={(e) => setPaymentForm((p) => ({ ...p, reference: e.target.value }))}
-                      />
-                    </label>
-                    </div>
-                  </div>
-                </div>
-
-                <footer className="shipment-fin-payment-modal__footer">
-                  <button
-                    type="button"
-                    className="client-detail-modal__btn client-detail-modal__btn--secondary"
-                    disabled={paymentSaving}
-                    onClick={() => setShowPaymentModal(false)}
-                  >
-                    {t('common.cancel')}
-                  </button>
-                  <button
-                    type="button"
-                    className={`client-detail-modal__btn client-detail-modal__btn--primary${clientInvoice?.id ? '' : ' shipment-fin-payment-modal__submit--advance'}`}
-                    disabled={paymentSaving}
-                    onClick={submitClientPayment}
-                  >
-                    {paymentSaving
-                      ? t('shipments.saving')
-                      : clientInvoice?.id
-                        ? t('shipments.fin.recordPayment', { defaultValue: 'Record Payment' })
-                        : t('shipments.fin.recordAdvancePayment', { defaultValue: 'Record advance payment' })}
-                  </button>
-                </footer>
-
-              </div>
-            </div>
-          ) : null}
+          <ClientPaymentModal
+            open={showPaymentModal}
+            onClose={() => setShowPaymentModal(false)}
+            onSubmit={submitClientPayment}
+            saving={paymentSaving}
+            mode={clientInvoice?.id ? 'invoice' : 'advance'}
+            form={paymentForm}
+            setForm={setPaymentForm}
+            bankAccounts={bankAccounts}
+            prepaidByCurrency={prepaidByCurrency}
+            titleId="shipment-fin-payment-modal-title"
+          />
           <InvoiceDocumentPreviewModal
             open={invoicePreviewOpen}
             onClose={() => setInvoicePreviewOpen(false)}

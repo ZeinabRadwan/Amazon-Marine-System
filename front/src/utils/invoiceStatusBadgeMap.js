@@ -38,6 +38,16 @@ export function getInvoiceStatusBadgeMeta(status, t) {
       label: t('invoices.status.cancelled', { defaultValue: 'Cancelled' }),
       icon: 'dot',
     },
+    credit: {
+      tone: 'paid',
+      label: t('accountings.accountStatusCredit', { defaultValue: 'Prepaid credit' }),
+      icon: 'check',
+    },
+    clear: {
+      tone: 'draft',
+      label: t('accountings.accountStatusClear', { defaultValue: 'No balance' }),
+      icon: 'dot',
+    },
   }
   return map[normalized] || {
     tone: 'draft',

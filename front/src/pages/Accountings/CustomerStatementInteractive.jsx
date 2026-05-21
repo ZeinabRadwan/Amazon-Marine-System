@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Wallet } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import LoaderDots from '../../components/LoaderDots'
 import { Container } from '../../components/Container'
 import { downloadInvoicePdf } from '../../api/invoices'
 import { getStoredToken } from '../Login'
+import { useAuthAccess } from '../../hooks/useAuthAccess'
 import { getCustomerStatementDetail, listBankAccounts, recordPayment } from '../../api/accountings'
 import { getTreasuryBankOverview } from '../../api/treasury'
 import '../Clients/Clients.css'
@@ -14,6 +15,7 @@ import '../Shipments/Shipments.css'
 import './Accountings.css'
 import { currencyMapToExportPlain } from './CurrencyMapBadges'
 import AccountingsPaymentModal from './AccountingsPaymentModal'
+import ClientPaymentModal, { emptyClientPaymentForm } from '../../components/ClientPaymentModal'
 import CustomerStatementBody from './CustomerStatementBody'
 import {
   bankSupportsCurrency,
@@ -30,6 +32,8 @@ export default function CustomerStatementInteractive({ customerId, variant = 'pa
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const token = getStoredToken()
+  const { isAdminRole, isAccountant } = useAuthAccess()
+  const canRecordAdvancePayment = isAdminRole || isAccountant
 
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
@@ -39,6 +43,11 @@ export default function CustomerStatementInteractive({ customerId, variant = 'pa
   const [bankAccounts, setBankAccounts] = useState([])
   const [treasuryBankOverview, setTreasuryBankOverview] = useState(null)
   const [paymentModal, setPaymentModal] = useState(null)
+  const [advancePaymentOpen, setAdvancePaymentOpen] = useState(false)
+  const [advancePaymentForm, setAdvancePaymentForm] = useState(emptyClientPaymentForm)
+  const [advancePaymentSubmitError, setAdvancePaymentSubmitError] = useState(null)
+  const [advancePaymentBusy, setAdvancePaymentBusy] = useState(false)
+  const [advanceProofFile, setAdvanceProofFile] = useState(null)
   const [paymentSubmitError, setPaymentSubmitError] = useState(null)
   const [paymentBusy, setPaymentBusy] = useState(false)
   const [paymentProofFile, setPaymentProofFile] = useState(null)
@@ -54,6 +63,7 @@ export default function CustomerStatementInteractive({ customerId, variant = 'pa
     client_id: '',
     vendor_id: '',
     vendor_bill_id: '',
+    reference: '',
   })
 
   const reloadDetail = useCallback(async () => {
@@ -155,6 +165,46 @@ export default function CustomerStatementInteractive({ customerId, variant = 'pa
     }))
   }
 
+  const openAdvancePayment = () => {
+    if (!customerDetail?.customer_id) return
+    setAdvancePaymentForm(emptyClientPaymentForm())
+    setAdvancePaymentSubmitError(null)
+    setAdvanceProofFile(null)
+    setAdvancePaymentOpen(true)
+  }
+
+  const submitAdvancePayment = async () => {
+    if (!token || !customerDetail?.customer_id) return
+    const amount = Number(advancePaymentForm.amount)
+    if (!Number.isFinite(amount) || amount <= 0) return
+    const payload = new FormData()
+    payload.append('type', 'client_receipt')
+    payload.append('amount', String(amount))
+    payload.append('currency_code', advancePaymentForm.currency)
+    payload.append('method', advancePaymentForm.method || 'bank_transfer')
+    payload.append('paid_at', advancePaymentForm.paid_at || new Date().toISOString().slice(0, 10))
+    payload.append('client_id', String(Number(customerDetail.customer_id)))
+    if (advancePaymentForm.bank_account_id) {
+      payload.append('source_account_id', String(Number(advancePaymentForm.bank_account_id)))
+    }
+    if (advancePaymentForm.reference) {
+      payload.append('reference', String(advancePaymentForm.reference).trim())
+    }
+    if (advanceProofFile) payload.append('proof_file', advanceProofFile)
+    setAdvancePaymentBusy(true)
+    setAdvancePaymentSubmitError(null)
+    try {
+      await recordPayment(token, payload)
+      setAdvancePaymentOpen(false)
+      setAdvancePaymentForm(emptyClientPaymentForm())
+      await reloadDetail()
+    } catch (e) {
+      setAdvancePaymentSubmitError(e?.message || String(e))
+    } finally {
+      setAdvancePaymentBusy(false)
+    }
+  }
+
   const submitPayment = async () => {
     if (!token) return
     const amount = Number(payment.amount)
@@ -194,6 +244,7 @@ export default function CustomerStatementInteractive({ customerId, variant = 'pa
     if (payment.shipment_id) payload.append('shipment_id', String(Number(payment.shipment_id)))
     if (payment.client_id) payload.append('client_id', String(Number(payment.client_id)))
     if (payment.vendor_id) payload.append('vendor_id', String(Number(payment.vendor_id)))
+    if (payment.reference) payload.append('reference', String(payment.reference).trim())
     if (paymentProofFile) payload.append('proof_file', paymentProofFile)
     setPaymentBusy(true)
     setPaymentSubmitError(null)
@@ -224,22 +275,42 @@ export default function CustomerStatementInteractive({ customerId, variant = 'pa
     ) : null
 
   const paymentModalEl = (
-    <AccountingsPaymentModal
-      open={!!paymentModal}
-      onClose={() => {
-        setPaymentModal(null)
-        setPaymentSubmitError(null)
-      }}
-      t={t}
-      payment={payment}
-      setPayment={setPayment}
-      paymentBusy={paymentBusy}
-      bankAccounts={bankAccounts}
-      paymentProofFile={paymentProofFile}
-      setPaymentProofFile={setPaymentProofFile}
-      onSubmit={submitPayment}
-      submitError={paymentSubmitError}
-    />
+    <>
+      <AccountingsPaymentModal
+        open={!!paymentModal}
+        onClose={() => {
+          setPaymentModal(null)
+          setPaymentSubmitError(null)
+        }}
+        t={t}
+        payment={payment}
+        setPayment={setPayment}
+        paymentBusy={paymentBusy}
+        bankAccounts={bankAccounts}
+        paymentProofFile={paymentProofFile}
+        setPaymentProofFile={setPaymentProofFile}
+        onSubmit={submitPayment}
+        submitError={paymentSubmitError}
+      />
+      <ClientPaymentModal
+        open={advancePaymentOpen}
+        onClose={() => {
+          setAdvancePaymentOpen(false)
+          setAdvancePaymentSubmitError(null)
+        }}
+        onSubmit={submitAdvancePayment}
+        saving={advancePaymentBusy}
+        submitError={advancePaymentSubmitError}
+        mode="advance"
+        form={advancePaymentForm}
+        setForm={setAdvancePaymentForm}
+        bankAccounts={bankAccounts}
+        prepaidByCurrency={customerDetail?.prepaid_balance_by_currency ?? null}
+        proofFile={advanceProofFile}
+        setProofFile={setAdvanceProofFile}
+        titleId="customer-statement-advance-payment-modal-title"
+      />
+    </>
   )
 
   if (loading && !customerDetail) {
@@ -319,6 +390,7 @@ export default function CustomerStatementInteractive({ customerId, variant = 'pa
       toggleCustomerPaymentRow={toggleCustomerPaymentRow}
       handleDownloadInvoicePdf={handleDownloadInvoicePdf}
       openPayment={openPayment}
+      openAdvancePayment={canRecordAdvancePayment ? openAdvancePayment : null}
       downloadCustomerStatementSnapshot={downloadCustomerStatementSnapshot}
     />
   )

@@ -10,8 +10,8 @@ use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Shipment;
 use App\Models\ShipmentCostInvoice;
-use App\Models\Vendor;
 use App\Models\TreasuryEntry;
+use App\Models\Vendor;
 use App\Models\VendorBill;
 use App\Services\AccountingAggregationService;
 use App\Services\PrepaidPaymentService;
@@ -529,7 +529,13 @@ class AccountingController extends Controller
 
         $query = Client::query();
         if ($search !== '') {
-            $query->where('name', 'like', '%'.$search.'%');
+            $query->where(function ($q) use ($search): void {
+                $q->where('name', 'like', '%'.$search.'%')
+                    ->orWhereHas('invoices', function ($iq) use ($search): void {
+                        $this->applyCustomerInvoiceFilter($iq);
+                        $iq->where('invoice_number', 'like', '%'.$search.'%');
+                    });
+            });
         }
         $clients = $query->orderBy('name')->get();
 
@@ -557,23 +563,43 @@ class AccountingController extends Controller
                 $invoicesQuery->where('shipment_id', (int) $shipmentId);
             }
             $invoices = $invoicesQuery->with('items')->get();
-            if ($invoices->isEmpty()) {
-                return null;
-            }
             $invoices->loadMissing('items');
-            // Payment status filter must match computed settlement (payments vs lines), not invoices.status column.
-            if ($status !== '') {
+
+            if ($status !== '' && $invoices->isNotEmpty()) {
                 $mapStatus = $status === 'partial' ? 'partial' : $status;
                 $invoices = $invoices
                     ->filter(function (Invoice $inv) use ($mapStatus): bool {
                         return AccountingAggregationService::invoiceStatementTotals($inv)['status'] === $mapStatus;
                     })
                     ->values();
-                if ($invoices->isEmpty()) {
-                    return null;
-                }
             }
-            $aggregated = AccountingAggregationService::aggregateInvoices($invoices);
+
+            if ($shipmentId && $invoices->isEmpty()) {
+                return null;
+            }
+
+            $aggregated = $invoices->isNotEmpty()
+                ? AccountingAggregationService::aggregateInvoices($invoices)
+                : [
+                    'total_invoiced_per_currency' => [],
+                    'total_paid_per_currency' => [],
+                    'total_remaining_per_currency' => [],
+                ];
+
+            $prepaidBalance = PrepaidPaymentService::prepaidBalanceByCurrency((int) $client->id);
+            $invoicePaid = $aggregated['total_paid_per_currency'];
+            $totalPayments = $this->mergeCurrencyMaps($invoicePaid, $prepaidBalance);
+            $remainingBalance = $aggregated['total_remaining_per_currency'];
+            $accountStatus = $this->deriveCustomerAccountStatus(
+                $remainingBalance,
+                $prepaidBalance,
+                $invoicePaid,
+                $invoices->count(),
+            );
+
+            if ($status !== '' && ! $this->customerAccountStatusMatchesFilter($accountStatus, $status)) {
+                return null;
+            }
 
             $invoiceStatuses = [
                 'paid' => 0,
@@ -596,13 +622,100 @@ class AccountingController extends Controller
                 'invoice_count' => $invoices->count(),
                 'shipments_count' => $shipmentsCount,
                 'total_invoices_value' => $aggregated['total_invoiced_per_currency'],
-                'paid_amount' => $aggregated['total_paid_per_currency'],
-                'remaining_balance' => $aggregated['total_remaining_per_currency'],
+                'paid_amount' => $totalPayments,
+                'invoice_paid_amount' => $invoicePaid,
+                'prepaid_balance' => $prepaidBalance,
+                'remaining_balance' => $remainingBalance,
+                'current_balance' => $remainingBalance,
+                'account_status' => $accountStatus,
                 'invoice_status_counts' => $invoiceStatuses,
             ];
         })->filter()->values();
 
         return response()->json(['data' => $rows]);
+    }
+
+    /**
+     * @param  array<string, float>  $remaining
+     * @param  array<string, float>  $prepaid
+     * @param  array<string, float>  $invoicePaid
+     */
+    private function deriveCustomerAccountStatus(
+        array $remaining,
+        array $prepaid,
+        array $invoicePaid,
+        int $invoiceCount,
+    ): string {
+        $hasRemaining = false;
+        foreach ($remaining as $val) {
+            if ((float) $val > 0.00001) {
+                $hasRemaining = true;
+                break;
+            }
+        }
+
+        $hasPrepaid = false;
+        foreach ($prepaid as $val) {
+            if ((float) $val > 0.00001) {
+                $hasPrepaid = true;
+                break;
+            }
+        }
+
+        if ($hasRemaining) {
+            $hasInvoicePaid = false;
+            foreach ($invoicePaid as $val) {
+                if ((float) $val > 0.00001) {
+                    $hasInvoicePaid = true;
+                    break;
+                }
+            }
+
+            return $hasInvoicePaid ? 'partial' : 'unpaid';
+        }
+
+        if ($hasPrepaid) {
+            return 'credit';
+        }
+
+        if ($invoiceCount > 0) {
+            return 'paid';
+        }
+
+        return 'clear';
+    }
+
+    private function customerAccountStatusMatchesFilter(string $accountStatus, string $filter): bool
+    {
+        if ($filter === '') {
+            return true;
+        }
+
+        if ($filter === 'paid') {
+            return in_array($accountStatus, ['paid', 'clear', 'credit'], true);
+        }
+
+        return $accountStatus === $filter;
+    }
+
+    /**
+     * @param  array<string, float>  ...$maps
+     * @return array<string, float>
+     */
+    private function mergeCurrencyMaps(array ...$maps): array
+    {
+        $out = [];
+        foreach ($maps as $map) {
+            foreach ($map as $cur => $val) {
+                $cu = strtoupper(trim((string) $cur));
+                if ($cu === '') {
+                    continue;
+                }
+                $out[$cu] = (float) ($out[$cu] ?? 0) + (float) $val;
+            }
+        }
+
+        return AccountingAggregationService::normalizeCurrencyMap($out);
     }
 
     public function customerStatementDetail(Request $request, Client $client): JsonResponse

@@ -26,6 +26,13 @@ export function validateWithdrawalAgainstTreasuryBank(p) {
   return { ok: true }
 }
 
+/** Prefer API `account_status`; fall back to currency maps (legacy rows). */
+export function resolveCustomerAccountStatus(row) {
+  const fromApi = String(row?.account_status || '').toLowerCase().trim()
+  if (fromApi) return fromApi
+  return rowPaymentStatus(row?.paid_amount, row?.remaining_balance)
+}
+
 export function rowPaymentStatus(paidMap, remainingMap) {
   const currencies = new Set([
     ...Object.keys(paidMap || {}),

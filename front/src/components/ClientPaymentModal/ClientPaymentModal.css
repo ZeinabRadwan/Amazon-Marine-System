@@ -1,0 +1,334 @@
+/* Shared client payment / advance payment modal (Shipment Financials + Accountings). */
+
+.shipment-fin-payment-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+  animation: shipment-fin-payment-fade-in 0.2s ease-out;
+}
+
+@keyframes shipment-fin-payment-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes shipment-fin-payment-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.shipment-fin-payment-modal {
+  width: min(520px, calc(100vw - 2rem));
+  max-height: min(90vh, 720px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--form-bg, #fff);
+  border-radius: 16px;
+  border: 1px solid var(--form-divider, #e5e7eb);
+  box-shadow:
+    0 24px 48px rgba(15, 23, 42, 0.18),
+    0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+  animation: shipment-fin-payment-slide-in 0.24s ease-out;
+}
+
+[data-theme='dark'] .shipment-fin-payment-modal,
+.dark .shipment-fin-payment-modal {
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+}
+
+.shipment-fin-payment-modal--advance {
+  border-color: color-mix(in oklab, var(--form-primary, #0039c5) 28%, var(--form-divider, #e5e7eb));
+}
+
+.shipment-fin-payment-modal--advance .shipment-fin-payment-modal__header {
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--form-primary, #0039c5) 12%, var(--form-bg, #fff)) 0%,
+    color-mix(in oklab, #2563eb 8%, var(--form-bg, #fff)) 100%
+  );
+  border-bottom-color: color-mix(in oklab, var(--form-primary, #0039c5) 22%, var(--form-divider, #e5e7eb));
+}
+
+[data-theme='dark'] .shipment-fin-payment-modal--advance .shipment-fin-payment-modal__header,
+.dark .shipment-fin-payment-modal--advance .shipment-fin-payment-modal__header {
+  background: linear-gradient(135deg, rgba(0, 57, 197, 0.22), rgba(37, 99, 235, 0.1));
+}
+
+.shipment-fin-payment-modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1.1rem 1.15rem 1rem;
+  border-bottom: 1px solid var(--form-divider, #e5e7eb);
+}
+
+.shipment-fin-payment-modal__header-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.shipment-fin-payment-modal__icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 12px;
+  background: color-mix(in oklab, var(--form-primary, #0039c5) 12%, transparent);
+  color: var(--form-primary, #0039c5);
+}
+
+.shipment-fin-payment-modal--advance .shipment-fin-payment-modal__icon {
+  background: color-mix(in oklab, var(--form-primary, #0039c5) 16%, transparent);
+  color: var(--form-primary, #0039c5);
+}
+
+.shipment-fin-payment-modal__icon svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.shipment-fin-payment-modal__titles {
+  min-width: 0;
+}
+
+.shipment-fin-payment-modal__titles h4 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--root-text, #111827);
+}
+
+.shipment-fin-payment-modal__subtitle {
+  margin: 0.2rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--form-text, #6b7280);
+}
+
+.shipment-fin-payment-modal__close {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--form-text, #6b7280);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.shipment-fin-payment-modal__close:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--form-divider, #e5e7eb) 70%, transparent);
+  color: var(--root-text, #111827);
+}
+
+.shipment-fin-payment-modal__notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin: 0.85rem 1.15rem 0;
+  padding: 0.75rem 0.85rem;
+  border-radius: 12px;
+  background: color-mix(in oklab, var(--form-primary, #0039c5) 10%, var(--form-bg, #fff));
+  border: 1px solid color-mix(in oklab, var(--form-primary, #0039c5) 22%, transparent);
+}
+
+.shipment-fin-payment-modal__notice p {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: #1e40af;
+}
+
+[data-theme='dark'] .shipment-fin-payment-modal__notice p,
+.dark .shipment-fin-payment-modal__notice p {
+  color: #93c5fd;
+}
+
+.shipment-fin-payment-modal__notice-icon {
+  flex-shrink: 0;
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-top: 0.1rem;
+  color: var(--form-primary, #0039c5);
+}
+
+.shipment-fin-payment-modal__prepaid {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0.65rem 1.15rem 0;
+  padding: 0.55rem 0.75rem;
+  border-radius: 10px;
+  background: var(--root-bg, #f8fafc);
+  border: 1px dashed color-mix(in oklab, var(--form-primary, #0039c5) 35%, var(--form-divider, #e5e7eb));
+}
+
+.shipment-fin-payment-modal__prepaid-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--form-text, #6b7280);
+}
+
+.shipment-fin-payment-modal__prepaid-value {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--form-primary, #0039c5);
+}
+
+.shipment-fin-payment-modal__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 1.15rem;
+}
+
+.shipment-fin-payment-modal__error {
+  margin: 0 1.15rem 0.5rem;
+  font-size: 0.875rem;
+  color: #dc2626;
+}
+
+.shipment-fin-payment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.shipment-fin-payment-row--amount-currency {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.shipment-fin-payment-field--amount {
+  flex: 7 1 0;
+  min-width: 0;
+}
+
+.shipment-fin-payment-field--currency {
+  flex: 3 1 0;
+  min-width: 0;
+}
+
+.shipment-fin-payment-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.shipment-fin-payment-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.shipment-fin-payment-field--full {
+  grid-column: 1 / -1;
+}
+
+.shipment-fin-payment-field__label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--form-text, #6b7280);
+}
+
+.shipment-fin-payment-field__required {
+  color: #dc2626;
+  margin-inline-start: 2px;
+}
+
+.shipment-fin-payment-field__input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.55rem 0.65rem;
+  font-size: 0.875rem;
+  line-height: 1.3;
+  border: 1px solid var(--form-divider, #e5e7eb);
+  border-radius: 10px;
+  background: var(--form-bg, #fff);
+  color: var(--root-text, #111827);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.shipment-fin-payment-field__input:focus {
+  outline: none;
+  border-color: color-mix(in oklab, var(--form-primary, #0039c5) 55%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--form-primary, #0039c5) 14%, transparent);
+}
+
+.shipment-fin-payment-modal__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  padding: 0.85rem 1.15rem 1.1rem;
+  border-top: 1px solid var(--form-divider, #e5e7eb);
+  background: color-mix(in oklab, var(--root-bg, #f8fafc) 55%, var(--form-bg, #fff));
+}
+
+.shipment-fin-payment-modal__submit--advance {
+  background: linear-gradient(135deg, var(--form-primary, #0039c5), #2563eb) !important;
+  border-color: transparent !important;
+  box-shadow: 0 8px 20px rgba(0, 57, 197, 0.28);
+}
+
+.shipment-fin-payment-modal__submit--advance:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+@media (max-width: 768px) {
+  .shipment-fin-payment-modal {
+    width: 100%;
+    max-height: 92vh;
+    border-radius: 14px;
+  }
+
+  .shipment-fin-payment-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .shipment-fin-payment-modal__footer {
+    flex-direction: column-reverse;
+  }
+
+  .shipment-fin-payment-modal__footer .client-detail-modal__btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

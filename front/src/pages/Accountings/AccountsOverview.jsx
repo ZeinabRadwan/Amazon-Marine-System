@@ -9,6 +9,7 @@ import {
   CircleDollarSign,
   Download,
   Search,
+  Wallet,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import Tabs from '../../components/Tabs'
@@ -18,6 +19,7 @@ import { Container } from '../../components/Container'
 import Pagination from '../../components/Pagination'
 import InvoiceStatusBadge from '../../components/InvoiceStatusBadge'
 import { getStoredToken } from '../Login'
+import { useAuthAccess } from '../../hooks/useAuthAccess'
 import {
   getCustomerStatements,
   getCustomerStatementDetail,
@@ -42,11 +44,13 @@ import {
   currencyMapToExportPlain,
 } from './CurrencyMapBadges'
 import AccountingsPaymentModal from './AccountingsPaymentModal'
+import ClientPaymentModal, { emptyClientPaymentForm } from '../../components/ClientPaymentModal'
 import {
   EPS,
   bankSupportsCurrency,
   validateWithdrawalAgainstTreasuryBank,
   rowPaymentStatus,
+  resolveCustomerAccountStatus,
   partnerCategoryKey,
   partnerMatchesDateFilter,
   hasPositivePayable,
@@ -59,6 +63,8 @@ export default function AccountsOverview() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const token = getStoredToken()
+  const { isAdminRole, isAccountant } = useAuthAccess()
+  const canRecordAdvancePayment = isAdminRole || isAccountant
   const [activeTab, setActiveTab] = useState('customers')
   const [loading, setLoading] = useState(false)
   const [customers, setCustomers] = useState([])
@@ -86,6 +92,12 @@ export default function AccountsOverview() {
   /** Raw treasury bank-overview payload ({ banks }) for withdrawal validation */
   const [treasuryBankOverview, setTreasuryBankOverview] = useState(null)
   const [paymentModal, setPaymentModal] = useState(null)
+  const [advancePaymentOpen, setAdvancePaymentOpen] = useState(false)
+  const [advancePaymentClientId, setAdvancePaymentClientId] = useState(null)
+  const [advancePaymentForm, setAdvancePaymentForm] = useState(emptyClientPaymentForm)
+  const [advancePaymentSubmitError, setAdvancePaymentSubmitError] = useState(null)
+  const [advancePaymentBusy, setAdvancePaymentBusy] = useState(false)
+  const [advanceProofFile, setAdvanceProofFile] = useState(null)
   const [paymentSubmitError, setPaymentSubmitError] = useState(null)
   const [paymentBusy, setPaymentBusy] = useState(false)
   const [paymentProofFile, setPaymentProofFile] = useState(null)
@@ -101,6 +113,7 @@ export default function AccountsOverview() {
     client_id: '',
     vendor_id: '',
     vendor_bill_id: '',
+    reference: '',
   })
 
   useEffect(() => {
@@ -163,6 +176,47 @@ export default function AccountsOverview() {
       vendor_bill_id: ctx.vendor_bill_id ? String(ctx.vendor_bill_id) : '',
       currency_code: normalizeAccountingsPaymentCurrency(ctx.currency_code ?? prev.currency_code),
     }))
+  }
+
+  const openAdvancePayment = (clientId) => {
+    setAdvancePaymentClientId(clientId)
+    setAdvancePaymentForm(emptyClientPaymentForm())
+    setAdvancePaymentSubmitError(null)
+    setAdvanceProofFile(null)
+    setAdvancePaymentOpen(true)
+  }
+
+  const submitAdvancePayment = async () => {
+    if (!token || advancePaymentClientId == null) return
+    const amount = Number(advancePaymentForm.amount)
+    if (!Number.isFinite(amount) || amount <= 0) return
+    const payload = new FormData()
+    payload.append('type', 'client_receipt')
+    payload.append('amount', String(amount))
+    payload.append('currency_code', advancePaymentForm.currency)
+    payload.append('method', advancePaymentForm.method || 'bank_transfer')
+    payload.append('paid_at', advancePaymentForm.paid_at || new Date().toISOString().slice(0, 10))
+    payload.append('client_id', String(Number(advancePaymentClientId)))
+    if (advancePaymentForm.bank_account_id) {
+      payload.append('source_account_id', String(Number(advancePaymentForm.bank_account_id)))
+    }
+    if (advancePaymentForm.reference) {
+      payload.append('reference', String(advancePaymentForm.reference).trim())
+    }
+    if (advanceProofFile) payload.append('proof_file', advanceProofFile)
+    setAdvancePaymentBusy(true)
+    setAdvancePaymentSubmitError(null)
+    try {
+      await recordPayment(token, payload)
+      setAdvancePaymentOpen(false)
+      setAdvancePaymentClientId(null)
+      setAdvancePaymentForm(emptyClientPaymentForm())
+      await loadOverview()
+    } catch (e) {
+      setAdvancePaymentSubmitError(e?.message || String(e))
+    } finally {
+      setAdvancePaymentBusy(false)
+    }
   }
 
   const triggerBlobDownload = (blob, filename) => {
@@ -253,6 +307,7 @@ export default function AccountsOverview() {
     if (payment.shipment_id) payload.append('shipment_id', String(Number(payment.shipment_id)))
     if (payment.client_id) payload.append('client_id', String(Number(payment.client_id)))
     if (payment.vendor_id) payload.append('vendor_id', String(Number(payment.vendor_id)))
+    if (payment.reference) payload.append('reference', String(payment.reference).trim())
     if (paymentProofFile) payload.append('proof_file', paymentProofFile)
     setPaymentBusy(true)
     setPaymentSubmitError(null)
@@ -275,9 +330,12 @@ export default function AccountsOverview() {
         acc.paidMap = mergeCurrencyMaps(acc.paidMap, row.paid_amount || {})
         acc.outstandingMap = mergeCurrencyMaps(acc.outstandingMap, row.remaining_balance || {})
         acc.unpaid += Number(row.invoice_status_counts?.unpaid || 0)
+        if (resolveCustomerAccountStatus(row) === 'unpaid' || resolveCustomerAccountStatus(row) === 'partial') {
+          acc.customersWithBalance += 1
+        }
         return acc
       },
-      { invoiceCount: 0, paidMap: {}, outstandingMap: {}, unpaid: 0 }
+      { invoiceCount: 0, paidMap: {}, outstandingMap: {}, unpaid: 0, customersWithBalance: 0 }
     )
     return totals
   }, [customers])
@@ -285,13 +343,19 @@ export default function AccountsOverview() {
   /** Same keys as partnerStatementStats for shared stats cards. */
   const customerStatementHeadline = useMemo(
     () => ({
-      totalCount: customerSummary.invoiceCount,
-      unpaidCount: customerSummary.unpaid,
+      totalCount: customers.length,
+      unpaidCount: customerSummary.customersWithBalance,
       paidMap: customerSummary.paidMap,
       outstandingMap: customerSummary.outstandingMap,
     }),
-    [customerSummary],
+    [customers.length, customerSummary],
   )
+
+  const advancePrepaidForModal = useMemo(() => {
+    if (!advancePaymentClientId) return null
+    const row = customers.find((c) => String(c.customer_id) === String(advancePaymentClientId))
+    return row?.prepaid_balance && typeof row.prepaid_balance === 'object' ? row.prepaid_balance : null
+  }, [advancePaymentClientId, customers])
 
   const partnerCostRows = useMemo(() => {
     const rows = aggregateShipmentCostsByPartner(
@@ -452,7 +516,11 @@ export default function AccountsOverview() {
           <div className="clients-stats-grid accountings-stats-grid accountings-stats-grid--statement">
             <StatsCard
               className="accountings-stat-card"
-              title={t('accountings.totalInvoicesCount')}
+              title={
+                activeTab === 'customers'
+                  ? t('accountings.totalCustomersCount', 'Total customers')
+                  : t('accountings.totalInvoicesCount')
+              }
               value={headlineStats.totalCount}
               icon={<WalletCards className="h-4 w-4" aria-hidden />}
               variant="blue"
@@ -560,11 +628,11 @@ export default function AccountsOverview() {
                 <thead>
                   <tr>
                     <th>{t('accountings.colClient', 'Customer')}</th>
+                    <th>{t('accountings.colCurrentBalance', 'Current balance')}</th>
                     <th>{t('accountings.colInvoiceCount', 'Total invoices')}</th>
+                    <th>{t('accountings.colTotalPayments', 'Total payments')}</th>
                     <th>{t('accountings.colRelatedShipments', 'Shipments')}</th>
                     <th>{t('accountings.colTotalDue', 'Total invoiced')}</th>
-                    <th>{t('accountings.totalPaidAmount')}</th>
-                    <th>{t('accountings.remainingBalance')}</th>
                     <th>{t('accountings.status')}</th>
                     <th>{t('accountings.colActions')}</th>
                   </tr>
@@ -573,22 +641,19 @@ export default function AccountsOverview() {
                   {pagedCustomers.map((row) => (
                     <tr key={row.customer_id}>
                       <td>{row.customer_name}</td>
+                      <td>
+                        <CurrencyMapBadges value={row.current_balance ?? row.remaining_balance} size="sm" />
+                      </td>
                       <td>{Number(row.invoice_count || 0)}</td>
+                      <td>
+                        <CurrencyMapBadges value={row.paid_amount} size="sm" />
+                      </td>
                       <td className="tabular-nums">{Number(row.shipments_count ?? 0)}</td>
                       <td>
                         <CurrencyMapBadges value={row.total_invoices_value} size="sm" />
                       </td>
                       <td>
-                        <CurrencyMapBadges value={row.paid_amount} size="sm" />
-                      </td>
-                      <td>
-                        <CurrencyMapBadges value={row.remaining_balance} size="sm" />
-                      </td>
-                      <td>
-                        <InvoiceStatusBadge
-                          status={rowPaymentStatus(row.paid_amount, row.remaining_balance)}
-                          t={t}
-                        />
+                        <InvoiceStatusBadge status={resolveCustomerAccountStatus(row)} t={t} />
                       </td>
                       <td>
                         <button
@@ -609,6 +674,17 @@ export default function AccountsOverview() {
                         >
                           <DollarSign className="h-4 w-4" />
                         </button>
+                        {canRecordAdvancePayment ? (
+                          <button
+                            type="button"
+                            className="accountings-action-icon-btn accountings-action-icon-btn--advance"
+                            title={t('accountings.recordAdvancePayment', 'Record advance payment')}
+                            aria-label={t('accountings.recordAdvancePayment', 'Record advance payment')}
+                            onClick={() => openAdvancePayment(row.customer_id)}
+                          >
+                            <Wallet className="h-4 w-4" />
+                          </button>
+                        ) : null}
                         <button
                           type="button"
                           className="accountings-action-icon-btn"
@@ -623,7 +699,7 @@ export default function AccountsOverview() {
                   ))}
                   {!customers.length && !loading && (
                     <tr>
-                      <td colSpan={8} className="accountings-empty py-8 text-center">
+                      <td colSpan={9} className="accountings-empty py-8 text-center">
                         {t('accountings.emptyClients', 'No customer accounts found.')}
                       </td>
                     </tr>
@@ -758,6 +834,26 @@ export default function AccountsOverview() {
           setPaymentProofFile={setPaymentProofFile}
           onSubmit={submitPayment}
           submitError={paymentSubmitError}
+        />
+
+        <ClientPaymentModal
+          open={advancePaymentOpen}
+          onClose={() => {
+            setAdvancePaymentOpen(false)
+            setAdvancePaymentClientId(null)
+            setAdvancePaymentSubmitError(null)
+          }}
+          onSubmit={submitAdvancePayment}
+          saving={advancePaymentBusy}
+          submitError={advancePaymentSubmitError}
+          mode="advance"
+          form={advancePaymentForm}
+          setForm={setAdvancePaymentForm}
+          bankAccounts={bankAccounts}
+          prepaidByCurrency={advancePrepaidForModal}
+          proofFile={advanceProofFile}
+          setProofFile={setAdvanceProofFile}
+          titleId="accountings-advance-payment-modal-title"
         />
       </div>
     </Container>

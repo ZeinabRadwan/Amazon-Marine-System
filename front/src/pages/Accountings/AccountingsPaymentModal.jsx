@@ -6,6 +6,7 @@ import {
 } from './accountingsStatementShared'
 import './Accountings.css'
 
+/** Simple payment modal for invoice / vendor payments (not advance — use ClientPaymentModal). */
 export default function AccountingsPaymentModal({
   open,
   onClose,
