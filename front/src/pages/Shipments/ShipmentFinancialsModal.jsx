@@ -47,6 +47,7 @@ import { listBankAccounts, listPayments, recordPayment } from '../../api/account
 import { useAuthAccess } from '../../hooks/useAuthAccess'
 import { ROLE_ID } from '../../constants/roles'
 import { latinDateTimeFormat } from '../../utils/westernNumerals'
+import { resolvePaymentSourceAccountLabel, treasuryAccountDisplayName } from '../../utils/treasuryAccountDisplay'
 import { BUCKET_DEFS, expenseBucket, LINE_TEMPLATES, expenseHaystack, partitionBucketRows } from './shipmentFinUtils'
 import Tabs from '../../components/Tabs'
 import InvoiceDocumentPreviewModal from '../../components/InvoiceDocumentPreviewModal'
@@ -100,12 +101,9 @@ function resolveExpenseBankAccountId(bankAccounts, currencyCode, existingBankId)
   return hit?.id != null ? Number(hit.id) : list[0]?.id != null ? Number(list[0].id) : null
 }
 
-function paymentMethodLabelFromBank(bankAccounts, bankId) {
+function paymentMethodLabelFromBank(bankAccounts, bankId, locale) {
   const b = Array.isArray(bankAccounts) ? bankAccounts.find((x) => Number(x.id) === Number(bankId)) : null
-  if (!b) return ''
-  const bn = String(b.bank_name || '').trim()
-  const an = String(b.account_name || '').trim()
-  return bn && an ? `${bn} — ${an}` : bn || an || ''
+  return treasuryAccountDisplayName(b, locale)
 }
 
 /** Build same download URL the SPA uses (when API omits `url` but `id` is valid). */
@@ -1750,14 +1748,21 @@ export default function ShipmentFinancialsModal({
     const add = (p) => {
       if (!p) return
       const id = p.id ?? `${p.paid_at}-${p.amount}-${p.currency_code}`
-      if (!byId.has(id)) byId.set(id, p)
+      if (!byId.has(id)) {
+        byId.set(id, {
+          ...p,
+          source_account_label: resolvePaymentSourceAccountLabel(p, bankAccounts, i18n.language),
+        })
+      }
     }
     shipmentClientPayments.forEach(add)
     ;(clientInvoice?.payments || []).forEach(add)
     return Array.from(byId.values()).sort(
       (a, b) => new Date(b.paid_at || b.created_at || 0).getTime() - new Date(a.paid_at || a.created_at || 0).getTime(),
     )
-  }, [shipmentClientPayments, clientInvoice?.payments])
+  }, [shipmentClientPayments, clientInvoice?.payments, bankAccounts, i18n.language])
+
+  const paymentSourceAccountFallback = t('payments.noBankAccount', 'No bank account')
 
   const prepaidByCurrency = useMemo(() => {
     const map = {}
@@ -2779,7 +2784,7 @@ export default function ShipmentFinancialsModal({
         title: p.invoice_id
           ? t('invoices.timeline.paymentAdded', 'Payment Added')
           : t('shipments.fin.advancePayment', { defaultValue: 'Advance payment' }),
-        details: `${p.method || '—'} • ${p.bank_name || p.bank_account_name || t('payments.bankAccountOptional', 'No bank account')}`,
+        details: `${p.method || '—'} • ${p.source_account_label || paymentSourceAccountFallback}`,
         amountNode: (
           <ShipmentMoney
             amount={Number(p.amount) || 0}
@@ -2808,7 +2813,7 @@ export default function ShipmentFinancialsModal({
       })
     }
     return rows.sort((a, b) => new Date(a.date || 0).getTime() - new Date(b.date || 0).getTime())
-  }, [clientInvoice, invoiceFinancialOverview.remaining, invoiceFinancialOverview.status, numberLocale, shipment?.id, summaryClientPayments, t])
+  }, [clientInvoice, invoiceFinancialOverview.remaining, invoiceFinancialOverview.status, numberLocale, shipment?.id, summaryClientPayments, paymentSourceAccountFallback, t])
 
   const submitClientPayment = useCallback(async () => {
     if (!token || !shipment?.client_id) return
@@ -4955,7 +4960,7 @@ export default function ShipmentFinancialsModal({
                           <div className="shipment-fin-summary-payment-item__title">
                             {p.method || '—'}
                             <span className="shipment-fin-summary-payment-item__sep">•</span>
-                            {p.bank_name || p.bank_account_name || t('payments.bankAccountOptional', 'No bank account')}
+                            {p.source_account_label || paymentSourceAccountFallback}
                             {!p.invoice_id ? (
                               <span className="shipment-fin-summary-advance-badge">
                                 {t('shipments.fin.advanceBadge', { defaultValue: 'Advance' })}

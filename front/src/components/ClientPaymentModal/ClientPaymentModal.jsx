@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { DollarSign, Paperclip, Sparkles, Wallet, X } from 'lucide-react'
 import DatePicker from '../DatePicker'
+import { treasuryAccountDisplayName } from '../../utils/treasuryAccountDisplay'
 import { ShipmentMoneyMap } from '../../pages/Shipments/shipmentMoneyDisplay'
 import '../../pages/Shipments/shipmentMoneyDisplay.css'
 import { bankSupportsCurrency } from '../../pages/Accountings/accountingsStatementShared'
@@ -214,7 +215,7 @@ export default function ClientPaymentModal({
                   <option value="">{t('payments.bankAccountOptional', { defaultValue: 'Bank account (optional)' })}</option>
                   {bankAccounts.map((b) => (
                     <option key={b.id} value={b.id}>
-                      {b.bank_name} — {b.account_name}
+                      {treasuryAccountDisplayName(b, i18n.language) || b.id}
                     </option>
                   ))}
                 </select>

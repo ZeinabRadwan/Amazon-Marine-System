@@ -752,18 +752,14 @@ class AccountingController extends Controller
                     $recvAcct = $p->sourceAccount ?? $p->targetAccount;
                     $targetAccountLabel = null;
                     if ($recvAcct) {
-                        $bank = trim((string) ($recvAcct->bank_name ?? ''));
-                        $acct = trim((string) ($recvAcct->account_name ?? ''));
-                        $targetAccountLabel = $acct !== '' ? $bank.' — '.$acct : ($bank !== '' ? $bank : null);
+                        $targetAccountLabel = trim($recvAcct->primaryDisplayName()) ?: null;
                     }
                     if ($targetAccountLabel === null) {
                         foreach ([$p->source_account_id, $p->target_account_id] as $accountId) {
                             if ($accountId) {
                                 $ba = BankAccount::query()->find((int) $accountId);
                                 if ($ba) {
-                                    $bank = trim((string) ($ba->bank_name ?? ''));
-                                    $acct = trim((string) ($ba->account_name ?? ''));
-                                    $targetAccountLabel = $acct !== '' ? $bank.' — '.$acct : ($bank !== '' ? $bank : null);
+                                    $targetAccountLabel = trim($ba->primaryDisplayName()) ?: null;
                                     break;
                                 }
                             }
@@ -775,9 +771,7 @@ class AccountingController extends Controller
                         if ($treasuryAccountId) {
                             $ba = BankAccount::query()->find((int) $treasuryAccountId);
                             if ($ba) {
-                                $bank = trim((string) ($ba->bank_name ?? ''));
-                                $acct = trim((string) ($ba->account_name ?? ''));
-                                $targetAccountLabel = $acct !== '' ? $bank.' — '.$acct : ($bank !== '' ? $bank : null);
+                                $targetAccountLabel = trim($ba->primaryDisplayName()) ?: null;
                             }
                         }
                     }

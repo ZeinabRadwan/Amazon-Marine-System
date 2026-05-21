@@ -16,9 +16,10 @@ use App\Notifications\ShipmentFinancialsCompleted;
 use App\Services\ActivityLogger;
 use App\Services\BankPaymentCurrencyService;
 use App\Services\FinancialService;
-use App\Services\PrepaidPaymentService;
 use App\Services\NotificationService;
+use App\Services\PrepaidPaymentService;
 use App\Support\MpdfInvoiceFonts;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -493,8 +494,9 @@ class InvoiceController extends Controller
                         'shipment_id' => $p->shipment_id ?? $invoice->shipment_id,
                         'shipment_reference' => $invoice->shipment?->bl_number,
                         'source_account_id' => $p->source_account_id,
-                        'bank_account_name' => $p->sourceAccount?->account_name,
-                        'bank_name' => $p->sourceAccount?->bank_name,
+                        'source_account_label' => $p->sourceAccount ? trim($p->sourceAccount->primaryDisplayName()) : null,
+                        'bank_account_name' => $p->sourceAccount ? trim($p->sourceAccount->primaryDisplayName()) : null,
+                        'bank_name' => $p->sourceAccount ? trim($p->sourceAccount->primaryDisplayName()) : null,
                     ];
                 })->all(),
             'sections' => $sections,
@@ -717,7 +719,7 @@ class InvoiceController extends Controller
     /**
      * Full invoice JSON for shipment client-invoice draft routes (caller enforces access).
      */
-    public function invoicePayloadResponse(Invoice $invoice): \Illuminate\Http\JsonResponse
+    public function invoicePayloadResponse(Invoice $invoice): JsonResponse
     {
         return response()->json([
             'data' => $this->invoicePayload($invoice->load(['client', 'shipment', 'items', 'payments'])),

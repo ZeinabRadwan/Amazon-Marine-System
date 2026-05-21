@@ -2760,6 +2760,7 @@
   "payments": {
     "bankAccount": "Bank account",
     "bankAccountOptional": "Bank account (optional)",
+    "noBankAccount": "No bank account",
     "insufficientBalanceCurrency": "Insufficient balance in this currency."
   },
   "invoices": {

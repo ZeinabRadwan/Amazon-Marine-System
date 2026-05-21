@@ -2761,6 +2761,7 @@
   "payments": {
     "bankAccount": "الحساب البنكي",
     "bankAccountOptional": "الحساب البنكي (اختياري)",
+    "noBankAccount": "بدون حساب بنكي",
     "insufficientBalanceCurrency": "رصيد غير كافٍ بهذه العملة."
   },
   "invoices": {

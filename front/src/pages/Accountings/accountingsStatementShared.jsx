@@ -1,4 +1,5 @@
 import { ExternalLink, PanelRight } from 'lucide-react'
+import { treasuryAccountDisplayName } from '../../utils/treasuryAccountDisplay'
 import { expenseBucket, LINE_TEMPLATES } from '../Shipments/shipmentFinUtils'
 
 /** Paid / partial / unpaid from currency maps (customer balances or partner settlement). */
@@ -172,13 +173,11 @@ export function enrichPartnerCostLines(lines, paidMap, remainingMap) {
   })
 }
 
-export function bankAccountLabel(acc) {
+export function bankAccountLabel(acc, locale) {
   if (!acc) return null
-  const bank = String(acc.bank_name || '').trim()
-  const name = String(acc.account_name || '').trim()
-  const cur = Array.isArray(acc.supported_currencies) ? acc.supported_currencies.join('/') : ''
-  const base = name ? `${bank} — ${name}` : bank
+  const base = treasuryAccountDisplayName(acc, locale)
   if (!base) return null
+  const cur = Array.isArray(acc.supported_currencies) ? acc.supported_currencies.join('/') : ''
   return cur ? `${base} (${cur})` : base
 }
 

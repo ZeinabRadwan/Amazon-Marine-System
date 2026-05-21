@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Shipment;
+use App\Models\VendorBill;
 use App\Services\ActivityLogger;
 use App\Services\BankPaymentCurrencyService;
 use App\Services\FinancialService;
@@ -75,6 +77,12 @@ class PaymentController extends Controller
         $data = $payments->map(static function (Payment $p): array {
             $arr = $p->toArray();
             $arr['proof_url'] = $p->proof_path ? Storage::disk('public')->url($p->proof_path) : null;
+            $label = $p->sourceAccount ? trim($p->sourceAccount->primaryDisplayName()) : '';
+            if ($label !== '') {
+                $arr['source_account_label'] = $label;
+                $arr['bank_account_name'] = $label;
+                $arr['bank_name'] = $label;
+            }
 
             return $arr;
         });
@@ -127,27 +135,27 @@ class PaymentController extends Controller
         }
 
         if (! empty($validated['invoice_id']) && empty($validated['client_id'])) {
-            $invoice = \App\Models\Invoice::query()->find($validated['invoice_id']);
+            $invoice = Invoice::query()->find($validated['invoice_id']);
             if ($invoice) {
                 $validated['client_id'] = $invoice->client_id;
                 $validated['shipment_id'] = $validated['shipment_id'] ?? $invoice->shipment_id;
             }
         }
-        if (!empty($validated['vendor_bill_id']) && empty($validated['vendor_id'])) {
-            $bill = \App\Models\VendorBill::query()->find($validated['vendor_bill_id']);
+        if (! empty($validated['vendor_bill_id']) && empty($validated['vendor_id'])) {
+            $bill = VendorBill::query()->find($validated['vendor_bill_id']);
             if ($bill) {
                 $validated['vendor_id'] = $bill->vendor_id;
                 $validated['shipment_id'] = $validated['shipment_id'] ?? $bill->shipment_id;
             }
         }
-        if (!isset($validated['source_account_id']) && !empty($validated['bank_account_id'])) {
+        if (! isset($validated['source_account_id']) && ! empty($validated['bank_account_id'])) {
             $validated['source_account_id'] = $validated['bank_account_id'];
         }
         BankPaymentCurrencyService::prepareForBank($validated);
 
         try {
             $payment = DB::transaction(function () use ($request, $validated, $user) {
-                $payment = new Payment();
+                $payment = new Payment;
                 $payment->fill($validated);
                 if ($request->hasFile('proof_file')) {
                     $path = $request->file('proof_file')->store('payments/proofs', 'public');
@@ -181,11 +189,18 @@ class PaymentController extends Controller
             'amount' => $payment->amount,
         ]);
 
+        $fresh = $payment->fresh(['invoice', 'vendorBill', 'client', 'vendor', 'shipment', 'sourceAccount', 'targetAccount']);
+        $payload = $fresh?->toArray() ?? [];
+        $payload['proof_url'] = $payment->proof_path ? Storage::disk('public')->url($payment->proof_path) : null;
+        $label = $fresh?->sourceAccount ? trim($fresh->sourceAccount->primaryDisplayName()) : '';
+        if ($label !== '') {
+            $payload['source_account_label'] = $label;
+            $payload['bank_account_name'] = $label;
+            $payload['bank_name'] = $label;
+        }
+
         return response()->json([
-            'data' => $payment->fresh(['invoice', 'vendorBill', 'client', 'vendor', 'shipment', 'sourceAccount', 'targetAccount'])?->toArray() + [
-                'proof_url' => $payment->proof_path ? Storage::disk('public')->url($payment->proof_path) : null,
-            ],
+            'data' => $payload,
         ], 201);
     }
 }
-

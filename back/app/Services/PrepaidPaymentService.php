@@ -174,8 +174,9 @@ class PrepaidPaymentService
                 'shipment_id' => $p->shipment_id,
                 'shipment_reference' => $p->shipment?->bl_number,
                 'is_advance' => true,
-                'bank_account_name' => $p->sourceAccount?->account_name,
-                'bank_name' => $p->sourceAccount?->bank_name,
+                'source_account_label' => $p->sourceAccount ? trim($p->sourceAccount->primaryDisplayName()) : null,
+                'bank_account_name' => $p->sourceAccount ? trim($p->sourceAccount->primaryDisplayName()) : null,
+                'bank_name' => $p->sourceAccount ? trim($p->sourceAccount->primaryDisplayName()) : null,
                 'proof_url' => $proofUrl,
                 'proof_filename' => $p->proof_path ? basename((string) $p->proof_path) : null,
             ];
